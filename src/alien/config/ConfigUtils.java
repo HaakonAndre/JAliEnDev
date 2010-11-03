@@ -1,7 +1,7 @@
 /**
  * 
  */
-package config;
+package alien.config;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
