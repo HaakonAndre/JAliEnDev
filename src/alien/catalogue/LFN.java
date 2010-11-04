@@ -3,6 +3,8 @@ package alien.catalogue;
 import java.util.Date;
 import java.util.UUID;
 
+import alien.catalogue.CatalogueUtils.IndexTableEntry;
+
 import lazyj.DBFunctions;
 
 /**
@@ -45,11 +47,20 @@ public class LFN {
 	
 	boolean broken;
 	
+	int host;
+	
+	int tableName;
+	
 	/**
 	 * @param db
+	 * @param host 
+	 * @param tableName 
 	 */
-	public LFN(final DBFunctions db){
+	public LFN(final DBFunctions db, final int host, final int tableName){
 		init(db);
+		
+		this.host = host;
+		this.tableName = tableName;
 	}
 	
 	@Override
@@ -112,4 +123,29 @@ public class LFN {
 		       "broken\t\t: "+broken;
 	}
 	
+	/**
+	 * Get the canonical name (full path and name)
+	 * 
+	 * @return canonical name
+	 */
+	public String getCanonicalName(){
+		final IndexTableEntry entry = CatalogueUtils.getIndexTable(tableName);
+		
+		if (entry==null){
+			return lfn;
+		}
+		
+		final String sLFN = entry.lfn;
+		
+		final boolean bEnds = sLFN.endsWith("/");
+		final boolean bStarts = lfn.startsWith("/");
+		
+		if (bEnds && bStarts)
+			return sLFN.substring(0, sLFN.length()-1) + lfn;
+		
+		if (!bEnds && !bStarts)
+			return sLFN + "/" + lfn;
+			
+		return sLFN + lfn;
+	}
 }

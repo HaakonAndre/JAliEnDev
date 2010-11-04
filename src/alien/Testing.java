@@ -32,6 +32,7 @@ public class Testing {
 		
 		for (LFN lfn: lfns){
 			System.err.println(lfn);
+			System.err.println(lfn.getCanonicalName());
 		}
 	}
 	

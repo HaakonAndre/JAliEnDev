@@ -74,22 +74,22 @@ public final class GUIDUtils {
 		if (!db.moveNext())
 			return null;
 		
-		String sLFNRef = db.gets(1);
+		final String sLFNRef = db.gets(1);
 		
-		int idx = sLFNRef.indexOf('_');
+		final int idx = sLFNRef.indexOf('_');
 		
-		int iHostID = Integer.parseInt(sLFNRef.substring(0, idx));
+		final int iHostID = Integer.parseInt(sLFNRef.substring(0, idx));
 		
-		int iLFNTableIndex = Integer.parseInt(sLFNRef.substring(idx+1));
+		final int iLFNTableIndex = Integer.parseInt(sLFNRef.substring(idx+1));
 		
 		final DBFunctions db2 = CatalogueUtils.getHost(iHostID).getDB();
 		
 		db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary('"+guid.guid+"');");
 	
-		Set<LFN> ret = new LinkedHashSet<LFN>();
+		final Set<LFN> ret = new LinkedHashSet<LFN>();
 		
 		while (db2.moveNext()){
-			ret.add(new LFN(db2));
+			ret.add(new LFN(db2, iHostID, iLFNTableIndex));
 		}
 		
 		return ret;
