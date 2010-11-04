@@ -14,27 +14,27 @@ public class Host {
 	/**
 	 * host index
 	 */
-	public int hostIndex;
+	public final int hostIndex;
 	
 	/**
 	 * machine name:port 
 	 */
-	public String address;
+	public final String address;
 	
 	/**
 	 * database name
 	 */
-	public String db;
+	public final String db;
 	
 	/**
 	 * driver 
 	 */
-	public String driver;
+	public final String driver;
 	
 	/**
 	 * organization
 	 */
-	public String organization;
+	public final String organization;
 	
 	private ExtProperties dbProperties = null;
 	

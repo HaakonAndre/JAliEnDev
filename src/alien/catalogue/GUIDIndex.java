@@ -33,7 +33,7 @@ public class GUIDIndex {
 	 * Initialize from a DB query from alice_users.GUIDINDEX
 	 * 
 	 * @param db
-	 * @see CatalogueUtils#getGUIDIndex(int)
+	 * @see CatalogueUtils#getGUIDIndex(long)
 	 */
 	GUIDIndex(final DBFunctions db){
 		indexId = db.geti("indexId");

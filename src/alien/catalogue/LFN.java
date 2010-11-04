@@ -118,6 +118,10 @@ public class LFN {
 	 */
 	public IndexTableEntry indexTableEntry;
 	
+	/**
+	 * @param lfn
+	 * @param entry
+	 */
 	LFN(final String lfn, final IndexTableEntry entry){
 		this.lfn = lfn;
 		this.indexTableEntry = entry;

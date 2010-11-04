@@ -10,15 +10,30 @@ import lazyj.DBFunctions;
  */
 public class PFN {
 
-	int guidId;
+	/**
+	 * guidID
+	 */
+	public int guidId;
 	
-	String pfn;
+	/**
+	 * PFN 
+	 */
+	public String pfn;
 	
-	int seNumber;
+	/**
+	 * SE number
+	 */
+	public int seNumber;
 	
-	int host;
+	/**
+	 * index
+	 */
+	public int host;
 	
-	int tableNumber;
+	/**
+	 * table name
+	 */
+	public int tableNumber;
 	
 	/**
 	 * @param db
