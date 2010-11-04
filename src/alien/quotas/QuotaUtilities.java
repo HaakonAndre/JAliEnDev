@@ -17,26 +17,26 @@ import lazyj.DBFunctions;
  */
 public final class QuotaUtilities {
 
-	private static Map<String, FQuota> fileQuotas = null;
-	private static long fileQuotasLastUpdated = 0;
+	private static Map<String, Quota> quotas = null;
+	private static long quotasLastUpdated = 0;
 	
 	private static synchronized void updateFileQuotasCache(){
-		if (System.currentTimeMillis() - fileQuotasLastUpdated > 1000*60*5 || fileQuotas==null){
-			final Map<String, FQuota> newQuotas = new HashMap<String, FQuota>();
+		if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
+			final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
 			
-			final DBFunctions db = ConfigUtils.getDB("?");
+			final DBFunctions db = ConfigUtils.getDB("processes");
 			
-			db.query("?");
+			db.query("SELECT * FROM PRIORITY;");
 			
 			while (db.moveNext()){
-				final FQuota fq = new FQuota(db);
+				final Quota fq = new Quota(db);
 		
-				if (fq.account!=null)
-					newQuotas.put(fq.account.toLowerCase(), fq);
+				if (fq.user!=null)
+					newQuotas.put(fq.user.toLowerCase(), fq);
 			}
 			
-			fileQuotas = Collections.unmodifiableMap(newQuotas);
-			fileQuotasLastUpdated = System.currentTimeMillis();
+			quotas = Collections.unmodifiableMap(newQuotas);
+			quotasLastUpdated = System.currentTimeMillis();
 		}
 	}
 	
@@ -46,51 +46,12 @@ public final class QuotaUtilities {
 	 * @param account
 	 * @return file quota
 	 */
-	public static FQuota getFQuota(final String account){
+	public static Quota getFQuota(final String account){
 		if (account==null || account.length()==0)
 			return null;
 		
 		updateFileQuotasCache();
 		
-		return fileQuotas.get(account.toLowerCase());
-	}
-
-
-	private static Map<String, JQuota> jobQuotas = null;
-	private static long jobQuotasLastUpdated = 0;
-	
-	private static synchronized void updateJobQuotasCache(){
-		if (System.currentTimeMillis() - jobQuotasLastUpdated > 1000*60*5 || jobQuotas==null){
-			final Map<String, JQuota> newQuotas = new HashMap<String, JQuota>();
-			
-			final DBFunctions db = ConfigUtils.getDB("?");
-			
-			db.query("?");
-			
-			while (db.moveNext()){
-				final JQuota jq = new JQuota(db);
-		
-				if (jq.account!=null)
-					newQuotas.put(jq.account.toLowerCase(), jq);
-			}
-			
-			jobQuotas = Collections.unmodifiableMap(newQuotas);
-			jobQuotasLastUpdated = System.currentTimeMillis();
-		}
-	}
-	
-	/**
-	 * Get the job quota for a particular account
-	 * 
-	 * @param account
-	 * @return job quota
-	 */
-	public static FQuota getJQuota(final String account){
-		if (account==null || account.length()==0)
-			return null;
-		
-		updateJobQuotasCache();
-		
-		return fileQuotas.get(account.toLowerCase());
+		return quotas.get(account.toLowerCase());
 	}
 }
