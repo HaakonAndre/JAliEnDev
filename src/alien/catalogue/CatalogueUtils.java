@@ -15,7 +15,7 @@ import alien.config.ConfigUtils;
  * @author costing
  * @since Nov 3, 2010
  */
-public class CatalogueUtils {
+public final class CatalogueUtils {
 
 	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<Integer, Host>() {
 		private static final long serialVersionUID = 1L;
@@ -75,7 +75,7 @@ public class CatalogueUtils {
 	 * @param timestamp
 	 * @return the GUIDIndex that contains this timestamp (in milliseconds)
 	 */
-	public static GUIDIndex getGUIDIndex(final int timestamp){
+	public static GUIDIndex getGUIDIndex(final long timestamp){
 		updateGuidIndexCache();
 		
 		GUIDIndex old = null;

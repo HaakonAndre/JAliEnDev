@@ -40,13 +40,11 @@ public class GUIDIndex {
 		hostIndex = db.geti("hostIndex");
 		tableName = db.gets("tableName");
 		
-		String sTime = db.gets("guidTime", "0");
-		
-		// 11DF800000000000
-		if (sTime.length()>11){
-			sTime = sTime.substring(0, 11);
-		}
-		
-		guidTime = Long.parseLong(sTime, 16);
+		String sTime = db.gets("guidTime");
+
+		if (sTime.length()>1)
+			guidTime = Long.parseLong(sTime.substring(1), 16);
+		else
+			guidTime = 0;
 	}
 }

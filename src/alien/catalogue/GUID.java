@@ -120,7 +120,7 @@ public class GUID implements Serializable {
 		
 		guid = getUUID(guidBytes);
 		
-		type = 'f';
+		type = 0;
 		
 		String sTemp = db.gets("type");
 		
@@ -141,7 +141,7 @@ public class GUID implements Serializable {
 		       "aclId\t\t: "+aclId+"\n"+
 		       "expireTime\t: "+expiretime+"\n"+
 		       "size\t\t: "+size+"\n"+
-		       "guid\t\t: "+guid+"\n"+
+		       "guid\t\t: "+guid+" ("+guid.timestamp()+")\n"+
 		       "type\t\t: "+type+"\n"+
 		       "md5\t\t: "+md5+"\n"+
 		       "permissions\t: "+perm
