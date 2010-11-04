@@ -1,12 +1,11 @@
 package alien;
 
 import java.util.Set;
+import java.util.UUID;
 
-import lazyj.DBFunctions;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
-import alien.config.ConfigUtils;
 
 /**
  * Testing stuff
@@ -20,12 +19,10 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		DBFunctions db = ConfigUtils.getDB("alice_users");
+		UUID startingGUID = UUID.fromString("00270ff2-3bd3-11df-9bee-001cc45cb5dc");
 		
-		db.query("SELECT * FROM G94L WHERE guidId=67271284");
-		
-		GUID guid = new GUID(db);
-		
+		GUID guid = GUIDUtils.getGUID(startingGUID);
+				
 		System.err.println(guid);
 		
 		Set<LFN> lfns = GUIDUtils.getLFNsForGUID(guid);

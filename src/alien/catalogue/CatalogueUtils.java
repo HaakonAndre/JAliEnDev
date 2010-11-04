@@ -181,8 +181,6 @@ public final class CatalogueUtils {
 	public static IndexTableEntry getIndexTable(final int tableName){
 		updateIndexTableCache();
 
-		System.err.println(tableName);
-		
 		return indextable.get(Integer.valueOf(tableName));
 	}
 	
