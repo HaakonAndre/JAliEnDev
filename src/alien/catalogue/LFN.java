@@ -3,7 +3,6 @@ package alien.catalogue;
 import java.util.Date;
 import java.util.UUID;
 
-import alien.catalogue.CatalogueUtils.IndexTableEntry;
 
 import lazyj.DBFunctions;
 
@@ -29,7 +28,7 @@ public class LFN {
 	
 	long size;
 	
-	int dir;
+	long dir;
 	
 	String gowner;
 	
@@ -51,6 +50,46 @@ public class LFN {
 	
 	int tableName;
 	
+	boolean exists = false;
+	
+	LFN parentDir = null; 
+	
+	String canonicalName = null;
+	
+	LFN(final String lfn, final int host, final int tableName){
+		this.lfn = lfn;
+		this.host = host;
+		this.tableName = tableName;
+		
+		int idx = lfn.lastIndexOf('/');
+		
+		if (idx>=0){
+			String sDir = lfn.substring(0, idx);
+			
+			parentDir = LFNUtils.getLFN(sDir, false);
+			
+			if (parentDir!=null){
+				dir = parentDir.entryId;
+			}
+		}
+	}
+	
+	/**
+	 * Get the parent directory
+	 * 
+	 * @return parent directory
+	 */
+	public LFN getParentDir(){
+		if (parentDir!=null)
+			return parentDir;
+		
+		final IndexTableEntry ite = CatalogueUtils.getIndexTable(tableName);
+		
+		parentDir = ite.getLFN(dir);
+		
+		return parentDir;
+	}
+	
 	/**
 	 * @param db
 	 * @param host 
@@ -65,10 +104,12 @@ public class LFN {
 	
 	@Override
 	public int hashCode() {
-		return dir*13 + lfn.hashCode()*17;
+		return (int)dir*13 + lfn.hashCode()*17;
 	}
 	
 	private void init(final DBFunctions db){
+		exists = true;
+		
 		entryId = db.getl("entryId");
 		
 		owner = db.gets("owner");
@@ -129,6 +170,9 @@ public class LFN {
 	 * @return canonical name
 	 */
 	public String getCanonicalName(){
+		if (canonicalName!=null)
+			return canonicalName;
+		
 		final IndexTableEntry entry = CatalogueUtils.getIndexTable(tableName);
 		
 		if (entry==null){
@@ -141,11 +185,13 @@ public class LFN {
 		final boolean bStarts = lfn.startsWith("/");
 		
 		if (bEnds && bStarts)
-			return sLFN.substring(0, sLFN.length()-1) + lfn;
-		
+			canonicalName = sLFN.substring(0, sLFN.length()-1) + lfn;
+		else
 		if (!bEnds && !bStarts)
-			return sLFN + "/" + lfn;
-			
-		return sLFN + lfn;
+			canonicalName = sLFN + "/" + lfn;
+		else	
+			canonicalName = sLFN + lfn;
+		
+		return canonicalName;
 	}
 }

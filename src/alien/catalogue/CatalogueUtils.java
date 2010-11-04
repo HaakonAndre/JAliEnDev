@@ -103,59 +103,12 @@ public final class CatalogueUtils {
 		return Collections.unmodifiableList(guidIndexCache);
 	}
 	
-	/**
-	 * Wrapper around a row in INDEXTABLE
-	 * 
-	 * @author costing
-	 */
-	public static class IndexTableEntry {
-		/**
-		 * Index id
-		 */
-		public final int indexId;
-		
-		/**
-		 * Host and database where this table is located
-		 */
-		public final int hostIndex;
-		
-		/**
-		 * Table name
-		 */
-		public final int tableName;
-		
-		/**
-		 * LFN prefix
-		 */
-		public final String lfn;
-		
-		/**
-		 * Initialize from one entry in INDEXTABLE
-		 * 
-		 * @param db
-		 */
-		public IndexTableEntry(final DBFunctions db){
-			indexId = db.geti("indexId");
-			hostIndex = db.geti("hostIndex");
-			tableName = db.geti("tableName");
-			lfn = db.gets("lfn");
-		}
-		
-		@Override
-		public String toString() {
-			return "IndexTableEntry indexId: "+indexId+"\n"+
-			       "hostIndex\t\t: "+hostIndex+"\n"+
-			       "tableName\t\t: "+tableName+"\n"+
-			       "lfn\t\t\t: "+lfn+"\n";
-		}
-	}
-	
 	private static Map<Integer, IndexTableEntry> indextable = null;
 	private static long lastIndexTableUpdate = 0;
 
 	private static synchronized void updateIndexTableCache(){
 		if (System.currentTimeMillis() - lastIndexTableUpdate > 1000*60*5 || indextable==null){
-			final Map<Integer, IndexTableEntry> newIndextable = new HashMap<Integer, CatalogueUtils.IndexTableEntry>();
+			final Map<Integer, IndexTableEntry> newIndextable = new HashMap<Integer, IndexTableEntry>();
 			
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 			
