@@ -13,6 +13,24 @@ import lazyj.DBFunctions;
 public final class GUIDUtils {
 	
 	/**
+	 * Get the host where this entry should be located
+	 * 
+	 * @param guid
+	 * @return host id
+	 * @see Host
+	 */
+	public static int getGUIDHost(final UUID guid){
+		final long guidTime = guid.timestamp();
+		
+		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
+		
+		if (index==null)
+			return -1;
+		
+		return index.hostIndex;
+	}
+	
+	/**
 	 * Get the DB connection that applies for a particular GUID
 	 * 
 	 * @param guid
@@ -20,14 +38,10 @@ public final class GUIDUtils {
 	 * @see #getTableNameForGUID(UUID)
 	 */
 	public static DBFunctions getDBForGUID(final UUID guid){
-		final long guidTime = guid.timestamp();
+		final int host = getGUIDHost(guid);
 		
-		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
-		
-		if (index==null)
+		if (host<0)
 			return null;
-		
-		final int host = index.hostIndex;
 		
 		final Host h = CatalogueUtils.getHost(host);
 		
@@ -44,15 +58,50 @@ public final class GUIDUtils {
 	 * @return table name, or <code>null</code> if any problem
 	 * @see #getDBForGUID(UUID)
 	 */
-	public static String getTableNameForGUID(final UUID guid){
+	public static int getTableNameForGUID(final UUID guid){
 		final long guidTime = guid.timestamp();
 		
 		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
 		
 		if (index==null)
-			return null;
+			return -1;
 
 		return index.tableName;
+	}
+	
+	/**
+	 * Get the GUID catalogue entry when the uuid is known
+	 * 
+	 * @param guid
+	 * @return the GUID, or <code>null</code> if it cannot be located
+	 */
+	public static GUID getGUID(final UUID guid){
+		final int host = getGUIDHost(guid);
+		
+		if (host<0)
+			return null;
+		
+		final Host h = CatalogueUtils.getHost(host);
+		
+		if (h==null)
+			return null;
+		
+		final DBFunctions db = h.getDB();
+		
+		if (db==null)
+			return null;
+		
+		final int tableName = GUIDUtils.getTableNameForGUID(guid);
+		
+		if (tableName < 0)
+			return null;
+		
+		db.query("SELECT * FROM G"+tableName+"L WHERE guid=string2binary('"+guid+"');");
+		
+		if (db.moveNext())
+			return new GUID(db, host, tableName);
+		
+		return null;
 	}
 
 	/**
@@ -67,7 +116,7 @@ public final class GUIDUtils {
 		if (db==null)
 			return null;
 		
-		final String tablename = getTableNameForGUID(guid.guid);
+		final int tablename = getTableNameForGUID(guid.guid);
 		
 		db.query("SELECT distinct lfnRef FROM G"+tablename+"L_REF WHERE guidId="+guid.guidId);
 		

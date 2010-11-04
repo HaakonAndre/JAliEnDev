@@ -86,13 +86,22 @@ public class GUID implements Serializable {
 	 */
 	String perm;
 	
+	int host;
+	
+	int tableName;
+	
 	/**
 	 * Load one row from a G*L table
 	 * 
 	 * @param db
+	 * @param host 
+	 * @param tableName 
 	 */
-	public GUID(final DBFunctions db){
+	public GUID(final DBFunctions db, final int host, final int tableName){
 		init(db);
+		
+		this.host = host;
+		this.tableName = tableName;
 	}
 		
 	private void init(final DBFunctions db){

@@ -22,7 +22,7 @@ public class GUIDIndex {
 	/**
 	 * Table name
 	 */
-	public final String tableName;
+	public final int tableName;
 	
 	/**
 	 * GUID time, in milliseconds
@@ -38,7 +38,7 @@ public class GUIDIndex {
 	GUIDIndex(final DBFunctions db){
 		indexId = db.geti("indexId");
 		hostIndex = db.geti("hostIndex");
-		tableName = db.gets("tableName");
+		tableName = db.geti("tableName");
 		
 		String sTime = db.gets("guidTime");
 
