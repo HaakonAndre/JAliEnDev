@@ -92,13 +92,13 @@ public class IndexTableEntry {
 		
 		if (!db.moveNext()){
 			if (evenIfDoesntExist){
-				return new LFN(sSearch, hostIndex, tableName);
+				return new LFN(sSearch, this);
 			}
 			
 			return null;
 		}
 		
-		return new LFN(db, hostIndex, tableName);
+		return new LFN(db, this);
 	}
 	
 	/**
@@ -116,6 +116,6 @@ public class IndexTableEntry {
 		if (!db.moveNext())
 			return null;
 		
-		return new LFN(db, hostIndex, tableName);
+		return new LFN(db, this);
 	}
 }

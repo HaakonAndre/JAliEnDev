@@ -49,6 +49,7 @@ public class Testing {
 		while ( (parent = parent.getParentDir())!=null ){
 			System.err.println("--- Parent ----");
 			System.err.println(parent);
+			System.err.println("Canonical name : "+parent.getCanonicalName());
 		}
 	}
 	

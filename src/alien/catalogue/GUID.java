@@ -24,71 +24,77 @@ public class GUID implements Serializable {
 	/**
 	 * Creation time
 	 */
-	Date ctime;
+	public Date ctime;
 	
 	/**
 	 * Username
 	 */
-	String owner;
+	public String owner;
 	
 	/**
 	 * References
 	 */
-	int ref;
+	public int ref;
 	
 	/**
 	 * SE IDs
 	 */
-	Set<Integer> seStringList;
+	public Set<Integer> seStringList;
 	
 	/**
 	 * ?
 	 */
-	Set<Integer> seAutoStringList;
+	public Set<Integer> seAutoStringList;
 	
 	/**
 	 * ?
 	 */
-	int aclId;
+	public int aclId;
 	
 	/**
 	 * ?
 	 */
-	Date expiretime;
+	public Date expiretime;
 	
 	/**
 	 * File size, in bytes
 	 */
-	long size;
+	public long size;
 	
 	/**
 	 * Group name
 	 */
-	String gowner;
+	public String gowner;
 	
 	/**
 	 * UUID
 	 */
-	UUID guid;
+	public UUID guid;
 	
 	/**
 	 * File type
 	 */
-	char type;
+	public char type;
 	
 	/**
 	 * MD5 checksum
 	 */
-	String md5;
+	public String md5;
 	
 	/**
 	 * Permissions
 	 */
-	String perm;
+	public String perm;
 	
-	int host;
+	/**
+	 * Host where this entry was read from
+	 */
+	public final int host;
 	
-	int tableName;
+	/**
+	 * Table name where this entry was read from
+	 */
+	public final int tableName;
 	
 	/**
 	 * Load one row from a G*L table

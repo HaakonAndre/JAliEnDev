@@ -12,54 +12,115 @@ import lazyj.DBFunctions;
  */
 public class LFN {
 
-	long entryId;
+	/**
+	 * entryId
+	 */
+	public long entryId;
 	
-	String owner;
+	/**
+	 * Owner
+	 */
+	public String owner;
 	
-	Date ctime;
+	/**
+	 * Last change timestamp
+	 */
+	public Date ctime;
 	
-	boolean replicated;
+	/**
+	 * If more than one copy
+	 */
+	public boolean replicated;
 	
-	int aclId;
+	/**
+	 * ACL id
+	 */
+	public int aclId;
 	
-	String lfn;
+	/**
+	 * short LFN
+	 * @see IndexTableEntry
+	 */
+	public String lfn;
 	
-	Date expiretime;
+	/**
+	 * Expiration time
+	 */
+	public Date expiretime;
 	
-	long size;
+	/**
+	 * Size, in bytes
+	 */
+	public long size;
 	
-	long dir;
+	/**
+	 * Parent directory, in the same IndexTableEntry
+	 */
+	public long dir;
 	
-	String gowner;
+	/**
+	 * Group
+	 */
+	public String gowner;
 	
-	char type;
+	/**
+	 * File type
+	 */
+	public char type;
 	
-	String perm;
+	/**
+	 * Access rights
+	 */
+	public String perm;
 	
-	long selist;
+	/**
+	 * SE list
+	 */
+	public long selist;
 	
-	UUID guid;
+	/**
+	 * The unique identifier
+	 */
+	public UUID guid;
 	
-	String md5;
+	/**
+	 * MD5 checksum
+	 */
+	public String md5;
 	
-	String guidtime;
+	/**
+	 * GUID time (in GUIDINDEX short style)
+	 */
+	public String guidtime;
 	
-	boolean broken;
+	/**
+	 * ?
+	 */
+	public boolean broken;
 	
-	int host;
+	/**
+	 * Whether or not this entry really exists in the catalogue
+	 */
+	public boolean exists = false;
 	
-	int tableName;
+	/**
+	 * Parent directory
+	 */
+	public LFN parentDir = null; 
 	
-	boolean exists = false;
+	/**
+	 * Canonical path
+	 */
+	public String canonicalName = null;
 	
-	LFN parentDir = null; 
+	/**
+	 * The table where this row can be found
+	 */
+	public IndexTableEntry indexTableEntry;
 	
-	String canonicalName = null;
-	
-	LFN(final String lfn, final int host, final int tableName){
+	LFN(final String lfn, final IndexTableEntry entry){
 		this.lfn = lfn;
-		this.host = host;
-		this.tableName = tableName;
+		this.indexTableEntry = entry;
 		
 		int idx = lfn.lastIndexOf('/');
 		
@@ -92,23 +153,34 @@ public class LFN {
 		if (parentDir!=null)
 			return parentDir;
 		
-		final IndexTableEntry ite = CatalogueUtils.getIndexTable(tableName);
+		if (dir>0)
+			parentDir = indexTableEntry.getLFN(dir);
 		
-		parentDir = ite.getLFN(dir);
+		if (parentDir==null){
+			String sParentDir = getCanonicalName();
+			
+			if (sParentDir.length()>1){
+				int idx = sParentDir.lastIndexOf('/');
+				
+				if (idx==sParentDir.length()-1)
+					idx = sParentDir.lastIndexOf('/', idx-1);
+				
+				if (idx>0)
+					parentDir = LFNUtils.getLFN(sParentDir.substring(0, idx+1));
+			}
+		}
 		
 		return parentDir;
 	}
 	
 	/**
 	 * @param db
-	 * @param host 
-	 * @param tableName 
+	 * @param entry 
 	 */
-	public LFN(final DBFunctions db, final int host, final int tableName){
+	public LFN(final DBFunctions db, final IndexTableEntry entry){
 		init(db);
 		
-		this.host = host;
-		this.tableName = tableName;
+		this.indexTableEntry = entry;
 	}
 	
 	@Override
@@ -187,13 +259,7 @@ public class LFN {
 		if (canonicalName!=null)
 			return canonicalName;
 		
-		final IndexTableEntry entry = CatalogueUtils.getIndexTable(tableName);
-		
-		if (entry==null){
-			return lfn;
-		}
-		
-		final String sLFN = entry.lfn;
+		final String sLFN = indexTableEntry.lfn;
 		
 		final boolean bEnds = sLFN.endsWith("/");
 		final boolean bStarts = lfn.startsWith("/");
