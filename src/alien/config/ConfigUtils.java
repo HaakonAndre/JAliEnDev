@@ -39,12 +39,12 @@ public class ConfigUtils {
 			final File[] list = f.listFiles();
 			
 			if (list!=null){
-				for (File sub: list){
+				for (final File sub: list){
 					if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")){
 						String sName = sub.getName();
 						sName = sName.substring(0, sName.lastIndexOf('.'));
 						
-						final ExtProperties prop = new ExtProperties(CONFIG_FOLDER, sub.getName());
+						final ExtProperties prop = new ExtProperties(CONFIG_FOLDER, sName);
 						
 						if (sName.equals("logging")){
 							logging = new LoggingConfigurator(prop);
