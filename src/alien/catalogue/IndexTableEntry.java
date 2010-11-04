@@ -108,9 +108,7 @@ public class IndexTableEntry {
 	 * @return the LFN, or <code>null</code>
 	 */
 	public LFN getLFN(final long entryId){
-		final DBFunctions db = getDB();
-		
-		System.err.println("getting for entryid = "+ entryId);
+		final DBFunctions db = getDB();		
 		
 		if (!db.query("SELECT * FROM L"+tableName+"L WHERE entryId="+entryId+";"))
 			return null;

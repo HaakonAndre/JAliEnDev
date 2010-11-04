@@ -178,6 +178,35 @@ public class GUID implements Serializable {
 	}
 	
 	/**
+	 * Get the PFNs for this GUID
+	 * 
+	 * @return set of physical locations
+	 */
+	public Set<PFN> getPFNs(){
+		final Host h = CatalogueUtils.getHost(host);
+		
+		if (h==null)
+			return null;
+		
+		final DBFunctions db = h.getDB();
+		
+		if (db==null)
+			return null;
+		
+		final String q = "SELECT distinct guidId, pfn, seNumber FROM G"+tableName+"L_PFN WHERE guidId="+guidId; 
+
+		db.query(q);
+		
+		final Set<PFN> ret = new LinkedHashSet<PFN>();
+		
+		while (db.moveNext()){
+			ret.add(new PFN(db, host, tableName));
+		}
+		
+		return ret;
+	}
+	
+	/**
 	 * Get the UUID for the given value array
 	 *  
 	 * @param data
