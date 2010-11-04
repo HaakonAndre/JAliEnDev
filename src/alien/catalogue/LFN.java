@@ -63,13 +63,22 @@ public class LFN {
 		
 		int idx = lfn.lastIndexOf('/');
 		
+		if (idx==lfn.length()-1)
+			idx = lfn.lastIndexOf('/', idx);
+		
 		if (idx>=0){
-			String sDir = lfn.substring(0, idx);
+			final String sDir = lfn.substring(0, idx-1);
 			
-			parentDir = LFNUtils.getLFN(sDir, false);
+			parentDir = LFNUtils.getLFN(sDir, true);
 			
 			if (parentDir!=null){
 				dir = parentDir.entryId;
+				
+				owner = parentDir.owner;
+				
+				gowner = parentDir.gowner;
+				
+				perm = parentDir.perm;
 			}
 		}
 	}
@@ -135,8 +144,13 @@ public class LFN {
 		perm = db.gets("perm");
 		
 		selist = db.getl("selist");
+
+		byte[] guidBytes = db.getBytes("guid");
 		
-		guid = GUID.getUUID(db.getBytes("guid"));
+		if (guidBytes!=null)
+			guid = GUID.getUUID(guidBytes);
+		else
+			guid = null;
 		
 		md5 = db.gets("md5");
 		
