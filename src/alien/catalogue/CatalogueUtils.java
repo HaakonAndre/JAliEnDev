@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,24 +61,44 @@ public final class CatalogueUtils {
 	private static List<GUIDIndex> guidIndexCache = null;
 	private static long guidIndexCacheUpdated = 0;
 	
-	private static synchronized final void updateGuidIndexCache(){
-		if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000*60*5 || guidIndexCache==null){
-			if (logger.isLoggable(Level.FINER)){
-				logger.log(Level.FINER, "Updating GUIDINDEX cache");
+	private static final ReentrantReadWriteLock guidIndexRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock guidIndexReadLock = guidIndexRWLock.readLock();
+	private static final WriteLock guidIndexWriteLock = guidIndexRWLock.writeLock();
+	
+	private static final void updateGuidIndexCache() {
+		guidIndexReadLock.lock();
+
+		if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
+			guidIndexReadLock.unlock();
+			
+			guidIndexWriteLock.lock();
+			
+			try{
+				if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
+					if (logger.isLoggable(Level.FINER)) {
+						logger.log(Level.FINER, "Updating GUIDINDEX cache");
+					}
+
+					final DBFunctions db = ConfigUtils.getDB("alice_users");
+
+					db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;");
+
+					final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
+
+					while (db.moveNext())
+						ret.add(new GUIDIndex(db));
+
+					guidIndexCache = ret;
+
+					guidIndexCacheUpdated = System.currentTimeMillis();
+				}
 			}
-			
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
-			
-			db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;");
-			
-			final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
-			
-			while (db.moveNext())
-				ret.add(new GUIDIndex(db));
-			
-			guidIndexCache = ret;
-			
-			guidIndexCacheUpdated = System.currentTimeMillis();
+			finally {
+				guidIndexWriteLock.unlock();
+			}
+		}
+		else{
+			guidIndexReadLock.unlock();
 		}
 	}
 	
@@ -113,27 +136,46 @@ public final class CatalogueUtils {
 	
 	private static Set<IndexTableEntry> indextable = null;
 	private static long lastIndexTableUpdate = 0;
+	
+	private static final ReentrantReadWriteLock indextableRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock indextableReadLock = indextableRWLock.readLock();
+	private static final WriteLock indextableWriteLock = indextableRWLock.writeLock();
 
-	private static synchronized void updateIndexTableCache(){
-		if (System.currentTimeMillis() - lastIndexTableUpdate > 1000*60*5 || indextable==null){
-			if (logger.isLoggable(Level.FINER)){
-				logger.log(Level.FINER, "Updating INDEXTABLE cache");
-			}
-			
-			final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
-			
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
-			
-			db.query("SELECT * FROM INDEXTABLE;");
-			
-			while (db.moveNext()){
-				final IndexTableEntry entry = new IndexTableEntry(db);
+	private static synchronized void updateIndexTableCache() {
+		indextableReadLock.lock();
+
+		if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
+			indextableReadLock.unlock();
 				
-				newIndextable.add(entry);
+			indextableWriteLock.lock();
+				
+			try{
+				if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
+					if (logger.isLoggable(Level.FINER)) {
+						logger.log(Level.FINER, "Updating INDEXTABLE cache");
+					}
+
+					final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
+
+					final DBFunctions db = ConfigUtils.getDB("alice_users");
+
+					db.query("SELECT * FROM INDEXTABLE;");
+
+					while (db.moveNext()) {
+						final IndexTableEntry entry = new IndexTableEntry(db);
+
+						newIndextable.add(entry);
+					}
+					indextable = newIndextable;
+					lastIndexTableUpdate = System.currentTimeMillis();
+				}
 			}
-			
-			indextable = newIndextable;
-			lastIndexTableUpdate = System.currentTimeMillis();
+			finally {
+				indextableWriteLock.unlock();
+			}
+		}
+		else{
+			indextableReadLock.unlock();
 		}
 	}
 	
@@ -147,7 +189,7 @@ public final class CatalogueUtils {
 	public static IndexTableEntry getIndexTable(final int hostId, final int tableName){
 		updateIndexTableCache();
 
-		for (IndexTableEntry ite: indextable)
+		for (final IndexTableEntry ite: indextable)
 			if (ite.hostIndex == hostId && ite.tableName == tableName)
 				return ite;
 			
