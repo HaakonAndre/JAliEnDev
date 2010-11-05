@@ -138,7 +138,7 @@ public final class GUIDUtils {
 		final Set<LFN> ret = new LinkedHashSet<LFN>();
 		
 		while (db2.moveNext()){
-			ret.add(new LFN(db2, CatalogueUtils.getIndexTable(iLFNTableIndex)));
+			ret.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
 		}
 		
 		return ret;

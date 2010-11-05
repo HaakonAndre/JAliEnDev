@@ -4,10 +4,12 @@
 package alien.catalogue;
 
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.cache.GenericLastValuesCache;
@@ -19,6 +21,8 @@ import alien.config.ConfigUtils;
  */
 public final class CatalogueUtils {
 
+	static Logger logger = Logger.getLogger(CatalogueUtils.class.getCanonicalName());
+	
 	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<Integer, Host>() {
 		private static final long serialVersionUID = 1L;
 
@@ -56,6 +60,10 @@ public final class CatalogueUtils {
 	
 	private static synchronized final void updateGuidIndexCache(){
 		if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000*60*5 || guidIndexCache==null){
+			if (logger.isLoggable(Level.FINER)){
+				logger.log(Level.FINER, "Updating GUIDINDEX cache");
+			}
+			
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 			
 			db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;");
@@ -103,12 +111,16 @@ public final class CatalogueUtils {
 		return Collections.unmodifiableList(guidIndexCache);
 	}
 	
-	private static Map<Integer, IndexTableEntry> indextable = null;
+	private static Set<IndexTableEntry> indextable = null;
 	private static long lastIndexTableUpdate = 0;
 
 	private static synchronized void updateIndexTableCache(){
 		if (System.currentTimeMillis() - lastIndexTableUpdate > 1000*60*5 || indextable==null){
-			final Map<Integer, IndexTableEntry> newIndextable = new HashMap<Integer, IndexTableEntry>();
+			if (logger.isLoggable(Level.FINER)){
+				logger.log(Level.FINER, "Updating INDEXTABLE cache");
+			}
+			
+			final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
 			
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 			
@@ -117,7 +129,7 @@ public final class CatalogueUtils {
 			while (db.moveNext()){
 				final IndexTableEntry entry = new IndexTableEntry(db);
 				
-				newIndextable.put(Integer.valueOf(entry.tableName), entry);
+				newIndextable.add(entry);
 			}
 			
 			indextable = newIndextable;
@@ -127,14 +139,19 @@ public final class CatalogueUtils {
 	
 	/**
 	 * Get the base folder for this table name 
+	 * @param hostId 
 	 * 
 	 * @param tableName
 	 * @return entry in INDEXTABLE for this table name
 	 */
-	public static IndexTableEntry getIndexTable(final int tableName){
+	public static IndexTableEntry getIndexTable(final int hostId, final int tableName){
 		updateIndexTableCache();
 
-		return indextable.get(Integer.valueOf(tableName));
+		for (IndexTableEntry ite: indextable)
+			if (ite.hostIndex == hostId && ite.tableName == tableName)
+				return ite;
+			
+		return null;
 	}
 	
 	/**
@@ -150,7 +167,7 @@ public final class CatalogueUtils {
 		
 		IndexTableEntry best = null;
 		
-		for (final IndexTableEntry ite: indextable.values()){
+		for (final IndexTableEntry ite: indextable){
 			if (pattern.startsWith(ite.lfn)){
 				if (ite.lfn.length() > bestLen){
 					best = ite;

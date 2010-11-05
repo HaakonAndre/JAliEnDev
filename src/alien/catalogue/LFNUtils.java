@@ -1,5 +1,8 @@
 package alien.catalogue;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * LFN utilities
  * 
@@ -8,6 +11,8 @@ package alien.catalogue;
  */
 public class LFNUtils {
 
+	static Logger logger = Logger.getLogger(LFNUtils.class.getCanonicalName());
+	
 	/**
 	 * Get the LFN entry for this catalog filename
 	 * 
@@ -32,8 +37,14 @@ public class LFNUtils {
 		
 		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(fileName);
 		
-		if (ite==null)
+		if (ite==null){
+			logger.log(Level.FINE, "IndexTableEntry is null for: "+fileName+" (even if doesn't exist: "+evenIfDoesntExist+")");
+			
 			return null;
+		}
+		
+		if (logger.isLoggable(Level.FINER))
+			logger.log(Level.FINER, "Using "+ite+" for: "+fileName);
 		
 		return ite.getLFN(fileName, evenIfDoesntExist);
 	}
