@@ -175,7 +175,7 @@ public class LFN {
 				if (idx==sParentDir.length()-1)
 					idx = sParentDir.lastIndexOf('/', idx-1);
 				
-				if (idx>0)
+				if (idx>=0)
 					parentDir = LFNUtils.getLFN(sParentDir.substring(0, idx+1));
 			}
 		}
