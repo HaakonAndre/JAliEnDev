@@ -1,6 +1,7 @@
 package alien.catalogue;
 
 import java.util.Date;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -277,5 +278,22 @@ public class LFN {
 			canonicalName = sLFN + lfn;
 		
 		return canonicalName;
+	}
+	
+	/**
+	 * Get the physical locations of this file
+	 * 
+	 * @return the physical locations for this file
+	 */
+	public Set<PFN> whereis(){
+		if (!exists || guid==null)
+			return null;
+		
+		final GUID id = GUIDUtils.getGUID(guid);
+		
+		if (id==null)
+			return null;
+		
+		return id.getPFNs();
 	}
 }
