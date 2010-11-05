@@ -12,16 +12,21 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
+import lazyj.cache.ExpirationCache;
 
 /**
  * @author costing
  * @since Nov 3, 2010
  */
 public class ConfigUtils {
-
+	private static ExpirationCache<String, String> seenLoggers = new ExpirationCache<String, String>();
+	
+	static transient final Logger logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
+	
 	private static final Map<String, ExtProperties> dbConfigFiles; 
 	
 	private static final String CONFIG_FOLDER;
@@ -151,6 +156,25 @@ public class ConfigUtils {
 	            t.printStackTrace();                                                                                                                                                                               
 	        }
 		}
+	}
+	
+	/**
+	 * Get the logger for this component
+	 * 
+	 * @param component
+	 * @return the logger
+	 */
+	public static Logger getLogger(final String component){
+		final Logger l = Logger.getLogger(component);
 		
+		final String s = seenLoggers.get(component);
+		
+		if (s==null && logging!=null){
+			seenLoggers.put(component, component, 60*1000);
+		
+			logging.update(null, null);
+		}
+		
+		return l;
 	}
 }

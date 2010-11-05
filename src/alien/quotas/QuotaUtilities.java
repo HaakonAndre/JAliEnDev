@@ -6,6 +6,7 @@ package alien.quotas;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 
@@ -16,6 +17,7 @@ import lazyj.DBFunctions;
  * @since Nov 4, 2010
  */
 public final class QuotaUtilities {
+	static transient final Logger logger = ConfigUtils.getLogger(QuotaUtilities.class.getCanonicalName());
 
 	private static Map<String, Quota> quotas = null;
 	private static long quotasLastUpdated = 0;

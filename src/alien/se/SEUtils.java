@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import alien.catalogue.PFN;
@@ -20,6 +21,7 @@ import alien.config.ConfigUtils;
  * @since Nov 4, 2010
  */
 public final class SEUtils {
+	static transient final Logger logger = ConfigUtils.getLogger(SEUtils.class.getCanonicalName());
 
 	private static Map<Integer, SE> seCache = null;
 	

@@ -6,6 +6,9 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.logging.Logger;
+
+import alien.config.ConfigUtils;
 
 import lazyj.DBFunctions;
 
@@ -16,6 +19,8 @@ import lazyj.DBFunctions;
 public class GUID implements Serializable {
 	private static final long serialVersionUID = -2625119814122149207L;
 
+	static transient final Logger logger = ConfigUtils.getLogger(GUID.class.getCanonicalName());
+	
 	/**
 	 * GUID id
 	 */

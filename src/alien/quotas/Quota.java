@@ -3,6 +3,10 @@
  */
 package alien.quotas;
 
+import java.util.logging.Logger;
+
+import alien.config.ConfigUtils;
+
 import lazyj.DBFunctions;
 
 /**
@@ -10,6 +14,7 @@ import lazyj.DBFunctions;
  * @since Nov 4, 2010
  */
 public class Quota {
+	static transient final Logger logger = ConfigUtils.getLogger(Quota.class.getCanonicalName());
 
 	/*
 user                    | varchar(64)

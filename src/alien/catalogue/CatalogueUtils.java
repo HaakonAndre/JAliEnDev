@@ -21,7 +21,7 @@ import alien.config.ConfigUtils;
  */
 public final class CatalogueUtils {
 
-	static Logger logger = Logger.getLogger(CatalogueUtils.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
 	
 	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<Integer, Host>() {
 		private static final long serialVersionUID = 1L;

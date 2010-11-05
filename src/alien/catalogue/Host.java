@@ -1,5 +1,7 @@
 package alien.catalogue;
 
+import java.util.logging.Logger;
+
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
 import alien.config.ConfigUtils;
@@ -11,6 +13,8 @@ import alien.config.ConfigUtils;
  * @since Nov 4, 2010
  */
 public class Host {
+	static transient final Logger logger = ConfigUtils.getLogger(Host.class.getCanonicalName());
+	
 	/**
 	 * host index
 	 */

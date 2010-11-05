@@ -4,6 +4,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
+
+import alien.config.ConfigUtils;
 
 import lazyj.DBFunctions;
 
@@ -12,6 +15,7 @@ import lazyj.DBFunctions;
  * @since Nov 4, 2010
  */
 public class SE {
+	static transient final Logger logger = ConfigUtils.getLogger(SE.class.getCanonicalName());
 
 	/**
 	 * SE name

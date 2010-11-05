@@ -2,12 +2,14 @@ package alien;
 
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Logger;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 import alien.se.SEUtils;
 
 /**
@@ -17,6 +19,7 @@ import alien.se.SEUtils;
  *
  */
 public class Testing {
+	static transient final Logger logger = ConfigUtils.getLogger(Testing.class.getCanonicalName());
 	
 	/**
 	 * @param args

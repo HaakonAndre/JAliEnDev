@@ -3,6 +3,8 @@ package alien.catalogue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.config.ConfigUtils;
+
 /**
  * LFN utilities
  * 
@@ -11,7 +13,7 @@ import java.util.logging.Logger;
  */
 public class LFNUtils {
 
-	static Logger logger = Logger.getLogger(LFNUtils.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(LFNUtils.class.getCanonicalName());
 	
 	/**
 	 * Get the LFN entry for this catalog filename

@@ -3,6 +3,9 @@ package alien.catalogue;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Logger;
+
+import alien.config.ConfigUtils;
 
 import lazyj.DBFunctions;
 
@@ -11,6 +14,7 @@ import lazyj.DBFunctions;
  *
  */
 public final class GUIDUtils {
+	static transient final Logger logger = ConfigUtils.getLogger(GUIDUtils.class.getCanonicalName());
 	
 	/**
 	 * Get the host where this entry should be located

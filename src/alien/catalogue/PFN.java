@@ -3,6 +3,9 @@ package alien.catalogue;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.logging.Logger;
+
+import alien.config.ConfigUtils;
 
 import lazyj.DBFunctions;
 
@@ -13,7 +16,8 @@ import lazyj.DBFunctions;
  *
  */
 public class PFN {
-
+	static transient final Logger logger = ConfigUtils.getLogger(PFN.class.getCanonicalName());
+	
 	/**
 	 * guidID
 	 */

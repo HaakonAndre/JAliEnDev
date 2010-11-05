@@ -1,5 +1,9 @@
 package alien.catalogue;
 
+import java.util.logging.Logger;
+
+import alien.config.ConfigUtils;
+
 import lazyj.DBFunctions;
 import lazyj.Format;
 
@@ -9,6 +13,8 @@ import lazyj.Format;
  * @author costing
  */
 public class IndexTableEntry {
+	static transient final Logger logger = ConfigUtils.getLogger(IndexTableEntry.class.getCanonicalName());
+	
 	/**
 	 * Index id
 	 */
