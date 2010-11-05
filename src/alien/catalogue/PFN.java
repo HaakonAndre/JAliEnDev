@@ -1,5 +1,9 @@
 package alien.catalogue;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.UUID;
+
 import lazyj.DBFunctions;
 
 /**
@@ -35,6 +39,8 @@ public class PFN {
 	 */
 	public int tableNumber;
 	
+	private Set<PFN> realPFNs = null;
+	
 	/**
 	 * @param db
 	 * @param host
@@ -62,4 +68,40 @@ public class PFN {
 		       "seNumber\t: "+seNumber;
 	}
 	
+	/**
+	 * @return the physical locations
+	 */
+	public Set<PFN> getRealPFNs(){
+		if (realPFNs!=null)
+			return realPFNs;
+		
+		if (pfn.startsWith("guid://")){
+			int idx = 7;
+			
+			String uuid;
+			
+			while (pfn.charAt(idx)=='/' && idx<pfn.length()-1)
+				idx++;
+			
+			int idx2 = pfn.indexOf('?', idx);
+			
+			if (idx2<0)
+				uuid = pfn.substring(idx);
+			else
+				uuid = pfn.substring(idx, idx2);
+			
+			final GUID guid = GUIDUtils.getGUID(UUID.fromString(uuid));
+			
+			if (guid!=null)
+				realPFNs = guid.getPFNs();
+			else
+				realPFNs = null;
+		}
+		else{
+			realPFNs = new LinkedHashSet<PFN>(1);
+			realPFNs.add(this);
+		}
+		
+		return realPFNs;
+	}
 }

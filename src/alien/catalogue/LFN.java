@@ -1,6 +1,7 @@
 package alien.catalogue;
 
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -295,5 +296,36 @@ public class LFN {
 			return null;
 		
 		return id.getPFNs();
+	}
+	
+	/**
+	 * Get the real physical locations of this file
+	 * 
+	 * @return real locations
+	 */
+	public Set<PFN> whereisReal(){
+		if (!exists || guid==null)
+			return null;
+		
+		final GUID id = GUIDUtils.getGUID(guid);
+		
+		if (id==null)
+			return null;
+		
+		final Set<PFN> pfns = id.getPFNs();
+		
+		if (pfns==null || pfns.size()==0)
+			return pfns;
+		
+		final Set<PFN> ret = new LinkedHashSet<PFN>(pfns.size());
+		
+		for (PFN p: pfns){
+			final Set<PFN> real = p.getRealPFNs();
+			
+			if (real!=null)
+				ret.addAll(real);
+		}
+		
+		return ret;
 	}
 }
