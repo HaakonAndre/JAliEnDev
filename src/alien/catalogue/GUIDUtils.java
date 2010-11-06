@@ -14,6 +14,10 @@ import lazyj.DBFunctions;
  *
  */
 public final class GUIDUtils {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(GUIDUtils.class.getCanonicalName());
 	
 	/**

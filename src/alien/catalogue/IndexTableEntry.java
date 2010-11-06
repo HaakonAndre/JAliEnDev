@@ -13,6 +13,10 @@ import lazyj.Format;
  * @author costing
  */
 public class IndexTableEntry {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(IndexTableEntry.class.getCanonicalName());
 	
 	/**

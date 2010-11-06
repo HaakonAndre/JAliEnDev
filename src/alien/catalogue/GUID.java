@@ -18,7 +18,10 @@ import lazyj.DBFunctions;
  */
 public class GUID implements Serializable {
 	private static final long serialVersionUID = -2625119814122149207L;
-
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(GUID.class.getCanonicalName());
 	
 	/**

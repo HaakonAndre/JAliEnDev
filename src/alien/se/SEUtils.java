@@ -10,6 +10,10 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -21,28 +25,56 @@ import alien.config.ConfigUtils;
  * @since Nov 4, 2010
  */
 public final class SEUtils {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(SEUtils.class.getCanonicalName());
 
 	private static Map<Integer, SE> seCache = null;
 	
 	private static long seCacheUpdated = 0;
 	
-	private static synchronized final void updateSECache(){
+	private static final ReentrantReadWriteLock seCacheRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock seCacheReadLock = seCacheRWLock.readLock();
+	private static final WriteLock seCacheWriteLock = seCacheRWLock.writeLock();
+	
+	private static final void updateSECache(){
+		seCacheReadLock.lock();
+		
 		if (System.currentTimeMillis() - seCacheUpdated > 1000*60*5 || seCache == null){
-			final Map<Integer, SE> ses = new HashMap<Integer, SE>();
+			seCacheReadLock.unlock();
 			
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
+			seCacheWriteLock.lock();
 			
-			db.query("SELECT * FROM SE;");
-			
-			while (db.moveNext()){
-				final SE se = new SE(db);
+			try{
+				if (System.currentTimeMillis() - seCacheUpdated > 1000*60*5 || seCache == null){
+					if (logger.isLoggable(Level.FINER)){
+						logger.log(Level.FINER, "Updating SE cache");
+					}
+					
+					final Map<Integer, SE> ses = new HashMap<Integer, SE>();
 				
-				ses.put(Integer.valueOf(se.seNumber), se);
+					final DBFunctions db = ConfigUtils.getDB("alice_users");
+				
+					db.query("SELECT * FROM SE;");
+				
+					while (db.moveNext()){
+						final SE se = new SE(db);
+					
+						ses.put(Integer.valueOf(se.seNumber), se);
+					}
+				
+					seCache = ses;
+					seCacheUpdated = System.currentTimeMillis();
+				}
 			}
-			
-			seCache = ses;
-			seCacheUpdated = System.currentTimeMillis();
+			finally{
+				seCacheWriteLock.unlock();
+			}
+		}
+		else{
+			seCacheReadLock.unlock();
 		}
 	}
 	
@@ -62,38 +94,62 @@ public final class SEUtils {
 	
 	private static long seRanksUpdated = 0;
 	
-	private static synchronized void updateSERanksCache(){
+	private static final ReentrantReadWriteLock seRanksRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock seRanksReadLock = seRanksRWLock.readLock();
+	private static final WriteLock seRanksWriteLock = seRanksRWLock.writeLock();
+	
+	private static void updateSERanksCache(){
+		seRanksReadLock.lock();
+		
 		if (System.currentTimeMillis() - seRanksUpdated > 1000*60*10 || seRanks == null){
-			final Map<String, Map<Integer, Integer>> newRanks = new HashMap<String, Map<Integer,Integer>>();
+			seRanksReadLock.unlock();
 			
-			String sOldSite = null;
-			Map<Integer, Integer> oldMap = null;
-			
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
-			
-			db.query("SELECT sitename, seNumber, rank FROM SERanks ORDER BY sitename;");
-			
-			while (db.moveNext()){
-				final String sitename = db.gets(1).trim().toUpperCase();
-				final int seNumber = db.geti(2);
-				final int rank = db.geti(3);
-				
-				if (!sitename.equals(sOldSite) || oldMap==null){
-					oldMap = newRanks.get(sitename);
-					
-					if (oldMap==null){
-						oldMap = new HashMap<Integer, Integer>();
-						newRanks.put(sitename, oldMap);
+			seRanksWriteLock.lock();
+
+			try{
+				if (System.currentTimeMillis() - seRanksUpdated > 1000*60*10 || seRanks == null){
+					if (logger.isLoggable(Level.FINER)){
+						logger.log(Level.FINER, "Updating SE Ranks cache");
 					}
 					
-					sOldSite=sitename;
+					final Map<String, Map<Integer, Integer>> newRanks = new HashMap<String, Map<Integer,Integer>>();
+					
+					String sOldSite = null;
+					Map<Integer, Integer> oldMap = null;
+					
+					final DBFunctions db = ConfigUtils.getDB("alice_users");
+					
+					db.query("SELECT sitename, seNumber, rank FROM SERanks ORDER BY sitename;");
+					
+					while (db.moveNext()){
+						final String sitename = db.gets(1).trim().toUpperCase();
+						final int seNumber = db.geti(2);
+						final int rank = db.geti(3);
+						
+						if (!sitename.equals(sOldSite) || oldMap==null){
+							oldMap = newRanks.get(sitename);
+							
+							if (oldMap==null){
+								oldMap = new HashMap<Integer, Integer>();
+								newRanks.put(sitename, oldMap);
+							}
+							
+							sOldSite=sitename;
+						}
+						
+						oldMap.put(Integer.valueOf(seNumber), Integer.valueOf(rank));
+					}
+					
+					seRanks = newRanks;
+					seRanksUpdated = System.currentTimeMillis();
 				}
-				
-				oldMap.put(Integer.valueOf(seNumber), Integer.valueOf(rank));
 			}
-			
-			seRanks = newRanks;
-			seRanksUpdated = System.currentTimeMillis();
+			finally{
+				seRanksWriteLock.unlock();
+			}
+		}
+		else{
+			seRanksReadLock.unlock();
 		}
 	}
 	

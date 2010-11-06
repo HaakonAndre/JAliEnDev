@@ -19,6 +19,9 @@ import alien.se.SEUtils;
  *
  */
 public class Testing {
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Testing.class.getCanonicalName());
 	
 	/**

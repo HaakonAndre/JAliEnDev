@@ -25,6 +25,9 @@ import lazyj.cache.ExpirationCache;
 public class ConfigUtils {
 	private static ExpirationCache<String, String> seenLoggers = new ExpirationCache<String, String>();
 	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
 	
 	private static final Map<String, ExtProperties> dbConfigFiles; 

@@ -13,6 +13,10 @@ import lazyj.DBFunctions;
  * @since Nov 3, 2010
  */
 public class GUIDIndex {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(GUIDIndex.class.getCanonicalName());
 	
 	/**

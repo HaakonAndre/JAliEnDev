@@ -3,6 +3,7 @@
  */
 package alien.quotas;
 
+import java.io.Serializable;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
@@ -13,7 +14,16 @@ import lazyj.DBFunctions;
  * @author costing
  * @since Nov 4, 2010
  */
-public class Quota {
+public class Quota implements Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6590424126764110021L;
+
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Quota.class.getCanonicalName());
 
 	/*

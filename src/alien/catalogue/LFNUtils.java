@@ -12,7 +12,10 @@ import alien.config.ConfigUtils;
  *
  */
 public class LFNUtils {
-
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(LFNUtils.class.getCanonicalName());
 	
 	/**

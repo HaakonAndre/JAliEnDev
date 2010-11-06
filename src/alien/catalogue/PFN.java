@@ -16,6 +16,10 @@ import lazyj.DBFunctions;
  *
  */
 public class PFN {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(PFN.class.getCanonicalName());
 	
 	/**

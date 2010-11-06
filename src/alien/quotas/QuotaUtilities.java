@@ -6,6 +6,10 @@ package alien.quotas;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
@@ -17,29 +21,56 @@ import lazyj.DBFunctions;
  * @since Nov 4, 2010
  */
 public final class QuotaUtilities {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(QuotaUtilities.class.getCanonicalName());
 
 	private static Map<String, Quota> quotas = null;
 	private static long quotasLastUpdated = 0;
 	
-	private static synchronized void updateFileQuotasCache(){
-		if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
-			final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
-			
-			final DBFunctions db = ConfigUtils.getDB("processes");
-			
-			db.query("SELECT * FROM PRIORITY;");
-			
-			while (db.moveNext()){
-				final Quota fq = new Quota(db);
+	private static final ReentrantReadWriteLock quotasRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock quotaReadLock = quotasRWLock.readLock();
+	private static final WriteLock quotaWriteLock = quotasRWLock.writeLock();
+	
+	private static void updateFileQuotasCache(){
+		quotaReadLock.lock();
 		
-				if (fq.user!=null)
-					newQuotas.put(fq.user.toLowerCase(), fq);
-			}
+		if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
+			quotaReadLock.unlock();
 			
-			quotas = Collections.unmodifiableMap(newQuotas);
-			quotasLastUpdated = System.currentTimeMillis();
+			quotaWriteLock.lock();
+			
+			try{
+				if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
+					if (logger.isLoggable(Level.FINER)){
+						logger.log(Level.FINER, "Updating Quotas cache");
+					}
+					
+					final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
+				
+					final DBFunctions db = ConfigUtils.getDB("processes");
+				
+					db.query("SELECT * FROM PRIORITY;");
+				
+					while (db.moveNext()){
+						final Quota fq = new Quota(db);
+			
+						if (fq.user!=null)
+							newQuotas.put(fq.user.toLowerCase(), fq);
+					}
+				
+					quotas = Collections.unmodifiableMap(newQuotas);
+					quotasLastUpdated = System.currentTimeMillis();
+				}
+			}
+			finally{
+				quotaWriteLock.unlock();
+			}
 		}
+		else
+			quotaReadLock.unlock();
 	}
 	
 	/**

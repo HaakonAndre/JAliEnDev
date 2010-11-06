@@ -1,5 +1,6 @@
 package alien.catalogue;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -15,7 +16,16 @@ import lazyj.DBFunctions;
  * @author costing
  *
  */
-public class LFN {
+public class LFN implements Serializable {
+	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4419468872696081193L;
+
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(LFN.class.getCanonicalName());
 	
 	/**
@@ -122,7 +132,7 @@ public class LFN {
 	/**
 	 * The table where this row can be found
 	 */
-	public IndexTableEntry indexTableEntry;
+	public transient IndexTableEntry indexTableEntry;
 	
 	/**
 	 * @param lfn

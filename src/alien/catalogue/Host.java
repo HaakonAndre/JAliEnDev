@@ -13,6 +13,10 @@ import alien.config.ConfigUtils;
  * @since Nov 4, 2010
  */
 public class Host {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Host.class.getCanonicalName());
 	
 	/**

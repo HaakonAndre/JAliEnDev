@@ -15,6 +15,10 @@ import lazyj.DBFunctions;
  * @since Nov 4, 2010
  */
 public class SE {
+	
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(SE.class.getCanonicalName());
 
 	/**

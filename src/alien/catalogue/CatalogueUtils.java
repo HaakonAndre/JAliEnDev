@@ -24,6 +24,9 @@ import alien.config.ConfigUtils;
  */
 public final class CatalogueUtils {
 
+	/**
+	 * Logger
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
 	
 	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<Integer, Host>() {
@@ -141,7 +144,7 @@ public final class CatalogueUtils {
 	private static final ReadLock indextableReadLock = indextableRWLock.readLock();
 	private static final WriteLock indextableWriteLock = indextableRWLock.writeLock();
 
-	private static synchronized void updateIndexTableCache() {
+	private static void updateIndexTableCache() {
 		indextableReadLock.lock();
 
 		if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
