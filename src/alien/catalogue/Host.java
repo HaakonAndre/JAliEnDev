@@ -12,7 +12,7 @@ import alien.config.ConfigUtils;
  * @author costing
  * @since Nov 4, 2010
  */
-public class Host {
+public class Host implements Comparable<Host>{
 	
 	/**
 	 * Logger
@@ -84,5 +84,23 @@ public class Host {
 	 */
 	public DBFunctions getDB(){
 		return new DBFunctions(dbProperties);
-	}	
+	}
+
+	@Override
+	public int compareTo(final Host o) {
+		return hostIndex - o.hostIndex;
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if ( ! (obj instanceof Host))
+			return false;
+		
+		return compareTo( (Host) obj ) == 0;
+	}
+	
+	@Override
+	public int hashCode() {
+		return hostIndex;
+	}
 }

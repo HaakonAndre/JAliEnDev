@@ -1,5 +1,6 @@
 package alien.catalogue;
 
+import java.io.Serializable;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
@@ -12,8 +13,13 @@ import lazyj.Format;
  * 
  * @author costing
  */
-public class IndexTableEntry {
+public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry>{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2978796807690712492L;
+
 	/**
 	 * Logger
 	 */
@@ -127,5 +133,37 @@ public class IndexTableEntry {
 			return null;
 		
 		return new LFN(db, this);
+	}
+
+	@Override
+	public int compareTo(final IndexTableEntry o) {
+		int diff = hostIndex - o.hostIndex;
+		
+		if (diff!=0)
+			return diff;
+		
+		diff = tableName - o.tableName;
+		
+		if (diff!=0)
+			return diff;
+		
+		diff = indexId - o.indexId;
+		
+		return diff;
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if (! (obj instanceof IndexTableEntry))
+			return false;
+		
+		IndexTableEntry oth = (IndexTableEntry) obj;
+		
+		return compareTo(oth)==0;
+	}
+	
+	@Override
+	public int hashCode() {
+		return hostIndex * 13 + tableName * 29 + indexId * 43;
 	}
 }

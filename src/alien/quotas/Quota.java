@@ -14,7 +14,7 @@ import lazyj.DBFunctions;
  * @author costing
  * @since Nov 4, 2010
  */
-public class Quota implements Serializable {
+public class Quota implements Serializable, Comparable<Quota> {
 	
 	/**
 	 * 
@@ -192,6 +192,24 @@ tmpIncreasedNbFiles     | int(11)
 		maxTotalRunningTime = db.getl("maxTotalRunningTime");
 		
 		tmpIncreasedNbFiles = db.geti("tmpIncreasedNbFiles");
+	}
+
+	@Override
+	public int compareTo(final Quota o) {
+		return user.compareTo(o.user);
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if ( ! (obj instanceof Quota))
+			return false;
+		
+		return compareTo((Quota) obj) == 0;
+	}
+	
+	@Override
+	public int hashCode() {
+		return user.hashCode();
 	}
 	
 }

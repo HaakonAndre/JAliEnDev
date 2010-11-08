@@ -1,5 +1,6 @@
 package alien.catalogue;
 
+import java.io.Serializable;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
@@ -12,8 +13,13 @@ import lazyj.DBFunctions;
  * @author costing
  * @since Nov 3, 2010
  */
-public class GUIDIndex {
+public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6989985910318299235L;
+
 	/**
 	 * Logger
 	 */
@@ -57,4 +63,35 @@ public class GUIDIndex {
 		else
 			guidTime = 0;
 	}
+
+	@Override
+	public int compareTo(final GUIDIndex o) {
+		int diff = hostIndex - o.hostIndex;
+		
+		if (diff!=0)
+			return diff;
+		
+		diff = tableName - o.tableName;
+		
+		if (diff!=0)
+			return diff;
+		
+		diff = indexId - o.indexId;
+		
+		return diff;
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if ( ! (obj instanceof GUIDIndex))
+			return false;
+		
+		return compareTo((GUIDIndex) obj) == 0;
+	}
+	
+	@Override
+	public int hashCode() {
+		return 13 * hostIndex + 29 * tableName + 43 * indexId;
+	}
+	
 }

@@ -16,7 +16,7 @@ import lazyj.DBFunctions;
  * @author costing
  *
  */
-public class GUID implements Serializable {
+public class GUID implements Serializable, Comparable<GUID> {
 	private static final long serialVersionUID = -2625119814122149207L;
 	
 	/**
@@ -237,6 +237,24 @@ public class GUID implements Serializable {
             lsb = (lsb << 8) | (data[i] & 0xff);
         
         return new UUID(msb, lsb);
+	}
+
+	@Override
+	public int compareTo(final GUID o) {
+		return guid.compareTo(o.guid);
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if (! (obj instanceof GUID))
+			return false;
+		
+		return compareTo((GUID) obj) == 0;
+	}
+	
+	@Override
+	public int hashCode() {
+		return guid.hashCode();
 	}
 	
 }

@@ -1,5 +1,6 @@
 package alien.se;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -14,8 +15,13 @@ import lazyj.DBFunctions;
  * @author costing
  * @since Nov 4, 2010
  */
-public class SE {
+public class SE implements Serializable, Comparable<SE>{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5338699957055031926L;
+
 	/**
 	 * Logger
 	 */
@@ -130,5 +136,23 @@ public class SE {
 		}
 		
 		return Collections.unmodifiableSet(ret);
+	}
+
+	@Override
+	public int compareTo(final SE o) {
+		return seName.compareToIgnoreCase(o.seName);
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if ( ! (obj instanceof SE) )
+			return false;
+		
+		return compareTo((SE) obj)==0;
+	}
+	
+	@Override
+	public int hashCode() {
+		return seName.toUpperCase().hashCode();
 	}
 }

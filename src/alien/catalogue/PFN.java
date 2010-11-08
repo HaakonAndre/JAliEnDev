@@ -1,5 +1,6 @@
 package alien.catalogue;
 
+import java.io.Serializable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -15,8 +16,13 @@ import lazyj.DBFunctions;
  * @author costing
  *
  */
-public class PFN {
+public class PFN implements Serializable, Comparable<PFN>{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3854116042004576123L;
+
 	/**
 	 * Logger
 	 */
@@ -111,5 +117,23 @@ public class PFN {
 		}
 		
 		return realPFNs;
+	}
+
+	@Override
+	public int compareTo(final PFN o) {
+		return pfn.compareTo(o.pfn);
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if (! (obj instanceof PFN))
+			return false;
+		
+		return compareTo((PFN) obj) == 0;
+	}
+	
+	@Override
+	public int hashCode() {
+		return pfn.hashCode();
 	}
 }

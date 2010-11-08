@@ -16,7 +16,7 @@ import lazyj.DBFunctions;
  * @author costing
  *
  */
-public class LFN implements Serializable {
+public class LFN implements Serializable, Comparable<LFN> {
 	
 	/**
 	 * 
@@ -132,7 +132,7 @@ public class LFN implements Serializable {
 	/**
 	 * The table where this row can be found
 	 */
-	public transient IndexTableEntry indexTableEntry;
+	public IndexTableEntry indexTableEntry;
 	
 	/**
 	 * @param lfn
@@ -341,5 +341,23 @@ public class LFN implements Serializable {
 		}
 		
 		return ret;
+	}
+
+	@Override
+	public int compareTo(final LFN o) {
+		int diff = indexTableEntry.compareTo(o.indexTableEntry);
+		
+		if (diff!=0)
+			return diff;
+		
+		return lfn.compareTo(o.lfn);
+	}
+	
+	@Override
+	public boolean equals(Object obj) {
+		if (! (obj instanceof LFN))
+			return false;
+		
+		return compareTo((LFN) obj)==0;
 	}
 }
