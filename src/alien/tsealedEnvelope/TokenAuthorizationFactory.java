@@ -21,6 +21,10 @@ import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
 
+/**
+ * @author Steffen
+ * @since Nov 9, 2010
+ */
 public class TokenAuthorizationFactory  
 {
     private Map<String, KeyPair> keystore;
@@ -31,6 +35,9 @@ public class TokenAuthorizationFactory
      */
     private String _noStrongAuthz;
 
+    /**
+     * @return handler
+     */
     public TokenAuthzHandler getAuthzHandler()
     {
         return new TokenAuthzHandler(_noStrongAuthz, keystore);
@@ -146,7 +153,9 @@ public class TokenAuthorizationFactory
         byte[] result = new byte[(int) file.length()];
         int bytesRead = 0;
 
-        while ((bytesRead += in.read(result, bytesRead, (int) file.length()-bytesRead)) < file.length());
+        while ((bytesRead += in.read(result, bytesRead, (int) file.length()-bytesRead)) < file.length()){
+        	// nothing
+        }
 
         if (bytesRead != file.length()) {
             throw new IOException("Keyfile "+file.getName()+" corrupt.");
@@ -157,6 +166,9 @@ public class TokenAuthorizationFactory
         return result;
     }
 
+    /**
+     * @throws GeneralSecurityException
+     */
     public void init() throws GeneralSecurityException
     {
         try {
@@ -166,21 +178,33 @@ public class TokenAuthorizationFactory
         }
     }
 
+    /**
+     * @param file
+     */
     public void setKeystore(String file)
     {
         keystoreFile = new File(file);
     }
 
+    /**
+     * @return keystore file
+     */
     public String getKeystore()
     {
         return keystoreFile.toString();
     }
 
+    /**
+     * @param auth
+     */
     public void setNoStrongAuthorization(String auth)
     {
         _noStrongAuthz = auth;
     }
 
+    /**
+     * @return ?
+     */
     public String getNoStrongAuthorization()
     {
         return _noStrongAuthz;

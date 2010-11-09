@@ -12,16 +12,24 @@ import java.net.InetSocketAddress;
 import alien.tsealedEnvelope.Envelope.GridFile;
 import alien.tsealedEnvelope.Envelope.FilePerm;
 
+/**
+ * @author Steffen
+ * @since Nov 9, 2010
+ */
 public class TokenAuthzHandler
 {
-    private final Map keystore;
+    private final Map<String, KeyPair> keystore;
     private String pfn = null;
     // the envelope will be initialised during checkAuthz()
     private Envelope env;
     private String noStrongAuthz;
     private final int XrootdProtocolDEFAULT_PORT=8080;
 
-    public TokenAuthzHandler(String noStrongAuthz, Map keystore)
+    /**
+     * @param noStrongAuthz
+     * @param keystore
+     */
+    public TokenAuthzHandler(String noStrongAuthz, Map<String, KeyPair> keystore)
     {
         this.keystore = keystore;
         this.noStrongAuthz = noStrongAuthz;
@@ -30,6 +38,14 @@ public class TokenAuthzHandler
 
 
 
+    /**
+     * @param pathToOpen
+     * @param options
+     * @param mode
+     * @param endpoint
+     * @return true if is ok
+     * @throws GeneralSecurityException
+     */
     public boolean checkAuthz(String pathToOpen, Map<String,String> options,
                               FilePerm mode,
                               InetSocketAddress endpoint)
@@ -40,7 +56,7 @@ public class TokenAuthzHandler
         }
 
         String authzTokenString;
-        if ((authzTokenString = (String) options.get("authz")) == null) {
+        if ((authzTokenString = options.get("authz")) == null) {
 
             // dirty hack for ALICE: skip authorization if no token
             // arrives and configuration says ok (this will be soon
@@ -67,25 +83,25 @@ public class TokenAuthzHandler
 
         // get the VO-specific keypair or the default keypair if VO
         // was not specified
-        KeyPair keypair = getKeys((String) options.get("vo"));
+        KeyPair keypair = getKeys(options.get("vo"));
 
 
 
         // decode the envelope from the token using the keypair
         // (Remote publicm key, local private key)
-        Envelope env = null;
+        Envelope envelope = null;
         try {
-            env = decodeEnvelope(authzTokenString, keypair);
+            envelope = decodeEnvelope(authzTokenString, keypair);
         } catch (CorruptedEnvelopeException e) {
             throw new GeneralSecurityException("Error parsing authorization token: "+e.getMessage());
         }
 
-        this.env = env;
+        this.env = envelope;
 
         // loop through all files contained in the envelope and find
         // the one with the matching lfn if no match is found, the
         // token/envelope is possibly hijacked
-        GridFile file = findFile(pathToOpen, env);
+        GridFile file = findFile(pathToOpen, envelope);
         if (file == null) {
             throw new GeneralSecurityException("authorization token doesn't contain any file permissions for lfn "+pathToOpen);
         }
@@ -125,21 +141,21 @@ public class TokenAuthzHandler
         return true;
     }
 
-    private GridFile findFile(String pathToOpen, Envelope env)
+    private GridFile findFile(String pathToOpen, Envelope envelope)
     {
-        Iterator files = env.getFiles();
+        Iterator<GridFile> files = envelope.getFiles();
         GridFile file  = null;
 
         // loop through all files contained in the envelope, selecting
         // the one which maches the LFN
         while (files.hasNext()) {
-            file = (GridFile) files.next();
+            file = files.next();
 
             if (pathToOpen.equals(file.getLfn())) {
                 break;
-            } else {
-                file = null;
             }
+            
+			file = null;
         }
 
         return file;
@@ -156,11 +172,17 @@ public class TokenAuthzHandler
         return token.getEnvelope();
     }
 
+    /**
+     * @return true if pfn is provided
+     */
     public boolean providesPFN()
     {
         return true;
     }
 
+    /**
+     * @return the pfn
+     */
     public String getPFN()
     {
         return pfn;
@@ -182,7 +204,7 @@ public class TokenAuthzHandler
 
         if (vo != null) {
             if (keystore.containsKey(vo)) {
-                keypair = (KeyPair) keystore.get(vo);
+                keypair = keystore.get(vo);
             } else {
                 throw new GeneralSecurityException("no keypair for VO "+vo+" found in keystore");
             }
@@ -190,7 +212,7 @@ public class TokenAuthzHandler
             // fall back to default keypair in case the VO is
             // unspecified
             if (keystore.containsKey("*")) {
-                keypair = (KeyPair) keystore.get("*");
+                keypair = keystore.get("*");
             } else {
                 throw new GeneralSecurityException("no default keypair found in keystore, required for decoding authorization token");
             }
@@ -202,7 +224,7 @@ public class TokenAuthzHandler
 
     /**
      * Returns the FQDN of the token creator
-     *
+     * @return token creator
      */
 
     public String getUser()
