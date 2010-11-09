@@ -1,29 +1,26 @@
 package alien.services;
 
-import java.security.Certificate;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.util.*;
-import java.io.*;
-import java.security.*;
+import java.security.KeyFactory;
+import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 
-//import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
-import org.bouncycastle.jce.provider.*;
-import org.bouncycastle.openssl.*;
-import org.bouncycastle.x509.X509CertificatePair;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 
-import sun.security.x509.X509Cert;
-import sun.security.x509.X509Key;
-
+/**
+ * @author Steffen
+ * @since Nov 9, 2010
+ */
 public class AuthenServer {
 
 	private RSAPrivateKey AuthenPrivKey;
@@ -32,6 +29,7 @@ public class AuthenServer {
 	private RSAPublicKey SEPubKey;
 
 	
+	@SuppressWarnings("unused")
 	private String verificationEnvelope = "-----BEGIN SEALED CIPHER-----\n"
 	+ "Amkq4hz7cJBtP4SxPyk-8d7OGPokdSewpfqwwIbilH1PfH7hAY7pnVXTLDd1E00+4uNsbwh81Rog\n"
 	+ "oMB4FtTb3ccjqQ9bsQ0fAcXXGboSG1fu-Trk1dg-3os35tjsMcNMEg662qMcdtOLSxCIOsQs5HJP\n"
@@ -141,15 +139,35 @@ public class AuthenServer {
 
 	
 	
+	/**
+	 * @param args
+	 */
 	public static void main(String[] args) {
 
 		AuthenServer authen = new AuthenServer();
 
 		String nix = authen.createEnvelope("asdf", "asdf", "asdf", "asdf",
 				"asdf", "asdf", "asdf", "asdf", "asdf", "asdf", "asdf");
-
+		
+		System.err.println(nix);
 	}
 
+	/**
+	 * Create envelope
+	 * 
+	 * @param user
+	 * @param egal
+	 * @param envreq
+	 * @param lfn
+	 * @param staticSEs
+	 * @param size
+	 * @param noSEs
+	 * @param guid
+	 * @param site
+	 * @param qos
+	 * @param qosCount
+	 * @return the envelope
+	 */
 	public String createEnvelope(String user, String egal, String envreq,
 			String lfn, String staticSEs, String size, String noSEs,
 			String guid, String site, String qos, String qosCount) {
@@ -300,7 +318,7 @@ public class AuthenServer {
 
 		// Hashtable<int, String> alles = new Hashtable[1];
 		// alles[0] = envelope;
-		int asdf = 5;
+
 		System.out.println("i encrypted ticket:" + encrTicket);
 
 		return encrTicket;
