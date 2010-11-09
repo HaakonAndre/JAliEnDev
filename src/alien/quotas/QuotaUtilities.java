@@ -37,40 +37,45 @@ public final class QuotaUtilities {
 	private static void updateFileQuotasCache(){
 		quotaReadLock.lock();
 		
-		if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
-			quotaReadLock.unlock();
-			
-			quotaWriteLock.lock();
-			
-			try{
-				if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
-					if (logger.isLoggable(Level.FINER)){
-						logger.log(Level.FINER, "Updating Quotas cache");
-					}
+		try{
+			if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
+				quotaReadLock.unlock();
+				
+				quotaWriteLock.lock();
+				
+				try{
+					if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
+						if (logger.isLoggable(Level.FINER)){
+							logger.log(Level.FINER, "Updating Quotas cache");
+						}
+						
+						final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
 					
-					final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
+						final DBFunctions db = ConfigUtils.getDB("processes");
+					
+						db.query("SELECT * FROM PRIORITY;");
+					
+						while (db.moveNext()){
+							final Quota fq = new Quota(db);
 				
-					final DBFunctions db = ConfigUtils.getDB("processes");
-				
-					db.query("SELECT * FROM PRIORITY;");
-				
-					while (db.moveNext()){
-						final Quota fq = new Quota(db);
-			
-						if (fq.user!=null)
-							newQuotas.put(fq.user.toLowerCase(), fq);
+							if (fq.user!=null)
+								newQuotas.put(fq.user.toLowerCase(), fq);
+						}
+					
+						quotas = Collections.unmodifiableMap(newQuotas);
+						quotasLastUpdated = System.currentTimeMillis();
 					}
-				
-					quotas = Collections.unmodifiableMap(newQuotas);
-					quotasLastUpdated = System.currentTimeMillis();
 				}
-			}
-			finally{
-				quotaWriteLock.unlock();
+				finally{
+					quotaWriteLock.unlock();
+				}
+				
+				quotaReadLock.lock();
 			}
 		}
-		else
+		finally{
 			quotaReadLock.unlock();
+		}
 	}
 	
 	/**

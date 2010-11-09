@@ -71,36 +71,40 @@ public final class CatalogueUtils {
 	private static final void updateGuidIndexCache() {
 		guidIndexReadLock.lock();
 
-		if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
-			guidIndexReadLock.unlock();
-			
-			guidIndexWriteLock.lock();
-			
-			try{
-				if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
-					if (logger.isLoggable(Level.FINER)) {
-						logger.log(Level.FINER, "Updating GUIDINDEX cache");
+		try{
+			if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
+				guidIndexReadLock.unlock();
+				
+				guidIndexWriteLock.lock();
+				
+				try{
+					if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
+						if (logger.isLoggable(Level.FINER)) {
+							logger.log(Level.FINER, "Updating GUIDINDEX cache");
+						}
+	
+						final DBFunctions db = ConfigUtils.getDB("alice_users");
+	
+						db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;");
+	
+						final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
+	
+						while (db.moveNext())
+							ret.add(new GUIDIndex(db));
+	
+						guidIndexCache = ret;
+	
+						guidIndexCacheUpdated = System.currentTimeMillis();
 					}
-
-					final DBFunctions db = ConfigUtils.getDB("alice_users");
-
-					db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;");
-
-					final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
-
-					while (db.moveNext())
-						ret.add(new GUIDIndex(db));
-
-					guidIndexCache = ret;
-
-					guidIndexCacheUpdated = System.currentTimeMillis();
 				}
-			}
-			finally {
-				guidIndexWriteLock.unlock();
+				finally {
+					guidIndexWriteLock.unlock();
+				}
+				
+				guidIndexReadLock.lock();
 			}
 		}
-		else{
+		finally{
 			guidIndexReadLock.unlock();
 		}
 	}
@@ -147,37 +151,41 @@ public final class CatalogueUtils {
 	private static void updateIndexTableCache() {
 		indextableReadLock.lock();
 
-		if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
-			indextableReadLock.unlock();
-				
-			indextableWriteLock.lock();
-				
-			try{
-				if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
-					if (logger.isLoggable(Level.FINER)) {
-						logger.log(Level.FINER, "Updating INDEXTABLE cache");
+		try{
+			if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
+				indextableReadLock.unlock();
+					
+				indextableWriteLock.lock();
+					
+				try{
+					if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
+						if (logger.isLoggable(Level.FINER)) {
+							logger.log(Level.FINER, "Updating INDEXTABLE cache");
+						}
+	
+						final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
+	
+						final DBFunctions db = ConfigUtils.getDB("alice_users");
+	
+						db.query("SELECT * FROM INDEXTABLE;");
+	
+						while (db.moveNext()) {
+							final IndexTableEntry entry = new IndexTableEntry(db);
+	
+							newIndextable.add(entry);
+						}
+						indextable = newIndextable;
+						lastIndexTableUpdate = System.currentTimeMillis();
 					}
-
-					final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
-
-					final DBFunctions db = ConfigUtils.getDB("alice_users");
-
-					db.query("SELECT * FROM INDEXTABLE;");
-
-					while (db.moveNext()) {
-						final IndexTableEntry entry = new IndexTableEntry(db);
-
-						newIndextable.add(entry);
-					}
-					indextable = newIndextable;
-					lastIndexTableUpdate = System.currentTimeMillis();
 				}
-			}
-			finally {
-				indextableWriteLock.unlock();
+				finally {
+					indextableWriteLock.unlock();
+				}
+				
+				indextableReadLock.lock();
 			}
 		}
-		else{
+		finally{
 			indextableReadLock.unlock();
 		}
 	}
