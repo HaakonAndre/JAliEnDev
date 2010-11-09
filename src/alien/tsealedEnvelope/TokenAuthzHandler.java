@@ -23,7 +23,8 @@ public class TokenAuthzHandler
     // the envelope will be initialised during checkAuthz()
     private Envelope env;
     private String noStrongAuthz;
-    private final int XrootdProtocolDEFAULT_PORT=8080;
+    
+    private static final int XrootdProtocolDEFAULT_PORT=8080;
 
     /**
      * @param noStrongAuthz

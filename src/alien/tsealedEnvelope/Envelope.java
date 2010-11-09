@@ -84,7 +84,7 @@ public class Envelope {
 	 * @author Martin Radicke
 	 * 
 	 */
-	public class GridFile {
+	public static class GridFile {
 
 		private String lfn;
 		private int access;
@@ -259,7 +259,7 @@ public class Envelope {
 		Date creation = new Date(created*1000);
 		DateFormat indfm = new SimpleDateFormat("EEE MMM  d HH:mm:ss yyyy");
 		creationDate = 		indfm.format(creation);
-		this.expires = created + (expireAfter * 3600000);
+		this.expires = created + (expireAfter * 3600000L);
 		expireDate = new Date(this.expires);
 
 		this.certificate = certificateString;

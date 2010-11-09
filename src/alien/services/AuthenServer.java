@@ -336,19 +336,22 @@ public class AuthenServer {
 
 //		KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
-
+		// TODO : load file locations from configuration
 		File AuthenPrivfile = new File("/home/ron/authen_keys/AuthenPriv.key");
 		byte[] AuthenPriv = new byte[(int) AuthenPrivfile.length()];
-		new FileInputStream(AuthenPrivfile).read(AuthenPriv);
+		FileInputStream fis = new FileInputStream(AuthenPrivfile);
+		fis.read(AuthenPriv);
+		fis.close();
 
 		PKCS8EncodedKeySpec AuthenPrivSpec = new PKCS8EncodedKeySpec(AuthenPriv);
 		System.out.println("loading AuthenPriv...");
 		this.AuthenPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(AuthenPrivSpec);
 		
-		
 		File SEPrivfile = new File("/home/ron/authen_keys/SEPriv.key");
 		byte[] SEPriv = new byte[(int) SEPrivfile.length()];
-		new FileInputStream(SEPrivfile).read(SEPriv);
+		fis = new FileInputStream(SEPrivfile);
+		fis.read(SEPriv);
+		fis.close();
 
 		PKCS8EncodedKeySpec SEPrivSpec = new PKCS8EncodedKeySpec(SEPriv);
 		System.out.println("loading SEPriv...");
