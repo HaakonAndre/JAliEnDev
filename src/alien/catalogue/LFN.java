@@ -354,7 +354,7 @@ public class LFN implements Serializable, Comparable<LFN> {
 	}
 	
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(final Object obj) {
 		if (! (obj instanceof LFN))
 			return false;
 		

@@ -103,4 +103,13 @@ public class Host implements Comparable<Host>{
 	public int hashCode() {
 		return hostIndex;
 	}
+	
+	@Override
+	public String toString() {
+		return "Host: hostIndex: "+hostIndex+"\n"+
+		       "address\t: "+address+"\n"+
+		       "database\t: "+db+"\n"+
+		       "driver\t: "+driver+"\n"+
+		       "organization\t: "+organization;
+	}
 }

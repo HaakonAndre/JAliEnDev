@@ -109,11 +109,27 @@ public class SE implements Serializable, Comparable<SE>{
 		
 		seType = db.gets("seType");
 		
-		exclusiveUsers = parseArray("exclusiveUsers");
+		exclusiveUsers = parseArray(db.gets("exclusiveUsers"));
 		
 		seExclusiveRead = db.gets("seExclusiveRead");
 		
 		seExclusiveWrite = db.gets("seExclusiveWrite");
+	}
+	
+	@Override
+	public String toString() {
+		return "SE: seName: "+seName+"\n"+
+			"seNumber\t: "+seNumber+"\n"+
+			"qos\t: "+qos+"\n"+
+			"seioDaemons\t: "+seioDaemons+"\n"+
+			"seStoragePath\t: "+seStoragePath+"\n"+
+			"seUsedSpace\t: "+seUsedSpace+"\n"+
+			"seNumFiles\t: "+seNumFiles+"\n"+
+			"seMinSize\t: "+seMinSize+"\n"+
+			"seType\t: "+seType+"\n"+
+			"exclusiveUsers\t: "+exclusiveUsers+"\n"+
+			"seExclusiveRead\t: "+seExclusiveRead+"\n"+
+			"seExclusiveWrite\t: "+seExclusiveWrite;
 	}
 	
 	/**

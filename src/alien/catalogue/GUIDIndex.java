@@ -1,11 +1,11 @@
 package alien.catalogue;
 
 import java.io.Serializable;
+import java.util.Date;
 import java.util.logging.Logger;
 
-import alien.config.ConfigUtils;
-
 import lazyj.DBFunctions;
+import alien.config.ConfigUtils;
 
 /**
  * One row from alice_users.GUIDINDEX
@@ -92,6 +92,14 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 	@Override
 	public int hashCode() {
 		return 13 * hostIndex + 29 * tableName + 43 * indexId;
+	}
+	
+	@Override
+	public String toString() {
+		return "GUIDIndex : hostIndex : "+hostIndex+"\n"+
+		       "tableName\t: "+tableName+"\n"+
+		       "indexId\t: "+indexId+"\n"+
+		       "guidTime\t: "+guidTime+" ("+(new Date(guidTime))+")";
 	}
 	
 }
