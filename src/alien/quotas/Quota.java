@@ -193,6 +193,32 @@ tmpIncreasedNbFiles     | int(11)
 		
 		tmpIncreasedNbFiles = db.geti("tmpIncreasedNbFiles");
 	}
+	
+	@Override
+	public String toString() {
+		return "Quota: user: "+user+"\n"+
+		       "priority\t: "+priority+"\n"+
+		       "maxparallelJobs\t: "+maxparallelJobs+"\n"+
+		       "userload\t: "+userload+"\n"+
+		       "nominalparallelJobs\t: "+nominalparallelJobs+"\n"+
+		       "computedpriority\t: "+computedpriority+"\n"+
+		       "waiting\t: "+waiting+"\n"+
+		       "running\t: "+running+"\n"+
+		       "maxUnfinishedJobs\t: "+maxUnfinishedJobs+"\n"+
+		       "maxTotalCpuCost\t: "+maxTotalCpuCost+"\n"+
+		       "totalRunningTimeLast24h\t: "+totalRunningTimeLast24h+"\n"+
+		       "unfinishedJobsLast24h\t: "+unfinishedJobsLast24h+"\n"+
+		       "totalSize\t: "+totalSize+"\n"+
+		       "maxNbFiles\t: "+maxNbFiles+"\n"+
+		       "nbFiles\t: "+nbFiles+"\n"+
+		       "tmpIncreasedTotalSize\t: "+tmpIncreasedTotalSize+"\n"+
+		       "totalCpuCostLast24h\t: "+totalCpuCostLast24h+"\n"+
+		       "maxTotalSize\t: "+maxTotalSize+"\n"+
+		       "maxTotalRunningTime\t: "+maxTotalRunningTime+"\n"+
+		       "tmpIncreasedNbFiles\t: "+tmpIncreasedNbFiles;
+		       
+		       
+	}
 
 	@Override
 	public int compareTo(final Quota o) {
