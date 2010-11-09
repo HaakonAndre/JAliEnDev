@@ -34,8 +34,30 @@ import java.util.UUID;
  */
 public class Envelope {
 
+	/**
+	 * @author costing
+	 * @since Nov 9, 2010
+	 */
 	public static enum FilePerm {
-		READ("read"), WRITE_ONCE("write-once"), WRITE("write"), DELETE("delete");
+		/**
+		 * Read envelope
+		 */
+		READ("read"), 
+		
+		/**
+		 * Write once envelope
+		 */
+		WRITE_ONCE("write-once"), 
+		
+		/**
+		 * Write envelope
+		 */
+		WRITE("write"), 
+		
+		/**
+		 * Delete envelope
+		 */
+		DELETE("delete");
 
 		private final String _xmlText;
 
@@ -43,15 +65,18 @@ public class Envelope {
 			_xmlText = xmlText;
 		}
 
+		/**
+		 * @return XML text
+		 */
 		public String xmlText() {
 			return _xmlText;
 		}
-	};
+	}
 
 	// static Logger logger = LoggerFactory.getLogger(Envelope.class);
 
 	/**
-	 * This class encapsulates all permisson and location information for one
+	 * This class encapsulates all permission and location information for one
 	 * file in the grid context, particularly the mapping between the logical
 	 * filename (lfn) and the physical filename (transport URI, TURL) as well as
 	 * the access permission granted by the file catalogue.
@@ -72,6 +97,12 @@ public class Envelope {
 		private String turlProtocol;
 		private InetAddress turlHost;
 
+		/**
+		 * @param lfn
+		 * @param turl
+		 * @param access
+		 * @throws CorruptedEnvelopeException
+		 */
 		public GridFile(String lfn, String turl, String access)
 				throws CorruptedEnvelopeException {
 			this.lfn = lfn;
@@ -113,30 +144,51 @@ public class Envelope {
 			return new URI(rootURLString);
 		}
 
+		/**
+		 * @return access permissions
+		 */
 		public int getAccess() {
 			return access;
 		}
 
+		/**
+		 * @return logical file name
+		 */
 		public String getLfn() {
 			return lfn;
 		}
 
+		/**
+		 * @return TURL
+		 */
 		public String getTurl() {
 			return turlString;
 		}
 
+		/**
+		 * @return protocol
+		 */
 		public String getTurlProtocol() {
 			return turlProtocol;
 		}
 
+		/**
+		 * @return Host
+		 */
 		public InetAddress getTurlHost() {
 			return turlHost;
 		}
 
+		/**
+		 * @return port
+		 */
 		public int getTurlPort() {
 			return turl.getPort();
 		}
 
+		/**
+		 * @return path
+		 */
 		public String getTurlPath() {
 			return turl.getPath();
 		}
@@ -152,15 +204,18 @@ public class Envelope {
 	}
 
 	// the cipher algorithm used
+	@SuppressWarnings("unused")
 	private String cipheralgorithm;
 
 	// coding type
+	@SuppressWarnings("unused")
 	private int codingType;
 
 	// the creator of the envelope
 	private String creator;
 
 	// symmetric key
+	@SuppressWarnings("unused")
 	private UUID fUUID;
 
 	// certificate inside the envelope
@@ -173,6 +228,7 @@ public class Envelope {
 	private String creationDate;
 
 	// expire date
+	@SuppressWarnings("unused")
 	private Date expireDate;
 
 	// UNIX timestamp specifying when envelope expires
@@ -185,7 +241,7 @@ public class Envelope {
 	// yet expired
 	private boolean valid = false;
 
-	// the file information embedded in the envelope body
+	/** the file information embedded in the envelope body */
 	List<GridFile> files = new LinkedList<GridFile>();
 
 	private final static String ENVELOPE_START = "-----BEGIN ENVELOPE-----";
@@ -193,8 +249,8 @@ public class Envelope {
 	private final static String BODY_START = "-----BEGIN ENVELOPE BODY-----";
 	private final static String BODY_STOP = "-----END ENVELOPE BODY-----";
 
-	private void initializeEnvelope(String envelopein, int expires,
-			String certificate) {
+	private void initializeEnvelope(String envelopein, int expireAfter,
+			String certificateString) {
 
 		cipheralgorithm = "Blowfish";
 //		creator = "AuthenX";
@@ -203,13 +259,17 @@ public class Envelope {
 		Date creation = new Date(created*1000);
 		DateFormat indfm = new SimpleDateFormat("EEE MMM  d HH:mm:ss yyyy");
 		creationDate = 		indfm.format(creation);
-		this.expires = created + (expires * 3600000);
+		this.expires = created + (expireAfter * 3600000);
 		expireDate = new Date(this.expires);
 
-		this.certificate = certificate;
+		this.certificate = certificateString;
 
 	}
 
+	/**
+	 * @param envelopein
+	 * @return ALICE envelope
+	 */
 	public String create_ALICE_SE_Envelope(String envelopein) {
 
 		initializeEnvelope(envelopein, 24, "none");
@@ -235,7 +295,7 @@ public class Envelope {
 
 	}
 
-	/*
+	/**
 	 * build a lookup table for the string (XML) representations of the file
 	 * permissions from the enum. This will help in mapping from the string
 	 * values in the authorization XML to the ordinal values associated with the
@@ -252,11 +312,14 @@ public class Envelope {
 	// time frame to determine whether creatin time is still valid
 	private static final long TIME_OFFSET = 60;
 
-	// the stack used for parsing the structured content of the envelope
+	/** the stack used for parsing the structured content of the envelope */
 	Stack<String> stack = new Stack<String>();
 
+	/**
+	 * Simple constructor
+	 */
 	public Envelope() {
-
+		// nothing
 	}
 
 	/**
@@ -276,7 +339,7 @@ public class Envelope {
 	}
 
 	/**
-	 * Parses the envlope. Distiguishes between header and body.
+	 * Parses the envelope. Distinguishes between header and body.
 	 * 
 	 * @param envelope
 	 *            the envelope to be parsed

@@ -3,38 +3,20 @@ package alien.tsealedEnvelope;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
-import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
 import java.security.Key;
-import java.security.KeyStore.PrivateKeyEntry;
-import java.security.KeyFactory;
-import java.security.MessageDigest;
 import java.security.Security;
 import java.security.Signature;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Random;
 import java.util.Stack;
-import java.util.UUID;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.engines.BlowfishEngine;
-import org.bouncycastle.crypto.modes.CBCBlockCipher;
-import org.bouncycastle.crypto.params.KeyParameter;
-import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-import sun.awt.X11.ToBin;
-
-import com.sun.crypto.provider.BlowfishCipher;
-import com.sun.crypto.provider.BlowfishKeyGenerator;
-import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
 
 /**
  * This class does the decoding/decryption of a given authorization token which
@@ -104,15 +86,8 @@ public class EncryptedAuthzToken {
 	/**
 	 * 
 	 * Creates a new instance for encryption.
-	 * 
-	 * @param locPrivKey
-	 *            the local private RSA key
-	 * @param locPubKey
-	 *            the local public RSA key
-	 * @param remPrivKey
-	 *            the remote private RSA key
-	 * @param remPubKey
-	 *            the remote public RSA key
+	 * @param AuthenPrivKey 
+	 * @param SEPubKey 
 	 * 
 	 * @throws GeneralSecurityException
 	 */
@@ -126,6 +101,7 @@ public class EncryptedAuthzToken {
 	/**
 	 * Does the actual creation and encryption/encoding of a token. This method
 	 * should not be called for more than one times.
+	 * @param message 
 	 * 
 	 * @return the encrypted envelope or NULL if signature could not be verified
 	 * @throws GeneralSecurityException
@@ -273,10 +249,10 @@ public class EncryptedAuthzToken {
 //		 byte[] encryptedCipher = cipher.wrap(symKeySpec);
 
 		// encode base64
-		String cipherEncryptedBase64 = Base64.encodeBytes(encryptedCipher);
+		String sCipherEncryptedBase64 = Base64.encodeBytes(encryptedCipher);
 		this.cipherEncryptedBase64 = new StringBuffer(
-				cipherEncryptedBase64.length());
-		this.cipherEncryptedBase64.append(cipherEncryptedBase64);
+				sCipherEncryptedBase64.length());
+		this.cipherEncryptedBase64.append(sCipherEncryptedBase64);
 
 		System.out.println("...key creation done!");
 		System.out.println();
@@ -394,10 +370,10 @@ public class EncryptedAuthzToken {
 		// encryptedEnvelopeFinal[3] =(byte) ((byte)( (signature.length << 24)
 		// >> 24 ) & 0xff);
 
-		encryptedEnvelopeFinal[0] = (byte) ((byte) (signature.length >> 24));
-		encryptedEnvelopeFinal[1] = (byte) ((byte) ((signature.length << 8) >> 24));
-		encryptedEnvelopeFinal[2] = (byte) ((byte) ((signature.length << 16) >> 24));
-		encryptedEnvelopeFinal[3] = (byte) ((byte) ((signature.length << 24) >> 24));
+		encryptedEnvelopeFinal[0] = ((byte) (signature.length >> 24));
+		encryptedEnvelopeFinal[1] = ((byte) ((signature.length << 8) >> 24));
+		encryptedEnvelopeFinal[2] = ((byte) ((signature.length << 16) >> 24));
+		encryptedEnvelopeFinal[3] = ((byte) ((signature.length << 24) >> 24));
 
 		System.out.println("siglen: " + signature.length + "");
 
@@ -428,17 +404,21 @@ public class EncryptedAuthzToken {
 		System.arraycopy(encryptedEnvelope, 0, encryptedEnvelopeFinal,
 				4 + signature.length, encryptedEnvelope.length);
 
-		String envelopeEncryptedBase64 = Base64
+		String sEnvelopeEncryptedBase64 = Base64
 				.encodeBytes(encryptedEnvelopeFinal);
 		this.envelopeEncryptedBase64 = new StringBuffer(
-				envelopeEncryptedBase64.length());
-		this.envelopeEncryptedBase64.append(envelopeEncryptedBase64);
+				sEnvelopeEncryptedBase64.length());
+		this.envelopeEncryptedBase64.append(sEnvelopeEncryptedBase64);
 
 	}
 
-	static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4', '5',
+	private static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4', '5',
 			'6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
+	/**
+	 * @param bytes
+	 * @return hex string
+	 */
 	public String toHex(byte[] bytes) {
 		char[] out = new char[bytes.length * 2]; // 2 hex characters per byte
 		for (int i = 0; i < bytes.length; i++) {
@@ -501,10 +481,8 @@ public class EncryptedAuthzToken {
 	 * 
 	 * @param rawToken
 	 *            rawToken the sealed token which is going to be decrypted
-	 * @param privKey
-	 *            the local private RSA key
-	 * @param pubKey
-	 *            the remote public RSA key
+	 * @param SEPrivKey 
+	 * @param AuthenPubKey 
 	 * @throws GeneralSecurityException
 	 */
 	public EncryptedAuthzToken(String rawToken, RSAPrivateKey SEPrivKey,
@@ -757,7 +735,7 @@ public class EncryptedAuthzToken {
 		cipherEncryptedBase64 = new StringBuffer();
 		envelopeEncryptedBase64 = new StringBuffer();
 
-		Stack stack = new Stack();
+		Stack<String> stack = new Stack<String>();
 
 		LineNumberReader input = new LineNumberReader(
 				new StringReader(rawToken));
@@ -841,6 +819,7 @@ public class EncryptedAuthzToken {
 	 * @param len
 	 *            the number of bytes to be dumped
 	 */
+	@SuppressWarnings("unused")
 	private String arrayToHex(String name, byte[] array, int offset, int len) {
 		if (array == null) {
 			return "";
@@ -878,6 +857,9 @@ public class EncryptedAuthzToken {
 		return new Envelope(new String(envelope));
 	}
 
+	/**
+	 * @return the envelope
+	 */
 	public String getEnvelopeString() {
 		return new String(envelope);
 	}
