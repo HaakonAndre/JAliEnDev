@@ -104,6 +104,8 @@ public class GUID implements Serializable, Comparable<GUID> {
 	 */
 	public final int tableName;
 	
+	Set<LFN> lfns;
+	
 	/**
 	 * Load one row from a G*L table
 	 * 
@@ -219,6 +221,43 @@ public class GUID implements Serializable, Comparable<GUID> {
 			pfn.setGUID(this);
 			
 			ret.add(pfn);
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * @return the LFNs associated to this GUID
+	 */
+	public Set<LFN> getLFNs(){
+		final DBFunctions db = GUIDUtils.getDBForGUID(guid);
+		
+		if (db==null)
+			return null;
+		
+		final int tablename = GUIDUtils.getTableNameForGUID(guid);
+		
+		db.query("SELECT distinct lfnRef FROM G"+tablename+"L_REF WHERE guidId="+guidId);
+		
+		if (!db.moveNext())
+			return null;
+		
+		final String sLFNRef = db.gets(1);
+		
+		final int idx = sLFNRef.indexOf('_');
+		
+		final int iHostID = Integer.parseInt(sLFNRef.substring(0, idx));
+		
+		final int iLFNTableIndex = Integer.parseInt(sLFNRef.substring(idx+1));
+		
+		final DBFunctions db2 = CatalogueUtils.getHost(iHostID).getDB();
+		
+		db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary('"+guid+"');");
+	
+		final Set<LFN> ret = new LinkedHashSet<LFN>();
+		
+		while (db2.moveNext()){
+			ret.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
 		}
 		
 		return ret;

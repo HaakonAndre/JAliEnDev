@@ -1,13 +1,10 @@
 package alien.catalogue;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import alien.config.ConfigUtils;
-
 import lazyj.DBFunctions;
+import alien.config.ConfigUtils;
 
 /**
  * @author costing
@@ -110,46 +107,6 @@ public final class GUIDUtils {
 			return new GUID(db, host, tableName);
 		
 		return null;
-	}
-
-	/**
-	 * Get all LFNs associated with this GUIDs
-	 * 
-	 * @param guid
-	 * @return LFNs
-	 */
-	public static Set<LFN> getLFNsForGUID(final GUID guid){
-		final DBFunctions db = getDBForGUID(guid.guid);
-		
-		if (db==null)
-			return null;
-		
-		final int tablename = getTableNameForGUID(guid.guid);
-		
-		db.query("SELECT distinct lfnRef FROM G"+tablename+"L_REF WHERE guidId="+guid.guidId);
-		
-		if (!db.moveNext())
-			return null;
-		
-		final String sLFNRef = db.gets(1);
-		
-		final int idx = sLFNRef.indexOf('_');
-		
-		final int iHostID = Integer.parseInt(sLFNRef.substring(0, idx));
-		
-		final int iLFNTableIndex = Integer.parseInt(sLFNRef.substring(idx+1));
-		
-		final DBFunctions db2 = CatalogueUtils.getHost(iHostID).getDB();
-		
-		db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary('"+guid.guid+"');");
-	
-		final Set<LFN> ret = new LinkedHashSet<LFN>();
-		
-		while (db2.moveNext()){
-			ret.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
-		}
-		
-		return ret;
 	}
 	
 }

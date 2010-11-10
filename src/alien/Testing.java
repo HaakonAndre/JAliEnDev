@@ -62,7 +62,7 @@ public class Testing {
 			System.err.println(pfn);
 		}
 		
-		Set<LFN> lfns = GUIDUtils.getLFNsForGUID(guid);
+		Set<LFN> lfns = guid.getLFNs();
 		
 		for (LFN lfn: lfns){
 			System.err.println("---- LFN ------");
