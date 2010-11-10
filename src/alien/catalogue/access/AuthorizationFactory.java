@@ -2,34 +2,93 @@ package alien.catalogue.access;
 
 import java.util.UUID;
 
-import alien.catalogue.*;
+import lazyj.cache.ExpirationCache;
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.PFN;
 
- class AuthorizationFactory {
+/**
+ * @author Steffen
+ */
+public final class AuthorizationFactory {
 
-	static CatalogueAccess requestAccess(LFN lfn, String access) {
-		return requestAccess(lfn.guid,access);
+	/**
+	 * Request access to this LFN
+	 * 
+	 * @param lfn LFN
+	 * @param access access type
+	 * @return the access, or <code>null</code> if not permitted
+	 */
+	public static CatalogueAccess requestAccess(final LFN lfn, final String access) {
+		return requestAccess(GUIDUtils.getGUID(lfn.guid), access);
+	}
+	
+	/**
+	 * Request access to this PFN
+	 * 
+	 * @param pfn PFN 
+	 * @param access access type
+	 * @return access, or <code>null</code> if not permitted
+	 */
+	public static CatalogueAccess requestAccess(final PFN pfn, final String access){
+		return requestAccess(pfn.getGuid(), access);
 	}
 
-	static CatalogueAccess requestAccess(UUID guid, String access){
+	/**
+	 * Request access to this GUID
+	 * 
+	 * @param guid GUID
+	 * @param access access type
+	 * @return access, or <code>null</code> if not permitted
+	 */
+	public static CatalogueAccess requestAccess(final GUID guid, final String access){
 		
-		if(authorized(guid,access)){
-			CatalogueAccess ca =  accessType(guid, access);
+		if (isAuthorized(guid,access)){
+			final CatalogueAccess ca =  accessType(guid, access);
+			
 			ca.decorate(); // decorate the access with all catalogue info
+			
 			PFN pfn = ca.pickPFNforAccess(); // however we do that
+			
 			ca.addEnvelope(new XrootDEnvelope(ca, pfn));
 		}
+		
 		return null;
 	}
 	
-	static boolean authorized(UUID guid, String access){
+	/**
+	 * Check if an user is authorized to access this resource for the indicated operation
+	 * 
+	 * @param guid
+	 * @param access
+	 * @return true if allowed
+	 */
+	public static boolean isAuthorized(final GUID guid, final String access){
 		return false;
 	}
 	
-	static CatalogueAccess accessType(UUID guid,String access){
+	/**
+	 * Cache the recently requested read envelopes 
+	 */
+	private static final ExpirationCache<UUID, CatalogueAccess> readEnvelopes = new ExpirationCache<UUID, CatalogueAccess>(10000);
+	
+	private static CatalogueAccess accessType(final GUID guid, final String access){
 		
-		if(access.equals("delete")){
-			return (CatalogueAccess) new CatalogueDeleteAccess(guid);
+		if (access.equals("delete")){
+			return new CatalogueDeleteAccess(guid);
 		}
+		
+		if (access.equals("read")){
+			CatalogueAccess readAccess = readEnvelopes.get(guid.guid);
+			
+			if (readAccess==null){
+				readAccess = new CatalogueReadAccess(guid);
+				
+				readEnvelopes.put(guid.guid, readAccess, 1000*60*5);
+			}
+		}
+		
 		return null;
 	}
 
