@@ -104,6 +104,9 @@ public class GUID implements Serializable, Comparable<GUID> {
 	 */
 	public final int tableName;
 	
+	/**
+	 * LFNs associated to this GUID
+	 */
 	Set<LFN> lfns;
 	
 	/**

@@ -130,10 +130,20 @@ public class PFN implements Serializable, Comparable<PFN>{
 		return realPFNs;
 	}
 	
+	/**
+	 * Set the UUID, when known, to avoid reading from database
+	 * 
+	 * @param uid
+	 */
 	void setUUID(final UUID uid){
 		uuid = uid;
 	}
 	
+	/**
+	 * Set the GUID, when known, to avoid reading from database
+	 * 
+	 * @param guid
+	 */
 	void setGUID(final GUID guid){
 		this.guid = guid;
 	}
