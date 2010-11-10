@@ -53,6 +53,17 @@ public class PFN implements Serializable, Comparable<PFN>{
 	 */
 	public int tableNumber;
 	
+	/**
+	 * GUID references
+	 */
+	private UUID uuid;
+	
+	/**
+	 * GUID
+	 * @see #getGuid()
+	 */
+	private GUID guid;
+	
 	private Set<PFN> realPFNs = null;
 	
 	/**
@@ -60,7 +71,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 	 * @param host
 	 * @param tableNumber
 	 */
-	public PFN(final DBFunctions db, final int host, final int tableNumber){
+	PFN(final DBFunctions db, final int host, final int tableNumber){
 		this.host = host;
 		this.tableNumber = tableNumber;
 		
@@ -92,7 +103,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 		if (pfn.startsWith("guid://")){
 			int idx = 7;
 			
-			String uuid;
+			String sUuid;
 			
 			while (pfn.charAt(idx)=='/' && idx<pfn.length()-1)
 				idx++;
@@ -100,14 +111,14 @@ public class PFN implements Serializable, Comparable<PFN>{
 			int idx2 = pfn.indexOf('?', idx);
 			
 			if (idx2<0)
-				uuid = pfn.substring(idx);
+				sUuid = pfn.substring(idx);
 			else
-				uuid = pfn.substring(idx, idx2);
+				sUuid = pfn.substring(idx, idx2);
 			
-			final GUID guid = GUIDUtils.getGUID(UUID.fromString(uuid));
+			final GUID archiveGuid = GUIDUtils.getGUID(UUID.fromString(sUuid));
 			
-			if (guid!=null)
-				realPFNs = guid.getPFNs();
+			if (archiveGuid!=null)
+				realPFNs = archiveGuid.getPFNs();
 			else
 				realPFNs = null;
 		}
@@ -118,7 +129,62 @@ public class PFN implements Serializable, Comparable<PFN>{
 		
 		return realPFNs;
 	}
+	
+	void setUUID(final UUID uid){
+		uuid = uid;
+	}
+	
+	void setGUID(final GUID guid){
+		this.guid = guid;
+	}
 
+	/**
+	 * @return get the UUID associated to the GUID of which this entry is a replica
+	 */
+	public UUID getUUID(){
+		if (uuid==null){
+			if (guid!=null){
+				uuid = guid.guid;
+			}
+			else{
+				getGuid();
+			}
+		}
+		
+		return uuid;
+	}
+	
+	/**
+	 * @return the GUID for this PFN
+	 */
+	public GUID getGuid(){
+		if (guid==null){
+			if (uuid!=null){
+				guid = GUIDUtils.getGUID(uuid);
+			}
+			else{
+				final Host h = CatalogueUtils.getHost(host);
+			
+				if (h==null)
+					return null;
+			
+				final DBFunctions db = h.getDB();
+			
+				if (db==null)
+					return null;
+			
+				db.query("SELECT * FROM G"+tableNumber+"L WHERE guidId="+guidId);
+				
+				if (db.moveNext()){
+					guid = new GUID(db, host, tableNumber);
+					uuid = guid.guid;
+				}
+			}
+		}
+		
+		return guid;
+	}
+	
 	@Override
 	public int compareTo(final PFN o) {
 		return pfn.compareTo(o.pfn);
