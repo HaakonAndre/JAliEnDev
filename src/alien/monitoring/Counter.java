@@ -97,7 +97,7 @@ public final class Counter implements MonitoringObject {
 	@Override
 	public void fillValues(final Vector<String> paramNames, final Vector<Object> paramValues) {
 		paramNames.add(name);
-		paramValues.add(Long.valueOf(longValue()));
+		paramValues.add(Double.valueOf(longValue()));
 		
 		final double rate = getRate();
 		
@@ -105,5 +105,13 @@ public final class Counter implements MonitoringObject {
 			paramNames.add(name+"_R");
 			paramValues.add(Double.valueOf(rate));
 		}
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return name+": "+counter.longValue();
 	}
 }

@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lia.Monitor.monitor.Result;
+import lia.Monitor.monitor.eResult;
 import lia.util.DynamicThreadPoll.SchJobInt;
 import alien.config.ConfigUtils;
 import apmon.ApMon;
@@ -93,6 +94,24 @@ public class Monitor implements Runnable {
 	}
 
 	/**
+	 * Add this extra monitoring object.
+	 * 
+	 * @param key 
+	 * @param obj
+	 */
+	void addMonitoring(final String key, final MonitoringObject obj){
+		monitoringObjects.put(key, obj);
+	}
+	
+	/**
+	 * @param key
+	 * @return the monitoring object for this key
+	 */
+	public MonitoringObject get(final String key){
+		return monitoringObjects.get(key);
+	}
+	
+	/**
 	 * Increment an access counter
 	 * 
 	 * @param counterKey
@@ -119,29 +138,30 @@ public class Monitor implements Runnable {
 	}
 	
 	/**
-	 * Add a timing measurement
+	 * Add a measurement value. This can be the time (recommended in seconds) that took a command to executed, a file size 
+	 * (in bytes) and so on.
 	 * 
 	 * @param key
-	 * @param millis
+	 * @param quantity
 	 */
-	public void addTiming(final String key, final double millis){
+	public void addMeasurement(final String key, final double quantity){
 		final MonitoringObject mo = monitoringObjects.get(key);
 
-		final Timing t;
+		final Measurement t;
 		
 		if (mo == null) {
-			t = new Timing(key);
+			t = new Measurement(key);
 			
 			monitoringObjects.put(key, t);
 		}
 		else
-		if (mo instanceof Timing){
-			t = (Timing) mo;
+		if (mo instanceof Measurement){
+			t = (Measurement) mo;
 		}
 		else
 			return ;
 		
-		t.addTiming(millis);
+		t.addMeasurement(quantity);
 	}
 
 	@Override
@@ -213,6 +233,19 @@ public class Monitor implements Runnable {
 					paramValues.add(Double.valueOf(r.param[i]));
 				}
 			}
+			else
+			if (o instanceof eResult){
+				final eResult er = (eResult) o;
+				
+				if (er.param==null)
+					continue;
+				
+				for (int i=0; i<er.param.length; i++){
+					paramNames.add(er.param_name[i]);
+					paramValues.add(er.param[i].toString());
+				}
+				
+			}
 		}
 		
 		sendParameters(paramNames, paramValues);
@@ -232,9 +265,6 @@ public class Monitor implements Runnable {
 		
 		if (apmon==null)
 			return;
-		
-		System.err.println(paramNames);
-		System.err.println(paramValues);
 		
 		try {
 			apmon.sendParameters(clusterName, nodeName, paramNames.size(), paramNames, paramValues);

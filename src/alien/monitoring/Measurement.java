@@ -9,7 +9,7 @@ import java.util.Vector;
  * @author costing
  * @since Nov 10, 2010
  */
-public class Timing implements MonitoringObject {
+public class Measurement implements MonitoringObject {
 	
 	private String name;
 	
@@ -23,25 +23,25 @@ public class Timing implements MonitoringObject {
 	/**
 	 * @param name 
 	 */
-	public Timing(final String name) {
+	public Measurement(final String name) {
 		this.name = name;
 	}
 	
 	/**
-	 * Add a timing measurement
+	 * Add a measurement
 	 * 
-	 * @param millis
+	 * @param quantity
 	 */
-	public synchronized void addTiming(final double millis){
+	public synchronized void addMeasurement(final double quantity){
 		count++;
-		sum += millis;
+		sum += quantity;
 		
 		if (count==1){
-			min = max = millis;
+			min = max = quantity;
 		}
 		else{
-			min = Math.min(min, millis);
-			max = Math.max(max, millis);
+			min = Math.min(min, quantity);
+			max = Math.max(max, quantity);
 		}
 	}
 	

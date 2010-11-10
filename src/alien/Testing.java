@@ -39,7 +39,7 @@ public class Testing {
 		Monitor m = MonitorFactory.getMonitor(Testing.class.getCanonicalName());
 		
 		for (int i=0; i<100; i++){
-			m.addTiming("timing", i);
+			m.addMeasurement("timing", i);
 			m.incrementCounter("counter");
 			
 			try {

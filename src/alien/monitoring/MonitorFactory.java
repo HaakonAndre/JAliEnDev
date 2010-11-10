@@ -244,7 +244,7 @@ public final class MonitorFactory {
 			if (apmonInstance==null){
 				final Vector<String> destinations = getApMonDestinations();
 				
-				logger.log(Level.FINE, "ApMon destinations", destinations);
+				logger.log(Level.FINE, "ApMon destinations : "+ destinations);
 				
 				try{
 					apmonInstance = new ApMon(destinations);
