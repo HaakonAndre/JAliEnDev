@@ -111,7 +111,7 @@ public class GUID implements Serializable, Comparable<GUID> {
 	 * @param host 
 	 * @param tableName 
 	 */
-	public GUID(final DBFunctions db, final int host, final int tableName){
+	GUID(final DBFunctions db, final int host, final int tableName){
 		init(db);
 		
 		this.host = host;
@@ -214,7 +214,11 @@ public class GUID implements Serializable, Comparable<GUID> {
 		final Set<PFN> ret = new LinkedHashSet<PFN>();
 		
 		while (db.moveNext()){
-			ret.add(new PFN(db, host, tableName));
+			final PFN pfn = new PFN(db, host, tableName);
+			
+			pfn.setGUID(this);
+			
+			ret.add(pfn);
 		}
 		
 		return ret;
