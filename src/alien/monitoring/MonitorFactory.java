@@ -26,15 +26,19 @@ import apmon.ApMonException;
  */
 public final class MonitorFactory {
 
+	/**
+	 * For giving incremental thread IDs
+	 */
 	static final AtomicInteger aiFactoryIndex = new AtomicInteger(0);
 	
 	private static final ThreadFactory threadFactory = new ThreadFactory() {
 		
 		@Override
 		public Thread newThread(final Runnable r) {
-			Thread t = new Thread(r);
+			final Thread t = new Thread(r);
 			
 			t.setName("alien.monitor.MonitorFactory - "+aiFactoryIndex.incrementAndGet());
+			t.setDaemon(true);
 			
 			return t;
 		}
@@ -137,16 +141,31 @@ public final class MonitorFactory {
 		return p.toVector("destinations");
 	}
 
+	/**
+	 * @return monitoring configuration
+	 */
 	static ExtProperties getConfig(){
 		return ConfigUtils.getConfiguration("monitoring");
 	}
 	
+	/**
+	 * @param component
+	 * @param key
+	 * @param defaultValue
+	 * @return the boolean value for this key
+	 */
 	static boolean getConfigBoolean(final String component, final String key, final boolean defaultValue){
 		final String sValue = getConfigString(component, key, null);
 
 		return Utils.stringToBool(sValue, defaultValue);
 	}
 	
+	/**
+	 * @param component
+	 * @param key
+	 * @param defaultValue
+	 * @return the double value for this key
+	 */
 	static double getConfigDouble(final String component, final String key, final double defaultValue){
 		final String sValue = getConfigString(component, key, null);
 		
@@ -161,6 +180,12 @@ public final class MonitorFactory {
 		}		
 	}
 	
+	/**
+	 * @param component
+	 * @param key
+	 * @param defaultValue
+	 * @return the integer value for this key
+	 */
 	static int getConfigInt(final String component, final String key, final int defaultValue){
 		final String sValue = getConfigString(component, key, null);
 		
@@ -175,6 +200,12 @@ public final class MonitorFactory {
 		}
 	}
 	
+	/**
+	 * @param component
+	 * @param key
+	 * @param defaultValue
+	 * @return the string value for this key
+	 */
 	static String getConfigString(final String component, final String key, final String defaultValue){
 		final ExtProperties prop = MonitorFactory.getConfig();
 		
@@ -200,15 +231,22 @@ public final class MonitorFactory {
 		return defaultValue;
 	}
 	
+	/**
+	 * Get the ApMon sender
+	 * 
+	 * @return the sender
+	 */
 	static ApMon getApMonSender(){
 		if (apmonInstance!=null)
 			return apmonInstance;
 		
 		synchronized (apmonLock){
 			if (apmonInstance==null){
+				final Vector<String> destinations = getApMonDestinations();
+				
+				logger.log(Level.FINE, "ApMon destinations", destinations);
+				
 				try{
-					final Vector<String> destinations = getApMonDestinations();
-						
 					apmonInstance = new ApMon(destinations);
 				}
 				catch (IOException ioe){

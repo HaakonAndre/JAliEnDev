@@ -10,6 +10,8 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import alien.se.SEUtils;
 
 /**
@@ -28,8 +30,26 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		testWhereisAndRankings();
-		testFileOperations();
+		//testWhereisAndRankings();
+		//testFileOperations();
+		testMonitoring();
+	}
+	
+	private static void testMonitoring(){
+		Monitor m = MonitorFactory.getMonitor(Testing.class.getCanonicalName());
+		
+		for (int i=0; i<100; i++){
+			m.addTiming("timing", i);
+			m.incrementCounter("counter");
+			
+			try {
+				Thread.sleep(i*2000);
+			}
+			catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	private static void testWhereisAndRankings(){

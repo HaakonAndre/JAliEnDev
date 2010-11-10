@@ -5,10 +5,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,13 +30,26 @@ public class Monitor implements Runnable {
 
 	private Collection<SchJobInt> modules;
 
+	/**
+	 * Scheduled task, so that it can be canceled later if needed
+	 */
 	ScheduledFuture<?> future = null;
 
-	private ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<String, Monitor.Counter>();
+	private ConcurrentHashMap<String, MonitoringObject> monitoringObjects = new ConcurrentHashMap<String, MonitoringObject>();
 
+	/**
+	 * MonALISA Cluster name
+	 */
 	private final String clusterName;
+	
+	/**
+	 * MonALISA Node name
+	 */
 	private final String nodeName;
 
+	/**
+	 * @param component
+	 */
 	Monitor(final String component){
 		this.component = component;
 		
@@ -70,75 +82,14 @@ public class Monitor implements Runnable {
 		nodeName = MonitorFactory.getConfigString(component, "node_name", hostName);
 	}
 
+	/**
+	 * Add MonALISA monitoring module 
+	 * 
+	 * @param module
+	 */
 	void addModule(final SchJobInt module) {
 		if (module != null)
 			modules.add(module);
-	}
-
-	/**
-	 * Access counters
-	 * 
-	 * @author costing
-	 */
-	public static final class Counter {
-		private final AtomicLong counter = new AtomicLong(0);
-
-		private long oldValue = 0;
-
-		/**
-		 * Default constructor
-		 */
-		Counter() {
-			// default constructor
-		}
-
-		/**
-		 * Increment the counter
-		 * 
-		 * @return the incremented value
-		 */
-		public long increment() {
-			long value = counter.incrementAndGet();
-
-			if (value == Long.MAX_VALUE) {
-				// reset counters when overflowing
-				value = 1;
-				counter.set(value);
-				oldValue = 0;
-			}
-
-			return value;
-		}
-
-		/**
-		 * @return current absolute value of the counter
-		 */
-		public long longValue() {
-			return counter.get();
-		}
-
-		/**
-		 * Get the increment rate in changes/second, since the last call
-		 * 
-		 * @param timeInterval interval in seconds
-		 * @return changes/second
-		 */
-		double getRate(final double timeInterval) {
-			if (timeInterval <= 0)
-				return Double.NaN;
-
-			final long value = longValue();
-
-			double ret = Double.NaN;
-
-			if (value >= oldValue) {
-				ret = (value - oldValue) / timeInterval;
-			}
-
-			oldValue = value;
-
-			return ret;
-		}
 	}
 
 	/**
@@ -148,18 +99,50 @@ public class Monitor implements Runnable {
 	 * @return the new absolute value of the counter
 	 */
 	public long incrementCounter(final String counterKey) {
-		Counter c = counters.get(counterKey);
+		final MonitoringObject mo = monitoringObjects.get(counterKey);
 
-		if (c == null) {
-			c = new Counter();
+		final Counter c;
+		
+		if (mo == null) {
+			c = new Counter(counterKey);
 
-			counters.put(counterKey, c);
+			monitoringObjects.put(counterKey, c);
 		}
-
+		else
+		if (mo instanceof Counter){
+			c = (Counter) mo;
+		}
+		else
+			return -1;
+		
 		return c.increment();
 	}
+	
+	/**
+	 * Add a timing measurement
+	 * 
+	 * @param key
+	 * @param millis
+	 */
+	public void addTiming(final String key, final double millis){
+		final MonitoringObject mo = monitoringObjects.get(key);
 
-	private long lLastTimestamp = System.currentTimeMillis();
+		final Timing t;
+		
+		if (mo == null) {
+			t = new Timing(key);
+			
+			monitoringObjects.put(key, t);
+		}
+		else
+		if (mo instanceof Timing){
+			t = (Timing) mo;
+		}
+		else
+			return ;
+		
+		t.addTiming(millis);
+	}
 
 	@Override
 	public void run() {
@@ -191,27 +174,19 @@ public class Monitor implements Runnable {
 			else
 				values.add(o);
 		}
+		
+		sendResults(values);
 
-		final Result rates = new Result();
-
-		final long lNow = System.currentTimeMillis();
-
-		final double diff = (lNow - lLastTimestamp) / 1000d;
-
-		lLastTimestamp = lNow;
-
-		for (final Map.Entry<String, Counter> me : counters.entrySet()) {
-			final double dRate = me.getValue().getRate(diff);
-
-			if (!Double.isNaN(dRate))
-				rates.addSet(me.getKey(), dRate);
+		if (monitoringObjects.size()>0){
+			final Vector<String> paramNames = new Vector<String>(monitoringObjects.size());
+			final Vector<Object> paramValues = new Vector<Object>(monitoringObjects.size());
+			
+			for (final MonitoringObject mo: monitoringObjects.values()) {
+				mo.fillValues(paramNames, paramValues);
+			}
+			
+			sendParameters(paramNames, paramValues);
 		}
-
-		if (rates.param != null && rates.param.length > 0)
-			values.add(rates);
-
-		if (values.size() > 0)
-			sendResults(values);
 	}
 
 	/**
@@ -219,7 +194,71 @@ public class Monitor implements Runnable {
 	 * 
 	 * @param values
 	 */
-	public void sendResults(final Collection<Object> values){
-		// TODO actual sending
+	public void sendResults(final Collection<Object> values){	
+		if (values==null || values.size()==0)
+			return;
+		
+		final Vector<String> paramNames = new Vector<String>();
+		final Vector<Object> paramValues = new Vector<Object>();
+		
+		for (final Object o: values){
+			if (o instanceof Result){
+				final Result r = (Result) o;
+				
+				if (r.param==null)
+					continue;
+				
+				for (int i=0; i<r.param.length; i++){
+					paramNames.add(r.param_name[i]);
+					paramValues.add(Double.valueOf(r.param[i]));
+				}
+			}
+		}
+		
+		sendParameters(paramNames, paramValues);
+	}
+	
+	/**
+	 * Send these parameters
+	 * 
+	 * @param paramNames the names
+	 * @param paramValues values associated to the names, Strings or Numbers
+	 */
+	public void sendParameters(final Vector<String> paramNames, final Vector<?> paramValues){
+		if (paramNames==null || paramNames.size()==0 || paramValues==null || paramValues.size() != paramNames.size())
+			return;
+		
+		final ApMon apmon = MonitorFactory.getApMonSender();
+		
+		if (apmon==null)
+			return;
+		
+		System.err.println(paramNames);
+		System.err.println(paramValues);
+		
+		try {
+			apmon.sendParameters(clusterName, nodeName, paramNames.size(), paramNames, paramValues);
+		}
+		catch (Throwable t) {
+			logger.log(Level.SEVERE, "Cannot send ApMon datagram", t);
+		}
+	}
+	
+	/**
+	 * Send only one parameter. This method of sending is less efficient than {@link #sendParameters(Vector, Vector)}
+	 * and so it should only be used when there is exactly one parameter to be sent.
+	 * 
+	 * @param parameterName parameter name
+	 * @param parameterValue the value, should be either a String or a Number
+	 * @see #sendParameters(Vector, Vector)
+	 */
+	public void sendParameter(final String parameterName, final Object parameterValue){
+		final Vector<String> paramNames = new Vector<String>(1);
+		paramNames.add(parameterName);
+		
+		final Vector<Object> paramValues = new Vector<Object>(1);
+		paramValues.add(parameterValue);
+		
+		sendParameters(paramNames, paramValues);
 	}
 }
