@@ -3,28 +3,42 @@ package alien.catalogue.access;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import alien.catalogue.*;
-import alien.se.*;
-import java.util.Set;
+import alien.catalogue.GUID;
+import alien.catalogue.LFN;
+import alien.catalogue.PFN;
 
 
-public class CatalogueAccess  {
+/**
+ * @author Steffen
+ * @since 2010-11-10
+ */
+public abstract class CatalogueAccess  {
 
+	/**
+	 * Access type
+	 */
 	protected String access;
+	
 	LFN lfn = null;
 	GUID guid = null;
 	Set<PFN> pfns = new LinkedHashSet<PFN>();
 	int size = 0;
 	String md5 = "";
-
-	void decorate(){
-		
+	
+	/** 
+	 * Package protected access to the constructor.
+	 * @param guid
+	 * @see AuthorizationFactory
+	 */
+	CatalogueAccess(final GUID guid){
+		this.guid = guid;
 	}
+
+	abstract void decorate();
 	
 	PFN pickPFNforAccess(){
 		return null;
 	}
-	
 	
 	private Set<XrootDEnvelope> envelopes = new LinkedHashSet<XrootDEnvelope>();
 	
@@ -62,10 +76,12 @@ public class CatalogueAccess  {
 //		return md5;
 //	}
 	
-	void addEnvelope(XrootDEnvelope envelope){
+	void addEnvelope(final XrootDEnvelope envelope){
 		envelopes.add(envelope);
+		
 		envelope.setCatalogueAccess(this);
 	}
+	
 	Set<XrootDEnvelope> getEnvelopes(){
 		return envelopes;
 	}
