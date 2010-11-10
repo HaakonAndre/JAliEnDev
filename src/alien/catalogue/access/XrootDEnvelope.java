@@ -1,10 +1,12 @@
 package alien.catalogue.access;
 
-import java.util.UUID;
+import alien.catalogue.PFN;
+import alien.se.SE;
+import alien.se.SEUtils;
 
-import alien.catalogue.*;
-import alien.se.*;
-
+/**
+ * @author Steffen
+ */
 public class XrootDEnvelope {
 
 	private String plainEnvelopeTicket;
@@ -15,25 +17,23 @@ public class XrootDEnvelope {
 	private SE se;
 	private PFN pfn;
 
-	void setCatalogueAccess(CatalogueAccess access) {
+	void setCatalogueAccess(final CatalogueAccess access) {
 		this.access = access;
 	}
 
-	XrootDEnvelope(CatalogueAccess access, PFN pfn) {
+	XrootDEnvelope(final CatalogueAccess access, final PFN pfn) {
 		this.access = access;
 		this.pfn = pfn;
 		decorate();
 	}
 
 	void decorate() {
-		// find the SE for the PFN
-		//
-		SE se; // replace by real code
-
+		se = SEUtils.getSE(pfn.seNumber);
 	}
+	
+	
 
 	private void initializeEncryptedTicket() {
-
 		plainEnvelopeTicket = "<authz>\n  <file>\n" + "    <access>"
 				+ access.access + "</access>\n" + "    <turl>" + se.seioDaemons
 				+ "/" + se.seStoragePath + access.guid.toString() + "</turl>\n"
@@ -49,6 +49,9 @@ public class XrootDEnvelope {
 	// this.ticket = ticket;
 	// }
 	String getTicket() {
+		if (plainEnvelopeTicket==null)
+			initializeEncryptedTicket();
+		
 		return plainEnvelopeTicket;
 	}
 
