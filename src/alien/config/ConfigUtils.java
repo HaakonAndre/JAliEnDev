@@ -30,18 +30,22 @@ public class ConfigUtils {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
 	
-	private static final Map<String, ExtProperties> dbConfigFiles; 
+	private static final Map<String, ExtProperties> dbConfigFiles;
+	
+	private static final Map<String, ExtProperties> otherConfigFiles;
 	
 	private static final String CONFIG_FOLDER;
 	
 	private static LoggingConfigurator logging = null;
 	
 	static {
-		CONFIG_FOLDER = System.getProperty("AlienConfig", "config");
+		CONFIG_FOLDER = System.getProperty("AliEnConfig", "config");
 		
 		final File f = new File(CONFIG_FOLDER);
 
 		final HashMap<String, ExtProperties> dbconfig = new HashMap<String, ExtProperties>();
+		
+		final HashMap<String, ExtProperties> otherconfig = new HashMap<String, ExtProperties>();
 		
 		if (f.exists() && f.isDirectory() && f.canRead()){
 			final File[] list = f.listFiles();
@@ -61,12 +65,16 @@ public class ConfigUtils {
 						if (prop.gets("driver").length()>0){
 							dbconfig.put(sName, prop);
 						}
+						else
+							otherconfig.put(sName, prop);
 					}
 				}
 			}
 		}
 		
 		dbConfigFiles = Collections.unmodifiableMap(dbconfig);
+		
+		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 		
 		if (logging == null){
 			final ExtProperties prop = new ExtProperties();
@@ -104,6 +112,16 @@ public class ConfigUtils {
 			return null;
 		
 		return new DBFunctions(p);
+	}
+	
+	/**
+	 * Get the contents of the configuration file indicated by the key
+	 * 
+	 * @param key
+	 * @return configuration contents
+	 */
+	public static final ExtProperties getConfiguration(final String key){
+		return otherConfigFiles.get(key);
 	}
 	
 	/**
