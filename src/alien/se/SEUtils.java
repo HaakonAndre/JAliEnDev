@@ -89,7 +89,7 @@ public final class SEUtils {
 	 * @param seNumber
 	 * @return the SE, if it exists, or <code>null</code> if it doesn't
 	 */
-	public SE getSE(final int seNumber){
+	public static SE getSE(final int seNumber){
 		updateSECache();
 		
 		return seCache.get(Integer.valueOf(seNumber));
