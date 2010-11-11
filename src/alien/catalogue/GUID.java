@@ -18,7 +18,7 @@ import lazyj.DBFunctions;
  * @author costing
  *
  */
-public class GUID implements Serializable, Comparable<GUID> {
+public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
 	private static final long serialVersionUID = -2625119814122149207L;
 	
 	/**
@@ -323,6 +323,46 @@ public class GUID implements Serializable, Comparable<GUID> {
 	@Override
 	public int hashCode() {
 		return guid.hashCode();
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getGroup()
+	 */
+	@Override
+	public String getGroup() {
+		return gowner;
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getName()
+	 */
+	@Override
+	public String getName() {
+		return guid.toString();
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getOwner()
+	 */
+	@Override
+	public String getOwner() {
+		return owner;
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getPermissions()
+	 */
+	@Override
+	public String getPermissions() {
+		return perm;
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getType()
+	 */
+	@Override
+	public char getType() {
+		return type;
 	}
 	
 }

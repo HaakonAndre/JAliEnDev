@@ -16,7 +16,7 @@ import lazyj.DBFunctions;
  * @author costing
  *
  */
-public class LFN implements Serializable, Comparable<LFN> {
+public class LFN implements Serializable, Comparable<LFN>, CatalogEntity {
 	
 	/**
 	 * 
@@ -359,5 +359,45 @@ public class LFN implements Serializable, Comparable<LFN> {
 			return false;
 		
 		return compareTo((LFN) obj)==0;
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getGroup()
+	 */
+	@Override
+	public String getGroup() {
+		return gowner;
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getName()
+	 */
+	@Override
+	public String getName() {
+		return lfn;
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getOwner()
+	 */
+	@Override
+	public String getOwner() {
+		return owner;
+	}
+
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getPermissions()
+	 */
+	@Override
+	public String getPermissions() {
+		return perm;
+	}
+	
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getType()
+	 */
+	@Override
+	public char getType() {
+		return type;
 	}
 }

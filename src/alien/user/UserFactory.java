@@ -39,7 +39,7 @@ public final class UserFactory {
 	public static AliEnPrincipal getByCertificate(final X509Certificate[] certChain) {
 		final String sDN = certChain[0].getSubjectDN().getName();
 		
-		return getByDN(sDN);
+		return getByDN(transformDN(sDN));
 	}
 	
 	/**
