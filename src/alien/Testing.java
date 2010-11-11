@@ -42,11 +42,15 @@ public class Testing {
 			m.addMeasurement("timing", i);
 			m.incrementCounter("counter");
 			
+			if (i%3==0)
+				m.incrementCacheHits("cache");
+			else
+				m.incrementCacheMisses("cache");
+			
 			try {
-				Thread.sleep(i*2000);
+				Thread.sleep(i*500);
 			}
 			catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

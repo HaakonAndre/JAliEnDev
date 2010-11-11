@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -24,6 +26,11 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(IndexTableEntry.class.getCanonicalName());
+
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(IndexTableEntry.class.getCanonicalName());
 	
 	/**
 	 * Index id
@@ -102,6 +109,10 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			sSearch = sSearch.substring(lfn.length());
 		
 		final DBFunctions db = getDB();
+		
+		if (monitor!=null){
+			monitor.incrementCounter("LFN_db_lookup");
+		}
 		
 		if (!db.query("SELECT * FROM L"+tableName+"L WHERE lfn='"+Format.escSQL(sSearch)+"';"))
 			return null;

@@ -163,6 +163,66 @@ public class Monitor implements Runnable {
 		
 		t.addMeasurement(quantity);
 	}
+	
+	/**
+	 * Get the CacheMonitor for this key.
+	 * 
+	 * @param key
+	 * @return the existing, or newly created, object, or <code>null</code> if a different type of object was
+	 * 		already associated to this key
+	 */
+	public CacheMonitor getCacheMonitor(final String key){
+		final MonitoringObject mo = monitoringObjects.get(key);
+
+		final CacheMonitor cm;
+		
+		if (mo == null) {
+			cm = new CacheMonitor(key);
+			
+			monitoringObjects.put(key, cm);
+		}
+		else
+		if (mo instanceof CacheMonitor){
+			cm = (CacheMonitor) mo;
+		}
+		else
+			return null;
+		
+		return cm;
+		
+	}
+	
+	/**
+	 * Increment the hit count for the given key
+	 * 
+	 * @param key
+	 * @see #incrementCacheMisses(String)
+	 * @see #getCacheMonitor(String)
+	 */
+	public void incrementCacheHits(final String key){
+		final CacheMonitor cm = getCacheMonitor(key);
+		
+		if (cm==null)
+			return;
+		
+		cm.incrementHits();
+	}
+
+	/**
+	 * Increment the misses count for the given key
+	 * 
+	 * @param key
+	 * @see #incrementCacheHits(String)
+	 * @see #getCacheMonitor(String)
+	 */
+	public void incrementCacheMisses(final String key){
+		final CacheMonitor cm = getCacheMonitor(key);
+		
+		if (cm==null)
+			return;
+		
+		cm.incrementMisses();
+	}
 
 	@Override
 	public void run() {

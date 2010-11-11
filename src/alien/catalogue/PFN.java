@@ -7,6 +7,8 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 import lazyj.DBFunctions;
 
@@ -27,6 +29,11 @@ public class PFN implements Serializable, Comparable<PFN>{
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(PFN.class.getCanonicalName());
+	
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(PFN.class.getCanonicalName());
 	
 	/**
 	 * guidID
@@ -183,6 +190,10 @@ public class PFN implements Serializable, Comparable<PFN>{
 				if (db==null)
 					return null;
 			
+				if (monitor!=null){
+					monitor.incrementCounter("GUID_db_lookup");
+				}
+				
 				db.query("SELECT * FROM G"+tableNumber+"L WHERE guidId="+guidId);
 				
 				if (db.moveNext()){

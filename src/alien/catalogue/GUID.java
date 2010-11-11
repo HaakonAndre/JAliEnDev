@@ -9,6 +9,8 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 import lazyj.DBFunctions;
 
@@ -23,6 +25,11 @@ public class GUID implements Serializable, Comparable<GUID> {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(GUID.class.getCanonicalName());
+	
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(GUID.class.getCanonicalName());
 	
 	/**
 	 * GUID id
@@ -212,6 +219,10 @@ public class GUID implements Serializable, Comparable<GUID> {
 		if (db==null)
 			return null;
 		
+		if (monitor!=null){
+			monitor.incrementCounter("PFN_db_lookup");
+		}
+		
 		final String q = "SELECT distinct guidId, pfn, seNumber FROM G"+tableName+"L_PFN WHERE guidId="+guidId; 
 
 		db.query(q);
@@ -240,28 +251,39 @@ public class GUID implements Serializable, Comparable<GUID> {
 		
 		final int tablename = GUIDUtils.getTableNameForGUID(guid);
 		
+		if (monitor!=null){
+			monitor.incrementCounter("LFNREF_db_lookup");
+		}
+		
 		db.query("SELECT distinct lfnRef FROM G"+tablename+"L_REF WHERE guidId="+guidId);
 		
 		if (!db.moveNext())
 			return null;
 		
-		final String sLFNRef = db.gets(1);
-		
-		final int idx = sLFNRef.indexOf('_');
-		
-		final int iHostID = Integer.parseInt(sLFNRef.substring(0, idx));
-		
-		final int iLFNTableIndex = Integer.parseInt(sLFNRef.substring(idx+1));
-		
-		final DBFunctions db2 = CatalogueUtils.getHost(iHostID).getDB();
-		
-		db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary('"+guid+"');");
-	
 		final Set<LFN> ret = new LinkedHashSet<LFN>();
 		
-		while (db2.moveNext()){
-			ret.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
+		do{
+			final String sLFNRef = db.gets(1);
+		
+			final int idx = sLFNRef.indexOf('_');
+		
+			final int iHostID = Integer.parseInt(sLFNRef.substring(0, idx));
+		
+			final int iLFNTableIndex = Integer.parseInt(sLFNRef.substring(idx+1));
+		
+			final DBFunctions db2 = CatalogueUtils.getHost(iHostID).getDB();
+			
+			if (monitor!=null){
+				monitor.incrementCounter("LFN_db_lookup");
+			}
+		
+			db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary('"+guid+"');");
+		
+			while (db2.moveNext()){
+				ret.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
+			}
 		}
+		while (db.moveNext());
 		
 		return ret;
 	}

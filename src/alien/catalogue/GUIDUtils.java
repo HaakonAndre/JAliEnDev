@@ -5,6 +5,8 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 /**
  * @author costing
@@ -16,6 +18,11 @@ public final class GUIDUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(GUIDUtils.class.getCanonicalName());
+	
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(GUIDUtils.class.getCanonicalName());
 	
 	/**
 	 * Get the host where this entry should be located
@@ -100,6 +107,9 @@ public final class GUIDUtils {
 		
 		if (tableName < 0)
 			return null;
+		
+		if (monitor!=null)
+			monitor.incrementCounter("GUID_db_lookup");
 		
 		db.query("SELECT * FROM G"+tableName+"L WHERE guid=string2binary('"+guid+"');");
 		

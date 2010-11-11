@@ -17,6 +17,8 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import lazyj.cache.GenericLastValuesCache;
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 /**
  * @author costing
@@ -28,6 +30,11 @@ public final class CatalogueUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
+	
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueUtils.class.getCanonicalName());
 	
 	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<Integer, Host>() {
 		private static final long serialVersionUID = 1L;
@@ -215,6 +222,9 @@ public final class CatalogueUtils {
 	 */
 	public static IndexTableEntry getClosestMatch(final String pattern){
 		updateIndexTableCache();
+		
+		if (monitor!=null)
+			monitor.incrementCounter("INDEXTABLE_lookup");
 		
 		int bestLen = 0;
 		
