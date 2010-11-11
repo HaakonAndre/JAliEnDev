@@ -15,6 +15,13 @@ import java.util.logging.Logger;
 
 import lazyj.ExtProperties;
 import lazyj.Utils;
+import lia.Monitor.modules.DiskDF;
+import lia.Monitor.modules.MemInfo;
+import lia.Monitor.modules.Netstat;
+import lia.Monitor.modules.SysInfo;
+import lia.Monitor.modules.monIPAddresses;
+import lia.Monitor.modules.monLMSensors;
+import lia.Monitor.modules.monProcIO;
 import lia.Monitor.modules.monProcLoad;
 import lia.Monitor.modules.monProcStat;
 import alien.config.ConfigUtils;
@@ -57,6 +64,14 @@ public final class MonitorFactory {
 	
 	private static final Map<String, Monitor> monitors = new HashMap<String, Monitor>();
 	
+	static {
+		if (getConfigBoolean("System", "enabled", true))
+			enableSystemMonitoring();
+		
+		if (getConfigBoolean("Self", "enabled", true))
+			enableSelfMonitoring();
+	}
+	
 	/**
 	 * Get the monitor for this component
 	 * 
@@ -94,20 +109,80 @@ public final class MonitorFactory {
 		if (systemMonitor!=null)
 			return;
 		
-		systemMonitor = getMonitor("System");
+		final String component = "System";
+		
+		systemMonitor = getMonitor(component);
+
+		try {
+			if (getConfigBoolean(component, "monProcIO", true))
+				systemMonitor.addModule(new monProcIO());
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot instantiate monProcIO", e);
+		}
 		
 		try {
-			systemMonitor.addModule(new monProcStat());
+			if (getConfigBoolean(component, "monProcStat", true))
+				systemMonitor.addModule(new monProcStat());
 		}
 		catch (Exception e) {
 			logger.log(Level.WARNING, "Cannot instantiate monProcStat", e);
 		}
 		
 		try {
-			systemMonitor.addModule(new monProcLoad());
+			if (getConfigBoolean(component, "monProcLoad", true))
+				systemMonitor.addModule(new monProcLoad());
 		}
 		catch (Exception e) {
 			logger.log(Level.WARNING, "Cannot instantiate monProcLoad", e);
+		}
+
+		try {
+			if (getConfigBoolean(component, "monIPAddresses", true))
+				systemMonitor.addModule(new monIPAddresses());
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot instantiate monIPAddresses", e);
+		}
+
+		try {
+			if (getConfigBoolean(component, "monLMSensors", true))
+				systemMonitor.addModule(new monLMSensors());
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot instantiate monLMSensors", e);
+		}
+
+		try {
+			if (getConfigBoolean(component, "DiskDF", true))
+				systemMonitor.addModule(new DiskDF());
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot instantiate DiskDF", e);
+		}
+
+		try {
+			if (getConfigBoolean(component, "MemInfo", true))
+				systemMonitor.addModule(new MemInfo());
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot instantiate MemInfo", e);
+		}
+
+		try {
+			if (getConfigBoolean(component, "Netstat", true))
+				systemMonitor.addModule(new Netstat());
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot instantiate Netstat", e);
+		}
+
+		try {
+			if (getConfigBoolean(component, "SysInfo", true))
+				systemMonitor.addModule(new SysInfo());
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Cannot instantiate SysInfo", e);
 		}
 	}
 	
