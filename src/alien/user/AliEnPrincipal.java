@@ -1,11 +1,9 @@
 package alien.user;
 
 import java.security.Principal;
-import java.util.Set;
 import java.util.HashSet;
-import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Implements java.security.Principal
@@ -14,12 +12,12 @@ import java.util.logging.Logger;
  * @since 02-04-2007
  */
 public class AliEnPrincipal implements Principal {
-	private static final Logger logger = Logger.getLogger(AliEnPrincipal.class.getCanonicalName());
-
+	private final String username;
+	
 	/**
 	 * Set of account names from LDAP that have the given DN
 	 */
-	private final Set<String> sUsernames;
+	private Set<String> sUsernames = null;
 
 	/**
 	 * Cache the roles
@@ -30,29 +28,14 @@ public class AliEnPrincipal implements Principal {
 	 * When were the roles generated
 	 */
 	private long lRolesChecked = 0;
-
+	
 	/**
 	 * building a Principal for ALICE user
 	 * 
-	 * @param dn
+	 * @param username
 	 */
-	public AliEnPrincipal(final String dn) {
-		final StringTokenizer st = new StringTokenizer(dn, ",");
-		String sNewDn = "";
-
-		while (st.hasMoreTokens()) {
-			final String sToken = st.nextToken();
-
-			sNewDn = sToken.trim() + (sNewDn.length() == 0 ? "" : "/") + sNewDn;
-		}
-
-		if (!sNewDn.startsWith("/"))
-			sNewDn = "/" + sNewDn;
-
-		this.sUsernames = LDAPHelper.checkLdapInformation("subject=" + sNewDn, "ou=People,", "uid");
-
-		if (logger.isLoggable(Level.FINE))
-			logger.fine("Usernames: '" + sUsernames + "' for DN='" + sNewDn + "'");
+	AliEnPrincipal(final String username) {
+		this.username = username;
 	}
 
 	/**
@@ -63,7 +46,19 @@ public class AliEnPrincipal implements Principal {
 	 */
 	@Override
 	public String getName() {
-		return sUsernames != null && sUsernames.size() > 0 ? sUsernames.iterator().next() : null;
+		return username;
+	}
+	
+	/**
+	 * If known, all usernames associated to a DN
+	 * 
+	 * @param names
+	 */
+	void setNames(final Set<String> names){
+		sUsernames = new LinkedHashSet<String>(names);
+		
+		if (!sUsernames.contains(username))
+			sUsernames.add(username);
 	}
 
 	/**
@@ -72,12 +67,17 @@ public class AliEnPrincipal implements Principal {
 	 * @return set of account names that have the DN
 	 */
 	public Set<String> getNames() {
+		if (sUsernames==null){
+			sUsernames = new LinkedHashSet<String>();
+			sUsernames.add(username);
+		}
+		
 		return sUsernames;
 	}
 
 	@Override
 	public String toString() {
-		return sUsernames.toString();
+		return getNames().toString();
 	}
 
 	/**
@@ -91,7 +91,7 @@ public class AliEnPrincipal implements Principal {
 
 		final Set<String> ret = new HashSet<String>();
 
-		for (String sUsername : sUsernames) {
+		for (String sUsername : getNames()) {
 			final Set<String> sRoles = LDAPHelper.checkLdapInformation("users=" + sUsername, "ou=Roles,", "uid");
 
 			if (sRoles != null)

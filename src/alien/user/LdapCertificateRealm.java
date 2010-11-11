@@ -28,7 +28,7 @@ public class LdapCertificateRealm extends RealmBase {
 		if (logger.isLoggable(Level.FINE))
 			logger.fine("Request DN : "+sDN);
 		
-		return new AliEnPrincipal(sDN);
+		return UserFactory.getByDN(UserFactory.transformDN(sDN)); 
 	}
 
 	/**
