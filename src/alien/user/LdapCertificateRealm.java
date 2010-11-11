@@ -15,7 +15,7 @@ import org.apache.catalina.realm.RealmBase;
  * @since 02-04-2007
  * */
 public class LdapCertificateRealm extends RealmBase {
-	private static final Logger	logger	= Logger.getLogger("auth.LdapCertificateRealm");
+	private static final Logger	logger	= Logger.getLogger(LdapCertificateRealm.class.getCanonicalName());
 	
 	/**
 	 * @param certChain Certificate chain

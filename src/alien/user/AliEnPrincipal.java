@@ -14,7 +14,7 @@ import java.util.logging.Logger;
  * @since 02-04-2007
  */
 public class AliEnPrincipal implements Principal {
-	private static final Logger logger = Logger.getLogger("auth.AlicePrincipal");
+	private static final Logger logger = Logger.getLogger(AliEnPrincipal.class.getCanonicalName());
 
 	/**
 	 * Set of account names from LDAP that have the given DN
