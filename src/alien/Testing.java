@@ -30,15 +30,19 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		//testWhereisAndRankings();
-		//testFileOperations();
 		testMonitoring();
 	}
 	
 	private static void testMonitoring(){
+		MonitorFactory.enableSystemMonitoring();
+		MonitorFactory.enableSelfMonitoring();
+		
 		Monitor m = MonitorFactory.getMonitor(Testing.class.getCanonicalName());
 		
 		for (int i=0; i<100; i++){
+			testWhereisAndRankings();
+			testFileOperations();
+			
 			m.addMeasurement("timing", i);
 			m.incrementCounter("counter");
 			

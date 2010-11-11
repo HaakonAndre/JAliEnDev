@@ -220,6 +220,9 @@ public final class MonitorFactory {
 			if (sValue!=null)
 				return sValue;
 			
+			if (comp.length()==0)
+				break;
+			
 			final int idx = comp.lastIndexOf('.');
 			
 			if (idx>=0)
