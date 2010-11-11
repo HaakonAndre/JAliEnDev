@@ -38,6 +38,8 @@ public class ConfigUtils {
 	
 	private static LoggingConfigurator logging = null;
 	
+	private static final ExtProperties appConfig;
+	
 	static {
 		CONFIG_FOLDER = System.getProperty("AliEnConfig", "config");
 		
@@ -46,6 +48,8 @@ public class ConfigUtils {
 		final HashMap<String, ExtProperties> dbconfig = new HashMap<String, ExtProperties>();
 		
 		final HashMap<String, ExtProperties> otherconfig = new HashMap<String, ExtProperties>();
+		
+		ExtProperties applicationConfig = null;
 		
 		if (f.exists() && f.isDirectory() && f.canRead()){
 			final File[] list = f.listFiles();
@@ -57,9 +61,15 @@ public class ConfigUtils {
 						sName = sName.substring(0, sName.lastIndexOf('.'));
 						
 						final ExtProperties prop = new ExtProperties(CONFIG_FOLDER, sName);
+						prop.makeReadOnly();
+						prop.setAutoReload(1000*60);
 						
 						if (sName.equals("logging")){
 							logging = new LoggingConfigurator(prop);
+						}
+						else
+						if (sName.equals("config")){
+							applicationConfig = prop;
 						}
 						else
 						if (prop.gets("driver").length()>0){
@@ -75,6 +85,9 @@ public class ConfigUtils {
 		dbConfigFiles = Collections.unmodifiableMap(dbconfig);
 		
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
+		
+		appConfig = applicationConfig!=null ? applicationConfig : new ExtProperties();
+		appConfig.makeReadOnly();
 		
 		if (logging == null){
 			final ExtProperties prop = new ExtProperties();
@@ -112,6 +125,15 @@ public class ConfigUtils {
 			return null;
 		
 		return new DBFunctions(p);
+	}
+	
+	/**
+	 * Get the global application configuration
+	 * 
+	 * @return application configuration
+	 */
+	public static final ExtProperties getConfig(){
+		return appConfig;
 	}
 	
 	/**

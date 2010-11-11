@@ -1,0 +1,161 @@
+package alien.user;
+
+import java.util.Hashtable;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attributes;
+import javax.naming.directory.BasicAttribute;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
+
+import lazyj.cache.ExpirationCache;
+import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
+
+/***
+ * operations with LDAP informations
+ * @author Alina Grigoras
+ * @since 02-04-2007
+ * */
+public class LDAPHelper {
+	private static final Logger	logger	= Logger.getLogger(LDAPHelper.class.getCanonicalName());
+	
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(LDAPHelper.class.getCanonicalName());
+	
+	/**
+	 * For statistics, get the number of cached query results
+	 * 
+	 * @return number of cached queries
+	 */
+	public int getCacheSize(){
+		return cache.size();
+	}
+	
+	private static String ldapServer = ConfigUtils.getConfig().gets("ldap_server");
+	
+	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root");
+	
+	private static final ExpirationCache<String, TreeSet<String>> cache = new ExpirationCache<String, TreeSet<String>>(1000);
+	
+	/**
+	 * @param sParam - search query
+	 * @param sRootExt - subpath
+	 * @param sKey - key to extract
+	 * @return Set of result from the query
+	 */
+	public static final Set<String> checkLdapInformation(final String sParam, final String sRootExt, final String sKey){
+		final String sCacheKey = sParam +"\n" + sRootExt + "\n" + sKey;
+		
+		TreeSet<String> tsResult = cache.get(sCacheKey);
+		
+		if (tsResult!=null){
+			if (monitor!=null)
+				monitor.incrementCacheHits("querycache");
+			
+			return tsResult;
+		}
+
+		if (monitor!=null)
+			monitor.incrementCacheMisses("querycache");
+		
+		tsResult = new TreeSet<String>();
+
+		try {
+			final String dirRoot = sRootExt+ldapRoot;
+
+			final Hashtable<String, String> env = new Hashtable<String, String>();
+			env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+			env.put(Context.PROVIDER_URL, "ldap://"+ldapServer+"/" + dirRoot);
+
+			final DirContext context = new InitialDirContext(env);
+
+			final SearchControls ctrl = new SearchControls();
+			ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+			final NamingEnumeration<SearchResult> enumeration = context.search("", sParam, ctrl);
+
+			while (enumeration.hasMore()) {
+				final SearchResult result = enumeration.next();
+
+				final Attributes attribs = result.getAttributes();
+
+				if (attribs==null)
+				    continue;
+
+				final BasicAttribute ba = (BasicAttribute) attribs.get(sKey);
+
+				if (ba==null)
+				    continue;
+
+				final NamingEnumeration<?> values = ba.getAll();
+				
+				if (values==null)
+				    continue;
+				
+				while (values.hasMoreElements()){
+					final String s = values.nextElement().toString();
+					tsResult.add(s);
+				}
+
+			}
+			
+			cache.put(sCacheKey, tsResult, 1000*60*15);
+		}
+		catch (NamingException ne) {    
+			if (logger.isLoggable(Level.FINE))
+			    logger.log(Level.WARNING, "Exception executing the LDAP query ('"+sParam+"', '"+sRootExt+"', '"+sKey+"')", ne);
+			else
+			    logger.log(Level.WARNING, "Exception executing the LDAP query ('"+sParam+"', '"+sRootExt+"', '"+sKey+"'): "+ne+" ("+ne.getMessage()+")");
+		}
+		
+		if (logger.isLoggable(Level.FINEST))
+			logger.fine("Query was:\nparam: "+sParam+"\nroot extension: "+sRootExt+"\nkey: "+sKey+"\nresult:\n"+tsResult);
+
+		return tsResult;
+	}
+	
+	/**
+	 * Debug method
+	 * 
+	 * @param args
+	 */
+	public static void main(final String[] args){
+		System.out.println(checkLdapInformation(
+		    "uid=gconesab",
+		    "ou=People,",
+		    "email"
+		));
+	
+		System.out.println(checkLdapInformation(
+				"subject=/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=agrigora/CN=659434/CN=Alina Gabriela Grigoras",
+				"ou=People,",
+				"uid"
+		));
+		
+		System.out.println(" 1 "+ checkLdapInformation("users=peters", "ou=Roles,", "uid"));
+		
+		try{ Thread.sleep(1000); } catch (Exception e) { /* nothing */ }
+		
+		System.out.println(" 2 "+ checkLdapInformation("users=peters", "ou=Roles,", "uid"));
+		
+		try{ Thread.sleep(1000); } catch (Exception e) { /* nothing */ }
+		
+		System.out.println(" 3 "+ checkLdapInformation("users=peters", "ou=Roles,", "uid"));
+		
+		try{ Thread.sleep(1000); } catch (Exception e) { /* nothing */ }
+		
+		System.out.println(" 4 "+ checkLdapInformation("users=peters", "ou=Roles,", "uid"));	
+	}
+}

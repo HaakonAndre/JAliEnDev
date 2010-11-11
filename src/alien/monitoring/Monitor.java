@@ -223,6 +223,11 @@ public class Monitor implements Runnable {
 		
 		cm.incrementMisses();
 	}
+	
+	@Override
+	protected void finalize() throws Throwable {
+		run();
+	}
 
 	@Override
 	public void run() {
