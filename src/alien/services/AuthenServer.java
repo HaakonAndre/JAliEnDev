@@ -15,10 +15,11 @@ import java.security.spec.PKCS8EncodedKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import alien.catalogue.access.XrootDEnvelope;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 
 /**
- * @author Steffen
+ * @author ron
  * @since Nov 9, 2010
  */
 public class AuthenServer {
@@ -151,6 +152,18 @@ public class AuthenServer {
 		
 		System.err.println(nix);
 	}
+	
+	
+	
+	public XrootDEnvelope[] createEnvelopePerlAliEnV218(String P_user,String P_access,String P_options,String P_lfn,int size,String P_guid,String[] ses,String[] exxSes,int sesel,String P_qos,int qosCount,String P_sitename) {
+
+		
+		
+		XrootDEnvelope[] envelopes = null;
+		
+		return envelopes;
+	}
+	
 
 	/**
 	 * Create envelope
@@ -404,39 +417,3 @@ public class AuthenServer {
 
 	}
 }
-
-// package alien;
-//
-// import java.security.*;
-//
-// public class AuthenServer {
-//
-// public String[] createEnvelope(String user, String egal, String envreq,
-// String lfn, String staticSEs, String size, String noSEs,
-// String guid, String site, String qos, String qosCount) {
-// String backer = "";
-//
-// // for (int i = 0; i < celsius.length; i++) {
-// //
-// // try {
-// // System.out.println("getting" + celsius[i]);
-// // backer += ",";
-// // backer += celsius[i];
-// //
-// // } catch (java.lang.ArrayIndexOutOfBoundsException iob) {
-// // break;
-// // }
-// // }
-// System.out.println("i got: user: " + user + ", envreq: " + envreq
-// + ", lfn: " + lfn + ",staticSEs: " + staticSEs);
-//
-// // System.out.println("i got:" + envparameters[1]);
-//
-// String[] alles = { user, envreq, lfn };
-// int asdf = 5;
-// System.out.println("i got:" + backer);
-//
-// return alles;
-// }
-//
-// }
