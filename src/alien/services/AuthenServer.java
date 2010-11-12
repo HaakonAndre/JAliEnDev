@@ -12,6 +12,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Set;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -155,7 +156,7 @@ public class AuthenServer {
 	
 	
 	
-	public XrootDEnvelope[] createEnvelopePerlAliEnV218(String P_user,String P_access,String P_options,String P_lfn,int size,String P_guid,String[] ses,String[] exxSes,int sesel,String P_qos,int qosCount,String P_sitename) {
+	public XrootDEnvelope[] createEnvelopePerlAliEnV218(String P_user,String P_access,String P_options,String P_lfn,int size,String P_guid,Set<String> ses, Set<String> exxSes,int sesel,String P_qos,int qosCount,String P_sitename) {
 
 		
 		

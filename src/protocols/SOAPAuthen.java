@@ -1,8 +1,11 @@
 package protocols;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import alien.services.AuthenServer;
@@ -108,7 +111,7 @@ public class SOAPAuthen {
 			return replySOAPerrorMessage_access_eof("No LFN provided");
 
 		P_staticSEs = ensureStringInitialized(P_staticSEs);
-		String[] ses = initializeSElist(P_staticSEs);
+		Set<String> ses = initializeSElist(P_staticSEs);
 
 		P_size = ensureStringInitialized(P_size);
 		int size = Integer.valueOf(P_size).intValue(); // here we still need to
@@ -124,7 +127,7 @@ public class SOAPAuthen {
 																// "" becomes 0
 			P_sesel_noSEs = "";
 		}
-		String[] exxSes = initializeSElist(P_sesel_noSEs);
+		Set<String> exxSes = initializeSElist(P_sesel_noSEs);
 
 		P_guid = ensureStringInitialized(P_guid);
 
@@ -181,8 +184,6 @@ public class SOAPAuthen {
 	 * create a proper PerlAliEN-SOAP reply structure containing an error
 	 * message
 	 * 
-	 * @param <String>
-	 * @param <String>
 	 * @param message
 	 */
 	private Map<String, String>[] replySOAPerrorMessage_access_eof(
@@ -197,6 +198,9 @@ public class SOAPAuthen {
 		return returnAll;
 	}
 
+
+	private static final Pattern SE_NAME = Pattern.compile("^[0-9a-zA-Z_\\-]+(::[0-9a-zA-Z_\\-]+){2}$");
+
 	/**
 	 * 
 	 * initialize an array from the SE String "se1;se2;se3" containing only the
@@ -205,37 +209,24 @@ public class SOAPAuthen {
 	 * @param sestring
 	 * @return array of valid SE names as Strings
 	 */
-	private String[] initializeSElist(String sestring) {
+	private Set<String> initializeSElist(final String sestring) {
 
-		String[] ses = sestring.split(";");
-		String[] seList = new String[ses.length];
-
-		for (int i = 0; i < ses.length; i++) {
-			if (isValidSEName(ses[i]))
-				seList[i] = ses[i];
+		final StringTokenizer st = new StringTokenizer(sestring, ";,");
+		
+		final Set<String> ret = new HashSet<String>();
+		
+		while (st.hasMoreTokens()){
+			final String se = st.nextToken();
+			
+			final Matcher m = SE_NAME.matcher(se);
+			
+			if (m.matches())
+				ret.add(se);
 		}
-		return seList;
-	}
 
-	/**
-	 * 
-	 * check if the string contains a valid SE name
-	 * 
-	 * @param se
-	 * @return yesORno
-	 */
-	private boolean isValidSEName(String se) {
-		String[] tags = se.split("::");
-		if (tags.length != 3)
-			return false;
-		for (String tag : tags) {
-			if (!Pattern.matches("^[0-9a-zA-Z_\\-]+$", tag)) {
-				return false;
-			}
-		}
-		return true;
+		return ret;
 	}
-
+	
 	/**
 	 * 
 	 * check if the string contains a valid GUID
