@@ -338,8 +338,11 @@ public class Monitor implements Runnable {
 	 * @param paramValues values associated to the names, Strings or Numbers
 	 */
 	public void sendParameters(final Vector<String> paramNames, final Vector<?> paramValues){
-		if (paramNames==null || paramNames.size()==0 || paramValues==null || paramValues.size() != paramNames.size()){
-			logger.log(Level.WARNING, "Not sending the values because:\nparamNames="+paramNames+"\nparamValues="+paramValues);
+		if (paramNames==null || paramValues==null || (paramNames.size()==0 && paramValues.size()==0))
+			return;
+		
+		if (paramValues.size() != paramNames.size()){
+			logger.log(Level.WARNING, "The names and the values arrays have different sizes ("+paramNames.size()+" vs "+paramValues.size()+")");
 			return;
 		}
 		
