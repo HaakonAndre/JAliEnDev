@@ -1,5 +1,8 @@
 package alien.catalogue.access;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
@@ -12,6 +15,15 @@ public class XrootDEnvelope {
 	private String plainEnvelopeTicket;
 	private String encryptedEnvelope;
 	private String signedEnvelope;
+
+	private String envAccess;
+	private String envLFN;
+	private String envGUID;
+	private String envPFN;
+	private String envSize;
+	private String envMD5;
+	private String envTURL;
+	private String envSE;
 
 	private CatalogueAccess access;
 	private SE se;
@@ -30,10 +42,19 @@ public class XrootDEnvelope {
 	void decorate() {
 		se = SEUtils.getSE(pfn.seNumber);
 	}
-	
-	
 
 	private void initializeEncryptedTicket() {
+
+		envAccess = access.access;
+		envTURL = se.seioDaemons + se.seStoragePath + access.guid.toString();
+		envPFN = se.seStoragePath + access.guid.toString();
+		envLFN = access.lfn.toString();
+		envSize = Long.toString(access.lfn.size);
+		envGUID = access.guid.toString();
+		envSE = se.seName;
+		envGUID = access.guid.toString();
+		envMD5 = access.lfn.md5;
+
 		plainEnvelopeTicket = "<authz>\n  <file>\n" + "    <access>"
 				+ access.access + "</access>\n" + "    <turl>" + se.seioDaemons
 				+ "/" + se.seStoragePath + access.guid.toString() + "</turl>\n"
@@ -49,9 +70,9 @@ public class XrootDEnvelope {
 	// this.ticket = ticket;
 	// }
 	String getTicket() {
-		if (plainEnvelopeTicket==null)
+		if (plainEnvelopeTicket == null)
 			initializeEncryptedTicket();
-		
+
 		return plainEnvelopeTicket;
 	}
 
@@ -67,5 +88,21 @@ public class XrootDEnvelope {
 	// }
 	String getSignedEnvelope() {
 		return signedEnvelope;
+	}
+	
+	public Map<String, String> getPerlEnvelopeTicket(){
+		
+		Map<String, String> envelope = new HashMap<String, String>();
+		envelope.put("access",envAccess);
+		envelope.put("lfn", envLFN);
+		envelope.put("guid",envGUID );
+		envelope.put("pfn", envPFN);
+		envelope.put("turl",envTURL );
+		envelope.put("size",envSize );
+		envelope.put("md5", envMD5);
+		envelope.put("signedenvelope", signedEnvelope);
+		envelope.put("envelope", encryptedEnvelope);
+
+		return envelope;
 	}
 }
