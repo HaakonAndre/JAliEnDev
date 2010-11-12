@@ -29,7 +29,9 @@ import java.util.UUID;
  * and Peters.
  * 
  * 
- * @author Martin Radicke
+ * @author Martin Radicke (original)
+ * 
+ * rewritten and added with encryption functionality by ron as of Nov 9, 2010
  * 
  */
 public class Envelope {
@@ -228,7 +230,6 @@ public class Envelope {
 	private String creationDate;
 
 	// expire date
-	@SuppressWarnings("unused")
 	private Date expireDate;
 
 	// UNIX timestamp specifying when envelope expires
@@ -252,9 +253,9 @@ public class Envelope {
 	private void initializeEnvelope(String envelopein, int expireAfter,
 			String certificateString) {
 
-		cipheralgorithm = "Blowfish";
-//		creator = "AuthenX";
-		creator = "CatService@ALIEN";
+//		cipheralgorithm = "Blowfish";
+		creator = "AuthenX";
+//		creator = "CatService@ALIEN";
 		created = System.currentTimeMillis()/1000L;
 		Date creation = new Date(created*1000);
 		DateFormat indfm = new SimpleDateFormat("EEE MMM  d HH:mm:ss yyyy");
@@ -281,9 +282,9 @@ public class Envelope {
 		lEnvelope += "UNIXTIME:    " + created + "\n";
 		lEnvelope += "DATE:        " + creationDate + "\n";
 //		Mon Nov  8 03:01:00 2010
-//		lEnvelope += "EXPIRES:     " + expires + "\n";
+		lEnvelope += "EXPIRES:     " + expires + "\n";
 		lEnvelope += "EXPIRES:     0\n";
-//		lEnvelope += "EXPDATE:     " + expireDate + "\n";
+		lEnvelope += "EXPDATE:     " + expireDate + "\n";
 		lEnvelope += "EXPDATE:     never\n";
 		lEnvelope += "CERTIFICATE: " + certificate + "\n";
 		lEnvelope += BODY_START + "\n";
