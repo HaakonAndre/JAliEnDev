@@ -13,6 +13,9 @@ import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SEUtils;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
+import alien.user.UserFactory;
 
 /**
  * Testing stuff
@@ -33,11 +36,8 @@ public class Testing {
 		testMonitoring();
 	}
 	
-	private static void testMonitoring(){
-		MonitorFactory.enableSystemMonitoring();
-		MonitorFactory.enableSelfMonitoring();
-		
-		Monitor m = MonitorFactory.getMonitor(Testing.class.getCanonicalName());
+	private static void testMonitoring(){	
+		final Monitor m = MonitorFactory.getMonitor(Testing.class.getCanonicalName());
 		
 		for (int i=0; i<100; i++){
 			testWhereisAndRankings();
@@ -62,6 +62,18 @@ public class Testing {
 	
 	private static void testWhereisAndRankings(){
 		LFN lfn = LFNUtils.getLFN("/alice/data/2010/LHC10e/000130848/ESDs/pass1/AOD019/0001/AliAOD.Dielectron.root");
+		
+		AliEnPrincipal user = UserFactory.getByUsername("grigoras");
+		
+		System.err.println(user+" can read "+lfn.getName()+" : "+AuthorizationChecker.canRead(lfn, user));
+		System.err.println(user+" can write "+lfn.getName()+" : "+AuthorizationChecker.canWrite(lfn, user));
+		System.err.println(user+" can execute "+lfn.getName()+" : "+AuthorizationChecker.canExecute(lfn, user));
+
+		user = UserFactory.getByUsername("agrigora");
+		
+		System.err.println(user+" can read "+lfn.getName()+" : "+AuthorizationChecker.canRead(lfn, user));
+		System.err.println(user+" can write "+lfn.getName()+" : "+AuthorizationChecker.canWrite(lfn, user));
+		System.err.println(user+" can execute "+lfn.getName()+" : "+AuthorizationChecker.canExecute(lfn, user));
 		
 		System.err.println(lfn);
 		System.err.println("");
