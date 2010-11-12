@@ -91,6 +91,24 @@ public class Monitor implements Runnable {
 	}
 
 	/**
+	 * Get the ML cluster name
+	 * 
+	 * @return cluster name
+	 */
+	String getClusterName(){
+		return clusterName;
+	}
+	
+	/**
+	 * Get the ML node name
+	 * 
+	 * @return node name
+	 */
+	String getNodeName(){
+		return nodeName;
+	}
+	
+	/**
 	 * Add MonALISA monitoring module 
 	 * 
 	 * @param module
