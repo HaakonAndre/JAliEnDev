@@ -13,23 +13,19 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Set;
-
-import lia.util.UUID;
+import java.util.UUID;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.catalogue.CatalogEntity;
-import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
-import alien.catalogue.PFN;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 import alien.user.AliEnPrincipal;
-import alien.user.AuthorizationChecker;
 import alien.user.UserFactory;
 
 /**
