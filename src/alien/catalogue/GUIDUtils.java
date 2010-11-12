@@ -119,4 +119,23 @@ public final class GUIDUtils {
 		return null;
 	}
 	
+	
+	/**
+	 * 
+	 * check if the string contains a valid GUID
+	 * 
+	 * @param guid
+	 * @return yesORno
+	 */
+	public static boolean isValidGUID(String guid) {
+		
+		try{
+		 UUID.fromString(guid);
+		 return true;
+		}
+		catch(Exception e){
+		return false;
+		}
+	}
+	
 }

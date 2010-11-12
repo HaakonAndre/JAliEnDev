@@ -14,10 +14,23 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Set;
 
+import lia.util.UUID;
+
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import alien.catalogue.CatalogEntity;
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
+import alien.catalogue.PFN;
+import alien.catalogue.access.AuthorizationFactory;
+import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -30,117 +43,119 @@ public class AuthenServer {
 	private RSAPrivateKey SEPrivKey;
 	private RSAPublicKey SEPubKey;
 
-	
 	@SuppressWarnings("unused")
 	private String verificationEnvelope = "-----BEGIN SEALED CIPHER-----\n"
-	+ "Amkq4hz7cJBtP4SxPyk-8d7OGPokdSewpfqwwIbilH1PfH7hAY7pnVXTLDd1E00+4uNsbwh81Rog\n"
-	+ "oMB4FtTb3ccjqQ9bsQ0fAcXXGboSG1fu-Trk1dg-3os35tjsMcNMEg662qMcdtOLSxCIOsQs5HJP\n"
-	+ "G+DvvH6GL-0xqw3veko=\n"
-	+ "-----END SEALED CIPHER-----\n"
-	+ "-----BEGIN SEALED ENVELOPE-----\n"
-	+ "AAAAgF0cAcKEjcklYmCWQlL+L5nIRS-qBZfShf2X5zbnB4atPhl7RRQBWOhJn1oXcjoNMYtiC0RP\n"
-	+ "raA+oetWr04-C2lkcJkIyI4yO70vBIDF4W-JuR33o9xVA7tVVG6cKyVsOfw5GygJNFBkNrtt8XVx\n"
-	+ "R8L79guHNUUvni0GNZvNrok2KjkmCR+2c9ZQsSdoOk1hIrfd0E71VJsHOa0a0U925aUZOX6ETFt-\n"
-	+ "rh+qfHHJiULAHk9sl-oTvpWYLgyCN0+2ImT9r5R+GpF0e+PiZu9h3kFDuE6N4UTigOI78+hv0daH\n"
-	+ "QuAbEG6-k0QX0UTqE5X45lBAVAx75ddh3xGERywhYqWywwGxSWENjTQ+L9+xMi19CTDWlkuRxmzE\n"
-	+ "kJKN6fxX4mheov64wwDm-e5CiKJIoKYoWxqrMXdI6FyJhL5wuA0jAUzSaVg3y3mGE2CT-mGDEx0E\n"
-	+ "gpho5cT56FWLaBmXlmsJxpVgIvK7Vkf8N4kgibRVkng59gbFnIQkWsUjGNyDqxZRSKJhFj3DR+fP\n"
-	+ "BzxQM5iTPuZxSeUxzAXE5Df9NFV8eeN8W9reXwUJqfl7xbwNI-AAfcRgFAeC9He2y8O15SlkgEog\n"
-	+ "hmOepWKTIfJ8Ei6MKYFZ2DkQh3QCfZ8HPVG3lsI1+1xQBYoOjhPuMk70o2OABO1z56a1EuGTWBS9\n"
-	+ "eUGu-2bJqTbQND5NzQRUzdae9QwfE0F9OsoX5NSg+dYGEHGEjerHN4kNvvBGAj6gVYbieFOdmzm5\n"
-	+ "gNgU+BzVI1yhHmj+maSgmO3RPNePeV5Gn254jCFOhhYzK0CZ8DLLCFja-IiT2NDTrujWo9vXSyt2\n"
-	+ "0TiCaue4IjwbaNzHrp9lR+5ntyg-riU-RIU6d1rNQkjI1nuA4B7vRBySdEykPLtZr1nVN-nwjz2u\n"
-	+ "BhizYsJevVg6-lt+RB29DJdVqjQA-Y5jvRqxaOCIL87RDBp1jZTCBQO-BF4AuDxN-gcvTXMcsc-t\n"
-	+ "JHn3Kaep6d7kq8eTHf-sGQcMc97tUg7Xvu2Wg6sTk5B5W+0npIfn6gElKLogxamThF2+XweZvWOc\n"
-	+ "Y2hfLARZB6Mp4cDe6xcpQm-k-CFxqsyHAiuB-Hyy\n"
-	+ "-----END SEALED ENVELOPE-----\n";
-	
-//	private String verificationEnvelope2 = "-----BEGIN SEALED CIPHER-----\n"
-//	+ "qZqt5uMTSFSUYQBbgVllT+0XQxZatiS-NS2UaOSp2AL2M3voA0kEwumVcLHcBX7rOxsUckC3Xn66\n"
-//	+ "QKWMRgFlUJpeZopoMt2LGdoNvBMaA60pqZeFx9e7-C91N2mX1Y1PH0Zia5bCckxi+XFF9JzKIctr\n"
-//	+ "WRa53VV5XRQ9N74EqTg=\n"
-//	+ "-----END SEALED CIPHER-----\n"
-//	+ "-----BEGIN SEALED ENVELOPE-----\n"
-//	+ "AAAAgEk2PCx6I+BfJTFWNM2UKcTneHij6xCh3I8Ktrcnr4IIBw-5sBn8p1rc8gQ9YFBVndvQ5jFA\n"
-//	+ "qq9M8fHcI9En657g56xN8FAqyeHZbwgocDAExCvuLrZtOMIVI5qDnEHKTXfv99Jl3VqeIaHEbtCx\n"
-//	+ "T+m3IZS90ILPh2RDWZOW-iNSh4k-ebrtTYpB32jfXR3wEeXo+m5drUxW2c3ZmSU8V8Cv7Me2i2aF\n"
-//	+ "CQSDwAgrSIDSKCEsnYu7L5-ZxNymJ1PGavbgWGYhyCq7KDDq4SkJFl2fAfEVlRYtxvX-A-1HYJ5v\n"
-//	+ "s31Za1vIhAYU6CROoRE7rcXQBAETphC+bpolHmWazoMdTAC6ycTdRmtoHLmGQvZc+hzAXLNq8YU8\n"
-//	+ "wN-YUnYHNmdohFm4ga7j+AUx40Re9fdZcow3D4lutBRqAYPA9wAk7yoFRSYZcqEY2K577vnxMLWr\n"
-//	+ "yq3WP1Xdzbk7PpTzzsvcK0Kyj7Xm4zhz3s5fzJ8RUHKOgXvqJ34P3F0kVGJaaa0OdJ41A44bgJN4\n"
-//	+ "f4fkjewpS5-uuJQ4tGHr+GUoyFZf2l7l2NWmSZc4xPZZbmHpr6q882xHpBLfN22DjeUjnmfI8aD9\n"
-//	+ "BrHaut3RmlS4UkSlC4qNVMijwf1Js-VDo5S4GYlh6YwgWsFCO5M6v8D8Y8tAcwwGHKMCXg6rYv36\n"
-//	+ "GLY-h1SmOWvMltxLKrVxJdMBG-LCtAN2yXS01EqhNBATzWu7R8pKM3gFYpPdG9nW7jL-AbrqRqMc\n"
-//	+ "8KNM6xJY1Is0bv+9KMqfWIJC0yyVx8xGjmZ45MfPJndA-mGwrceNXXT2PlvFuNENI2ffTHq1g7wr\n"
-//	+ "+VdI0LL3T4efmH1UIdlpi5rjYq6hPhVhvTTQHv3ZktZYmtDO89IdljHKFjhE3KUZr-d0+GRG394p\n"
-//	+ "caEANTGSRIvdLhDJQbDFm2ISuT+3VNKJCTQZLoPt3Hee0z4EFepVA6ReDZDQjDHAHK+TfS4qiOJy\n"
-//	+ "hrz1-xwixg+F6MuWoLhD2Am4xLeaxhjjB-KiKLNfjuh63xHjUPpbyJncOKt82X81lt-dNWP48Y7M\n"
-//	+ "mIzk90CAQxANceEOjvnsqxXmPE0Znp1SFm1b5MVYEE1yDa0q1Iu+TIk451vvuPFRzSXpc7vSlN+v\n"
-//	+ "ZvqWHv5Zp0fHKsCVf0lAPulRbaSb\n"
-//	+ "-----END SEALED ENVELOPE-----\n";
+			+ "Amkq4hz7cJBtP4SxPyk-8d7OGPokdSewpfqwwIbilH1PfH7hAY7pnVXTLDd1E00+4uNsbwh81Rog\n"
+			+ "oMB4FtTb3ccjqQ9bsQ0fAcXXGboSG1fu-Trk1dg-3os35tjsMcNMEg662qMcdtOLSxCIOsQs5HJP\n"
+			+ "G+DvvH6GL-0xqw3veko=\n"
+			+ "-----END SEALED CIPHER-----\n"
+			+ "-----BEGIN SEALED ENVELOPE-----\n"
+			+ "AAAAgF0cAcKEjcklYmCWQlL+L5nIRS-qBZfShf2X5zbnB4atPhl7RRQBWOhJn1oXcjoNMYtiC0RP\n"
+			+ "raA+oetWr04-C2lkcJkIyI4yO70vBIDF4W-JuR33o9xVA7tVVG6cKyVsOfw5GygJNFBkNrtt8XVx\n"
+			+ "R8L79guHNUUvni0GNZvNrok2KjkmCR+2c9ZQsSdoOk1hIrfd0E71VJsHOa0a0U925aUZOX6ETFt-\n"
+			+ "rh+qfHHJiULAHk9sl-oTvpWYLgyCN0+2ImT9r5R+GpF0e+PiZu9h3kFDuE6N4UTigOI78+hv0daH\n"
+			+ "QuAbEG6-k0QX0UTqE5X45lBAVAx75ddh3xGERywhYqWywwGxSWENjTQ+L9+xMi19CTDWlkuRxmzE\n"
+			+ "kJKN6fxX4mheov64wwDm-e5CiKJIoKYoWxqrMXdI6FyJhL5wuA0jAUzSaVg3y3mGE2CT-mGDEx0E\n"
+			+ "gpho5cT56FWLaBmXlmsJxpVgIvK7Vkf8N4kgibRVkng59gbFnIQkWsUjGNyDqxZRSKJhFj3DR+fP\n"
+			+ "BzxQM5iTPuZxSeUxzAXE5Df9NFV8eeN8W9reXwUJqfl7xbwNI-AAfcRgFAeC9He2y8O15SlkgEog\n"
+			+ "hmOepWKTIfJ8Ei6MKYFZ2DkQh3QCfZ8HPVG3lsI1+1xQBYoOjhPuMk70o2OABO1z56a1EuGTWBS9\n"
+			+ "eUGu-2bJqTbQND5NzQRUzdae9QwfE0F9OsoX5NSg+dYGEHGEjerHN4kNvvBGAj6gVYbieFOdmzm5\n"
+			+ "gNgU+BzVI1yhHmj+maSgmO3RPNePeV5Gn254jCFOhhYzK0CZ8DLLCFja-IiT2NDTrujWo9vXSyt2\n"
+			+ "0TiCaue4IjwbaNzHrp9lR+5ntyg-riU-RIU6d1rNQkjI1nuA4B7vRBySdEykPLtZr1nVN-nwjz2u\n"
+			+ "BhizYsJevVg6-lt+RB29DJdVqjQA-Y5jvRqxaOCIL87RDBp1jZTCBQO-BF4AuDxN-gcvTXMcsc-t\n"
+			+ "JHn3Kaep6d7kq8eTHf-sGQcMc97tUg7Xvu2Wg6sTk5B5W+0npIfn6gElKLogxamThF2+XweZvWOc\n"
+			+ "Y2hfLARZB6Mp4cDe6xcpQm-k-CFxqsyHAiuB-Hyy\n"
+			+ "-----END SEALED ENVELOPE-----\n";
 
-	
-	
-	
-	
-	
+	// private String verificationEnvelope2 = "-----BEGIN SEALED CIPHER-----\n"
+	// +
+	// "qZqt5uMTSFSUYQBbgVllT+0XQxZatiS-NS2UaOSp2AL2M3voA0kEwumVcLHcBX7rOxsUckC3Xn66\n"
+	// +
+	// "QKWMRgFlUJpeZopoMt2LGdoNvBMaA60pqZeFx9e7-C91N2mX1Y1PH0Zia5bCckxi+XFF9JzKIctr\n"
+	// + "WRa53VV5XRQ9N74EqTg=\n"
+	// + "-----END SEALED CIPHER-----\n"
+	// + "-----BEGIN SEALED ENVELOPE-----\n"
+	// +
+	// "AAAAgEk2PCx6I+BfJTFWNM2UKcTneHij6xCh3I8Ktrcnr4IIBw-5sBn8p1rc8gQ9YFBVndvQ5jFA\n"
+	// +
+	// "qq9M8fHcI9En657g56xN8FAqyeHZbwgocDAExCvuLrZtOMIVI5qDnEHKTXfv99Jl3VqeIaHEbtCx\n"
+	// +
+	// "T+m3IZS90ILPh2RDWZOW-iNSh4k-ebrtTYpB32jfXR3wEeXo+m5drUxW2c3ZmSU8V8Cv7Me2i2aF\n"
+	// +
+	// "CQSDwAgrSIDSKCEsnYu7L5-ZxNymJ1PGavbgWGYhyCq7KDDq4SkJFl2fAfEVlRYtxvX-A-1HYJ5v\n"
+	// +
+	// "s31Za1vIhAYU6CROoRE7rcXQBAETphC+bpolHmWazoMdTAC6ycTdRmtoHLmGQvZc+hzAXLNq8YU8\n"
+	// +
+	// "wN-YUnYHNmdohFm4ga7j+AUx40Re9fdZcow3D4lutBRqAYPA9wAk7yoFRSYZcqEY2K577vnxMLWr\n"
+	// +
+	// "yq3WP1Xdzbk7PpTzzsvcK0Kyj7Xm4zhz3s5fzJ8RUHKOgXvqJ34P3F0kVGJaaa0OdJ41A44bgJN4\n"
+	// +
+	// "f4fkjewpS5-uuJQ4tGHr+GUoyFZf2l7l2NWmSZc4xPZZbmHpr6q882xHpBLfN22DjeUjnmfI8aD9\n"
+	// +
+	// "BrHaut3RmlS4UkSlC4qNVMijwf1Js-VDo5S4GYlh6YwgWsFCO5M6v8D8Y8tAcwwGHKMCXg6rYv36\n"
+	// +
+	// "GLY-h1SmOWvMltxLKrVxJdMBG-LCtAN2yXS01EqhNBATzWu7R8pKM3gFYpPdG9nW7jL-AbrqRqMc\n"
+	// +
+	// "8KNM6xJY1Is0bv+9KMqfWIJC0yyVx8xGjmZ45MfPJndA-mGwrceNXXT2PlvFuNENI2ffTHq1g7wr\n"
+	// +
+	// "+VdI0LL3T4efmH1UIdlpi5rjYq6hPhVhvTTQHv3ZktZYmtDO89IdljHKFjhE3KUZr-d0+GRG394p\n"
+	// +
+	// "caEANTGSRIvdLhDJQbDFm2ISuT+3VNKJCTQZLoPt3Hee0z4EFepVA6ReDZDQjDHAHK+TfS4qiOJy\n"
+	// +
+	// "hrz1-xwixg+F6MuWoLhD2Am4xLeaxhjjB-KiKLNfjuh63xHjUPpbyJncOKt82X81lt-dNWP48Y7M\n"
+	// +
+	// "mIzk90CAQxANceEOjvnsqxXmPE0Znp1SFm1b5MVYEE1yDa0q1Iu+TIk451vvuPFRzSXpc7vSlN+v\n"
+	// + "ZvqWHv5Zp0fHKsCVf0lAPulRbaSb\n"
+	// + "-----END SEALED ENVELOPE-----\n";
+
 	private String verificationEnvelope2 = "-----BEGIN SEALED CIPHER-----\n"
-	+ "a8HJt2968uWC3Y5yo3OSh95tfDriXQPQp4cK4MrKe4LVykFTmDECM2kC9rSIbEkuRbbJWjqBhCFL\n"
-	+ "onyaa27eqKJtZvK2wsKNMsFRphAjMKX-yEIq+0X6NvVFxXdhiT3Nh94NCXUD8QmM-dYxJQNuh2fO\n"
-	+ "BjAsIZWMAPTt8LU43pY=\n"
-	+ "-----END SEALED CIPHER-----\n"
-	+ "-----BEGIN SEALED ENVELOPE-----\n"
-	+ "AAAAgF1tObrdN8AciMmqQAbdJK6dP8AsJ9z8HBBOdbGyXwP+4TXVRI-C1Yn7Z85JrmbfZEKHnoa+\n"
-	+ "EvpOAEyt12e5V2UCRy4KcBnZJvAMdAy8+0CMY8S6B12GWpGIXCghzNJaBVfiu52kqTUlbbYB0Auy\n"
-	+ "VsahRrvjVBlaTi3kvgJ8AzeFP1yhLBlEK9Zu0m6h2ZHjk-hAg7Ij1XD+plB9Wm4AkbAXPYW++398\n"
-	+ "Dx08YuT8wIfhGIBqoby1cydrHMD2kP+x6jgReXwgyVoYbt+jJsHhz0c+g4dXAsMC81Zv1ZNWN7sD\n"
-	+ "dOK-zwOCOFVbFf9vflnyfHNSu67b3vqesGFVElFQW+Pea1qmPS7RseYhvr3JIBWZ5PKmOnaXjxBx\n"
-	+ "8vr5ABz5QXX-YzWuLqmspeBmoCzhHHS1tT-phg9DYOA8voo6ulHGZppuMb-8uf5-Lmw6ymyLEjG-\n"
-	+ "Q5+FCDeGSEehxLHeiovHfitWJEJectgq-jROJ07QNIBO5y7bkWURx+hUq7At2jAYuoebFZaUhFZF\n"
-	+ "aWK8ePDGdIGdpMkQ40p32nriSR8YilBe3nsIFXiH3cWTvM1+KEFRBePqA0obORU4qu5M8TwWqlHh\n"
-	+ "0R5iuoKa5HPg+k1frs5dLxoh-hZpFI3M8Z2+FfVIoukqtkgzBWtVdUH5wpNkiaBlsQFLQcYe26dj\n"
-	+ "thL0R-kK3kUUxX7VZ4cMWfUyvbahRrUzhGnkUCBWhxcG9AN+m0Hji1Px9ZHJJlH3oURfHpxFAQm4\n"
-	+ "jxeBE5RACY7IgiAdSvJ4Kx5ralaMidmwSVBzQe7ANX8VmbABPREz5jLp5R8O7w7nf5bEEmuY+iJn\n"
-	+ "eOsMphqH+dL6PqjJrd60bZrOE5WbJHSFwUJwS9D8f1mlXoxGNf8sqQAyp1fG19-3aNDg-pNBAgDt\n"
-	+ "0yYSBouOS03gUjQp68LgDdZaRSclBuOQWtWkMo8vxrm5oE-xOjrOHYdQLI1A1XfAdqMtHKwGLFfD\n"
-	+ "jcFASMGoVrl8yJ6vyPnieFDPaOTOmEte6BlIHwlqJg5etQ78xx5ax17qltZzImj-hKYkqryr9usx\n"
-	+ "	w1iJgq9szENJZfAD4Ii7wfrV1PmgnVgOsxR7IUGi2sCqlpT5lMKAJCr3QhiU+86HybvUqzB0jbpW\n"
-	+ "	Bk0u8RpeBy3zlEKfHOKQJawk1J4ePxgr57-nZxSBH2RY21YsKA==\n"
-	+ "	-----END SEALED ENVELOPE-----\n";
+			+ "a8HJt2968uWC3Y5yo3OSh95tfDriXQPQp4cK4MrKe4LVykFTmDECM2kC9rSIbEkuRbbJWjqBhCFL\n"
+			+ "onyaa27eqKJtZvK2wsKNMsFRphAjMKX-yEIq+0X6NvVFxXdhiT3Nh94NCXUD8QmM-dYxJQNuh2fO\n"
+			+ "BjAsIZWMAPTt8LU43pY=\n"
+			+ "-----END SEALED CIPHER-----\n"
+			+ "-----BEGIN SEALED ENVELOPE-----\n"
+			+ "AAAAgF1tObrdN8AciMmqQAbdJK6dP8AsJ9z8HBBOdbGyXwP+4TXVRI-C1Yn7Z85JrmbfZEKHnoa+\n"
+			+ "EvpOAEyt12e5V2UCRy4KcBnZJvAMdAy8+0CMY8S6B12GWpGIXCghzNJaBVfiu52kqTUlbbYB0Auy\n"
+			+ "VsahRrvjVBlaTi3kvgJ8AzeFP1yhLBlEK9Zu0m6h2ZHjk-hAg7Ij1XD+plB9Wm4AkbAXPYW++398\n"
+			+ "Dx08YuT8wIfhGIBqoby1cydrHMD2kP+x6jgReXwgyVoYbt+jJsHhz0c+g4dXAsMC81Zv1ZNWN7sD\n"
+			+ "dOK-zwOCOFVbFf9vflnyfHNSu67b3vqesGFVElFQW+Pea1qmPS7RseYhvr3JIBWZ5PKmOnaXjxBx\n"
+			+ "8vr5ABz5QXX-YzWuLqmspeBmoCzhHHS1tT-phg9DYOA8voo6ulHGZppuMb-8uf5-Lmw6ymyLEjG-\n"
+			+ "Q5+FCDeGSEehxLHeiovHfitWJEJectgq-jROJ07QNIBO5y7bkWURx+hUq7At2jAYuoebFZaUhFZF\n"
+			+ "aWK8ePDGdIGdpMkQ40p32nriSR8YilBe3nsIFXiH3cWTvM1+KEFRBePqA0obORU4qu5M8TwWqlHh\n"
+			+ "0R5iuoKa5HPg+k1frs5dLxoh-hZpFI3M8Z2+FfVIoukqtkgzBWtVdUH5wpNkiaBlsQFLQcYe26dj\n"
+			+ "thL0R-kK3kUUxX7VZ4cMWfUyvbahRrUzhGnkUCBWhxcG9AN+m0Hji1Px9ZHJJlH3oURfHpxFAQm4\n"
+			+ "jxeBE5RACY7IgiAdSvJ4Kx5ralaMidmwSVBzQe7ANX8VmbABPREz5jLp5R8O7w7nf5bEEmuY+iJn\n"
+			+ "eOsMphqH+dL6PqjJrd60bZrOE5WbJHSFwUJwS9D8f1mlXoxGNf8sqQAyp1fG19-3aNDg-pNBAgDt\n"
+			+ "0yYSBouOS03gUjQp68LgDdZaRSclBuOQWtWkMo8vxrm5oE-xOjrOHYdQLI1A1XfAdqMtHKwGLFfD\n"
+			+ "jcFASMGoVrl8yJ6vyPnieFDPaOTOmEte6BlIHwlqJg5etQ78xx5ax17qltZzImj-hKYkqryr9usx\n"
+			+ "	w1iJgq9szENJZfAD4Ii7wfrV1PmgnVgOsxR7IUGi2sCqlpT5lMKAJCr3QhiU+86HybvUqzB0jbpW\n"
+			+ "	Bk0u8RpeBy3zlEKfHOKQJawk1J4ePxgr57-nZxSBH2RY21YsKA==\n"
+			+ "	-----END SEALED ENVELOPE-----\n";
 
-	
-	
-	
-	
-	
-	
-	
-//	-----BEGIN SEALED CIPHER-----
-//	qZqt5uMTSFSUYQBbgVllT+0XQxZatiS-NS2UaOSp2AL2M3voA0kEwumVcLHcBX7rOxsUckC3Xn66
-//	QKWMRgFlUJpeZopoMt2LGdoNvBMaA60pqZeFx9e7-C91N2mX1Y1PH0Zia5bCckxi+XFF9JzKIctr
-//	WRa53VV5XRQ9N74EqTg=
-//	-----END SEALED CIPHER-----
-//	-----BEGIN SEALED ENVELOPE-----
-//	AAAAgEk2PCx6I+BfJTFWNM2UKcTneHij6xCh3I8Ktrcnr4IIBw-5sBn8p1rc8gQ9YFBVndvQ5jFA
-//	qq9M8fHcI9En657g56xN8FAqyeHZbwgocDAExCvuLrZtOMIVI5qDnEHKTXfv99Jl3VqeIaHEbtCx
-//	T+m3IZS90ILPh2RDWZOW-iNSh4k-ebrtTYpB32jfXR3wEeXo+m5drUxW2c3ZmSU8V8Cv7Me2i2aF
-//	CQSDwAgrSIDSKCEsnYu7L5-ZxNymJ1PGavbgWGYhyCq7KDDq4SkJFl2fAfEVlRYtxvX-A-1HYJ5v
-//	s31Za1vIhAYU6CROoRE7rcXQBAETphC+bpolHmWazoMdTAC6ycTdRmtoHLmGQvZc+hzAXLNq8YU8
-//	wN-YUnYHNmdohFm4ga7j+AUx40Re9fdZcow3D4lutBRqAYPA9wAk7yoFRSYZcqEY2K577vnxMLWr
-//	yq3WP1Xdzbk7PpTzzsvcK0Kyj7Xm4zhz3s5fzJ8RUHKOgXvqJ34P3F0kVGJaaa0OdJ41A44bgJN4
-//	f4fkjewpS5-uuJQ4tGHr+GUoyFZf2l7l2NWmSZc4xPZZbmHpr6q882xHpBLfN22DjeUjnmfI8aD9
-//	BrHaut3RmlS4UkSlC4qNVMijwf1Js-VDo5S4GYlh6YwgWsFCO5M6v8D8Y8tAcwwGHKMCXg6rYv36
-//	GLY-h1SmOWvMltxLKrVxJdMBG-LCtAN2yXS01EqhNBATzWu7R8pKM3gFYpPdG9nW7jL-AbrqRqMc
-//	8KNM6xJY1Is0bv+9KMqfWIJC0yyVx8xGjmZ45MfPJndA-mGwrceNXXT2PlvFuNENI2ffTHq1g7wr
-//	+VdI0LL3T4efmH1UIdlpi5rjYq6hPhVhvTTQHv3ZktZYmtDO89IdljHKFjhE3KUZr-d0+GRG394p
-//	caEANTGSRIvdLhDJQbDFm2ISuT+3VNKJCTQZLoPt3Hee0z4EFepVA6ReDZDQjDHAHK+TfS4qiOJy
-//	hrz1-xwixg+F6MuWoLhD2Am4xLeaxhjjB-KiKLNfjuh63xHjUPpbyJncOKt82X81lt-dNWP48Y7M
-//	mIzk90CAQxANceEOjvnsqxXmPE0Znp1SFm1b5MVYEE1yDa0q1Iu+TIk451vvuPFRzSXpc7vSlN+v
-//	ZvqWHv5Zp0fHKsCVf0lAPulRbaSb
-//	-----END SEALED ENVELOPE-----
+	// -----BEGIN SEALED CIPHER-----
+	// qZqt5uMTSFSUYQBbgVllT+0XQxZatiS-NS2UaOSp2AL2M3voA0kEwumVcLHcBX7rOxsUckC3Xn66
+	// QKWMRgFlUJpeZopoMt2LGdoNvBMaA60pqZeFx9e7-C91N2mX1Y1PH0Zia5bCckxi+XFF9JzKIctr
+	// WRa53VV5XRQ9N74EqTg=
+	// -----END SEALED CIPHER-----
+	// -----BEGIN SEALED ENVELOPE-----
+	// AAAAgEk2PCx6I+BfJTFWNM2UKcTneHij6xCh3I8Ktrcnr4IIBw-5sBn8p1rc8gQ9YFBVndvQ5jFA
+	// qq9M8fHcI9En657g56xN8FAqyeHZbwgocDAExCvuLrZtOMIVI5qDnEHKTXfv99Jl3VqeIaHEbtCx
+	// T+m3IZS90ILPh2RDWZOW-iNSh4k-ebrtTYpB32jfXR3wEeXo+m5drUxW2c3ZmSU8V8Cv7Me2i2aF
+	// CQSDwAgrSIDSKCEsnYu7L5-ZxNymJ1PGavbgWGYhyCq7KDDq4SkJFl2fAfEVlRYtxvX-A-1HYJ5v
+	// s31Za1vIhAYU6CROoRE7rcXQBAETphC+bpolHmWazoMdTAC6ycTdRmtoHLmGQvZc+hzAXLNq8YU8
+	// wN-YUnYHNmdohFm4ga7j+AUx40Re9fdZcow3D4lutBRqAYPA9wAk7yoFRSYZcqEY2K577vnxMLWr
+	// yq3WP1Xdzbk7PpTzzsvcK0Kyj7Xm4zhz3s5fzJ8RUHKOgXvqJ34P3F0kVGJaaa0OdJ41A44bgJN4
+	// f4fkjewpS5-uuJQ4tGHr+GUoyFZf2l7l2NWmSZc4xPZZbmHpr6q882xHpBLfN22DjeUjnmfI8aD9
+	// BrHaut3RmlS4UkSlC4qNVMijwf1Js-VDo5S4GYlh6YwgWsFCO5M6v8D8Y8tAcwwGHKMCXg6rYv36
+	// GLY-h1SmOWvMltxLKrVxJdMBG-LCtAN2yXS01EqhNBATzWu7R8pKM3gFYpPdG9nW7jL-AbrqRqMc
+	// 8KNM6xJY1Is0bv+9KMqfWIJC0yyVx8xGjmZ45MfPJndA-mGwrceNXXT2PlvFuNENI2ffTHq1g7wr
+	// +VdI0LL3T4efmH1UIdlpi5rjYq6hPhVhvTTQHv3ZktZYmtDO89IdljHKFjhE3KUZr-d0+GRG394p
+	// caEANTGSRIvdLhDJQbDFm2ISuT+3VNKJCTQZLoPt3Hee0z4EFepVA6ReDZDQjDHAHK+TfS4qiOJy
+	// hrz1-xwixg+F6MuWoLhD2Am4xLeaxhjjB-KiKLNfjuh63xHjUPpbyJncOKt82X81lt-dNWP48Y7M
+	// mIzk90CAQxANceEOjvnsqxXmPE0Znp1SFm1b5MVYEE1yDa0q1Iu+TIk451vvuPFRzSXpc7vSlN+v
+	// ZvqWHv5Zp0fHKsCVf0lAPulRbaSb
+	// -----END SEALED ENVELOPE-----
 
-	
-	
 	/**
 	 * @param args
 	 */
@@ -150,21 +165,37 @@ public class AuthenServer {
 
 		String nix = authen.createEnvelope("asdf", "asdf", "asdf", "asdf",
 				"asdf", "asdf", "asdf", "asdf", "asdf", "asdf", "asdf");
-		
+
 		System.err.println(nix);
 	}
-	
-	
-	
-	public XrootDEnvelope[] createEnvelopePerlAliEnV218(String P_user,String P_access,String P_options,String P_lfn,int size,String P_guid,Set<String> ses, Set<String> exxSes,int sesel,String P_qos,int qosCount,String P_sitename) {
+
+	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,int access,String P_options,String P_lfn,int size,String P_guid,Set<String> ses, Set<String> exxSes,int sesel,String P_qos,int qosCount,String P_sitename) {
 
 		
-		
-		XrootDEnvelope[] envelopes = null;
-		
-		return envelopes;
-	}
+		AliEnPrincipal user = UserFactory.getByUsername(P_user);
 	
+			
+		LFN lfn = LFNUtils.getLFN("/alice/data/2010/LHC10e/000130848/ESDs/pass1/AOD019/0001/AliAOD.Dielectron.root");
+		
+		CatalogEntity requestedEntry;
+		
+		CatalogueAccess ca;
+		
+		if(!GUIDUtils.isValidGUID(P_lfn)){ 
+			requestedEntry = LFNUtils.getLFN(P_lfn);
+			ca = AuthorizationFactory.requestAccess(user, requestedEntry,  access);
+
+		}else{
+			requestedEntry = GUIDUtils.getGUID(UUID.fromString(P_lfn));
+			ca = AuthorizationFactory.requestAccess(user,requestedEntry,  access);
+		}
+		
+		CatalogueAccessEnvelopeDecorator.getXrootDEnvelopesForCatalogueAccess(ca, P_sitename, P_qos, qosCount, ses, exxSes,sesel);
+		
+		
+		return ca.getEnvelopes();
+		
+	}
 
 	/**
 	 * Create envelope
@@ -215,19 +246,22 @@ public class AuthenServer {
 		// "111111111111111111000000000000000000000000000xxxxxxxxxxxxxxxxxxxxxxxxxx");
 		// envelope.put("signedEnvelope", envreq);
 		//
-//		String ticket = "<authz>\n  <file>" + "\n";
-//		ticket += "    <access>write-once</access>" + "\n";
-//		ticket += "    <turl>root://lpsc-se-dpm-server.in2p3.fr:1094//dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</turl>"
-//				+ "\n";
-//		ticket += "    <lfn>/pcepalice11/user/a/ali/ksksksk</lfn>" + "\n";
-//		ticket += "    <size>13593</size>" + "\n";
-//		ticket += "    <pfn>/dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</pfn>"
-//				+ "\n";
-//		ticket += "    <se>pcepalice11::CERN::DPM</se>" + "\n";
-//		ticket += "    <guid>087984d8-eadc-13df-8274-001e0b24002f</guid>" + "\n";
-//		ticket += "    <md5>4eef16773f59388963526254922bf5ef</md5>" + "\n";
-//		ticket += "  </file>\n</authz>\n";
-		
+		// String ticket = "<authz>\n  <file>" + "\n";
+		// ticket += "    <access>write-once</access>" + "\n";
+		// ticket +=
+		// "    <turl>root://lpsc-se-dpm-server.in2p3.fr:1094//dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</turl>"
+		// + "\n";
+		// ticket += "    <lfn>/pcepalice11/user/a/ali/ksksksk</lfn>" + "\n";
+		// ticket += "    <size>13593</size>" + "\n";
+		// ticket +=
+		// "    <pfn>/dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</pfn>"
+		// + "\n";
+		// ticket += "    <se>pcepalice11::CERN::DPM</se>" + "\n";
+		// ticket += "    <guid>087984d8-eadc-13df-8274-001e0b24002f</guid>" +
+		// "\n";
+		// ticket += "    <md5>4eef16773f59388963526254922bf5ef</md5>" + "\n";
+		// ticket += "  </file>\n</authz>\n";
+
 		String ticket = "<authz>\n  <file>" + "\n";
 		ticket += "    <access>write-once</access>" + "\n";
 		ticket += "    <turl>root://nanxrdmgr01.in2p3.fr:1094//01/10795/d3a4f56e-ec41-11df-ab69-33fa9fe34833</turl>"
@@ -237,15 +271,11 @@ public class AuthenServer {
 		ticket += "    <pfn>/01/10795/d3a4f56e-ec41-11df-ab69-33fa9fe34833</pfn>"
 				+ "\n";
 		ticket += "    <se>pcepalice11::CERN::Suba</se>" + "\n";
-		ticket += "    <guid>d3a4f56e-ec41-11df-ab69-33fa9fe34833</guid>" + "\n";
+		ticket += "    <guid>d3a4f56e-ec41-11df-ab69-33fa9fe34833</guid>"
+				+ "\n";
 		ticket += "    <md5>4eef16773f59388963526254922bf5ef</md5>" + "\n";
 		ticket += "  </file>\n</authz>\n";
-		
-		
-		
-		
-		
-			
+
 		// envEngine = SealedEnvelope.InitializeEngine();
 
 		String encrTicket = "";
@@ -263,59 +293,53 @@ public class AuthenServer {
 			loadKeys();
 			System.out.println("loaded keys");
 
-			EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey);
+			EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey,
+					SEPubKey);
 			System.out.println();
 			System.out.println();
 			System.out.println("loaded authz engine");
 
 			encrTicket = authz.encrypt(ticket);
 			System.out.println("ticket encryption finished.");
-			
-			
-			
+
 			System.out.println();
 			System.out.println();
-			EncryptedAuthzToken deauthz= new EncryptedAuthzToken(encrTicket, SEPrivKey, AuthenPubKey);
+			EncryptedAuthzToken deauthz = new EncryptedAuthzToken(encrTicket,
+					SEPrivKey, AuthenPubKey);
 			System.out.println("ROUND 3, own ticket: decrypting");
 
 			String plain = deauthz.decrypt();
-			
+
 			System.out.println("ticket decrypted");
 			System.out.println("ticket was:" + plain);
 
-			
-			
-			
-			
-//			System.out.println();
-//			System.out.println();
-//			EncryptedAuthzToken verdeauthz = new EncryptedAuthzToken(verificationEnvelope, SEPrivKey, AuthenPubKey);
-//			System.out.println("ROUND 1: decrypting");
-//
-//			String verplain = verdeauthz.decrypt();
-//			
-//			System.out.println("ticket decrypted");
-//			System.out.println("ticket was:" + verplain);
-			
-			
-			
+			// System.out.println();
+			// System.out.println();
+			// EncryptedAuthzToken verdeauthz = new
+			// EncryptedAuthzToken(verificationEnvelope, SEPrivKey,
+			// AuthenPubKey);
+			// System.out.println("ROUND 1: decrypting");
+			//
+			// String verplain = verdeauthz.decrypt();
+			//
+			// System.out.println("ticket decrypted");
+			// System.out.println("ticket was:" + verplain);
+
 			System.out.println();
 			System.out.println();
-			EncryptedAuthzToken verdeauthz2 = new EncryptedAuthzToken(verificationEnvelope2, SEPrivKey, AuthenPubKey);
+			EncryptedAuthzToken verdeauthz2 = new EncryptedAuthzToken(
+					verificationEnvelope2, SEPrivKey, AuthenPubKey);
 			System.out.println("ROUND 2: decrypting");
 
 			String verplain2 = verdeauthz2.decrypt();
 
 			System.out.println("ticket decrypted");
 			System.out.println("ticket was:" + verplain2);
-			
-			
-			
-			System.out.println();
-			System.out.println();			
-			System.out.println();
-			System.out.println();
 
+			System.out.println();
+			System.out.println();
+			System.out.println();
+			System.out.println();
 
 		} catch (GeneralSecurityException gexcept) {
 			System.out.println("General Securiry exception" + gexcept);
@@ -348,7 +372,7 @@ public class AuthenServer {
 
 		Security.addProvider(new BouncyCastleProvider());
 
-//		KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+		// KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
 		// TODO : load file locations from configuration
 		File AuthenPrivfile = new File("/home/ron/authen_keys/AuthenPriv.key");
@@ -359,8 +383,9 @@ public class AuthenServer {
 
 		PKCS8EncodedKeySpec AuthenPrivSpec = new PKCS8EncodedKeySpec(AuthenPriv);
 		System.out.println("loading AuthenPriv...");
-		this.AuthenPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(AuthenPrivSpec);
-		
+		this.AuthenPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
+				.generatePrivate(AuthenPrivSpec);
+
 		File SEPrivfile = new File("/home/ron/authen_keys/SEPriv.key");
 		byte[] SEPriv = new byte[(int) SEPrivfile.length()];
 		fis = new FileInputStream(SEPrivfile);
@@ -369,7 +394,8 @@ public class AuthenServer {
 
 		PKCS8EncodedKeySpec SEPrivSpec = new PKCS8EncodedKeySpec(SEPriv);
 		System.out.println("loading SEPriv...");
-		this.SEPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA").generatePrivate(SEPrivSpec);
+		this.SEPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
+				.generatePrivate(SEPrivSpec);
 
 		//
 		//

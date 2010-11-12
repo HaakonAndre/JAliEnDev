@@ -400,4 +400,12 @@ public class LFN implements Serializable, Comparable<LFN>, CatalogEntity {
 	public char getType() {
 		return type;
 	}
+	
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getType()
+	 */
+	@Override
+	public char is() {
+		return 'l';
+	}
 }

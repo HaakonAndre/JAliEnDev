@@ -8,8 +8,12 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lia.util.UUID;
+
 import alien.services.AuthenServer;
 
+import alien.catalogue.access.AuthorizationFactory;
+import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.XrootDEnvelope;
 
 /**
@@ -18,6 +22,12 @@ import alien.catalogue.access.XrootDEnvelope;
  */
 public class SOAPAuthen {
 
+	
+	private static final Pattern writeRequest = Pattern.compile("^write");
+	private static final Pattern isPerlOption = Pattern.compile("^-");
+	private static final Pattern isNumeric = Pattern.compile("^[0-9]+$");
+	private static final Pattern SE_NAME = Pattern.compile("^[0-9a-zA-Z_\\-]+(::[0-9a-zA-Z_\\-]+){2}$");
+	
 	// sub createEnvelope{
 	// my $other=shift;
 	// my $user=shift;
@@ -53,6 +63,8 @@ public class SOAPAuthen {
 	// my $sitename= (shift || 0);
 	// my $writeQos = (shift || 0);
 	// my $writeQosCount = (shift || 0);
+	
+
 
 	/**
 	 * 
@@ -92,7 +104,7 @@ public class SOAPAuthen {
 		String P_access = "";
 		String[] someoptions = P_maybeoptions.split(" ");
 		for (String s : someoptions) {
-			if (Pattern.matches("^-", s)) {
+			if (isPerlOption.matcher(P_access).matches()) {
 				P_options += " " + s;
 			} else {
 				P_access = s;
@@ -101,10 +113,15 @@ public class SOAPAuthen {
 		if (P_access.length() == 0)
 			return replySOAPerrorMessage_access_eof("No access request provided");
 
-		if ((P_access != "read") || (P_access != "delete")
-				|| (Pattern.matches("^write-", P_access))) {
+
+		int access =  CatalogueAccess.INVALID;
+
+		if (P_access != "read") { access = CatalogueAccess.READ; }
+		else if (P_access != "delete") { access = CatalogueAccess.DELETE; }
+		else if (writeRequest.matcher(P_access).matches()) { access = CatalogueAccess.WRITE;};
+		if(access == CatalogueAccess.INVALID)
 			return replySOAPerrorMessage_access_eof("Illegal access request provided, possible ones are: <read><write-version><write-once><delete>");
-		}
+		
 
 		P_lfn = ensureStringInitialized(P_lfn);
 		if (P_lfn.length() == 0)
@@ -120,7 +137,8 @@ public class SOAPAuthen {
 
 		P_sesel_noSEs = ensureStringInitialized(P_sesel_noSEs);
 		int sesel = 0;
-		if (Pattern.matches("^[0-9]+$", P_sesel_noSEs)) {
+ 
+		if (isNumeric.matcher(P_sesel_noSEs).matches()) {
 			sesel = Integer.valueOf(P_sesel_noSEs).intValue(); // here we still
 																// need to
 																// ensure that
@@ -143,8 +161,8 @@ public class SOAPAuthen {
 
 		AuthenServer authen = new AuthenServer();
 
-		XrootDEnvelope[] envelopes = authen.createEnvelopePerlAliEnV218(P_user,
-				P_access, P_options, P_lfn, size, P_guid, ses, exxSes, sesel,
+		Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
+				access, P_options, P_lfn, size, P_guid, ses, exxSes, sesel,
 				P_qos, qosCount, P_sitename);
 
 		return translateEnvelopeIntoMap(envelopes);
@@ -152,7 +170,7 @@ public class SOAPAuthen {
 	}
 
 	public Map<String, String>[] translateEnvelopeIntoMap(
-			XrootDEnvelope[] envelope) {
+			Set<XrootDEnvelope> envelope) {
 
 		// foreach envelope call and append String
 		// envelope.getPerlEnvelopeTicket() to return;
@@ -199,7 +217,6 @@ public class SOAPAuthen {
 	}
 
 
-	private static final Pattern SE_NAME = Pattern.compile("^[0-9a-zA-Z_\\-]+(::[0-9a-zA-Z_\\-]+){2}$");
 
 	/**
 	 * 
@@ -226,34 +243,7 @@ public class SOAPAuthen {
 
 		return ret;
 	}
-	
-	/**
-	 * 
-	 * check if the string contains a valid GUID
-	 * 
-	 * @param guid
-	 * @return yesORno
-	 */
-	private boolean isValidGUID(String guid) {
-		// sub isValidGUID{
-		// my $guid=shift;
-		// my $lines = $guid;
-		// # guid has to be 36 chars long, containing 4 times '-', at position
-		// 9,14,19,24 and the rest needs to be hexdec
-		// (length($guid) eq 36)
-		// and $lines = substr($lines, 8, 1)
-		// .substr($lines, 13, 1).substr($lines, 18, 1).substr($lines, 23, 1)
-		// and $lines =~ s/[-]*// and (length($lines) eq 0)
-		// and $guid = substr($guid, 0, 8)
-		// .substr($guid, 9, 4).substr($guid, 14, 4)
-		// .substr($guid, 19, 4).substr($guid, 24, 12)
-		// and $guid =~ s/[0-9a-f]*//i
-		// and (length($guid) eq 0)
-		// and return 1;
-		// return 0;
-		// }
-		return true;
-	}
+
 
 	//
 	// sub doOperation {

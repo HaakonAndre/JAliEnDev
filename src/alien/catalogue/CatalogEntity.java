@@ -9,6 +9,10 @@ package alien.catalogue;
  */
 public interface CatalogEntity {
 
+//	private static int IAm = 0;
+//	private static int GUID = 1;
+//	private static int PFN = 2;
+		
 	/**
 	 * @return owner of the entity
 	 */
@@ -33,5 +37,10 @@ public interface CatalogEntity {
 	 * @return entry type (f,c,d,l)
 	 */
 	public char getType();
+	
+	/**
+	 * @return type of CatalogEntity
+	 */
+	public char is();
 	
 }

@@ -3,23 +3,36 @@ package alien.catalogue.access;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 
 
 /**
- * @author Steffen
+ * @author ron
  * @since 2010-11-10
  */
 public abstract class CatalogueAccess  {
 
+	
+	public static int INVALID = 0;
+	public static int READ = 1;
+	public static int WRITE = 2;
+	public static int DELETE = 3;
+	
+
+	
 	/**
 	 * Access type
 	 */
-	protected String access;
+	protected int access;
 	
+	CatalogEntity entity;
 	LFN lfn = null;
+	
 	GUID guid = null;
 	Set<PFN> pfns = new LinkedHashSet<PFN>();
 	int size = 0;
@@ -30,12 +43,18 @@ public abstract class CatalogueAccess  {
 	 * @param guid
 	 * @see AuthorizationFactory
 	 */
-	CatalogueAccess(final GUID guid){
-		this.guid = guid;
+	CatalogueAccess(final CatalogEntity entity){
+		this.entity = entity;
+		if(entity.is() == 'l') {
+			lfn = (LFN) entity;
+			guid = (GUID) GUIDUtils.getGUID(lfn.guid);
+		} else {
+			lfn = LFNUtils.getLFN("/NOLFN", true);
+			guid = (GUID) entity;
+		}
+		
 	}
 
-	abstract void decorate();
-	
 	PFN pickPFNforAccess(){
 		return null;
 	}
@@ -82,7 +101,7 @@ public abstract class CatalogueAccess  {
 		envelope.setCatalogueAccess(this);
 	}
 	
-	Set<XrootDEnvelope> getEnvelopes(){
+	public Set<XrootDEnvelope> getEnvelopes(){
 		return envelopes;
 	}
 }

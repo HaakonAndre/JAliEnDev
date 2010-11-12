@@ -1,9 +1,10 @@
 package alien.catalogue.access;
 
+import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUID;
 
 /**
- * @author Steffen
+ * @author ron
  *
  */
 public class CatalogueReadAccess extends CatalogueAccess{
@@ -14,13 +15,9 @@ public class CatalogueReadAccess extends CatalogueAccess{
 	 * 
 	 * @param guid
 	 */
-	CatalogueReadAccess(GUID guid){
-		super(guid);
-		super.access = "read";
+	CatalogueReadAccess(CatalogEntity entity){
+		super(entity);
+		super.access = READ;
 	}
 
-	@Override
-	void decorate(){
-		// guid.getALlINFO;
-	}
 }

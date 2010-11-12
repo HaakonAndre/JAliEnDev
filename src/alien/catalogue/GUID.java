@@ -30,7 +30,7 @@ public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
 	 * Monitoring component
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(GUID.class.getCanonicalName());
-	
+
 	/**
 	 * GUID id
 	 */
@@ -365,4 +365,11 @@ public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
 		return type;
 	}
 	
+	/* (non-Javadoc)
+	 * @see alien.catalogue.CatalogEntity#getType()
+	 */
+	@Override
+	public char is() {
+		return 'g';
+	}
 }

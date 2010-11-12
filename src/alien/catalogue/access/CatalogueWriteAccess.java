@@ -7,17 +7,16 @@ import alien.catalogue.GUID;
  * @author ron
  *
  */
-public class CatalogueDeleteAccess extends CatalogueAccess{
+public class CatalogueWriteAccess extends CatalogueAccess{
 	
 	/**
-	 * Delete access to the catalogue object indicated by this GUID.
+	 * Read access to the catalogue object indicated by this GUID.
 	 * This constructor is package protected, the objects should be created only by {@link AuthorizationFactory}
 	 * 
 	 * @param guid
 	 */
-	CatalogueDeleteAccess(CatalogEntity entity){
+	CatalogueWriteAccess(CatalogEntity entity){
 		super(entity);
-		super.access = DELETE;
+		super.access = WRITE;
 	}
-
 }

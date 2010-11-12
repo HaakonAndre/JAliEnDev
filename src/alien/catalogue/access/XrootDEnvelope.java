@@ -12,6 +12,13 @@ import alien.se.SEUtils;
  */
 public class XrootDEnvelope {
 
+	// analog to the following access types, we define levels:
+	//	public static int INVALID = 0;
+	//	public static int READ = 1;
+	//	public static int WRITE = 2;
+	//	public static int DELETE = 3;
+	private static String[] levels = {"invalid","read","write-once","delete"};
+	
 	private String plainEnvelopeTicket;
 	private String encryptedEnvelope;
 	private String signedEnvelope;
@@ -45,7 +52,7 @@ public class XrootDEnvelope {
 
 	private void initializeEncryptedTicket() {
 
-		envAccess = access.access;
+		envAccess = levels[access.access];
 		envTURL = se.seioDaemons + se.seStoragePath + access.guid.toString();
 		envPFN = se.seStoragePath + access.guid.toString();
 		envLFN = access.lfn.toString();
