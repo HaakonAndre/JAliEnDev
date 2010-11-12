@@ -200,13 +200,13 @@ public final class MonitorFactory {
 		
 		selfMonitor.addMonitoring("self", new SelfMonitor());
 		
-		ApMon apmon = getApMonSender();
+		final ApMon apmon = getApMonSender();
 		
 		if (apmon!=null){
-			int pid = getSelfProcessID();
+			final int pid = getSelfProcessID();
 			
 			if (pid>0)
-				apmon.addJobToMonitor(getSelfProcessID(), System.getProperty("user.dir"), selfMonitor.getClusterName(), selfMonitor.getNodeName());
+				apmon.addJobToMonitor(pid, System.getProperty("user.dir"), selfMonitor.getClusterName(), selfMonitor.getNodeName());
 		}
 	}
 	
