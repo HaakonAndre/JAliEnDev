@@ -11,6 +11,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lia.Monitor.monitor.MCluster;
+import lia.Monitor.monitor.MFarm;
+import lia.Monitor.monitor.MNode;
+import lia.Monitor.monitor.MonitoringModule;
 import lia.Monitor.monitor.Result;
 import lia.Monitor.monitor.eResult;
 import lia.util.DynamicThreadPoll.SchJobInt;
@@ -89,8 +93,19 @@ public class Monitor implements Runnable {
 	 * @param module
 	 */
 	void addModule(final SchJobInt module) {
-		if (module != null)
+		if (module != null){
+			if (module instanceof MonitoringModule){
+				final MonitoringModule job = (MonitoringModule) module;
+				
+		        final MFarm mfarm = new MFarm(component);
+		        final MCluster mcluster = new MCluster(clusterName, mfarm);
+		        final MNode mnode = new MNode(nodeName, mcluster, mfarm);
+				
+				job.init(mnode, ConfigUtils.getConfig().gets(module.getClass().getCanonicalName()+".args"));
+			}
+			
 			modules.add(module);
+		}
 	}
 
 	/**
@@ -269,7 +284,7 @@ public class Monitor implements Runnable {
 			for (final MonitoringObject mo: monitoringObjects.values()) {
 				mo.fillValues(paramNames, paramValues);
 			}
-			
+
 			sendParameters(paramNames, paramValues);
 		}
 	}
@@ -323,16 +338,24 @@ public class Monitor implements Runnable {
 	 * @param paramValues values associated to the names, Strings or Numbers
 	 */
 	public void sendParameters(final Vector<String> paramNames, final Vector<?> paramValues){
-		if (paramNames==null || paramNames.size()==0 || paramValues==null || paramValues.size() != paramNames.size())
+		if (paramNames==null || paramNames.size()==0 || paramValues==null || paramValues.size() != paramNames.size()){
+			logger.log(Level.WARNING, "Not sending the values because:\nparamNames="+paramNames+"\nparamValues="+paramValues);
 			return;
+		}
 		
 		final ApMon apmon = MonitorFactory.getApMonSender();
 		
 		if (apmon==null)
 			return;
 		
+		if (logger.isLoggable(Level.FINEST)){
+			logger.log(Level.FINEST, "Sending\n"+paramNames+"\n"+paramValues);
+		}
+		
 		try {
-			apmon.sendParameters(clusterName, nodeName, paramNames.size(), paramNames, paramValues);
+			synchronized (apmon){
+				apmon.sendParameters(clusterName, nodeName, paramNames.size(), paramNames, paramValues);
+			}
 		}
 		catch (Throwable t) {
 			logger.log(Level.SEVERE, "Cannot send ApMon datagram", t);
@@ -355,5 +378,10 @@ public class Monitor implements Runnable {
 		paramValues.add(parameterValue);
 		
 		sendParameters(paramNames, paramValues);
+	}
+	
+	@Override
+	public String toString() {
+		return clusterName+"/"+nodeName+" : "+modules;
 	}
 }
