@@ -91,7 +91,7 @@ public class SE implements Serializable, Comparable<SE>{
 	 * @param db
 	 */
 	SE(final DBFunctions db){
-		seName = db.gets("seName");
+		seName = db.gets("seName").toUpperCase();
 		
 		seNumber = db.geti("seNumber");
 		

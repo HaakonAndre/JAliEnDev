@@ -9,8 +9,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -89,10 +92,56 @@ public final class SEUtils {
 	 * @param seNumber
 	 * @return the SE, if it exists, or <code>null</code> if it doesn't
 	 */
-	public static SE getSE(final int seNumber){
+	public static SE getSE(final Integer seNumber){
 		updateSECache();
 		
-		return seCache.get(Integer.valueOf(seNumber));
+		return seCache.get(seNumber);
+	}
+	
+	/**
+	 * Get the SE object that has this name
+	 * 
+	 * @param seName
+	 * @return SE, if defined, otherwise <code>null</code>
+	 */
+	public static SE getSE(final String seName){
+		if (seName==null || seName.length()==0)
+			return null;
+		
+		updateSECache();
+		
+		final Collection<SE> ses = seCache.values();
+		
+		final String name = seName.trim().toUpperCase();
+		
+		for (final SE se: ses){
+			if (se.seName.equals(name))
+				return se;
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Get all SE objects that have the given names
+	 * 
+	 * @param seNames
+	 * @return SE objects
+	 */
+	public static Set<SE> getSEs(final Set<String> seNames){
+		if (seNames==null)
+			return null;
+		
+		final Set<SE> ret = new LinkedHashSet<SE>(seNames.size());
+		
+		for (final String name: seNames){
+			final SE se = getSE(name);
+			
+			if (se!=null)
+				ret.add(se);
+		}
+		
+		return ret;
 	}
 	
 	private static Map<String, Map<Integer, Integer>> seRanks = null;
@@ -125,7 +174,7 @@ public final class SEUtils {
 						
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 						
-						db.query("SELECT sitename, seNumber, rank FROM SERanks ORDER BY sitename;");
+						db.query("SELECT sitename, seNumber, rank FROM SERanks ORDER BY sitename, rank;");
 						
 						while (db.moveNext()){
 							final String sitename = db.gets(1).trim().toUpperCase();
@@ -136,7 +185,7 @@ public final class SEUtils {
 								oldMap = newRanks.get(sitename);
 								
 								if (oldMap==null){
-									oldMap = new HashMap<Integer, Integer>();
+									oldMap = new LinkedHashMap<Integer, Integer>();
 									newRanks.put(sitename, oldMap);
 								}
 								
@@ -197,6 +246,40 @@ public final class SEUtils {
 			// the only case left, second one is best
 			return 1;
 		}
+	}
+	
+	/**
+	 * Get all the SEs available to one site, sorted by the relative distance to the site
+	 * 
+	 * @param site
+	 * @return sorted list of SEs based on MonALISA distance metric
+	 */
+	public static List<SE> getClosestSEs(final String site){
+		if (site==null || site.length()==0)
+			return null;
+		
+		final String sitename = site.trim().toUpperCase();
+		
+		updateSERanksCache();
+		
+		final Map<Integer, Integer> ranks = seRanks.get(sitename);
+		
+		if (ranks==null)
+			return null;
+		
+		final List<SE> ret = new ArrayList<SE>(ranks.size());
+		
+		for (final Map.Entry<Integer, Integer> me: ranks.entrySet()){
+			final SE se = getSE(me.getKey());
+			
+			if (se!=null)
+				ret.add(se);
+		}
+		
+		// We don't need to sort the return list because of the way the cache is built
+		// (it sorts by sitename and rank) and because the cache is LinkedHashMap
+		
+		return ret;
 	}
 	
 	/**
