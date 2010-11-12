@@ -98,6 +98,7 @@ public final class CacheMonitor implements MonitoringObject {
 		paramValues.add(Double.valueOf(absTotal));
 	
 		if (absDiffSeconds > 0){
+			paramNames.add(name+"_abs_misses_R");
 			paramValues.add(Double.valueOf(absMisses / absDiffSeconds));
 			
 			paramNames.add(name+"_abs_hits_R");
