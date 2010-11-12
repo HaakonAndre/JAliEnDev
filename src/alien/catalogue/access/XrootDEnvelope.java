@@ -40,7 +40,7 @@ public class XrootDEnvelope {
 	}
 
 	void decorate() {
-		se = SEUtils.getSE(pfn.seNumber);
+		se = SEUtils.getSE(Integer.valueOf(pfn.seNumber));
 	}
 
 	private void initializeEncryptedTicket() {
