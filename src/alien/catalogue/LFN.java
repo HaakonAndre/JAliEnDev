@@ -374,7 +374,7 @@ public class LFN implements Serializable, Comparable<LFN>, CatalogEntity {
 	 */
 	@Override
 	public String getName() {
-		return lfn;
+		return getCanonicalName();
 	}
 
 	/* (non-Javadoc)
