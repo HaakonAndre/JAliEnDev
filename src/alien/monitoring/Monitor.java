@@ -11,6 +11,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lazyj.Format;
 import lia.Monitor.monitor.MCluster;
 import lia.Monitor.monitor.MFarm;
 import lia.Monitor.monitor.MNode;
@@ -84,7 +85,9 @@ public class Monitor implements Runnable {
 			logger.log(Level.SEVERE, "Cannot get localhost name!", uhe);
 		}
 		
-		nodeName = MonitorFactory.getConfigString(component, "node_name", hostName);
+		final String pattern = MonitorFactory.getConfigString(component, "node_name", "${hostname}");
+		
+		nodeName = Format.replace(pattern, "${hostname}", hostName);
 	}
 
 	/**

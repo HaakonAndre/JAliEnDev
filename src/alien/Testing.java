@@ -1,5 +1,6 @@
 package alien;
 
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;

@@ -1,5 +1,6 @@
 package alien.monitoring;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -197,8 +198,7 @@ public final class MonitorFactory {
 		
 		selfMonitor = getMonitor("Self");
 		
-		// TODO implement the module for self JVM monitoring
-		// @see myMon
+		selfMonitor.addMonitoring("self", new SelfMonitor());
 	}
 	
 	private static ApMon apmonInstance = null;
@@ -337,5 +337,40 @@ public final class MonitorFactory {
 		}
 		
 		return apmonInstance;
+	}
+	
+	private static int selfProcessID = 0;
+	
+	/**
+	 * Get JVM's process ID
+	 * 
+	 * @return the process id, if it can be determined, or <code>-1</code> if not
+	 */
+	public static final int getSelfProcessID(){
+		if (selfProcessID!=0)
+			return selfProcessID;
+		
+		try{
+			// on Linux
+			selfProcessID = Integer.parseInt( ( new File("/proc/self")).getCanonicalFile().getName() );
+				
+			return selfProcessID;
+		}
+		catch (Throwable t){
+			// ignore
+		}
+
+		try{
+			final String s = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
+			
+			selfProcessID = Integer.parseInt(s.substring(0, s.indexOf('@')));
+		}
+		catch (Throwable t){
+			// ignore
+		}
+		
+		selfProcessID = -1;
+		
+		return selfProcessID;
 	}
 }
