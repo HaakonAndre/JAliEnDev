@@ -363,7 +363,7 @@ public class Monitor implements Runnable {
 	 * @param paramNames the names
 	 * @param paramValues values associated to the names, Strings or Numbers
 	 */
-	public void sendParameters(final Vector<String> paramNames, final Vector<?> paramValues){
+	public void sendParameters(final Vector<String> paramNames, final Vector<Object> paramValues){
 		if (paramNames==null || paramValues==null || (paramNames.size()==0 && paramValues.size()==0))
 			return;
 		
