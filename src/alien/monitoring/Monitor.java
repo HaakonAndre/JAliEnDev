@@ -40,6 +40,11 @@ public class Monitor implements Runnable {
 	 * Scheduled task, so that it can be canceled later if needed
 	 */
 	ScheduledFuture<?> future = null;
+	
+	/**
+	 * Collecting interval
+	 */
+	int interval = 0; 
 
 	private ConcurrentHashMap<String, MonitoringObject> monitoringObjects = new ConcurrentHashMap<String, MonitoringObject>();
 

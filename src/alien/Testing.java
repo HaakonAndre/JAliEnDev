@@ -1,6 +1,5 @@
 package alien;
 
-import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -35,6 +34,12 @@ public class Testing {
 	 */
 	public static void main(String[] args) {
 		testMonitoring();
+		
+//		Properties prop = System.getProperties();
+//		
+//		for (Object o: prop.keySet()){
+//			System.err.println(o+ " : " + prop.get(o));
+//		}
 	}
 	
 	private static void testMonitoring(){	
@@ -66,6 +71,11 @@ public class Testing {
 		
 		AliEnPrincipal user = UserFactory.getByUsername("grigoras");
 		
+		if (lfn==null){
+			System.err.println("LFN is null, cannot continue testing");
+			return;
+		}
+		
 		System.err.println(user+" can read "+lfn.getName()+" : "+AuthorizationChecker.canRead(lfn, user));
 		System.err.println(user+" can write "+lfn.getName()+" : "+AuthorizationChecker.canWrite(lfn, user));
 		System.err.println(user+" can execute "+lfn.getName()+" : "+AuthorizationChecker.canExecute(lfn, user));
@@ -94,6 +104,11 @@ public class Testing {
 		
 		GUID guid = GUIDUtils.getGUID(startingGUID);
 				
+		if (guid==null){
+			System.err.println("GUID is null, cannot continue");
+			return;
+		}
+		
 		System.err.println(guid);
 		
 		Set<PFN> pfns = guid.getPFNs();

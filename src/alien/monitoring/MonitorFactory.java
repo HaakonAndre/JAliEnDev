@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,6 +40,10 @@ public final class MonitorFactory {
 	 */
 	static final AtomicInteger aiFactoryIndex = new AtomicInteger(0);
 	
+	private static Monitor selfMonitor = null;
+
+	private static Monitor systemMonitor = null;
+	
 	private static final ThreadFactory threadFactory = new ThreadFactory() {
 		
 		@Override
@@ -59,11 +64,13 @@ public final class MonitorFactory {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(MonitorFactory.class.getCanonicalName());
 	
-	private MonitorFactory(){
-		// disable this constructor, only static methods
-	}
+	private static final Object apmonLock = new Object();
+	
+	private static ApMon apmonInstance = null;
 	
 	private static final Map<String, Monitor> monitors = new HashMap<String, Monitor>();
+
+	private static int selfProcessID = 0;
 	
 	static {
 		if (getConfigBoolean("System", "enabled", true))
@@ -71,6 +78,10 @@ public final class MonitorFactory {
 		
 		if (getConfigBoolean("Self", "enabled", true))
 			enableSelfMonitoring();
+	}
+	
+	private MonitorFactory(){
+		// disable this constructor, only static methods
 	}
 	
 	/**
@@ -82,6 +93,8 @@ public final class MonitorFactory {
 	public static Monitor getMonitor(final String component){
 		Monitor m;
 		
+		final Random r = new Random(System.currentTimeMillis());
+		
 		synchronized (monitors){
 			m = monitors.get(component);
 		
@@ -90,9 +103,10 @@ public final class MonitorFactory {
 			
 				final int interval = getConfigInt(component, "period", 60);
 				
-				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, interval/2, interval, TimeUnit.SECONDS);
+				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, r.nextInt(interval), interval, TimeUnit.SECONDS);
 				
 				m.future = future;
+				m.interval = interval;
 				
 				monitors.put(component, m);
 			}
@@ -100,8 +114,6 @@ public final class MonitorFactory {
 		
 		return m;
 	}
-	
-	private static Monitor systemMonitor = null;
 	
 	/**
 	 * Enable periodic sending of background host monitoring 
@@ -187,8 +199,6 @@ public final class MonitorFactory {
 		}
 	}
 	
-	private static Monitor selfMonitor = null;
-	
 	/**
 	 * Enable periodic sending of internal parameters
 	 */
@@ -205,13 +215,12 @@ public final class MonitorFactory {
 		if (apmon!=null){
 			final int pid = getSelfProcessID();
 			
-			if (pid>0)
+			if (pid>0){
+				apmon.setJobMonitoring(true, selfMonitor.interval);
 				apmon.addJobToMonitor(pid, System.getProperty("user.dir"), selfMonitor.getClusterName(), selfMonitor.getNodeName());
+			}
 		}
 	}
-	
-	private static ApMon apmonInstance = null;
-	private static Object apmonLock = new Object();
 	
 	private static Vector<String> getApMonDestinations(){
 		final ExtProperties p = getConfig();
@@ -347,8 +356,6 @@ public final class MonitorFactory {
 		
 		return apmonInstance;
 	}
-	
-	private static int selfProcessID = 0;
 	
 	/**
 	 * Get JVM's process ID

@@ -15,6 +15,8 @@ public class SelfMonitor implements MonitoringObject {
 	
 	private static final double MB = 1024 * 1024d;
 	
+	private static final long systemStarted = System.currentTimeMillis();
+	
 	static {
 		final Set<String> temp = new HashSet<String>();
 		
@@ -50,35 +52,38 @@ public class SelfMonitor implements MonitoringObject {
 		
 		final long freeMemory = r.freeMemory();
 		
-		paramNames.add("free_memory");
+		paramNames.add("jvm_free_memory");
 		paramValues.add(Double.valueOf(freeMemory / MB));
 		
 		final long maxMemory = r.maxMemory();
 		
-		paramNames.add("max_memory");
+		paramNames.add("jvm_max_memory");
 		paramValues.add(Double.valueOf(maxMemory / MB));
 		
 		final long totalMemory = r.totalMemory();
 		
-		paramNames.add("total_memory");
+		paramNames.add("jvm_total_memory");
 		paramValues.add(Double.valueOf(totalMemory / MB));
 		
 		final long usedMemory = totalMemory - freeMemory;
 		
-		paramNames.add("used_memory");
+		paramNames.add("jvm_used_memory");
 		paramValues.add(Double.valueOf(usedMemory / MB));
 		
 		final long availableMemory = maxMemory - usedMemory;
 		
-		paramNames.add("available_memory");
+		paramNames.add("jvm_available_memory");
 		paramValues.add(Double.valueOf(availableMemory / MB));
 		
 		if (totalMemory>0){
-			paramNames.add("memory_usage");
+			paramNames.add("jvm_memory_usage");
 			paramValues.add(Double.valueOf(usedMemory * 100d / totalMemory));
 		}
 		
-		paramNames.add("available_processors");
+		paramNames.add("jvm_available_processors");
 		paramValues.add(Integer.valueOf(r.availableProcessors()));
+		
+		paramNames.add("jvm_uptime");
+		paramValues.add(Double.valueOf((System.currentTimeMillis() - systemStarted) / 1000d));
 	}
 }
