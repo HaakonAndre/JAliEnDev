@@ -6,6 +6,7 @@ package alien.config;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
 import lazyj.cache.ExpirationCache;
+import lia.Monitor.monitor.AppConfig;
 
 /**
  * @author costing
@@ -70,6 +72,16 @@ public class ConfigUtils {
 						else
 						if (sName.equals("config")){
 							applicationConfig = prop;
+							
+							try{
+								System.setProperty("lia.Monitor.ConfigURL", "file:"+sub.getCanonicalPath());
+							}
+							catch (IOException ioe){
+								// ignore
+							}
+							
+							// force a call to this guy so everything instantiates correctly
+							AppConfig.lastReloaded();
 						}
 						else
 						if (prop.gets("driver").length()>0){
