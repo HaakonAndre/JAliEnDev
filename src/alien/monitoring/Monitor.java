@@ -378,7 +378,7 @@ public class Monitor implements Runnable {
 			return;
 		
 		if (logger.isLoggable(Level.FINEST)){
-			logger.log(Level.FINEST, "Sending\n"+paramNames+"\n"+paramValues);
+			logger.log(Level.FINEST, "Sending on "+clusterName+" / "+nodeName+"\n"+paramNames+"\n"+paramValues);
 		}
 		
 		try {
