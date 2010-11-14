@@ -21,6 +21,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import alien.catalogue.CatalogueUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 
@@ -47,31 +48,34 @@ public final class SEUtils {
 		seCacheReadLock.lock();
 		
 		try{
-			if (System.currentTimeMillis() - seCacheUpdated > 1000*60*5 || seCache == null){
+			if (System.currentTimeMillis() - seCacheUpdated > CatalogueUtils.CACHE_TIMEOUT || seCache == null){
 				seCacheReadLock.unlock();
 				
 				seCacheWriteLock.lock();
 				
 				try{
-					if (System.currentTimeMillis() - seCacheUpdated > 1000*60*5 || seCache == null){
+					if (System.currentTimeMillis() - seCacheUpdated > CatalogueUtils.CACHE_TIMEOUT || seCache == null){
 						if (logger.isLoggable(Level.FINER)){
 							logger.log(Level.FINER, "Updating SE cache");
 						}
 						
-						final Map<Integer, SE> ses = new HashMap<Integer, SE>();
-					
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 					
-						db.query("SELECT * FROM SE;");
-					
-						while (db.moveNext()){
-							final SE se = new SE(db);
+						if (db.query("SELECT * FROM SE;")){
+							final Map<Integer, SE> ses = new HashMap<Integer, SE>();
+												
+							while (db.moveNext()){
+								final SE se = new SE(db);
+							
+								ses.put(Integer.valueOf(se.seNumber), se);
+							}
 						
-							ses.put(Integer.valueOf(se.seNumber), se);
+							seCache = ses;
+							seCacheUpdated = System.currentTimeMillis();
 						}
-					
-						seCache = ses;
-						seCacheUpdated = System.currentTimeMillis();
+						else{
+							seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+						}
 					}
 				}
 				finally{
@@ -95,6 +99,9 @@ public final class SEUtils {
 	public static SE getSE(final Integer seNumber){
 		updateSECache();
 		
+		if (seCache==null)
+			return null;
+		
 		return seCache.get(seNumber);
 	}
 	
@@ -109,6 +116,9 @@ public final class SEUtils {
 			return null;
 		
 		updateSECache();
+		
+		if (seCache==null)
+			return null;
 		
 		final Collection<SE> ses = seCache.values();
 		
@@ -156,47 +166,50 @@ public final class SEUtils {
 		seRanksReadLock.lock();
 		
 		try{
-			if (System.currentTimeMillis() - seRanksUpdated > 1000*60*10 || seRanks == null){
+			if (System.currentTimeMillis() - seRanksUpdated > CatalogueUtils.CACHE_TIMEOUT || seRanks == null){
 				seRanksReadLock.unlock();
 				
 				seRanksWriteLock.lock();
 	
 				try{
-					if (System.currentTimeMillis() - seRanksUpdated > 1000*60*10 || seRanks == null){
+					if (System.currentTimeMillis() - seRanksUpdated > CatalogueUtils.CACHE_TIMEOUT || seRanks == null){
 						if (logger.isLoggable(Level.FINER)){
 							logger.log(Level.FINER, "Updating SE Ranks cache");
 						}
 						
-						final Map<String, Map<Integer, Integer>> newRanks = new HashMap<String, Map<Integer,Integer>>();
-						
-						String sOldSite = null;
-						Map<Integer, Integer> oldMap = null;
-						
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 						
-						db.query("SELECT sitename, seNumber, rank FROM SERanks ORDER BY sitename, rank;");
-						
-						while (db.moveNext()){
-							final String sitename = db.gets(1).trim().toUpperCase();
-							final int seNumber = db.geti(2);
-							final int rank = db.geti(3);
+						if (db.query("SELECT sitename, seNumber, rank FROM SERanks ORDER BY sitename, rank;")){
+							final Map<String, Map<Integer, Integer>> newRanks = new HashMap<String, Map<Integer,Integer>>();
 							
-							if (!sitename.equals(sOldSite) || oldMap==null){
-								oldMap = newRanks.get(sitename);
+							String sOldSite = null;
+							Map<Integer, Integer> oldMap = null;
+							
+							while (db.moveNext()){
+								final String sitename = db.gets(1).trim().toUpperCase();
+								final int seNumber = db.geti(2);
+								final int rank = db.geti(3);
 								
-								if (oldMap==null){
-									oldMap = new LinkedHashMap<Integer, Integer>();
-									newRanks.put(sitename, oldMap);
+								if (!sitename.equals(sOldSite) || oldMap==null){
+									oldMap = newRanks.get(sitename);
+									
+									if (oldMap==null){
+										oldMap = new LinkedHashMap<Integer, Integer>();
+										newRanks.put(sitename, oldMap);
+									}
+									
+									sOldSite=sitename;
 								}
 								
-								sOldSite=sitename;
+								oldMap.put(Integer.valueOf(seNumber), Integer.valueOf(rank));
 							}
 							
-							oldMap.put(Integer.valueOf(seNumber), Integer.valueOf(rank));
+							seRanks = newRanks;
+							seRanksUpdated = System.currentTimeMillis();
 						}
-						
-						seRanks = newRanks;
-						seRanksUpdated = System.currentTimeMillis();
+						else{
+							seRanksUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+						}
 					}
 				}
 				finally{
@@ -257,10 +270,13 @@ public final class SEUtils {
 	public static List<SE> getClosestSEs(final String site){
 		if (site==null || site.length()==0)
 			return null;
+				
+		updateSERanksCache();
+		
+		if (seRanks==null)
+			return null;
 		
 		final String sitename = site.trim().toUpperCase();
-		
-		updateSERanksCache();
 		
 		final Map<Integer, Integer> ranks = seRanks.get(sitename);
 		
@@ -299,6 +315,9 @@ public final class SEUtils {
 			return ret;
 		
 		updateSERanksCache();
+		
+		if (seRanks==null)
+			return null;
 		
 		final Map<Integer, Integer> ranks = seRanks.get(sSite.trim().toUpperCase());
 		

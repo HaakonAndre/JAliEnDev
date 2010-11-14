@@ -48,7 +48,8 @@ public final class CatalogueUtils {
 		protected Host resolve(final Integer key) {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 			
-			db.query("SELECT * FROM HOSTS WHERE hostIndex="+key+";");
+			if (!db.query("SELECT * FROM HOSTS WHERE hostIndex="+key+";"))
+				return null;
 			
 			if (db.moveNext()){
 				return new Host(db);
@@ -75,33 +76,42 @@ public final class CatalogueUtils {
 	private static final ReadLock guidIndexReadLock = guidIndexRWLock.readLock();
 	private static final WriteLock guidIndexWriteLock = guidIndexRWLock.writeLock();
 	
+	/**
+	 * For how long the caches are active
+	 */
+	public static final long CACHE_TIMEOUT = 1000 * 60 * 5;
+	
 	private static final void updateGuidIndexCache() {
 		guidIndexReadLock.lock();
 
 		try{
-			if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
+			if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
 				guidIndexReadLock.unlock();
 				
 				guidIndexWriteLock.lock();
 				
 				try{
-					if (System.currentTimeMillis() - guidIndexCacheUpdated > 1000 * 60 * 5 || guidIndexCache == null) {
+					if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
 						if (logger.isLoggable(Level.FINER)) {
 							logger.log(Level.FINER, "Updating GUIDINDEX cache");
 						}
 	
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 	
-						db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;");
-	
-						final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
-	
-						while (db.moveNext())
-							ret.add(new GUIDIndex(db));
-	
-						guidIndexCache = ret;
-	
-						guidIndexCacheUpdated = System.currentTimeMillis();
+						if (db!=null && db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")){
+							final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
+		
+							while (db.moveNext())
+								ret.add(new GUIDIndex(db));
+		
+							guidIndexCache = ret;
+		
+							guidIndexCacheUpdated = System.currentTimeMillis();
+						}
+						else{
+							// in case of a DB connection failure, try again in 10 seconds, until then reuse the existing value (if any)
+							guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000*10;
+						}
 					}
 				}
 				finally {
@@ -124,6 +134,9 @@ public final class CatalogueUtils {
 	 */
 	public static GUIDIndex getGUIDIndex(final long timestamp){
 		updateGuidIndexCache();
+
+		if (guidIndexCache==null)
+			return null;
 		
 		GUIDIndex old = null;
 		
@@ -145,6 +158,9 @@ public final class CatalogueUtils {
 	public static List<GUIDIndex> getAllGUIDIndexes(){
 		updateGuidIndexCache();
 		
+		if (guidIndexCache==null)
+			return null;
+		
 		return Collections.unmodifiableList(guidIndexCache);
 	}
 	
@@ -159,30 +175,34 @@ public final class CatalogueUtils {
 		indextableReadLock.lock();
 
 		try{
-			if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
+			if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
 				indextableReadLock.unlock();
 					
 				indextableWriteLock.lock();
 					
 				try{
-					if (System.currentTimeMillis() - lastIndexTableUpdate > 1000 * 60 * 5 || indextable == null) {
+					if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
 						if (logger.isLoggable(Level.FINER)) {
 							logger.log(Level.FINER, "Updating INDEXTABLE cache");
 						}
 	
-						final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
-	
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 	
-						db.query("SELECT * FROM INDEXTABLE;");
-	
-						while (db.moveNext()) {
-							final IndexTableEntry entry = new IndexTableEntry(db);
-	
-							newIndextable.add(entry);
+						if (db!=null && db.query("SELECT * FROM INDEXTABLE;")){
+							final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
+							
+							while (db.moveNext()) {
+								final IndexTableEntry entry = new IndexTableEntry(db);
+		
+								newIndextable.add(entry);
+							}
+							indextable = newIndextable;
+							lastIndexTableUpdate = System.currentTimeMillis();
 						}
-						indextable = newIndextable;
-						lastIndexTableUpdate = System.currentTimeMillis();
+						else{
+							// in case of a DB connection failure, try again in 10 seconds, until then reuse the existing value (if any)
+							lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000*10;
+						}
 					}
 				}
 				finally {
@@ -207,6 +227,9 @@ public final class CatalogueUtils {
 	public static IndexTableEntry getIndexTable(final int hostId, final int tableName){
 		updateIndexTableCache();
 
+		if (indextable == null)
+			return null;
+		
 		for (final IndexTableEntry ite: indextable)
 			if (ite.hostIndex == hostId && ite.tableName == tableName)
 				return ite;
@@ -222,6 +245,9 @@ public final class CatalogueUtils {
 	 */
 	public static IndexTableEntry getClosestMatch(final String pattern){
 		updateIndexTableCache();
+		
+		if (indextable==null)
+			return null;
 		
 		if (monitor!=null)
 			monitor.incrementCounter("INDEXTABLE_lookup");

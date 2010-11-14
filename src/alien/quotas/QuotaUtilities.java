@@ -12,6 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 
 import lazyj.DBFunctions;
@@ -38,32 +39,35 @@ public final class QuotaUtilities {
 		quotaReadLock.lock();
 		
 		try{
-			if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
+			if (System.currentTimeMillis() - quotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || quotas==null){
 				quotaReadLock.unlock();
 				
 				quotaWriteLock.lock();
 				
 				try{
-					if (System.currentTimeMillis() - quotasLastUpdated > 1000*60*2 || quotas==null){
+					if (System.currentTimeMillis() - quotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || quotas==null){
 						if (logger.isLoggable(Level.FINER)){
 							logger.log(Level.FINER, "Updating Quotas cache");
 						}
 						
-						final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
-					
 						final DBFunctions db = ConfigUtils.getDB("processes");
 					
-						db.query("SELECT * FROM PRIORITY;");
+						if (db.query("SELECT * FROM PRIORITY;")){
+							final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
+							
+							while (db.moveNext()){
+								final Quota fq = new Quota(db);
 					
-						while (db.moveNext()){
-							final Quota fq = new Quota(db);
-				
-							if (fq.user!=null)
-								newQuotas.put(fq.user.toLowerCase(), fq);
+								if (fq.user!=null)
+									newQuotas.put(fq.user.toLowerCase(), fq);
+							}
+						
+							quotas = Collections.unmodifiableMap(newQuotas);
+							quotasLastUpdated = System.currentTimeMillis();
 						}
-					
-						quotas = Collections.unmodifiableMap(newQuotas);
-						quotasLastUpdated = System.currentTimeMillis();
+						else{
+							quotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+						}
 					}
 				}
 				finally{
@@ -89,6 +93,9 @@ public final class QuotaUtilities {
 			return null;
 		
 		updateFileQuotasCache();
+		
+		if (quotas==null)
+			return null;
 		
 		return quotas.get(account.toLowerCase());
 	}
