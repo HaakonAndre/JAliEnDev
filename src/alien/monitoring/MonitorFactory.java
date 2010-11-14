@@ -44,6 +44,8 @@ public final class MonitorFactory {
 
 	private static Monitor systemMonitor = null;
 	
+	private static final Random random = new Random(System.currentTimeMillis());
+	
 	private static final ThreadFactory threadFactory = new ThreadFactory() {
 		
 		@Override
@@ -83,7 +85,7 @@ public final class MonitorFactory {
 	private MonitorFactory(){
 		// disable this constructor, only static methods
 	}
-	
+		
 	/**
 	 * Get the monitor for this component
 	 * 
@@ -93,8 +95,6 @@ public final class MonitorFactory {
 	public static Monitor getMonitor(final String component){
 		Monitor m;
 		
-		final Random r = new Random(System.currentTimeMillis());
-		
 		synchronized (monitors){
 			m = monitors.get(component);
 		
@@ -103,7 +103,7 @@ public final class MonitorFactory {
 			
 				final int interval = getConfigInt(component, "period", 60);
 				
-				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, r.nextInt(interval), interval, TimeUnit.SECONDS);
+				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, random.nextInt(interval), interval, TimeUnit.SECONDS);
 				
 				m.future = future;
 				m.interval = interval;
@@ -216,9 +216,17 @@ public final class MonitorFactory {
 			final int pid = getSelfProcessID();
 			
 			if (pid>0){
-				apmon.setJobMonitoring(true, selfMonitor.interval);
+				logger.log(Level.FINE, "Enabling background self monitoring of PID "+pid+" every "+selfMonitor.interval+" seconds");
+				
+				apmon.setJobMonitoring(true, selfMonitor.interval);				
 				apmon.addJobToMonitor(pid, System.getProperty("user.dir"), selfMonitor.getClusterName(), selfMonitor.getNodeName());
 			}
+			else{
+				logger.log(Level.WARNING, "Could not determine self pid so external process tracking is disabled");
+			}
+		}
+		else{
+			logger.log(Level.WARNING, "ApMon is null, so self monitoring cannot run");
 		}
 	}
 	
