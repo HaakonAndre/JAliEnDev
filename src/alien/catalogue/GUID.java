@@ -117,6 +117,13 @@ public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
 	Set<LFN> lfns;
 	
 	/**
+	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not.
+	 * Setting the other fields will only be permitted if this field is false.
+	 */
+	@SuppressWarnings("unused")
+	private final boolean exists;
+	
+	/**
 	 * Load one row from a G*L table
 	 * 
 	 * @param db
@@ -126,17 +133,23 @@ public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
 	GUID(final DBFunctions db, final int host, final int tableName){
 		init(db);
 		
+		this.exists = true;
 		this.host = host;
 		this.tableName = tableName;
 	}
 	
-	GUID(UUID id){
-		guid=id;
-		tableName = 0;
-		host = 0;
+	/**
+	 * Create a new GUID
+	 * @param newID 
+	 */
+	GUID(final UUID newID){
+		this.guid = newID;
+
+		this.exists = false;
+		
+		this.host = GUIDUtils.getGUIDHost(guid);
+		this.tableName = GUIDUtils.getTableNameForGUID(guid);
 	}
-	
-	
 	
 	private void init(final DBFunctions db){
 		guidId = db.geti("guidId");
@@ -371,13 +384,5 @@ public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
 	@Override
 	public char getType() {
 		return type;
-	}
-	
-	/* (non-Javadoc)
-	 * @see alien.catalogue.CatalogEntity#getType()
-	 */
-	@Override
-	public char is() {
-		return 'g';
 	}
 }

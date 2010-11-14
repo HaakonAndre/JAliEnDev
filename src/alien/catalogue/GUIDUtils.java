@@ -4,7 +4,6 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
-import lazyj.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -91,42 +90,14 @@ public final class GUIDUtils {
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
 	public static GUID getGUID(final UUID guid) {
-		final int host = getGUIDHost(guid);
-
-		if (host < 0)
-			return null;
-
-		final Host h = CatalogueUtils.getHost(host);
-
-		if (h == null)
-			return null;
-
-		final DBFunctions db = h.getDB();
-
-		if (db == null)
-			return null;
-
-		final int tableName = GUIDUtils.getTableNameForGUID(guid);
-
-		if (tableName < 0)
-			return null;
-
-		if (monitor != null)
-			monitor.incrementCounter("GUID_db_lookup");
-
-		db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary('"
-				+ guid + "');");
-
-		if (db.moveNext())
-			return new GUID(db, host, tableName);
-
-		return null;
+		return getGUID(guid, false);
 	}
 
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
 	 * 
 	 * @param guid
+	 * @param evenIfDoesntExist if <code>true</code>, if the entry doesn't exist then a new GUID is returned
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
 	public static GUID getGUID(final UUID guid, boolean evenIfDoesntExist) {
@@ -158,11 +129,12 @@ public final class GUIDUtils {
 
 		if (!db.moveNext()) {
 			if (evenIfDoesntExist) {
-				return new GUID(db, host, tableName);
+				return new GUID(guid);
 			}
 
 			return null;
 		}
+		
 		return new GUID(db, host, tableName);
 	}
 
@@ -174,7 +146,6 @@ public final class GUIDUtils {
 	 * @return yesORno
 	 */
 	public static boolean isValidGUID(String guid) {
-
 		try {
 			UUID.fromString(guid);
 			return true;
@@ -184,15 +155,15 @@ public final class GUIDUtils {
 	}
 	
 	
+	/**
+	 * @return a new (empty) GUID
+	 */
 	public static GUID createGuid(){
 		UUID id;
 		do{
-		id = UUID.randomUUID();
-		} while(getGUID(id) != null);
+			id = UUID.randomUUID();
+		} while (getGUID(id) != null);
+		
 		return new GUID(id);
 	}
-	
-	
-	
-	
 }

@@ -40,18 +40,24 @@ public abstract class CatalogueAccess  {
 	
 	/** 
 	 * Package protected access to the constructor.
-	 * @param guid
+	 * @param entity 
 	 * @see AuthorizationFactory
 	 */
 	CatalogueAccess(final CatalogEntity entity){
 		this.entity = entity;
-		if(entity.is() == 'l') {
+		if(entity instanceof LFN) {
 			lfn = (LFN) entity;
-			guid = (GUID) GUIDUtils.getGUID(lfn.guid);
-		} else {
-			lfn = LFNUtils.getLFN("/NOLFN", true);
-			guid = (GUID) entity;
+			guid = GUIDUtils.getGUID(lfn.guid);
 		}
+		else
+		if (entity instanceof GUID)
+		{
+			guid = (GUID) entity;
+			lfn = LFNUtils.getLFN("/NOLFN", true);
+		}
+		else
+			throw new IllegalAccessError("Unknown entity type");
+		
 		size = guid.size;
 		md5 = guid.md5;
 		

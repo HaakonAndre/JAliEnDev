@@ -38,9 +38,4 @@ public interface CatalogEntity {
 	 */
 	public char getType();
 	
-	/**
-	 * @return type of CatalogEntity
-	 */
-	public char is();
-	
 }
