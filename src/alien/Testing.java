@@ -96,7 +96,7 @@ public class Testing {
 		
 		System.err.println(" ------- Whereis  Real --------\n"+whereisReal+"\n");
 		
-		System.err.println(SEUtils.sortBySite(whereisReal, "CCIN2P3"));
+		System.err.println(SEUtils.sortBySite(whereisReal, "CCIN2P3", false));
 	}
 	
 	private static void testFileOperations(){

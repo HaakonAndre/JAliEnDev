@@ -1,116 +1,106 @@
 package alien.services;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
-import lia.Monitor.modules.XrootdServerMonitor;
 import alien.catalogue.PFN;
 import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.se.SE;
 import alien.se.SEUtils;
 
+/**
+ * @author Steffen
+ * @since Nov 14, 2010
+ */
 public class CatalogueAccessEnvelopeDecorator {
 
+	/**
+	 * @param ca
+	 * @param sitename
+	 * @param qos
+	 * @param qosCount
+	 * @param staticSEs
+	 * @param exxSes
+	 */
 	public static void loadXrootDEnvelopesForCatalogueAccessV218(
 			CatalogueAccess ca, String sitename, String qos, int qosCount,
-			Set<String> staticSEs, Set<String> exxSes) {
+			Set<SE> staticSEs, Set<SE> exxSes) {
 
 		if (ca.getAccess() == CatalogueAccess.READ
 				|| ca.getAccess() == CatalogueAccess.DELETE) {
 
 			ca.loadPFNS();
-			Hashtable<SE, PFN> whereis = getSEsForPFNs(ca.getPFNS());
+			
+			final Set<PFN> whereis = ca.getPFNS();
 
-			Hashtable<SE, PFN> existingSEs = returnExisting(whereis, staticSEs);
-
-			if (existingSEs.isEmpty()) {
-
-				Hashtable<SE, PFN> closestExistingSEs = 
-						sortSEsBySiteAndexcludeSpecifiedSEs(whereis, exxSes, sitename);
-				getEnvelopesforSEList(ca, closestExistingSEs);
-
-			} else {
-				getEnvelopesforSEList(ca, existingSEs);
+			// keep all replicas, even if the SE is reported as broken (though it will go to the end of list)
+			final List<PFN> sorted = SEUtils.sortBySite(whereis, sitename, false);
+			
+			// remove the replicas from these SEs, if specified
+			if (exxSes!=null && exxSes.size()>0){
+				final Iterator<PFN> it = sorted.iterator();
+				
+				while (it.hasNext()){
+					final PFN pfn = it.next();
+					
+					final SE se = SEUtils.getSE(pfn.seNumber);
+					
+					if (exxSes.contains(se))
+						it.remove();
+				}
 			}
-
-		} else if (ca.getAccess() == CatalogueAccess.WRITE) {
-
-			List<SE> statics = (List<SE>) SEUtils.getSEs(staticSEs);
-
-			List<SE> dynamics = SEUtils.getQOSNClosestSEsNotExSEs(sitename,
-					qos, qosCount, exxSes);
-
-			getEnvelopesforSEList(ca, statics);
-			getEnvelopesforSEList(ca, dynamics);
+			
+			getEnvelopesforPFNList(ca, sorted);
 		}
+		else if (ca.getAccess() == CatalogueAccess.WRITE) {
 
+			final List<SE> ses = new LinkedList<SE>();
+			
+			if (staticSEs != null)
+				ses.addAll(staticSEs);
+			
+			filterSEs(ses, qos, exxSes);
+			
+			if (ses.size()>=qosCount){
+				final List<SE> dynamics = SEUtils.getClosestSEs(sitename);
+				
+				filterSEs(dynamics, qos, exxSes);
+
+				final Iterator<SE> it = dynamics.iterator();
+				
+				while (ses.size() < qosCount && it.hasNext())
+					ses.add(it.next());
+			}
+			
+			getEnvelopesforSEList(ca, ses);
+		}
+	}
+	
+	private static final void filterSEs(final List<SE> ses, final String qos, final Set<SE> exxSes){
+		final Iterator<SE> it = ses.iterator();
+		
+		while (it.hasNext()){
+			final SE se = it.next();
+			
+			if (!se.qos.contains(qos) || exxSes.contains(se))
+				it.remove();
+		}
 	}
 
-	private static void getEnvelopesforSEList(CatalogueAccess ca, Hashtable<SE, PFN> thereis) {
-		for (SE se : thereis.keySet()) {
-			ca.addEnvelope(new XrootDEnvelope(ca, thereis.get(se)));
+	private static void getEnvelopesforPFNList(final CatalogueAccess ca, final Collection<PFN> pfns) {
+		for (final PFN pfn: pfns) {
+			ca.addEnvelope(new XrootDEnvelope(ca, pfn));
 		}
 	}
 
 	
-	private static void getEnvelopesforSEList(CatalogueAccess ca, List<SE> ses) {
-		for (SE se : ses) {
-			
+	private static void getEnvelopesforSEList(final CatalogueAccess ca, final Collection<SE> ses) {
+		for (final SE se : ses) {
 			ca.addEnvelope(new XrootDEnvelope(ca, se, se.seioDaemons + se.seStoragePath + ca.getGUID().toString()));
 		}
-	}
-	
-	
-	
-
-	private static Hashtable<SE, PFN> sortSEsBySiteAndexcludeSpecifiedSEs(
-			Hashtable<SE, PFN> whereis, Set<String> exses, String sitename) {
-		
-		final List<SE> existing = new ArrayList<SE>();
-		
-		Hashtable<SE, PFN> thereis = new Hashtable<SE, PFN>();
-
-		for (String sename : exses) {
-			SE se = SEUtils.getSE(sename);
-			if (!whereis.containsKey(se.seNumber))
-				existing.add(se);
-		}
-
-		final List<SE> sorted = SEUtils.sortSEsBySite(existing, sitename);
-		for (SE se : sorted) {
-			thereis.put(se, whereis.get(se));
-		}
-
-		return thereis;
-
-	}
-
-	private static Hashtable<SE, PFN> returnExisting(
-			Hashtable<SE, PFN> whereis, Set<String> ses) {
-
-		Hashtable<SE, PFN> thereis = new Hashtable<SE, PFN>();
-
-		for (String sename : ses) {
-			SE se = SEUtils.getSE(sename);
-			if (whereis.containsKey(se.seNumber))
-				thereis.put(se, whereis.get(se));
-		}
-
-		return thereis;
-
-	}
-
-	private static Hashtable<SE, PFN> getSEsForPFNs(Set<PFN> pfns) {
-		Hashtable<SE, PFN> whereis = new Hashtable<SE, PFN>();
-
-		for (PFN pfn : pfns)
-			whereis.put(SEUtils.getSE(pfn.seNumber), pfn);
-
-		return whereis;
-
 	}
 }

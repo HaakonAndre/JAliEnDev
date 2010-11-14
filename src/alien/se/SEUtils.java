@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -87,6 +88,16 @@ public final class SEUtils {
 		finally{
 			seCacheReadLock.unlock();
 		}
+	}
+	
+	/**
+	 * Get the SE by its number
+	 * 
+	 * @param seNumber
+	 * @return the SE, if it exists, or <code>null</code> if it doesn't
+	 */
+	public static SE getSE(final int seNumber){
+		return getSE(Integer.valueOf(seNumber));
 	}
 	
 	/**
@@ -302,9 +313,10 @@ public final class SEUtils {
 	 * 
 	 * @param pfns
 	 * @param sSite
+	 * @param removeBrokenSEs 
 	 * @return the sorted list of locations
 	 */
-	public static List<PFN> sortBySite(final Collection<PFN> pfns, final String sSite){
+	public static List<PFN> sortBySite(final Collection<PFN> pfns, final String sSite, final boolean removeBrokenSEs){
 		if (pfns==null)
 			return null;
 		
@@ -322,12 +334,102 @@ public final class SEUtils {
 		
 		if (ranks==null)
 			return ret;
+	
+		if (removeBrokenSEs){
+			final Iterator<PFN> it = ret.iterator();
+			
+			while (it.hasNext()){
+				final PFN pfn = it.next();
+				
+				if (!ranks.containsKey(Integer.valueOf(pfn.seNumber)))
+					it.remove();
+			}
+		}
 		
 		final Comparator<PFN> c = new PFNComparatorBySite(ranks);
 		
 		Collections.sort(ret, c);
 		
 		return ret;
+	}
+	
+	/**
+	 * @author costing
+	 * @since Nov 14, 2010
+	 */
+	public static final class SEComparator implements Comparator<SE> {
+		private final Map<Integer, Integer> ranks;
+		
+		/**
+		 * @param ranks 
+		 */
+		public SEComparator(final Map<Integer, Integer> ranks) {
+			this.ranks = ranks;
+		}
+
+		@Override
+		public int compare(final SE o1, final SE o2) {
+			final Integer r1 = ranks.get(Integer.valueOf(o1.seNumber));
+			final Integer r2 = ranks.get(Integer.valueOf(o2.seNumber));
+			
+			// broken first SE, move the second one to the front if it's ok
+			if (r1==null){
+				return r2 == null ? 0 : 1;
+			}
+			
+			// broken second SE, move the first one to the front
+			if (r2==null)
+				return -1;
+			
+			// lower rank to the front
+			
+			return r1.compareTo(r2);
+		}
+	}
+	
+	/**
+	 * @param ses
+	 * @param sSite
+	 * @param removeBrokenSEs
+	 * @return the sorted list of SEs
+	 */
+	public static List<SE> sortSEsBySite(final Collection<SE> ses, final String sSite, final boolean removeBrokenSEs){
+		if (ses==null)
+			return null;
+		
+		final List<SE> ret = new ArrayList<SE>(ses);
+		
+		if ((ret.size()<=1 || sSite==null || sSite.length()==0) && (!removeBrokenSEs))
+			return ret;
+		
+		updateSERanksCache();
+		
+		if (seRanks==null)
+			return null;
+		
+		final Map<Integer, Integer> ranks = seRanks.get(sSite.trim().toUpperCase());
+		
+		if (ranks==null){
+			// missing information about this site, leave the storages as they are
+			return ret;
+		}
+		
+		if (removeBrokenSEs){
+			final Iterator<SE> it = ret.iterator();
+			
+			while (it.hasNext()){
+				final SE se = it.next();
+				
+				if (!ranks.containsKey(Integer.valueOf(se.seNumber)))
+					it.remove();
+			}
+		}
+		
+		final Comparator<SE> c = new SEComparator(ranks);
+		
+		Collections.sort(ret, c);
+		
+		return ret;		
 	}
 	
 }

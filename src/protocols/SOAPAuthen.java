@@ -10,6 +10,8 @@ import java.util.regex.Pattern;
 
 import lia.util.UUID;
 
+import alien.se.SE;
+import alien.se.SEUtils;
 import alien.services.AuthenServer;
 
 import alien.catalogue.access.AuthorizationFactory;
@@ -128,7 +130,7 @@ public class SOAPAuthen {
 			return replySOAPerrorMessage_access_eof("No LFN provided");
 
 		P_staticSEs = ensureStringInitialized(P_staticSEs);
-		Set<String> ses = initializeSElist(P_staticSEs);
+		Set<SE> ses = initializeSElist(P_staticSEs);
 
 		P_size = ensureStringInitialized(P_size);
 		int size = Integer.valueOf(P_size).intValue(); // here we still need to
@@ -145,7 +147,8 @@ public class SOAPAuthen {
 																// "" becomes 0
 			P_sesel_noSEs = "";
 		}
-		Set<String> exxSes = initializeSElist(P_sesel_noSEs);
+		
+		Set<SE> exxSes = initializeSElist(P_sesel_noSEs);
 
 		P_guid = ensureStringInitialized(P_guid);
 
@@ -226,19 +229,23 @@ public class SOAPAuthen {
 	 * @param sestring
 	 * @return array of valid SE names as Strings
 	 */
-	private Set<String> initializeSElist(final String sestring) {
+	private Set<SE> initializeSElist(final String sestring) {
 
 		final StringTokenizer st = new StringTokenizer(sestring, ";,");
 		
-		final Set<String> ret = new HashSet<String>();
+		final Set<SE> ret = new HashSet<SE>();
 		
 		while (st.hasMoreTokens()){
-			final String se = st.nextToken();
+			final String seName = st.nextToken();
 			
-			final Matcher m = SE_NAME.matcher(se);
+			final Matcher m = SE_NAME.matcher(seName);
 			
-			if (m.matches())
-				ret.add(se);
+			if (m.matches()){
+				SE se = SEUtils.getSE(seName);
+				
+				if (se!=null)
+					ret.add(se);
+			}
 		}
 
 		return ret;
