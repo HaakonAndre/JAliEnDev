@@ -33,7 +33,12 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		testMonitoring();
+		//testMonitoring();
+		
+		//testFileOperations();
+		
+		for (int i=0; i<10; i++)
+			System.err.println(GUIDUtils.generateTimeUUID());
 		
 //		Properties prop = System.getProperties();
 //		
@@ -101,6 +106,12 @@ public class Testing {
 	
 	private static void testFileOperations(){
 		UUID startingGUID = UUID.fromString("00270ff2-3bd3-11df-9bee-001cc45cb5dc");
+		
+		System.err.println("UUID Variant : "+startingGUID.variant());
+		System.err.println("UUID Version : "+startingGUID.version());
+		
+		System.err.println("UUID Variant : "+startingGUID.timestamp());
+		//System.err.println("UUID Version : "+startingGUID.version());
 		
 		GUID guid = GUIDUtils.getGUID(startingGUID);
 				
