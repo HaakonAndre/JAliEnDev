@@ -1,9 +1,16 @@
 package alien.catalogue;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lia.util.process.ExternalProcesses;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -154,6 +161,120 @@ public final class GUIDUtils {
 		}
 	}
 	
+	private static int clockSequence = MonitorFactory.getSelfProcessID();
+	
+	private static long lastTimestamp = System.nanoTime() / 100 + 122192928000000000L;
+	
+	/**
+	 * @return a new time-based (version 1) UUID
+	 */
+	public static synchronized UUID generateTimeUUID(){
+		final byte[] contents = new byte[16];
+		
+		final byte[] mac = getMac();
+		
+		for (int i=0; i<6; i++)
+			contents[10+i] = mac[i];
+		
+		final long time = System.currentTimeMillis() * 10000 + 122192928000000000L;
+		
+		if (time <= lastTimestamp){
+			clockSequence ++;
+			
+			if (clockSequence>=65535)
+				clockSequence = 0;
+		}
+		
+		lastTimestamp = time;
+		
+		final int timeHi = (int) (time >>> 32);
+		final int timeLo = (int) time;
+		
+		contents[0] = (byte) (timeLo >>> 24);
+		contents[1] = (byte) (timeLo >>> 16);
+		contents[2] = (byte) (timeLo >>> 8);
+		contents[3] = (byte) (timeLo);
+		
+		contents[4] = (byte) (timeHi >>> 8);
+		contents[5] = (byte) timeHi;
+		contents[6] = (byte) (timeHi >>> 24);
+		contents[7] = (byte) (timeHi >>> 16);
+
+		contents[8] = (byte) (clockSequence >> 8);
+		contents[9] = (byte) clockSequence;
+		
+		contents[6] &= (byte) 0x0F;
+		contents[6] |= (byte) 0x10;
+		
+		contents[8] &= (byte) 0x3F;
+		contents[8] |= (byte) 0x80;
+		
+		final UUID ret = GUID.getUUID(contents); 
+
+		return ret;
+	}
+	
+	private static byte[] MACAddress = null;
+	
+	private static byte[] getMac(){
+		if (MACAddress == null){
+			// figure it out
+			MACAddress = new byte[6];
+
+			String sMac = null;
+			
+			final File f = new File("/sys/class/net");
+			
+			if (f.exists()){
+				final String[] devices = f.list();
+				
+				if (devices!=null){
+					for (final String dev: devices){
+						final String addr = lazyj.Utils.readFile("/sys/class/net/"+dev+"/address");
+						
+						if (addr!=null && !addr.equals("00:00:00:00:00:00")){
+							sMac = addr;
+							break;
+						}
+					}
+				}
+			}
+			
+			if (sMac==null){
+				try{
+					final BufferedReader br = new BufferedReader(new StringReader(ExternalProcesses.getCmdOutput(Arrays.asList("/sbin/ifconfig", "-a"), false, 30, TimeUnit.SECONDS)));
+					
+					String s;
+					
+					while ( (s=br.readLine()) != null ){
+						final StringTokenizer st = new StringTokenizer(s);
+						
+						while (st.hasMoreTokens()){
+							final String tok = st.nextToken();
+							
+							if (tok.equals("HWaddr") && st.hasMoreTokens())
+								sMac = st.nextToken();
+						}
+					}
+					
+					br.close();
+				}
+				catch (Throwable t){
+					// ignore
+				}
+			}
+			
+			if (sMac!=null){
+				final StringTokenizer st = new StringTokenizer(sMac, ":");
+				
+				for (int i=0; i<6; i++){
+					MACAddress[i] = (byte) Integer.parseInt(st.nextToken(), 16);
+				}
+			}
+		}
+		
+		return MACAddress;
+	}
 	
 	/**
 	 * @return a new (empty) GUID
