@@ -10,9 +10,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -138,17 +137,17 @@ public final class SEUtils {
 	 * @param seNames
 	 * @return SE objects
 	 */
-	public static Set<SE> getSEs(final Set<String> seNames){
+	public static Map<String, SE> getSEs(final Set<String> seNames){
 		if (seNames==null)
 			return null;
 		
-		final Set<SE> ret = new LinkedHashSet<SE>(seNames.size());
+		final Map<String, SE> ret = new HashMap<String, SE>(seNames.size()); 
 		
 		for (final String name: seNames){
 			final SE se = getSE(name);
 			
 			if (se!=null)
-				ret.add(se);
+				ret.put(name, se);
 		}
 		
 		return ret;
