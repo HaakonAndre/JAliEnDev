@@ -165,7 +165,7 @@ public class AuthenServer {
 		System.err.println(nix);
 	}
 
-	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,int access,String P_options,String P_lfn,int size,String P_guid,Set<String> ses, Set<String> exxSes,int sesel,String P_qos,int qosCount,String P_sitename) {
+	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,int access,String P_options,String P_lfn,int size,String P_guid,Set<String> ses, Set<String> exxSes,String P_qos,int qosCount,String P_sitename) {
 
 		
 		AliEnPrincipal user = UserFactory.getByUsername(P_user);
@@ -175,18 +175,9 @@ public class AuthenServer {
 		
 		CatalogEntity requestedEntry;
 		
-		CatalogueAccess ca;
-		
-		if(!GUIDUtils.isValidGUID(P_lfn)){ 
-			requestedEntry = LFNUtils.getLFN(P_lfn);
-			ca = AuthorizationFactory.requestAccess(user, requestedEntry,  access);
-
-		}else{
-			requestedEntry = GUIDUtils.getGUID(UUID.fromString(P_lfn));
-			ca = AuthorizationFactory.requestAccess(user,requestedEntry,  access);
-		}
-		
-		CatalogueAccessEnvelopeDecorator.getXrootDEnvelopesForCatalogueAccess(ca, P_sitename, P_qos, qosCount, ses, exxSes,sesel);
+		CatalogueAccess ca = AuthorizationFactory.requestAccess(user,P_lfn,  access);
+			
+		CatalogueAccessEnvelopeDecorator.loadXrootDEnvelopesForCatalogueAccessV218(ca, P_sitename, P_qos, qosCount, ses, exxSes);
 		
 		
 		return ca.getEnvelopes();

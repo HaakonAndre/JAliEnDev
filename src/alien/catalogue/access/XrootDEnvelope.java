@@ -8,7 +8,7 @@ import alien.se.SE;
 import alien.se.SEUtils;
 
 /**
- * @author Steffen
+ * @author ron
  */
 public class XrootDEnvelope {
 
@@ -35,42 +35,46 @@ public class XrootDEnvelope {
 	private CatalogueAccess access;
 	private SE se;
 	private PFN pfn;
+	private String newPFN;
+	
 
 	void setCatalogueAccess(final CatalogueAccess access) {
 		this.access = access;
 	}
 
-	XrootDEnvelope(final CatalogueAccess access, final PFN pfn) {
+	public XrootDEnvelope(final CatalogueAccess access, final PFN pfn) {
 		this.access = access;
 		this.pfn = pfn;
-		decorate();
-	}
-
-	void decorate() {
 		se = SEUtils.getSE(Integer.valueOf(pfn.seNumber));
+	}
+	
+	public XrootDEnvelope(final CatalogueAccess access, final SE se, final String newPFN) {
+		this.access = access;
+		this.newPFN = newPFN;
+		this.se = se;
 	}
 
 	private void initializeEncryptedTicket() {
 
 		envAccess = levels[access.access];
-		envTURL = se.seioDaemons + se.seStoragePath + access.guid.toString();
-		envPFN = se.seStoragePath + access.guid.toString();
-		envLFN = access.lfn.toString();
-		envSize = Long.toString(access.lfn.size);
-		envGUID = access.guid.toString();
+		envTURL = se.seioDaemons + se.seStoragePath + access.getGUID().toString();
+		envPFN = se.seStoragePath + access.getGUID().toString();
+		envLFN = access.getLFN().toString();
+		envSize = Long.toString(access.getLFN().size);
+		envGUID = access.getGUID().toString();
 		envSE = se.seName;
-		envGUID = access.guid.toString();
-		envMD5 = access.lfn.md5;
+		envGUID = access.getGUID().toString();
+		envMD5 = access.getLFN().md5;
 
 		plainEnvelopeTicket = "<authz>\n  <file>\n" + "    <access>"
 				+ access.access + "</access>\n" + "    <turl>" + se.seioDaemons
-				+ "/" + se.seStoragePath + access.guid.toString() + "</turl>\n"
-				+ "    <lfn>" + access.lfn.toString() + "</lfn>\n"
-				+ "    <size>" + access.lfn.size + "</size>\n" + "    <pfn>"
-				+ se.seStoragePath + access.guid.toString() + "</pfn>\n"
+				+ "/" + se.seStoragePath + access.getGUID().toString() + "</turl>\n"
+				+ "    <lfn>" + access.getLFN().toString() + "</lfn>\n"
+				+ "    <size>" + access.getLFN().size + "</size>\n" + "    <pfn>"
+				+ se.seStoragePath + access.getGUID().toString() + "</pfn>\n"
 				+ "    <se>" + se.seName + "</se>\n" + "    <guid"
-				+ access.guid.toString() + "</guid>\n" + "    <md5>"
-				+ access.lfn.md5 + "</md5>\n" + "  </file>\n</authz>\n";
+				+ access.getGUID().toString() + "</guid>\n" + "    <md5>"
+				+ access.getLFN().md5 + "</md5>\n" + "  </file>\n</authz>\n";
 	}
 
 	// void setTicket(String ticket){

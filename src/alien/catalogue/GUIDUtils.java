@@ -4,26 +4,29 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 
 /**
  * @author costing
- *
+ * 
  */
 public final class GUIDUtils {
-	
+
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(GUIDUtils.class.getCanonicalName());
-	
+	static transient final Logger logger = ConfigUtils
+			.getLogger(GUIDUtils.class.getCanonicalName());
+
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory.getMonitor(GUIDUtils.class.getCanonicalName());
-	
+	static transient final Monitor monitor = MonitorFactory
+			.getMonitor(GUIDUtils.class.getCanonicalName());
+
 	/**
 	 * Get the host where this entry should be located
 	 * 
@@ -31,17 +34,17 @@ public final class GUIDUtils {
 	 * @return host id
 	 * @see Host
 	 */
-	public static int getGUIDHost(final UUID guid){
+	public static int getGUIDHost(final UUID guid) {
 		final long guidTime = guid.timestamp();
-		
+
 		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
-		
-		if (index==null)
+
+		if (index == null)
 			return -1;
-		
+
 		return index.hostIndex;
 	}
-	
+
 	/**
 	 * Get the DB connection that applies for a particular GUID
 	 * 
@@ -49,17 +52,17 @@ public final class GUIDUtils {
 	 * @return the DB connection, or <code>null</code> if something is not right
 	 * @see #getTableNameForGUID(UUID)
 	 */
-	public static DBFunctions getDBForGUID(final UUID guid){
+	public static DBFunctions getDBForGUID(final UUID guid) {
 		final int host = getGUIDHost(guid);
-		
-		if (host<0)
+
+		if (host < 0)
 			return null;
-		
+
 		final Host h = CatalogueUtils.getHost(host);
-		
-		if (h==null)
+
+		if (h == null)
 			return null;
-		
+
 		return h.getDB();
 	}
 
@@ -70,56 +73,99 @@ public final class GUIDUtils {
 	 * @return table name, or <code>null</code> if any problem
 	 * @see #getDBForGUID(UUID)
 	 */
-	public static int getTableNameForGUID(final UUID guid){
+	public static int getTableNameForGUID(final UUID guid) {
 		final long guidTime = guid.timestamp();
-		
+
 		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
-		
-		if (index==null)
+
+		if (index == null)
 			return -1;
 
 		return index.tableName;
 	}
-	
+
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
 	 * 
 	 * @param guid
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
-	public static GUID getGUID(final UUID guid){
+	public static GUID getGUID(final UUID guid) {
 		final int host = getGUIDHost(guid);
-		
-		if (host<0)
+
+		if (host < 0)
 			return null;
-		
+
 		final Host h = CatalogueUtils.getHost(host);
-		
-		if (h==null)
+
+		if (h == null)
 			return null;
-		
+
 		final DBFunctions db = h.getDB();
-		
-		if (db==null)
+
+		if (db == null)
 			return null;
-		
+
 		final int tableName = GUIDUtils.getTableNameForGUID(guid);
-		
+
 		if (tableName < 0)
 			return null;
-		
-		if (monitor!=null)
+
+		if (monitor != null)
 			monitor.incrementCounter("GUID_db_lookup");
-		
-		db.query("SELECT * FROM G"+tableName+"L WHERE guid=string2binary('"+guid+"');");
-		
+
+		db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary('"
+				+ guid + "');");
+
 		if (db.moveNext())
 			return new GUID(db, host, tableName);
-		
+
 		return null;
 	}
-	
-	
+
+	/**
+	 * Get the GUID catalogue entry when the uuid is known
+	 * 
+	 * @param guid
+	 * @return the GUID, or <code>null</code> if it cannot be located
+	 */
+	public static GUID getGUID(final UUID guid, boolean evenIfDoesntExist) {
+		final int host = getGUIDHost(guid);
+
+		if (host < 0)
+			return null;
+
+		final Host h = CatalogueUtils.getHost(host);
+
+		if (h == null)
+			return null;
+
+		final DBFunctions db = h.getDB();
+
+		if (db == null)
+			return null;
+
+		final int tableName = GUIDUtils.getTableNameForGUID(guid);
+
+		if (tableName < 0)
+			return null;
+
+		if (monitor != null)
+			monitor.incrementCounter("GUID_db_lookup");
+
+		db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary('"
+				+ guid + "');");
+
+		if (!db.moveNext()) {
+			if (evenIfDoesntExist) {
+				return new GUID(db, host, tableName);
+			}
+
+			return null;
+		}
+		return new GUID(db, host, tableName);
+	}
+
 	/**
 	 * 
 	 * check if the string contains a valid GUID
@@ -128,14 +174,25 @@ public final class GUIDUtils {
 	 * @return yesORno
 	 */
 	public static boolean isValidGUID(String guid) {
-		
-		try{
-		 UUID.fromString(guid);
-		 return true;
-		}
-		catch(Exception e){
-		return false;
+
+		try {
+			UUID.fromString(guid);
+			return true;
+		} catch (Exception e) {
+			return false;
 		}
 	}
+	
+	
+	public static GUID createGuid(){
+		UUID id;
+		do{
+		id = UUID.randomUUID();
+		} while(getGUID(id) != null);
+		return new GUID(id);
+	}
+	
+	
+	
 	
 }

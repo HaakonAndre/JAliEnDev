@@ -77,6 +77,17 @@ public final class AuthorizationChecker {
 	}
 
 	
+	/**
+	 * Check if the user can read the entity
+	 * 
+	 * @param entity
+	 * @param user
+	 * @return true if the user can read it
+	 */
+	public static boolean exists(final CatalogEntity entity, final AliEnPrincipal user){
+		return (getPermissions(entity, user) & 4) == 4;
+	}
+
 	
 	/**
 	 * Check if the user can read the entity

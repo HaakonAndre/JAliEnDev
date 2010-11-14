@@ -162,7 +162,7 @@ public class SOAPAuthen {
 		AuthenServer authen = new AuthenServer();
 
 		Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
-				access, P_options, P_lfn, size, P_guid, ses, exxSes, sesel,
+				access, P_options, P_lfn, size, P_guid, ses, exxSes,
 				P_qos, qosCount, P_sitename);
 
 		return translateEnvelopeIntoMap(envelopes);

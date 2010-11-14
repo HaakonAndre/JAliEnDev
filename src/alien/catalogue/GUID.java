@@ -129,7 +129,15 @@ public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
 		this.host = host;
 		this.tableName = tableName;
 	}
-		
+	
+	GUID(UUID id){
+		guid=id;
+		tableName = 0;
+		host = 0;
+	}
+	
+	
+	
 	private void init(final DBFunctions db){
 		guidId = db.geti("guidId");
 		

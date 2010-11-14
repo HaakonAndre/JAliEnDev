@@ -26,9 +26,14 @@ public class CatalogueAccessDENIED extends CatalogueAccess{
 		name = entity.getName();
 		super.access = INVALID;
 	}
+	CatalogueAccessDENIED(String name){
+		super(null);
+		this.name = name;
+		super.access = INVALID;
+	}
 
 
-	void addEnvelope(final XrootDEnvelope envelope){
+	public void addEnvelope(final XrootDEnvelope envelope){
 	}
 	
 	public Set<XrootDEnvelope> getEnvelopes(){

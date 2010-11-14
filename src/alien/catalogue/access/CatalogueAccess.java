@@ -28,15 +28,15 @@ public abstract class CatalogueAccess  {
 	/**
 	 * Access type
 	 */
-	protected int access;
+	protected int access = INVALID;
 	
-	CatalogEntity entity;
-	LFN lfn = null;
+	protected CatalogEntity entity;
+	protected LFN lfn = null;
 	
-	GUID guid = null;
-	Set<PFN> pfns = new LinkedHashSet<PFN>();
-	int size = 0;
-	String md5 = "";
+	protected GUID guid = null;
+	private Set<PFN> pfns = new LinkedHashSet<PFN>();
+	private long size = 0;
+	private String md5 = "";
 	
 	/** 
 	 * Package protected access to the constructor.
@@ -52,7 +52,35 @@ public abstract class CatalogueAccess  {
 			lfn = LFNUtils.getLFN("/NOLFN", true);
 			guid = (GUID) entity;
 		}
+		size = guid.size;
+		md5 = guid.md5;
 		
+	}
+	
+	
+	
+	public void loadPFNS(){
+		pfns = guid.getPFNs();
+	}
+	
+	
+	public int getAccess(){
+		return access;
+	}
+	public LFN getLFN(){
+		return lfn;
+	}
+	public GUID getGUID(){
+		return guid;
+	}
+	public Set<PFN> getPFNS(){
+		return pfns;
+	}
+	public long getSize(){
+		return size;
+	}
+	public String getMD5(){
+		return md5;
 	}
 
 	PFN pickPFNforAccess(){
@@ -95,7 +123,7 @@ public abstract class CatalogueAccess  {
 //		return md5;
 //	}
 	
-	void addEnvelope(final XrootDEnvelope envelope){
+	public void addEnvelope(final XrootDEnvelope envelope){
 		envelopes.add(envelope);
 		
 		envelope.setCatalogueAccess(this);
