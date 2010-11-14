@@ -24,6 +24,7 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.XrootDEnvelope;
+import alien.se.SE;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
@@ -165,7 +166,7 @@ public class AuthenServer {
 		System.err.println(nix);
 	}
 
-	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,int access,String P_options,String P_lfn,int size,String P_guid,Set<String> ses, Set<String> exxSes,String P_qos,int qosCount,String P_sitename) {
+	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,int access,String P_options,String P_lfn,int size,String P_guid,Set<SE> ses, Set<SE> exxSes,String P_qos,int qosCount,String P_sitename) {
 
 		
 		AliEnPrincipal user = UserFactory.getByUsername(P_user);
