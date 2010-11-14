@@ -6,14 +6,6 @@ package alien.user;
 import java.util.Set;
 
 import alien.catalogue.CatalogEntity;
-import alien.catalogue.GUID;
-import alien.catalogue.GUIDUtils;
-import alien.catalogue.LFN;
-import alien.catalogue.access.CatalogueAccess;
-import alien.catalogue.access.CatalogueAccessDENIED;
-import alien.catalogue.access.CatalogueDeleteAccess;
-import alien.catalogue.access.CatalogueReadAccess;
-import alien.catalogue.access.CatalogueWriteAccess;
 
 /**
  * @author costing
