@@ -86,14 +86,19 @@ public class SOAPAuthen {
 	 * @param qosCount
 	 * @return
 	 */
-	public Map<String, String>[] createEnvelope(String P_user,
-			String P_options, String P_maybeoptions, String P_lfn,
-			String P_staticSEs, String P_size, String P_sesel_noSEs,
-			String P_guid, String P_sitename, String P_qos, String P_qosCount) {
+//	public Map<String, String>[] createEnvelope(String P_user,
+//			String P_options, String P_maybeoptions, String P_lfn,
+//			String P_staticSEs, String P_size, String P_sesel_noSEs,
+//			String P_guid, String P_sitename, String P_qos, String P_qosCount) {
+		
+	public Set<XrootDEnvelope>	 createEnvelope(String P_user,
+				String P_options, String P_maybeoptions, String P_lfn,
+				String P_staticSEs, String P_size, String P_sesel_noSEs,
+				String P_guid, String P_sitename, String P_qos, String P_qosCount) {
 
 		P_user = ensureStringInitialized(P_user);
-		if (P_user.length() == 0)
-			return replySOAPerrorMessage_access_eof("No username provided");
+//		if (P_user.length() == 0)
+//			return replySOAPerrorMessage_access_eof("No username provided");
 		P_options = ensureStringInitialized(P_options);
 		P_maybeoptions = ensureStringInitialized(P_maybeoptions);
 
@@ -112,8 +117,8 @@ public class SOAPAuthen {
 				P_access = s;
 			}
 		}
-		if (P_access.length() == 0)
-			return replySOAPerrorMessage_access_eof("No access request provided");
+//		if (P_access.length() == 0)
+//			return replySOAPerrorMessage_access_eof("No access request provided");
 
 
 		int access =  CatalogueAccess.INVALID;
@@ -121,13 +126,13 @@ public class SOAPAuthen {
 		if (P_access != "read") { access = CatalogueAccess.READ; }
 		else if (P_access != "delete") { access = CatalogueAccess.DELETE; }
 		else if (writeRequest.matcher(P_access).matches()) { access = CatalogueAccess.WRITE;};
-		if(access == CatalogueAccess.INVALID)
-			return replySOAPerrorMessage_access_eof("Illegal access request provided, possible ones are: <read><write-version><write-once><delete>");
+//		if(access == CatalogueAccess.INVALID)
+//			return replySOAPerrorMessage_access_eof("Illegal access request provided, possible ones are: <read><write-version><write-once><delete>");
 		
 
 		P_lfn = ensureStringInitialized(P_lfn);
-		if (P_lfn.length() == 0)
-			return replySOAPerrorMessage_access_eof("No LFN provided");
+//		if (P_lfn.length() == 0)
+//			return replySOAPerrorMessage_access_eof("No LFN provided");
 
 		P_staticSEs = ensureStringInitialized(P_staticSEs);
 		Set<SE> ses = initializeSElist(P_staticSEs);
@@ -168,9 +173,33 @@ public class SOAPAuthen {
 				access, P_options, P_lfn, size, P_guid, ses, exxSes,
 				P_qos, qosCount, P_sitename);
 
-		return translateEnvelopeIntoMap(envelopes);
+		return envelopes;
+//		return translateEnvelopeIntoMap(envelopes);
 
 	}
+	
+	
+//	public static String access(
+	public static String main(
+	String P_user,
+			String P_options, String P_maybeoptions, String P_lfn,
+			String P_staticSEs, String P_size, String P_sesel_noSEs,
+			String P_guid, String P_sitename, String P_qos, String P_qosCount){
+		
+		SOAPAuthen soap = new SOAPAuthen();
+		
+		Set<XrootDEnvelope> envelopes =   soap.createEnvelope( P_user,
+				 P_options,  P_maybeoptions,  P_lfn,
+				 P_staticSEs,  P_size,  P_sesel_noSEs,
+				 P_guid,  P_sitename, P_qos,  P_qosCount);
+		
+		String ret = "";
+		 for(XrootDEnvelope env: envelopes)
+			 ret += "\n" + env.getPerlEnvelopeTicket().get("envelope") + "\n";
+		 
+		 return ret;
+	}
+	
 
 	public Map<String, String>[] translateEnvelopeIntoMap(
 			Set<XrootDEnvelope> envelope) {

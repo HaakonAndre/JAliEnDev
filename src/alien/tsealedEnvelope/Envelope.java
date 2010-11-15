@@ -291,7 +291,7 @@ public class Envelope {
 		lEnvelope += envelopein + "\n";
 		lEnvelope += BODY_STOP + "\n";
 		lEnvelope += ENVELOPE_STOP + "\n";
-		System.out.println("initialized Envelope with:" + lEnvelope);
+//		System.out.println("initialized Envelope with:" + lEnvelope);
 		return lEnvelope;
 
 	}

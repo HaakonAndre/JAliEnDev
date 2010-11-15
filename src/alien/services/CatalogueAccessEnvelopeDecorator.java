@@ -33,6 +33,7 @@ public class CatalogueAccessEnvelopeDecorator {
 		if (ca.getAccess() == CatalogueAccess.READ
 				|| ca.getAccess() == CatalogueAccess.DELETE) {
 
+			
 			ca.loadPFNS();
 			
 			final Set<PFN> whereis = ca.getPFNS();
@@ -54,7 +55,9 @@ public class CatalogueAccessEnvelopeDecorator {
 				}
 			}
 			
-			getEnvelopesforPFNList(ca, sorted);
+//			getEnvelopesforPFNList(ca, sorted);
+			if(sorted.iterator().hasNext())
+				ca.addEnvelope(new XrootDEnvelope(ca,  sorted.iterator().next()));
 		}
 		else if (ca.getAccess() == CatalogueAccess.WRITE) {
 
@@ -90,7 +93,7 @@ public class CatalogueAccessEnvelopeDecorator {
 				it.remove();
 		}
 	}
-
+	
 	private static void getEnvelopesforPFNList(final CatalogueAccess ca, final Collection<PFN> pfns) {
 		for (final PFN pfn: pfns) {
 			ca.addEnvelope(new XrootDEnvelope(ca, pfn));

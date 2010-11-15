@@ -1,11 +1,13 @@
 package alien.catalogue.access;
 
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
 import java.util.Map;
 
 import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.tsealedEnvelope.EncryptedAuthzToken;
 
 /**
  * @author ron
@@ -46,35 +48,38 @@ public class XrootDEnvelope {
 		this.access = access;
 		this.pfn = pfn;
 		se = SEUtils.getSE(Integer.valueOf(pfn.seNumber));
+		initializeEncryptedTicket();
 	}
 	
 	public XrootDEnvelope(final CatalogueAccess access, final SE se, final String newPFN) {
 		this.access = access;
 		this.newPFN = newPFN;
 		this.se = se;
+		initializeEncryptedTicket();
 	}
 
 	private void initializeEncryptedTicket() {
 
 		envAccess = levels[access.access];
-		envTURL = se.seioDaemons + se.seStoragePath + access.getGUID().toString();
-		envPFN = se.seStoragePath + access.getGUID().toString();
-		envLFN = access.getLFN().toString();
+		envTURL = se.seioDaemons.toString() + "/" + se.seStoragePath.toString() + access.getGUID().getName();
+		envPFN = se.seStoragePath.toString() + access.getGUID().getName();
+		envLFN = access.getLFN().getName();
 		envSize = Long.toString(access.getLFN().size);
-		envGUID = access.getGUID().toString();
+		envGUID = access.getGUID().getName();
 		envSE = se.seName;
-		envGUID = access.getGUID().toString();
-		envMD5 = access.getLFN().md5;
+		envGUID = access.getGUID().getName();
+		envMD5 = access.getLFN().md5.toString();
 
 		plainEnvelopeTicket = "<authz>\n  <file>\n" + "    <access>"
-				+ access.access + "</access>\n" + "    <turl>" + se.seioDaemons
-				+ "/" + se.seStoragePath + access.getGUID().toString() + "</turl>\n"
-				+ "    <lfn>" + access.getLFN().toString() + "</lfn>\n"
-				+ "    <size>" + access.getLFN().size + "</size>\n" + "    <pfn>"
-				+ se.seStoragePath + access.getGUID().toString() + "</pfn>\n"
+				+ envAccess + "</access>\n" + "    <turl>" + envTURL + "</turl>\n"
+				+ "    <lfn>" + envLFN + "</lfn>\n"
+				+ "    <size>" + envSize + "</size>\n" + "    <pfn>"
+				+ envPFN + "</pfn>\n"
 				+ "    <se>" + se.seName + "</se>\n" + "    <guid"
-				+ access.getGUID().toString() + "</guid>\n" + "    <md5>"
-				+ access.getLFN().md5 + "</md5>\n" + "  </file>\n</authz>\n";
+				+ envGUID + "</guid>\n" + "    <md5>"
+				+ envMD5 + "</md5>\n" + "  </file>\n</authz>\n";
+		System.out.println("we have a ticket:");
+		System.out.println(plainEnvelopeTicket);
 	}
 
 	// void setTicket(String ticket){
@@ -87,6 +92,14 @@ public class XrootDEnvelope {
 		return plainEnvelopeTicket;
 	}
 
+	
+	public void decorateEnvelope(EncryptedAuthzToken authz) throws GeneralSecurityException{
+		encryptedEnvelope = authz.encrypt(plainEnvelopeTicket);
+		System.out.println("we have an encrypted ticket:");
+		System.out.println(encryptedEnvelope);
+	}
+	
+	
 	// void setEncryptedEnvelope(String encryptedEnvelope){
 	// this.encryptedEnvelope = encryptedEnvelope;
 	// }

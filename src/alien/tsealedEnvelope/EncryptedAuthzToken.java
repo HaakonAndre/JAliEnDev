@@ -111,18 +111,18 @@ public class EncryptedAuthzToken {
 		Envelope env = new Envelope();
 		envelope = (env.create_ALICE_SE_Envelope(message)).getBytes();
 
-		System.out.println("starting encryption of:" + (new String(envelope)));
+//		System.out.println("starting encryption of:" + (new String(envelope)));
 
 		// encrypt UUID/CIPHER with the remote public key
 		// get RSA-sealed cipher (aka session- or symmetric key(
 		encryptSealedCipher();
-		System.out.println("starting cipherEncrypted64:"
-				+ new String(cipherEncryptedBase64));
+//		System.out.println("starting cipherEncrypted64:"
+//				+ new String(cipherEncryptedBase64));
 
 		// create signature and envelope with symmetric key using Blowfish
 		encryptSealedEnvelope();
-		System.out.println("starting envelopeEncrypted64:"
-				+ new String(envelopeEncryptedBase64));
+//		System.out.println("starting envelopeEncrypted64:"
+//				+ new String(envelopeEncryptedBase64));
 
 		return getToken();
 
@@ -254,8 +254,8 @@ public class EncryptedAuthzToken {
 				sCipherEncryptedBase64.length());
 		this.cipherEncryptedBase64.append(sCipherEncryptedBase64);
 
-		System.out.println("...key creation done!");
-		System.out.println();
+//		System.out.println("...key creation done!");
+//		System.out.println();
 	}
 
 	/**
@@ -267,8 +267,8 @@ public class EncryptedAuthzToken {
 	private void encryptSealedEnvelope() throws GeneralSecurityException {
 
 		signature = signEnvelope();
-		System.out.println("we created the signature: "
-				+ Base64.encodeBytes(signature));
+//		System.out.println("we created the signature: "
+//				+ Base64.encodeBytes(signature));
 
 //		SecretKeySpec symKeySpec = new SecretKeySpec(symmetricKey, 0, 
 //				(symmetricKey.length - 1), "Blowfish");
@@ -375,7 +375,7 @@ public class EncryptedAuthzToken {
 		encryptedEnvelopeFinal[2] = ((byte) ((signature.length << 16) >> 24));
 		encryptedEnvelopeFinal[3] = ((byte) ((signature.length << 24) >> 24));
 
-		System.out.println("siglen: " + signature.length + "");
+//		System.out.println("siglen: " + signature.length + "");
 
 		// //
 		// int controlvalue = encryptedEnvelopeFinal[0] & 0xff << 24
@@ -399,7 +399,7 @@ public class EncryptedAuthzToken {
 		System.arraycopy(signature, 0, encryptedEnvelopeFinal, 4,
 				signature.length);
 		String hexsign = toHex(signature);
-		System.out.println("signature: --" + hexsign + "--");
+//		System.out.println("signature: --" + hexsign + "--");
 
 		System.arraycopy(encryptedEnvelope, 0, encryptedEnvelopeFinal,
 				4 + signature.length, encryptedEnvelope.length);
@@ -532,7 +532,7 @@ public class EncryptedAuthzToken {
 
 		// RSA-decrypt the session key by using the local private key
 		Cipher cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
-		System.out.println("do I like the key  .... ?");
+//		System.out.println("do I like the key  .... ?");
 
 		cipher.init(Cipher.UNWRAP_MODE, SEPrivKey);
 
@@ -549,14 +549,14 @@ public class EncryptedAuthzToken {
 		// Cipher.SECRET_KEY).getEncoded();
 
 		// symmetricKey = new SecretKeySpec(key, 0, key.length,"Blowfish");
-		System.out.println("the encoded cipher length:" + symmetricKey.length);
-		System.out.println("encoded base64 cipher:"
-				+ Base64.encodeBytes(symmetricKey));
+//		System.out.println("the encoded cipher length:" + symmetricKey.length);
+//		System.out.println("encoded base64 cipher:"
+//				+ Base64.encodeBytes(symmetricKey));
 
-		System.out
-				.println("cipher to String length:" + key.toString().length());
-		System.out.println("cipher to String base64 cipher:"
-				+ Base64.encodeBytes(key.toString().getBytes()));
+//		System.out
+//				.println("cipher to String length:" + key.toString().length());
+//		System.out.println("cipher to String base64 cipher:"
+//				+ Base64.encodeBytes(key.toString().getBytes()));
 	}
 
 	/**
@@ -592,16 +592,16 @@ public class EncryptedAuthzToken {
 		// encryptedEnvelope[1] & 0xff << 8 | encryptedEnvelope[2] & 0xff << 16
 		// | encryptedEnvelope[3] & 0xff << 24;
 		int envelopeOffset = 4 + signatureLength;
-		System.out.println("Found signature length:" + signatureLength);
+//		System.out.println("Found signature length:" + signatureLength);
 		// store signature into a seperate buffer
 		signature = new byte[signatureLength];
 		System.arraycopy(encryptedEnvelope, 4, signature, 0, signatureLength);
 
 		// String hexsign = toHex(signature);
 
-		System.out.println("signature: --" + Base64.encodeBytes(signature)
-				+ "--");
-		System.out.println("siglen: " + signature.length + "");
+//		System.out.println("signature: --" + Base64.encodeBytes(signature)
+//				+ "--");
+//		System.out.println("siglen: " + signature.length + "");
 
 		// if (logger.getEffectiveLevel().equals(Level.DEBUG)) {
 		// printArrayHex("encrypted env", encryptedEnvelope, envelopeOffset,

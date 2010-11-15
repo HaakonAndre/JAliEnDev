@@ -12,6 +12,7 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -160,29 +161,78 @@ public class AuthenServer {
 
 		AuthenServer authen = new AuthenServer();
 
-		String nix = authen.createEnvelope("asdf", "asdf", "asdf", "asdf",
-				"asdf", "asdf", "asdf", "asdf", "asdf", "asdf", "asdf");
+		System.out.println("... gonna ask for a READ envelope");
+		String nix = authen.access("sschrein", CatalogueAccess.READ, "",
+				"/alice/cern.ch/user/s/sschrein/testasdfasdfasdf", 0, "", null,
+				null, "", 0, "CERN");
+//		System.out.println("... gonna ask for a WRITE envelope");
+//		nix = authen.access("sschrein", CatalogueAccess.WRITE, "",
+//				"/alice/cern.ch/user/s/sschrein/newAuthenFile", 666, "", null,
+//				null, "disk", 2, "CERN");
+		System.out.println("... gonna ask for a DELETE envelope");
+		nix = authen.access("sschrein", CatalogueAccess.DELETE, "",
+				"/alice/cern.ch/user/s/sschrein/testasdfasdfasdf", 0, "", null,
+				null, "", 0, "CERN");
 
-		System.err.println(nix);
+		// System.out.println(nix);
 	}
 
-	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,int access,String P_options,String P_lfn,int size,String P_guid,Set<SE> ses, Set<SE> exxSes,String P_qos,int qosCount,String P_sitename) {
+	public String access(String P_user, int access, String P_options,
+			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
+			String P_qos, int qosCount, String P_sitename) {
 
-		
+		String ret = "";
+
+		try {
+
+			Set<XrootDEnvelope> envelopes = createEnvelopePerlAliEnV218(P_user,
+					access, P_options, P_lfn, size, P_guid, ses, exxSes, P_qos,
+					qosCount, P_sitename);
+
+			loadKeys();
+			EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey,
+					SEPubKey);
+			System.out.println();
+			// System.out.println();
+			// System.out.println("loaded authz engine");
+
+			for (XrootDEnvelope env : envelopes) {
+				env.decorateEnvelope(authz);
+				// System.out.println("envelope ready: " +
+				// env.getPerlEnvelopeTicket().get("envelope"));
+				ret += "\n" + env.getPerlEnvelopeTicket().get("envelope")
+						+ "\n";
+
+			}
+		} catch (GeneralSecurityException gexcept) {
+			System.out.println("General Securiry exception" + gexcept);
+		} catch (IOException ioexcept) {
+			System.out.println("IO exception" + ioexcept);
+		}
+		return ret;
+	}
+
+	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,
+			int access, String P_options, String P_lfn, int size,
+			String P_guid, Set<SE> ses, Set<SE> exxSes, String P_qos,
+			int qosCount, String P_sitename) {
+
 		AliEnPrincipal user = UserFactory.getByUsername(P_user);
-	
-			
-		LFN lfn = LFNUtils.getLFN("/alice/data/2010/LHC10e/000130848/ESDs/pass1/AOD019/0001/AliAOD.Dielectron.root");
-		
+
+		LFN lfn = LFNUtils
+				.getLFN("/alice/data/2010/LHC10e/000130848/ESDs/pass1/AOD019/0001/AliAOD.Dielectron.root");
+
 		CatalogEntity requestedEntry;
-		
-		CatalogueAccess ca = AuthorizationFactory.requestAccess(user,P_lfn,  access);
-			
-		CatalogueAccessEnvelopeDecorator.loadXrootDEnvelopesForCatalogueAccessV218(ca, P_sitename, P_qos, qosCount, ses, exxSes);
-		
-		
+
+		CatalogueAccess ca = AuthorizationFactory.requestAccess(user, P_lfn,
+				access);
+
+		CatalogueAccessEnvelopeDecorator
+				.loadXrootDEnvelopesForCatalogueAccessV218(ca, P_sitename,
+						P_qos, qosCount, ses, exxSes);
+
 		return ca.getEnvelopes();
-		
+
 	}
 
 	/**

@@ -30,6 +30,9 @@ public final class AuthorizationFactory {
 	public static CatalogueAccess requestAccess(final AliEnPrincipal user,
 			final String lfnOrGUID, final int access) {
 
+		System.out.println("i got: lfn:" + lfnOrGUID + " for user: "+ user.toString() + " access: " + access);
+		
+		
 		if (access == CatalogueAccess.READ) {
 
 			if (GUIDUtils.isValidGUID(lfnOrGUID)) {
