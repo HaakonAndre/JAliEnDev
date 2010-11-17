@@ -56,8 +56,8 @@ public class CatalogueAccessEnvelopeDecorator {
 			}
 			
 //			getEnvelopesforPFNList(ca, sorted);
-			if(sorted.iterator().hasNext())
-				ca.addEnvelope(new XrootDEnvelope(ca,  sorted.iterator().next()));
+			if(sorted.size()>0)
+				ca.addEnvelope(new XrootDEnvelope(ca,  sorted.get(0)));
 		}
 		else if (ca.getAccess() == CatalogueAccess.WRITE) {
 
