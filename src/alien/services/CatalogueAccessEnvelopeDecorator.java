@@ -94,13 +94,6 @@ public class CatalogueAccessEnvelopeDecorator {
 		}
 	}
 	
-	private static void getEnvelopesforPFNList(final CatalogueAccess ca, final Collection<PFN> pfns) {
-		for (final PFN pfn: pfns) {
-			ca.addEnvelope(new XrootDEnvelope(ca, pfn));
-		}
-	}
-
-	
 	private static void getEnvelopesforSEList(final CatalogueAccess ca, final Collection<SE> ses) {
 		for (final SE se : ses) {
 			ca.addEnvelope(new XrootDEnvelope(ca, se, se.seioDaemons + se.seStoragePath + ca.getGUID().toString()));
