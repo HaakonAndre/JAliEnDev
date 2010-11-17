@@ -1,5 +1,7 @@
 package alien.catalogue.access;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import lazyj.cache.ExpirationCache;
@@ -8,10 +10,8 @@ import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
-import alien.catalogue.PFN;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
-import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -20,9 +20,8 @@ public final class AuthorizationFactory {
 
 	/**
 	 * Request access to this GUID
-	 * 
-	 * @param guid
-	 *            GUID
+	 * @param user 
+	 * @param lfnOrGUID 
 	 * @param access
 	 *            access type
 	 * @return access, or <code>null</code> if not permitted
@@ -32,101 +31,123 @@ public final class AuthorizationFactory {
 
 		System.out.println("i got: lfn:" + lfnOrGUID + " for user: "+ user.toString() + " access: " + access);
 		
+		UUID uuid = null;
+		
+		try{
+			uuid = UUID.fromString(lfnOrGUID);
+		}
+		catch (IllegalArgumentException iae){
+			// ignore
+		}
+		
+		GUID guid = null;
+		
+		Set<LFN> lfns = null;
+		
+		LFN lfn = null;
+		
+		if (uuid!=null){
+			// starting from a GUID
+			
+			guid = GUIDUtils.getGUID(uuid);
+			
+			if (guid == null)
+				return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			lfns = guid.getLFNs();
+			
+			if (lfns!=null && lfns.size()>0)
+				lfn = lfns.iterator().next();
+		}
+		else{
+			// is it an LFN ?
+			
+			// the LFNs are checked to exist only for READ, otherwise we need to create that entry first
+			lfn = LFNUtils.getLFN(lfnOrGUID, access == CatalogueAccess.READ ? false : true);
+			
+			if (lfn == null)
+				return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			if (lfn.guid != null)
+				guid = GUIDUtils.getGUID(lfn.guid);
+						
+			lfns = new LinkedHashSet<LFN>(1);
+			lfns.add(lfn);
+		}
 		
 		if (access == CatalogueAccess.READ) {
-
-			if (GUIDUtils.isValidGUID(lfnOrGUID)) {
-
-				CatalogEntity entity = GUIDUtils.getGUID(UUID
-						.fromString(lfnOrGUID));
-				if (entity == null)
-					return new CatalogueAccessDENIED(entity);
-				if (AuthorizationChecker.canRead(entity, user)) {
-					return new CatalogueReadAccess(entity);
-				} else {
-					return new CatalogueAccessDENIED(lfnOrGUID);
+			if (guid == null)
+				return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			if (!AuthorizationChecker.canRead(guid, user))
+				return new CatalogueAccessDENIED(guid);
+			
+			if (lfns!=null){
+				for (LFN lfn1 : lfns){
+					if (AuthorizationChecker.canRead(lfn1, user))
+						return new CatalogueReadAccess(guid);
 				}
-			} else {
-
-				CatalogEntity entity = LFNUtils.getLFN(lfnOrGUID);
-				if (entity == null)
-					return new CatalogueAccessDENIED(entity);
-				if (AuthorizationChecker.canRead(((LFN) entity).getParentDir(),
-						user)
-						&& AuthorizationChecker.canRead(((LFN) entity), user)
-						&& AuthorizationChecker
-								.canRead(((GUID) GUIDUtils
-										.getGUID(((LFN) entity).guid)), user)) {
-					return new CatalogueReadAccess(entity);
-				} else {
-					return new CatalogueAccessDENIED(lfnOrGUID);
-				}
+				
+				return new CatalogueAccessDENIED(guid);
 			}
-		} else if (access == CatalogueAccess.WRITE) {
-			if (GUIDUtils.isValidGUID(lfnOrGUID)) {
-				CatalogEntity entity = GUIDUtils.getGUID(
-						UUID.fromString(lfnOrGUID), true);
-				if (AuthorizationChecker.canWrite(entity, user)
-						&& AuthorizationChecker.isOwner(entity, user)) {
-					return new CatalogueWriteAccess(entity);
-				} else {
-					return new CatalogueAccessDENIED(lfnOrGUID);
-				}
-
-			} else {
-				CatalogEntity entity = LFNUtils.getLFN(lfnOrGUID, true);
-				if (AuthorizationChecker.canRead(((LFN) entity).getParentDir(),
-						user)
-						&&
-						// AuthorizationChecker.canWrite(((LFN)
-						// entity).getParentDir(), user) &&
-						AuthorizationChecker.isOwner(entity, user)
-						&& AuthorizationChecker.canWrite(entity, user)
-						&& AuthorizationChecker
-								.isOwner(((GUID) GUIDUtils
-										.getGUID(((LFN) entity).guid)), user)
-						&& AuthorizationChecker
-								.canWrite(((GUID) GUIDUtils
-										.getGUID(((LFN) entity).guid)), user)) {
-					return new CatalogueWriteAccess(entity);
-				} else {
-					return new CatalogueAccessDENIED(lfnOrGUID);
-				}
+			
+			return new CatalogueReadAccess(guid);
+		} 
+		
+		if (access == CatalogueAccess.WRITE) {
+			// the object doesn't exist yet, how can we determine if we can write it or not ?
+			
+			if (lfn == null)
+				return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			if (guid == null){
+				// TODO
+				// maybe we should generate a new one instead ?
+				
+				// guid = GUIDUtils.createGuid();
+				
+				return new CatalogueAccessDENIED(lfnOrGUID);
 			}
-		} else if (access == CatalogueAccess.DELETE) {
-			if (GUIDUtils.isValidGUID(lfnOrGUID)) {
-				CatalogEntity entity = GUIDUtils.getGUID(UUID
-						.fromString(lfnOrGUID));
-				if (entity == null)
-					return new CatalogueAccessDENIED(entity);
-				if (AuthorizationChecker.canWrite(entity, user)
-						&& AuthorizationChecker.isOwner(entity, user)) {
-					return new CatalogueDeleteAccess(entity);
-				} else {
-					return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			if (lfn.exists)
+				return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			LFN parent = lfn.getParentDir();
+			
+			if (parent==null || parent.getType() != 'd')
+				return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			if (AuthorizationChecker.canWrite(parent, user))
+				return new CatalogueWriteAccess(lfn);
+			
+			return new CatalogueAccessDENIED(lfn);
+		} 
+		
+		if (access == CatalogueAccess.DELETE) {
+			if (guid == null)
+				return new CatalogueAccessDENIED(lfnOrGUID);
+			
+			if (!AuthorizationChecker.canWrite(guid, user))
+				return new CatalogueAccessDENIED(guid);
+			
+			if (lfns!=null){
+				// all lfns should be files and the user should be able to delete them
+				
+				for (LFN lfn1 : lfns){
+					if (lfn1.type != 'f')
+						return new CatalogueAccessDENIED(lfn1);
+					
+					LFN parent = lfn1.getParentDir();
+					
+					if (parent==null || !AuthorizationChecker.canWrite(parent, user))
+						return new CatalogueAccessDENIED(lfn1);
 				}
-			} else {
-				CatalogEntity entity = LFNUtils.getLFN(lfnOrGUID);
-				if (AuthorizationChecker.canRead(((LFN) entity).getParentDir(),
-						user)
-						&& AuthorizationChecker.canWrite(
-								((LFN) entity).getParentDir(), user)
-						&& AuthorizationChecker.isOwner(entity, user)
-						&& AuthorizationChecker.canWrite(entity, user)
-						&& AuthorizationChecker
-								.isOwner(((GUID) GUIDUtils
-										.getGUID(((LFN) entity).guid)), user)
-						&& AuthorizationChecker
-								.canWrite(((GUID) GUIDUtils
-										.getGUID(((LFN) entity).guid)), user)) {
-					return new CatalogueDeleteAccess(entity);
-				} else {
-					return new CatalogueAccessDENIED(lfnOrGUID);
-				}
+				
+				return new CatalogueDeleteAccess(guid);
 			}
-		} else {
-			return new CatalogueAccessDENIED(lfnOrGUID);
-		}
+		} 
+		
+		return new CatalogueAccessDENIED(lfnOrGUID);
 	}
 
 	/**
