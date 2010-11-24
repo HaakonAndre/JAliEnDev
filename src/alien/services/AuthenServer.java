@@ -12,6 +12,10 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -36,6 +40,8 @@ import alien.user.UserFactory;
  */
 public class AuthenServer {
 
+
+	
 	private RSAPrivateKey AuthenPrivKey;
 	private RSAPublicKey AuthenPubKey;
 	private RSAPrivateKey SEPrivKey;
@@ -162,7 +168,7 @@ public class AuthenServer {
 		AuthenServer authen = new AuthenServer();
 
 		System.out.println("... gonna ask for a READ envelope");
-		String nix = authen.access("sschrein", CatalogueAccess.READ, "",
+		String nix = authen.accessString("sschrein", CatalogueAccess.READ, "",
 				"/alice/cern.ch/user/s/sschrein/testasdfasdfasdf", 0, "", null,
 				null, "", 0, "CERN");
 //		System.out.println("... gonna ask for a WRITE envelope");
@@ -170,28 +176,32 @@ public class AuthenServer {
 //				"/alice/cern.ch/user/s/sschrein/newAuthenFile", 666, "", null,
 //				null, "disk", 2, "CERN");
 		System.out.println("... gonna ask for a DELETE envelope");
-		nix = authen.access("sschrein", CatalogueAccess.DELETE, "",
+		nix = authen.accessString("sschrein", CatalogueAccess.DELETE, "",
 				"/alice/cern.ch/user/s/sschrein/testasdfasdfasdf", 0, "", null,
 				null, "", 0, "CERN");
 
 		// System.out.println(nix);
 	}
 
-	public String access(String P_user, int access, String P_options,
+	
+	public static String accessString(String P_user, int access, String P_options,
 			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
 			String P_qos, int qosCount, String P_sitename) {
 
+
+		AuthenServer authen = new AuthenServer();
+		
 		String ret = "";
 
 		try {
 
-			Set<XrootDEnvelope> envelopes = createEnvelopePerlAliEnV218(P_user,
+			Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
 					access, P_options, P_lfn, size, P_guid, ses, exxSes, P_qos,
 					qosCount, P_sitename);
 
-			loadKeys();
-			EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey,
-					SEPubKey);
+			authen.loadKeys();
+			EncryptedAuthzToken authz = new EncryptedAuthzToken(authen.AuthenPrivKey,
+					authen.SEPubKey);
 			System.out.println();
 			// System.out.println();
 			// System.out.println("loaded authz engine");
@@ -210,6 +220,59 @@ public class AuthenServer {
 			System.out.println("IO exception" + ioexcept);
 		}
 		return ret;
+	}
+	
+	public static Hashtable<String,String>[] access(String P_user, int access, String P_options,
+			String P_lfn, int size, String P_guid, String ses, String exxSes,
+			String P_qos, int qosCount, String P_sitename) {
+		
+
+		
+		System.out.println("we are invoked: user: " + P_user + ", code: " + access + ", options: " + P_options + ", lfn: " + P_lfn
+						+ ", size: " + size + ", guid: " + P_guid);
+		
+		Hashtable<String,String>[] envList = new Hashtable[1];
+		
+
+		Hashtable<String,String> returnEnvs = new Hashtable<String,String>();
+		
+		
+		returnEnvs.put("se","eins");
+		returnEnvs.put("access","zwei");
+		
+		envList[0] = returnEnvs;
+
+//
+//	
+//		try {
+//
+//			Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
+//					access, P_options, P_lfn, size, P_guid, null, null, P_qos,
+//					qosCount, P_sitename);
+//
+//			authen.loadKeys();
+//			EncryptedAuthzToken authz = new EncryptedAuthzToken(authen.AuthenPrivKey,
+//					authen.SEPubKey);
+//			System.out.println();
+//			// System.out.println();
+//			// System.out.println("loaded authz engine");
+//
+//	
+//			
+//			for (XrootDEnvelope env : envelopes) {
+//				env.decorateEnvelope(authz);
+//				System.out.println("envelope ready: " +
+//				 env.getPerlEnvelopeTicket().get("envelope"));
+//				 
+//				returnEnvs.add(env.getPerlEnvelopeTicket().get("envelope"));
+//
+//			}
+//		} catch (GeneralSecurityException gexcept) {
+//			System.out.println("General Securiry exception" + gexcept);
+//		} catch (IOException ioexcept) {
+//			System.out.println("IO exception" + ioexcept);
+//		}
+		return envList;
 	}
 
 	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,
