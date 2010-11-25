@@ -2,6 +2,7 @@ package alien.catalogue.access;
 
 import java.security.GeneralSecurityException;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Map;
 
 import alien.catalogue.PFN;
@@ -68,14 +69,17 @@ public class XrootDEnvelope {
 		envGUID = access.getGUID().getName();
 		envSE = se.seName;
 		envGUID = access.getGUID().getName();
-		envMD5 = access.getLFN().md5.toString();
+		
+		envMD5 = "md5field";
+//		envMD5 = access.getLFN().md5.toString();
+		
 
 		plainEnvelopeTicket = "<authz>\n  <file>\n" + "    <access>"
 				+ envAccess + "</access>\n" + "    <turl>" + envTURL + "</turl>\n"
 				+ "    <lfn>" + envLFN + "</lfn>\n"
 				+ "    <size>" + envSize + "</size>\n" + "    <pfn>"
 				+ envPFN + "</pfn>\n"
-				+ "    <se>" + se.seName + "</se>\n" + "    <guid"
+				+ "    <se>" + se.seName + "</se>\n" + "    <guid>"
 				+ envGUID + "</guid>\n" + "    <md5>"
 				+ envMD5 + "</md5>\n" + "  </file>\n</authz>\n";
 		System.out.println("we have a ticket:");
@@ -114,9 +118,10 @@ public class XrootDEnvelope {
 		return signedEnvelope;
 	}
 	
-	public Map<String, String> getPerlEnvelopeTicket(){
+	public Hashtable<String, String> getPerlEnvelopeTicket(){
 		
-		Map<String, String> envelope = new HashMap<String, String>();
+		Hashtable<String,String> envelope = new Hashtable<String,String>();
+		
 		envelope.put("access",envAccess);
 		envelope.put("lfn", envLFN);
 		envelope.put("guid",envGUID );
@@ -124,7 +129,7 @@ public class XrootDEnvelope {
 		envelope.put("turl",envTURL );
 		envelope.put("size",envSize );
 		envelope.put("md5", envMD5);
-		envelope.put("signedenvelope", signedEnvelope);
+//		envelope.put("signedenvelope", signedEnvelope);
 		envelope.put("envelope", encryptedEnvelope);
 
 		return envelope;
