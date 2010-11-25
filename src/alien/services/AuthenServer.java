@@ -222,11 +222,17 @@ public class AuthenServer {
 		return ret;
 	}
 	
-	public static Hashtable<String,String>[] access(String P_user, int access, String P_options,
-			String P_lfn, int size, String P_guid, String ses, String exxSes,
-			String P_qos, int qosCount, String P_sitename) {
+	public static Hashtable<String,String>[] access(String P_user, String P_access, String P_options,
+			String P_lfn, String P_size, String P_guid, String p_ses, String P_exxSes,
+			String P_qos, String P_qosCount, String P_sitename) {
 		
+		int access = new Integer(P_access);
+		int size = new Integer(P_size);
+		int qosCount = new Integer(P_qosCount);
 
+		Set<SE> ses = new LinkedHashSet<SE>();
+		
+		Set<SE> exxses = new LinkedHashSet<SE>();
 		
 		System.out.println("we are invoked: user: " + P_user + ", code: " + access + ", options: " + P_options + ", lfn: " + P_lfn
 						+ ", size: " + size + ", guid: " + P_guid);
@@ -234,58 +240,62 @@ public class AuthenServer {
 		Hashtable<String,String>[] envList = new Hashtable[1];
 		
 
-		Hashtable<String,String> returnEnvs = new Hashtable<String,String>();
+//		Hashtable<String,String> returnEnvs = new Hashtable<String,String>();
 		
-		
-		returnEnvs.put("se","eins");
-		returnEnvs.put("access","zwei");
-		
-		envList[0] = returnEnvs;
+//		
+//		returnEnvs.put("se","eins");
+//		returnEnvs.put("access","zwei");
+//		
+//		envList[0] = returnEnvs;
 
-//
-//	
-//		try {
-//
-//			Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
-//					access, P_options, P_lfn, size, P_guid, null, null, P_qos,
-//					qosCount, P_sitename);
-//
-//			authen.loadKeys();
-//			EncryptedAuthzToken authz = new EncryptedAuthzToken(authen.AuthenPrivKey,
-//					authen.SEPubKey);
-//			System.out.println();
-//			// System.out.println();
-//			// System.out.println("loaded authz engine");
-//
-//	
-//			
-//			for (XrootDEnvelope env : envelopes) {
-//				env.decorateEnvelope(authz);
-//				System.out.println("envelope ready: " +
-//				 env.getPerlEnvelopeTicket().get("envelope"));
-//				 
+
+		AuthenServer authen = new AuthenServer();
+
+		try {
+
+			Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
+					access, P_options, P_lfn, size, P_guid, ses, exxses, P_qos,
+					qosCount, P_sitename);
+
+			authen.loadKeys();
+			EncryptedAuthzToken authz = new EncryptedAuthzToken(authen.AuthenPrivKey,
+					authen.SEPubKey);
+			System.out.println();
+			// System.out.println();
+			// System.out.println("loaded authz engine");
+
+	
+			
+			for (XrootDEnvelope env : envelopes) {
+				env.decorateEnvelope(authz);
+				System.out.println("envelope ready: " +
+				 env.getPerlEnvelopeTicket().get("envelope"));
+				 
+				envList[0] = env.getPerlEnvelopeTicket();
 //				returnEnvs.add(env.getPerlEnvelopeTicket().get("envelope"));
-//
-//			}
-//		} catch (GeneralSecurityException gexcept) {
-//			System.out.println("General Securiry exception" + gexcept);
-//		} catch (IOException ioexcept) {
-//			System.out.println("IO exception" + ioexcept);
-//		}
+
+			}
+		} catch (GeneralSecurityException gexcept) {
+			System.out.println("General Securiry exception" + gexcept);
+		} catch (IOException ioexcept) {
+			System.out.println("IO exception" + ioexcept);
+		}
 		return envList;
 	}
 
+	
+	
 	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,
 			int access, String P_options, String P_lfn, int size,
 			String P_guid, Set<SE> ses, Set<SE> exxSes, String P_qos,
 			int qosCount, String P_sitename) {
 
 		AliEnPrincipal user = UserFactory.getByUsername(P_user);
-
-		LFN lfn = LFNUtils
-				.getLFN("/alice/data/2010/LHC10e/000130848/ESDs/pass1/AOD019/0001/AliAOD.Dielectron.root");
-
-		CatalogEntity requestedEntry;
+//
+//		LFN lfn = LFNUtils
+//				.getLFN(P_lfn);
+//
+//		CatalogEntity requestedEntry;
 
 		CatalogueAccess ca = AuthorizationFactory.requestAccess(user, P_lfn,
 				access);
