@@ -37,9 +37,31 @@ public final class UserFactory {
 	 * @return account, or <code>null</code> if no account has this certificate associated to it
 	 */
 	public static AliEnPrincipal getByCertificate(final X509Certificate[] certChain) {
-		final String sDN = certChain[0].getSubjectDN().getName();
+		for (int i=0; i<certChain.length; i++){
+			final String sDN = certChain[i].getSubjectX500Principal().getName();
 		
-		return getByDN(transformDN(sDN));
+			final String sDNTransformed = transformDN(sDN);
+			
+			final AliEnPrincipal p = getByDN(sDNTransformed);
+			
+			if (p!=null)
+				return p;
+			
+			final int idx = sDNTransformed.lastIndexOf('=');
+			
+			if (idx<0 || idx==sDNTransformed.length()-1)
+				return null;
+			
+			try{
+				Long.parseLong(sDNTransformed.substring(idx+1));
+			}
+			catch (NumberFormatException nfe){
+				// try the next certificate in chain only if the last item is a number, so it might be a proxy certificate in fact
+				return null;
+			}
+		}
+		
+		return null;
 	}
 	
 	/**
@@ -100,7 +122,7 @@ public final class UserFactory {
 				
 				p.setNames(check);
 				
-				ret.add(new AliEnPrincipal(username));
+				ret.add(p);
 			}
 			
 			return ret;
