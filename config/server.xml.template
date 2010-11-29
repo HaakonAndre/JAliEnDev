@@ -64,7 +64,7 @@
 	  <DefaultContext allowLinking="true"/>
       </Host>
 
-      <Realm className="org.apache.catalina.realm.UserDatabaseRealm" resourceName="UserDatabase" />
+      <Realm className="alien.user.LdapCertificateRealm" resourceName="UserDatabase" />
     </Engine>
   </Service>
 </Server>
