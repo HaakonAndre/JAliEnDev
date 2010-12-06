@@ -5,17 +5,22 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -168,52 +173,49 @@ public class AuthenServer {
 	public static void main(String[] args) {
 
 		AuthenServer authen = new AuthenServer();
-		
-		
 
-		long created = System.currentTimeMillis() / 1000L;
-		long expires = created + 86400;
-		String base = "turl=root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/01/60060/7c7d01"+
-		"ca-00ad-11e0-b961-001e0b24002f&access=write&lfn=/pcepalice11/user/a/ali/testing.outsdasd"+
-		"ffput&size=18295"+
-		"&se=pcepalice11::CERN::XR1&guid=7c7d01ca-00ad-11e0-b961-001e0b2400"+
-		"2f&md5=5ea1a3e0ae9af742e7c53696bb23e816&creator=JAuthenX"+
-		"&hashord=turl-access-lfn-size-se-guid-md5-creator-hashord-created-expires&"+
-		"&created=" + created + "&expires=" + expires;
+		HashSet<SE> empty = new HashSet<SE>();
+		
+		String[] envelopes;
+		envelopes = authen.authorize("sschrein", 1,
+				"", "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 440, "a00e6c3e-3cbb-11df-8620-0018fe730ae5",
+				empty, empty, "", 1,
+				"CERN");
+		
+		System.out.println("we received:");
+		System.out.println(Arrays.toString(envelopes));
+
 		
 		try {
-		authen.loadKeys();
 
-		Signature signer = Signature.getInstance("SHA384withRSA");
-		signer.initSign(authen.AuthenPrivKey);
-		signer.update(base.getBytes());
-		// signer.update(digest);
+			authen.loadKeys();
 
-		base = base + "&signature="
-				+ Base64.encodeBytes(signer.sign());
+			String baseEnvelope = "turl=root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/14/58772/0fefd262-0148-11e0-be40-001e0b24002f"+
+			"&access=read&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=13958&se=pcepalice11::CERN::XR1"+
+			"&guid=0FEFD262-0148-11E0-BE40-001E0B24002F&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d";
+			
+			String hashord = "turl-access-lfn-size-se-guid-md5-creator-created-expires-hashord";
+			
 
-		System.out.println(base.replace("&", "\\&"));
-		
+
+			System.out.println("generated testVO: ");
+			
+			System.out.println("xrdcpapmon  -DIFirstConnectMaxCnt 6 root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/14/58772/0fefd262-0148-11e0-be40-001e0b24002f"+
+					" /tmp/pcepalice11/cache/0fefd262-0148-11e0-be40-001e0b24002f.16591291647188"+
+					" -OS\\&"
+			+ 
+			authen.dryEngine(baseEnvelope, hashord));
+
+
 		} catch (GeneralSecurityException gexcept) {
 			System.out.println("General Securiry exception" + gexcept);
 		} catch (IOException ioexcept) {
 			System.out.println("IO exception" + ioexcept);
 		}
+		
+		
 
-//		System.out.println("... gonna ask for a READ envelope");
-//		String nix = authen.accessString("sschrein", CatalogueAccess.READ, "",
-//				"/alice/cern.ch/user/s/sschrein/testasdfasdfasdf", 0, "", null,
-//				null, "", 0, "CERN");
-//		// System.out.println("... gonna ask for a WRITE envelope");
-//		// nix = authen.access("sschrein", CatalogueAccess.WRITE, "",
-//		// "/alice/cern.ch/user/s/sschrein/newAuthenFile", 666, "", null,
-//		// null, "disk", 2, "CERN");
-//		System.out.println("... gonna ask for a DELETE envelope");
-//		nix = authen.accessString("sschrein", CatalogueAccess.DELETE, "",
-//				"/alice/cern.ch/user/s/sschrein/testasdfasdfasdf", 0, "", null,
-//				null, "", 0, "CERN");
 
-		// System.out.println(nix);
 	}
 //
 //	public static String accessString(String P_user, int access,
@@ -321,7 +323,11 @@ public class AuthenServer {
 	public String[] authorize(String P_user, int access, String P_options,
 			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
 			String P_qos, int qosCount, String P_sitename) {
+		
+		
 
+		System.out.println("we are invoked.");
+		
 		ArrayList<String> signedEnvelopes = null;
 		
 		AuthenServer authen = new AuthenServer();
@@ -340,7 +346,7 @@ public class AuthenServer {
 			EncryptedAuthzToken authz = new EncryptedAuthzToken(
 					authen.AuthenPrivKey, authen.SEPubKey);
 				
-			signedEnvelopes = CatalogueAccessEnvelopeDecorator.signEnvelope(AuthenPrivKey,
+			signedEnvelopes = CatalogueAccessEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
 					ca.getEnvelopes());
 
 //			FOR (XROOTDENVELOPE ENV : CA.GETENVELOPES()) {
@@ -386,170 +392,173 @@ public class AuthenServer {
 //
 //	}
 
-	/**
-	 * Create envelope
-	 * 
-	 * @param user
-	 * @param egal
-	 * @param envreq
-	 * @param lfn
-	 * @param staticSEs
-	 * @param size
-	 * @param noSEs
-	 * @param guid
-	 * @param site
-	 * @param qos
-	 * @param qosCount
-	 * @return the envelope
-	 */
-	public String createEnvelope(String user, String egal, String envreq,
-			String lfn, String staticSEs, String size, String noSEs,
-			String guid, String site, String qos, String qosCount) {
-
-		// for (int i = 0; i < celsius.length; i++) {
-		//
-		// try {
-		// System.out.println("getting" + celsius[i]);
-		// backer += ",";
-		// backer += celsius[i];
-		//
-		// } catch (java.lang.ArrayIndexOutOfBoundsException iob) {
-		// break;
-		// }
-		// }
-		System.out.println("i got: user: " + user + ", envreq: " + envreq
-				+ ", lfn: " + lfn + ",staticSEs: " + staticSEs);
-
-		// Hashtable<String, String> envelope = new Hashtable<String, String>();
-		// envelope.put("access", envreq);
-		// envelope.put("turl",
-		// "root://lpsc-se-dpm-server.in2p3.fr:1094//dpm/in2p3.fr/home/alice/06/13580/7c1e082e-e81f-11df-93de-001e0b24002f");
-		// envelope.put("pfn",
-		// "/dpm/in2p3.fr/home/alice/06/13580/7c1e082e-e81f-11df-93de-001e0b24002f");
-		// envelope.put("pfn", lfn);
-		// envelope.put("size", "1234");
-		// envelope.put("se", "pcepalice11::CERN::DPM");
-		// envelope.put("guid", "7c1e082e-e81f-11df-93de-001e0b24002f");
-		// envelope.put("md5", "4eef16773f59388963526254922bf5ef");
-		// envelope.put("envelepe",
-		// "111111111111111111000000000000000000000000000xxxxxxxxxxxxxxxxxxxxxxxxxx");
-		// envelope.put("signedEnvelope", envreq);
-		//
-		// String ticket = "<authz>\n  <file>" + "\n";
-		// ticket += "    <access>write-once</access>" + "\n";
-		// ticket +=
-		// "    <turl>root://lpsc-se-dpm-server.in2p3.fr:1094//dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</turl>"
-		// + "\n";
-		// ticket += "    <lfn>/pcepalice11/user/a/ali/ksksksk</lfn>" + "\n";
-		// ticket += "    <size>13593</size>" + "\n";
-		// ticket +=
-		// "    <pfn>/dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</pfn>"
-		// + "\n";
-		// ticket += "    <se>pcepalice11::CERN::DPM</se>" + "\n";
-		// ticket += "    <guid>087984d8-eadc-13df-8274-001e0b24002f</guid>" +
-		// "\n";
-		// ticket += "    <md5>4eef16773f59388963526254922bf5ef</md5>" + "\n";
-		// ticket += "  </file>\n</authz>\n";
-
-		String ticket = "<authz>\n  <file>" + "\n";
-		ticket += "    <access>write-once</access>" + "\n";
-		ticket += "    <turl>root://nanxrdmgr01.in2p3.fr:1094//01/10795/d3a4f56e-ec41-11df-ab69-33fa9fe34833</turl>"
-				+ "\n";
-		ticket += "    <lfn>/pcepalice11/user/a/ali/ksksksk</lfn>" + "\n";
-		ticket += "    <size>18295</size>" + "\n";
-		ticket += "    <pfn>/01/10795/d3a4f56e-ec41-11df-ab69-33fa9fe34833</pfn>"
-				+ "\n";
-		ticket += "    <se>pcepalice11::CERN::Suba</se>" + "\n";
-		ticket += "    <guid>d3a4f56e-ec41-11df-ab69-33fa9fe34833</guid>"
-				+ "\n";
-		ticket += "    <md5>4eef16773f59388963526254922bf5ef</md5>" + "\n";
-		ticket += "  </file>\n</authz>\n";
-
-		// envEngine = SealedEnvelope.InitializeEngine();
-
-		String encrTicket = "";
-
-		// envEngine = envEngine.TSealedEnvelope(lpriv.toCharArray(),
-		// lpub.toCharArray(), rpriv.toCharArray(), rpub.toCharArray(),
-		// cipher.toCharArray(),
-		// creator.toCharArray(), 0);
-		// TSealedEnvelope envEngine = new TSealedEnvelope();
-
-		// envEngine.Reset();
-		// envEngine.Initialize(2);
-
-		try {
-			loadKeys();
-			System.out.println("loaded keys");
-
-			EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey,
-					SEPubKey);
-			System.out.println();
-			System.out.println();
-			System.out.println("loaded authz engine");
-
-			encrTicket = authz.encrypt(ticket);
-			System.out.println("ticket encryption finished.");
-
-			System.out.println();
-			System.out.println();
-			EncryptedAuthzToken deauthz = new EncryptedAuthzToken(encrTicket,
-					SEPrivKey, AuthenPubKey);
-			System.out.println("ROUND 3, own ticket: decrypting");
-
-			String plain = deauthz.decrypt();
-
-			System.out.println("ticket decrypted");
-			System.out.println("ticket was:" + plain);
-
-			// System.out.println();
-			// System.out.println();
-			// EncryptedAuthzToken verdeauthz = new
-			// EncryptedAuthzToken(verificationEnvelope, SEPrivKey,
-			// AuthenPubKey);
-			// System.out.println("ROUND 1: decrypting");
-			//
-			// String verplain = verdeauthz.decrypt();
-			//
-			// System.out.println("ticket decrypted");
-			// System.out.println("ticket was:" + verplain);
-
-			System.out.println();
-			System.out.println();
-			EncryptedAuthzToken verdeauthz2 = new EncryptedAuthzToken(
-					verificationEnvelope2, SEPrivKey, AuthenPubKey);
-			System.out.println("ROUND 2: decrypting");
-
-			String verplain2 = verdeauthz2.decrypt();
-
-			System.out.println("ticket decrypted");
-			System.out.println("ticket was:" + verplain2);
-
-			System.out.println();
-			System.out.println();
-			System.out.println();
-			System.out.println();
-
-		} catch (GeneralSecurityException gexcept) {
-			System.out.println("General Securiry exception" + gexcept);
-		}
-
-		catch (IOException ioexcept) {
-			System.out.println("IO exception" + ioexcept);
-		}
-
-		// encrTicket = TSealedEnvelope.encode(lpriv,lpub,rpriv,rpub,ticket);
-
-		// envEngine.encodeEnvelopePerl(ticket,0,"none");
-		// encrTicket = envEngine.GetEncodedEnvelope();
-
-		// Hashtable<int, String> alles = new Hashtable[1];
-		// alles[0] = envelope;
-
-		System.out.println("i encrypted ticket:" + encrTicket);
-
-		return encrTicket;
-	}
+	
+	
+//	
+//	/**
+//	 * Create envelope
+//	 * 
+//	 * @param user
+//	 * @param egal
+//	 * @param envreq
+//	 * @param lfn
+//	 * @param staticSEs
+//	 * @param size
+//	 * @param noSEs
+//	 * @param guid
+//	 * @param site
+//	 * @param qos
+//	 * @param qosCount
+//	 * @return the envelope
+//	 */
+//	public String createEnvelope(String user, String egal, String envreq,
+//			String lfn, String staticSEs, String size, String noSEs,
+//			String guid, String site, String qos, String qosCount) {
+//
+//		// for (int i = 0; i < celsius.length; i++) {
+//		//
+//		// try {
+//		// System.out.println("getting" + celsius[i]);
+//		// backer += ",";
+//		// backer += celsius[i];
+//		//
+//		// } catch (java.lang.ArrayIndexOutOfBoundsException iob) {
+//		// break;
+//		// }
+//		// }
+//		System.out.println("i got: user: " + user + ", envreq: " + envreq
+//				+ ", lfn: " + lfn + ",staticSEs: " + staticSEs);
+//
+//		// Hashtable<String, String> envelope = new Hashtable<String, String>();
+//		// envelope.put("access", envreq);
+//		// envelope.put("turl",
+//		// "root://lpsc-se-dpm-server.in2p3.fr:1094//dpm/in2p3.fr/home/alice/06/13580/7c1e082e-e81f-11df-93de-001e0b24002f");
+//		// envelope.put("pfn",
+//		// "/dpm/in2p3.fr/home/alice/06/13580/7c1e082e-e81f-11df-93de-001e0b24002f");
+//		// envelope.put("pfn", lfn);
+//		// envelope.put("size", "1234");
+//		// envelope.put("se", "pcepalice11::CERN::DPM");
+//		// envelope.put("guid", "7c1e082e-e81f-11df-93de-001e0b24002f");
+//		// envelope.put("md5", "4eef16773f59388963526254922bf5ef");
+//		// envelope.put("envelepe",
+//		// "111111111111111111000000000000000000000000000xxxxxxxxxxxxxxxxxxxxxxxxxx");
+//		// envelope.put("signedEnvelope", envreq);
+//		//
+//		// String ticket = "<authz>\n  <file>" + "\n";
+//		// ticket += "    <access>write-once</access>" + "\n";
+//		// ticket +=
+//		// "    <turl>root://lpsc-se-dpm-server.in2p3.fr:1094//dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</turl>"
+//		// + "\n";
+//		// ticket += "    <lfn>/pcepalice11/user/a/ali/ksksksk</lfn>" + "\n";
+//		// ticket += "    <size>13593</size>" + "\n";
+//		// ticket +=
+//		// "    <pfn>/dpm/in2p3.fr/home/alice/14/00977/087984d8-eadc-13df-8274-001e0b24002f</pfn>"
+//		// + "\n";
+//		// ticket += "    <se>pcepalice11::CERN::DPM</se>" + "\n";
+//		// ticket += "    <guid>087984d8-eadc-13df-8274-001e0b24002f</guid>" +
+//		// "\n";
+//		// ticket += "    <md5>4eef16773f59388963526254922bf5ef</md5>" + "\n";
+//		// ticket += "  </file>\n</authz>\n";
+//
+//		String ticket = "<authz>\n  <file>" + "\n";
+//		ticket += "    <access>write-once</access>" + "\n";
+//		ticket += "    <turl>root://nanxrdmgr01.in2p3.fr:1094//01/10795/d3a4f56e-ec41-11df-ab69-33fa9fe34833</turl>"
+//				+ "\n";
+//		ticket += "    <lfn>/pcepalice11/user/a/ali/ksksksk</lfn>" + "\n";
+//		ticket += "    <size>18295</size>" + "\n";
+//		ticket += "    <pfn>/01/10795/d3a4f56e-ec41-11df-ab69-33fa9fe34833</pfn>"
+//				+ "\n";
+//		ticket += "    <se>pcepalice11::CERN::Suba</se>" + "\n";
+//		ticket += "    <guid>d3a4f56e-ec41-11df-ab69-33fa9fe34833</guid>"
+//				+ "\n";
+//		ticket += "    <md5>4eef16773f59388963526254922bf5ef</md5>" + "\n";
+//		ticket += "  </file>\n</authz>\n";
+//
+//		// envEngine = SealedEnvelope.InitializeEngine();
+//
+//		String encrTicket = "";
+//
+//		// envEngine = envEngine.TSealedEnvelope(lpriv.toCharArray(),
+//		// lpub.toCharArray(), rpriv.toCharArray(), rpub.toCharArray(),
+//		// cipher.toCharArray(),
+//		// creator.toCharArray(), 0);
+//		// TSealedEnvelope envEngine = new TSealedEnvelope();
+//
+//		// envEngine.Reset();
+//		// envEngine.Initialize(2);
+//
+//		try {
+//			loadKeys();
+//			System.out.println("loaded keys");
+//
+//			EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey,
+//					SEPubKey);
+//			System.out.println();
+//			System.out.println();
+//			System.out.println("loaded authz engine");
+//
+//			encrTicket = authz.encrypt(ticket);
+//			System.out.println("ticket encryption finished.");
+//
+//			System.out.println();
+//			System.out.println();
+//			EncryptedAuthzToken deauthz = new EncryptedAuthzToken(encrTicket,
+//					SEPrivKey, AuthenPubKey);
+//			System.out.println("ROUND 3, own ticket: decrypting");
+//
+//			String plain = deauthz.decrypt();
+//
+//			System.out.println("ticket decrypted");
+//			System.out.println("ticket was:" + plain);
+//
+//			// System.out.println();
+//			// System.out.println();
+//			// EncryptedAuthzToken verdeauthz = new
+//			// EncryptedAuthzToken(verificationEnvelope, SEPrivKey,
+//			// AuthenPubKey);
+//			// System.out.println("ROUND 1: decrypting");
+//			//
+//			// String verplain = verdeauthz.decrypt();
+//			//
+//			// System.out.println("ticket decrypted");
+//			// System.out.println("ticket was:" + verplain);
+//
+//			System.out.println();
+//			System.out.println();
+//			EncryptedAuthzToken verdeauthz2 = new EncryptedAuthzToken(
+//					verificationEnvelope2, SEPrivKey, AuthenPubKey);
+//			System.out.println("ROUND 2: decrypting");
+//
+//			String verplain2 = verdeauthz2.decrypt();
+//
+//			System.out.println("ticket decrypted");
+//			System.out.println("ticket was:" + verplain2);
+//
+//			System.out.println();
+//			System.out.println();
+//			System.out.println();
+//			System.out.println();
+//
+//		} catch (GeneralSecurityException gexcept) {
+//			System.out.println("General Securiry exception" + gexcept);
+//		}
+//
+//		catch (IOException ioexcept) {
+//			System.out.println("IO exception" + ioexcept);
+//		}
+//
+//		// encrTicket = TSealedEnvelope.encode(lpriv,lpub,rpriv,rpub,ticket);
+//
+//		// envEngine.encodeEnvelopePerl(ticket,0,"none");
+//		// encrTicket = envEngine.GetEncodedEnvelope();
+//
+//		// Hashtable<int, String> alles = new Hashtable[1];
+//		// alles[0] = envelope;
+//
+//		System.out.println("i encrypted ticket:" + encrTicket);
+//
+//		return encrTicket;
+//	}
 
 	private void loadKeys() throws GeneralSecurityException, IOException {
 
@@ -633,4 +642,28 @@ public class AuthenServer {
 
 	}
 
+	private String dryEngine(String baseEnvelope, String hashord) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+		
+		
+		long created = System.currentTimeMillis() / 1000L;
+		long expires = created + 86400;
+
+		String toBeSigned = baseEnvelope
+				+ "&creator=JAuthenX&created=" + created + "&expires="
+				+ expires + "&hashord=" + hashord
+				+ "-creator-expires-hashord";
+
+		Signature signer = Signature.getInstance("SHA384withRSA");
+		signer.initSign(AuthenPrivKey);
+		signer.update(toBeSigned.getBytes());
+		// signer.update(digest);
+
+		toBeSigned = toBeSigned + "&signature="
+				+ Base64.encodeBytes(signer.sign()).replace("\n", "");
+
+		return toBeSigned.replace("&", "\\&");
+
+	}
 }
+
+	

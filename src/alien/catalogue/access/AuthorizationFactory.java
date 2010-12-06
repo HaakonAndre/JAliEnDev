@@ -104,7 +104,7 @@ public final class AuthorizationFactory {
 				// TODO
 				// maybe we should generate a new one instead ?
 				
-				// guid = GUIDUtils.createGuid();
+				guid = GUIDUtils.createGuid();
 				
 				return new CatalogueAccessDENIED(lfnOrGUID);
 			}

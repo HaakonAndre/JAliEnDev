@@ -136,9 +136,9 @@ public class CatalogueAccessEnvelopeDecorator {
 			signer.initSign(AuthenPrivKey);
 			signer.update(toBeSigned.getBytes());
 			// signer.update(digest);
-
+			
 			toBeSigned = toBeSigned + "&signature="
-					+ Base64.encodeBytes(signer.sign());
+					+ Base64.encodeBytes(signer.sign()).replace("\n", "");
 
 			signedEnvelopes.add(toBeSigned.replace("&", "\\&"));
 		}
