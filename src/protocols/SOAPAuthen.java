@@ -169,11 +169,12 @@ public class SOAPAuthen {
 
 		AuthenServer authen = new AuthenServer();
 
-		Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
-				access, P_options, P_lfn, size, P_guid, ses, exxSes,
-				P_qos, qosCount, P_sitename);
+//		Set<XrootDEnvelope> envelopes = authen.createEnvelopePerlAliEnV218(P_user,
+//				access, P_options, P_lfn, size, P_guid, ses, exxSes,
+//				P_qos, qosCount, P_sitename);
 
-		return envelopes;
+//		return envelopes;
+		return null;
 //		return translateEnvelopeIntoMap(envelopes);
 
 	}
@@ -194,9 +195,9 @@ public class SOAPAuthen {
 				 P_guid,  P_sitename, P_qos,  P_qosCount);
 		
 		String ret = "";
-		 for(XrootDEnvelope env: envelopes)
-			 ret += "\n" + env.getPerlEnvelopeTicket().get("envelope") + "\n";
-		 
+//		 for(XrootDEnvelope env: envelopes)
+//			 ret += "\n" + env.getPerlEnvelopeTicket().get("envelope") + "\n";
+//		 
 		 return ret;
 	}
 	

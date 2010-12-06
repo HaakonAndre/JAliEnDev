@@ -16,14 +16,17 @@ import alien.tsealedEnvelope.EncryptedAuthzToken;
 public class XrootDEnvelope {
 
 	// analog to the following access types, we define levels:
-	//	public static int INVALID = 0;
-	//	public static int READ = 1;
-	//	public static int WRITE = 2;
-	//	public static int DELETE = 3;
-	private static String[] levels = {"invalid","read","write-once","delete"};
-	
+	// public static int INVALID = 0;
+	// public static int READ = 1;
+	// public static int WRITE = 2;
+	// public static int DELETE = 3;
+	private static String[] levels = { "invalid", "read", "write-once",
+			"delete" };
+
 	private String plainEnvelopeTicket;
 	private String encryptedEnvelope;
+	
+	public final String hashord = "turl-access-lfn-guid-size-md5";
 	private String signedEnvelope;
 
 	private String envAccess;
@@ -39,7 +42,6 @@ public class XrootDEnvelope {
 	private SE se;
 	private PFN pfn;
 	private String newPFN;
-	
 
 	void setCatalogueAccess(final CatalogueAccess access) {
 		this.access = access;
@@ -51,8 +53,9 @@ public class XrootDEnvelope {
 		se = SEUtils.getSE(Integer.valueOf(pfn.seNumber));
 		initializeEncryptedTicket();
 	}
-	
-	public XrootDEnvelope(final CatalogueAccess access, final SE se, final String newPFN) {
+
+	public XrootDEnvelope(final CatalogueAccess access, final SE se,
+			final String newPFN) {
 		this.access = access;
 		this.newPFN = newPFN;
 		this.se = se;
@@ -62,33 +65,25 @@ public class XrootDEnvelope {
 	private void initializeEncryptedTicket() {
 
 		envAccess = levels[access.access];
-		envTURL = se.seioDaemons.toString() + "/" + se.seStoragePath.toString() + access.getGUID().getName();
+		envTURL = se.seioDaemons.toString() + "/" + se.seStoragePath.toString()
+				+ access.getGUID().getName();
 		envPFN = se.seStoragePath.toString() + access.getGUID().getName();
 		envLFN = access.getLFN().getName();
 		envSize = Long.toString(access.getLFN().size);
 		envGUID = access.getGUID().getName();
 		envSE = se.seName;
-		envGUID = access.getGUID().getName();
-		
-		envMD5 = "md5field";
-//		envMD5 = access.getLFN().md5.toString();
-		
 
-		plainEnvelopeTicket = "<authz>\n  <file>\n" + "    <access>"
-				+ envAccess + "</access>\n" + "    <turl>" + envTURL + "</turl>\n"
-				+ "    <lfn>" + envLFN + "</lfn>\n"
-				+ "    <size>" + envSize + "</size>\n" + "    <pfn>"
-				+ envPFN + "</pfn>\n"
-				+ "    <se>" + se.seName + "</se>\n" + "    <guid>"
-				+ envGUID + "</guid>\n" + "    <md5>"
-				+ envMD5 + "</md5>\n" + "  </file>\n</authz>\n";
+		envMD5 = "md5field";
+		// envMD5 = access.getLFN().md5.toString();
+
+
+
+		
+		
 		System.out.println("we have a ticket:");
 		System.out.println(plainEnvelopeTicket);
 	}
 
-	// void setTicket(String ticket){
-	// this.ticket = ticket;
-	// }
 	String getTicket() {
 		if (plainEnvelopeTicket == null)
 			initializeEncryptedTicket();
@@ -96,42 +91,33 @@ public class XrootDEnvelope {
 		return plainEnvelopeTicket;
 	}
 
-	
-	public void decorateEnvelope(EncryptedAuthzToken authz) throws GeneralSecurityException{
+	public void decorateEnvelope(EncryptedAuthzToken authz)
+			throws GeneralSecurityException {
 		encryptedEnvelope = authz.encrypt(plainEnvelopeTicket);
 		System.out.println("we have an encrypted ticket:");
 		System.out.println(encryptedEnvelope);
 	}
-	
-	
-	// void setEncryptedEnvelope(String encryptedEnvelope){
-	// this.encryptedEnvelope = encryptedEnvelope;
-	// }
-	String getEncryptedEnvelope() {
-		return encryptedEnvelope;
+
+	private void setSignature(String signature){
+		signedEnvelope = signature;
 	}
 
-	// void setSignedEnvelope(String signedEnvelope){
-	// this.signedEnvelope = signedEnvelope;
-	// }
-	String getSignedEnvelope() {
+	public String getUnsignedEnvelope() {
+		
+		return "turl=" + se.seioDaemons.toString() + "/" + se.seStoragePath.toString() +
+		access.getGUID().getName() + "&access=" + levels[access.access] +
+		"&lfn=" + access.getLFN().getName() +"&guid=" + access.getGUID().getName() +
+		"&size=" + Long.toString(access.getLFN().size) + "&md5="+ "md5field";
+		// envMD5 = access.getLFN().md5.toString();
+		
+
+	}
+
+	private String getSignedEnvelope() {
 		return signedEnvelope;
 	}
-	
-	public Hashtable<String, String> getPerlEnvelopeTicket(){
-		
-		Hashtable<String,String> envelope = new Hashtable<String,String>();
-		
-		envelope.put("access",envAccess);
-		envelope.put("lfn", envLFN);
-		envelope.put("guid",envGUID );
-		envelope.put("pfn", envPFN);
-		envelope.put("turl",envTURL );
-		envelope.put("size",envSize );
-		envelope.put("md5", envMD5);
-//		envelope.put("signedenvelope", signedEnvelope);
-		envelope.put("envelope", encryptedEnvelope);
 
-		return envelope;
+	private String getEncryptedEnvelope() {
+		return encryptedEnvelope;
 	}
 }
