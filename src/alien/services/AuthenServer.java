@@ -10,6 +10,7 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.Signature;
+import java.security.Key;
 import java.security.SignatureException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -178,7 +179,7 @@ public class AuthenServer {
 		
 		String[] envelopes;
 		envelopes = authen.authorize("sschrein", 1,
-				"", "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 440, "a00e6c3e-3cbb-11df-8620-0018fe730ae5",
+				 "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 440, "a00e6c3e-3cbb-11df-8620-0018fe730ae5",
 				empty, empty, "", 1,
 				"CERN");
 		
@@ -320,13 +321,16 @@ public class AuthenServer {
 //		return envList;
 //	}
 
-	public String[] authorize(String P_user, int access, String P_options,
+	public String[] authorize(String P_user, int access, 
 			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
 			String P_qos, int qosCount, String P_sitename) {
 		
 		
 
-		System.out.println("we are invoked.");
+		System.out.println("we are invoked:  P_user: " + P_user + "\naccess: " + access 
+			+ "\nP_lfn: " + 	
+			 P_lfn + "\nsize: " + size + "\nP_guid: " +  P_guid 
+			 + "\nP_qos: " + P_qos + "\nqosCount: " +  qosCount + "\nP_sitename: " +  P_sitename);
 		
 		ArrayList<String> signedEnvelopes = null;
 		
@@ -562,7 +566,7 @@ public class AuthenServer {
 
 	private void loadKeys() throws GeneralSecurityException, IOException {
 
-		System.out.println("loading keys...");
+//		System.out.println("loading keys...");
 		// String lprivfile = "/home/ron/authen_keys/lpriv.key";
 		// String lpubfile = "/home/ron/authen_keys/lpub.pem";
 		// String rprivfile = "/home/ron/authen_keys/rpriv.pem";
@@ -580,7 +584,7 @@ public class AuthenServer {
 		fis.close();
 
 		PKCS8EncodedKeySpec AuthenPrivSpec = new PKCS8EncodedKeySpec(AuthenPriv);
-		System.out.println("loading AuthenPriv...");
+		System.out.print("loading AuthenPriv...");
 		this.AuthenPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
 				.generatePrivate(AuthenPrivSpec);
 
@@ -591,7 +595,7 @@ public class AuthenServer {
 		fis.close();
 
 		PKCS8EncodedKeySpec SEPrivSpec = new PKCS8EncodedKeySpec(SEPriv);
-		System.out.println("loading SEPriv...");
+//		System.out.println("loading SEPriv...");
 		this.SEPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
 				.generatePrivate(SEPrivSpec);
 
@@ -610,14 +614,14 @@ public class AuthenServer {
 		CertificateFactory certFact = CertificateFactory.getInstance("X.509");
 
 		File AuthenPubfile = new File("/home/ron/authen_keys/AuthenPub.crt");
-		System.out.println("loading SEPub...");
+//		System.out.println("loading SEPub...");
 		X509Certificate AuthenPub = (X509Certificate) certFact
 				.generateCertificate(new BufferedInputStream(
 						new FileInputStream(AuthenPubfile)));
 		this.AuthenPubKey = (RSAPublicKey) AuthenPub.getPublicKey();
 
 		File SEPubfile = new File("/home/ron/authen_keys/SEPub.crt");
-		System.out.println("loading rpub...");
+//		System.out.println("loading rpub...");
 
 		X509Certificate SEPub = (X509Certificate) certFact
 				.generateCertificate(new BufferedInputStream(
@@ -638,7 +642,7 @@ public class AuthenServer {
 		// BufferedReader(
 		// new FileReader(rpub))).readObject());
 
-		System.out.println("...done!");
+		System.out.println("done!");
 
 	}
 
@@ -650,16 +654,16 @@ public class AuthenServer {
 
 		String toBeSigned = baseEnvelope
 				+ "&creator=JAuthenX&created=" + created + "&expires="
-				+ expires + "&hashord=" + hashord
-				+ "-creator-expires-hashord";
+				+ expires + "&hashord=" + hashord;
+				
 
 		Signature signer = Signature.getInstance("SHA384withRSA");
 		signer.initSign(AuthenPrivKey);
 		signer.update(toBeSigned.getBytes());
-		// signer.update(digest);
 
 		toBeSigned = toBeSigned + "&signature="
-				+ Base64.encodeBytes(signer.sign()).replace("\n", "");
+				+ Base64.encodeBytes(signer.sign(),Base64.DONT_BREAK_LINES);
+		
 
 		return toBeSigned.replace("&", "\\&");
 

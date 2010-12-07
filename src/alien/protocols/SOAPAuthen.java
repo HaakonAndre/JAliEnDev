@@ -1,5 +1,6 @@
 package alien.protocols;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -92,15 +93,20 @@ public class SOAPAuthen {
 //			String P_guid, String P_sitename, String P_qos, String P_qosCount) {
 		
 	public String[]	 createEnvelope(String P_user,
-				String P_options, String P_maybeoptions, String P_lfn,
-				String P_staticSEs, String P_size, String P_sesel_noSEs,
-				String P_guid, String P_sitename, String P_qos, String P_qosCount) {
+				 String P_access, String P_lfn,
+				String P_staticSEs, String P_size, 
+				String P_guid, String P_md5, String P_sitename, String P_qos, String P_qosCount) {
 
+//		->createEnvelope("sschrein", "", "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 
+//		"", "440", "a00e6c3e-3cbb-11df-8620-0018fe730ae5", "", "CERN","", "1")->result;
+
+		
+		
 		P_user = ensureStringInitialized(P_user);
 //		if (P_user.length() == 0)
 //			return replySOAPerrorMessage_access_eof("No username provided");
-		P_options = ensureStringInitialized(P_options);
-		P_maybeoptions = ensureStringInitialized(P_maybeoptions);
+//		P_options = ensureStringInitialized(P_options);
+//		P_maybeoptions = ensureStringInitialized(P_maybeoptions);
 
 		// if ( $maybeoption =~ /^-/ ) {
 		// $options .= $maybeoption;
@@ -108,15 +114,15 @@ public class SOAPAuthen {
 		// } else {
 		// $access = ( $maybeoption or 0);
 		// }
-		String P_access = "";
-		String[] someoptions = P_maybeoptions.split(" ");
-		for (String s : someoptions) {
-			if (isPerlOption.matcher(P_access).matches()) {
-				P_options += " " + s;
-			} else {
-				P_access = s;
-			}
-		}
+//		String P_access = "";
+//		String[] someoptions = P_maybeoptions.split(" ");
+//		for (String s : someoptions) {
+//			if (isPerlOption.matcher(P_access).matches()) {
+//				P_options += " " + s;
+//			} else {
+//				P_access = s;
+//			}
+//		}
 //		if (P_access.length() == 0)
 //			return replySOAPerrorMessage_access_eof("No access request provided");
 
@@ -144,18 +150,18 @@ public class SOAPAuthen {
 														// ensure that ""
 														// becomes 0
 
-		P_sesel_noSEs = ensureStringInitialized(P_sesel_noSEs);
-		int sesel = 0;
- 
-		if (isNumeric.matcher(P_sesel_noSEs).matches()) {
-			sesel = Integer.valueOf(P_sesel_noSEs).intValue(); // here we still
-																// need to
-																// ensure that
-																// "" becomes 0
-			P_sesel_noSEs = "";
-		}
+//		P_sesel_noSEs = ensureStringInitialized(P_sesel_noSEs);
+//		int sesel = 0;
+// 
+//		if (isNumeric.matcher(P_sesel_noSEs).matches()) {
+//			sesel = Integer.valueOf(P_sesel_noSEs).intValue(); // here we still
+//																// need to
+//																// ensure that
+//																// "" becomes 0
+//			P_sesel_noSEs = "";
+//		}
 		
-		Set<SE> exxSes = initializeSElist(P_sesel_noSEs);
+		Set<SE> exxSes = initializeSElist(P_staticSEs);
 
 		P_guid = ensureStringInitialized(P_guid);
 
@@ -169,16 +175,17 @@ public class SOAPAuthen {
 																// ensure that
 																// "" becomes 0
 
+		
 		AuthenServer authen = new AuthenServer();
 
-		return authen.authorize(P_user,
-				access, P_options, P_lfn, size, P_guid, ses, exxSes,
+		String[] envelopes =  authen.authorize(P_user,
+				access, P_lfn, size, P_guid, ses, exxSes,
 				P_qos, qosCount, P_sitename);
 
-//		return envelopes;
-//		return null;
-//		return translateEnvelopeIntoMap(envelopes);
-
+		System.out.println("we return over SOAP the string: " +Arrays.toString(envelopes));
+		
+		return envelopes;
+		
 	}
 	
 	
