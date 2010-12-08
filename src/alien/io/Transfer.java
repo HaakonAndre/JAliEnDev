@@ -203,6 +203,8 @@ public class Transfer implements Serializable, Runnable {
 					
 					targetPFN = target.pfn;
 					
+					temp.delete();
+					
 					return;
 				}
 				catch (UnsupportedOperationException uoe){
@@ -213,6 +215,8 @@ public class Transfer implements Serializable, Runnable {
 					failureReason = ioe.getMessage();
 				}
 			}
+			
+			temp.delete();
 			
 			return;
 		}
