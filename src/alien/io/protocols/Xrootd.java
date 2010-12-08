@@ -15,6 +15,7 @@ import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
 import alien.catalogue.PFN;
+import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.CatalogueReadAccess;
 import alien.catalogue.access.CatalogueWriteAccess;
 import alien.catalogue.access.XrootDEnvelope;
@@ -68,8 +69,9 @@ public class Xrootd extends Protocol {
 			command.add(pfn.pfn);
 			command.add(target.getCanonicalPath());
 			
-			for (final XrootDEnvelope envelope: access.getEnvelopes())
-				command.add("-OS&authz="+envelope.getEncryptedEnvelope());
+			if (access!=null)
+				for (final XrootDEnvelope envelope: access.getEnvelopes())
+					command.add("-OS&authz="+envelope.getEncryptedEnvelope());
 			
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
@@ -93,7 +95,7 @@ public class Xrootd extends Protocol {
 	        }
 	        
 	        if (exitStatus.getExtProcExitStatus() != 0){
-	        	throw new IOException("xrdcp exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
+	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
 	        }
 	        
 			if (!checkDownloadedFile(target, access))
@@ -124,16 +126,19 @@ public class Xrootd extends Protocol {
 			throw new IOException("Local file "+localFile+" cannot be read");
 		
 		try{
-			// TODO check the syntax here
 			final List<String> command = new LinkedList<String>();
 			command.add("xrdcpapmon");
 			command.add("-DIFirstConnectMaxCnt");
 			command.add("6");
+			command.add("-np");
+			command.add("-v");
+			command.add("-f");
 			command.add(localFile.getCanonicalPath());
 			command.add(pfn.pfn);
 			
-			for (final XrootDEnvelope envelope: access.getEnvelopes())
-				command.add("-OS&authz="+envelope.getEncryptedEnvelope());
+			if (access!=null)
+				for (final XrootDEnvelope envelope: access.getEnvelopes())
+					command.add("-OS&authz="+envelope.getEncryptedEnvelope());
 			
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
@@ -157,10 +162,10 @@ public class Xrootd extends Protocol {
 	        }
 	        
 	        if (exitStatus.getExtProcExitStatus() != 0){
-	        	throw new IOException("xrdcp exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
+	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
 	        }
 	        
-	        // TODO double-check with xrdstat and pass the envelope that it returns (if any) 
+	        return xrdstat(pfn, access);
 		}
 		catch (final IOException ioe){
 			throw ioe;
@@ -170,6 +175,18 @@ public class Xrootd extends Protocol {
 			
 			throw new IOException("Get aborted because "+t);
 		}
+	}
+	
+	/**
+	 * Check if the PFN has the correct properties, such as described in the access envelope
+	 * 
+	 * @param pfn
+	 * @param access
+	 * @return the signed envelope from the storage, if it knows how to generate one
+	 * @throws IOException if the remote file properties are not what is expected
+	 */
+	public static String xrdstat(final PFN pfn, final CatalogueAccess access) throws IOException {
+		// TODO implement remote file status checking by xrdstat
 		
 		return null;
 	}
