@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 
 import alien.catalogue.PFN;
+import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.CatalogueReadAccess;
 import alien.catalogue.access.CatalogueWriteAccess;
 
@@ -28,8 +29,9 @@ public abstract class Protocol {
 	 * 
 	 * @param pfn location
 	 * @param access envelope
-	 * @param localFile local file name (can be <code>null</code> to generate a temporary file name)
-	 * @return local file name
+	 * @param localFile local file. Can be <code>null</code> to generate a temporary file name. If specified, it must point to a 
+	 * 	file name that doesn't exist yet but can be created by this user. 
+	 * @return local file, either the same that was passed or a temporary file name
 	 * @throws IOException in case of problems
 	 */
 	public File get(final PFN pfn, final CatalogueReadAccess access, final File localFile) throws IOException{
@@ -50,7 +52,7 @@ public abstract class Protocol {
 	}
 	
 	/**
-	 * Directly transfer between two
+	 * Direct transfer between the two involved storage elements
 	 * 
 	 * @param source
 	 * @param sourceAccess
@@ -70,7 +72,7 @@ public abstract class Protocol {
 	 * @param access
 	 * @return <code>true</code> if the file matches catalogue information, <code>false</code> otherwise
 	 */
-	public static boolean checkDownloadedFile(final File f, final CatalogueReadAccess access){
+	public static boolean checkDownloadedFile(final File f, final CatalogueAccess access){
 		if (f==null || !f.exists() || !f.isFile())
 			return false;
 		
