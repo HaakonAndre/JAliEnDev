@@ -17,12 +17,30 @@ import alien.catalogue.PFN;
  * @since 2010-11-10
  */
 public abstract class CatalogueAccess implements Serializable {
-
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6351566505141657823L;
 	
-	public static int INVALID = 0;
-	public static int READ = 1;
-	public static int WRITE = 2;
-	public static int DELETE = 3;
+	/**
+	 * Invalid access
+	 */
+	public static final int INVALID = 0;
+	
+	/**
+	 * Read access
+	 */
+	public static final int READ = 1;
+	
+	/**
+	 * Write access
+	 */
+	public static final int WRITE = 2;
+	
+	/**
+	 * Delete access
+	 */
+	public static final int DELETE = 3;
 	
 
 	
@@ -31,13 +49,26 @@ public abstract class CatalogueAccess implements Serializable {
 	 */
 	protected int access = INVALID;
 	
+	/**
+	 * Catalogue entity that is referred
+	 */
 	protected CatalogEntity entity;
+	
+	/**
+	 * LFN, inferred from the entity above
+	 */
 	protected LFN lfn = null;
 	
+	/**
+	 * GUID, inferred from the entity above
+	 */
 	protected GUID guid = null;
-	private Set<PFN> pfns = new LinkedHashSet<PFN>();
-	private long size = 0;
-	private String md5 = "";
+	
+	private Set<PFN> pfns;
+	
+	private long size;
+	
+	private String md5;
 	
 	/** 
 	 * Package protected access to the constructor.
@@ -46,6 +77,7 @@ public abstract class CatalogueAccess implements Serializable {
 	 */
 	CatalogueAccess(final CatalogEntity entity){
 		this.entity = entity;
+		
 		if(entity instanceof LFN) {
 			lfn = (LFN) entity;
 			guid = GUIDUtils.getGUID(lfn.guid);
@@ -60,36 +92,62 @@ public abstract class CatalogueAccess implements Serializable {
 			throw new IllegalAccessError("Unknown entity type");
 		
 		size = guid.size;
-		md5 = guid.md5;
 		
+		md5 = guid.md5;
 	}
 	
-	
-	
+	/**
+	 * Initialize the PFNs
+	 */
 	public void loadPFNS(){
 		pfns = guid.getPFNs();
 	}
 	
-	
+	/**
+	 * @return access type, see the constants of this class
+	 */
 	public int getAccess(){
 		return access;
 	}
+	
+	/**
+	 * @return the LFN
+	 */
 	public LFN getLFN(){
 		return lfn;
 	}
+	
+	/**
+	 * @return the GUID
+	 */
 	public GUID getGUID(){
 		return guid;
 	}
+	
+	/**
+	 * @return Associated PFNs
+	 */
 	public Set<PFN> getPFNS(){
 		return pfns;
 	}
+	
+	/**
+	 * @return file size, in bytes
+	 */
 	public long getSize(){
 		return size;
 	}
+	
+	/**
+	 * @return MD5 checksum
+	 */
 	public String getMD5(){
 		return md5;
 	}
 
+	/**
+	 * @return one of the PFNs
+	 */
 	PFN pickPFNforAccess(){
 		return null;
 	}
@@ -130,12 +188,18 @@ public abstract class CatalogueAccess implements Serializable {
 //		return md5;
 //	}
 	
+	/**
+	 * @param envelope envelope to add
+	 */
 	public void addEnvelope(final XrootDEnvelope envelope){
 		envelopes.add(envelope);
 		
 		envelope.setCatalogueAccess(this);
 	}
 	
+	/**
+	 * @return all envelopes
+	 */
 	public Set<XrootDEnvelope> getEnvelopes(){
 		return envelopes;
 	}

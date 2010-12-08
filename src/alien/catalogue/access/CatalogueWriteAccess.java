@@ -9,6 +9,11 @@ import alien.catalogue.CatalogEntity;
 public class CatalogueWriteAccess extends CatalogueAccess{
 	
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8600686267511296949L;
+
+	/**
 	 * Read access to the catalogue object indicated by this GUID.
 	 * This constructor is package protected, the objects should be created only by {@link AuthorizationFactory}
 	 * @param entity 
