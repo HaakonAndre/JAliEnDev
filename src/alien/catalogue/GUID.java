@@ -1,6 +1,5 @@
 package alien.catalogue;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -8,17 +7,16 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import lazyj.DBFunctions;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
-
-import lazyj.DBFunctions;
 
 /**
  * @author costing
  *
  */
-public class GUID implements Serializable, Comparable<GUID>, CatalogEntity {
+public class GUID implements Comparable<GUID>, CatalogEntity {
 	private static final long serialVersionUID = -2625119814122149207L;
 	
 	/**

@@ -18,8 +18,7 @@ public class CatalogueAccessDENIED extends CatalogueAccess{
 	/**
 	 * Delete access to the catalogue object indicated by this GUID.
 	 * This constructor is package protected, the objects should be created only by {@link AuthorizationFactory}
-	 * 
-	 * @param guid
+	 * @param entity 
 	 */
 	CatalogueAccessDENIED(CatalogEntity entity){
 		super(null);

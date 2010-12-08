@@ -5,7 +5,6 @@ import java.util.Set;
 import java.util.UUID;
 
 import lazyj.cache.ExpirationCache;
-import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -168,8 +167,7 @@ public final class AuthorizationFactory {
 	private static final ExpirationCache<UUID, CatalogueAccess> readEnvelopes = new ExpirationCache<UUID, CatalogueAccess>(
 			10000);
 
-	private static CatalogueAccess accessType(final GUID guid,
-			final String access) {
+	private static CatalogueAccess accessType(final GUID guid, final String access) {
 
 		if (access.equals("delete")) {
 			return new CatalogueDeleteAccess(guid);

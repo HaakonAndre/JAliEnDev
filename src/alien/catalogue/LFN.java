@@ -1,22 +1,19 @@
 package alien.catalogue;
 
-import java.io.Serializable;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import alien.config.ConfigUtils;
-
-
 import lazyj.DBFunctions;
+import alien.config.ConfigUtils;
 
 /**
  * @author costing
  *
  */
-public class LFN implements Serializable, Comparable<LFN>, CatalogEntity {
+public class LFN implements Comparable<LFN>, CatalogEntity {
 	
 	/**
 	 * 

@@ -1,9 +1,7 @@
 package alien.catalogue.access;
 
+import java.io.Serializable;
 import java.security.GeneralSecurityException;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.Map;
 
 import alien.catalogue.PFN;
 import alien.se.SE;
@@ -13,7 +11,7 @@ import alien.tsealedEnvelope.EncryptedAuthzToken;
 /**
  * @author ron
  */
-public class XrootDEnvelope {
+public class XrootDEnvelope implements Serializable {
 
 	// analog to the following access types, we define levels:
 	// public static int INVALID = 0;
@@ -94,8 +92,8 @@ public class XrootDEnvelope {
 	public void decorateEnvelope(EncryptedAuthzToken authz)
 			throws GeneralSecurityException {
 		encryptedEnvelope = authz.encrypt(plainEnvelopeTicket);
-		System.out.println("we have an encrypted ticket:");
-		System.out.println(encryptedEnvelope);
+		//System.out.println("we have an encrypted ticket:");
+		//System.out.println(encryptedEnvelope);
 	}
 
 	private void setSignature(String signature){
@@ -117,7 +115,7 @@ public class XrootDEnvelope {
 		return signedEnvelope;
 	}
 
-	private String getEncryptedEnvelope() {
+	public String getEncryptedEnvelope() {
 		return encryptedEnvelope;
 	}
 }

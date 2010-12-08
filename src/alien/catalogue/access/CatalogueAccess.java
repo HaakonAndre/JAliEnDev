@@ -1,5 +1,6 @@
 package alien.catalogue.access;
 
+import java.io.Serializable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -15,7 +16,7 @@ import alien.catalogue.PFN;
  * @author ron
  * @since 2010-11-10
  */
-public abstract class CatalogueAccess  {
+public abstract class CatalogueAccess implements Serializable {
 
 	
 	public static int INVALID = 0;

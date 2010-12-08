@@ -3,15 +3,13 @@
  */
 package alien.catalogue;
 
+import java.io.Serializable;
+
 /**
  * @author costing
  * @since Nov 11, 2010
  */
-public interface CatalogEntity {
-
-//	private static int IAm = 0;
-//	private static int GUID = 1;
-//	private static int PFN = 2;
+public interface CatalogEntity extends Serializable {
 		
 	/**
 	 * @return owner of the entity
