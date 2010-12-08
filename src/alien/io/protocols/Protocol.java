@@ -63,4 +63,21 @@ public abstract class Protocol {
 		throw new UnsupportedOperationException();
 	}
 	
+	/**
+	 * Check the consistency of the downloaded file
+	 * 
+	 * @param f
+	 * @param access
+	 * @return <code>true</code> if the file matches catalogue information, <code>false</code> otherwise
+	 */
+	public static boolean checkDownloadedFile(final File f, final CatalogueReadAccess access){
+		if (f==null || !f.exists() || !f.isFile())
+			return false;
+		
+		if (f.length() != access.getSize())
+			return false;
+		
+		return true;
+	}
+	
 }

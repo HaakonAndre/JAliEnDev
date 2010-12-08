@@ -5,17 +5,31 @@ package alien.io.protocols;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
+import lia.util.process.ExternalProcessBuilder;
+import lia.util.process.ExternalProcess.ExecutorFinishStatus;
+import lia.util.process.ExternalProcess.ExitStatus;
 import alien.catalogue.PFN;
 import alien.catalogue.access.CatalogueReadAccess;
 import alien.catalogue.access.CatalogueWriteAccess;
+import alien.catalogue.access.XrootDEnvelope;
+import alien.config.ConfigUtils;
 
 /**
  * @author costing
  * @since Dec 8, 2010
  */
 public class Xrootd extends Protocol {
-
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
+	
 	/**
 	 * package protected
 	 */
@@ -46,7 +60,57 @@ public class Xrootd extends Protocol {
 			target = File.createTempFile("xrootd", null);
 		}
 		
-		// TODO implement this
+		try{
+			final List<String> command = new LinkedList<String>();
+			command.add("xrdcpapmon");
+			command.add("-DIFirstConnectMaxCnt");
+			command.add("6");
+			command.add(pfn.pfn);
+			command.add(target.getCanonicalPath());
+			
+			for (final XrootDEnvelope envelope: access.getEnvelopes())
+				command.add("-OS&authz="+envelope.getEncryptedEnvelope());
+			
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			
+	        pBuilder.returnOutputOnExit(true);
+	        
+	        pBuilder.timeout(24, TimeUnit.HOURS);
+	        
+	        pBuilder.redirectErrorStream(true);
+	        
+	        ExitStatus exitStatus;
+	        
+	        try{
+	        	exitStatus = pBuilder.start().waitFor();
+	        }
+	        catch (final InterruptedException ie){
+	        	throw new IOException("Interrupted while waiting for the following command to finish : "+command.toString());
+	        }
+	        
+	        if(exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
+	            throw new IOException("Executor finish status: " + exitStatus.getExecutorFinishStatus() + " for command: " + command.toString());
+	        }
+	        
+	        if (exitStatus.getExtProcExitStatus() != 0){
+	        	throw new IOException("xrdcp exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
+	        }
+	        
+			if (!checkDownloadedFile(target, access))
+				throw new IOException("Local file doesn't match catalogue details");
+		}
+		catch (final IOException ioe){
+			target.delete();
+			
+			throw ioe;
+		}
+		catch (final Throwable t){
+			target.delete();
+			
+			logger.log(Level.WARNING, "Caught exception", t);
+			
+			throw new IOException("Get aborted because "+t);
+		}
 		
 		return target;
 	}
@@ -59,7 +123,53 @@ public class Xrootd extends Protocol {
 		if (localFile==null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
 			throw new IOException("Local file "+localFile+" cannot be read");
 		
-		// TODO implement this
+		try{
+			// TODO check the syntax here
+			final List<String> command = new LinkedList<String>();
+			command.add("xrdcpapmon");
+			command.add("-DIFirstConnectMaxCnt");
+			command.add("6");
+			command.add(localFile.getCanonicalPath());
+			command.add(pfn.pfn);
+			
+			for (final XrootDEnvelope envelope: access.getEnvelopes())
+				command.add("-OS&authz="+envelope.getEncryptedEnvelope());
+			
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			
+	        pBuilder.returnOutputOnExit(true);
+	        
+	        pBuilder.timeout(24, TimeUnit.HOURS);
+	        
+	        pBuilder.redirectErrorStream(true);
+	        
+	        ExitStatus exitStatus;
+	        
+	        try{
+	        	exitStatus = pBuilder.start().waitFor();
+	        }
+	        catch (final InterruptedException ie){
+	        	throw new IOException("Interrupted while waiting for the following command to finish : "+command.toString());
+	        }
+	        
+	        if(exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
+	            throw new IOException("Executor finish status: " + exitStatus.getExecutorFinishStatus() + " for command: " + command.toString());
+	        }
+	        
+	        if (exitStatus.getExtProcExitStatus() != 0){
+	        	throw new IOException("xrdcp exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
+	        }
+	        
+	        // TODO double-check with xrdstat and pass the envelope that it returns (if any) 
+		}
+		catch (final IOException ioe){
+			throw ioe;
+		}
+		catch (final Throwable t){
+			logger.log(Level.WARNING, "Caught exception", t);
+			
+			throw new IOException("Get aborted because "+t);
+		}
 		
 		return null;
 	}

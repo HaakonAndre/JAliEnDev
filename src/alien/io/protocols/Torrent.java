@@ -53,6 +53,8 @@ public class Torrent extends Protocol {
 		lazyj.Utils.download(pfn.pfn, target.getCanonicalPath());
 		
 		// TODO implement downloading the actual content!
+		
+		// TODO how to check the size and md5sum and so on for a torrent ?
 
 		return target;
 	}	

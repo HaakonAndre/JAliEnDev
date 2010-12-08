@@ -45,7 +45,17 @@ public class Http extends Protocol {
 			target = File.createTempFile("http", null);
 		}
 		
-		lazyj.Utils.download(pfn.pfn, target.getCanonicalPath());
+		try{
+			lazyj.Utils.download(pfn.pfn, target.getCanonicalPath());
+			
+			if (!checkDownloadedFile(target, access))
+				throw new IOException("Local file doesn't match catalogue details");
+		}
+		catch (IOException ioe){
+			target.delete();
+			
+			throw ioe;
+		}
 		
 		return target;
 	}	
