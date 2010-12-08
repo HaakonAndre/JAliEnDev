@@ -24,7 +24,8 @@ public class XrootDEnvelope implements Serializable {
 	private String plainEnvelopeTicket;
 	private String encryptedEnvelope;
 	
-	public final String hashord = "turl-access-lfn-guid-size-md5";
+	public static final String hashord = "turl-access-lfn-guid-size-md5";
+	
 	private String signedEnvelope;
 
 	private String envAccess;
