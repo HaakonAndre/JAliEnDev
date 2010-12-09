@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import alien.catalogue.PFN;
 import alien.catalogue.access.CatalogueAccess;
+import alien.catalogue.access.CatalogueDeleteAccess;
 import alien.catalogue.access.CatalogueReadAccess;
 import alien.catalogue.access.CatalogueWriteAccess;
 
@@ -22,6 +23,16 @@ public abstract class Protocol {
 	 */
 	Protocol(){
 		// package protected
+	}
+	
+	/**
+	 * @param pfn pfn to delete
+	 * @param access access envelope
+	 * @return <code>true</code> if the file was deleted, <code>false</code> if the file doesn't exist
+	 * @throws IOException in case of access problems
+	 */
+	public boolean delete(final PFN pfn, final CatalogueDeleteAccess access) throws IOException {
+		throw new UnsupportedOperationException();
 	}
 	
 	/**
