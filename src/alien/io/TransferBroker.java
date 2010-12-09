@@ -128,6 +128,8 @@ public class TransferBroker {
 		executeQuery(dbc, "update TRANSFERS_DIRECT where status='TRANSFERRING' order by transferId asc limit 1;");
 		executeQuery(dbc, "unlock tables;");
 		
+		executeClose();
+		
 		dbc.free();
 		
 		final LFN lfn = LFNUtils.getLFN(sLFN);
