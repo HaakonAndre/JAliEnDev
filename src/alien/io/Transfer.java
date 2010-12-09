@@ -14,13 +14,19 @@ import alien.catalogue.access.CatalogueReadAccess;
 import alien.catalogue.access.CatalogueWriteAccess;
 import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 /**
  * @author costing
  * @since Dec 8, 2010
  */
 public class Transfer implements Serializable, Runnable {
-
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(Transfer.class.getCanonicalName());
+	
 	/**
 	 * Transfer was successful
 	 */
@@ -132,6 +138,20 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	@Override
 	public void run() {
+		final long started = System.currentTimeMillis();
+		
+		doWork();
+		
+		final long ended = System.currentTimeMillis();
+		
+		if (monitor!=null){
+			monitor.addMeasurement("transfer_time", ended-started);
+			
+			monitor.incrementCounter("transfer_status_"+exitCode);
+		}
+	}
+	
+	private void doWork(){
 		final List<Protocol> protocols = getProtocols(source, target);
 		
 		if (protocols.size()==0){
