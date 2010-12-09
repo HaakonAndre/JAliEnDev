@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
+import alien.catalogue.GUID;
 import alien.catalogue.PFN;
 import alien.catalogue.access.CatalogueReadAccess;
 import alien.catalogue.access.CatalogueWriteAccess;
@@ -148,6 +149,13 @@ public class Transfer implements Serializable, Runnable {
 			monitor.addMeasurement("transfer_time", ended-started);
 			
 			monitor.incrementCounter("transfer_status_"+exitCode);
+			
+			if (exitCode==0 && source!=null){
+				GUID guid = source.getGuid();
+				
+				if (guid!=null)
+					monitor.addMeasurement("transfer_MB", source.getGuid().size / (1024*1024));
+			}
 		}
 	}
 	
