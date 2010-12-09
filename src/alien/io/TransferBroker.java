@@ -159,6 +159,7 @@ public class TransferBroker {
 		}
 		
 		// TODO : generate target PFN
+		// TODO : register the PFN in the booking table
 		// TODO : figure out the closest SE to copy from
 		// TODO : generate access envelopes for both endpoints 
 		
