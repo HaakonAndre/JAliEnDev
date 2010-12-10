@@ -1,6 +1,7 @@
 package alien;
 
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -35,10 +36,10 @@ public class Testing {
 	public static void main(String[] args) {
 		//testMonitoring();
 		
-		//testFileOperations();
+		testFileOperations();
 		
-		for (int i=0; i<10; i++)
-			System.err.println(GUIDUtils.generateTimeUUID());
+//		for (int i=0; i<10; i++)
+//			System.err.println(GUIDUtils.generateTimeUUID());
 		
 //		Properties prop = System.getProperties();
 //		
@@ -105,7 +106,7 @@ public class Testing {
 	}
 	
 	private static void testFileOperations(){
-		UUID startingGUID = UUID.fromString("00270ff2-3bd3-11df-9bee-001cc45cb5dc");
+		UUID startingGUID = UUID.fromString("1d4a5d3a-038f-11e0-b2b3-001e0bd3f44c");
 		
 		System.err.println("UUID Variant : "+startingGUID.variant());
 		System.err.println("UUID Version : "+startingGUID.version());
@@ -121,6 +122,8 @@ public class Testing {
 		}
 		
 		System.err.println(guid);
+		System.err.println("CHash : "+guid.getCHash());
+		System.err.println("Hash  : "+guid.getHash());
 		
 		Set<PFN> pfns = guid.getPFNs();
 		
@@ -136,6 +139,11 @@ public class Testing {
 			System.err.println(lfn);
 			System.err.println(lfn.getCanonicalName());
 		}
+		
+		PFN pfn = new PFN(guid, SEUtils.getSE("ALICE::CERN::SE"));
+		
+		System.err.println("----- NEW PFN ------");
+		System.err.println(pfn);
 		
 		LFN lfn = LFNUtils.getLFN("/alice/sim/LHC10a18/140014/128/QA.root");
 		
