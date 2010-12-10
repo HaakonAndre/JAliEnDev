@@ -407,8 +407,8 @@ public final class SEUtils {
 		if (seRanks==null)
 			return null;
 		
-		final Map<Integer, Integer> ranks = seRanks.get(sSite.trim().toUpperCase());
-		
+		final Map<Integer, Integer> ranks = sSite!=null ? seRanks.get(sSite.trim().toUpperCase()) : null;
+		 
 		if (ranks==null){
 			// missing information about this site, leave the storages as they are
 			return ret;
