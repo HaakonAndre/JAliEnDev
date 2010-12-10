@@ -6,15 +6,21 @@ package alien.io;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.DBFunctions.DBConnection;
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.access.CatalogueReadAccess;
+import alien.catalogue.access.CatalogueWriteAccess;
 import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
@@ -139,6 +145,18 @@ public class TransferBroker {
 			return null;
 		}
 		
+		if (lfn.guid==null){
+			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID is null for this LFN");
+			return null;
+		}
+		
+		final GUID guid = GUIDUtils.getGUID(lfn.guid);
+		
+		if (guid==null){
+			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID was not found in the database");
+			return null;
+		}
+		
 		final SE se = SEUtils.getSE(targetSE);
 		
 		if (se==null){
@@ -160,12 +178,27 @@ public class TransferBroker {
 			}
 		}
 		
-		// TODO : generate target PFN
-		// TODO : register the PFN in the booking table
-		// TODO : figure out the closest SE to copy from
-		// TODO : generate access envelopes for both endpoints 
+		final PFN target = new PFN(guid, se);
 		
-		return null;
+		StringTokenizer st = new StringTokenizer(targetSE, ":");
+		
+		st.nextToken();
+		final String site = st.nextToken();
+		
+		List<PFN> sortedPFNs = SEUtils.sortBySite(pfns, site, false);
+		
+		final PFN source = sortedPFNs.get(0);
+
+		// TODO : register the PFN in the booking table
+		// TODO : generate access envelopes for both endpoints 
+
+		CatalogueReadAccess sourceAccess = null;
+		
+		CatalogueWriteAccess targetAccess = null;
+		
+		final Transfer t = new Transfer(source, sourceAccess, target, targetAccess);
+		
+		return t;
 	}
 	
 	private static final String getTransferStatus(final int exitCode){
