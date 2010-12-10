@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 
 import alien.catalogue.PFN;
-import alien.catalogue.access.CatalogueReadAccess;
 
 /**
  * @author costing
@@ -31,7 +30,7 @@ public class Http extends Protocol {
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
-	public File get(final PFN pfn, final CatalogueReadAccess access, final File localFile) throws IOException {
+	public File get(final PFN pfn, final File localFile) throws IOException {
 		File target = null;
 
 		if (localFile!=null){
@@ -48,7 +47,7 @@ public class Http extends Protocol {
 		try{
 			lazyj.Utils.download(pfn.pfn, target.getCanonicalPath());
 			
-			if (!checkDownloadedFile(target, access))
+			if (!checkDownloadedFile(target, pfn))
 				throw new IOException("Local file doesn't match catalogue details");
 		}
 		catch (IOException ioe){

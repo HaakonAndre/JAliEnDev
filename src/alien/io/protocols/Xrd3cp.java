@@ -12,11 +12,8 @@ import java.util.logging.Level;
 import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
-
 import alien.catalogue.PFN;
-import alien.catalogue.access.CatalogueReadAccess;
-import alien.catalogue.access.CatalogueWriteAccess;
-import alien.catalogue.access.XrootDEnvelope;
+import alien.catalogue.access.SignedEnvelope;
 
 /**
  * @author costing
@@ -35,7 +32,7 @@ public class Xrd3cp extends Xrootd {
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
-	public String transfer(final PFN source, final CatalogueReadAccess sourceAccess, final PFN target, final CatalogueWriteAccess targetAccess) throws IOException {
+	public String transfer(final PFN source, final PFN target) throws IOException {
 		// direct copying between two storages
 		
 		try{
@@ -46,13 +43,25 @@ public class Xrd3cp extends Xrootd {
 			command.add(source.pfn);
 			command.add(target.pfn);
 			
-			if (sourceAccess!=null)
-				for (final XrootDEnvelope envelope: sourceAccess.getEnvelopes())
-					command.add("authz="+envelope.getEncryptedEnvelope());
-			
-			if (targetAccess!=null)
-				for (final XrootDEnvelope envelope: targetAccess.getEnvelopes())
-					command.add("authz="+envelope.getEncryptedEnvelope());
+			if (source.ticket!=null && (source.ticket instanceof SignedEnvelope)){
+				final SignedEnvelope env = (SignedEnvelope) source.ticket;
+				
+				if (env.encryptedEnvelope!=null)
+					command.add("authz="+env.encryptedEnvelope);
+				else
+				if (env.signedEnvelope!=null)
+					command.add("authz="+env.signedEnvelope);
+			}
+
+			if (target.ticket!=null && (target.ticket instanceof SignedEnvelope)){
+				final SignedEnvelope env = (SignedEnvelope) source.ticket;
+				
+				if (env.encryptedEnvelope!=null)
+					command.add("authz="+env.encryptedEnvelope);
+				else
+				if (env.signedEnvelope!=null)
+					command.add("authz="+env.signedEnvelope);
+			}
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
@@ -79,7 +88,7 @@ public class Xrd3cp extends Xrootd {
 	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
 	        }
 	        
-	        return xrdstat(target, targetAccess);
+	        return xrdstat(target);
 		}
 		catch (final IOException ioe){
 			throw ioe;

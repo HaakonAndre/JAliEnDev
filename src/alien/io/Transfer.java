@@ -57,10 +57,6 @@ public class Transfer implements Serializable, Runnable {
 	 * 
 	 */
 	private static final long serialVersionUID = -4620016257875988468L;
-
-	private final CatalogueReadAccess sourceAccess;
-	
-	private final CatalogueWriteAccess targetAccess;
 	
 	private final PFN source;
 	
@@ -83,8 +79,6 @@ public class Transfer implements Serializable, Runnable {
 			throw new IllegalArgumentException("Source cannot be null");
 		
 		this.target = target;
-		this.sourceAccess = sourceAccess;
-		this.targetAccess = targetAccess;
 	}
 	
 	/**
@@ -178,7 +172,7 @@ public class Transfer implements Serializable, Runnable {
 				
 				for (final Protocol p: protocolsSource){
 					try{
-						targetPFN = p.get(source, sourceAccess, null).getCanonicalPath();
+						targetPFN = p.get(source, null).getCanonicalPath();
 						
 						exitCode = OK;
 						failureReason = null;
@@ -208,7 +202,7 @@ public class Transfer implements Serializable, Runnable {
 			
 			for (final Protocol p: protocolsSource){
 				try{
-					temp = p.get(source, sourceAccess, null);
+					temp = p.get(source, null);
 					break;
 				}
 				catch (final UnsupportedOperationException uoe){
@@ -225,7 +219,7 @@ public class Transfer implements Serializable, Runnable {
 			
 			for (final Protocol p: protocolsTarget){
 				try{
-					storageReplyEnvelope = p.put(target, targetAccess, temp);
+					storageReplyEnvelope = p.put(target, temp);
 					exitCode = OK;
 					failureReason = null;
 					
@@ -251,7 +245,7 @@ public class Transfer implements Serializable, Runnable {
 		
 		for (final Protocol p: protocols){
 			try{
-				storageReplyEnvelope = p.transfer(source, sourceAccess, target, targetAccess);
+				storageReplyEnvelope = p.transfer(source, target);
 				
 				exitCode = OK;
 				failureReason = null;

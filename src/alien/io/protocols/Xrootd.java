@@ -15,10 +15,7 @@ import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
 import alien.catalogue.PFN;
-import alien.catalogue.access.CatalogueAccess;
-import alien.catalogue.access.CatalogueReadAccess;
-import alien.catalogue.access.CatalogueWriteAccess;
-import alien.catalogue.access.XrootDEnvelope;
+import alien.catalogue.access.SignedEnvelope;
 import alien.config.ConfigUtils;
 
 /**
@@ -47,7 +44,7 @@ public class Xrootd extends Protocol {
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
-	public File get(final PFN pfn, final CatalogueReadAccess access, final File localFile) throws IOException {
+	public File get(final PFN pfn, final File localFile) throws IOException {
 		File target = null;
 
 		if (localFile!=null){
@@ -69,9 +66,15 @@ public class Xrootd extends Protocol {
 			command.add(pfn.pfn);
 			command.add(target.getCanonicalPath());
 			
-			if (access!=null)
-				for (final XrootDEnvelope envelope: access.getEnvelopes())
-					command.add("-OS&authz="+envelope.getEncryptedEnvelope());
+			if (pfn.ticket!=null && (pfn.ticket instanceof SignedEnvelope)){
+				final SignedEnvelope env = (SignedEnvelope) pfn.ticket;
+				
+				if (env.encryptedEnvelope!=null)
+					command.add("-OS&authz="+env.encryptedEnvelope);
+				else
+				if (env.signedEnvelope!=null)
+					command.add("-OS&authz="+env.signedEnvelope);
+			}
 			
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
@@ -98,7 +101,7 @@ public class Xrootd extends Protocol {
 	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
 	        }
 	        
-			if (!checkDownloadedFile(target, access))
+			if (!checkDownloadedFile(target, pfn))
 				throw new IOException("Local file doesn't match catalogue details");
 		}
 		catch (final IOException ioe){
@@ -121,7 +124,7 @@ public class Xrootd extends Protocol {
 	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
 	 */
 	@Override
-	public String put(final PFN pfn, final CatalogueWriteAccess access, final File localFile) throws IOException {
+	public String put(final PFN pfn, final File localFile) throws IOException {
 		if (localFile==null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
 			throw new IOException("Local file "+localFile+" cannot be read");
 		
@@ -136,9 +139,15 @@ public class Xrootd extends Protocol {
 			command.add(localFile.getCanonicalPath());
 			command.add(pfn.pfn);
 			
-			if (access!=null)
-				for (final XrootDEnvelope envelope: access.getEnvelopes())
-					command.add("-OS&authz="+envelope.getEncryptedEnvelope());
+			if (pfn.ticket!=null && (pfn.ticket instanceof SignedEnvelope)){
+				final SignedEnvelope env = (SignedEnvelope) pfn.ticket;
+				
+				if (env.encryptedEnvelope!=null)
+					command.add("-OS&authz="+env.encryptedEnvelope);
+				else
+				if (env.signedEnvelope!=null)
+					command.add("-OS&authz="+env.signedEnvelope);
+			}
 			
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
@@ -165,7 +174,7 @@ public class Xrootd extends Protocol {
 	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
 	        }
 	        
-	        return xrdstat(pfn, access);
+	        return xrdstat(pfn);
 		}
 		catch (final IOException ioe){
 			throw ioe;
@@ -181,11 +190,10 @@ public class Xrootd extends Protocol {
 	 * Check if the PFN has the correct properties, such as described in the access envelope
 	 * 
 	 * @param pfn
-	 * @param access
 	 * @return the signed envelope from the storage, if it knows how to generate one
 	 * @throws IOException if the remote file properties are not what is expected
 	 */
-	public static String xrdstat(final PFN pfn, final CatalogueAccess access) throws IOException {
+	public static String xrdstat(final PFN pfn) throws IOException {
 		// TODO implement remote file status checking by xrdstat
 		
 		return null;
@@ -195,11 +203,11 @@ public class Xrootd extends Protocol {
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
-	public String transfer(final PFN source, final CatalogueReadAccess sourceAccess, final PFN target, final CatalogueWriteAccess targetAccess) throws IOException {
-		final File temp = get(source, sourceAccess, null);
+	public String transfer(final PFN source, final PFN target) throws IOException {
+		final File temp = get(source, null);
 		
 		try{
-			return put(target, targetAccess, temp);
+			return put(target, temp);
 		}
 		finally{
 			temp.delete();

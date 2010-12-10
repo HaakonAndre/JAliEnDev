@@ -6,6 +6,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import alien.catalogue.access.AccessTicket;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -73,6 +74,11 @@ public class PFN implements Serializable, Comparable<PFN>{
 	private GUID guid;
 	
 	private Set<PFN> realPFNs = null;
+	
+	/**
+	 * Access ticket, if needed
+	 */
+	public AccessTicket ticket = null;
 	
 	/**
 	 * @param db
