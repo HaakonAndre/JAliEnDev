@@ -19,8 +19,6 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
-import alien.catalogue.access.CatalogueReadAccess;
-import alien.catalogue.access.CatalogueWriteAccess;
 import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
@@ -180,23 +178,19 @@ public class TransferBroker {
 		
 		final PFN target = new PFN(guid, se);
 		
-		StringTokenizer st = new StringTokenizer(targetSE, ":");
+		final StringTokenizer st = new StringTokenizer(targetSE, ":");
 		
 		st.nextToken();
 		final String site = st.nextToken();
 		
-		List<PFN> sortedPFNs = SEUtils.sortBySite(pfns, site, false);
+		final List<PFN> sortedPFNs = SEUtils.sortBySite(pfns, site, false);
 		
 		final PFN source = sortedPFNs.get(0);
 
 		// TODO : register the PFN in the booking table
 		// TODO : generate access envelopes for both endpoints 
-
-		CatalogueReadAccess sourceAccess = null;
 		
-		CatalogueWriteAccess targetAccess = null;
-		
-		final Transfer t = new Transfer(source, sourceAccess, target, targetAccess);
+		final Transfer t = new Transfer(source, target);
 		
 		return t;
 	}

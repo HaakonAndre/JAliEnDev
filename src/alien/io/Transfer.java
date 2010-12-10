@@ -11,8 +11,6 @@ import java.util.List;
 
 import alien.catalogue.GUID;
 import alien.catalogue.PFN;
-import alien.catalogue.access.CatalogueReadAccess;
-import alien.catalogue.access.CatalogueWriteAccess;
 import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
@@ -68,11 +66,9 @@ public class Transfer implements Serializable, Runnable {
 	
 	/**
 	 * @param source source PFN
-	 * @param sourceAccess source read envelope, if needed (can be <code>null</code> if not)
 	 * @param target target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
-	 * @param targetAccess target write envelope, if needed (can be <code>null</code> if not)
 	 */
-	public Transfer(final PFN source, final CatalogueReadAccess sourceAccess, final PFN target, final CatalogueWriteAccess targetAccess){
+	public Transfer(final PFN source, final PFN target){
 		this.source = source;
 		
 		if (this.source==null)
