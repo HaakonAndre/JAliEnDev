@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.se.SE;
 
 import lazyj.DBFunctions;
 
@@ -91,6 +92,20 @@ public class PFN implements Serializable, Comparable<PFN>{
 		pfn = db.gets("pfn");
 		
 		seNumber = db.geti("seNumber");
+	}
+	
+	/**
+	 * Generate a new PFN
+	 * 
+	 * @param guid
+	 * @param se
+	 */
+	public PFN(final GUID guid, final SE se){
+		this.guidId = guid.guidId;
+		this.pfn = se.generatePFN(guid);
+		this.seNumber = se.seNumber;
+		this.host = guid.host;
+		this.tableNumber = guid.tableName;
 	}
 	
 	@Override
