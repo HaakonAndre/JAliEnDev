@@ -67,19 +67,6 @@ public final class AuthorizationChecker {
 		
 		return entity.getPermissions().charAt(2) - '0';
 	}
-
-	
-	/**
-	 * Check if the user can read the entity
-	 * 
-	 * @param entity
-	 * @param user
-	 * @return true if the user can read it
-	 */
-	public static boolean exists(final CatalogEntity entity, final AliEnPrincipal user){
-		return (getPermissions(entity, user) & 4) == 4;
-	}
-
 	
 	/**
 	 * Check if the user can read the entity
@@ -111,7 +98,7 @@ public final class AuthorizationChecker {
 	 * @return true if the user can execute it
 	 */
 	public static boolean canExecute(final CatalogEntity entity, final AliEnPrincipal user){
-		return (getPermissions(entity, user) & 4) == 4;
+		return (getPermissions(entity, user) & 1) == 1;
 	}
 
 }
