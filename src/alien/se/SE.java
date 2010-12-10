@@ -1,15 +1,17 @@
 package alien.se;
 
 import java.io.Serializable;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
-import alien.config.ConfigUtils;
-
 import lazyj.DBFunctions;
+import alien.catalogue.GUID;
+import alien.config.ConfigUtils;
 
 /**
  * @author costing
@@ -130,6 +132,33 @@ public class SE implements Serializable, Comparable<SE>{
 			"exclusiveUsers\t: "+exclusiveUsers+"\n"+
 			"seExclusiveRead\t: "+seExclusiveRead+"\n"+
 			"seExclusiveWrite\t: "+seExclusiveWrite;
+	}
+	
+	private static final NumberFormat twoDigits = new DecimalFormat("00");
+	private static final NumberFormat fiveDigits = new DecimalFormat("00000");
+	
+	/**
+	 * @param guid
+	 * @return the PFN for this storage
+	 */
+	public String generatePFN(final GUID guid){
+		if (seioDaemons==null || seioDaemons.length()==0)
+			return null;
+	
+		String ret = seioDaemons;
+		
+		if (!ret.endsWith("/"))
+			ret += "/";
+		
+		if (seStoragePath!=null)
+			ret += seStoragePath;
+				
+		if (!ret.endsWith("/"))
+			ret += "/";
+		
+		ret += twoDigits.format(guid.getCHash())+"/"+fiveDigits.format(guid.getHash())+"/"+guid.guid.toString();
+		
+		return ret;
 	}
 	
 	/**
