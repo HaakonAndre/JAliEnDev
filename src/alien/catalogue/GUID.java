@@ -221,7 +221,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		return ret;
 	}
-	
+
 	/**
 	 * Get the PFNs for this GUID
 	 * 
@@ -382,5 +382,57 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	@Override
 	public char getType() {
 		return type;
+	}
+	
+	private static final int hexToInt(final char c){
+		if (c>='0' && c<='9') return c-'0';
+		if (c>='a' && c<='f') return c+10-'a';
+		if (c>='A' && c<='F') return c+10-'A';
+		return 0;
+	}
+	
+	/**
+	 * From AliEn/GUID.pm#GetCHash
+	 * 
+	 * @return hash code
+	 */
+	public int getCHash(){
+		int csum = 0;
+		
+		for (char c: guid.toString().toCharArray()){
+			if (c!='-'){
+				csum += hexToInt(c);
+			}
+		}
+		
+		return csum%16;
+	}
+	
+	/**
+	 * From AliEn/GUID.pm#GetHash
+	 * 
+	 * @return hash code
+	 */
+	public int getHash(){
+		int c0 = 0;
+		int c1 = 0;
+		
+		for (char c: guid.toString().toCharArray()){
+			if (c!='-'){
+				c0 += hexToInt(c);
+				c1 += c0;
+			}
+		}
+		
+		c0 &= 0xFF;
+		c1 &= 0xFF;
+
+		int x = c1 % 255;
+		int y = (c1 - c0) % 255;
+		
+		if (y<0)
+			y = 255 + y;
+		
+		return (y<<8) + x;
 	}
 }
