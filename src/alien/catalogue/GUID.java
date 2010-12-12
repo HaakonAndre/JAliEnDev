@@ -229,7 +229,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 */
 	public Set<PFN> getPFNs(){
 		final Host h = CatalogueUtils.getHost(host);
-		
+
 		if (h==null)
 			return null;
 		

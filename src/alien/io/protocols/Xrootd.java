@@ -30,7 +30,8 @@ public class Xrootd extends Protocol {
 
 	private static String xrdcpenvKey = "LD_LIBRARY_PATH";
 	private static String xrdcpenvVal = "/lib:/lib:/opt/alien/api/lib/";
-	private static String xrdcplocation = "/opt/alien/api/bin/xrdcpapmon";
+	private static String xrdcplocation = "/opt/alien/api/bin/xrdcp";
+//	private static String xrdcplocation = "/opt/alien/api/bin/xrdcpapmon";
 	private static String xrdstatlocation = "/opt/alien/api/bin/xrdstat";
 	private static String xrdcpdebug = "-d";
 	private static int xrdcpdebuglevel = 0;
@@ -74,10 +75,10 @@ public class Xrootd extends Protocol {
 
 		if (localFile != null) {
 			target = localFile;
-
-			if (!target.createNewFile())
-				throw new IOException("Local file " + localFile
-						+ " could not be created");
+//
+//			if (!target.createNewFile())
+//				throw new IOException("Local file " + localFile
+//						+ " could not be created");
 		}
 
 		if (target == null) {
@@ -131,6 +132,7 @@ public class Xrootd extends Protocol {
 			}
 
 			if (exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
+				System.out.println(exitStatus.getStdOut());
 				throw new IOException("Executor finish status: "
 						+ exitStatus.getExecutorFinishStatus()
 						+ " for command: " + command.toString());

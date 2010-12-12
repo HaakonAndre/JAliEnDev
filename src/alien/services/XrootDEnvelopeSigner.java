@@ -73,7 +73,8 @@ public class XrootDEnvelopeSigner {
 			while (it.hasNext()) {
 				final PFN pfn = it.next();
 
-				if(pfn.envelope.ticket.type != AccessType.DENIED){
+				if(ticket.type != AccessType.DENIED){
+					pfn.envelope = new XrootDEnvelope(ticket, pfn, SEUtils.getSE(pfn.seNumber));
 					try {
 						signEnvelope(pfn.envelope);
 					} catch (InvalidKeyException e1) {

@@ -68,7 +68,7 @@ public final class GUIDUtils {
 
 		if (h == null)
 			return null;
-
+		
 		return h.getDB();
 	}
 
@@ -108,13 +108,17 @@ public final class GUIDUtils {
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
 	public static GUID getGUID(final UUID guid, boolean evenIfDoesntExist) {
-		final int host = getGUIDHost(guid);
-
+//		final int host = getGUIDHost(guid);
+		final int host = 1; //gron
+		
 		if (host < 0)
 			return null;
 
 		final Host h = CatalogueUtils.getHost(host);
 
+		System.out.println("gron: host is: " + h);
+
+		
 		if (h == null)
 			return null;
 
@@ -122,14 +126,17 @@ public final class GUIDUtils {
 
 		if (db == null)
 			return null;
-
-		final int tableName = GUIDUtils.getTableNameForGUID(guid);
-
+		
+//		final int tableName = GUIDUtils.getTableNameForGUID(guid);
+		final int tableName=0; //gron
+		
 		if (tableName < 0)
 			return null;
 
 		if (monitor != null)
 			monitor.incrementCounter("GUID_db_lookup");
+		
+		System.out.println("gron: guid table is: " + tableName);
 
 		db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary('"
 				+ guid + "');");

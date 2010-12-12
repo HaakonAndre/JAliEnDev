@@ -64,7 +64,7 @@ public final class AuthorizationFactory {
 			// is it an LFN ?
 			
 			// the LFNs are checked to exist only for READ, otherwise we need to create that entry first
-			lfn = LFNUtils.getLFN(lfnOrGUID, AccessType.READ.toString() == access);
+			lfn = LFNUtils.getLFN(lfnOrGUID, AccessType.READ.toString() != access);
 			
 			if (lfn == null)
 				return new AccessTicket(AccessType.DENIED,null);
@@ -75,6 +75,8 @@ public final class AuthorizationFactory {
 			lfns = new LinkedHashSet<LFN>(1);
 			lfns.add(lfn);
 		}
+		System.out.println("we found lfn: " + lfn.toString());
+		System.out.println("we found guid: " + guid.toString());
 		
 		if (AccessType.READ.toString() == access) {
 			if (guid == null)

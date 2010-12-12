@@ -42,7 +42,6 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.access.AuthorizationFactory;
-import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.io.protocols.Xrootd_implementation;
 import alien.se.SE;
@@ -344,37 +343,37 @@ public class AuthenServer {
 //		return envList;
 //	}
 
-	public String[] authorize(String P_user, int access, 
-			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
-			String P_qos, int qosCount, String P_sitename) {
-		
-		
-
-		System.out.println("we are invoked:  P_user: " + P_user + "\naccess: " + access 
-			+ "\nP_lfn: " + 	
-			 P_lfn + "\nsize: " + size + "\nP_guid: " +  P_guid 
-			 + "\nP_qos: " + P_qos + "\nqosCount: " +  qosCount + "\nP_sitename: " +  P_sitename);
-		
-		ArrayList<String> signedEnvelopes = null;
-		
-		AuthenServer authen = new AuthenServer();
-		try {
-
-			AliEnPrincipal user = UserFactory.getByUsername(P_user);
-
-			CatalogueAccess ca = AuthorizationFactory.requestAccess(user,
-					P_lfn, access);
-
-			XrootDEnvelopeDecorator
-					.loadXrootDEnvelopesForCatalogueAccess(ca, P_sitename,
-							P_qos, qosCount, ses, exxSes);
-
-			authen.loadKeys();
-			EncryptedAuthzToken authz = new EncryptedAuthzToken(
-					authen.AuthenPrivKey, authen.SEPubKey);
-				
-			signedEnvelopes = XrootDEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
-					ca.getEnvelopes());
+////	public String[] authorize(String P_user, int access, 
+//			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
+//			String P_qos, int qosCount, String P_sitename) {
+//		
+//		
+//
+//		System.out.println("we are invoked:  P_user: " + P_user + "\naccess: " + access 
+//			+ "\nP_lfn: " + 	
+//			 P_lfn + "\nsize: " + size + "\nP_guid: " +  P_guid 
+//			 + "\nP_qos: " + P_qos + "\nqosCount: " +  qosCount + "\nP_sitename: " +  P_sitename);
+//		
+//		ArrayList<String> signedEnvelopes = null;
+//		
+//		AuthenServer authen = new AuthenServer();
+//		try {
+//
+//			AliEnPrincipal user = UserFactory.getByUsername(P_user);
+//
+//			CatalogueAccess ca = AuthorizationFactory.requestAccess(user,
+//					P_lfn, access);
+//
+//			XrootDEnvelopeDecorator
+//					.loadXrootDEnvelopesForCatalogueAccess(ca, P_sitename,
+//							P_qos, qosCount, ses, exxSes);
+//
+//			authen.loadKeys();
+//			EncryptedAuthzToken authz = new EncryptedAuthzToken(
+//					authen.AuthenPrivKey, authen.SEPubKey);
+//				
+//			signedEnvelopes = XrootDEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
+//					ca.getEnvelopes());
 
 //			FOR (XROOTDENVELOPE ENV : CA.GETENVELOPES()) {
 //				
@@ -387,14 +386,14 @@ public class AuthenServer {
 //						+ "\N";
 //
 //			}
-		} catch (GeneralSecurityException gexcept) {
-			System.out.println("General Securiry exception" + gexcept);
-		} catch (IOException ioexcept) {
-			System.out.println("IO exception" + ioexcept);
-		}
-		return (String[]) signedEnvelopes.toArray(new String[0]);
-
-	}
+//		} catch (GeneralSecurityException gexcept) {
+//			System.out.println("General Securiry exception" + gexcept);
+//		} catch (IOException ioexcept) {
+//			System.out.println("IO exception" + ioexcept);
+//		}
+//		return (String[]) signedEnvelopes.toArray(new String[0]);
+//
+//	}
 
 	
 	
@@ -429,9 +428,9 @@ public class AuthenServer {
 			authen.loadKeys();
 //			EncryptedAuthzToken authz = new EncryptedAuthzToken(
 //					authen.AuthenPrivKey, authen.SEPubKey);
-				
-			signedEnvelopes = XrootDEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
-					ca.getEnvelopes());
+//				
+//			signedEnvelopes = XrootDEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
+//					ca.getEnvelopes());
 
 		} catch (GeneralSecurityException gexcept) {
 			System.out.println("General Securiry exception" + gexcept);

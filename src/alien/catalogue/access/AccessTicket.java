@@ -35,6 +35,8 @@ public class AccessTicket implements Serializable {
 		this.type = type;
 		this.entity = entity;
 		
+		if (type == AccessType.DENIED)throw new IllegalAccessError("Access denied!");
+		
 		if(entity instanceof LFN) {
 			lfn = (LFN) entity;
 			guid = GUIDUtils.getGUID(lfn.guid);
@@ -45,7 +47,7 @@ public class AccessTicket implements Serializable {
 			guid = (GUID) entity;
 			lfn = LFNUtils.getLFN("/NOLFN", true);
 		}
-		else
+		else 
 			throw new IllegalAccessError("Unknown entity type");
 		
 		size = guid.size;

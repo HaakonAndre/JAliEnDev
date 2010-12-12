@@ -150,6 +150,10 @@ public class SE implements Serializable, Comparable<SE>{
 			"seExclusiveWrite\t: "+seExclusiveWrite;
 	}
 	
+	public String getName(){
+		return seName;
+	}
+	
 	private static final NumberFormat twoDigits = new DecimalFormat("00");
 	private static final NumberFormat fiveDigits = new DecimalFormat("00000");
 	

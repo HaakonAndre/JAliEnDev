@@ -25,7 +25,7 @@ public class XrootDEnvelope  implements Serializable {
 	 */
 	private static final long serialVersionUID = 1024787790575833398L;
 
-	public static final String hashord = "turl-access-lfn-guid-size-md5";
+	public static final String hashord = "turl-access-lfn-guid-se-size-md5";
 	
 	/**
 	 * the access ticket this envelope belongs to
@@ -82,23 +82,24 @@ public class XrootDEnvelope  implements Serializable {
 		
 		return "<authz>\n  <file>\n"
 		+ "    <access>"+ access+"</access>\n"
-		+ "    <turl>"+ pfn.toString()+ "</turl>\n"
-		+ "    <lfn>"+ticket.getLFN().toString()+"</lfn>\n"
+		+ "    <turl>"+ pfn.getName()+ "</turl>\n"
+		+ "    <lfn>"+ticket.getLFN().getName()+"</lfn>\n"
 		+ "    <size>"+Long.toString(ticket.getLFN().size)+"</size>" + "\n"
 		+ "    <pfn>"+pfnsplit[2]+"</pfn>\n"
-		+ "    <se>"+se.toString()+"</se>\n"
-		+ "    <guid>"+ticket.getGUID().toString()+"</guid>\n"
-		+ "    <md5>"+ticket.getLFN().md5.toString()+"</md5>\n"
+		+ "    <se>"+se.getName()+"</se>\n"
+		+ "    <guid>"+ticket.getGUID().getName()+"</guid>\n"
+		+ "    <md5>"+ticket.getLFN().md5+"</md5>\n"
 		+ "  </file>\n</authz>\n";
 	}
 	
 
 	public String getUnsignedEnvelope() {
 		
-		return "turl=" + pfn.toString() 
+		return "turl=" + pfn.getName()
 		+ "&access=" + ticket.getAccessType().toString() +
-		"&lfn=" + ticket.getLFN().toString() +"&guid=" + ticket.getGUID().toString() +
-		"&size=" + Long.toString(ticket.getLFN().size) + "&md5="+ ticket.getLFN().md5.toString();
+		"&lfn=" + ticket.getLFN().getName() +"&guid=" + ticket.getGUID().getName() +
+		"&se=" + se.getName() +
+		"&size=" + Long.toString(ticket.getLFN().size) + "&md5="+ ticket.getLFN().md5;
 	}
 
 	public void setSignedEnvelope(String signedEnvelope){

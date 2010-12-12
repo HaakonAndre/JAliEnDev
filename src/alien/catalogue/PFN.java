@@ -129,6 +129,10 @@ public class PFN implements Serializable, Comparable<PFN>{
 		       "seNumber\t: "+seNumber;
 	}
 	
+	public String getName(){
+		return pfn;
+	}
+	
 	/**
 	 * @return the physical locations
 	 */
