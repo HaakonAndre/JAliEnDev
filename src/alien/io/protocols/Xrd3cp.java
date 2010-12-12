@@ -13,7 +13,7 @@ import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
 import alien.catalogue.PFN;
-import alien.catalogue.access.SignedEnvelope;
+import alien.catalogue.access.XrootDEnvelope;
 
 /**
  * @author costing
@@ -42,26 +42,29 @@ public class Xrd3cp extends Xrootd {
 			command.add("-S");
 			command.add(source.pfn);
 			command.add(target.pfn);
-			
-			if (source.ticket!=null && (source.ticket instanceof SignedEnvelope)){
-				final SignedEnvelope env = (SignedEnvelope) source.ticket;
-				
-				if (env.encryptedEnvelope!=null)
-					command.add("authz="+env.encryptedEnvelope);
-				else
-				if (env.signedEnvelope!=null)
-					command.add("authz="+env.signedEnvelope);
-			}
 
-			if (target.ticket!=null && (target.ticket instanceof SignedEnvelope)){
-				final SignedEnvelope env = (SignedEnvelope) source.ticket;
-				
-				if (env.encryptedEnvelope!=null)
-					command.add("authz="+env.encryptedEnvelope);
-				else
-				if (env.signedEnvelope!=null)
-					command.add("authz="+env.signedEnvelope);
+			if (source.envelope == null) {
+				throw new IOException("The ticket for source PFN " + source.toString()
+						+ " could not be found.");
 			}
+			if (target.envelope == null) {
+				throw new IOException("The ticket for target PFN " + target.toString()
+						+ " could not be found.");
+			}
+			
+
+				if (source.envelope.getEncryptedEnvelope()!=null)
+					command.add("\"authz="+source.envelope.getEncryptedEnvelope()+"\"");
+				else
+				if (source.envelope.getSignedEnvelope()!=null)
+					command.add("\"authz="+source.envelope.getSignedEnvelope()+"\"");
+
+				
+				if (source.envelope.getEncryptedEnvelope()!=null)
+					command.add("\"authz="+source.envelope.getEncryptedEnvelope()+"\"");
+				else
+				if (source.envelope.getSignedEnvelope()!=null)
+					command.add("\"authz="+source.envelope.getSignedEnvelope()+"\"");
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
@@ -88,7 +91,7 @@ public class Xrd3cp extends Xrootd {
 	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
 	        }
 	        
-	        return xrdstat(target);
+	        return xrdstat(target,(source.envelope.getSignedEnvelope()==null));
 		}
 		catch (final IOException ioe){
 			throw ioe;

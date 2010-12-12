@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import alien.catalogue.access.AccessTicket;
+import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -74,11 +75,17 @@ public class PFN implements Serializable, Comparable<PFN>{
 	private GUID guid;
 	
 	private Set<PFN> realPFNs = null;
-	
+
 	/**
 	 * Access ticket, if needed
 	 */
 	public AccessTicket ticket = null;
+	
+
+	/**
+	 * XrootDEnvelope, if needed
+	 */
+	public XrootDEnvelope envelope = null;
 	
 	/**
 	 * @param db
@@ -113,6 +120,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.host = guid.host;
 		this.tableNumber = guid.tableName;
 	}
+	
 	
 	@Override
 	public String toString() {

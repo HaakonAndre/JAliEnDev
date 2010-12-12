@@ -4,6 +4,8 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
+import sun.security.krb5.internal.Ticket;
+
 import lazyj.cache.ExpirationCache;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -25,8 +27,8 @@ public final class AuthorizationFactory {
 	 *            access type
 	 * @return access, or <code>null</code> if not permitted
 	 */
-	public static CatalogueAccess requestAccess(final AliEnPrincipal user,
-			final String lfnOrGUID, final int access) {
+	public static AccessTicket requestAccess(final AliEnPrincipal user,
+			final String lfnOrGUID, String access) {
 
 		System.out.println("i got: lfn:" + lfnOrGUID + " for user: "+ user.toString() + " access: " + access);
 		
@@ -51,7 +53,7 @@ public final class AuthorizationFactory {
 			guid = GUIDUtils.getGUID(uuid);
 			
 			if (guid == null)
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			lfns = guid.getLFNs();
 			
@@ -62,10 +64,10 @@ public final class AuthorizationFactory {
 			// is it an LFN ?
 			
 			// the LFNs are checked to exist only for READ, otherwise we need to create that entry first
-			lfn = LFNUtils.getLFN(lfnOrGUID, access == CatalogueAccess.READ ? false : true);
+			lfn = LFNUtils.getLFN(lfnOrGUID, AccessType.READ.toString() == access);
 			
 			if (lfn == null)
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			if (lfn.guid != null)
 				guid = GUIDUtils.getGUID(lfn.guid);
@@ -74,30 +76,30 @@ public final class AuthorizationFactory {
 			lfns.add(lfn);
 		}
 		
-		if (access == CatalogueAccess.READ) {
+		if (AccessType.READ.toString() == access) {
 			if (guid == null)
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			if (!AuthorizationChecker.canRead(guid, user))
-				return new CatalogueAccessDENIED(guid);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			if (lfns!=null){
 				for (LFN lfn1 : lfns){
 					if (AuthorizationChecker.canRead(lfn1, user))
-						return new CatalogueReadAccess(guid);
+						return new AccessTicket(AccessType.READ,lfn);
 				}
 				
-				return new CatalogueAccessDENIED(guid);
+				return new AccessTicket(AccessType.DENIED,null);
 			}
 			
-			return new CatalogueReadAccess(guid);
+			return new AccessTicket(AccessType.READ,guid);
 		} 
 		
-		if (access == CatalogueAccess.WRITE) {
+		if (AccessType.WRITE.toString() == access) {
 			// the object doesn't exist yet, how can we determine if we can write it or not ?
 			
 			if (lfn == null)
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			if (guid == null){
 				// TODO
@@ -105,48 +107,48 @@ public final class AuthorizationFactory {
 				
 				guid = GUIDUtils.createGuid();
 				
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return  new AccessTicket(AccessType.DENIED,null);
 			}
 			
 			if (lfn.exists)
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return  new AccessTicket(AccessType.DENIED,null);
 			
 			LFN parent = lfn.getParentDir();
 			
 			if (parent==null || parent.getType() != 'd')
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			if (AuthorizationChecker.canWrite(parent, user))
-				return new CatalogueWriteAccess(lfn);
+				return new AccessTicket(AccessType.WRITE,lfn);
 			
-			return new CatalogueAccessDENIED(lfn);
+			return new AccessTicket(AccessType.DENIED,null);
 		} 
 		
-		if (access == CatalogueAccess.DELETE) {
+		if (AccessType.DELETE.toString() == access) {
 			if (guid == null)
-				return new CatalogueAccessDENIED(lfnOrGUID);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			if (!AuthorizationChecker.canWrite(guid, user))
-				return new CatalogueAccessDENIED(guid);
+				return new AccessTicket(AccessType.DENIED,null);
 			
 			if (lfns!=null){
 				// all lfns should be files and the user should be able to delete them
 				
 				for (LFN lfn1 : lfns){
 					if (lfn1.type != 'f')
-						return new CatalogueAccessDENIED(lfn1);
+						new AccessTicket(AccessType.DENIED,null);
 					
 					LFN parent = lfn1.getParentDir();
 					
 					if (parent==null || !AuthorizationChecker.canWrite(parent, user))
-						return new CatalogueAccessDENIED(lfn1);
+						new AccessTicket(AccessType.DENIED,null);
 				}
 				
-				return new CatalogueDeleteAccess(guid);
+				return new AccessTicket(AccessType.DELETE,lfn);
 			}
 		} 
 		
-		return new CatalogueAccessDENIED(lfnOrGUID);
+		return new AccessTicket(AccessType.WRITE,guid);
 	}
 
 	/**
@@ -164,26 +166,7 @@ public final class AuthorizationFactory {
 	/**
 	 * Cache the recently requested read envelopes
 	 */
-	private static final ExpirationCache<UUID, CatalogueAccess> readEnvelopes = new ExpirationCache<UUID, CatalogueAccess>(
+	private static final ExpirationCache<UUID, AccessTicket> readEnvelopes = new ExpirationCache<UUID, AccessTicket>(
 			10000);
-
-	private static CatalogueAccess accessType(final GUID guid, final String access) {
-
-		if (access.equals("delete")) {
-			return new CatalogueDeleteAccess(guid);
-		}
-
-		if (access.equals("read")) {
-			CatalogueAccess readAccess = readEnvelopes.get(guid.guid);
-
-			if (readAccess == null) {
-				readAccess = new CatalogueReadAccess(guid);
-
-				readEnvelopes.put(guid.guid, readAccess, 1000 * 60 * 5);
-			}
-		}
-
-		return null;
-	}
 
 }

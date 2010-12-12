@@ -38,6 +38,11 @@ public class SE implements Serializable, Comparable<SE>{
 	 * SE number
 	 */
 	public int seNumber;
+
+	/**
+	 * SE version number, if < 219, then triggers encrypted xrootd envelope creation over boolean needsEncryptedEnvelope
+	 */
+	public int seVersion;
 	
 	/**
 	 * QoS associated to this storage elements
@@ -88,6 +93,12 @@ public class SE implements Serializable, Comparable<SE>{
 	 * Exclusive read
 	 */
 	public String seExclusiveRead;
+
+	/**
+	 * triggered by the seVersion if < 219
+	 */
+	public boolean needsEncryptedEnvelope;
+	
 	
 	/**
 	 * @param db
@@ -98,6 +109,10 @@ public class SE implements Serializable, Comparable<SE>{
 		seNumber = db.geti("seNumber");
 		
 		qos = parseArray(db.gets("seQoS"));
+		
+		seVersion = db.geti("seVersion");
+		
+		needsEncryptedEnvelope = (seVersion < 219);
 		
 		seioDaemons = db.gets("seioDaemons");
 		
@@ -122,6 +137,7 @@ public class SE implements Serializable, Comparable<SE>{
 	public String toString() {
 		return "SE: seName: "+seName+"\n"+
 			"seNumber\t: "+seNumber+"\n"+
+			"seVersion\t: "+seVersion+"\n"+
 			"qos\t: "+qos+"\n"+
 			"seioDaemons\t: "+seioDaemons+"\n"+
 			"seStoragePath\t: "+seStoragePath+"\n"+

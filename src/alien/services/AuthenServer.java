@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -31,6 +32,11 @@ import java.util.UUID;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+//import org.bouncycastle.util.encoders.Base64;
+//import org.apache.catalina.util.Base64;
+
+
+
 import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -38,8 +44,8 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.CatalogueAccess;
 import alien.catalogue.access.XrootDEnvelope;
+import alien.io.protocols.Xrootd_implementation;
 import alien.se.SE;
-import alien.tsealedEnvelope.Base64;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
@@ -185,27 +191,44 @@ public class AuthenServer {
 		
 		System.out.println("we received:");
 		System.out.println(Arrays.toString(envelopes));
-
 		
 		try {
 
 			authen.loadKeys();
 
-			String baseEnvelope = "turl=root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/14/58772/0fefd262-0148-11e0-be40-001e0b24002f"+
-			"&access=read&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=13958&se=pcepalice11::CERN::XR1"+
-			"&guid=0FEFD262-0148-11E0-BE40-001E0B24002F&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d";
+			String localfile = "/tmp/javatestgedoehns";
+			String localcopy = "/tmp/javatestgedoehns.copy";
 			
-			String hashord = "turl-access-lfn-size-se-guid-md5-creator-created-expires-hashord";
+			
+			String turl = "root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/13/36958/a891c798-e29c-11df-8143-001e0b24002f";
+			
+//			String turl = "root://pcepalice11.cern.ch:1094//tmp/a891c798-e29c-11df-8143-001e0b24002f";
+
+			String readEnvelope = "turl="+ turl +
+			"&access=read&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=9&se=pcepalice11::CERN::XR1"+
+			"&guid=a891c798-e29c-11df-8143-001e0b24002f&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d&user=ali";
+			
+			String writeEnvelope = "turl="+ turl +
+			"&access=write&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=18&se=pcepalice11::CERN::XR1"+
+			"&guid=a891c798-e29c-11df-8143-001e0b24002f&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d&user=ali";
+			
+			String hashord = "turl-access-lfn-size-se-guid-md5-user";
 			
 
 
 			System.out.println("generated testVO: ");
-			
-			System.out.println("xrdcpapmon  -DIFirstConnectMaxCnt 6 root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/14/58772/0fefd262-0148-11e0-be40-001e0b24002f"+
-					" /tmp/pcepalice11/cache/0fefd262-0148-11e0-be40-001e0b24002f.16591291647188"+
-					" -OS\\&"
-			+ 
-			authen.dryEngine(baseEnvelope, hashord));
+		
+			Xrootd_implementation xrootd = new Xrootd_implementation();
+			xrootd.xrdUpload(turl, authen.dryEngine(writeEnvelope, hashord), localfile, 18);
+//			xrootd.xrdGet(turl, authen.dryEngine(readEnvelope, hashord), localcopy, 9);
+
+//			
+//			
+//			System.out.println("xrdcpapmon  -DIFirstConnectMaxCnt 6 root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/14/58772/0fefd262-0148-11e0-be40-001e0b24002f"+
+//					" /tmp/pcepalice11/cache/0fefd262-0148-11e0-be40-001e0b24002f.16591291647188"+
+//					" -OS\\&"
+//			+ 
+//			authen.dryEngine(baseEnvelope, hashord));
 
 
 		} catch (GeneralSecurityException gexcept) {
@@ -342,7 +365,7 @@ public class AuthenServer {
 			CatalogueAccess ca = AuthorizationFactory.requestAccess(user,
 					P_lfn, access);
 
-			CatalogueAccessEnvelopeDecorator
+			XrootDEnvelopeDecorator
 					.loadXrootDEnvelopesForCatalogueAccess(ca, P_sitename,
 							P_qos, qosCount, ses, exxSes);
 
@@ -350,7 +373,7 @@ public class AuthenServer {
 			EncryptedAuthzToken authz = new EncryptedAuthzToken(
 					authen.AuthenPrivKey, authen.SEPubKey);
 				
-			signedEnvelopes = CatalogueAccessEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
+			signedEnvelopes = XrootDEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
 					ca.getEnvelopes());
 
 //			FOR (XROOTDENVELOPE ENV : CA.GETENVELOPES()) {
@@ -373,6 +396,73 @@ public class AuthenServer {
 
 	}
 
+	
+	
+	
+	
+
+	public String[] authorizeEnvelope(String P_user, int access, 
+			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
+			String P_qos, int qosCount, String P_sitename) {
+		
+		
+
+		System.out.println("we are invoked:  P_user: " + P_user + "\naccess: " + access 
+			+ "\nP_lfn: " + 	
+			 P_lfn + "\nsize: " + size + "\nP_guid: " +  P_guid 
+			 + "\nP_qos: " + P_qos + "\nqosCount: " +  qosCount + "\nP_sitename: " +  P_sitename);
+		
+		ArrayList<String> signedEnvelopes = null;
+		
+		AuthenServer authen = new AuthenServer();
+		try {
+
+			AliEnPrincipal user = UserFactory.getByUsername(P_user);
+
+			CatalogueAccess ca = AuthorizationFactory.requestAccess(user,
+					P_lfn, access);
+
+			XrootDEnvelopeDecorator
+					.loadXrootDEnvelopesForCatalogueAccess(ca, P_sitename,
+							P_qos, qosCount, ses, exxSes);
+
+			authen.loadKeys();
+//			EncryptedAuthzToken authz = new EncryptedAuthzToken(
+//					authen.AuthenPrivKey, authen.SEPubKey);
+				
+			signedEnvelopes = XrootDEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
+					ca.getEnvelopes());
+
+		} catch (GeneralSecurityException gexcept) {
+			System.out.println("General Securiry exception" + gexcept);
+		} catch (IOException ioexcept) {
+			System.out.println("IO exception" + ioexcept);
+		}
+		return (String[]) signedEnvelopes.toArray(new String[0]);
+
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 //	public Set<XrootDEnvelope> createEnvelopePerlAliEnV218(String P_user,
 //			int access, String P_options, String P_lfn, int size,
 //			String P_guid, Set<SE> ses, Set<SE> exxSes, String P_qos,
@@ -577,7 +667,7 @@ public class AuthenServer {
 		// KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
 		// TODO : load file locations from configuration
-		File AuthenPrivfile = new File("/home/ron/authen_keys/AuthenPriv.key");
+		File AuthenPrivfile = new File("/home/ron/authen_keys/AuthenPriv.der");
 		byte[] AuthenPriv = new byte[(int) AuthenPrivfile.length()];
 		FileInputStream fis = new FileInputStream(AuthenPrivfile);
 		fis.read(AuthenPriv);
@@ -588,7 +678,7 @@ public class AuthenServer {
 		this.AuthenPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
 				.generatePrivate(AuthenPrivSpec);
 
-		File SEPrivfile = new File("/home/ron/authen_keys/SEPriv.key");
+		File SEPrivfile = new File("/home/ron/authen_keys/SEPriv.der");
 		byte[] SEPriv = new byte[(int) SEPrivfile.length()];
 		fis = new FileInputStream(SEPrivfile);
 		fis.read(SEPriv);
@@ -649,24 +739,24 @@ public class AuthenServer {
 	private String dryEngine(String baseEnvelope, String hashord) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 		
 		
-		long created = System.currentTimeMillis() / 1000L;
-		long expires = created + 86400;
+		long issued = System.currentTimeMillis() / 1000L;
+		long expires = issued + 86400;
 
 		String toBeSigned = baseEnvelope
-				+ "&creator=JAuthenX&created=" + created + "&expires="
-				+ expires + "&hashord=" + hashord;
+				+ "&issuer=JAuthenX&issued=" + issued + "&expires="
+				+ expires + "&hashord=" + hashord + "-issuer-issued-expires-hashord";
 				
-
 		Signature signer = Signature.getInstance("SHA384withRSA");
 		signer.initSign(AuthenPrivKey);
 		signer.update(toBeSigned.getBytes());
-
-		toBeSigned = toBeSigned + "&signature="
-				+ Base64.encodeBytes(signer.sign(),Base64.DONT_BREAK_LINES);
 		
 
-		return toBeSigned.replace("&", "\\&");
+		byte[] rawsignature = new byte[1024];
+		rawsignature = signer.sign();
 
+		toBeSigned = toBeSigned + "&signature="
+				+ String.valueOf(Base64.encode(rawsignature));
+		return toBeSigned;
 	}
 }
 

@@ -3,120 +3,115 @@ package alien.catalogue.access;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 
+import alien.catalogue.CatalogEntity;
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 
+
 /**
  * @author ron
+ *
  */
-public class XrootDEnvelope implements Serializable {
+public class XrootDEnvelope  implements Serializable {
 
-	// analog to the following access types, we define levels:
-	// public static int INVALID = 0;
-	// public static int READ = 1;
-	// public static int WRITE = 2;
-	// public static int DELETE = 3;
-	private static String[] levels = { "invalid", "read", "write-once",
-			"delete" };
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1024787790575833398L;
 
-	private String plainEnvelopeTicket;
-	private String encryptedEnvelope;
-	
 	public static final String hashord = "turl-access-lfn-guid-size-md5";
 	
-	private String signedEnvelope;
+	/**
+	 * the access ticket this envelope belongs to
+	 */
+	public AccessTicket ticket = null;
+	
+	/**
+	 * pfn of the file on the SE (proto:://hostdns:port//storagepath)
+	 */
+	public final PFN pfn;
+	
 
-	private String envAccess;
-	private String envLFN;
-	private String envGUID;
-	private String envPFN;
-	private String envSize;
-	private String envMD5;
-	private String envTURL;
-	private String envSE;
+	/**
+	 * name of the regarding SE
+	 */
+	public final SE se;
+	
+	/**
+	 * Signed envelope
+	 */
+	protected String signedEnvelope; 
+	
+	/**
+	 * Encrypted envelope
+	 */
+	protected String encryptedEnvelope;
 
-	private CatalogueAccess access;
-	private SE se;
-	private PFN pfn;
-	private String newPFN;
-
-	void setCatalogueAccess(final CatalogueAccess access) {
-		this.access = access;
-	}
-
-	public XrootDEnvelope(final CatalogueAccess access, final PFN pfn) {
-		this.access = access;
-		this.pfn = pfn;
-		se = SEUtils.getSE(Integer.valueOf(pfn.seNumber));
-		initializeEncryptedTicket();
-	}
-
-	public XrootDEnvelope(final CatalogueAccess access, final SE se,
-			final String newPFN) {
-		this.access = access;
-		this.newPFN = newPFN;
+	/**
+	 * triggers additional encrypted envelope creation
+	 */
+	public boolean createEcryptedEnvelope;
+	
+	
+	/**
+	 * @param type
+	 * @param signedEnvelope 
+	 * @param encryptedEnvelope 
+	 */
+	public XrootDEnvelope(final AccessTicket ticket, PFN pfn, SE se){
+	
+		
+		this.ticket = ticket;
 		this.se = se;
-		initializeEncryptedTicket();
+		this.pfn = pfn;
+		createEcryptedEnvelope = se.needsEncryptedEnvelope;
 	}
 
-	private void initializeEncryptedTicket() {
 
-		envAccess = levels[access.access];
-		envTURL = se.seioDaemons.toString() + "/" + se.seStoragePath.toString()
-				+ access.getGUID().getName();
-		envPFN = se.seStoragePath.toString() + access.getGUID().getName();
-		envLFN = access.getLFN().getName();
-		envSize = Long.toString(access.getLFN().size);
-		envGUID = access.getGUID().getName();
-		envSE = se.seName;
+	public String getUnEncryptedEnvelope() {
 
-		envMD5 = "md5field";
-		// envMD5 = access.getLFN().md5.toString();
-
-
-
+		String access = ticket.getAccessType().toString().replace("write", "write-once");
 		
+		String[] pfnsplit = pfn.toString().split("//");
 		
-		System.out.println("we have a ticket:");
-		System.out.println(plainEnvelopeTicket);
+		return "<authz>\n  <file>\n"
+		+ "    <access>"+ access+"</access>\n"
+		+ "    <turl>"+ pfn.toString()+ "</turl>\n"
+		+ "    <lfn>"+ticket.getLFN().toString()+"</lfn>\n"
+		+ "    <size>"+Long.toString(ticket.getLFN().size)+"</size>" + "\n"
+		+ "    <pfn>"+pfnsplit[2]+"</pfn>\n"
+		+ "    <se>"+se.toString()+"</se>\n"
+		+ "    <guid>"+ticket.getGUID().toString()+"</guid>\n"
+		+ "    <md5>"+ticket.getLFN().md5.toString()+"</md5>\n"
+		+ "  </file>\n</authz>\n";
 	}
-
-	String getTicket() {
-		if (plainEnvelopeTicket == null)
-			initializeEncryptedTicket();
-
-		return plainEnvelopeTicket;
-	}
-
-	public void decorateEnvelope(EncryptedAuthzToken authz)
-			throws GeneralSecurityException {
-		encryptedEnvelope = authz.encrypt(plainEnvelopeTicket);
-		//System.out.println("we have an encrypted ticket:");
-		//System.out.println(encryptedEnvelope);
-	}
-
-	private void setSignature(String signature){
-		signedEnvelope = signature;
-	}
+	
 
 	public String getUnsignedEnvelope() {
 		
-		return "turl=" + se.seioDaemons.toString() + "/" + se.seStoragePath.toString() +
-		access.getGUID().getName() + "&access=" + levels[access.access] +
-		"&lfn=" + access.getLFN().getName() +"&guid=" + access.getGUID().getName() +
-		"&size=" + Long.toString(access.getLFN().size) + "&md5="+ "md5field";
-		// envMD5 = access.getLFN().md5.toString();
-		
-
+		return "turl=" + pfn.toString() 
+		+ "&access=" + ticket.getAccessType().toString() +
+		"&lfn=" + ticket.getLFN().toString() +"&guid=" + ticket.getGUID().toString() +
+		"&size=" + Long.toString(ticket.getLFN().size) + "&md5="+ ticket.getLFN().md5.toString();
 	}
 
-	private String getSignedEnvelope() {
+	public void setSignedEnvelope(String signedEnvelope){
+		this.signedEnvelope = signedEnvelope;
+	}
+	public String getSignedEnvelope(){
 		return signedEnvelope;
 	}
-
-	public String getEncryptedEnvelope() {
+	
+	public void setEncryptedEnvelope(String encryptedEnvelope){
+		this.encryptedEnvelope = encryptedEnvelope;
+	}
+	public String getEncryptedEnvelope(){
 		return encryptedEnvelope;
 	}
 }
