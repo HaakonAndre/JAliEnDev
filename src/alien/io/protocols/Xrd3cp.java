@@ -9,11 +9,10 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
-import alien.catalogue.access.XrootDEnvelope;
 
 /**
  * @author costing

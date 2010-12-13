@@ -7,19 +7,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
-import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 
 /**
@@ -59,6 +56,9 @@ public class Xrootd extends Protocol {
 	 */
 	private static final long serialVersionUID = -7442913364052285097L;
 
+	/**
+	 * @param level xrdcp debug level
+	 */
 	public void setDebugLevel(int level) {
 		xrdcpdebuglevel = level;
 	}
@@ -81,7 +81,8 @@ public class Xrootd extends Protocol {
 		}
 
 		if (target == null) {
-			// TODO: we need a temporary file name, the file may NOT exist, otherwise xrdcp fails
+			target = File.createTempFile("xrd", null);
+			target.delete();
 		}
 
 		if (pfn.envelope == null) {
@@ -244,19 +245,24 @@ public class Xrootd extends Protocol {
 			throw new IOException("Get aborted because " + t);
 		}
 	}
-
+	
 	/**
 	 * Check if the PFN has the correct properties, such as described in the
 	 * access envelope
 	 * 
 	 * @param pfn
+	 * @param returnEnvelope 
 	 * @return the signed envelope from the storage, if it knows how to generate
 	 *         one
 	 * @throws IOException
 	 *             if the remote file properties are not what is expected
 	 */
-	public String xrdstat(final PFN pfn, boolean returnEnvelope)
-			throws IOException {
+	public String xrdstat(final PFN pfn, final boolean returnEnvelope) throws IOException {
+		statRetryCounter = 0;
+		return xrdstatImpl(pfn, returnEnvelope);
+	}
+	
+	private String xrdstatImpl(final PFN pfn, final boolean returnEnvelope) throws IOException {
 
 		try {
 			final List<String> command = new LinkedList<String>();
@@ -301,38 +307,38 @@ public class Xrootd extends Protocol {
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
-
 				if (waitAndTryAgain()) {
 					return xrdstat(pfn, returnEnvelope);
-				} else {
-					throw new IOException("Exit code was not zero but "
-							+ exitStatus.getExtProcExitStatus()
-							+ " for command : " + command.toString());
 				}
-			} else {
-				if (returnEnvelope) {
-					return exitStatus.getStdOut(); // TODO this is not the
-													// return envelope, we have
-													// to get first the xrdcp
-													// implementation, than
-													// finish this
-				} else {
-					long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
-					if (pfn.envelope.ticket.getLFN().size == filesize) {
-						return pfn.envelope.getSignedEnvelope();
-					} else {
-						if (waitAndTryAgain()) {
-							return xrdstat(pfn, false);
-						} else {
-							throw new IOException(
-									"The xrdstat could not confirm the file to be uploaded with size, reported size: "
-											+ filesize
-											+ ", expected size: "
-											+ pfn.envelope.ticket.getLFN().size);
-						}
-					}
-				}
+				
+				throw new IOException("Exit code was not zero but "
+						+ exitStatus.getExtProcExitStatus()
+						+ " for command : " + command.toString());
 			}
+			
+			if (returnEnvelope) {
+				return exitStatus.getStdOut(); // TODO this is not the
+												// return envelope, we have
+												// to get first the xrdcp
+												// implementation, than
+												// finish this
+			}
+			
+			long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
+			
+			if (pfn.envelope.ticket.getLFN().size == filesize) {
+				return pfn.envelope.getSignedEnvelope();
+			}
+			
+			if (waitAndTryAgain()) {
+				return xrdstat(pfn, false);
+			}
+			
+			throw new IOException(
+					"The xrdstat could not confirm the file to be uploaded with size, reported size: "
+							+ filesize
+							+ ", expected size: "
+							+ pfn.envelope.ticket.getLFN().size);
 		} catch (final IOException ioe) {
 			throw ioe;
 		} catch (final Throwable t) {
@@ -353,6 +359,7 @@ public class Xrootd extends Protocol {
 			statRetryCounter++;
 			return true;
 		}
+		
 		return false;
 	}
 
