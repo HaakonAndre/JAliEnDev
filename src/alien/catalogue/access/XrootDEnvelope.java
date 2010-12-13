@@ -1,16 +1,20 @@
 package alien.catalogue.access;
 
 import java.io.Serializable;
+import java.util.Set;
 
+import alien.catalogue.GUID;
+import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.se.SE;
+import alien.se.SEUtils;
 
 
 /**
  * @author ron
  *
  */
-public class XrootDEnvelope  implements Serializable {
+public class XrootDEnvelope implements Serializable {
 
 	/**
 	 * 
@@ -25,18 +29,12 @@ public class XrootDEnvelope  implements Serializable {
 	/**
 	 * the access ticket this envelope belongs to
 	 */
-	public AccessTicket ticket = null;
+	public AccessType type = null;
 	
 	/**
 	 * pfn of the file on the SE (proto:://hostdns:port//storagepath)
 	 */
 	public final PFN pfn;
-	
-
-	/**
-	 * name of the regarding SE
-	 */
-	public final SE se;
 	
 	/**
 	 * Signed envelope
@@ -49,23 +47,12 @@ public class XrootDEnvelope  implements Serializable {
 	protected String encryptedEnvelope;
 
 	/**
-	 * triggers additional encrypted envelope creation
-	 */
-	public boolean createEcryptedEnvelope;
-	
-	
-	/**
-	 * @param ticket 
+	 * @param type
 	 * @param pfn 
-	 * @param se 
 	 */
-	public XrootDEnvelope(final AccessTicket ticket, PFN pfn, SE se){
-	
-		
-		this.ticket = ticket;
-		this.se = se;
+	public XrootDEnvelope(final AccessType type, final PFN pfn){
+		this.type = type;
 		this.pfn = pfn;
-		createEcryptedEnvelope = se.needsEncryptedEnvelope;
 	}
 
 
@@ -74,20 +61,31 @@ public class XrootDEnvelope  implements Serializable {
 	 */
 	public String getUnEncryptedEnvelope() {
 
-		String access = ticket.getAccessType().toString().replace("write", "write-once");
+		final String access = type.toString().replace("write", "write-once");
 		
-		String[] pfnsplit = pfn.toString().split("//");
+		final String[] pfnsplit = pfn.getPFN().split("//");
 		
-		return "<authz>\n  <file>\n"
+		final GUID guid = pfn.getGuid();
+		
+		final Set<LFN> lfns = guid.getLFNs();
+		
+		final SE se = SEUtils.getSE(pfn.seNumber);
+		
+		String ret = "<authz>\n  <file>\n"
 		+ "    <access>"+ access+"</access>\n"
-		+ "    <turl>"+ pfn.getPFN()+ "</turl>\n"
-		+ "    <lfn>"+ticket.getLFN().getName()+"</lfn>\n"
-		+ "    <size>"+Long.toString(ticket.getLFN().size)+"</size>" + "\n"
+		+ "    <turl>"+ pfn.getPFN()+ "</turl>\n";
+		
+		if (lfns!=null && lfns.size()>0)
+			ret += "    <lfn>"+lfns.iterator().next().getCanonicalName()+"</lfn>\n";
+		
+		ret += "    <size>"+Long.toString(guid.size)+"</size>" + "\n"
 		+ "    <pfn>"+pfnsplit[2]+"</pfn>\n"
 		+ "    <se>"+se.getName()+"</se>\n"
-		+ "    <guid>"+ticket.getGUID().getName()+"</guid>\n"
-		+ "    <md5>"+ticket.getLFN().md5+"</md5>\n"
+		+ "    <guid>"+guid.getName()+"</guid>\n"
+		+ "    <md5>"+guid.md5+"</md5>\n"
 		+ "  </file>\n</authz>\n";
+		
+		return ret;
 	}
 	
 
@@ -96,11 +94,22 @@ public class XrootDEnvelope  implements Serializable {
 	 */
 	public String getUnsignedEnvelope() {
 		
-		return "turl=" + pfn.getPFN()
-		+ "&access=" + ticket.getAccessType().toString() +
-		"&lfn=" + ticket.getLFN().getName() +"&guid=" + ticket.getGUID().getName() +
+		final GUID guid = pfn.getGuid();
+		
+		final Set<LFN> lfns = guid.getLFNs();
+		
+		final SE se = SEUtils.getSE(pfn.seNumber);
+		
+		String ret = "turl=" + pfn.getPFN() + "&access=" + type.toString();
+		
+		if (lfns!=null && lfns.size()>0)
+			ret += "&lfn=" + lfns.iterator().next().getCanonicalName();
+	
+		ret += "&guid=" + guid.getName() +
 		"&se=" + se.getName() +
-		"&size=" + Long.toString(ticket.getLFN().size) + "&md5="+ ticket.getLFN().md5;
+		"&size=" + guid.size + "&md5="+ guid.md5;
+		
+		return ret;
 	}
 
 	/**

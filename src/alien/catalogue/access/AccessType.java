@@ -17,11 +17,7 @@ public enum AccessType {
 	/**
 	 * Delete
 	 */
-	DELETE("delete"),
-	/**
-	 * Invalid Access
-	 */
-	DENIED("accessdenied");
+	DELETE("delete");
 
 	private final String shortDescription;
 

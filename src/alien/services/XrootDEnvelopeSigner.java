@@ -2,6 +2,7 @@ package alien.services;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOError;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -13,16 +14,11 @@ import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.Iterator;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 
-import alien.catalogue.PFN;
-import alien.catalogue.access.AccessTicket;
-import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
-import alien.se.SEUtils;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 
 /**
@@ -31,101 +27,53 @@ import alien.tsealedEnvelope.EncryptedAuthzToken;
  */
 public class XrootDEnvelopeSigner {
 
-	private String AuthenPrivLocation = "/home/ron/authen_keys/lpriv.pem";
-	private String AuthenPubLocation = "/home/ron/authen_keys/lpub.pem";
-	private String SEPrivLocation = "/home/ron/authen_keys/rpriv.pem";
-	private String SEPubLocation = "/home/ron/authen_keys/rpub.pem";
+	private static final String AuthenPrivLocation = "/home/ron/authen_keys/lpriv.pem";
+	private static final String AuthenPubLocation = "/home/ron/authen_keys/lpub.pem";
+	private static final String SEPrivLocation = "/home/ron/authen_keys/rpriv.pem";
+	private static final String SEPubLocation = "/home/ron/authen_keys/rpub.pem";
 
-	private RSAPrivateKey AuthenPrivKey;
-	private RSAPublicKey AuthenPubKey;
-	private RSAPrivateKey SEPrivKey;
-	private RSAPublicKey SEPubKey;
-
-	EncryptedAuthzToken authz = null;
-
-	public XrootDEnvelopeSigner() {
-		try {
-			loadKeys();
-		} catch (GeneralSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	}
-
-	public void signEnvelopesForAccess(AccessTicket ticket) {
-
-		if (ticket != null) {
-			final Iterator<PFN> it = ticket.getPFNS().iterator();
-
-			while (it.hasNext()) {
-				final PFN pfn = it.next();
-
-				if (ticket.type != AccessType.DENIED) {
-					pfn.envelope = new XrootDEnvelope(ticket, pfn,
-							SEUtils.getSE(pfn.seNumber));
-					try {
-						signEnvelope(pfn.envelope);
-					} catch (InvalidKeyException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (NoSuchAlgorithmException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					} catch (SignatureException e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					if (pfn.envelope.createEcryptedEnvelope)
-						try {
-							encryptEnvelope(pfn.envelope);
-						} catch (GeneralSecurityException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-				}
-
-			}
-
-		}
-
-	}
+	private static final RSAPrivateKey AuthenPrivKey;
+	private static final RSAPublicKey AuthenPubKey;
+	private static final RSAPrivateKey SEPrivKey;
+	private static final RSAPublicKey SEPubKey;
 
 	/**
-	 * 
 	 * load the RSA keys for envelope signature, keys are supposed to be in pem,
 	 * and can be created with: openssl req -x509 -nodes -days 365 -newkey
 	 * rsa:4096 -keyout lpriv.pem -out lpub.pem
-	 * 
-	 * @throws GeneralSecurityException
-	 * @throws IOException
 	 */
-
-	private void loadKeys() throws GeneralSecurityException, IOException {
-
+	static{
 		Security.addProvider(new BouncyCastleProvider());
 
-		AuthenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
-				new BufferedReader(new FileReader(AuthenPrivLocation)))
-				.readObject()).getPrivate();
-		AuthenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
-				new BufferedReader(new FileReader(AuthenPubLocation)))
-				.readObject()).getPublicKey();
+		try{
+			AuthenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
+					new BufferedReader(new FileReader(AuthenPrivLocation)))
+					.readObject()).getPrivate();
+			AuthenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
+					new BufferedReader(new FileReader(AuthenPubLocation)))
+					.readObject()).getPublicKey();
 
-		SEPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
-				new BufferedReader(new FileReader(SEPrivLocation)))
-				.readObject()).getPrivate();
-		SEPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
-				new BufferedReader(new FileReader(SEPubLocation))).readObject())
-				.getPublicKey();
-
+			SEPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
+					new BufferedReader(new FileReader(SEPrivLocation)))
+					.readObject()).getPrivate();
+			SEPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
+					new BufferedReader(new FileReader(SEPubLocation))).readObject())
+					.getPublicKey();
+		}
+		catch (IOException ioe){
+			throw new IOError(ioe);
+		}
 	}
+	
+	private static EncryptedAuthzToken authz = null;
 
-	private void signEnvelope(XrootDEnvelope envelope)
-			throws NoSuchAlgorithmException, InvalidKeyException,
-			SignatureException {
+	/**
+	 * @param envelope
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
+	 * @throws SignatureException
+	 */
+	public void signEnvelope(XrootDEnvelope envelope) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
 		// System.out.println("About to be signed: " +
 		// envelope.getUnsignedEnvelope());
@@ -152,7 +100,14 @@ public class XrootDEnvelopeSigner {
 
 	}
 
-	private void verifyEnvelope(XrootDEnvelope envelope, boolean selfSigned)
+	/**
+	 * @param envelope
+	 * @param selfSigned
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
+	 * @throws SignatureException
+	 */
+	public static void signEnvelope(XrootDEnvelope envelope, boolean selfSigned)
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
@@ -185,8 +140,11 @@ public class XrootDEnvelopeSigner {
 
 	}
 
-	private void encryptEnvelope(XrootDEnvelope envelope)
-			throws GeneralSecurityException {
+	/**
+	 * @param envelope
+	 * @throws GeneralSecurityException
+	 */
+	public static void encryptEnvelope(XrootDEnvelope envelope) throws GeneralSecurityException {
 
 		// System.out.println("About to be encrypted: " +
 		// envelope.getUnEncryptedEnvelope());

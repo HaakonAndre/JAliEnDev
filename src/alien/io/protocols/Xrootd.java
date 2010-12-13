@@ -85,7 +85,7 @@ public class Xrootd extends Protocol {
 			target.delete();
 		}
 
-		if (pfn.envelope == null) {
+		if (pfn.ticket==null || pfn.ticket.envelope == null) {
 			throw new IOException("The envelope for PFN " + pfn.toString()
 					+ " could not be found.");
 		}
@@ -102,11 +102,11 @@ public class Xrootd extends Protocol {
 			command.add(pfn.pfn);
 			command.add(target.getCanonicalPath());
 
-			if (pfn.envelope.getEncryptedEnvelope() != null)
+			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 				command.add("-OD&authz=\""
-						+ pfn.envelope.getEncryptedEnvelope() + "\"");
-			else if (pfn.envelope.getSignedEnvelope() != null)
-				command.add("-OD" + pfn.envelope.getSignedEnvelope());
+						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
+			else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+				command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
@@ -172,11 +172,12 @@ public class Xrootd extends Protocol {
 				|| !localFile.canRead())
 			throw new IOException("Local file " + localFile + " cannot be read");
 
-		if (pfn.envelope == null) {
+		if (pfn.ticket==null || pfn.ticket.envelope == null) {
 			throw new IOException("The envelope for PFN " + pfn.toString()
 					+ " could not be found.");
 		}
-		if (localFile.length() != pfn.envelope.ticket.getLFN().size) {
+		
+		if (localFile.length() != pfn.getGuid().size) {
 			throw new IOException("The ticket for PFN " + pfn.toString()
 					+ " does not match file size of " + localFile.getName());
 		}
@@ -196,11 +197,11 @@ public class Xrootd extends Protocol {
 			command.add(localFile.getCanonicalPath());
 			command.add(pfn.pfn);
 
-			if (pfn.envelope.getEncryptedEnvelope() != null)
+			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 				command.add("-OD&authz=\""
-						+ pfn.envelope.getEncryptedEnvelope() + "\"");
-			else if (pfn.envelope.getSignedEnvelope() != null)
-				command.add("-OD" + pfn.envelope.getSignedEnvelope());
+						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
+			else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+				command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
@@ -234,7 +235,7 @@ public class Xrootd extends Protocol {
 						+ exitStatus.getExtProcExitStatus() + " for command : "
 						+ command.toString());
 			}
-			if (pfn.envelope.getEncryptedEnvelope() != null)
+			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 				return xrdstat(pfn, false);
 			return xrdstat(pfn, true);
 		} catch (final IOException ioe) {
@@ -275,9 +276,9 @@ public class Xrootd extends Protocol {
 				command.add("-returnEnvelope");
 			command.add(pfn.toString());
 
-			if ((pfn.envelope != null)
-					&& (pfn.envelope.getSignedEnvelope() != null))
-				command.add("-OD" + pfn.envelope.getSignedEnvelope());
+			if ((pfn.ticket.envelope != null)
+					&& (pfn.ticket.envelope.getSignedEnvelope() != null))
+				command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
@@ -326,8 +327,8 @@ public class Xrootd extends Protocol {
 			
 			long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 			
-			if (pfn.envelope.ticket.getLFN().size == filesize) {
-				return pfn.envelope.getSignedEnvelope();
+			if (pfn.getGuid().size == filesize) {
+				return pfn.ticket.envelope.getSignedEnvelope();
 			}
 			
 			if (waitAndTryAgain()) {
@@ -338,7 +339,7 @@ public class Xrootd extends Protocol {
 					"The xrdstat could not confirm the file to be uploaded with size, reported size: "
 							+ filesize
 							+ ", expected size: "
-							+ pfn.envelope.ticket.getLFN().size);
+							+ pfn.getGuid().size);
 		} catch (final IOException ioe) {
 			throw ioe;
 		} catch (final Throwable t) {

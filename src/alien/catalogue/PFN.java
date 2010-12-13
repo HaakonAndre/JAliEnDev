@@ -6,14 +6,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import lazyj.DBFunctions;
 import alien.catalogue.access.AccessTicket;
-import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
-
-import lazyj.DBFunctions;
 
 /**
  * Wrapper around a G*L_PFN row
@@ -80,12 +78,6 @@ public class PFN implements Serializable, Comparable<PFN>{
 	 * Access ticket, if needed
 	 */
 	public AccessTicket ticket = null;
-	
-
-	/**
-	 * XrootDEnvelope, if needed
-	 */
-	public XrootDEnvelope envelope = null;
 	
 	/**
 	 * @param db

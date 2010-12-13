@@ -42,28 +42,27 @@ public class Xrd3cp extends Xrootd {
 			command.add(source.pfn);
 			command.add(target.pfn);
 
-			if (source.envelope == null) {
+			if (source.ticket==null || source.ticket.envelope == null) {
 				throw new IOException("The ticket for source PFN " + source.toString()
 						+ " could not be found.");
 			}
-			if (target.envelope == null) {
+			if (target.ticket==null || target.ticket.envelope == null) {
 				throw new IOException("The ticket for target PFN " + target.toString()
 						+ " could not be found.");
 			}
 			
+			if (source.ticket.envelope.getEncryptedEnvelope()!=null)
+				command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
+			else
+			if (source.ticket.envelope.getSignedEnvelope()!=null)
+				command.add("\"authz="+source.ticket.envelope.getSignedEnvelope()+"\"");
 
-				if (source.envelope.getEncryptedEnvelope()!=null)
-					command.add("\"authz="+source.envelope.getEncryptedEnvelope()+"\"");
-				else
-				if (source.envelope.getSignedEnvelope()!=null)
-					command.add("\"authz="+source.envelope.getSignedEnvelope()+"\"");
-
-				
-				if (source.envelope.getEncryptedEnvelope()!=null)
-					command.add("\"authz="+source.envelope.getEncryptedEnvelope()+"\"");
-				else
-				if (source.envelope.getSignedEnvelope()!=null)
-					command.add("\"authz="+source.envelope.getSignedEnvelope()+"\"");
+			
+			if (source.ticket.envelope.getEncryptedEnvelope()!=null)
+				command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
+			else
+			if (source.ticket.envelope.getSignedEnvelope()!=null)
+				command.add("\"authz="+source.ticket.envelope.getSignedEnvelope()+"\"");
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
@@ -90,7 +89,7 @@ public class Xrd3cp extends Xrootd {
 	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
 	        }
 	        
-	        return xrdstat(target,(source.envelope.getSignedEnvelope()==null));
+	        return xrdstat(target,(source.ticket.envelope.getSignedEnvelope()==null));
 		}
 		catch (final IOException ioe){
 			throw ioe;
