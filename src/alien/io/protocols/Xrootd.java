@@ -25,12 +25,6 @@ import alien.config.ConfigUtils;
  * @since Dec 8, 2010
  */
 public class Xrootd extends Protocol {
-
-	private static String xrdcpenvKey = "LD_LIBRARY_PATH";
-	private static String xrdcpenvVal = "/lib:/lib:/opt/alien/api/lib/";
-	private static String xrdcplocation = "/opt/alien/api/bin/xrdcp";
-	// private static String xrdcplocation = "/opt/alien/api/bin/xrdcpapmon";
-	private static String xrdstatlocation = "/opt/alien/api/bin/xrdstat";
 	private static String xrdcpdebug = "-d";
 	private static int xrdcpdebuglevel = 0;
 	private static String DIFirstConnectMaxCnt = "6";
@@ -91,7 +85,7 @@ public class Xrootd extends Protocol {
 
 		try {
 			final List<String> command = new LinkedList<String>();
-			command.add(xrdcplocation);
+			command.add("xrdcpapmon");
 			command.add("-DIFirstConnectMaxCnt");
 			command.add(DIFirstConnectMaxCnt);
 			if (xrdcpdebuglevel > 0) {
@@ -109,8 +103,6 @@ public class Xrootd extends Protocol {
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
-
-			pBuilder.environment().put(xrdcpenvKey, xrdcpenvVal);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -181,7 +173,7 @@ public class Xrootd extends Protocol {
 
 		try {
 			final List<String> command = new LinkedList<String>();
-			command.add(xrdcplocation);
+			command.add("xrdcpapmon");
 			command.add("-DIFirstConnectMaxCnt");
 			command.add(DIFirstConnectMaxCnt);
 			if (xrdcpdebuglevel > 0) {
@@ -203,8 +195,6 @@ public class Xrootd extends Protocol {
 			}
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-
-			pBuilder.environment().put(xrdcpenvKey, xrdcpenvVal);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -260,7 +250,7 @@ public class Xrootd extends Protocol {
 		for (int statRetryCounter=0; statRetryCounter<statRetryTimes.length; statRetryCounter++){
 			try {
 				final List<String> command = new LinkedList<String>();
-				command.add(xrdstatlocation);
+				command.add("xrdstat");
 				if (xrdcpdebuglevel > 0) {
 					command.add(xrdcpdebug);
 					command.add(String.valueOf(xrdcpdebuglevel));
@@ -275,8 +265,6 @@ public class Xrootd extends Protocol {
 	
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 						command);
-	
-				pBuilder.environment().put(xrdcpenvKey, xrdcpenvVal);
 	
 				pBuilder.returnOutputOnExit(true);
 	
