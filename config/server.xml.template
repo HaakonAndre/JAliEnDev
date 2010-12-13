@@ -39,7 +39,7 @@
     secure='true'
     protocol="org.apache.coyote.http11.Http11Protocol"
     enableLookups='false'
-    sslCertFile='@PATHTO@2/tomcat/conf/newcert.cer'
+    sslCertFile='@PATHTO@/tomcat/conf/newcert.cer'
     sslKey='@PATHTO@/tomcat/conf/privkey.pem'
     sslCAFiles='@ALIEN@/globus/share/certificates/*.0'
     trustStoreDir="@ALIEN@/globus/share/certificates"
