@@ -27,8 +27,10 @@ import alien.config.ConfigUtils;
 public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
 	private static int xrdcpdebuglevel = 0;
+	
 	private static String DIFirstConnectMaxCnt = "6";
 
+	// last value must be 0 for a clean exit
 	private static final int statRetryTimes[] = { 6, 12, 30, 0 };
 
 	/**
@@ -74,13 +76,13 @@ public class Xrootd extends Protocol {
 		}
 
 		if (target == null) {
-			target = File.createTempFile("xrd", null);
+			target = File.createTempFile("xrootd-get", null);
 			target.delete();
 		}
 
-		if (pfn.ticket==null || pfn.ticket.envelope == null) {
+		if (pfn.ticket==null || pfn.ticket.type!=AccessType.READ) {
 			throw new IOException("The envelope for PFN " + pfn.toString()
-					+ " could not be found.");
+					+ " could not be found or is not a READ one.");
 		}
 
 		try {
@@ -95,14 +97,15 @@ public class Xrootd extends Protocol {
 			command.add(pfn.pfn);
 			command.add(target.getCanonicalPath());
 
-			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-				command.add("-OD&authz=\""
+			if (pfn.ticket.envelope!=null){
+				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
+					command.add("-OD&authz=\""
 						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
-			else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-				command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+			}
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					command);
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
 
