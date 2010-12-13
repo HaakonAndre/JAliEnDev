@@ -38,10 +38,26 @@ public class TestXrootDEngine {
 		if (user.hasRole("admin"))
 			System.out.println("I got root! ");
 
-		String lfnOrGUID = "/pcalice46/user/a/ali/24-createorgportal.t";
+//		String lfnOrGUID = "/pcalice46/user/a/ali/databaseSign.pm"; // on XR1 signed
+		
+		String lfnOrGUID = "/pcalice46/user/a/ali/Dataset.pm"; // on subatech
+		
 
 		// lfnOrGUID = "dcf4fbf0-0636-11e0-aa7a-00235a36bb1b";
 
+		
+		LFN lfn = LFNUtils.getLFN(lfnOrGUID);
+		if (lfn==null){
+			System.err.println("LFN is null, cannot continue testing");
+			return;
+		}
+		
+
+		XrootDEnvelopeSigner signEngine = new XrootDEnvelopeSigner();
+
+		long start = System.currentTimeMillis();
+		
+		
 		String access = "read";
 		File myCopy = new File("/tmp/javateststuff");
 
@@ -54,9 +70,11 @@ public class TestXrootDEngine {
 
 		System.out.println("PFN1: " + pfns.iterator().next().toString());
 
-		XrootDEnvelopeSigner signEngine = new XrootDEnvelopeSigner();
 
 		signEngine.signEnvelopesForAccess(ticket);
+		
+		long middle = System.currentTimeMillis();
+
 
 		PFN pfn = pfns.iterator().next();
 
@@ -81,6 +99,11 @@ public class TestXrootDEngine {
 			}
 		}
 		System.out.println("Local file copy content: " + content);
+
+		long end = System.currentTimeMillis();
+
+		System.out.println("Execution time envelope creation was "+(middle-start)+" ms.");
+		System.out.println("Execution time including getting file  was "+(end-start)+" ms.");
 
 	}
 }

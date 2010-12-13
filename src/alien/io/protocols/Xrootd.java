@@ -31,7 +31,7 @@ public class Xrootd extends Protocol {
 	private static String xrdcpenvKey = "LD_LIBRARY_PATH";
 	private static String xrdcpenvVal = "/lib:/lib:/opt/alien/api/lib/";
 	private static String xrdcplocation = "/opt/alien/api/bin/xrdcp";
-//	private static String xrdcplocation = "/opt/alien/api/bin/xrdcpapmon";
+	// private static String xrdcplocation = "/opt/alien/api/bin/xrdcpapmon";
 	private static String xrdstatlocation = "/opt/alien/api/bin/xrdstat";
 	private static String xrdcpdebug = "-d";
 	private static int xrdcpdebuglevel = 0;
@@ -74,15 +74,14 @@ public class Xrootd extends Protocol {
 		File target = null;
 
 		if (localFile != null) {
+			if (localFile.exists())
+				throw new IOException("Local file " + localFile.getCanonicalPath()
+						+ " exists already. Xrdcp would fail.");
 			target = localFile;
-//
-//			if (!target.createNewFile())
-//				throw new IOException("Local file " + localFile
-//						+ " could not be created");
 		}
 
 		if (target == null) {
-			target = File.createTempFile("xrootd", null);
+			// TODO: we need a temporary file name, the file may NOT exist, otherwise xrdcp fails
 		}
 
 		if (pfn.envelope == null) {
@@ -104,11 +103,9 @@ public class Xrootd extends Protocol {
 
 			if (pfn.envelope.getEncryptedEnvelope() != null)
 				command.add("-OD&authz=\""
-						+ pfn.envelope.getEncryptedEnvelope()
-						+ "\"");
+						+ pfn.envelope.getEncryptedEnvelope() + "\"");
 			else if (pfn.envelope.getSignedEnvelope() != null)
-				command.add("-OD"
-						+ pfn.envelope.getSignedEnvelope());
+				command.add("-OD" + pfn.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
@@ -200,11 +197,9 @@ public class Xrootd extends Protocol {
 
 			if (pfn.envelope.getEncryptedEnvelope() != null)
 				command.add("-OD&authz=\""
-						+ pfn.envelope.getEncryptedEnvelope()
-						+ "\"");
+						+ pfn.envelope.getEncryptedEnvelope() + "\"");
 			else if (pfn.envelope.getSignedEnvelope() != null)
-				command.add("-OD"
-						+ pfn.envelope.getSignedEnvelope());
+				command.add("-OD" + pfn.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
@@ -274,8 +269,9 @@ public class Xrootd extends Protocol {
 				command.add("-returnEnvelope");
 			command.add(pfn.toString());
 
-			if ((pfn.envelope != null) &&  (pfn.envelope.getSignedEnvelope() != null))
-					command.add("-OD" + pfn.envelope.getSignedEnvelope());
+			if ((pfn.envelope != null)
+					&& (pfn.envelope.getSignedEnvelope() != null))
+				command.add("-OD" + pfn.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
@@ -331,8 +327,8 @@ public class Xrootd extends Protocol {
 							throw new IOException(
 									"The xrdstat could not confirm the file to be uploaded with size, reported size: "
 											+ filesize
-													+ ", expected size: "
-													+ pfn.envelope.ticket.getLFN().size);
+											+ ", expected size: "
+											+ pfn.envelope.ticket.getLFN().size);
 						}
 					}
 				}
