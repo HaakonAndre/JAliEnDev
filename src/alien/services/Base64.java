@@ -17,18 +17,17 @@ package alien.services;
  *
  */
 
+/**
+ * Implementation of MIME's Base64 encoding and decoding conversions.
+ * Optimized code. (raw version taken from oreilly.jonathan.util, and
+ * currently org.apache.xerces.ds.util.Base64)
+ * 
+ * @author Raul Benito(Of the xerces copy, and little adaptations).
+ * @author Anli Shundi
+ * @author Christian Geuer-Pollmann
+ * @see <A HREF="ftp://ftp.isi.edu/in-notes/rfc2045.txt">RFC 2045</A>
+ */
 public class Base64 {
-  /**
-   * Implementation of MIME's Base64 encoding and decoding conversions.
-   * Optimized code. (raw version taken from oreilly.jonathan.util, and
-   * currently org.apache.xerces.ds.util.Base64)
-   * 
-   * @author Raul Benito(Of the xerces copy, and little adaptations).
-   * @author Anli Shundi
-   * @author Christian Geuer-Pollmann
-   * @see <A HREF="ftp://ftp.isi.edu/in-notes/rfc2045.txt">RFC 2045</A>
-   * @see org.apache.xml.security.transforms.implementations.TransformBase64Decode
-   */
 
   /**
    * Field BASE64DEFAULTLENGTH
@@ -107,11 +106,19 @@ public class Base64 {
     return encode(binaryData, BASE64DEFAULTLENGTH, false);
   }
 
-  protected static boolean isWhiteSpace(byte octect) {
+  /**
+ * @param octect
+ * @return true if white space
+ */
+protected static boolean isWhiteSpace(byte octect) {
     return (octect == 0x20 || octect == 0xd || octect == 0xa || octect == 0x9);
   }
 
-  protected static boolean isPad(byte octect) {
+  /**
+ * @param octect
+ * @return true if padding
+ */
+protected static boolean isPad(byte octect) {
     return (octect == PAD);
   }
 
@@ -120,12 +127,15 @@ public class Base64 {
    * 
    * @param binaryData
    *          <code>byte[]</code> data to be encoded
-   * @param length
+   * @param len
    *          <code>int<code> length of wrapped lines; No wrapping if less than 4.
+   * @param wrap 
    * @return a <code>String</code> with encoded data
    */
-  public static String encode(byte[] binaryData, int length, boolean wrap) {
+  public static String encode(byte[] binaryData, int len, boolean wrap) {
 
+	  int length = len; 
+	  
     if (length < 4) {
       length = Integer.MAX_VALUE;
     }
@@ -228,6 +238,7 @@ public class Base64 {
    * @param encoded
    *          String containing Base64 data
    * @return Array containing decoded data.
+   * @throws RuntimeException 
    */
   public static byte[] decode(String encoded) throws RuntimeException {
     byte[] base64Data = encoded.getBytes();
@@ -332,14 +343,6 @@ public class Base64 {
         data[newSize++] = dataS;
     }
     return newSize;
-  }
-
-  /**
-   * @param args
-   */
-  public static void main(String[] args) {
-    // TODO Auto-generated method stub
-
   }
 }
 
