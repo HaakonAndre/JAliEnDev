@@ -150,6 +150,9 @@ public class SE implements Serializable, Comparable<SE>{
 			"seExclusiveWrite\t: "+seExclusiveWrite;
 	}
 	
+	/**
+	 * @return SE name
+	 */
 	public String getName(){
 		return seName;
 	}
