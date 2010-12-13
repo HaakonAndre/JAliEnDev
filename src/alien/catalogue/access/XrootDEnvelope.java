@@ -3,6 +3,8 @@ package alien.catalogue.access;
 import java.io.Serializable;
 import java.util.Set;
 
+import lazyj.Format;
+
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
@@ -73,16 +75,16 @@ public class XrootDEnvelope implements Serializable {
 		
 		String ret = "<authz>\n  <file>\n"
 		+ "    <access>"+ access+"</access>\n"
-		+ "    <turl>"+ pfn.getPFN()+ "</turl>\n";
+		+ "    <turl>"+ Format.escHtml(pfn.getPFN())+ "</turl>\n";
 		
 		if (lfns!=null && lfns.size()>0)
-			ret += "    <lfn>"+lfns.iterator().next().getCanonicalName()+"</lfn>\n";
+			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
 		
-		ret += "    <size>"+Long.toString(guid.size)+"</size>" + "\n"
-		+ "    <pfn>"+pfnsplit[2]+"</pfn>\n"
-		+ "    <se>"+se.getName()+"</se>\n"
-		+ "    <guid>"+guid.getName()+"</guid>\n"
-		+ "    <md5>"+guid.md5+"</md5>\n"
+		ret += "    <size>"+guid.size+"</size>" + "\n"
+		+ "    <pfn>"+Format.escHtml(pfnsplit[2])+"</pfn>\n"
+		+ "    <se>"+Format.escHtml(se.getName())+"</se>\n"
+		+ "    <guid>"+Format.escHtml(guid.getName())+"</guid>\n"
+		+ "    <md5>"+Format.escHtml(guid.md5)+"</md5>\n"
 		+ "  </file>\n</authz>\n";
 		
 		return ret;
@@ -100,14 +102,14 @@ public class XrootDEnvelope implements Serializable {
 		
 		final SE se = SEUtils.getSE(pfn.seNumber);
 		
-		String ret = "turl=" + pfn.getPFN() + "&access=" + type.toString();
+		String ret = "turl=" + Format.encode(pfn.getPFN()) + "&access=" + type.toString();
 		
 		if (lfns!=null && lfns.size()>0)
-			ret += "&lfn=" + lfns.iterator().next().getCanonicalName();
+			ret += "&lfn=" + Format.encode(lfns.iterator().next().getCanonicalName());
 	
-		ret += "&guid=" + guid.getName() +
-		"&se=" + se.getName() +
-		"&size=" + guid.size + "&md5="+ guid.md5;
+		ret += "&guid=" + Format.encode(guid.getName()) +
+		"&se=" + Format.encode(se.getName()) +
+		"&size=" + guid.size + "&md5="+ Format.encode(guid.md5);
 		
 		return ret;
 	}
