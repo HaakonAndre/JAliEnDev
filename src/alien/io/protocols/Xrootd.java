@@ -17,6 +17,7 @@ import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 
 /**
@@ -34,9 +35,7 @@ public class Xrootd extends Protocol {
 	private static int xrdcpdebuglevel = 0;
 	private static String DIFirstConnectMaxCnt = "6";
 
-	private static int statRetries = 3;
-	private static int statRetryTimes[] = { 6, 12, 30 };
-	private int statRetryCounter = 0;
+	private static final int statRetryTimes[] = { 6, 12, 30, 0 };
 
 	/**
 	 * Logger
@@ -172,14 +171,12 @@ public class Xrootd extends Protocol {
 				|| !localFile.canRead())
 			throw new IOException("Local file " + localFile + " cannot be read");
 
-		if (pfn.ticket==null || pfn.ticket.envelope == null) {
-			throw new IOException("The envelope for PFN " + pfn.toString()
-					+ " could not be found.");
+		if (pfn.ticket == null || pfn.ticket.type!=AccessType.WRITE) {
+			throw new IOException("No access to this PFN");
 		}
 		
 		if (localFile.length() != pfn.getGuid().size) {
-			throw new IOException("The ticket for PFN " + pfn.toString()
-					+ " does not match file size of " + localFile.getName());
+			throw new IOException("Difference in sizes: local="+localFile.length()+" / pfn="+pfn.getGuid().size);
 		}
 
 		try {
@@ -197,14 +194,15 @@ public class Xrootd extends Protocol {
 			command.add(localFile.getCanonicalPath());
 			command.add(pfn.pfn);
 
-			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-				command.add("-OD&authz=\""
+			if (pfn.ticket.envelope != null){
+				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
+					command.add("-OD&authz=\""
 						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
-			else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-				command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+			}
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					command);
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.environment().put(xrdcpenvKey, xrdcpenvVal);
 
@@ -259,109 +257,99 @@ public class Xrootd extends Protocol {
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope) throws IOException {
-		statRetryCounter = 0;
-		return xrdstatImpl(pfn, returnEnvelope);
-	}
-	
-	private String xrdstatImpl(final PFN pfn, final boolean returnEnvelope) throws IOException {
-
-		try {
-			final List<String> command = new LinkedList<String>();
-			command.add(xrdstatlocation);
-			if (xrdcpdebuglevel > 0) {
-				command.add(xrdcpdebug);
-				command.add(String.valueOf(xrdcpdebuglevel));
-			}
-			if (returnEnvelope)
-				command.add("-returnEnvelope");
-			command.add(pfn.toString());
-
-			if ((pfn.ticket.envelope != null)
-					&& (pfn.ticket.envelope.getSignedEnvelope() != null))
-				command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
-
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					command);
-
-			pBuilder.environment().put(xrdcpenvKey, xrdcpenvVal);
-
-			pBuilder.returnOutputOnExit(true);
-
-			pBuilder.timeout(24, TimeUnit.HOURS);
-
-			pBuilder.redirectErrorStream(true);
-
-			ExitStatus exitStatus;
-
+		for (int statRetryCounter=0; statRetryCounter<statRetryTimes.length; statRetryCounter++){
 			try {
-				exitStatus = pBuilder.start().waitFor();
-			} catch (final InterruptedException ie) {
-				throw new IOException(
-						"Interrupted while waiting for the following command to finish : "
-								+ command.toString());
-			}
-
-			if (exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
-				throw new IOException("Executor finish status: "
-						+ exitStatus.getExecutorFinishStatus()
-						+ " for command: " + command.toString());
-			}
-
-			if (exitStatus.getExtProcExitStatus() != 0) {
-				if (waitAndTryAgain()) {
-					return xrdstat(pfn, returnEnvelope);
+				final List<String> command = new LinkedList<String>();
+				command.add(xrdstatlocation);
+				if (xrdcpdebuglevel > 0) {
+					command.add(xrdcpdebug);
+					command.add(String.valueOf(xrdcpdebuglevel));
+				}
+				if (returnEnvelope)
+					command.add("-returnEnvelope");
+				command.add(pfn.toString());
+	
+				if ((pfn.ticket.envelope != null)
+						&& (pfn.ticket.envelope.getSignedEnvelope() != null))
+					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+	
+				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
+						command);
+	
+				pBuilder.environment().put(xrdcpenvKey, xrdcpenvVal);
+	
+				pBuilder.returnOutputOnExit(true);
+	
+				pBuilder.timeout(24, TimeUnit.HOURS);
+	
+				pBuilder.redirectErrorStream(true);
+	
+				ExitStatus exitStatus;
+	
+				try {
+					exitStatus = pBuilder.start().waitFor();
+				} catch (final InterruptedException ie) {
+					throw new IOException(
+							"Interrupted while waiting for the following command to finish : "
+									+ command.toString());
+				}
+	
+				if (exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
+					throw new IOException("Executor finish status: "
+							+ exitStatus.getExecutorFinishStatus()
+							+ " for command: " + command.toString());
 				}
 				
-				throw new IOException("Exit code was not zero but "
-						+ exitStatus.getExtProcExitStatus()
-						+ " for command : " + command.toString());
-			}
-			
-			if (returnEnvelope) {
-				return exitStatus.getStdOut(); // TODO this is not the
-												// return envelope, we have
-												// to get first the xrdcp
-												// implementation, than
-												// finish this
-			}
-			
-			long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
-			
-			if (pfn.getGuid().size == filesize) {
-				return pfn.ticket.envelope.getSignedEnvelope();
-			}
-			
-			if (waitAndTryAgain()) {
-				return xrdstat(pfn, false);
-			}
-			
-			throw new IOException(
-					"The xrdstat could not confirm the file to be uploaded with size, reported size: "
-							+ filesize
-							+ ", expected size: "
-							+ pfn.getGuid().size);
-		} catch (final IOException ioe) {
-			throw ioe;
-		} catch (final Throwable t) {
-			logger.log(Level.WARNING, "Caught exception", t);
+				final int sleep = statRetryTimes[statRetryCounter];
+	
+				if (exitStatus.getExtProcExitStatus() != 0) {
+					if (sleep==0){
+						throw new IOException("Exit code was not zero but "
+							+ exitStatus.getExtProcExitStatus()
+							+ " for command : " + command.toString());
+					}
+					
+					Thread.sleep(sleep * 1000);
+					continue;					
+				}
+				
+				if (returnEnvelope) {
+					return exitStatus.getStdOut(); // TODO this is not the
+													// return envelope, we have
+													// to get first the xrdcp
+													// implementation, than
+													// finish this
+				}
+				
+				long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
+				
+				if (pfn.getGuid().size == filesize) {
+					return pfn.ticket.envelope.getSignedEnvelope();
+				}
 
-			throw new IOException("Get aborted because " + t);
-		}
-	}
-
-	private boolean waitAndTryAgain() {
-		if (statRetryCounter < statRetries) {
-			try {
-				Thread.sleep(statRetryTimes[statRetryCounter]);
-			} catch (InterruptedException e) {
-				// the VM doesn't want us to sleep anymore,
-				// so get back to work
+				if (sleep==0){
+					throw new IOException(
+						"The xrdstat could not confirm the file to be uploaded with size, reported size: "
+								+ filesize
+								+ ", expected size: "
+								+ pfn.getGuid().size);
+				}
+				
+				Thread.sleep(sleep * 1000);
+				continue;
+				
+			} 
+			catch (final IOException ioe) {
+				throw ioe;
 			}
-			statRetryCounter++;
-			return true;
+			catch (final Throwable t) {
+				logger.log(Level.WARNING, "Caught exception", t);
+
+				throw new IOException("Get aborted because " + t);
+			}
 		}
 		
-		return false;
+		return null;
 	}
 
 	/*
