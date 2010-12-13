@@ -129,7 +129,10 @@ public class PFN implements Serializable, Comparable<PFN>{
 		       "seNumber\t: "+seNumber;
 	}
 	
-	public String getName(){
+	/**
+	 * @return the PFN URL
+	 */
+	public String getPFN(){
 		return pfn;
 	}
 	

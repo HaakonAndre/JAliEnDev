@@ -4,9 +4,6 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import sun.security.krb5.internal.Ticket;
-
-import lazyj.cache.ExpirationCache;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -75,8 +72,9 @@ public final class AuthorizationFactory {
 			lfns = new LinkedHashSet<LFN>(1);
 			lfns.add(lfn);
 		}
-		System.out.println("we found lfn: " + lfn.toString());
-		System.out.println("we found guid: " + guid.toString());
+		
+		System.out.println("we found lfn: " + lfn);
+		System.out.println("we found guid: " + guid);
 		
 		if (AccessType.READ.toString() == access) {
 			if (guid == null)
@@ -138,12 +136,12 @@ public final class AuthorizationFactory {
 				
 				for (LFN lfn1 : lfns){
 					if (lfn1.type != 'f')
-						new AccessTicket(AccessType.DENIED,null);
+						return new AccessTicket(AccessType.DENIED, null);
 					
 					LFN parent = lfn1.getParentDir();
 					
 					if (parent==null || !AuthorizationChecker.canWrite(parent, user))
-						new AccessTicket(AccessType.DENIED,null);
+						return new AccessTicket(AccessType.DENIED, null);
 				}
 				
 				return new AccessTicket(AccessType.DELETE,lfn);
@@ -164,11 +162,4 @@ public final class AuthorizationFactory {
 	public static boolean isAuthorized(final GUID guid, final String access) {
 		return false;
 	}
-
-	/**
-	 * Cache the recently requested read envelopes
-	 */
-	private static final ExpirationCache<UUID, AccessTicket> readEnvelopes = new ExpirationCache<UUID, AccessTicket>(
-			10000);
-
 }
