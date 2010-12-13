@@ -13,6 +13,7 @@ import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
 
 /**
  * @author costing
@@ -42,27 +43,31 @@ public class Xrd3cp extends Xrootd {
 			command.add(source.pfn);
 			command.add(target.pfn);
 
-			if (source.ticket==null || source.ticket.envelope == null) {
+			if (source.ticket==null || source.ticket.type != AccessType.READ) {
 				throw new IOException("The ticket for source PFN " + source.toString()
-						+ " could not be found.");
+						+ " could not be found or is not a READ one.");
 			}
-			if (target.ticket==null || target.ticket.envelope == null) {
+			
+			if (target.ticket==null || target.ticket.type != AccessType.WRITE) {
 				throw new IOException("The ticket for target PFN " + target.toString()
-						+ " could not be found.");
+						+ " could not be found or is not a WRITE one.");
 			}
 			
-			if (source.ticket.envelope.getEncryptedEnvelope()!=null)
-				command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
-			else
-			if (source.ticket.envelope.getSignedEnvelope()!=null)
-				command.add("\"authz="+source.ticket.envelope.getSignedEnvelope()+"\"");
+			if (source.ticket.envelope!=null){
+				if (source.ticket.envelope.getEncryptedEnvelope()!=null)
+					command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
+				else
+					if (source.ticket.envelope.getSignedEnvelope()!=null)
+						command.add("\"authz="+source.ticket.envelope.getSignedEnvelope()+"\"");
+			}
 
-			
-			if (source.ticket.envelope.getEncryptedEnvelope()!=null)
-				command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
-			else
-			if (source.ticket.envelope.getSignedEnvelope()!=null)
-				command.add("\"authz="+source.ticket.envelope.getSignedEnvelope()+"\"");
+			if (target.ticket.envelope!=null){
+				if (target.ticket.envelope.getEncryptedEnvelope()!=null)
+					command.add("\"authz="+target.ticket.envelope.getEncryptedEnvelope()+"\"");
+				else
+					if (target.ticket.envelope.getSignedEnvelope()!=null)
+						command.add("\"authz="+target.ticket.envelope.getSignedEnvelope()+"\"");
+			}
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 			
