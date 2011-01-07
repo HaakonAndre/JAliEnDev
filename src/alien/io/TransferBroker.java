@@ -19,9 +19,13 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 
 /**
  * @author costing
@@ -188,9 +192,24 @@ public class TransferBroker {
 		final PFN source = sortedPFNs.get(0);
 
 		// TODO : register the PFN in the booking table
-		// TODO : generate access envelopes for both endpoints 
 		
-		final Transfer t = new Transfer(source, target);
+		final AliEnPrincipal admin = UserFactory.getByUsername("admin");
+		
+		String reason = AuthorizationFactory.fillAccess(admin, source, AccessType.READ);
+		
+		if (reason!=null){
+			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Source authorization failed: "+reason);
+			return null;
+		}
+		
+		reason = AuthorizationFactory.fillAccess(admin, target, AccessType.WRITE);
+
+		if (reason!=null){
+			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target authorization failed: "+reason);
+			return null;
+		}
+		
+		final Transfer t = new Transfer(transferId, source, target);
 		
 		return t;
 	}
@@ -219,5 +238,16 @@ public class TransferBroker {
 			return;
 		
 		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(reason)+"' WHERE transferId="+transferId);
+	}
+	
+	/**
+	 * When a transfer has completed, call this method to update the database status
+	 * 
+	 * @param t 
+	 */
+	public void notifyTransferComplete(final Transfer t){
+		// TODO : verify the storage reply envelope here
+		
+		markTransfer(t.getTransferId(), t.getExitCode(), t.getFailureReason());
 	}
 }

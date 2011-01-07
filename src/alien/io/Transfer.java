@@ -56,6 +56,8 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	private static final long serialVersionUID = -4620016257875988468L;
 	
+	private final int transferId;
+	
 	private final PFN source;
 	
 	private final PFN target;
@@ -65,16 +67,19 @@ public class Transfer implements Serializable, Runnable {
 	private String storageReplyEnvelope;
 	
 	/**
+	 * @param transferId transfer ID
 	 * @param source source PFN
 	 * @param target target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
 	 */
-	public Transfer(final PFN source, final PFN target){
+	public Transfer(final int transferId, final PFN source, final PFN target){
 		this.source = source;
 		
 		if (this.source==null)
 			throw new IllegalArgumentException("Source cannot be null");
 		
 		this.target = target;
+		
+		this.transferId = transferId;
 	}
 	
 	/**
@@ -89,7 +94,17 @@ public class Transfer implements Serializable, Runnable {
 		if (pfn==null)
 			return ret;
 		
-		final String s = pfn.pfn.substring(pfn.pfn.indexOf("://")).trim().toLowerCase();
+		final String sPFN = pfn.pfn;
+		
+		if (sPFN==null || sPFN.length()==0)
+			return ret;
+		
+		final int idx = sPFN.indexOf("://");
+		
+		if (idx<=0)
+			return ret;
+		
+		final String s = sPFN.substring(0, idx).trim().toLowerCase();
 		
 		if (s.equals("root")){
 			ret.add(Factory.xrd3cp);
@@ -294,5 +309,12 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	public String getStorageReplyEnvelope(){
 		return storageReplyEnvelope;
+	}
+	
+	/**
+	 * @return the transfer ID
+	 */
+	public int getTransferId() {
+		return transferId;
 	}
 }
