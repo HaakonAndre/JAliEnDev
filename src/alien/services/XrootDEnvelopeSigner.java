@@ -101,38 +101,6 @@ public class XrootDEnvelopeSigner {
 	}
 	
 	private static EncryptedAuthzToken authz = null;
-
-	/**
-	 * @param envelope
-	 * @throws NoSuchAlgorithmException
-	 * @throws InvalidKeyException
-	 * @throws SignatureException
-	 */
-	public void signEnvelope(final XrootDEnvelope envelope) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-
-		// System.out.println("About to be signed: " +
-		// envelope.getUnsignedEnvelope());
-
-		final long issued = System.currentTimeMillis() / 1000L;
-		final long expires = issued + 86400;
-
-		final String toBeSigned = envelope.getUnsignedEnvelope()
-				+ "&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires
-				+ "&hashord=" + XrootDEnvelope.hashord
-				+ "-issuer-issued-expires-hashord";
-
-		final Signature signer = Signature.getInstance("SHA384withRSA");
-		signer.initSign(AuthenPrivKey);
-		signer.update(toBeSigned.getBytes());
-
-		final byte[] rawsignature = signer.sign();
-
-		envelope.setSignedEnvelope(toBeSigned + "&signature="
-				+ String.valueOf(Base64.encode(rawsignature)));
-
-		// System.out.println("We signed: " + envelope.getSignedEnvelope());
-
-	}
 	
 	private static String localHostName = null;
 	
