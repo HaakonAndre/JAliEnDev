@@ -130,7 +130,11 @@ public class Transfer implements Serializable, Runnable {
 	 * @return protocols that match both
 	 */
 	public static List<Protocol> getProtocols(final PFN source, final PFN target){
-		final List<Protocol> ret = new LinkedList<Protocol>();
+		final List<Protocol> ret = getProtocols(source);
+		
+		final List<Protocol> targetProtocols = getProtocols(target);
+		
+		ret.retainAll(targetProtocols);
 		
 		return ret;
 	}
@@ -316,5 +320,10 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	public int getTransferId() {
 		return transferId;
+	}
+	
+	@Override
+	public String toString() {
+		return "ID: "+transferId+", exitCode: "+exitCode+", reason: "+failureReason;
 	}
 }

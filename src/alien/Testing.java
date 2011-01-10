@@ -11,6 +11,8 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import alien.io.Transfer;
+import alien.io.TransferBroker;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SEUtils;
@@ -33,10 +35,17 @@ public class Testing {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws Exception {
 		//testMonitoring();
 		
-		testFileOperations();
+		Transfer t = TransferBroker.getInstance().getWork();
+		System.err.println("Start: "+t);
+		
+		if (t!=null){
+			t.run();
+			System.err.println("End: "+t);
+			TransferBroker.getInstance().notifyTransferComplete(t);
+		}
 		
 //		for (int i=0; i<10; i++)
 //			System.err.println(GUIDUtils.generateTimeUUID());

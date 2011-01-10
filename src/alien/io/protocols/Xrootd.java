@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
@@ -36,8 +35,7 @@ public class Xrootd extends Protocol {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class
-			.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
 
 	/**
 	 * package protected
@@ -56,6 +54,35 @@ public class Xrootd extends Protocol {
 	 */
 	public void setDebugLevel(int level) {
 		xrdcpdebuglevel = level;
+	}
+	
+	/**
+	 * Extract the most relevant failure reason from an xrdcp / xrd3cp output
+	 * 
+	 * @param message
+	 * @return relevant portion of the output
+	 */
+	public static final String parseXrootdError(final String message){
+		if (message==null || message.length()==0)
+			return null;
+		
+		int idx = message.indexOf("Last server error");
+		
+		if (idx>=0){
+			idx = message.indexOf("('", idx);
+			
+			if (idx>0){
+				idx+=2;
+				
+				int idx2 = message.indexOf("')", idx);
+				
+				if (idx2>idx){
+					return message.substring(idx, idx2);
+				}
+			}
+		}
+		
+		return null;
 	}
 
 	/*
@@ -113,7 +140,7 @@ public class Xrootd extends Protocol {
 
 			pBuilder.redirectErrorStream(true);
 
-			ExitStatus exitStatus;
+			final ExitStatus exitStatus;
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
@@ -123,17 +150,19 @@ public class Xrootd extends Protocol {
 								+ command.toString());
 			}
 
-			if (exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
-				System.out.println(exitStatus.getStdOut());
-				throw new IOException("Executor finish status: "
-						+ exitStatus.getExecutorFinishStatus()
-						+ " for command: " + command.toString());
-			}
-
 			if (exitStatus.getExtProcExitStatus() != 0) {
-				throw new IOException("Exit code was not zero but "
-						+ exitStatus.getExtProcExitStatus() + " for command : "
-						+ command.toString());
+				String sMessage = parseXrootdError(exitStatus.getStdOut());
+				
+				logger.log(Level.WARNING, "GET failed with "+exitStatus.getStdOut());
+				
+				if (sMessage!=null){
+					sMessage = "xrdcpapmon exited with "+exitStatus.getExtProcExitStatus()+": "+sMessage;
+				}
+				else{
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+				}
+				
+				throw new IOException(sMessage);
 			}
 
 			if (!checkDownloadedFile(target, pfn))
@@ -205,7 +234,7 @@ public class Xrootd extends Protocol {
 
 			pBuilder.redirectErrorStream(true);
 
-			ExitStatus exitStatus;
+			final ExitStatus exitStatus;
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
@@ -214,20 +243,25 @@ public class Xrootd extends Protocol {
 						"Interrupted while waiting for the following command to finish : "
 								+ command.toString());
 			}
-
-			if (exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
-				throw new IOException("Executor finish status: "
-						+ exitStatus.getExecutorFinishStatus()
-						+ " for command: " + command.toString());
-			}
-
+			
 			if (exitStatus.getExtProcExitStatus() != 0) {
-				throw new IOException("Exit code was not zero but "
-						+ exitStatus.getExtProcExitStatus() + " for command : "
-						+ command.toString());
+				String sMessage = parseXrootdError(exitStatus.getStdOut());
+
+				logger.log(Level.WARNING, "PUT failed with "+exitStatus.getStdOut());
+				
+				if (sMessage!=null){
+					sMessage = "xrdcpapmon exited with "+exitStatus.getExtProcExitStatus()+": "+sMessage;
+				}
+				else{
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+				}
+				
+				throw new IOException(sMessage);
 			}
+
 			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 				return xrdstat(pfn, false);
+			
 			return xrdstat(pfn, true);
 		} catch (final IOException ioe) {
 			throw ioe;
@@ -284,18 +318,12 @@ public class Xrootd extends Protocol {
 							"Interrupted while waiting for the following command to finish : "
 									+ command.toString());
 				}
-	
-				if (exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
-					throw new IOException("Executor finish status: "
-							+ exitStatus.getExecutorFinishStatus()
-							+ " for command: " + command.toString());
-				}
 				
 				final int sleep = statRetryTimes[statRetryCounter];
 	
 				if (exitStatus.getExtProcExitStatus() != 0) {
 					if (sleep==0){
-						throw new IOException("Exit code was not zero but "
+						throw new IOException("Exit code was "
 							+ exitStatus.getExtProcExitStatus()
 							+ " for command : " + command.toString());
 					}
@@ -351,8 +379,7 @@ public class Xrootd extends Protocol {
 	 * alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
-	public String transfer(final PFN source, final PFN target)
-			throws IOException {
+	public String transfer(final PFN source, final PFN target) throws IOException {
 		final File temp = get(source, null);
 
 		try {

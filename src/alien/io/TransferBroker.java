@@ -193,7 +193,7 @@ public class TransferBroker {
 
 		// TODO : register the PFN in the booking table
 		
-		final AliEnPrincipal admin = UserFactory.getByUsername("admin");
+		final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
 		
 		String reason = AuthorizationFactory.fillAccess(admin, source, AccessType.READ);
 		
@@ -236,8 +236,13 @@ public class TransferBroker {
 		
 		if (db==null)
 			return;
+
+		String formattedReason = reason;
 		
-		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(reason)+"' WHERE transferId="+transferId);
+		if (formattedReason!=null && formattedReason.length()>250)
+			formattedReason = formattedReason.substring(0, 250);
+		
+		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"' WHERE transferId="+transferId);
 	}
 	
 	/**

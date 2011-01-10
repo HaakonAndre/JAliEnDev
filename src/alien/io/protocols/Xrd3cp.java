@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import lia.util.process.ExternalProcess.ExecutorFinishStatus;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
@@ -36,13 +35,6 @@ public class Xrd3cp extends Xrootd {
 		// direct copying between two storages
 		
 		try{
-			final List<String> command = new LinkedList<String>();
-			command.add("xrd3cp");
-			command.add("-m");
-			command.add("-S");
-			command.add(source.pfn);
-			command.add(target.pfn);
-
 			if (source.ticket==null || source.ticket.type != AccessType.READ) {
 				throw new IOException("The ticket for source PFN " + source.toString()
 						+ " could not be found or is not a READ one.");
@@ -53,6 +45,13 @@ public class Xrd3cp extends Xrootd {
 						+ " could not be found or is not a WRITE one.");
 			}
 			
+			final List<String> command = new LinkedList<String>();
+			command.add("xrd3cp");
+			command.add("-m");
+			command.add("-S");
+			command.add(source.pfn);
+			command.add(target.pfn);
+
 			if (source.ticket.envelope!=null){
 				if (source.ticket.envelope.getEncryptedEnvelope()!=null)
 					command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
@@ -77,7 +76,7 @@ public class Xrd3cp extends Xrootd {
 	        
 	        pBuilder.redirectErrorStream(true);
 	        
-	        ExitStatus exitStatus;
+	        final ExitStatus exitStatus;
 	        
 	        try{
 	        	exitStatus = pBuilder.start().waitFor();
@@ -86,12 +85,19 @@ public class Xrd3cp extends Xrootd {
 	        	throw new IOException("Interrupted while waiting for the following command to finish : "+command.toString());
 	        }
 	        
-	        if(exitStatus.getExecutorFinishStatus() != ExecutorFinishStatus.NORMAL) {
-	            throw new IOException("Executor finish status: " + exitStatus.getExecutorFinishStatus() + " for command: " + command.toString());
-	        }
-	        
 	        if (exitStatus.getExtProcExitStatus() != 0){
-	        	throw new IOException("Exit code was not zero but "+exitStatus.getExtProcExitStatus()+" for command : "+command.toString());
+				String sMessage = parseXrootdError(exitStatus.getStdOut());
+				
+				logger.log(Level.WARNING, "TRANSFER failed with "+exitStatus.getStdOut());
+				
+				if (sMessage!=null){
+					sMessage = "xrd3cp exited with "+exitStatus.getExtProcExitStatus()+": "+sMessage;
+				}
+				else{
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+				}
+				
+				throw new IOException(sMessage);
 	        }
 	        
 	        return xrdstat(target,(source.ticket.envelope.getSignedEnvelope()==null));

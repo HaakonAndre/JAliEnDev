@@ -2,7 +2,6 @@ package alien.services;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.IOError;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -14,11 +13,16 @@ import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import lazyj.ExtProperties;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 
 import alien.catalogue.access.XrootDEnvelope;
+import alien.config.ConfigUtils;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 
 /**
@@ -26,17 +30,22 @@ import alien.tsealedEnvelope.EncryptedAuthzToken;
  * @since Nov 14, 2010
  */
 public class XrootDEnvelopeSigner {
+	
+	/**
+	 * logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(XrootDEnvelopeSigner.class.getCanonicalName());
 
-	private static final String AuthenPrivLocation = "/home/ron/authen_keys/lpriv.pem";
-	private static final String AuthenPubLocation = "/home/ron/authen_keys/lpub.pem";
-	private static final String SEPrivLocation = "/home/ron/authen_keys/rpriv.pem";
-	private static final String SEPubLocation = "/home/ron/authen_keys/rpub.pem";
+	private static final String AuthenPrivLocation;
+	private static final String AuthenPubLocation;
+	private static final String SEPrivLocation;
+	private static final String SEPubLocation;
 
 	private static final RSAPrivateKey AuthenPrivKey;
 	private static final RSAPublicKey AuthenPubKey;
 	private static final RSAPrivateKey SEPrivKey;
 	private static final RSAPublicKey SEPubKey;
-
+	
 	/**
 	 * load the RSA keys for envelope signature, keys are supposed to be in pem,
 	 * and can be created with: openssl req -x509 -nodes -days 365 -newkey
@@ -45,24 +54,50 @@ public class XrootDEnvelopeSigner {
 	static{
 		Security.addProvider(new BouncyCastleProvider());
 
+		ExtProperties config = ConfigUtils.getConfig();
+		
+		final String authenKeysLocation = config.gets("Authen.keys.location", System.getProperty("user.home")+System.getProperty("file.separator")+".alien"+System.getProperty("file.separator")+"authen"+System.getProperty("file.separator"));
+		
+		final String seKeysLocation = config.gets("SE.keys.location", authenKeysLocation);
+		
+		AuthenPrivLocation = authenKeysLocation+"lpriv.pem";
+		AuthenPubLocation = authenKeysLocation+"lpub.pem";
+		SEPrivLocation = seKeysLocation+"rpriv.pem";
+		SEPubLocation = seKeysLocation+"rpub.pem";
+
+		RSAPrivateKey authenPrivKey = null;
+		RSAPublicKey  authenPubKey = null;
+		RSAPrivateKey sePrivKey = null;
+		RSAPublicKey  sePubKey = null;
+		
 		try{
-			AuthenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
+			authenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
 					new BufferedReader(new FileReader(AuthenPrivLocation)))
 					.readObject()).getPrivate();
-			AuthenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
+			authenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
 					new BufferedReader(new FileReader(AuthenPubLocation)))
 					.readObject()).getPublicKey();
-
-			SEPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
+		}
+		catch (IOException ioe){
+			logger.log(Level.WARNING, "Authen keys could not be loaded from "+authenKeysLocation);
+		}
+		
+		try{
+			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
 					new BufferedReader(new FileReader(SEPrivLocation)))
 					.readObject()).getPrivate();
-			SEPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
+			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
 					new BufferedReader(new FileReader(SEPubLocation))).readObject())
 					.getPublicKey();
 		}
 		catch (IOException ioe){
-			throw new IOError(ioe);
+			logger.log(Level.WARNING, "SE keys could not be loaded from "+seKeysLocation);
 		}
+		
+		AuthenPrivKey = authenPrivKey;
+		AuthenPubKey = authenPubKey;
+		SEPrivKey = sePrivKey;
+		SEPubKey = sePubKey;
 	}
 	
 	private static EncryptedAuthzToken authz = null;
@@ -73,31 +108,45 @@ public class XrootDEnvelopeSigner {
 	 * @throws InvalidKeyException
 	 * @throws SignatureException
 	 */
-	public void signEnvelope(XrootDEnvelope envelope) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+	public void signEnvelope(final XrootDEnvelope envelope) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
 		// System.out.println("About to be signed: " +
 		// envelope.getUnsignedEnvelope());
 
-		long issued = System.currentTimeMillis() / 1000L;
-		long expires = issued + 86400;
+		final long issued = System.currentTimeMillis() / 1000L;
+		final long expires = issued + 86400;
 
-		String toBeSigned = envelope.getUnsignedEnvelope()
-				+ "&issuer=JAuthenX&issued=" + issued + "&expires=" + expires
+		final String toBeSigned = envelope.getUnsignedEnvelope()
+				+ "&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires
 				+ "&hashord=" + XrootDEnvelope.hashord
 				+ "-issuer-issued-expires-hashord";
 
-		Signature signer = Signature.getInstance("SHA384withRSA");
+		final Signature signer = Signature.getInstance("SHA384withRSA");
 		signer.initSign(AuthenPrivKey);
 		signer.update(toBeSigned.getBytes());
 
-		byte[] rawsignature = new byte[1024];
-		rawsignature = signer.sign();
+		final byte[] rawsignature = signer.sign();
 
 		envelope.setSignedEnvelope(toBeSigned + "&signature="
 				+ String.valueOf(Base64.encode(rawsignature)));
 
 		// System.out.println("We signed: " + envelope.getSignedEnvelope());
 
+	}
+	
+	private static String localHostName = null;
+	
+	private static final String getLocalHostName(){
+		if (localHostName==null){
+			try{
+				localHostName = java.net.InetAddress.getLocalHost().getHostName();
+			}
+			catch (Exception e){
+				// ignore
+			}
+		}
+		
+		return localHostName;
 	}
 
 	/**
@@ -107,31 +156,33 @@ public class XrootDEnvelopeSigner {
 	 * @throws InvalidKeyException
 	 * @throws SignatureException
 	 */
-	public static void signEnvelope(XrootDEnvelope envelope, boolean selfSigned)
+	public static void signEnvelope(final XrootDEnvelope envelope, final boolean selfSigned)
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
 		// System.out.println("About to be signed: " +
 		// envelope.getUnsignedEnvelope());
 
-		long issued = System.currentTimeMillis() / 1000L;
-		long expires = issued + 86400;
+		final long issued = System.currentTimeMillis() / 1000L;
+		final long expires = issued + 86400;
 
-		String toBeSigned = envelope.getUnsignedEnvelope()
-				+ "&issuer=JAuthenX&issued=" + issued + "&expires=" + expires
+		final String toBeSigned = envelope.getUnsignedEnvelope()
+				+ "&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires
 				+ "&hashord=" + XrootDEnvelope.hashord
 				+ "-issuer-issued-expires-hashord";
 
-		Signature signer = Signature.getInstance("SHA384withRSA");
+		final Signature signer = Signature.getInstance("SHA384withRSA");
+		
 		if (selfSigned){
-			signer.initVerify(AuthenPubKey);
-		} else {
-			signer.initVerify(SEPubKey);
+			signer.initSign(SEPrivKey);
 		}
+		else {
+			signer.initSign(AuthenPrivKey);
+		}
+		
 		signer.update(toBeSigned.getBytes());
 
-		byte[] rawsignature = new byte[1024];
-		rawsignature = signer.sign();
+		final byte[] rawsignature = signer.sign();
 
 		envelope.setSignedEnvelope(toBeSigned + "&signature="
 				+ String.valueOf(Base64.encode(rawsignature)));
@@ -144,7 +195,7 @@ public class XrootDEnvelopeSigner {
 	 * @param envelope
 	 * @throws GeneralSecurityException
 	 */
-	public static void encryptEnvelope(XrootDEnvelope envelope) throws GeneralSecurityException {
+	public static void encryptEnvelope(final XrootDEnvelope envelope) throws GeneralSecurityException {
 
 		// System.out.println("About to be encrypted: " +
 		// envelope.getUnEncryptedEnvelope());

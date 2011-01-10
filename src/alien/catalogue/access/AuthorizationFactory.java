@@ -33,7 +33,8 @@ public final class AuthorizationFactory {
 	 */
 	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access) {
 
-		System.out.println("i got: pfn:" + pfn + " for user: "+ user.toString() + " access: " + access);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, pfn + ", user: "+ user + ", access: " + access);
 
 		final GUID guid = pfn.getGuid();
 		
@@ -87,7 +88,7 @@ public final class AuthorizationFactory {
 				}
 			}
 			catch (GeneralSecurityException gse){
-				logger.log(Level.SEVERE, "Cannot sign and encrypt envelope: "+gse);
+				logger.log(Level.SEVERE, "Cannot sign and encrypt envelope", gse);
 			}
 
 		}
