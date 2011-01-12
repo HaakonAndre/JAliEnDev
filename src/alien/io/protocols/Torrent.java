@@ -49,7 +49,7 @@ public class Torrent extends Protocol {
 		// replace torrent:// with http://
 		url = "http"+url.substring(url.indexOf("://"));
 		
-		lazyj.Utils.download(pfn.pfn, target.getCanonicalPath());
+		lazyj.Utils.download(url, target.getCanonicalPath());
 		
 		// TODO implement downloading the actual content!
 		

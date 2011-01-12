@@ -218,7 +218,7 @@ public final class GUIDUtils {
 	
 	private static byte[] MACAddress = null;
 	
-	private static byte[] getMac(){
+	private static synchronized byte[] getMac(){
 		if (MACAddress == null){
 			// figure it out
 			MACAddress = new byte[6];

@@ -25,7 +25,7 @@ import alien.config.ConfigUtils;
  */
 public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
-	private static int xrdcpdebuglevel = 0;
+	private int xrdcpdebuglevel = 0;
 	
 	private static String DIFirstConnectMaxCnt = "6";
 
@@ -52,7 +52,7 @@ public class Xrootd extends Protocol {
 	/**
 	 * @param level xrdcp debug level
 	 */
-	public void setDebugLevel(int level) {
+	public void setDebugLevel(final int level) {
 		xrdcpdebuglevel = level;
 	}
 	

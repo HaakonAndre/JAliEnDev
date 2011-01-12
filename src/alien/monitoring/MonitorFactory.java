@@ -66,8 +66,6 @@ public final class MonitorFactory {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(MonitorFactory.class.getCanonicalName());
 	
-	private static final Object apmonLock = new Object();
-	
 	private static ApMon apmonInstance = null;
 	
 	private static final Map<String, Monitor> monitors = new HashMap<String, Monitor>();
@@ -340,26 +338,22 @@ public final class MonitorFactory {
 	 * 
 	 * @return the sender
 	 */
-	static ApMon getApMonSender(){
+	static synchronized ApMon getApMonSender(){
 		if (apmonInstance!=null)
 			return apmonInstance;
 		
-		synchronized (apmonLock){
-			if (apmonInstance==null){
-				final Vector<String> destinations = getApMonDestinations();
+		final Vector<String> destinations = getApMonDestinations();
 				
-				logger.log(Level.FINE, "ApMon destinations : "+ destinations);
-				
-				try{
-					apmonInstance = new ApMon(destinations);
-				}
-				catch (IOException ioe){
-					logger.log(Level.SEVERE, "Cannot instantiate ApMon because IOException ", ioe);
-				}
-				catch (ApMonException e) {
-					logger.log(Level.SEVERE, "Cannot instantiate ApMon because ApMonException ", e);
-				}
-			}
+		logger.log(Level.FINE, "ApMon destinations : "+ destinations);
+			
+		try{
+			apmonInstance = new ApMon(destinations);
+		}
+		catch (IOException ioe){
+			logger.log(Level.SEVERE, "Cannot instantiate ApMon because IOException ", ioe);
+		}
+		catch (ApMonException e) {
+			logger.log(Level.SEVERE, "Cannot instantiate ApMon because ApMonException ", e);
 		}
 		
 		return apmonInstance;

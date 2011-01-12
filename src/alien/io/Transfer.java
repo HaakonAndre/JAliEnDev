@@ -163,7 +163,7 @@ public class Transfer implements Serializable, Runnable {
 				GUID guid = source.getGuid();
 				
 				if (guid!=null)
-					monitor.addMeasurement("transfer_MB", source.getGuid().size / (1024*1024));
+					monitor.addMeasurement("transfer_MB", source.getGuid().size / (1024*1024d));
 			}
 		}
 	}
