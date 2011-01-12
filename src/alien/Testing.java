@@ -1,5 +1,8 @@
 package alien;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
@@ -10,9 +13,12 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.TransferBroker;
+import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SEUtils;
@@ -38,14 +44,7 @@ public class Testing {
 	public static void main(String[] args) throws Exception {
 		//testMonitoring();
 		
-		Transfer t = TransferBroker.getInstance().getWork();
-		System.err.println("Start: "+t);
-		
-		if (t!=null){
-			t.run();
-			System.err.println("End: "+t);
-			TransferBroker.getInstance().notifyTransferComplete(t);
-		}
+		testGET();
 		
 //		for (int i=0; i<10; i++)
 //			System.err.println(GUIDUtils.generateTimeUUID());
@@ -55,6 +54,57 @@ public class Testing {
 //		for (Object o: prop.keySet()){
 //			System.err.println(o+ " : " + prop.get(o));
 //		}
+	}
+	
+	private static void testGET(){
+		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/LHC10h/rec.jdl");
+		
+		GUID guid = GUIDUtils.getGUID(lfn.guid);
+		
+		Set<PFN> pfns = guid.getPFNs();
+		
+		final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
+		
+		for (PFN pfn: pfns){
+			System.err.println(pfn.pfn);
+			
+			String reason = AuthorizationFactory.fillAccess(admin, pfn, AccessType.READ);
+			
+			if (reason!=null){
+				System.err.println("Access refused because: "+reason);
+				continue;
+			}
+			
+			List<Protocol> protocols = Transfer.getProtocols(pfn);
+			
+			for (Protocol p: protocols){
+				System.err.println("Trying "+p.getClass().getName()+" on "+pfn.pfn);
+				
+				try {
+					File f = p.get(pfn, null);
+					
+					if (f!=null){
+						System.err.println("Success : "+f);
+						return;
+					}
+				}
+				catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+	
+	private static void testTransfers(){
+		Transfer t = TransferBroker.getInstance().getWork();
+		System.err.println("Start: "+t);
+		
+		if (t!=null){
+			t.run();
+			System.err.println("End: "+t);
+			TransferBroker.getInstance().notifyTransferComplete(t);
+		}		
 	}
 	
 	private static void testMonitoring(){	

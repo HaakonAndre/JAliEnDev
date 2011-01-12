@@ -79,12 +79,14 @@ public final class AuthorizationFactory {
 			env = new XrootDEnvelope(access, pfn);
 			
 			try{
-				XrootDEnvelopeSigner.signEnvelope(env, false);
-		
 				final SE se = SEUtils.getSE(pfn.seNumber);
 				
 				if (se!=null && se.needsEncryptedEnvelope){
 					XrootDEnvelopeSigner.encryptEnvelope(env);
+				}
+				else{
+					// new xrootd implementations accept signed-only envelopes
+					XrootDEnvelopeSigner.signEnvelope(env);	
 				}
 			}
 			catch (GeneralSecurityException gse){

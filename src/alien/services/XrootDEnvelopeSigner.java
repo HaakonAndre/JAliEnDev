@@ -116,15 +116,52 @@ public class XrootDEnvelopeSigner {
 		
 		return localHostName;
 	}
-
+	
 	/**
 	 * @param envelope
-	 * @param selfSigned
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
 	 * @throws SignatureException
 	 */
-	public static void signEnvelope(final XrootDEnvelope envelope, final boolean selfSigned)
+	public static void signEnvelope(final XrootDEnvelope envelope)
+			throws NoSuchAlgorithmException, InvalidKeyException,
+			SignatureException {
+
+		// System.out.println("About to be signed: " +
+		// envelope.getUnsignedEnvelope());
+
+		final long issued = System.currentTimeMillis() / 1000L;
+		final long expires = issued + 86400;
+
+		final String toBeSigned = envelope.getUnsignedEnvelope()
+				+ "&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires
+				+ "&hashord=" + XrootDEnvelope.hashord
+				+ "-issuer-issued-expires-hashord";
+
+		final Signature signer = Signature.getInstance("SHA384withRSA");
+		
+		signer.initSign(AuthenPrivKey);
+		
+		signer.update(toBeSigned.getBytes());
+
+		final byte[] rawsignature = signer.sign();
+
+		envelope.setSignedEnvelope(toBeSigned + "&signature="
+				+ String.valueOf(Base64.encode(rawsignature)));
+
+		// System.out.println("We signed: " + envelope.getSignedEnvelope());
+
+	}
+
+	/**
+	 * @param envelope
+	 * @param selfSigned
+	 * @return <code>true</code> if the signature verifies
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
+	 * @throws SignatureException
+	 */
+	public static boolean verifyEnvelope(final XrootDEnvelope envelope, final boolean selfSigned)
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
@@ -142,21 +179,13 @@ public class XrootDEnvelopeSigner {
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 		
 		if (selfSigned){
-			signer.initSign(SEPrivKey);
+			signer.initVerify(SEPubKey);
 		}
 		else {
-			signer.initSign(AuthenPrivKey);
+			signer.initVerify(AuthenPubKey);
 		}
 		
-		signer.update(toBeSigned.getBytes());
-
-		final byte[] rawsignature = signer.sign();
-
-		envelope.setSignedEnvelope(toBeSigned + "&signature="
-				+ String.valueOf(Base64.encode(rawsignature)));
-
-		// System.out.println("We signed: " + envelope.getSignedEnvelope());
-
+		return signer.verify(toBeSigned.getBytes());
 	}
 
 	/**
