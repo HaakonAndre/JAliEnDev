@@ -221,6 +221,15 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		return ret;
 	}
+	
+	private Set<PFN> pfnCache = null;
+	
+	/**
+	 * Clear the PFN cache
+	 */
+	public void cleanPFNCache(){
+		pfnCache = null;
+	}
 
 	/**
 	 * Get the PFNs for this GUID
@@ -228,6 +237,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @return set of physical locations
 	 */
 	public Set<PFN> getPFNs(){
+		if (pfnCache!=null)
+			return pfnCache;
+		
 		final Host h = CatalogueUtils.getHost(host);
 
 		if (h==null)
@@ -246,23 +258,35 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		db.query(q);
 		
-		final Set<PFN> ret = new LinkedHashSet<PFN>();
+		pfnCache = new LinkedHashSet<PFN>();
 		
 		while (db.moveNext()){
 			final PFN pfn = new PFN(db, host, tableName);
 			
 			pfn.setGUID(this);
 			
-			ret.add(pfn);
+			pfnCache.add(pfn);
 		}
 		
-		return ret;
+		return pfnCache;
+	}
+	
+	private Set<LFN> lfnCache = null;
+	
+	/**
+	 * Clear the cache, in case you expect the structure to have changed since the last call
+	 */
+	public void cleanLFNCache(){
+		lfnCache = null;
 	}
 	
 	/**
 	 * @return the LFNs associated to this GUID
 	 */
 	public Set<LFN> getLFNs(){
+		if (lfnCache!=null)
+			return lfnCache;
+		
 		final DBFunctions db = GUIDUtils.getDBForGUID(guid);
 		
 		if (db==null)
@@ -279,7 +303,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		if (!db.moveNext())
 			return null;
 		
-		final Set<LFN> ret = new LinkedHashSet<LFN>();
+		lfnCache = new LinkedHashSet<LFN>();
 		
 		do{
 			final String sLFNRef = db.gets(1);
@@ -299,12 +323,12 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary('"+guid+"');");
 		
 			while (db2.moveNext()){
-				ret.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
+				lfnCache.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
 			}
 		}
 		while (db.moveNext());
 		
-		return ret;
+		return lfnCache;
 	}
 	
 	/**

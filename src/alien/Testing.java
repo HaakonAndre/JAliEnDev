@@ -2,6 +2,7 @@ package alien;
 
 import java.io.File;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -15,6 +16,7 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
+import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.TransferBroker;
@@ -22,6 +24,7 @@ import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SEUtils;
+import alien.services.XrootDEnvelopeSigner;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.UserFactory;
@@ -42,9 +45,11 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
+		timing();
+		
 		//testMonitoring();
 		
-		testGET();
+		//testGET();
 		
 //		for (int i=0; i<10; i++)
 //			System.err.println(GUIDUtils.generateTimeUUID());
@@ -56,8 +61,30 @@ public class Testing {
 //		}
 	}
 	
+	public static void timing() throws GeneralSecurityException{
+		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/LHC10h/rec_pass16.jdl");
+		
+		GUID guid = GUIDUtils.getGUID(lfn.guid);
+		
+		Set<PFN> pfns = guid.getPFNs();
+
+		PFN pfn = pfns.iterator().next();
+		
+		XrootDEnvelope env =  new XrootDEnvelope(AccessType.READ, pfn);
+		
+		for (int i=0; i<100; i++){
+			final long start = System.currentTimeMillis();
+			for (int j=0; j<10000; j++){
+				XrootDEnvelopeSigner.encryptEnvelope(env);
+				//XrootDEnvelopeSigner.signEnvelope(env);
+			}
+			
+			System.err.println(i+" : "+(System.currentTimeMillis() - start));
+		}
+	}
+	
 	private static void testGET(){
-		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/LHC10h/rec.jdl");
+		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/LHC10h/rec_pass16.jdl");
 		
 		GUID guid = GUIDUtils.getGUID(lfn.guid);
 		
@@ -84,7 +111,7 @@ public class Testing {
 					File f = p.get(pfn, null);
 					
 					if (f!=null){
-						System.err.println("Success : "+f);
+						System.err.println("Success : "+f+" / "+f.length());
 						return;
 					}
 				}
