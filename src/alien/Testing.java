@@ -45,11 +45,11 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		timing();
+		//timing();
 		
 		//testMonitoring();
 		
-		//testGET();
+		testGET();
 		
 //		for (int i=0; i<10; i++)
 //			System.err.println(GUIDUtils.generateTimeUUID());
