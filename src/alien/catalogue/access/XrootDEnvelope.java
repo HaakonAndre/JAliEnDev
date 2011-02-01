@@ -77,8 +77,9 @@ public class XrootDEnvelope implements Serializable {
 		+ "    <access>"+ access+"</access>\n"
 		+ "    <turl>"+ Format.escHtml(pfn.getPFN())+ "</turl>\n";
 		
-		if (lfns!=null && lfns.size()>0)
-			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
+//		if (lfns!=null && lfns.size()>0)
+//			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
+		ret += "    <lfn>/alice/cern.ch/user/s/sschrein/jtest</lfn>\n";
 		
 		ret += "    <size>"+guid.size+"</size>" + "\n"
 		+ "    <pfn>"+Format.escHtml("/" + pfnsplit[2])+"</pfn>\n"
@@ -87,7 +88,17 @@ public class XrootDEnvelope implements Serializable {
 		+ "    <md5>"+Format.escHtml(guid.md5)+"</md5>\n"
 		+ "  </file>\n</authz>\n";
 		
-		return ret;
+//		return ret;
+		return   "<authz>\n  <file>\n"
+		+ "    <access>read</access>\n"
+		+ "    <turl>root://voalice16.cern.ch:1094//02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</turl>\n"
+		+ "    <lfn>/alice/cern.ch/user/s/sschrein/jtest</lfn>\n"
+		+ "    <size>9096</size>\n"
+		+ "    <se>ALICE::CERN::ALICEDISK</se>\n"
+		+ "    <guid>DE81D1C8-2E18-11E0-B66A-001CC4624D66</guid>\n"
+		+ "    <md5>e73f3a05b652affbf22ce7b1128c1869</md5>\n"
+		+ "    <pfn>/02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</pfn>\n"
+	    + "  </file>\n</authz>\n";
 	}
 	
 
