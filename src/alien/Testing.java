@@ -84,7 +84,7 @@ public class Testing {
 	}
 	
 	private static void testGET(){
-		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/LHC10h/rec_pass16.jdl");
+		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest");
 		
 		GUID guid = GUIDUtils.getGUID(lfn.guid);
 		
