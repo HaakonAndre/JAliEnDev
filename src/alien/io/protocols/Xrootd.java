@@ -132,6 +132,9 @@ public class Xrootd extends Protocol {
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 			
+			
+			System.out.println("calling ... "+ command.toString());
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
