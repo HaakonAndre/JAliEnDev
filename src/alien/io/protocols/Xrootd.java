@@ -126,11 +126,13 @@ public class Xrootd extends Protocol {
 
 			if (pfn.ticket.envelope!=null){
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OD&authz=\""
+					command.add("-OS\\&authz=\""
 						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
+			
+			System.out.println("calling ... "+ command.toString());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -220,7 +222,7 @@ public class Xrootd extends Protocol {
 
 			if (pfn.ticket.envelope != null){
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OD&authz=\""
+					command.add("-OD\\&authz=\""
 						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
