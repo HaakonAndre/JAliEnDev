@@ -81,7 +81,7 @@ public class XrootDEnvelope implements Serializable {
 			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
 		
 		ret += "    <size>"+guid.size+"</size>" + "\n"
-		+ "    <pfn>"+Format.escHtml(pfnsplit[2])+"</pfn>\n"
+		+ "    <pfn>"+Format.escHtml("/" + pfnsplit[2])+"</pfn>\n"
 		+ "    <se>"+Format.escHtml(se.getName())+"</se>\n"
 		+ "    <guid>"+Format.escHtml(guid.getName())+"</guid>\n"
 		+ "    <md5>"+Format.escHtml(guid.md5)+"</md5>\n"
