@@ -282,9 +282,9 @@ public class Envelope {
 		lEnvelope += "UNIXTIME:    " + created + "\n";
 		lEnvelope += "DATE:        " + creationDate + "\n";
 //		Mon Nov  8 03:01:00 2010
-		lEnvelope += "EXPIRES:     " + expires + "\n";
+//		lEnvelope += "EXPIRES:     " + expires + "\n";
 		lEnvelope += "EXPIRES:     0\n";
-		lEnvelope += "EXPDATE:     " + expireDate + "\n";
+//		lEnvelope += "EXPDATE:     " + expireDate + "\n";
 		lEnvelope += "EXPDATE:     never\n";
 		lEnvelope += "CERTIFICATE: " + certificate + "\n";
 		lEnvelope += BODY_START + "\n";
