@@ -164,13 +164,22 @@ public class EncryptedAuthzToken {
 //		freshBlowfish = new SecretKeySpec(
 //				freshBlowfish.getEncoded(), "Blowfish");
 		
-
-
+		byte[] bkey = freshBlowfish.getEncoded();
 		freshBlowfish = new SecretKeySpec(
-				freshBlowfish.getEncoded(), 0, 16, "Blowfish");
+				bkey, 0, 16, "Blowfish");
 		
-		freshBlowfish = new SecretKeySpec(
-		"po5439aasdfsdf8d7sdklksklaakskkd65asdf1dsfg23w6".getBytes(), 0, 16, "Blowfish");
+		
+		byte[] key = new byte[17];
+
+
+		for(int i=0; i< bkey.length; i++) key[i] = bkey[i];
+		key[16] = (byte) '\0';
+
+		SecretKeySpec	freshBlowfishDASHED = new SecretKeySpec(
+				key, 0, 17, "Blowfish");
+//		
+//		freshBlowfish = new SecretKeySpec(
+//		"po5439aasdfsdf8d7sdklksklaakskkd65asdf1dsfg23w6".getBytes(), 0, 16, "Blowfish");
 		
 		
 //		int TSEALED_KEY_LENGTH = 17;
@@ -245,7 +254,7 @@ public class EncryptedAuthzToken {
 
 		// System.out.println("choosen cipher is:"
 		// + Base64.encodeBytes(key.toString().getBytes()));
-		byte[] encryptedCipher = cipher.wrap(freshBlowfish);
+		byte[] encryptedCipher = cipher.wrap(freshBlowfishDASHED);
 //		 byte[] encryptedCipher = cipher.wrap(symKeySpec);
 
 		// encode base64
@@ -640,10 +649,10 @@ public class EncryptedAuthzToken {
 		// SunJCE/BC Blowfish
 		// ////////////////////////////////////////////
 		//
-//		SecretKeySpec symKeySpec = new SecretKeySpec(symmetricKey, 0,
-//				(symmetricKey.length - 1), "Blowfish");
 		SecretKeySpec symKeySpec = new SecretKeySpec(symmetricKey, 0,
-				(symmetricKey.length), "Blowfish");
+				(symmetricKey.length - 1), "Blowfish");
+//		SecretKeySpec symKeySpec = new SecretKeySpec(symmetricKey, 0,
+//				(symmetricKey.length), "Blowfish");
 		// SecretKeySpec symKeySpec = new
 		// SecretKeySpec(symmetricKey,"Blowfish");
 
