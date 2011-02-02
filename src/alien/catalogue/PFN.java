@@ -12,6 +12,7 @@ import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
+import alien.se.SEUtils;
 
 /**
  * Wrapper around a G*L_PFN row
@@ -97,6 +98,21 @@ public class PFN implements Serializable, Comparable<PFN>{
 		pfn = db.gets("pfn");
 		
 		seNumber = db.geti("seNumber");
+		
+		if (seNumber>0){
+			final SE se = SEUtils.getSE(seNumber);
+			
+			if (se!=null && se.seioDaemons!=null && se.seioDaemons.length()>0 && !pfn.startsWith(se.seioDaemons)){
+				int idx = pfn.indexOf("://");
+				
+				if (idx>0 && idx<10){
+					idx = pfn.indexOf('/', idx+3);
+					
+					if (idx>0)
+						pfn = se.seioDaemons + pfn.substring(idx);
+				}
+			}
+		}
 	}
 	
 	/**

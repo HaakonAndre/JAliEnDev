@@ -84,15 +84,19 @@ public class Testing {
 	}
 	
 	private static void testGET(){
-		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest");
+		//LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest");
+		//LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/AOD/AOD030/FILTERsim.jdl");
+		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest2");
 		
 		GUID guid = GUIDUtils.getGUID(lfn.guid);
 		
 		Set<PFN> pfns = guid.getPFNs();
 		
+		final List<PFN> sortedPFNs = SEUtils.sortBySite(pfns, "CERN", false);
+		
 		final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
 		
-		for (PFN pfn: pfns){
+		for (PFN pfn: sortedPFNs){
 			System.err.println(pfn.pfn);
 			
 			String reason = AuthorizationFactory.fillAccess(admin, pfn, AccessType.READ);

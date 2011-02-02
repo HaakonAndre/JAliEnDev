@@ -121,7 +121,13 @@ public class Xrootd extends Protocol {
 				command.add(xrdcpdebug);
 				command.add(String.valueOf(xrdcpdebuglevel));
 			}
-			command.add(pfn.pfn);
+			
+			String transactionURL = pfn.pfn;
+			
+			if (pfn.ticket.envelope!=null)
+				transactionURL = pfn.ticket.envelope.getTransactionURL();
+			
+			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
 
 			if (pfn.ticket.envelope!=null){
@@ -131,7 +137,6 @@ public class Xrootd extends Protocol {
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
-			
 			
 			System.out.println("calling ... "+ command.toString());
 

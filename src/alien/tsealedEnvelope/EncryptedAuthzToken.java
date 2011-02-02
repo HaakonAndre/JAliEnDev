@@ -164,15 +164,14 @@ public class EncryptedAuthzToken {
 //		freshBlowfish = new SecretKeySpec(
 //				freshBlowfish.getEncoded(), "Blowfish");
 		
-		byte[] bkey = freshBlowfish.getEncoded();
+		final byte[] bkey = freshBlowfish.getEncoded();
 		freshBlowfish = new SecretKeySpec(
 				bkey, 0, 16, "Blowfish");
-		
-		
-		byte[] key = new byte[17];
+				
+		final byte[] key = new byte[17];
 
+		System.arraycopy(bkey, 0, key, 0, 16);
 
-		for(int i=0; i< bkey.length; i++) key[i] = bkey[i];
 		key[16] = (byte) '\0';
 
 		SecretKeySpec	freshBlowfishDASHED = new SecretKeySpec(

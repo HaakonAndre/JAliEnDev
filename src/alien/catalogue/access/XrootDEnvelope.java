@@ -11,9 +11,10 @@ import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
 
+
 /**
  * @author ron
- * 
+ *
  */
 public class XrootDEnvelope implements Serializable {
 
@@ -26,22 +27,22 @@ public class XrootDEnvelope implements Serializable {
 	 * Format
 	 */
 	public static final String hashord = "turl-access-lfn-guid-se-size-md5";
-
+	
 	/**
 	 * the access ticket this envelope belongs to
 	 */
 	public AccessType type = null;
-
+	
 	/**
 	 * pfn of the file on the SE (proto:://hostdns:port//storagepath)
 	 */
 	public final PFN pfn;
-
+	
 	/**
 	 * Signed envelope
 	 */
-	protected String signedEnvelope;
-
+	protected String signedEnvelope; 
+	
 	/**
 	 * Encrypted envelope
 	 */
@@ -49,22 +50,13 @@ public class XrootDEnvelope implements Serializable {
 
 	/**
 	 * @param type
-	 * @param pfn
+	 * @param pfn 
 	 */
-	public XrootDEnvelope(final AccessType type, final PFN pfn) {
+	public XrootDEnvelope(final AccessType type, final PFN pfn){
 		this.type = type;
 		this.pfn = pfn;
 	}
 
-	public String getTransactionURL() {
-		SE se = SEUtils.getSE(pfn.seNumber);
-		if (se == null)
-			return null;
-		if (se.seName.indexOf("DCACHE") > 0)
-			return se.seioDaemons + "//NOLFN";
-
-		return null;
-	}
 
 	/**
 	 * @return envelope xml
@@ -72,94 +64,106 @@ public class XrootDEnvelope implements Serializable {
 	public String getUnEncryptedEnvelope() {
 
 		final String access = type.toString().replace("write", "write-once");
-
+		
 		final String[] pfnsplit = pfn.getPFN().split("//");
-
+		
 		final GUID guid = pfn.getGuid();
-
+		
 		final Set<LFN> lfns = guid.getLFNs();
-
+		
 		final SE se = SEUtils.getSE(pfn.seNumber);
+		
+		String ret = "<authz>\n  <file>\n"
+		+ "    <access>"+ access+"</access>\n"
+		+ "    <turl>"+ Format.escHtml(pfn.getPFN())+ "</turl>\n";
+		
+		if (lfns!=null && lfns.size()>0)
+			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
+		else
+			ret += "    <lfn>/NOLFN</lfn>\n";
+		
+		ret += "    <size>"+guid.size+"</size>" + "\n"
+		+ "    <pfn>"+Format.escHtml("/" + pfnsplit[2])+"</pfn>\n"
+		+ "    <se>"+Format.escHtml(se.getName())+"</se>\n"
+		+ "    <guid>"+Format.escHtml(guid.getName())+"</guid>\n"
+		+ "    <md5>"+Format.escHtml(guid.md5)+"</md5>\n"
+		+ "  </file>\n</authz>\n";
+		
+		return ret;
+	}
 
-		String ret = "<authz>\n  <file>\n" + "    <access>" + access
-				+ "</access>\n" + "    <turl>" + Format.escHtml(pfn.getPFN())
-				+ "</turl>\n";
+	/**
+	 * @return URL of the storage. This is passed as argument to xrdcp and in most cases it is the PFN but for 
+	 * 			DCACHE it is a special path ...
+	 */
+	public String getTransactionURL() {
+		final SE se = SEUtils.getSE(pfn.seNumber);
+		
+		if (se == null)
+			return null;
+		
+		if (se.seName.indexOf("DCACHE") > 0){
+			final GUID guid = pfn.getGuid();
+			
+			final Set<LFN> lfns = guid.getLFNs();
+			
+			if (lfns!=null && lfns.size()>0)
+				return se.seioDaemons + "/" + lfns.iterator().next().getCanonicalName();
+			
+			return se.seioDaemons + "//NOLFN";
+		}
 
-		// if (lfns!=null && lfns.size()>0)
-		// ret +=
-		// "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
-		ret += "    <lfn>/alice/cern.ch/user/s/sschrein/jtest</lfn>\n";
-
-		ret += "    <size>" + guid.size + "</size>" + "\n" + "    <pfn>"
-				+ Format.escHtml("/" + pfnsplit[2]) + "</pfn>\n" + "    <se>"
-				+ Format.escHtml(se.getName()) + "</se>\n" + "    <guid>"
-				+ Format.escHtml(guid.getName()) + "</guid>\n" + "    <md5>"
-				+ Format.escHtml(guid.md5) + "</md5>\n"
-				+ "  </file>\n</authz>\n";
-
-		// return ret;
-		return "<authz>\n  <file>\n"
-				+ "    <access>read</access>\n"
-				+ "    <turl>root://voalice16.cern.ch:1094//02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</turl>\n"
-				+ "    <lfn>/alice/cern.ch/user/s/sschrein/jtest</lfn>\n"
-				+ "    <size>9096</size>\n"
-				+ "    <se>ALICE::CERN::ALICEDISK</se>\n"
-				+ "    <guid>DE81D1C8-2E18-11E0-B66A-001CC4624D66</guid>\n"
-				+ "    <md5>e73f3a05b652affbf22ce7b1128c1869</md5>\n"
-				+ "    <pfn>/02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</pfn>\n"
-				+ "  </file>\n</authz>\n";
+		return null;
 	}
 
 	/**
 	 * @return url envelope
 	 */
 	public String getUnsignedEnvelope() {
-
+		
 		final GUID guid = pfn.getGuid();
-
+		
 		final Set<LFN> lfns = guid.getLFNs();
-
+		
 		final SE se = SEUtils.getSE(pfn.seNumber);
-
-		String ret = "turl=" + Format.encode(pfn.getPFN()) + "&access="
-				+ type.toString();
-
-		if (lfns != null && lfns.size() > 0)
-			ret += "&lfn="
-					+ Format.encode(lfns.iterator().next().getCanonicalName());
-
-		ret += "&guid=" + Format.encode(guid.getName()) + "&se="
-				+ Format.encode(se.getName()) + "&size=" + guid.size + "&md5="
-				+ Format.encode(guid.md5);
-
+		
+		String ret = "turl=" + Format.encode(pfn.getPFN()) + "&access=" + type.toString();
+		
+		if (lfns!=null && lfns.size()>0)
+			ret += "&lfn=" + Format.encode(lfns.iterator().next().getCanonicalName());
+	
+		ret += "&guid=" + Format.encode(guid.getName()) +
+		"&se=" + Format.encode(se.getName()) +
+		"&size=" + guid.size + "&md5="+ Format.encode(guid.md5);
+		
 		return ret;
 	}
 
 	/**
 	 * @param signedEnvelope
 	 */
-	public void setSignedEnvelope(String signedEnvelope) {
+	public void setSignedEnvelope(String signedEnvelope){
 		this.signedEnvelope = signedEnvelope;
 	}
-
+	
 	/**
 	 * @return the signed envelope
 	 */
-	public String getSignedEnvelope() {
+	public String getSignedEnvelope(){
 		return signedEnvelope;
 	}
-
+	
 	/**
 	 * @param encryptedEnvelope
 	 */
-	public void setEncryptedEnvelope(String encryptedEnvelope) {
+	public void setEncryptedEnvelope(String encryptedEnvelope){
 		this.encryptedEnvelope = encryptedEnvelope;
 	}
-
+	
 	/**
 	 * @return encrypted envelope
 	 */
-	public String getEncryptedEnvelope() {
+	public String getEncryptedEnvelope(){
 		return encryptedEnvelope;
 	}
 }

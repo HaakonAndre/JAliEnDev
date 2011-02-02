@@ -133,7 +133,7 @@ public class TransferBroker {
 			return null;
 		}
 		
-		executeQuery(dbc, "update TRANSFERS_DIRECT where status='TRANSFERRING' order by transferId asc limit 1;");
+		executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId="+transferId+";");
 		executeQuery(dbc, "unlock tables;");
 		
 		executeClose();
