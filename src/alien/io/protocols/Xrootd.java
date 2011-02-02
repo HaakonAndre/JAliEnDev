@@ -126,8 +126,8 @@ public class Xrootd extends Protocol {
 
 			if (pfn.ticket.envelope!=null){
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OS\\&authz=\""
-						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
+					command.add("-OS&authz="
+						+ pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
@@ -223,8 +223,8 @@ public class Xrootd extends Protocol {
 
 			if (pfn.ticket.envelope != null){
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OD\\&authz=\""
-						+ pfn.ticket.envelope.getEncryptedEnvelope() + "\"");
+					command.add("-OD&authz="
+						+ pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 			}
