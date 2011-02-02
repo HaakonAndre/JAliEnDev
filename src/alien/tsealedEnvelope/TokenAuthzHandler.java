@@ -16,220 +16,210 @@ import alien.tsealedEnvelope.Envelope.FilePerm;
  * @author Steffen
  * @since Nov 9, 2010
  */
-public class TokenAuthzHandler
-{
-    private final Map<String, KeyPair> keystore;
-    private String pfn = null;
-    // the envelope will be initialised during checkAuthz()
-    private Envelope env;
-    private String noStrongAuthz;
-    
-    private static final int XrootdProtocolDEFAULT_PORT=8080;
+public class TokenAuthzHandler {
+	private final Map<String, KeyPair> keystore;
+	private String pfn = null;
+	// the envelope will be initialised during checkAuthz()
+	private Envelope env;
+	private String noStrongAuthz;
 
-    /**
-     * @param noStrongAuthz
-     * @param keystore
-     */
-    public TokenAuthzHandler(String noStrongAuthz, Map<String, KeyPair> keystore)
-    {
-        this.keystore = keystore;
-        this.noStrongAuthz = noStrongAuthz;
-    }
+	private static final int XrootdProtocolDEFAULT_PORT = 8080;
 
+	/**
+	 * @param noStrongAuthz
+	 * @param keystore
+	 */
+	public TokenAuthzHandler(String noStrongAuthz, Map<String, KeyPair> keystore) {
+		this.keystore = keystore;
+		this.noStrongAuthz = noStrongAuthz;
+	}
 
+	/**
+	 * @param pathToOpen
+	 * @param options
+	 * @param mode
+	 * @param endpoint
+	 * @return true if is ok
+	 * @throws GeneralSecurityException
+	 */
+	public boolean checkAuthz(String pathToOpen, Map<String, String> options,
+			FilePerm mode, InetSocketAddress endpoint)
+			throws GeneralSecurityException {
+		if (pathToOpen == null) {
+			throw new IllegalArgumentException(
+					"the lfn string must not be null");
+		}
 
+		String authzTokenString;
+		if ((authzTokenString = options.get("authz")) == null) {
 
-    /**
-     * @param pathToOpen
-     * @param options
-     * @param mode
-     * @param endpoint
-     * @return true if is ok
-     * @throws GeneralSecurityException
-     */
-    public boolean checkAuthz(String pathToOpen, Map<String,String> options,
-                              FilePerm mode,
-                              InetSocketAddress endpoint)
-        throws GeneralSecurityException
-    {
-        if (pathToOpen == null) {
-            throw new IllegalArgumentException("the lfn string must not be null");
-        }
+			// dirty hack for ALICE: skip authorization if no token
+			// arrives and configuration says ok (this will be soon
+			// deprecated)
+			if ("always".equalsIgnoreCase(noStrongAuthz)) {
+				setPfn(pathToOpen);
+				return true;
+			}
 
-        String authzTokenString;
-        if ((authzTokenString = options.get("authz")) == null) {
+			if ("read".equalsIgnoreCase(noStrongAuthz) && mode == FilePerm.READ) {
+				setPfn(pathToOpen);
+				return true;
+			}
 
-            // dirty hack for ALICE: skip authorization if no token
-            // arrives and configuration says ok (this will be soon
-            // deprecated)
-            if ("always".equalsIgnoreCase(noStrongAuthz)) {
-                setPfn(pathToOpen);
-                return true;
-            }
+			if ("write".equalsIgnoreCase(noStrongAuthz)
+					&& mode == FilePerm.WRITE) {
+				setPfn(pathToOpen);
+				return true;
+			}
 
-            if ("read".equalsIgnoreCase(noStrongAuthz) &&
-                mode == FilePerm.READ) {
-                setPfn(pathToOpen);
-                return true;
-            }
+			throw new GeneralSecurityException(
+					"No authorization token found in open request, access denied.");
+		}
 
-            if ("write".equalsIgnoreCase(noStrongAuthz) &&
-                mode == FilePerm.WRITE) {
-                setPfn(pathToOpen);
-                return true;
-            }
+		// get the VO-specific keypair or the default keypair if VO
+		// was not specified
+		KeyPair keypair = getKeys(options.get("vo"));
 
-            throw new GeneralSecurityException("No authorization token found in open request, access denied.");
-        }
+		// decode the envelope from the token using the keypair
+		// (Remote publicm key, local private key)
+		Envelope envelope = null;
+		try {
+			envelope = decodeEnvelope(authzTokenString, keypair);
+		} catch (CorruptedEnvelopeException e) {
+			throw new GeneralSecurityException(
+					"Error parsing authorization token: " + e.getMessage());
+		}
 
-        // get the VO-specific keypair or the default keypair if VO
-        // was not specified
-        KeyPair keypair = getKeys(options.get("vo"));
+		this.env = envelope;
 
+		// loop through all files contained in the envelope and find
+		// the one with the matching lfn if no match is found, the
+		// token/envelope is possibly hijacked
+		GridFile file = findFile(pathToOpen, envelope);
+		if (file == null) {
+			throw new GeneralSecurityException(
+					"authorization token doesn't contain any file permissions for lfn "
+							+ pathToOpen);
+		}
 
+		// check for hostname:port in the TURL. Must match the current
+		// xrootd service endpoint. If this check fails, the token is
+		// possibly hijacked
+		if (!Arrays.equals(file.getTurlHost().getAddress(), endpoint
+				.getAddress().getAddress())) {
+			throw new GeneralSecurityException(
+					"Hostname mismatch in authorization token (lfn="
+							+ file.getLfn() + " TURL=" + file.getTurl() + ")");
+		}
 
-        // decode the envelope from the token using the keypair
-        // (Remote publicm key, local private key)
-        Envelope envelope = null;
-        try {
-            envelope = decodeEnvelope(authzTokenString, keypair);
-        } catch (CorruptedEnvelopeException e) {
-            throw new GeneralSecurityException("Error parsing authorization token: "+e.getMessage());
-        }
+		int turlPort = (file.getTurlPort() == -1) ? XrootdProtocolDEFAULT_PORT
+				: file.getTurlPort();
+		if (turlPort != endpoint.getPort()) {
+			throw new GeneralSecurityException(
+					"Port mismatch in authorization token (lfn="
+							+ file.getLfn() + " TURL=" + file.getTurl() + ")");
+		}
 
-        this.env = envelope;
+		// the authorization check. read access (lowest permission
+		// required) is granted by default (file.getAccess() == 0), we
+		// must check only in case of writing
+		int grantedPermission = file.getAccess();
+		if (mode == Envelope.FilePerm.WRITE) {
+			if (grantedPermission < FilePerm.WRITE_ONCE.ordinal()) {
+				return false;
+			}
+		} else if (mode == FilePerm.DELETE) {
+			if (grantedPermission < FilePerm.DELETE.ordinal()) {
+				return false;
+			}
+		}
 
-        // loop through all files contained in the envelope and find
-        // the one with the matching lfn if no match is found, the
-        // token/envelope is possibly hijacked
-        GridFile file = findFile(pathToOpen, envelope);
-        if (file == null) {
-            throw new GeneralSecurityException("authorization token doesn't contain any file permissions for lfn "+pathToOpen);
-        }
+		setPfn(file.getTurlPath());
+		return true;
+	}
 
-        // check for hostname:port in the TURL. Must match the current
-        // xrootd service endpoint.  If this check fails, the token is
-        // possibly hijacked
-        if (!Arrays.equals(file.getTurlHost().getAddress(),
-                           endpoint.getAddress().getAddress())) {
-            throw new GeneralSecurityException("Hostname mismatch in authorization token (lfn="+file.getLfn()+" TURL="+file.getTurl()+")");
-        }
+	private GridFile findFile(String pathToOpen, Envelope envelope) {
+		Iterator<GridFile> files = envelope.getFiles();
+		GridFile file = null;
 
-        int turlPort =
-            (file.getTurlPort() == -1)
-            ? XrootdProtocolDEFAULT_PORT
-            : file.getTurlPort();
-        if (turlPort != endpoint.getPort()) {
-            throw new GeneralSecurityException("Port mismatch in authorization token (lfn="+file.getLfn()+" TURL="+file.getTurl()+")");
-        }
+		// loop through all files contained in the envelope, selecting
+		// the one which maches the LFN
+		while (files.hasNext()) {
+			file = files.next();
 
+			if (pathToOpen.equals(file.getLfn())) {
+				break;
+			}
 
-        // the authorization check. read access (lowest permission
-        // required) is granted by default (file.getAccess() == 0), we
-        // must check only in case of writing
-        int grantedPermission = file.getAccess();
-        if (mode == Envelope.FilePerm.WRITE) {
-            if (grantedPermission < FilePerm.WRITE_ONCE.ordinal()) {
-                return false;
-            }
-        } else if (mode == FilePerm.DELETE) {
-            if (grantedPermission < FilePerm.DELETE.ordinal()) {
-                return false;
-            }
-        }
-
-        setPfn(file.getTurlPath());
-        return true;
-    }
-
-    private GridFile findFile(String pathToOpen, Envelope envelope)
-    {
-        Iterator<GridFile> files = envelope.getFiles();
-        GridFile file  = null;
-
-        // loop through all files contained in the envelope, selecting
-        // the one which maches the LFN
-        while (files.hasNext()) {
-            file = files.next();
-
-            if (pathToOpen.equals(file.getLfn())) {
-                break;
-            }
-            
 			file = null;
-        }
+		}
 
-        return file;
-    }
+		return file;
+	}
 
-    private Envelope decodeEnvelope(String authzTokenString, KeyPair keypair)
-        throws GeneralSecurityException, CorruptedEnvelopeException
-    {
-        EncryptedAuthzToken token =
-            new EncryptedAuthzToken(authzTokenString,
-                                    (RSAPrivateKey) keypair.getPrivate(),
-                                    (RSAPublicKey) keypair.getPublic());
-        token.decrypt();
-        return token.getEnvelope();
-    }
+	private Envelope decodeEnvelope(String authzTokenString, KeyPair keypair)
+			throws GeneralSecurityException, CorruptedEnvelopeException {
+		EncryptedAuthzToken token = new EncryptedAuthzToken(
+				(RSAPrivateKey) keypair.getPrivate(),
+				(RSAPublicKey) keypair.getPublic(), true);
+		token.decrypt(authzTokenString);
+		return token.getEnvelope();
+	}
 
-    /**
-     * @return true if pfn is provided
-     */
-    public boolean providesPFN()
-    {
-        return true;
-    }
+	/**
+	 * @return true if pfn is provided
+	 */
+	public boolean providesPFN() {
+		return true;
+	}
 
-    /**
-     * @return the pfn
-     */
-    public String getPFN()
-    {
-        return pfn;
-    }
+	/**
+	 * @return the pfn
+	 */
+	public String getPFN() {
+		return pfn;
+	}
 
-    private void setPfn(String pfn)
-    {
-        this.pfn = pfn;
-    }
+	private void setPfn(String pfn) {
+		this.pfn = pfn;
+	}
 
-    private KeyPair getKeys(String vo) throws GeneralSecurityException
-    {
-        if (keystore == null) {
-            throw new GeneralSecurityException("no keystore found");
-        }
+	private KeyPair getKeys(String vo) throws GeneralSecurityException {
+		if (keystore == null) {
+			throw new GeneralSecurityException("no keystore found");
+		}
 
-        KeyPair keypair = null;
+		KeyPair keypair = null;
 
+		if (vo != null) {
+			if (keystore.containsKey(vo)) {
+				keypair = keystore.get(vo);
+			} else {
+				throw new GeneralSecurityException("no keypair for VO " + vo
+						+ " found in keystore");
+			}
+		} else {
+			// fall back to default keypair in case the VO is
+			// unspecified
+			if (keystore.containsKey("*")) {
+				keypair = keystore.get("*");
+			} else {
+				throw new GeneralSecurityException(
+						"no default keypair found in keystore, required for decoding authorization token");
+			}
+		}
 
-        if (vo != null) {
-            if (keystore.containsKey(vo)) {
-                keypair = keystore.get(vo);
-            } else {
-                throw new GeneralSecurityException("no keypair for VO "+vo+" found in keystore");
-            }
-        } else {
-            // fall back to default keypair in case the VO is
-            // unspecified
-            if (keystore.containsKey("*")) {
-                keypair = keystore.get("*");
-            } else {
-                throw new GeneralSecurityException("no default keypair found in keystore, required for decoding authorization token");
-            }
-        }
+		return keypair;
 
-        return keypair;
+	}
 
-    }
+	/**
+	 * Returns the FQDN of the token creator
+	 * 
+	 * @return token creator
+	 */
 
-    /**
-     * Returns the FQDN of the token creator
-     * @return token creator
-     */
-
-    public String getUser()
-    {
-        return env == null ? null : env.getCreator();
-    }
+	public String getUser() {
+		return env == null ? null : env.getCreator();
+	}
 }
