@@ -18,11 +18,13 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.TransferBroker;
 import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.se.SE;
 import alien.se.SEUtils;
 import alien.services.XrootDEnvelopeSigner;
 import alien.user.AliEnPrincipal;
@@ -45,11 +47,13 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
+		testBT();
+		
 		//timing();
 		
 		//testMonitoring();
 		
-		testGET();
+		//testGET();
 		
 //		for (int i=0; i<10; i++)
 //			System.err.println(GUIDUtils.generateTimeUUID());
@@ -61,6 +65,13 @@ public class Testing {
 //		}
 	}
 	
+	private static void testBT() throws IOException {
+		System.err.println(IOUtils.getMD5(new File("/etc/passwd")));
+		
+		SE se = SEUtils.getSE("ALICE::CERN::ALICEDISK");
+		GUID guid = GUIDUtils.createGuid();
+	}
+
 	public static void timing() throws GeneralSecurityException{
 		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/LHC10h/rec_pass16.jdl");
 		

@@ -118,7 +118,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not.
 	 * Setting the other fields will only be permitted if this field is false.
 	 */
-	@SuppressWarnings("unused")
 	private final boolean exists;
 	
 	/**
@@ -458,5 +457,19 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			y = 255 + y;
 		
 		return (y<<8) + x;
+	}
+	
+	/**
+	 * @return <code>true</code> if the guid was taken from the database, <code>false</code> if it is a newly generated one
+	 */
+	public boolean exists(){
+		return exists;
+	}
+	
+	public boolean setOwner(final String s){
+		if (!exists)
+			owner = s;
+		
+		return !exists;
 	}
 }

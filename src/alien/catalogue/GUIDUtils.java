@@ -2,8 +2,11 @@ package alien.catalogue;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -12,8 +15,10 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import lia.util.process.ExternalProcesses;
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.AliEnPrincipal;
 
 /**
  * @author costing
@@ -288,5 +293,35 @@ public final class GUIDUtils {
 		} while (getGUID(id) != null);
 		
 		return new GUID(id);
+	}
+	
+	/**
+	 * @param f base file to fill the properties from: ctime, md5, size
+	 * @param user who owns this new entry
+	 * @return the newly created GUID
+	 * @throws IOException
+	 */
+	public static GUID createGuid(final File f, final AliEnPrincipal user) throws IOException{
+		final String md5 = IOUtils.getMD5(f);
+		
+		final GUID guid = createGuid();
+		
+		guid.ctime = new Date(f.lastModified());
+		guid.md5 = md5;
+		guid.size = f.length();
+		
+		guid.owner = user.getName();
+		
+		final Set<String> roles = user.getRoles();
+		
+		if (roles!=null && roles.size()>0)
+			guid.gowner = roles.iterator().next();
+		else
+			guid.gowner = guid.owner;
+		
+		// TODO : is this correct ?
+		guid.type = 'f';
+		
+		return guid;
 	}
 }
