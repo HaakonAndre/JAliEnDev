@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.List;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -18,9 +18,9 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
-import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.TransferBroker;
+import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -53,7 +53,7 @@ public class Testing {
 		
 		//testMonitoring();
 		
-		//testGET();
+//		testGET();
 		
 //		for (int i=0; i<10; i++)
 //			System.err.println(GUIDUtils.generateTimeUUID());
@@ -66,10 +66,57 @@ public class Testing {
 	}
 	
 	private static void testBT() throws IOException {
-		System.err.println(IOUtils.getMD5(new File("/etc/passwd")));
-		
 		SE se = SEUtils.getSE("ALICE::CERN::ALICEDISK");
-		GUID guid = GUIDUtils.createGuid();
+		
+		File toUpload = new File("/etc/passwd");
+		
+		AliEnPrincipal user = UserFactory.getByUsername("alidaq");
+		
+		GUID guid = GUIDUtils.createGuid(toUpload, user);
+
+		System.err.println(guid);
+		
+		PFN pfn = new PFN(guid, se);
+		
+		System.err.println(pfn);
+		
+		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/testjupload", true);
+		
+		if (!lfn.exists){
+			lfn.ctime = guid.ctime;
+			lfn.gowner = guid.gowner;
+			lfn.owner = guid.owner;
+			lfn.guid = guid.guid;
+			lfn.md5 = guid.md5;
+			lfn.perm = guid.perm;
+			lfn.size = guid.size;
+			lfn.type = 'f';
+		}
+		
+		System.err.println(lfn.getCanonicalName());
+		System.err.println(lfn);
+		
+		PFN bookedPFN = BookingTable.bookForWriting(user, lfn, guid, pfn, 1234, se);
+		
+		System.err.println("Got booked pfn: "+bookedPFN);
+		
+		List<Protocol> protocols = Transfer.getProtocols(pfn);
+		
+		for (Protocol p: protocols){
+			System.err.println("Trying protocol "+p);
+			
+			try{
+				String reply = p.put(bookedPFN, toUpload);
+				
+				System.err.println("Reply was: "+reply);
+				
+				break;
+			}
+			catch (Exception e){
+				System.err.println("Got exception uploading: "+e);
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public static void timing() throws GeneralSecurityException{
@@ -99,7 +146,11 @@ public class Testing {
 		//LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/AOD/AOD030/FILTERsim.jdl");
 		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest2");
 		
+		System.err.println(lfn);
+		
 		GUID guid = GUIDUtils.getGUID(lfn.guid);
+		
+		System.err.println(guid);
 		
 		Set<PFN> pfns = guid.getPFNs();
 		
@@ -108,7 +159,7 @@ public class Testing {
 		final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
 		
 		for (PFN pfn: sortedPFNs){
-			System.err.println(pfn.pfn);
+			System.err.println(pfn);
 			
 			String reason = AuthorizationFactory.fillAccess(admin, pfn, AccessType.READ);
 			

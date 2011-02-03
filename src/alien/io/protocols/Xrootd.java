@@ -302,7 +302,7 @@ public class Xrootd extends Protocol {
 				}
 				if (returnEnvelope)
 					command.add("-returnEnvelope");
-				command.add(pfn.toString());
+				command.add(pfn.getPFN());
 	
 				if ((pfn.ticket.envelope != null)
 						&& (pfn.ticket.envelope.getSignedEnvelope() != null))
@@ -313,7 +313,7 @@ public class Xrootd extends Protocol {
 	
 				pBuilder.returnOutputOnExit(true);
 	
-				pBuilder.timeout(24, TimeUnit.HOURS);
+				pBuilder.timeout(1, TimeUnit.MINUTES);
 	
 				pBuilder.redirectErrorStream(true);
 	
@@ -405,12 +405,14 @@ public class Xrootd extends Protocol {
 
 		try {
 			while ((line = reader.readLine()) != null) {
-				// $doxrcheck =~ /Size:\ (\d+)/;
-				if (line.length() > 0)
-					System.out.println(line.charAt(0));
-				if (line.startsWith("Size: ")) {
-					String[] elements = line.split(" ");
-					size = Long.parseLong(elements[1].trim());
+				if (line.startsWith("xstat:")){
+					int idx = line.indexOf("size=");
+					
+					if (idx>0){
+						int idx2 = line.indexOf(" ", idx);
+						
+						size = Long.parseLong(line.substring(idx+5, idx2));
+					}
 				}
 			}
 
@@ -418,6 +420,14 @@ public class Xrootd extends Protocol {
 			e.printStackTrace();
 		}
 		return size;
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "xrootd";	
 	}
 
 }

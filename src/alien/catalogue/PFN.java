@@ -122,6 +122,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 	 * @param se
 	 */
 	public PFN(final GUID guid, final SE se){
+		this.guid = guid;
 		this.guidId = guid.guidId;
 		this.pfn = se.generatePFN(guid);
 		this.seNumber = se.seNumber;

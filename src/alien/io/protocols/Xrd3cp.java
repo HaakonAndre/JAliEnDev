@@ -111,4 +111,12 @@ public class Xrd3cp extends Xrootd {
 			throw new IOException("Transfer aborted because "+t);
 		}
 	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "xrd3cp";
+	}
 }

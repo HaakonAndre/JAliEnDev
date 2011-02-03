@@ -57,5 +57,13 @@ public class Http extends Protocol {
 		}
 		
 		return target;
-	}	
+	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "http";
+	}
 }

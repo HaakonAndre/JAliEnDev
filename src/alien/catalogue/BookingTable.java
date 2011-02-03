@@ -33,7 +33,7 @@ public class BookingTable {
 	 * 			if the PFN doesn't indicate a physical file but the entry was successfully booked
 	 * @throws IOException if now allowed to do that
 	 */
-	public PFN bookForWriting(final AliEnPrincipal user, final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
+	public static PFN bookForWriting(final AliEnPrincipal user, final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
 		if (lfn==null)
 			throw new IllegalArgumentException("LFN cannot be null");
 		
@@ -85,6 +85,11 @@ public class BookingTable {
 		if (db.moveNext()){
 			// there is a previous attempt on this GUID to this SE, who is the owner?
 			if (user.canBecome(db.gets(1))){
+				final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
+				
+				if (reason!=null)
+					throw new IOException("Access denied: "+reason);
+				
 				// that's fine, it's the same user, we can recycle the entry
 				db.query("UPDATE LFN_BOOKED SET expiretime=unix_timestamp(now())+86400 WHERE guid=string2binary('"+requestedGUID.guid.toString()+"') AND se='"+Format.escSQL(se.getName())+"' AND pfn='"+Format.escSQL(pfn.getPFN())+"'");
 			}
@@ -92,6 +97,11 @@ public class BookingTable {
 				throw new IOException("You are not allowed to do this");
 		}
 		else{
+			final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
+			
+			if (reason!=null)
+				throw new IOException("Access denied: "+reason);
+			
 			// create the entry in the booking table
 			final StringBuilder q = new StringBuilder("INSERT INTO LFN_BOOKED (lfn,owner,md5sum,expiretime,size,pfn,se,gowner,user,guid,jobid) VALUES ("); 
 			
@@ -123,12 +133,7 @@ public class BookingTable {
 			
 			db.query(q.toString());
 		}
-		
-		final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
-		
-		if (reason!=null)
-			throw new IOException("Access denied: "+reason);
-		
+				
 		return pfn;
 	}
 	
