@@ -195,7 +195,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		       "expireTime\t: "+expiretime+"\n"+
 		       "size\t\t: "+size+"\n"+
 		       "guid\t\t: "+guid+" ("+guid.timestamp()+")\n"+
-		       "type\t\t: "+type+"\n"+
+		       "type\t\t: "+type+" ("+(int)type+")\n"+
 		       "md5\t\t: "+md5+"\n"+
 		       "permissions\t: "+perm
 		       ;

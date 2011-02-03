@@ -198,7 +198,7 @@ public class XrootDEnvelopeSigner {
 		// envelope.getUnEncryptedEnvelope());
 
 		if (authz == null)
-			authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey);
+			authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey, false);
 
 		envelope.setEncryptedEnvelope(authz.encrypt(envelope
 				.getUnEncryptedEnvelope()));

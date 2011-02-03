@@ -289,7 +289,7 @@ public final class GUIDUtils {
 	public static GUID createGuid(){
 		UUID id;
 		do{
-			id = UUID.randomUUID();
+			id = generateTimeUUID();
 		} while (getGUID(id) != null);
 		
 		return new GUID(id);
@@ -319,8 +319,9 @@ public final class GUIDUtils {
 		else
 			guid.gowner = guid.owner;
 		
-		// TODO : is this correct ?
-		guid.type = 'f';
+		guid.type = 0;	// as in the catalogue
+		guid.perm = "755";
+		guid.aclId = -1;
 		
 		return guid;
 	}
