@@ -465,11 +465,4 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public boolean exists(){
 		return exists;
 	}
-	
-	public boolean setOwner(final String s){
-		if (!exists)
-			owner = s;
-		
-		return !exists;
-	}
 }
