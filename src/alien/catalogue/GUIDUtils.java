@@ -112,7 +112,7 @@ public final class GUIDUtils {
 	 * @param evenIfDoesntExist if <code>true</code>, if the entry doesn't exist then a new GUID is returned
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
-	public static GUID getGUID(final UUID guid, boolean evenIfDoesntExist) {
+	public static GUID getGUID(final UUID guid, final boolean evenIfDoesntExist) {
 		final int host = getGUIDHost(guid);
 //		final int host = 1; //gron
 		
@@ -151,7 +151,7 @@ public final class GUIDUtils {
 		
 		return new GUID(db, host, tableName);
 	}
-
+	
 	/**
 	 * 
 	 * check if the string contains a valid GUID
@@ -159,7 +159,7 @@ public final class GUIDUtils {
 	 * @param guid
 	 * @return yesORno
 	 */
-	public static boolean isValidGUID(String guid) {
+	public static boolean isValidGUID(final String guid) {
 		try {
 			UUID.fromString(guid);
 			return true;
@@ -324,5 +324,13 @@ public final class GUIDUtils {
 		guid.aclId = -1;
 		
 		return guid;
+	}
+	
+	/**
+	 * @param uuid
+	 * @return epoch time of this uuid
+	 */
+	public static final long epochTime(final UUID uuid){
+		return (uuid.timestamp() - 0x01b21dd213814000L) / 10000;
 	}
 }
