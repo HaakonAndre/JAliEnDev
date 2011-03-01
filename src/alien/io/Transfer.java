@@ -8,9 +8,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import alien.catalogue.GUID;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
@@ -21,6 +24,11 @@ import alien.monitoring.MonitorFactory;
  * @since Dec 8, 2010
  */
 public class Transfer implements Serializable, Runnable {
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Transfer.class.getCanonicalName());
+	
 	/**
 	 * Monitoring component
 	 */
@@ -58,9 +66,15 @@ public class Transfer implements Serializable, Runnable {
 	
 	private final int transferId;
 	
-	private final PFN source;
+	/**
+	 * Source pfn, package protected
+	 */
+	final PFN source;
 	
-	private final PFN target;
+	/**
+	 * Target pfn, package protected
+	 */
+	final PFN target;
 	
 	private String targetPFN;
 	
@@ -240,7 +254,8 @@ public class Transfer implements Serializable, Runnable {
 					
 					targetPFN = target.pfn;
 					
-					temp.delete();
+					if (!temp.delete())
+						logger.log(Level.WARNING, "Could not delete temporary file after successful transfer "+transferId+" : "+temp);
 					
 					return;
 				}
@@ -253,7 +268,8 @@ public class Transfer implements Serializable, Runnable {
 				}
 			}
 			
-			temp.delete();
+			if (!temp.delete())
+				logger.log(Level.WARNING, "Could not remove temporary file "+temp);
 			
 			return;
 		}
