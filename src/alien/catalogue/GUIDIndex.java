@@ -56,12 +56,26 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 		hostIndex = db.geti("hostIndex");
 		tableName = db.geti("tableName");
 		
-		String sTime = db.gets("guidTime");
-
-		if (sTime.length()>1)
-			guidTime = Long.parseLong(sTime.substring(1), 16);
-		else
-			guidTime = 0;
+		guidTime = toEpochTime(db.gets("guidTime"));		
+	}
+	
+	/**
+	 * @param epoch
+	 * @return time in guidTime format
+	 */
+	public static final String toGuidTime(final long epoch){
+		return Long.toHexString(epoch * 1000000).toUpperCase();
+	}
+	
+	/**
+	 * @param guidTime
+	 * @return epoch time of this guidTime
+	 */
+	public static final long toEpochTime(final String guidTime){
+		if (guidTime.length()>1)
+			return  Long.parseLong(guidTime, 16) / 1000000;
+	
+		return 0;
 	}
 
 	@Override
