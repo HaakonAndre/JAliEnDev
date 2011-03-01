@@ -2,6 +2,8 @@ package alien.catalogue;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -9,6 +11,7 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.se.SE;
+import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 
@@ -18,6 +21,11 @@ import alien.user.AuthorizationChecker;
  */
 public class BookingTable {
 
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
+	
 	private static final DBFunctions getDB(){
 		return ConfigUtils.getDB("alice_users");
 	}
@@ -31,7 +39,7 @@ public class BookingTable {
 	 * @param se
 	 * @return the PFN with the write access envelope if allowed to write or <code>null</code>
 	 * 			if the PFN doesn't indicate a physical file but the entry was successfully booked
-	 * @throws IOException if now allowed to do that
+	 * @throws IOException if not allowed to do that
 	 */
 	public static PFN bookForWriting(final AliEnPrincipal user, final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
 		if (lfn==null)
@@ -46,7 +54,13 @@ public class BookingTable {
 		if (requestedGUID==null)
 			throw new IllegalArgumentException("requested GUID cannot be null");
 		
-		if (!AuthorizationChecker.canWrite(lfn, user)){
+		LFN check = lfn;
+		
+		while (check!=null && !check.exists ){
+			check = check.getParentDir();
+		}
+		
+		if (!AuthorizationChecker.canWrite(check, user)){
 			throw new IOException("User "+user.getName()+" is not allowed to write LFN "+lfn.getCanonicalName());
 		}
 		
@@ -135,6 +149,106 @@ public class BookingTable {
 		}
 				
 		return pfn;
+	}
+	
+	/**
+	 * Promote this entry to the catalog
+	 * 
+	 * @param user
+	 * @param pfn
+	 * @return true if successful, false if not
+	 */
+	public static boolean commit(final AliEnPrincipal user, final PFN pfn){
+		return mark(user, pfn, true);
+	}
+	
+	/**
+	 * Mark this entry as failed, to be recycled
+	 * 
+	 * @param user
+	 * @param pfn
+	 * @return true if marking was ok, false if not
+	 */
+	public static boolean reject(final AliEnPrincipal user, final PFN pfn){
+		return mark(user, pfn, false);
+	}
+	
+	private static boolean mark(final AliEnPrincipal user, final PFN pfn, final boolean ok){
+		final DBFunctions db = getDB();
+		
+		if (user==null){
+			logger.log(Level.WARNING, "Not marking since the user is null");
+			return false;
+		}
+			
+		if (pfn==null){
+			logger.log(Level.WARNING, "Not marking since the PFN is null");
+			return false;
+		}
+
+		String w = "pfn="+e(pfn.getPFN());
+		
+		final SE se = SEUtils.getSE(pfn.seNumber);
+		
+		if (se==null){
+			logger.log(Level.WARNING, "Not marking since there is no valid SE in this PFN: "+pfn);
+			return false;
+		}
+		
+		w += " AND se="+e(se.getName());
+		
+		final GUID guid = pfn.getGuid();
+		
+		if (guid==null){
+			logger.log(Level.WARNING, "Not marking since there is no GUID in this PFN: "+pfn);
+			return false;
+		}
+		
+		w += " AND guid=string2binary("+e(guid.guid.toString())+")";
+		
+		w += " AND owner="+e(user.getName());
+		
+		if (!ok){
+			db.query("UPDATE LFN_BOOKED SET expiretime=-1*(unix_timestamp(now())+60*60*24*30) WHERE "+w);
+			return db.getUpdateCount()>0;
+		}
+
+		if (!guid.addPFN(pfn)){
+			logger.log(Level.WARNING, "Could not add the PFN to this GUID: "+guid+"\nPFN: "+pfn);
+			return false;
+		}
+
+		db.query("SELECT lfn,jobid FROM LFN_BOOKED WHERE "+w);
+
+		while (db.moveNext()){
+			final LFN lfn = LFNUtils.getLFN(db.gets(1), true);
+			
+			if (!lfn.exists){
+				lfn.size = guid.size;
+				lfn.owner = guid.owner;
+				lfn.gowner = guid.gowner;
+				lfn.perm = guid.perm;
+				lfn.aclId = guid.aclId;
+				lfn.ctime = guid.ctime;
+				lfn.expiretime = guid.expiretime;
+				lfn.guid = guid.guid;
+				// lfn.guidtime = ?;
+				
+				lfn.md5 = guid.md5;
+				lfn.type = guid.type;
+				
+				lfn.guidtime = Long.toHexString(GUIDUtils.epochTime(guid.guid));
+				
+				lfn.jobid = db.geti(2, -1);
+				
+				LFNUtils.insertLFN(lfn);
+			}
+		}
+		
+		// was booked, now let's move it to the catalog
+		db.query("DELETE FROM LFN_BOOKED WHERE "+w);
+		
+		return true;
 	}
 	
 	private static final String e(final String s){
