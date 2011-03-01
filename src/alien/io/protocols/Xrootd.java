@@ -104,7 +104,9 @@ public class Xrootd extends Protocol {
 
 		if (target == null) {
 			target = File.createTempFile("xrootd-get", null);
-			target.delete();
+			
+			if (!target.delete())
+				logger.log(Level.WARNING, "Could not delete the just created temporary file: "+target);
 		}
 
 		if (pfn.ticket==null || pfn.ticket.type!=AccessType.READ) {
@@ -177,11 +179,13 @@ public class Xrootd extends Protocol {
 				throw new IOException(
 						"Local file doesn't match catalogue details");
 		} catch (final IOException ioe) {
-			target.delete();
+			if (!target.delete())
+				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: "+target);
 
 			throw ioe;
 		} catch (final Throwable t) {
-			target.delete();
+			if (!target.delete())
+				logger.log(Level.WARNING, "Could not delete temporary file on throwable: "+target);
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
@@ -393,7 +397,9 @@ public class Xrootd extends Protocol {
 		try {
 			return put(target, temp);
 		} finally {
-			temp.delete();
+			if (!temp.delete()){
+				logger.log(Level.WARNING, "Could not delete temporary file : "+temp);
+			}
 		}
 	}
 

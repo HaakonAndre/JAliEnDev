@@ -5,15 +5,22 @@ package alien.io.protocols;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 
 /**
  * @author costing
  * @since Dec 8, 2010
  */
 public class Http extends Protocol {
-
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Http.class.getCanonicalName());
+	
 	/**
 	 * package protected
 	 */
@@ -51,7 +58,8 @@ public class Http extends Protocol {
 				throw new IOException("Local file doesn't match catalogue details");
 		}
 		catch (IOException ioe){
-			target.delete();
+			if (!target.delete())
+				logger.log(Level.WARNING, "Could not delete temporary file on exception : "+target);
 			
 			throw ioe;
 		}
