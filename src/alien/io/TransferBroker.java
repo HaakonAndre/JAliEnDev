@@ -3,6 +3,7 @@
  */
 package alien.io;
 
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -14,6 +15,7 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.DBFunctions.DBConnection;
+import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -180,8 +182,6 @@ public class TransferBroker {
 			}
 		}
 		
-		final PFN target = new PFN(guid, se);
-		
 		final StringTokenizer st = new StringTokenizer(targetSE, ":");
 		
 		st.nextToken();
@@ -201,10 +201,14 @@ public class TransferBroker {
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Source authorization failed: "+reason);
 			return null;
 		}
+				
+		final PFN target;
 		
-		reason = AuthorizationFactory.fillAccess(admin, target, AccessType.WRITE);
-
-		if (reason!=null){
+		try{
+			target = BookingTable.bookForWriting(admin, lfn, guid, null, 0, se);
+		}
+		catch (IOException ioe){
+			reason = ioe.getMessage();
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target authorization failed: "+reason);
 			return null;
 		}
@@ -254,5 +258,12 @@ public class TransferBroker {
 		// TODO : verify the storage reply envelope here
 		
 		markTransfer(t.getTransferId(), t.getExitCode(), t.getFailureReason());
+		
+		if (t.getExitCode() == Transfer.OK){
+			// Update the file catalog with the new replica
+			final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
+			
+			BookingTable.commit(admin, t.target);
+		}
 	}
 }
