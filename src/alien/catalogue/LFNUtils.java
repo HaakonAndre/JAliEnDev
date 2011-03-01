@@ -54,4 +54,70 @@ public class LFNUtils {
 		return ite.getLFN(fileName, evenIfDoesntExist);
 	}
 	
+	/**
+	 * Make sure the parent directory exists
+	 * 
+	 * @param lfn
+	 * @return the updated LFN entry
+	 */
+	static LFN ensureDir(final LFN lfn){
+		if (lfn.exists)
+			return lfn;
+		
+		LFN parent = lfn.getParentDir(true);
+		
+		if (!parent.exists){
+			parent.owner = lfn.owner;
+			parent.gowner = lfn.gowner;
+			parent = ensureDir(parent);
+		}
+		
+		if (parent == null)
+			return null;
+		
+		lfn.parentDir = parent;
+		
+		if (insertLFN(lfn))
+			return lfn;
+		
+		return null;
+	}
+	
+	/**
+	 * Insert an LFN in the catalogue
+	 * 
+	 * @param lfn
+	 * @return true if the entry was inserted (or previously existed), false if there was an error
+	 */
+	static boolean insertLFN(final LFN lfn){
+		if (lfn.exists){
+			// nothing to be done, the entry already exists
+			return true;
+		}
+		
+		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(lfn.getCanonicalName());
+		
+		if (ite==null){
+			logger.log(Level.WARNING, "IndexTableEntry is null for: "+lfn.getCanonicalName());
+			
+			return false;
+		}
+		
+		final LFN parent = ensureDir(lfn.getParentDir());
+		
+		if (parent==null){
+			logger.log(Level.WARNING, "Parent dir is null for "+lfn.getCanonicalName());
+			
+			return false;
+		}
+		
+		lfn.parentDir = parent;
+		lfn.indexTableEntry = ite;
+		
+		if (lfn.indexTableEntry.equals(parent.indexTableEntry))
+			lfn.dir = parent.entryId;
+		
+		return lfn.insert();
+	}
+	
 }
