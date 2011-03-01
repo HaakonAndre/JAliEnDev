@@ -1,5 +1,7 @@
 package alien.catalogue;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -8,6 +10,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -118,7 +121,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not.
 	 * Setting the other fields will only be permitted if this field is false.
 	 */
-	private final boolean exists;
+	private boolean exists;
 	
 	/**
 	 * Load one row from a G*L table
@@ -185,6 +188,98 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		perm = db.gets("perm");
 	}
 	
+	/**
+	 * Inform the GUID about another replica in the given SE. If the entry 
+	 * 
+	 * @param seNumber
+	 * @return true if updating was ok, false if the entry was not updated
+	 */
+	private boolean addSE(final int seNumber){
+		final Integer i = Integer.valueOf(seNumber);
+		
+		if (!seStringList.contains(i)){
+			seStringList.add(i);
+			
+			return update();
+		}
+		
+		return false;
+	}
+	
+	private boolean update(){
+		final Host h = CatalogueUtils.getHost(host);
+		
+		if (h == null)
+			return false;
+
+		final DBFunctions db = h.getDB();
+
+		if (db == null)
+			return false;
+			
+		if (!exists)
+			return insert(db);
+		
+		// only the SE list can change
+		if (!db.query("UPDATE G"+tableName+"L SET seStringlist="+setToString(seStringList)+" WHERE guidId="+guidId)){
+			// wrong table name or what?
+			return false;
+		}
+		
+		if (db.getUpdateCount()==0){
+			// the entry did not exist in fact, what's going on?
+			return false;
+		}
+
+		if (monitor != null)
+			monitor.incrementCounter("GUID_db_update");
+		
+		return true;
+	}
+	
+	private static final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	private boolean insert(final DBFunctions db){
+		String q;
+		
+		synchronized (formatter){
+			q = "INSERT INTO G"+tableName+"L (ctime, owner, ref, seStringList, seAutoStringList, aclId, expiretime, size, gowner, guid, type, md5, perm) VALUES ("+
+			(ctime==null ? "null" : "'"+formatter.format(ctime)+"'")+","+		// ctime
+			"'"+Format.escSQL(owner)+"',"+										// owner
+			"0,"+																// ref
+			setToString(seStringList)+","+										// seStringList
+			setToString(seAutoStringList)+","+									// seAutoStringList
+			aclId+","+															// aclId
+			(expiretime==null ? "null" : "'"+formatter.format(expiretime)+"'")+","+		// expiretime
+			size+","+															// size
+			"'"+Format.escSQL(gowner)+"'"+										// gowner
+			"string2binary('"+guid+"'),"+										// guid
+			(type==0 ? "null" : "'"+type+"'")+","+								// type
+			"'"+Format.escSQL(md5)+"',"+										// md5
+			"'"+Format.escSQL(perm)+"'"+										// perm
+			");";
+		}
+		
+		if (db.query(q)){
+			if (monitor != null)
+				monitor.incrementCounter("GUID_db_insert");
+			
+			exists = true;
+			
+			db.query("SELECT guidId FROM G"+tableName+"L WHERE guid=string2binary('"+guid+"');");
+			
+			if (!db.moveNext()){
+				// that would be weird, we have just inserted it. but double checking cannot hurt
+				return false;
+			}
+			
+			guidId = db.geti(1);
+			return true;
+		}
+		
+		return false;
+	}
+	
 	@Override
 	public String toString() {
 		return "guidID\t\t: "+guidId+"\n"+
@@ -219,6 +314,24 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		return ret;
+	}
+	
+	private static final String setToString(final Set<Integer> s){
+		if (s==null)
+			return "null";
+		
+		if (s.size()==0)
+			return "','";
+		
+		final StringBuilder sb = new StringBuilder("',");
+		
+		for (final Integer i: s){
+			sb.append(i).append(',');
+		}
+		
+		sb.append('\'');
+		
+		return sb.toString();
 	}
 	
 	private Set<PFN> pfnCache = null;
@@ -268,6 +381,39 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		return pfnCache;
+	}
+	
+	/**
+	 * Package protected. Should be accessed only from BookingTable
+	 * 
+	 * @param pfn
+	 * @return true if inserting was ok
+	 */
+	boolean addPFN(final PFN pfn){
+		final Host h = CatalogueUtils.getHost(host);
+
+		if (h==null)
+			return false;
+		
+		final DBFunctions db = h.getDB();
+		
+		if (db==null)
+			return false;
+		
+		if (monitor!=null){
+			monitor.incrementCounter("PFN_db_insert");
+		}
+
+		if (!addSE(pfn.seNumber))
+			return false;
+		
+		if (!db.query("INSERT INTO G"+tableName+"L_PFN (guidId, pfn, seNumber) VALUES ("+guidId+", '"+Format.escSQL(pfn.getPFN())+"', "+pfn.seNumber+")")){
+			seStringList.remove(Integer.valueOf(pfn.seNumber));
+			update();
+			return false;
+		}
+		
+		return true;
 	}
 	
 	private Set<LFN> lfnCache = null;
