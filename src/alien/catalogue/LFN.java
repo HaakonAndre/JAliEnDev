@@ -1,5 +1,7 @@
 package alien.catalogue;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -7,6 +9,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import alien.config.ConfigUtils;
 
 /**
@@ -132,6 +135,12 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	public IndexTableEntry indexTableEntry;
 	
 	/**
+	 * Job ID that produced this file
+	 * @since AliEn 2.19
+	 */
+	public int jobid;
+	
+	/**
 	 * @param lfn
 	 * @param entry
 	 */
@@ -167,6 +176,14 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * @return parent directory
 	 */
 	public LFN getParentDir(){
+		return getParentDir(false);
+	}
+	
+	/**
+	 * @param evenIfNotExist
+	 * @return parent directory
+	 */
+	LFN getParentDir(final boolean evenIfNotExist){
 		if (parentDir!=null)
 			return parentDir;
 		
@@ -183,7 +200,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 					idx = sParentDir.lastIndexOf('/', idx-1);
 				
 				if (idx>=0)
-					parentDir = LFNUtils.getLFN(sParentDir.substring(0, idx+1));
+					parentDir = LFNUtils.getLFN(sParentDir.substring(0, idx+1), evenIfNotExist);
 			}
 		}
 		
@@ -246,6 +263,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		guidtime = db.gets("guidtime");
 		
 		broken = db.getb("broken", false);
+		
+		jobid = db.geti("jobid", -1);
 	}
 	
 	@Override
@@ -264,7 +283,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		       "guid\t\t: "+guid+"\n"+
 		       "md5\t\t: "+md5+"\n"+
 		       "guidtime\t: "+guidtime+"\n"+
-		       "broken\t\t: "+broken;
+		       "broken\t\t: "+broken+"\n"+
+		       "jobid\t\t: "+jobid
+		       ;
 	}
 	
 	/**
@@ -396,5 +417,53 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	@Override
 	public char getType() {
 		return type;
+	}
+	
+	private static final String e(final String s){
+		if (s==null)
+			return "null";
+		
+		return "'"+Format.escSQL(s)+"'";
+	}
+	
+	private static final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	
+	private static final synchronized String format(final Date d){
+		if (d==null)
+			return null;
+		
+		return formatter.format(d);
+	}
+	
+	/**
+	 * Insert a new LFN in the catalogue
+	 * 
+	 * @return <code>true</code> if the new entry was inserted, <code>false</code> if the query failed
+	 */
+	boolean insert(){
+		String q = "INSERT INTO L"+indexTableEntry.tableName+"L (owner, ctime, replicated, aclId, lfn, expiretime, size, "+
+		"dir, gowner, type, perm, selist, guid, md5, guidtime, broken, jobid) VALUES ("+
+		e(owner)+","+
+		e(format(ctime))+","+
+		(replicated ? "1" : "0")+","+
+		(aclId>0 ? ""+aclId : "null")+","+
+		e(lfn)+","+
+		e(format(expiretime))+","+
+		size+","+
+		dir+","+
+		e(gowner)+","+
+		(type>0 ? e(""+type) : "null")+","+
+		e(perm)+","+
+		selist+","+
+		"string2binary('"+guid+"'),"+
+		e(md5)+","+
+		e(guidtime)+","+
+		(broken ? 1 : 0)+","+
+		(jobid>0 ? ""+jobid : "null")+
+		");";
+		
+		DBFunctions db = indexTableEntry.getDB();
+		
+		return db.query(q);
 	}
 }
