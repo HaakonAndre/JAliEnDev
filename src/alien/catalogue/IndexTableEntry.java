@@ -168,9 +168,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		if (! (obj instanceof IndexTableEntry))
 			return false;
 		
-		IndexTableEntry oth = (IndexTableEntry) obj;
-		
-		return compareTo(oth)==0;
+		return compareTo((IndexTableEntry) obj)==0;
 	}
 	
 	@Override
