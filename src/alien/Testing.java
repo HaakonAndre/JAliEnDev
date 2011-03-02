@@ -20,7 +20,6 @@ import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.TransferBroker;
-import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -49,13 +48,13 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		testBT();
+//		testBT();
 		
 		//timing();
 		
 		//testMonitoring();
 		
-//		testGET();
+		//testGET();
 		
 //		for (int i=0; i<10; i++)
 //			System.err.println(GUIDUtils.generateTimeUUID());
@@ -65,6 +64,10 @@ public class Testing {
 //		for (Object o: prop.keySet()){
 //			System.err.println(o+ " : " + prop.get(o));
 //		}
+
+		UUID uuid = UUID.fromString("6f5cd868-2ece-11e0-b519-bbfb68418daa");
+
+		System.err.println(Long.toHexString(uuid.timestamp()));
 	}
 	
 	private static void testBT() throws IOException {
