@@ -52,7 +52,7 @@ public class Host implements Comparable<Host>{
 	 * @param db
 	 * @see CatalogueUtils#getHost(int)
 	 */
-	Host(final DBFunctions db){
+	public Host(final DBFunctions db){
 		hostIndex = db.geti("hostIndex");
 		address = db.gets("address");
 		this.db = db.gets("db");

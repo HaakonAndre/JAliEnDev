@@ -27,6 +27,8 @@ import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.services.XrootDEnvelopeSigner;
+import alien.taskQueue.Job;
+import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.UserFactory;
@@ -144,6 +146,12 @@ public class Testing {
 	private static void testGET(){
 		//LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest");
 		//LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/AOD/AOD030/FILTERsim.jdl");
+		
+		int jobID = 80278854;
+		Job job = TaskQueueUtils.getJob(jobID);
+		System.out.println("found job "+ jobID + " toString: " + job.toString());
+		
+		
 		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest2");
 		
 		System.err.println(lfn);
