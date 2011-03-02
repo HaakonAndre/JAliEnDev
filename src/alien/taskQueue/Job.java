@@ -32,7 +32,7 @@ public class Job  implements Comparable<Job> {
 	/**
 	 * sent
 	 */
-	public int sent;
+	public long sent;
 	
 	/**
 	 * split
@@ -40,24 +40,24 @@ public class Job  implements Comparable<Job> {
 	public int split;
 	
 	/**
-	 * name
+	 * name - executable
 	 */
 	public String name;
 	
 	/**
-	 * split
+	 * URL
 	 */
 	public String spyurl;
 	
 	/**
-	 * commandArg
+	 * executable parameters
 	 */
 	public String commandArg;
 	
 	/**
 	 * finished
 	 */
-	public int finished;
+	public long finished;
 	
 	/**
 	 * masterjob
@@ -92,7 +92,7 @@ public class Job  implements Comparable<Job> {
 	/**
 	 * received
 	 */
-	public int received;
+	public long received;
 	
 	/**
 	 * validate
@@ -132,7 +132,7 @@ public class Job  implements Comparable<Job> {
 	/**
 	 * started
 	 */
-	public int started;
+	public long started;
 	
 	/**
 	 * expires
@@ -200,24 +200,22 @@ public class Job  implements Comparable<Job> {
 	
 
 	private void init(final DBFunctions db){
-
-		
-		
 		queueId = db.geti("queueId");
 		priority = db.geti("priority");
 		execHost = db.gets("execHost");
+		sent = db.getl("sent");
 		split = db.geti("split");
 		name = db.gets("name");
 		spyurl = db.gets("spyurl");
 		commandArg = db.gets("commandArg");
-		finished = db.geti("finished");
+		finished = db.getl("finished");
 		masterjob = db.getb("masterjob", false);
 		status = db.gets("status");
 		splitting = db.geti("splitting");
 		node = db.gets("node");
 		error = db.geti("error");
 		current = db.gets("current");
-		received = db.geti("received");
+		received = db.getl("received");
 		validate = db.getb("validate",false);
 		command = db.gets("command");
 		merging = db.gets("merging");
@@ -225,7 +223,7 @@ public class Job  implements Comparable<Job> {
 		jdl = db.gets("jdl");
 		path = db.gets("path");
 		site = db.gets("site");
-		started = db.geti("started");
+		started = db.getl("started");
 		expires = db.geti("expires");
 		finalPrice = db.getf("finalPrice");
 		effectivePriority = db.getf("effectivePriority");
@@ -264,6 +262,7 @@ public class Job  implements Comparable<Job> {
 		return "Job queueId\t\t: "+queueId+"\n" +
 		" priority\t\t: "+priority+"\n" +
 		" execHost\t\t: "+execHost+"\n" +
+		" sent\t\t: "+sent+"\n"+
 		" split\t\t: "+split+"\n" +
 		" name\t\t: "+name+"\n" +
 		" spyurl\t\t: "+spyurl+"\n" +
@@ -295,8 +294,6 @@ public class Job  implements Comparable<Job> {
 		" chargeStatus\t\t: "+chargeStatus+"\n" +
 		" optimized\t\t: "+optimized+"\n" +
 		" mtime\t\t: "+mtime+ "\n";
-
-		    
 	}
 	
 }
