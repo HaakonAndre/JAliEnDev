@@ -2,8 +2,6 @@ package alien.taskQueue;
 
 import java.util.Date;
 
-import alien.catalogue.GUID;
-
 import lazyj.DBFunctions;
 
 
@@ -190,24 +188,14 @@ public class Job  implements Comparable<Job> {
 	 * mtime
 	 */
 	public Date mtime;
-	
-	
-	
-	/**
-	 * Host where this entry was read from
-	 */
-	public final int host;
-	
+		
 	/**
 	 * Load one row from a G*L table
 	 * 
 	 * @param db
-	 * @param host 
-	 * @param tableName 
 	 */
-	Job(final DBFunctions db, final int host){
+	Job(final DBFunctions db){
 		init(db);
-		this.host = host;
 	}
 	
 
@@ -241,27 +229,25 @@ public class Job  implements Comparable<Job> {
 		expires = db.geti("expires");
 		finalPrice = db.getf("finalPrice");
 		effectivePriority = db.getf("effectivePriority");
-			price = db.getf("price");
+		price = db.getf("price");
 		si2k = db.getf("si2k");
 		jobagentId = db.geti("jobagentId");
 		agentid = db.geti("agentid");
 		notify = db.gets("notify");
 		chargeStatus = db.gets("chargeStatus");
 		optimized = db.getb("optimized",false);
-		mtime = db.getDate("mtime", null);
-
-			
+		mtime = db.getDate("mtime", null);	
 	}
 	
 
 	@Override
 	public int compareTo(final Job o) {
-		return (new Integer(queueId)).compareTo(new Integer(o.queueId));
+		return queueId - o.queueId;
 	}
 	
 	@Override
 	public boolean equals(final Object obj) {
-		if (! (obj instanceof GUID))
+		if (! (obj instanceof Job))
 			return false;
 		
 		return compareTo((Job) obj) == 0;

@@ -1,26 +1,18 @@
 package alien.taskQueue;
 
-import java.util.List;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
-import lazyj.cache.GenericLastValuesCache;
-import alien.catalogue.CatalogueUtils;
-import alien.catalogue.Host;
-import alien.catalogue.LFN;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 
+/**
+ * @author steffen
+ * @since Mar 1, 2011
+ */
 public class TaskQueueUtils {
-	/**
-	 * @author steffen
-	 * @since Mar 1, 2011
-	 */
 
 	/**
 	 * Logger
@@ -44,28 +36,26 @@ public class TaskQueueUtils {
 	/**
 	 * Get the Job from the QUEUE
 	 * 
-	 * @param sPath
-	 * @param evenIfDoesntExist
-	 * @return the LFN, either the existing entry, or if <code>evenIfDoesntExist</code> is <code>true</code>
-	 *      then a bogus entry is returned
+	 * @param queueId 
+	 * @return the job, or <code>null</code> if it cannot be located 
 	 */
 	public static Job getJob(final int queueId){
 		String sSearch = String.valueOf(queueId);
 
 		final DBFunctions db = getDB();
 		
-//		if (monitor!=null){
-//			monitor.incrementCounter("LFN_db_lookup");
-//		}
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+		}
 		
 		if (!db.query("SELECT * FROM QUEUE WHERE queueId='"+Format.escSQL(sSearch)+"';"))
 			return null;
 		
-		if (!db.moveNext()){		
+		if (!db.moveNext()){
 			return null;
 		}
 		
-		return new Job(db,0);
+		return new Job(db);
 	}
 	
 
