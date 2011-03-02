@@ -165,6 +165,7 @@ public final class CatalogueUtils {
 	}
 	
 	private static Set<IndexTableEntry> indextable = null;
+	private static Set<String> tableentries = null;
 	private static long lastIndexTableUpdate = 0;
 	
 	private static final ReentrantReadWriteLock indextableRWLock = new ReentrantReadWriteLock();
@@ -190,13 +191,19 @@ public final class CatalogueUtils {
 	
 						if (db!=null && db.query("SELECT * FROM INDEXTABLE;")){
 							final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
+							final Set<String> newTableentries = new HashSet<String>(); 
 							
 							while (db.moveNext()) {
 								final IndexTableEntry entry = new IndexTableEntry(db);
 		
 								newIndextable.add(entry);
+								
+								newTableentries.add(db.gets("lfn"));
 							}
+							
 							indextable = newIndextable;
+							tableentries = newTableentries;
+							
 							lastIndexTableUpdate = System.currentTimeMillis();
 						}
 						else{
@@ -266,5 +273,21 @@ public final class CatalogueUtils {
 		}
 		
 		return best;
+	}
+	
+	/**
+	 * @param path
+	 * @return <code>true</code> if this path is held in a separate table
+	 */
+	public static boolean isSeparateTable(final String path){
+		if (path==null || path.length()==0 || !path.startsWith("/"))
+			return false;
+		
+		updateIndexTableCache();
+		
+		if (!path.endsWith("/"))
+			return tableentries.contains(path+"/");
+		
+		return tableentries.contains(path);
 	}
 }

@@ -1,6 +1,7 @@
 package alien.catalogue;
 
 import java.io.Serializable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
@@ -81,6 +82,10 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		if (h==null)
 			return null;
 		
+		if (logger.isLoggable(Level.FINEST)){
+			logger.log(Level.FINEST, "Host is : "+h);
+		}
+		
 		return h.getDB();
 	}
 	
@@ -114,10 +119,18 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			monitor.incrementCounter("LFN_db_lookup");
 		}
 		
-		if (!db.query("SELECT * FROM L"+tableName+"L WHERE lfn='"+Format.escSQL(sSearch)+"';"))
+		String q = "SELECT * FROM L"+tableName+"L WHERE lfn='"+Format.escSQL(sSearch)+"'";
+		
+		if (!sSearch.endsWith("/"))
+			q += " OR lfn='"+Format.escSQL(sSearch)+"/'";
+		
+		if (!db.query(q))
 			return null;
 		
 		if (!db.moveNext()){
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Empty result set for "+q);
+			
 			if (evenIfDoesntExist){
 				return new LFN(sSearch, this);
 			}

@@ -2,8 +2,10 @@ package alien.catalogue;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -127,7 +129,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	/**
 	 * Canonical path
 	 */
-	public String canonicalName = null;
+	private String canonicalName = null;
 	
 	/**
 	 * The table where this row can be found
@@ -465,5 +467,54 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		DBFunctions db = indexTableEntry.getDB();
 		
 		return db.query(q);
+	}
+	
+	/**
+	 * @return the list of entries in this folder
+	 */
+	public List<LFN> list(){
+		if (indexTableEntry==null)
+			return null;
+		
+		final List<LFN> ret = new ArrayList<LFN>();
+
+		if (CatalogueUtils.isSeparateTable(getCanonicalName())){
+			final IndexTableEntry other = CatalogueUtils.getClosestMatch(getCanonicalName());
+			
+			Host h = CatalogueUtils.getHost(other.hostIndex);
+			
+			
+			
+			final DBFunctions db = other.getDB();
+			
+			String q = "SELECT * FROM L"+other.tableName+"L WHERE dir=(SELECT entryId FROM L"+other.tableName+"L WHERE dir IS NULL) ORDER BY lfn ASC;";
+			
+			System.err.println(h);
+			System.err.println(q);
+			
+			System.err.println("------------");
+			
+			db.query(q);
+
+			while (db.moveNext()){
+				ret.add(new LFN(db, other));
+			}
+			
+			return ret;
+		}
+		
+		final DBFunctions db = indexTableEntry.getDB();
+		
+		String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir="+entryId+" ORDER BY lfn ASC;";
+		
+		System.err.println(q);
+		
+		db.query(q);
+		
+		while (db.moveNext()){
+			ret.add(new LFN(db, indexTableEntry));
+		}
+				
+		return ret;
 	}
 }
