@@ -48,6 +48,8 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
+		testCatalogue();
+		
 //		testBT();
 		
 		//timing();
@@ -68,6 +70,28 @@ public class Testing {
 		UUID uuid = UUID.fromString("6f5cd868-2ece-11e0-b519-bbfb68418daa");
 
 		System.err.println(Long.toHexString(uuid.timestamp()));
+	}
+	
+	private static void testCatalogue() throws IOException {
+		LFN root = LFNUtils.getLFN("/alice");
+		
+		List<LFN> list = root.list();
+		
+		for (LFN l: list){
+			System.err.println(l.getCanonicalName());
+			
+//			List<LFN> list2 = l.list();
+//			
+//			for (LFN l2: list2){
+//				System.err.println(l2.getCanonicalName());
+//				
+//				List<LFN> list3 = l2.list();
+//				
+//				for (LFN l3: list3){
+//					System.err.println(l3.getCanonicalName());
+//				}
+//			}
+		}
 	}
 	
 	private static void testBT() throws IOException {
