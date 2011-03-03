@@ -232,4 +232,11 @@ public class ConfigUtils {
 		
 		return l;
 	}
+
+	private static final String jAliEnVersion = "0.0.1";
+	
+	public static final String getVersion(){
+		return jAliEnVersion;
+	}
+	
 }

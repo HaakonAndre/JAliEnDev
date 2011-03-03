@@ -117,4 +117,12 @@ public class TaskQueueUtils {
 		
 		return ret;		
 	}
+	
+
+	public static String getJobTraceLog(final int queueId){
+		JobTraceLog trace = new JobTraceLog(queueId);
+		return trace.getTraceLog();
+	}
+	
+	
 }
