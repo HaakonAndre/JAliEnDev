@@ -193,9 +193,7 @@ public class TransferBroker {
 
 		// TODO : register the PFN in the booking table
 		
-		final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
-		
-		String reason = AuthorizationFactory.fillAccess(admin, source, AccessType.READ);
+		String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
 		
 		if (reason!=null){
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Source authorization failed: "+reason);
@@ -205,7 +203,7 @@ public class TransferBroker {
 		final PFN target;
 		
 		try{
-			target = BookingTable.bookForWriting(admin, lfn, guid, null, 0, se);
+			target = BookingTable.bookForWriting(lfn, guid, null, 0, se);
 		}
 		catch (IOException ioe){
 			reason = ioe.getMessage();

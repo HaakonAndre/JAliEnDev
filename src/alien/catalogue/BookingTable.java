@@ -31,6 +31,20 @@ public class BookingTable {
 	}
 	
 	/**
+	 * @param lfn
+	 * @param requestedGUID
+	 * @param requestedPFN 
+	 * @param jobid
+	 * @param se
+	 * @return the PFN with the write access envelope if allowed to write or <code>null</code>
+	 * 			if the PFN doesn't indicate a physical file but the entry was successfully booked
+	 * @throws IOException if not allowed to do that
+	 */
+	public static PFN bookForWriting(final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
+		return bookForWriting(AuthorizationFactory.getDefaultUser(), lfn, requestedGUID, requestedPFN, jobid, se);
+	}	
+	
+	/**
 	 * @param user
 	 * @param lfn
 	 * @param requestedGUID

@@ -24,6 +24,42 @@ public final class AuthorizationFactory {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(AuthorizationFactory.class.getCanonicalName());
 	
+	private static AliEnPrincipal defaultAccount = null;
+	
+	static{
+		// TODO initialize default account from the environment
+		setDefaultUser(null);
+	}
+	
+	/**
+	 * Set the default account of this environment
+	 * 
+	 * @param account 
+	 */
+	private static final void setDefaultUser(final AliEnPrincipal account){
+		defaultAccount = account;
+	}
+	
+	/**
+	 * @return default account for 
+	 */
+	public static final AliEnPrincipal getDefaultUser(){
+		return defaultAccount;
+	}
+	
+	/**
+	 * Request access to this GUID, with the priviledges of the default account
+	 * @param pfn 
+	 * @param access 
+	 * @return <code>null</code> if access was granted, otherwise the reason why the access was rejected 
+	 */
+	public static String fillAccess(final PFN pfn, final AccessType access) {
+		if (defaultAccount==null)
+			return "There is no default account set";
+		
+		return fillAccess(defaultAccount, pfn, access);
+	}	
+	
 	/**
 	 * Request access to this GUID
 	 * @param user 
