@@ -97,12 +97,26 @@ public class Transfer implements Serializable, Runnable {
 	}
 	
 	/**
+	 * Get the list of protocols via which this PFN can be accessed
+	 * 
+	 * @param pfn
+	 * @return list of protocols
+	 */
+	public static List<Protocol> getAccessProtocols(final PFN pfn){
+		return getProtocols(pfn, true);
+	}
+	
+	/**
 	 * Get the protocols supported by this guy
 	 * 
 	 * @param pfn
 	 * @return list of protocols
 	 */
 	public static List<Protocol> getProtocols(final PFN pfn){
+		return getProtocols(pfn, false);
+	}
+	
+	private static List<Protocol> getProtocols(final PFN pfn, final boolean onlyAccess){
 		final List<Protocol> ret = new LinkedList<Protocol>();
 		
 		if (pfn==null)
@@ -121,7 +135,9 @@ public class Transfer implements Serializable, Runnable {
 		final String s = sPFN.substring(0, idx).trim().toLowerCase();
 		
 		if (s.equals("root")){
-			ret.add(Factory.xrd3cp);
+			if (!onlyAccess)
+				ret.add(Factory.xrd3cp);
+			
 			ret.add(Factory.xrootd);
 		}
 		else
