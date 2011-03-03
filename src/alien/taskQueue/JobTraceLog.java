@@ -1,36 +1,40 @@
 package alien.taskQueue;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 
-import alien.protocols.HTTP;
+import lazyj.Utils;
 
+/**
+ * @author steffen
+ * @since Mar 3, 2011
+ */
 public class JobTraceLog {
 	
 	final private String jobTraceLogURLPrefix = "http://aliendb8.cern.ch/joblog/";
 	
 	private String trace = "";
 	
-	JobTraceLog(int id){
-		String queueId = String.valueOf(id);
+	/**
+	 * @param id job ID
+	 */
+	JobTraceLog(final int id){
+		final String queueId = String.valueOf(id);
 		retrieve(jobTraceLogURLPrefix + queueId.substring(0,4) + "/" + queueId + ".log" );
 	}
 	
 	private void retrieve(String url ){
-		HTTP http = new HTTP();
-		try {
-			trace = http.retrieve(url);
-		} catch (MalformedURLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		try{
+			trace = Utils.download(url, null);
+		}
+		catch (IOException ioe){
+			// ignore
 		}
 	}
 	  
+    /**
+     * @return the trace log
+     */
     public String getTraceLog(){
     	return trace;
     }
-    
 }
