@@ -481,19 +481,10 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (CatalogueUtils.isSeparateTable(getCanonicalName())){
 			final IndexTableEntry other = CatalogueUtils.getClosestMatch(getCanonicalName());
 			
-			Host h = CatalogueUtils.getHost(other.hostIndex);
-			
-			
-			
 			final DBFunctions db = other.getDB();
 			
-			String q = "SELECT * FROM L"+other.tableName+"L WHERE dir=(SELECT entryId FROM L"+other.tableName+"L WHERE dir IS NULL) ORDER BY lfn ASC;";
-			
-			System.err.println(h);
-			System.err.println(q);
-			
-			System.err.println("------------");
-			
+			final String q = "SELECT * FROM L"+other.tableName+"L WHERE dir=(SELECT entryId FROM L"+other.tableName+"L WHERE lfn='') ORDER BY lfn ASC;";
+						
 			db.query(q);
 
 			while (db.moveNext()){
@@ -505,9 +496,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
-		String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir="+entryId+" ORDER BY lfn ASC;";
-		
-		System.err.println(q);
+		final String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir="+entryId+" ORDER BY lfn ASC;";
 		
 		db.query(q);
 		
