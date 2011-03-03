@@ -80,17 +80,17 @@ public class Testing {
 		for (LFN l: list){
 			System.err.println(l.getCanonicalName());
 			
-//			List<LFN> list2 = l.list();
-//			
-//			for (LFN l2: list2){
-//				System.err.println(l2.getCanonicalName());
+			List<LFN> list2 = l.list();
+			
+			for (LFN l2: list2){
+				System.err.println(l2.getCanonicalName());
 //				
 //				List<LFN> list3 = l2.list();
 //				
 //				for (LFN l3: list3){
 //					System.err.println(l3.getCanonicalName());
 //				}
-//			}
+			}
 		}
 	}
 	
