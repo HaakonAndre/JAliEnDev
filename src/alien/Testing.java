@@ -174,11 +174,6 @@ public class Testing {
 		//LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest");
 		//LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/a/alidaq/AOD/AOD030/FILTERsim.jdl");
 		
-		int jobID = 80278854;
-		Job job = TaskQueueUtils.getJob(jobID);
-		System.out.println("found job "+ jobID + " toString: " + job.toString());
-		
-		
 		LFN lfn = LFNUtils.getLFN("/alice/cern.ch/user/s/sschrein/jtest2");
 		
 		System.err.println(lfn);
