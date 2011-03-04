@@ -1,6 +1,7 @@
 package alien.ui;
 
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -68,6 +69,11 @@ public abstract class Request implements Serializable, Runnable {
 	private transient AliEnPrincipal partner_identity = null;
 	
 	/**
+	 * Set on receiving a request over the network
+	 */
+	private transient InetAddress partner_address = null;
+	
+	/**
 	 * @return the unique identifier of the VM that generated the request
 	 */
 	public final UUID getVMUUID(){
@@ -110,5 +116,22 @@ public abstract class Request implements Serializable, Runnable {
 			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 		
 		partner_identity = id;
+	}
+	
+	/**
+	 * @return partner's IP address
+	 */
+	public InetAddress getPartnerAddress() {
+		return partner_address;
+	}
+	
+	/**
+	 * @param ip partner's address
+	 */
+	public final void setPartnerAddress(final InetAddress ip){
+		if (ip!=null)
+			throw new IllegalAccessError("You are not allowed to overwrite this field!");
+		
+		this.partner_address = ip;
 	}
 }
