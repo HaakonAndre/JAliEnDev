@@ -11,7 +11,7 @@ import alien.user.AliEnPrincipal;
  * @author costing
  * @since 2011-03-04
  */
-public class Request implements Serializable {
+public abstract class Request implements Serializable, Runnable {
 
 	/**
 	 * 

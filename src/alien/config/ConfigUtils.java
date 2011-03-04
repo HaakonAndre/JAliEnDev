@@ -42,6 +42,8 @@ public class ConfigUtils {
 	
 	private static final ExtProperties appConfig;
 	
+	private static boolean hasDirectDBConnection = false;
+	
 	static {
 		CONFIG_FOLDER = System.getProperty("AliEnConfig", "config");
 		
@@ -86,6 +88,9 @@ public class ConfigUtils {
 						else
 						if (prop.gets("driver").length()>0){
 							dbconfig.put(sName, prop);
+							
+							if (prop.gets("password").length()>0)
+								hasDirectDBConnection = true;
 						}
 						else
 							otherconfig.put(sName, prop);
@@ -111,6 +116,13 @@ public class ConfigUtils {
 	        
 	        logging = new LoggingConfigurator(prop);
 		}
+	}
+	
+	/**
+	 * @return <code>true</code> if direct database access is available
+	 */
+	public static final boolean isCentralService(){
+		return hasDirectDBConnection;
 	}
 	
 	/**
