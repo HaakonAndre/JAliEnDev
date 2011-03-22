@@ -483,7 +483,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			
 			final DBFunctions db = other.getDB();
 			
-			final String q = "SELECT * FROM L"+other.tableName+"L WHERE dir=(SELECT entryId FROM L"+other.tableName+"L WHERE lfn='') ORDER BY lfn ASC;";
+			final String q = "SELECT * FROM L"+other.tableName+"L WHERE dir=(SELECT entryId FROM L"+other.tableName+"L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 						
 			db.query(q);
 
@@ -496,7 +496,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
-		final String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir="+entryId+" ORDER BY lfn ASC;";
+		final String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir="+entryId+" AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 		
 		db.query(q);
 		
