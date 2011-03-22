@@ -46,12 +46,13 @@ public final class GUIDUtils {
 	 * @see Host
 	 */
 	public static int getGUIDHost(final UUID guid) {
-		final long guidTime = guid.timestamp();
+		final long guidTime = indexTime(guid);
 
 		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
 
-		if (index == null)
+		if (index == null){
 			return -1;
+		}
 
 		return index.hostIndex;
 	}
@@ -85,7 +86,7 @@ public final class GUIDUtils {
 	 * @see #getDBForGUID(UUID)
 	 */
 	public static int getTableNameForGUID(final UUID guid) {
-		final long guidTime = guid.timestamp();
+		final long guidTime = indexTime(guid);
 
 		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
 
@@ -296,7 +297,7 @@ public final class GUIDUtils {
 	}
 	
 	/**
-	 * @param f base file to fill the properties from: ctime, md5, size
+	 * @param f base file to fill the properties from: ctime, md5, sizeSystem.
 	 * @param user who owns this new entry
 	 * @return the newly created GUID
 	 * @throws IOException
@@ -332,5 +333,18 @@ public final class GUIDUtils {
 	 */
 	public static final long epochTime(final UUID uuid){
 		return (uuid.timestamp() - 0x01b21dd213814000L) / 10000;
+	}
+	
+	/**
+	 * @param uuid
+	 * @return AliEn guidtime-compatible value
+	 */
+	public static final long indexTime(final UUID uuid){
+		final long msg = uuid.getMostSignificantBits() & 0x00000000FFFFFFFFL;
+		
+		long ret = (msg >>> 16);
+		ret += (msg & 0x0FFFFL)<<16;
+		
+		return ret;
 	}
 }
