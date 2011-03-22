@@ -1,7 +1,6 @@
 package alien.catalogue;
 
 import java.io.Serializable;
-import java.util.Date;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -56,26 +55,12 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 		hostIndex = db.geti("hostIndex");
 		tableName = db.geti("tableName");
 		
-		guidTime = toEpochTime(db.gets("guidTime"));		
-	}
-	
-	/**
-	 * @param epoch
-	 * @return time in guidTime format
-	 */
-	public static final String toGuidTime(final long epoch){
-		return Long.toHexString(epoch * 1000000).toUpperCase();
-	}
-	
-	/**
-	 * @param guidTime
-	 * @return epoch time of this guidTime
-	 */
-	public static final long toEpochTime(final String guidTime){
-		if (guidTime.length()>1)
-			return  Long.parseLong(guidTime, 16) / 1000000;
-	
-		return 0;
+		String s = db.gets("guidTime");
+		
+		if (s.length()>=8)
+			guidTime = Long.parseLong(s.substring(0,8), 16);
+		else
+			guidTime = 0;
 	}
 
 	@Override
@@ -113,7 +98,7 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 		return "GUIDIndex : hostIndex : "+hostIndex+"\n"+
 		       "tableName\t: "+tableName+"\n"+
 		       "indexId\t: "+indexId+"\n"+
-		       "guidTime\t: "+guidTime+" ("+(new Date(guidTime))+")";
+		       "guidTime\t: "+Long.toHexString(guidTime);
 	}
 	
 }
