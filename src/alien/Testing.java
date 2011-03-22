@@ -3,6 +3,7 @@ package alien;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -48,7 +49,7 @@ public class Testing {
 	 * @param args
 	 */
 	public static void main(String[] args) throws Exception {
-		testCatalogue();
+		//testCatalogue();
 		
 //		testBT();
 		
@@ -66,10 +67,55 @@ public class Testing {
 //		for (Object o: prop.keySet()){
 //			System.err.println(o+ " : " + prop.get(o));
 //		}
+		
+		rename();
 
 		UUID uuid = UUID.fromString("6f5cd868-2ece-11e0-b519-bbfb68418daa");
 
 		System.err.println(Long.toHexString(uuid.timestamp()));
+	}
+	
+	private static void rename(){
+		for (String s: Arrays.asList("/alice/data/2011/LHC11a/000145455/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000145454/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000145448/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000145385/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000145384/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145383/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145379/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145355/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145354/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145353/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145314/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145309/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145300/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145299/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145294/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145292/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145291/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145290/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145289/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145288/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145182/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145180/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145157/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145156/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145145/ESDs/Pass1",                                                                                                                                     
+"/alice/data/2011/LHC11a/000145144/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000145075/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000145074/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000145008/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000144998/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000144991/ESDs/Pass1",
+"/alice/data/2011/LHC11a/000144774/ESDs/Pass1"
+)){
+			LFN lfn = LFNUtils.getLFN(s);
+			
+			if (lfn!=null){
+				System.err.println(lfn);
+				System.err.println(lfn.indexTableEntry);
+			}
+		}
 	}
 	
 	private static void testCatalogue() throws IOException {
