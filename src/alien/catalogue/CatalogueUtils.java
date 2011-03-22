@@ -116,9 +116,8 @@ public final class CatalogueUtils {
 				}
 				finally {
 					guidIndexWriteLock.unlock();
+					guidIndexReadLock.lock();
 				}
-				
-				guidIndexReadLock.lock();
 			}
 		}
 		finally{
