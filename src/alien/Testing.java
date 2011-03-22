@@ -68,11 +68,23 @@ public class Testing {
 //			System.err.println(o+ " : " + prop.get(o));
 //		}
 		
-		rename();
+		//rename();
+//
+//		LFN lfn = LFNUtils.getLFN("/alice/data/2010/LHC10h/000139514/ESDs/pass1/AOD040/Stage_1.xml");
+//		
+//		System.err.println(lfn);
 
-		UUID uuid = UUID.fromString("6f5cd868-2ece-11e0-b519-bbfb68418daa");
+		UUID uuid = UUID.fromString("c282d290-4fdf-11e0-8e3b-002481e40db6");
+		
+		GUID guid = GUIDUtils.getGUID(uuid);
+		
+		System.err.println(guid);
 
-		System.err.println(Long.toHexString(uuid.timestamp()));
+//		System.err.println(Long.toHexString(GUIDUtils.indexTime(uuid)));
+		
+		//GUID guid = GUIDUtils.getGUID(uuid);
+		
+		//System.err.println(guid);
 	}
 	
 	private static void rename(){
