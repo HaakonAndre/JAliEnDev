@@ -45,15 +45,18 @@ public class ConfigUtils {
 	private static boolean hasDirectDBConnection = false;
 	
 	static {
-		CONFIG_FOLDER = System.getProperty("AliEnConfig", "config");
+	  String sConfigFolder = null;
 		
-		final File f = new File(CONFIG_FOLDER);
-
-		final HashMap<String, ExtProperties> dbconfig = new HashMap<String, ExtProperties>();
+	  final HashMap<String, ExtProperties> dbconfig = new HashMap<String, ExtProperties>();
 		
-		final HashMap<String, ExtProperties> otherconfig = new HashMap<String, ExtProperties>();
+	  final HashMap<String, ExtProperties> otherconfig = new HashMap<String, ExtProperties>();
+	  
+	  ExtProperties applicationConfig = null;
+	  
+	  try{
+		sConfigFolder = System.getProperty("AliEnConfig", "config");
 		
-		ExtProperties applicationConfig = null;
+		final File f = new File(sConfigFolder);
 		
 		if (f.exists() && f.isDirectory() && f.canRead()){
 			final File[] list = f.listFiles();
@@ -64,7 +67,7 @@ public class ConfigUtils {
 						String sName = sub.getName();
 						sName = sName.substring(0, sName.lastIndexOf('.'));
 						
-						final ExtProperties prop = new ExtProperties(CONFIG_FOLDER, sName);
+						final ExtProperties prop = new ExtProperties(sConfigFolder, sName);
 						prop.makeReadOnly();
 						prop.setAutoReload(1000*60);
 						
@@ -99,13 +102,6 @@ public class ConfigUtils {
 			}
 		}
 		
-		dbConfigFiles = Collections.unmodifiableMap(dbconfig);
-		
-		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
-		
-		appConfig = applicationConfig!=null ? applicationConfig : new ExtProperties();
-		appConfig.makeReadOnly();
-		
 		if (logging == null){
 			final ExtProperties prop = new ExtProperties();
 			
@@ -116,6 +112,20 @@ public class ConfigUtils {
 	        
 	        logging = new LoggingConfigurator(prop);
 		}
+	  }
+	  catch (Throwable t){
+		  System.err.println("ConfigUtils: static: caught: "+t+" ("+t.getMessage()+")");
+		  t.printStackTrace();
+	  }
+	  
+	  CONFIG_FOLDER = sConfigFolder;
+	  
+	  dbConfigFiles = Collections.unmodifiableMap(dbconfig);
+		
+	  otherConfigFiles = Collections.unmodifiableMap(otherconfig);
+		
+	  appConfig = applicationConfig!=null ? applicationConfig : new ExtProperties();
+	  appConfig.makeReadOnly();
 	}
 	
 	/**

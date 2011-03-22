@@ -293,6 +293,20 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	/**
 	 * Get the canonical name (full path and name)
 	 * 
+	 * @return canonical name without the '/' at the end, if any
+	 */
+	public String getStrippedCanonicalName(){
+		String s = getCanonicalName();
+		
+		if (s!=null && s.endsWith("/"))
+			s = s.substring(0, s.length()-1);
+		
+		return s;
+	}
+	
+	/**
+	 * Get the canonical name (full path and name)
+	 * 
 	 * @return canonical name
 	 */
 	public String getCanonicalName(){

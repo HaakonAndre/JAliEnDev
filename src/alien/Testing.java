@@ -59,32 +59,17 @@ public class Testing {
 		
 		//testGET();
 		
-//		for (int i=0; i<10; i++)
-//			System.err.println(GUIDUtils.generateTimeUUID());
-		
-//		Properties prop = System.getProperties();
-//		
-//		for (Object o: prop.keySet()){
-//			System.err.println(o+ " : " + prop.get(o));
-//		}
-		
 		//rename();
-//
-//		LFN lfn = LFNUtils.getLFN("/alice/data/2010/LHC10h/000139514/ESDs/pass1/AOD040/Stage_1.xml");
-//		
-//		System.err.println(lfn);
 
-		UUID uuid = UUID.fromString("c282d290-4fdf-11e0-8e3b-002481e40db6");
+		for (String s: Arrays.asList("/alice/", "/alice/cern.ch/user/g/grigoras/")){
+			System.err.println("*****************************************************\n\n\n"+s+"\n\n\n");
+			
+			LFN lfn = LFNUtils.getLFN(s);
+			
+			for (LFN l: lfn.list())
+				System.err.println(l.getCanonicalName());
+		}
 		
-		GUID guid = GUIDUtils.getGUID(uuid);
-		
-		System.err.println(guid);
-
-//		System.err.println(Long.toHexString(GUIDUtils.indexTime(uuid)));
-		
-		//GUID guid = GUIDUtils.getGUID(uuid);
-		
-		//System.err.println(guid);
 	}
 	
 	private static void rename(){
