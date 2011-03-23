@@ -137,13 +137,23 @@ public class TaskQueueUtils {
 			
 			if (j!=oldJobID){
 				m = new HashMap<String, Integer>();
-				ret.put(reverse.get(Integer.valueOf(j)), m);
+
+				final Integer jobId = Integer.valueOf(j);
+				ret.put(reverse.get(jobId), m);
+				reverse.remove(jobId);
 				
 				oldJobID = j;
 			}
 			
 			// ignore the NPE warning, this cannot be null
 			m.put(db.gets(2), Integer.valueOf(db.geti(3)));
+		}
+		
+		// now, what is left, something that doesn't have subjobs ?
+		for (final Job j: reverse.values()){
+			m = new HashMap<String, Integer>(1);
+			m.put(j.status, Integer.valueOf(1));
+			ret.put(j, m);
 		}
 				
 		return ret;
