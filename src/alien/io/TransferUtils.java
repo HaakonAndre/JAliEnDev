@@ -43,6 +43,11 @@ public final class TransferUtils {
 		if (db==null)
 			return null;
 		
+		if (monitor!=null){
+			monitor.incrementCounter("TRANSFERS_db_lookup");
+			monitor.incrementCounter("TRANSFERS_get_by_id");
+		}
+		
 		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId="+id);
 		
 		if (!db.moveNext())
@@ -60,6 +65,11 @@ public final class TransferUtils {
 		
 		if (db==null)
 			return null;
+
+		if (monitor!=null){
+			monitor.incrementCounter("TRANSFERS_db_lookup");
+			monitor.incrementCounter("TRANSFERS_get_by_destination");
+		}
 		
 		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination='"+Format.escSQL(targetSE)+"' ORDER BY transferId");
 		
@@ -82,6 +92,11 @@ public final class TransferUtils {
 		
 		if (db==null)
 			return null;
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TRANSFERS_db_lookup");
+			monitor.incrementCounter("TRANSFERS_get_by_user");
+		}
 		
 		String q = "SELECT * FROM TRANSFERS_DIRECT ";
 		
