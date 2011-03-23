@@ -1,6 +1,7 @@
 package alien.taskQueue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -48,6 +49,7 @@ public class TaskQueueUtils {
 		
 		if (monitor!=null){
 			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_jobdetails");
 		}
 		
 		if (!db.query("SELECT * FROM QUEUE WHERE queueId="+queueId+";"))
@@ -102,29 +104,46 @@ public class TaskQueueUtils {
 		
 		final Map<Job, Map<String, Integer>> ret = new TreeMap<Job, Map<String, Integer>>();
 		
+		if (jobs.size()==0)
+			return ret;
+		
 		final DBFunctions db = getDB();
+
+		final StringBuilder sb = new StringBuilder(jobs.size() * 10);
+		
+		final Map<Integer, Job> reverse = new HashMap<Integer, Job>(); 
 		
 		for (final Job j: jobs){
-			if (monitor!=null){
-				monitor.incrementCounter("TQ_db_lookup");
-				monitor.incrementCounter("TQ_getmasterjob_stats");
-			}
+			if (sb.length()>0)
+				sb.append(',');
 			
-			db.query("SELECT status,count(1) FROM QUEUE WHERE split="+j.queueId+" GROUP BY status;");
+			sb.append(j.queueId);
 			
-			Map<String, Integer> m = new TreeMap<String, Integer>();
-			
-			while (db.moveNext()){
-				m.put(db.gets(1), Integer.valueOf(db.geti(2)));
-			}
-			
-			if (m.size()==0){
-				m.put(j.status, Integer.valueOf(1));	// no subjobs, so just put itself there
-			}
-			
-			ret.put(j, m);
+			reverse.put(Integer.valueOf(j.queueId), j);
 		}
-		
+
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_getmasterjob_stats");
+		}
+
+		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status;");
+			
+		Map<String, Integer> m = null;
+		int oldJobID = -1;
+			
+		while (db.moveNext()){
+			final int j = db.geti(1);
+			
+			if (j!=oldJobID){
+				m = new HashMap<String, Integer>();
+				ret.put(reverse.get(Integer.valueOf(j)), m);
+			}
+			
+			// ignore the NPE warning, this cannot be null
+			m.put(db.gets(2), Integer.valueOf(db.geti(3)));
+		}
+				
 		return ret;
 	}
 
@@ -142,7 +161,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_getsubjobs");
 		}
 		
-		String q = "SELECT * FROM QUEUE WHERE split="+queueId+" ORDER BY queueId ASC;";
+		final String q = "SELECT * FROM QUEUE WHERE split="+queueId+" ORDER BY queueId ASC;";
 		
 		final List<Job> ret = new ArrayList<Job>();
 
