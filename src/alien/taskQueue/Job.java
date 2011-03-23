@@ -296,4 +296,19 @@ public class Job  implements Comparable<Job> {
 		" mtime\t\t: "+mtime+ "\n";
 	}
 	
+	/**
+	 * @return the owner of the job (AliEn account name)
+	 */
+	public String getOwner(){
+		if (submitHost==null)
+			return null;
+		
+		int idx = submitHost.indexOf('@');
+		
+		if (idx<0)
+			return null;
+		
+		return lia.util.StringFactory.get(submitHost.substring(0, idx).toLowerCase());
+	}
+	
 }
