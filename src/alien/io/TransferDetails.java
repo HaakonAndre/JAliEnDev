@@ -16,142 +16,142 @@ public class TransferDetails {
 	/**
 	 * transfer queue id
 	 */
-	int transferId;  
+	public final int transferId;  
 	
 	/**
 	 * priority
 	 */
-	int priority;
+	public final int priority;
 	
 	/**
 	 * change time
 	 */
-	Date ctime;   
+	public final Date ctime;   
 	
 	/**
 	 * status
 	 */
-	String status;
+	public final String status;
 	
 	/**
 	 * jdl
 	 */
-	String jdl;
+	public final String jdl;
 	
 	/**
 	 * LFN
 	 */
-	String lfn;
+	public final String lfn;
 	
 	/**
 	 * file size
 	 */
-	long size;  
+	public final long size;  
 	
 	/**
 	 * error code
 	 */
-	int error;
+	public final int error;
 	
 	/**
 	 * started timestamp
 	 */
-	long started;      
+	public final long started;      
 	
 	/**
 	 * sent timestamp
 	 */
-	long sent;       
+	public final long sent;       
 	
 	/**
 	 * finished timestamp
 	 */
-	long finished;     
+	public final long finished;     
 	
 	/**
 	 * received timestamp
 	 */
-	long received;
+	public final long received;
 	
 	/**
 	 * expires
 	 */
-	int expires;
+	public final int expires;
 	
 	/**
 	 * transfer group
 	 */
-	int transferGroup;
+	public final int transferGroup;
 	
 	/**
 	 * transfer options
 	 */
-	String options;    
+	public final String options;    
 	
 	/**
 	 * target SE
 	 */
-	String destination;
+	public final String destination;
 	
 	/**
 	 * user who has submitted it 
 	 */
-	String user;         
+	public final String user;         
 	
 	/**
 	 * attempts
 	 */
-	int attempts;
+	public final int attempts;
 	
 	/**
 	 * protocols
 	 */
-	String protocols;
+	public final String protocols;
 	
 	/**
 	 * type
 	 */
-	String type;
+	public final String type;
 	
 	/**
 	 * agent id
 	 */
-	int agentid;
+	public final int agentid;
 	
 	/**
 	 * failure reason
 	 */
-	String reason;
+	public final String reason;
 	
 	/**
 	 * pfn
 	 */
-	String pfn;
+	public final String pfn;
 	
 	/**
 	 * protocol ID
 	 */
-	String protocolid;
+	public final String protocolid;
 	
 	/**
 	 * FTD instance
 	 */
-	String ftd;
+	public final String ftd;
 	
 	/**
 	 * ?!
 	 */
-	int persevere;
+	public final int persevere;
 	
 	/**
 	 * retry time (?!)
 	 */
-	int retrytime;
+	public final int retrytime;
 	
 	/**
 	 * max time (?!)
 	 */
-	int maxtime;      
+	public final int maxtime;      
 	
 	/**
 	 * @param db
