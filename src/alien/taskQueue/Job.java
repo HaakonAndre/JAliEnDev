@@ -5,6 +5,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lazyj.DBFunctions;
+import lia.util.StringFactory;
 
 
 /**
@@ -207,12 +208,12 @@ public class Job  implements Comparable<Job> {
 		execHost = db.gets("execHost");
 		sent = db.getl("sent");
 		split = db.geti("split");
-		name = db.gets("name");
+		name = StringFactory.get(db.gets("name"));
 		spyurl = db.gets("spyurl");
-		commandArg = db.gets("commandArg");
+		commandArg = StringFactory.get(db.gets("commandArg"));
 		finished = db.getl("finished");
 		masterjob = db.getb("masterjob", false);
-		status = db.gets("status");
+		status = StringFactory.get(db.gets("status"));
 		splitting = db.geti("splitting");
 		node = db.gets("node");
 		error = db.geti("error");
@@ -221,10 +222,10 @@ public class Job  implements Comparable<Job> {
 		validate = db.getb("validate",false);
 		command = db.gets("command");
 		merging = db.gets("merging");
-		submitHost = db.gets("submitHost");
+		submitHost = StringFactory.get(db.gets("submitHost"));
 		jdl = db.gets("jdl");
 		path = db.gets("path");
-		site = db.gets("site");
+		site = StringFactory.get(db.gets("site"));
 		started = db.getl("started");
 		expires = db.geti("expires");
 		finalPrice = db.getf("finalPrice");
@@ -234,7 +235,7 @@ public class Job  implements Comparable<Job> {
 		jobagentId = db.geti("jobagentId");
 		agentid = db.geti("agentid");
 		notify = db.gets("notify");
-		chargeStatus = db.gets("chargeStatus");
+		chargeStatus = StringFactory.get(db.gets("chargeStatus"));
 		optimized = db.getb("optimized",false);
 		mtime = db.getDate("mtime", null);	
 	}
