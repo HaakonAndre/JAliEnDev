@@ -2,6 +2,8 @@ package alien.taskQueue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -90,6 +92,41 @@ public class TaskQueueUtils {
 		
 		return ret;
 	}
+	
+	/**
+	 * @param account
+	 * @return the masterjob for this account and the subjob statistics for them
+	 */
+	public static Map<Job, Map<String, Integer>> getMasterjobStats(final String account){
+		final List<Job> jobs = getMasterjobs(account);
+		
+		final Map<Job, Map<String, Integer>> ret = new TreeMap<Job, Map<String, Integer>>();
+		
+		final DBFunctions db = getDB();
+		
+		for (final Job j: jobs){
+			if (monitor!=null){
+				monitor.incrementCounter("TQ_db_lookup");
+				monitor.incrementCounter("TQ_getmasterjob_stats");
+			}
+			
+			db.query("SELECT status,count(1) FROM QUEUE WHERE split="+j.queueId+" GROUP BY status;");
+			
+			Map<String, Integer> m = new TreeMap<String, Integer>();
+			
+			while (db.moveNext()){
+				m.put(db.gets(1), Integer.valueOf(db.geti(2)));
+			}
+			
+			if (m.size()==0){
+				m.put(j.status, Integer.valueOf(1));	// no subjobs, so just put itself there
+			}
+			
+			ret.put(j, m);
+		}
+		
+		return ret;
+	}
 
 	/**
 	 * Get the subjobs of this masterjob
@@ -118,9 +155,39 @@ public class TaskQueueUtils {
 		return ret;		
 	}
 	
+	/**
+	 * @param jobs
+	 * @return the jobs grouped by their state
+	 */
+	public static Map<String, List<Job>> groupByStates(final List<Job> jobs){
+		if (jobs==null)
+			return null;
+		
+		final Map<String, List<Job>> ret = new TreeMap<String, List<Job>>();
+		
+		if (jobs.size()==0)
+			return ret;
+		
+		for (final Job j: jobs){
+			List<Job> l = ret.get(j.status);
+			
+			if (l==null){
+				l = new ArrayList<Job>();
+				ret.put(j.status, l);
+			}
+			
+			l.add(j);
+		}
+		
+		return ret;
+	}
 
+	/**
+	 * @param queueId
+	 * @return trace log
+	 */
 	public static String getJobTraceLog(final int queueId){
-		JobTraceLog trace = new JobTraceLog(queueId);
+		final JobTraceLog trace = new JobTraceLog(queueId);
 		return trace.getTraceLog();
 	}
 	
