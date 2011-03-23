@@ -1,6 +1,8 @@
 package alien.taskQueue;
 
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lazyj.DBFunctions;
 
@@ -309,6 +311,24 @@ public class Job  implements Comparable<Job> {
 			return null;
 		
 		return lia.util.StringFactory.get(submitHost.substring(0, idx).toLowerCase());
+	}
+
+	private static final Pattern pJDLContent = Pattern.compile("^\\s*\\[\\s*(.*)\\s*\\]\\s*$", Pattern.DOTALL | Pattern.MULTILINE); 
+	
+	/**
+	 * @return the JDL contents, without the enclosing []
+	 */
+	public String getJDL(){
+		String ret = jdl;
+		
+		final Matcher m = pJDLContent.matcher(ret);
+		
+		if (m.matches())
+			ret = m.group(1);
+		
+		ret = ret.replaceAll("(^|\\n)\\s{1,8}", "$1");
+		
+		return ret;
 	}
 	
 }
