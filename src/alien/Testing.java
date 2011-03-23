@@ -61,15 +61,9 @@ public class Testing {
 		
 		//rename();
 
-		for (String s: Arrays.asList("/alice/", "/alice/cern.ch/user/g/grigoras/")){
-			System.err.println("*****************************************************\n\n\n"+s+"\n\n\n");
-			
-			LFN lfn = LFNUtils.getLFN(s);
-			
-			for (LFN l: lfn.list())
-				System.err.println(l.getCanonicalName());
-		}
+		Job j = TaskQueueUtils.getJob(81348926);
 		
+		System.err.println(j.getJDL());
 	}
 	
 	private static void rename(){
