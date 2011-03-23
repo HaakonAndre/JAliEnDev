@@ -72,4 +72,32 @@ public final class TransferUtils {
 		return ret;
 	}
 	
+	
+	/**
+	 * @param username
+	 * @return transfers to this SE
+	 */
+	public static List<TransferDetails> getActiveTransfersByUser(final String username){
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return null;
+		
+		String q = "SELECT * FROM TRANSFERS_DIRECT ";
+		
+		if (username!=null && username.length()>0)
+			q += "WHERE user='"+Format.escSQL(username)+"' ";
+			
+		q += "ORDER BY transferId"; 
+		
+		db.query(q);
+		
+		final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
+		
+		while (db.moveNext()){
+			ret.add(new TransferDetails(db));
+		}
+		
+		return ret;
+	}
 }
