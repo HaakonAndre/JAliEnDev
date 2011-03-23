@@ -127,7 +127,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_getmasterjob_stats");
 		}
 
-		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status;");
+		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
 			
 		Map<String, Integer> m = null;
 		int oldJobID = -1;
@@ -138,6 +138,8 @@ public class TaskQueueUtils {
 			if (j!=oldJobID){
 				m = new HashMap<String, Integer>();
 				ret.put(reverse.get(Integer.valueOf(j)), m);
+				
+				oldJobID = j;
 			}
 			
 			// ignore the NPE warning, this cannot be null
