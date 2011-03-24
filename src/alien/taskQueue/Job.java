@@ -332,4 +332,32 @@ public class Job  implements Comparable<Job> {
 		return ret;
 	}
 	
+	/**
+	 * @return <code>true</code> if the job has finished successfully
+	 */
+	public boolean isDone(){
+		return status.startsWith("DONE");
+	}
+	
+	/**
+	 * @return <code>true</code> if the job is in a final error state
+	 */
+	public boolean isError(){
+		return status.startsWith("ERR") || status.startsWith("EXP") || status.startsWith("KILL");
+	}
+	
+	/**
+	 * @return <code>true</code> if the job is in a final state (either successful or failed)
+	 */
+	public boolean isFinalState(){
+		return isDone() || isError();
+	}
+	
+	/**
+	 * @return <code>true</code> if the job is still active
+	 */
+	public boolean isActive(){
+		return !isFinalState();
+	}
+	
 }

@@ -84,7 +84,7 @@ public class TaskQueueUtils {
 		
 		q += "ORDER BY queueId ASC;";
 				
-		final List<Job> ret = new ArrayList<Job>();
+		final List<Job> ret = new ArrayList<Job>(db.count());
 		
 		db.query(q);
 
@@ -96,12 +96,39 @@ public class TaskQueueUtils {
 	}
 	
 	/**
+	 * @param initial
+	 * @param maxAge the age in milliseconds
+	 * @return the jobs that are active or have finished since at most maxAge
+	 */
+	public static List<Job> filterMasterjobs(final List<Job> initial, final long maxAge){
+		if (initial==null)
+			return null;
+		
+		final List<Job> ret = new ArrayList<Job>(initial.size());
+		
+		final long now = System.currentTimeMillis();
+		
+		for (final Job j: initial){
+			if (j.isActive() ||  j.mtime==null || (now - j.mtime.getTime() < maxAge))
+				ret.add(j);
+		}
+		
+		return ret;
+	}
+	
+	/**
 	 * @param account
-	 * @return the masterjob for this account and the subjob statistics for them
+	 * @return the masterjobs for this account and the subjob statistics for them
 	 */
 	public static Map<Job, Map<String, Integer>> getMasterjobStats(final String account){
-		final List<Job> jobs = getMasterjobs(account);
-		
+		return getMasterjobStats(getMasterjobs(account));
+	}
+	
+	/**
+	 * @param jobs
+	 * @return the same masterjobs and the respective subjob statistics
+	 */
+	public static Map<Job, Map<String, Integer>> getMasterjobStats(final List<Job> jobs){
 		final Map<Job, Map<String, Integer>> ret = new TreeMap<Job, Map<String, Integer>>();
 		
 		if (jobs.size()==0)
