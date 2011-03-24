@@ -83,8 +83,8 @@ public class TaskQueueUtils {
 		}
 		
 		q += "ORDER BY queueId ASC;";
-				
-		final List<Job> ret = new ArrayList<Job>(db.count());
+		
+		final List<Job> ret = new ArrayList<Job>();
 		
 		db.query(q);
 
