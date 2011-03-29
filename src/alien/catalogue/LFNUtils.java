@@ -3,6 +3,8 @@ package alien.catalogue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lia.util.security.authz.Format;
+
 import alien.config.ConfigUtils;
 
 /**
@@ -39,6 +41,12 @@ public class LFNUtils {
 	public static LFN getLFN(final String fileName, final boolean evenIfDoesntExist){
 		if (fileName == null || fileName.length() == 0)
 			return null;
+		
+		
+		String processedFileName = fileName;
+		
+		while (processedFileName.indexOf("//")>=0)
+			processedFileName = Format.replace(processedFileName, "//", "/");
 		
 		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(fileName);
 		
