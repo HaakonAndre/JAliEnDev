@@ -3,7 +3,7 @@ package alien.catalogue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lia.util.security.authz.Format;
+import lazyj.Format;
 
 import alien.config.ConfigUtils;
 
