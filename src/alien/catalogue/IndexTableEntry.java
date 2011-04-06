@@ -115,6 +115,9 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		
 		final DBFunctions db = getDB();
 		
+		if (db==null)
+			return null;
+		
 		if (monitor!=null){
 			monitor.incrementCounter("LFN_db_lookup");
 		}
