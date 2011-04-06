@@ -52,8 +52,12 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_jobdetails");
 		}
 		
+		final long lQueryStart = System.currentTimeMillis();
+		
 		if (!db.query("SELECT * FROM QUEUE WHERE queueId="+queueId+";"))
 			return null;
+		
+		monitor.addMeasurement("TQ_jobdetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 		
 		if (!db.moveNext()){
 			return null;
@@ -86,7 +90,11 @@ public class TaskQueueUtils {
 		
 		final List<Job> ret = new ArrayList<Job>();
 		
+		final long lQueryStart = System.currentTimeMillis();
+		
 		db.query(q);
+		
+		monitor.addMeasurement("TQ_getmasterjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 
 		while (db.moveNext()){
 			ret.add(new Job(db));
@@ -153,8 +161,12 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_db_lookup");
 			monitor.incrementCounter("TQ_getmasterjob_stats");
 		}
+		
+		final long lQueryStart = System.currentTimeMillis();
 
 		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
+		
+		monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 			
 		Map<String, Integer> m = null;
 		int oldJobID = -1;
@@ -195,6 +207,9 @@ public class TaskQueueUtils {
 	public static List<Job> getSubjobs(final int queueId){
 		final DBFunctions db = getDB();
 		
+		if (db==null)
+			return null;
+		
 		if (monitor!=null){
 			monitor.incrementCounter("TQ_db_lookup");
 			monitor.incrementCounter("TQ_getsubjobs");
@@ -203,8 +218,12 @@ public class TaskQueueUtils {
 		final String q = "SELECT * FROM QUEUE WHERE split="+queueId+" ORDER BY queueId ASC;";
 		
 		final List<Job> ret = new ArrayList<Job>();
+		
+		final long lQueryStart = System.currentTimeMillis();
 
 		db.query(q);
+		
+		monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 		
 		while (db.moveNext()){
 			ret.add(new Job(db));
