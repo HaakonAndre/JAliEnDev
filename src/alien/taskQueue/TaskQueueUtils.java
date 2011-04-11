@@ -278,7 +278,7 @@ public class TaskQueueUtils {
 		if (db==null)
 			return;
 		
-		db.query("UPDATE QUEUE SET status='"+Format.escSQL(newStatus)+"' WHERE queueId="+job+" AND newStatus!='"+Format.escSQL(newStatus)+"'");
+		db.query("UPDATE QUEUE SET status='"+Format.escSQL(newStatus)+"' WHERE queueId="+job+" AND status!='"+Format.escSQL(newStatus)+"'");
 	}
 	
 }
