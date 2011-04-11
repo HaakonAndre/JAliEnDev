@@ -268,5 +268,17 @@ public class TaskQueueUtils {
 		return trace.getTraceLog();
 	}
 	
+	/**
+	 * @param job
+	 * @param newStatus
+	 */
+	public static void setJobStatus(final int job, final String newStatus){
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return;
+		
+		db.query("UPDATE QUEUE SET status='"+Format.escSQL(newStatus)+"' WHERE queueId="+job+" AND newStatus!='"+Format.escSQL(newStatus)+"'");
+	}
 	
 }
