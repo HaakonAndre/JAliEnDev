@@ -1,6 +1,12 @@
 package alien.catalogue.access;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -13,6 +19,7 @@ import alien.se.SEUtils;
 import alien.services.XrootDEnvelopeSigner;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -26,10 +33,47 @@ public final class AuthorizationFactory {
 	
 	private static AliEnPrincipal defaultAccount = null;
 	
-	static{
-		// TODO initialize default account from the environment
-		setDefaultUser(null);
-	}
+	static{	
+		String file = System.getenv("X509_USER_CERT");
+		
+		if (file==null)
+			file = System.getenv("X509_USER_PROXY");
+		
+		if (file==null)
+			file = System.getProperty("user.home")+"/.globus/usercert.pem";
+		
+		final File f = new File(file);
+		
+		AliEnPrincipal user = null;
+		
+		if (f.exists() && f.isFile() && f.canRead()){
+			InputStream is = null;
+			
+			try{
+				is = new FileInputStream(f);
+				
+				final CertificateFactory cf = CertificateFactory.getInstance("X.509");
+				
+				final X509Certificate cert = (X509Certificate) cf.generateCertificate(is);
+				
+				user = UserFactory.getByCertificate(new X509Certificate[]{cert});
+			}
+			catch (Throwable t){
+				logger.log(Level.WARNING, "Could not read from "+file, t);
+			}
+			finally{
+				if (is!=null)
+					try {
+						is.close();
+					}
+					catch (IOException e) {
+						// ignore
+					}
+			}
+		}
+
+		setDefaultUser(user);
+}
 	
 	/**
 	 * Set the default account of this environment
