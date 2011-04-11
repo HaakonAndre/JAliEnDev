@@ -3,6 +3,7 @@ package alien.catalogue;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -289,7 +290,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		       "aclId\t\t: "+aclId+"\n"+
 		       "expireTime\t: "+expiretime+"\n"+
 		       "size\t\t: "+size+"\n"+
-		       "guid\t\t: "+guid+" ("+guid.timestamp()+")\n"+
+		       "guid\t\t: "+guid+"\n"+
 		       "type\t\t: "+type+" ("+(int)type+")\n"+
 		       "md5\t\t: "+md5+"\n"+
 		       "permissions\t: "+perm
@@ -610,5 +611,47 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 */
 	public boolean exists(){
 		return exists;
+	}
+	
+	/**
+	 * @return the set of real GUIDs of this file
+	 */
+	public Set<GUID> getRealGUIDs(){
+		if (!exists)
+			return null;
+		
+		final Set<GUID> ret = new HashSet<GUID>();
+		
+		final Set<PFN> pfns = getPFNs();
+		
+		for (final PFN replica: pfns){
+			final String pfn = replica.pfn;
+			
+			if (pfn.startsWith("guid://")){
+				int idx = 7;
+				
+				String sUuid;
+				
+				while (pfn.charAt(idx)=='/' && idx<pfn.length()-1)
+					idx++;
+				
+				int idx2 = pfn.indexOf('?', idx);
+				
+				if (idx2<0)
+					sUuid = pfn.substring(idx);
+				else
+					sUuid = pfn.substring(idx, idx2);
+				
+				final GUID archiveGuid = GUIDUtils.getGUID(UUID.fromString(sUuid));
+				
+				if (archiveGuid!=null)
+					ret.add(archiveGuid);
+			}
+		}
+		
+		if (ret.size()==0)
+			ret.add(this);
+		
+		return ret;
 	}
 }
