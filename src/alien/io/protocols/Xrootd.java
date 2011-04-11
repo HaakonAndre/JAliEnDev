@@ -376,7 +376,11 @@ public class Xrootd extends Protocol {
 			catch (final Throwable t) {
 				logger.log(Level.WARNING, "Caught exception", t);
 
-				throw new IOException("Get aborted because " + t);
+				final IOException ioe = new IOException("xrdstat internal failure " + t);
+				
+				ioe.setStackTrace(t.getStackTrace());
+				
+				throw ioe;
 			}
 		}
 		
