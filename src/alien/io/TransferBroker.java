@@ -191,8 +191,6 @@ public class TransferBroker {
 		
 		final PFN source = sortedPFNs.get(0);
 
-		// TODO : register the PFN in the booking table
-		
 		String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
 		
 		if (reason!=null){
