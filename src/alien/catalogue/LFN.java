@@ -360,21 +360,48 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (id==null)
 			return null;
 		
-		final Set<PFN> pfns = id.getPFNs();
+		final Set<GUID> realGUIDs = id.getRealGUIDs(); 
 		
-		if (pfns==null || pfns.size()==0)
-			return pfns;
+		final Set<PFN> ret = new LinkedHashSet<PFN>();
 		
-		final Set<PFN> ret = new LinkedHashSet<PFN>(pfns.size());
+		for (final GUID realId: realGUIDs){
+			final Set<PFN> pfns = realId.getPFNs();
 		
-		for (PFN p: pfns){
-			final Set<PFN> real = p.getRealPFNs();
-			
-			if (real!=null)
-				ret.addAll(real);
+			if (pfns==null)
+				continue;
+
+			ret.addAll(pfns);
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * Check whether or not this LFN points to a physical file or is a pointer to an archive
+	 * 
+	 * @return <code>true</code> if the file is physically on disk, <code>false</code> if it is located
+	 * 	inside an archive or even if doesn't exist
+	 */
+	public boolean isReal(){
+		if (!exists || guid==null)
+			return false;
+		
+		final GUID id = GUIDUtils.getGUID(guid);
+		
+		if (id==null)
+			return false;
+		
+		final Set<PFN> pfns = id.getPFNs();
+		
+		if (pfns==null || pfns.size()==0)
+			return false;
+		
+		for (final PFN pfn: pfns){
+			if (pfn.pfn.startsWith("guid://"))
+				return false;
+		}
+		
+		return true;
 	}
 
 	@Override
