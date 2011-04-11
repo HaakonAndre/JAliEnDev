@@ -5,9 +5,12 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
+
+import utils.XRDChecker;
 
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
@@ -22,6 +25,7 @@ import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.TransferBroker;
 import alien.io.protocols.Protocol;
+import alien.io.protocols.XRDStatus;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
@@ -61,9 +65,19 @@ public class Testing {
 		
 		//rename();
 
-		Job j = TaskQueueUtils.getJob(81348926);
+//		Job j = TaskQueueUtils.getJob(81348926);
+//		
+//		System.err.println(j.getJDL());
 		
-		System.err.println(j.getJDL());
+		xrdstat();
+	}
+	
+	private static final void xrdstat(){
+		Map<PFN, XRDStatus> check = XRDChecker.check(LFNUtils.getLFN("/alice/sim/LHC11a10b/139517/AOD048/0313/root_archive.zip"));
+		
+		for (Map.Entry<PFN, XRDStatus> entry: check.entrySet()){
+			System.err.println(entry.getKey()+" : "+entry.getValue());
+		}
 	}
 	
 	private static void rename(){
