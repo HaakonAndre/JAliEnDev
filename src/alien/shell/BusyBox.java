@@ -88,9 +88,7 @@ public class BusyBox {
 			int jobID = Integer.parseInt(args[2]);
 			Job job = TaskQueueUtils.getJob(jobID);
 			out.println("JDL of job id "+jobID+" :");
-			out.println(job.getJDL());
-			String jdl = "null";
-			if(job.jdl != null) jdl = job.jdl;
+			String jdl = job.getJDL();
 			out.println(jdl);
 		} else if (args[1].equals("status")) {
 			int jobID = Integer.parseInt(args[2]);
