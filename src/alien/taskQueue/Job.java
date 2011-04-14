@@ -323,9 +323,9 @@ public class Job  implements Comparable<Job> {
 	private static final Pattern pJDLContent = Pattern.compile("^\\s*\\[\\s*(.*)\\s*\\]\\s*$", Pattern.DOTALL | Pattern.MULTILINE); 
 	
 	/**
-	 * @return the JDL contents, without the enclosing []
+	 * @return original JDL as in the QUEUE table
 	 */
-	public String getJDL(){
+	public String getOriginalJDL(){
 		if (jdl==null){
 			jdl = TaskQueueUtils.getJDL(queueId);
 			
@@ -333,7 +333,14 @@ public class Job  implements Comparable<Job> {
 				return "";
 		}
 		
-		String ret = jdl;
+		return jdl;
+	}
+	
+	/**
+	 * @return the JDL contents, without the enclosing []
+	 */
+	public String getJDL(){
+		String ret = getOriginalJDL();
 		
 		final Matcher m = pJDLContent.matcher(ret);
 		
