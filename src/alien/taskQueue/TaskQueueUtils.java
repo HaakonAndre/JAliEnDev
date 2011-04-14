@@ -45,6 +45,19 @@ public class TaskQueueUtils {
 	 * @return the job, or <code>null</code> if it cannot be located 
 	 */
 	public static Job getJob(final int queueId){
+		return getJob(queueId, false);
+	}
+	
+	private static final String ALL_BUT_JDL="queueId, priority, execHost, sent, split, name, spyurl, commandArg, finished, masterjob, status, splitting, node, error, current, received, validate, command, merging, submitHost, path, site, started, expires, finalPrice, effectivePriority, price, si2k, jobagentId, agentid, notify, chargeStatus, optimized, mtime";
+	
+	/**
+	 * Get the Job from the QUEUE
+	 * 
+	 * @param queueId 
+	 * @param loadJDL 
+	 * @return the job, or <code>null</code> if it cannot be located 
+	 */
+	public static Job getJob(final int queueId, final boolean loadJDL){
 		final DBFunctions db = getDB();
 		
 		if (monitor!=null){
@@ -53,8 +66,10 @@ public class TaskQueueUtils {
 		}
 		
 		final long lQueryStart = System.currentTimeMillis();
-		
-		if (!db.query("SELECT * FROM QUEUE WHERE queueId="+queueId+";"))
+
+		final String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE queueId="+queueId;
+	
+		if (!db.query(q))
 			return null;
 		
 		monitor.addMeasurement("TQ_jobdetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
@@ -63,7 +78,7 @@ public class TaskQueueUtils {
 			return null;
 		}
 		
-		return new Job(db);
+		return new Job(db, loadJDL);
 	}
 	
 	/**
@@ -73,6 +88,17 @@ public class TaskQueueUtils {
 	 * @return the list of active masterjobs for this account
 	 */
 	public static List<Job> getMasterjobs(final String account){
+		return getMasterjobs(account, false);
+	}	
+	
+	/**
+	 * Get the list of active masterjobs
+	 * 
+	 * @param account the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
+	 * @param loadJDL 
+	 * @return the list of active masterjobs for this account
+	 */
+	public static List<Job> getMasterjobs(final String account, final boolean loadJDL){
 		final DBFunctions db = getDB();
 		
 		if (monitor!=null){
@@ -80,7 +106,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_getmasterjobs");
 		}
 		
-		String q = "SELECT * FROM QUEUE WHERE split=0 ";
+		String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=0 ";
 		
 		if (account!=null && account.length()>0){
 			q += "AND submitHost LIKE '"+Format.escSQL(account)+"@%' ";
@@ -97,7 +123,7 @@ public class TaskQueueUtils {
 		monitor.addMeasurement("TQ_getmasterjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 
 		while (db.moveNext()){
-			ret.add(new Job(db));
+			ret.add(new Job(db, loadJDL));
 		}
 		
 		return ret;
@@ -205,6 +231,17 @@ public class TaskQueueUtils {
 	 * @return the subjobs, if any
 	 */
 	public static List<Job> getSubjobs(final int queueId){
+		return getSubjobs(queueId, false);
+	}
+		
+	/**
+	 * Get the subjobs of this masterjob
+	 * 
+	 * @param queueId
+	 * @param loadJDL 
+	 * @return the subjobs, if any
+	 */
+	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL){
 		final DBFunctions db = getDB();
 		
 		if (db==null)
@@ -215,7 +252,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_getsubjobs");
 		}
 		
-		final String q = "SELECT * FROM QUEUE WHERE split="+queueId+" ORDER BY queueId ASC;";
+		final String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split="+queueId+" ORDER BY queueId ASC;";
 		
 		final List<Job> ret = new ArrayList<Job>();
 		
@@ -226,7 +263,7 @@ public class TaskQueueUtils {
 		monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 		
 		while (db.moveNext()){
-			ret.add(new Job(db));
+			ret.add(new Job(db, loadJDL));
 		}
 		
 		return ret;		
@@ -279,6 +316,29 @@ public class TaskQueueUtils {
 			return;
 		
 		db.query("UPDATE QUEUE SET status='"+Format.escSQL(newStatus)+"' WHERE queueId="+job+" AND status!='"+Format.escSQL(newStatus)+"'");
+	}
+	
+	/**
+	 * @param queueId
+	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
+	 */
+	static String getJDL(final int queueId){
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return null;
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_get_jdl");
+		}
+		
+		final String q = "SELECT jdl FROM QUEUE WHERE split="+queueId+" ORDER BY queueId ASC;";
+		
+		if (!db.query(q) || !db.moveNext())
+			return null;
+		
+		return db.gets(1);
 	}
 	
 }

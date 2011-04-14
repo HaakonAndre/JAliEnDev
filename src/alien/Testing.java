@@ -73,7 +73,7 @@ public class Testing {
 	}
 	
 	private static final void xrdstat(){
-		Map<PFN, XRDStatus> check = XRDChecker.check(LFNUtils.getLFN("/alice/sim/LHC11a10b/139517/AOD048/0313/root_archive.zip"));
+		Map<PFN, XRDStatus> check = XRDChecker.check(LFNUtils.getLFN("/alice/cern.ch/user/a/akarasu/data/ME_0704/lhc10b/output/000116574/016/lhc10c.root"));
 		
 		for (Map.Entry<PFN, XRDStatus> entry: check.entrySet()){
 			System.err.println(entry.getKey()+" : "+entry.getValue());

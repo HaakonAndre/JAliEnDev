@@ -198,11 +198,18 @@ public class Job  implements Comparable<Job> {
 	 * @param db
 	 */
 	Job(final DBFunctions db){
-		init(db);
+		init(db, false);
 	}
 	
-
-	private void init(final DBFunctions db){
+	/**
+	 * @param db
+	 * @param loadJDL
+	 */
+	Job(final DBFunctions db, final boolean loadJDL){
+		init(db, loadJDL);
+	}
+	
+	private void init(final DBFunctions db, final boolean loadJDL){
 		queueId = db.geti("queueId");
 		priority = db.geti("priority");
 		execHost = db.gets("execHost");
@@ -223,7 +230,7 @@ public class Job  implements Comparable<Job> {
 		command = db.gets("command");
 		merging = db.gets("merging");
 		submitHost = StringFactory.get(db.gets("submitHost"));
-		jdl = db.gets("jdl");
+		jdl = loadJDL ? db.gets("jdl") : null;
 		path = db.gets("path");
 		site = StringFactory.get(db.gets("site"));
 		started = db.getl("started");
@@ -239,7 +246,6 @@ public class Job  implements Comparable<Job> {
 		optimized = db.getb("optimized",false);
 		mtime = db.getDate("mtime", null);	
 	}
-	
 
 	@Override
 	public int compareTo(final Job o) {
@@ -320,6 +326,13 @@ public class Job  implements Comparable<Job> {
 	 * @return the JDL contents, without the enclosing []
 	 */
 	public String getJDL(){
+		if (jdl==null){
+			jdl = TaskQueueUtils.getJDL(queueId);
+			
+			if (jdl==null)
+				return "";
+		}
+		
 		String ret = jdl;
 		
 		final Matcher m = pJDLContent.matcher(ret);
