@@ -212,7 +212,7 @@ public class Job  implements Comparable<Job> {
 	private void init(final DBFunctions db, final boolean loadJDL){
 		queueId = db.geti("queueId");
 		priority = db.geti("priority");
-		execHost = db.gets("execHost");
+		execHost = StringFactory.get(db.gets("execHost"));
 		sent = db.getl("sent");
 		split = db.geti("split");
 		name = StringFactory.get(db.gets("name"));
