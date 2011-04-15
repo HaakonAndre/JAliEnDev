@@ -98,13 +98,17 @@ public class XRDChecker {
 		final GUID guid = pfn.getGuid();
 		
 		try{
-			f = File.createTempFile("xrdstatus", "download");
+			f = File.createTempFile("xrdstatus-", "-download.tmp");
 		
 			f.delete();
+			
+			final long lStart = System.currentTimeMillis();
 			
 			System.err.println("Getting this file "+pfn.pfn);
 			
 			xrootd.get(pfn, f);
+			
+			System.err.println("Got the file in "+(System.currentTimeMillis() - lStart)/1000+" seconds");
 			
 			if (f.length() != guid.size){
 				return new XRDStatus(false, "Size is different: catalog="+guid.size+", downloaded size: "+f.length());
@@ -120,8 +124,8 @@ public class XRDChecker {
 			return new XRDStatus(false, ioe.getMessage());
 		}
 		finally{
-			if (f!=null)
-				f.delete();
+			//if (f!=null)
+				//f.delete();
 		}
 		
 		return new XRDStatus(true, null);
