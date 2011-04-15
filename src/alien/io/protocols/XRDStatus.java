@@ -31,7 +31,14 @@ public class XRDStatus {
 		if (commandOK)
 			return "OK";
 		
-		return "ERR: "+commandOutput;
+		String firstLine = commandOutput;
+		
+		final int idx = firstLine.indexOf('\n');
+		
+		if (idx>=0)
+			firstLine = firstLine.substring(0, idx);
+		
+		return "ERR: "+firstLine;
 	}
 	
 }
