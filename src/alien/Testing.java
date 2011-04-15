@@ -1,7 +1,9 @@
 package alien;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
@@ -70,14 +72,85 @@ public class Testing {
 //		System.err.println(j.getJDL());
 		
 		xrdstat();
+		
+		//compareFiles("/tmp/xrdstatus-5741189761428427102-download.tmp.CERN", "/tmp/xrdstatus-6842356284876004826-download.tmp.ISS");
+		//compareFiles("/tmp/xrdstatus-5741189761428427102-download.tmp.CERN", "/tmp/xrdstatus-8650443894764062995-download.tmp.NIHAM");
 	}
 	
 	private static final void xrdstat(){
-		Map<PFN, XRDStatus> check = XRDChecker.check(LFNUtils.getLFN("/alice/cern.ch/user/a/akarasu/data/ME_0704/lhc10b/output/000116574/016/lhc10c.root"));
+		final Map<PFN, XRDStatus> check = XRDChecker.fullCheckLFN("/alice/data/2010/LHC10h/000139172/ESDs/pass2/AOD044/0049/AliAOD.root");
 		
-		for (Map.Entry<PFN, XRDStatus> entry: check.entrySet()){
-			System.err.println(entry.getKey()+" : "+entry.getValue());
+		for (final Map.Entry<PFN, XRDStatus> entry: check.entrySet()){
+			System.err.println(entry.getKey().pfn+" : "+entry.getValue());
 		}
+	}
+	
+	private static final void compareFiles(final String f1, final String f2) throws IOException {
+		
+		final InputStream is1 = new FileInputStream(f1);
+		final InputStream is2 = new FileInputStream(f2);
+		
+		final byte[] b1 = new byte[256*1024];
+		final byte[] b2 = new byte[256*1024];
+		
+		long pos = 0;
+		
+		int r;
+		
+		long bad_start = -1;
+
+		int count = 0;
+		
+		final int ok_threshold = 1024;
+		
+		long ok_start = -1;
+		
+		long diffbytes = 0;
+		
+		do {
+			r = is1.read(b1);
+			
+			if (r>0){
+				int r2 = is2.read(b2, 0, r);
+			
+				if (r2!=r){
+					System.err.println("f2 is smaller than f1!");
+					return;
+				}
+				
+				for (int i=0; i<r; i++){
+					if (b1[i] == b2[i]){
+						if (bad_start>=0){
+							if (ok_start<0)
+								ok_start = pos+i;
+			
+							if (pos+i-ok_start >= ok_threshold){
+								diffbytes += (ok_start - bad_start);
+							
+								System.err.println("Bad range: "+bad_start+" .. "+(ok_start-1)+" ("+(ok_start-bad_start)+" bytes)");
+								bad_start = -1;
+								ok_start = -1;
+							
+								count ++;
+							}
+						}
+					}
+					else{
+						System.err.println((pos+i)+" : ok="+((int) b1[i] & 0xFF) +" - bad="+((int) b2[i] & 0xFF));
+						
+						if (bad_start<0)
+							bad_start = pos+i;
+						
+						ok_start = -1;
+					}
+				}
+			}
+			
+			pos += r;
+		}
+		while (r>0);
+		
+		System.err.println("Different blocks : "+count+", bytes : "+diffbytes);
 	}
 	
 	private static void rename(){
