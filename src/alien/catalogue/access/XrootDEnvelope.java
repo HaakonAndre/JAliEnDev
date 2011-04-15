@@ -2,6 +2,8 @@ package alien.catalogue.access;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lazyj.Format;
 
@@ -92,6 +94,8 @@ public class XrootDEnvelope implements Serializable {
 		return ret;
 	}
 
+	private static final Pattern PFN_EXTRACT = Pattern.compile("^\\w+://\\w+(\\.\\w+)*(:\\d+)?/(.*)$");
+	
 	/**
 	 * @return URL of the storage. This is passed as argument to xrdcp and in most cases it is the PFN but for 
 	 * 			DCACHE it is a special path ...
@@ -112,8 +116,14 @@ public class XrootDEnvelope implements Serializable {
 			
 			return se.seioDaemons + "//NOLFN";
 		}
+		
+		final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
+		
+		if (m.matches()){
+			return se.seioDaemons + "/" + m.group(3);
+		}
 
-		return null;
+		return pfn.pfn;
 	}
 
 	/**
