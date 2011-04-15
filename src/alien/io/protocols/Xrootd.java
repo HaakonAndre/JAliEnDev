@@ -7,12 +7,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
@@ -27,7 +29,9 @@ public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
 	
-	private static String DIFirstConnectMaxCnt = "6";
+	private static String DIFirstConnectMaxCnt = "2";
+	
+	private int timeout = 300;
 
 	// last value must be 0 for a clean exit
 	private static final int statRetryTimes[] = { 6, 12, 30, 0 };
@@ -54,6 +58,15 @@ public class Xrootd extends Protocol {
 	 */
 	public void setDebugLevel(final int level) {
 		xrdcpdebuglevel = level;
+	}
+	
+	/**
+	 * Set the xrdcp timeout
+	 * 
+	 * @param seconds
+	 */
+	public void setTimeout(final int seconds){
+		timeout = seconds;
 	}
 	
 	/**
@@ -117,17 +130,14 @@ public class Xrootd extends Protocol {
 		try {
 			final List<String> command = new LinkedList<String>();
 			command.add("xrdcpapmon");
-			command.add("-DIFirstConnectMaxCnt");
-			command.add(DIFirstConnectMaxCnt);
-			if (xrdcpdebuglevel > 0) {
-				command.add(xrdcpdebug);
-				command.add(String.valueOf(xrdcpdebuglevel));
-			}
+
+			command.addAll(getCommonArguments());
 			
 			String transactionURL = pfn.pfn;
 			
-			if (pfn.ticket.envelope!=null)
+			if (pfn.ticket.envelope!=null){
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
+			}
 			
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
@@ -140,8 +150,6 @@ public class Xrootd extends Protocol {
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 			
-			System.out.println("calling ... "+ command.toString());
-
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
@@ -153,8 +161,14 @@ public class Xrootd extends Protocol {
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
-			} catch (final InterruptedException ie) {
+				final ExternalProcess p = pBuilder.start();
+				
+				if (p!=null)
+					exitStatus = p.waitFor();
+				else
+					throw new IOException("Cannot start the process");
+			}
+			catch (final InterruptedException ie) {
 				throw new IOException(
 						"Interrupted while waiting for the following command to finish : "
 								+ command.toString());
@@ -218,17 +232,21 @@ public class Xrootd extends Protocol {
 		try {
 			final List<String> command = new LinkedList<String>();
 			command.add("xrdcpapmon");
-			command.add("-DIFirstConnectMaxCnt");
-			command.add(DIFirstConnectMaxCnt);
-			if (xrdcpdebuglevel > 0) {
-				command.add(xrdcpdebug);
-				command.add(String.valueOf(xrdcpdebuglevel));
-			}
+
+			command.addAll(getCommonArguments());
+			
 			command.add("-np");
 			command.add("-v");
 			command.add("-f");
 			command.add(localFile.getCanonicalPath());
-			command.add(pfn.pfn);
+			
+			String transactionURL = pfn.pfn;
+			
+			if (pfn.ticket.envelope!=null){
+				transactionURL = pfn.ticket.envelope.getTransactionURL();
+			}
+			
+			command.add(transactionURL);
 
 			if (pfn.ticket.envelope != null){
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
@@ -284,6 +302,28 @@ public class Xrootd extends Protocol {
 		}
 	}
 	
+	private final List<String> getCommonArguments(){
+		final List<String> ret = new ArrayList<String>();
+		
+		ret.add("-DIFirstConnectMaxCnt");
+		ret.add(DIFirstConnectMaxCnt);
+		
+		if (xrdcpdebuglevel > 0) {
+			ret.add(xrdcpdebug);
+			ret.add(String.valueOf(xrdcpdebuglevel));
+		}
+				
+		if (timeout>0){
+			ret.add("-DITransactionTimeout");
+			ret.add(String.valueOf(timeout));
+			
+			ret.add("-DIRequestTimeout");
+			ret.add(String.valueOf(timeout));
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Check if the PFN has the correct properties, such as described in the
 	 * access envelope
@@ -300,10 +340,9 @@ public class Xrootd extends Protocol {
 			try {
 				final List<String> command = new LinkedList<String>();
 				command.add("xrdstat");
-				if (xrdcpdebuglevel > 0) {
-					command.add(xrdcpdebug);
-					command.add(String.valueOf(xrdcpdebuglevel));
-				}
+				
+				command.addAll(getCommonArguments());
+				
 				if (returnEnvelope)
 					command.add("-returnEnvelope");
 				command.add(pfn.getPFN());
