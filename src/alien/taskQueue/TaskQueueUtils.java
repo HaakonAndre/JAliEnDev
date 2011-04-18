@@ -322,7 +322,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
 	 */
-	static String getJDL(final int queueId){
+	public static String getJDL(final int queueId){
 		final DBFunctions db = getDB();
 		
 		if (db==null)
