@@ -333,7 +333,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_get_jdl");
 		}
 		
-		final String q = "SELECT jdl FROM QUEUE WHERE split="+queueId+" ORDER BY queueId ASC;";
+		final String q = "SELECT jdl FROM QUEUE WHERE queueId="+queueId;
 		
 		if (!db.query(q) || !db.moveNext())
 			return null;
