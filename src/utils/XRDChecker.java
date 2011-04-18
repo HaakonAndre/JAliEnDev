@@ -124,8 +124,8 @@ public class XRDChecker {
 			return new XRDStatus(false, ioe.getMessage());
 		}
 		finally{
-			//if (f!=null)
-				//f.delete();
+			if (f!=null)
+				f.delete();
 		}
 		
 		return new XRDStatus(true, null);
