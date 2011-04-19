@@ -200,7 +200,7 @@ public class BookingTable {
 			return false;
 		}
 
-		String w = "pfn="+e(pfn.getPFN());
+		String w = "pfn"+eq(pfn.getPFN());
 		
 		final SE se = SEUtils.getSE(pfn.seNumber);
 		
@@ -209,7 +209,7 @@ public class BookingTable {
 			return false;
 		}
 		
-		w += " AND se="+e(se.getName());
+		w += " AND se"+eq(se.getName());
 		
 		final GUID guid = pfn.getGuid();
 		
@@ -220,7 +220,7 @@ public class BookingTable {
 		
 		w += " AND guid=string2binary("+e(guid.guid.toString())+")";
 		
-		w += " AND owner="+e(user.getName());
+		w += " AND owner"+eq(user.getName());
 		
 		if (!ok){
 			db.query("UPDATE LFN_BOOKED SET expiretime=-1*(unix_timestamp(now())+60*60*24*30) WHERE "+w);
@@ -263,6 +263,13 @@ public class BookingTable {
 		db.query("DELETE FROM LFN_BOOKED WHERE "+w);
 		
 		return true;
+	}
+	
+	private static final String eq(final String s){
+		if (s==null)
+			return " IS NULL";
+		
+		return "='"+Format.escSQL(s)+"'";
 	}
 	
 	private static final String e(final String s){
