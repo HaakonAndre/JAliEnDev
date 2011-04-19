@@ -375,8 +375,9 @@ public class Xrootd extends Protocol {
 				if (exitStatus.getExtProcExitStatus() != 0) {
 					if (sleep==0){
 						throw new IOException("Exit code was "
-							+ exitStatus.getExtProcExitStatus()
-							+ " for command : " + command.toString());
+							+ exitStatus.getExtProcExitStatus() + ", output was " 
+							+ exitStatus.getStdOut()+", "
+							+ "for command : " + command.toString());
 					}
 					
 					Thread.sleep(sleep * 1000);
