@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -14,6 +15,7 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
+import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.io.protocols.XRDStatus;
 import alien.io.protocols.Xrootd;
@@ -24,6 +26,11 @@ import alien.io.protocols.Xrootd;
  */
 public class XRDChecker {
 
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(XRDChecker.class.getCanonicalName());
+	
 	/**
 	 * @param guid
 	 * @return the status for each PFN of this LFN (the real ones)
