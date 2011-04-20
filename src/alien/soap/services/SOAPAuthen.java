@@ -329,4 +329,149 @@ public class SOAPAuthen {
 	// rcvalues=>\@info, rcmessages=>\@loglist};
 	// }
 
+	
+	
+	
+
+//	private Set<String> authorize() {
+//	  my $self   = shift;
+//	  my $access = (shift || return), my @registerEnvelopes = @_;
+//	  my $jid    = pop(@registerEnvelopes);                         # remove the added jobID from Service/Authen
+//	  ($jid =~ m/^\d+$/) or push @registerEnvelopes, $jid;
+//	  my $options = shift;
+//
+//	  my $user = $self->{CONFIG}->{ROLE};
+//	  $self->{ROLE} and $user = $self->{ROLE};
+//
+//	  #
+//
+//	  ($access =~ /^write[\-a-z]*/) and $access = "write";
+//	  my $writeReq    = (($access =~ /^write$/)    || 0);
+//	  my $mirrorReq   = (($access =~ /^mirror$/)   || 0);
+//	  my $readReq     = (($access =~ /^read$/)     || 0);
+//	  my $registerReq = (($access =~ /^register$/) || 0);
+//	  my $deleteReq   = (($access =~ /^delete$/)   || 0);
+//
+//	  my $exceptions = 0;
+//
+//	  ($access =~ /^registerenvs$/)
+//	    and return $self->validateSignedEnvAndRegisterAccordingly($user, \@registerEnvelopes);
+//
+//	  my $lfn      = ($options->{lfn}      || "");
+//	  my $wishedSE = ($options->{wishedSE} || "");
+//	  my $size        = (($options->{size} and int($options->{size})) || 0);
+//	  my $md5         = ($options->{md5}                              || 0);
+//	  my $guidRequest = ($options->{guidRequest}                      || 0);
+//	  $options->{guid} and $guidRequest = $options->{guid};
+//	  my $sitename = ($options->{site}     || 0);
+//	  my $writeQos = ($options->{writeQos} || 0);
+//	  my $writeQosCount = (($options->{writeQosCount} and int($options->{writeQosCount})) || 0);
+//	  my $excludedAndfailedSEs = $self->validateArrayOfSEs(split(/;/, ($options->{excludeSE} || "")));
+//	  my $pfn   = ($options->{pfn}   || "");
+//	  my $links = ($options->{links} || 0);
+//	  my $linksToBeBooked = 1;
+//	  my $jobID           = (shift || 0);
+//
+//	  my $seList = $self->validateArrayOfSEs(split(/;/, $wishedSE));
+//
+//	  my @returnEnvelopes = ();
+//	  my $prepareEnvelope = {};
+//
+//	  if ($writeReq or $registerReq) {
+//	    $prepareEnvelope = $self->getBaseEnvelopeForWriteAccess($user, $lfn, $size, $md5, $guidRequest);
+//	    $prepareEnvelope or $self->info("Authorize: Error preparing the envelope for $user and $lfn", 1) and return 0;
+//	    if ($registerReq) {
+//	      $prepareEnvelope or $self->info("Authorize: Permission denied. Could not register $lfn.", 1) and return 0;
+//	      return $self->registerPFNInCatalogue($user, $prepareEnvelope, $pfn, $wishedSE);
+//	    }
+//	  }
+//	  $deleteReq
+//	    and ($prepareEnvelope, $seList) = $self->getBaseEnvelopeForDeleteAccess($user, $lfn);
+//
+//	  $mirrorReq and $prepareEnvelope = $self->getBaseEnvelopeForMirrorAccess($user, $guidRequest, $lfn);
+//
+//	  ($writeReq or $mirrorReq)
+//	    and ($prepareEnvelope, $seList) =
+//	    $self->getSEsAndCheckQuotaForWriteOrMirrorAccess($user, $prepareEnvelope, $seList, $sitename, $writeQos,
+//	    $writeQosCount, $excludedAndfailedSEs);
+//
+//	  $readReq
+//	    and $prepareEnvelope = $self->getBaseEnvelopeForReadAccess($user, $lfn, $seList, $excludedAndfailedSEs, $sitename)
+//	    and @$seList = ($prepareEnvelope->{se});
+//	  $prepareEnvelope or $self->info("Authorize: We couldn't create any envelope.", 1) and return 0;
+//
+//	  ($seList && (scalar(@$seList) gt 0))
+//	    or $self->info("Authorize: access: After checkups there's no SE left to make an envelope for.", 1)
+//	    and return 0;
+//
+//	  (scalar(@$seList) lt 0) and $self->info(
+//	"Authorize: Authorize: ERROR! There are no SE's after checkups to create an envelope for '$$prepareEnvelope->{lfn}/$prepareEnvelope->{guid}'",
+//	    1
+//	    )
+//	    and return 0;
+//
+//	  while (scalar(@$seList) gt 0) {
+//	    $prepareEnvelope->{se} = shift(@$seList);
+//
+//	    if ($writeReq or $mirrorReq) {
+//	      $prepareEnvelope = $self->calculateXrootdTURLForWriteEnvelope($prepareEnvelope);
+//	      $self->addEntryToBookingTableAndOptionalExistingFlagTrigger($user, $prepareEnvelope, $jobID, $mirrorReq) or next;
+//	      if ($links and $linksToBeBooked) {
+//	        $self->prepookArchiveLinksInBookingTable($user, $jobID, $links, $prepareEnvelope->{guid})
+//	          or $self->info("Authorize: The requested links of the archive could not been booked", 1)
+//	          and return 0;
+//	        $linksToBeBooked = 0;
+//	      }
+//
+//	      # or next;
+//	    }
+//
+//	    $prepareEnvelope->{xurl} = 0;
+//
+//	    if ( ($prepareEnvelope->{se} =~ /dcache/i)
+//	      or ($prepareEnvelope->{se} =~ /alice::((RAL)|(CNAF))::castor/i)
+//	      and !($prepareEnvelope->{se} =~ /alice::RAL::castor2_test/i)) {
+//	      $prepareEnvelope->{turl} =~ m{^((root)|(file))://([^/]*)/(.*)};
+//	      $prepareEnvelope->{xurl} = "root://$4/$prepareEnvelope->{lfn}";
+//	    }
+//
+//	    my $signedEnvelope = $self->signEnvelope($prepareEnvelope, $user);
+//
+//	    $self->isOldEnvelopeStorageElement($prepareEnvelope->{se})
+//	      and $signedEnvelope .= '\&oldEnvelope=' . $self->createAndEncryptEnvelopeTicket($access, $prepareEnvelope);
+//
+//	    push @returnEnvelopes, $signedEnvelope;
+//
+//	    if ($self->{MONITOR}) {
+//
+//	      #my @params= ("$se", $prepareEnvelope->{size});
+//	      my $method;
+//	      ($access =~ /^((read)|(write))/) and $method = "${1}req";
+//	      $access =~ /^delete/ and $method = "delete";
+//	      $method
+//	        and $self->{MONITOR}->sendParameters("$self->{CONFIG}->{SITE}_QUOTA",
+//	        "$self->{ROLE}_$method", ("$signedEnvelope->{se}", $signedEnvelope->{size}));
+//	    }
+//	  }
+//
+//	  $self->debug(2, "End of authorize, giving back ENVELOPES: " . Dumper(@returnEnvelopes));
+//
+//	  return @returnEnvelopes;
+//	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }
