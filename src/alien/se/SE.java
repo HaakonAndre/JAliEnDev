@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import alien.catalogue.GUID;
 import alien.config.ConfigUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * @author costing
@@ -87,12 +88,12 @@ public class SE implements Serializable, Comparable<SE>{
 	/**
 	 * Exclusive write
 	 */
-	public String seExclusiveWrite;
+	public Set<String> seExclusiveWrite;
 	
 	/**
 	 * Exclusive read
 	 */
-	public String seExclusiveRead;
+	public Set<String> seExclusiveRead;
 
 	/**
 	 * triggered by the seVersion if < 219
@@ -128,9 +129,9 @@ public class SE implements Serializable, Comparable<SE>{
 		
 		exclusiveUsers = parseArray(db.gets("exclusiveUsers"));
 		
-		seExclusiveRead = db.gets("seExclusiveRead");
+		seExclusiveRead = parseArray(db.gets("seExclusiveRead"));
 		
-		seExclusiveWrite = db.gets("seExclusiveWrite");
+		seExclusiveWrite = parseArray(db.gets("seExclusiveWrite"));
 	}
 	
 	@Override
@@ -223,4 +224,31 @@ public class SE implements Serializable, Comparable<SE>{
 	public int hashCode() {
 		return seName.toUpperCase().hashCode();
 	}
+	
+	/**
+	 * Check if the user is allowed to read files from this storage element
+	 * 
+	 * @param user
+	 * @return <code>true</code> if allowed
+	 */
+	public boolean canRead(final AliEnPrincipal user){
+		if (seExclusiveRead.size()==0)
+			return true;
+		
+		return seExclusiveRead.contains(user.getName());
+	}
+	
+	/**
+	 * Check if the user is allowed to write files in this storage element
+	 * 
+	 * @param user
+	 * @return <code>true</code> if allowed
+	 */
+	public boolean canWrite(final AliEnPrincipal user){
+		if (seExclusiveWrite.size()==0)
+			return true;
+		
+		return seExclusiveWrite.contains(user.getName());
+	}
+	
 }
