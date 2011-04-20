@@ -13,7 +13,6 @@ import lia.util.UUID;
 
 import alien.se.SE;
 import alien.se.SEUtils;
-import alien.services.AuthenServer;
 
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.CatalogueAccess;
@@ -23,7 +22,7 @@ import alien.catalogue.access.XrootDEnvelope;
  * @author ron
  * @since Nov 12, 2010
  */
-public class SOAPAuthen {
+public class AuthenSOAPBridge {
 
 	
 	private static final Pattern writeRequest = Pattern.compile("^write");
@@ -178,7 +177,7 @@ public class SOAPAuthen {
 		
 		AuthenServer authen = new AuthenServer();
 
-		String[] envelopes =  authen.authorize(P_user,
+		String[] envelopes =  authen.2(P_user,
 				access, P_lfn, size, P_guid, ses, exxSes,
 				P_qos, qosCount, P_sitename);
 
