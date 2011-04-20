@@ -184,13 +184,13 @@ public class AuthenEngine {
 		HashSet<SE> empty = new HashSet<SE>();
 		
 		String[] envelopes;
-		envelopes = authen.authorize("sschrein", 1,
-				 "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 440, "a00e6c3e-3cbb-11df-8620-0018fe730ae5",
-				empty, empty, "", 1,
-				"CERN");
-		
-		System.out.println("we received:");
-		System.out.println(Arrays.toString(envelopes));
+//		envelopes = authen.authorize("sschrein", 1,
+//				 "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 440, "a00e6c3e-3cbb-11df-8620-0018fe730ae5",
+//				empty, empty, "", 1,
+//				"CERN");
+//		
+//		System.out.println("we received:");
+//		System.out.println(Arrays.toString(envelopes));
 		
 		try {
 
@@ -419,12 +419,12 @@ public class AuthenEngine {
 
 			AliEnPrincipal user = UserFactory.getByUsername(P_user);
 
-			CatalogueAccess ca = AuthorizationFactory.requestAccess(user,
-					P_lfn, access);
-
-			XrootDEnvelopeDecorator
-					.loadXrootDEnvelopesForCatalogueAccess(ca, P_sitename,
-							P_qos, qosCount, ses, exxSes);
+//			CatalogueAccess ca = AuthorizationFactory.requestAccess(user,
+//					P_lfn, access);
+//
+//			XrootDEnvelopeDecorator
+//					.loadXrootDEnvelopesForCatalogueAccess(ca, P_sitename,
+//							P_qos, qosCount, ses, exxSes);
 
 			authen.loadKeys();
 //			EncryptedAuthzToken authz = new EncryptedAuthzToken(

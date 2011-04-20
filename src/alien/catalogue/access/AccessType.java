@@ -17,7 +17,11 @@ public enum AccessType {
 	/**
 	 * Delete
 	 */
-	DELETE("delete");
+	DELETE("delete"),
+	/**
+	 * NULL
+	 */
+	NULL("null");
 
 	private final String shortDescription;
 
