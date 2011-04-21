@@ -144,44 +144,6 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		return new LFN(db, this);
 	}
 	
-
-	/**
-	 * Create a new LFN, if one with the path is not yet existing
-	 * 
-	 * @param sPath
-	 * @return the LFN or <code>null</code> if already existing 
-	 */
-	public LFN createLFN(final String sPath){
-		String sSearch = sPath;
-		
-		if (sSearch.startsWith("/"))
-			sSearch = sSearch.substring(lfn.length());
-		
-		final DBFunctions db = getDB();
-		
-		if (db==null)
-			return null;
-		
-		if (monitor!=null){
-			monitor.incrementCounter("LFN_db_lookup");
-		}
-		
-		String q = "SELECT * FROM L"+tableName+"L WHERE lfn='"+Format.escSQL(sSearch)+"'";
-		
-		if (!sSearch.endsWith("/"))
-			q += " OR lfn='"+Format.escSQL(sSearch)+"/'";
-		
-		if (!db.query(q))
-			return null;
-		
-		if (!db.moveNext()){
-				return new LFN(sSearch, this);
-		}
-		
-		return null;
-	}
-	
-	
 	/**
 	 * Get the LFN from this table
 	 * 

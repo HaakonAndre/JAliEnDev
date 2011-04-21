@@ -62,38 +62,6 @@ public class LFNUtils {
 		return ite.getLFN(fileName, evenIfDoesntExist);
 	}
 	
-
-	/**
-	 * Create a LFN if one with fileName is not yet existing
-	 * 
-	 * @param fileName
-	 * @return entry or <code>null</code> if already existing
-	 */
-	public static LFN createLFN(final String fileName){
-		if (fileName == null || fileName.length() == 0)
-			return null;
-		
-		String processedFileName = fileName;
-		
-		while (processedFileName.indexOf("//")>=0)
-			processedFileName = Format.replace(processedFileName, "//", "/");
-		
-		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(fileName);
-		
-		if (ite==null){
-			logger.log(Level.FINE, "IndexTableEntry is null for: "+fileName);
-			
-			return null;
-		}
-		
-		if (logger.isLoggable(Level.FINER))
-			logger.log(Level.FINER, "Using "+ite+" for: "+fileName);
-		
-		return ite.createLFN(fileName);
-	}
-	
-	
-	
 	/**
 	 * Make sure the parent directory exists
 	 * 
