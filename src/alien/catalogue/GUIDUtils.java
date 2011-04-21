@@ -115,6 +115,7 @@ public final class GUIDUtils {
 	 */
 	public static GUID getGUID(final UUID guid, final boolean evenIfDoesntExist) {
 		final int host = getGUIDHost(guid);
+//		final int host = 1; //gron
 		
 		if (host < 0)
 			return null;
@@ -130,6 +131,7 @@ public final class GUIDUtils {
 			return null;
 		
 		final int tableName = GUIDUtils.getTableNameForGUID(guid);
+//		final int tableName=0; //gron
 		
 		if (tableName < 0)
 			return null;
@@ -150,47 +152,6 @@ public final class GUIDUtils {
 		
 		return new GUID(db, host, tableName);
 	}
-	
-	/**
-	 * Create and return a GUID one with UUID does not yet exist
-	 * 
-	 * @param guid
-	 * @return a new GUID object or <code>null</code> if exists 
-	 */
-	public static GUID createGUID(final UUID guid) {
-		final int host = getGUIDHost(guid);
-		
-		if (host < 0)
-			return null;
-
-		final Host h = CatalogueUtils.getHost(host);
-		
-		if (h == null)
-			return null;
-
-		final DBFunctions db = h.getDB();
-
-		if (db == null)
-			return null;
-		
-		final int tableName = GUIDUtils.getTableNameForGUID(guid);
-		
-		if (tableName < 0)
-			return null;
-
-		if (monitor != null)
-			monitor.incrementCounter("GUID_db_lookup");
-	
-		db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary('"
-				+ guid + "');");
-
-		if (!db.moveNext()) {
-			return new GUID(guid);		
-			}
-		
-		return null;
-	}
-	
 	
 	/**
 	 * 
