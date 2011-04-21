@@ -1,38 +1,28 @@
 package alien.soap.services;
 
-import java.security.GeneralSecurityException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
+import java.util.UUID;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import java.util.UUID;
-
-import org.bouncycastle.jce.provider.JDKMessageDigest.MD5;
-import alien.se.SE;
-import alien.se.SEUtils;
-import alien.services.XrootDEnvelopeSigner;
-import alien.user.AliEnPrincipal;
-import alien.user.AuthorizationChecker;
-import alien.user.UserFactory;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
-import alien.catalogue.PFN;
-import alien.catalogue.access.AccessTicket;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
-import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
+import alien.se.SE;
+import alien.se.SEUtils;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -89,27 +79,14 @@ public class AuthenSOAPBridge {
 	 * 
 	 * createEnvelope - the main entry function of Authen for the SOAP/Perl
 	 * interoperability
+	 * @param access 
+	 * @param inputvars 
+	 * @param options 
 	 * 
-	 * @param user
-	 * @param egal
-	 * @param envreq
-	 * @param lfn
-	 * @param staticSEs
-	 * @param size
-	 * @param noSEs
-	 * @param guid
-	 * @param site
-	 * @param qos
-	 * @param qosCount
-	 * @return
+	 * @return 
 	 */
-	// public Map<String, String>[] createEnvelope(String P_user,
-	// String P_options, String P_maybeoptions, String P_lfn,
-	// String P_staticSEs, String P_size, String P_sesel_noSEs,
-	// String P_guid, String P_sitename, String P_qos, String P_qosCount) {
-
 	public static Map<String, String>[] authorize(String access,
-			String[] inputvars, Hashtable options) {
+			String[] inputvars, Hashtable<?, ?> options) {
 
 		// we need to get the user name from gridsite over http
 		String getTHISFromGridSite = "monalisa";
@@ -155,8 +132,14 @@ public class AuthenSOAPBridge {
 		return replySOAPerrorMessage_access_eof("Illegal access request provided, possible ones are: <read><write-version><write-once><delete>");
 	}
 
+	/**
+	 * @param user
+	 * @param taccess
+	 * @param options
+	 * @return
+	 */
 	public static Map<String, String>[] createEnvelope(AliEnPrincipal user,
-			String taccess, Hashtable options) {
+			String taccess, Hashtable<?, ?> options) {
 
 		AccessType access = AccessType.NULL;
 		if (taccess != "read") {
@@ -166,7 +149,7 @@ public class AuthenSOAPBridge {
 		} else if (writeRequest.matcher(taccess).matches()) {
 			access = AccessType.WRITE;
 		}
-		;
+		
 		if (access == AccessType.NULL)
 			return replySOAPerrorMessage_access_eof("Illegal access request provided, possible ones are: <read><write-version><write-once><delete>");
 
@@ -194,15 +177,17 @@ public class AuthenSOAPBridge {
 		GUID guid = null;
 
 		try {
+			final String sLFN = (String) options.get("lfn");
+			
 			// if the user request catalogue object by GUID
-			if (GUIDUtils.isValidGUID((String) options.get("lfn"))) {
-				guid = GUIDUtils.createGUID(
-						UUID.fromString((String) options.get("lfn")));
+			if (GUIDUtils.isValidGUID(sLFN)) {
+				guid = GUIDUtils.getGUID(UUID.fromString(sLFN), true);
 				// if the user request catalogue object by LFN
 			} else {
-				lfn = LFNUtils.createLFN((String) options.get("lfn"));
+				lfn = LFNUtils.getLFN(sLFN, true);
 			}
 		} catch (ClassCastException e) {
+			// if the passed lfn is not a String, ignore
 		}
 
 		if ((lfn == null) && (guid == null))
@@ -210,24 +195,30 @@ public class AuthenSOAPBridge {
 
 		// if the user requested a certain GUID for an LFN
 		try {
-			if (GUIDUtils.isValidGUID((String) options.get("guidRequest")))
-				guid = GUIDUtils.createGUID(
-						UUID.fromString((String) options.get("guidRequest")));
+			final String sGUID = (String) options.get("guidRequest"); 
+			
+			if (GUIDUtils.isValidGUID(sGUID))
+				guid = GUIDUtils.getGUID(UUID.fromString((String) options.get("guidRequest")), true);
 		} catch (ClassCastException e) {
+			// ignore this
 		}
 
 		int size = 0;
 		try {
-			size = Integer.valueOf((String) options.get("lfn"));
+			size = Integer.parseInt((String) options.get("lfn"));	// TODO : is this really "lfn" ?
 		}
-		catch(NumberFormatException e){}
+		catch(NumberFormatException e){
+			// ignore
+		}
 		
 		
 		String md5 = null;
 		try {
 			md5 = (String) options.get("md5");
 		}
-		catch(ClassCastException e){}
+		catch(ClassCastException e){
+			// ignore
+		}
 		
 		
 		if (access == AccessType.WRITE) {
