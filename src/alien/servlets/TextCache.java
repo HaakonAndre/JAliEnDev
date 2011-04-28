@@ -32,7 +32,7 @@ public class TextCache extends ExtendedServlet {
 		if (ret!=null)
 			return ret;
 		
-		ret = new ExpirationCache<String, WeakReference<String>>(10240);
+		ret = new ExpirationCache<String, WeakReference<String>>(102400);
 		
 		namespaces.put(name, ret);
 		
