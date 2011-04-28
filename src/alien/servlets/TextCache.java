@@ -4,6 +4,7 @@
 package alien.servlets;
 
 import java.lang.ref.WeakReference;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import lazyj.ExtendedServlet;
@@ -50,7 +51,10 @@ public class TextCache extends ExtendedServlet {
 		response.setContentType("text/plain");
 		
 		if (key.length()==0){
-			pwOut.println("ERR: key");
+			for (Map.Entry<String, ExpirationCache<String, WeakReference<String>>> entry: namespaces.entrySet()){
+				pwOut.println(entry.getKey()+" : "+entry.getValue().size());
+			}
+			
 			pwOut.flush();
 			return;
 		}
