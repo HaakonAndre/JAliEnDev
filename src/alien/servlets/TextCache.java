@@ -67,7 +67,7 @@ public class TextCache extends ExtendedServlet {
 			if (monitor != null)
 				monitor.incrementCounter("SET_"+ns);
 			
-			cache.put(key, new WeakReference<String>(value), getl("timeout", 60*60)*1000);
+			cache.overwrite(key, new WeakReference<String>(value), getl("timeout", 60*60)*1000);
 			return;
 		}
 		
@@ -87,6 +87,8 @@ public class TextCache extends ExtendedServlet {
 		if (value==null){
 			if (monitor != null)
 				monitor.incrementCounter("EXPIRED_"+ns);
+			
+			cache.remove(key);
 			
 			pwOut.println("ERR: expired");
 			pwOut.flush();
