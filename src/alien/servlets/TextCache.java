@@ -47,8 +47,11 @@ public class TextCache extends ExtendedServlet {
 		
 		final String key = gets("key");
 		
+		response.setContentType("text/plain");
+		
 		if (key.length()==0){
 			pwOut.println("ERR: key");
+			pwOut.flush();
 			return;
 		}
 		
@@ -71,6 +74,7 @@ public class TextCache extends ExtendedServlet {
 				monitor.incrementCounter("NULL_"+ns);
 			
 			pwOut.println("ERR: null");
+			pwOut.flush();
 			return;
 		}
 		
@@ -81,6 +85,7 @@ public class TextCache extends ExtendedServlet {
 				monitor.incrementCounter("EXPIRED_"+ns);
 			
 			pwOut.println("ERR: expired");
+			pwOut.flush();
 			return;
 		}
 		
@@ -88,6 +93,7 @@ public class TextCache extends ExtendedServlet {
 			monitor.incrementCounter("HIT_"+ns);
 		
 		pwOut.println(value);
+		pwOut.flush();
 	}
 
 }
