@@ -3,7 +3,6 @@
  */
 package alien.servlets;
 
-import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,20 +18,20 @@ import alien.monitoring.MonitorFactory;
 public class TextCache extends ExtendedServlet {
 	private static final long serialVersionUID = 6024682549531639348L;
 	
-	private final static ConcurrentHashMap<String, ExpirationCache<String, WeakReference<String>>> namespaces = new ConcurrentHashMap<String, ExpirationCache<String,WeakReference<String>>>();
+	private final static ConcurrentHashMap<String, ExpirationCache<String, String>> namespaces = new ConcurrentHashMap<String, ExpirationCache<String, String>>();
 	
 	/**
 	 * Monitoring component
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(TextCache.class.getCanonicalName());
 	
-	private final ExpirationCache<String, WeakReference<String>> getNamespace(final String name){
-		ExpirationCache<String, WeakReference<String>> ret = namespaces.get(name);
+	private static final ExpirationCache<String, String> getNamespace(final String name){
+		ExpirationCache<String, String> ret = namespaces.get(name);
 		
 		if (ret!=null)
 			return ret;
 		
-		ret = new ExpirationCache<String, WeakReference<String>>(102400);
+		ret = new ExpirationCache<String, String>(50000);
 		
 		namespaces.put(name, ret);
 		
@@ -51,7 +50,7 @@ public class TextCache extends ExtendedServlet {
 		response.setContentType("text/plain");
 		
 		if (key.length()==0){
-			for (Map.Entry<String, ExpirationCache<String, WeakReference<String>>> entry: namespaces.entrySet()){
+			for (Map.Entry<String, ExpirationCache<String, String>> entry: namespaces.entrySet()){
 				pwOut.println(entry.getKey()+" : "+entry.getValue().size());
 			}
 			
@@ -59,38 +58,27 @@ public class TextCache extends ExtendedServlet {
 			return;
 		}
 		
-		final ExpirationCache<String, WeakReference<String>> cache = getNamespace(ns);
+		final ExpirationCache<String, String> cache = getNamespace(ns);
 		
 		String value = gets("value", null);
 		
 		if (value!=null){
+			// a SET operation
+			
 			if (monitor != null)
 				monitor.incrementCounter("SET_"+ns);
 			
-			cache.overwrite(key, new WeakReference<String>(value), getl("timeout", 60*60)*1000);
+			cache.overwrite(key, value, getl("timeout", 60*60)*1000);
 			return;
 		}
 		
-		final WeakReference<String> weak = cache.get(key);
+		value = cache.get(key);
 		
-		if (weak==null){
+		if (value==null){
 			if (monitor != null)
 				monitor.incrementCounter("NULL_"+ns);
 			
 			pwOut.println("ERR: null");
-			pwOut.flush();
-			return;
-		}
-		
-		value = weak.get();
-		
-		if (value==null){
-			if (monitor != null)
-				monitor.incrementCounter("EXPIRED_"+ns);
-			
-			cache.remove(key);
-			
-			pwOut.println("ERR: expired");
 			pwOut.flush();
 			return;
 		}
