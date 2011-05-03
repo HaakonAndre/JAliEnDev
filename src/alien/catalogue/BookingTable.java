@@ -254,7 +254,7 @@ public class BookingTable {
 				lfn.md5 = guid.md5;
 				lfn.type = guid.type;
 				
-				lfn.guidtime = Long.toHexString(GUIDUtils.epochTime(guid.guid));
+				lfn.guidtime = GUIDUtils.getIndexTime(guid.guid);
 				
 				lfn.jobid = db.geti(2, -1);
 				
