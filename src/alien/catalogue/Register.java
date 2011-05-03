@@ -62,6 +62,9 @@ public class Register {
 		if (g.exists()){
 			if (g.size != size || !g.md5.equals(md5))
 				throw new IOException("You are trying to associate the wrong entries here");
+			
+			if (!AuthorizationChecker.canWrite(g, user))
+				throw new IOException("User "+user.getName()+" cannot update GUID "+uuid);
 		}
 		
 		if (!g.exists()){
@@ -81,10 +84,6 @@ public class Register {
 			g.type = 0;	// as in the catalogue
 			g.perm = "755";
 			g.aclId = -1;			
-		}
-		else{
-			if (!AuthorizationChecker.canWrite(g, user))
-				throw new IOException("User "+user.getName()+" cannot update GUID "+uuid);
 		}
 		
 		if (!g.seStringList.contains(Integer.valueOf(se.seNumber))){
