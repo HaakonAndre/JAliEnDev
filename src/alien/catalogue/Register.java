@@ -44,6 +44,17 @@ public class Register {
 			if (!name.guid.equals(uuid) || name.size!=size || !name.md5.equals(md5))
 				throw new IOException("The details don't match the existing LFN fields");
 		}
+		else{
+			LFN check = name.getParentDir();
+			
+			while (check!=null && !check.exists ){
+				check = check.getParentDir();
+			}
+			
+			if (!AuthorizationChecker.canWrite(check, user)){
+				throw new IOException("User "+user.getName()+" is not allowed to write LFN "+lfn);
+			}
+		}
 		
 		final GUID g = GUIDUtils.getGUID(uuid, true);
 		
@@ -80,21 +91,12 @@ public class Register {
 			PFN p = new PFN(g, se);
 			p.pfn = pfn;
 			
-			if (!g.addPFN(p))
+			if (!g.addPFN(p)){
 				return false;
+			}
 		}
 		
-		if (!name.exists){
-			LFN check = name.getParentDir();
-			
-			while (check!=null && !check.exists ){
-				check = check.getParentDir();
-			}
-			
-			if (!AuthorizationChecker.canWrite(check, user)){
-				throw new IOException("User "+user.getName()+" is not allowed to write LFN "+lfn);
-			}
-			
+		if (!name.exists){	
 			name.size = g.size;
 			name.owner = g.owner;
 			name.gowner = g.gowner;
@@ -106,13 +108,15 @@ public class Register {
 			// lfn.guidtime = ?;
 			
 			name.md5 = g.md5;
-			name.type = g.type;
+			name.type = 'f';
 			
-			name.guidtime = Long.toHexString(GUIDUtils.epochTime(g.guid));
+			name.guidtime = GUIDUtils.getIndexTime(g.guid);
 			
 			name.jobid = -1;
 			
-			return LFNUtils.insertLFN(name);
+			final boolean insertOK = LFNUtils.insertLFN(name); 
+			
+			return insertOK;
 		}
 		
 		return true;
