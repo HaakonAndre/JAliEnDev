@@ -150,6 +150,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		this.host = GUIDUtils.getGUIDHost(guid);
 		this.tableName = GUIDUtils.getTableNameForGUID(guid);
+		
+		seStringList = new LinkedHashSet<Integer>();
+		seAutoStringList = new LinkedHashSet<Integer>();
 	}
 	
 	private void init(final DBFunctions db){
@@ -210,16 +213,21 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	private boolean update(){
 		final Host h = CatalogueUtils.getHost(host);
 		
-		if (h == null)
+		if (h == null){
 			return false;
+		}
 
 		final DBFunctions db = h.getDB();
 
-		if (db == null)
+		if (db == null){
 			return false;
+		}
 			
-		if (!exists)
-			return insert(db);
+		if (!exists){
+			final boolean insertOK = insert(db);
+			
+			return insertOK;
+		}
 		
 		// only the SE list can change
 		if (!db.query("UPDATE G"+tableName+"L SET seStringlist="+setToString(seStringList)+" WHERE guidId="+guidId)){
@@ -253,7 +261,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			aclId+","+															// aclId
 			(expiretime==null ? "null" : "'"+formatter.format(expiretime)+"'")+","+		// expiretime
 			size+","+															// size
-			"'"+Format.escSQL(gowner)+"'"+										// gowner
+			"'"+Format.escSQL(gowner)+"',"+										// gowner
 			"string2binary('"+guid+"'),"+										// guid
 			(type==0 ? "null" : "'"+type+"'")+","+								// type
 			"'"+Format.escSQL(md5)+"',"+										// md5
@@ -393,20 +401,23 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	boolean addPFN(final PFN pfn){
 		final Host h = CatalogueUtils.getHost(host);
 
-		if (h==null)
+		if (h==null){
 			return false;
+		}
 		
 		final DBFunctions db = h.getDB();
 		
-		if (db==null)
+		if (db==null){
 			return false;
+		}
 		
 		if (monitor!=null){
 			monitor.incrementCounter("PFN_db_insert");
 		}
 
-		if (!addSE(pfn.seNumber))
+		if (!addSE(pfn.seNumber)){
 			return false;
+		}
 		
 		if (!db.query("INSERT INTO G"+tableName+"L_PFN (guidId, pfn, seNumber) VALUES ("+guidId+", '"+Format.escSQL(pfn.getPFN())+"', "+pfn.seNumber+")")){
 			seStringList.remove(Integer.valueOf(pfn.seNumber));
