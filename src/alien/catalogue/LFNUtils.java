@@ -84,6 +84,7 @@ public class LFNUtils {
 			return null;
 		
 		lfn.parentDir = parent;
+		lfn.type = 'd';
 		
 		if (insertLFN(lfn))
 			return lfn;
