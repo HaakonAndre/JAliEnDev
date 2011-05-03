@@ -20,6 +20,7 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.Register;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.XrootDEnvelope;
@@ -71,7 +72,24 @@ public class Testing {
 //		
 //		System.err.println(j.getJDL());
 		
-		xrdstat();
+		//xrdstat();
+		
+		String l = "/alice/cern.ch/user/g/grigoras/register.test";
+		
+		try{
+			boolean ok = Register.register(l, "torrent://bubu", null, "12345", 12345, "no_se", alien.user.UserFactory.getByUsername("grigoras"));
+		
+			System.err.println("Result : "+ok);
+		}
+		catch (Exception e){
+			e.printStackTrace();
+		}
+		
+		LFN lfn = LFNUtils.getLFN(l);
+		
+		System.err.println(lfn);
+		
+		System.err.println(lfn.whereis());
 		
 		//compareFiles("/tmp/xrdstatus-5741189761428427102-download.tmp.CERN", "/tmp/xrdstatus-6842356284876004826-download.tmp.ISS");
 		//compareFiles("/tmp/xrdstatus-5741189761428427102-download.tmp.CERN", "/tmp/xrdstatus-8650443894764062995-download.tmp.NIHAM");
