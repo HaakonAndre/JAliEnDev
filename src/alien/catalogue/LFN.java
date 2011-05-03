@@ -92,11 +92,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	public String perm;
 	
 	/**
-	 * SE list
-	 */
-	public long selist;
-	
-	/**
 	 * The unique identifier
 	 */
 	public UUID guid;
@@ -251,8 +246,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		perm = db.gets("perm");
 		
-		selist = db.getl("selist");
-
 		byte[] guidBytes = db.getBytes("guid");
 		
 		if (guidBytes!=null)
@@ -281,7 +274,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		       "size\t\t: "+size+"\n"+
 		       "type\t\t: "+type+"\n"+
 		       "perm\t\t: "+perm+"\n"+
-		       "selist\t\t: "+selist+"\n"+
 		       "guid\t\t: "+guid+"\n"+
 		       "md5\t\t: "+md5+"\n"+
 		       "guidtime\t: "+guidtime+"\n"+
@@ -485,7 +477,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 */
 	boolean insert(){
 		String q = "INSERT INTO L"+indexTableEntry.tableName+"L (owner, ctime, replicated, aclId, lfn, expiretime, size, "+
-		"dir, gowner, type, perm, selist, guid, md5, guidtime, broken, jobid) VALUES ("+
+		"dir, gowner, type, perm, guid, md5, guidtime, broken, jobid) VALUES ("+
 		e(owner)+","+
 		e(format(ctime))+","+
 		(replicated ? "1" : "0")+","+
@@ -497,7 +489,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		e(gowner)+","+
 		(type>0 ? e(""+type) : "null")+","+
 		e(perm)+","+
-		selist+","+
 		"string2binary('"+guid+"'),"+
 		e(md5)+","+
 		e(guidtime)+","+
