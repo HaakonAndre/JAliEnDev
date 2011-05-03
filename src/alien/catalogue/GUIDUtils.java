@@ -347,4 +347,12 @@ public final class GUIDUtils {
 		
 		return ret;
 	}
+	
+	/**
+	 * @param uuid
+	 * @return index time as string
+	 */
+	public static final String getIndexTime(final UUID uuid){
+		return Long.toHexString(indexTime(uuid)).toUpperCase();
+	}
 }
