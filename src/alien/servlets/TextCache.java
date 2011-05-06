@@ -31,7 +31,16 @@ public class TextCache extends ExtendedServlet {
 		if (ret!=null)
 			return ret;
 		
-		ret = new ExpirationCache<String, String>(300000);
+		int size;
+		
+		try{
+			size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
+		}
+		catch (Throwable t){
+			size = 300000;
+		}
+		
+		ret = new ExpirationCache<String, String>(size);
 		
 		namespaces.put(name, ret);
 		
