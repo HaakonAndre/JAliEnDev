@@ -4,6 +4,7 @@
 package alien.servlets;
 
 import java.util.Map;
+import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import lazyj.ExtendedServlet;
@@ -34,7 +35,12 @@ public class TextCache extends ExtendedServlet {
 		int size;
 		
 		try{
-			size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
+			try{
+				size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size_"+name));
+			}
+			catch (Throwable t1){
+				size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
+			}
 		}
 		catch (Throwable t){
 			size = 300000;
@@ -47,11 +53,49 @@ public class TextCache extends ExtendedServlet {
 		return ret;
 	}
 	
+	private static long lastMonitoringSent = System.currentTimeMillis();
+	
+	private static final long MONITORING_INTERVAL = 1000*60;
+	
+	private static final Object monitoringLock = new Object();
+	
+	private static void sendMonitoringData(){
+		synchronized (monitoringLock){
+			final long lNow = System.currentTimeMillis();
+		
+			if (lNow - lastMonitoringSent < MONITORING_INTERVAL){
+				return;
+			}
+			
+			lastMonitoringSent = lNow;
+		}
+		
+		final Vector<String> parameters = new Vector<String>();
+		final Vector<Object> values = new Vector<Object>();
+			
+		for (final Map.Entry<String, ExpirationCache<String, String>> entry: namespaces.entrySet()){
+			parameters.add(entry.getKey()+"_size");
+			values.add(Integer.valueOf(entry.getValue().size()));
+		}
+			
+		monitor.sendParameters(parameters, values);
+	}
+	
 	/* (non-Javadoc)
 	 * @see lazyj.ExtendedServlet#execGet()
 	 */
 	@Override
 	public void execGet() {
+		final long start = System.currentTimeMillis();
+		
+		execRealGet();
+		
+		final long duration = System.currentTimeMillis() - start;
+		
+		monitor.addMeasurement("ms_to_answer", duration);
+	}
+	
+	private final void execRealGet(){
 		final String ns = gets("ns", "default");
 		
 		final String key = gets("key");
@@ -97,6 +141,8 @@ public class TextCache extends ExtendedServlet {
 		
 		pwOut.println(value);
 		pwOut.flush();
+		
+		sendMonitoringData();
 	}
 
 }
