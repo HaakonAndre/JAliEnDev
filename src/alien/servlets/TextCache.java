@@ -3,12 +3,13 @@
  */
 package alien.servlets;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import lazyj.ExtendedServlet;
-import lazyj.cache.ExpirationCache;
+import lazyj.LRUMap;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 
@@ -19,15 +20,73 @@ import alien.monitoring.MonitorFactory;
 public class TextCache extends ExtendedServlet {
 	private static final long serialVersionUID = 6024682549531639348L;
 	
-	private final static ConcurrentHashMap<String, ExpirationCache<String, String>> namespaces = new ConcurrentHashMap<String, ExpirationCache<String, String>>();
+	private static final class CacheValue {
+		public final String value;
+		
+		public final long expires;
+		
+		public CacheValue(final String value, final long expires){
+			this.value = value;
+			this.expires = expires;
+		}
+	}
+
+	private static final class CleanupThread extends Thread{
+		public CleanupThread() {
+			setName("alien.servlets.ThreadCache.CleanupThread");
+			setDaemon(true);
+		}
+		
+		@Override
+		public void run() {
+			while (true){
+				try{
+					Thread.sleep(1000*60);
+					
+					final long now = System.currentTimeMillis();
+					
+					for (final Map<String, CacheValue> cache: namespaces.values()){
+						synchronized (cache){
+							final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
+							
+							while (it.hasNext()){
+								final Map.Entry<String, CacheValue> entry = it.next();
+								
+								if (entry.getValue().expires < now)
+									it.remove();
+							}
+						}
+					}
+				}
+				catch (Throwable t){
+					// ignore
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Goes through the entries and removes the expired ones
+	 */
+	static final CleanupThread cleanup;
+	
+	static{
+		cleanup = new CleanupThread();
+		cleanup.start();
+	}
+	
+	/**
+	 * Big cache structure
+	 */
+	final static Map<String, Map<String, CacheValue>> namespaces = new ConcurrentHashMap<String, Map<String, CacheValue>>();
 	
 	/**
 	 * Monitoring component
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(TextCache.class.getCanonicalName());
 	
-	private static final ExpirationCache<String, String> getNamespace(final String name){
-		ExpirationCache<String, String> ret = namespaces.get(name);
+	private static final Map<String, CacheValue> getNamespace(final String name){
+		Map<String, CacheValue> ret = namespaces.get(name);
 		
 		if (ret!=null)
 			return ret;
@@ -43,10 +102,10 @@ public class TextCache extends ExtendedServlet {
 			}
 		}
 		catch (Throwable t){
-			size = 300000;
+			size = 50000;
 		}
 		
-		ret = new ExpirationCache<String, String>(size);
+		ret = new LRUMap<String, CacheValue>(size);
 		
 		namespaces.put(name, ret);
 		
@@ -55,7 +114,7 @@ public class TextCache extends ExtendedServlet {
 	
 	private static long lastMonitoringSent = System.currentTimeMillis();
 	
-	private static final long MONITORING_INTERVAL = 1000*60;
+	private static final long MONITORING_INTERVAL = 1000*30;
 	
 	private static final Object monitoringLock = new Object();
 	
@@ -73,7 +132,7 @@ public class TextCache extends ExtendedServlet {
 		final Vector<String> parameters = new Vector<String>();
 		final Vector<Object> values = new Vector<Object>();
 			
-		for (final Map.Entry<String, ExpirationCache<String, String>> entry: namespaces.entrySet()){
+		for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
 			parameters.add(entry.getKey()+"_size");
 			values.add(Integer.valueOf(entry.getValue().size()));
 		}
@@ -103,7 +162,7 @@ public class TextCache extends ExtendedServlet {
 		response.setContentType("text/plain");
 		
 		if (key.length()==0){
-			for (Map.Entry<String, ExpirationCache<String, String>> entry: namespaces.entrySet()){
+			for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
 				pwOut.println(entry.getKey()+" : "+entry.getValue().size());
 			}
 			
@@ -111,9 +170,9 @@ public class TextCache extends ExtendedServlet {
 			return;
 		}
 		
-		final ExpirationCache<String, String> cache = getNamespace(ns);
+		final Map<String, CacheValue> cache = getNamespace(ns);
 		
-		String value = gets("value", null);
+		final String value = gets("value", null);
 		
 		if (value!=null){
 			// a SET operation
@@ -121,13 +180,20 @@ public class TextCache extends ExtendedServlet {
 			if (monitor != null)
 				monitor.incrementCounter("SET_"+ns);
 			
-			cache.overwrite(key, value, getl("timeout", 60*60)*1000);
+			synchronized(cache){
+				cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", 60*60)*1000));
+			}
+			
 			return;
 		}
 		
-		value = cache.get(key);
+		CacheValue existing;
 		
-		if (value==null){
+		synchronized (cache){
+			existing = cache.get(key);
+		}
+		
+		if (existing==null){
 			if (monitor != null)
 				monitor.incrementCounter("NULL_"+ns);
 			
@@ -136,10 +202,19 @@ public class TextCache extends ExtendedServlet {
 			return;
 		}
 		
+		if (existing.expires < System.currentTimeMillis()){
+			if (monitor != null)
+				monitor.incrementCounter("EXPIRED_"+ns);
+			
+			pwOut.println("ERR: expired");
+			pwOut.flush();
+			return;			
+		}
+				
 		if (monitor != null)
 			monitor.incrementCounter("HIT_"+ns);
 		
-		pwOut.println(value);
+		pwOut.println(existing.value);
 		pwOut.flush();
 		
 		sendMonitoringData();
