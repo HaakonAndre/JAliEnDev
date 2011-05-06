@@ -162,11 +162,22 @@ public class TextCache extends ExtendedServlet {
 		response.setContentType("text/plain");
 		
 		if (key.length()==0){
-			for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
-				pwOut.println(entry.getKey()+" : "+entry.getValue().size());
+			if (gets("clean", null)!=null){
+				for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
+					final Map<String, CacheValue> cache = entry.getValue();
+					
+					synchronized(cache){
+						cache.clear();
+					}
+				}
 			}
-			
+			else{
+				for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
+					pwOut.println(entry.getKey()+" : "+entry.getValue().size());
+				}				
+			}
 			pwOut.flush();
+			
 			return;
 		}
 		
