@@ -31,7 +31,7 @@ public class TextCache extends ExtendedServlet {
 		if (ret!=null)
 			return ret;
 		
-		ret = new ExpirationCache<String, String>(150000);
+		ret = new ExpirationCache<String, String>(300000);
 		
 		namespaces.put(name, ret);
 		
