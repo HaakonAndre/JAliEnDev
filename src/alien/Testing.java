@@ -72,31 +72,14 @@ public class Testing {
 //		
 //		System.err.println(j.getJDL());
 		
-		//xrdstat();
-		
-		String l = "/alice/cern.ch/user/g/grigoras/register.test";
-		
-		try{
-			boolean ok = Register.register(l, "torrent://bubu", null, "12345", 12345, "no_se", alien.user.UserFactory.getByUsername("grigoras"));
-		
-			System.err.println("Result : "+ok);
-		}
-		catch (Exception e){
-			e.printStackTrace();
-		}
-		
-		LFN lfn = LFNUtils.getLFN(l);
-		
-		System.err.println(lfn);
-		
-		System.err.println(lfn.whereis());
-		
+		xrdstat();
+				
 		//compareFiles("/tmp/xrdstatus-5741189761428427102-download.tmp.CERN", "/tmp/xrdstatus-6842356284876004826-download.tmp.ISS");
 		//compareFiles("/tmp/xrdstatus-5741189761428427102-download.tmp.CERN", "/tmp/xrdstatus-8650443894764062995-download.tmp.NIHAM");
 	}
 	
 	private static final void xrdstat(){
-		final Map<PFN, XRDStatus> check = XRDChecker.fullCheckLFN("/alice/data/2010/LHC10h/000139172/ESDs/pass2/AOD044/0049/AliAOD.root");
+		final Map<PFN, XRDStatus> check = XRDChecker.fullCheckLFN("/alice/data/2010/LHC10h/000139308/ESDs/pass2/QA65/0002/root_archive.zip");
 		
 		for (final Map.Entry<PFN, XRDStatus> entry: check.entrySet()){
 			System.err.println(entry.getKey().pfn+" : "+entry.getValue());
