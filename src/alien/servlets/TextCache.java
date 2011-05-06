@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import lazyj.ExtendedServlet;
 import lazyj.LRUMap;
+import lia.util.StringFactory;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 
@@ -183,13 +184,17 @@ public class TextCache extends ExtendedServlet {
 		
 		final Map<String, CacheValue> cache = getNamespace(ns);
 		
-		final String value = gets("value", null);
+		String value = gets("value", null);
 		
 		if (value!=null){
 			// a SET operation
 			
 			if (monitor != null)
 				monitor.incrementCounter("SET_"+ns);
+			
+			if (value.indexOf("'eof'")>=0){
+				value = StringFactory.get(value);
+			}
 			
 			synchronized(cache){
 				cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", 60*60)*1000));
