@@ -42,22 +42,51 @@ public class TextCache extends ExtendedServlet {
 		public void run() {
 			while (true){
 				try{
-					Thread.sleep(1000*60);
+					Thread.sleep(1000*30);
 					
 					final long now = System.currentTimeMillis();
+										
+					final Vector<String> parameters = new Vector<String>();
+					final Vector<Object> values = new Vector<Object>();
 					
-					for (final Map<String, CacheValue> cache: namespaces.values()){
+					for (final Map.Entry<String, Map<String, CacheValue>> nsEntry: namespaces.entrySet()){
+						final String ns = nsEntry.getKey();
+						final Map<String, CacheValue> cache = nsEntry.getValue();
+					
+						long soonestToExpire = 0;
+						long latestToExpire = now;
+						
 						synchronized (cache){
 							final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
 							
 							while (it.hasNext()){
 								final Map.Entry<String, CacheValue> entry = it.next();
 								
-								if (entry.getValue().expires < now)
+								final long expires = entry.getValue().expires; 
+								
+								if (expires < now){
 									it.remove();
+								}
+								else{
+									if (soonestToExpire==0 || expires < soonestToExpire)
+										soonestToExpire = expires;
+								
+									if (expires > latestToExpire)
+										latestToExpire = expires;
+								}
 							}
+							
+							parameters.add(ns+"_size");
+							values.add(Integer.valueOf(cache.size()));
+						}
+						
+						if (soonestToExpire>0){
+							parameters.add(ns+"_hours");
+							values.add(Double.valueOf((latestToExpire-soonestToExpire)/(3600000d)));
 						}
 					}
+					
+					monitor.sendParameters(parameters, values);
 				}
 				catch (Throwable t){
 					// ignore
@@ -112,47 +141,19 @@ public class TextCache extends ExtendedServlet {
 		
 		return ret;
 	}
-	
-	private static long lastMonitoringSent = System.currentTimeMillis();
-	
-	private static final long MONITORING_INTERVAL = 1000*30;
-	
-	private static final Object monitoringLock = new Object();
-	
-	private static void sendMonitoringData(){
-		synchronized (monitoringLock){
-			final long lNow = System.currentTimeMillis();
 		
-			if (lNow - lastMonitoringSent < MONITORING_INTERVAL){
-				return;
-			}
-			
-			lastMonitoringSent = lNow;
-		}
-		
-		final Vector<String> parameters = new Vector<String>();
-		final Vector<Object> values = new Vector<Object>();
-			
-		for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
-			parameters.add(entry.getKey()+"_size");
-			values.add(Integer.valueOf(entry.getValue().size()));
-		}
-			
-		monitor.sendParameters(parameters, values);
-	}
-	
 	/* (non-Javadoc)
 	 * @see lazyj.ExtendedServlet#execGet()
 	 */
 	@Override
 	public void execGet() {
-		final long start = System.currentTimeMillis();
+		final long start = System.nanoTime();
 		
 		execRealGet();
 		
-		final long duration = System.currentTimeMillis() - start;
+		final long duration = System.nanoTime() - start;
 		
-		monitor.addMeasurement("ms_to_answer", duration);
+		monitor.addMeasurement("ms_to_answer", duration/1000000d);
 	}
 	
 	private final void execRealGet(){
@@ -192,8 +193,11 @@ public class TextCache extends ExtendedServlet {
 			if (monitor != null)
 				monitor.incrementCounter("SET_"+ns);
 			
-			if (value.indexOf("'eof'")>=0){
+			if (value.indexOf("eof")>=0){
 				value = StringFactory.get(value);
+				
+				if (monitor != null)
+					monitor.incrementCounter("SET_EOF_"+ns);
 			}
 			
 			synchronized(cache){
@@ -230,10 +234,13 @@ public class TextCache extends ExtendedServlet {
 		if (monitor != null)
 			monitor.incrementCounter("HIT_"+ns);
 		
+		if (existing.value.indexOf("eof")>=0){
+			if (monitor != null)
+				monitor.incrementCounter("HIT_EOF_"+ns);
+		}
+		
 		pwOut.println(existing.value);
 		pwOut.flush();
-		
-		sendMonitoringData();
 	}
 
 }
