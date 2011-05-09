@@ -56,13 +56,42 @@ public class Register {
 			}
 		}
 		
-		final GUID g = GUIDUtils.getGUID(uuid, true);
+		GUID g = GUIDUtils.getGUID(uuid, true);
 		
 		// sanity check
 		if (g.exists()){
-			if (g.size != size || !g.md5.equals(md5))
-				throw new IOException("You are trying to associate the wrong entries here");
-			
+			if (g.size != size || !g.md5.equals(md5)){
+				System.err.println("Register : GUID exists for "+uuid+" and the details don't match:\n"+g+"\nwhile the new size = "+size+" and the md5 is "+md5);
+				
+				final Set<PFN> pfns = g.getPFNs();
+				
+				if (pfns==null || pfns.size()==0){
+					System.err.println("Register : no pfns associated to "+uuid);
+				}
+				else{
+					for (final PFN pfnit: pfns){
+						System.err.println("Register : "+uuid+" - associated pfn : "+pfnit.pfn);
+					}
+				}
+				
+				final Set<LFN> lfns = g.getLFNs();
+				
+				if (lfns==null || lfns.size()==0){
+					System.err.println("Register : no lfns associated to "+uuid);
+				}
+				else{
+					for (final LFN lfnit: lfns){
+						System.err.println("Register : "+uuid+" - associated lfn : "+lfnit.getCanonicalName());
+					}
+				}
+		
+				g = GUIDUtils.createGuid();
+				
+				System.err.println("Register : replacing "+uuid+" with "+g.guid+" because of the conflict");
+				
+				// throw new IOException("You are trying to associate the wrong entries here ("+g.size+", "+g.md5+") != ("+size+", "+md5+")");
+			}
+			else
 			if (!AuthorizationChecker.canWrite(g, user))
 				throw new IOException("User "+user.getName()+" cannot update GUID "+uuid);
 		}
