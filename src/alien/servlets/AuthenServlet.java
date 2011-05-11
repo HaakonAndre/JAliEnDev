@@ -55,7 +55,7 @@ public class AuthenServlet extends ExtendedServlet {
 			Log.log(Log.INFO, "Request from user "+user.getName());
 		}
 
-		try{
+	/*	try{
 			BufferedReader br = request.getReader();
 			String bubu;
 			
@@ -68,7 +68,7 @@ public class AuthenServlet extends ExtendedServlet {
 			e.printStackTrace();
 			}
 
-		
+		*/
 		Page pMasterpage = new Page(osOut, "response.res");	
 
 		try {
