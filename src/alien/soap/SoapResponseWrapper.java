@@ -84,7 +84,7 @@ public class SoapResponseWrapper {
 				+ actionName
 				+ "Response xmlns:ns1=\"urn:"
 				+ namespace
-				+ "\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n");
+				+ "\" >\n");
 
 		sb.append(toSOAPXML(response));
 
