@@ -352,6 +352,10 @@ public class Xrootd extends Protocol {
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay) throws IOException {
+		
+		final boolean hasEnvelope = pfn.ticket != null && (pfn.ticket.envelope != null);
+		final boolean hasSignedEnvelope = hasEnvelope && pfn.ticket.envelope.getSignedEnvelope() != null; 
+		
 		for (int statRetryCounter=0; statRetryCounter<statRetryTimes.length; statRetryCounter++){
 			try {
 				final List<String> command = new LinkedList<String>();
@@ -363,8 +367,7 @@ public class Xrootd extends Protocol {
 					command.add("-returnEnvelope");
 				command.add(pfn.getPFN());
 	
-				if (pfn.ticket != null && (pfn.ticket.envelope != null)
-						&& (pfn.ticket.envelope.getSignedEnvelope() != null))
+				if (hasSignedEnvelope)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 	
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
@@ -411,7 +414,10 @@ public class Xrootd extends Protocol {
 				long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 				
 				if (pfn.getGuid().size == filesize) {
-					return pfn.ticket.envelope.getSignedEnvelope();
+					if (hasSignedEnvelope)
+						return pfn.ticket.envelope.getSignedEnvelope();
+					
+					return exitStatus.getStdOut();
 				}
 
 				if (sleep==0 || !retryWithDelay){
