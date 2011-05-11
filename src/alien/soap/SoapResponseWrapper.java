@@ -112,8 +112,7 @@ public class SoapResponseWrapper {
 			StringBuilder sb = new StringBuilder();
 
 			for (final Object inner : c) {
-				sb.append("<xsd:string>"+inner+"</xsd:string>");
-				//sb.append("<item "+getXsiType(inner)+">" + toSOAPXMLElement(inner)+ "</item>");
+				sb.append("<"+getShortXsiType(inner)+">"+toSOAPXMLElement(inner)+"</"+getShortXsiType(inner)+">");
 			}
 		
 			return sb.toString();
@@ -187,6 +186,39 @@ public class SoapResponseWrapper {
 
 		if(o instanceof SOAPXMLWriter){
 			return "xsi:type=\"xsd:Struct\"";
+		}
+
+		throw new IllegalArgumentException("Unknown type : "
+				+ o.getClass().getCanonicalName());
+	}
+
+	
+	/**
+	 * @param Object
+	 * @return SOAP element type
+	 */
+	private static String getShortXsiType(final Object o) {
+		if (o instanceof String){
+			return "xsd:string";
+		}
+
+		if(o instanceof Number){
+			if(o instanceof Integer)
+				return "xsd:int";
+			else
+				return "xsd:string";
+		}
+
+		if(o instanceof Collection<?>){
+			return "xsd:Array";
+		}
+
+		if(o instanceof Map<?, ?>){
+			return "xsd:Struct";
+		}
+
+		if(o instanceof SOAPXMLWriter){
+			return "xsd:Struct";
 		}
 
 		throw new IllegalArgumentException("Unknown type : "
