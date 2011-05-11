@@ -175,15 +175,15 @@ public class SoapResponseWrapper {
 		}
 
 		if(o instanceof Collection<?>){
-			return "xsi:type=\"SOAP:ENC:Array\"";
+			return "xsi:type=\"SOAP-ENC:Array\"";
 		}
 
 		if(o instanceof Map<?, ?>){
-			return "xsi:type=\"SOAP:ENC:Struct\"";
+			return "xsi:type=\"SOAP-ENC:Struct\"";
 		}
 
 		if(o instanceof SOAPXMLWriter){
-			return "xsi:type=\"SOAP:ENC:Struct\"";
+			return "xsi:type=\"SOAP-ENC:Struct\"";
 		}
 
 		throw new IllegalArgumentException("Unknown type : "
