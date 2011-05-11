@@ -112,9 +112,9 @@ public class SoapResponseWrapper {
 			StringBuilder sb = new StringBuilder();
 
 			for (final Object inner : c) {
-				//sb.append("<"+getShortXsiType(inner)+">"+toSOAPXMLElement(inner)+"</"+getShortXsiType(inner)+">");
+				sb.append("<"+getShortXsiType(inner)+">"+toSOAPXMLElement(inner)+"</"+getShortXsiType(inner)+">");
 			
-				sb.append("<"+toSOAPXMLElement(inner)+" />");
+				//sb.append("<"+toSOAPXMLElement(inner)+" />");
 			}
 		
 			return sb.toString();
