@@ -84,7 +84,7 @@ public class SoapResponseWrapper {
 				+ actionName
 				+ "Response xmlns:ns1=\"urn:"
 				+ namespace
-				+ "\" \">\n");
+				+ "\">\n");
 
 		sb.append(toSOAPXML(response));
 
