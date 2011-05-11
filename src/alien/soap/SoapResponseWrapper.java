@@ -111,11 +111,16 @@ public class SoapResponseWrapper {
 
 			StringBuilder sb = new StringBuilder();
 
+			sb.append("<SOAP-ENC:Array SOAP-ENC:arrayType=\"xsd:string["+c.size()+"]\">");
 			for (final Object inner : c) {
 			//	sb.append("<item "+getXsiType(inner)+">" + toSOAPXMLElement(inner)+ "</item>");
-				sb.append("<xsd:string>"+inner+"</xsd:string>");
-			}
+			
 		
+		
+				sb.append("<SOAP-ENC:string>"+inner+"</SOAP-ENC:string>");
+				
+			}
+			sb.append("</SOAP-ENC:Array>");
 			return sb.toString();
 		}
 
