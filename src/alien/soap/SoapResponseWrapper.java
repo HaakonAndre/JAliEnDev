@@ -167,14 +167,14 @@ public class SoapResponseWrapper {
 	 */
 	private static String getXsiType(final Object o) {
 		if (o instanceof String){
-			return "xsi:type=\"xs:string\"";
+			return "xsi:type=\"tns:string\"";
 		}
 
 		if(o instanceof Number){
 			if(o instanceof Integer)
-				return "xsi:type=\"xs:int\"";
+				return "xsi:type=\"tns:int\"";
 			else
-				return "xsi:type=\"xs:string\"";
+				return "xsi:type=\"tns:string\"";
 		}
 
 		if(o instanceof Collection<?>){
