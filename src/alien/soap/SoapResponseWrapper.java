@@ -167,26 +167,26 @@ public class SoapResponseWrapper {
 	 */
 	private static String getXsiType(final Object o) {
 		if (o instanceof String){
-			return "xsi:type=\"tns:string\"";
+			return "xsi:type=\"xsd:string\"";
 		}
 
 		if(o instanceof Number){
 			if(o instanceof Integer)
-				return "xsi:type=\"tns:int\"";
+				return "xsi:type=\"xsd:int\"";
 			else
-				return "xsi:type=\"tns:string\"";
+				return "xsi:type=\"xsd:string\"";
 		}
 
 		if(o instanceof Collection<?>){
-			return "xsi:type=\"tns:Array\"";
+			return "xsi:type=\"xsd:Array\"";
 		}
 
 		if(o instanceof Map<?, ?>){
-			return "xsi:type=\"tns:Struct\"";
+			return "xsi:type=\"xsd:Struct\"";
 		}
 
 		if(o instanceof SOAPXMLWriter){
-			return "xsi:type=\"tns:Struct\"";
+			return "xsi:type=\"xsd:Struct\"";
 		}
 
 		throw new IllegalArgumentException("Unknown type : "
