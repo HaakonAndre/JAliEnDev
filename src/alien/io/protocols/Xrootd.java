@@ -336,6 +336,22 @@ public class Xrootd extends Protocol {
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope) throws IOException {
+		return xrdstat(pfn, returnEnvelope, true);
+	}
+	
+	/**
+	 * Check if the PFN has the correct properties, such as described in the
+	 * access envelope
+	 * 
+	 * @param pfn
+	 * @param returnEnvelope 
+	 * @param retryWithDelay 
+	 * @return the signed envelope from the storage, if it knows how to generate
+	 *         one
+	 * @throws IOException
+	 *             if the remote file properties are not what is expected
+	 */
+	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay) throws IOException {
 		for (int statRetryCounter=0; statRetryCounter<statRetryTimes.length; statRetryCounter++){
 			try {
 				final List<String> command = new LinkedList<String>();
@@ -373,7 +389,7 @@ public class Xrootd extends Protocol {
 				final int sleep = statRetryTimes[statRetryCounter];
 	
 				if (exitStatus.getExtProcExitStatus() != 0) {
-					if (sleep==0){
+					if (sleep==0 || !retryWithDelay){
 						throw new IOException("Exit code was "
 							+ exitStatus.getExtProcExitStatus() + ", output was " 
 							+ exitStatus.getStdOut()+", "
@@ -398,7 +414,7 @@ public class Xrootd extends Protocol {
 					return pfn.ticket.envelope.getSignedEnvelope();
 				}
 
-				if (sleep==0){
+				if (sleep==0 || !retryWithDelay){
 					throw new IOException(
 						"The xrdstat could not confirm the file to be uploaded with size, reported size: "
 								+ filesize
