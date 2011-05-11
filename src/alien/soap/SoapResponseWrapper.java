@@ -156,7 +156,7 @@ public class SoapResponseWrapper {
 			throw new NullPointerException(
 			"SOAP Object is null! Please fill the object");
 
-		return "				<return xmlns:ns2=\"http://schemas.xmlsoap.org/soap/encoding/\" "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
+		return "				<return xmlns:ns2=\"http://www.w3.org/2001/12/soap-encoding\" "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
 
 	}
 
