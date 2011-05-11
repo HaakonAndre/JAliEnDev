@@ -1,5 +1,6 @@
 package alien.servlets;
 
+import java.io.BufferedReader;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +55,20 @@ public class AuthenServlet extends ExtendedServlet {
 			Log.log(Log.INFO, "Request from user "+user.getName());
 		}
 
+		try{
+			BufferedReader br = request.getReader();
+			String bubu;
+			
+			while( (bubu = br.readLine()) != null){
+				System.err.println(bubu);	
+			}
+			
+					
+		}catch (Exception e) {
+			e.printStackTrace();
+			}
+
+		
 		Page pMasterpage = new Page(osOut, "response.res");	
 
 		try {
