@@ -130,7 +130,8 @@ public class SoapResponseWrapper {
 				String sKey = (String) e.getKey();
 				Object oValue = e.getValue();
 
-				sb.append("<"+sKey+" "+getXsiType(oValue)+">");
+			//	sb.append("<"+sKey+" "+getXsiType(oValue)+">");
+				sb.append("<"+sKey+">");
 				sb.append(toSOAPXMLElement(oValue));
 				sb.append("</"+sKey+">");
 			}
