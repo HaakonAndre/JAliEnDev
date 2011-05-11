@@ -86,9 +86,10 @@ public class AuthenServlet extends ExtendedServlet {
 			hm.put("rcvalues", ar);
 			
 			ArrayList<String> ar1 = new ArrayList<String>();
-			ar1.add("Log messsseessss 1");
-			ar1.add("Log messsseessss 2");
-			ar1.add("Log messsseessss 3");
+			ar1.add("TestJobDisk2Subatech.jdl\n");
+			ar1.add("TestJobDisk2Subatech1.jdl\n");
+			ar1.add("TestJobDisk2Subatech2.jdl\n");
+			ar1.add("TestJobDisk2Subatech3.jdl\n");
 			
 			hm.put("rcmessages", ar1);
 			
