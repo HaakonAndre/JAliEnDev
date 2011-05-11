@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -162,6 +164,7 @@ public class TaskQueueUtils {
 	 * @param jobs
 	 * @return the same masterjobs and the respective subjob statistics
 	 */
+	@SuppressWarnings("null")
 	public static Map<Job, Map<String, Integer>> getMasterjobStats(final List<Job> jobs){
 		final Map<Job, Map<String, Integer>> ret = new TreeMap<Job, Map<String, Integer>>();
 		
@@ -339,6 +342,56 @@ public class TaskQueueUtils {
 			return null;
 		
 		return db.gets(1);
+	}
+	
+	/**
+	 * @return the number of matching waiting jobs for each site
+	 */
+	public static Map<String, Integer> getMatchingJobsSummary(){
+		final Map<String, Integer> ret = new TreeMap<String, Integer>();
+
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return ret;
+		
+		final Map<String, AtomicInteger> work = new HashMap<String, AtomicInteger>();
+		
+		db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site order by site;");
+		
+		int addToAll = 0;
+		
+		while (db.moveNext()){
+			final String sites = db.gets(1);
+			final int count = db.geti(2);
+			
+			if (sites.length()==0)
+				addToAll = count;
+			else{
+				final StringTokenizer st = new StringTokenizer(sites,",; ");
+				
+				while (st.hasMoreTokens()){
+					final String site = st.nextToken().trim();
+					
+					final AtomicInteger ai = work.get(site);
+					
+					if (ai==null)
+						work.put(site, new AtomicInteger(count));
+					else
+						ai.addAndGet(count);
+				}
+			}
+		}
+		
+		for (final Map.Entry<String, AtomicInteger> entry: work.entrySet()){
+			ret.put(entry.getKey(), Integer.valueOf(entry.getValue().intValue() + addToAll));
+		}
+		
+		if (addToAll > 0){
+			// TODO : check if we have seen all sites, if not add them to "ret" with value=addToAll
+		}
+		
+		return ret;
 	}
 	
 }
