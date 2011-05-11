@@ -110,12 +110,12 @@ public class SoapResponseWrapper {
 			final Collection<?> c = (Collection<?>) o;
 
 			StringBuilder sb = new StringBuilder();
-			
-			sb.append("<sequence>");
+
 			for (final Object inner : c) {
-				sb.append("<element "+getXsiType(inner)+">"+toSOAPXMLElement(inner)+"</element>");
+				//sb.append("<"+getShortXsiType(inner)+">"+toSOAPXMLElement(inner)+"</"+getShortXsiType(inner)+">");
+			
+				sb.append("<"+toSOAPXMLElement(inner)+" />");
 			}
-			sb.append("</sequence>");
 		
 			return sb.toString();
 		}
