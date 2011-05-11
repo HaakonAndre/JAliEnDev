@@ -112,7 +112,7 @@ public class SoapResponseWrapper {
 			StringBuilder sb = new StringBuilder();
 
 			for (final Object inner : c) {
-				sb.append("<item "+getXsiType(inner)+">"+toSOAPXMLElement(inner)+"</item>");
+				sb.append("<item "+getXsiType(inner)+">" + toSOAPXMLElement(inner)+ "</item>");
 			}
 		
 			return sb.toString();
@@ -131,7 +131,6 @@ public class SoapResponseWrapper {
 				Object oValue = e.getValue();
 
 				sb.append("<"+sKey+" "+getXsiType(oValue)+">");
-				sb.append("<"+sKey+">");
 				sb.append(toSOAPXMLElement(oValue));
 				sb.append("</"+sKey+">");
 			}
@@ -171,10 +170,7 @@ public class SoapResponseWrapper {
 		}
 
 		if(o instanceof Number){
-			if(o instanceof Integer)
-				return "xsi:type=\"xsd:int\"";
-			else
-				return "xsi:type=\"xsd:string\"";
+			return "xsi:type=\"xsd:string\"";
 		}
 
 		if(o instanceof Collection<?>){
@@ -187,39 +183,6 @@ public class SoapResponseWrapper {
 
 		if(o instanceof SOAPXMLWriter){
 			return "xsi:type=\"xsd:Struct\"";
-		}
-
-		throw new IllegalArgumentException("Unknown type : "
-				+ o.getClass().getCanonicalName());
-	}
-
-	
-	/**
-	 * @param Object
-	 * @return SOAP element type
-	 */
-	private static String getShortXsiType(final Object o) {
-		if (o instanceof String){
-			return "xsd:string";
-		}
-
-		if(o instanceof Number){
-			if(o instanceof Integer)
-				return "xsd:int";
-			else
-				return "xsd:string";
-		}
-
-		if(o instanceof Collection<?>){
-			return "ns2:Array";
-		}
-
-		if(o instanceof Map<?, ?>){
-			return "ns2:Struct";
-		}
-
-		if(o instanceof SOAPXMLWriter){
-			return "ns2:Struct";
 		}
 
 		throw new IllegalArgumentException("Unknown type : "
