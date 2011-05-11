@@ -78,7 +78,8 @@ public class SoapResponseWrapper {
 		final StringBuilder sb = new StringBuilder();
 
 		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		sb.append("<SOAP-ENV:Envelope  xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\"  xmlns:xsi=\"http://www.w3.org/1999/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/1999/XMLSchema\">\n");
+		sb.append("<SOAP-ENV:Envelope SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/1999/XMLSchema\" xmlns:xsi=\"http://www.w3.org/1999/XMLSchema-instance\">");
+		//sb.append("<SOAP-ENV:Envelope  xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/1999/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/1999/XMLSchema\">\n");
 		sb.append("		<SOAP-ENV:Body>\n");
 		sb.append("			<ns1:"
 				+ actionName
@@ -174,15 +175,15 @@ public class SoapResponseWrapper {
 		}
 
 		if(o instanceof Collection<?>){
-			return "xsi:type=\"SOAP-ENC:Array\"";
+			return "xsi:type=\"SOAP:ENC:Array\"";
 		}
 
 		if(o instanceof Map<?, ?>){
-			return "xsi:type=\"SOAP-ENC:Struct\"";
+			return "xsi:type=\"SOAP:ENC:Struct\"";
 		}
 
 		if(o instanceof SOAPXMLWriter){
-			return "xsi:type=\"SOAP-ENC:Struct\"";
+			return "xsi:type=\"SOAP:ENC:Struct\"";
 		}
 
 		throw new IllegalArgumentException("Unknown type : "
