@@ -78,13 +78,13 @@ public class SoapResponseWrapper {
 		final StringBuilder sb = new StringBuilder();
 
 		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		sb.append("<SOAP-ENV:Envelope  xmlns:SOAP-ENV=\"http://www.w3.org/2001/12/soap-envelope\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n");
+		sb.append("<SOAP-ENV:Envelope  xmlns:SOAP-ENV=\"http://www.w3.org/2003/05/soap-envelope\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema-instance\">\n");
 		sb.append("		<SOAP-ENV:Body>\n");
 		sb.append("			<ns1:"
 				+ actionName
 				+ "Response xmlns:ns1=\"urn:"
 				+ namespace
-				+ "\" SOAP-ENV:encodingStyle=\"http://www.w3.org/2001/12/soap-encoding/\">\n");
+				+ "\" SOAP-ENV:encodingStyle=\"http://www.w3.org/2003/05/soap-encoding\">\n");
 
 		sb.append(toSOAPXML(response));
 
@@ -155,7 +155,7 @@ public class SoapResponseWrapper {
 			throw new NullPointerException(
 			"SOAP Object is null! Please fill the object");
 
-		return "				<return xmlns:ns2=\"http://www.w3.org/2001/12/soap-encoding\" "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
+		return "				<return xmlns:ns2=\"http://www.w3.org/2003/05/soap-encoding\" "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
 
 	}
 
