@@ -84,7 +84,7 @@ public class SoapResponseWrapper {
 				+ actionName
 				+ "Response xmlns:ns1=\"urn:"
 				+ namespace
-				+ "\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n");
+				+ "\" SOAP-ENV:encodingStyle=\"http://www.w3.org/2001/12/soap-encoding\">\n");
 
 		sb.append(toSOAPXML(response));
 
@@ -156,7 +156,7 @@ public class SoapResponseWrapper {
 			throw new NullPointerException(
 			"SOAP Object is null! Please fill the object");
 
-		return "				<return xmlns:ns2=\"http://www.w3.org/2001/12/soap-encoding\" "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
+		return "				<return "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
 
 	}
 
