@@ -72,4 +72,8 @@ public class AuthenServlet extends ExtendedServlet {
 
 
 	}
+	
+	public void execPost(){
+		execGet();
+	}
 }
