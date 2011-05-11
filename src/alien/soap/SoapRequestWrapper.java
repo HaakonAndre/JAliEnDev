@@ -176,6 +176,7 @@ public class SoapRequestWrapper {
 				sb.append("Argument = "+obj+" \n");
 			}
 			else if (obj instanceof HashMap<?, ?>){
+				sb.append("Argument (Map) = \n");
 				HashMap<?, ?> hm = (HashMap<?, ?>) obj;
 				
 				if(hm == null || hm.size() == 0)
