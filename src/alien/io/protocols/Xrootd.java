@@ -363,7 +363,7 @@ public class Xrootd extends Protocol {
 					command.add("-returnEnvelope");
 				command.add(pfn.getPFN());
 	
-				if ((pfn.ticket.envelope != null)
+				if (pfn.ticket != null && (pfn.ticket.envelope != null)
 						&& (pfn.ticket.envelope.getSignedEnvelope() != null))
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 	
