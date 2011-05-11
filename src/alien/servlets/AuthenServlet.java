@@ -1,6 +1,9 @@
 package alien.servlets;
 
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 
 import javax.servlet.http.HttpServletRequest;
@@ -57,8 +60,24 @@ public class AuthenServlet extends ExtendedServlet {
 			SoapRequestWrapper sreqw = new SoapRequestWrapper(request);	
 			Log.log(Log.INFO, sreqw.toString());
 			
+			LinkedHashMap<String, ArrayList<String>> hm = new LinkedHashMap<String, ArrayList<String>>();
 			
-			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), sreqw.getActionArguments());
+			ArrayList<String> ar = new ArrayList<String>();
+			ar.add("TestJobDisk2Subatech.jdl");
+			ar.add("TestJobDisk2Subatech1.jdl");
+			ar.add("TestJobDisk2Subatech2.jdl");
+			ar.add("TestJobDisk2Subatech3.jdl");
+			
+			hm.put("rcvalues", ar);
+			
+			ArrayList<String> ar1 = new ArrayList<String>();
+			ar1.add("Log messsseessss 1");
+			ar1.add("Log messsseessss 2");
+			ar1.add("Log messsseessss 3");
+			
+			hm.put("rcmessages", ar1);
+			
+			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), hm);
 			Log.log(Log.INFO, srw.toSOAPXML());
 			
 			
