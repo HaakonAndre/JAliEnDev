@@ -84,7 +84,7 @@ public class SoapResponseWrapper {
 				+ actionName
 				+ "Response xmlns:ns1=\"urn:"
 				+ namespace
-				+ "\" SOAP-ENV:encodingStyle=\"http://www.w3.org/2001/12/soap-encoding\">\n");
+				+ "\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n");
 
 		sb.append(toSOAPXML(response));
 
@@ -156,7 +156,7 @@ public class SoapResponseWrapper {
 			throw new NullPointerException(
 			"SOAP Object is null! Please fill the object");
 
-		return "				<return "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
+		return "				<return xmlns:ns2=\"http://schemas.xmlsoap.org/soap/encoding/\" "+getXsiType(o)+">"+toSOAPXMLElement(o)+"</return>\n";
 
 	}
 
@@ -167,26 +167,26 @@ public class SoapResponseWrapper {
 	 */
 	private static String getXsiType(final Object o) {
 		if (o instanceof String){
-			return "xsi:type=\"xsd:string\"";
+			return "xsi:type=\"xs:string\"";
 		}
 
 		if(o instanceof Number){
 			if(o instanceof Integer)
-				return "xsi:type=\"xsd:int\"";
+				return "xsi:type=\"xs:int\"";
 			else
-				return "xsi:type=\"xsd:string\"";
+				return "xsi:type=\"xs:string\"";
 		}
 
 		if(o instanceof Collection<?>){
-			return "xsi:type=\"ns2:Array\"";
+			return "xsi:type=\"tns:Array\"";
 		}
 
 		if(o instanceof Map<?, ?>){
-			return "xsi:type=\"ns2:Struct\"";
+			return "xsi:type=\"tns:Struct\"";
 		}
 
 		if(o instanceof SOAPXMLWriter){
-			return "xsi:type=\"ns2:Struct\"";
+			return "xsi:type=\"tns:Struct\"";
 		}
 
 		throw new IllegalArgumentException("Unknown type : "
