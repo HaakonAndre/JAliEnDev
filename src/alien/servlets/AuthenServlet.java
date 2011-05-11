@@ -10,6 +10,7 @@ import alien.soap.SoapResponseWrapper;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import lazyj.ExtendedServlet;
+import lazyj.Log;
 
 /**
  * @author costing
@@ -46,8 +47,9 @@ public class AuthenServlet extends ExtendedServlet {
 			pwOut.flush();
 			return;
 		}
-
-
+		else{
+			Log.log(Log.INFO, "Request from user "+user.getName());
+		}
 
 		Page pMasterpage = new Page(osOut, "response.res");	
 
