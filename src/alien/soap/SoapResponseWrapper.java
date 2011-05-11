@@ -78,20 +78,19 @@ public class SoapResponseWrapper {
 		final StringBuilder sb = new StringBuilder();
 
 		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-		sb.append("<SOAP-ENV:Envelope SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENC=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsd=\"http://www.w3.org/1999/XMLSchema\" xmlns:xsi=\"http://www.w3.org/1999/XMLSchema-instance\">");
-		//sb.append("<SOAP-ENV:Envelope  xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:xsi=\"http://www.w3.org/1999/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/1999/XMLSchema\">\n");
-		sb.append("		<SOAP-ENV:Body>\n");
+		sb.append("<soap:Envelope xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" soap:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\" xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n");
+		sb.append("		<soap:Body>\n");
 		sb.append("			<ns1:"
 				+ actionName
 				+ "Response xmlns:ns1=\"urn:"
 				+ namespace
-				+ "\" >\n");
+				+ "\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">\n");
 
 		sb.append(toSOAPXML(response));
 
 		sb.append("			</ns1:" + actionName + "Response>\n");
-		sb.append("		</SOAP-ENV:Body>\n");
-		sb.append("</SOAP-ENV:Envelope>\n");
+		sb.append("		</soap:Body>\n");
+		sb.append("</soap:Envelope>\n");
 
 		return sb.toString();
 	}
@@ -111,9 +110,14 @@ public class SoapResponseWrapper {
 			final Collection<?> c = (Collection<?>) o;
 
 			StringBuilder sb = new StringBuilder();
-
+			
 			for (final Object inner : c) {
-				sb.append("<item "+getXsiType(inner)+">" + toSOAPXMLElement(inner)+ "</item>");
+				if(inner instanceof Collection<?>){
+					final Collection<?> c1 = (Collection<?>) inner;
+						sb.append("<item "+getXsiType(inner)+" soapenc:arrayType=\"xsd:string["+c1.size()+"]\">" + toSOAPXMLElement(inner)+ "</item>");
+				}
+				else
+					sb.append("<item "+getXsiType(inner)+">" + toSOAPXMLElement(inner)+ "</item>");
 			}
 		
 			return sb.toString();
@@ -130,8 +134,14 @@ public class SoapResponseWrapper {
 
 				String sKey = (String) e.getKey();
 				Object oValue = e.getValue();
-
-				sb.append("<"+sKey+" "+getXsiType(oValue)+">");
+				
+				if(oValue instanceof Collection<?>){
+					final Collection<?> c = (Collection<?>) oValue;
+					sb.append("<"+sKey+" "+getXsiType(oValue)+" soapenc:arrayType=\"xsd:string["+c.size()+"]\">");
+				}
+				else
+					sb.append("<"+sKey+" "+getXsiType(oValue)+">");
+				
 				sb.append(toSOAPXMLElement(oValue));
 				sb.append("</"+sKey+">");
 			}
@@ -171,19 +181,22 @@ public class SoapResponseWrapper {
 		}
 
 		if(o instanceof Number){
-			return "xsi:type=\"xsd:string\"";
+			if(o instanceof Integer)
+				return "xsi:type=\"xsd:int\"";
+			else
+				return "xsi:type=\"xsd:string\"";
 		}
 
 		if(o instanceof Collection<?>){
-			return "xsi:type=\"SOAP-ENC:Array\"";
+			return "xsi:type=\"soapenc:Array\"";
 		}
 
 		if(o instanceof Map<?, ?>){
-			return "xsi:type=\"SOAP-ENC:Struct\"";
+			return "xsi:type=\"soapenc:Struct\"";
 		}
 
 		if(o instanceof SOAPXMLWriter){
-			return "xsi:type=\"SOAP-ENC:Struct\"";
+			return "xsi:type=\"soapenc:Struct\"";
 		}
 
 		throw new IllegalArgumentException("Unknown type : "
