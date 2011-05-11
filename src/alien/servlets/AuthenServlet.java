@@ -55,11 +55,12 @@ public class AuthenServlet extends ExtendedServlet {
 
 		try {
 			SoapRequestWrapper sreqw = new SoapRequestWrapper(request);	
-
+			Log.log(Log.INFO, sreqw.toString());
+			
 			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), sreqw.getActionArguments());
-
-			System.err.println(srw.toSOAPXML());
-
+			Log.log(Log.INFO, srw.toSOAPXML());
+			
+			
 			pMasterpage.append(srw.toSOAPXML());
 
 		} catch (Exception e) {
