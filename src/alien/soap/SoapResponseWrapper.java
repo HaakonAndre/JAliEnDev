@@ -170,7 +170,10 @@ public class SoapResponseWrapper {
 		}
 
 		if(o instanceof Number){
-			return "xsi:type=\"xsd:string\"";
+			if(o instanceof Integer)
+				return "xsi:type=\"xsd:int\"";
+			else
+				return "xsi:type=\"xsd:string\"";
 		}
 
 		if(o instanceof Collection<?>){

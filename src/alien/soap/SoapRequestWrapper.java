@@ -137,6 +137,12 @@ public class SoapRequestWrapper {
 			//we have a string
 			return se.getTextContent();
 		}
+		else if (se.getAttribute("xsi:type") != null && se.getAttribute("xsi:type").equals("xsd:int")){
+			Log.log(Log.INFO, "SOAPElement "+se.getLocalName()+" value = "+se.getTextContent());
+			
+			//we have a string
+			return se.getTextContent();			
+		}
 		else{
 			Log.log(Log.INFO, "SOAPElement "+se.getLocalName()+" is a map");
 			

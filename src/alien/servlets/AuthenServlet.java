@@ -57,6 +57,7 @@ public class AuthenServlet extends ExtendedServlet {
 			SoapRequestWrapper sreqw = new SoapRequestWrapper(request);	
 			Log.log(Log.INFO, sreqw.toString());
 			
+			
 			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), sreqw.getActionArguments());
 			Log.log(Log.INFO, srw.toSOAPXML());
 			
