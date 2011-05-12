@@ -8,7 +8,9 @@ import javax.servlet.http.HttpServletRequest;
 
 import lazyj.ExtendedServlet;
 import lazyj.Log;
+import alien.commands.AlienCommand;
 import alien.commands.AlienCommandls;
+import alien.commands.AlienCommands;
 import alien.soap.SoapRequestWrapper;
 import alien.soap.SoapResponseWrapper;
 import alien.user.AliEnPrincipal;
@@ -72,9 +74,9 @@ public class AuthenServlet extends ExtendedServlet {
 			SoapRequestWrapper sreqw = new SoapRequestWrapper(request);	
 			Log.log(Log.FINE, sreqw.toString());
 			
-			AlienCommandls ls = new AlienCommandls(sreqw.getActionArguments());
+			AlienCommand cmd = AlienCommands.getAlienCommand(user, sreqw.getActionArguments());
 			
-			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), ls.executeCommand());
+			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), cmd.executeCommand());
 			Log.log(Log.FINE, srw.toSOAPXML());
 			
 			
