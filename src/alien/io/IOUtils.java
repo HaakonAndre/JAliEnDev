@@ -32,9 +32,11 @@ public class IOUtils {
 		if (f==null || !f.isFile() || !f.canRead())
 			throw new IOException("Cannot read from this file: "+f);
 		
+		DigestInputStream dis = null;
+		
 		try{
 			final MessageDigest md = MessageDigest.getInstance("MD5");
-			final DigestInputStream dis = new DigestInputStream(new FileInputStream(f), md);
+			dis = new DigestInputStream(new FileInputStream(f), md);
 			
 			final byte[] buff = new byte[10240];
 			
@@ -54,6 +56,16 @@ public class IOUtils {
 		}
 		catch (Exception e){
 			// ignore
+		}
+		finally{
+			if (dis!=null){
+				try{
+					dis.close();
+				}
+				catch (IOException ioe){
+					// ignore
+				}
+			}
 		}
 		
 		return null;
