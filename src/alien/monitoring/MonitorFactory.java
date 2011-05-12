@@ -359,6 +359,8 @@ public final class MonitorFactory {
 		return apmonInstance;
 	}
 	
+	private static final String PROC_SELF = "/proc/self";
+	
 	/**
 	 * Get JVM's process ID
 	 * 
@@ -370,7 +372,7 @@ public final class MonitorFactory {
 		
 		try{
 			// on Linux
-			selfProcessID = Integer.parseInt( ( new File("/proc/self")).getCanonicalFile().getName() );
+			selfProcessID = Integer.parseInt( ( new File(PROC_SELF)).getCanonicalFile().getName() );
 				
 			return selfProcessID;
 		}
