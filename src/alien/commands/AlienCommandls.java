@@ -97,7 +97,9 @@ public class AlienCommandls extends AlienCommand {
 				//listing current directory
 				if(!sPath.startsWith("/"))
 					sPath += this.sCurrentDirectory+sPath;
-					
+				
+				Log.log(Log.INFO, "Spath = \""+sPath+"\"");
+				
 				final LFN entry = LFNUtils.getLFN(sPath);
 
 				//what message in case of error?
