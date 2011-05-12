@@ -94,7 +94,10 @@ public class AlienCommandls extends AlienCommand {
 				alPaths.add(this.sCurrentDirectory);
 
 			for(String sPath: alPaths){
-				//listing current directory	
+				//listing current directory
+				if(!sPath.startsWith("/"))
+					sPath += this.sCurrentDirectory+"/"+sPath;
+					
 				final LFN entry = LFNUtils.getLFN(sPath);
 
 				//what message in case of error?
@@ -123,7 +126,7 @@ public class AlienCommandls extends AlienCommand {
 			}
 		}
 		else{
-			alrcMessages.add("This is ls help. You should write all the crap here");
+			alrcMessages.add("This is ls help. You should write all the crap here \n");
 		}
 		
 		hmReturn.put("rcvalues", alrcValues);
