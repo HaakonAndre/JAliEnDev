@@ -1,5 +1,6 @@
 package alien.commands;
 
+import java.awt.List;
 import java.security.Principal;
 import java.util.ArrayList;
 
@@ -52,7 +53,7 @@ public abstract class AlienCommand {
 	 * @throws Exception
 	 */
 	public AlienCommand(final Principal pAlienUser, final ArrayList<Object> al) throws Exception{
-		Log.log(Log.ERROR, "Inceput de constructor");
+		
 		if(pAlienUser == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
 		
@@ -60,7 +61,6 @@ public abstract class AlienCommand {
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
 		else{
-			Log.log(Log.INFO, "trecem prin constructor");
 			
 			this.pAlienUser = pAlienUser;
 			
@@ -73,7 +73,8 @@ public abstract class AlienCommand {
 			ArrayList<Object> alLocalArguments = null; 
 			
 			if(alSize > 3){
-				alLocalArguments = (ArrayList<Object>) al.subList(3, alSize -1);
+				alLocalArguments = new ArrayList<Object>();
+				alLocalArguments.addAll(3, al);
 			}
 			
 			this.sUsername = sLocalUsername;
