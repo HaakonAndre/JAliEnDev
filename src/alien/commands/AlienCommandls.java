@@ -55,31 +55,32 @@ public class AlienCommandls extends AlienCommand {
 				//we got an argument
 				if(sArg.startsWith("-")){
 					if(sArg.length() == 1){
-						alrcMessages.add("Expected argument after \"-\" \n ls -help for more help");
+						alrcMessages.add("Expected argument after \"-\" \n ls -help for more help\n");
 					}
 					else{
 						String sLocalArg = sArg.substring(1);
 
-						char[] sLetters = sLocalArg.toCharArray();
+						if("help".equals(sLocalArg)){
+							bHelp = true;
+						}
+						else{
+							char[] sLetters = sLocalArg.toCharArray();
 
-						for(char cLetter : sLetters){
+							for(char cLetter : sLetters){
 
-							if(!lsArguments.contains(cLetter+"")){
-								alrcMessages.add("Unknown argument "+cLetter+"! \n ls -help for more help");
-							}
-							else{
-								if("l".equals(cLetter+""))
-									bL = true;
+								if(!lsArguments.contains(cLetter+"")){
+									alrcMessages.add("Unknown argument "+cLetter+"! \n ls -help for more help\n");
+								}
+								else{
+									if("l".equals(cLetter+""))
+										bL = true;
 
-								if("a".equals(cLetter+""))
-									bA = true;
+									if("a".equals(cLetter+""))
+										bA = true;
 
-								if("help".equals(cLetter+"")){
-									bHelp = true;
 								}
 							}
-						}
-					}
+						}}
 				}
 				else{
 					//we got paths
