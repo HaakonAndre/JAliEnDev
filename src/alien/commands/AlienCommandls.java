@@ -55,7 +55,7 @@ public class AlienCommandls extends AlienCommand {
 				//we got an argument
 				if(sArg.startsWith("-")){
 					if(sArg.length() == 1){
-						alrcMessages.add("Expected argument after -. \n ls -help for more help");
+						alrcMessages.add("Expected argument after \"-\" \n ls -help for more help");
 					}
 					else{
 						String sLocalArg = sArg.substring(1);
@@ -83,6 +83,9 @@ public class AlienCommandls extends AlienCommand {
 		}
 
 		int iDirs = alPaths.size();
+		
+		if(iDirs == 0)
+			alPaths.add(this.sCurrentDirectory);
 		
 		for(String sPath: alPaths){
 			//listing current directory	
