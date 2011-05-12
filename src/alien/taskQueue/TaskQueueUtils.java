@@ -381,7 +381,7 @@ public class TaskQueueUtils {
 					key++;
 			}
 			
-			final int value = db.geti(1);
+			final int value = db.geti(2);
 			
 			final Integer iKey = Integer.valueOf(key);
 			
