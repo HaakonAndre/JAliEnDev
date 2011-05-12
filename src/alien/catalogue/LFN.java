@@ -325,9 +325,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * @return the last token of the name
 	 */
 	public String getFileName(){
-		String fullName = getCanonicalName();
+		final String fullName = getCanonicalName();
 		
-		int idx = fullName.lastIndexOf('/');
+		final int idx = fullName.lastIndexOf('/');
 		
 		if (idx>=0)
 			return fullName.substring(idx+1);
