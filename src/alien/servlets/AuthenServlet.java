@@ -99,7 +99,7 @@ public class AuthenServlet extends ExtendedServlet {
 				pMasterpage.append(srw.toSOAPXML());
 			}
 
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			Log.log(Log.ERROR, "Eroaaaree "+e.getStackTrace());
 			e.printStackTrace();
 		}
