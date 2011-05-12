@@ -72,12 +72,22 @@ public class AuthenServlet extends ExtendedServlet {
 
 		try {
 			SoapRequestWrapper sreqw = new SoapRequestWrapper(request);	
-			Log.log(Log.FINE, sreqw.toString());
+			Log.log(Log.INFO, sreqw.toString());
 			
 			AlienCommand cmd = AlienCommands.getAlienCommand(user, sreqw.getActionArguments());
 			
-			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), cmd.executeCommand());
-			Log.log(Log.FINE, srw.toSOAPXML());
+			Object objResponse;
+			
+			//command not implemented
+			if(cmd == null){
+				objResponse = "Command not implemented!";
+			}	
+			else{
+				objResponse = cmd.executeCommand();
+			}
+			
+			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), objResponse);
+			Log.log(Log.INFO, srw.toSOAPXML());
 			
 			
 			pMasterpage.append(srw.toSOAPXML());
