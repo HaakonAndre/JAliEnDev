@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletRequest;
 
 import lazyj.ExtendedServlet;
 import lazyj.Log;
+import alien.commands.AlienCommandls;
 import alien.soap.SoapRequestWrapper;
 import alien.soap.SoapResponseWrapper;
 import alien.user.AliEnPrincipal;
@@ -69,28 +70,12 @@ public class AuthenServlet extends ExtendedServlet {
 
 		try {
 			SoapRequestWrapper sreqw = new SoapRequestWrapper(request);	
-			Log.log(Log.INFO, sreqw.toString());
+			Log.log(Log.FINE, sreqw.toString());
 			
-			LinkedHashMap<String, ArrayList<String>> hm = new LinkedHashMap<String, ArrayList<String>>();
+			AlienCommandls ls = new AlienCommandls(sreqw.getActionArguments());
 			
-			ArrayList<String> ar = new ArrayList<String>();
-			ar.add("TestJobDisk2Subatech.jdl");
-			ar.add("TestJobDisk2Subatech1.jdl");
-			ar.add("TestJobDisk2Subatech2.jdl");
-			ar.add("TestJobDisk2Subatech3.jdl");
-			
-			hm.put("rcvalues", ar);
-			
-			ArrayList<String> ar1 = new ArrayList<String>();
-			ar1.add("TestJobDisk2Subatech.jdl\n");
-			ar1.add("TestJobDisk2Subatech1.jdl\n");
-			ar1.add("TestJobDisk2Subatech2.jdl\n");
-			ar1.add("TestJobDisk2Subatech3.jdl\n");
-			
-			hm.put("rcmessages", ar1);
-			
-			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), hm);
-			Log.log(Log.INFO, srw.toSOAPXML());
+			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), ls.executeCommand());
+			Log.log(Log.FINE, srw.toSOAPXML());
 			
 			
 			pMasterpage.append(srw.toSOAPXML());

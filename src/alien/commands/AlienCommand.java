@@ -16,19 +16,19 @@ public abstract class AlienCommand {
 	/**
 	 * 
 	 */
-	private String sUsername ;
+	protected String sUsername ;
 	
 	/**
 	 * 
 	 */
-	private String sCurrentDirectory ;
+	protected String sCurrentDirectory ;
 	
 	/**
 	 * 
 	 */
-	private String sCommand ;
+	protected String sCommand ;
 	
-	private ArrayList<Object> alArguments ;
+	protected ArrayList<Object> alArguments ;
 	
 	/**
 	 * Constructor based on the array received from the request <br />

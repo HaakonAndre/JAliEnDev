@@ -132,19 +132,19 @@ public class SoapRequestWrapper {
 	private Object parseSoapElement(SOAPElement se){
 		
 		if(se.getAttribute("xsi:type") != null && se.getAttribute("xsi:type").equals("xsd:string")){
-			Log.log(Log.INFO, "SOAPElement "+se.getLocalName()+" value = "+se.getTextContent());
+			Log.log(Log.FINEST, "SOAPElement "+se.getLocalName()+" value = "+se.getTextContent());
 			
 			//we have a string
 			return se.getTextContent();
 		}
 		else if (se.getAttribute("xsi:type") != null && se.getAttribute("xsi:type").equals("xsd:int")){
-			Log.log(Log.INFO, "SOAPElement "+se.getLocalName()+" value = "+se.getTextContent());
+			Log.log(Log.FINEST, "SOAPElement "+se.getLocalName()+" value = "+se.getTextContent());
 			
 			//we have a string
 			return se.getTextContent();			
 		}
 		else{
-			Log.log(Log.INFO, "SOAPElement "+se.getLocalName()+" is a map");
+			Log.log(Log.FINEST, "SOAPElement "+se.getLocalName()+" is a map");
 			
 			HashMap<String, Object> hm = new HashMap<String, Object>();
 			
@@ -154,7 +154,7 @@ public class SoapRequestWrapper {
 			while(it.hasNext()){
 				
 				SOAPElement child = (SOAPElement) it.next();
-				Log.log(Log.INFO, "Child "+child.getLocalName());				
+				Log.log(Log.FINEST, "Child "+child.getLocalName());				
 				hm.put(child.getLocalName(), parseSoapElement(child));
 			}
 			
