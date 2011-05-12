@@ -70,7 +70,11 @@ public abstract class AlienCommand {
 			String sLocalCommand = (String) al.get(2);
 			
 			int alSize = al.size();
-			
+			Log.log(Log.INFO, "Array size = "+alSize);
+			for(Object o: al){
+				String ss = (String) o;
+				Log.log(Log.INFO, "Array member = \""+ss+"\"");
+			}
 			List alLocalArguments = null; 
 			
 			if(alSize > 3){
