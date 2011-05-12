@@ -60,18 +60,23 @@ public class AlienCommandls extends AlienCommand {
 					else{
 						String sLocalArg = sArg.substring(1);
 
-						if(!lsArguments.contains(sLocalArg)){
-							alrcMessages.add("Unknown argument "+sArg+"! \n ls -help for more help");
-						}
-						else{
-							if("l".equals(sLocalArg))
-								bL = true;
+						char[] sLetters = sLocalArg.toCharArray();
 
-							if("a".equals(sLocalArg))
-								bA = true;
+						for(char cLetter : sLetters){
 
-							if("help".equals(sLocalArg)){
-								bHelp = true;
+							if(!lsArguments.contains(cLetter)){
+								alrcMessages.add("Unknown argument "+cLetter+"! \n ls -help for more help");
+							}
+							else{
+								if("l".equals(cLetter))
+									bL = true;
+
+								if("a".equals(cLetter))
+									bA = true;
+
+								if("help".equals(cLetter)){
+									bHelp = true;
+								}
 							}
 						}
 					}
@@ -97,9 +102,9 @@ public class AlienCommandls extends AlienCommand {
 				//listing current directory
 				if(!sPath.startsWith("/"))
 					sPath = this.sCurrentDirectory+sPath;
-				
+
 				Log.log(Log.INFO, "Spath = \""+sPath+"\"");
-				
+
 				final LFN entry = LFNUtils.getLFN(sPath);
 
 				//what message in case of error?
@@ -123,14 +128,14 @@ public class AlienCommandls extends AlienCommand {
 					}
 				}
 				else{
-					alrcMessages.add("No such file or directory");
+					alrcMessages.add("No such file or directory\n");
 				}
 			}
 		}
 		else{
-			alrcMessages.add("This is ls help. You should write all the crap here \n");
+			alrcMessages.add("This is ls help. You should write all the crap here\n");
 		}
-		
+
 		hmReturn.put("rcvalues", alrcValues);
 		hmReturn.put("rcmessages", alrcMessages);
 
