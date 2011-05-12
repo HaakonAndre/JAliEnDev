@@ -46,7 +46,7 @@ public class AuthenServlet extends ExtendedServlet {
 	public void execGet() {
 		final AliEnPrincipal user = getPrincipal(request);
 
-		if (user==null){
+		if (user == null){
 			Log.log(Log.ERROR, "You are not alloed here");
 			pwOut.println("You are not allowed here");
 			pwOut.flush();
@@ -85,7 +85,7 @@ public class AuthenServlet extends ExtendedServlet {
 				objResponse = "Command not implemented!";
 			}	
 			else{
-				Log.log(Log.INFO, cmd.toString());
+				Log.log(Log.INFO, "Cmd = "+cmd.toString());
 				objResponse = cmd.executeCommand();
 			}
 			
