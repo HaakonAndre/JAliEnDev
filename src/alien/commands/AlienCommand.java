@@ -1,5 +1,6 @@
 package alien.commands;
 
+import java.security.Principal;
 import java.util.ArrayList;
 
 /**
@@ -14,20 +15,28 @@ import java.util.ArrayList;
  */
 public abstract class AlienCommand {
 	/**
-	 * 
+	 * the principal received from http request
+	 */
+	protected Principal pAlienUser;
+	
+	/**
+	 * the username received from SOAP Request
 	 */
 	protected String sUsername ;
 	
 	/**
-	 * 
+	 * current directory received from SOAP request
 	 */
 	protected String sCurrentDirectory ;
 	
 	/**
-	 * 
+	 * command received from SOAP request
 	 */
 	protected String sCommand ;
-	
+
+	/**
+	 * 
+	 */
 	protected ArrayList<Object> alArguments ;
 	
 	/**
@@ -40,11 +49,16 @@ public abstract class AlienCommand {
 	 * @param the array containing all the information required to run the command
 	 * @throws Exception
 	 */
-	public AlienCommand(final ArrayList<Object> al) throws Exception{
+	public AlienCommand(final Principal pAlienUser, final ArrayList<Object> al) throws Exception{
+		if(pAlienUser == null)
+			throw new SecurityException("No Alien Principal! We hane no credentials");
+		
 		if(al.size() < 3){
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
 		else{
+			this.pAlienUser = pAlienUser;
+			
 			String sLocalUsername = (String) al.get(0);
 			String sLocalCurrentDirectory = (String) al.get(1);
 			String sLocalCommand = (String) al.get(2);
@@ -71,7 +85,7 @@ public abstract class AlienCommand {
 	 * @param alArguments
 	 * @throws Exception
 	 */
-	public AlienCommand (final String sUsername, final String sCurrentDirectory, final String sCommand, final ArrayList<Object> alArguments) throws Exception{
+	public AlienCommand (final Principal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final ArrayList<Object> alArguments) throws Exception{
 		if(sUsername == null || sUsername.length() == 0)
 			throw new Exception("Empty username");
 		
@@ -81,6 +95,7 @@ public abstract class AlienCommand {
 		if(sCommand == null || sCommand.length() == 0)
 			throw new Exception("Empty command");
 		
+		this.pAlienUser = pAlienPrincipal;
 		this.sUsername = sUsername;
 		this.sCurrentDirectory = sCurrentDirectory;
 		this.sCommand = sCommand;
@@ -113,6 +128,14 @@ public abstract class AlienCommand {
 	 */
 	public ArrayList<Object> getAlArguments() {
 		return alArguments;
+	}
+	
+	
+	/**
+	 * @return alien principal received from http request
+	 */
+	public Principal getpAlienUser() {
+		return pAlienUser;
 	}
 
 	/**

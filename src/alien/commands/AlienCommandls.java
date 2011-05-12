@@ -1,5 +1,6 @@
 package alien.commands;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,12 +11,12 @@ import alien.catalogue.LFNUtils;
 
 public class AlienCommandls extends AlienCommand {
 
-	public AlienCommandls(ArrayList<Object> al) throws Exception {
-		super(al);
+	public AlienCommandls(final Principal p, final ArrayList<Object> al) throws Exception {
+		super(p, al);
 	}
 
-	public AlienCommandls (final String sUsername, final String sCurrentDirectory, final String sCommand, final ArrayList<Object> alArguments) throws Exception {
-		super(sUsername, sCurrentDirectory, sCommand, alArguments);
+	public AlienCommandls (final Principal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final ArrayList<Object> alArguments) throws Exception {
+		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
 	}
 
 	/*
