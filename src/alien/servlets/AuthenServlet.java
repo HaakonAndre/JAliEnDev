@@ -1,20 +1,17 @@
 package alien.servlets;
 
-import java.io.BufferedReader;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
-
 
 import javax.servlet.http.HttpServletRequest;
 
+import lazyj.ExtendedServlet;
+import lazyj.Log;
 import alien.soap.SoapRequestWrapper;
 import alien.soap.SoapResponseWrapper;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
-import lazyj.ExtendedServlet;
-import lazyj.Log;
 
 /**
  * @author costing
@@ -51,9 +48,8 @@ public class AuthenServlet extends ExtendedServlet {
 			pwOut.flush();
 			return;
 		}
-		else{
-			Log.log(Log.INFO, "Request from user "+user.getName());
-		}
+		
+		Log.log(Log.INFO, "Request from user "+user.getName());
 
 	/*	try{
 			BufferedReader br = request.getReader();
@@ -109,6 +105,7 @@ public class AuthenServlet extends ExtendedServlet {
 
 	}
 	
+	@Override
 	public void execPost(){
 		execGet();
 	}
