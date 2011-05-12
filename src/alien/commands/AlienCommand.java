@@ -142,4 +142,19 @@ public abstract class AlienCommand {
 	 * @return the command output
 	 */
 	public abstract Object executeCommand();
+
+	
+	@Override
+	public String toString() {
+		String sToString  = "AlienCommand { \n";
+		
+		sToString += "		Username = "+this.sUsername+" \n";
+		sToString += "		Current directory = "+this.sCurrentDirectory+" \n";
+		sToString += "		Command = "+this.sCommand+" \n";	
+		sToString += "		User principal = "+this.pAlienUser.getName()+" \n";
+		
+		sToString += " } \n";
+		
+		return sToString;
+	}
 }
