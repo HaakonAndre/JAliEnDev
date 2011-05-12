@@ -1,6 +1,7 @@
 package alien.commands;
 
-import java.awt.List;
+import java.util.List;
+
 import java.security.Principal;
 import java.util.ArrayList;
 
@@ -40,7 +41,7 @@ public abstract class AlienCommand {
 	/**
 	 * 
 	 */
-	protected ArrayList<Object> alArguments ;
+	protected List alArguments ;
 	
 	/**
 	 * Constructor based on the array received from the request <br />
@@ -52,7 +53,7 @@ public abstract class AlienCommand {
 	 * @param the array containing all the information required to run the command
 	 * @throws Exception
 	 */
-	public AlienCommand(final Principal pAlienUser, final ArrayList<Object> al) throws Exception{
+	public AlienCommand(final Principal pAlienUser, final List al) throws Exception{
 		
 		if(pAlienUser == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
@@ -70,10 +71,10 @@ public abstract class AlienCommand {
 			
 			int alSize = al.size();
 			
-			ArrayList<Object> alLocalArguments = null; 
+			List alLocalArguments = null; 
 			
 			if(alSize > 3){
-				alLocalArguments = (ArrayList<Object>) al.subList(3, alSize - 1);
+				alLocalArguments = (List) al.subList(3, alSize - 1);
 			}
 			
 			this.sUsername = sLocalUsername;
@@ -90,7 +91,7 @@ public abstract class AlienCommand {
 	 * @param alArguments
 	 * @throws Exception
 	 */
-	public AlienCommand (final Principal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final ArrayList<Object> alArguments) throws Exception{
+	public AlienCommand (final Principal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List alArguments) throws Exception{
 		if(sUsername == null || sUsername.length() == 0)
 			throw new Exception("Empty username");
 		
@@ -131,7 +132,7 @@ public abstract class AlienCommand {
 	/**
 	 * @return the arguments of the command issued by the user. This can be null or empty
 	 */
-	public ArrayList<Object> getAlArguments() {
+	public List getAlArguments() {
 		return alArguments;
 	}
 	
