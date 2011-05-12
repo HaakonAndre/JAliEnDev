@@ -52,6 +52,7 @@ public abstract class AlienCommand {
 	 * @throws Exception
 	 */
 	public AlienCommand(final Principal pAlienUser, final ArrayList<Object> al) throws Exception{
+		Log.log(Log.ERROR, "Inceput de constructor");
 		if(pAlienUser == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
 		
