@@ -224,6 +224,8 @@ public final class GUIDUtils {
 	
 	private static byte[] MACAddress = null;
 	
+	private static final String SYS_ENTRY = "/sys/class/net";
+	
 	private static synchronized byte[] getMac(){
 		if (MACAddress == null){
 			// figure it out
@@ -231,14 +233,14 @@ public final class GUIDUtils {
 
 			String sMac = null;
 			
-			final File f = new File("/sys/class/net");
+			final File f = new File(SYS_ENTRY);
 			
 			if (f.exists()){
 				final String[] devices = f.list();
 				
 				if (devices!=null){
 					for (final String dev: devices){
-						final String addr = lazyj.Utils.readFile("/sys/class/net/"+dev+"/address");
+						final String addr = lazyj.Utils.readFile(SYS_ENTRY+"/"+dev+"/address");
 						
 						if (addr!=null && !addr.equals("00:00:00:00:00:00")){
 							sMac = addr;
