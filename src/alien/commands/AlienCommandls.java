@@ -10,6 +10,17 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 
 public class AlienCommandls extends AlienCommand {
+	private static ArrayList<String> lsArguments;
+
+	static{
+		lsArguments.add("help");
+		lsArguments.add("l");
+		lsArguments.add("a");
+	}
+
+	private boolean bHelp =  false;
+	private boolean bL = false;
+	private boolean bA = false;
 
 	public AlienCommandls(final Principal p, final ArrayList<Object> al) throws Exception {
 		super(p, al);
@@ -31,29 +42,72 @@ public class AlienCommandls extends AlienCommand {
 		ArrayList<String> alrcValues = new ArrayList<String>();
 		ArrayList<String> alrcMessages = new ArrayList<String>();
 
+		ArrayList<String> alPaths = new ArrayList<String>();
+
 		//we got arguments for ls
 		if(this.alArguments != null && this.alArguments.size() > 0){
-			return null;
+
+			for(Object oArg: this.alArguments){
+				String sArg = (String) oArg;
+
+				//we got an argument
+				if(sArg.startsWith("-")){
+					if(sArg.length() == 1){
+						alrcMessages.add("Expected argument after -. \n ls -help for more help");
+					}
+					else{
+						String sLocalArg = sArg.substring(1);
+
+						if(!lsArguments.contains(sLocalArg)){
+							alrcMessages.add("Unknown argument "+sArg+"! \n ls -help for more help");
+						}
+						else{
+							if("l".equals(sLocalArg))
+								bL = true;
+
+							if("a".equals(sLocalArg))
+								bA = true;
+						}
+					}
+				}
+				else{
+					//we got paths
+					alPaths.add(sArg);
+				}
+			}
 		}
 		else{
+			alPaths.add(this.sCurrentDirectory);
+		}
+
+		int iDirs = alPaths.size();
+		
+		for(String sPath: alPaths){
 			//listing current directory	
-			final LFN entry = LFNUtils.getLFN(this.sCurrentDirectory);
+			final LFN entry = LFNUtils.getLFN(sPath);
 
 			//what message in case of error?
 			if (entry != null){
 
 				List<LFN> lLFN;
-				
+
 				if (entry.type=='d'){
 					lLFN = entry.list();
 				}
 				else
 					lLFN = Arrays.asList(entry);
-			
-				for(LFN localLFN : lLFN){
-					alrcValues.add(localLFN.lfn);
-					alrcMessages.add(localLFN.lfn+"\n");
+
+				if(iDirs != 1){
+					alrcMessages.add(sPath+"\n");
 				}
+				
+				for(LFN localLFN : lLFN){
+					alrcValues.add(localLFN.getFileName());
+					alrcMessages.add(localLFN.getFileName()+"\n");
+				}
+			}
+			else{
+				alrcMessages.add("No such file or directory");
 			}
 		}
 
