@@ -51,8 +51,8 @@ public class AlienCommandls extends AlienCommand {
 					lLFN = Arrays.asList(entry);
 			
 				for(LFN localLFN : lLFN){
-					alrcValues.add(localLFN.getName());
-					alrcMessages.add(localLFN.getName()+"\n");
+					alrcValues.add(localLFN.lfn);
+					alrcMessages.add(localLFN.lfn+"\n");
 				}
 			}
 		}
