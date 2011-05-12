@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,6 +15,7 @@ import lazyj.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.LDAPHelper;
 
 /**
  * @author steffen
@@ -388,7 +390,14 @@ public class TaskQueueUtils {
 		}
 		
 		if (addToAll > 0){
-			// TODO : check if we have seen all sites, if not add them to "ret" with value=addToAll
+			final Set<String> sites = LDAPHelper.checkLdapInformation("(objectClass=organizationalUnit)", "ou=Sites,", "ou", false);
+			
+			if (sites!=null){
+				for (final String site: sites){
+					if (!ret.containsKey(site))
+						ret.put(site, Integer.valueOf(addToAll));
+				}
+			}
 		}
 		
 		return ret;
