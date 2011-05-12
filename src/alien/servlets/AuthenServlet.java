@@ -84,6 +84,7 @@ public class AuthenServlet extends ExtendedServlet {
 				objResponse = "Command not implemented!";
 			}	
 			else{
+				Log.log(Log.INFO, cmd.toString());
 				objResponse = cmd.executeCommand();
 			}
 			
