@@ -124,7 +124,8 @@ public class TaskQueueUtils {
 		
 		db.query(q);
 		
-		monitor.addMeasurement("TQ_getmasterjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+		if (monitor!=null)
+			monitor.addMeasurement("TQ_getmasterjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 
 		while (db.moveNext()){
 			ret.add(new Job(db, loadJDL));
@@ -197,7 +198,8 @@ public class TaskQueueUtils {
 
 		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
 		
-		monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+		if (monitor!=null)
+			monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 			
 		Map<String, Integer> m = null;
 		int oldJobID = -1;
@@ -265,7 +267,8 @@ public class TaskQueueUtils {
 
 		db.query(q);
 		
-		monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+		if (monitor!=null)
+			monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 		
 		while (db.moveNext()){
 			ret.add(new Job(db, loadJDL));
@@ -358,6 +361,11 @@ public class TaskQueueUtils {
 			return ret;
 		
 		final Map<String, AtomicInteger> work = new HashMap<String, AtomicInteger>();
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_matching_jobs_summary");
+		}
 		
 		db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site order by site;");
 		
