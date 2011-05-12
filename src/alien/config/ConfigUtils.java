@@ -133,6 +133,13 @@ public class ConfigUtils {
 	}
 
 	/**
+	 * @return the base directory where the configuration files are
+	 */
+	public static final String getConfigFolder(){
+		return CONFIG_FOLDER;
+	}
+	
+	/**
 	 * @return <code>true</code> if direct database access is available
 	 */
 	public static final boolean isCentralService() {
