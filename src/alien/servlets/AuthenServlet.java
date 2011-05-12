@@ -52,48 +52,52 @@ public class AuthenServlet extends ExtendedServlet {
 			pwOut.flush();
 			return;
 		}
-		
+
 		Log.log(Log.INFO, "Request from user "+user.getName());
 
-	/*	try{
+		/*	try{
 			BufferedReader br = request.getReader();
 			String bubu;
-			
+
 			while( (bubu = br.readLine()) != null){
 				System.err.println(bubu);	
 			}
-			
-					
+
+
 		}catch (Exception e) {
 			e.printStackTrace();
 			}
 
-		*/
+		 */
 		Page pMasterpage = new Page(osOut, "response.res");	
 
 		try {
 			SoapRequestWrapper sreqw = new SoapRequestWrapper(request);	
 			Log.log(Log.INFO, sreqw.toString());
-			
-			AlienCommand cmd = AlienCommands.getAlienCommand(user, sreqw.getActionArguments());
-			
-			Object objResponse;
-			
-			//command not implemented
-			if(cmd == null){
-				Log.log(Log.ERROR, "We got a hit for a command that it is not implemented = "+AlienCommands.getAlienCommandString(user, sreqw.getActionArguments()));
-				objResponse = "Command not implemented!";
-			}	
-			else{
-				Log.log(Log.INFO, "Cmd = "+cmd.toString());
-				objResponse = cmd.executeCommand();
+
+			if(!"ping".equals(sreqw.getActionName())){
+				Log.log(Log.INFO, "Inainte de cmd");
+				AlienCommand cmd = AlienCommands.getAlienCommand(user, sreqw.getActionArguments());
+				Log.log(Log.INFO, "Dupa cmd");
+				
+				Object objResponse;
+
+				//command not implemented
+				if(cmd == null){
+					Log.log(Log.ERROR, "We got a hit for a command that it is not implemented = "+AlienCommands.getAlienCommandString(user, sreqw.getActionArguments()));
+					objResponse = "Command not implemented!";
+				}	
+				else{
+					Log.log(Log.INFO, "Cmd = "+cmd.toString());
+					objResponse = cmd.executeCommand();
+				}
+
+				SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), objResponse);
+				Log.log(Log.INFO, srw.toSOAPXML());
+
+
+				pMasterpage.append(srw.toSOAPXML());
 			}
-			
-			SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), objResponse);
-			Log.log(Log.INFO, srw.toSOAPXML());
-			
-			
-			pMasterpage.append(srw.toSOAPXML());
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -104,7 +108,7 @@ public class AuthenServlet extends ExtendedServlet {
 
 
 	}
-	
+
 	@Override
 	public void execPost(){
 		execGet();
