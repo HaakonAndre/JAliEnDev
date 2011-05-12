@@ -12,7 +12,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 
 public class AlienCommandls extends AlienCommand {
-	private static ArrayList<String> lsArguments;
+	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
 	static{
 		lsArguments.add("help");
