@@ -56,6 +56,17 @@ public class LDAPHelper {
 	 * @return Set of result from the query
 	 */
 	public static final Set<String> checkLdapInformation(final String sParam, final String sRootExt, final String sKey){
+		return checkLdapInformation(sParam, sRootExt, sKey, true);
+	}
+
+	/**
+	 * @param sParam - search query
+	 * @param sRootExt - subpath
+	 * @param sKey - key to extract
+	 * @param recursive 
+	 * @return Set of result from the query
+	 */
+	public static final Set<String> checkLdapInformation(final String sParam, final String sRootExt, final String sKey, final boolean recursive){
 		final String sCacheKey = sParam +"\n" + sRootExt + "\n" + sKey;
 		
 		TreeSet<String> tsResult = cache.get(sCacheKey);
@@ -82,7 +93,7 @@ public class LDAPHelper {
 			final DirContext context = new InitialDirContext(env);
 
 			final SearchControls ctrl = new SearchControls();
-			ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+			ctrl.setSearchScope(recursive ? SearchControls.SUBTREE_SCOPE : SearchControls.ONELEVEL_SCOPE);
 
 			final NamingEnumeration<SearchResult> enumeration = context.search("", sParam, ctrl);
 
