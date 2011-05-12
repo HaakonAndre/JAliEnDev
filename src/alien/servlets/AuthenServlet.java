@@ -47,6 +47,7 @@ public class AuthenServlet extends ExtendedServlet {
 		final AliEnPrincipal user = getPrincipal(request);
 
 		if (user==null){
+			Log.log(Log.ERROR, "You are not alloed here");
 			pwOut.println("You are not allowed here");
 			pwOut.flush();
 			return;
