@@ -69,6 +69,10 @@ public class AlienCommandls extends AlienCommand {
 
 							if("a".equals(sLocalArg))
 								bA = true;
+
+							if("help".equals(sLocalArg)){
+								bHelp = true;
+							}
 						}
 					}
 				}
@@ -82,40 +86,46 @@ public class AlienCommandls extends AlienCommand {
 			alPaths.add(this.sCurrentDirectory);
 		}
 
-		int iDirs = alPaths.size();
-		
-		if(iDirs == 0)
-			alPaths.add(this.sCurrentDirectory);
-		
-		for(String sPath: alPaths){
-			//listing current directory	
-			final LFN entry = LFNUtils.getLFN(sPath);
+		if(!bHelp){
 
-			//what message in case of error?
-			if (entry != null){
+			int iDirs = alPaths.size();
 
-				List<LFN> lLFN;
+			if(iDirs == 0)
+				alPaths.add(this.sCurrentDirectory);
 
-				if (entry.type=='d'){
-					lLFN = entry.list();
+			for(String sPath: alPaths){
+				//listing current directory	
+				final LFN entry = LFNUtils.getLFN(sPath);
+
+				//what message in case of error?
+				if (entry != null){
+
+					List<LFN> lLFN;
+
+					if (entry.type=='d'){
+						lLFN = entry.list();
+					}
+					else
+						lLFN = Arrays.asList(entry);
+
+					if(iDirs != 1){
+						alrcMessages.add(sPath+"\n");
+					}
+
+					for(LFN localLFN : lLFN){
+						alrcValues.add(bL ? localLFN.getName() : localLFN.getFileName());
+						alrcMessages.add( bL ? localLFN.getName()+"\n" : localLFN.getFileName()+"\n");
+					}
 				}
-				else
-					lLFN = Arrays.asList(entry);
-
-				if(iDirs != 1){
-					alrcMessages.add(sPath+"\n");
+				else{
+					alrcMessages.add("No such file or directory");
 				}
-				
-				for(LFN localLFN : lLFN){
-					alrcValues.add(bL ? localLFN.getName() : localLFN.getFileName());
-					alrcMessages.add( bL ? localLFN.getName()+"\n" : localLFN.getFileName()+"\n");
-				}
-			}
-			else{
-				alrcMessages.add("No such file or directory");
 			}
 		}
-
+		else{
+			alrcMessages.add("This is ls help. You should write all the crap here");
+		}
+		
 		hmReturn.put("rcvalues", alrcValues);
 		hmReturn.put("rcmessages", alrcMessages);
 
