@@ -104,7 +104,7 @@ public class AuthenServlet extends ExtendedServlet {
 			e.printStackTrace();
 		}
 
-
+		Log.log(Log.ERROR, "Chiar scriem ceva");
 		pMasterpage.write();
 
 
