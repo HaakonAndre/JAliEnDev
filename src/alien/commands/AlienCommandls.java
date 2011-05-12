@@ -39,7 +39,6 @@ public class AlienCommandls extends AlienCommand {
 	 */
 	@Override
 	public HashMap<String, ArrayList<String>> executeCommand() {
-		Log.log(Log.INFO, "We got an LS");
 		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
 
 		ArrayList<String> alrcValues = new ArrayList<String>();
@@ -105,8 +104,8 @@ public class AlienCommandls extends AlienCommand {
 				}
 				
 				for(LFN localLFN : lLFN){
-					alrcValues.add(bL ? localLFN.getCanonicalName() : localLFN.getFileName());
-					alrcMessages.add( bL ? localLFN.getCanonicalName()+"\n" : localLFN.getFileName()+"\n");
+					alrcValues.add(bL ? localLFN.getName() : localLFN.getFileName());
+					alrcMessages.add( bL ? localLFN.getName()+"\n" : localLFN.getFileName()+"\n");
 				}
 			}
 			else{
