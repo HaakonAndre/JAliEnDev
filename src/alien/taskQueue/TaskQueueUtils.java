@@ -350,6 +350,57 @@ public class TaskQueueUtils {
 	}
 	
 	/**
+	 * @return matching jobs histograms
+	 */
+	public static Map<Integer, Integer> getMatchingHistogram(){
+		final Map<Integer, Integer> ret = new TreeMap<Integer, Integer>();
+		
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return ret;
+		
+		final Map<Integer, AtomicInteger> work = new HashMap<Integer, AtomicInteger>();
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_matching_histogram");
+		}
+		
+		db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site");
+		
+		while (db.moveNext()){
+			final String site = db.gets(1);
+			
+			int key = 0;
+			
+			final StringTokenizer st = new StringTokenizer(site, ",; ");
+			
+			while (st.hasMoreTokens()){
+				if (st.nextToken().length()>0)
+					key++;
+			}
+			
+			final int value = db.geti(1);
+			
+			final Integer iKey = Integer.valueOf(key);
+			
+			final AtomicInteger ai = work.get(iKey);
+			
+			if (ai==null)
+				work.put(iKey, new AtomicInteger(value));
+			else
+				ai.addAndGet(value);
+		}
+		
+		for (final Map.Entry<Integer, AtomicInteger> entry: work.entrySet()){
+			ret.put(entry.getKey(), Integer.valueOf(entry.getValue().intValue()));
+		}
+		
+		return ret;
+	}
+	
+	/**
 	 * @return the number of matching waiting jobs for each site
 	 */
 	public static Map<String, Integer> getMatchingJobsSummary(){
