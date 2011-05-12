@@ -80,6 +80,7 @@ public class AuthenServlet extends ExtendedServlet {
 			
 			//command not implemented
 			if(cmd == null){
+				Log.log(Log.ERROR, "We got a hit for a command that it is not implemented = "+AlienCommands.getAlienCommandString(user, sreqw.getActionArguments()));
 				objResponse = "Command not implemented!";
 			}	
 			else{
