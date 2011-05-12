@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import lazyj.Log;
+
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 
@@ -37,6 +39,7 @@ public class AlienCommandls extends AlienCommand {
 	 */
 	@Override
 	public HashMap<String, ArrayList<String>> executeCommand() {
+		Log.log(Log.INFO, "We got an LS");
 		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
 
 		ArrayList<String> alrcValues = new ArrayList<String>();

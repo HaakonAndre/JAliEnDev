@@ -3,6 +3,8 @@ package alien.commands;
 import java.security.Principal;
 import java.util.ArrayList;
 
+import lazyj.Log;
+
 /**
  * @author Alina Grigoras
  * Alien commands factory
@@ -46,7 +48,7 @@ public class AlienCommands {
 		}
 		else{
 			String sLocalCommand = (String) al.get(2);
-			
+			Log.log(Log.INFO, "Command received = "+sLocalCommand);
 			return sLocalCommand;
 		}
 	}
