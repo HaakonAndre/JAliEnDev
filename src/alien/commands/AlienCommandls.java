@@ -96,7 +96,7 @@ public class AlienCommandls extends AlienCommand {
 			for(String sPath: alPaths){
 				//listing current directory
 				if(!sPath.startsWith("/"))
-					sPath += this.sCurrentDirectory+sPath;
+					sPath = this.sCurrentDirectory+sPath;
 				
 				Log.log(Log.INFO, "Spath = \""+sPath+"\"");
 				
