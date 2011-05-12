@@ -3,6 +3,8 @@ package alien.commands;
 import java.security.Principal;
 import java.util.ArrayList;
 
+import lazyj.Log;
+
 /**
  * @since 2011, 12 May
  * @author Alina Grigoras
@@ -57,6 +59,8 @@ public abstract class AlienCommand {
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
 		else{
+			Log.log(Log.INFO, "trecem prin constructor");
+			
 			this.pAlienUser = pAlienUser;
 			
 			String sLocalUsername = (String) al.get(0);
