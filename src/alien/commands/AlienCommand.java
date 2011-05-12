@@ -158,6 +158,12 @@ public abstract class AlienCommand {
 		sToString += "		Current directory = "+this.sCurrentDirectory+" \n";
 		sToString += "		Command = "+this.sCommand+" \n";	
 		sToString += "		User principal = "+this.pAlienUser.getName()+" \n";
+		sToString += "		Arguments = \n";	
+		
+		
+		for(Object o : this.alArguments){
+			sToString += o.toString()+" \n";
+		}
 		
 		sToString += " } \n";
 		
