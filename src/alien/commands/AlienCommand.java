@@ -22,17 +22,17 @@ public abstract class AlienCommand {
 	 * the principal received from http request
 	 */
 	protected Principal pAlienUser;
-	
+
 	/**
 	 * the username received from SOAP Request
 	 */
 	protected String sUsername ;
-	
+
 	/**
 	 * current directory received from SOAP request
 	 */
 	protected String sCurrentDirectory ;
-	
+
 	/**
 	 * command received from SOAP request
 	 */
@@ -42,7 +42,7 @@ public abstract class AlienCommand {
 	 * 
 	 */
 	protected List alArguments ;
-	
+
 	/**
 	 * Constructor based on the array received from the request <br />
 	 * The minimum size of the array is 3: <br />
@@ -54,21 +54,21 @@ public abstract class AlienCommand {
 	 * @throws Exception
 	 */
 	public AlienCommand(final Principal pAlienUser, final List al) throws Exception{
-		
+
 		if(pAlienUser == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
-		
+
 		if(al.size() < 3){
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
 		else{
-			
+
 			this.pAlienUser = pAlienUser;
-			
+
 			String sLocalUsername = (String) al.get(0);
 			String sLocalCurrentDirectory = (String) al.get(1);
 			String sLocalCommand = (String) al.get(2);
-			
+
 			int alSize = al.size();
 			Log.log(Log.INFO, "Array size = "+alSize);
 			for(Object o: al){
@@ -76,18 +76,24 @@ public abstract class AlienCommand {
 				Log.log(Log.INFO, "Array member = \""+ss+"\"");
 			}
 			List alLocalArguments = null; 
-			
+
 			if(alSize > 3){
 				alLocalArguments = (List) al.subList(3, alSize);
+
+				for (Object oL: alLocalArguments){
+					String sss = (String) oL;
+					Log.log(Log.INFO, "Command arg= \""+sss+"\"");
+				}
 			}
-			
+
+
 			this.sUsername = sLocalUsername;
 			this.sCurrentDirectory = sLocalCurrentDirectory;
 			this.sCommand = sLocalCommand;
 			this.alArguments = alLocalArguments;
 		}
 	}
-	
+
 	/**
 	 * @param sUsername
 	 * @param sCurrentDirectory
@@ -98,13 +104,13 @@ public abstract class AlienCommand {
 	public AlienCommand (final Principal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List alArguments) throws Exception{
 		if(sUsername == null || sUsername.length() == 0)
 			throw new Exception("Empty username");
-		
+
 		if(sCurrentDirectory == null || sCurrentDirectory.length() == 0)
 			throw new Exception("Empty current directory");
-		
+
 		if(sCommand == null || sCommand.length() == 0)
 			throw new Exception("Empty command");
-		
+
 		this.pAlienUser = pAlienPrincipal;
 		this.sUsername = sUsername;
 		this.sCurrentDirectory = sCurrentDirectory;
@@ -139,8 +145,8 @@ public abstract class AlienCommand {
 	public List getAlArguments() {
 		return alArguments;
 	}
-	
-	
+
+
 	/**
 	 * @return alien principal received from http request
 	 */
@@ -153,24 +159,24 @@ public abstract class AlienCommand {
 	 */
 	public abstract Object executeCommand();
 
-	
+
 	@Override
 	public String toString() {
 		String sToString  = "AlienCommand { \n";
-		
+
 		sToString += "		Username = "+this.sUsername+" \n";
 		sToString += "		Current directory = "+this.sCurrentDirectory+" \n";
 		sToString += "		Command = "+this.sCommand+" \n";	
 		sToString += "		User principal = "+this.pAlienUser.getName()+" \n";
 		sToString += "		Arguments = \n";	
-		
-		
-		for(Object o : this.alArguments){
-			sToString += o.toString()+" \n";
+
+		if(this.alArguments != null){
+			for(Object o : this.alArguments){
+				sToString += o.toString()+" \n";
+			}
 		}
-		
 		sToString += " } \n";
-		
+
 		return sToString;
 	}
 }
