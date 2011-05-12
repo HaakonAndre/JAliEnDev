@@ -73,8 +73,7 @@ public abstract class AlienCommand {
 			ArrayList<Object> alLocalArguments = null; 
 			
 			if(alSize > 3){
-				alLocalArguments = new ArrayList<Object>();
-				alLocalArguments.addAll(3, al);
+				alLocalArguments = (ArrayList<Object>) al.subList(3, alSize - 1);
 			}
 			
 			this.sUsername = sLocalUsername;
