@@ -102,8 +102,8 @@ public class AlienCommandls extends AlienCommand {
 				}
 				
 				for(LFN localLFN : lLFN){
-					alrcValues.add(localLFN.getFileName());
-					alrcMessages.add(localLFN.getFileName()+"\n");
+					alrcValues.add(bL ? localLFN.getCanonicalName() : localLFN.getFileName());
+					alrcMessages.add( bL ? localLFN.getCanonicalName()+"\n" : localLFN.getFileName()+"\n");
 				}
 			}
 			else{
