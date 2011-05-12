@@ -64,17 +64,17 @@ public class AlienCommandls extends AlienCommand {
 
 						for(char cLetter : sLetters){
 
-							if(!lsArguments.contains(cLetter)){
+							if(!lsArguments.contains(cLetter+"")){
 								alrcMessages.add("Unknown argument "+cLetter+"! \n ls -help for more help");
 							}
 							else{
-								if("l".equals(cLetter))
+								if("l".equals(cLetter+""))
 									bL = true;
 
-								if("a".equals(cLetter))
+								if("a".equals(cLetter+""))
 									bA = true;
 
-								if("help".equals(cLetter)){
+								if("help".equals(cLetter+"")){
 									bHelp = true;
 								}
 							}
