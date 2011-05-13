@@ -210,6 +210,21 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		return false;
 	}
 	
+	/**
+	 * Inform the GUID about another replica in the given SE. If the entry 
+	 * 
+	 * @param seNumber
+	 * @return true if updating was ok, false if the entry was not updated
+	 */
+	private boolean removeSE(final int seNumber){
+		final Integer i = Integer.valueOf(seNumber);
+		
+		if (!seStringList.remove(i))
+			return false;
+		
+		return update();
+	}
+	
 	private boolean update(){
 		final Host h = CatalogueUtils.getHost(host);
 		
@@ -426,6 +441,43 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		return true;
+	}
+	
+	/**
+	 * Remove an associated PFN. It does <b>NOT</b> check if it was the last PFN.
+	 * 
+	 * @param pfn
+	 * @return <code>true</code> if the PFN could be removed
+	 */
+	public boolean removePFN(final PFN pfn){
+		final Host h = CatalogueUtils.getHost(host);
+
+		if (h==null){
+			return false;
+		}
+		
+		final DBFunctions db = h.getDB();
+		
+		if (db==null){
+			return false;
+		}
+		
+		if (monitor!=null){
+			monitor.incrementCounter("PFN_db_delete");
+		}
+
+		if (!removeSE(pfn.seNumber)){
+			return false;
+		}
+		
+		if (!db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber)){
+			seStringList.add(Integer.valueOf(pfn.seNumber));
+			update();
+			return false;
+		}
+		
+		return true;
+		
 	}
 	
 	private Set<LFN> lfnCache = null;
