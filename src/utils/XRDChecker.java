@@ -60,7 +60,7 @@ public class XRDChecker {
 				}
 				
 				try{
-					final String output = xrootd.xrdstat(pfn, false);
+					final String output = xrootd.xrdstat(pfn, false, false);
 					
 					ret.put(pfn, new XRDStatus(true, output));
 				}
