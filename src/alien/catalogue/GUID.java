@@ -15,6 +15,7 @@ import lazyj.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.se.SE;
 
 /**
  * @author costing
@@ -478,6 +479,33 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		return true;
 		
+	}
+	
+	/**
+	 * Remove the associated PFN from this particular SE 
+	 * 
+	 * @param se
+	 * @return The PFN that was deleted, <code>null</code> if no change happened
+	 */
+	public String removePFN(final SE se){
+		if (se==null || !seStringList.contains(Integer.valueOf(se.seNumber)))
+			return null;
+		
+		final Set<PFN> pfns = getPFNs();
+		
+		if (pfns==null || pfns.size()==0)
+			return null;
+		
+		for (final PFN pfn: pfns){
+			if (pfn.seNumber == se.seNumber){
+				if (removePFN(pfn))
+					return pfn.pfn;
+				
+				break;
+			}
+		}
+		
+		return null;
 	}
 	
 	private Set<LFN> lfnCache = null;
