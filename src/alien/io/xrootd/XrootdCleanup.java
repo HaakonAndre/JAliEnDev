@@ -66,7 +66,7 @@ public class XrootdCleanup {
 			}
 			
 			for (XrootdFile dir: listing.getDirs()){
-				if (dir.getName().matches("^\\d+$"))
+				if (dir.path.matches("^/\\d{2}(/\\d{5})?$"))
 					storageCleanup(dir.path);
 			}
 		}
