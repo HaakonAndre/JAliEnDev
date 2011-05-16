@@ -66,7 +66,8 @@ public class XrootdCleanup {
 			}
 			
 			for (XrootdFile dir: listing.getDirs()){
-				storageCleanup(dir.path);
+				if (dir.getName().matches("^\\d+$"))
+					storageCleanup(dir.path);
 			}
 		}
 		catch (IOException ioe){
