@@ -18,8 +18,6 @@ import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.protocols.XRDStatus;
 import alien.io.xrootd.XrootdCleanup;
-import alien.io.xrootd.XrootdFile;
-import alien.io.xrootd.XrootdListing;
 import alien.se.SE;
 import alien.se.SEUtils;
 
@@ -45,7 +43,7 @@ public class Testing {
 		
 //		SE se = SEUtils.getSE("ALICE::Trieste::SE");
 		
-		XrootdCleanup cleanup = new XrootdCleanup("ALICE::Trieste::SE", false);
+		XrootdCleanup cleanup = new XrootdCleanup("ALICE::GSI::SE2", false);
 		
 //		XrootdListing listing = new XrootdListing("alired.ts.infn.it:1094", "/14/35947/");
 //		

@@ -5,6 +5,7 @@ package alien.io.protocols;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -108,7 +109,7 @@ public class Xrootd extends Protocol {
 			final List<String> command = new LinkedList<String>();
 			command.add("xrdrm");
 
-			command.addAll(getCommonArguments());
+			//command.addAll(getCommonArguments());
 			
 			command.add("-v");
 			
@@ -120,13 +121,28 @@ public class Xrootd extends Protocol {
 			
 			command.add(transactionURL);
 
+			File fAuthz = null;
+			
 			if (pfn.ticket.envelope != null){
-				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OD&authz="
-						+ pfn.ticket.envelope.getEncryptedEnvelope());
-				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+				fAuthz = File.createTempFile("xrdrm-", ".authz");
+				
+				final FileWriter fw = new FileWriter(fAuthz);
+				
+				if (pfn.ticket.envelope.getEncryptedEnvelope() != null){
+					fw.write(pfn.ticket.envelope.getEncryptedEnvelope());
+				}
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null){
+					fw.write(pfn.ticket.envelope.getSignedEnvelope());
+				}
+				
+				fw.flush();
+				fw.close();
+				
+				command.add("-authz");
+				command.add(fAuthz.getCanonicalPath());
 			}
+			
+			System.err.println(command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -145,10 +161,17 @@ public class Xrootd extends Protocol {
 						"Interrupted while waiting for the following command to finish : "
 								+ command.toString());
 			}
+			finally{
+				if (fAuthz!=null)
+					fAuthz.delete();	// normally it is cleaned up by xrdrm
+			}
 			
 			if (exitStatus.getExtProcExitStatus() != 0) {
+				System.err.println("xrdrm error\n"+exitStatus.getStdOut());
+				
 				throw new IOException("Exit code "+exitStatus.getExtProcExitStatus());
 			}
+			System.err.println(exitStatus.getStdOut());
 
 			return true;
 		} catch (final IOException ioe) {
@@ -212,7 +235,7 @@ public class Xrootd extends Protocol {
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
-			
+					
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
