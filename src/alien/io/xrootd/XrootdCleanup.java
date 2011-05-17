@@ -217,9 +217,15 @@ public class XrootdCleanup {
 		
 		final Xrootd xrootd = new Xrootd();
 		try {
-			return xrootd.delete(pfn);
+			if (!xrootd.delete(pfn)){
+				System.err.println("Could not delete : "+pfn);
+				return false;
+			}
+			
+			return true;
 		}
 		catch (IOException e) {
+			e.printStackTrace();
 			return false;
 		}
 	}
