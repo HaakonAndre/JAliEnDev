@@ -1,16 +1,26 @@
 package alien.io.xrootd;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import lazyj.Format;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.access.AccessTicket;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.XrootDEnvelope;
+import alien.io.protocols.Xrootd;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.services.XrootDEnvelopeSigner;
 
 /**
  * @author costing
@@ -26,6 +36,11 @@ public class XrootdCleanup {
 	private long filesRemoved = 0;
 	private long filesKept = 0;
 	private long dirsSeen = 0;
+	
+	/**
+	 * How many items are currently in progress
+	 */
+	AtomicInteger inProgress = new AtomicInteger(0);
 	
 	/**
 	 * Check all GUID files in this storage by listing recursively its contents.
@@ -50,10 +65,94 @@ public class XrootdCleanup {
 		
 		server = sBase;
 		
-		storageCleanup("/");
+		pushDir("/");
+		
+		while (inProgress.intValue()>0){
+			try{
+				Thread.sleep(1000);
+			}
+			catch (InterruptedException ie){
+				// ignore
+			}
+		}
+		
+		for (final CleanupThread t: workers){
+			t.signalStop();
+			t.interrupt();
+		}
 	}
 	
-	private void storageCleanup(final String path){
+	/**
+	 * processing queue
+	 */
+	LinkedBlockingQueue<String> processingQueue = null;
+	
+	private static final int XROOTD_THREADS = 100;
+	
+	/**
+	 * parallel xrootd listing threads
+	 */
+	private List<CleanupThread> workers = null;
+	
+	private class CleanupThread extends Thread {
+		private boolean shouldRun = true;
+		
+		public CleanupThread() {
+			setDaemon(true);
+		}
+
+		@Override
+		public void run() {
+			while (shouldRun){
+				try{
+					final String dir = processingQueue.take();
+					
+					if (dir!=null){
+						try{
+							storageCleanup(dir);
+						}
+						finally{
+							inProgress.decrementAndGet();
+						}
+					}
+				}
+				catch (InterruptedException ie){
+					// ignore
+				}
+			}
+		}
+		
+		/**
+		 * Tell it to stop
+		 */
+		public void signalStop(){
+			shouldRun = false;
+		}
+	}
+	
+	private synchronized void pushDir(final String dir){
+		if (processingQueue == null){
+			processingQueue = new LinkedBlockingQueue<String>();
+			
+			workers = new ArrayList<CleanupThread>(XROOTD_THREADS);
+			
+			for (int i=0; i<XROOTD_THREADS; i++){
+				final CleanupThread t = new CleanupThread();
+				t.start();
+				
+				workers.add(t);
+			}
+		}
+		
+		inProgress.incrementAndGet();
+		
+		processingQueue.offer(dir);
+	}
+	
+	/**
+	 * @param path
+	 */
+	void storageCleanup(final String path){
 		System.err.println("storageCleanup: "+path);
 		
 		dirsSeen++;
@@ -61,24 +160,57 @@ public class XrootdCleanup {
 		try{
 			final XrootdListing listing = new XrootdListing(server, path);
 			
-			for (XrootdFile file: listing.getFiles()){
+			for (final XrootdFile file: listing.getFiles()){
 				fileCheck(file);
 			}
 			
-			for (XrootdFile dir: listing.getDirs()){
-				if (dir.path.matches("^/\\d{2}(/\\d{5})?$"))
-					storageCleanup(dir.path);
+			for (final XrootdFile dir: listing.getDirs()){
+				if (dir.path.matches("^/\\d{2}(/\\d{5})?$")){
+					pushDir(dir.path);
+				}
 			}
 		}
 		catch (IOException ioe){
 			System.err.println(ioe.getMessage());
+			ioe.printStackTrace();
 		}
 	}
 	
-	private boolean removeFile(final XrootdFile file){
+	/**
+	 * @param file
+	 * @param se 
+	 * @return true if the file was actually removed
+	 */
+	public static boolean removeFile(final XrootdFile file, final SE se){
 		System.err.println("RM "+file);
 		
-		return true;
+		PFN pfn = new PFN(GUIDUtils.getGUID(UUID.fromString(file.getName()), true), se);
+		
+		XrootDEnvelope env =  new XrootDEnvelope(AccessType.DELETE, pfn);
+
+		try {
+			if (se.needsEncryptedEnvelope){
+					XrootDEnvelopeSigner.encryptEnvelope(env);
+			}
+			else{
+				// new xrootd implementations accept signed-only envelopes
+				XrootDEnvelopeSigner.signEnvelope(env);	
+			}
+		}
+		catch (final GeneralSecurityException e) {
+			e.printStackTrace();
+			return false;
+		}
+		
+		pfn.ticket = new AccessTicket(AccessType.DELETE, env);
+		
+		final Xrootd xrootd = new Xrootd();
+		try {
+			return xrootd.delete(pfn);
+		}
+		catch (IOException e) {
+			return false;
+		}
 	}
 	
 	private void fileCheck(final XrootdFile file) {
@@ -111,7 +243,7 @@ public class XrootdCleanup {
 				}
 			}
 			
-			if (remove && removeFile(file)){
+			if (remove && removeFile(file, se)){
 				sizeRemoved += file.size;
 				filesRemoved ++;
 			}
