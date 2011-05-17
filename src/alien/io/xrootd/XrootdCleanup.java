@@ -226,6 +226,11 @@ public class XrootdCleanup {
 	
 	private void fileCheck(final XrootdFile file) {
 		try{
+			if (System.currentTimeMillis() - file.date.getTime() < 1000*60*60*24){
+				// ignore very recent files
+				return;
+			}
+			
 			final UUID uuid = UUID.fromString(file.getName());
 			
 			final GUID guid = GUIDUtils.getGUID(uuid);
