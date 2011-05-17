@@ -30,7 +30,10 @@ import alien.services.XrootDEnvelopeSigner;
  *
  */
 public class XrootdCleanup {
-	private final SE se;
+	/**
+	 * Storage element we are working on
+	 */
+	final SE se;
 	
 	private final String server;
 	
@@ -91,7 +94,7 @@ public class XrootdCleanup {
 			}
 			
 			if ( (++progressCounter) % 10 == 0){
-				System.err.println("*** processed so far : "+processed.get()+", "+inProgress.get()+" are queued");
+				System.err.println("*** "+se.seName+" *** processed so far : "+processed.get()+", "+inProgress.get()+" are queued");
 			}
 		}
 		
@@ -125,6 +128,8 @@ public class XrootdCleanup {
 			while (shouldRun){
 				try{
 					final String dir = processingQueue.take();
+					
+					setName(se.seName+dir);
 					
 					if (dir!=null){
 						try{
@@ -307,6 +312,9 @@ public class XrootdCleanup {
 	 */
 	public static void main(String[] args) throws IOException {
 		final OptionParser parser = new OptionParser();
+		
+		parser.accepts("n", "Do not take any action (dry run)");
+		parser.accepts("?", "Print this help");
 		
 		final OptionSet options = parser.parse(args);
 		
