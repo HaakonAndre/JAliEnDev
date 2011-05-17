@@ -9,6 +9,9 @@ import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import lazyj.Format;
 
 import alien.catalogue.GUID;
@@ -47,12 +50,17 @@ public class XrootdCleanup {
 	 */
 	final AtomicInteger processed = new AtomicInteger(0);
 	
+	private final boolean dryRun;
+	
 	/**
 	 * Check all GUID files in this storage by listing recursively its contents.
 	 * 
 	 * @param sSE
+	 * @param dryRun 
 	 */
-	public XrootdCleanup(final String sSE){
+	public XrootdCleanup(final String sSE, final boolean dryRun){
+		this.dryRun = dryRun;
+		
 		se = SEUtils.getSE(sSE);
 		
 		if (se==null){
@@ -187,6 +195,13 @@ public class XrootdCleanup {
 		}
 	}
 	
+	private boolean removeFile(final XrootdFile file){
+		if (!dryRun)
+			return removeFile(file, se);
+		
+		return true;
+	}
+	
 	/**
 	 * @param file
 	 * @param se 
@@ -265,7 +280,7 @@ public class XrootdCleanup {
 				}
 			}
 			
-			if (remove && removeFile(file, se)){
+			if (remove && removeFile(file)){
 				sizeRemoved += file.size;
 				filesRemoved ++;
 			}
@@ -284,6 +299,32 @@ public class XrootdCleanup {
 	@Override
 	public String toString() {
 		return "Removed "+filesRemoved+" files ("+Format.size(sizeRemoved)+"), kept "+filesKept+" ("+Format.size(sizeKept)+"), "+dirsSeen+" directories";
+	}
+	
+	/**
+	 * @param args the only argument taken by this class is the name of the storage to be cleaned
+	 * @throws IOException 
+	 */
+	public static void main(String[] args) throws IOException {
+		final OptionParser parser = new OptionParser();
+		
+		final OptionSet options = parser.parse(args);
+		
+		if (options.nonOptionArguments().size()==0 || options.has("?")){
+			parser.printHelpOn(System.out);
+			return;
+		}
+		
+		final boolean dryRun = options.has("n");
+		
+		System.err.println("Dry run : "+dryRun);
+		
+		final long lStart = System.currentTimeMillis();
+		
+		for (String se: options.nonOptionArguments()){
+			final XrootdCleanup cleanup = new XrootdCleanup(se, dryRun);
+			System.err.println(cleanup+", took "+Format.toInterval(System.currentTimeMillis() - lStart));
+		}
 	}
 	
 }
