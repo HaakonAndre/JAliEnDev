@@ -40,7 +40,12 @@ public class XrootdCleanup {
 	/**
 	 * How many items are currently in progress
 	 */
-	AtomicInteger inProgress = new AtomicInteger(0);
+	final AtomicInteger inProgress = new AtomicInteger(0);
+	
+	/**
+	 * how many files were processed so far
+	 */
+	final AtomicInteger processed = new AtomicInteger(0);
 	
 	/**
 	 * Check all GUID files in this storage by listing recursively its contents.
@@ -67,12 +72,18 @@ public class XrootdCleanup {
 		
 		pushDir("/");
 		
+		int progressCounter = 0;
+		
 		while (inProgress.intValue()>0){
 			try{
 				Thread.sleep(1000);
 			}
 			catch (InterruptedException ie){
 				// ignore
+			}
+			
+			if ( (++progressCounter) % 10 == 0){
+				System.err.println("*** processed so far : "+processed.get());
 			}
 		}
 		
@@ -255,6 +266,8 @@ public class XrootdCleanup {
 		catch (Exception e){
 			// ignore
 		}
+		
+		processed.incrementAndGet();
 	}
 	
 	@Override
