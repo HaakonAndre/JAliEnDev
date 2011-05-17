@@ -118,8 +118,6 @@ public class Xrootd extends Protocol {
 			if (pfn.ticket.envelope!=null){
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 			}
-			
-			command.add(transactionURL);
 
 			File fAuthz = null;
 			
@@ -141,6 +139,8 @@ public class Xrootd extends Protocol {
 				command.add("-authz");
 				command.add(fAuthz.getCanonicalPath());
 			}
+			
+			command.add(transactionURL);
 			
 			System.err.println(command);
 
