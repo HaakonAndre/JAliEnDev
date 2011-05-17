@@ -83,7 +83,7 @@ public class XrootdCleanup {
 			}
 			
 			if ( (++progressCounter) % 10 == 0){
-				System.err.println("*** processed so far : "+processed.get());
+				System.err.println("*** processed so far : "+processed.get()+", "+inProgress.get()+" are queued");
 			}
 		}
 		
