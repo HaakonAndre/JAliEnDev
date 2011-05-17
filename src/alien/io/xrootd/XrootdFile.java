@@ -37,7 +37,7 @@ public class XrootdFile implements Comparable<XrootdFile>{
 	 * @throws IllegalArgumentException 
 	 */
 	public XrootdFile(final String line) throws IllegalArgumentException{
-		StringTokenizer st = new StringTokenizer(line);
+		final StringTokenizer st = new StringTokenizer(line);
 		
 		if (st.countTokens()!=5)
 			throw new IllegalArgumentException("Not in the correct format : "+line);
@@ -45,8 +45,20 @@ public class XrootdFile implements Comparable<XrootdFile>{
 		perms = st.nextToken();
 		
 		size = Long.parseLong(st.nextToken());
+
+		String datePart = st.nextToken()+" "+st.nextToken();
 		
-		date = Format.parseDate(st.nextToken()+" "+st.nextToken());
+		try{
+			date = Format.parseDate(datePart);
+		}
+		catch (NumberFormatException nfe){
+			System.err.println("Could not parse date `"+datePart+"` of `"+line+"`");
+			throw new IllegalArgumentException("Date not in a parseable format `"+datePart+"`");
+		}
+		
+		if (date==null){
+			throw new IllegalArgumentException("Could not parse date `"+datePart+"`");
+		}
 		
 		path = st.nextToken();
 	}
@@ -85,6 +97,14 @@ public class XrootdFile implements Comparable<XrootdFile>{
 			return diff;
 		
 		return path.compareTo(o.path);
+	}
+	
+	@Override
+	public boolean equals(final Object obj) {
+		if (obj==null || !(obj instanceof XrootdFile))
+			return false;
+		
+		return compareTo((XrootdFile) obj)==0;
 	}
 	
 	@Override
