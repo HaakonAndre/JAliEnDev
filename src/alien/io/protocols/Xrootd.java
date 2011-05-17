@@ -98,6 +98,69 @@ public class Xrootd extends Protocol {
 		return null;
 	}
 
+	@Override
+	public boolean delete(final PFN pfn) throws IOException {
+		if (pfn==null || pfn.ticket == null || pfn.ticket.type!=AccessType.DELETE) {
+			throw new IOException("You didn't get the rights to delete this PFN");
+		}
+		
+		try {
+			final List<String> command = new LinkedList<String>();
+			command.add("xrdrm");
+
+			command.addAll(getCommonArguments());
+			
+			command.add("-v");
+			
+			String transactionURL = pfn.pfn;
+			
+			if (pfn.ticket.envelope!=null){
+				transactionURL = pfn.ticket.envelope.getTransactionURL();
+			}
+			
+			command.add(transactionURL);
+
+			if (pfn.ticket.envelope != null){
+				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
+					command.add("-OD&authz="
+						+ pfn.ticket.envelope.getEncryptedEnvelope());
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+			}
+
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+			pBuilder.returnOutputOnExit(true);
+
+			pBuilder.timeout(1, TimeUnit.HOURS);
+
+			pBuilder.redirectErrorStream(true);
+
+			final ExitStatus exitStatus;
+
+			try {
+				exitStatus = pBuilder.start().waitFor();
+			} catch (final InterruptedException ie) {
+				throw new IOException(
+						"Interrupted while waiting for the following command to finish : "
+								+ command.toString());
+			}
+			
+			if (exitStatus.getExtProcExitStatus() != 0) {
+				throw new IOException("Exit code "+exitStatus.getExtProcExitStatus());
+			}
+
+			return true;
+		} catch (final IOException ioe) {
+			throw ioe;
+		} catch (final Throwable t) {
+			logger.log(Level.WARNING, "Caught exception", t);
+
+			throw new IOException("Get aborted because " + t);
+		}
+
+	}
+	
 	/*
 	 * (non-Javadoc)
 	 * 
