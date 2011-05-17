@@ -81,12 +81,15 @@ public class XrootdListing {
         String sLine;
         
         while ( (sLine=br.readLine())!=null ){
+        	//System.err.println(sLine);
+        	
         	if (sLine.startsWith("-") || sLine.startsWith("d")){
         		try{
         			entries.add(new XrootdFile(sLine.trim()));
         		}
         		catch (IllegalArgumentException iae){
         			System.err.println(iae.getMessage());
+        			iae.printStackTrace();
         		}
         	}
         }
