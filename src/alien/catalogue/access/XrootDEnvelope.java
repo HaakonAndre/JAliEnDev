@@ -94,7 +94,10 @@ public class XrootDEnvelope implements Serializable {
 		return ret;
 	}
 
-	private static final Pattern PFN_EXTRACT = Pattern.compile("^\\w+://\\w+(\\.\\w+)*(:\\d+)?/(.*)$");
+	/**
+	 * Splitter of PFNs
+	 */
+	public static final Pattern PFN_EXTRACT = Pattern.compile("^\\w+://([\\w-]+(\\.[\\w-]+)*(:\\d+))?/(.*)$");
 	
 	/**
 	 * @return URL of the storage. This is passed as argument to xrdcp and in most cases it is the PFN but for 
@@ -120,7 +123,7 @@ public class XrootDEnvelope implements Serializable {
 		final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
 		
 		if (m.matches()){
-			return se.seioDaemons + "/" + m.group(3);
+			return se.seioDaemons + "/" + m.group(4);
 		}
 
 		return pfn.pfn;
