@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -37,11 +38,11 @@ public class XrootdCleanup {
 	
 	private final String server;
 	
-	private long sizeRemoved = 0;
-	private long sizeKept = 0;
-	private long filesRemoved = 0;
-	private long filesKept = 0;
-	private long dirsSeen = 0;
+	private AtomicLong sizeRemoved = new AtomicLong();
+	private AtomicLong sizeKept = new AtomicLong();
+	private AtomicLong filesRemoved = new AtomicLong();
+	private AtomicLong filesKept = new AtomicLong();
+	private AtomicLong dirsSeen = new AtomicLong();
 	
 	/**
 	 * How many items are currently in progress
@@ -111,7 +112,7 @@ public class XrootdCleanup {
 	 */
 	LinkedBlockingQueue<String> processingQueue = null;
 	
-	private static final int XROOTD_THREADS_DEFAULT = 100;
+	private static final int XROOTD_THREADS_DEFAULT = 32;
 	
 	private int XROOTD_THREADS = XROOTD_THREADS_DEFAULT;
 	
@@ -183,7 +184,7 @@ public class XrootdCleanup {
 	void storageCleanup(final String path){
 		System.err.println("storageCleanup: "+path);
 		
-		dirsSeen++;
+		dirsSeen.incrementAndGet();
 		
 		try{
 			final XrootdListing listing = new XrootdListing(server, path);
@@ -297,12 +298,12 @@ public class XrootdCleanup {
 			}
 			
 			if (remove && removeFile(file)){
-				sizeRemoved += file.size;
-				filesRemoved ++;
+				sizeRemoved.addAndGet(file.size);
+				filesRemoved.incrementAndGet();
 			}
 			else{
-				sizeKept += file.size;
-				filesKept ++;
+				sizeKept.addAndGet(file.size);
+				filesKept.incrementAndGet();
 			}
 		}
 		catch (Exception e){
@@ -314,7 +315,7 @@ public class XrootdCleanup {
 	
 	@Override
 	public String toString() {
-		return "Removed "+filesRemoved+" files ("+Format.size(sizeRemoved)+"), kept "+filesKept+" ("+Format.size(sizeKept)+"), "+dirsSeen+" directories";
+		return "Removed "+filesRemoved+" files ("+Format.size(sizeRemoved.longValue())+"), kept "+filesKept+" ("+Format.size(sizeKept.longValue())+"), "+dirsSeen+" directories";
 	}
 	
 	/**
