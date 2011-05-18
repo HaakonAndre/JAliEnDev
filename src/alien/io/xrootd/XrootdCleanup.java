@@ -60,9 +60,11 @@ public class XrootdCleanup {
 	 * 
 	 * @param sSE
 	 * @param dryRun 
+	 * @param threads 
 	 */
-	public XrootdCleanup(final String sSE, final boolean dryRun){
+	public XrootdCleanup(final String sSE, final boolean dryRun, final int threads){
 		this.dryRun = dryRun;
+		this.XROOTD_THREADS = threads;
 		
 		se = SEUtils.getSE(sSE);
 		
@@ -94,7 +96,7 @@ public class XrootdCleanup {
 			}
 			
 			if ( (++progressCounter) % 10 == 0){
-				System.err.println("*** "+se.seName+" *** processed so far : "+processed.get()+", "+inProgress.get()+" are queued");
+				System.err.println("*** "+se.seName+" *** processed so far : "+processed.get()+", "+inProgress.get()+" are queued, "+toString());
 			}
 		}
 		
@@ -109,7 +111,9 @@ public class XrootdCleanup {
 	 */
 	LinkedBlockingQueue<String> processingQueue = null;
 	
-	private static final int XROOTD_THREADS = 100;
+	private static final int XROOTD_THREADS_DEFAULT = 100;
+	
+	private int XROOTD_THREADS = XROOTD_THREADS_DEFAULT;
 	
 	/**
 	 * parallel xrootd listing threads
@@ -204,6 +208,8 @@ public class XrootdCleanup {
 		if (!dryRun)
 			return removeFile(file, se);
 		
+		System.err.println("WOULD RM "+file);
+		
 		return true;
 	}
 	
@@ -215,9 +221,14 @@ public class XrootdCleanup {
 	public static boolean removeFile(final XrootdFile file, final SE se){
 		System.err.println("RM "+file);
 		
-		PFN pfn = new PFN(GUIDUtils.getGUID(UUID.fromString(file.getName()), true), se);
+		final GUID guid = GUIDUtils.getGUID(UUID.fromString(file.getName()), true);
 		
-		XrootDEnvelope env =  new XrootDEnvelope(AccessType.DELETE, pfn);
+		guid.size = file.size;
+		guid.md5 = "130254d9540d6903fa6f0ab41a132361";
+		
+		final PFN pfn = new PFN(guid, se);
+				
+		final XrootDEnvelope env =  new XrootDEnvelope(AccessType.DELETE, pfn);
 
 		try {
 			if (se.needsEncryptedEnvelope){
@@ -315,6 +326,7 @@ public class XrootdCleanup {
 		
 		parser.accepts("n", "Do not take any action (dry run)");
 		parser.accepts("?", "Print this help");
+		parser.accepts("t").withRequiredArg().describedAs("Parallel threads, default "+XROOTD_THREADS_DEFAULT).ofType(Integer.class);
 		
 		final OptionSet options = parser.parse(args);
 		
@@ -329,8 +341,15 @@ public class XrootdCleanup {
 		
 		final long lStart = System.currentTimeMillis();
 		
+		int threads = XROOTD_THREADS_DEFAULT;
+		
+		if (options.has("t") && options.hasArgument("t"))
+			threads = ((Integer) options.valueOf("t")).intValue();
+		
+		System.err.println("Parallel threads : "+threads);
+		
 		for (String se: options.nonOptionArguments()){
-			final XrootdCleanup cleanup = new XrootdCleanup(se, dryRun);
+			final XrootdCleanup cleanup = new XrootdCleanup(se, dryRun, threads);
 			System.err.println(cleanup+", took "+Format.toInterval(System.currentTimeMillis() - lStart));
 		}
 	}
