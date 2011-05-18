@@ -14,12 +14,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 
 import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
+import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 
 /**
@@ -98,7 +100,23 @@ public class Xrootd extends Protocol {
 		
 		return null;
 	}
+	
+	private boolean usexrdrm = true;
 
+	/**
+	 * Whether to use "xrdrm" (<code>true</code>) or "xrd rm" (<code>false</code>)
+	 * 
+	 * @param newValue
+	 * @return the previous setting
+	 */
+	public boolean setUseXrdRm(final boolean newValue){
+		final boolean prev = usexrdrm;
+		
+		usexrdrm = newValue;
+		
+		return prev;
+	}
+	
 	@Override
 	public boolean delete(final PFN pfn) throws IOException {
 		if (pfn==null || pfn.ticket == null || pfn.ticket.type!=AccessType.DELETE) {
@@ -107,42 +125,63 @@ public class Xrootd extends Protocol {
 		
 		try {
 			final List<String> command = new LinkedList<String>();
-			command.add("xrdrm");
-
+			
 			//command.addAll(getCommonArguments());
 			
-			command.add("-v");
-			
-			String transactionURL = pfn.pfn;
+			String envelope = null;
 			
 			if (pfn.ticket.envelope!=null){
-				transactionURL = pfn.ticket.envelope.getTransactionURL();
+				envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+				
+				if (envelope==null)
+					envelope = pfn.ticket.envelope.getSignedEnvelope();
 			}
-
+			
 			File fAuthz = null;
+						
+			if (usexrdrm){
+				command.add("xrdrm");
+				command.add("-v");
+				
+				String transactionURL = pfn.pfn;
 			
-			if (pfn.ticket.envelope != null){
-				fAuthz = File.createTempFile("xrdrm-", ".authz");
-				
-				final FileWriter fw = new FileWriter(fAuthz);
-				
-				if (pfn.ticket.envelope.getEncryptedEnvelope() != null){
-					fw.write(pfn.ticket.envelope.getEncryptedEnvelope());
-				}
-				else if (pfn.ticket.envelope.getSignedEnvelope() != null){
-					fw.write(pfn.ticket.envelope.getSignedEnvelope());
+				if (pfn.ticket.envelope!=null){
+					transactionURL = pfn.ticket.envelope.getTransactionURL();
 				}
 				
-				fw.flush();
-				fw.close();
+				if (envelope!=null){
+					fAuthz = File.createTempFile("xrdrm-", ".authz");
+					
+					final FileWriter fw = new FileWriter(fAuthz);
 				
-				command.add("-authz");
-				command.add(fAuthz.getCanonicalPath());
+					fw.write(envelope);
+								
+					fw.flush();
+					fw.close();
+					
+					command.add("-authz");
+					command.add(fAuthz.getCanonicalPath());
+				}
+				
+				command.add(transactionURL);
+			}
+			else{
+				final Matcher m = XrootDEnvelope.PFN_EXTRACT.matcher(pfn.pfn);
+				
+				if (!m.matches()){
+					System.err.println("Pattern doesn't match "+pfn.pfn);
+					return false;
+				}
+				
+				final String server = m.group(1);
+				final String spfn = m.group(4);
+				
+				command.add("xrd");
+				command.add(server);				
+				command.add("rm "+spfn+"?authz="+envelope);
 			}
 			
-			command.add(transactionURL);
-			
-			System.err.println(command);
+			//System.err.println(command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -163,7 +202,7 @@ public class Xrootd extends Protocol {
 			}
 			finally{
 				if (fAuthz!=null)
-					fAuthz.delete();	// normally it is cleaned up by xrdrm
+					fAuthz.delete();
 			}
 			
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -171,7 +210,8 @@ public class Xrootd extends Protocol {
 				
 				throw new IOException("Exit code "+exitStatus.getExtProcExitStatus());
 			}
-			System.err.println(exitStatus.getStdOut());
+			
+			//System.err.println(exitStatus.getStdOut());
 
 			return true;
 		} catch (final IOException ioe) {
@@ -179,7 +219,7 @@ public class Xrootd extends Protocol {
 		} catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			throw new IOException("Get aborted because " + t);
+			throw new IOException("delete aborted because " + t);
 		}
 
 	}
