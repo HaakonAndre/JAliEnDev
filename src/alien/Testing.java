@@ -8,6 +8,7 @@ import java.io.StringReader;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
 
 import lazyj.Format;
 import lazyj.Utils;
@@ -15,9 +16,12 @@ import utils.XRDChecker;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.protocols.XRDStatus;
 import alien.io.xrootd.XrootdCleanup;
+import alien.io.xrootd.XrootdFile;
+import alien.io.xrootd.XrootdListing;
 import alien.se.SE;
 import alien.se.SEUtils;
 
@@ -38,24 +42,22 @@ public class Testing {
 	 */
 	public static void main(String[] args) throws Exception {
 		//removeFZK();
-		
-		final long lStart = System.currentTimeMillis();
-		
-//		SE se = SEUtils.getSE("ALICE::Trieste::SE");
-		
-		XrootdCleanup cleanup = new XrootdCleanup("ALICE::GSI::SE2", false);
-		
-//		XrootdListing listing = new XrootdListing("alired.ts.infn.it:1094", "/14/35947/");
+			
+		XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+				
+//		XrootdListing listing = new XrootdListing("pcaliense04.cern.ch:1095", "/02/00002/");
+//
+//		SE se = SEUtils.getSE("ALICE::CERN::SE");
 //		
 //		for (XrootdFile f: listing.getFiles()){
-//			if (f.getName().equals("afa8fe42-3c2a-11e0-b760-0018fe730ae5")){
+//			if (f.getName().equals("077dca9c-f5a8-11dd-bbf8-001e0bd3f44c")){
 //				System.err.println(f);
 //				
 //				System.err.println(XrootdCleanup.removeFile(f, se));
 //			}
 //		}
-		
-		System.err.println(cleanup+", took "+Format.toInterval(System.currentTimeMillis() - lStart));
+//		
+//		System.err.println("finish");
 	}
 		
 	private static void removeFZK() throws IOException {
