@@ -70,28 +70,67 @@ public class XrootDEnvelopeSigner {
 		RSAPrivateKey sePrivKey = null;
 		RSAPublicKey  sePubKey = null;
 		
+		BufferedReader authenPriv = null;
+		BufferedReader authenPub  = null;
+		
 		try{
-			authenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
-					new BufferedReader(new FileReader(AuthenPrivLocation)))
-					.readObject()).getPrivate();
-			authenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
-					new BufferedReader(new FileReader(AuthenPubLocation)))
-					.readObject()).getPublicKey();
+			authenPriv = new BufferedReader(new FileReader(AuthenPrivLocation));
+			authenPub  = new BufferedReader(new FileReader(AuthenPubLocation));
+			
+			authenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(authenPriv).readObject()).getPrivate();
+			authenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(authenPub).readObject()).getPublicKey();
 		}
 		catch (IOException ioe){
 			logger.log(Level.WARNING, "Authen keys could not be loaded from "+authenKeysLocation);
 		}
+		finally{
+			if (authenPriv!=null)
+				try {
+					authenPriv.close();
+				}
+				catch (IOException e) {
+					// ignore
+				}
+			
+			if (authenPub!=null)
+				try {
+					authenPub.close();
+				}
+				catch (IOException e) {
+					// ignore
+				}
+		}
+		
+		BufferedReader sePriv = null;
+		BufferedReader sePub  = null;
 		
 		try{
-			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(
-					new BufferedReader(new FileReader(SEPrivLocation)))
-					.readObject()).getPrivate();
-			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
-					new BufferedReader(new FileReader(SEPubLocation))).readObject())
-					.getPublicKey();
+			sePriv = new BufferedReader(new FileReader(SEPrivLocation)); 
+			sePub  = new BufferedReader(new FileReader(SEPubLocation));
+			
+			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(sePriv).readObject()).getPrivate();
+			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(sePub).readObject()).getPublicKey();
 		}
 		catch (IOException ioe){
 			logger.log(Level.WARNING, "SE keys could not be loaded from "+seKeysLocation);
+		}
+		finally{
+			if (sePriv!=null){
+				try {
+					sePriv.close();
+				}
+				catch (IOException e) {
+					// ignore
+				}
+			}
+			if (sePub!=null){
+				try {
+					sePub.close();
+				}
+				catch (IOException e) {
+					// ignore
+				}
+			}
 		}
 		
 		AuthenPrivKey = authenPrivKey;
@@ -193,17 +232,14 @@ public class XrootDEnvelopeSigner {
 	 * @throws GeneralSecurityException
 	 */
 	public static void encryptEnvelope(final XrootDEnvelope envelope) throws GeneralSecurityException {
-
-		// System.out.println("About to be encrypted: " +
-		// envelope.getUnEncryptedEnvelope());
-
 		if (authz == null)
 			authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey, false);
 
-		envelope.setEncryptedEnvelope(authz.encrypt(envelope
-				.getUnEncryptedEnvelope()));
-		// System.out.println("We encrypted: " +
-		// envelope.getEncryptedEnvelope());
+		final String plainEnvelope = envelope.getUnEncryptedEnvelope(); 
+		
+		//System.err.println("Encrypting:\n"+plainEnvelope);
+		
+		envelope.setEncryptedEnvelope(authz.encrypt(plainEnvelope));
 	}
 
 	//
