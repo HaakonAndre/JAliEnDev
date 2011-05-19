@@ -44,7 +44,14 @@ public class XrootdFile implements Comparable<XrootdFile>{
 		
 		perms = st.nextToken();
 		
-		size = Long.parseLong(st.nextToken());
+		long lsize = Long.parseLong(st.nextToken());
+		
+		if (lsize<0){
+			System.err.println("XrootdFile: Negative size detected: "+line);
+			lsize = 1;
+		}
+		
+		size = lsize;
 
 		String datePart = st.nextToken()+" "+st.nextToken();
 		
