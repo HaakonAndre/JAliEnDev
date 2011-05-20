@@ -37,12 +37,14 @@ public class XrootdCleanup {
 	final SE se;
 	
 	private final String server;
-	
-	private AtomicLong sizeRemoved = new AtomicLong();
-	private AtomicLong sizeKept = new AtomicLong();
-	private AtomicLong filesRemoved = new AtomicLong();
-	private AtomicLong filesKept = new AtomicLong();
-	private AtomicLong dirsSeen = new AtomicLong();
+
+	private final AtomicLong sizeRemoved = new AtomicLong();
+	private final AtomicLong sizeKept = new AtomicLong();
+	private final AtomicLong sizeFailed = new AtomicLong();
+	private final AtomicLong filesRemoved = new AtomicLong();
+	private final AtomicLong filesKept = new AtomicLong();
+	private final AtomicLong filesFailed = new AtomicLong();
+	private final AtomicLong dirsSeen = new AtomicLong();
 	
 	/**
 	 * How many items are currently in progress
@@ -297,9 +299,15 @@ public class XrootdCleanup {
 				}
 			}
 			
-			if (remove && removeFile(file)){
-				sizeRemoved.addAndGet(file.size);
-				filesRemoved.incrementAndGet();
+			if (remove){
+				if (removeFile(file)){
+					sizeRemoved.addAndGet(file.size);
+					filesRemoved.incrementAndGet();
+				}
+				else{
+					sizeFailed.addAndGet(file.size);
+					filesFailed.incrementAndGet();
+				}
 			}
 			else{
 				sizeKept.addAndGet(file.size);
@@ -315,7 +323,10 @@ public class XrootdCleanup {
 	
 	@Override
 	public String toString() {
-		return "Removed "+filesRemoved+" files ("+Format.size(sizeRemoved.longValue())+"), kept "+filesKept+" ("+Format.size(sizeKept.longValue())+"), "+dirsSeen+" directories";
+		return "Removed "+filesRemoved+" files ("+Format.size(sizeRemoved.longValue())+"), "+
+			"failed to remove "+filesFailed+" ("+Format.size(sizeFailed.longValue())+"), "+
+			"kept "+filesKept+" ("+Format.size(sizeKept.longValue())+"), "+
+			dirsSeen+" directories";
 	}
 	
 	/**
