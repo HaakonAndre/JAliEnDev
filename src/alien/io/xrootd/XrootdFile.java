@@ -46,8 +46,8 @@ public class XrootdFile implements Comparable<XrootdFile>{
 		
 		long lsize = Long.parseLong(st.nextToken());
 		
-		if (lsize<0 || lsize>1024*1024*1024*100){
-			System.err.println("XrootdFile: Negative or excessive size detected: "+line);
+		if (lsize<0 || lsize>1024L*1024*1024*100){
+			System.err.println("XrootdFile: Negative or excessive size detected: "+lsize+", from "+line);
 			lsize = 1;
 		}
 		
