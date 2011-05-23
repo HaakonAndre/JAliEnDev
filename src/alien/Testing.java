@@ -56,7 +56,7 @@ public class Testing {
 		for (PFN pfn : lfn.whereisReal()){
 			String reason = AuthorizationFactory.fillAccess(pfn, AccessType.READ);
 			
-			System.err.println(pfn.pfn);
+			System.err.println("READ FROM : "+pfn.pfn);
 			System.err.println(pfn.ticket.envelope.getEncryptedEnvelope());
 			System.err.println("****************************************************");
 		}
@@ -67,7 +67,7 @@ public class Testing {
 		
 		String reason = AuthorizationFactory.fillAccess(target, AccessType.WRITE);
 		
-		System.err.println(target.pfn);
+		System.err.println("WRITE TO : "+target.pfn);
 		System.err.println(target.ticket.envelope.getEncryptedEnvelope());
 				
 //		XrootdListing listing = new XrootdListing("pcaliense04.cern.ch:1095", "/02/00002/");
