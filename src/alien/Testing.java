@@ -15,7 +15,11 @@ import lazyj.Utils;
 import utils.XRDChecker;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.protocols.XRDStatus;
@@ -43,7 +47,28 @@ public class Testing {
 	public static void main(String[] args) throws Exception {
 		//removeFZK();
 			
-		XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+		
+		LFN lfn = LFNUtils.getLFN(args[0]);
+				
+		GUID guid = GUIDUtils.getGUID(lfn.guid);
+		
+		for (PFN pfn : lfn.whereisReal()){
+			String reason = AuthorizationFactory.fillAccess(pfn, AccessType.READ);
+			
+			System.err.println(pfn.pfn);
+			System.err.println(pfn.ticket.envelope.getEncryptedEnvelope());
+			System.err.println("****************************************************");
+		}
+		
+		SE targetSE = SEUtils.getSE("ALICE::CERN::SETEST");
+		
+		PFN target = new PFN(guid, targetSE);
+		
+		String reason = AuthorizationFactory.fillAccess(target, AccessType.WRITE);
+		
+		System.err.println(target.pfn);
+		System.err.println(target.ticket.envelope.getEncryptedEnvelope());
 				
 //		XrootdListing listing = new XrootdListing("pcaliense04.cern.ch:1095", "/02/00002/");
 //
