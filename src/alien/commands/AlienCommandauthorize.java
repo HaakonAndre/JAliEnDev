@@ -38,6 +38,8 @@ public class AlienCommandauthorize extends AlienCommand {
 			
 			if(this.alArguments.size() == 3){
 				sJobId = (String) this.alArguments.get(2);
+				if(sJobId.startsWith("-debug")) 
+					sJobId = "0";
 			}
 			
 			if("registerenvs".equals(sAccess)){
