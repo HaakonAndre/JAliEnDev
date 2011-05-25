@@ -411,7 +411,8 @@ public class AuthenEngine {
 //			String p_exxSes, String qos, int p_qosCount, String sitename,
 //			int jobid) {
 //		
-		public String[] authorizeEnvelope(String p_user, String access,HashMap<String,String> optionHash,String p_jobid){
+		public String[] authorizeEnvelope(AliEnPrincipal certOwner, 
+				String p_user, String access,HashMap<String,String> optionHash,String p_jobid){
 		
 
 		boolean evenIfNotExists = false;
