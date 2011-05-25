@@ -3,6 +3,9 @@
  */
 package alien.servlets;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Vector;
@@ -25,6 +28,8 @@ public class TextCache extends ExtendedServlet {
 		public final String value;
 		
 		public final long expires;
+		
+		public int accesses = 0;
 		
 		public CacheValue(final String value, final long expires){
 			this.value = value;
@@ -65,6 +70,8 @@ public class TextCache extends ExtendedServlet {
 								final long expires = entry.getValue().expires; 
 								
 								if (expires < now){
+									notifyEntryRemoved(entry.getKey(), entry.getValue());
+									
 									it.remove();
 								}
 								else{
@@ -115,6 +122,54 @@ public class TextCache extends ExtendedServlet {
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(TextCache.class.getCanonicalName());
 	
+	private static PrintWriter requestLogger = null;
+	
+	/**
+	 * Call this one entry is removed to log the number of hits
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	static synchronized void notifyEntryRemoved(final String key, final CacheValue value){
+		if (requestLogger==null){
+			try {
+				requestLogger = new PrintWriter(new FileWriter("cache.log"));
+			}
+			catch (IOException e) {
+				return;
+			}
+		}
+		
+		requestLogger.println(System.currentTimeMillis()+" "+value.accesses+" "+key);
+	}
+	
+	/**
+	 * @author costing
+	 *
+	 */
+	public static final class NotifyLRUMap extends LRUMap<String, CacheValue>{
+		private static final long serialVersionUID = -9117776082771411054L;
+
+		/**
+		 * @param iCacheSize
+		 */
+		public NotifyLRUMap(final int iCacheSize) {
+			super(iCacheSize);
+		}
+		
+		@Override
+		protected boolean removeEldestEntry(java.util.Map.Entry<String, CacheValue> eldest) {
+			final boolean ret = super.removeEldestEntry(eldest);
+			
+			if (ret){
+				notifyEntryRemoved(eldest.getKey(), eldest.getValue());
+			}
+			
+			return ret;
+		}
+		
+	}
+	
 	private static final Map<String, CacheValue> getNamespace(final String name){
 		Map<String, CacheValue> ret = namespaces.get(name);
 		
@@ -135,7 +190,7 @@ public class TextCache extends ExtendedServlet {
 			size = 50000;
 		}
 		
-		ret = new LRUMap<String, CacheValue>(size);
+		ret = new NotifyLRUMap(size);
 		
 		namespaces.put(name, ret);
 		
@@ -169,6 +224,10 @@ public class TextCache extends ExtendedServlet {
 					final Map<String, CacheValue> cache = entry.getValue();
 					
 					synchronized(cache){
+						for (final Map.Entry<String, CacheValue> entryToDelete: cache.entrySet()){
+							notifyEntryRemoved(entryToDelete.getKey(), entryToDelete.getValue());
+						}
+						
 						cache.clear();
 					}
 				}
@@ -230,6 +289,8 @@ public class TextCache extends ExtendedServlet {
 			pwOut.flush();
 			return;			
 		}
+		
+		existing.accesses++;
 				
 		if (monitor != null)
 			monitor.incrementCounter("HIT_"+ns);
