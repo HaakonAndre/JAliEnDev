@@ -38,7 +38,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			
 				HashMap<String, String> hminfo = (HashMap<String, String>) this.alArguments.get(1);
 				
-				Log.log(Log.INFO, hminfo.toString());
+				Log.log(Log.INFO, "We get this map"+hminfo.toString());
 			}
 			
 		}
