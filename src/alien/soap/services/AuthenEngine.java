@@ -538,7 +538,9 @@ public class AuthenEngine {
 				if (pfn.ticket.envelope.getEncryptedEnvelope() == null) {
 					System.err.println("Sorry ... getInternalEnvelope is null!");
 				} else {
-					envelopes.add(pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\\\&")+"\\\\&oldEnvelope="+
+					envelopes.add(
+							//pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\\\&")+
+							"oldEnvelope="+
 							pfn.ticket.envelope.getEncryptedEnvelope()
 							);
 				}
