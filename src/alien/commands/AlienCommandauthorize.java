@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import lazyj.Log;
+
 public class AlienCommandauthorize extends AlienCommand {
 	public AlienCommandauthorize(final Principal p, final ArrayList<Object> al) throws Exception {
 		super(p, al);
@@ -29,7 +31,15 @@ public class AlienCommandauthorize extends AlienCommand {
 			
 			String sAccess = (String) this.alArguments.get(0);
 			
-			HashMap<String, String> hminfo = (HashMap<String, String>) this.alArguments.get(1);
+			if("registerenvs".equals(sAccess)){
+				ArrayList<String> alInfo = (ArrayList<String>) this.alArguments.get(1);
+			}
+			else{
+			
+				HashMap<String, String> hminfo = (HashMap<String, String>) this.alArguments.get(1);
+				
+				Log.log(Log.INFO, hminfo.toString());
+			}
 			
 		}
 		else{
