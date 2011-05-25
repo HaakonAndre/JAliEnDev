@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import alien.soap.services.AuthenEngine;
+
 import lazyj.Log;
 
 public class AlienCommandauthorize extends AlienCommand {
@@ -28,17 +30,26 @@ public class AlienCommandauthorize extends AlienCommand {
 		
 		if(this.alArguments != null && this.alArguments.size() >= 2){
 			//first argument must be access string
-			
 			String sAccess = (String) this.alArguments.get(0);
+			
+			String sJobId = null;
+			
+			if(this.alArguments.size() == 3){
+				sJobId = (String) this.alArguments.get(2);
+			}
 			
 			if("registerenvs".equals(sAccess)){
 				ArrayList<String> alInfo = (ArrayList<String>) this.alArguments.get(1);
+				
+				
 			}
 			else{
 			
-				HashMap<String, String> hminfo = (HashMap<String, String>) this.alArguments.get(1);
+				HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
+				//site=CERN, lfn=test_deps1.jdl, wishedSE=0, excludeSE=
 				
-				Log.log(Log.INFO, "We get this map"+hminfo.toString());
+				AuthenEngine.authorizeEnvelope(this.pAlienUser.getName(), this.sUsername , sAccess, hmInfo, sJobId);
+		
 			}
 			
 		}
