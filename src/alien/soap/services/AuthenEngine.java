@@ -1,47 +1,17 @@
 package alien.soap.services;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.Security;
-import java.security.Signature;
-import java.security.Key;
-import java.security.SignatureException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.UUID;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
-//import org.bouncycastle.util.encoders.Base64;
-//import org.apache.catalina.util.Base64;
 
 
 
 import alien.catalogue.BookingTable;
-import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -49,14 +19,8 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
-import alien.catalogue.access.XrootDEnvelope;
-import alien.io.Transfer;
-import alien.io.protocols.Protocol;
-import alien.io.protocols.Xrootd_implementation;
 import alien.se.SE;
 import alien.se.SEUtils;
-import alien.services.Base64;
-import alien.tsealedEnvelope.EncryptedAuthzToken;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 
@@ -66,34 +30,32 @@ import alien.user.UserFactory;
  */
 public class AuthenEngine {
 
-	private RSAPrivateKey AuthenPrivKey;
-	private RSAPublicKey AuthenPubKey;
-	private RSAPrivateKey SEPrivKey;
-	private RSAPublicKey SEPubKey;
 
 	@SuppressWarnings("unused")
-	private String verificationEnvelope = "-----BEGIN SEALED CIPHER-----\n"
-			+ "Amkq4hz7cJBtP4SxPyk-8d7OGPokdSewpfqwwIbilH1PfH7hAY7pnVXTLDd1E00+4uNsbwh81Rog\n"
-			+ "oMB4FtTb3ccjqQ9bsQ0fAcXXGboSG1fu-Trk1dg-3os35tjsMcNMEg662qMcdtOLSxCIOsQs5HJP\n"
-			+ "G+DvvH6GL-0xqw3veko=\n"
-			+ "-----END SEALED CIPHER-----\n"
-			+ "-----BEGIN SEALED ENVELOPE-----\n"
-			+ "AAAAgF0cAcKEjcklYmCWQlL+L5nIRS-qBZfShf2X5zbnB4atPhl7RRQBWOhJn1oXcjoNMYtiC0RP\n"
-			+ "raA+oetWr04-C2lkcJkIyI4yO70vBIDF4W-JuR33o9xVA7tVVG6cKyVsOfw5GygJNFBkNrtt8XVx\n"
-			+ "R8L79guHNUUvni0GNZvNrok2KjkmCR+2c9ZQsSdoOk1hIrfd0E71VJsHOa0a0U925aUZOX6ETFt-\n"
-			+ "rh+qfHHJiULAHk9sl-oTvpWYLgyCN0+2ImT9r5R+GpF0e+PiZu9h3kFDuE6N4UTigOI78+hv0daH\n"
-			+ "QuAbEG6-k0QX0UTqE5X45lBAVAx75ddh3xGERywhYqWywwGxSWENjTQ+L9+xMi19CTDWlkuRxmzE\n"
-			+ "kJKN6fxX4mheov64wwDm-e5CiKJIoKYoWxqrMXdI6FyJhL5wuA0jAUzSaVg3y3mGE2CT-mGDEx0E\n"
-			+ "gpho5cT56FWLaBmXlmsJxpVgIvK7Vkf8N4kgibRVkng59gbFnIQkWsUjGNyDqxZRSKJhFj3DR+fP\n"
-			+ "BzxQM5iTPuZxSeUxzAXE5Df9NFV8eeN8W9reXwUJqfl7xbwNI-AAfcRgFAeC9He2y8O15SlkgEog\n"
-			+ "hmOepWKTIfJ8Ei6MKYFZ2DkQh3QCfZ8HPVG3lsI1+1xQBYoOjhPuMk70o2OABO1z56a1EuGTWBS9\n"
-			+ "eUGu-2bJqTbQND5NzQRUzdae9QwfE0F9OsoX5NSg+dYGEHGEjerHN4kNvvBGAj6gVYbieFOdmzm5\n"
-			+ "gNgU+BzVI1yhHmj+maSgmO3RPNePeV5Gn254jCFOhhYzK0CZ8DLLCFja-IiT2NDTrujWo9vXSyt2\n"
-			+ "0TiCaue4IjwbaNzHrp9lR+5ntyg-riU-RIU6d1rNQkjI1nuA4B7vRBySdEykPLtZr1nVN-nwjz2u\n"
-			+ "BhizYsJevVg6-lt+RB29DJdVqjQA-Y5jvRqxaOCIL87RDBp1jZTCBQO-BF4AuDxN-gcvTXMcsc-t\n"
-			+ "JHn3Kaep6d7kq8eTHf-sGQcMc97tUg7Xvu2Wg6sTk5B5W+0npIfn6gElKLogxamThF2+XweZvWOc\n"
-			+ "Y2hfLARZB6Mp4cDe6xcpQm-k-CFxqsyHAiuB-Hyy\n"
-			+ "-----END SEALED ENVELOPE-----\n";
+	
+	
+//	private String verificationEnvelope = "-----BEGIN SEALED CIPHER-----\n"
+//			+ "Amkq4hz7cJBtP4SxPyk-8d7OGPokdSewpfqwwIbilH1PfH7hAY7pnVXTLDd1E00+4uNsbwh81Rog\n"
+//			+ "oMB4FtTb3ccjqQ9bsQ0fAcXXGboSG1fu-Trk1dg-3os35tjsMcNMEg662qMcdtOLSxCIOsQs5HJP\n"
+//			+ "G+DvvH6GL-0xqw3veko=\n"
+//			+ "-----END SEALED CIPHER-----\n"
+//			+ "-----BEGIN SEALED ENVELOPE-----\n"
+//			+ "AAAAgF0cAcKEjcklYmCWQlL+L5nIRS-qBZfShf2X5zbnB4atPhl7RRQBWOhJn1oXcjoNMYtiC0RP\n"
+//			+ "raA+oetWr04-C2lkcJkIyI4yO70vBIDF4W-JuR33o9xVA7tVVG6cKyVsOfw5GygJNFBkNrtt8XVx\n"
+//			+ "R8L79guHNUUvni0GNZvNrok2KjkmCR+2c9ZQsSdoOk1hIrfd0E71VJsHOa0a0U925aUZOX6ETFt-\n"
+//			+ "rh+qfHHJiULAHk9sl-oTvpWYLgyCN0+2ImT9r5R+GpF0e+PiZu9h3kFDuE6N4UTigOI78+hv0daH\n"
+//			+ "QuAbEG6-k0QX0UTqE5X45lBAVAx75ddh3xGERywhYqWywwGxSWENjTQ+L9+xMi19CTDWlkuRxmzE\n"
+//			+ "kJKN6fxX4mheov64wwDm-e5CiKJIoKYoWxqrMXdI6FyJhL5wuA0jAUzSaVg3y3mGE2CT-mGDEx0E\n"
+//			+ "gpho5cT56FWLaBmXlmsJxpVgIvK7Vkf8N4kgibRVkng59gbFnIQkWsUjGNyDqxZRSKJhFj3DR+fP\n"
+//			+ "BzxQM5iTPuZxSeUxzAXE5Df9NFV8eeN8W9reXwUJqfl7xbwNI-AAfcRgFAeC9He2y8O15SlkgEog\n"
+//			+ "hmOepWKTIfJ8Ei6MKYFZ2DkQh3QCfZ8HPVG3lsI1+1xQBYoOjhPuMk70o2OABO1z56a1EuGTWBS9\n"
+//			+ "eUGu-2bJqTbQND5NzQRUzdae9QwfE0F9OsoX5NSg+dYGEHGEjerHN4kNvvBGAj6gVYbieFOdmzm5\n"
+//			+ "gNgU+BzVI1yhHmj+maSgmO3RPNePeV5Gn254jCFOhhYzK0CZ8DLLCFja-IiT2NDTrujWo9vXSyt2\n"
+//			+ "0TiCaue4IjwbaNzHrp9lR+5ntyg-riU-RIU6d1rNQkjI1nuA4B7vRBySdEykPLtZr1nVN-nwjz2u\n"
+//			+ "BhizYsJevVg6-lt+RB29DJdVqjQA-Y5jvRqxaOCIL87RDBp1jZTCBQO-BF4AuDxN-gcvTXMcsc-t\n"
+//			+ "JHn3Kaep6d7kq8eTHf-sGQcMc97tUg7Xvu2Wg6sTk5B5W+0npIfn6gElKLogxamThF2+XweZvWOc\n"
+//			+ "Y2hfLARZB6Mp4cDe6xcpQm-k-CFxqsyHAiuB-Hyy\n"
+//			+ "-----END SEALED ENVELOPE-----\n";
 
 	// private String verificationEnvelope2 = "-----BEGIN SEALED CIPHER-----\n"
 	// +
@@ -136,29 +98,29 @@ public class AuthenEngine {
 	// + "ZvqWHv5Zp0fHKsCVf0lAPulRbaSb\n"
 	// + "-----END SEALED ENVELOPE-----\n";
 
-	private String verificationEnvelope2 = "-----BEGIN SEALED CIPHER-----\n"
-			+ "a8HJt2968uWC3Y5yo3OSh95tfDriXQPQp4cK4MrKe4LVykFTmDECM2kC9rSIbEkuRbbJWjqBhCFL\n"
-			+ "onyaa27eqKJtZvK2wsKNMsFRphAjMKX-yEIq+0X6NvVFxXdhiT3Nh94NCXUD8QmM-dYxJQNuh2fO\n"
-			+ "BjAsIZWMAPTt8LU43pY=\n"
-			+ "-----END SEALED CIPHER-----\n"
-			+ "-----BEGIN SEALED ENVELOPE-----\n"
-			+ "AAAAgF1tObrdN8AciMmqQAbdJK6dP8AsJ9z8HBBOdbGyXwP+4TXVRI-C1Yn7Z85JrmbfZEKHnoa+\n"
-			+ "EvpOAEyt12e5V2UCRy4KcBnZJvAMdAy8+0CMY8S6B12GWpGIXCghzNJaBVfiu52kqTUlbbYB0Auy\n"
-			+ "VsahRrvjVBlaTi3kvgJ8AzeFP1yhLBlEK9Zu0m6h2ZHjk-hAg7Ij1XD+plB9Wm4AkbAXPYW++398\n"
-			+ "Dx08YuT8wIfhGIBqoby1cydrHMD2kP+x6jgReXwgyVoYbt+jJsHhz0c+g4dXAsMC81Zv1ZNWN7sD\n"
-			+ "dOK-zwOCOFVbFf9vflnyfHNSu67b3vqesGFVElFQW+Pea1qmPS7RseYhvr3JIBWZ5PKmOnaXjxBx\n"
-			+ "8vr5ABz5QXX-YzWuLqmspeBmoCzhHHS1tT-phg9DYOA8voo6ulHGZppuMb-8uf5-Lmw6ymyLEjG-\n"
-			+ "Q5+FCDeGSEehxLHeiovHfitWJEJectgq-jROJ07QNIBO5y7bkWURx+hUq7At2jAYuoebFZaUhFZF\n"
-			+ "aWK8ePDGdIGdpMkQ40p32nriSR8YilBe3nsIFXiH3cWTvM1+KEFRBePqA0obORU4qu5M8TwWqlHh\n"
-			+ "0R5iuoKa5HPg+k1frs5dLxoh-hZpFI3M8Z2+FfVIoukqtkgzBWtVdUH5wpNkiaBlsQFLQcYe26dj\n"
-			+ "thL0R-kK3kUUxX7VZ4cMWfUyvbahRrUzhGnkUCBWhxcG9AN+m0Hji1Px9ZHJJlH3oURfHpxFAQm4\n"
-			+ "jxeBE5RACY7IgiAdSvJ4Kx5ralaMidmwSVBzQe7ANX8VmbABPREz5jLp5R8O7w7nf5bEEmuY+iJn\n"
-			+ "eOsMphqH+dL6PqjJrd60bZrOE5WbJHSFwUJwS9D8f1mlXoxGNf8sqQAyp1fG19-3aNDg-pNBAgDt\n"
-			+ "0yYSBouOS03gUjQp68LgDdZaRSclBuOQWtWkMo8vxrm5oE-xOjrOHYdQLI1A1XfAdqMtHKwGLFfD\n"
-			+ "jcFASMGoVrl8yJ6vyPnieFDPaOTOmEte6BlIHwlqJg5etQ78xx5ax17qltZzImj-hKYkqryr9usx\n"
-			+ "	w1iJgq9szENJZfAD4Ii7wfrV1PmgnVgOsxR7IUGi2sCqlpT5lMKAJCr3QhiU+86HybvUqzB0jbpW\n"
-			+ "	Bk0u8RpeBy3zlEKfHOKQJawk1J4ePxgr57-nZxSBH2RY21YsKA==\n"
-			+ "	-----END SEALED ENVELOPE-----\n";
+//	private String verificationEnvelope2 = "-----BEGIN SEALED CIPHER-----\n"
+//			+ "a8HJt2968uWC3Y5yo3OSh95tfDriXQPQp4cK4MrKe4LVykFTmDECM2kC9rSIbEkuRbbJWjqBhCFL\n"
+//			+ "onyaa27eqKJtZvK2wsKNMsFRphAjMKX-yEIq+0X6NvVFxXdhiT3Nh94NCXUD8QmM-dYxJQNuh2fO\n"
+//			+ "BjAsIZWMAPTt8LU43pY=\n"
+//			+ "-----END SEALED CIPHER-----\n"
+//			+ "-----BEGIN SEALED ENVELOPE-----\n"
+//			+ "AAAAgF1tObrdN8AciMmqQAbdJK6dP8AsJ9z8HBBOdbGyXwP+4TXVRI-C1Yn7Z85JrmbfZEKHnoa+\n"
+//			+ "EvpOAEyt12e5V2UCRy4KcBnZJvAMdAy8+0CMY8S6B12GWpGIXCghzNJaBVfiu52kqTUlbbYB0Auy\n"
+//			+ "VsahRrvjVBlaTi3kvgJ8AzeFP1yhLBlEK9Zu0m6h2ZHjk-hAg7Ij1XD+plB9Wm4AkbAXPYW++398\n"
+//			+ "Dx08YuT8wIfhGIBqoby1cydrHMD2kP+x6jgReXwgyVoYbt+jJsHhz0c+g4dXAsMC81Zv1ZNWN7sD\n"
+//			+ "dOK-zwOCOFVbFf9vflnyfHNSu67b3vqesGFVElFQW+Pea1qmPS7RseYhvr3JIBWZ5PKmOnaXjxBx\n"
+//			+ "8vr5ABz5QXX-YzWuLqmspeBmoCzhHHS1tT-phg9DYOA8voo6ulHGZppuMb-8uf5-Lmw6ymyLEjG-\n"
+//			+ "Q5+FCDeGSEehxLHeiovHfitWJEJectgq-jROJ07QNIBO5y7bkWURx+hUq7At2jAYuoebFZaUhFZF\n"
+//			+ "aWK8ePDGdIGdpMkQ40p32nriSR8YilBe3nsIFXiH3cWTvM1+KEFRBePqA0obORU4qu5M8TwWqlHh\n"
+//			+ "0R5iuoKa5HPg+k1frs5dLxoh-hZpFI3M8Z2+FfVIoukqtkgzBWtVdUH5wpNkiaBlsQFLQcYe26dj\n"
+//			+ "thL0R-kK3kUUxX7VZ4cMWfUyvbahRrUzhGnkUCBWhxcG9AN+m0Hji1Px9ZHJJlH3oURfHpxFAQm4\n"
+//			+ "jxeBE5RACY7IgiAdSvJ4Kx5ralaMidmwSVBzQe7ANX8VmbABPREz5jLp5R8O7w7nf5bEEmuY+iJn\n"
+//			+ "eOsMphqH+dL6PqjJrd60bZrOE5WbJHSFwUJwS9D8f1mlXoxGNf8sqQAyp1fG19-3aNDg-pNBAgDt\n"
+//			+ "0yYSBouOS03gUjQp68LgDdZaRSclBuOQWtWkMo8vxrm5oE-xOjrOHYdQLI1A1XfAdqMtHKwGLFfD\n"
+//			+ "jcFASMGoVrl8yJ6vyPnieFDPaOTOmEte6BlIHwlqJg5etQ78xx5ax17qltZzImj-hKYkqryr9usx\n"
+//			+ "	w1iJgq9szENJZfAD4Ii7wfrV1PmgnVgOsxR7IUGi2sCqlpT5lMKAJCr3QhiU+86HybvUqzB0jbpW\n"
+//			+ "	Bk0u8RpeBy3zlEKfHOKQJawk1J4ePxgr57-nZxSBH2RY21YsKA==\n"
+//			+ "	-----END SEALED ENVELOPE-----\n";
 
 	// -----BEGIN SEALED CIPHER-----
 	// qZqt5uMTSFSUYQBbgVllT+0XQxZatiS-NS2UaOSp2AL2M3voA0kEwumVcLHcBX7rOxsUckC3Xn66
@@ -183,74 +145,74 @@ public class AuthenEngine {
 	// mIzk90CAQxANceEOjvnsqxXmPE0Znp1SFm1b5MVYEE1yDa0q1Iu+TIk451vvuPFRzSXpc7vSlN+v
 	// ZvqWHv5Zp0fHKsCVf0lAPulRbaSb
 	// -----END SEALED ENVELOPE-----
-
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) {
-
-		AuthenEngine authen = new AuthenEngine();
-
-		HashSet<SE> empty = new HashSet<SE>();
-		
-		String[] envelopes;
-//		envelopes = authen.authorize("sschrein", 1,
-//				 "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 440, "a00e6c3e-3cbb-11df-8620-0018fe730ae5",
-//				empty, empty, "", 1,
-//				"CERN");
+//
+//	/**
+//	 * @param args
+//	 */
+//	public static void main(String[] args) {
+//
+//		AuthenEngine authen = new AuthenEngine();
+//
+//		HashSet<SE> empty = new HashSet<SE>();
 //		
-//		System.out.println("we received:");
-//		System.out.println(Arrays.toString(envelopes));
-		
-		try {
-
-			authen.loadKeys();
-
-			String localfile = "/tmp/javatestgedoehns";
-			String localcopy = "/tmp/javatestgedoehns.copy";
-			
-			
-			String turl = "root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/13/36958/a891c798-e29c-11df-8143-001e0b24002f";
-			
-//			String turl = "root://pcepalice11.cern.ch:1094//tmp/a891c798-e29c-11df-8143-001e0b24002f";
-
-			String readEnvelope = "turl="+ turl +
-			"&access=read&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=9&se=pcepalice11::CERN::XR1"+
-			"&guid=a891c798-e29c-11df-8143-001e0b24002f&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d&user=ali";
-			
-			String writeEnvelope = "turl="+ turl +
-			"&access=write&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=18&se=pcepalice11::CERN::XR1"+
-			"&guid=a891c798-e29c-11df-8143-001e0b24002f&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d&user=ali";
-			
-			String hashord = "turl-access-lfn-size-se-guid-md5-user";
-			
-
-
-			System.out.println("generated testVO: ");
-		
-			Xrootd_implementation xrootd = new Xrootd_implementation();
-			xrootd.xrdUpload(turl, authen.dryEngine(writeEnvelope, hashord), localfile, 18);
-//			xrootd.xrdGet(turl, authen.dryEngine(readEnvelope, hashord), localcopy, 9);
-
+//		String[] envelopes;
+////		envelopes = authen.authorize("sschrein", 1,
+////				 "/alice/cern.ch/user/s/sschrein/testJDLFULL2.jdl", 440, "a00e6c3e-3cbb-11df-8620-0018fe730ae5",
+////				empty, empty, "", 1,
+////				"CERN");
+////		
+////		System.out.println("we received:");
+////		System.out.println(Arrays.toString(envelopes));
+//		
+//		try {
+//
+//			authen.loadKeys();
+//
+//			String localfile = "/tmp/javatestgedoehns";
+//			String localcopy = "/tmp/javatestgedoehns.copy";
 //			
 //			
-//			System.out.println("xrdcpapmon  -DIFirstConnectMaxCnt 6 root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/14/58772/0fefd262-0148-11e0-be40-001e0b24002f"+
-//					" /tmp/pcepalice11/cache/0fefd262-0148-11e0-be40-001e0b24002f.16591291647188"+
-//					" -OS\\&"
-//			+ 
-//			authen.dryEngine(baseEnvelope, hashord));
-
-
-		} catch (GeneralSecurityException gexcept) {
-			System.out.println("General Securiry exception" + gexcept);
-		} catch (IOException ioexcept) {
-			System.out.println("IO exception" + ioexcept);
-		}
-		
-		
-
-
-	}
+//			String turl = "root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/13/36958/a891c798-e29c-11df-8143-001e0b24002f";
+//			
+////			String turl = "root://pcepalice11.cern.ch:1094//tmp/a891c798-e29c-11df-8143-001e0b24002f";
+//
+//			String readEnvelope = "turl="+ turl +
+//			"&access=read&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=9&se=pcepalice11::CERN::XR1"+
+//			"&guid=a891c798-e29c-11df-8143-001e0b24002f&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d&user=ali";
+//			
+//			String writeEnvelope = "turl="+ turl +
+//			"&access=write&lfn=/pcepalice11/user/a/ali/testing.output.lasttryX&size=18&se=pcepalice11::CERN::XR1"+
+//			"&guid=a891c798-e29c-11df-8143-001e0b24002f&md5=fb8e3a8f65d2bbfd9d4d6de6bef2519d&user=ali";
+//			
+//			String hashord = "turl-access-lfn-size-se-guid-md5-user";
+//			
+//
+//
+//			System.out.println("generated testVO: ");
+//		
+//			Xrootd_implementation xrootd = new Xrootd_implementation();
+//			xrootd.xrdUpload(turl, authen.dryEngine(writeEnvelope, hashord), localfile, 18);
+////			xrootd.xrdGet(turl, authen.dryEngine(readEnvelope, hashord), localcopy, 9);
+//
+////			
+////			
+////			System.out.println("xrdcpapmon  -DIFirstConnectMaxCnt 6 root://pcepalice11.cern.ch:1094//opt/xrootd_storage/xr1/14/58772/0fefd262-0148-11e0-be40-001e0b24002f"+
+////					" /tmp/pcepalice11/cache/0fefd262-0148-11e0-be40-001e0b24002f.16591291647188"+
+////					" -OS\\&"
+////			+ 
+////			authen.dryEngine(baseEnvelope, hashord));
+//
+//
+//		} catch (GeneralSecurityException gexcept) {
+//			System.out.println("General Securiry exception" + gexcept);
+//		} catch (IOException ioexcept) {
+//			System.out.println("IO exception" + ioexcept);
+//		}
+//		
+//		
+//
+//
+//	}
 //
 //	public static String accessString(String P_user, int access,
 //			String P_options, String P_lfn, int size, String P_guid,
@@ -406,11 +368,7 @@ public class AuthenEngine {
 //
 //	}
 
-//	public String[] authorizeEnvelope(String p_user, String access,
-//			String p_lfn, int p_size, String guidrequest, String p_ses,
-//			String p_exxSes, String qos, int p_qosCount, String sitename,
-//			int jobid) {
-//		
+	
 		public List<String> authorizeEnvelope(AliEnPrincipal certOwner, 
 				String p_user, String p_dir, String access,HashMap<String,String> optionHash,String p_jobid){
 		
@@ -419,7 +377,6 @@ public class AuthenEngine {
 		AliEnPrincipal user = UserFactory.getByUsername(p_user);
 
 		AccessType accessRequest = AccessType.NULL;
-		;
 
 		if (access.startsWith("write")) {
 			accessRequest = AccessType.WRITE;
@@ -437,7 +394,9 @@ public class AuthenEngine {
 		
 		int p_size = new Integer(sanitizePerlString(optionHash.get("size"),true));
 		int p_qosCount = new Integer(sanitizePerlString(optionHash.get("writeQosCount"),true));
-		String p_lfn = p_dir + sanitizePerlString(optionHash.get("lfn"),false);
+		String p_lfn = sanitizePerlString(optionHash.get("lfn"),false);
+		if(!p_lfn.startsWith("//"))
+			p_lfn = p_dir + p_lfn;
 		String p_guid = sanitizePerlString(optionHash.get("guid"),false);
 		String p_guidrequest = sanitizePerlString(optionHash.get("guidRequest"),false);
 		String p_md5 = sanitizePerlString(optionHash.get("md5"),false);
@@ -538,11 +497,12 @@ public class AuthenEngine {
 				if (pfn.ticket.envelope.getEncryptedEnvelope() == null) {
 					System.err.println("Sorry ... getInternalEnvelope is null!");
 				} else {
-					envelopes.add(
-							//pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\\\&")+
-							"oldEnvelope="+
+					if (pfn.ticket.envelope.getSignedEnvelope() == null) {
+					envelopes.add(pfn.ticket.envelope.getUnsignedEnvelope().replace("&", "\\&")+
+							"\\&hashord=1\\&signature=1234556\\&oldEnvelope="+
 							pfn.ticket.envelope.getEncryptedEnvelope()
 							);
+					}
 				}
 			}
 		}
@@ -762,111 +722,111 @@ public class AuthenEngine {
 //
 //		return encrTicket;
 //	}
-
-	private void loadKeys() throws GeneralSecurityException, IOException {
-
-//		System.out.println("loading keys...");
-		// String lprivfile = "/home/ron/authen_keys/lpriv.key";
-		// String lpubfile = "/home/ron/authen_keys/lpub.pem";
-		// String rprivfile = "/home/ron/authen_keys/rpriv.pem";
-		// String rpubfile = "/home/ron/authen_keys/rpub.pem";
-
-		Security.addProvider(new BouncyCastleProvider());
-
-		// KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-
-		// TODO : load file locations from configuration
-		File AuthenPrivfile = new File("/home/ron/authen_keys/AuthenPriv.der");
-		byte[] AuthenPriv = new byte[(int) AuthenPrivfile.length()];
-		FileInputStream fis = new FileInputStream(AuthenPrivfile);
-		fis.read(AuthenPriv);
-		fis.close();
-
-		PKCS8EncodedKeySpec AuthenPrivSpec = new PKCS8EncodedKeySpec(AuthenPriv);
-		System.out.print("loading AuthenPriv...");
-		this.AuthenPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
-				.generatePrivate(AuthenPrivSpec);
-
-		File SEPrivfile = new File("/home/ron/authen_keys/SEPriv.der");
-		byte[] SEPriv = new byte[(int) SEPrivfile.length()];
-		fis = new FileInputStream(SEPrivfile);
-		fis.read(SEPriv);
-		fis.close();
-
-		PKCS8EncodedKeySpec SEPrivSpec = new PKCS8EncodedKeySpec(SEPriv);
-//		System.out.println("loading SEPriv...");
-		this.SEPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
-				.generatePrivate(SEPrivSpec);
-
-		//
-		//
-
-		// byte[] lpriv = (new BufferedReader(new
-		// FileReader(lprivfile))).toString().getBytes();
-		// byte[] lpub = (new BufferedReader(new
-		// FileReader(lpubfile))).toString().getBytes();
-		// byte[] rpriv = (new BufferedReader(new
-		// FileReader(rprivfile))).toString().getBytes();
-		// byte[] rpub = (new BufferedReader(new
-		// FileReader(rpubfile))).toString().getBytes();
-
-		CertificateFactory certFact = CertificateFactory.getInstance("X.509");
-
-		File AuthenPubfile = new File("/home/ron/authen_keys/AuthenPub.crt");
-//		System.out.println("loading SEPub...");
-		X509Certificate AuthenPub = (X509Certificate) certFact
-				.generateCertificate(new BufferedInputStream(
-						new FileInputStream(AuthenPubfile)));
-		this.AuthenPubKey = (RSAPublicKey) AuthenPub.getPublicKey();
-
-		File SEPubfile = new File("/home/ron/authen_keys/SEPub.crt");
-//		System.out.println("loading rpub...");
-
-		X509Certificate SEPub = (X509Certificate) certFact
-				.generateCertificate(new BufferedInputStream(
-						new FileInputStream(SEPubfile)));
-		this.SEPubKey = (RSAPublicKey) SEPub.getPublicKey();
-
-		// this.lpub = (RSAPublicKey) ((X509CertificateObject) new PEMReader(new
-		// BufferedReader(new FileReader(lpub))).readObject());
-
-		// this.lpub = (RSAPublicKey) ((KeyPair) new PEMReader(new
-		// BufferedReader(
-		// new FileReader(lpub))).readObject()).getPublic();
-
-		// this.rpriv = (RSAPrivateKey) ((X509CertificateObject) new PEMReader(
-		// new BufferedReader(new FileReader(rpriv))).readObject());
-		//
-		// this.rpub = (RSAPublicKey) ((X509CertificateObject) new PEMReader(new
-		// BufferedReader(
-		// new FileReader(rpub))).readObject());
-
-		System.out.println("done!");
-
-	}
-
-	private String dryEngine(String baseEnvelope, String hashord) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-		
-		
-		long issued = System.currentTimeMillis() / 1000L;
-		long expires = issued + 86400;
-
-		String toBeSigned = baseEnvelope
-				+ "&issuer=JAuthenX&issued=" + issued + "&expires="
-				+ expires + "&hashord=" + hashord + "-issuer-issued-expires-hashord";
-				
-		Signature signer = Signature.getInstance("SHA384withRSA");
-		signer.initSign(AuthenPrivKey);
-		signer.update(toBeSigned.getBytes());
-		
-
-		byte[] rawsignature = new byte[1024];
-		rawsignature = signer.sign();
-
-		toBeSigned = toBeSigned + "&signature="
-				+ String.valueOf(Base64.encode(rawsignature));
-		return toBeSigned;
-	}
+//
+//	private void loadKeys() throws GeneralSecurityException, IOException {
+//
+////		System.out.println("loading keys...");
+//		// String lprivfile = "/home/ron/authen_keys/lpriv.key";
+//		// String lpubfile = "/home/ron/authen_keys/lpub.pem";
+//		// String rprivfile = "/home/ron/authen_keys/rpriv.pem";
+//		// String rpubfile = "/home/ron/authen_keys/rpub.pem";
+//
+//		Security.addProvider(new BouncyCastleProvider());
+//
+//		// KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+//
+//	
+//		File AuthenPrivfile = new File("/home/ron/authen_keys/AuthenPriv.der");
+//		byte[] AuthenPriv = new byte[(int) AuthenPrivfile.length()];
+//		FileInputStream fis = new FileInputStream(AuthenPrivfile);
+//		fis.read(AuthenPriv);
+//		fis.close();
+//
+//		PKCS8EncodedKeySpec AuthenPrivSpec = new PKCS8EncodedKeySpec(AuthenPriv);
+//		System.out.print("loading AuthenPriv...");
+//		this.AuthenPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
+//				.generatePrivate(AuthenPrivSpec);
+//
+//		File SEPrivfile = new File("/home/ron/authen_keys/SEPriv.der");
+//		byte[] SEPriv = new byte[(int) SEPrivfile.length()];
+//		fis = new FileInputStream(SEPrivfile);
+//		fis.read(SEPriv);
+//		fis.close();
+//
+//		PKCS8EncodedKeySpec SEPrivSpec = new PKCS8EncodedKeySpec(SEPriv);
+////		System.out.println("loading SEPriv...");
+//		this.SEPrivKey = (RSAPrivateKey) KeyFactory.getInstance("RSA")
+//				.generatePrivate(SEPrivSpec);
+//
+//		//
+//		//
+//
+//		// byte[] lpriv = (new BufferedReader(new
+//		// FileReader(lprivfile))).toString().getBytes();
+//		// byte[] lpub = (new BufferedReader(new
+//		// FileReader(lpubfile))).toString().getBytes();
+//		// byte[] rpriv = (new BufferedReader(new
+//		// FileReader(rprivfile))).toString().getBytes();
+//		// byte[] rpub = (new BufferedReader(new
+//		// FileReader(rpubfile))).toString().getBytes();
+//
+//		CertificateFactory certFact = CertificateFactory.getInstance("X.509");
+//
+//		File AuthenPubfile = new File("/home/ron/authen_keys/AuthenPub.crt");
+////		System.out.println("loading SEPub...");
+//		X509Certificate AuthenPub = (X509Certificate) certFact
+//				.generateCertificate(new BufferedInputStream(
+//						new FileInputStream(AuthenPubfile)));
+//		this.AuthenPubKey = (RSAPublicKey) AuthenPub.getPublicKey();
+//
+//		File SEPubfile = new File("/home/ron/authen_keys/SEPub.crt");
+////		System.out.println("loading rpub...");
+//
+//		X509Certificate SEPub = (X509Certificate) certFact
+//				.generateCertificate(new BufferedInputStream(
+//						new FileInputStream(SEPubfile)));
+//		this.SEPubKey = (RSAPublicKey) SEPub.getPublicKey();
+//
+//		// this.lpub = (RSAPublicKey) ((X509CertificateObject) new PEMReader(new
+//		// BufferedReader(new FileReader(lpub))).readObject());
+//
+//		// this.lpub = (RSAPublicKey) ((KeyPair) new PEMReader(new
+//		// BufferedReader(
+//		// new FileReader(lpub))).readObject()).getPublic();
+//
+//		// this.rpriv = (RSAPrivateKey) ((X509CertificateObject) new PEMReader(
+//		// new BufferedReader(new FileReader(rpriv))).readObject());
+//		//
+//		// this.rpub = (RSAPublicKey) ((X509CertificateObject) new PEMReader(new
+//		// BufferedReader(
+//		// new FileReader(rpub))).readObject());
+//
+//		System.out.println("done!");
+//
+//	}
+//
+//	private String dryEngine(String baseEnvelope, String hashord) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+//		
+//		
+//		long issued = System.currentTimeMillis() / 1000L;
+//		long expires = issued + 86400;
+//
+//		String toBeSigned = baseEnvelope
+//				+ "&issuer=JAuthenX&issued=" + issued + "&expires="
+//				+ expires + "&hashord=" + hashord + "-issuer-issued-expires-hashord";
+//				
+//		Signature signer = Signature.getInstance("SHA384withRSA");
+//		signer.initSign(AuthenPrivKey);
+//		signer.update(toBeSigned.getBytes());
+//		
+//
+//		byte[] rawsignature = new byte[1024];
+//		rawsignature = signer.sign();
+//
+//		toBeSigned = toBeSigned + "&signature="
+//				+ String.valueOf(Base64.encode(rawsignature));
+//		return toBeSigned;
+//	}
 }
 
 	
