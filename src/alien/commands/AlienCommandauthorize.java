@@ -51,7 +51,7 @@ public class AlienCommandauthorize extends AlienCommand {
 				//site=CERN, lfn=test_deps1.jdl, wishedSE=0, excludeSE=
 				
 				AuthenEngine au = new AuthenEngine();
-				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername , sAccess, hmInfo, sJobId);
+				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, hmInfo, sJobId);
 			}
 			
 		}
