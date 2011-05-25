@@ -24,7 +24,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 		//we need to have at least 2 parameters
 		
-		if(this.alArguments != null && this.alArguments.size() > 2){
+		if(this.alArguments != null && this.alArguments.size() >= 2){
 			//first argument must be access string
 			
 			String sAccess = (String) this.alArguments.get(0);
