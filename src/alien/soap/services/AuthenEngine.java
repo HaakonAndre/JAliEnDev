@@ -406,10 +406,13 @@ public class AuthenEngine {
 //
 //	}
 
-	public String[] authorizeEnvelope(String p_user, String access,
-			String p_lfn, int p_size, String guidrequest, String p_ses,
-			String p_exxSes, String qos, int p_qosCount, String sitename,
-			int jobid) {
+//	public String[] authorizeEnvelope(String p_user, String access,
+//			String p_lfn, int p_size, String guidrequest, String p_ses,
+//			String p_exxSes, String qos, int p_qosCount, String sitename,
+//			int jobid) {
+//		
+		public String[] authorizeEnvelope(String p_user, String access,HashMap<String,String> optionHash,String p_jobid){
+		
 
 		boolean evenIfNotExists = false;
 		AliEnPrincipal user = UserFactory.getByUsername(p_user);
@@ -428,33 +431,44 @@ public class AuthenEngine {
 			System.out.println("illegal access type!");
 			return null;
 		}
+		int jobid = new Integer(sanitizePerlString(p_jobid,true));
 
-		int size = new Integer(p_size);
-		int qosCount = new Integer(p_qosCount);
+		
+		int p_size = new Integer(sanitizePerlString(optionHash.get("size"),true));
+		int p_qosCount = new Integer(sanitizePerlString(optionHash.get("writeQosCount"),true));
+		String p_lfn = sanitizePerlString(optionHash.get("lfn"),false);
+		String p_guid = sanitizePerlString(optionHash.get("guid"),false);
+		String p_guidrequest = sanitizePerlString(optionHash.get("guidRequest"),false);
+		String p_md5 = sanitizePerlString(optionHash.get("md5"),false);
+		String p_qos = sanitizePerlString(optionHash.get("writeQos"),false);
+		String p_pfn = sanitizePerlString(optionHash.get("pfn"),false);
+		String p_links = sanitizePerlString(optionHash.get("links"),false);
+		String p_site = sanitizePerlString(optionHash.get("site"),false);
+
 
 		Set<SE> ses = new LinkedHashSet<SE>();
-		for (String sename : Arrays.asList(p_ses.split(";"))) {
+		for (String sename : Arrays.asList(sanitizePerlString(optionHash.get("wishedSE"),false).split(";"))) {
 			SE se = SEUtils.getSE(sename);
 			if (se != null)
 				ses.add(se);
 		}
 
 		Set<SE> exxSes = new LinkedHashSet<SE>();
-		for (String sename : Arrays.asList(p_ses.split(";"))) {
+		for (String sename : Arrays.asList(sanitizePerlString(optionHash.get("excludeSE"),false).split(";"))) {
 			SE se = SEUtils.getSE(sename);
 			if (se != null)
 				ses.add(se);
 		}
 
-		if ((ses.size() + qosCount) <= 0) {
-			qos = "disk";
-			qosCount = 2;
+		if ((ses.size() + p_qosCount) <= 0) {
+			p_qos = "disk";
+			p_qosCount = 2;
 		}
 
 		System.out.println("we are invoked:  user: " + p_user + "\naccess: "
-				+ access + "\nlfn: " + p_lfn + "\nsize: " + size
-				+ "\nrequestguid: " + guidrequest + "\nqos: " + qos
-				+ "\nqosCount: " + qosCount + "\nsitename: " + sitename);
+				+ access + "\nlfn: " + p_lfn + "\nsize: " + p_size
+				+ "\nrequestguid: " + p_guidrequest + "\nqos: " + p_qos
+				+ "\nqosCount: " + p_qosCount + "\nsitename: " + p_site);
 
 		LFN lfn = null;
 		GUID guid = null;
@@ -465,7 +479,7 @@ public class AuthenEngine {
 			guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
 		}
 
-		List<PFN> pfns = new ArrayList<PFN>(ses.size() + qosCount);
+		List<PFN> pfns = new ArrayList<PFN>(ses.size() + p_qosCount);
 
 		try {
 			if (accessRequest == AccessType.WRITE) {
@@ -476,12 +490,12 @@ public class AuthenEngine {
 							jobid, se));
 				}
 
-				if (qosCount > 0) {
-					List<SE> SEs = SEUtils.getClosestSEs(sitename);
+				if (p_qosCount > 0) {
+					List<SE> SEs = SEUtils.getClosestSEs(p_site);
 					final Iterator<SE> it = SEs.iterator();
 
 					int counter = 0;
-					while (counter < qosCount && it.hasNext()) {
+					while (counter < p_qosCount && it.hasNext()) {
 						SE se = it.next();
 						if ((!ses.contains(se)) && (!exxSes.contains(se))) {
 							pfns.add(BookingTable.bookForWriting(user, lfn,
@@ -495,7 +509,7 @@ public class AuthenEngine {
 			}
 			if (accessRequest == AccessType.READ) {
 
-				pfns = SEUtils.sortBySite(guid.getPFNs(), sitename, false);
+				pfns = SEUtils.sortBySite(guid.getPFNs(), p_site, false);
 
 				for (PFN pfn : pfns) {
 					System.err.println(pfn);
@@ -544,8 +558,14 @@ public class AuthenEngine {
 	}
 	
 	
-	
-	
+	public String sanitizePerlString(String maybeNull,boolean isInteger){
+		if(maybeNull == null){
+			if(isInteger)
+				return "0";
+			return "";
+			}
+		return maybeNull;
+	}
 	
 	
 	
