@@ -2,6 +2,7 @@ package alien.catalogue;
 
 import java.io.IOException;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -280,5 +281,35 @@ public class BookingTable {
 			return "'"+Format.escSQL(s)+"'";
 
 		return "null";
+	}
+	
+	/**
+	 * Get the object for a booked PFN
+	 * 
+	 * @param pfn 
+	 * @return the object, if exactly one entry exists, <code>null</code> if it was not booked
+	 * @throws IOException if any problem (more than one entry, invalid SE ...)
+	 */
+	public static PFN getBookedPFN(final String pfn) throws IOException{
+		final DBFunctions db = getDB();
+		
+		db.query("SELECT binary2string(guid), se FROM LFN_BOOKED WHERE pfn="+e(pfn)+";");
+		
+		final int count = db.count();
+		
+		if (count==0)
+			return null;
+		
+		if (count>1)
+			throw new IOException("More than one entry with this pfn: '"+pfn+"'");
+		
+		final GUID guid = GUIDUtils.getGUID(UUID.fromString(db.gets(1)), true);
+		
+		final SE se = SEUtils.getSE(db.gets(2));
+		
+		if (se==null)
+			throw new IOException("This SE doesn't exist: '"+db.gets(2)+"' for '"+pfn+"'");
+		
+		return new PFN(guid, se);
 	}
 }
