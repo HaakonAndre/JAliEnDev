@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import lazyj.Format;
+
 
 
 import alien.catalogue.BookingTable;
@@ -498,10 +500,12 @@ public class AuthenEngine {
 					System.err.println("Sorry ... getInternalEnvelope is null!");
 				} else {
 					if (pfn.ticket.envelope.getSignedEnvelope() == null) {
-					envelopes.add(pfn.ticket.envelope.getUnsignedEnvelope().replace("&", "\\&")+
+					envelopes.add(
+							Format.escHtml(
+							pfn.ticket.envelope.getUnsignedEnvelope().replace("&", "\\&")+
 							"\\&hashord=1\\&signature=1234556\\&oldEnvelope="+
 							pfn.ticket.envelope.getEncryptedEnvelope()
-							);
+							));
 					}
 				}
 			}
