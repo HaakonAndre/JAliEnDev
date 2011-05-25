@@ -412,7 +412,7 @@ public class AuthenEngine {
 //			int jobid) {
 //		
 		public List<String> authorizeEnvelope(AliEnPrincipal certOwner, 
-				String p_user, String access,HashMap<String,String> optionHash,String p_jobid){
+				String p_user, String p_dir, String access,HashMap<String,String> optionHash,String p_jobid){
 		
 
 		boolean evenIfNotExists = false;
@@ -437,7 +437,7 @@ public class AuthenEngine {
 		
 		int p_size = new Integer(sanitizePerlString(optionHash.get("size"),true));
 		int p_qosCount = new Integer(sanitizePerlString(optionHash.get("writeQosCount"),true));
-		String p_lfn = sanitizePerlString(optionHash.get("lfn"),false);
+		String p_lfn = p_dir + sanitizePerlString(optionHash.get("lfn"),false);
 		String p_guid = sanitizePerlString(optionHash.get("guid"),false);
 		String p_guidrequest = sanitizePerlString(optionHash.get("guidRequest"),false);
 		String p_md5 = sanitizePerlString(optionHash.get("md5"),false);
