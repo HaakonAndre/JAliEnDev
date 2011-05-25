@@ -140,14 +140,14 @@ public class XrootDEnvelope implements Serializable {
 		
 		final SE se = SEUtils.getSE(pfn.seNumber);
 		
-		String ret = "turl=" + Format.encode(pfn.getPFN()) + "&access=" + type.toString();
+		String ret = "turl=" + pfn.getPFN() + "&access=" + type.toString();
 		
 		if (lfns!=null && lfns.size()>0)
-			ret += "&lfn=" + Format.encode(lfns.iterator().next().getCanonicalName());
+			ret += "&lfn=" + lfns.iterator().next().getCanonicalName();
 	
-		ret += "&guid=" + Format.encode(guid.getName()) +
-		"&se=" + Format.encode(se.getName()) +
-		"&size=" + guid.size + "&md5="+ Format.encode(guid.md5);
+		ret += "&guid=" + guid.getName() +
+		"&se=" + se.getName() +
+		"&size=" + guid.size + "&md5="+ guid.md5;
 		
 		return ret;
 	}
