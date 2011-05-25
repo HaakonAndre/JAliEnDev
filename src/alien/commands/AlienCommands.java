@@ -27,9 +27,13 @@ public class AlienCommands {
 		else{
 			String sLocalCommand = (String) al.get(2);
 			
-			if("ls".equals(sLocalCommand)){
-				Log.log(Log.INFO, "Command received = \""+sLocalCommand+"\"");	
+			Log.log(Log.INFO, "Command received = \""+sLocalCommand+"\"");
+			
+			if("ls".equals(sLocalCommand)){	
 				return new AlienCommandls(p, al);
+			}
+			else if("authorize".equals(sLocalCommand)){
+				return new AlienCommandauthorize(p, al);
 			}
 			else return null;
 		}

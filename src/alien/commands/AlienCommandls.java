@@ -28,7 +28,7 @@ public class AlienCommandls extends AlienCommand {
 		super(p, al);
 	}
 
-	public AlienCommandls (final Principal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List alArguments) throws Exception {
+	public AlienCommandls (final Principal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
 		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
 	}
 

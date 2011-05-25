@@ -53,7 +53,7 @@ public abstract class AlienCommand {
 	 * @param the array containing all the information required to run the command
 	 * @throws Exception
 	 */
-	public AlienCommand(final Principal pAlienUser, final List al) throws Exception{
+	public AlienCommand(final Principal pAlienUser, final List<?> al) throws Exception{
 
 		if(pAlienUser == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
@@ -71,10 +71,12 @@ public abstract class AlienCommand {
 
 			int alSize = al.size();
 			Log.log(Log.INFO, "Array size = "+alSize);
+			
 			for(Object o: al){
 				String ss = (String) o;
 				Log.log(Log.INFO, "Array member = \""+ss+"\"");
 			}
+			
 			List alLocalArguments = null; 
 
 			if(alSize > 3){
@@ -157,7 +159,7 @@ public abstract class AlienCommand {
 	/**
 	 * @return the command output
 	 */
-	public abstract Object executeCommand();
+	public abstract Object executeCommand() throws Exception;
 
 
 	@Override
