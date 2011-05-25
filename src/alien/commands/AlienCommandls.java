@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import lazyj.Format;
 import lazyj.Log;
 
 import alien.catalogue.LFN;
@@ -125,8 +126,8 @@ public class AlienCommandls extends AlienCommand {
 					}
 
 					for(LFN localLFN : lLFN){
-						alrcValues.add(bL ? localLFN.getName() : localLFN.getFileName());
-						alrcMessages.add( bL ? localLFN.getName()+"\n" : localLFN.getFileName()+"\n");
+						alrcValues.add(bL ? Format.escHtml(localLFN.getName()) : Format.escHtml(localLFN.getFileName()));
+//						alrcMessages.add( bL ? localLFN.getName()+"\n" : localLFN.getFileName()+"\n");
 					}
 				}
 				else{
