@@ -411,7 +411,7 @@ public class AuthenEngine {
 //			String p_exxSes, String qos, int p_qosCount, String sitename,
 //			int jobid) {
 //		
-		public String[] authorizeEnvelope(AliEnPrincipal certOwner, 
+		public List<String> authorizeEnvelope(AliEnPrincipal certOwner, 
 				String p_user, String access,HashMap<String,String> optionHash,String p_jobid){
 		
 
@@ -551,10 +551,7 @@ public class AuthenEngine {
 			System.out.println("we'll send an envelope:    " + it.next());
 		}
 		
-		if (!(envelopes.size() > 0))
-			return new String[0];
-
-		return (String[]) envelopes.toArray();
+		return envelopes;
 
 	}
 	
