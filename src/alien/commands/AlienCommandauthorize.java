@@ -7,15 +7,16 @@ import java.util.HashMap;
 import java.util.List;
 
 import alien.soap.services.AuthenEngine;
+import alien.user.AliEnPrincipal;
 
 import lazyj.Log;
 
 public class AlienCommandauthorize extends AlienCommand {
-	public AlienCommandauthorize(final Principal p, final ArrayList<Object> al) throws Exception {
+	public AlienCommandauthorize(final AliEnPrincipal p, final ArrayList<Object> al) throws Exception {
 		super(p, al);
 	}
 
-	public AlienCommandauthorize (final Principal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List alArguments) throws Exception {
+	public AlienCommandauthorize (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List alArguments) throws Exception {
 		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
 	}
 	
@@ -25,7 +26,8 @@ public class AlienCommandauthorize extends AlienCommand {
 
 		ArrayList<String> alrcValues = new ArrayList<String>();
 		ArrayList<String> alrcMessages = new ArrayList<String>();
-
+		alrcMessages.add("This is just a simple log\n");
+		
 		//we need to have at least 2 parameters
 		
 		if(this.alArguments != null && this.alArguments.size() >= 2){
@@ -48,14 +50,17 @@ public class AlienCommandauthorize extends AlienCommand {
 				HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
 				//site=CERN, lfn=test_deps1.jdl, wishedSE=0, excludeSE=
 				
-				AuthenEngine.authorizeEnvelope(this.pAlienUser.getName(), this.sUsername , sAccess, hmInfo, sJobId);
-		
+				AuthenEngine au = new AuthenEngine();
+				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername , sAccess, hmInfo, sJobId);
 			}
 			
 		}
 		else{
 			throw new Exception("Invalid authorize command arguments");		
 		}
+		
+		hmReturn.put("rcvalues", alrcValues);
+		hmReturn.put("rcmessages", alrcMessages);
 		
 		return hmReturn;
 	}

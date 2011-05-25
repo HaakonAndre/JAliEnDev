@@ -10,6 +10,7 @@ import lazyj.Log;
 
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.user.AliEnPrincipal;
 
 public class AlienCommandls extends AlienCommand {
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
@@ -24,11 +25,11 @@ public class AlienCommandls extends AlienCommand {
 	private boolean bL = false;
 	private boolean bA = false;
 
-	public AlienCommandls(final Principal p, final ArrayList<Object> al) throws Exception {
+	public AlienCommandls(final AliEnPrincipal p, final ArrayList<Object> al) throws Exception {
 		super(p, al);
 	}
 
-	public AlienCommandls (final Principal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
+	public AlienCommandls (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
 		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
 	}
 

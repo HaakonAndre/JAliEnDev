@@ -3,6 +3,8 @@ package alien.commands;
 import java.security.Principal;
 import java.util.ArrayList;
 
+import alien.user.AliEnPrincipal;
+
 import lazyj.Log;
 
 /**
@@ -17,7 +19,7 @@ public class AlienCommands {
 	 * @return AlienCommand implementation for the requested command
 	 * @throws Exception
 	 */
-	public static AlienCommand getAlienCommand(Principal p, ArrayList<Object> al) throws Exception{
+	public static AlienCommand getAlienCommand(AliEnPrincipal p, ArrayList<Object> al) throws Exception{
 		if(p == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
 		

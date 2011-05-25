@@ -4,6 +4,8 @@ import java.util.List;
 
 import java.security.Principal;
 
+import alien.user.AliEnPrincipal;
+
 /**
  * @since 2011, 12 May
  * @author Alina Grigoras
@@ -18,7 +20,7 @@ public abstract class AlienCommand {
 	/**
 	 * the principal received from http request
 	 */
-	protected Principal pAlienUser;
+	protected AliEnPrincipal pAlienUser;
 
 	/**
 	 * the username received from SOAP Request
@@ -50,7 +52,7 @@ public abstract class AlienCommand {
 	 * @param the array containing all the information required to run the command
 	 * @throws Exception
 	 */
-	public AlienCommand(final Principal pAlienUser, final List<?> al) throws Exception{
+	public AlienCommand(final AliEnPrincipal pAlienUser, final List<?> al) throws Exception{
 
 		if(pAlienUser == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
@@ -89,7 +91,7 @@ public abstract class AlienCommand {
 	 * @param alArguments
 	 * @throws Exception
 	 */
-	public AlienCommand (final Principal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception{
+	public AlienCommand (final AliEnPrincipal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception{
 		if(sUsername == null || sUsername.length() == 0)
 			throw new Exception("Empty username");
 
