@@ -70,7 +70,7 @@ public class TextCache extends ExtendedServlet {
 								final long expires = entry.getValue().expires; 
 								
 								if (expires < now){
-									notifyEntryRemoved(entry.getKey(), entry.getValue());
+									notifyEntryRemoved(ns, entry.getKey(), entry.getValue());
 									
 									it.remove();
 								}
@@ -127,10 +127,11 @@ public class TextCache extends ExtendedServlet {
 	/**
 	 * Call this one entry is removed to log the number of hits
 	 * 
+	 * @param namespace 
 	 * @param key
 	 * @param value
 	 */
-	static synchronized void notifyEntryRemoved(final String key, final CacheValue value){
+	static synchronized void notifyEntryRemoved(final String namespace, final String key, final CacheValue value){
 		if (requestLogger==null){
 			try {
 				requestLogger = new PrintWriter(new FileWriter("cache.log"));
@@ -140,7 +141,7 @@ public class TextCache extends ExtendedServlet {
 			}
 		}
 		
-		requestLogger.println(System.currentTimeMillis()+" "+value.accesses+" "+key);
+		requestLogger.println(System.currentTimeMillis()+" "+value.accesses+" "+namespace+" "+key);
 	}
 	
 	/**
@@ -150,19 +151,24 @@ public class TextCache extends ExtendedServlet {
 	public static final class NotifyLRUMap extends LRUMap<String, CacheValue>{
 		private static final long serialVersionUID = -9117776082771411054L;
 
+		private final String namespace;
+		
 		/**
 		 * @param iCacheSize
+		 * @param namespace 
 		 */
-		public NotifyLRUMap(final int iCacheSize) {
+		public NotifyLRUMap(final int iCacheSize, final String namespace) {
 			super(iCacheSize);
+			
+			this.namespace = namespace;
 		}
 		
 		@Override
-		protected boolean removeEldestEntry(java.util.Map.Entry<String, CacheValue> eldest) {
+		protected boolean removeEldestEntry(final java.util.Map.Entry<String, CacheValue> eldest) {
 			final boolean ret = super.removeEldestEntry(eldest);
 			
 			if (ret){
-				notifyEntryRemoved(eldest.getKey(), eldest.getValue());
+				notifyEntryRemoved(namespace, eldest.getKey(), eldest.getValue());
 			}
 			
 			return ret;
@@ -190,7 +196,7 @@ public class TextCache extends ExtendedServlet {
 			size = 50000;
 		}
 		
-		ret = new NotifyLRUMap(size);
+		ret = new NotifyLRUMap(size, name);
 		
 		namespaces.put(name, ret);
 		
@@ -225,7 +231,7 @@ public class TextCache extends ExtendedServlet {
 					
 					synchronized(cache){
 						for (final Map.Entry<String, CacheValue> entryToDelete: cache.entrySet()){
-							notifyEntryRemoved(entryToDelete.getKey(), entryToDelete.getValue());
+							notifyEntryRemoved(entry.getKey(), entryToDelete.getKey(), entryToDelete.getValue());
 						}
 						
 						cache.clear();
