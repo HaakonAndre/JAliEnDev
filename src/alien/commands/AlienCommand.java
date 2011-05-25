@@ -3,9 +3,6 @@ package alien.commands;
 import java.util.List;
 
 import java.security.Principal;
-import java.util.ArrayList;
-
-import lazyj.Log;
 
 /**
  * @since 2011, 12 May
@@ -41,7 +38,7 @@ public abstract class AlienCommand {
 	/**
 	 * 
 	 */
-	protected List alArguments ;
+	protected List<?> alArguments ;
 
 	/**
 	 * Constructor based on the array received from the request <br />
@@ -70,22 +67,11 @@ public abstract class AlienCommand {
 			String sLocalCommand = (String) al.get(2);
 
 			int alSize = al.size();
-			Log.log(Log.INFO, "Array size = "+alSize);
 			
-			for(Object o: al){
-				String ss = (String) o;
-				Log.log(Log.INFO, "Array member = \""+ss+"\"");
-			}
-			
-			List alLocalArguments = null; 
+			List<?> alLocalArguments = null; 
 
 			if(alSize > 3){
-				alLocalArguments = (List) al.subList(3, alSize);
-
-				for (Object oL: alLocalArguments){
-					String sss = (String) oL;
-					Log.log(Log.INFO, "Command arg= \""+sss+"\"");
-				}
+				alLocalArguments = (List<?>) al.subList(3, alSize);
 			}
 
 
@@ -103,7 +89,7 @@ public abstract class AlienCommand {
 	 * @param alArguments
 	 * @throws Exception
 	 */
-	public AlienCommand (final Principal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List alArguments) throws Exception{
+	public AlienCommand (final Principal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception{
 		if(sUsername == null || sUsername.length() == 0)
 			throw new Exception("Empty username");
 
@@ -144,7 +130,7 @@ public abstract class AlienCommand {
 	/**
 	 * @return the arguments of the command issued by the user. This can be null or empty
 	 */
-	public List getAlArguments() {
+	public List<?> getAlArguments() {
 		return alArguments;
 	}
 
