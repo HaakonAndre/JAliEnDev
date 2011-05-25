@@ -26,8 +26,11 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.UUID;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -37,14 +40,21 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 
+import alien.catalogue.BookingTable;
 import alien.catalogue.CatalogEntity;
+import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.XrootDEnvelope;
+import alien.io.Transfer;
+import alien.io.protocols.Protocol;
 import alien.io.protocols.Xrootd_implementation;
 import alien.se.SE;
+import alien.se.SEUtils;
 import alien.services.Base64;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 import alien.user.AliEnPrincipal;
@@ -396,63 +406,142 @@ public class AuthenEngine {
 //
 //	}
 
-	
-	
-	
-	
+	public String[] authorizeEnvelope(String p_user, String access,
+			String p_lfn, int p_size, String guidrequest, String p_ses,
+			String p_exxSes, String qos, int p_qosCount, String sitename,
+			int jobid) {
 
-	public String[] authorizeEnvelope(String P_user, int access, 
-			String P_lfn, int size, String P_guid, Set<SE> ses, Set<SE> exxSes,
-			String P_qos, int qosCount, String P_sitename) {
-		
-		
+		boolean evenIfNotExists = false;
+		AliEnPrincipal user = UserFactory.getByUsername(p_user);
 
-		System.out.println("we are invoked:  P_user: " + P_user + "\naccess: " + access 
-			+ "\nP_lfn: " + 	
-			 P_lfn + "\nsize: " + size + "\nP_guid: " +  P_guid 
-			 + "\nP_qos: " + P_qos + "\nqosCount: " +  qosCount + "\nP_sitename: " +  P_sitename);
-		
-		ArrayList<String> signedEnvelopes = null;
-		
-		AuthenEngine authen = new AuthenEngine();
-		try {
+		AccessType accessRequest = AccessType.NULL;
+		;
 
-			AliEnPrincipal user = UserFactory.getByUsername(P_user);
-
-//			CatalogueAccess ca = AuthorizationFactory.requestAccess(user,
-//					P_lfn, access);
-//
-//			XrootDEnvelopeDecorator
-//					.loadXrootDEnvelopesForCatalogueAccess(ca, P_sitename,
-//							P_qos, qosCount, ses, exxSes);
-
-			authen.loadKeys();
-//			EncryptedAuthzToken authz = new EncryptedAuthzToken(
-//					authen.AuthenPrivKey, authen.SEPubKey);
-//				
-//			signedEnvelopes = XrootDEnvelopeDecorator.signEnvelope(authen.AuthenPrivKey,
-//					ca.getEnvelopes());
-
-		} catch (GeneralSecurityException gexcept) {
-			System.out.println("General Securiry exception" + gexcept);
-		} catch (IOException ioexcept) {
-			System.out.println("IO exception" + ioexcept);
+		if (access.startsWith("write")) {
+			accessRequest = AccessType.WRITE;
+			evenIfNotExists = true;
+		} else if (access.equals("read")) {
+			accessRequest = AccessType.READ;
+		} else if (access.equals("delete")) {
+			accessRequest = AccessType.DELETE;
+		} else {
+			System.out.println("illegal access type!");
+			return null;
 		}
-		return (String[]) signedEnvelopes.toArray(new String[0]);
+
+		int size = new Integer(p_size);
+		int qosCount = new Integer(p_qosCount);
+
+		Set<SE> ses = new LinkedHashSet<SE>();
+		for (String sename : Arrays.asList(p_ses.split(";"))) {
+			SE se = SEUtils.getSE(sename);
+			if (se != null)
+				ses.add(se);
+		}
+
+		Set<SE> exxSes = new LinkedHashSet<SE>();
+		for (String sename : Arrays.asList(p_ses.split(";"))) {
+			SE se = SEUtils.getSE(sename);
+			if (se != null)
+				ses.add(se);
+		}
+
+		if ((ses.size() + qosCount) <= 0) {
+			qos = "disk";
+			qosCount = 2;
+		}
+
+		System.out.println("we are invoked:  user: " + p_user + "\naccess: "
+				+ access + "\nlfn: " + p_lfn + "\nsize: " + size
+				+ "\nrequestguid: " + guidrequest + "\nqos: " + qos
+				+ "\nqosCount: " + qosCount + "\nsitename: " + sitename);
+
+		LFN lfn = null;
+		GUID guid = null;
+		if (GUIDUtils.isValidGUID(p_lfn)) {
+			guid = GUIDUtils.getGUID(UUID.fromString(p_lfn), evenIfNotExists);
+		} else {
+			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
+			guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
+		}
+
+		List<PFN> pfns = new ArrayList<PFN>(ses.size() + qosCount);
+
+		try {
+			if (accessRequest == AccessType.WRITE) {
+
+				// statis list of specified SEs
+				for (SE se : ses) {
+					pfns.add(BookingTable.bookForWriting(user, lfn, guid, null,
+							jobid, se));
+				}
+
+				if (qosCount > 0) {
+					List<SE> SEs = SEUtils.getClosestSEs(sitename);
+					final Iterator<SE> it = SEs.iterator();
+
+					int counter = 0;
+					while (counter < qosCount && it.hasNext()) {
+						SE se = it.next();
+						if ((!ses.contains(se)) && (!exxSes.contains(se))) {
+							pfns.add(BookingTable.bookForWriting(user, lfn,
+									guid, null, jobid, se));
+							counter++;
+						}
+
+					}
+
+				}
+			}
+			if (accessRequest == AccessType.READ) {
+
+				pfns = SEUtils.sortBySite(guid.getPFNs(), sitename, false);
+
+				for (PFN pfn : pfns) {
+					System.err.println(pfn);
+					System.out.println("Asking read for " + user.getName() + " to " + pfn.getPFN());
+					String reason = AuthorizationFactory.fillAccess(user, pfn,
+							AccessType.READ);
+
+					if (reason != null) {
+						System.err.println("Access refused because: " + reason);
+						continue;
+					}
+
+				}
+			}
+		} catch (Exception e) {
+			System.out.println("exception: " + e.toString());
+		}
+
+		List<String> envelopes = new ArrayList<String>(pfns.size());
+
+		for (PFN pfn : pfns) {
+			if (pfn.ticket.envelope == null) {
+				System.err.println("Sorry ... Envelope is null!");
+			} else {
+				if (pfn.ticket.envelope.getEncryptedEnvelope() == null) {
+					System.err.println("Sorry ... getInternalEnvelope is null!");
+				} else {
+					envelopes.add(pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\\\&")+"\\\\&oldEnvelope="+
+							pfn.ticket.envelope.getEncryptedEnvelope()
+							);
+				}
+			}
+		}
+		
+		final Iterator<String> it = envelopes.iterator();
+
+		while (it.hasNext()) {
+			System.out.println("we'll send an envelope:    " + it.next());
+		}
+		
+		if (!(envelopes.size() > 0))
+			return new String[0];
+
+		return (String[]) envelopes.toArray();
 
 	}
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	
 	
 	
