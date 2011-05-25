@@ -26,6 +26,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 		ArrayList<String> alrcValues = new ArrayList<String>();
 		ArrayList<String> alrcMessages = new ArrayList<String>();
+		boolean debug = false;
 		alrcMessages.add("This is just a simple log\n");
 		
 		//we need to have at least 2 parameters
@@ -38,8 +39,10 @@ public class AlienCommandauthorize extends AlienCommand {
 			
 			if(this.alArguments.size() == 3){
 				sJobId = (String) this.alArguments.get(2);
-				if(sJobId.startsWith("-debug")) 
+				if(sJobId.startsWith("-debug")) {
+					debug = true;
 					sJobId = "0";
+				}
 			}
 			
 			if("registerenvs".equals(sAccess)){
@@ -60,6 +63,8 @@ public class AlienCommandauthorize extends AlienCommand {
 		else{
 			throw new Exception("Invalid authorize command arguments");		
 		}
+		
+		if(!debug) alrcMessages.clear();
 		
 		hmReturn.put("rcvalues", alrcValues);
 		hmReturn.put("rcmessages", alrcMessages);
