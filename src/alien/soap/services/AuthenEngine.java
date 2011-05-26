@@ -553,7 +553,7 @@ public class AuthenEngine {
 								.add(pfn.ticket.envelope
 												.getUnsignedEnvelope().replace(
 														"&", "\\&")
-												+ "\\&hashord=1\\&signature=1234556\\&oldEnvelope="
+												+ "\\&hashord=lfn-pfn-turl-md5-size-guid-zguid-se-access\\&signature=1234556\\&oldEnvelope="
 												+ pfn.ticket.envelope
 														.getEncryptedEnvelope());
 						System.out.println("enc: " + pfn.ticket.envelope
