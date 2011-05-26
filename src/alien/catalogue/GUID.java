@@ -118,7 +118,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * LFNs associated to this GUID
 	 */
 	Set<LFN> lfns;
-	
+
 	/**
 	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not.
 	 * Setting the other fields will only be permitted if this field is false.

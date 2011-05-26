@@ -353,6 +353,41 @@ public final class SEUtils {
 		return ret;
 	}
 	
+	
+
+	/**
+	 * Sort a collection of PFNs by their relative distance to a given site (where the job is running for example), priorize SEs, exclude exSEs
+	 * 
+	 * @param pfns
+	 * @param sSite
+	 * @param removeBrokenSEs 
+	 * @param SEs
+	 * @return the sorted list of locations
+	 */
+	public static List<PFN> sortBySiteSpecifySEs(final Collection<PFN> pfns, final String sSite, final boolean removeBrokenSEs, final List<SE> SEs,final List<SE> exSEs){
+		
+		List<PFN> spfns = sortBySite(pfns,sSite,removeBrokenSEs);
+		
+		if(SEs.size()>0) return spfns;
+		
+		List<PFN> ret =  new ArrayList<PFN>(spfns);
+		
+		for (PFN pfn:spfns){
+			for (SE ex: exSEs){
+				if(pfn.seNumber == ex.seNumber)
+					spfns.remove(pfn);
+			}
+			for (SE se:SEs){
+			if(pfn.seNumber == se.seNumber){
+				ret.add(pfn);
+				spfns.remove(pfn);
+			}
+		}}
+		ret.addAll(spfns);
+		return ret;
+	}
+	
+	
 	/**
 	 * @author costing
 	 * @since Nov 14, 2010

@@ -41,6 +41,12 @@ public class XrootDEnvelope implements Serializable {
 	public final PFN pfn;
 	
 	/**
+	 * A LFN that is pointing to this envelope's GUID/PFN us as a guid:// archive link
+	 */
+	private LFN archiveAnchor;
+	
+	
+	/**
 	 * Signed envelope
 	 */
 	protected String signedEnvelope; 
@@ -59,6 +65,12 @@ public class XrootDEnvelope implements Serializable {
 		this.pfn = pfn;
 	}
 
+	/**
+	 * Set the LFN that is pointing to this envelope's GUID/PFN us as a guid:// archive link
+     */	
+	public void setArchiveAnchor(LFN anchor){
+		archiveAnchor = anchor;
+	}
 
 	/**
 	 * @return envelope xml
@@ -133,25 +145,41 @@ public class XrootDEnvelope implements Serializable {
 	 * @return url envelope
 	 */
 	public String getUnsignedEnvelope() {
-		
+				
 		final GUID guid = pfn.getGuid();
+
 		
 		final Set<LFN> lfns = guid.getLFNs();
 		
 		final SE se = SEUtils.getSE(pfn.seNumber);
 		
-		String ret = "turl=" + pfn.getPFN() + "&access=" + type.toString();
+		String ret = "turl=" + pfn.getPFN();
+		if(archiveAnchor!=null)
+			ret = ret + "#" + archiveAnchor.getFileName();
+		
+		System.out.println("Decorating: " + pfn.getPFN());
+		if(archiveAnchor!=null)
+		System.out.println("Archive Link: " + archiveAnchor.getFileName());
+		
+		
+		ret +=  "&access=" + type.toString();
 		
 		if (lfns!=null && lfns.size()>0)
 			ret += "&lfn=" + lfns.iterator().next().getCanonicalName();
 	
-		ret += "&guid=" + guid.getName() +
-		"&se=" + se.getName() +
+		if(archiveAnchor==null){
+		ret += "&guid=" + guid.getName() ;
+		} else {
+			ret += "&zguid=" + guid.getName() ;
+			ret += "&guid=" + archiveAnchor.guid;
+
+		}
+		ret += "&se=" + se.getName() +
 		"&size=" + guid.size + "&md5="+ guid.md5;
 		
 		return ret;
 	}
-
+	
 	/**
 	 * @param signedEnvelope
 	 */

@@ -24,6 +24,7 @@ import alien.catalogue.access.AuthorizationFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 import alien.user.UserFactory;
 
 /**
@@ -370,10 +371,9 @@ public class AuthenEngine {
 //
 //	}
 
-	
-		public List<String> authorizeEnvelope(AliEnPrincipal certOwner, 
-				String p_user, String p_dir, String access,HashMap<String,String> optionHash,String p_jobid){
-		
+	public List<String> authorizeEnvelope(AliEnPrincipal certOwner,
+			String p_user, String p_dir, String access,
+			HashMap<String, String> optionHash, String p_jobid) {
 
 		boolean evenIfNotExists = false;
 		AliEnPrincipal user = UserFactory.getByUsername(p_user);
@@ -391,32 +391,37 @@ public class AuthenEngine {
 			System.out.println("illegal access type!");
 			return null;
 		}
-		int jobid = new Integer(sanitizePerlString(p_jobid,true));
+		int jobid = new Integer(sanitizePerlString(p_jobid, true));
 
-		
-		int p_size = new Integer(sanitizePerlString(optionHash.get("size"),true));
-		int p_qosCount = new Integer(sanitizePerlString(optionHash.get("writeQosCount"),true));
-		String p_lfn = sanitizePerlString(optionHash.get("lfn"),false);
-		if(!p_lfn.startsWith("//"))
+		int p_size = new Integer(sanitizePerlString(optionHash.get("size"),
+				true));
+		int p_qosCount = new Integer(sanitizePerlString(
+				optionHash.get("writeQosCount"), true));
+		String p_lfn = sanitizePerlString(optionHash.get("lfn"), false);
+		if (!p_lfn.startsWith("//"))
 			p_lfn = p_dir + p_lfn;
-		String p_guid = sanitizePerlString(optionHash.get("guid"),false);
-		String p_guidrequest = sanitizePerlString(optionHash.get("guidRequest"),false);
-		String p_md5 = sanitizePerlString(optionHash.get("md5"),false);
-		String p_qos = sanitizePerlString(optionHash.get("writeQos"),false);
-		String p_pfn = sanitizePerlString(optionHash.get("pfn"),false);
-		String p_links = sanitizePerlString(optionHash.get("links"),false);
-		String p_site = sanitizePerlString(optionHash.get("site"),false);
+		String p_guid = sanitizePerlString(optionHash.get("guid"), false);
+		String p_guidrequest = sanitizePerlString(
+				optionHash.get("guidRequest"), false);
+		String p_md5 = sanitizePerlString(optionHash.get("md5"), false);
+		String p_qos = sanitizePerlString(optionHash.get("writeQos"), false);
+		String p_pfn = sanitizePerlString(optionHash.get("pfn"), false);
+		String p_links = sanitizePerlString(optionHash.get("links"), false);
+		String p_site = sanitizePerlString(optionHash.get("site"), false);
 
-
-		Set<SE> ses = new LinkedHashSet<SE>();
-		for (String sename : Arrays.asList(sanitizePerlString(optionHash.get("wishedSE"),false).split(";"))) {
+		String[] splitWishedSE = sanitizePerlString(optionHash.get("wishedSE"),
+				false).split(";");
+		List<SE> ses = new ArrayList<SE>(splitWishedSE.length);
+		for (String sename : Arrays.asList(splitWishedSE)) {
 			SE se = SEUtils.getSE(sename);
 			if (se != null)
 				ses.add(se);
 		}
 
-		Set<SE> exxSes = new LinkedHashSet<SE>();
-		for (String sename : Arrays.asList(sanitizePerlString(optionHash.get("excludeSE"),false).split(";"))) {
+		String[] splitExcludeSE = sanitizePerlString(
+				optionHash.get("excludeSE"), false).split(";");
+		List<SE> exxSes = new ArrayList<SE>(splitExcludeSE.length);
+		for (String sename : Arrays.asList(splitExcludeSE)) {
 			SE se = SEUtils.getSE(sename);
 			if (se != null)
 				ses.add(se);
@@ -442,6 +447,8 @@ public class AuthenEngine {
 		}
 
 		List<PFN> pfns = new ArrayList<PFN>(ses.size() + p_qosCount);
+		
+		LFN setArchiveAnchor = null;
 
 		try {
 			if (accessRequest == AccessType.WRITE) {
@@ -471,11 +478,15 @@ public class AuthenEngine {
 			}
 			if (accessRequest == AccessType.READ) {
 
-				pfns = SEUtils.sortBySite(guid.getPFNs(), p_site, false);
+				PFN readpfn = null;
+
+				pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), p_site,
+						true, ses, exxSes);
 
 				for (PFN pfn : pfns) {
 					System.err.println(pfn);
-					System.out.println("Asking read for " + user.getName() + " to " + pfn.getPFN());
+					System.out.println("Asking read for " + user.getName()
+							+ " to " + pfn.getPFN());
 					String reason = AuthorizationFactory.fillAccess(user, pfn,
 							AccessType.READ);
 
@@ -483,6 +494,43 @@ public class AuthenEngine {
 						System.err.println("Access refused because: " + reason);
 						continue;
 					}
+					UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
+					if (archiveLinkedTo != null) {
+						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo,
+								false);
+						setArchiveAnchor = lfn;
+						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(
+								GUIDUtils.getGUID(
+										pfn.retrieveArchiveLinkedGUID())
+										.getPFNs(), p_site, true, ses, exxSes);
+						if (!AuthorizationChecker.canRead(archiveguid, user)) {
+							System.err
+									.println("Access refused because: Not allowed to read sub-archive");
+							continue;
+						}
+
+						for (PFN apfn : apfns) {
+							reason = AuthorizationFactory.fillAccess(user,
+									apfn, AccessType.READ);
+
+							if (reason != null) {
+								System.err.println("Access refused because: "
+										+ reason);
+								continue;
+							}
+							System.out
+									.println("We have an evenlope candidate: "
+											+ apfn.getPFN());
+							readpfn = apfn;
+							break;
+
+						}
+					} else {
+						readpfn = pfn;
+					}
+					pfns.clear();
+					pfns.add(readpfn);
+					break;
 
 				}
 			}
@@ -496,32 +544,28 @@ public class AuthenEngine {
 			if (pfn.ticket.envelope == null) {
 				System.err.println("Sorry ... Envelope is null!");
 			} else {
+				pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
 				if (pfn.ticket.envelope.getEncryptedEnvelope() == null) {
-					System.err.println("Sorry ... getInternalEnvelope is null!");
+					System.err
+							.println("Sorry ... getInternalEnvelope is null!");
 				} else {
 					if (pfn.ticket.envelope.getSignedEnvelope() == null) {
-					envelopes.add(
-							Format.escHtml(
-							pfn.ticket.envelope.getUnsignedEnvelope().replace("&", "\\&")+
-							"\\&hashord=1\\&signature=1234556\\&oldEnvelope="+
-							pfn.ticket.envelope.getEncryptedEnvelope()
-							));
+						envelopes
+								.add(Format
+										.escHtml(pfn.ticket.envelope
+												.getUnsignedEnvelope().replace(
+														"&", "\\&")
+												+ "\\&hashord=1\\&signature=1234556\\&oldEnvelope="
+												+ pfn.ticket.envelope
+														.getEncryptedEnvelope()));
 					}
 				}
 			}
 		}
-		
-		final Iterator<String> it = envelopes.iterator();
-
-		while (it.hasNext()) {
-			System.out.println("we'll send an envelope:    " + it.next());
-		}
-		
 		return envelopes;
 
 	}
-	
-	
+
 	public String sanitizePerlString(String maybeNull,boolean isInteger){
 		if(maybeNull == null){
 			if(isInteger)
