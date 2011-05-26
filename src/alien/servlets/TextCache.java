@@ -142,6 +142,9 @@ public class TextCache extends ExtendedServlet {
 		}
 		
 		requestLogger.println(System.currentTimeMillis()+" "+value.accesses+" "+namespace+" "+key);
+		
+		if (requestLogger.checkError())
+			requestLogger = null;
 	}
 	
 	/**
