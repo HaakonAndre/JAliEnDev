@@ -374,13 +374,16 @@ public final class SEUtils {
 		
 		for (PFN pfn:spfns){
 			for (SE ex: exSEs){
-				if(pfn.seNumber == ex.seNumber)
+				if(pfn.seNumber == ex.seNumber){
+				System.out.println("Hit remove for SE: " + ex.seName);
 					spfns.remove(pfn);
+				}
 			}
 			for (SE se:SEs){
 			if(pfn.seNumber == se.seNumber){
 				ret.add(pfn);
 				spfns.remove(pfn);
+				System.out.println("Hit priority for SE: " + se.seName);
 			}
 		}}
 		ret.addAll(spfns);
