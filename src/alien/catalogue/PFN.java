@@ -277,4 +277,14 @@ public class PFN implements Serializable, Comparable<PFN>{
 		return pfn.hashCode();
 	}
 	
+	private boolean isArchiveLinkedGUID(){
+		return (pfn.toLowerCase()).startsWith("guid://");
+	}
+
+	public UUID retrieveArchiveLinkedGUID() {
+		if(isArchiveLinkedGUID())
+			return UUID.fromString(pfn.substring(8, 44));
+		return null;
+	}
+	
 }
