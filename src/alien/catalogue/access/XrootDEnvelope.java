@@ -93,7 +93,9 @@ public class XrootDEnvelope implements Serializable {
 		if(archiveAnchor!=null)
 			turl  += "#" + archiveAnchor.getFileName();
 		ret += "    <turl>"+ Format.escHtml(turl)+ "</turl>\n";
-		if (lfns!=null && lfns.size()>0)
+		if(archiveAnchor!=null)
+			ret += "    <lfn>"+Format.escHtml(archiveAnchor.getCanonicalName())+"</lfn>\n";
+		else if (lfns!=null && lfns.size()>0)
 			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
 		else
 			ret += "    <lfn>/NOLFN</lfn>\n";
@@ -166,9 +168,13 @@ public class XrootDEnvelope implements Serializable {
 		
 		ret +=  "&access=" + type.toString();
 		
-		if (lfns!=null && lfns.size()>0)
+		if(archiveAnchor!=null)
+			ret += "&lfn=" + archiveAnchor.getCanonicalName();
+		else if (lfns!=null && lfns.size()>0)
 			ret += "&lfn=" + lfns.iterator().next().getCanonicalName();
-	
+		else
+			ret += "&lfn=/NOLFN";
+			
 		if(archiveAnchor==null){
 		ret += "&guid=" + guid.getName() ;
 		} else {
