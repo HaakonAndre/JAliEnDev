@@ -563,7 +563,7 @@ public class AuthenEngine {
 					}
 				}
 			}
-		}
+		
 		return envelopes;
 
 	}
