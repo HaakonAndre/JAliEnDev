@@ -368,7 +368,7 @@ public final class SEUtils {
 		
 		List<PFN> spfns = sortBySite(pfns,sSite,removeBrokenSEs);
 		
-		if(SEs.size()>0) return spfns;
+		if(SEs.size()<=0 || exSEs.size()<=0) return spfns;
 		
 		List<PFN> ret =  new ArrayList<PFN>(spfns);
 		
