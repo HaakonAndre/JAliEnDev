@@ -377,7 +377,7 @@ public final class SEUtils {
 			System.out.println("SEs contains: " + se.seName);
 		}
 		
-		List<PFN> ret =  new ArrayList<PFN>(spfns);
+		List<PFN> ret =  new ArrayList<PFN>(spfns.size());
 		
 		for (PFN pfn:spfns){
 			for (SE ex: exSEs){
