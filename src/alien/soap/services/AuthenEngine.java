@@ -551,13 +551,12 @@ public class AuthenEngine {
 				} else {
 					if (pfn.ticket.envelope.getSignedEnvelope() == null) {
 						envelopes
-								.add(Format
-										.escHtml(pfn.ticket.envelope
+								.add(pfn.ticket.envelope
 												.getUnsignedEnvelope().replace(
 														"&", "\\&")
 												+ "\\&hashord=1\\&signature=1234556\\&oldEnvelope="
 												+ pfn.ticket.envelope
-														.getEncryptedEnvelope()));
+														.getEncryptedEnvelope());
 					}
 				}
 			}
