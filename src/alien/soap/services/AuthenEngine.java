@@ -549,7 +549,6 @@ public class AuthenEngine {
 					System.err
 							.println("Sorry ... getInternalEnvelope is null!");
 				} else {
-					if (pfn.ticket.envelope.getSignedEnvelope() == null) {
 						envelopes
 								.add(pfn.ticket.envelope
 												.getUnsignedEnvelope().replace(
@@ -557,6 +556,10 @@ public class AuthenEngine {
 												+ "\\&hashord=1\\&signature=1234556\\&oldEnvelope="
 												+ pfn.ticket.envelope
 														.getEncryptedEnvelope());
+						System.out.println("enc: " + pfn.ticket.envelope
+								.getUnEncryptedEnvelope());
+						System.out.println("sgn: " + pfn.ticket.envelope
+								.getUnsignedEnvelope());
 					}
 				}
 			}
