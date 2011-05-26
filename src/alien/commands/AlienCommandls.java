@@ -1,6 +1,5 @@
 package alien.commands;
 
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -12,8 +11,15 @@ import lazyj.Log;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
-
+/**
+ * @author Alina Grigoras
+ * @since May 10, 2011
+ * implements AliEn ls command
+ * */
 public class AlienCommandls extends AlienCommand {
+	/**
+	 * ls command arguments : -help/l/a
+	 */
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
 	static{
@@ -22,22 +28,48 @@ public class AlienCommandls extends AlienCommand {
 		lsArguments.add("a");
 	}
 
+	/**
+	 * marker for -help argument 
+	 */
 	private boolean bHelp =  false;
+	
+	/**
+	 * marker for -l argument 
+	 */
 	private boolean bL = false;
+	
+	/**
+	 * marker for -a argument
+	 */
 	private boolean bA = false;
 
+	/**
+	 * @param AliEn principal received from https request
+	 * @param all arguments received from SOAP request, contains user, current directory and command
+	 * @throws Exception
+	 */
 	public AlienCommandls(final AliEnPrincipal p, final ArrayList<Object> al) throws Exception {
 		super(p, al);
 	}
 
+	/**
+	 * @param AliEn principal received from https request
+	 * @param username received from SOAP request, can be different than the one from the https request is the user make a su
+	 * @param the directory from the user issued the command
+	 * @param the command requested through the SOAP request
+	 * @param command arguments, can be size 0 or null
+	 * @throws Exception
+	 */
 	public AlienCommandls (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
 		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
 	}
 
-	/*
-	 * ls returns a map of <String, List<String>> with only 2 keys <br />
-	 * 	- rcvalues - the list of files
-	 * 	- rcmessages - the list of files with an extra \n at the end of the file name
+	/**
+	 * @return a map of <String, List<String>> with only 2 keys
+	 * 	<ul>
+	 * 		<li>rcvalues - file list</li>
+	 * 		<li>rcmessages - file list with an extra \n at the end of the file name</li>
+	 * 	</ul>
 	 */
 	@Override
 	public HashMap<String, ArrayList<String>> executeCommand() {

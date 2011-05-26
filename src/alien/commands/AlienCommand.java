@@ -4,17 +4,21 @@ import java.util.List;
 
 import java.security.Principal;
 
+import lazyj.Log;
+
 import alien.user.AliEnPrincipal;
 
 /**
  * @since 2011, 12 May
- * @author Alina Grigoras
- * Abstract class to implement Alien shell commands <br />
- * A commands expects at least 3 paramenters: <br />
- * 	- the username that issued the command <br />
- * 	- current directory from where the user issued the command <br />
- * 	- the command <br />
- * 	- extra arguments for the command, this parameter is not mandatory <br />
+ * @author Alina Grigoras <br>
+ * Abstract class to implement Alien shell commands <br>
+ * A commands expects at least 3 paramenters:
+ * <ul> 
+ * 		<li>the username that issued the command</li>
+ * 		<li>current directory from where the user issued the command</li>
+ * 		<li>the command</li>
+ * 		<li>extra arguments for the command, this parameter is not mandatory</li>
+ * </ul>
  */
 public abstract class AlienCommand {
 	/**
@@ -38,22 +42,25 @@ public abstract class AlienCommand {
 	protected String sCommand ;
 
 	/**
-	 * 
+	 * the argument list for the command received through the SOAP request
 	 */
 	protected List<?> alArguments ;
 
 	/**
-	 * Constructor based on the array received from the request <br />
-	 * The minimum size of the array is 3: <br />
-	 * 	- the username that issued the command <br />
-	 * 	- current directory from where the user issued the command <br />
-	 * 	- the command <br />
-	 * 	- extra arguments for the command, this parameter is not mandatory <br />
+	 * Constructor based on the array received from the request <br>
+	 * The minimum size of the array is 3:
+	 * 		<ul>
+	 * 			<li>the username that issued the command</li>
+	 * 			<li>current directory from where the user issued the command</li>
+	 * 			<li>the command</li>
+	 * 			<li>extra arguments for the command, this parameter is not mandatory</li>
+	 * 		</ul>
 	 * @param the array containing all the information required to run the command
 	 * @throws Exception
 	 */
 	public AlienCommand(final AliEnPrincipal pAlienUser, final List<?> al) throws Exception{
-
+		Log.log(Log.FINER, "Entering AliEn Command constructor with 2 params");
+		
 		if(pAlienUser == null)
 			throw new SecurityException("No Alien Principal! We hane no credentials");
 
@@ -68,6 +75,8 @@ public abstract class AlienCommand {
 			String sLocalCurrentDirectory = (String) al.get(1);
 			String sLocalCommand = (String) al.get(2);
 
+			Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sLocalUsername+" / "+sLocalCurrentDirectory+" / "+sLocalCommand);
+			
 			int alSize = al.size();
 			
 			List<?> alLocalArguments = null; 
@@ -82,6 +91,8 @@ public abstract class AlienCommand {
 			this.sCommand = sLocalCommand;
 			this.alArguments = alLocalArguments;
 		}
+		
+		Log.log(Log.FINER, "Exiting AliEn Command constructor with 2 params");
 	}
 
 	/**
@@ -92,6 +103,8 @@ public abstract class AlienCommand {
 	 * @throws Exception
 	 */
 	public AlienCommand (final AliEnPrincipal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception{
+		Log.log(Log.FINER, "Entering AliEn Command constructor with 5 params");
+		
 		if(sUsername == null || sUsername.length() == 0)
 			throw new Exception("Empty username");
 
@@ -106,6 +119,10 @@ public abstract class AlienCommand {
 		this.sCurrentDirectory = sCurrentDirectory;
 		this.sCommand = sCommand;
 		this.alArguments = alArguments;
+	
+		Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sUsername+" / "+sCurrentDirectory+" / "+sCommand);
+		
+		Log.log(Log.FINER, "Exiting AliEn Command constructor with 5 params");
 	}
 
 	/**
@@ -145,6 +162,7 @@ public abstract class AlienCommand {
 	}
 
 	/**
+	 * to be implemented by all AliEn commands
 	 * @return the command output
 	 */
 	public abstract Object executeCommand() throws Exception;
