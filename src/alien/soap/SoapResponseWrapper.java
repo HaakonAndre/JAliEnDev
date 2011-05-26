@@ -185,7 +185,7 @@ public class SoapResponseWrapper {
 		if(o instanceof Number){
 			if(o instanceof Integer)
 				return "xsi:type=\"xsd:int\"";
-			
+
 			return "xsi:type=\"xsd:string\"";
 		}
 
