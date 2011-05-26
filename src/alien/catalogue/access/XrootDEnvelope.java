@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import lazyj.Format;
 
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.se.SE;
@@ -43,7 +44,7 @@ public class XrootDEnvelope implements Serializable {
 	/**
 	 * A LFN that is pointing to this envelope's GUID/PFN us as a guid:// archive link
 	 */
-	private LFN archiveAnchor;
+	private LFN archiveAnchorLFN;
 	
 	
 	/**
@@ -69,7 +70,7 @@ public class XrootDEnvelope implements Serializable {
 	 * Set the LFN that is pointing to this envelope's GUID/PFN us as a guid:// archive link
      */	
 	public void setArchiveAnchor(LFN anchor){
-		archiveAnchor = anchor;
+		archiveAnchorLFN = anchor;
 	}
 
 	/**
@@ -90,23 +91,31 @@ public class XrootDEnvelope implements Serializable {
 		String ret = "<authz>\n  <file>\n"
 		+ "    <access>"+ access+"</access>\n";
 		String turl = pfn.getPFN();
-		if(archiveAnchor!=null)
-			turl  += "#" + archiveAnchor.getFileName();
+		if(archiveAnchorLFN!=null)
+			turl  += "#" + archiveAnchorLFN.getFileName();
 		ret += "    <turl>"+ Format.escHtml(turl)+ "</turl>\n";
-		if(archiveAnchor!=null)
-			ret += "    <lfn>"+Format.escHtml(archiveAnchor.getCanonicalName())+"</lfn>\n";
+		if(archiveAnchorLFN!=null)
+			ret += "    <lfn>"+Format.escHtml(archiveAnchorLFN.getCanonicalName())+"</lfn>\n";
 		else if (lfns!=null && lfns.size()>0)
 			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
 		else
 			ret += "    <lfn>/NOLFN</lfn>\n";
-		
-		ret += "    <size>"+guid.size+"</size>" + "\n"
-		+ "    <pfn>"+Format.escHtml("/" + pfnsplit[2])+"</pfn>\n"
-		+ "    <se>"+Format.escHtml(se.getName())+"</se>\n"
-		+ "    <guid>"+Format.escHtml(guid.getName())+"</guid>\n"
-		+ "    <md5>"+Format.escHtml(guid.md5)+"</md5>\n"
-		+ "  </file>\n</authz>\n";
-		
+		if (archiveAnchorLFN != null) {
+			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
+			ret += "    <size>" + archiveAnchorGUID.size + "</size>" + "\n"
+		    + "    <guid>" + Format.escHtml(archiveAnchorGUID.getName()) + "</guid>\n"
+			+ "    <md5>" + Format.escHtml(archiveAnchorGUID.md5) + "</md5>\n";
+		} else {
+			ret += "    <size>" + guid.size + "</size>" + "\n" 
+			+ "    <guid>"
+					+ Format.escHtml(guid.getName()) + "</guid>\n"
+					+ "    <md5>" + Format.escHtml(guid.md5) + "</md5>\n";
+		}
+
+		ret += "    <pfn>" + Format.escHtml("/" + pfnsplit[2]) + "</pfn>\n"
+				+ "    <se>" + Format.escHtml(se.getName()) + "</se>\n"
+				+ "  </file>\n</authz>\n";
+
 		return ret;
 	}
 
@@ -158,32 +167,35 @@ public class XrootDEnvelope implements Serializable {
 		final SE se = SEUtils.getSE(pfn.seNumber);
 		
 		String ret = "turl=" + pfn.getPFN();
-		if(archiveAnchor!=null)
-			ret = ret + "#" + archiveAnchor.getFileName();
+		if(archiveAnchorLFN!=null)
+			ret = ret + "#" + archiveAnchorLFN.getFileName();
 		
 		System.out.println("Decorating: " + pfn.getPFN());
-		if(archiveAnchor!=null)
-		System.out.println("Archive Link: " + archiveAnchor.getFileName());
+		if(archiveAnchorLFN!=null)
+		System.out.println("Archive Link: " + archiveAnchorLFN.getFileName());
 		
 		
 		ret +=  "&access=" + type.toString();
 		
-		if(archiveAnchor!=null)
-			ret += "&lfn=" + archiveAnchor.getCanonicalName();
+		if(archiveAnchorLFN!=null)
+			ret += "&lfn=" + archiveAnchorLFN.getCanonicalName();
 		else if (lfns!=null && lfns.size()>0)
 			ret += "&lfn=" + lfns.iterator().next().getCanonicalName();
 		else
 			ret += "&lfn=/NOLFN";
 			
-		if(archiveAnchor==null){
-		ret += "&guid=" + guid.getName() ;
+		if(archiveAnchorLFN==null){
+			ret += "&guid=" + guid.getName() +
+			"&size=" + guid.size + "&md5="+ guid.md5;
+
 		} else {
-			ret += "&zguid=" + guid.getName() ;
-			ret += "&guid=" + archiveAnchor.guid;
+			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
+			ret += "&zguid=" + guid.getName() +
+			"&guid=" + archiveAnchorGUID.getName() +
+			"&size=" + archiveAnchorGUID.size + "&md5="+ archiveAnchorGUID.md5;
 
 		}
-		ret += "&se=" + se.getName() +
-		"&size=" + guid.size + "&md5="+ guid.md5;
+		ret += "&se=" + se.getName();
 		
 		return ret;
 	}
