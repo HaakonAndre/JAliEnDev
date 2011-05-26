@@ -162,10 +162,9 @@ public class SE implements Serializable, Comparable<SE>{
 	private static final NumberFormat fiveDigits = new DecimalFormat("00000");
 	
 	/**
-	 * @param guid
-	 * @return the PFN for this storage
+	 * @return the protocol part
 	 */
-	public String generatePFN(final GUID guid){
+	public String generateProtocol(){
 		if (seioDaemons==null || seioDaemons.length()==0)
 			return null;
 	
@@ -179,6 +178,19 @@ public class SE implements Serializable, Comparable<SE>{
 				
 		if (!ret.endsWith("/"))
 			ret += "/";
+		
+		return ret;
+	}
+	
+	/**
+	 * @param guid
+	 * @return the PFN for this storage
+	 */
+	public String generatePFN(final GUID guid){
+		String ret = generateProtocol();
+		
+		if (ret==null)
+			return ret;
 		
 		ret += twoDigits.format(guid.getCHash())+"/"+fiveDigits.format(guid.getHash())+"/"+guid.guid.toString();
 		
