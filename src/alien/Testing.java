@@ -5,6 +5,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -48,41 +50,38 @@ public class Testing {
 		//removeFZK();
 			
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+						
+		XrootdListing listing = new XrootdListing("pcaliense01.cern.ch:1094", "/00");
+
+		final SE se = SEUtils.getSE("ALICE::CERN::SETEST");
 		
-		LFN lfn = LFNUtils.getLFN(args[0]);
-				
-		GUID guid = GUIDUtils.getGUID(lfn.guid);
+		List<XrootdFile> files = new ArrayList<XrootdFile>();
 		
-		for (PFN pfn : lfn.whereisReal()){
-			String reason = AuthorizationFactory.fillAccess(pfn, AccessType.READ);
+		for (XrootdFile f: listing.getDirs()){
 			
-			System.err.println("READ FROM : "+pfn.pfn);
-			System.err.println(pfn.ticket.envelope.getEncryptedEnvelope());
-			System.err.println("****************************************************");
+			if (!f.path.startsWith("/00/10"))
+				continue;
+			
+			XrootdListing listing2 = new XrootdListing("pcaliense01.cern.ch:1094", f.path);
+			
+			files.addAll(listing2.getFiles());
+		}
+				
+		for (final XrootdFile f: files){
+			System.err.println(f.path);
+			
+			System.err.println(XrootdCleanup.removeFile(f, se));
+			
+//			if (!f.path.endsWith(".md5")){
+//				new Thread(){
+//					public void run() {
+//						System.err.println(XrootdCleanup.removeFile(f, se));
+//					}
+//				}.start();
+//			}
 		}
 		
-		SE targetSE = SEUtils.getSE("ALICE::CERN::SETEST");
-		
-		PFN target = new PFN(guid, targetSE);
-		
-		String reason = AuthorizationFactory.fillAccess(target, AccessType.WRITE);
-		
-		System.err.println("WRITE TO : "+target.pfn);
-		System.err.println(target.ticket.envelope.getEncryptedEnvelope());
-				
-//		XrootdListing listing = new XrootdListing("pcaliense04.cern.ch:1095", "/02/00002/");
-//
-//		SE se = SEUtils.getSE("ALICE::CERN::SE");
-//		
-//		for (XrootdFile f: listing.getFiles()){
-//			if (f.getName().equals("077dca9c-f5a8-11dd-bbf8-001e0bd3f44c")){
-//				System.err.println(f);
-//				
-//				System.err.println(XrootdCleanup.removeFile(f, se));
-//			}
-//		}
-//		
-//		System.err.println("finish");
+		System.err.println("finish : "+files.size());
 	}
 		
 	private static void removeFZK() throws IOException {
