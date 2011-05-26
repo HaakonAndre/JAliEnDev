@@ -180,12 +180,14 @@ public class XrootDEnvelope implements Serializable {
 		
 		ret +=  "&access=" + type.toString();
 		
+		String lfn = "/NOLFN";
+		
 		if(archiveAnchorLFN!=null)
-			ret += "&lfn=" + archiveAnchorLFN.getCanonicalName();
+			lfn = archiveAnchorLFN.getCanonicalName();
 		else if (lfns!=null && lfns.size()>0)
-			ret += "&lfn=" + lfns.iterator().next().getCanonicalName();
-		else
-			ret += "&lfn=/NOLFN";
+			lfn = lfns.iterator().next().getCanonicalName();		
+		
+		ret += "&lfn=" + lfn;
 			
 		if(archiveAnchorLFN==null){
 			ret += "&guid=" + guid.getName() +
@@ -198,8 +200,24 @@ public class XrootDEnvelope implements Serializable {
 			"&size=" + archiveAnchorGUID.size + "&md5="+ archiveAnchorGUID.md5;
 
 		}
+		
 		ret += "&se=" + se.getName();
 		
+		ret = addXURLForSpecialSEs(ret,lfn);
+		
+		return ret;
+	}
+	
+	
+	private String addXURLForSpecialSEs(String ret, String lfn) {
+
+		SE se = SEUtils.getSE(pfn.seNumber);
+
+		// $se =~ /dcache/i
+		// $se =~ /alice::((RAL)|(CNAF))::castor/i
+		// $se =~ /alice::RAL::castor2_test/i
+		if ((se.seName.toLowerCase()).contains("dcache"))
+			return ret + "&xurl=" + se.seioDaemons + "/" + lfn;
 		return ret;
 	}
 	
