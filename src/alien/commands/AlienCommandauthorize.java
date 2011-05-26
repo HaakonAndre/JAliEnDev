@@ -32,7 +32,7 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * @param the arguments to the commnad, can be null or empty
 	 * @throws Exception
 	 */
-	public AlienCommandauthorize (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List alArguments) throws Exception {
+	public AlienCommandauthorize (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
 		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
 	}
 
@@ -85,10 +85,12 @@ public class AlienCommandauthorize extends AlienCommand {
 			Log.log(Log.FINER, "Authorize Job id = "+sJobId);
 
 			if("registerenvs".equals(sAccess)){
+				@SuppressWarnings({ "unused", "unchecked" })
 				ArrayList<String> alInfo = (ArrayList<String>) this.alArguments.get(1);
-				//to implement
+		
 			}
 			else{
+				@SuppressWarnings("unchecked")
 				HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
 				
 				AuthenEngine au = new AuthenEngine();

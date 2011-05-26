@@ -67,30 +67,28 @@ public abstract class AlienCommand {
 		if(al.size() < 3){
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
-		else{
+		
+		this.pAlienUser = pAlienUser;
 
-			this.pAlienUser = pAlienUser;
+		String sLocalUsername = (String) al.get(0);
+		String sLocalCurrentDirectory = (String) al.get(1);
+		String sLocalCommand = (String) al.get(2);
 
-			String sLocalUsername = (String) al.get(0);
-			String sLocalCurrentDirectory = (String) al.get(1);
-			String sLocalCommand = (String) al.get(2);
+		Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sLocalUsername+" / "+sLocalCurrentDirectory+" / "+sLocalCommand);
+		
+		int alSize = al.size();
+		
+		List<?> alLocalArguments = null; 
 
-			Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sLocalUsername+" / "+sLocalCurrentDirectory+" / "+sLocalCommand);
-			
-			int alSize = al.size();
-			
-			List<?> alLocalArguments = null; 
-
-			if(alSize > 3){
-				alLocalArguments = (List<?>) al.subList(3, alSize);
-			}
-
-
-			this.sUsername = sLocalUsername;
-			this.sCurrentDirectory = sLocalCurrentDirectory;
-			this.sCommand = sLocalCommand;
-			this.alArguments = alLocalArguments;
+		if(alSize > 3){
+			alLocalArguments = al.subList(3, alSize);
 		}
+
+
+		this.sUsername = sLocalUsername;
+		this.sCurrentDirectory = sLocalCurrentDirectory;
+		this.sCommand = sLocalCommand;
+		this.alArguments = alLocalArguments;
 		
 		Log.log(Log.FINER, "Exiting AliEn Command constructor with 2 params");
 	}

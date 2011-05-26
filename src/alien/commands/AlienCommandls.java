@@ -41,6 +41,7 @@ public class AlienCommandls extends AlienCommand {
 	/**
 	 * marker for -a argument
 	 */
+	@SuppressWarnings("unused")
 	private boolean bA = false;
 
 	/**

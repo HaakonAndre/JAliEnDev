@@ -26,19 +26,18 @@ public class AlienCommands {
 		if(al.size() < 3){
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
-		else{
-			String sLocalCommand = (String) al.get(2);
-			
-			Log.log(Log.INFO, "Command received = \""+sLocalCommand+"\"");
-			
-			if("ls".equals(sLocalCommand)){	
-				return new AlienCommandls(p, al);
-			}
-			else if("authorize".equals(sLocalCommand)){
-				return new AlienCommandauthorize(p, al);
-			}
-			else return null;
+		
+		String sLocalCommand = (String) al.get(2);
+		
+		Log.log(Log.INFO, "Command received = \""+sLocalCommand+"\"");
+		
+		if("ls".equals(sLocalCommand)){	
+			return new AlienCommandls(p, al);
 		}
+		else if("authorize".equals(sLocalCommand)){
+			return new AlienCommandauthorize(p, al);
+		}
+		else return null;
 	}
 
 	/**
@@ -54,10 +53,10 @@ public class AlienCommands {
 		if(al.size() < 3){
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
-		else{
-			String sLocalCommand = (String) al.get(2);
-			Log.log(Log.INFO, "Command received = "+sLocalCommand);
-			return sLocalCommand;
-		}
+		
+		String sLocalCommand = (String) al.get(2);
+		Log.log(Log.INFO, "Command received = "+sLocalCommand);
+		
+		return sLocalCommand;
 	}
 }
