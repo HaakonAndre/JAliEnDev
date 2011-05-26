@@ -435,7 +435,9 @@ public class AuthenEngine {
 		System.out.println("we are invoked:  user: " + p_user + "\naccess: "
 				+ access + "\nlfn: " + p_lfn + "\nsize: " + p_size
 				+ "\nrequestguid: " + p_guidrequest + "\nqos: " + p_qos
-				+ "\nqosCount: " + p_qosCount + "\nsitename: " + p_site);
+				+ "\nqosCount: " + p_qosCount + "\nsitename: " + p_site + "\nSEs: " + optionHash.get("wishedSE")
+				 + "\nexSEs: " + optionHash.get("excludeSE")+"\n...\n");
+
 
 		LFN lfn = null;
 		GUID guid = null;
