@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import lazyj.Format;
 import lazyj.Log;
 
 import alien.catalogue.LFN;
@@ -45,8 +44,8 @@ public class AlienCommandls extends AlienCommand {
 	private boolean bA = false;
 
 	/**
-	 * @param AliEn principal received from https request
-	 * @param all arguments received from SOAP request, contains user, current directory and command
+	 * @param p AliEn principal received from https request 
+	 * @param al all arguments received from SOAP request, contains user, current directory and command 
 	 * @throws Exception
 	 */
 	public AlienCommandls(final AliEnPrincipal p, final ArrayList<Object> al) throws Exception {
@@ -54,11 +53,11 @@ public class AlienCommandls extends AlienCommand {
 	}
 
 	/**
-	 * @param AliEn principal received from https request
-	 * @param username received from SOAP request, can be different than the one from the https request is the user make a su
-	 * @param the directory from the user issued the command
-	 * @param the command requested through the SOAP request
-	 * @param command arguments, can be size 0 or null
+	 * @param p AliEn principal received from https request
+	 * @param sUsername username received from SOAP request, can be different than the one from the https request is the user make a su
+	 * @param sCurrentDirectory the directory from the user issued the command
+	 * @param sCommand the command requested through the SOAP request
+	 * @param alArguments command arguments, can be size 0 or null
 	 * @throws Exception
 	 */
 	public AlienCommandls (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
@@ -159,8 +158,7 @@ public class AlienCommandls extends AlienCommand {
 					}
 
 					for(LFN localLFN : lLFN){
-//						alrcValues.add(bL ? localLFN.getName()) : Format.escHtml(localLFN.getFileName()));
-						alrcMessages.add( bL ? Format.escHtml(localLFN.getName()+"\n") : Format.escHtml(localLFN.getFileName()+"\n"));
+						alrcMessages.add( bL ?localLFN.getName()+"\n" : localLFN.getFileName()+"\n");
 					}
 				}
 				else{

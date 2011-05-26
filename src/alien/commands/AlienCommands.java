@@ -14,8 +14,8 @@ import lazyj.Log;
 public class AlienCommands {
 	/**
 	 * Returns a implementation of the command
-	 * @param Alien principal received from request
-	 * @param array of arguments received from the request
+	 * @param p Alien principal received from request
+	 * @param al array of arguments received from the request
 	 * @return AlienCommand implementation for the requested command
 	 * @throws Exception
 	 */
@@ -41,8 +41,8 @@ public class AlienCommands {
 	}
 
 	/**
-	 * @param Alien principal
-	 * @param array of arguments received from the soap request
+	 * @param p AliEn principal received from the https request
+	 * @param al array containg the user that issued the command, the directory from where the command was issued, the command and its arguments 
 	 * @return the name of the requested command
 	 * @throws Exception
 	 */

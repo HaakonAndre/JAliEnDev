@@ -16,8 +16,8 @@ import alien.user.AliEnPrincipal;
  * */
 public class AlienCommandauthorize extends AlienCommand {
 	/**
-	 * @param AliEn principal received from the https request
-	 * @param SOAP arguments received from the http request
+	 * @param p AliEn principal received from the https request
+	 * @param al SOAP arguments received from the http request 
 	 * @throws Exception
 	 */
 	public AlienCommandauthorize(final AliEnPrincipal p, final ArrayList<Object> al) throws Exception {
@@ -25,11 +25,11 @@ public class AlienCommandauthorize extends AlienCommand {
 	}
 
 	/**
-	 * @param AliEn principal received from the https request
-	 * @param username received from SOAP request. It can be a different user than the user received through the AliEn principal (the user can su into a different user)
-	 * @param current directory when the command was issued
-	 * @param the command requested by the user
-	 * @param the arguments to the commnad, can be null or empty
+	 * @param p AliEn principal received from the https request
+	 * @param sUsername username received from SOAP request. It can be a different user than the user received through the AliEn principal (the user can su into a different user)
+	 * @param sCurrentDirectory current directory when the command was issued 
+	 * @param sCommand the command requested by the user
+	 * @param alArguments the arguments to the commnad, can be null or empty
 	 * @throws Exception
 	 */
 	public AlienCommandauthorize (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {

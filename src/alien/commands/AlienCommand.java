@@ -55,7 +55,10 @@ public abstract class AlienCommand {
 	 * 			<li>the command</li>
 	 * 			<li>extra arguments for the command, this parameter is not mandatory</li>
 	 * 		</ul>
-	 * @param the array containing all the information required to run the command
+	 * @param pAlienUser AliEn Principal received from the https request. <br>
+	 * 			It can be different than the user received from SOAP request if the user is using su 
+	 * @param al array containg the user that issued the command, the current directory from where the user issued the command,
+	 * 			the command and its arguments
 	 * @throws Exception
 	 */
 	public AlienCommand(final AliEnPrincipal pAlienUser, final List<?> al) throws Exception{
@@ -94,10 +97,12 @@ public abstract class AlienCommand {
 	}
 
 	/**
-	 * @param sUsername
-	 * @param sCurrentDirectory
-	 * @param sCommand
-	 * @param alArguments
+	 * @param pAlienPrincipal AliEn principal received from https request. It can be different from the user received
+	 * 					from the SOAP request if the used is using su
+	 * @param sUsername the username received from the SOAP request
+	 * @param sCurrentDirectory the directory from where the user issued the command
+	 * @param sCommand the command 
+	 * @param alArguments command arguments
 	 * @throws Exception
 	 */
 	public AlienCommand (final AliEnPrincipal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception{
@@ -162,28 +167,30 @@ public abstract class AlienCommand {
 	/**
 	 * to be implemented by all AliEn commands
 	 * @return the command output
+	 * @throws Exception 
 	 */
 	public abstract Object executeCommand() throws Exception;
 
 
 	@Override
 	public String toString() {
-		String sToString  = "AlienCommand { \n";
+		StringBuilder sb = new StringBuilder();
+		sb.append("AlienCommand { \n");
 
-		sToString += "		Username = "+this.sUsername+" \n";
-		sToString += "		Current directory = "+this.sCurrentDirectory+" \n";
-		sToString += "		Command = "+this.sCommand+" \n";	
-		sToString += "		User principal = "+this.pAlienUser.getName()+" \n";
-		sToString += "		Arguments = ";	
+		sb.append("		Username = "+this.sUsername+" \n");
+		sb.append("		Current directory = "+this.sCurrentDirectory+" \n");
+		sb.append("		Command = "+this.sCommand+" \n");	
+		sb.append("		User principal = "+this.pAlienUser.getName()+" \n");
+		sb.append("		Arguments = ");	
 
 		if(this.alArguments != null){
 			for(Object o : this.alArguments){
-				sToString += o.toString()+" ";
+				sb.append(o.toString()+" ");
 			}
 		}
 		
-		sToString += " } \n";
+		sb.append( " } \n");
 
-		return sToString;
+		return sb.toString();
 	}
 }
