@@ -88,9 +88,11 @@ public class XrootDEnvelope implements Serializable {
 		final SE se = SEUtils.getSE(pfn.seNumber);
 		
 		String ret = "<authz>\n  <file>\n"
-		+ "    <access>"+ access+"</access>\n"
-		+ "    <turl>"+ Format.escHtml(pfn.getPFN())+ "</turl>\n";
-		
+		+ "    <access>"+ access+"</access>\n";
+		String turl = pfn.getPFN();
+		if(archiveAnchor!=null)
+			turl  += "#" + archiveAnchor.getFileName();
+		ret += "    <turl>"+ Format.escHtml(turl)+ "</turl>\n";
 		if (lfns!=null && lfns.size()>0)
 			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
 		else
