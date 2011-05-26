@@ -9,6 +9,8 @@ import java.util.UUID;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -216,6 +218,9 @@ public class XrootdCleanup {
 		return true;
 	}
 	
+	// B6B6EF58-4000-11E0-9CE5-001F29EB8B98
+	private static final Pattern UUID_PATTERN = Pattern.compile(".*([0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}).*");
+	
 	/**
 	 * @param file
 	 * @param se 
@@ -223,13 +228,25 @@ public class XrootdCleanup {
 	 */
 	public static boolean removeFile(final XrootdFile file, final SE se){
 		System.err.println("RM "+file);
+				
+		final Matcher m = UUID_PATTERN.matcher(file.getName());
+
+		final UUID uuid;
+
+		if (m.matches()){
+			uuid = UUID.fromString(m.group(1));
+		}
+		else
+			uuid = GUIDUtils.generateTimeUUID();
 		
-		final GUID guid = GUIDUtils.getGUID(UUID.fromString(file.getName()), true);
+		final GUID guid = GUIDUtils.getGUID(uuid, true);
 		
 		guid.size = file.size;
 		guid.md5 = "130254d9540d6903fa6f0ab41a132361";
 		
 		final PFN pfn = new PFN(guid, se);
+		
+		pfn.pfn = se.generateProtocol()+file.path;
 				
 		final XrootDEnvelope env =  new XrootDEnvelope(AccessType.DELETE, pfn);
 
@@ -250,6 +267,9 @@ public class XrootdCleanup {
 		pfn.ticket = new AccessTicket(AccessType.DELETE, env);
 		
 		final Xrootd xrootd = new Xrootd();
+		
+		xrootd.setUseXrdRm(true);
+		
 		try {
 			if (!xrootd.delete(pfn)){
 				System.err.println("Could not delete : "+pfn);
