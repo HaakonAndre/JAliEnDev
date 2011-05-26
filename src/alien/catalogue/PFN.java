@@ -130,6 +130,14 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.tableNumber = guid.tableName;
 	}
 	
+	/**
+	 * @param path correct path for case-sensitive locations
+	 */
+	public void setPath(final String path){
+		if (this.pfn.toLowerCase().endsWith(path.toLowerCase())){
+			this.pfn = this.pfn.substring(0, this.pfn.length()-path.length()) + path;
+		}
+	}
 	
 	@Override
 	public String toString() {
