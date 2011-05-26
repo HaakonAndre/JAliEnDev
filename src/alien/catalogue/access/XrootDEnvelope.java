@@ -103,12 +103,12 @@ public class XrootDEnvelope implements Serializable {
 		if (archiveAnchorLFN != null) {
 			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
 			ret += "    <size>" + archiveAnchorGUID.size + "</size>" + "\n"
-		    + "    <guid>" + Format.escHtml(archiveAnchorGUID.getName()) + "</guid>\n"
+		    + "    <guid>" + Format.escHtml(archiveAnchorGUID.getName().toUpperCase()) + "</guid>\n"
 			+ "    <md5>" + Format.escHtml(archiveAnchorGUID.md5) + "</md5>\n";
 		} else {
 			ret += "    <size>" + guid.size + "</size>" + "\n" 
 			+ "    <guid>"
-					+ Format.escHtml(guid.getName()) + "</guid>\n"
+					+ Format.escHtml(guid.getName().toUpperCase()) + "</guid>\n"
 					+ "    <md5>" + Format.escHtml(guid.md5) + "</md5>\n";
 		}
 
