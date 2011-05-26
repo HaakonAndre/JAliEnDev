@@ -148,9 +148,12 @@ public class XrootDEnvelope implements Serializable {
 		final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
 		
 		if (m.matches()){
+			if(archiveAnchorLFN!=null)
+				return se.seioDaemons + "/" + m.group(4) + "#" + archiveAnchorLFN.getFileName();
 			return se.seioDaemons + "/" + m.group(4);
 		}
-
+		if(archiveAnchorLFN!=null)
+			return pfn.pfn + "#" + archiveAnchorLFN.getFileName();
 		return pfn.pfn;
 	}
 
