@@ -370,6 +370,13 @@ public final class SEUtils {
 		
 		if(SEs.size()<=0 || exSEs.size()<=0) return spfns;
 		
+		for (SE ex: exSEs){
+			System.out.println("exSEs contains: " + ex.seName);
+		}
+		for (SE se: SEs){
+			System.out.println("SEs contains: " + se.seName);
+		}
+		
 		List<PFN> ret =  new ArrayList<PFN>(spfns);
 		
 		for (PFN pfn:spfns){
