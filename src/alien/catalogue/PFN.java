@@ -131,6 +131,21 @@ public class PFN implements Serializable, Comparable<PFN>{
 	}
 	
 	/**
+	 * Load a PFN Object from String
+	 * 
+	 * @param guid
+	 * @param se
+	 */
+	public PFN(final String pfn, final GUID guid, final SE se){
+		this.guid = guid;
+		this.guidId = guid.guidId;
+		this.pfn = pfn;
+		this.seNumber = se.seNumber;
+		this.host = guid.host;
+		this.tableNumber = guid.tableName;
+	}
+	
+	/**
 	 * @param path correct path for case-sensitive locations
 	 */
 	public void setPath(final String path){
