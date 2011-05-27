@@ -413,6 +413,10 @@ public class AuthenEngine {
 	public List<String> registerEnvelope(AliEnPrincipal certOwner,
 			String p_user, String p_dir, String access,
 			ArrayList<String> envelopes, int jobid, int debugLevel) {
+		
+			for(String env: envelopes){
+				System.out.print("We received for registration an envelope: " + env);
+			}
 	
 			return envelopes;
 	}
