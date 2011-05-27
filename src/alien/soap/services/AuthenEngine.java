@@ -447,6 +447,8 @@ public class AuthenEngine {
 							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
 								retenv.add(env);
 						
+						} else{
+							System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
 						}
 						
 				}
