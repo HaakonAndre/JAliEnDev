@@ -1,9 +1,14 @@
 package alien.catalogue.access;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import sun.security.provider.JavaKeyStore.CaseExactJKS;
 
 import lazyj.Format;
 
@@ -64,6 +69,65 @@ public class XrootDEnvelope implements Serializable {
 	public XrootDEnvelope(final AccessType type, final PFN pfn){
 		this.type = type;
 		this.pfn = pfn;
+	}
+	
+	/**
+	 * Create a signed only envelope in order to verify it
+	 * 
+	 * @param envelope
+	 */
+	public XrootDEnvelope(String envelope){
+		
+		StringTokenizer st = new StringTokenizer(envelope, "\\&");
+		String pfn = "";
+		String lfn = "";
+		String guid = "";
+		String se = "";
+		int size = 0;
+		String md5 = "";
+		
+	     while (st.hasMoreTokens()) {
+	    	 String tok = st.nextToken();
+	    	 
+	    	 int idx = tok.indexOf('=');
+	    	 
+	    	 if (idx>=0){
+	    		 String key = tok.substring(0, idx);
+	    		 String value = tok.substring(idx+1);
+	    	 
+	    		 if("access".equals(key)) 
+	    				if (value.startsWith("write")) {
+	    					type = AccessType.WRITE;
+	    				} else if (value.equals("read")) {
+	    					type = AccessType.READ;
+	    				} else if (value.equals("delete")) {
+	    					type = AccessType.DELETE;
+	    				} else {
+	    					System.err.println("illegal access type!");
+	    					type=null;
+	    					this.pfn=null;
+	    				}
+	    		 else if ("pfn".equals(key))
+	    			 pfn = value;
+	    		 else if ("lfn".equals(key))
+	    			 lfn = value;
+	    		 else if ("guid".equals(key))
+	    			 guid = value;
+	    		 else if ("size".equals(key))
+	    			 size = Integer.parseInt(value);
+	    		 else if ("md5".equals(key))
+	    			 md5 = value;
+	    		 else if ("se".equals(key))
+	    			 se = value;
+	    	 }
+	     }
+	    GUID g = GUIDUtils.getGUID(UUID.fromString(guid), true);
+	    g.md5 = md5;
+	    g.size = size;
+	    
+		this.pfn = new PFN(pfn,g,SEUtils.getSE(se));
+		
+		signedEnvelope = envelope;
 	}
 
 	/**
