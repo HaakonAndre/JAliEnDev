@@ -68,8 +68,9 @@ public class XrootDEnvelope implements Serializable {
 
 	/**
 	 * Set the LFN that is pointing to this envelope's GUID/PFN us as a guid:// archive link
+	 * @param anchor Anchor LFN
      */	
-	public void setArchiveAnchor(LFN anchor){
+	public void setArchiveAnchor(final LFN anchor){
 		archiveAnchorLFN = anchor;
 	}
 
@@ -79,42 +80,46 @@ public class XrootDEnvelope implements Serializable {
 	public String getUnEncryptedEnvelope() {
 
 		final String access = type.toString().replace("write", "write-once");
-		
+
 		final String[] pfnsplit = pfn.getPFN().split("//");
-		
+
 		final GUID guid = pfn.getGuid();
-		
+
 		final Set<LFN> lfns = guid.getLFNs();
-		
+
 		final SE se = SEUtils.getSE(pfn.seNumber);
-		
-		String ret = "<authz>\n  <file>\n"
-		+ "    <access>"+ access+"</access>\n";
+
+		String ret = "<authz>\n  <file>\n" + "    <access>" + access + "</access>\n";
+
 		String turl = pfn.getPFN();
-		if(archiveAnchorLFN!=null)
-			turl  += "#" + archiveAnchorLFN.getFileName();
-		ret += "    <turl>"+ Format.escHtml(turl)+ "</turl>\n";
-		if(archiveAnchorLFN!=null)
-			ret += "    <lfn>"+Format.escHtml(archiveAnchorLFN.getCanonicalName())+"</lfn>\n";
+		if (archiveAnchorLFN != null)
+			turl += "#" + archiveAnchorLFN.getFileName();
+
+		ret += "    <turl>" + Format.escHtml(turl) + "</turl>\n";
+		
+		LFN refLFN = null;
+		
+		if (archiveAnchorLFN != null)
+			refLFN = archiveAnchorLFN;
 		else if (lfns!=null && lfns.size()>0)
-			ret += "    <lfn>"+Format.escHtml(lfns.iterator().next().getCanonicalName())+"</lfn>\n";
+			refLFN = lfns.iterator().next();
+		
+		if (refLFN != null)
+			ret += "    <lfn>" + Format.escHtml(refLFN.getCanonicalName()) + "</lfn>\n";
 		else
 			ret += "    <lfn>/NOLFN</lfn>\n";
-		if (archiveAnchorLFN != null) {
-			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
-			ret += "    <size>" + archiveAnchorGUID.size + "</size>" + "\n"
-		    + "    <guid>" + Format.escHtml(archiveAnchorGUID.getName().toUpperCase()) + "</guid>\n"
-			+ "    <md5>" + Format.escHtml(archiveAnchorGUID.md5) + "</md5>\n";
-		} else {
-			ret += "    <size>" + guid.size + "</size>" + "\n" 
-			+ "    <guid>"
-					+ Format.escHtml(guid.getName().toUpperCase()) + "</guid>\n"
-					+ "    <md5>" + Format.escHtml(guid.md5) + "</md5>\n";
-		}
-
-		ret += "    <pfn>" + Format.escHtml("/" + pfnsplit[2]) + "</pfn>\n"
-				+ "    <se>" + Format.escHtml(se.getName()) + "</se>\n"
-				+ "  </file>\n</authz>\n";
+		
+		GUID refGUID = guid;
+		
+		if (archiveAnchorLFN != null) 
+			refGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
+			
+		ret += "    <size>" + refGUID.size + "</size>" + "\n" + 
+			   "    <guid>" + Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n" + 
+			   "    <md5>"	+ Format.escHtml(refGUID.md5) + "</md5>\n"+
+			   "    <pfn>" + Format.escHtml("/" + pfnsplit[2]) + "</pfn>\n" + 
+		       "    <se>" + Format.escHtml(se.getName())+ "</se>\n" + 
+		       "  </file>\n</authz>\n";
 
 		return ret;
 	}
