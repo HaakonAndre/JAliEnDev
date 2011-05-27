@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import lazyj.Format;
 import lazyj.Utils;
 import utils.XRDChecker;
+import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -55,11 +56,20 @@ public class Testing {
 
 		final SE se = SEUtils.getSE("ALICE::CERN::SETEST");
 		
+		if (true){
+			PFN pfn = BookingTable.bookForWriting(LFNUtils.getLFN("/alice/users/g/grigoras/testsetest", true), GUIDUtils.createGuid(), null, 0, se);
+			
+			System.err.println(pfn);
+			
+			return;
+		}
+		
+		
 		List<XrootdFile> files = new ArrayList<XrootdFile>();
 		
 		for (XrootdFile f: listing.getDirs()){
 			
-			if (!f.path.startsWith("/00/10"))
+			if (!f.path.startsWith("/00/12"))
 				continue;
 			
 			XrootdListing listing2 = new XrootdListing("pcaliense01.cern.ch:1094", f.path);
@@ -70,15 +80,16 @@ public class Testing {
 		for (final XrootdFile f: files){
 			System.err.println(f.path);
 			
-			System.err.println(XrootdCleanup.removeFile(f, se));
+//			System.err.println(XrootdCleanup.removeFile(f, se));
 			
-//			if (!f.path.endsWith(".md5")){
-//				new Thread(){
-//					public void run() {
-//						System.err.println(XrootdCleanup.removeFile(f, se));
-//					}
-//				}.start();
-//			}
+			if (!f.path.endsWith(".md5")){
+				new Thread(){
+					@Override
+					public void run() {
+						System.err.println(XrootdCleanup.removeFile(f, se));
+					}
+				}.start();
+			}
 		}
 		
 		System.err.println("finish : "+files.size());
