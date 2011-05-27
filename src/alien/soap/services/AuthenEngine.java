@@ -430,11 +430,12 @@ public class AuthenEngine {
 			ArrayList<String> retenv = new ArrayList<String>(envelopes.size());
 		
 			for(String env: envelopes){
-				System.out.print("We received for registration an envelope: " + env);
+				System.out.println("We received for registration an envelope: " + env);
 				XrootDEnvelope xenv = new XrootDEnvelope(env);
 				try{
 					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
 					{
+						System.out.println("Self Signature VERIFIED!");
 							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
 
 							retenv.add(env);
@@ -442,6 +443,7 @@ public class AuthenEngine {
 					} else
 						if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
 						{
+							System.out.println("SE Signature VERIFIED!");
 							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
 								retenv.add(env);
 						
