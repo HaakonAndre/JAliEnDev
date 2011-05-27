@@ -2,9 +2,9 @@ package alien.soap.services;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import alien.catalogue.BookingTable;
@@ -412,7 +412,7 @@ public class AuthenEngine {
 	 */
 	public List<String> registerEnvelope(AliEnPrincipal certOwner,
 			String p_user, String p_dir, String access,
-			ArrayList<String> envelopes, int debugLevel) {
+			ArrayList<String> envelopes, int jobid, int debugLevel) {
 	
 			return envelopes;
 	}
@@ -430,7 +430,7 @@ public class AuthenEngine {
 	 */
 	public List<String> authorizeEnvelope(AliEnPrincipal certOwner,
 			String p_user, String p_dir, String access,
-			HashMap<String, String> optionHash, String p_jobid, int debugLevel) {
+			Map<String, String> optionHash, int jobid, int debugLevel) {
 
 		System.out.println();
 		System.out.println("JAuthen SOAP request for authorize...");
@@ -452,7 +452,6 @@ public class AuthenEngine {
 			System.out.println("illegal access type!");
 			return null;
 		}
-		int jobid = Integer.parseInt(sanitizePerlString(p_jobid, true));
 
 		int p_size = Integer.parseInt(sanitizePerlString(optionHash.get("size"), true));
 		int p_qosCount = Integer.parseInt(sanitizePerlString(optionHash.get("writeQosCount"), true));
