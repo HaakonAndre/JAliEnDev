@@ -37,6 +37,9 @@ public class AlienCommands {
 		else if("authorize".equals(sLocalCommand)){
 			return new AlienCommandauthorize(p, al);
 		}
+		else if("whereis".equals(sLocalCommand)){
+			return new AlienCommandwhereis(p, al);
+		}
 		else return null;
 	}
 
