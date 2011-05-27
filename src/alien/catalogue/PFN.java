@@ -281,6 +281,9 @@ public class PFN implements Serializable, Comparable<PFN>{
 		return (pfn.toLowerCase()).startsWith("guid://");
 	}
 
+	/**
+	 * @return the GUID to which this PFN points to
+	 */
 	public UUID retrieveArchiveLinkedGUID() {
 		if(isArchiveLinkedGUID())
 			return UUID.fromString(pfn.substring(8, 44));
