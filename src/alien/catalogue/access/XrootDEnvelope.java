@@ -8,7 +8,6 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.security.provider.JavaKeyStore.CaseExactJKS;
 
 import lazyj.Format;
 
@@ -104,8 +103,6 @@ public class XrootDEnvelope implements Serializable {
 	    					type = AccessType.DELETE;
 	    				} else {
 	    					System.err.println("illegal access type!");
-	    					type=null;
-	    					this.pfn=null;
 	    				}
 	    		 else if ("pfn".equals(key))
 	    			 pfn = value;
@@ -122,6 +119,7 @@ public class XrootDEnvelope implements Serializable {
 	    	 }
 	     }
 	    GUID g = GUIDUtils.getGUID(UUID.fromString(guid), true);
+
 	    g.md5 = md5;
 	    g.size = size;
 	    
