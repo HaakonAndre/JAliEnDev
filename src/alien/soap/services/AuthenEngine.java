@@ -407,6 +407,10 @@ public class AuthenEngine {
 			String p_user, String p_dir, String access,
 			HashMap<String, String> optionHash, String p_jobid) {
 
+		System.out.println();
+		System.out.println("JAuthen SOAP request for authorize...");
+
+		
 		boolean evenIfNotExists = false;
 		AliEnPrincipal user = UserFactory.getByUsername(p_user);
 
@@ -524,7 +528,7 @@ public class AuthenEngine {
 							pfns.add(BookingTable.bookForWriting(user, lfn,
 									guid, null, jobid, se));
 						} catch (Exception e) {
-							break;
+							continue;
 						}
 						counter++;
 					}
