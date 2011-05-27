@@ -60,8 +60,8 @@ public class AlienCommandls extends AlienCommand {
 	 * @param alArguments command arguments, can be size 0 or null
 	 * @throws Exception
 	 */
-	public AlienCommandls (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
-		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
+	public AlienCommandls (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final int iDebugLevel, final List<?> alArguments) throws Exception {
+		super(p, sUsername, sCurrentDirectory, sCommand, iDebugLevel,alArguments);
 	}
 
 	/**

@@ -32,8 +32,8 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * @param alArguments the arguments to the commnad, can be null or empty
 	 * @throws Exception
 	 */
-	public AlienCommandauthorize (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception {
-		super(p, sUsername, sCurrentDirectory, sCommand, alArguments);
+	public AlienCommandauthorize (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final int iDebugLevel, final List<?> alArguments) throws Exception {
+		super(p, sUsername, sCurrentDirectory, sCommand, iDebugLevel,alArguments);
 	}
 
 	/**
@@ -75,18 +75,15 @@ public class AlienCommandauthorize extends AlienCommand {
 
 			if(this.alArguments.size() == 3){
 				sJobId = (String) this.alArguments.get(2);
-				
-				if(sJobId.startsWith("-debug")) {
-					bDebug = true;
-					sJobId = "0";
-				}
 			}
 			
 			Log.log(Log.FINER, "Authorize Job id = "+sJobId);
 
 			if("registerenvs".equals(sAccess)){
-				@SuppressWarnings({ "unused", "unchecked" })
 				ArrayList<String> alInfo = (ArrayList<String>) this.alArguments.get(1);
+				
+				AuthenEngine au = new AuthenEngine();
+				alrcValues = (ArrayList<String>) au.registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, alInfo, this.iDebug);
 		
 			}
 			else{
@@ -94,7 +91,7 @@ public class AlienCommandauthorize extends AlienCommand {
 				HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
 				
 				AuthenEngine au = new AuthenEngine();
-				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, hmInfo, sJobId);
+				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, hmInfo, sJobId, this.iDebug);
 			}
 
 		}

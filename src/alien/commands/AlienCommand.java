@@ -4,6 +4,7 @@ import java.util.List;
 
 import java.security.Principal;
 
+import lazyj.Format;
 import lazyj.Log;
 
 import alien.user.AliEnPrincipal;
@@ -47,6 +48,11 @@ public abstract class AlienCommand {
 	protected List<?> alArguments ;
 
 	/**
+	 * debug level
+	 */
+	protected int iDebug = 0;
+	
+	/**
 	 * Constructor based on the array received from the request <br>
 	 * The minimum size of the array is 3:
 	 * 		<ul>
@@ -84,7 +90,32 @@ public abstract class AlienCommand {
 		List<?> alLocalArguments = null; 
 
 		if(alSize > 3){
-			alLocalArguments = al.subList(3, alSize);
+			
+			Object o = al.get(alSize -1);
+			
+			if(o instanceof String){
+				String sDebug = (String) o;
+			
+				if(sDebug.startsWith("-debug=")){
+					String sDebugLevel = Format.replace(sDebug, "-debug=", "");
+					
+					try {
+						this.iDebug = Integer.parseInt(sDebugLevel);
+												
+					} catch (Exception e) {
+						Log.log(Log.ERROR, "Wrong debug level = "+sDebug);
+					}
+					
+					alLocalArguments = al.subList(3, alSize -1);
+				}
+				else{
+					alLocalArguments = al.subList(3, alSize);	
+				}
+			
+			}
+			else{
+				alLocalArguments = al.subList(3, alSize);
+			}
 		}
 
 
@@ -105,7 +136,7 @@ public abstract class AlienCommand {
 	 * @param alArguments command arguments
 	 * @throws Exception
 	 */
-	public AlienCommand (final AliEnPrincipal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final List<?> alArguments) throws Exception{
+	public AlienCommand (final AliEnPrincipal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, int iDebugLevel,final List<?> alArguments) throws Exception{
 		Log.log(Log.FINER, "Entering AliEn Command constructor with 5 params");
 		
 		if(sUsername == null || sUsername.length() == 0)
@@ -122,10 +153,19 @@ public abstract class AlienCommand {
 		this.sCurrentDirectory = sCurrentDirectory;
 		this.sCommand = sCommand;
 		this.alArguments = alArguments;
+		this.iDebug = iDebugLevel;
 	
 		Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sUsername+" / "+sCurrentDirectory+" / "+sCommand);
 		
 		Log.log(Log.FINER, "Exiting AliEn Command constructor with 5 params");
+	}
+	
+	public int getiDebug() {
+		return iDebug;
+	}
+
+	public void setiDebug(int iDebug) {
+		this.iDebug = iDebug;
 	}
 
 	/**
