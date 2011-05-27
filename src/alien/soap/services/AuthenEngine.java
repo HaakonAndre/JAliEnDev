@@ -1,5 +1,9 @@
 package alien.soap.services;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -15,8 +19,10 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
+import alien.catalogue.access.XrootDEnvelope;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.services.XrootDEnvelopeSigner;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.UserFactory;
@@ -399,9 +405,8 @@ public class AuthenEngine {
 	// return (String[]) signedEnvelopes.toArray(new String[0]);
 	//
 	// }
-	
-	
-	
+
+
 	/**
 	 * @param certOwner
 	 * @param p_user
@@ -410,15 +415,58 @@ public class AuthenEngine {
 	 * @param envelopes
 	 * @return the list of envelopes
 	 */
-	public List<String> registerEnvelope(AliEnPrincipal certOwner,
+	public List<String> registerEnvelope(AliEnPrincipal user,
 			String p_user, String p_dir, String access,
 			ArrayList<String> envelopes, int jobid, int debugLevel) {
 		
+		if (user.canBecome(p_user))
+			user = UserFactory.getByUsername(p_user);
+		else {
+			System.err.println("You [" + user.getName()
+					+ "] have not the rights to become " + p_user);
+			return null;
+		}
+		
+			ArrayList<String> retenv = new ArrayList<String>(envelopes.size());
+		
 			for(String env: envelopes){
 				System.out.print("We received for registration an envelope: " + env);
+				XrootDEnvelope xenv = new XrootDEnvelope(env);
+				try{
+					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
+					{
+							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
+
+							retenv.add(env);
+						
+					} else
+						if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
+						{
+							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
+								retenv.add(env);
+						
+						}
+						
+				}
+				catch(SignatureException e){
+					System.err
+					.println("Sorry ... Could not sign the envelope!");
+				}
+				catch(InvalidKeyException e){
+					System.err
+					.println("Sorry ... Could not sign the envelope!");
+				}
+				catch(NoSuchAlgorithmException e){
+					System.err
+					.println("Sorry ... Could not sign the envelope!");
+				}
+				catch (IOException e) {
+					System.err
+					.println("Sorry ... Error getting the PFN!");
+				}
 			}
 	
-			return envelopes;
+			return retenv;
 	}
 	
 		
@@ -432,7 +480,7 @@ public class AuthenEngine {
 	 * @param p_jobid
 	 * @return the list of envelopes
 	 */
-	public List<String> authorizeEnvelope(AliEnPrincipal certOwner,
+	public List<String> authorizeEnvelope(AliEnPrincipal user,
 			String p_user, String p_dir, String access,
 			Map<String, String> optionHash, int jobid, int debugLevel) {
 
@@ -441,7 +489,13 @@ public class AuthenEngine {
 
 		
 		boolean evenIfNotExists = false;
-		AliEnPrincipal user = UserFactory.getByUsername(p_user);
+		if (user.canBecome(p_user))
+			user = UserFactory.getByUsername(p_user);
+		else {
+			System.err.println("You [" + user.getName()
+					+ "] have not the rights to become " + p_user);
+			return null;
+		}
 
 		AccessType accessRequest = AccessType.NULL;
 
@@ -634,10 +688,25 @@ public class AuthenEngine {
 					System.err
 							.println("Sorry ... getInternalEnvelope is null!");
 				} else {
+					try{
+						XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
+					}
+					catch(SignatureException e){
+						System.err
+						.println("Sorry ... Could not sign the envelope!");
+					}
+					catch(InvalidKeyException e){
+						System.err
+						.println("Sorry ... Could not sign the envelope!");
+					}
+					catch(NoSuchAlgorithmException e){
+						System.err
+						.println("Sorry ... Could not sign the envelope!");
+					}
 					envelopes
-							.add(pfn.ticket.envelope.getUnsignedEnvelope()
+							.add(pfn.ticket.envelope.getSignedEnvelope()
 									.replace("&", "\\&")
-									+ "\\&hashord=lfn-pfn-turl-md5-size-guid-zguid-se-access\\&signature=1234556\\&oldEnvelope="
+									+ "\\&oldEnvelope="
 									+ pfn.ticket.envelope
 											.getEncryptedEnvelope());
 					System.out.println("enc: "
