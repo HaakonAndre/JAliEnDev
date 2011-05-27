@@ -26,8 +26,11 @@ public class AlienCommandwhereis extends AlienCommand {
 
 	static {
 		lsArguments.add("help");
+		lsArguments.add("h");
 		lsArguments.add("l");
-		lsArguments.add("a");
+		lsArguments.add("s");
+		lsArguments.add("g");
+		lsArguments.add("r");
 	}
 
 	/**
@@ -123,7 +126,7 @@ public class AlienCommandwhereis extends AlienCommand {
 					} else {
 						String sLocalArg = sArg.substring(1);
 
-						if ("help".equals(sLocalArg)) {
+						if (sLocalArg.startsWith("h")) {
 							bHelp = true;
 						} else {
 							char[] sLetters = sLocalArg.toCharArray();
