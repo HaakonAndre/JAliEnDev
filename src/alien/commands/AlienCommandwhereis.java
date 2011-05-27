@@ -1,9 +1,11 @@
 package alien.commands;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import lazyj.Log;
 import alien.catalogue.GUID;
@@ -57,9 +59,9 @@ public class AlienCommandwhereis extends AlienCommand {
 		private boolean bS = false;
 		
 	/**
-	 * marker for -a argument
+	 * marker for -g argument
 	 */
-	private boolean bA = false;
+	private boolean bG = false;
 
 	/**
 	 * @param p AliEn principal received from https request 
@@ -96,8 +98,6 @@ public class AlienCommandwhereis extends AlienCommand {
 		ArrayList<String> alrcValues = new ArrayList<String>();
 		ArrayList<String> alrcMessages = new ArrayList<String>();
 
-		ArrayList<String> alPaths = new ArrayList<String>();
-
 		//we got arguments for ls
 		if(this.alArguments != null && this.alArguments.size() > 0){
 
@@ -127,8 +127,14 @@ public class AlienCommandwhereis extends AlienCommand {
 									if("l".equals(cLetter+""))
 										bL = true;
 
-									if("a".equals(cLetter+""))
-										bA = true;
+									if("g".equals(cLetter+""))
+										bG = true;
+									
+									if("s".equals(cLetter+""))
+										bS = true;
+									
+									if("r".equals(cLetter+""))
+										bR = true;
 
 								}
 							}
@@ -156,26 +162,44 @@ public class AlienCommandwhereis extends AlienCommand {
 
 				Log.log(Log.INFO, "Spath = \""+slfn+"\"");
 
-				final LFN lfn = LFNUtils.getLFN(slfn);
+				GUID guid = null;
+				if(bG)
+					guid = GUIDUtils.getGUID(UUID.fromString(slfn));
+				else
+					guid = GUIDUtils.getGUID(LFNUtils.getLFN(slfn).guid);
+
 
 				//what message in case of error?
-				if (lfn != null){
-
-					List<LFN> lLFN;
-
-					if (lfn.type!='f'){
+				if (guid != null){
+					if (guid.type!='f'){
 						alrcMessages.add("Specified lfn is not the name of a file.\n");
 					}
 					else {
-						GUID guid = GUIDUtils.getGUID(lfn.guid);
+						
+						if(bR){
+							
+						}
 						
 						Set<PFN> pfns = guid.getPFNs();
 						
-						alrcMessages.add("May 28 00:09:33  info	The file whoamI.jdl is in\n");
+						
+						if(bR)
+							if(pfns.toArray()[0]!=null)
+							if(((PFN) pfns.toArray()[0]).pfn.toLowerCase().startsWith("guid://")){
+								pfns = GUIDUtils.getGUID(UUID.fromString(((PFN) pfns.toArray()[0]).pfn.substring(8, 44))).getPFNs();
+							}
+					
+						alrcMessages.add(AlienTime.getStamp()+"	The file whoamI.jdl is in\n");
 						for (PFN pfn: pfns){
-							alrcMessages.add("SE => "+SEUtils.getSE(pfn.seNumber).seName+"  pfn =>" + pfn.pfn);
+	
+							
+							String se = SEUtils.getSE(pfn.seNumber).seName;
+							alrcValues.add(se);
+							if(!bL)
+								alrcValues.add(pfn.pfn);
+							if(!bS)
+							alrcMessages.add("	SE => "+se+"  pfn =>" + pfn.pfn +"\n");
 						}
-
 				}}
 				else{
 					alrcMessages.add("No such file or directory\n");
