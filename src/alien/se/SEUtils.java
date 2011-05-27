@@ -277,7 +277,18 @@ public final class SEUtils {
 	 * @param site
 	 * @return sorted list of SEs based on MonALISA distance metric
 	 */
-	public static List<SE> getClosestSEs(final String site, List<SE> exSEs ){
+	public static List<SE> getClosestSEs(final String site){
+		return getClosestSEs(site, null);
+	}
+	
+	/**
+	 * Get all the SEs available to one site, sorted by the relative distance to the site, exclude exSEs
+	 * 
+	 * @param site
+	 * @param exSEs 
+	 * @return sorted list of SEs based on MonALISA distance metric
+	 */
+	public static List<SE> getClosestSEs(final String site, final List<SE> exSEs ){
 		if (site==null || site.length()==0)
 			return null;
 				
@@ -298,7 +309,7 @@ public final class SEUtils {
 		for (final Map.Entry<Integer, Integer> me: ranks.entrySet()){
 			final SE se = getSE(me.getKey());
 			
-			if (se!=null && !(exSEs.contains(se)))
+			if (se!=null && (exSEs == null || !exSEs.contains(se)))
 				ret.add(se);
 		}
 		
