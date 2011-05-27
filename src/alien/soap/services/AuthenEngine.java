@@ -400,6 +400,8 @@ public class AuthenEngine {
 	//
 	// }
 	
+	//registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, alInfo, this.iDebug);
+	
 	/**
 	 * @param certOwner
 	 * @param p_user
