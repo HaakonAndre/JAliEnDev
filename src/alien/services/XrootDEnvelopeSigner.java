@@ -139,8 +139,6 @@ public class XrootDEnvelopeSigner {
 		SEPubKey = sePubKey;
 	}
 	
-	private static EncryptedAuthzToken authz = null;
-	
 	private static String localHostName = null;
 	
 	private static final String getLocalHostName(){
@@ -232,8 +230,7 @@ public class XrootDEnvelopeSigner {
 	 * @throws GeneralSecurityException
 	 */
 	public static void encryptEnvelope(final XrootDEnvelope envelope) throws GeneralSecurityException {
-		if (authz == null)
-			authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey, false);
+		final EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey, false);
 
 		final String plainEnvelope = envelope.getUnEncryptedEnvelope(); 
 		
