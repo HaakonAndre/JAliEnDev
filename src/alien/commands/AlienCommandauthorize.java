@@ -76,8 +76,10 @@ public class AlienCommandauthorize extends AlienCommand {
 
 			if(this.alArguments.size() >= 2){
 				try {
-					iJobId = Integer.parseInt((String) this.alArguments.get(this.alArguments.size()-1));
-					envelopeCount--;
+					if(this.alArguments.get(this.alArguments.size()-1) instanceof String){
+						iJobId = Integer.parseInt((String) this.alArguments.get(this.alArguments.size()-1));
+						envelopeCount--;
+					}
 				} 
 				catch(NumberFormatException e){
 					// nothing to do, then the jobID is just not set by Perl ...
