@@ -71,19 +71,29 @@ public class AlienCommandauthorize extends AlienCommand {
 			String sAccess = (String) this.alArguments.get(0);
 			Log.log(Log.FINER, "Authorize access = "+sAccess);
 			
-			String sJobId = null;
+			int iJobId = 0;
+			int envelopeCount = this.alArguments.size()-1;
 
-			if(this.alArguments.size() == 3){
-				sJobId = (String) this.alArguments.get(2);
+			if(this.alArguments.size() >= 2){
+				try {
+					iJobId = Integer.parseInt((String) this.alArguments.get(this.alArguments.size()-1));
+					envelopeCount--;
+				} 
+				catch(NumberFormatException e){
+					// nothing to do, then the jobID is just not set by Perl ...
+				}
 			}
 			
-			Log.log(Log.FINER, "Authorize Job id = "+sJobId);
+			Log.log(Log.FINER, "Authorize Job id = "+iJobId);
 
 			if("registerenvs".equals(sAccess)){
-				ArrayList<String> alInfo = (ArrayList<String>) this.alArguments.get(1);
+				ArrayList<String> alInfo = new ArrayList<String>(this.alArguments.size()-3);
+				for(int i=1; i< envelopeCount;i++){
+					alInfo.add((String) this.alArguments.get(i));
+				}
 				
 				AuthenEngine au = new AuthenEngine();
-				alrcValues = (ArrayList<String>) au.registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, alInfo, this.iDebug);
+				alrcValues = (ArrayList<String>) au.registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, alInfo, iJobId,this.iDebug);
 		
 			}
 			else{
@@ -91,7 +101,7 @@ public class AlienCommandauthorize extends AlienCommand {
 				HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
 				
 				AuthenEngine au = new AuthenEngine();
-				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, hmInfo, sJobId, this.iDebug);
+				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, hmInfo, iJobId, this.iDebug);
 			}
 
 		}
