@@ -46,12 +46,12 @@ public class BookingTable {
 	}	
 	
 	/**
-	 * @param user
-	 * @param lfn
-	 * @param requestedGUID
-	 * @param requestedPFN 
-	 * @param jobid
-	 * @param se
+	 * @param user <code>null</code> not allowed
+	 * @param lfn <code>null</code> not allowed
+	 * @param requestedGUID <code>null</code> not allowed
+	 * @param requestedPFN can be <code>null</code> and then a PFN specific for this SE and this GUID is generated
+	 * @param jobid set to 0 if this request doesn't come from a job, or to the job id if known ...
+	 * @param se <code>null</code> not allowed
 	 * @return the PFN with the write access envelope if allowed to write or <code>null</code>
 	 * 			if the PFN doesn't indicate a physical file but the entry was successfully booked
 	 * @throws IOException if not allowed to do that
