@@ -445,7 +445,12 @@ public class AuthenEngine {
 			guid = GUIDUtils.getGUID(UUID.fromString(p_lfn), evenIfNotExists);
 		} else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
-			guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
+			if(lfn.guid==null) {
+				guid = GUIDUtils.createGuid();
+				lfn.guid = guid.guid;
+			} else {
+			    guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists );
+			}
 		}
 
 		List<PFN> pfns = new ArrayList<PFN>(ses.size() + p_qosCount);
