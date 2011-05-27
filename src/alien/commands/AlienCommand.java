@@ -19,6 +19,7 @@ import alien.user.AliEnPrincipal;
  * 		<li>current directory from where the user issued the command</li>
  * 		<li>the command</li>
  * 		<li>extra arguments for the command, this parameter is not mandatory</li>
+ * 		<li>debug level - optional parameter</li>
  * </ul>
  */
 public abstract class AlienCommand {
@@ -133,10 +134,11 @@ public abstract class AlienCommand {
 	 * @param sUsername the username received from the SOAP request
 	 * @param sCurrentDirectory the directory from where the user issued the command
 	 * @param sCommand the command 
+	 * @param iDebugLevel the debug level received from the soap request
 	 * @param alArguments command arguments
 	 * @throws Exception
 	 */
-	public AlienCommand (final AliEnPrincipal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, int iDebugLevel,final List<?> alArguments) throws Exception{
+	public AlienCommand (final AliEnPrincipal pAlienPrincipal, final String sUsername, final String sCurrentDirectory, final String sCommand, final int iDebugLevel,final List<?> alArguments) throws Exception{
 		Log.log(Log.FINER, "Entering AliEn Command constructor with 5 params");
 		
 		if(sUsername == null || sUsername.length() == 0)
@@ -160,10 +162,16 @@ public abstract class AlienCommand {
 		Log.log(Log.FINER, "Exiting AliEn Command constructor with 5 params");
 	}
 	
+	/**
+	 * @return debug level
+	 */
 	public int getiDebug() {
 		return iDebug;
 	}
 
+	/**
+	 * @param iDebug setting the debug level
+	 */
 	public void setiDebug(int iDebug) {
 		this.iDebug = iDebug;
 	}
