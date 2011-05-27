@@ -417,6 +417,7 @@ public class AuthenEngine {
 			if (se != null){
 				ses.add(se);
 				System.out.println("An SE found: " + se.getName());
+			}
 		}
 
 		String[] splitExcludeSE = sanitizePerlString(
@@ -470,18 +471,18 @@ public class AuthenEngine {
 				}
 
 				if (p_qosCount > 0) {
-					List<SE> SEs = SEUtils.getClosestSEs(p_site);
+					ses.addAll(exxSes);
+					List<SE> SEs = SEUtils.getClosestSEs(p_site,ses);
 					final Iterator<SE> it = SEs.iterator();
 
 					int counter = 0;
 					while (counter < p_qosCount && it.hasNext()) {
 						SE se = it.next();
-						if ((!ses.contains(se)) && (!exxSes.contains(se))) {
+						System.out.println("Trying to book writing on SE: " + se.getName());
+
 							pfns.add(BookingTable.bookForWriting(user, lfn,
 									guid, null, jobid, se));
 							counter++;
-						}
-
 					}
 
 				}
