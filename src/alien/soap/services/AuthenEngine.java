@@ -528,6 +528,7 @@ public class AuthenEngine {
 							pfns.add(BookingTable.bookForWriting(user, lfn,
 									guid, null, jobid, se));
 						} catch (Exception e) {
+							System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 							continue;
 						}
 						counter++;
