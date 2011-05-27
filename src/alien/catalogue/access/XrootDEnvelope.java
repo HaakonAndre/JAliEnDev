@@ -98,9 +98,12 @@ public class XrootDEnvelope implements Serializable {
 		ret += "    <turl>" + Format.escHtml(turl) + "</turl>\n";
 		
 		LFN refLFN = null;
+		GUID refGUID = guid;
 		
-		if (archiveAnchorLFN != null)
+		if (archiveAnchorLFN != null){
+			refGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
 			refLFN = archiveAnchorLFN;
+		}
 		else if (lfns!=null && lfns.size()>0)
 			refLFN = lfns.iterator().next();
 		
@@ -108,12 +111,7 @@ public class XrootDEnvelope implements Serializable {
 			ret += "    <lfn>" + Format.escHtml(refLFN.getCanonicalName()) + "</lfn>\n";
 		else
 			ret += "    <lfn>/NOLFN</lfn>\n";
-		
-		GUID refGUID = guid;
-		
-		if (archiveAnchorLFN != null) 
-			refGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
-			
+					
 		ret += "    <size>" + refGUID.size + "</size>" + "\n" + 
 			   "    <guid>" + Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n" + 
 			   "    <md5>"	+ Format.escHtml(refGUID.md5) + "</md5>\n"+
