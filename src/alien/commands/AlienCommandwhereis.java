@@ -15,8 +15,8 @@ import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * @author Alina Grigoras
- * @since May 10, 2011 implements AliEn ls command
+ * @author ron
+ * @since May 28, 2011 implements AliEn whereis command
  * */
 public class AlienCommandwhereis extends AlienCommand {
 	/**
@@ -198,7 +198,8 @@ public class AlienCommandwhereis extends AlienCommand {
 													.substring(8, 44)))
 									.getPFNs();
 
-				alrcMessages.add(AlienTime.getStamp()
+				if (!bS)
+					alrcMessages.add(AlienTime.getStamp()
 						+ "	The file whoamI.jdl is in\n");
 				for (PFN pfn : pfns) {
 
