@@ -208,7 +208,7 @@ public class AlienCommandwhereis extends AlienCommand {
 					if (!bL)
 						alrcValues.add(pfn.pfn);
 					if (!bS)
-						alrcMessages.add("	SE => " + se + "  pfn =>" + pfn.pfn
+						alrcMessages.add("	SE => " + se + "	PFN => " + pfn.pfn
 								+ "\n");
 				}
 			} else {
