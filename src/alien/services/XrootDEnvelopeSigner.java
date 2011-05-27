@@ -43,7 +43,7 @@ public class XrootDEnvelopeSigner {
 
 	private static final RSAPrivateKey AuthenPrivKey;
 	private static final RSAPublicKey AuthenPubKey;
-	private static final RSAPrivateKey SEPrivKey;
+//	private static final RSAPrivateKey SEPrivKey;
 	private static final RSAPublicKey SEPubKey;
 	
 	/**
@@ -67,7 +67,7 @@ public class XrootDEnvelopeSigner {
 
 		RSAPrivateKey authenPrivKey = null;
 		RSAPublicKey  authenPubKey = null;
-		RSAPrivateKey sePrivKey = null;
+//		RSAPrivateKey sePrivKey = null;
 		RSAPublicKey  sePubKey = null;
 		
 		BufferedReader authenPriv = null;
@@ -108,7 +108,7 @@ public class XrootDEnvelopeSigner {
 			sePriv = new BufferedReader(new FileReader(SEPrivLocation)); 
 			sePub  = new BufferedReader(new FileReader(SEPubLocation));
 			
-			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(sePriv).readObject()).getPrivate();
+//			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(sePriv).readObject()).getPrivate();
 			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(sePub).readObject()).getPublicKey();
 		}
 		catch (IOException ioe){
@@ -135,9 +135,10 @@ public class XrootDEnvelopeSigner {
 		
 		AuthenPrivKey = authenPrivKey;
 		AuthenPubKey = authenPubKey;
-		SEPrivKey = sePrivKey;
+//		SEPrivKey = sePrivKey;
 		SEPubKey = sePubKey;
 	}
+	
 	
 	private static String localHostName = null;
 	
@@ -202,17 +203,6 @@ public class XrootDEnvelopeSigner {
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
-		// System.out.println("About to be signed: " +
-		// envelope.getUnsignedEnvelope());
-
-		final long issued = System.currentTimeMillis() / 1000L;
-		final long expires = issued + 86400;
-
-		final String toBeSigned = envelope.getUnsignedEnvelope()
-				+ "&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires
-				+ "&hashord=" + XrootDEnvelope.hashord
-				+ "-issuer-issued-expires-hashord";
-
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 		
 		if (selfSigned){
@@ -222,7 +212,7 @@ public class XrootDEnvelopeSigner {
 			signer.initVerify(AuthenPubKey);
 		}
 		
-		return signer.verify(toBeSigned.getBytes());
+		return signer.verify(envelope.getSignedEnvelope().getBytes());
 	}
 
 	/**
