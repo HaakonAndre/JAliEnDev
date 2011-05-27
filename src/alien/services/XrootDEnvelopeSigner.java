@@ -23,7 +23,6 @@ import lazyj.ExtProperties;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 
-import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
@@ -232,6 +231,10 @@ public class XrootDEnvelopeSigner {
 		        String key = hash.nextToken();
 				signedEnvelope += key + "=" + env.get(key);
 			}
+			
+			System.out.println("sign String: " + signedEnvelope);
+			System.out.println("signature: "+ env.get("signature"));
+
 		
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 		
@@ -244,7 +247,7 @@ public class XrootDEnvelopeSigner {
 		}
 		signer.update(signedEnvelope.getBytes());
 		
-		return signer.verify((env.get("signature")).getBytes());
+		return signer.verify(Base64.decode(env.get("signature")));
 	}
 
 	/**
