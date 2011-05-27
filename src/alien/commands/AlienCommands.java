@@ -40,6 +40,9 @@ public class AlienCommands {
 		else if("whereis".equals(sLocalCommand)){
 			return new AlienCommandwhereis(p, al);
 		}
+		else if("complete_path".equals(sLocalCommand)){
+			return new AlienCommandCompletePath(p, al);
+		}
 		else return null;
 	}
 

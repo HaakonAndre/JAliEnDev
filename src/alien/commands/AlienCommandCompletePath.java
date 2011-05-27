@@ -19,7 +19,7 @@ import alien.user.AliEnPrincipal;
  * @author ron
  * @since May 28, 2011 implements AliEn whereis command
  * */
-public class AlienCommandwhereis extends AlienCommand {
+public class AlienCommandCompletePath extends AlienCommand {
 	
 
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
@@ -33,7 +33,7 @@ public class AlienCommandwhereis extends AlienCommand {
 	 *            current directory and command
 	 * @throws Exception
 	 */
-	public AlienCommandwhereis(final AliEnPrincipal p,
+	public AlienCommandCompletePath(final AliEnPrincipal p,
 			final ArrayList<Object> al) throws Exception {
 		super(p, al);
 	}
@@ -52,7 +52,7 @@ public class AlienCommandwhereis extends AlienCommand {
 	 *            command arguments, can be size 0 or null
 	 * @throws Exception
 	 */
-	public AlienCommandwhereis(final AliEnPrincipal p, final String sUsername,
+	public AlienCommandCompletePath(final AliEnPrincipal p, final String sUsername,
 			final String sCurrentDirectory, final String sCommand,
 			final int iDebugLevel, final List<?> alArguments) throws Exception {
 		super(p, sUsername, sCurrentDirectory, sCommand, iDebugLevel,
