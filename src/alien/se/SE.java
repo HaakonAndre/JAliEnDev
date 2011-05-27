@@ -192,7 +192,7 @@ public class SE implements Serializable, Comparable<SE>{
 		if (ret==null)
 			return ret;
 		
-		ret += twoDigits.format(guid.getCHash())+"/"+fiveDigits.format(guid.getHash())+"/"+guid.guid.toString();
+		ret += "/"+twoDigits.format(guid.getCHash())+"/"+fiveDigits.format(guid.getHash())+"/"+guid.guid.toString();
 		
 		return ret;
 	}
