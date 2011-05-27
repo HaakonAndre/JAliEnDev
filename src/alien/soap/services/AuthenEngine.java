@@ -400,7 +400,24 @@ public class AuthenEngine {
 	//
 	// }
 	
-	//registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, alInfo, this.iDebug);
+	
+	
+	/**
+	 * @param certOwner
+	 * @param p_user
+	 * @param p_dir
+	 * @param access
+	 * @param envelopes
+	 * @return the list of envelopes
+	 */
+	public List<String> registerEnvelope(AliEnPrincipal certOwner,
+			String p_user, String p_dir, String access,
+			ArrayList<String> envelopes, int debugLevel) {
+	
+			return envelopes;
+	}
+	
+		
 	
 	/**
 	 * @param certOwner
@@ -413,7 +430,7 @@ public class AuthenEngine {
 	 */
 	public List<String> authorizeEnvelope(AliEnPrincipal certOwner,
 			String p_user, String p_dir, String access,
-			HashMap<String, String> optionHash, String p_jobid) {
+			HashMap<String, String> optionHash, String p_jobid, int debugLevel) {
 
 		System.out.println();
 		System.out.println("JAuthen SOAP request for authorize...");
