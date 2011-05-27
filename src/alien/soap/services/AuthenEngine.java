@@ -414,8 +414,9 @@ public class AuthenEngine {
 		List<SE> ses = new ArrayList<SE>(splitWishedSE.length);
 		for (String sename : Arrays.asList(splitWishedSE)) {
 			SE se = SEUtils.getSE(sename);
-			if (se != null)
+			if (se != null){
 				ses.add(se);
+				System.out.println("An SE found: " + se.getName());
 		}
 
 		String[] splitExcludeSE = sanitizePerlString(
@@ -423,8 +424,10 @@ public class AuthenEngine {
 		List<SE> exxSes = new ArrayList<SE>(splitExcludeSE.length);
 		for (String sename : Arrays.asList(splitExcludeSE)) {
 			SE se = SEUtils.getSE(sename);
-			if (se != null)
+			if (se != null){
 				ses.add(se);
+				System.out.println("An exSE found: " + se.getName());
+			}
 		}
 
 		if ((ses.size() + p_qosCount) <= 0) {
