@@ -433,37 +433,37 @@ public class AuthenEngine {
 				System.out.println("We received for registration an envelope: " + env);
 				XrootDEnvelope xenv = new XrootDEnvelope(env);
 				try{
-//					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
-//					{
-//						System.out.println("Self Signature VERIFIED!");
+					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
+					{
+						System.out.println("Self Signature VERIFIED!");
 							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
 
 							retenv.add(env);
-//						
-//					} else
-//						if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
-//						{
-//							System.out.println("SE Signature VERIFIED!");
-//							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
-//								retenv.add(env);
-//						
-//						} else{
-//							System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
-//						}
-//						
+						
+					} else
+						if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
+						{
+							System.out.println("SE Signature VERIFIED!");
+							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
+								retenv.add(env);
+						
+						} else{
+							System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
+						}
+						
 				}
-//				catch(SignatureException e){
-//					System.err
-//					.println("Sorry ... Could not sign the envelope!");
-//				}
-//				catch(InvalidKeyException e){
-//					System.err
-//					.println("Sorry ... Could not sign the envelope!");
-//				}
-//				catch(NoSuchAlgorithmException e){
-//					System.err
-//					.println("Sorry ... Could not sign the envelope!");
-//				}
+				catch(SignatureException e){
+					System.err
+					.println("Sorry ... Could not sign the envelope!");
+				}
+				catch(InvalidKeyException e){
+					System.err
+					.println("Sorry ... Could not sign the envelope!");
+				}
+				catch(NoSuchAlgorithmException e){
+					System.err
+					.println("Sorry ... Could not sign the envelope!");
+				}
 				catch (IOException e) {
 					System.err
 					.println("Sorry ... Error getting the PFN!");
