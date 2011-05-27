@@ -4,12 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-
-import lazyj.Format;
 
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
@@ -31,7 +27,7 @@ import alien.user.UserFactory;
  */
 public class AuthenEngine {
 
-	@SuppressWarnings("unused")
+
 	// private String verificationEnvelope = "-----BEGIN SEALED CIPHER-----\n"
 	// +
 	// "Amkq4hz7cJBtP4SxPyk-8d7OGPokdSewpfqwwIbilH1PfH7hAY7pnVXTLDd1E00+4uNsbwh81Rog\n"
@@ -403,6 +399,16 @@ public class AuthenEngine {
 	// return (String[]) signedEnvelopes.toArray(new String[0]);
 	//
 	// }
+	
+	/**
+	 * @param certOwner
+	 * @param p_user
+	 * @param p_dir
+	 * @param access
+	 * @param optionHash
+	 * @param p_jobid
+	 * @return the list of envelopes
+	 */
 	public List<String> authorizeEnvelope(AliEnPrincipal certOwner,
 			String p_user, String p_dir, String access,
 			HashMap<String, String> optionHash, String p_jobid) {
@@ -427,12 +433,11 @@ public class AuthenEngine {
 			System.out.println("illegal access type!");
 			return null;
 		}
-		int jobid = new Integer(sanitizePerlString(p_jobid, true));
+		int jobid = Integer.parseInt(sanitizePerlString(p_jobid, true));
 
-		int p_size = new Integer(sanitizePerlString(optionHash.get("size"),
-				true));
-		int p_qosCount = new Integer(sanitizePerlString(
-				optionHash.get("writeQosCount"), true));
+		int p_size = Integer.parseInt(sanitizePerlString(optionHash.get("size"), true));
+		int p_qosCount = Integer.parseInt(sanitizePerlString(optionHash.get("writeQosCount"), true));
+		
 		String p_lfn = sanitizePerlString(optionHash.get("lfn"), false);
 		if (!p_lfn.startsWith("//"))
 			p_lfn = p_dir + p_lfn;
@@ -505,9 +510,7 @@ public class AuthenEngine {
 					System.out.println("Trying to book writing on static SE: "
 							+ se.getName());
 					try {
-
-					pfns.add(BookingTable.bookForWriting(user, lfn, guid, null,
-							jobid, se));
+						pfns.add(BookingTable.bookForWriting(user, lfn, guid, null, jobid, se));
 					} catch (Exception e) {
 						System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 					}
@@ -627,7 +630,12 @@ public class AuthenEngine {
 
 	}
 
-	public String sanitizePerlString(String maybeNull, boolean isInteger) {
+	/**
+	 * @param maybeNull
+	 * @param isInteger
+	 * @return a non-null value, defaulting to "0" if isInteger
+	 */
+	public static String sanitizePerlString(String maybeNull, boolean isInteger) {
 		if (maybeNull == null) {
 			if (isInteger)
 				return "0";
