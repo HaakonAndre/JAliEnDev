@@ -13,6 +13,8 @@ import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.HashMap;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,6 +23,7 @@ import lazyj.ExtProperties;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 
+import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
@@ -203,7 +206,35 @@ public class XrootDEnvelopeSigner {
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
+		HashMap<String,String> env = new HashMap<String,String>();
+		
+		String signedEnvelope = "";
+		
+			StringTokenizer st = new StringTokenizer(envelope.getSignedEnvelope(), "\\&");
+
+		   while (st.hasMoreTokens()) {
+	    	 String tok = st.nextToken();
+	    	 
+	    	 int idx = tok.indexOf('=');
+	    	 
+	    	 if (idx>=0){
+	    		 String key = tok.substring(0, idx);
+	    		 String value = tok.substring(idx+1);
+	    		 env.put(key, value);
+	    	 }
+		  }	 
+			StringTokenizer hash = new StringTokenizer(env.get("hashord"),"-");
+
+			
+			while (hash.hasMoreTokens()) {
+				if(!("").equals(signedEnvelope))
+					signedEnvelope += "&";
+		        String key = hash.nextToken();
+				signedEnvelope += key + "=" + env.get(key);
+			}
+		
 		final Signature signer = Signature.getInstance("SHA384withRSA");
+		
 		
 		if (selfSigned){
 			signer.initVerify(SEPubKey);
@@ -211,8 +242,9 @@ public class XrootDEnvelopeSigner {
 		else {
 			signer.initVerify(AuthenPubKey);
 		}
+		signer.update(signedEnvelope.getBytes());
 		
-		return signer.verify(envelope.getSignedEnvelope().getBytes());
+		return signer.verify((env.get("signature")).getBytes());
 	}
 
 	/**
