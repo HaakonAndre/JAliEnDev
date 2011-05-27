@@ -170,12 +170,12 @@ public class SE implements Serializable, Comparable<SE>{
 	
 		String ret = seioDaemons;
 		
-		if (!ret.endsWith("/"))
+		if (!ret.endsWith("/") && (seStoragePath==null || !seStoragePath.startsWith("/")))
 			ret += "/";
 		
 		if (seStoragePath!=null)
 			ret += seStoragePath;
-				
+		
 		if (!ret.endsWith("/"))
 			ret += "/";
 		
