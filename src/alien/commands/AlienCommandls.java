@@ -207,6 +207,9 @@ public class AlienCommandls extends AlienCommand {
 					}
 
 					for (LFN localLFN : lLFN) {
+						
+						if(!bA && localLFN.getFileName().startsWith("."))
+							continue;
 					
 						String ret = "";
 						if(bB){
