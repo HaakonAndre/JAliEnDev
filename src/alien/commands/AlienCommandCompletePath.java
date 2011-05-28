@@ -106,8 +106,6 @@ public class AlienCommandCompletePath extends AlienCommand {
 						ArrayList<String> suggestions = new ArrayList<String>();
 
 						for (LFN lfn : lLFN) {
-							System.out.println("comparing candidate: "
-									+ lfn.getName());
 							if (lfn.getFileName().startsWith(wildcard)) {
 								System.out.println("matched wildcard: "
 										+ lfn.getFileName());
