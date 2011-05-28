@@ -27,15 +27,12 @@ public class AlienCommands {
 			throw new Exception("Alien Command did not receive minimum number of arguments (in this order): username, current directory, command (+ arguments)? ");
 		}
 		
-		String sInternalCommand = (String) al.get(0);
 		
 		String sLocalCommand = (String) al.get(2);
 		
 		Log.log(Log.INFO, "Command received = \""+sLocalCommand+"\"");
 		
-		if("getTabCompletion".equals(sInternalCommand)){
-			return new AlienCommandCompletePath(p, al);
-		}
+
 		
 		if("ls".equals(sLocalCommand)){	
 			return new AlienCommandls(p, al);
@@ -45,6 +42,9 @@ public class AlienCommands {
 		}
 		else if("whereis".equals(sLocalCommand)){
 			return new AlienCommandwhereis(p, al);
+		}
+		else if("tabCompletion".equals(sLocalCommand)){
+			return new AlienCommandCompletePath(p, al);
 		}
 
 		else return null;
