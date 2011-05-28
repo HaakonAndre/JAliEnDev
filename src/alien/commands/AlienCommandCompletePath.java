@@ -87,7 +87,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 						List<LFN> lLFN = folder.list();
 						for (LFN lfn : lLFN) {
 							if (lfn.getName().startsWith(wildcard))
-								alrcValues.add(lfn.getName() + "\n");
+								alrcMessages.add(lfn.getName() + "\n");
 						}
 					}
 
