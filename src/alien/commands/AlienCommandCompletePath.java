@@ -69,35 +69,23 @@ public class AlienCommandCompletePath extends AlienCommand {
 		if (this.alArguments != null && this.alArguments.size() > 0)
 			if (this.pAlienUser.canBecome(this.sUsername)) {
 
-				for (Object oArg : this.alArguments) {
-					String sArg = (String) oArg;
-
-					System.out.println("We are asked to tabcomplete: " + sArg);
-				}
-
 				String search = (String) this.alArguments.toArray()[0];
 
 				String abs = FileSystemUtils.getAbsolutePath(this.sUsername,
 						this.sCurrentDirectory, search);
 
-				System.out.println("tabcompleting on absolute path: " + abs);
-
 				String foldername = abs.substring(0, abs.lastIndexOf("/"));
 
 				String wildcard = abs.substring(abs.lastIndexOf("/") + 1,
 						abs.length());
-				System.out.println("tabcompleting wildcard: " + wildcard);
 
 				String relpath = "";
 				if (search.contains("/"))
 					relpath = search.substring(0, search.lastIndexOf("/")+1);
 
-				System.out
-						.println("tabcompleting on foldername: " + foldername);
-
 				final LFN folder = LFNUtils.getLFN(foldername);
 
-				// what message in case of error?
+				// NO message in case of error
 				if (folder != null) {
 
 					if (folder.type == 'd') {
@@ -107,22 +95,15 @@ public class AlienCommandCompletePath extends AlienCommand {
 
 						for (LFN lfn : lLFN) {
 							if (lfn.getFileName().startsWith(wildcard)) {
-								System.out.println("matched wildcard: "
-										+ lfn.getFileName());
 								String suggest = lfn.getFileName();
 								if (lfn.type == 'd')
 									suggest += "/";
 								suggestions.add(suggest);
 							}
 						}
-						if (suggestions.size() == 1) {
+						if (suggestions.size() == 1) 
 							alrcValues.add(relpath + suggestions.get(0));
-							String suggest = (relpath + suggestions.get(0))
-									.replace(search, "");
-							//alrcMessages.add(suggest);
-
-							System.out.println("filling in one: " + suggest);
-						} else {
+						else {
 							for (String lfn : suggestions) {
 								alrcValues.add(relpath + lfn);
 								alrcMessages.add(relpath + lfn
