@@ -199,9 +199,9 @@ public class AlienCommandls extends AlienCommand {
 					} else
 						lLFN = Arrays.asList(entry);
 
-					if (iDirs != 1) {
-						alrcMessages.add(sPath + "\n");
-					}
+//					if (iDirs != 1) {
+//						alrcMessages.add(sPath + "\n");
+//					}
 
 					for (LFN localLFN : lLFN) {
 
