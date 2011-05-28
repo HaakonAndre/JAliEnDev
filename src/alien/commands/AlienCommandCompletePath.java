@@ -76,21 +76,21 @@ public class AlienCommandCompletePath extends AlienCommand {
 				}
 
 				String search = (String) this.alArguments.toArray()[0];
-				
+
 				String abs = FileSystemUtils.getAbsolutePath(this.sUsername,
 						this.sCurrentDirectory, search);
 
 				System.out.println("tabcompleting on absolute path: " + abs);
 
 				String foldername = abs.substring(0, abs.lastIndexOf("/"));
-				
-				String wildcard = abs.substring(abs.lastIndexOf("/")+1,abs.length()-1);
+
+				String wildcard = abs.substring(abs.lastIndexOf("/") + 1,
+						abs.length());
 				System.out.println("tabcompleting wildcard: " + wildcard);
 
-				
 				String relpath = "";
-					if(search.contains("/"))
-				relpath = search.substring(0, search.lastIndexOf("/"));
+				if (search.contains("/"))
+					relpath = search.substring(0, search.lastIndexOf("/"));
 
 				System.out
 						.println("tabcompleting on foldername: " + foldername);
@@ -108,26 +108,27 @@ public class AlienCommandCompletePath extends AlienCommand {
 						for (LFN lfn : lLFN) {
 							System.out.println("comparing candidate: "
 									+ lfn.getName());
-							if (lfn.getFileName().startsWith(wildcard)){
+							if (lfn.getFileName().startsWith(wildcard)) {
 								System.out.println("matched wildcard: "
 										+ lfn.getFileName());
 								String suggest = lfn.getFileName();
-								if(lfn.type == 'd')
+								if (lfn.type == 'd')
 									suggest += "/";
 								suggestions.add(suggest);
 							}
 						}
 						if (suggestions.size() == 1) {
 							alrcValues.add(relpath + suggestions.get(0));
-							String suggest = (relpath + suggestions.get(0)).replace(search, "");
+							String suggest = (relpath + suggestions.get(0))
+									.replace(search, "");
 							alrcMessages.add(suggest);
 
-							System.out.println("filling in one: "
-									+ suggest);
+							System.out.println("filling in one: " + suggest);
 						} else {
 							for (String lfn : suggestions) {
-								alrcValues.add(relpath + suggestions.get(0));
-								alrcMessages.add(relpath + suggestions.get(0) + "\n");
+								alrcValues.add(relpath + lfn);
+								alrcMessages.add(relpath + lfn
+										+ "\n");
 
 							}
 						}
