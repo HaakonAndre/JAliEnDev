@@ -207,8 +207,9 @@ public class AlienCommandls extends AlienCommand {
 						
 					
 						String ret = "";
-						if(bL)
-							ret += localLFN.getName();
+						if(bL){
+							ret += localLFN.perm +"	"+ localLFN.owner +"	"+ localLFN.gowner  +"		"+ localLFN.ctime + "		" + 	localLFN.getFileName();
+						}
 						else 
 							ret += localLFN.getName();
 						
