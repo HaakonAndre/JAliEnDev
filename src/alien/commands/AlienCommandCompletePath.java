@@ -79,6 +79,9 @@ public class AlienCommandCompletePath extends AlienCommand {
 						this.sCurrentDirectory,
 						((String) this.alArguments.toArray()[0]));
 
+				System.out.println("tabcompleting on absolute path: " + abs);
+
+				
 				String wildcard = abs.substring(abs.lastIndexOf("/"),
 						abs.length() - 1);
 
