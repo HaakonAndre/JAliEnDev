@@ -83,7 +83,10 @@ public class AlienCommandCompletePath extends AlienCommand {
 				System.out.println("tabcompleting on absolute path: " + abs);
 
 				String foldername = abs.substring(0, abs.lastIndexOf("/"));
-				String relpath = search.substring(0, search.lastIndexOf("/"));
+				
+				String relpath = "";
+					if(search.contains("/"))
+				relpath = search.substring(0, search.lastIndexOf("/"));
 
 				System.out
 						.println("tabcompleting on foldername: " + foldername);
