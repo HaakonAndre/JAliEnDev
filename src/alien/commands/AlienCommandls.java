@@ -229,7 +229,7 @@ public class AlienCommandls extends AlienCommand {
 										+ localLFN.ctime
 										+ "		" + localLFN.getFileName();
 							else
-								ret += localLFN.getName();
+								ret += localLFN.getFileName();
 
 							if (bF && (localLFN.type == 'd'))
 								ret += "/";
