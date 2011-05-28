@@ -103,10 +103,13 @@ public class AlienCommandCompletePath extends AlienCommand {
 								suggestions.add(lfn.getName());
 						}
 						if (suggestions.size() == 1) {
-							alrcMessages.add(suggestions.get(0)
-									.replace(abs, ""));
+							String suggest = suggestions.get(0)
+							.replace(abs, "");
+							alrcValues.add(suggest);
+							alrcMessages.add(suggest);
+
 							System.out.println("filling in one: "
-									+ suggestions.get(0).replace(abs, ""));
+									+ suggest);
 						} else {
 							for (String lfn : suggestions) {
 								alrcMessages.add(lfn + "\n");
