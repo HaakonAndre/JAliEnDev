@@ -174,10 +174,6 @@ public class AlienCommandwhereis extends AlienCommand {
 
 			Log.log(Log.INFO, "Spath = \"" + slfn + "\"");
 
-			System.out.println("Checking with whereis for: " + slfn);
-			System.out.println("Checking with whereis for processed lfn: " + LFNUtils.getLFN(slfn).getName());
-			System.out.println("Checking with whereis for processed guid: " + LFNUtils.getLFN(slfn).guid.toString());
-			
 			GUID guid = null;
 			if (bG)
 				guid = GUIDUtils.getGUID(UUID.fromString(slfn));
@@ -209,7 +205,7 @@ public class AlienCommandwhereis extends AlienCommand {
 
 				if (!bS)
 					alrcMessages.add(AlienTime.getStamp()
-						+ "	The file whoamI.jdl is in\n");
+						+ "	The file "+slfn.substring(slfn.lastIndexOf("/"),slfn.length())+" is in\n");
 				for (PFN pfn : pfns) {
 
 					String se = SEUtils.getSE(pfn.seNumber).seName;
