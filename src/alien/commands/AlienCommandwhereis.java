@@ -214,7 +214,7 @@ public class AlienCommandwhereis extends AlienCommand {
 								+ "\n");
 				}
 			} else {
-				alrcMessages.add("No such file or directory\n");
+				alrcMessages.add(AlienTime.getStamp() + "No such file or directory\n");
 			}
 
 		} else {
