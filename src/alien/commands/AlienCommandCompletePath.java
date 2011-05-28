@@ -64,7 +64,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 
 		ArrayList<String> alrcValues = new ArrayList<String>();
 		ArrayList<String> alrcMessages = new ArrayList<String>();
-
+		
 		// we got arguments for ls
 		if (this.alArguments != null && this.alArguments.size() > 0)
 			if (this.pAlienUser.canBecome(this.sUsername)) {
@@ -81,13 +81,9 @@ public class AlienCommandCompletePath extends AlienCommand {
 
 				System.out.println("tabcompleting on absolute path: " + abs);
 
-				
-				String wildcard = abs.substring(abs.lastIndexOf("/")+1,
-						abs.length() - 1);
-
 				String foldername = abs.substring(0, abs.lastIndexOf("/"));
 				
-				System.out.println("tabcompleting on wildcard: " + wildcard);
+
 				System.out.println("tabcompleting on foldername: " + foldername);
 
 
@@ -99,10 +95,18 @@ public class AlienCommandCompletePath extends AlienCommand {
 					if (folder.type == 'd') {
 
 						List<LFN> lLFN = folder.list();
+						ArrayList<String> suggestions = new ArrayList<String>();
+
 						for (LFN lfn : lLFN) {
 							System.out.println("comparing candidate: " + lfn.getName());
-							if (lfn.getName().startsWith(wildcard))
-								alrcMessages.add(lfn.getName() + "\n");
+							if (lfn.getName().startsWith(abs))
+								suggestions.add(lfn.getFileName());
+						}
+						if(suggestions.size()>1){
+							alrcMessages.add(suggestions.get(0).replace(abs, ""));
+						}
+						for (String lfn : suggestions) {
+							alrcMessages.add(lfn+"\n");
 						}
 					}
 
