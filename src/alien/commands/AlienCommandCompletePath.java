@@ -75,7 +75,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 					System.out.println("We are asked to tabcomplete: " + sArg);
 				}
 
-				String search = (String) this.alArguments.toArray()[0]);
+				String search = (String) this.alArguments.toArray()[0];
 				
 				String abs = FileSystemUtils.getAbsolutePath(this.sUsername,
 						this.sCurrentDirectory, search);
