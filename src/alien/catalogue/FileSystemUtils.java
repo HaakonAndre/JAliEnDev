@@ -71,13 +71,16 @@ public final class FileSystemUtils {
 	 * @param lfn
 	 * @return type+perm String e.g. -rwxrwxr-x or drwxr-xr-x
 	 */
-	public static String getFormatedTypeAndPerm(GUID guid){
+	public static String getFormatedTypeAndPerm(LFN lfn){
 		
 		String ret = "-";
-		if(guid.type!='f')
-			ret = String.valueOf(guid.type);
+		String permissions = lfn.perm;
+		if(lfn.type!='f'){
+			permissions = GUIDUtils.getGUID(lfn.guid).perm;
+		}
+		ret = String.valueOf(lfn.type);
 		for (int pos=0;pos<3;pos++){
-			int perm = guid.perm.charAt(pos);
+			int perm = permissions.charAt(pos);
 			perm -= 4;
 			if(perm>0) 
 				ret += "r";
