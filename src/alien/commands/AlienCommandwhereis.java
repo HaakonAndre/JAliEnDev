@@ -65,6 +65,12 @@ public class AlienCommandwhereis extends AlienCommand {
 	private boolean bG = false;
 
 	/**
+	 * marker for -g argument
+	 */
+	private final static String Iam = "whereis";
+	
+	
+	/**
 	 * @param p
 	 *            AliEn principal received from https request
 	 * @param al
@@ -123,7 +129,7 @@ public class AlienCommandwhereis extends AlienCommand {
 				if (sArg.startsWith("-")) {
 					if (sArg.length() == 1) {
 						alrcMessages
-								.add("Expected argument after \"-\" \n ls -help for more help\n");
+								.add("Expected argument after \"-\" \n "+ Iam +" -help for more help\n");
 					} else {
 						String sLocalArg = sArg.substring(1);
 
@@ -137,7 +143,7 @@ public class AlienCommandwhereis extends AlienCommand {
 								if (!lsArguments.contains(cLetter + "")) {
 									alrcMessages.add("Unknown argument "
 											+ cLetter
-											+ "! \n ls -help for more help\n");
+											+ "! \n "+ Iam +" -help for more help\n");
 								} else {
 									if ("l".equals(cLetter + ""))
 										bL = true;
