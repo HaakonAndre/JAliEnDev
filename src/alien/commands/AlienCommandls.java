@@ -22,9 +22,12 @@ public class AlienCommandls extends AlienCommand {
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
 	static {
-		lsArguments.add("help");
+		lsArguments.add("h");
 		lsArguments.add("l");
 		lsArguments.add("a");
+		lsArguments.add("F");
+		lsArguments.add("n");
+		lsArguments.add("b");
 	}
 
 	/**
@@ -43,6 +46,22 @@ public class AlienCommandls extends AlienCommand {
 	@SuppressWarnings("unused")
 	private boolean bA = false;
 
+	/**
+	 * marker for -F argument
+	 */
+	private boolean bF = false;
+
+	/**
+	 * marker for -n argument
+	 */
+	@SuppressWarnings("unused")
+	private boolean bN = false;
+
+	/**
+	 * marker for -b argument
+	 */
+	@SuppressWarnings("unused")
+	private boolean bB = false;
 
 	/**
 	 * marker for -g argument
@@ -132,8 +151,14 @@ public class AlienCommandls extends AlienCommand {
 									if ("l".equals(cLetter + ""))
 										bL = true;
 
-									if ("a".equals(cLetter + ""))
+									else if ("a".equals(cLetter + ""))
 										bA = true;
+
+									else if ("a".equals(cLetter + ""))
+										bF = true;
+
+									else if ("a".equals(cLetter + ""))
+										bB = true;
 
 								}
 							}
@@ -179,8 +204,18 @@ public class AlienCommandls extends AlienCommand {
 					}
 
 					for (LFN localLFN : lLFN) {
-						alrcMessages.add(bL ? localLFN.getName() + "\n"
-								: localLFN.getFileName() + "\n");
+						
+					
+						String ret = "";
+						if(bL)
+							ret += localLFN.getName();
+						else 
+							ret += localLFN.getName();
+						
+						if(bF && (localLFN.type == 'd'))
+							ret += "/";
+						
+						alrcMessages.add(ret+ "\n");
 					}
 				} else {
 					alrcMessages.add("No such file or directory\n");
@@ -188,14 +223,14 @@ public class AlienCommandls extends AlienCommand {
 			}
 		} else {
 			alrcMessages.add(AlienTime.getStamp()
-					+ "Usage: ls [-laFn|b|h] [<directory>]");
-			alrcMessages.add("		-l : long format");
-			alrcMessages.add("		-a : show hidden .* files");
-			alrcMessages.add("		-F : add trailing / to directory names");
-			alrcMessages.add("		-n: switch off the colour output	[NOT IMPLEMENTED]");
-			alrcMessages.add("		-b : print in guid format");
-			alrcMessages.add("		-h : print the help text");
-			alrcMessages.add("		-e : display also the expire date	[NOT IMPLEMENTED]");
+					+ "Usage: ls [-laFn|b|h] [<directory>]\n");
+			alrcMessages.add("		-l : long format\n");
+			alrcMessages.add("		-a : show hidden .* files\n");
+			alrcMessages.add("		-F : add trailing / to directory names\n");
+			alrcMessages.add("		-n: switch off the colour output	[NOT IMPLEMENTED]\n");
+			alrcMessages.add("		-b : print in guid format\n");
+			alrcMessages.add("		-h : print the help text\n");
+			alrcMessages.add("		-e : display also the expire date	[NOT IMPLEMENTED]\n");
 
 		}
 
