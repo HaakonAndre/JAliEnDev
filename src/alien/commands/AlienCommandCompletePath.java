@@ -104,6 +104,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 						}
 						if(suggestions.size()>1){
 							alrcMessages.add(suggestions.get(0).replace(abs, ""));
+							System.out.println("filling in one: " + suggestions.get(0).replace(abs, ""));
 						}
 						for (String lfn : suggestions) {
 							alrcMessages.add(lfn+"\n");

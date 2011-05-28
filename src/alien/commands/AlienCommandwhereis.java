@@ -174,6 +174,8 @@ public class AlienCommandwhereis extends AlienCommand {
 			Log.log(Log.INFO, "Spath = \"" + slfn + "\"");
 
 			System.out.println("Checking with whereis for: " + slfn);
+			System.out.println("Checking with whereis for processed lfn: " + LFNUtils.getLFN(slfn).getName());
+			System.out.println("Checking with whereis for processed guid: " + LFNUtils.getLFN(slfn).guid.toString());
 			
 			GUID guid = null;
 			if (bG)
