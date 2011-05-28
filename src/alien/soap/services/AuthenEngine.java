@@ -519,7 +519,7 @@ public class AuthenEngine {
 		int p_qosCount = Integer.parseInt(sanitizePerlString(optionHash.get("writeQosCount"), true));
 		
 		String p_lfn = sanitizePerlString(optionHash.get("lfn"), false);
-		if (!p_lfn.startsWith("//"))
+		if (!p_lfn.startsWith("/"))
 			p_lfn = p_dir + "/" + p_lfn;
 		String p_guid = sanitizePerlString(optionHash.get("guid"), false);
 		String p_guidrequest = sanitizePerlString(
