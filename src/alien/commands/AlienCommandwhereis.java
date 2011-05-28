@@ -9,6 +9,7 @@ import java.util.UUID;
 import lazyj.Log;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.se.SEUtils;
@@ -180,14 +181,13 @@ public class AlienCommandwhereis extends AlienCommand {
 			GUID guid = null;
 			if (bG)
 				guid = GUIDUtils.getGUID(UUID.fromString(slfn));
-			else
-				guid = GUIDUtils.getGUID(LFNUtils.getLFN(slfn).guid);
-
+			else{
+				LFN lfn = LFNUtils.getLFN(slfn);
+				if(lfn!=null)
+				guid = GUIDUtils.getGUID(lfn.guid);
+			}
 			// what message in case of error?
 			if (guid != null) {
-				if (bR) {
-
-				}
 
 				Set<PFN> pfns = guid.getPFNs();
 
