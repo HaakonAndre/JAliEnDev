@@ -100,7 +100,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 							System.out.println("comparing candidate: "
 									+ lfn.getName());
 							if (lfn.getName().startsWith(abs))
-								suggestions.add(lfn.getFileName());
+								suggestions.add(lfn.getName());
 						}
 						if (suggestions.size() == 1) {
 							alrcMessages.add(suggestions.get(0)
