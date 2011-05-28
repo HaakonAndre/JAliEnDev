@@ -84,6 +84,10 @@ public class AlienCommandCompletePath extends AlienCommand {
 
 				String foldername = abs.substring(0, abs.lastIndexOf("/"));
 				
+				String wildcard = abs.substring(abs.lastIndexOf("/")+1,abs.length()-1);
+				System.out.println("tabcompleting wildcard: " + wildcard);
+
+				
 				String relpath = "";
 					if(search.contains("/"))
 				relpath = search.substring(0, search.lastIndexOf("/"));
@@ -104,7 +108,9 @@ public class AlienCommandCompletePath extends AlienCommand {
 						for (LFN lfn : lLFN) {
 							System.out.println("comparing candidate: "
 									+ lfn.getName());
-							if (lfn.getName().startsWith(abs)){
+							if (lfn.getFileName().startsWith(wildcard)){
+								System.out.println("matched wildcard: "
+										+ lfn.getFileName());
 								String suggest = lfn.getFileName();
 								if(lfn.type == 'd')
 									suggest += "/";
