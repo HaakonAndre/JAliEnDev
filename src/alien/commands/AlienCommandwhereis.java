@@ -173,6 +173,8 @@ public class AlienCommandwhereis extends AlienCommand {
 
 			Log.log(Log.INFO, "Spath = \"" + slfn + "\"");
 
+			System.out.println("Checking with whereis for: " + slfn);
+			
 			GUID guid = null;
 			if (bG)
 				guid = GUIDUtils.getGUID(UUID.fromString(slfn));
