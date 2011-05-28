@@ -8,6 +8,8 @@ import java.util.List;
 import lazyj.Log;
 
 import alien.catalogue.FileSystemUtils;
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
@@ -205,17 +207,21 @@ public class AlienCommandls extends AlienCommand {
 					}
 
 					for (LFN localLFN : lLFN) {
-						
 					
 						String ret = "";
+						if(bB){
+							ret += localLFN.guid + "	" + localLFN.getFileName();
+						}else{
+						
 						if(bL){
-							ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) +"	"+ localLFN.owner +"	"+ localLFN.gowner  +"		"+ localLFN.ctime + "		" + 	localLFN.getFileName();
+							ret += FileSystemUtils.getFormatedTypeAndPerm(GUIDUtils.getGUID(localLFN.guid)) +"	"+ localLFN.owner +"	"+ localLFN.gowner  +"		"+ localLFN.ctime + "		" + 	localLFN.getFileName();
 						}
 						else 
 							ret += localLFN.getName();
 						
 						if(bF && (localLFN.type == 'd'))
 							ret += "/";
+					}
 						
 						alrcMessages.add(ret+ "\n");
 					}
