@@ -77,8 +77,8 @@ public final class FileSystemUtils {
 		String permissions = lfn.perm;
 		if (lfn.type != 'f')
 			ret = String.valueOf(lfn.type);
-		else
-			permissions = GUIDUtils.getGUID(lfn.guid).perm;
+//		else
+//			permissions = GUIDUtils.getGUID(lfn.guid).perm;
 		for (int pos = 0; pos < 3; pos++) {
 			int perm = permissions.charAt(pos);
 			perm -= 4;

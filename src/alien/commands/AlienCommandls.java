@@ -214,7 +214,7 @@ public class AlienCommandls extends AlienCommand {
 						}else{
 						
 						if(bL){
-							ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) +"	"+ localLFN.owner +"	"+ localLFN.gowner  +"		"+ localLFN.ctime + "		" + 	localLFN.getFileName();
+							ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) +"	"+ localLFN.owner +" "+ localLFN.gowner  +"		"+ localLFN.size +" "+ localLFN.ctime + "		" + 	localLFN.getFileName();
 						}
 						else 
 							ret += localLFN.getName();
