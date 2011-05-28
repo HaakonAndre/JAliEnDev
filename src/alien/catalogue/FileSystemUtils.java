@@ -41,10 +41,10 @@ public final class FileSystemUtils {
 		if (path.substring(0, 1) == "/")
 			return path;
 		else if (path.substring(0, 1) == "~")
-			path = UsersHelper.getHomeDir(user) + "/"
+			path = UsersHelper.getHomeDir(user) 
 					+ path.substring(1, path.length() - 1);
 		else
-			path = currentDir + "/" + path;
+			path = currentDir + path;
 
 		if (path.contains(".")) {
 			if (path.contains("/..")) {
