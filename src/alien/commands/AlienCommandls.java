@@ -210,7 +210,7 @@ public class AlienCommandls extends AlienCommand {
 					
 						String ret = "";
 						if(bB){
-							ret += localLFN.guid + "	" + localLFN.getFileName();
+							ret += localLFN.guid.toString() + "	" + localLFN.getFileName();
 						}else{
 						
 						if(bL){
