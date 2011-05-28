@@ -22,10 +22,8 @@ import alien.user.AliEnPrincipal;
  * @since May 28, 2011 implements AliEn whereis command
  * */
 public class AlienCommandCompletePath extends AlienCommand {
-	
 
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
-
 
 	/**
 	 * @param p
@@ -54,9 +52,10 @@ public class AlienCommandCompletePath extends AlienCommand {
 	 *            command arguments, can be size 0 or null
 	 * @throws Exception
 	 */
-	public AlienCommandCompletePath(final AliEnPrincipal p, final String sUsername,
-			final String sCurrentDirectory, final String sCommand,
-			final int iDebugLevel, final List<?> alArguments) throws Exception {
+	public AlienCommandCompletePath(final AliEnPrincipal p,
+			final String sUsername, final String sCurrentDirectory,
+			final String sCommand, final int iDebugLevel,
+			final List<?> alArguments) throws Exception {
 		super(p, sUsername, sCurrentDirectory, sCommand, iDebugLevel,
 				alArguments);
 	}
@@ -77,34 +76,37 @@ public class AlienCommandCompletePath extends AlienCommand {
 		ArrayList<String> alrcMessages = new ArrayList<String>();
 
 		// we got arguments for ls
-		if (this.alArguments != null && this.alArguments.size() > 0) 
-			if(this.pAlienUser.canBecome(this.sUsername)){
-				String abs = FileSystemUtils.getAbsolutePath(this.sUsername, this.sCurrentDirectory , ((String) this.alArguments.toArray()[0]));
-			
-				String wildcard = abs.substring(abs.lastIndexOf("/"),abs.length()-1);
-				
-				String foldername = abs.substring(0,abs.lastIndexOf("/")-1);
-				
+		if (this.alArguments != null && this.alArguments.size() > 0)
+			if (this.pAlienUser.canBecome(this.sUsername)) {
+				String abs = FileSystemUtils.getAbsolutePath(this.sUsername,
+						this.sCurrentDirectory,
+						((String) this.alArguments.toArray()[0]));
+
+				String wildcard = abs.substring(abs.lastIndexOf("/"),
+						abs.length() - 1);
+
+				String foldername = abs.substring(0, abs.lastIndexOf("/") - 1);
+
 				final LFN folder = LFNUtils.getLFN(foldername);
 
-				//what message in case of error?
-				if (folder != null){
-					
-					if (folder.type=='d'){
-						
-					
+				// what message in case of error?
+				if (folder != null) {
+
+					if (folder.type == 'd') {
+
 						List<LFN> lLFN = folder.list();
-						for(LFN lfn : lLFN){
-							if(lfn.getName().startsWith(wildcard))
-								alrcValues.add(lfn.getName()+"\n");
+						for (LFN lfn : lLFN) {
+							if (lfn.getName().startsWith(wildcard))
+								alrcValues.add(lfn.getName() + "\n");
 						}
 					}
-				
+
+				}
+				hmReturn.put("rcvalues", alrcValues);
+				hmReturn.put("rcmessages", alrcMessages);
+
+				return hmReturn;
 			}
-		hmReturn.put("rcvalues", alrcValues);
-		hmReturn.put("rcmessages", alrcMessages);
 
-		return hmReturn;
 	}
-
 }
