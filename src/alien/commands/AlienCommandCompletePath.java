@@ -86,6 +86,10 @@ public class AlienCommandCompletePath extends AlienCommand {
 						abs.length() - 1);
 
 				String foldername = abs.substring(0, abs.lastIndexOf("/") - 1);
+				
+				System.out.println("tabcompleting on wildcard: " + wildcard);
+				System.out.println("tabcompleting on foldername: " + foldername);
+
 
 				final LFN folder = LFNUtils.getLFN(foldername);
 
@@ -96,6 +100,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 
 						List<LFN> lLFN = folder.list();
 						for (LFN lfn : lLFN) {
+							System.out.println("comparing candidate: " + lfn.getName());
 							if (lfn.getName().startsWith(wildcard))
 								alrcMessages.add(lfn.getName() + "\n");
 						}
