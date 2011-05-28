@@ -210,6 +210,8 @@ public class AlienCommandls extends AlienCommand {
 
 						String ret = "";
 						if (bB){
+							if(localLFN.type=='d')
+								continue;
 							System.out.println("We will paste GUID: "+ localLFN.guid.toString());
 							ret += localLFN.guid.toString() + "	"
 									+ localLFN.getFileName();
