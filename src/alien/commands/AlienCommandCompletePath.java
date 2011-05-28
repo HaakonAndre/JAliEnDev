@@ -75,13 +75,15 @@ public class AlienCommandCompletePath extends AlienCommand {
 					System.out.println("We are asked to tabcomplete: " + sArg);
 				}
 
+				String search = (String) this.alArguments.toArray()[0]);
+				
 				String abs = FileSystemUtils.getAbsolutePath(this.sUsername,
-						this.sCurrentDirectory,
-						((String) this.alArguments.toArray()[0]));
+						this.sCurrentDirectory, search);
 
 				System.out.println("tabcompleting on absolute path: " + abs);
 
 				String foldername = abs.substring(0, abs.lastIndexOf("/"));
+				String relpath = search.substring(0, search.lastIndexOf("/"));
 
 				System.out
 						.println("tabcompleting on foldername: " + foldername);
@@ -99,20 +101,25 @@ public class AlienCommandCompletePath extends AlienCommand {
 						for (LFN lfn : lLFN) {
 							System.out.println("comparing candidate: "
 									+ lfn.getName());
-							if (lfn.getName().startsWith(abs))
-								suggestions.add(lfn.getName());
+							if (lfn.getName().startsWith(abs)){
+								String suggest = lfn.getFileName();
+								if(lfn.type == 'd')
+									suggest += "/";
+								suggestions.add(suggest);
+							}
 						}
 						if (suggestions.size() == 1) {
-							String suggest = suggestions.get(0)
-							.replace(abs, "");
-							alrcValues.add(suggest);
+							alrcValues.add(relpath + suggestions.get(0));
+							String suggest = (relpath + suggestions.get(0)).replace(search, "");
 							alrcMessages.add(suggest);
 
 							System.out.println("filling in one: "
 									+ suggest);
 						} else {
 							for (String lfn : suggestions) {
-								alrcMessages.add(lfn + "\n");
+								alrcValues.add(relpath + suggestions.get(0));
+								alrcMessages.add(relpath + suggestions.get(0) + "\n");
+
 							}
 						}
 					}
