@@ -41,7 +41,7 @@ public final class FileSystemUtils {
 		if (path.substring(0, 1) == "/")
 			return path;
 		else if (path.substring(0, 1) == "~")
-			path = UsersHelper.getHomeDir(user) 
+			path = UsersHelper.getHomeDir(user)
 					+ path.substring(1, path.length() - 1);
 		else
 			path = currentDir + path;
@@ -64,41 +64,40 @@ public final class FileSystemUtils {
 
 		return path;
 	}
-	
+
 	/**
 	 * Get the type+perm string for LFN
 	 * 
 	 * @param lfn
 	 * @return type+perm String e.g. -rwxrwxr-x or drwxr-xr-x
 	 */
-	public static String getFormatedTypeAndPerm(LFN lfn){
-		
+	public static String getFormatedTypeAndPerm(LFN lfn) {
+
 		String ret = "-";
 		String permissions = lfn.perm;
-		if(lfn.type!='f'){
+		if (lfn.type != 'f')
+			ret = String.valueOf(lfn.type);
+		else
 			permissions = GUIDUtils.getGUID(lfn.guid).perm;
-		}
-		ret = String.valueOf(lfn.type);
-		for (int pos=0;pos<3;pos++){
+		for (int pos = 0; pos < 3; pos++) {
 			int perm = permissions.charAt(pos);
 			perm -= 4;
-			if(perm>0) 
+			if (perm > 0)
 				ret += "r";
-			else 
+			else
 				ret += "-";
 			perm -= 2;
-			if(perm>0) 
+			if (perm > 0)
 				ret += "w";
-			else 
+			else
 				ret += "-";
 			perm -= 1;
-			if(perm>0) 
+			if (perm > 0)
 				ret += "x";
-			else 
+			else
 				ret += "-";
 		}
 		return ret;
 	}
-	
 
 }
