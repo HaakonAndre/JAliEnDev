@@ -7,6 +7,7 @@ import java.util.List;
 
 import lazyj.Log;
 
+import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
@@ -208,7 +209,7 @@ public class AlienCommandls extends AlienCommand {
 					
 						String ret = "";
 						if(bL){
-							ret += localLFN.perm +"	"+ localLFN.owner +"	"+ localLFN.gowner  +"		"+ localLFN.ctime + "		" + 	localLFN.getFileName();
+							ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) +"	"+ localLFN.owner +"	"+ localLFN.gowner  +"		"+ localLFN.ctime + "		" + 	localLFN.getFileName();
 						}
 						else 
 							ret += localLFN.getName();

@@ -64,5 +64,38 @@ public final class FileSystemUtils {
 
 		return path;
 	}
+	
+	/**
+	 * Get the type+perm string for LFN
+	 * 
+	 * @param lfn
+	 * @return type+perm String e.g. -rwxrwxr-x or drwxr-xr-x
+	 */
+	public static String getFormatedTypeAndPerm(LFN lfn){
+		
+		String ret = "-";
+		if(lfn.type!='f')
+			ret = String.valueOf(lfn.type);
+		for (int pos=0;pos<3;pos++){
+			int perm = lfn.perm.charAt(pos);
+			perm -= 4;
+			if(perm>0) 
+				ret += "r";
+			else 
+				ret += "-";
+			perm -= 2;
+			if(perm>0) 
+				ret += "w";
+			else 
+				ret += "-";
+			perm -= 1;
+			if(perm>0) 
+				ret += "x";
+			else 
+				ret += "-";
+		}
+		return ret;
+	}
+	
 
 }
