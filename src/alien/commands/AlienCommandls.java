@@ -70,8 +70,7 @@ public class AlienCommandls extends AlienCommand {
 	 * marker for -g argument
 	 */
 	private final static String Iam = "ls";
-	
-	
+
 	/**
 	 * @param p
 	 *            AliEn principal received from https request
@@ -126,16 +125,14 @@ public class AlienCommandls extends AlienCommand {
 		// we got arguments for ls
 		if (this.alArguments != null && this.alArguments.size() > 0) {
 
-			
-			
 			for (Object oArg : this.alArguments) {
 				String sArg = (String) oArg;
 
 				// we got an argument
 				if (sArg.startsWith("-")) {
 					if (sArg.length() == 1) {
-						alrcMessages
-								.add("Expected argument after \"-\" \n "+Iam+" -help for more help\n");
+						alrcMessages.add("Expected argument after \"-\" \n "
+								+ Iam + " -help for more help\n");
 					} else {
 						String sLocalArg = sArg.substring(1);
 
@@ -148,8 +145,8 @@ public class AlienCommandls extends AlienCommand {
 
 								if (!lsArguments.contains(cLetter + "")) {
 									alrcMessages.add("Unknown argument "
-											+ cLetter
-											+ "! \n "+Iam+" -help for more help\n");
+											+ cLetter + "! \n " + Iam
+											+ " -help for more help\n");
 								} else {
 									if ("l".equals(cLetter + ""))
 										bL = true;
@@ -157,10 +154,10 @@ public class AlienCommandls extends AlienCommand {
 									else if ("a".equals(cLetter + ""))
 										bA = true;
 
-									else if ("a".equals(cLetter + ""))
+									else if ("F".equals(cLetter + ""))
 										bF = true;
 
-									else if ("a".equals(cLetter + ""))
+									else if ("b".equals(cLetter + ""))
 										bB = true;
 
 								}
@@ -207,26 +204,38 @@ public class AlienCommandls extends AlienCommand {
 					}
 
 					for (LFN localLFN : lLFN) {
-						
-						if(!bA && localLFN.getFileName().startsWith("."))
+
+						if (!bA && localLFN.getFileName().startsWith("."))
 							continue;
-					
+
 						String ret = "";
-						if(bB){
-							ret += localLFN.guid.toString() + "	" + localLFN.getFileName();
-						}else{
-						
-						if(bL){
-							ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) +"	"+ localLFN.owner +" "+ localLFN.gowner  +"		"+ localLFN.size +" "+ localLFN.ctime + "		" + 	localLFN.getFileName();
+						if (bB){
+							System.out.println("We will paste GUID: "+ localLFN.guid.toString());
+							ret += localLFN.guid.toString() + "	"
+									+ localLFN.getFileName();
 						}
-						else 
-							ret += localLFN.getName();
-						
-						if(bF && (localLFN.type == 'd'))
-							ret += "/";
-					}
-						
-						alrcMessages.add(ret+ "\n");
+						else {
+
+							if (bL)
+								ret += FileSystemUtils
+										.getFormatedTypeAndPerm(localLFN)
+										+ "	"
+										+ localLFN.owner
+										+ " "
+										+ localLFN.gowner
+										+ "		"
+										+ localLFN.size
+										+ " "
+										+ localLFN.ctime
+										+ "		" + localLFN.getFileName();
+							else
+								ret += localLFN.getName();
+
+							if (bF && (localLFN.type == 'd'))
+								ret += "/";
+						}
+
+						alrcMessages.add(ret + "\n");
 					}
 				} else {
 					alrcMessages.add("No such file or directory\n");
@@ -238,10 +247,12 @@ public class AlienCommandls extends AlienCommand {
 			alrcMessages.add("		-l : long format\n");
 			alrcMessages.add("		-a : show hidden .* files\n");
 			alrcMessages.add("		-F : add trailing / to directory names\n");
-			alrcMessages.add("		-n: switch off the colour output	[NOT IMPLEMENTED]\n");
+			alrcMessages
+					.add("		-n: switch off the colour output	[NOT IMPLEMENTED]\n");
 			alrcMessages.add("		-b : print in guid format\n");
 			alrcMessages.add("		-h : print the help text\n");
-			alrcMessages.add("		-e : display also the expire date	[NOT IMPLEMENTED]\n");
+			alrcMessages
+					.add("		-e : display also the expire date	[NOT IMPLEMENTED]\n");
 
 		}
 
