@@ -183,6 +183,11 @@ public class AlienCommandwhereis extends AlienCommand {
 				guid = GUIDUtils.getGUID(UUID.fromString(slfn));
 			else{
 				LFN lfn = LFNUtils.getLFN(slfn);
+				if(lfn==null)
+					System.out.println("lfn of "+ slfn +" is null");
+					if(lfn.guid==null)
+						System.out.println("guid of "+ slfn +" is null");
+						
 				if(lfn!=null && lfn.guid!=null)
 					guid = GUIDUtils.getGUID(lfn.guid);
 			}
