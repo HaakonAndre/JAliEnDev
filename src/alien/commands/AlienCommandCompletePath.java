@@ -1,20 +1,12 @@
 package alien.commands;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
-import lazyj.Log;
 import alien.catalogue.FileSystemUtils;
-import alien.catalogue.GUID;
-import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
-import alien.catalogue.PFN;
-import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -22,8 +14,6 @@ import alien.user.AliEnPrincipal;
  * @since May 28, 2011 implements AliEn whereis command
  * */
 public class AlienCommandCompletePath extends AlienCommand {
-
-	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
 	/**
 	 * @param p
@@ -102,11 +92,11 @@ public class AlienCommandCompletePath extends AlienCommand {
 					}
 
 				}
-				hmReturn.put("rcvalues", alrcValues);
-				hmReturn.put("rcmessages", alrcMessages);
-
-				return hmReturn;
 			}
+		hmReturn.put("rcvalues", alrcValues);
+		hmReturn.put("rcmessages", alrcMessages);
+
+		return hmReturn;
 
 	}
 }
