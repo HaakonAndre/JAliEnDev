@@ -169,7 +169,7 @@ public class AlienCommandwhereis extends AlienCommand {
 
 			// listing current directory
 			if (!slfn.startsWith("/") && !bG)
-				slfn = this.sCurrentDirectory + slfn;
+				slfn = this.sCurrentDirectory + "/" + slfn;
 
 			Log.log(Log.INFO, "Spath = \"" + slfn + "\"");
 

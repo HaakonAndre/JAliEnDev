@@ -520,7 +520,7 @@ public class AuthenEngine {
 		
 		String p_lfn = sanitizePerlString(optionHash.get("lfn"), false);
 		if (!p_lfn.startsWith("//"))
-			p_lfn = p_dir + p_lfn;
+			p_lfn = p_dir + "/" + p_lfn;
 		String p_guid = sanitizePerlString(optionHash.get("guid"), false);
 		String p_guidrequest = sanitizePerlString(
 				optionHash.get("guidRequest"), false);
