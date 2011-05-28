@@ -33,7 +33,7 @@ public class AlienCommands {
 		
 		Log.log(Log.INFO, "Command received = \""+sLocalCommand+"\"");
 		
-		if("complete_path".equals(sInternalCommand)){
+		if("getTabCompletion".equals(sInternalCommand)){
 			return new AlienCommandCompletePath(p, al);
 		}
 		

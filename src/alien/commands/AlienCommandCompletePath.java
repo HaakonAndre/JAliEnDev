@@ -1,6 +1,7 @@
 package alien.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -10,6 +11,7 @@ import lazyj.Log;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.se.SEUtils;
@@ -76,9 +78,29 @@ public class AlienCommandCompletePath extends AlienCommand {
 
 		// we got arguments for ls
 		if (this.alArguments != null && this.alArguments.size() > 0) 
-			if(this.pAlienUser.canBecome(this.sUsername))
-				alrcValues.add(FileSystemUtils.getAbsolutePath(this.sUsername, this.sCurrentDirectory , ((String) this.alArguments.toArray()[0])));
+			if(this.pAlienUser.canBecome(this.sUsername)){
+				String abs = FileSystemUtils.getAbsolutePath(this.sUsername, this.sCurrentDirectory , ((String) this.alArguments.toArray()[0]));
 			
+				String wildcard = abs.substring(abs.lastIndexOf("/"),abs.length()-1);
+				
+				String foldername = abs.substring(0,abs.lastIndexOf("/")-1);
+				
+				final LFN folder = LFNUtils.getLFN(foldername);
+
+				//what message in case of error?
+				if (folder != null){
+					
+					if (folder.type=='d'){
+						
+					
+						List<LFN> lLFN = folder.list();
+						for(LFN lfn : lLFN){
+							if(lfn.getName().startsWith(wildcard))
+								alrcValues.add(lfn.getName()+"\n");
+						}
+					}
+				
+			}
 		hmReturn.put("rcvalues", alrcValues);
 		hmReturn.put("rcmessages", alrcMessages);
 
