@@ -119,7 +119,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 							alrcValues.add(relpath + suggestions.get(0));
 							String suggest = (relpath + suggestions.get(0))
 									.replace(search, "");
-							alrcMessages.add(suggest);
+							//alrcMessages.add(suggest);
 
 							System.out.println("filling in one: " + suggest);
 						} else {

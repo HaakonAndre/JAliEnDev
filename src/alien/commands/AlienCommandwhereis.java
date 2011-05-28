@@ -202,7 +202,7 @@ public class AlienCommandwhereis extends AlienCommand {
 
 				if (!bS)
 					alrcMessages.add(AlienTime.getStamp()
-						+ "	The file "+slfn.substring(slfn.lastIndexOf("/"),slfn.length())+" is in\n");
+						+ "The file "+slfn.substring(slfn.lastIndexOf("/"),slfn.length())+" is in\n");
 				for (PFN pfn : pfns) {
 
 					String se = SEUtils.getSE(pfn.seNumber).seName;
