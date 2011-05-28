@@ -68,6 +68,13 @@ public class AlienCommandCompletePath extends AlienCommand {
 		// we got arguments for ls
 		if (this.alArguments != null && this.alArguments.size() > 0)
 			if (this.pAlienUser.canBecome(this.sUsername)) {
+
+				for (Object oArg : this.alArguments) {
+					String sArg = (String) oArg;
+
+					System.out.println("We are asked to tabcomplete: " + sArg);
+				}
+
 				String abs = FileSystemUtils.getAbsolutePath(this.sUsername,
 						this.sCurrentDirectory,
 						((String) this.alArguments.toArray()[0]));
