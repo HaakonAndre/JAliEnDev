@@ -154,16 +154,10 @@ public class AlienCommandlfn2guid extends AlienCommand {
 
 			if (lfn != null) {
 
-				GUID guid = GUIDUtils.getGUID(lfn.guid);
-
-				// what message in case of error?
-				if (guid != null) {
-
 					alrcMessages.add(lfn.getFileName() + "   "
-							+ guid.toString().toUpperCase());
+							+ lfn.guid.toString().toUpperCase());
 
-					alrcValues.add(guid.toString());
-				}
+					alrcValues.add(lfn.guid.toString());
 
 			} else {
 				alrcMessages.add(AlienTime.getStamp()
