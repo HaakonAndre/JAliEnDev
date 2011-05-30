@@ -11,7 +11,7 @@ public class AlienAdminCommand  extends AlienCommand{
 		super(pAlienUser, al);
 		if(!pAlienUser.canBecome("admin"))
 			throw new PerlSecurityException("CANBECOME: You need to be [admin] to execute this command");
-		if(super.sUsername!="admin")
+		if(sUsername!="admin")
 			throw new PerlSecurityException("USERNAME: You need to be [admin] to execute this command");
 		if(!pAlienUser.canBecome("admin") || super.sUsername!="admin")
 			throw new PerlSecurityException("You need to be [admin] to execute this command");
