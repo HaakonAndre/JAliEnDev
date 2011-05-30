@@ -13,8 +13,11 @@ import java.util.logging.Logger;
 
 import lazyj.Utils;
 import utils.XRDChecker;
+import alien.catalogue.CatalogueUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.protocols.XRDStatus;
@@ -44,6 +47,20 @@ public class Testing {
 		//removeFZK();
 			
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+		
+		if (true){
+			LFN lfn = LFNUtils.getLFN("/alice/data/2011/LHC11b/000149656/ESDs/pass1");
+			
+			List<LFN> found = LFNUtils.find(lfn, CatalogueUtils.dbToJavaPattern("%AliESDs.root"), 0);
+						
+			long lStart = System.currentTimeMillis();
+			
+			found = LFNUtils.find(lfn, CatalogueUtils.dbToJavaPattern("%AliESDs.root"), 0);
+						
+			System.err.println("done : "+(System.currentTimeMillis() - lStart));
+			
+			return;
+		}
 		
 		XrootdListing listing = new XrootdListing("pcaliense01.cern.ch:1094", "/00");
 

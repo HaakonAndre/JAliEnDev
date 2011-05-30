@@ -1,7 +1,11 @@
 package alien.catalogue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lazyj.Format;
 
@@ -127,6 +131,52 @@ public class LFNUtils {
 			lfn.dir = parent.entryId;
 		
 		return lfn.insert();
+	}
+	
+	/**
+	 * the "-s" flag of AliEn `find`
+	 */
+	public static final int FIND_NO_SORT = 1;
+	
+	/**
+	 * the "-d" flag of AliEn `find`
+	 */
+	public static final int FIND_INCLUDE_DIRS = 2;
+	
+	/**
+	 * @param path
+	 * @param pattern
+	 * @param flags a combination of FIND_* flags
+	 * @return the list of LFNs that match
+	 */
+	public static List<LFN> find(final LFN path, final Pattern pattern, final int flags){
+		final List<LFN> ret = new ArrayList<LFN>();
+		
+		final List<LFN> listing = path.list();
+		
+		if (listing==null || listing.size()==0)
+			return ret;
+		
+		for (final LFN entry: listing){
+			if (entry.getType()=='d'){
+				if ((flags & FIND_INCLUDE_DIRS) != 0){
+					final Matcher m = pattern.matcher(entry.getCanonicalName());
+					
+					if (m.matches())
+						ret.add(entry);
+				}
+				
+				ret.addAll(find(entry, pattern, flags));
+			}
+			else{
+				final Matcher m = pattern.matcher(entry.getCanonicalName());
+				
+				if (m.matches())
+					ret.add(entry);
+			}
+		}
+		
+		return ret;
 	}
 	
 }

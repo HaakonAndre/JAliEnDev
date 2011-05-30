@@ -13,9 +13,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import lazyj.DBFunctions;
 import lazyj.cache.GenericLastValuesCache;
+import lia.util.security.authz.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -272,6 +274,20 @@ public final class CatalogueUtils {
 		}
 		
 		return best;
+	}
+	
+	/**
+	 * @param pattern
+	 * @return the Java pattern
+	 */
+	public static Pattern dbToJavaPattern(final String pattern){
+		String p = Format.replace(pattern, "*", "%");
+		p = Format.replace(p, "%%", "%");
+		p = Format.replace(p, ".", "\\.");
+		p = Format.replace(p, "_", ".");
+		p = Format.replace(p, "%", ".*");
+		
+		return Pattern.compile(p);
 	}
 	
 	/**
