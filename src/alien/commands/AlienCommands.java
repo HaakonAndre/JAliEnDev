@@ -52,7 +52,9 @@ public class AlienCommands {
 		else if("fquota_list".equals(sLocalCommand)){
 			return new AlienCommandfquotalist(p, al);
 		}
-		
+		else if("fquota_set".equals(sLocalCommand)){
+			return new AlienCommandfquotaset(p, al);
+		}
 		else return null;
 	}
 

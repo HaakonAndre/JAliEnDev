@@ -20,19 +20,13 @@ import alien.user.AliEnPrincipal;
  * @author Steffen Schreiner
  * @since May 30, 2011 implements AliEn fquota list command
  * */
-public class AlienCommandfquotalist extends AlienCommand {
+public class AlienCommandfquotaset extends AlienCommand {
 	/**
 	 * ls command arguments : -help/l/a
 	 */
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
-	/**
-	 * allowed units
-	 */
-	private static String allowedUnits = "BKMG";
-
 	static {
-		lsArguments.add("unit");
 	}
 
 	/**
@@ -43,8 +37,13 @@ public class AlienCommandfquotalist extends AlienCommand {
 	/**
 	 * marker for -l argument
 	 */
-	private char bU = 'M';
-
+	private String setWhat = null;
+	
+	/**
+	 * marker for -l argument
+	 */
+	private long setTo = 0;
+	
 	/**
 	 * marker for -a argument
 	 */
@@ -53,7 +52,7 @@ public class AlienCommandfquotalist extends AlienCommand {
 	/**
 	 * marker for -g argument
 	 */
-	private final static String Iam = "fquota";
+	private final static String Iam = "fquota set";
 
 	/**
 	 * @param p
@@ -63,7 +62,7 @@ public class AlienCommandfquotalist extends AlienCommand {
 	 *            current directory and command
 	 * @throws Exception
 	 */
-	public AlienCommandfquotalist(final AliEnPrincipal p,
+	public AlienCommandfquotaset(final AliEnPrincipal p,
 			final ArrayList<Object> al) throws Exception {
 		super(p, al);
 	}
@@ -83,7 +82,7 @@ public class AlienCommandfquotalist extends AlienCommand {
 	 *            command arguments, can be size 0 or null
 	 * @throws Exception
 	 */
-	public AlienCommandfquotalist(final AliEnPrincipal p,
+	public AlienCommandfquotaset(final AliEnPrincipal p,
 			final String sUsername, final String sCurrentDirectory,
 			final String sCommand, final int iDebugLevel,
 			final List<?> alArguments) throws Exception {
@@ -107,8 +106,11 @@ public class AlienCommandfquotalist extends AlienCommand {
 		ArrayList<String> alrcMessages = new ArrayList<String>();
 
 		// we got arguments for fquota list
-		if (this.alArguments != null && this.alArguments.size() > 0) {
+		if (this.alArguments != null && this.alArguments.size() >= 3) {
 
+			
+			ArrayList<String> args = new ArrayList<String>(3);
+			
 			for (Object oArg : this.alArguments) {
 				String sArg = (String) oArg;
 
@@ -122,90 +124,52 @@ public class AlienCommandfquotalist extends AlienCommand {
 
 						if (sLocalArg.startsWith("h")) {
 							bHelp = true;
-						} else {
-							if (sArg.startsWith("-unit=")) {
-								if (allowedUnits.indexOf(sArg.charAt(6)) != -1) {
-									alrcMessages
-											.add("Unknown unit. Allowed are [BKMG], default M.\n");
-									bU = sArg.charAt(6);
-								}
 							}
 						}
-					}
 				} else {
-					// get the username
-					user = sArg;
+					args.add(sArg);
 				}
+				
 			}
-		}
-
+			if(args.size() == 3){
+			user = args.get(0);
+				setWhat = args.get(1);
+				setTo = Long.getLong(args.get(2));
+			}else
+				bHelp=true;
+		} else 
+			bHelp=true;
+		
 		if (!bHelp) {
 
-			if (user != null) {
-				System.out.println("you are: " + this.pAlienUser);
-				System.out.println("you want: " + user);
-
-				if (this.pAlienUser.canBecome(user))
-					System.out.println("you can become this user");
-
-				if (!this.pAlienUser.canBecome(user))
-					user = null;
-			} else
-				user = this.pAlienUser.getName();
-
-			// you are allowed to view quota of ...
-			if (user != null) {
-
-				long unit = 1024;
-				if (bU == 'K')
-					unit = 1024;
-				else if (bU == 'B')
-					unit = 1;
-				else if (bU == 'G')
-					unit = 1024 * 1024 * 1024;
-
+			if(this.pAlienUser.getName() != "admin")
+				alrcMessages.add("You are not admin, so you can't set quotas!");
+			else{
+				
 				Quota quota = QuotaUtilities.getFQuota(user);
-
-				System.out.println("quota is: " + quota.toString());
-				System.out.println("quota totalSize is: " + quota.totalSize);
-				System.out.println("quota tmpIncreasedTotalSize is: "
-						+ quota.tmpIncreasedTotalSize);
-				System.out.println("quota unit-char is: " + bU);
-				System.out.println("quota unit is: " + unit);
-
-				alrcMessages
-						.add("\n------------------------------------------------------------------------------------------\n"
-								+ "             user, nbFiles, totalSize("
-								+ bU
-								+ ") \n"
-								+ "------------------------------------------------------------------------------------------\n");
-
-				long totalSize = quota.totalSize + quota.tmpIncreasedTotalSize
-						/ unit;
-
-				long maxTotalSize = quota.maxTotalSize / unit;
-
-				if (quota.maxTotalSize == -1)
-					maxTotalSize = -1;
-
-				alrcMessages.add(" [1]    " + user + "  " + quota.nbFiles
-						+ "   " + quota.tmpIncreasedNbFiles + "  /  " + "  "
-						+ quota.maxNbFiles + "    " + totalSize + "  /  "
-						+ maxTotalSize + "\n");
-
-				alrcMessages
-						.add("------------------------------------------------------------------------------------------\n");
-
-			} else {
-				alrcMessages
-						.add("You are not allowed to view quotas of this user.\n");
+				
+				if(quota==null)
+					System.out.println("Couldn't get the quota");
+				
+				if(setWhat=="maxNbFiles")
+					// TODO: set it
+					System.out.println("TODO: Set maxNbFiles in quotas");
+				else if(setWhat=="maxTotalSize")
+					// TODO: set it
+					System.out.println("TODO: Set maxTotalSize in quotas");
+				else 
+					alrcMessages
+					.add("Wrong oifield name! Choose one of them: maxNbFiles, maxTotalSize");
 			}
 
 		} else {
 
 			alrcMessages.add(AlienTime.getStamp()
-					+ "Usage: fquota list  [<username>]\n");
-			alrcMessages.add("		-unit=[BKMG]: format size \n");
+					+ "Usage: \nfquota set  <username> <field> <value> - set the user quota\n");
+			alrcMessages.add("		(maxNbFiles, maxTotalSize(Byte))\n");
+			alrcMessages.add("use <user>=% for all users\n");
+		
+				
 		}
 
 		hmReturn.put("rcvalues", alrcValues);
