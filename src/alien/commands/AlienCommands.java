@@ -46,6 +46,9 @@ public class AlienCommands {
 		else if("tabCompletion".equals(sLocalCommand)){
 			return new AlienCommandCompletePath(p, al);
 		}
+		else if("lfn2guid".equals(sLocalCommand)){
+			return new AlienCommandCompletePath(p, al);
+		}
 
 		else return null;
 	}
