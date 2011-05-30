@@ -3,18 +3,10 @@ package alien.commands;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
-import com.sun.org.apache.xml.internal.serializer.ToUnknownStream;
 
 import lazyj.Log;
-import alien.catalogue.GUID;
-import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
-import alien.catalogue.PFN;
-import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -154,10 +146,10 @@ public class AlienCommandlfn2guid extends AlienCommand {
 
 			if (lfn != null) {
 
-					alrcMessages.add(lfn.getFileName() + "   "
-							+ lfn.guid.toString().toUpperCase());
-
-					alrcValues.add(lfn.guid.toString());
+					alrcMessages.add(padLeft(lfn.getFileName(), 12) + "   "
+							+ lfn.guid.toString().toUpperCase()+"\n");
+		
+					alrcValues.add(lfn.guid.toString().toUpperCase());
 
 			} else {
 				alrcMessages.add(AlienTime.getStamp()
