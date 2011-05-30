@@ -1,13 +1,23 @@
 package alien.commands;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * @author ron
+ *
+ */
 public class AlienTime {
 
+	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm:ss"); 
+	
+	/**
+	 * @return current timestamp for logging
+	 */
 	public static String getStamp() {
-
-		Date date = new Date();
-		return date.getMonth() + " " + date.getDay() + " " + date.getHours()
-				+ ":" + date.getMinutes() + ":" + date.getSeconds() + "	jAuthen_v0.2		";
+		synchronized (formatter){
+			return formatter.format(new Date())+"	jAuthen_v0.2		";
+		}
 	}
 }
