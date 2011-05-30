@@ -44,8 +44,8 @@ public class EncryptedAuthzToken {
 	private final static byte[] BLOWFISH_IV = "$KJh#(}q".getBytes();
 
 	// raw cipher and Sealed Envelope
-	private StringBuffer cipherEncryptedBase64;
-	private StringBuffer envelopeEncryptedBase64;
+	private StringBuilder cipherEncryptedBase64;
+	private StringBuilder envelopeEncryptedBase64;
 
 	// decrypted blowfish key
 	private byte[] symmetricKey;
@@ -136,15 +136,29 @@ public class EncryptedAuthzToken {
 	 * @throws GeneralSecurityException
 	 */
 	private void encryptSealedCipher() throws GeneralSecurityException {
-
-		Cipher cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
-
-		cipher.init(Cipher.WRAP_MODE, SEPubKey);
-		KeyGenerator keyGenerator = KeyGenerator.getInstance("Blowfish", "BC");
+		final KeyGenerator keyGenerator = KeyGenerator.getInstance("Blowfish", "BC");
 		keyGenerator.init(128);
-		freshBlowfish = (SecretKeySpec) keyGenerator.generateKey();
-
-		final byte[] bkey = freshBlowfish.getEncoded();
+		
+		boolean ok;
+		
+		byte[] bkey; 
+		
+		// ugly hack : make sure there is no NULL characted that would confuse C
+		do {
+			freshBlowfish = (SecretKeySpec) keyGenerator.generateKey();
+			
+			ok = true;
+			
+			bkey = freshBlowfish.getEncoded();
+			
+			for (int i=bkey.length-1; i>=0; i--)
+				if (bkey[i] == 0){
+					ok = false;
+					break;
+				}
+		}
+		while (!ok);
+		
 		freshBlowfish = new SecretKeySpec(bkey, 0, 16, "Blowfish");
 
 		final byte[] key = new byte[17];
@@ -153,14 +167,16 @@ public class EncryptedAuthzToken {
 		SecretKeySpec freshBlowfishDASHED = new SecretKeySpec(key, 0, 17,
 				"Blowfish");
 
-		byte[] encryptedCipher = cipher.wrap(freshBlowfishDASHED);
+		final Cipher cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
 
+		cipher.init(Cipher.WRAP_MODE, SEPubKey);
+		
+		final byte[] encryptedCipher = cipher.wrap(freshBlowfishDASHED);
+		
 		// encode base64
-		String sCipherEncryptedBase64 = Base64.encodeBytes(encryptedCipher);
-		this.cipherEncryptedBase64 = new StringBuffer(
-				sCipherEncryptedBase64.length());
-		this.cipherEncryptedBase64.append(sCipherEncryptedBase64);
+		final String sCipherEncryptedBase64 = Base64.encodeBytes(encryptedCipher);
 
+		this.cipherEncryptedBase64 = new StringBuilder(sCipherEncryptedBase64);
 	}
 
 	/**
@@ -195,11 +211,8 @@ public class EncryptedAuthzToken {
 		System.arraycopy(encryptedEnvelope, 0, encryptedEnvelopeFinal,
 				4 + signature.length, encryptedEnvelope.length);
 
-		String sEnvelopeEncryptedBase64 = Base64
-				.encodeBytes(encryptedEnvelopeFinal);
-		this.envelopeEncryptedBase64 = new StringBuffer(
-				sEnvelopeEncryptedBase64.length());
-		this.envelopeEncryptedBase64.append(sEnvelopeEncryptedBase64);
+		String sEnvelopeEncryptedBase64 = Base64.encodeBytes(encryptedEnvelopeFinal);
+		this.envelopeEncryptedBase64 = new StringBuilder(sEnvelopeEncryptedBase64);
 
 	}
 
@@ -256,6 +269,7 @@ public class EncryptedAuthzToken {
 	/**
 	 * Does the actual decryption/decoding of the raw token. This method should
 	 * not be called for more than one times.
+	 * @param rawToken 
 	 * 
 	 * @return the decrypted envelope or NULL if signature could not be verified
 	 * @throws GeneralSecurityException
@@ -373,8 +387,8 @@ public class EncryptedAuthzToken {
 	 * @throws GeneralSecurityException
 	 */
 	private void splitToken(String rawToken) throws GeneralSecurityException {
-		cipherEncryptedBase64 = new StringBuffer();
-		envelopeEncryptedBase64 = new StringBuffer();
+		cipherEncryptedBase64 = new StringBuilder();
+		envelopeEncryptedBase64 = new StringBuilder();
 
 		Stack<String> stack = new Stack<String>();
 
