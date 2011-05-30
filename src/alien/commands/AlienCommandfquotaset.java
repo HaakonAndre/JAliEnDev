@@ -20,7 +20,7 @@ import alien.user.AliEnPrincipal;
  * @author Steffen Schreiner
  * @since May 30, 2011 implements AliEn fquota list command
  * */
-public class AlienCommandfquotaset extends AlienCommand {
+public class AlienCommandfquotaset extends AlienAdminCommand {
 	/**
 	 * ls command arguments : -help/l/a
 	 */
