@@ -141,10 +141,10 @@ public class AlienCommandfquotaset extends AlienCommand {
 			bHelp=true;
 		
 		if (!bHelp) {
-
-			if(this.pAlienUser.getName() != "admin")
-				alrcMessages.add("You are not admin, so you can't set quotas!");
-			else{
+//
+//			if (this.pAlienUser.getName() != "admin")
+//				alrcMessages.add("You are not admin, so you can't set quotas!");
+//			else {
 				
 				Quota quota = QuotaUtilities.getFQuota(user);
 				
@@ -160,7 +160,7 @@ public class AlienCommandfquotaset extends AlienCommand {
 				else 
 					alrcMessages
 					.add("Wrong oifield name! Choose one of them: maxNbFiles, maxTotalSize");
-			}
+//			}
 
 		} else {
 
