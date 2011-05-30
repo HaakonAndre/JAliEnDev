@@ -26,20 +26,13 @@ public class AlienCommandfquotalist extends AlienCommand {
 	 */
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
-
 	/**
-	 * unit formatting
+	 * allowed units
 	 */
-	private static HashMap<String,Long> unit = null;
+	private static String allowedUnits = "BKMG";
 	
 	static {
-		lsArguments.add("unit");
-		
-		  unit = new HashMap<String,Long>(4);
-		  unit.put("B",new Long(1));
-		  unit.put("K",new Long(1024));			  
-		  unit.put("M",new Long(1024 * 1024));
-		  unit.put("G",new Long(1024 * 1024 * 1024));
+		  lsArguments.add("unit");
 	}
 
 	/**
@@ -130,10 +123,9 @@ public class AlienCommandfquotalist extends AlienCommand {
 							bHelp = true;
 						} else {
 							if(sArg.startsWith("-unit=")){
-								char u = sArg.charAt(6);
-								if(!unit.containsKey(u)){
+								if(allowedUnits.indexOf(sArg.charAt(6))!=-1){
 									alrcMessages.add("Unknown unit. Allowed are [BKMG], default M.\n");
-									bU = u;
+									bU = sArg.charAt(6);
 								}
 							}
 						}
@@ -164,21 +156,30 @@ public class AlienCommandfquotalist extends AlienCommand {
 				// you are allowed to view quota of ...
 				if(user!=null){
 					
+					
+					long unit = 1024;
+					if(bU=='K')
+						unit = 1024;
+					else if(bU=='B')
+						unit = 1;
+					else if(bU=='G')
+						unit = 1024 * 1024 * 1024;
+					
 					Quota quota = QuotaUtilities.getFQuota(user);
 					
 					System.out.println("quota is: " + quota.toString());
 					System.out.println("quota totalSize is: " + quota.totalSize);
 					System.out.println("quota tmpIncreasedTotalSize is: " + quota.tmpIncreasedTotalSize);
 					System.out.println("quota unit-char is: " + bU );
-					System.out.println("quota unit is: " + unit.get(bU) );
+					System.out.println("quota unit is: " + unit);
 
 						  alrcMessages.add("\n------------------------------------------------------------------------------------------\n"
 						  + "             user, nbFiles, totalSize("+ bU +") \n"
 						  + "------------------------------------------------------------------------------------------\n");
 						  
-						  long totalSize = quota.totalSize + quota.tmpIncreasedTotalSize / unit.get(bU) ;
+						  long totalSize = quota.totalSize + quota.tmpIncreasedTotalSize / unit ;
 						  
-						  long maxTotalSize = quota.maxTotalSize / unit.get(bU) ;
+						  long maxTotalSize = quota.maxTotalSize / unit ;
 						  
 						  if(quota.maxTotalSize==-1)
 							  maxTotalSize = -1;
