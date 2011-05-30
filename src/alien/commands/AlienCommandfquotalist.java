@@ -165,6 +165,9 @@ public class AlienCommandfquotalist extends AlienCommand {
 				if(user!=null){
 					
 					Quota quota = QuotaUtilities.getFQuota(user);
+					
+					System.out.println("quota is: " + quota.toString());
+					System.out.println("quota totalSize is: " + quota.totalSize);
 
 						  alrcMessages.add("\n------------------------------------------------------------------------------------------\n"
 						  + "             user, nbFiles, totalSize("+ bU +") \n"
