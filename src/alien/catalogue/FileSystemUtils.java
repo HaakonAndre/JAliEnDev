@@ -80,7 +80,7 @@ public final class FileSystemUtils {
 //		else
 //			permissions = GUIDUtils.getGUID(lfn.guid).perm;
 		for (int pos = 0; pos < 3; pos++) {
-			int perm = permissions.charAt(pos);
+			int perm = permissions.charAt(pos) - '0';
 			perm -= 4;
 			if (perm > 0)
 				ret += "r";
