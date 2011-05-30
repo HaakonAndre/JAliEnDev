@@ -33,7 +33,7 @@ public class AlienCommands {
 		Log.log(Log.INFO, "Command received = \""+sLocalCommand+"\"");
 		
 
-		
+		try{
 		if("ls".equals(sLocalCommand)){	
 			return new AlienCommandls(p, al);
 		}
@@ -56,6 +56,12 @@ public class AlienCommands {
 			return new AlienCommandfquotaset(p, al);
 		}
 		else return null;
+		} 
+		catch(SecurityException se){
+			AlienCommandError er = new AlienCommandError(p,al);
+			er.errorMessage = se.toString();
+			return er;
+		}
 	}
 
 	/**

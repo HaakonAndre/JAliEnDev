@@ -1,5 +1,7 @@
 package alien.commands;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import lazyj.Log;
@@ -22,12 +24,14 @@ public class AlienAdminCommand  extends AlienCommand{
         	if(!pAlienUser.canBecome("admin") || super.sUsername!="admin")
     			throw new SecurityException("You need to be admin to execute this command");
 	}
-	
-	
+
+
 	@Override
 	public Object executeCommand() throws Exception {
 		return null;
 	}
+	
+	
 
 
 }

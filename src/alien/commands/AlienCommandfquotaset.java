@@ -132,7 +132,7 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 				
 			}
 			if(args.size() == 3){
-			user = args.get(0);
+				user = args.get(0);
 				setWhat = args.get(1);
 				setTo = Long.getLong(args.get(2));
 			}else
