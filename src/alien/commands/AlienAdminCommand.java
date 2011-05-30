@@ -23,10 +23,10 @@ public class AlienAdminCommand extends AlienCommand {
 
 		}
 
-		if (this.sUsername != "admin")
+		if (!"admin".equals(sUsername))
 			throw new PerlSecurityException(
 					"USERNAME: You need to be [admin] to execute this command");
-		if (!pAlienUser.canBecome("admin") || super.sUsername != "admin")
+		if (!pAlienUser.canBecome("admin") || !"admin".equals(sUsername))
 			throw new PerlSecurityException(
 					"You need to be [admin] to execute this command");
 	}
