@@ -216,8 +216,7 @@ public class AlienCommandwhereis extends AlienCommand {
 					if (!bL)
 						alrcValues.add(pfn.pfn);
 					if (!bS)
-						alrcMessages.add("	SE => " + se + "		PFN => " + pfn.pfn
-								+ "\n");
+						alrcMessages.add("\t\t SE => " + padRight(se, 40) + " pfn =>" + pfn.pfn + "\n");
 				}
 			} else {
 				alrcMessages.add(AlienTime.getStamp() + "No such file or directory\n");

@@ -219,11 +219,11 @@ public class AlienCommandls extends AlienCommand {
 							if (bL)
 								ret += FileSystemUtils
 										.getFormatedTypeAndPerm(localLFN)
-										+ "\t"
+										+ "   "
 										+ localLFN.owner
 										+ " "
 										+ localLFN.gowner
-										+ "\t"
+										+ " "
 										+ padLeft(String.valueOf(localLFN.size), 12)
 										+ " "
 										+ format(localLFN.ctime)
@@ -267,14 +267,5 @@ public class AlienCommandls extends AlienCommand {
 	private static synchronized String format(final Date d){
 		return formatter.format(d);
 	}
-	
-	/**
-	 * @param s
-	 * @param n
-	 * @return left-padded string
-	 */
-	public static String padLeft(final String s, final int n) {
-	    return String.format("%1$#" + n + "s", s);  
-	}
-	
+
 }
