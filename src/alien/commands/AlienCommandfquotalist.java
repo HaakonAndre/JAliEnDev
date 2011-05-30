@@ -168,6 +168,8 @@ public class AlienCommandfquotalist extends AlienCommand {
 					
 					System.out.println("quota is: " + quota.toString());
 					System.out.println("quota totalSize is: " + quota.totalSize);
+					System.out.println("quota tmpIncreasedTotalSize is: " + quota.tmpIncreasedTotalSize);
+					System.out.println("quota unit is: " + unit.get(bU) );
 
 						  alrcMessages.add("\n------------------------------------------------------------------------------------------\n"
 						  + "             user, nbFiles, totalSize("+ bU +") \n"
