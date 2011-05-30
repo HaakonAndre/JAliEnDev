@@ -47,7 +47,7 @@ public class AlienCommands {
 			return new AlienCommandCompletePath(p, al);
 		}
 		else if("lfn2guid".equals(sLocalCommand)){
-			return new AlienCommandCompletePath(p, al);
+			return new AlienCommandlfn2guid(p, al);
 		}
 
 		else return null;
