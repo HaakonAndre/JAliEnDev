@@ -49,7 +49,10 @@ public class AlienCommands {
 		else if("lfn2guid".equals(sLocalCommand)){
 			return new AlienCommandlfn2guid(p, al);
 		}
-
+		else if("fquota_list".equals(sLocalCommand)){
+			return new AlienCommandfquotalist(p, al);
+		}
+		
 		else return null;
 	}
 
