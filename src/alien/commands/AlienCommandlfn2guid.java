@@ -146,7 +146,7 @@ public class AlienCommandlfn2guid extends AlienCommand {
 
 			if (lfn != null) {
 
-					alrcMessages.add(padLeft(lfn.getFileName(), 12) + "   "
+					alrcMessages.add(padLeft(lfn.getFileName(), 40) 
 							+ lfn.guid.toString().toUpperCase()+"\n");
 		
 					alrcValues.add(lfn.guid.toString().toUpperCase());
