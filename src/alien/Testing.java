@@ -10,20 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 
-import lazyj.Format;
 import lazyj.Utils;
 import utils.XRDChecker;
-import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
-import alien.catalogue.LFN;
-import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
-import alien.catalogue.access.AccessType;
-import alien.catalogue.access.AuthorizationFactory;
-import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.protocols.XRDStatus;
 import alien.io.xrootd.XrootdCleanup;
@@ -31,6 +23,7 @@ import alien.io.xrootd.XrootdFile;
 import alien.io.xrootd.XrootdListing;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.services.XrootDEnvelopeSigner;
 
 /**
  * Testing stuff
@@ -51,48 +44,41 @@ public class Testing {
 		//removeFZK();
 			
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
-						
+		
 		XrootdListing listing = new XrootdListing("pcaliense01.cern.ch:1094", "/00");
 
 		final SE se = SEUtils.getSE("ALICE::CERN::SETEST");
-		
-		if (true){
-			PFN pfn = BookingTable.bookForWriting(LFNUtils.getLFN("/alice/users/g/grigoras/testsetest", true), GUIDUtils.createGuid(), null, 0, se);
-			
-			System.err.println(pfn);
-			
-			return;
-		}
-		
 		
 		List<XrootdFile> files = new ArrayList<XrootdFile>();
 		
 		for (XrootdFile f: listing.getDirs()){
 			
-			if (!f.path.startsWith("/00/12"))
+			if (!f.path.startsWith("/00/2"))
 				continue;
 			
 			XrootdListing listing2 = new XrootdListing("pcaliense01.cern.ch:1094", f.path);
 			
 			files.addAll(listing2.getFiles());
 		}
-				
+
+		int cnt = 0;
+		
 		for (final XrootdFile f: files){
-			System.err.println(f.path);
-			
-//			System.err.println(XrootdCleanup.removeFile(f, se));
-			
 			if (!f.path.endsWith(".md5")){
-				new Thread(){
-					@Override
-					public void run() {
-						System.err.println(XrootdCleanup.removeFile(f, se));
-					}
-				}.start();
+				cnt++;
+				System.err.println(f.path);
+				System.err.println(XrootdCleanup.removeFile(f, se));
+				
+//				new Thread(){
+//					@Override
+//					public void run() {
+//						System.err.println(XrootdCleanup.removeFile(f, se));
+//					}
+//				}.start();
 			}
 		}
 		
-		System.err.println("finish : "+files.size());
+		System.err.println("finish : "+cnt);
 	}
 		
 	private static void removeFZK() throws IOException {
