@@ -64,6 +64,17 @@ public final class FileSystemUtils {
 
 		return path;
 	}
+	
+	private static final String[] translation = new String[]{
+		"---",
+		"--x",
+		"-w-",
+		"-wx",
+		"r--",
+		"r-x",
+		"rw-",
+		"rwx"
+	};
 
 	/**
 	 * Get the type+perm string for LFN
@@ -71,33 +82,19 @@ public final class FileSystemUtils {
 	 * @param lfn
 	 * @return type+perm String e.g. -rwxrwxr-x or drwxr-xr-x
 	 */
-	public static String getFormatedTypeAndPerm(LFN lfn) {
-
-		String ret = "-";
-		String permissions = lfn.perm;
+	public static String getFormatedTypeAndPerm(final LFN lfn) {
+		final StringBuilder ret = new StringBuilder(10);
+		
 		if (lfn.type != 'f')
-			ret = String.valueOf(lfn.type);
-//		else
-//			permissions = GUIDUtils.getGUID(lfn.guid).perm;
+			ret.append(lfn.type);
+		else
+			ret.append('-');
+
 		for (int pos = 0; pos < 3; pos++) {
-			int perm = permissions.charAt(pos) - '0';
-			perm -= 4;
-			if (perm > 0)
-				ret += "r";
-			else
-				ret += "-";
-			perm -= 2;
-			if (perm > 0)
-				ret += "w";
-			else
-				ret += "-";
-			perm -= 1;
-			if (perm > 0)
-				ret += "x";
-			else
-				ret += "-";
+			ret.append(translation[lfn.perm.charAt(pos)-'0']);
 		}
-		return ret;
+		
+		return ret.toString();
 	}
 
 }
