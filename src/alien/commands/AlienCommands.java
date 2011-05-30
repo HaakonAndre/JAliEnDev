@@ -57,9 +57,9 @@ public class AlienCommands {
 		}
 		else return null;
 		} 
-		catch(SecurityException se){
+		catch(PerlSecurityException se){
 			AlienCommandError er = new AlienCommandError(p,al);
-			er.errorMessage = se.toString();
+			er.errorMessage = se.getMessage();
 			return er;
 		}
 	}

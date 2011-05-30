@@ -55,7 +55,7 @@ public class AlienCommandError extends AlienCommand {
 		ArrayList<String> alrcValues = new ArrayList<String>();
 		ArrayList<String> alrcMessages = new ArrayList<String>();
 
-		alrcMessages.add(errorMessage);
+		alrcMessages.add(errorMessage+"\n");
 
 		hmReturn.put("rcvalues", alrcValues);
 		hmReturn.put("rcmessages", alrcMessages);
