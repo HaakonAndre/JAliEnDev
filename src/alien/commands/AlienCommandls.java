@@ -1,7 +1,10 @@
 package alien.commands;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -216,15 +219,15 @@ public class AlienCommandls extends AlienCommand {
 							if (bL)
 								ret += FileSystemUtils
 										.getFormatedTypeAndPerm(localLFN)
-										+ "	"
+										+ "\t"
 										+ localLFN.owner
 										+ " "
 										+ localLFN.gowner
-										+ "		"
+										+ "\t"
 										+ padLeft(String.valueOf(localLFN.size), 12)
 										+ " "
-										+ localLFN.ctime
-										+ "		" + localLFN.getFileName();
+										+ format(localLFN.ctime)
+										+ "            " + localLFN.getFileName();
 							else
 								ret += localLFN.getFileName();
 
@@ -259,7 +262,12 @@ public class AlienCommandls extends AlienCommand {
 		return hmReturn;
 	}
 
+	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
 
+	private static synchronized String format(final Date d){
+		return formatter.format(d);
+	}
+	
 	/**
 	 * @param s
 	 * @param n
