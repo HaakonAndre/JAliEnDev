@@ -16,8 +16,8 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import lazyj.cache.GenericLastValuesCache;
-import lia.util.security.authz.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
