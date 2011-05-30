@@ -6,10 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 
 import lazyj.Log;
-
 import alien.catalogue.FileSystemUtils;
-import alien.catalogue.GUID;
-import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
@@ -46,7 +43,6 @@ public class AlienCommandls extends AlienCommand {
 	/**
 	 * marker for -a argument
 	 */
-	@SuppressWarnings("unused")
 	private boolean bA = false;
 
 	/**
@@ -63,7 +59,6 @@ public class AlienCommandls extends AlienCommand {
 	/**
 	 * marker for -b argument
 	 */
-	@SuppressWarnings("unused")
 	private boolean bB = false;
 
 	/**
@@ -94,6 +89,7 @@ public class AlienCommandls extends AlienCommand {
 	 *            the directory from the user issued the command
 	 * @param sCommand
 	 *            the command requested through the SOAP request
+	 * @param iDebugLevel 
 	 * @param alArguments
 	 *            command arguments, can be size 0 or null
 	 * @throws Exception
@@ -225,7 +221,7 @@ public class AlienCommandls extends AlienCommand {
 										+ " "
 										+ localLFN.gowner
 										+ "		"
-										+ localLFN.size
+										+ padLeft(String.valueOf(localLFN.size), 12)
 										+ " "
 										+ localLFN.ctime
 										+ "		" + localLFN.getFileName();
@@ -263,4 +259,14 @@ public class AlienCommandls extends AlienCommand {
 		return hmReturn;
 	}
 
+
+	/**
+	 * @param s
+	 * @param n
+	 * @return left-padded string
+	 */
+	public static String padLeft(final String s, final int n) {
+	    return String.format("%1$#" + n + "s", s);  
+	}
+	
 }
