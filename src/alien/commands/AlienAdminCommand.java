@@ -9,6 +9,10 @@ public class AlienAdminCommand  extends AlienCommand{
 	public AlienAdminCommand(AliEnPrincipal pAlienUser, List<?> al)
 			throws Exception {
 		super(pAlienUser, al);
+		if(!pAlienUser.canBecome("admin"))
+			throw new PerlSecurityException("CANBECOME: You need to be [admin] to execute this command");
+		if(super.sUsername!="admin")
+			throw new PerlSecurityException("USERNAME: You need to be [admin] to execute this command");
 		if(!pAlienUser.canBecome("admin") || super.sUsername!="admin")
 			throw new PerlSecurityException("You need to be [admin] to execute this command");
 	}
@@ -19,6 +23,7 @@ public class AlienAdminCommand  extends AlienCommand{
             super(pAlienPrincipal,sUsername,sCurrentDirectory,sCommand,iDebugLevel,alArguments);
         	if(!pAlienUser.canBecome("admin") || super.sUsername!="admin")
     			throw new PerlSecurityException("You need to be [admin] to execute this command");
+        	
 	}
 
 
