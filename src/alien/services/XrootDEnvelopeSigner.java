@@ -2,6 +2,7 @@ package alien.services;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -13,12 +14,17 @@ import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.ExtProperties;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
@@ -186,8 +192,7 @@ public class XrootDEnvelopeSigner {
 
 		final byte[] rawsignature = signer.sign();
 
-		envelope.setSignedEnvelope(toBeSigned + "&signature="
-				+ String.valueOf(Base64.encode(rawsignature)));
+		envelope.setSignedEnvelope(toBeSigned + "&signature=" + alien.services.Base64.encode(rawsignature));
 
 		// System.out.println("We signed: " + envelope.getSignedEnvelope());
 
@@ -202,51 +207,47 @@ public class XrootDEnvelopeSigner {
 	 * @throws SignatureException
 	 */
 	public static boolean verifyEnvelope(final XrootDEnvelope envelope, final boolean selfSigned)
-			throws NoSuchAlgorithmException, InvalidKeyException,
-			SignatureException {
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
-		HashMap<String,String> env = new HashMap<String,String>();
-		
+		HashMap<String, String> env = new HashMap<String, String>();
+
 		String signedEnvelope = "";
-		
-			StringTokenizer st = new StringTokenizer(envelope.getSignedEnvelope(), "\\&");
 
-		   while (st.hasMoreTokens()) {
-	    	 String tok = st.nextToken();
-	    	 
-	    	 int idx = tok.indexOf('=');
-	    	 
-	    	 if (idx>=0){
-	    		 String key = tok.substring(0, idx);
-	    		 String value = tok.substring(idx+1);
-	    		 env.put(key, value);
-	    	 }
-		  }	 
-			StringTokenizer hash = new StringTokenizer(env.get("hashord"),"-");
+		StringTokenizer st = new StringTokenizer(envelope.getSignedEnvelope(), "\\&");
 
-			
-			while (hash.hasMoreTokens()) {
-				if(!("").equals(signedEnvelope))
-					signedEnvelope += "&";
-		        String key = hash.nextToken();
-				signedEnvelope += key + "=" + env.get(key);
+		while (st.hasMoreTokens()) {
+			String tok = st.nextToken();
+
+			int idx = tok.indexOf('=');
+
+			if (idx >= 0) {
+				String key = tok.substring(0, idx);
+				String value = tok.substring(idx + 1);
+				env.put(key, value);
 			}
-			
-			System.out.println("sign String: " + signedEnvelope);
-			System.out.println("signature: "+ env.get("signature"));
+		}
+		StringTokenizer hash = new StringTokenizer(env.get("hashord"), "-");
 
-		
+		while (hash.hasMoreTokens()) {
+			if (!("").equals(signedEnvelope))
+				signedEnvelope += "&";
+			String key = hash.nextToken();
+			signedEnvelope += key + "=" + env.get(key);
+		}
+
+		System.out.println("sign String: " + signedEnvelope);
+		System.out.println("signature: " + env.get("signature"));
+
 		final Signature signer = Signature.getInstance("SHA384withRSA");
-		
-		
-		if (selfSigned){
+
+		if (selfSigned) {
 			signer.initVerify(SEPubKey);
 		}
 		else {
 			signer.initVerify(AuthenPubKey);
 		}
 		signer.update(signedEnvelope.getBytes());
-		
+
 		return signer.verify(Base64.decode(env.get("signature")));
 	}
 
@@ -264,6 +265,83 @@ public class XrootDEnvelopeSigner {
 		envelope.setEncryptedEnvelope(authz.encrypt(plainEnvelope));
 	}
 
+	/**
+	 * @param args
+	 * @throws GeneralSecurityException
+	 * @throws IOException
+	 */
+	public static void main(String[] args) throws GeneralSecurityException, IOException {
+	
+		int ok = 0;
+		int fail = 0;
+		
+		while (true){
+			String ticket = "<authz>\n"+
+			"  <file>\n"+
+			"    <access>delete</access>\n"+
+			"    <turl>root://pcaliense01.cern.ch:1094//00/23886/CDE428D4-572B-11E0-88BE-001F29EB8B98</turl>\n"+
+			"    <lfn>/NOLFN</lfn>\n"+
+			"    <size>12345</size>\n"+
+			"    <guid>CDE428D4-572B-11E0-88BE-001F29EB8B98</guid>\n"+
+			"    <md5>130254d9540d6903fa6f0ab41a132361</md5>\n"+
+			"    <pfn>/00/23886/CDE428D4-572B-11E0-88BE-001F29EB8B98</pfn>\n"+
+			"    <se>ALICE::CERN::SETEST</se>\n"+
+			"  </file>\n"+
+			"</authz>";
+			
+			EncryptedAuthzToken enAuthz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey,false);
+
+			String enticket = enAuthz.encrypt(ticket);
+			
+			FileWriter fw = new FileWriter("/tmp/ticket");
+			
+			fw.write(enticket);
+			fw.close();
+			
+			List<String> command = new ArrayList<String>();
+			
+			command.add("/home/costing/temp/x/test.sh");
+			command.add("/tmp/ticket");
+			
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+			pBuilder.returnOutputOnExit(true);
+
+			pBuilder.timeout(1, TimeUnit.MINUTES);
+
+			pBuilder.redirectErrorStream(true);
+
+			final ExitStatus exitStatus;
+
+			try {
+				exitStatus = pBuilder.start().waitFor();
+			} catch (final InterruptedException ie) {
+				throw new IOException(
+						"Interrupted while waiting for the following command to finish : "
+								+ command.toString());
+			}
+			
+			String out = exitStatus.getStdOut();
+			
+			if (out.indexOf("<authz>")>=0){
+				ok++;
+			}
+			else{
+				fail++;
+				System.err.println(out);
+				
+				break;
+			}
+			System.err.println("OK : "+ok+", fail : "+fail);
+		}
+	}
+	
+//	public static String decrypt(final String s) throws GeneralSecurityException{
+//		EncryptedAuthzToken deAuthz = new EncryptedAuthzToken( SEPrivKey, AuthenPubKey ,true);
+//
+//		return deAuthz.decrypt(s);
+//	}
+	
 	//
 	//
 	//
