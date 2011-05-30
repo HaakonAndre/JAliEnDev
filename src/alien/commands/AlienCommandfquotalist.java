@@ -147,11 +147,19 @@ public class AlienCommandfquotalist extends AlienCommand {
 
 		if (!bHelp) {
 
-				if (user!=null)
+				if (user!=null){
+					System.out.println("you are: " + this.pAlienUser);
+					System.out.println("you want: " + user);
+
+					if(this.pAlienUser.canBecome(user))
+						System.out.println("you can become this user");
+					
 					if(!this.pAlienUser.canBecome(user))
 					 user=null;
-					else
+				} else
 						user = this.pAlienUser.getName();
+				
+				
 			
 				// you are allowed to view quota of ...
 				if(user!=null){
