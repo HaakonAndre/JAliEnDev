@@ -4,12 +4,14 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import alien.config.JAliEnIAm;
+
 /**
  * @author ron
  *
  */
 public class AlienTime {
-
+	
 	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm:ss"); 
 	
 	/**
@@ -17,7 +19,8 @@ public class AlienTime {
 	 */
 	public static String getStamp() {
 		synchronized (formatter){
-			return formatter.format(new Date())+"	jAuthen_v0.2		";
+			return formatter.format(new Date())+"	"+ JAliEnIAm.whatsMyFullName()+"		";
 		}
 	}
+
 }

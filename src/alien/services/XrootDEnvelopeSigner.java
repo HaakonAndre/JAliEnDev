@@ -30,7 +30,9 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 
 import alien.catalogue.access.XrootDEnvelope;
+import alien.commands.AlienTime;
 import alien.config.ConfigUtils;
+import alien.config.JAliEnIAm;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
 
 /**
@@ -173,14 +175,11 @@ public class XrootDEnvelopeSigner {
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
-		// System.out.println("About to be signed: " +
-		// envelope.getUnsignedEnvelope());
-
 		final long issued = System.currentTimeMillis() / 1000L;
 		final long expires = issued + 86400;
 
 		final String toBeSigned = envelope.getUnsignedEnvelope()
-				+ "-issuer-issued-expires&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires;
+				+ "-issuer-issued-expires&issuer="+JAliEnIAm.whatsMyName()+"@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires;
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 		
@@ -188,9 +187,7 @@ public class XrootDEnvelopeSigner {
 		
 		signer.update(toBeSigned.getBytes());
 
-		final byte[] rawsignature = signer.sign();
-		
-		envelope.setSignedEnvelope(toBeSigned + "&signature=" + alien.services.Base64.encode(rawsignature));
+		envelope.setSignedEnvelope(toBeSigned + "&signature=" + alien.services.Base64.encode(signer.sign()));
 
 	}
 
