@@ -133,7 +133,10 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 			}
 			if(args.size() == 3){
 				user = args.get(0);
+				System.out.println("user: " + user);
 				setWhat = args.get(1);
+				System.out.println("setWhat: " + setWhat);
+				System.out.println("args2" + args.get(2));
 				setTo = Long.getLong(args.get(2));
 			}else
 				bHelp=true;
@@ -141,11 +144,7 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 			bHelp=true;
 		
 		if (!bHelp) {
-//
-//			if (this.pAlienUser.getName() != "admin")
-//				alrcMessages.add("You are not admin, so you can't set quotas!");
-//			else {
-				
+
 				Quota quota = QuotaUtilities.getFQuota(user);
 				
 				if(quota==null)
@@ -160,7 +159,6 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 				else 
 					alrcMessages
 					.add("Wrong oifield name! Choose one of them: maxNbFiles, maxTotalSize");
-//			}
 
 		} else {
 
