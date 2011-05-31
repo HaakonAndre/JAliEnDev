@@ -231,9 +231,11 @@ public class XrootDEnvelopeSigner {
 			String key = hash.nextToken();
 			signedEnvelope += key + "=" + env.get(key) +"&";
 		}
-		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.length()-1);
+		System.out.println("verifying sign1 of: " + signedEnvelope);
+
+		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.lastIndexOf("&"));
 		
-		System.out.println("verifying sign of: " + signedEnvelope);
+		System.out.println("verifying sign2 of: " + signedEnvelope);
 		System.out.println("verifying signature: " + env.get("signature"));
 		System.out.println();
 		final Signature signer = Signature.getInstance("SHA384withRSA");

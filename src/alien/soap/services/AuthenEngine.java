@@ -430,7 +430,7 @@ public class AuthenEngine {
 			ArrayList<String> retenv = new ArrayList<String>(envelopes.size());
 		
 			for(String env: envelopes){
-				env = env.replaceAll("\\&", "&");
+				env = env.replace("\\&", "&");
 				System.out.println("We received for registration an envelope: " + env);
 				XrootDEnvelope xenv = new XrootDEnvelope(env);
 				try{
