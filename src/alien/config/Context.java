@@ -57,11 +57,14 @@ public class Context {
 	 * @return the previously set value for this key
 	 */
 	public static Object setThreadContext(final String key, final Object value){
-		Map<String, Object> m = context.get(Long.valueOf(Thread.currentThread().getId()));
+		final Long threadID = Long.valueOf(Thread.currentThread().getId());
+		
+		Map<String, Object> m = context.get(threadID);
 		
 		if (m==null){
 			// the map will be accessed from within the same thread, so there can be no conflict here
 			m = new HashMap<String, Object>();
+			context.put(threadID, m);
 		}
 		
 		return m.put(key, value);
