@@ -33,7 +33,7 @@ public class SOAPLogger{
 			(l >= Level.FINER.intValue() && level>=4) ||
 			(level>=5)){
 			
-			loggingBuffer.append(record.toString()).append('\n');
+			loggingBuffer.append(record.getLevel().getName()).append(": ").append(record.getMessage()).append('\n');
 		}
 	}
 
