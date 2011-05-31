@@ -709,7 +709,7 @@ public class AuthenEngine {
 						.println("Sorry ... Could not sign the envelope!");
 					}
 					envelopes
-							.add(
+							.add(pfn.ticket.envelope.getSignedEnvelope()
 									.replace("&", "\\&")
 									+ "\\&oldEnvelope="
 									+ pfn.ticket.envelope
