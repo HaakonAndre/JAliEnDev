@@ -287,8 +287,6 @@ public class XrootDEnvelope implements Serializable {
 		
 		ret += "hashord=" +usedHashOrd + "hashord";
 		
-		System.out.println("unsigned envelope: " + ret);
-
 		return ret;
 	}
 

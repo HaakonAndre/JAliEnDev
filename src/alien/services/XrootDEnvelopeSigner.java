@@ -192,8 +192,6 @@ public class XrootDEnvelopeSigner {
 		
 		envelope.setSignedEnvelope(toBeSigned + "&signature=" + alien.services.Base64.encode(rawsignature));
 
-		System.out.println("We signed: " + envelope.getSignedEnvelope());
-
 	}
 
 	/**
@@ -221,9 +219,7 @@ public class XrootDEnvelopeSigner {
 			if (idx >= 0) {
 				String key = tok.substring(0, idx);
 				String value = tok.substring(idx + 1);
-				env.put(key, value);
-				System.out.println(" found envelope key/val pair: " + key +" / "+value);
-			}
+				env.put(key, value);			}
 		}
 		StringTokenizer hash = new StringTokenizer(env.get("hashord"), "-");
 
@@ -231,13 +227,8 @@ public class XrootDEnvelopeSigner {
 			String key = hash.nextToken();
 			signedEnvelope += key + "=" + env.get(key) +"&";
 		}
-		System.out.println("verifying sign1 of: " + signedEnvelope);
-
 		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.lastIndexOf("&"));
-		
-		System.out.println("verifying sign2 of: " + signedEnvelope);
-		System.out.println("verifying signature: " + env.get("signature"));
-		System.out.println();
+
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 
 		if (selfSigned) {

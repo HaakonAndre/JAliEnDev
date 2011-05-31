@@ -90,12 +90,8 @@ public class AlienCommandauthorize extends AlienCommand {
 
 			if("registerenvs".equals(sAccess)){
 				ArrayList<String> alInfo = new ArrayList<String>(this.alArguments.size());
-				for(int i=1; i<= envelopeCount;i++){
+				for(int i=1; i<= envelopeCount;i++)
 					alInfo.add((String) this.alArguments.get(i));
-					System.out.println("WE RECEIVED AN ENVELOPE TO REGISTER: " + (String) this.alArguments.get(i));
-				}
-				
-				
 				
 				AuthenEngine au = new AuthenEngine();
 				alrcValues = (ArrayList<String>) au.registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, alInfo, iJobId,this.iDebug);

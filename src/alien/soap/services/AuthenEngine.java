@@ -431,7 +431,7 @@ public class AuthenEngine {
 		
 			for(String env: envelopes){
 				env = env.replace("\\&", "&");
-				System.out.println("We received for registration an envelope: " + env);
+
 				XrootDEnvelope xenv = new XrootDEnvelope(env);
 				try{
 					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
