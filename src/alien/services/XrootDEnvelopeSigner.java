@@ -180,9 +180,7 @@ public class XrootDEnvelopeSigner {
 		final long expires = issued + 86400;
 
 		final String toBeSigned = envelope.getUnsignedEnvelope()
-				+ "&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires
-				+ "&hashord=" + XrootDEnvelope.hashord
-				+ "-issuer-issued-expires-hashord";
+				+ "-issuer-issued-expires&issuer=JAuthenX@"+getLocalHostName()+"&issued=" + issued + "&expires=" + expires;
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 		
@@ -191,7 +189,7 @@ public class XrootDEnvelopeSigner {
 		signer.update(toBeSigned.getBytes());
 
 		final byte[] rawsignature = signer.sign();
-
+		
 		envelope.setSignedEnvelope(toBeSigned + "&signature=" + alien.services.Base64.encode(rawsignature));
 
 		System.out.println("We signed: " + envelope.getSignedEnvelope());

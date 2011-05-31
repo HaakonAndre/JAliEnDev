@@ -275,14 +275,20 @@ public class XrootDEnvelope implements Serializable {
 		StringTokenizer hash = new StringTokenizer(hashord,"-");
 
 		String ret = "";
+		String usedHashOrd = "";
 		
 		while (hash.hasMoreTokens()) {
 			String key = hash.nextToken();
-			if(e.get(key)!=null)
+			if(e.get(key)!=null){
 				ret += key + "=" + e.get(key) + "&";
+				usedHashOrd += key + "-";
+			}
 		}
+		
+		ret += "hashord=" +usedHashOrd + "hashord";
+		
 		System.out.println("unsigned envelope: " + ret);
-		ret = ret.substring(0,ret.length()-1);
+
 		return ret;
 	}
 
