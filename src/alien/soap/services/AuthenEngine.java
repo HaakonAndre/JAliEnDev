@@ -436,7 +436,7 @@ public class AuthenEngine {
 				try{
 					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
 					{
-						System.out.println("Self Signature VERIFIED!");
+						System.out.println("Self Signature VERIFIED! : "+xenv.pfn.pfn);
 							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
 
 							retenv.add(env);
