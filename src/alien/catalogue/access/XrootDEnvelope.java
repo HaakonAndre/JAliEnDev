@@ -281,6 +281,7 @@ public class XrootDEnvelope implements Serializable {
 			if(e.get(key)!=null)
 				ret += "key=" + e.get(key) + "&";
 		}
+		System.out.println("unsigned envelope: " + ret);
 		ret = ret.substring(0,ret.length()-1);
 		return ret;
 	}
