@@ -137,7 +137,7 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 				setWhat = args.get(1);
 				System.out.println("setWhat: " + setWhat);
 				System.out.println("args2" + args.get(2));
-				setTo = Long.getLong(args.get(2));
+				setTo = Long.parseLong(args.get(2))
 			}else
 				bHelp=true;
 		} else 
