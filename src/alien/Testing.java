@@ -49,15 +49,13 @@ public class Testing {
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
 		
 		if (true){
-			LFN lfn = LFNUtils.getLFN("/alice/data/2011/LHC11b/000149656/ESDs/pass1");
-			
-			List<LFN> found = LFNUtils.find(lfn, CatalogueUtils.dbToJavaPattern("%AliESDs.root"), 0);
+			List<LFN> found = LFNUtils.find("/alice/data/2011/LHC11b/000149656/ESDs/pass1", "AliESDs.root", 0);
 						
 			long lStart = System.currentTimeMillis();
 			
-			found = LFNUtils.find(lfn, CatalogueUtils.dbToJavaPattern("%AliESDs.root"), 0);
+			found = LFNUtils.find("/alice/data/2011/LHC11b/000149656/ESDs/pass1", "AliESDs.root", 0);
 						
-			System.err.println("done : "+(System.currentTimeMillis() - lStart));
+			System.err.println("done : "+(System.currentTimeMillis() - lStart)+" : "+found.size());
 			
 			return;
 		}
