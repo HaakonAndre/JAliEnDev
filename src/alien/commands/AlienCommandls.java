@@ -12,6 +12,8 @@ import lazyj.Log;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.config.Context;
+import alien.config.SOAPLogger;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -257,6 +259,18 @@ public class AlienCommandls extends AlienCommand {
 		}
 
 		hmReturn.put("rcvalues", alrcValues);
+		
+		final Object o = Context.getTheadContext("logger");
+		
+		if (o!=null){
+			final SOAPLogger logger = (SOAPLogger) o;
+			
+			final String message = logger.getLog();
+			
+			if (message.length()>0)
+				alrcMessages.add(0, message);
+		}
+		
 		hmReturn.put("rcmessages", alrcMessages);
 
 		return hmReturn;
