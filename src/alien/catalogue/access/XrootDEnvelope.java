@@ -30,9 +30,11 @@ public class XrootDEnvelope implements Serializable {
 	private static final long serialVersionUID = 1024787790575833398L;
 
 	/**
-	 * Format
+	 * the order the key-vals have to appear for sign and verify
 	 */
 	public static final String hashord = "turl-xurl-access-lfn-guid-zguid-size-md5-se";
+	
+	
 
 	/**
 	 * the access ticket this envelope belongs to
