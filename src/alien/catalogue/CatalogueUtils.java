@@ -3,6 +3,7 @@
  */
 package alien.catalogue;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -274,6 +275,30 @@ public final class CatalogueUtils {
 		}
 		
 		return best;
+	}
+	
+	/**
+	 * @param pattern
+	 * @return all tables that belong to this tree
+	 */
+	public static List<IndexTableEntry> getAllMatchingTables(final String pattern){
+		final List<IndexTableEntry> ret = new ArrayList<IndexTableEntry>();
+		
+		final IndexTableEntry best = getClosestMatch(pattern);
+		
+		if (best==null)
+			return ret;
+		
+		ret.add(best);
+				
+		for (final IndexTableEntry ite: indextable){
+			if (ite.lfn.startsWith(pattern)){
+				System.err.println(ite);
+				ret.add(ite);
+			}
+		}
+		
+		return ret;
 	}
 	
 	/**

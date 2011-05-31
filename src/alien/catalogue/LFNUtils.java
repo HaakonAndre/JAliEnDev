@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import lazyj.Format;
-
 import alien.config.ConfigUtils;
 
 /**
@@ -149,34 +146,21 @@ public class LFNUtils {
 	 * @param flags a combination of FIND_* flags
 	 * @return the list of LFNs that match
 	 */
-	public static List<LFN> find(final LFN path, final Pattern pattern, final int flags){
+	public static List<LFN> find(final String path, final String pattern, final int flags){
 		final List<LFN> ret = new ArrayList<LFN>();
 		
-		final List<LFN> listing = path.list();
+		final List<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
+
+		final String processedPattern = Format.replace(pattern, "*", "%");
 		
-		if (listing==null || listing.size()==0)
-			return ret;
-		
-		for (final LFN entry: listing){
-			if (entry.getType()=='d'){
-				if ((flags & FIND_INCLUDE_DIRS) != 0){
-					final Matcher m = pattern.matcher(entry.getCanonicalName());
-					
-					if (m.matches())
-						ret.add(entry);
-				}
-				
-				ret.addAll(find(entry, pattern, flags));
-			}
-			else{
-				final Matcher m = pattern.matcher(entry.getCanonicalName());
-				
-				if (m.matches())
-					ret.add(entry);
-			}
+		for (final IndexTableEntry ite: matchingTables){
+			final List<LFN> findResults = ite.find(path, processedPattern, flags);
+			
+			if (findResults!=null && findResults.size()>0)
+				ret.addAll(findResults);
 		}
 		
-		return ret;
+		return ret;		
 	}
 	
 }

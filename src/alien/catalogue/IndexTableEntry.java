@@ -1,6 +1,8 @@
 package alien.catalogue;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -142,6 +144,57 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		}
 		
 		return new LFN(db, this);
+	}
+	
+	/**
+	 * @param sPath base path where to start searching, must be an absolute path ending in /
+	 * @param sPattern pattern to search for, in SQL wildcard format
+	 * @param flags a combination of {@link LFNUtils}.FIND_* fields
+	 * @return the LFNs from this table that match
+	 */
+	public List<LFN> find(final String sPath, final String sPattern, final int flags){
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return null;
+		
+		if (monitor!=null){
+			monitor.incrementCounter("LFN_find");
+		}
+		
+		final List<LFN> ret = new ArrayList<LFN>();
+		
+		String sSearch = sPath;
+		
+		if (sSearch.startsWith("/"))
+			sSearch = sSearch.substring(lfn.length());
+		
+		if (!sPattern.startsWith("%"))
+			sSearch += "%";
+		
+		sSearch += sPattern;
+		
+		if (!sPattern.endsWith("%"))
+			sSearch += "%";
+		
+		String q = "SELECT * FROM L"+tableName+"L WHERE lfn LIKE '"+Format.escSQL(sSearch)+"' AND replicated=0";		
+
+		if ( (flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
+			q += " AND type!='d'";
+		
+		if ( (flags & LFNUtils.FIND_NO_SORT) == 0)
+			q += " ORDER BY lfn";
+		
+		if (!db.query(q))
+			return null;
+		
+		while (db.moveNext()){
+			final LFN l = new LFN(db, this);
+			
+			ret.add(l);
+		}
+		
+		return ret;
 	}
 	
 	/**
