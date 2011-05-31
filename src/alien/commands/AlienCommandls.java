@@ -281,7 +281,11 @@ public class AlienCommandls extends AlienCommand {
 			
 			if (message.length()>0)
 				alrcMessages.add(0, message+"\n");
+			else
+				System.err.println("empty message");
 		}
+		else
+			System.err.println("null logger");
 		
 		hmReturn.put("rcmessages", alrcMessages);
 
