@@ -103,6 +103,7 @@ public class AlienCommandauthorize extends AlienCommand {
 				
 				AuthenEngine au = new AuthenEngine();
 				alrcValues = (ArrayList<String>) au.authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, hmInfo, iJobId, this.iDebug);
+				alrcMessages.addAll(alrcValues);
 			}
 
 		}
