@@ -79,14 +79,14 @@ public class AuthenServlet extends ExtendedServlet {
 
 			if(!"ping".equals(sreqw.getActionName())){
 				Log.log(Log.INFO, "Inainte de cmd");
+				// TODO - decode the debug level and give it to SOAPLogger below
+				final SOAPLogger logger = new SOAPLogger(0);
+				Context.setThreadContext("logger", logger);				
+				
 				AlienCommand cmd = AlienCommands.getAlienCommand(user, sreqw.getActionArguments());
 				Log.log(Log.INFO, "Dupa cmd");
 				
 				Object objResponse;
-
-				// TODO - decode the debug level and give it to SOAPLogger below
-				final SOAPLogger logger = new SOAPLogger(0);
-				Context.setThreadContext("logger", logger);
 				
 				//command not implemented
 				if(cmd == null){
