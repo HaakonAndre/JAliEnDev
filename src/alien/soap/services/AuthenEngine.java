@@ -572,8 +572,12 @@ public class AuthenEngine {
 		} else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
 			if (lfn.guid == null) {
+				lfn.size = p_size;
+				lfn.md5 = p_md5;
 				guid = GUIDUtils.createGuid();
 				lfn.guid = guid.guid;
+				guid.size = lfn.size;
+				guid.md5 = lfn.md5;
 			} else {
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
 			}
@@ -694,6 +698,7 @@ public class AuthenEngine {
 							.println("Sorry ... getInternalEnvelope is null!");
 				} else {
 					try{
+						// we need to both encrypt and sign, the later is not automatic
 						XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
 					}
 					catch(SignatureException e){
