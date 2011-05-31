@@ -709,15 +709,15 @@ public class AuthenEngine {
 						.println("Sorry ... Could not sign the envelope!");
 					}
 					envelopes
-							.add(pfn.ticket.envelope.getSignedEnvelope()
+							.add(
 									.replace("&", "\\&")
 									+ "\\&oldEnvelope="
 									+ pfn.ticket.envelope
 											.getEncryptedEnvelope());
-//					System.out.println("enc: "
-//							+ pfn.ticket.envelope.getUnEncryptedEnvelope());
-					System.out.println("sgn: "
-							+ pfn.ticket.envelope.getSignedEnvelope());
+					System.out.println("enc: "
+							+ pfn.ticket.envelope.getUnEncryptedEnvelope());
+//					System.out.println("sgn: "
+//							+ pfn.ticket.envelope.getSignedEnvelope());
 				}
 			}
 		}
