@@ -228,7 +228,6 @@ public class XrootDEnvelopeSigner {
 
 		while (hash.hasMoreTokens()) {
 			String key = hash.nextToken();
-			if(env.get(key)!=null)
 			signedEnvelope += key + "=" + env.get(key) +"&";
 		}
 		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.length()-1);
