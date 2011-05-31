@@ -194,7 +194,7 @@ public class XrootDEnvelopeSigner {
 
 		envelope.setSignedEnvelope(toBeSigned + "&signature=" + alien.services.Base64.encode(rawsignature));
 
-		// System.out.println("We signed: " + envelope.getSignedEnvelope());
+		System.out.println("We signed: " + envelope.getSignedEnvelope());
 
 	}
 
