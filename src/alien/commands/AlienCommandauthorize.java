@@ -89,7 +89,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			Log.log(Log.FINER, "Authorize Job id = "+iJobId);
 
 			if("registerenvs".equals(sAccess)){
-				ArrayList<String> alInfo = new ArrayList<String>(this.alArguments.size()-3);
+				ArrayList<String> alInfo = new ArrayList<String>(this.alArguments.size());
 				for(int i=1; i<= envelopeCount;i++){
 					alInfo.add((String) this.alArguments.get(i));
 				}
