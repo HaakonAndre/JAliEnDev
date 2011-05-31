@@ -5,30 +5,16 @@ import java.util.List;
 import alien.user.AliEnPrincipal;
 
 public class AlienAdminCommand extends AlienCommand {
+	
+	private static final String admin = "admin";
 
 	public AlienAdminCommand(AliEnPrincipal pAlienUser, List<?> al)
 			throws Exception {
 		super(pAlienUser, al);
-		if (!pAlienUser.canBecome("admin"))
-			throw new PerlSecurityException(
-					"CANBECOME: You need to be [admin] to execute this command");
-
-		try {
-
-			System.out.println("the sUsername: " + sUsername);
-
-			System.out.println("super sUsername: " + super.sUsername);
-			System.out.println("this sUsername: " + this.sUsername);
-		} catch (NullPointerException e) {
-
-		}
 
 		if (!"admin".equals(sUsername))
 			throw new PerlSecurityException(
-					"USERNAME: You need to be [admin] to execute this command");
-		if (!pAlienUser.canBecome("admin") || !"admin".equals(sUsername))
-			throw new PerlSecurityException(
-					"You need to be [admin] to execute this command");
+					"You need to be ["+admin+"] to execute this command");
 	}
 
 	public AlienAdminCommand(final AliEnPrincipal pAlienPrincipal,
@@ -37,9 +23,9 @@ public class AlienAdminCommand extends AlienCommand {
 			final List<?> alArguments) throws Exception {
 		super(pAlienPrincipal, sUsername, sCurrentDirectory, sCommand,
 				iDebugLevel, alArguments);
-		if (!pAlienUser.canBecome("admin") || super.sUsername != "admin")
+		if (!"admin".equals(sUsername))
 			throw new PerlSecurityException(
-					"You need to be [admin] to execute this command");
+					"You need to be ["+admin+"] to execute this command");
 
 	}
 
