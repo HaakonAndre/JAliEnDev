@@ -565,12 +565,33 @@ public class AuthenEngine {
 			if (lfn.guid == null) {
 				lfn.size = p_size;
 				lfn.md5 = p_md5;
+				lfn.type='f';
+				lfn.perm=755;
+				lfn.owner=user.getName();
+				lfn.gowner=user.getName();
 				guid = GUIDUtils.createGuid();
 				lfn.guid = guid.guid;
 				guid.size = lfn.size;
 				guid.md5 = lfn.md5;
+				guid.type  = lfn.type;
+				guid.perm = lfn.perm;
+				guid.owner = lfn.owner;
+				guid.gowner  = lfn.gowner;
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
+				
+		
+				
+				lfn.guidtime = GUIDUtils.getIndexTime(guid.guid);
+				
+				lfn.jobid = db.geti(2, -1);
+				
+				
+				
+				
+				
+				
+				
 			} else {
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
 			}
