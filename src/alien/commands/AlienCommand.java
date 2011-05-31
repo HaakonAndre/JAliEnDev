@@ -39,6 +39,11 @@ public abstract class AlienCommand {
 	protected String sCurrentDirectory ;
 
 	/**
+	 * current directory received from SOAP request, checked to be absolute path
+	 */
+	protected String sAbsoluteCurrentDirectory ;
+	
+	/**
 	 * command received from SOAP request
 	 */
 	protected String sCommand ;
@@ -84,6 +89,13 @@ public abstract class AlienCommand {
 		String sLocalCurrentDirectory = (String) al.get(1);
 		String sLocalCommand = (String) al.get(2);
 
+		if (sUsername != null)
+			if (!pAlienUser.canBecome(sUsername))
+				throw new PerlSecurityException(
+						"You are not allowed to execute this command as [sUsername]");
+			else
+				this.sUsername = pAlienUser.getName();
+		
 		Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sLocalUsername+" / "+sLocalCurrentDirectory+" / "+sLocalCommand);
 		
 		int alSize = al.size();
@@ -156,6 +168,14 @@ public abstract class AlienCommand {
 		this.sCommand = sCommand;
 		this.alArguments = alArguments;
 		this.iDebug = iDebugLevel;
+		
+
+		if (sUsername != null)
+			if (!pAlienUser.canBecome(sUsername))
+				throw new PerlSecurityException(
+						"You are not allowed to execute this command as [sUsername]");
+			else
+				this.sUsername = pAlienUser.getName();
 	
 		Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sUsername+" / "+sCurrentDirectory+" / "+sCommand);
 		
