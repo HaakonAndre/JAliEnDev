@@ -717,7 +717,7 @@ public class AuthenEngine {
 //					System.out.println("enc: "
 //							+ pfn.ticket.envelope.getUnEncryptedEnvelope());
 					System.out.println("sgn: "
-							+ pfn.ticket.envelope.getUnsignedEnvelope());
+							+ pfn.ticket.envelope.getSignedEnvelope());
 				}
 			}
 		}
