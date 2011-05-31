@@ -444,7 +444,7 @@ public class AuthenEngine {
 					} else
 						if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
 						{
-							System.out.println("SE Signature VERIFIED!");
+							System.out.println("SE Signature VERIFIED! : "+xenv.pfn.pfn);
 							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
 								retenv.add(env);
 						
