@@ -561,6 +561,7 @@ public class AuthenEngine {
 			guid = GUIDUtils.getGUID(UUID.fromString(p_lfn), evenIfNotExists);
 		} else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
+			System.out.println("lfn to string: "+lfn.toString());
 			if (lfn.guid == null) {
 				lfn.size = p_size;
 				lfn.md5 = p_md5;
