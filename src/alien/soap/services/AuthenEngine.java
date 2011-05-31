@@ -33,7 +33,6 @@ import alien.user.UserFactory;
  */
 public class AuthenEngine {
 
-
 	// private String verificationEnvelope = "-----BEGIN SEALED CIPHER-----\n"
 	// +
 	// "Amkq4hz7cJBtP4SxPyk-8d7OGPokdSewpfqwwIbilH1PfH7hAY7pnVXTLDd1E00+4uNsbwh81Rog\n"
@@ -406,7 +405,6 @@ public class AuthenEngine {
 	//
 	// }
 
-
 	/**
 	 * @param certOwner
 	 * @param p_user
@@ -415,10 +413,10 @@ public class AuthenEngine {
 	 * @param envelopes
 	 * @return the list of envelopes
 	 */
-	public List<String> registerEnvelope(AliEnPrincipal user,
-			String p_user, String p_dir, String access,
-			ArrayList<String> envelopes, int jobid, int debugLevel) {
-		
+	public List<String> registerEnvelope(AliEnPrincipal user, String p_user,
+			String p_dir, String access, ArrayList<String> envelopes,
+			int jobid, int debugLevel) {
+
 		if (user.canBecome(p_user))
 			user = UserFactory.getByUsername(p_user);
 		else {
@@ -426,56 +424,47 @@ public class AuthenEngine {
 					+ "] have not the rights to become " + p_user);
 			return null;
 		}
-		
-			ArrayList<String> retenv = new ArrayList<String>(envelopes.size());
-		
-			for(String env: envelopes){
-				env = env.replace("\\&", "&");
 
-				XrootDEnvelope xenv = new XrootDEnvelope(env);
-				try{
-					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
+		ArrayList<String> retenv = new ArrayList<String>(envelopes.size());
+
+		for(String env: envelopes){
+			env = env.replace("\\&", "&");
+
+			XrootDEnvelope xenv = new XrootDEnvelope(env);
+			try{
+				if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
+				{
+					System.out.println("Self Signature VERIFIED! : "+xenv.pfn.pfn);
+						BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
+
+						retenv.add(env);
+					
+				} else
+					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
 					{
-						System.out.println("Self Signature VERIFIED! : "+xenv.pfn.pfn);
-							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
-
+						System.out.println("SE Signature VERIFIED! : "+xenv.pfn.pfn);
+						BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
 							retenv.add(env);
-						
-					} else
-						if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
-						{
-							System.out.println("SE Signature VERIFIED! : "+xenv.pfn.pfn);
-							BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
-								retenv.add(env);
-						
-						} else{
-							System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
-						}
-						
-				}
-				catch(SignatureException e){
-					System.err
-					.println("Sorry ... Could not sign the envelope!");
-				}
-				catch(InvalidKeyException e){
-					System.err
-					.println("Sorry ... Could not sign the envelope!");
-				}
-				catch(NoSuchAlgorithmException e){
-					System.err
-					.println("Sorry ... Could not sign the envelope!");
-				}
-				catch (IOException e) {
-					System.err
-					.println("Sorry ... Error getting the PFN!");
-				}
+					
+					} else{
+						System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
+					}
+					
+
+			} catch (SignatureException e) {
+				System.err.println("Sorry ... Could not sign the envelope!");
+			} catch (InvalidKeyException e) {
+				System.err.println("Sorry ... Could not sign the envelope!");
+			} catch (NoSuchAlgorithmException e) {
+				System.err.println("Sorry ... Could not sign the envelope!");
+			} catch (IOException e) {
+				System.err.println("Sorry ... Error getting the PFN!");
 			}
-	
-			return retenv;
+		}
+
+		return retenv;
 	}
-	
-		
-	
+
 	/**
 	 * @param certOwner
 	 * @param p_user
@@ -485,14 +474,13 @@ public class AuthenEngine {
 	 * @param p_jobid
 	 * @return the list of envelopes
 	 */
-	public List<String> authorizeEnvelope(AliEnPrincipal user,
-			String p_user, String p_dir, String access,
-			Map<String, String> optionHash, int jobid, int debugLevel) {
+	public List<String> authorizeEnvelope(AliEnPrincipal user, String p_user,
+			String p_dir, String access, Map<String, String> optionHash,
+			int jobid, int debugLevel) {
 
 		System.out.println();
 		System.out.println("JAuthen SOAP request for authorize...");
 
-		
 		boolean evenIfNotExists = false;
 		if (user.canBecome(p_user))
 			user = UserFactory.getByUsername(p_user);
@@ -516,12 +504,14 @@ public class AuthenEngine {
 			return null;
 		}
 
-		int p_size = Integer.parseInt(sanitizePerlString(optionHash.get("size"), true));
-		int p_qosCount = Integer.parseInt(sanitizePerlString(optionHash.get("writeQosCount"), true));
-		
+		int p_size = Integer.parseInt(sanitizePerlString(
+				optionHash.get("size"), true));
+		int p_qosCount = Integer.parseInt(sanitizePerlString(
+				optionHash.get("writeQosCount"), true));
+
 		String p_lfn = sanitizePerlString(optionHash.get("lfn"), false);
 		if (!p_lfn.startsWith("/"))
-			p_lfn = p_dir +  p_lfn;
+			p_lfn = p_dir + p_lfn;
 		String p_guid = sanitizePerlString(optionHash.get("guid"), false);
 		String p_guidrequest = sanitizePerlString(
 				optionHash.get("guidRequest"), false);
@@ -595,9 +585,11 @@ public class AuthenEngine {
 					System.out.println("Trying to book writing on static SE: "
 							+ se.getName());
 					try {
-						pfns.add(BookingTable.bookForWriting(user, lfn, guid, null, jobid, se));
+						pfns.add(BookingTable.bookForWriting(user, lfn, guid,
+								null, jobid, se));
 					} catch (Exception e) {
-						System.out.println("Error for the request on " + se.getName() + ", message: " + e);
+						System.out.println("Error for the request on "
+								+ se.getName() + ", message: " + e);
 					}
 				}
 
@@ -616,7 +608,8 @@ public class AuthenEngine {
 							pfns.add(BookingTable.bookForWriting(user, lfn,
 									guid, null, jobid, se));
 						} catch (Exception e) {
-							System.out.println("Error for the request on " + se.getName() + ", message: " + e);
+							System.out.println("Error for the request on "
+									+ se.getName() + ", message: " + e);
 							continue;
 						}
 						counter++;
@@ -697,32 +690,31 @@ public class AuthenEngine {
 					System.err
 							.println("Sorry ... getInternalEnvelope is null!");
 				} else {
-					try{
-						// we need to both encrypt and sign, the later is not automatic
+					try {
+						// we need to both encrypt and sign, the later is not
+						// automatic
 						XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-					}
-					catch(SignatureException e){
+					} catch (SignatureException e) {
 						System.err
-						.println("Sorry ... Could not sign the envelope!");
-					}
-					catch(InvalidKeyException e){
+								.println("Sorry ... Could not sign the envelope!");
+					} catch (InvalidKeyException e) {
 						System.err
-						.println("Sorry ... Could not sign the envelope!");
-					}
-					catch(NoSuchAlgorithmException e){
+								.println("Sorry ... Could not sign the envelope!");
+					} catch (NoSuchAlgorithmException e) {
 						System.err
-						.println("Sorry ... Could not sign the envelope!");
+								.println("Sorry ... Could not sign the envelope!");
 					}
-					envelopes
-							.add(pfn.ticket.envelope.getSignedEnvelope()
-									.replace("&", "\\&")
-									+ "\\&oldEnvelope="
-									+ pfn.ticket.envelope
-											.getEncryptedEnvelope());
+					String addEnv = pfn.ticket.envelope.getSignedEnvelope()
+							.replace("&", "\\&");
+
+					if (!addEnv.toLowerCase().contains("alice::cern::setest"))
+						addEnv += "\\&oldEnvelope="
+								+ pfn.ticket.envelope.getEncryptedEnvelope();
+					envelopes.add(addEnv);
 					System.out.println("enc: "
 							+ pfn.ticket.envelope.getUnEncryptedEnvelope());
-//					System.out.println("sgn: "
-//							+ pfn.ticket.envelope.getSignedEnvelope());
+					// System.out.println("sgn: "
+					// + pfn.ticket.envelope.getSignedEnvelope());
 				}
 			}
 		}
