@@ -3,9 +3,8 @@ package alien.commands;
 import java.security.Principal;
 import java.util.ArrayList;
 
-import alien.user.AliEnPrincipal;
-
 import lazyj.Log;
+import alien.user.AliEnPrincipal;
 
 /**
  * @author Alina Grigoras

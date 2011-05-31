@@ -16,8 +16,6 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.config.ConfigUtils;
-import alien.config.Context;
-import alien.config.SOAPLogger;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -272,20 +270,10 @@ public class AlienCommandls extends AlienCommand {
 
 		hmReturn.put("rcvalues", alrcValues);
 		
-		final Object o = Context.getTheadContext("logger");
+		String message = getLogMessages();
 		
-		if (o!=null){
-			final SOAPLogger soaplogger = (SOAPLogger) o;
-			
-			final String message = soaplogger.toString();
-			
-			if (message.length()>0)
-				alrcMessages.add(0, message+"\n");
-			else
-				System.err.println("empty message");
-		}
-		else
-			System.err.println("null logger");
+		if (message!=null)
+			alrcMessages.add(0, message+"\n");
 		
 		hmReturn.put("rcmessages", alrcMessages);
 

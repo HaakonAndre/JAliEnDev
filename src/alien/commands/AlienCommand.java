@@ -7,6 +7,8 @@ import java.security.Principal;
 import lazyj.Format;
 import lazyj.Log;
 
+import alien.config.Context;
+import alien.config.SOAPLogger;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -89,12 +91,13 @@ public abstract class AlienCommand {
 		String sLocalCurrentDirectory = (String) al.get(1);
 		String sLocalCommand = (String) al.get(2);
 
-		if (sUsername != null)
+		if (sUsername != null){
 			if (!pAlienUser.canBecome(sUsername))
 				throw new PerlSecurityException(
 						"You are not allowed to execute this command as [sUsername]");
-			else
-				this.sUsername = pAlienUser.getName();
+
+			this.sUsername = pAlienUser.getName();
+		}
 		
 		Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sLocalUsername+" / "+sLocalCurrentDirectory+" / "+sLocalCommand);
 		
@@ -168,14 +171,12 @@ public abstract class AlienCommand {
 		this.sCommand = sCommand;
 		this.alArguments = alArguments;
 		this.iDebug = iDebugLevel;
-		
 
-		if (sUsername != null)
-			if (!pAlienUser.canBecome(sUsername))
-				throw new PerlSecurityException(
-						"You are not allowed to execute this command as [sUsername]");
-			else
-				this.sUsername = pAlienUser.getName();
+		if (!pAlienUser.canBecome(sUsername))
+			throw new PerlSecurityException(
+					"You are not allowed to execute this command as [sUsername]");
+
+		this.sUsername = pAlienUser.getName();
 	
 		Log.log(Log.FINER, "Inside AliEn command constructor with the values: "+sUsername+" / "+sCurrentDirectory+" / "+sCommand);
 		
@@ -278,5 +279,28 @@ public abstract class AlienCommand {
 	 */
 	public static String padRight(String s, int n) {
 	     return String.format("%1$-" + n + "s", s);  
+	}
+	
+	
+	/**
+	 * @return the log message, if any, otherwise <code>null</code>
+	 */
+	protected String getLogMessages(){
+		final Object o = Context.getTheadContext("logger");
+		
+		if (o!=null){
+			final SOAPLogger soaplogger = (SOAPLogger) o;
+			
+			String message = soaplogger.toString();
+			
+			if (message.length()>0){
+				if (!message.endsWith("\n"))
+					message += "\n";
+				
+				return message;
+			}
+		}
+		
+		return null;
 	}
 }
