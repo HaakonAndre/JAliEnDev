@@ -566,7 +566,7 @@ public class AuthenEngine {
 				lfn.size = p_size;
 				lfn.md5 = p_md5;
 				lfn.type='f';
-				lfn.perm=755;
+				lfn.perm="755";
 				lfn.owner=user.getName();
 				lfn.gowner=user.getName();
 				guid = GUIDUtils.createGuid();
