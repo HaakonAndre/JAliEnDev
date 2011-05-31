@@ -1,8 +1,5 @@
 package alien.config;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 /**
  * @author ron
@@ -14,12 +11,19 @@ public class JAliEnIAm {
 	
 	private static final String myVersion = "v0.3";
 
+	private static final String myFullName = thathsMe +" "+myVersion; 
 	
+	/**
+	 * @return my name
+	 */
 	public static String whatsMyName(){
 		return thathsMe;
 	}
+	/**
+	 * @return me and the version
+	 */
 	public static String whatsMyFullName(){
-		return thathsMe +" "+myVersion;
+		return myFullName;
 	}
 	
 }
