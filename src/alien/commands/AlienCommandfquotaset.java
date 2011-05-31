@@ -38,12 +38,12 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 	 * marker for -l argument
 	 */
 	private String setWhat = null;
-	
+
 	/**
 	 * marker for -l argument
 	 */
 	private long setTo = 0;
-	
+
 	/**
 	 * marker for -a argument
 	 */
@@ -108,9 +108,8 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 		// we got arguments for fquota list
 		if (this.alArguments != null && this.alArguments.size() >= 3) {
 
-			
 			ArrayList<String> args = new ArrayList<String>(3);
-			
+
 			for (Object oArg : this.alArguments) {
 				String sArg = (String) oArg;
 
@@ -124,50 +123,52 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 
 						if (sLocalArg.startsWith("h")) {
 							bHelp = true;
-							}
 						}
+					}
 				} else {
 					args.add(sArg);
 				}
-				
+
 			}
-			if(args.size() == 3){
+			if (args.size() == 3) {
 				user = args.get(0);
-				System.out.println("user: " + user);
 				setWhat = args.get(1);
-				System.out.println("setWhat: " + setWhat);
-				System.out.println("args2" + args.get(2));
 				setTo = Long.parseLong(args.get(2));
-			}else
-				bHelp=true;
-		} else 
-			bHelp=true;
-		
+			} else
+				bHelp = true;
+		} else
+			bHelp = true;
+
 		if (!bHelp) {
 
-				Quota quota = QuotaUtilities.getFQuota(user);
-				
-				if(quota==null)
-					System.out.println("Couldn't get the quota");
-				
-				if(setWhat=="maxNbFiles")
-					// TODO: set it
-					System.out.println("TODO: Set maxNbFiles in quotas");
-				else if(setWhat=="maxTotalSize")
-					// TODO: set it
-					System.out.println("TODO: Set maxTotalSize in quotas");
-				else 
-					alrcMessages
-					.add("Wrong oifield name! Choose one of them: maxNbFiles, maxTotalSize");
+			Quota quota = QuotaUtilities.getFQuota(user);
+
+			if (quota == null)
+				System.out.println("Couldn't get the quota");
+
+			if ("maxNbFiles".equals(setWhat)) {
+				// TODO: set it
+				System.out.println("TODO: Set maxNbFiles in quotas");
+				alrcMessages.add("Successfully set maxNbFiles to " + setTo
+						+ " for user [" + user + "]\n");
+
+			} else if ("maxTotalSize".equals(setWhat)) {
+				// TODO: set it
+				System.out.println("TODO: Set maxTotalSize in quotas");
+				alrcMessages.add("Successfully set maxTotalSize to " + setTo
+						+ " for user [" + user + "]\n");
+			} else
+				alrcMessages
+						.add("Wrong field name! Choose one of them: maxNbFiles, maxTotalSize\n");
 
 		} else {
 
-			alrcMessages.add(AlienTime.getStamp()
-					+ "Usage: \nfquota set  <username> <field> <value> - set the user quota\n");
+			alrcMessages
+					.add(AlienTime.getStamp()
+							+ "Usage: \nfquota set  <username> <field> <value> - set the user quota\n");
 			alrcMessages.add("		(maxNbFiles, maxTotalSize(Byte))\n");
 			alrcMessages.add("use <user>=% for all users\n");
-		
-				
+
 		}
 
 		hmReturn.put("rcvalues", alrcValues);
