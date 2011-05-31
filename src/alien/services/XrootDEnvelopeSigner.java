@@ -213,7 +213,7 @@ public class XrootDEnvelopeSigner {
 
 		String signedEnvelope = "";
 
-		StringTokenizer st = new StringTokenizer(envelope.getSignedEnvelope(), "\\&");
+		StringTokenizer st = new StringTokenizer(envelope.getSignedEnvelope(), "&");
 
 		while (st.hasMoreTokens()) {
 			String tok = st.nextToken();
@@ -229,15 +229,15 @@ public class XrootDEnvelopeSigner {
 		StringTokenizer hash = new StringTokenizer(env.get("hashord"), "-");
 
 		while (hash.hasMoreTokens()) {
-			if (!("").equals(signedEnvelope))
-				signedEnvelope += "&";
 			String key = hash.nextToken();
-			signedEnvelope += key + "=" + env.get(key);
+			if(env.get(key)!=null)
+			signedEnvelope += key + "=" + env.get(key) +"&";
 		}
-
-		System.out.println("sign String: " + signedEnvelope);
-		System.out.println("signature: " + env.get("signature"));
-
+		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.length()-1);
+		
+		System.out.println("verifying sign of: " + signedEnvelope);
+		System.out.println("verifying signature: " + env.get("signature"));
+		System.out.println();
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 
 		if (selfSigned) {
