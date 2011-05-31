@@ -18,7 +18,7 @@ public class Context {
 	static Map<Long, Map<String, Object>> context = new ConcurrentHashMap<Long, Map<String, Object>>();
 	
 	static {
-		new Thread("alien.config.Context.cleanup"){
+		final Thread cleanupThread = new Thread("alien.config.Context.cleanup"){
 			@Override
 			public void run() {
 				while (true){
@@ -27,14 +27,14 @@ public class Context {
 						
 						final Set<Long> threadIDs = new HashSet<Long>();
 						
-						for (Thread t: Thread.getAllStackTraces().keySet()){
+						for (final Thread t: Thread.getAllStackTraces().keySet()){
 							threadIDs.add(Long.valueOf(t.getId()));
 						}
 						
 						final Iterator<Map.Entry<Long, Map<String, Object>>> it = context.entrySet().iterator();
 						
 						while (it.hasNext()){
-							Map.Entry<Long, Map<String, Object>> me = it.next();
+							final Map.Entry<Long, Map<String, Object>> me = it.next();
 							
 							if (!threadIDs.contains(me.getKey()))
 								it.remove();
@@ -45,7 +45,10 @@ public class Context {
 					}
 				}
 			}
-		}.start();
+		};
+		
+		cleanupThread.setDaemon(true);
+		cleanupThread.start();
 	}
 	
 	/**
