@@ -80,6 +80,7 @@ public class XrootDEnvelope implements Serializable {
 
 		StringTokenizer st = new StringTokenizer(envelope, "\\&");
 		String pfn = "";
+		String turl = "";
 		String lfn = "";
 		String guid = "";
 		String se = "";
@@ -105,6 +106,8 @@ public class XrootDEnvelope implements Serializable {
 					} else {
 						System.err.println("illegal access type!");
 					}
+				else if ("turl".equals(key))
+					turl = value;
 				else if ("pfn".equals(key))
 					pfn = value;
 				else if ("lfn".equals(key))
@@ -123,6 +126,16 @@ public class XrootDEnvelope implements Serializable {
 
 		g.md5 = md5;
 		g.size = size;
+		if(turl.endsWith(pfn))
+			pfn = turl;
+		else{
+			//turl has #archive
+			if(turl.contains("#"))
+				turl = turl.substring(0,turl.indexOf('#'));
+			//turl has LFN rewrite for dCache etc
+			if(turl.endsWith(lfn))
+					turl = turl.replace(lfn, pfn);
+		}
 
 		this.pfn = new PFN(pfn, g, SEUtils.getSE(se));
 
