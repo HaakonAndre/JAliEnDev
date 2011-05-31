@@ -7,11 +7,15 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lazyj.Log;
 import alien.catalogue.FileSystemUtils;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.config.ConfigUtils;
 import alien.config.Context;
 import alien.config.SOAPLogger;
 import alien.user.AliEnPrincipal;
@@ -26,6 +30,12 @@ public class AlienCommandls extends AlienCommand {
 	 */
 	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils
+			.getLogger(GUIDUtils.class.getCanonicalName());
+	
 	static {
 		lsArguments.add("h");
 		lsArguments.add("l");
@@ -257,18 +267,20 @@ public class AlienCommandls extends AlienCommand {
 					.add("		-e : display also the expire date	[NOT IMPLEMENTED]\n");
 
 		}
+		
+		logger.log(Level.SEVERE, "buuuuuuuuuuuuuuuuubuuuuuuuuuubbbbbbbbbbbbbbbbbbbbbbb");
 
 		hmReturn.put("rcvalues", alrcValues);
 		
 		final Object o = Context.getTheadContext("logger");
 		
 		if (o!=null){
-			final SOAPLogger logger = (SOAPLogger) o;
+			final SOAPLogger soaplogger = (SOAPLogger) o;
 			
-			final String message = logger.getLog();
+			final String message = soaplogger.getLog();
 			
 			if (message.length()>0)
-				alrcMessages.add(0, message);
+				alrcMessages.add(0, message+"\n");
 		}
 		
 		hmReturn.put("rcmessages", alrcMessages);
