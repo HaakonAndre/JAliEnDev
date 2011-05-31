@@ -7,6 +7,7 @@ import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -569,6 +570,8 @@ public class AuthenEngine {
 				lfn.guid = guid.guid;
 				guid.size = lfn.size;
 				guid.md5 = lfn.md5;
+				guid.lfnCache = new LinkedHashSet<LFN>(1);
+				guid.lfnCache.add(lfn);
 			} else {
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
 			}
