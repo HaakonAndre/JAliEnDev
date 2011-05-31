@@ -1,7 +1,10 @@
 package alien.config;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -9,7 +12,41 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Context {
 
-	private static Map<Long, Map<String, Object>> context = new ConcurrentHashMap<Long, Map<String, Object>>();
+	/**
+	 * Thread-tied contexts
+	 */
+	static Map<Long, Map<String, Object>> context = new ConcurrentHashMap<Long, Map<String, Object>>();
+	
+	static {
+		new Thread("alien.config.Context.cleanup"){
+			@Override
+			public void run() {
+				while (true){
+					try{
+						Thread.sleep(1000*60);
+						
+						final Set<Long> threadIDs = new HashSet<Long>();
+						
+						for (Thread t: Thread.getAllStackTraces().keySet()){
+							threadIDs.add(Long.valueOf(t.getId()));
+						}
+						
+						final Iterator<Map.Entry<Long, Map<String, Object>>> it = context.entrySet().iterator();
+						
+						while (it.hasNext()){
+							Map.Entry<Long, Map<String, Object>> me = it.next();
+							
+							if (!threadIDs.contains(me.getKey()))
+								it.remove();
+						}
+					}
+					catch (final Throwable t){
+						// ignore
+					}
+				}
+			}
+		}.start();
+	}
 	
 	/**
 	 * @param key
