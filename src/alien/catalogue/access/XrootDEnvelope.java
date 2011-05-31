@@ -272,7 +272,7 @@ public class XrootDEnvelope implements Serializable {
 		
 		e.put("xurl",addXURLForSpecialSEs(e.get("lfn")));
 		
-		StringTokenizer hash = new StringTokenizer(hashord);
+		StringTokenizer hash = new StringTokenizer(hashord,"-");
 
 		String ret = "";
 		
