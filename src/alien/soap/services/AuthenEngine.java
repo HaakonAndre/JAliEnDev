@@ -428,29 +428,35 @@ public class AuthenEngine {
 
 		ArrayList<String> retenv = new ArrayList<String>(envelopes.size());
 
-		for(String env: envelopes){
+		for (String env : envelopes) {
 			env = env.replace("\\&", "&");
 
 			XrootDEnvelope xenv = new XrootDEnvelope(env);
-			try{
-				if(XrootDEnvelopeSigner.verifyEnvelope(xenv, true))
-				{
-					System.out.println("Self Signature VERIFIED! : "+xenv.pfn.pfn);
-						BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
+			try {
+				if (XrootDEnvelopeSigner.verifyEnvelope(xenv, true)) {
+					System.out.println("Self Signature VERIFIED! : "
+							+ xenv.pfn.pfn);
+					if (BookingTable.commit(user,
+							BookingTable.getBookedPFN(xenv.pfn.pfn))) {
+						System.out.println("Successfully moved " + xenv.pfn.pfn
+								+ " to the Catalogue");
 
 						retenv.add(env);
-					
-				} else
-					if(XrootDEnvelopeSigner.verifyEnvelope(xenv, false))
-					{
-						System.out.println("SE Signature VERIFIED! : "+xenv.pfn.pfn);
-						BookingTable.commit(user, BookingTable.getBookedPFN(xenv.pfn.pfn));
-							retenv.add(env);
-					
-					} else{
-						System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
 					}
-					
+
+				} else if (XrootDEnvelopeSigner.verifyEnvelope(xenv, false)) {
+					System.out.println("SE Signature VERIFIED! : "
+							+ xenv.pfn.pfn);
+					if (BookingTable.commit(user,
+							BookingTable.getBookedPFN(xenv.pfn.pfn))) {
+						System.out.println("Successfully moved " + xenv.pfn.pfn
+								+ " to the Catalogue");
+						retenv.add(env);
+					}
+
+				} else {
+					System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
+				}
 
 			} catch (SignatureException e) {
 				System.err.println("Sorry ... Could not sign the envelope!");
@@ -565,26 +571,21 @@ public class AuthenEngine {
 			if (lfn.guid == null) {
 				lfn.size = p_size;
 				lfn.md5 = p_md5;
-				lfn.type='f';
-				lfn.perm="755";
-				lfn.owner=user.getName();
-				lfn.gowner=user.getName();
+				lfn.type = 'f';
+				lfn.perm = "755";
+				lfn.owner = user.getName();
+				lfn.gowner = user.getName();
 				guid = GUIDUtils.createGuid();
 				lfn.guid = guid.guid;
 				guid.size = lfn.size;
 				guid.md5 = lfn.md5;
-				guid.type  = lfn.type;
+				guid.type = lfn.type;
 				guid.perm = lfn.perm;
 				guid.owner = lfn.owner;
-				guid.gowner  = lfn.gowner;
+				guid.gowner = lfn.gowner;
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
-				
-				
-				
-				
-				
-				
+
 			} else {
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
 			}
