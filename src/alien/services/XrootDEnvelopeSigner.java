@@ -222,6 +222,7 @@ public class XrootDEnvelopeSigner {
 				String key = tok.substring(0, idx);
 				String value = tok.substring(idx + 1);
 				env.put(key, value);
+				System.out.println(" found envelope key/val pair: " + key +" / "+value);
 			}
 		}
 		StringTokenizer hash = new StringTokenizer(env.get("hashord"), "-");
