@@ -580,13 +580,6 @@ public class AuthenEngine {
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
 				
-		
-				
-				lfn.guidtime = GUIDUtils.getIndexTime(guid.guid);
-				
-				lfn.jobid = db.geti(2, -1);
-				
-				
 				
 				
 				
