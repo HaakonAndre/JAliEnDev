@@ -11,6 +11,8 @@ import lazyj.Log;
 import alien.commands.AlienCommand;
 import alien.commands.AlienCommandls;
 import alien.commands.AlienCommands;
+import alien.config.Context;
+import alien.config.SOAPLogger;
 import alien.soap.SoapRequestWrapper;
 import alien.soap.SoapResponseWrapper;
 import alien.user.AliEnPrincipal;
@@ -82,6 +84,10 @@ public class AuthenServlet extends ExtendedServlet {
 				
 				Object objResponse;
 
+				// TODO - decode the debug level and give it to SOAPLogger below
+				final SOAPLogger logger = new SOAPLogger(0);
+				Context.setThreadContext("logger", logger);
+				
 				//command not implemented
 				if(cmd == null){
 					Log.log(Log.ERROR, "We got a hit for a command that it is not implemented = "+AlienCommands.getAlienCommandString(user, sreqw.getActionArguments()));
@@ -92,9 +98,11 @@ public class AuthenServlet extends ExtendedServlet {
 					objResponse = cmd.executeCommand();
 				}
 
+				// TODO - give the log messages back to the client
+				final String logMessages = logger.getLog();
+				
 				SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), objResponse);
 				Log.log(Log.INFO, srw.toSOAPXML());
-
 
 				pMasterpage.append(srw.toSOAPXML());
 			}
@@ -102,6 +110,9 @@ public class AuthenServlet extends ExtendedServlet {
 		} catch (Throwable e) {
 			Log.log(Log.ERROR, "Eroaaaree "+e.getStackTrace());
 			e.printStackTrace();
+		}
+		finally{
+			Context.setThreadContext("logger", null);
 		}
 
 		Log.log(Log.ERROR, "Chiar scriem ceva");

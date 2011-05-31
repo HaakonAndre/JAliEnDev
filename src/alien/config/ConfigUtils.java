@@ -269,6 +269,10 @@ public class ConfigUtils {
 			}
 		}
 
+		if (l.getFilter()==null){
+			l.setFilter(new LoggingFilter());
+		}
+		
 		return l;
 	}
 
