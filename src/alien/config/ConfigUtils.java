@@ -270,7 +270,7 @@ public class ConfigUtils {
 		}
 
 		if (l.getFilter()==null){
-			l.setFilter(new LoggingFilter());
+			l.setFilter(LoggingFilter.getInstance());
 		}
 		
 		return l;

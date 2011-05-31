@@ -9,6 +9,19 @@ import java.util.logging.LogRecord;
  */
 public class LoggingFilter implements Filter {
 
+	private static final LoggingFilter instance = new LoggingFilter();
+	
+	private LoggingFilter(){
+		// nothing, just protect it
+	}
+	
+	/**
+	 * @return singleton
+	 */
+	public static LoggingFilter getInstance(){
+		return instance;
+	}
+	
 	@Override
 	public boolean isLoggable(final LogRecord record) {
 		final Object o = Context.getTheadContext("logger");
