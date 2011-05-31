@@ -99,7 +99,7 @@ public class AuthenServlet extends ExtendedServlet {
 				}
 
 				// TODO - give the log messages back to the client
-				final String logMessages = logger.getLog();
+				final String logMessages = logger.toString();
 				
 				SoapResponseWrapper srw = new SoapResponseWrapper(sreqw.getActionName(), sreqw.getNamespace(), objResponse);
 				Log.log(Log.INFO, srw.toSOAPXML());

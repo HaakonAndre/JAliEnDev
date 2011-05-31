@@ -36,11 +36,9 @@ public class SOAPLogger{
 			loggingBuffer.append(record.toString()).append('\n');
 		}
 	}
-	
-	/**
-	 * @return the accumulated log
-	 */
-	public String getLog(){
+
+	@Override
+	public String toString(){
 		return loggingBuffer.toString();
 	}
 }

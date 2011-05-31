@@ -277,7 +277,7 @@ public class AlienCommandls extends AlienCommand {
 		if (o!=null){
 			final SOAPLogger soaplogger = (SOAPLogger) o;
 			
-			final String message = soaplogger.getLog();
+			final String message = soaplogger.toString();
 			
 			if (message.length()>0)
 				alrcMessages.add(0, message+"\n");
