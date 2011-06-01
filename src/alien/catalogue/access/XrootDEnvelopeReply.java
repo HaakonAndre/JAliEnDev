@@ -78,7 +78,7 @@ public class XrootDEnvelopeReply implements Serializable {
 		final SE rSE = SEUtils.getSE(se);
 		
 
-		final GUID g = GUIDUtils.getGUID(UUID.fromString(pfn.substring(pfn.lastIndexOf('/'))), true);
+		final GUID g = GUIDUtils.getGUID(UUID.fromString(pfn.substring(pfn.lastIndexOf('/')+1)), true);
 		g.md5 = md5;
 		g.size = size;
 		
