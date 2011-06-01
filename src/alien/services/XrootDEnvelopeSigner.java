@@ -188,9 +188,10 @@ public class XrootDEnvelopeSigner {
 		
 		signer.update(toBeSigned.getBytes());
 
-		envelope.setSignedEnvelope(toBeSigned + "&signature=" + Base64.encode(signer.sign()));
+		envelope.setSignedEnvelope((toBeSigned + "&signature=" + Base64.encode(signer.sign())).replace("&", "\\&"));
 
 	}
+
 
 	/**
 	 * @param envelope
@@ -203,11 +204,25 @@ public class XrootDEnvelopeSigner {
 	public static boolean verifyEnvelope(final XrootDEnvelope envelope, final boolean selfSigned)
 			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
+		return verifyEnvelope(envelope.getSignedEnvelope(), selfSigned);
+	}
+	
+	/**
+	 * @param envelope
+	 * @param selfSigned
+	 * @return <code>true</code> if the signature verifies
+	 * @throws NoSuchAlgorithmException
+	 * @throws InvalidKeyException
+	 * @throws SignatureException
+	 */
+	public static boolean verifyEnvelope(final String envelope, final boolean selfSigned)
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+
 		HashMap<String, String> env = new HashMap<String, String>();
 
 		String signedEnvelope = "";
 
-		StringTokenizer st = new StringTokenizer(envelope.getSignedEnvelope(), "&");
+		StringTokenizer st = new StringTokenizer(envelope, "\\&");
 
 		while (st.hasMoreTokens()) {
 			String tok = st.nextToken();

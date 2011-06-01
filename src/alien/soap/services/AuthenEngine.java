@@ -22,6 +22,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.catalogue.access.XrootDEnvelope;
+import alien.catalogue.access.XrootDEnvelopeReply;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.services.XrootDEnvelopeSigner;
@@ -434,9 +435,10 @@ public class AuthenEngine {
 			
 			System.out.println("We received an envelope for registration: " + env);
 
-			XrootDEnvelope xenv = new XrootDEnvelope(env);
 			try {
-				if (XrootDEnvelopeSigner.verifyEnvelope(xenv, true)) {
+				
+				if (XrootDEnvelopeSigner.verifyEnvelope(env, true)) {
+					XrootDEnvelope xenv = new XrootDEnvelope(env);
 					System.out.println("Self Signature VERIFIED! : "
 							+ xenv.pfn.pfn);
 					if (BookingTable.commit(user,
@@ -447,7 +449,8 @@ public class AuthenEngine {
 						retenv.add(env);
 					}
 
-				} else if (XrootDEnvelopeSigner.verifyEnvelope(xenv, false)) {
+				} else if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
+					XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
 					System.out.println("SE Signature VERIFIED! : "
 							+ xenv.pfn.pfn);
 					if (BookingTable.commit(user,
@@ -726,8 +729,7 @@ public class AuthenEngine {
 					System.err
 							.println("Sorry ... Could not sign the envelope!");
 				}
-				String addEnv = pfn.ticket.envelope.getSignedEnvelope()
-						.replace("&", "\\&");
+				String addEnv = pfn.ticket.envelope.getSignedEnvelope();
 
 				// drop the following once LDAP schema is updated and version
 				// number properly on

@@ -57,7 +57,7 @@ public class Xrd3cp extends Xrootd {
 					command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
 				else
 					if (source.ticket.envelope.getSignedEnvelope()!=null)
-						command.add("\"authz="+source.ticket.envelope.getSignedEnvelope()+"\"");
+						command.add(source.ticket.envelope.getSignedEnvelope());
 			}
 
 			if (target.ticket.envelope!=null){
@@ -65,7 +65,7 @@ public class Xrd3cp extends Xrootd {
 					command.add("\"authz="+target.ticket.envelope.getEncryptedEnvelope()+"\"");
 				else
 					if (target.ticket.envelope.getSignedEnvelope()!=null)
-						command.add("\"authz="+target.ticket.envelope.getSignedEnvelope()+"\"");
+						command.add(target.ticket.envelope.getSignedEnvelope());
 			}
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
