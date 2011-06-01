@@ -77,6 +77,9 @@ public class XrootDEnvelopeReply implements Serializable {
 		
 		final SE rSE = SEUtils.getSE(se);
 		
+		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size + " md5: " + md5
+				+ " se: " + se);
+		
 
 		final GUID g = GUIDUtils.getGUID(UUID.fromString(pfn.substring(pfn.lastIndexOf('/')+1)), true);
 		g.md5 = md5;
@@ -84,6 +87,9 @@ public class XrootDEnvelopeReply implements Serializable {
 		
 		if (rSE!=null && rSE.seioDaemons!=null && rSE.seioDaemons.length()>0)
 			pfn = rSE.seioDaemons + "/" + pfn;
+		
+		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size + " md5: " + md5);
+				System.out.println( " se: " + rSE.seName);
 
 		this.pfn = new PFN(pfn, g, SEUtils.getSE(se));
 
