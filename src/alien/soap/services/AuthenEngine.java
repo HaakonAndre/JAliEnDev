@@ -727,13 +727,16 @@ public class AuthenEngine {
 				String addEnv = pfn.ticket.envelope.getSignedEnvelope()
 						.replace("&", "\\&");
 
-				if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
-					addEnv += "\\&oldEnvelope="
-							+ pfn.ticket.envelope.getEncryptedEnvelope();
-					System.out.println("Creating ticket (encrypted): "
-							+ pfn.ticket.envelope.getUnEncryptedEnvelope());
+				// drop the following once LDAP schema is updated and version
+				// number properly on
+				if (!"".equals(SEUtils.getSE(pfn.seNumber).getName())) {
+					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
+						addEnv += "\\&oldEnvelope="
+								+ pfn.ticket.envelope.getEncryptedEnvelope();
+						System.out.println("Creating ticket (encrypted): "
+								+ pfn.ticket.envelope.getUnEncryptedEnvelope());
+					}
 				}
-
 				envelopes.add(addEnv);
 
 			}
