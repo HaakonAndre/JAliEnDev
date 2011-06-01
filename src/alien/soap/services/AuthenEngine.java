@@ -570,7 +570,7 @@ public class AuthenEngine {
 		} else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
 			if (lfn.guid == null) {
-				if(!"".equals(p_guidrequest))
+				if("".equals(p_guidrequest))
 					guid = GUIDUtils.createGuid();
 				else
 					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest));
