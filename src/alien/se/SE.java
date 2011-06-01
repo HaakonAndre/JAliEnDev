@@ -96,7 +96,7 @@ public class SE implements Serializable, Comparable<SE>{
 	public Set<String> seExclusiveRead;
 
 	/**
-	 * triggered by the seVersion if < 219
+	 * triggered by the seVersion if < 200
 	 */
 	public boolean needsEncryptedEnvelope;
 	
@@ -113,7 +113,7 @@ public class SE implements Serializable, Comparable<SE>{
 		
 		seVersion = db.geti("seVersion");
 		
-		needsEncryptedEnvelope = (seVersion < 210);
+		needsEncryptedEnvelope = (seVersion < 200);
 		
 		seioDaemons = db.gets("seioDaemons");
 		
