@@ -254,13 +254,17 @@ public class BookingTable {
 				// lfn.guidtime = ?;
 				
 				lfn.md5 = guid.md5;
-				lfn.type = guid.type;
+				lfn.type = guid.type != 0 ? guid.type : 'f';
 				
 				lfn.guidtime = GUIDUtils.getIndexTime(guid.guid);
 				
 				lfn.jobid = db.geti(2, -1);
 				
-				LFNUtils.insertLFN(lfn);
+				boolean inserted = LFNUtils.insertLFN(lfn);
+				
+				if (!inserted){
+					logger.log(Level.WARNING, "Could not insert this LFN in the catalog : "+lfn);
+				}
 			}
 		}
 		
