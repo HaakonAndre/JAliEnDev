@@ -546,7 +546,7 @@ public class AuthenEngine {
 		for (String sename : Arrays.asList(splitExcludeSE)) {
 			SE se = SEUtils.getSE(sename);
 			if (se != null) {
-				ses.add(se);
+				exxSes.add(se);
 				System.out.println("An exSE found: " + se.getName());
 			}
 		}
