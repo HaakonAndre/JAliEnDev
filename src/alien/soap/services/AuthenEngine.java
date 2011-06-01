@@ -570,10 +570,11 @@ public class AuthenEngine {
 		} else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
 			if (lfn.guid == null) {
-				if("".equals(p_guidrequest))
+				if ("".equals(p_guidrequest))
 					guid = GUIDUtils.createGuid();
 				else
-					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest), true);
+					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest),
+							true);
 				lfn.guid = guid.guid;
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
@@ -595,12 +596,13 @@ public class AuthenEngine {
 				for (SE se : ses) {
 					System.out.println("Trying to book writing on static SE: "
 							+ se.getName());
-					
-					if (!se.canWrite(user)){
-						System.err.println("You are not allowed to write to this SE.");
+
+					if (!se.canWrite(user)) {
+						System.err
+								.println("You are not allowed to write to this SE.");
 						continue;
 					}
-					
+
 					try {
 						pfns.add(BookingTable.bookForWriting(user, lfn, guid,
 								null, jobid, se));
@@ -618,10 +620,10 @@ public class AuthenEngine {
 					int counter = 0;
 					while (counter < p_qosCount && it.hasNext()) {
 						SE se = it.next();
-						
+
 						if (!se.canWrite(user))
 							continue;
-						
+
 						System.out
 								.println("Trying to book writing on discoverd SE: "
 										+ se.getName());
@@ -672,7 +674,7 @@ public class AuthenEngine {
 						}
 
 						for (PFN apfn : apfns) {
-														
+
 							reason = AuthorizationFactory.fillAccess(user,
 									apfn, AccessType.READ);
 
@@ -708,37 +710,35 @@ public class AuthenEngine {
 				System.err.println("Sorry ... Envelope is null!");
 			} else {
 				pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
-				if (pfn.ticket.envelope.getEncryptedEnvelope() == null) {
+				try {
+					// we need to both encrypt and sign, the later is not
+					// automatic
+					XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
+				} catch (SignatureException e) {
 					System.err
-							.println("Sorry ... getInternalEnvelope is null!");
-				} else {
-					try {
-						// we need to both encrypt and sign, the later is not
-						// automatic
-						XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-					} catch (SignatureException e) {
-						System.err
-								.println("Sorry ... Could not sign the envelope!");
-					} catch (InvalidKeyException e) {
-						System.err
-								.println("Sorry ... Could not sign the envelope!");
-					} catch (NoSuchAlgorithmException e) {
-						System.err
-								.println("Sorry ... Could not sign the envelope!");
-					}
-					String addEnv = pfn.ticket.envelope.getSignedEnvelope()
-							.replace("&", "\\&");
-
-					System.out.println("SE version number: " + SEUtils.getSE(pfn.seNumber).seVersion);
-			
-					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope){
-						addEnv += "\\&oldEnvelope="
-								+ pfn.ticket.envelope.getEncryptedEnvelope();
-						System.out.println("Creating ticket (encrypted): " + pfn.ticket.envelope.getUnEncryptedEnvelope());
-					}
-					
-					envelopes.add(addEnv);
+							.println("Sorry ... Could not sign the envelope!");
+				} catch (InvalidKeyException e) {
+					System.err
+							.println("Sorry ... Could not sign the envelope!");
+				} catch (NoSuchAlgorithmException e) {
+					System.err
+							.println("Sorry ... Could not sign the envelope!");
 				}
+				String addEnv = pfn.ticket.envelope.getSignedEnvelope()
+						.replace("&", "\\&");
+
+				System.out.println("SE version number: "
+						+ SEUtils.getSE(pfn.seNumber).seVersion);
+
+				if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
+					addEnv += "\\&oldEnvelope="
+							+ pfn.ticket.envelope.getEncryptedEnvelope();
+					System.out.println("Creating ticket (encrypted): "
+							+ pfn.ticket.envelope.getUnEncryptedEnvelope());
+				}
+
+				envelopes.add(addEnv);
+
 			}
 		}
 
