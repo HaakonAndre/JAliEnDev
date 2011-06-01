@@ -570,7 +570,10 @@ public class AuthenEngine {
 		} else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
 			if (lfn.guid == null) {
-				guid = GUIDUtils.createGuid();
+				if(!"".equals(p_guidrequest))
+					guid = GUIDUtils.createGuid();
+				else
+					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest));
 				lfn.guid = guid.guid;
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
@@ -592,6 +595,12 @@ public class AuthenEngine {
 				for (SE se : ses) {
 					System.out.println("Trying to book writing on static SE: "
 							+ se.getName());
+					
+					if (!se.canWrite(user)){
+						System.err.println("You are not allowed to write to this SE.");
+						continue;
+					}
+					
 					try {
 						pfns.add(BookingTable.bookForWriting(user, lfn, guid,
 								null, jobid, se));
@@ -663,6 +672,7 @@ public class AuthenEngine {
 						}
 
 						for (PFN apfn : apfns) {
+														
 							reason = AuthorizationFactory.fillAccess(user,
 									apfn, AccessType.READ);
 
