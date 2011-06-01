@@ -42,4 +42,9 @@ public class LFNfromString extends Request {
 	public LFN getLFN(){
 		return this.lfn;
 	}
+	
+	@Override
+	public String toString() {
+		return "Asked for : "+this.path+" ("+this.evenIfDoesNotExist+"), reply is:\n"+this.lfn;
+	}
 }
