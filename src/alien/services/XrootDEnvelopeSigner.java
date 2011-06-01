@@ -241,6 +241,10 @@ public class XrootDEnvelopeSigner {
 			signedEnvelope += key + "=" + env.get(key) +"&";
 		}
 		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.lastIndexOf("&"));
+		
+		System.out.println("plain envelope is : " + signedEnvelope);
+		System.out.println("sign for envelope is : " + env.get("signature"));
+
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 
