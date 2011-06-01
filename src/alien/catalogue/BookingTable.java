@@ -323,6 +323,10 @@ public class BookingTable {
 			guid.aclId = -1;
 		}
 		
-		return new PFN(guid, se);
+		final PFN retpfn = new PFN(guid, se);
+		
+		retpfn.pfn = pfn;
+		
+		return retpfn;
 	}
 }
