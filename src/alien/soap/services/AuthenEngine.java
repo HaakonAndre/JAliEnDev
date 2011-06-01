@@ -754,7 +754,8 @@ public class AuthenEngine {
 			if (isInteger)
 				return "0";
 			return "";
-		}
+		} else if (("0".equals(maybeNull) && !isInteger))
+			return "";
 		return maybeNull;
 	}
 
