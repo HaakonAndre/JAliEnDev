@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -569,23 +570,12 @@ public class AuthenEngine {
 		} else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
 			if (lfn.guid == null) {
-				lfn.size = p_size;
-				lfn.md5 = p_md5;
-				lfn.type = 'f';
-				lfn.perm = "755";
-				lfn.owner = user.getName();
-				lfn.gowner = user.getName();
 				guid = GUIDUtils.createGuid();
 				lfn.guid = guid.guid;
-				guid.size = lfn.size;
-				guid.md5 = lfn.md5;
-				guid.type = lfn.type;
-				guid.perm = lfn.perm;
-				guid.owner = lfn.owner;
-				guid.gowner = lfn.gowner;
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
-
+				guid.size = p_size;
+				guid.md5 = p_md5;
 			} else {
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
 			}
