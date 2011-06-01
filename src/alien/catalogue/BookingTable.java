@@ -294,7 +294,8 @@ public class BookingTable {
 	public static PFN getBookedPFN(final String pfn) throws IOException{
 		final DBFunctions db = getDB();
 		
-		db.query("SELECT binary2string(guid), * FROM LFN_BOOKED WHERE pfn="+e(pfn)+";");
+		if (!db.query("SELECT *, binary2string(guid) as guid_as_string FROM LFN_BOOKED WHERE pfn="+e(pfn)+";"))
+			throw new IOException("Could not get the booked details for this pfn, query execution failed");
 		
 		final int count = db.count();
 		
@@ -309,7 +310,7 @@ public class BookingTable {
 		if (se==null)
 			throw new IOException("This SE doesn't exist: '"+db.gets(2)+"' for '"+pfn+"'");
 		
-		final GUID guid = GUIDUtils.getGUID(UUID.fromString(db.gets(1)), true);
+		final GUID guid = GUIDUtils.getGUID(UUID.fromString(db.gets("guid_as_string")), true);
 		
 		if (!guid.exists()){
 			guid.size = db.getl("size");
