@@ -573,7 +573,7 @@ public class AuthenEngine {
 				if("".equals(p_guidrequest))
 					guid = GUIDUtils.createGuid();
 				else
-					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest));
+					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest), true);
 				lfn.guid = guid.guid;
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
