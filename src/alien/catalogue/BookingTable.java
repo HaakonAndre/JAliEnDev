@@ -1,6 +1,7 @@
 package alien.catalogue;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -293,7 +294,7 @@ public class BookingTable {
 	public static PFN getBookedPFN(final String pfn) throws IOException{
 		final DBFunctions db = getDB();
 		
-		db.query("SELECT binary2string(guid), se FROM LFN_BOOKED WHERE pfn="+e(pfn)+";");
+		db.query("SELECT binary2string(guid), * FROM LFN_BOOKED WHERE pfn="+e(pfn)+";");
 		
 		final int count = db.count();
 		
@@ -303,12 +304,24 @@ public class BookingTable {
 		if (count>1)
 			throw new IOException("More than one entry with this pfn: '"+pfn+"'");
 		
-		final GUID guid = GUIDUtils.getGUID(UUID.fromString(db.gets(1)), true);
-		
-		final SE se = SEUtils.getSE(db.gets(2));
+		final SE se = SEUtils.getSE(db.gets("se"));
 		
 		if (se==null)
 			throw new IOException("This SE doesn't exist: '"+db.gets(2)+"' for '"+pfn+"'");
+		
+		final GUID guid = GUIDUtils.getGUID(UUID.fromString(db.gets(1)), true);
+		
+		if (!guid.exists()){
+			guid.size = db.getl("size");
+			guid.md5 = db.gets("md5sum");
+			guid.owner = db.gets("owner");
+			guid.gowner = db.gets("gowner");
+			guid.perm = "755";
+			guid.ctime = new Date();
+			guid.expiretime = null;
+			guid.type = 0;
+			guid.aclId = -1;
+		}
 		
 		return new PFN(guid, se);
 	}
