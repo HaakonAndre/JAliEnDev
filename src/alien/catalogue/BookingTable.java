@@ -67,7 +67,7 @@ public class BookingTable {
 		if (se==null)
 			throw new IllegalArgumentException("SE cannot be null");
 
-		if (se.canWrite(user))
+		if (!se.canWrite(user))
 			throw new IllegalArgumentException("SE doesn't allow "+user.getName()+" to write there");
 		
 		if (requestedGUID==null)
