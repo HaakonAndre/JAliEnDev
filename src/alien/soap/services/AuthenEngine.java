@@ -729,6 +729,8 @@ public class AuthenEngine {
 					String addEnv = pfn.ticket.envelope.getSignedEnvelope()
 							.replace("&", "\\&");
 
+					System.out.println("SE version number: " + SEUtils.getSE(pfn.seNumber).seVersion);
+			
 					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope){
 						addEnv += "\\&oldEnvelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
