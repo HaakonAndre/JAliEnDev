@@ -48,7 +48,7 @@ public class XrootDEnvelopeSigner {
 
 	private static final String AuthenPrivLocation;
 	private static final String AuthenPubLocation;
-	private static final String SEPrivLocation;
+//	private static final String SEPrivLocation;
 	private static final String SEPubLocation;
 
 	private static final RSAPrivateKey AuthenPrivKey;
@@ -72,7 +72,7 @@ public class XrootDEnvelopeSigner {
 		
 		AuthenPrivLocation = authenKeysLocation+"lpriv.pem";
 		AuthenPubLocation = authenKeysLocation+"lpub.pem";
-		SEPrivLocation = seKeysLocation+"rpriv.pem";
+//		SEPrivLocation = seKeysLocation+"rpriv.pem";
 		SEPubLocation = seKeysLocation+"rpub.pem";
 
 		RSAPrivateKey authenPrivKey = null;
@@ -111,11 +111,11 @@ public class XrootDEnvelopeSigner {
 				}
 		}
 		
-		BufferedReader sePriv = null;
+//		BufferedReader sePriv = null;
 		BufferedReader sePub  = null;
 		
 		try{
-			sePriv = new BufferedReader(new FileReader(SEPrivLocation)); 
+//			sePriv = new BufferedReader(new FileReader(SEPrivLocation)); 
 			sePub  = new BufferedReader(new FileReader(SEPubLocation));
 			
 //			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(sePriv).readObject()).getPrivate();
@@ -125,14 +125,14 @@ public class XrootDEnvelopeSigner {
 			logger.log(Level.WARNING, "SE keys could not be loaded from "+seKeysLocation);
 		}
 		finally{
-			if (sePriv!=null){
-				try {
-					sePriv.close();
-				}
-				catch (IOException e) {
-					// ignore
-				}
-			}
+//			if (sePriv!=null){
+//				try {
+//					sePriv.close();
+//				}
+//				catch (IOException e) {
+//					// ignore
+//				}
+//			}
 			if (sePub!=null){
 				try {
 					sePub.close();
