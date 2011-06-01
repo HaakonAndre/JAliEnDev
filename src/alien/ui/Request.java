@@ -129,7 +129,7 @@ public abstract class Request implements Serializable, Runnable {
 	 * @param ip partner's address
 	 */
 	public final void setPartnerAddress(final InetAddress ip){
-		if (ip!=null)
+		if (this.partner_address!=null)
 			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 		
 		this.partner_address = ip;
