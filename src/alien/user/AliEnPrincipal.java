@@ -1,5 +1,6 @@
 package alien.user;
 
+import java.io.Serializable;
 import java.security.Principal;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -11,7 +12,12 @@ import java.util.Set;
  * @author Alina Grigoras
  * @since 02-04-2007
  */
-public class AliEnPrincipal implements Principal {
+public class AliEnPrincipal implements Principal, Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5393260803758989309L;
+
 	private final String username;
 	
 	/**
