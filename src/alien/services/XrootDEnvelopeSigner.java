@@ -242,6 +242,10 @@ public class XrootDEnvelopeSigner {
 		}
 		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.lastIndexOf("&"));
 		
+		// TODO: this needs to go in already by the SE. Drop it here, when the SE places it itself. 
+		if(!selfSigned)
+			signedEnvelope += "&" + "hashord=" + env.get("hashord");
+		
 		System.out.println("plain envelope is : " + signedEnvelope);
 		System.out.println("sign for envelope is : " + env.get("signature"));
 
