@@ -257,21 +257,11 @@ public class SE implements Serializable, Comparable<SE>{
 	 * @return <code>true</code> if allowed
 	 */
 	public boolean canWrite(final AliEnPrincipal user){
-		if (seExclusiveWrite.size()==0){
-			System.err.println("SE "+seName+" doesn't have any write restrictions, allowing");
-			
+		if (seExclusiveWrite.size()==0)
 			return true;
-		}
 		
 		final boolean allowed = seExclusiveWrite.contains(user.getName());
-		
-		if (allowed){
-			System.err.println("SE "+seName+" allows "+user.getName()+" to write here, the full list is "+seExclusiveWrite);
-		}
-		else{
-			System.err.println("SE "+seName+" doesn't allow "+user.getName()+" to write here, the full list is : "+seExclusiveWrite);
-		}
-			
+					
 		return allowed;
 	}
 	
