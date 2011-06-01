@@ -609,6 +609,10 @@ public class AuthenEngine {
 					int counter = 0;
 					while (counter < p_qosCount && it.hasNext()) {
 						SE se = it.next();
+						
+						if (!se.canWrite(user))
+							continue;
+						
 						System.out
 								.println("Trying to book writing on discoverd SE: "
 										+ se.getName());
