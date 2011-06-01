@@ -729,7 +729,7 @@ public class AuthenEngine {
 
 				// drop the following once LDAP schema is updated and version
 				// number properly on
-				if (!"".equals(SEUtils.getSE(pfn.seNumber).getName())) {
+				if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber).getName().toLowerCase())) {
 					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
 						addEnv += "\\&oldEnvelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
