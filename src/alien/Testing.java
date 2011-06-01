@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import lazyj.Utils;
 import utils.XRDChecker;
+import alien.catalogue.BookingTable;
 import alien.catalogue.CatalogueUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -27,6 +28,7 @@ import alien.io.xrootd.XrootdListing;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.services.XrootDEnvelopeSigner;
+import alien.user.UserFactory;
 
 /**
  * Testing stuff
@@ -47,6 +49,18 @@ public class Testing {
 		//removeFZK();
 			
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+		
+		if (true){
+			String spfn = "root://pcaliense01.cern.ch:1094//01/19968/a1784140-8c50-11e0-9ec0-0019bbc62419";
+			
+			PFN pfn = BookingTable.getBookedPFN(spfn);
+			
+			System.err.println("Booked pfn : "+pfn);
+			
+			BookingTable.commit(UserFactory.getByUsername("sschrein"), pfn);
+			
+			return;
+		}
 		
 		if (true){
 			List<LFN> found = LFNUtils.find("/alice/data/2011/LHC11b/000149656/ESDs/pass1", "AliESDs.root", 0);
