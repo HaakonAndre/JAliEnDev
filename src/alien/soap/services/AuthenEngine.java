@@ -725,14 +725,10 @@ public class AuthenEngine {
 					String addEnv = pfn.ticket.envelope.getSignedEnvelope()
 							.replace("&", "\\&");
 
-					if (!addEnv.toLowerCase().contains("alice::cern::setest"))
+					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope)
 						addEnv += "\\&oldEnvelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
 					envelopes.add(addEnv);
-					System.out.println("enc: "
-							+ pfn.ticket.envelope.getUnEncryptedEnvelope());
-					// System.out.println("sgn: "
-					// + pfn.ticket.envelope.getSignedEnvelope());
 				}
 			}
 		}

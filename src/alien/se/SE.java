@@ -113,7 +113,7 @@ public class SE implements Serializable, Comparable<SE>{
 		
 		seVersion = db.geti("seVersion");
 		
-		needsEncryptedEnvelope = (seVersion < 219);
+		needsEncryptedEnvelope = (seVersion < 210);
 		
 		seioDaemons = db.gets("seioDaemons");
 		

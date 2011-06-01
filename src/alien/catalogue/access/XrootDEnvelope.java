@@ -292,11 +292,14 @@ public class XrootDEnvelope implements Serializable {
 		String ret = "";
 		String usedHashOrd = "";
 		
+		System.out.println("Creating envelope:");
+		
 		while (hash.hasMoreTokens()) {
 			String key = hash.nextToken();
 			if(e.get(key)!=null){
 				ret += key + "=" + e.get(key) + "&";
 				usedHashOrd += key + "-";
+				System.out.println(key + ": "+ e.get(key));
 			}
 		}
 		
