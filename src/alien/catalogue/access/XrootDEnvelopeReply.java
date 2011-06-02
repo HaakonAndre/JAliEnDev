@@ -1,19 +1,11 @@
 package alien.catalogue.access;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import lazyj.Format;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
-import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.se.SE;
 import alien.se.SEUtils;
@@ -23,7 +15,6 @@ import alien.se.SEUtils;
  * 
  */
 public class XrootDEnvelopeReply implements Serializable {
-
 
 	/**
 	 * 
@@ -49,7 +40,6 @@ public class XrootDEnvelopeReply implements Serializable {
 
 		StringTokenizer st = new StringTokenizer(envelope, "\\&");
 		String pfn = "";
-		String turl = "";
 		String guid = "";
 		String se = "";
 		int size = 0;
@@ -74,27 +64,31 @@ public class XrootDEnvelopeReply implements Serializable {
 					se = value;
 			}
 		}
-		
-		final SE rSE = SEUtils.getSE(se);
-		
-		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size + " md5: " + md5
-				+ " se: " + se);
-		
 
-		final GUID g = GUIDUtils.getGUID(UUID.fromString(pfn.substring(pfn.lastIndexOf('/')+1)), true);
+		if ("alice::cern::testse".equals(se.toLowerCase()))
+			se = "alice::cern::setest";
+
+		final SE rSE = SEUtils.getSE(se);
+
+		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size
+				+ " md5: " + md5 + " se: " + se);
+
+		final GUID g = GUIDUtils.getGUID(
+				UUID.fromString(pfn.substring(pfn.lastIndexOf('/') + 1)), true);
 		g.md5 = md5;
 		g.size = size;
-		
-		if (rSE!=null && rSE.seioDaemons!=null && rSE.seioDaemons.length()>0)
+
+		if (rSE != null && rSE.seioDaemons != null
+				&& rSE.seioDaemons.length() > 0)
 			pfn = rSE.seioDaemons + "/" + pfn;
-		
-		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size + " md5: " + md5);
-				System.out.println( " se: " + rSE.seName);
+
+		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size
+				+ " md5: " + md5);
+		System.out.println(" se: " + rSE.seName);
 
 		this.pfn = new PFN(pfn, g, SEUtils.getSE(se));
 
 		signedEnvelope = envelope;
 	}
 
-	
 }
