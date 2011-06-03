@@ -1,5 +1,6 @@
 package alien.catalogue;
 
+import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -38,43 +39,49 @@ public final class FileSystemUtils {
 	public static String getAbsolutePath(String user, String currentDir,
 			String path) {
 
-		if (path.substring(0, 1) == "/")
-			return path;
-		else if (path.substring(0, 1) == "~")
+		if (path.indexOf('~') == 0)
 			path = UsersHelper.getHomeDir(user)
 					+ path.substring(1, path.length() - 1);
-		else
+		
+
+		if (path.indexOf('/') != 0)
 			path = currentDir + path;
 
-		if (path.contains(".")) {
-			if (path.contains("/..")) {
-				path.indexOf("/..");
-				// TODO:
-			}
-			if (path.contains("./")) {
-				path.replace("./", "");
-			}
 
-		}
 		if (path.contains("//")) {
-			// TODO:
+			path = path.replace("///", "/");
+			path = path.replace("//", "/");
 		}
+		
 		if (path.endsWith("/"))
-			path = path.substring(0, path.length() - 2);
+			path = path.substring(0, path.lastIndexOf('/'));
+
+
+		while (path.contains("/./"))
+			path = path.replace("/./", "/");
+
+		
+		while (path.contains("/..")) {
+			int pos = path.indexOf("/..") - 1;
+			String newpath = path.substring(0, pos);
+			newpath = newpath.substring(0, newpath.lastIndexOf('/'));
+			if (path.length() > (pos + 3))
+				path = newpath + "/" + path.substring(pos + 4);
+			else
+				path = newpath;
+		}
+
+		if (path.endsWith("/."))
+			path = path.substring(0, path.length() - 1);
+
+		if (path.endsWith("/.."))
+			path = path.substring(0, currentDir.lastIndexOf('/'));
 
 		return path;
 	}
-	
-	private static final String[] translation = new String[]{
-		"---",
-		"--x",
-		"-w-",
-		"-wx",
-		"r--",
-		"r-x",
-		"rw-",
-		"rwx"
-	};
+
+	private static final String[] translation = new String[] { "---", "--x",
+			"-w-", "-wx", "r--", "r-x", "rw-", "rwx" };
 
 	/**
 	 * Get the type+perm string for LFN
@@ -84,16 +91,16 @@ public final class FileSystemUtils {
 	 */
 	public static String getFormatedTypeAndPerm(final LFN lfn) {
 		final StringBuilder ret = new StringBuilder(10);
-		
+
 		if (lfn.type != 'f')
 			ret.append(lfn.type);
 		else
 			ret.append('-');
 
 		for (int pos = 0; pos < 3; pos++) {
-			ret.append(translation[lfn.perm.charAt(pos)-'0']);
+			ret.append(translation[lfn.perm.charAt(pos) - '0']);
 		}
-		
+
 		return ret.toString();
 	}
 
