@@ -8,11 +8,11 @@ import javax.servlet.http.HttpServletRequest;
 
 import lazyj.ExtendedServlet;
 import lazyj.Log;
-import alien.commands.AlienCommand;
-import alien.commands.AlienCommandls;
-import alien.commands.AlienCommands;
 import alien.config.Context;
 import alien.config.SOAPLogger;
+import alien.perl.commands.AlienCommand;
+import alien.perl.commands.AlienCommandls;
+import alien.perl.commands.AlienCommands;
 import alien.soap.SoapRequestWrapper;
 import alien.soap.SoapResponseWrapper;
 import alien.user.AliEnPrincipal;
