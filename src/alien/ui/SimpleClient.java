@@ -11,7 +11,7 @@ import alien.config.ConfigUtils;
  * @author costing
  *
  */
-public class SimpleClient extends Thread {
+class SimpleClient extends Thread {
 
 	private final Socket connection;
 	

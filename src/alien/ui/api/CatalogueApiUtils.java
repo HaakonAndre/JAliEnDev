@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
-import alien.ui.SimpleClient;
+import alien.ui.Dispatcher;
 
 /**
  * Get the GUID object for String
@@ -21,8 +21,7 @@ public class CatalogueApiUtils {
 	public static LFN getLFN(String slfn, boolean evenIfDoesNotExist) {
 
 		try {
-			LFNfromString rlfn = (LFNfromString) SimpleClient
-			.dispatchRequest(new LFNfromString(slfn, evenIfDoesNotExist));
+			LFNfromString rlfn = (LFNfromString) Dispatcher.execute(new LFNfromString(slfn, evenIfDoesNotExist));
 
 			return rlfn.getLFN();
 		} catch (IOException e) {
@@ -40,8 +39,7 @@ public class CatalogueApiUtils {
 	public static GUID getGUID(String sguid, boolean evenIfDoesNotExist) {
 
 		try {
-			GUIDfromString rguid = (GUIDfromString) SimpleClient
-			.dispatchRequest(new GUIDfromString(sguid, evenIfDoesNotExist));
+			GUIDfromString rguid = (GUIDfromString) Dispatcher.execute(new GUIDfromString(sguid, evenIfDoesNotExist));
 			
 		
 			return rguid.getGUID();
