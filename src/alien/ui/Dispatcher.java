@@ -20,10 +20,12 @@ public class Dispatcher {
 	 */
 	public static Request execute(final Request r) throws IOException{
 		if (ConfigUtils.isCentralService()){
+			System.out.println("Running centrally: " + r.toString());
 			r.run();
 			return r;
 		}
 
+		System.out.println("Running remote: " + r.toString());
 		return SimpleClient.dispatchRequest(r);
 	}
 
@@ -37,6 +39,8 @@ public class Dispatcher {
 		LFNfromString request = new LFNfromString("/alice/cern.ch/user/g/grigoras/myNewFile", false);
 		
 		LFNfromString response = (LFNfromString) execute(request);
+		
+		System.out.println("We received: " + response.getLFN().getFileName()  );
 		
 		long lStart = System.currentTimeMillis();
 		

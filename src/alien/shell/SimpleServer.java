@@ -62,8 +62,7 @@ public class SimpleServer extends Thread {
 				if (o!=null){					
 					if (o instanceof Request){
 						final Request r = (Request) o;
-						
-						//System.err.println("Got request "+o+" from "+r.getRequesterIdentity());
+
 						
 						long lStart = System.currentTimeMillis();
 						
@@ -77,6 +76,10 @@ public class SimpleServer extends Thread {
 						oos.flush();
 						
 						lSerialization += System.currentTimeMillis() - lSer;
+						
+						System.out.println("Got request from "+r.getRequesterIdentity()+ ": "+r.toString());
+						
+						
 					}
 					else{
 						logger.log(Level.WARNING, "I don't know what to do with an object of type "+o.getClass().getCanonicalName());

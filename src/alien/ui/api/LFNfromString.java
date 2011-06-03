@@ -45,6 +45,6 @@ public class LFNfromString extends Request {
 	
 	@Override
 	public String toString() {
-		return "Asked for : "+this.path+" ("+this.evenIfDoesNotExist+"), reply is:\n"+this.lfn;
+		return "Asked for : "+this.path+" ("+this.evenIfDoesNotExist+"), reply is: "+this.lfn;
 	}
 }
