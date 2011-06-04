@@ -13,21 +13,30 @@ import alien.ui.api.LFNfromString;
  */
 public class Dispatcher {
 
-	
-	
+
 	/**
 	 * @param r request to execute
 	 * @return the processed request
 	 * @throws IOException exception thrown by the processing
 	 */
 	public static Request execute(final Request r) throws IOException{
-		if (ConfigUtils.isCentralService()){
+		return execute(r,false);
+	}
+	
+	/**
+	 * @param r request to execute
+	 * @param forceRemote request to force remote execution
+	 * @return the processed request
+	 * @throws IOException exception thrown by the processing
+	 */
+	public static Request execute(final Request r, boolean forceRemote) throws IOException{
+		if (ConfigUtils.isCentralService() && !forceRemote){
 			System.out.println("Running centrally: " + r.toString());
 			r.run();
 			return r;
 		}
 
-		System.out.println("Running remote: " + r.toString());
+		//System.out.println("Running remote: " + r.toString());
 		return SimpleClient.dispatchRequest(r);
 	}
 

@@ -27,7 +27,7 @@ public class CatalogueApiUtils {
 	public static LFN getLFN(String slfn, boolean evenIfDoesNotExist) {
 
 		try {
-			LFNfromString rlfn = (LFNfromString) Dispatcher.execute(new LFNfromString(slfn, evenIfDoesNotExist));
+			LFNfromString rlfn = (LFNfromString) Dispatcher.execute(new LFNfromString(slfn, evenIfDoesNotExist),true);
 
 			return rlfn.getLFN();
 		} catch (IOException e) {
@@ -46,7 +46,7 @@ public class CatalogueApiUtils {
 
 		try {
 			GUIDfromString rguid = (GUIDfromString) Dispatcher.execute(new GUIDfromString(sguid,
-							evenIfDoesNotExist));
+							evenIfDoesNotExist),true);
 
 			return rguid.getGUID();
 		} catch (IOException e) {
@@ -59,7 +59,7 @@ public class CatalogueApiUtils {
 	public static Set<PFN> getPFNs(String sguid) {
 
 		try {
-			PFNfromString rpfns = (PFNfromString) Dispatcher.execute(new PFNfromString(sguid));
+			PFNfromString rpfns = (PFNfromString) Dispatcher.execute(new PFNfromString(sguid),true);
 
 			return rpfns.getPFNs();
 		} catch (IOException e) {
@@ -74,7 +74,7 @@ public class CatalogueApiUtils {
 			List<String> ses, List<String> exses) {
 		try {
 			PFNforReadOrDel readFile = (PFNforReadOrDel) Dispatcher.execute(new PFNforReadOrDel(user, site, AccessType.READ,
-							lfn, ses, exses));
+							lfn, ses, exses),true);
 			return readFile.getPFNs();
 		} catch (IOException e) {
 			System.out.println("Could not get PFN for: " + lfn);
@@ -86,7 +86,7 @@ public class CatalogueApiUtils {
 			List<String> ses, List<String> exses) {
 		try {
 			PFNforReadOrDel readFile = (PFNforReadOrDel) Dispatcher.execute(new PFNforReadOrDel(user, site, AccessType.READ,
-							guid, ses, exses));
+							guid, ses, exses),true);
 			return readFile.getPFNs();
 		} catch (IOException e) {
 			System.out.println("Could not get PFN for: " + guid);
@@ -98,7 +98,7 @@ public class CatalogueApiUtils {
 			List<String> ses, List<String> exses, String qosType, int qosCount) {
 		try {
 			PFNforWrite writeFile = (PFNforWrite) Dispatcher.execute(new PFNforWrite(user, site, lfn, ses, exses,
-							qosType, qosCount));
+							qosType, qosCount),true);
 			return writeFile.getPFNs();
 		} catch (IOException e) {
 			System.out.println("Could not get PFN for: " + lfn);
@@ -110,7 +110,7 @@ public class CatalogueApiUtils {
 			List<String> ses, List<String> exses, String qosType, int qosCount) {
 		try {
 			PFNforWrite writeFile = (PFNforWrite) Dispatcher.execute(new PFNforWrite(user, site, guid, ses, exses,
-							qosType, qosCount));
+							qosType, qosCount),true);
 			return writeFile.getPFNs();
 		} catch (IOException e) {
 			System.out.println("Could not get PFN for: " + guid);
@@ -121,7 +121,7 @@ public class CatalogueApiUtils {
 	public static SE getSE(String se) {
 
 		try {
-			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(se));
+			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(se),true);
 
 			return rse.getSE();
 		} catch (IOException e) {
@@ -135,7 +135,7 @@ public class CatalogueApiUtils {
 	public static SE getSE(int seno) {
 
 		try {
-			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(seno));
+			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(seno),true);
 
 			return rse.getSE();
 		} catch (IOException e) {
