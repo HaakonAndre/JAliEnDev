@@ -62,6 +62,9 @@ public class JAliEnCommandls extends JAliEnCommand {
 	 * marker for -b argument
 	 */
 	private boolean bB = false;
+	
+	
+	public long timingChallenge = 0;
 
 	/**
 	 * @param p
@@ -99,7 +102,9 @@ public class JAliEnCommandls extends JAliEnCommand {
 		// bHelp = true;
 
 		if (!bHelp) {
-
+			
+long lStart = System.currentTimeMillis();
+						
 			int iDirs = alPaths.size();
 
 			if (iDirs == 0)
@@ -169,6 +174,8 @@ public class JAliEnCommandls extends JAliEnCommand {
 					System.out.println("No such file or directory");
 				}
 			}
+			timingChallenge = (System.currentTimeMillis() - lStart);
+			System.err.println("jAliEn TIMING CHALLENGE : "+ timingChallenge );
 		} else {
 			System.out.println(AlienTime.getStamp()
 					+ "Usage: ls [-laFn|b|h] [<directory>]");

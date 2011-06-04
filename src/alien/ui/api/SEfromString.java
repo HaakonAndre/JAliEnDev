@@ -11,13 +11,13 @@ import alien.ui.Request;
  */
 public class SEfromString extends Request {
 
+	
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = -1720547988105993480L;
-	
+	private static final long serialVersionUID = 8631851052133487066L;
 	private final String sSE;
-	private final boolean evenIfDoesNotExist;
+	private final int seNo;
 
 	private SE se;
 	
@@ -25,14 +25,26 @@ public class SEfromString extends Request {
 	 * @param sSE
 	 * @param evenIfDoesNotExist
 	 */
-	public SEfromString(final String path, final boolean evenIfDoesNotExist){
-		this.sSE = path;
-		this.evenIfDoesNotExist = evenIfDoesNotExist;
+	public SEfromString(final String se){
+		sSE = se;
+		seNo = 0;
+	}
+	
+	/**
+	 * @param sSE
+	 * @param evenIfDoesNotExist
+	 */
+	public SEfromString(final int seno){
+		this.seNo = seno;
+		sSE = null;
 	}
 	
 	@Override
 	public void run() {
-		this.se = SEUtils.getSE(sSE);
+		if(sSE!=null)
+			this.se = SEUtils.getSE(sSE);
+		else 
+			this.se = SEUtils.getSE(seNo);
 	}
 	
 	/**
@@ -44,6 +56,9 @@ public class SEfromString extends Request {
 	
 	@Override
 	public String toString() {
-		return "Asked for : "+this.sSE+" ("+this.evenIfDoesNotExist+"), reply is:\n"+this.se;
+		if(sSE!=null)
+			return "Asked for : "+this.sSE+", reply is:\n"+this.se;
+		else 
+		return "Asked for No: "+this.seNo+", reply is:\n"+this.se;
 	}
 }
