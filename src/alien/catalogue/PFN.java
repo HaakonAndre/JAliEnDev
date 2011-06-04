@@ -158,7 +158,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 	public String toString() {
 		return "PFN: guidId\t: "+guidId+"\n"+
 		       "pfn\t\t: "+pfn+"\n"+
-		       "seNumber\t: "+seNumber;
+		       "seNumber\t: "+seNumber+"\n";
 	}
 	
 	/**
