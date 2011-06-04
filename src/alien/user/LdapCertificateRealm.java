@@ -91,7 +91,6 @@ public class LdapCertificateRealm extends RealmBase {
 	 * @param role - the role
 	 * @return true/false if the user is in role
 	 */
-	@Override
 	public boolean hasRole(final Principal principal, final String role) {
 		if (principal==null)
 			return false;
