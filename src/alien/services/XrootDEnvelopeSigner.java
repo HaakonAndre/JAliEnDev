@@ -30,7 +30,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 
 import alien.catalogue.access.XrootDEnvelope;
-import alien.commands.AlienTime;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.tsealedEnvelope.EncryptedAuthzToken;
