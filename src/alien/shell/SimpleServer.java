@@ -3,6 +3,7 @@ package alien.shell;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.logging.Level;
@@ -37,11 +38,19 @@ public class SimpleServer extends Thread {
 	 */
 	private final ObjectOutputStream oos;
 	
+	private final OutputStream os;
+	
 	private SimpleServer(final Socket connection) throws IOException {
 		this.connection = connection;
 		
-		this.oos = new ObjectOutputStream(connection.getOutputStream());
+		connection.setTcpNoDelay(true);
+		connection.setTrafficClass(0x10);
+	
+		this.os = connection.getOutputStream();
+		
+		this.oos = new ObjectOutputStream(this.os);
 		this.oos.flush();
+		this.os.flush();
 		
 		this.ois = new ObjectInputStream(connection.getInputStream());
 		
@@ -74,6 +83,7 @@ public class SimpleServer extends Thread {
 						
 						oos.writeObject(r);
 						oos.flush();
+						os.flush();
 						
 						lSerialization += System.currentTimeMillis() - lSer;
 						

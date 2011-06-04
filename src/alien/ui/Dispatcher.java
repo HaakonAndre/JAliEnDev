@@ -1,6 +1,8 @@
 package alien.ui;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 
 import alien.config.ConfigUtils;
 import alien.ui.api.LFNfromString;
@@ -53,6 +55,25 @@ public class Dispatcher {
 		}
 		
 		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+SimpleClient.lSerialization);
+		
+		// dry run
+		
+		final long lStartDry = System.currentTimeMillis();
+		
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(baos);
+		
+		for (int i=0; i<100; i++){
+			request = new LFNfromString("/alice/cern.ch/user/g/grigoras/myNewFile", false);
+			
+			oos.writeObject(request);
+			oos.flush();
+			baos.flush();
+		}
+		
+		oos.close();
+		
+		System.err.println("Dry run took "+(System.currentTimeMillis() - lStartDry));
 	}
 	
 }

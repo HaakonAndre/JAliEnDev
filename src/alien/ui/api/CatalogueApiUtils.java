@@ -9,7 +9,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.se.SE;
-import alien.ui.SimpleClient;
+import alien.ui.Dispatcher;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -27,8 +27,7 @@ public class CatalogueApiUtils {
 	public static LFN getLFN(String slfn, boolean evenIfDoesNotExist) {
 
 		try {
-			LFNfromString rlfn = (LFNfromString) SimpleClient
-					.dispatchRequest(new LFNfromString(slfn, evenIfDoesNotExist));
+			LFNfromString rlfn = (LFNfromString) Dispatcher.execute(new LFNfromString(slfn, evenIfDoesNotExist));
 
 			return rlfn.getLFN();
 		} catch (IOException e) {
@@ -46,8 +45,7 @@ public class CatalogueApiUtils {
 	public static GUID getGUID(String sguid, boolean evenIfDoesNotExist) {
 
 		try {
-			GUIDfromString rguid = (GUIDfromString) SimpleClient
-					.dispatchRequest(new GUIDfromString(sguid,
+			GUIDfromString rguid = (GUIDfromString) Dispatcher.execute(new GUIDfromString(sguid,
 							evenIfDoesNotExist));
 
 			return rguid.getGUID();
@@ -61,8 +59,7 @@ public class CatalogueApiUtils {
 	public static Set<PFN> getPFNs(String sguid) {
 
 		try {
-			PFNfromString rpfns = (PFNfromString) SimpleClient
-					.dispatchRequest(new PFNfromString(sguid));
+			PFNfromString rpfns = (PFNfromString) Dispatcher.execute(new PFNfromString(sguid));
 
 			return rpfns.getPFNs();
 		} catch (IOException e) {
@@ -76,8 +73,7 @@ public class CatalogueApiUtils {
 	public static List<PFN> getPFNsToRead(AliEnPrincipal user, String site, LFN lfn,
 			List<String> ses, List<String> exses) {
 		try {
-			PFNforReadOrDel readFile = (PFNforReadOrDel) SimpleClient
-					.dispatchRequest(new PFNforReadOrDel(user, site, AccessType.READ,
+			PFNforReadOrDel readFile = (PFNforReadOrDel) Dispatcher.execute(new PFNforReadOrDel(user, site, AccessType.READ,
 							lfn, ses, exses));
 			return readFile.getPFNs();
 		} catch (IOException e) {
@@ -89,8 +85,7 @@ public class CatalogueApiUtils {
 	public static List<PFN> getPFNsToRead(AliEnPrincipal user, String site, GUID guid,
 			List<String> ses, List<String> exses) {
 		try {
-			PFNforReadOrDel readFile = (PFNforReadOrDel) SimpleClient
-					.dispatchRequest(new PFNforReadOrDel(user, site, AccessType.READ,
+			PFNforReadOrDel readFile = (PFNforReadOrDel) Dispatcher.execute(new PFNforReadOrDel(user, site, AccessType.READ,
 							guid, ses, exses));
 			return readFile.getPFNs();
 		} catch (IOException e) {
@@ -102,8 +97,7 @@ public class CatalogueApiUtils {
 	public static List<PFN> getPFNsToWrite(AliEnPrincipal user, String site, LFN lfn,
 			List<String> ses, List<String> exses, String qosType, int qosCount) {
 		try {
-			PFNforWrite writeFile = (PFNforWrite) SimpleClient
-					.dispatchRequest(new PFNforWrite(user, site, lfn, ses, exses,
+			PFNforWrite writeFile = (PFNforWrite) Dispatcher.execute(new PFNforWrite(user, site, lfn, ses, exses,
 							qosType, qosCount));
 			return writeFile.getPFNs();
 		} catch (IOException e) {
@@ -115,8 +109,7 @@ public class CatalogueApiUtils {
 	public static List<PFN> getPFNsToWrite(AliEnPrincipal user, String site, GUID guid,
 			List<String> ses, List<String> exses, String qosType, int qosCount) {
 		try {
-			PFNforWrite writeFile = (PFNforWrite) SimpleClient
-					.dispatchRequest(new PFNforWrite(user, site, guid, ses, exses,
+			PFNforWrite writeFile = (PFNforWrite) Dispatcher.execute(new PFNforWrite(user, site, guid, ses, exses,
 							qosType, qosCount));
 			return writeFile.getPFNs();
 		} catch (IOException e) {
@@ -128,8 +121,7 @@ public class CatalogueApiUtils {
 	public static SE getSE(String se) {
 
 		try {
-			SEfromString rse = (SEfromString) SimpleClient
-					.dispatchRequest(new SEfromString(se));
+			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(se));
 
 			return rse.getSE();
 		} catch (IOException e) {
@@ -143,8 +135,7 @@ public class CatalogueApiUtils {
 	public static SE getSE(int seno) {
 
 		try {
-			SEfromString rse = (SEfromString) SimpleClient
-					.dispatchRequest(new SEfromString(seno));
+			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(seno));
 
 			return rse.getSE();
 		} catch (IOException e) {

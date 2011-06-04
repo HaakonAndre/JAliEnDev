@@ -3,6 +3,7 @@ package alien.ui;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 
 import alien.config.ConfigUtils;
@@ -11,19 +12,26 @@ import alien.config.ConfigUtils;
  * @author costing
  *
  */
-public class SimpleClient extends Thread {
+class SimpleClient extends Thread {
 
 	private final Socket connection;
 	
 	private final ObjectInputStream ois;
 	private final ObjectOutputStream oos;
 	
+	private final OutputStream os;
+	
 	private SimpleClient(final Socket connection) throws IOException{
 		this.connection = connection;
 		
-		this.ois = new ObjectInputStream(connection.getInputStream());
+		connection.setTcpNoDelay(true);
+		connection.setTrafficClass(0x10);
 		
-		this.oos = new ObjectOutputStream(connection.getOutputStream());
+		this.ois = new ObjectInputStream(connection.getInputStream());
+	
+		this.os = connection.getOutputStream();
+		
+		this.oos = new ObjectOutputStream(this.os);
 		this.oos.flush();
 	}
 	
@@ -102,6 +110,9 @@ public class SimpleClient extends Thread {
 		instance = null;
 	}
 	
+	/**
+	 * Total amount of time (in milliseconds) spent in writing objects to the socket.
+	 */
 	public static long lSerialization = 0;
 	
 	/**
@@ -121,6 +132,7 @@ public class SimpleClient extends Thread {
 			c.oos.writeObject(r);
 			//c.oos.reset();		
 			c.oos.flush();
+			c.os.flush();
 			
 			lSerialization += System.currentTimeMillis() - lStart;
 			
