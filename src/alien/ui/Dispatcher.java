@@ -31,7 +31,7 @@ public class Dispatcher {
 	 */
 	public static Request execute(final Request r, boolean forceRemote) throws IOException{
 		if (ConfigUtils.isCentralService() && !forceRemote){
-			System.out.println("Running centrally: " + r.toString());
+			//System.out.println("Running centrally: " + r.toString());
 			r.run();
 			return r;
 		}
