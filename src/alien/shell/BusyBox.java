@@ -270,11 +270,10 @@ public class BusyBox {
 		while(it.hasNext()){
 			alltime = alltime + it.next();
 		}
-		System.out.println("Total:" + alltime);
 		avr = alltime / times;
 		avr = avr /1000;
 		
-		System.out.println("Average:" + avr);
+		System.out.println(command + " with " +times+" tries, average: " + avr + ", total: " + alltime);
 
 	}
 
