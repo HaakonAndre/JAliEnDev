@@ -230,6 +230,7 @@ public class Envelope {
 	private String creationDate;
 
 	// expire date
+	@SuppressWarnings("unused")
 	private Date expireDate;
 
 	// UNIX timestamp specifying when envelope expires
