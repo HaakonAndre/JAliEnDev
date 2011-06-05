@@ -131,8 +131,6 @@ public class JobAgent extends Thread {
 
 			exitStatus = pBuilder.start().waitFor();
 
-//			System.out.println("ran, stdout: " + exitStatus.getStdOut());
-//			System.out.println("ran, stderr: " + exitStatus.getStdErr());
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 
@@ -144,6 +142,11 @@ public class JobAgent extends Thread {
 						tempDir.getCanonicalFile() + "/stderr"));
 				err.write(exitStatus.getStdErr());
 				err.close();
+				
+
+				System.out.println("ran, stdout+stderr should be there now");
+				System.out.println("ran, stdout: " + exitStatus.getStdOut());
+				System.out.println("ran, stderr: " + exitStatus.getStdErr());
 			}
 		} catch (final InterruptedException ie) {
 			System.err
