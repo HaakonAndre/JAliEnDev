@@ -71,10 +71,13 @@ public class JobAgent extends Thread {
 				localFile = new File(tempDir.getCanonicalFile() + "/"
 						+ slfn.substring(slfn.lastIndexOf('/') + 1));
 
+				System.out.println("Getting input file: " + slfn);
 				LFN lfn = CatalogueApiUtils.getLFN(slfn);
+				System.out.println("Getting input file lfn: " + lfn);
 				List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
 						JAliEnCOMMander.getUser(), JAliEnCOMMander.getSite(),
 						lfn, null, null);
+				System.out.println("Getting input file pfns: " + pfns);
 
 				for (PFN pfn : pfns) {
 
