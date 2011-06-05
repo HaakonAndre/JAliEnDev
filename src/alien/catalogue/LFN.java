@@ -468,6 +468,14 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		return type;
 	}
 	
+	/**
+	 * is this LFN a directory
+	 * @return <code>true</code> if this LFN is a directory
+	 */
+	public boolean isDirectory(){
+		return (type=='d');
+	}
+	
 	private static final String e(final String s){
 		if (s==null)
 			return "null";
