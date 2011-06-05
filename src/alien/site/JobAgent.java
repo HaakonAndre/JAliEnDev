@@ -119,7 +119,7 @@ public class JobAgent extends Thread {
 				command);
 
 		pBuilder.returnOutputOnExit(true);
-		
+
 		pBuilder.directory(tempDir);
 
 		pBuilder.timeout(24, TimeUnit.HOURS);
@@ -131,7 +131,6 @@ public class JobAgent extends Thread {
 
 			exitStatus = pBuilder.start().waitFor();
 
-
 			if (exitStatus.getExtProcExitStatus() == 0) {
 
 				BufferedWriter out = new BufferedWriter(new FileWriter(
@@ -142,14 +141,13 @@ public class JobAgent extends Thread {
 						tempDir.getCanonicalFile() + "/stderr"));
 				err.write(exitStatus.getStdErr());
 				err.close();
-				
 
 				System.out.println("ran, stdout+stderr should be there now");
 			}
 
 			System.out.println("ran, stdout: " + exitStatus.getStdOut());
 			System.out.println("ran, stderr: " + exitStatus.getStdErr());
-			
+
 		} catch (final InterruptedException ie) {
 			System.err
 					.println("Interrupted while waiting for the following command to finish : "
@@ -171,22 +169,29 @@ public class JobAgent extends Thread {
 				localFile = new File(tempDir.getCanonicalFile() + "/"
 						+ slfn.substring(slfn.lastIndexOf('/') + 1));
 
-				LFN lfn = CatalogueApiUtils.getLFN(slfn);
-				List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
-						JAliEnCOMMander.getUser(), JAliEnCOMMander.getSite(),
-						lfn, null, null);
+				if (localFile.exists() && localFile.canRead()
+						&& localFile.length() > 0) {
 
-				ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
-				for (PFN pfn : pfns) {
+					LFN lfn = CatalogueApiUtils.getLFN(slfn);
+					List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
+							JAliEnCOMMander.getUser(),
+							JAliEnCOMMander.getSite(), lfn, null, null);
 
-					List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-					for (final Protocol protocol : protocols) {
+					ArrayList<String> envelopes = new ArrayList<String>(
+							pfns.size());
+					for (PFN pfn : pfns) {
 
-						envelopes.add(protocol.put(pfn, localFile));
-						break;
+						List<Protocol> protocols = Transfer
+								.getAccessProtocols(pfn);
+						for (final Protocol protocol : protocols) {
+
+							envelopes.add(protocol.put(pfn, localFile));
+							break;
+
+						}
 
 					}
-				}
+		
 
 				// drop the following three lines once put replies correctly
 				// with the signed envelope
@@ -204,9 +209,15 @@ public class JobAgent extends Thread {
 						System.err.println("Upload failed, sorry!");
 					uploadedAllOutFiles = false;
 				}
+				} else {
+					System.out.println("Can't upload output file"
+							+ localFile.getName()
+							+ ", does not exist or has zero size.");
+				}
 			} catch (IOException e) {
 				uploadedAllOutFiles = false;
 			}
+			
 		}
 		return uploadedAllOutFiles;
 	}
