@@ -7,8 +7,7 @@ import alien.catalogue.GUIDUtils;
 import alien.ui.Request;
 
 /**
- * Get the GUID object for String
- *
+ * 
  * @author ron
  * @since Jun 03, 2011
  */

@@ -20,16 +20,12 @@ import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
 
 /**
- * Get the LFN object for this path
  * 
  * @author ron
- * @since Jun 04, 2011
+ * @since Jun 03, 2011
  */
 public class PFNforWrite extends Request {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6219657670649893255L;
 
 	private AliEnPrincipal user = null;
@@ -44,8 +40,14 @@ public class PFNforWrite extends Request {
 	private List<PFN> pfns = null;
 
 	/**
-	 * @param path
-	 * @param evenIfDoesNotExist
+	 * Get PFNs to write 
+	 * @param user 
+	 * @param site 
+	 * @param lfn 
+	 * @param ses 
+	 * @param exses 
+	 * @param qosType 
+	 * @param qosCount 
 	 */
 	public PFNforWrite(AliEnPrincipal user, String site, LFN lfn, List<String> ses,
 			List<String> exses, String qosType, int qosCount) {
@@ -59,8 +61,14 @@ public class PFNforWrite extends Request {
 	}
 
 	/**
-	 * @param path
-	 * @param evenIfDoesNotExist
+	 * Get PFNs to write 
+	 * @param user 
+	 * @param site 
+	 * @param guid 
+	 * @param ses 
+	 * @param exses 
+	 * @param qosType 
+	 * @param qosCount 
 	 */
 	public PFNforWrite(AliEnPrincipal user, String site, GUID guid, List<String> ses,
 			List<String> exses, String qosType, int qosCount) {
@@ -194,6 +202,9 @@ public class PFNforWrite extends Request {
 
 	}
 
+	/**
+	 * @return PFNs to write on
+	 */
 	public List<PFN> getPFNs() {
 		return pfns;
 	}

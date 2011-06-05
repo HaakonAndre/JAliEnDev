@@ -5,16 +5,12 @@ import alien.se.SEUtils;
 import alien.ui.Request;
 
 /**
- * Get the SE object for String
+ * 
  * @author ron
  * @since Jun 03, 2011
  */
 public class SEfromString extends Request {
 
-	
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 8631851052133487066L;
 	private final String sSE;
 	private final int seNo;
@@ -22,8 +18,8 @@ public class SEfromString extends Request {
 	private SE se;
 	
 	/**
-	 * @param sSE
-	 * @param evenIfDoesNotExist
+	 * Get SE by name
+	 * @param se
 	 */
 	public SEfromString(final String se){
 		sSE = se;
@@ -31,8 +27,8 @@ public class SEfromString extends Request {
 	}
 	
 	/**
-	 * @param sSE
-	 * @param evenIfDoesNotExist
+	 * Get SE by number
+	 * @param seno 
 	 */
 	public SEfromString(final int seno){
 		this.seNo = seno;

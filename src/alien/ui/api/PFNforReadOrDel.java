@@ -3,9 +3,7 @@ package alien.ui.api;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import alien.catalogue.GUID;
@@ -14,7 +12,6 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
-import alien.se.SE;
 import alien.se.SEUtils;
 import alien.services.XrootDEnvelopeSigner;
 import alien.ui.Request;
@@ -22,10 +19,9 @@ import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 
 /**
- * Get the LFN object for this path
  * 
  * @author ron
- * @since Jun 04, 2011
+ * @since Jun 03, 2011
  */
 public class PFNforReadOrDel extends Request {
 
@@ -46,8 +42,13 @@ public class PFNforReadOrDel extends Request {
 	private List<PFN> pfns = null;
 
 	/**
-	 * @param path
-	 * @param evenIfDoesNotExist
+	 * Get PFNs to read
+	 * @param user 
+	 * @param site 
+	 * @param access 
+	 * @param lfn 
+	 * @param ses 
+	 * @param exses 
 	 */
 	public PFNforReadOrDel(AliEnPrincipal user, String site, AccessType access,
 			LFN lfn, List<String> ses, List<String> exses) {
@@ -60,8 +61,13 @@ public class PFNforReadOrDel extends Request {
 	}
 
 	/**
-	 * @param path
-	 * @param evenIfDoesNotExist
+	 * Get PFNs to read
+	 * @param user 
+	 * @param site 
+	 * @param access 
+	 * @param guid 
+	 * @param ses 
+	 * @param exses 
 	 */
 	public PFNforReadOrDel(AliEnPrincipal user, String site, AccessType access,
 			GUID guid, List<String> ses, List<String> exses) {
@@ -167,6 +173,9 @@ public class PFNforReadOrDel extends Request {
 
 	}
 
+	/**
+	 * @return PFNs to read from
+	 */
 	public List<PFN> getPFNs() {
 		return pfns;
 	}
