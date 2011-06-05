@@ -17,7 +17,8 @@ import alien.user.UsersHelper;
 public class JAliEnCOMMander {
 
 	private static final String[] commandList = new String[] { "ls", "get",
-			"cat", "whoami", "whereis", "cp", "cd" };
+			"cat", "whoami", "whereis", "cp", "cd" ,"time"};
+	
 
 	protected static AliEnPrincipal user = AuthorizationFactory
 			.getDefaultUser();
