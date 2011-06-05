@@ -22,7 +22,7 @@ public class SimpleJobBrokerServer extends SimpleServer {
 	
 
 	private static final int defaultPort = 5283;
-	private static final String servicePort = "catalogueApiServicePort";
+	private static final String servicePort = "catalogueApiService";
 
 	/**
 	 * @param connection

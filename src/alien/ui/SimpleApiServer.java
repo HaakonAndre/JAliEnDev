@@ -22,7 +22,7 @@ public class SimpleApiServer extends SimpleServer {
 	
 
 	private static final int defaultPort = 5282;
-	private static final String servicePort = "catalogueApiServicePort";
+	private static final String servicePort = "catalogueApiService";
 
 	/**
 	 * @param connection
