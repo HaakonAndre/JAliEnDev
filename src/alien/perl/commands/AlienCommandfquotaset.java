@@ -1,17 +1,9 @@
 package alien.perl.commands;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import lazyj.Log;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.LFN;
-import alien.catalogue.LFNUtils;
 import alien.quotas.Quota;
 import alien.quotas.QuotaUtilities;
 import alien.user.AliEnPrincipal;
@@ -21,13 +13,7 @@ import alien.user.AliEnPrincipal;
  * @since May 30, 2011 implements AliEn fquota list command
  * */
 public class AlienCommandfquotaset extends AlienAdminCommand {
-	/**
-	 * ls command arguments : -help/l/a
-	 */
-	private static ArrayList<String> lsArguments = new ArrayList<String>();
 
-	static {
-	}
 
 	/**
 	 * marker for -help argument
@@ -177,11 +163,5 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 		return hmReturn;
 	}
 
-	private static final DateFormat formatter = new SimpleDateFormat(
-			"MMM dd HH:mm");
-
-	private static synchronized String format(final Date d) {
-		return formatter.format(d);
-	}
 
 }

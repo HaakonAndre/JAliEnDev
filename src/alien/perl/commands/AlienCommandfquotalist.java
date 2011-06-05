@@ -1,17 +1,9 @@
 package alien.perl.commands;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import lazyj.Log;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.LFN;
-import alien.catalogue.LFNUtils;
 import alien.quotas.Quota;
 import alien.quotas.QuotaUtilities;
 import alien.user.AliEnPrincipal;
@@ -212,13 +204,6 @@ public class AlienCommandfquotalist extends AlienCommand {
 		hmReturn.put("rcmessages", alrcMessages);
 
 		return hmReturn;
-	}
-
-	private static final DateFormat formatter = new SimpleDateFormat(
-			"MMM dd HH:mm");
-
-	private static synchronized String format(final Date d) {
-		return formatter.format(d);
 	}
 
 }
