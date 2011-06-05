@@ -25,5 +25,11 @@ public class JAliEnIAm {
 	public static String whatsMyFullName(){
 		return myFullName;
 	}
+	/**
+	 * @return my version
+	 */
+	public static String whatsVersion(){
+		return myVersion;
+	}
 	
 }
