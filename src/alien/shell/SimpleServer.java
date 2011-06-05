@@ -87,7 +87,7 @@ public class SimpleServer extends Thread {
 						
 						lSerialization += System.currentTimeMillis() - lSer;
 						
-						//System.out.println("Got request from "+r.getRequesterIdentity()+ ": "+r.toString());
+						System.out.println("Got request from "+r.getRequesterIdentity()); // + ": "+r.toString());
 						
 						
 					}
