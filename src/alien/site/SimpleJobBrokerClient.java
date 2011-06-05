@@ -5,6 +5,7 @@ import java.net.Socket;
 
 import alien.config.ConfigUtils;
 import alien.communications.SimpleClient;
+import alien.ui.Request;
 
 /**
  * @author ron
@@ -18,22 +19,24 @@ import alien.communications.SimpleClient;
 
 	private static String addr = null;
 	private static int port = 0;
-
-	private static SimpleClient instance = null;
 	
 	private SimpleBrokerClient(final Socket connection) throws IOException{
 		super(connection);
 	}
-	
-	@SuppressWarnings("unused")
-	private static SimpleBrokerClient getInstance() throws IOException {
-		if (instance == null) {
-			// connect to the other end
 
-			addr = ConfigUtils.getConfig().gets(serviceName).trim();
+	/**
+	 * @param r
+	 * @return the processed request, if successful
+	 * @throws IOException
+	 *             in case of connectivity problems
+	 */
+	public static synchronized Request dispatchRequest(final Request r)
+			throws IOException {
+		addr = ConfigUtils.getConfig().gets(serviceName).trim();
 
-			if (addr.length() == 0)
-				addr = defaultHost;
+		if (addr.length() == 0) {
+			addr = defaultHost;
+		} else {
 
 			String address = addr;
 
@@ -46,14 +49,10 @@ import alien.communications.SimpleClient;
 				} catch (Exception e) {
 				}
 			}
-
-			if (port != 0)
+			if (port == 0)
 				port = defaultPort;
 
-			instance = SimpleClient.getInstance(addr, port);
-			return (SimpleBrokerClient) instance;
 		}
-		return (SimpleBrokerClient) SimpleClient.getInstance(addr, port);
-
+		return SimpleClient.dispatchRequest(r, addr, port);
 	}
 }

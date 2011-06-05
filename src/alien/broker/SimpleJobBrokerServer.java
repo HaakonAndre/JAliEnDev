@@ -21,7 +21,7 @@ public class SimpleJobBrokerServer extends SimpleServer {
 	static transient final Logger logger = ConfigUtils.getLogger(SimpleJobBrokerServer.class.getCanonicalName());
 	
 
-	private static final int defaultPort = 5282;
+	private static final int defaultPort = 5283;
 	private static final String servicePort = "catalogueApiServicePort";
 
 	/**
@@ -47,7 +47,7 @@ public class SimpleJobBrokerServer extends SimpleServer {
 		if(port!=0)
 			port = defaultPort;
 		
-		final ServerSocket ss = new ServerSocket(5282);
+		final ServerSocket ss = new ServerSocket(port);
 		
 		logger.log(Level.INFO, "Server listening on "+ss.getLocalPort());
 		
@@ -57,7 +57,7 @@ public class SimpleJobBrokerServer extends SimpleServer {
 			
 				logger.log(Level.INFO, "Got a connection from : "+s.getInetAddress());
 				
-				new SimpleJobBrokerServer(s).start();
+				new SimpleServer(s).start();
 			}
 			catch (IOException ioe){
 				logger.log(Level.WARNING, "Exception treating a client", ioe);

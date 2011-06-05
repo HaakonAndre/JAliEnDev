@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.HashMap;
 
 import alien.ui.Request;
 
@@ -22,6 +23,7 @@ public class SimpleClient extends Thread {
 	private final OutputStream os;
 	
 	protected SimpleClient(final Socket connection) throws IOException{
+		
 		this.connection = connection;
 		
 		connection.setTcpNoDelay(true);
@@ -35,6 +37,7 @@ public class SimpleClient extends Thread {
 		this.oos.flush();
 	}
 	
+	
 	@Override
 	public String toString() {
 		return this.connection.getInetAddress().toString();
@@ -45,13 +48,8 @@ public class SimpleClient extends Thread {
 		// check
 	}
 	
-	private static SimpleClient instance = null;
-	
-	private static String address = null;
-	private static int port = 0;
-	
-	
-	
+	private static HashMap<Integer,SimpleClient> instance = new HashMap<Integer,SimpleClient>(20);
+
 	/**
 	 * @param addr
 	 * @param p
@@ -59,18 +57,17 @@ public class SimpleClient extends Thread {
 	 * @throws IOException
 	 */
 	public static SimpleClient getInstance(String addr, int p) throws IOException {
-		if (instance == null){
-			// connect to the other end
-			
-			address=addr;
-			port = p;
-			
-			Socket s = new Socket(address, port);
-			
-			instance = new SimpleClient(s);
-		}
 		
-		return instance;
+		if (!instance.containsKey(p) || instance.get(p) == null){
+			// connect to the other end
+			System.out.println("Connecting to " + addr + ":" + p);
+
+			
+			Socket s = new Socket(addr, p);
+			instance.put(p, new SimpleClient(s));
+		
+		}
+		return instance.get(p);
 	}
 	
 	private void close(){
@@ -108,14 +105,59 @@ public class SimpleClient extends Thread {
 	 * Total amount of time (in milliseconds) spent in writing objects to the socket.
 	 */
 	public static long lSerialization = 0;
+//	
+//	/**
+//	 * @param r
+//	 * @return the processed request, if successful
+//	 * @throws IOException in case of connectivity problems
+//	 */
+//	public static synchronized Request dispatchRequest(final Request r) throws IOException {
+//		final SimpleClient c = getInstance(address,port);
+//		
+//		if (c==null)
+//			throw new IOException("Connection is null");
+//		
+//		try{
+//			long lStart = System.currentTimeMillis();
+//			
+//			c.oos.writeObject(r);
+//			//c.oos.reset();		
+//			c.oos.flush();
+//			c.os.flush();
+//			
+//			lSerialization += System.currentTimeMillis() - lStart;
+//			
+//			Object o;
+//			try {
+//				o = c.ois.readObject();
+//			}
+//			catch (ClassNotFoundException e) {
+//				throw new IOException(e.getMessage());
+//			}
+//			
+//			return (Request) o;
+//		}
+//		catch (IOException ioe){
+//			c.close();
+//			
+//			throw ioe;
+//		}
+//	}
 	
+	
+	
+	
+
 	/**
 	 * @param r
+	 * @param addr 
+	 * @param port 
+	 * @param c
 	 * @return the processed request, if successful
 	 * @throws IOException in case of connectivity problems
 	 */
-	public static synchronized Request dispatchRequest(final Request r) throws IOException {
-		final SimpleClient c = getInstance(address,port);
+	public static synchronized Request dispatchRequest(final Request r,String addr, int port) throws IOException {
+		final SimpleClient c = getInstance(addr,port);
 		
 		if (c==null)
 			throw new IOException("Connection is null");

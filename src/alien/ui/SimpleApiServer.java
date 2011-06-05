@@ -47,7 +47,7 @@ public class SimpleApiServer extends SimpleServer {
 		if(port!=0)
 			port = defaultPort;
 		
-		final ServerSocket ss = new ServerSocket(5282);
+		final ServerSocket ss = new ServerSocket(port);
 		
 		logger.log(Level.INFO, "Server listening on "+ss.getLocalPort());
 		
@@ -57,7 +57,7 @@ public class SimpleApiServer extends SimpleServer {
 			
 				logger.log(Level.INFO, "Got a connection from : "+s.getInetAddress());
 				
-				new SimpleApiServer(s).start();
+				new SimpleServer(s).start();
 			}
 			catch (IOException ioe){
 				logger.log(Level.WARNING, "Exception treating a client", ioe);
