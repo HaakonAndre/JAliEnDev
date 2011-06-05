@@ -103,6 +103,7 @@ public class JobAgent extends Thread {
 
 		boolean ran = true;
 
+		System.out.println("we will run: " + command.toString());
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 				command);
 
@@ -117,6 +118,10 @@ public class JobAgent extends Thread {
 
 			exitStatus = pBuilder.start().waitFor();
 
+			System.out.println("ran, stdout: " + exitStatus.getStdOut());
+			System.out.println("ran, stderr: " + exitStatus.getStdErr());
+
+			
 			if (exitStatus.getExtProcExitStatus() != 0) {
 
 				BufferedWriter out = new BufferedWriter(new FileWriter(
