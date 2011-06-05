@@ -72,6 +72,9 @@ public class JobAgent extends Thread {
 			try {
 				localFile = new File(tempDir.getCanonicalFile() + "/"
 						+ slfn.substring(slfn.lastIndexOf('/') + 1));
+				
+				System.out.println("Getting input file into local file: " + tempDir.getCanonicalFile() + "/"
+						+ slfn.substring(slfn.lastIndexOf('/') + 1));
 
 				System.out.println("Getting input file: " + slfn);
 				LFN lfn = CatalogueApiUtils.getLFN(slfn);
@@ -95,6 +98,7 @@ public class JobAgent extends Thread {
 				if (!localFile.exists())
 					gotAllInputFiles = false;
 			} catch (IOException e) {
+				e.printStackTrace();
 				gotAllInputFiles = false;
 			}
 		}
