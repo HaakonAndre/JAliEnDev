@@ -18,10 +18,10 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	public void execute() throws Exception {
 
 		ArrayList<String> args = new ArrayList<String>();
-		args.add("-s");
 		args.addAll(alArguments);
 		JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander.getCommand(
 				"get", new Object[] { args });
+		get.silent();
 		get.execute();
 		File out = get.getOutputFile();
 		if (out != null && out.isFile() && out.canRead()) {
