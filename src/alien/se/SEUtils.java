@@ -167,7 +167,7 @@ public final class SEUtils {
 
 	/**
 	 * Get all SE objects that have the given names
-	 * 
+	 * @param ses 
 	 * @param seNames
 	 * @return SE objects
 	 */
@@ -400,6 +400,7 @@ public final class SEUtils {
 	 * @param sSite
 	 * @param removeBrokenSEs
 	 * @param SEs
+	 * @param exSEs 
 	 * @return the sorted list of locations
 	 */
 	public static List<PFN> sortBySiteSpecifySEs(final Collection<PFN> pfns,
