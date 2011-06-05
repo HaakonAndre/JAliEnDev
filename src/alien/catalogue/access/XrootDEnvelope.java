@@ -1,7 +1,6 @@
 package alien.catalogue.access;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -10,7 +9,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lazyj.Format;
-
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
