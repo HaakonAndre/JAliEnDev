@@ -186,6 +186,23 @@ public class CatalogueApiUtils {
 	
 	
 	/**
+	 * Register PFNs with enveloeps
+	 * @param user asking for access
+	 * @param envelopes
+	 * @return PFNs that were successfully registered
+	 */
+	public static List<PFN> registerEnvelopes(AliEnPrincipal user, List<String> envelopes) {
+		try {
+			RegisterEnvelopes register = (RegisterEnvelopes) Dispatcher.execute(new RegisterEnvelopes(user, envelopes),true);
+			return register.getPFNs();
+		} catch (IOException e) {
+			System.out.println("Could not get PFNs for: " + envelopes.toString());
+		}
+		return null;
+	}
+	
+	
+	/**
 	 * Get an SE by its name
 	 * @param se name of the SE
 	 * @return SE object

@@ -5,11 +5,13 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.se.SE;
@@ -40,17 +42,18 @@ public class PFNforWrite extends Request {
 	private List<PFN> pfns = null;
 
 	/**
-	 * Get PFNs to write 
-	 * @param user 
-	 * @param site 
-	 * @param lfn 
-	 * @param ses 
-	 * @param exses 
-	 * @param qosType 
-	 * @param qosCount 
+	 * Get PFNs to write
+	 * 
+	 * @param user
+	 * @param site
+	 * @param lfn
+	 * @param ses
+	 * @param exses
+	 * @param qosType
+	 * @param qosCount
 	 */
-	public PFNforWrite(AliEnPrincipal user, String site, LFN lfn, List<String> ses,
-			List<String> exses, String qosType, int qosCount) {
+	public PFNforWrite(AliEnPrincipal user, String site, LFN lfn,
+			List<String> ses, List<String> exses, String qosType, int qosCount) {
 		this.user = user;
 		this.site = site;
 		this.lfn = lfn;
@@ -61,17 +64,18 @@ public class PFNforWrite extends Request {
 	}
 
 	/**
-	 * Get PFNs to write 
-	 * @param user 
-	 * @param site 
-	 * @param guid 
-	 * @param ses 
-	 * @param exses 
-	 * @param qosType 
-	 * @param qosCount 
+	 * Get PFNs to write
+	 * 
+	 * @param user
+	 * @param site
+	 * @param guid
+	 * @param ses
+	 * @param exses
+	 * @param qosType
+	 * @param qosCount
 	 */
-	public PFNforWrite(AliEnPrincipal user, String site, GUID guid, List<String> ses,
-			List<String> exses, String qosType, int qosCount) {
+	public PFNforWrite(AliEnPrincipal user, String site, GUID guid,
+			List<String> ses, List<String> exses, String qosType, int qosCount) {
 		this.user = user;
 		this.site = site;
 		this.guid = guid;
@@ -100,20 +104,35 @@ public class PFNforWrite extends Request {
 			qosCount = Integer
 					.parseInt(defQos.substring(defQos.indexOf('=') + 1));
 
+
 		}
+
 		List<SE> SEs = SEUtils.getSEs(ses);
+
 		List<SE> exSEs = SEUtils.getSEs(exses);
-	
-		pfns = new ArrayList<PFN>(ses.size() + qosCount);
+
+		int count = qosCount;
+		if (ses != null)
+			count += ses.size();
+
+		pfns = new ArrayList<PFN>(count);
 
 		LFN setArchiveAnchor = null;
 
-		try {
+		if (lfn.guid == null)
+				guid = GUIDUtils.createGuid();
+		else
+			guid = GUIDUtils.getGUID(lfn.guid, true);
+		lfn.guid = guid.guid;
+		guid.lfnCache = new LinkedHashSet<LFN>(1);
+		guid.lfnCache.add(lfn);
+		guid.size = lfn.size;
+		guid.md5 = lfn.md5;
 
-			// statis list of specified SEs
+		// statis list of specified SEs
+		if (ses != null) {
 			for (SE se : SEs) {
-				System.out.println("Trying to book writing on static SE: "
-						+ se.getName());
+
 
 				if (!se.canWrite(user)) {
 					System.err
@@ -128,40 +147,33 @@ public class PFNforWrite extends Request {
 							+ se.getName() + ", message: " + e);
 				}
 			}
-
-			if (qosCount > 0) {
-				SEs.addAll(exSEs);
-				SEs = SEUtils.getClosestSEs(site, SEs);
-				final Iterator<SE> it = SEs.iterator();
-
-				int counter = 0;
-				while (counter < qosCount && it.hasNext()) {
-					SE se = it.next();
-
-					if (!se.canWrite(user))
-						continue;
-
-					System.out
-							.println("Trying to book writing on discoverd SE: "
-									+ se.getName());
-					try {
-						pfns.add(BookingTable.bookForWriting(user, lfn, guid,
-								null, 0, se));
-					} catch (Exception e) {
-						System.out.println("Error for the request on "
-								+ se.getName() + ", message: " + e);
-						continue;
-					}
-					counter++;
-				}
-
-			}
-
-		} catch (Exception e) {
-			System.out.println("exception: " + e.toString());
 		}
 
-		List<String> envelopes = new ArrayList<String>(pfns.size());
+		if (qosCount > 0) {
+			if(exSEs!=null)
+				SEs.addAll(exSEs);
+			SEs = SEUtils.getClosestSEs(site, SEs);
+			final Iterator<SE> it = SEs.iterator();
+
+			int counter = 0;
+			while (counter < qosCount && it.hasNext()) {
+				SE se = it.next();
+
+				if (!se.canWrite(user))
+					continue;
+
+				try {
+					pfns.add(BookingTable.bookForWriting(user, lfn, guid, null,
+							0, se));
+				} catch (Exception e) {
+					System.out.println("Error for the request on "
+							+ se.getName() + ", message: " + e);
+					continue;
+				}
+				counter++;
+			}
+
+		}
 
 		for (PFN pfn : pfns) {
 			if (pfn.ticket.envelope == null) {
@@ -195,7 +207,6 @@ public class PFNforWrite extends Request {
 								+ pfn.ticket.envelope.getUnEncryptedEnvelope());
 					}
 				}
-				envelopes.add(addEnv);
 
 			}
 		}
