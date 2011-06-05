@@ -131,8 +131,8 @@ public class JobAgent extends Thread {
 
 			exitStatus = pBuilder.start().waitFor();
 
-			System.out.println("ran, stdout: " + exitStatus.getStdOut());
-			System.out.println("ran, stderr: " + exitStatus.getStdErr());
+//			System.out.println("ran, stdout: " + exitStatus.getStdOut());
+//			System.out.println("ran, stderr: " + exitStatus.getStdErr());
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 
