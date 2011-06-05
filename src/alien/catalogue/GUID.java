@@ -508,6 +508,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		return null;
 	}
 	
+	/**
+	 * cached LFNs
+	 */
 	public Set<LFN> lfnCache = null;
 	
 	/**
