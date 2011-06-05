@@ -46,7 +46,6 @@ public class JobAgent extends Thread {
 
 	}
 
-	@SuppressWarnings("unchecked")
 	private void parseJDL() {
 
 		String executeable = (String) jdl.get("Executeable");
@@ -55,8 +54,10 @@ public class JobAgent extends Thread {
 		command.add(executeable);
 		command.add(arguments);
 
-		inputFiles = (LinkedList<String>) jdl.get("InputFiles");
-		outputFiles = (LinkedList<String>) jdl.get("OutputFiles");
+		inputFiles = new LinkedList<String>();
+		outputFiles = new LinkedList<String>();
+		inputFiles.add((String) jdl.get("InputFiles"));
+		outputFiles.add((String) jdl.get("OutputFiles"));
 
 	}
 
