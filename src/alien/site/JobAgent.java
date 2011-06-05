@@ -132,7 +132,7 @@ public class JobAgent extends Thread {
 			exitStatus = pBuilder.start().waitFor();
 
 
-			if (exitStatus.getExtProcExitStatus() != 0) {
+			if (exitStatus.getExtProcExitStatus() == 0) {
 
 				BufferedWriter out = new BufferedWriter(new FileWriter(
 						tempDir.getCanonicalFile() + "/stdout"));
