@@ -39,10 +39,12 @@ public class JobAgent extends Thread {
 	public void run() {
 		parseJDL();
 		if (createTempDir())
-			if (getInputFiles())
+			if (getInputFiles()){
 				if (execute())
 					if (uploadOutputFiles())
-						System.out.println("Job sucessfully executed.");
+						System.out.println("Job sucessfully executed.");}
+			else
+				System.out.println("Could not get input files.");
 
 	}
 
@@ -88,6 +90,7 @@ public class JobAgent extends Thread {
 						break;
 
 					}
+					System.out.println("Suppossed to have input file: " + localFile.getCanonicalPath());
 				}
 				if (!localFile.exists())
 					gotAllInputFiles = false;
