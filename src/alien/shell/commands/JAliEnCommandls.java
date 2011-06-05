@@ -6,42 +6,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Logger;
 
 import lazyj.Log;
 import alien.catalogue.FileSystemUtils;
-import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
-import alien.config.ConfigUtils;
 import alien.perl.commands.AlienTime;
 import alien.ui.api.CatalogueApiUtils;
-import alien.user.AliEnPrincipal;
 
-public class JAliEnCommandls extends JAliEnCommand {
-
-	/**
-	 * ls command arguments : -help/l/a
-	 */
-	private static ArrayList<String> lsArguments = new ArrayList<String>();
-
-	/**
-	 * Logger
-	 */
-	static transient final Logger logger = ConfigUtils
-			.getLogger(GUIDUtils.class.getCanonicalName());
-
-	static {
-		lsArguments.add("h");
-		lsArguments.add("l");
-		lsArguments.add("a");
-		lsArguments.add("F");
-		lsArguments.add("b");
-	}
-
-	/**
-	 * marker for -help argument
-	 */
-	private boolean bHelp = false;
+/**
+ * @author ron
+ * @since June 4, 2011
+ */
+public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**
 	 * marker for -l argument
@@ -62,31 +38,23 @@ public class JAliEnCommandls extends JAliEnCommand {
 	 * marker for -b argument
 	 */
 	private boolean bB = false;
-	
-	
-	public long timingChallenge = 0;
+
+	// public long timingChallenge = 0;
 
 	/**
-	 * @param p
-	 *            AliEn principal received from https request
-	 * @param al
-	 *            all arguments received from SOAP request, contains user,
-	 *            current directory and command
-	 * @throws Exception
+	 * list of the LFNs that came up by the ls command
 	 */
-	public JAliEnCommandls(AliEnPrincipal p, LFN currentDir, final ArrayList<String> al)
-			throws Exception {
-		super(p, currentDir, al);
-	}
+	private List<LFN> directory = null;
 
-	public void executeCommand() {
+	/**
+	 * execute the ls
+	 */
+	public void execute() {
 
 		ArrayList<String> alPaths = new ArrayList<String>(alArguments.size());
-		
+
 		for (String arg : alArguments) {
-			if ("-h".equals(arg) || "-help".equals(arg))
-				bHelp = true;
-			else if ("-b".equals(arg))
+			if ("-b".equals(arg))
 				bB = true;
 			else if ("-a".equals(arg))
 				bA = true;
@@ -98,94 +66,75 @@ public class JAliEnCommandls extends JAliEnCommand {
 				alPaths.add(arg);
 		}
 
-		// if (args[1].equals("-h"))
-		// bHelp = true;
+		// long lStart = System.currentTimeMillis();
 
-		if (!bHelp) {
-			
-long lStart = System.currentTimeMillis();
-						
-			int iDirs = alPaths.size();
+		int iDirs = alPaths.size();
 
-			if (iDirs == 0)
-				alPaths.add(currentDirectory.getCanonicalName());
+		if (iDirs == 0)
+			alPaths.add(JAliEnCOMMander.curDir.getCanonicalName());
 
-			for (String sPath : alPaths) {
-				// listing current directory
-				if (!sPath.startsWith("/"))
-					sPath = currentDirectory + sPath;
+		for (String sPath : alPaths) {
+			// listing current directory
+			if (!sPath.startsWith("/"))
+				sPath = JAliEnCOMMander.curDir.getCanonicalName() + sPath;
 
-				Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
+			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
 
-				final LFN entry = CatalogueApiUtils.getLFN(sPath);
+			final LFN entry = CatalogueApiUtils.getLFN(sPath);
 
-				// what message in case of error?
-				if (entry != null) {
+			// what message in case of error?
+			if (entry != null) {
 
-					List<LFN> lLFN;
+				if (entry.type == 'd') {
+					directory = entry.list();
+				} else
+					directory = Arrays.asList(entry);
 
-					if (entry.type == 'd') {
-						lLFN = entry.list();
-					} else
-						lLFN = Arrays.asList(entry);
+				// if (iDirs != 1) {
+				// System.out.println(sPath + "\n");
+				// }
 
-					// if (iDirs != 1) {
-					// System.out.println(sPath + "\n");
-					// }
+				for (LFN localLFN : directory) {
 
-					for (LFN localLFN : lLFN) {
+					if (!bA && localLFN.getFileName().startsWith("."))
+						continue;
 
-						if (!bA && localLFN.getFileName().startsWith("."))
+					String ret = "";
+					if (bB) {
+						if (localLFN.type == 'd')
 							continue;
+						ret += localLFN.guid.toString().toUpperCase() + "	"
+								+ localLFN.getName();
+					} else {
 
-						String ret = "";
-						if (bB) {
-							if (localLFN.type == 'd')
-								continue;
-							ret += localLFN.guid.toString().toUpperCase() + "	"
-									+ localLFN.getName();
-						} else {
+						if (bL)
+							ret += FileSystemUtils
+									.getFormatedTypeAndPerm(localLFN)
+									+ "   "
+									+ localLFN.owner
+									+ " "
+									+ localLFN.gowner
+									+ " "
+									+ padLeft(String.valueOf(localLFN.size), 12)
+									+ " "
+									+ format(localLFN.ctime)
+									+ "            " + localLFN.getFileName();
+						else
+							ret += localLFN.getFileName();
 
-							if (bL)
-								ret += FileSystemUtils
-										.getFormatedTypeAndPerm(localLFN)
-										+ "   "
-										+ localLFN.owner
-										+ " "
-										+ localLFN.gowner
-										+ " "
-										+ padLeft(
-												String.valueOf(localLFN.size),
-												12)
-										+ " "
-										+ format(localLFN.ctime)
-										+ "            "
-										+ localLFN.getFileName();
-							else
-								ret += localLFN.getFileName();
-
-							if (bF && (localLFN.type == 'd'))
-								ret += "/";
-						}
-
-						System.out.println(ret);
+						if (bF && (localLFN.type == 'd'))
+							ret += "/";
 					}
-				} else {
-					System.out.println("No such file or directory");
+					if (!silent)
+						System.out.println(ret);
 				}
+			} else {
+				if (!silent)
+					System.out.println("No such file or directory");
 			}
-			timingChallenge = (System.currentTimeMillis() - lStart);
-			System.err.println("jAliEn TIMING CHALLENGE : "+ timingChallenge );
-		} else {
-			System.out.println(AlienTime.getStamp()
-					+ "Usage: ls [-laFn|b|h] [<directory>]");
-			System.out.println("		-l : long format");
-			System.out.println("		-a : show hidden .* files");
-			System.out.println("		-F : add trailing / to directory names");
-			System.out.println("		-b : print in guid format");
-			System.out.println("		-h : print the help text");
-
 		}
+		// timingChallenge = (System.currentTimeMillis() - lStart);
+		// System.err.println("jAliEn TIMING CHALLENGE : "+ timingChallenge );
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat(
@@ -195,5 +144,57 @@ long lStart = System.currentTimeMillis();
 		return formatter.format(d);
 	}
 
+	/**
+	 * get the directory listing of the ls
+	 * 
+	 * @return list of the LFNs
+	 */
+	protected List<LFN> getDirectoryListing() {
+		return directory;
+	}
+
+	/**
+	 * printout the help info
+	 */
+	public void printHelp() {
+		System.out.println(AlienTime.getStamp()
+				+ "Usage: ls [-laFn|b|h] [<directory>]");
+		System.out.println("		-l : long format");
+		System.out.println("		-a : show hidden .* files");
+		System.out.println("		-F : add trailing / to directory names");
+		System.out.println("		-b : print in guid format");
+		System.out.println("		-h : print the help text");
+	}
+
+	/**
+	 * ls can run without arguments
+	 * 
+	 * @return <code>true</code>
+	 */
+	public boolean canRunWithoutArguments() {
+		return true;
+	}
+
+	/**
+	 * the command's silence trigger
+	 */
+	private boolean silent = false;
+
+	/**
+	 * set command's silence trigger
+	 */
+	public void silent() {
+		silent = true;
+	}
+
+	/**
+	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * 
+	 * @param alArguments
+	 *            the arguments of the command
+	 */
+	public JAliEnCommandls(final ArrayList<String> alArguments) {
+		super(alArguments);
+	}
 
 }

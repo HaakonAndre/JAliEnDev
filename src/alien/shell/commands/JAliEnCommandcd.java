@@ -1,54 +1,66 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
 
 import alien.catalogue.FileSystemUtils;
-import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
-import alien.config.ConfigUtils;
 import alien.ui.api.CatalogueApiUtils;
-import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
 
-public class JAliEnCommandcd extends JAliEnCommand {
+/**
+ * @author ron
+ * @since June 4, 2011
+ */
+public class JAliEnCommandcd extends JAliEnBaseCommand {
 
-	/**
-	 * Logger
-	 */
-	static transient final Logger logger = ConfigUtils
-			.getLogger(GUIDUtils.class.getCanonicalName());
+	public void execute() {
 
-	/**
-	 * @param al
-	 *            all arguments received from SOAP request, contains user,
-	 *            current directory and command
-	 * @throws Exception
-	 */
-	public JAliEnCommandcd(AliEnPrincipal p, LFN currentDir,
-			final ArrayList<String> al) throws Exception {
-		super(p, currentDir, al);
-	}
+		LFN newDir = null;
 
-	public LFN changeDir() {
-		executeCommand();
-		return currentDirectory;
-	}
-
-	public void executeCommand() {
-
-		LFN  newDir = null;
-		
-		if (alArguments.size() > 0) 
-				newDir = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(principal.getName(),
-						currentDirectory.getCanonicalName(), alArguments.get(0)));
+		if (alArguments.size() > 0)
+			newDir = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+					JAliEnCOMMander.user.getName(),
+					JAliEnCOMMander.curDir.getCanonicalName(),
+					alArguments.get(0)));
 		else
 			newDir = CatalogueApiUtils.getLFN(UsersHelper
-					.getHomeDir(principal.getName()));
+					.getHomeDir(JAliEnCOMMander.user.getName()));
 
-		if(newDir!=null)
-			currentDirectory = newDir;
+		if (newDir != null)
+			JAliEnCOMMander.curDir = newDir;
+		else
+			System.err.println("No such directory.");
 
 	}
 
+	/**
+	 * printout the help info, none for this command
+	 */
+	public void printHelp() {
+
+	}
+
+	/**
+	 * cd can run without arguments 
+	 * @return <code>true</code>
+	 */
+	public boolean canRunWithoutArguments() {
+		return true;
+	}
+
+	/**
+	 * nonimplemented command's silence trigger, cd is never silent
+	 */
+	public void silent() {
+	}
+
+	/**
+	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * 
+	 * @param alArguments
+	 *            the arguments of the command
+	 */
+	public JAliEnCommandcd(final ArrayList<String> alArguments){
+		super(alArguments);
+	}
 }
