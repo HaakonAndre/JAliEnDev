@@ -119,6 +119,8 @@ public class JobAgent extends Thread {
 				command);
 
 		pBuilder.returnOutputOnExit(true);
+		
+		pBuilder.directory(tempDir);
 
 		pBuilder.timeout(24, TimeUnit.HOURS);
 
