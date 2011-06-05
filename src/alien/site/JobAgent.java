@@ -50,11 +50,10 @@ public class JobAgent extends Thread {
 	private void parseJDL() {
 
 		String executeable = (String) jdl.get("Executeable");
-		LinkedList<String> arguments = (LinkedList<String>) jdl
-				.get("Arguments");
+		String arguments = (String) jdl.get("Arguments");
 		command = new LinkedList<String>();
 		command.add(executeable);
-		command.addAll(arguments);
+		command.add(arguments);
 
 		inputFiles = (LinkedList<String>) jdl.get("InputFiles");
 		outputFiles = (LinkedList<String>) jdl.get("OutputFiles");
