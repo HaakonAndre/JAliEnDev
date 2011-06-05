@@ -145,9 +145,11 @@ public class JobAgent extends Thread {
 				
 
 				System.out.println("ran, stdout+stderr should be there now");
-				System.out.println("ran, stdout: " + exitStatus.getStdOut());
-				System.out.println("ran, stderr: " + exitStatus.getStdErr());
 			}
+
+			System.out.println("ran, stdout: " + exitStatus.getStdOut());
+			System.out.println("ran, stderr: " + exitStatus.getStdErr());
+			
 		} catch (final InterruptedException ie) {
 			System.err
 					.println("Interrupted while waiting for the following command to finish : "
