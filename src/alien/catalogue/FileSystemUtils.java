@@ -1,13 +1,10 @@
 package alien.catalogue;
 
-import java.util.StringTokenizer;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
-import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
 
 /**
@@ -53,9 +50,8 @@ public final class FileSystemUtils {
 			path = path.replace("//", "/");
 		}
 		
-		if (path.endsWith("/"))
+		if (path.endsWith("/") && path.length()!=1)
 			path = path.substring(0, path.lastIndexOf('/'));
-
 
 		while (path.contains("/./"))
 			path = path.replace("/./", "/");
