@@ -40,6 +40,24 @@ public class JAliEnCOMMander {
 	}
 
 	/**
+	 * Get the user
+	 * 
+	 * @return user
+	 */
+	public static AliEnPrincipal getUser() {
+		return user;
+	}
+	
+	/**
+	 * Get the site
+	 * 
+	 * @return site
+	 */
+	public static String getSite() {
+		return site;
+	}
+	
+	/**
 	 * get the user's name
 	 * 
 	 * @return username

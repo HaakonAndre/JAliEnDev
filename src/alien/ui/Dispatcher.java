@@ -37,7 +37,7 @@ public class Dispatcher {
 		}
 
 		//System.out.println("Running remote: " + r.toString());
-		return SimpleClient.dispatchRequest(r);
+		return SimpleApiClient.dispatchRequest(r);
 	}
 
 	/**
@@ -63,7 +63,7 @@ public class Dispatcher {
 			//System.err.println(response);
 		}
 		
-		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+SimpleClient.lSerialization);
+		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+SimpleApiClient.lSerialization);
 		
 		// dry run
 		
