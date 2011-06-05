@@ -3,6 +3,7 @@ package alien.taskQueue;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -24,8 +25,12 @@ import alien.io.IOUtils;
  * @author costing
  *
  */
-public class JDL {
+public class JDL implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4803377858842338873L;
 	private final Map<String, Object> jdlContent = new HashMap<String, Object>();
 
 	/**
