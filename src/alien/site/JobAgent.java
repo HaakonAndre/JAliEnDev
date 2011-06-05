@@ -25,6 +25,8 @@ import alien.ui.api.CatalogueApiUtils;
  */
 public class JobAgent extends Thread {
 
+	private static final String tempDirPrefix = "jAliEn.JobAgent.tmp";
+
 	private LinkedList<String> command = null;
 	private LinkedList<String> inputFiles = null;
 	private LinkedList<String> outputFiles = null;
@@ -39,11 +41,11 @@ public class JobAgent extends Thread {
 	public void run() {
 		parseJDL();
 		if (createTempDir())
-			if (getInputFiles()){
+			if (getInputFiles()) {
 				if (execute())
 					if (uploadOutputFiles())
-						System.out.println("Job sucessfully executed.");}
-			else
+						System.out.println("Job sucessfully executed.");
+			} else
 				System.out.println("Could not get input files.");
 
 	}
@@ -72,8 +74,9 @@ public class JobAgent extends Thread {
 			try {
 				localFile = new File(tempDir.getCanonicalFile() + "/"
 						+ slfn.substring(slfn.lastIndexOf('/') + 1));
-				
-				System.out.println("Getting input file into local file: " + tempDir.getCanonicalFile() + "/"
+
+				System.out.println("Getting input file into local file: "
+						+ tempDir.getCanonicalFile() + "/"
 						+ slfn.substring(slfn.lastIndexOf('/') + 1));
 
 				System.out.println("Getting input file: " + slfn);
@@ -93,7 +96,8 @@ public class JobAgent extends Thread {
 						break;
 
 					}
-					System.out.println("Suppossed to have input file: " + localFile.getCanonicalPath());
+					System.out.println("Suppossed to have input file: "
+							+ localFile.getCanonicalPath());
 				}
 				if (!localFile.exists())
 					gotAllInputFiles = false;
@@ -128,7 +132,6 @@ public class JobAgent extends Thread {
 			System.out.println("ran, stdout: " + exitStatus.getStdOut());
 			System.out.println("ran, stderr: " + exitStatus.getStdErr());
 
-			
 			if (exitStatus.getExtProcExitStatus() != 0) {
 
 				BufferedWriter out = new BufferedWriter(new FileWriter(
@@ -165,7 +168,7 @@ public class JobAgent extends Thread {
 				List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
 						JAliEnCOMMander.getUser(), JAliEnCOMMander.getSite(),
 						lfn, null, null);
-				
+
 				ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
 				for (PFN pfn : pfns) {
 
@@ -177,20 +180,22 @@ public class JobAgent extends Thread {
 
 					}
 				}
-				
-				// drop the following three lines once put replies correctly with the signed envelope
+
+				// drop the following three lines once put replies correctly
+				// with the signed envelope
 				envelopes.clear();
 				for (PFN pfn : pfns)
-					envelopes.add(pfn.ticket.envelope.getSignedEnvelope()); 
-				
-				
-				List<PFN> pfnsok = 	CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.getUser(), envelopes);
-				if(!pfns.equals(pfnsok)){
-				 if(pfnsok!=null && pfnsok.size()>0)
-					System.out.println("Only " + pfnsok.size()+ " could be uploaded");
-				else 
-					System.err.println("Upload failed, sorry!");
-				 uploadedAllOutFiles = false;
+					envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+
+				List<PFN> pfnsok = CatalogueApiUtils.registerEnvelopes(
+						JAliEnCOMMander.getUser(), envelopes);
+				if (!pfns.equals(pfnsok)) {
+					if (pfnsok != null && pfnsok.size() > 0)
+						System.out.println("Only " + pfnsok.size()
+								+ " could be uploaded");
+					else
+						System.err.println("Upload failed, sorry!");
+					uploadedAllOutFiles = false;
 				}
 			} catch (IOException e) {
 				uploadedAllOutFiles = false;
@@ -200,13 +205,42 @@ public class JobAgent extends Thread {
 	}
 
 	private boolean createTempDir() {
-		File dir = new File("/tmp");
-		try {
-			tempDir = File.createTempFile("JavaTemp", ".javatemp", dir);
-		} catch (IOException ioe) {
+
+		String tmpDirStr = System.getProperty("java.io.tmpdir");
+		if (tmpDirStr == null) {
+			System.err
+					.println("System temp dir config [java.io.tmpdir] does not exist.");
+			return false;
+		}
+
+		File tmpDir = new File(tmpDirStr);
+		if (!tmpDir.exists()) {
+			boolean created = tmpDir.mkdirs();
+			if (!created) {
+				System.err
+						.println("System temp dir [java.io.tmpdir] does not exist and can't be created.");
+				return false;
+			}
+		}
+
+		int suffix = (int) System.currentTimeMillis();
+		int failureCount = 0;
+		do {
+			tempDir = new File(tmpDir, tempDirPrefix + suffix % 10000);
+			suffix++;
+			failureCount++;
+		} while (tempDir.exists() && failureCount < 50);
+
+		if (tempDir.exists()) {
 			System.err.println("Could not create temporary directory.");
 			return false;
 		}
+		boolean created = tempDir.mkdir();
+		if (!created) {
+			System.err.println("Could not create temporary directory.");
+			return false;
+		}
+
 		return true;
 	}
 
