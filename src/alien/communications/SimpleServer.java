@@ -9,8 +9,8 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.Request;
 import alien.config.ConfigUtils;
-import alien.ui.Request;
 
 /**
  * @author costing

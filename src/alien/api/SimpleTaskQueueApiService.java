@@ -1,4 +1,4 @@
-package alien.broker;
+package alien.api;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -13,12 +13,12 @@ import alien.config.ConfigUtils;
  * @author ron
  *  @since Jun 05, 2011
  */
-public class SimpleJobBroker extends Thread {
+public class SimpleTaskQueueApiService extends Thread {
 
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(SimpleJobBroker.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(SimpleTaskQueueApiService.class.getCanonicalName());
 	
 
 	private static final int defaultPort = 5283;

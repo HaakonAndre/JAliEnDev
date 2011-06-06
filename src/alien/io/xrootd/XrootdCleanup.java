@@ -24,9 +24,9 @@ import alien.catalogue.access.AccessTicket;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.io.protocols.Xrootd;
+import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 import alien.se.SEUtils;
-import alien.services.XrootDEnvelopeSigner;
 
 /**
  * @author costing

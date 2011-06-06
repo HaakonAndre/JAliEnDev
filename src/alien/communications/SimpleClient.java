@@ -7,7 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 
-import alien.ui.Request;
+import alien.api.Request;
 
 /**
  * @author costing
