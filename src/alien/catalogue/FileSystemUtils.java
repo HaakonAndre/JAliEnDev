@@ -1,10 +1,20 @@
 package alien.catalogue;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.math.BigInteger;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 import alien.user.UsersHelper;
 
 /**
@@ -25,8 +35,116 @@ public final class FileSystemUtils {
 	static transient final Monitor monitor = MonitorFactory
 			.getMonitor(CatalogueUtils.class.getCanonicalName());
 
+	
 	/**
-	 * Get the absolute path
+	 * @param user
+	 * @param path
+	 * @return the LFN
+	 */
+	public static LFN createCatalogueDirectory(AliEnPrincipal user,
+			String path) {
+		
+		path = FileSystemUtils.getAbsolutePath(
+				user.getName(), null, path);
+		
+		if(path.endsWith("/"))
+			path = path.substring(0,path.length()-1);
+
+		final LFN lfn = LFNUtils.getLFN(path, true);
+		LFN parent = LFNUtils.getLFN(path.substring(0,path.lastIndexOf('/')));
+		
+		if(!path.endsWith("/"))
+			path += "/";
+
+		if (AuthorizationChecker.canRead(lfn, user)
+				&& AuthorizationChecker.canWrite(lfn, user)) {
+
+			if (!lfn.exists) {
+
+				if(!lfn.lfn.endsWith("/"))
+					lfn.lfn += "/";
+				
+				lfn.size = 0;
+				lfn.owner = user.getName();
+				lfn.gowner = user.getName();
+				lfn.type = 'd';
+				lfn.perm="755";
+				
+				parent = LFNUtils.ensureDir(parent);
+				
+				if (parent==null){
+					logger.log(Level.WARNING, "Parent dir for new directory ["+path+"]  is null for "+lfn.getCanonicalName());
+					return null;
+				}
+				
+				lfn.parentDir = parent;
+				
+				final IndexTableEntry ite = CatalogueUtils.getClosestMatch(path);
+				if (ite==null){
+					logger.log(Level.WARNING, "Insertion for new directory ["+path+"] failed, ite null: " + lfn.getCanonicalName());
+					return null;
+				}
+				lfn.indexTableEntry = ite;
+				
+			    lfn.dir = parent.entryId;
+								
+				boolean inserted = LFNUtils.insertLFN(lfn);
+
+				if (!inserted) {
+					logger.log(Level.WARNING,
+							"New directory ["+path+"] creation failed. Could not insert this LFN in the catalog : " + lfn);
+					return null;
+				}
+				return LFNUtils.getLFN(path, true);
+			}else{
+				return lfn;
+			}
+				
+		}
+		logger.log(Level.WARNING,
+				"New directory ["+path+"] creation failed. Authorization failed.");
+		return null;
+	}
+	
+	
+	/**
+	 * @param user
+	 * @param path
+	 * @param createNonExistentParents 
+	 * @return the LFN
+	 */
+	public static LFN createCatalogueDirectory(AliEnPrincipal user,
+			String path, boolean createNonExistentParents) {
+		
+		if(createNonExistentParents){
+			String goDown = path;
+			if(goDown.endsWith("/"))
+				goDown = goDown.substring(0,goDown.length()-1);
+			ArrayList<String> parents = new ArrayList<String>();
+			parents.add(goDown);
+			while(goDown.lastIndexOf('/')!=0){
+				goDown = goDown.substring(0,goDown.lastIndexOf('/'));
+				parents.add(goDown);
+			}
+			
+			LinkedList<String> toDo = new LinkedList<String>();
+			for(String parent: parents)
+				if(LFNUtils.getLFN(parent)==null)
+					toDo.add(parent);
+			LFN ret = null;
+			while(!toDo.isEmpty()){
+				ret = createCatalogueDirectory(user,toDo.getLast());
+				toDo.removeLast();
+			}
+			return ret;
+		} else
+			return createCatalogueDirectory(user,path);
+		
+		
+	}
+
+	/**
+	 * Get the absolute path, currentDir can be <code>null</code> then currentDir is set to user's home
 	 * 
 	 * @param user
 	 * @param currentDir
@@ -36,27 +154,27 @@ public final class FileSystemUtils {
 	public static String getAbsolutePath(String user, String currentDir,
 			String path) {
 
+		if(currentDir==null)
+			currentDir = UsersHelper.getHomeDir(user);
+		
 		if (path.indexOf('~') == 0)
 			path = UsersHelper.getHomeDir(user)
-					+ path.substring(1, path.length() - 1);
-		
+					+ path.substring(1, path.length());
 
 		if (path.indexOf('/') != 0)
 			path = currentDir + path;
-
 
 		if (path.contains("//")) {
 			path = path.replace("///", "/");
 			path = path.replace("//", "/");
 		}
-		
-		if (path.endsWith("/") && path.length()!=1)
+
+		if (path.endsWith("/") && path.length() != 1)
 			path = path.substring(0, path.lastIndexOf('/'));
 
 		while (path.contains("/./"))
 			path = path.replace("/./", "/");
 
-		
 		while (path.contains("/..")) {
 			int pos = path.indexOf("/..") - 1;
 			String newpath = path.substring(0, pos);
@@ -100,4 +218,19 @@ public final class FileSystemUtils {
 		return ret.toString();
 	}
 
+	/**
+	 * @param file
+	 * @return MD5 checksum of the file
+	 * @throws Exception
+	 */
+	public static String calculateMD5(File file) throws Exception {
+		MessageDigest md = MessageDigest.getInstance("MD5");
+		InputStream fis = new FileInputStream(file);
+		byte[] buffer = new byte[8192];
+		int read = 0;
+		while ((read = fis.read(buffer)) > 0)
+			md.update(buffer, 0, read);
+		BigInteger bi = new BigInteger(1, md.digest());
+		return bi.toString(16);
+	}
 }
