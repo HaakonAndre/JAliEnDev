@@ -23,7 +23,7 @@ import alien.io.IOUtils;
 
 /**
  * @author costing
- *
+ * 
  */
 public class JDL implements Serializable {
 
@@ -44,7 +44,8 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * 	a local file
+	 * a local file
+	 * 
 	 * @param file
 	 * @throws IOException
 	 */
@@ -73,37 +74,37 @@ public class JDL implements Serializable {
 					.trim());
 
 			int idxEnd = idxEqual + 1;
-			
+
 			boolean bEsc = false;
 			boolean bQuote = false;
-			
-			outer: while (idxEnd < content.length()){
+
+			outer: while (idxEnd < content.length()) {
 				final char c = content.charAt(idxEnd);
-				
-				switch (c){
-					case '\\':
-						bEsc = !bEsc;
-						
-						break;
-					case '"':
-						if (!bEsc)
-							bQuote = !bQuote;
-						
-						bEsc = false;
-						
-						break;
-					case ';':
-						if (!bEsc && !bQuote)
-							break outer;
-						
-						bEsc = false;
-						
-						break;
-					default:
-						bEsc = false;
+
+				switch (c) {
+				case '\\':
+					bEsc = !bEsc;
+
+					break;
+				case '"':
+					if (!bEsc)
+						bQuote = !bQuote;
+
+					bEsc = false;
+
+					break;
+				case ';':
+					if (!bEsc && !bQuote)
+						break outer;
+
+					bEsc = false;
+
+					break;
+				default:
+					bEsc = false;
 				}
-				
-				idxEnd ++;
+
+				idxEnd++;
 			}
 
 			final String sValue = content.substring(idxEqual + 1, idxEnd)
@@ -111,7 +112,7 @@ public class JDL implements Serializable {
 
 			final Object value = parseValue(sValue);
 
-			//System.err.println(sKey +" = "+value);
+			// System.err.println(sKey +" = "+value);
 
 			if (value != null) {
 				jdlContent.put(sKey.toLowerCase(), value);
@@ -144,7 +145,8 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the value of a key
-	 * @param key 
+	 * 
+	 * @param key
 	 * 
 	 * @return the value, can be a String, a List ...
 	 */
@@ -154,7 +156,8 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the value of this key as String
-	 * @param key 
+	 * 
+	 * @param key
 	 * 
 	 * @return the single value if this was a String, the first entry of a
 	 *         List...
@@ -240,7 +243,7 @@ public class JDL implements Serializable {
 						return -1;
 					}
 				}
-				
+
 				return -1;
 			}
 		}
@@ -262,8 +265,8 @@ public class JDL implements Serializable {
 
 		if (split.startsWith("production:")) {
 			try {
-				return Integer.parseInt(split
-						.substring(split.lastIndexOf('-') + 1));
+				return Integer
+						.parseInt(split.substring(split.lastIndexOf('-') + 1));
 			} catch (NumberFormatException nfe) {
 				// ignore
 			}
@@ -274,6 +277,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the list of input files
+	 * 
 	 * @return the list of input files
 	 */
 	public List<String> getInputFiles() {
@@ -283,21 +287,22 @@ public class JDL implements Serializable {
 	/**
 	 * @return the input data
 	 */
-	public List<String> getInputData(){
+	public List<String> getInputData() {
 		return getInputData(true);
 	}
-	
+
 	/**
 	 * Get the list of input data
 	 * 
-	 * @param bNodownloadIncluded include or not the files with the ",nodownload" option
-	 *  
+	 * @param bNodownloadIncluded
+	 *            include or not the files with the ",nodownload" option
+	 * 
 	 * @return list of input data to the job
 	 */
-	public List<String> getInputData(final boolean bNodownloadIncluded){
+	public List<String> getInputData(final boolean bNodownloadIncluded) {
 		return getInputList(bNodownloadIncluded, "InputData");
 	}
-	
+
 	/**
 	 * Get the list of input files
 	 * 
@@ -306,13 +311,60 @@ public class JDL implements Serializable {
 	 *            indicated in the JDL
 	 * @return list of input files
 	 */
-	public List<String> getInputFiles(final boolean bNodownloadIncluded){
+	public List<String> getInputFiles(final boolean bNodownloadIncluded) {
 		List<String> ret = getInputList(bNodownloadIncluded, "InputFile");
-		
-		if (ret==null)
+
+		if (ret == null)
 			ret = getInputList(bNodownloadIncluded, "InputBox");
-		
+
 		return ret;
+	}
+
+	/**
+	 * Get the list of output files
+	 * 
+	 * @return list of output files
+	 */
+	public List<String> getOutputFiles() {
+		List<String> ret = getInputList(false, "Output");
+		if (ret == null)
+			ret = new LinkedList<String>();
+		List<String> retf = getInputList(false, "OutputFile");
+		if (retf != null)
+			ret.addAll(retf);
+		List<String> reta = getInputList(false, "OutputArchive");
+		if (reta != null)
+			ret.addAll(retf);
+
+		return ret;
+	}
+
+	
+	/**
+	 * Get the list of arguments
+	 * 
+	 * @return list of arguments
+	 */
+	public List<String> getArguments() {
+		return getInputList(false, "Arguments");
+	}
+	
+	/**
+	 * Get the executable
+	 * 
+	 * @return executable
+	 */
+	public List<String> getExecutable() {
+		return getInputList(false, "Executeable");
+	}
+
+	/**
+	 * Get the output directory
+	 * 
+	 * @return output directory
+	 */
+	public List<String> getOutputDirectory() {
+		return getInputList(false, "OutputDir");
 	}
 	
 	/**
@@ -321,18 +373,20 @@ public class JDL implements Serializable {
 	 * @param bNodownloadIncluded
 	 *            flag to include/exclude the files for which ",nodownload" is
 	 *            indicated in the JDL
-	 * @param sTag tag to extract the list from
+	 * @param sTag
+	 *            tag to extract the list from
 	 * @return input list
 	 */
-	public List<String> getInputList(final boolean bNodownloadIncluded, final String sTag) {
+	public List<String> getInputList(final boolean bNodownloadIncluded,
+			final String sTag) {
 		final Object o = get(sTag);
 
-		if (o == null){
-			//System.err.println("No such tag: "+sTag);
-			//for (Map.Entry<?, ?> me: jdlContent.entrySet()){
-			//	System.err.println("'"+me.getKey()+"' = '"+me.getValue()+"'");
-			//}
-			
+		if (o == null) {
+			// System.err.println("No such tag: "+sTag);
+			// for (Map.Entry<?, ?> me: jdlContent.entrySet()){
+			// System.err.println("'"+me.getKey()+"' = '"+me.getValue()+"'");
+			// }
+
 			return null;
 		}
 
@@ -412,6 +466,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the job comment
+	 * 
 	 * @return job comment
 	 */
 	public String getComment() {
@@ -427,7 +482,9 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT -> v5-26-00b-6) }
+	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT
+	 * -> v5-26-00b-6) }
+	 * 
 	 * @return packages
 	 */
 	@SuppressWarnings("unchecked")
@@ -465,6 +522,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the output directory
+	 * 
 	 * @return output directory
 	 */
 	public String getOutputDir() {
@@ -490,6 +548,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the number of events/job in this simulation run
+	 * 
 	 * @return events/job, of -1 if not supported
 	 */
 	public int getSimFactor() {
@@ -513,15 +572,16 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the number of events/job that this macro is expected to produce
-	 * @param f 
+	 * 
+	 * @param f
 	 * @return events/job, or -1 if not supported
 	 */
 	public static int getSimFactor(final LFN f) {
 		GUID guid = GUIDUtils.getGUID(f.guid);
-		
-		if (guid==null)
+
+		if (guid == null)
 			return -1;
-		
+
 		final String sContent = IOUtils.getContents(guid);
 
 		try {

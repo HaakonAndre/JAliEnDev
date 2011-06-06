@@ -20,7 +20,7 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		if (alArguments.size() > 0)
 			newDir = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
 					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.curDir.getCanonicalName(),
+					JAliEnCOMMander.getCurrentDir().getCanonicalName(),
 					alArguments.get(0)));
 		else
 			newDir = CatalogueApiUtils.getLFN(UsersHelper

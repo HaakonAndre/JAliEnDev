@@ -1,5 +1,6 @@
 package alien.taskQueue;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,9 +14,14 @@ import lia.util.StringFactory;
  * @since Mar 1, 2011
  */
 
-public class Job  implements Comparable<Job> {
+public class Job  implements Comparable<Job>,Serializable {
 	
 		
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7214453241953215533L;
+
 	/**
 	 * Job Queue ID
 	 */
@@ -199,6 +205,12 @@ public class Job  implements Comparable<Job> {
 	 */
 	Job(final DBFunctions db){
 		init(db, false);
+	}
+	
+	/**
+	 * Fake a job, needs to be removed one day!
+	 */
+	public Job(){
 	}
 	
 	/**

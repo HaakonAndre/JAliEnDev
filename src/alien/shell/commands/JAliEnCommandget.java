@@ -106,7 +106,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 			} else {
 				LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils
 						.getAbsolutePath(JAliEnCOMMander.user.getName(),
-								JAliEnCOMMander.curDir.getCanonicalName(),
+								JAliEnCOMMander.getCurrentDir().getCanonicalName(),
 								lfnOrGuid));
 				pfns = CatalogueApiUtils.getPFNsToRead(JAliEnCOMMander.user,
 						JAliEnCOMMander.site, lfn, ses, exses);

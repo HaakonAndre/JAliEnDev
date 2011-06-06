@@ -1,4 +1,4 @@
-package alien.ui;
+package alien.broker;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -13,41 +13,41 @@ import alien.config.ConfigUtils;
  * @author ron
  *  @since Jun 05, 2011
  */
-public class SimpleApiServer extends SimpleServer {
+public class SimpleJobBroker extends Thread {
 
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(SimpleApiServer.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(SimpleJobBroker.class.getCanonicalName());
 	
 
-	private static final int defaultPort = 5282;
+	private static final int defaultPort = 5283;
 	private static final String servicePort = "catalogueApiService";
-
-	/**
-	 * @param connection
-	 * @throws IOException
-	 */
-	public SimpleApiServer(final Socket connection) throws IOException {
-		super(connection);
-	}
 	
 	
 	/**
 	 * @param args
 	 * @throws IOException
 	 */
-	public static void main(final String[] args) throws IOException{
+	public void run(){
 		
 		int port = 0;
 		try{
 		port = Integer.parseInt(ConfigUtils.getConfig().gets(servicePort).trim());
 		} catch(NumberFormatException e){}
 		
-		if(port!=0)
+		if(port==0)
 			port = defaultPort;
 		
-		final ServerSocket ss = new ServerSocket(port);
+		ServerSocket ss = null;
+		try {
+			ss = new ServerSocket(port);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Listening now on " + port);
+
 		
 		logger.log(Level.INFO, "Server listening on "+ss.getLocalPort());
 		

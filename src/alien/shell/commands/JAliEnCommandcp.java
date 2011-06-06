@@ -1,11 +1,7 @@
 package alien.shell.commands;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -110,7 +106,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		} else {
 			LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
 					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.curDir.getCanonicalName(), source));
+					JAliEnCOMMander.getCurrentDir().getCanonicalName(), source));
 			pfns = CatalogueApiUtils.getPFNsToRead(JAliEnCOMMander.user,
 					JAliEnCOMMander.site, lfn, ses, exses);
 
@@ -128,7 +124,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					break;
 				} catch (IOException e) {
-					// ignore
+					e.getStackTrace();
 				}
 			}
 		}
@@ -158,7 +154,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		}
 		String md5 = null;
 		try {
-			md5 = calculateMD5(source);
+			md5 = FileSystemUtils.calculateMD5(source);
 		} catch (Exception e1) {
 		}
 		if (md5 == null) {
@@ -183,7 +179,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		} else {
 			lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
 					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.curDir.getCanonicalName(), target), true);
+					JAliEnCOMMander.getCurrentDir().getCanonicalName(), target), true);
 			guid = null;
 			// lfn.guid=... for user's specification
 			lfn.size = size;
@@ -223,21 +219,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	}
 
-	/**
-	 * @param file
-	 * @return MD5 checksum of the file
-	 * @throws Exception
-	 */
-	public static String calculateMD5(File file) throws Exception {
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		InputStream fis = new FileInputStream(file);
-		byte[] buffer = new byte[8192];
-		int read = 0;
-		while ((read = fis.read(buffer)) > 0)
-			md.update(buffer, 0, read);
-		BigInteger bi = new BigInteger(1, md.digest());
-		return bi.toString(16);
-	}
 
 	/**
 	 * printout the help info

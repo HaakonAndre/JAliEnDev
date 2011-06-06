@@ -12,8 +12,8 @@ public class ComputingElement {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		JobAgent jA = new JobAgent(JobAgentUtils.getJDL());
-		jA.run();
+		JobAgent jA = new JobAgent(JobAgentUtils.getJob());
+		jA.start();
 
 	}
 }

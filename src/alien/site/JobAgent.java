@@ -11,12 +11,14 @@ import java.util.concurrent.TimeUnit;
 
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
+import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
+import alien.taskQueue.Job;
 import alien.ui.api.CatalogueApiUtils;
 
 /**
@@ -26,42 +28,34 @@ import alien.ui.api.CatalogueApiUtils;
 public class JobAgent extends Thread {
 
 	private static final String tempDirPrefix = "jAliEn.JobAgent.tmp";
-
-	private LinkedList<String> command = null;
-	private LinkedList<String> inputFiles = null;
-	private LinkedList<String> outputFiles = null;
 	private File tempDir = null;
 
-	private JDL jdl = null;
+	private static final String defaultOutputDirPrefix = "~/jalien-job-";
 
-	JobAgent(JDL jdl) {
-		this.jdl = jdl;
+	private JDL jdl = null;
+	private Job job = null;
+
+	JobAgent(Job job) {
+		this.job = job;
+		try {
+			jdl = new JDL(job.getJDL());
+		} catch (IOException e) {
+			System.err.println("Unable to get JDL from Job.");
+			e.printStackTrace();
+		}
 	}
 
 	public void run() {
-		parseJDL();
+		JobAgentUtils.setJobStatus(job.queueId, "STARTED");
 		if (createTempDir())
 			if (getInputFiles()) {
 				if (execute())
 					if (uploadOutputFiles())
 						System.out.println("Job sucessfully executed.");
-			} else
+			} else {
 				System.out.println("Could not get input files.");
-
-	}
-
-	private void parseJDL() {
-
-		String executeable = (String) jdl.get("Executeable");
-		String arguments = (String) jdl.get("Arguments");
-		command = new LinkedList<String>();
-		command.add(executeable);
-		command.add(arguments);
-
-		inputFiles = new LinkedList<String>();
-		outputFiles = new LinkedList<String>();
-		inputFiles.add((String) jdl.get("InputFiles"));
-		outputFiles.add((String) jdl.get("OutputFiles"));
+				JobAgentUtils.setJobStatus(job.queueId, "ERROR_IB");
+			}
 
 	}
 
@@ -69,7 +63,7 @@ public class JobAgent extends Thread {
 
 		boolean gotAllInputFiles = true;
 
-		for (String slfn : inputFiles) {
+		for (String slfn : jdl.getInputFiles()) {
 			File localFile;
 			try {
 				localFile = new File(tempDir.getCanonicalFile() + "/"
@@ -114,6 +108,10 @@ public class JobAgent extends Thread {
 
 		boolean ran = true;
 
+		LinkedList<String> command = (LinkedList<String>) jdl.getExecutable();
+		if (jdl.getArguments() != null)
+			command.addAll(jdl.getArguments());
+
 		System.out.println("we will run: " + command.toString());
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 				command);
@@ -128,6 +126,8 @@ public class JobAgent extends Thread {
 
 		try {
 			final ExitStatus exitStatus;
+
+			JobAgentUtils.setJobStatus(job.queueId, "RUNNING");
 
 			exitStatus = pBuilder.start().waitFor();
 
@@ -162,63 +162,130 @@ public class JobAgent extends Thread {
 	private boolean uploadOutputFiles() {
 
 		boolean uploadedAllOutFiles = true;
+		boolean uploadedNotAllCopies = false;
+		JobAgentUtils.setJobStatus(job.queueId, "SAVING");
 
-		for (String slfn : outputFiles) {
-			File localFile;
-			try {
-				localFile = new File(tempDir.getCanonicalFile() + "/"
-						+ slfn.substring(slfn.lastIndexOf('/') + 1));
+		String outputDir = jdl.getOutputDir();
 
-				if (localFile.exists() && localFile.canRead()
-						&& localFile.length() > 0) {
+		if (outputDir == null)
+			outputDir = defaultOutputDirPrefix + job.queueId;
 
-					LFN lfn = CatalogueApiUtils.getLFN(slfn);
-					List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
-							JAliEnCOMMander.getUser(),
-							JAliEnCOMMander.getSite(), lfn, null, null);
+		System.out.println("QueueID: " + job.queueId);
 
-					ArrayList<String> envelopes = new ArrayList<String>(
-							pfns.size());
-					for (PFN pfn : pfns) {
+		System.out.println("Full catpath of outDir is: "
+				+ FileSystemUtils.getAbsolutePath(
+						JAliEnCOMMander.getUsername(), "~", outputDir));
 
-						List<Protocol> protocols = Transfer
-								.getAccessProtocols(pfn);
-						for (final Protocol protocol : protocols) {
+		if (CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+				JAliEnCOMMander.getUsername(), null, outputDir)) != null) {
+			System.err.println("OutputDir [" + outputDir + "] already exists.");
+			return false;
+		}
 
-							envelopes.add(protocol.put(pfn, localFile));
-							break;
+		LFN outDir = CatalogueApiUtils.createCatalogueDirectory(
+				JAliEnCOMMander.getUser(), outputDir);
+
+		if (outDir == null) {
+			System.err.println("Error creating the OutputDir [" + outputDir
+					+ "].");
+			uploadedAllOutFiles = false;
+		}
+		if (uploadedAllOutFiles) {
+			for (String slfn : jdl.getOutputFiles()) {
+				File localFile;
+				try {
+					localFile = new File(tempDir.getCanonicalFile() + "/"
+							+ slfn);
+
+					if (localFile.exists() && localFile.isFile()
+							&& localFile.canRead() && localFile.length() > 0) {
+
+						long size = localFile.length();
+						if (size <= 0) {
+							System.err.println("Local file has size zero: "
+									+ localFile.getAbsolutePath());
+						}
+						String md5 = null;
+						try {
+							md5 = FileSystemUtils.calculateMD5(localFile);
+						} catch (Exception e1) {
+						}
+						if (md5 == null) {
+							System.err
+									.println("Could not calculate md5 checksum of the local file: "
+											+ localFile.getAbsolutePath());
+						}
+
+						List<PFN> pfns = null;
+
+						LFN lfn = null;
+						lfn = CatalogueApiUtils.getLFN(
+								outDir.getCanonicalName() + slfn, true);
+
+						lfn.size = size;
+						lfn.md5 = md5;
+
+						pfns = CatalogueApiUtils.getPFNsToWrite(
+								JAliEnCOMMander.getUser(),
+								JAliEnCOMMander.getSite(), lfn, null, null,
+								null, 0);
+
+						ArrayList<String> envelopes = new ArrayList<String>(
+								pfns.size());
+						for (PFN pfn : pfns) {
+
+							List<Protocol> protocols = Transfer
+									.getAccessProtocols(pfn);
+							for (final Protocol protocol : protocols) {
+
+								envelopes.add(protocol.put(pfn, localFile));
+								break;
+
+							}
 
 						}
 
+						// drop the following three lines once put replies
+						// correctly
+						// with the signed envelope
+						envelopes.clear();
+						for (PFN pfn : pfns)
+							envelopes.add(pfn.ticket.envelope
+									.getSignedEnvelope());
+
+						List<PFN> pfnsok = CatalogueApiUtils.registerEnvelopes(
+								JAliEnCOMMander.getUser(), envelopes);
+						if (!pfns.equals(pfnsok)) {
+							if (pfnsok != null && pfnsok.size() > 0) {
+								System.out.println("Only " + pfnsok.size()
+										+ " could be uploaded");
+								uploadedNotAllCopies = true;
+							} else {
+
+								System.err.println("Upload failed, sorry!");
+								uploadedAllOutFiles = false;
+								break;
+							}
+						}
+					} else {
+						System.out.println("Can't upload output file"
+								+ localFile.getName()
+								+ ", does not exist or has zero size.");
 					}
-		
-
-				// drop the following three lines once put replies correctly
-				// with the signed envelope
-				envelopes.clear();
-				for (PFN pfn : pfns)
-					envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
-
-				List<PFN> pfnsok = CatalogueApiUtils.registerEnvelopes(
-						JAliEnCOMMander.getUser(), envelopes);
-				if (!pfns.equals(pfnsok)) {
-					if (pfnsok != null && pfnsok.size() > 0)
-						System.out.println("Only " + pfnsok.size()
-								+ " could be uploaded");
-					else
-						System.err.println("Upload failed, sorry!");
+				} catch (IOException e) {
+					e.printStackTrace();
 					uploadedAllOutFiles = false;
 				}
-				} else {
-					System.out.println("Can't upload output file"
-							+ localFile.getName()
-							+ ", does not exist or has zero size.");
-				}
-			} catch (IOException e) {
-				uploadedAllOutFiles = false;
 			}
-			
 		}
+		if(uploadedNotAllCopies)
+			JobAgentUtils.setJobStatus(job.queueId, "DONE_WARN");
+		else if (uploadedAllOutFiles)
+			JobAgentUtils.setJobStatus(job.queueId, "DONE");
+		else 
+			JobAgentUtils.setJobStatus(job.queueId, "ERROR_SV");
+
+		
 		return uploadedAllOutFiles;
 	}
 

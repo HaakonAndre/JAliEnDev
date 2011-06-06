@@ -2,7 +2,7 @@ package alien.site;
 
 import java.io.IOException;
 
-import alien.taskQueue.JDL;
+import alien.taskQueue.Job;
 import alien.ui.Dispatcher;
 
 
@@ -15,20 +15,37 @@ import alien.ui.Dispatcher;
 public class JobAgentUtils {
 	
 	/**
-	 * @return a JDL
+	 * @return a Job
 	 */
-	public static JDL getJDL() {
+	public static Job getJob() {
 
 		try {
-			GetJDL jdl = (GetJDL) Dispatcher.execute(new GetJDL(),true);
+			GetJob job = (GetJob) Dispatcher.execute(new GetJob(),true);
 
-			return jdl.getJDL();
+			return job.getJob();
 		} catch (IOException e) {
 			System.out.println("Could not a JDL: ");
 			e.printStackTrace();
 		}
 		return null;
 
+	}
+	
+	
+	/**
+	 * Set a job's status
+	 * @param jobnumber 
+	 * @param status 
+	 */
+	public static void setJobStatus(int jobnumber, String status) {
+
+		try {
+			Dispatcher.execute(new SetJobStatus(jobnumber,status),true);
+
+		} catch (IOException e) {
+			System.out.println("Could not a JDL: ");
+			e.printStackTrace();
+		}
 	}
 
 }

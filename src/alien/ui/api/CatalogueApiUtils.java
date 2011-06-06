@@ -201,6 +201,36 @@ public class CatalogueApiUtils {
 		return null;
 	}
 	
+	/**
+	 * Create a directory in the Catalogue
+	 * @param p 
+	 * @param path 
+	 * @return LFN of the created directory, if successful, else <code>null</code>
+	 */
+	public static LFN createCatalogueDirectory(AliEnPrincipal p, String path) {
+		return createCatalogueDirectory(p, path,false);
+	}
+	
+	/**
+	 * Create a directory in the Catalogue
+	 * @param p 
+	 * @param path 
+	 * @param createNonExistentParents 
+	 * @return LFN of the created directory, if successful, else <code>null</code>
+	 */
+	public static LFN createCatalogueDirectory(AliEnPrincipal p, String path, boolean createNonExistentParents) {
+
+		try {
+			CreateCatDirfromString rse = (CreateCatDirfromString) Dispatcher.execute(new CreateCatDirfromString(p,path,createNonExistentParents),true);
+
+			return rse.getDir();
+		} catch (IOException e) {
+			System.out.println("Could not create the CatDir: " + path);
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
 	
 	/**
 	 * Get an SE by its name

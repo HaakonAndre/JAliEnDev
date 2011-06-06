@@ -53,7 +53,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 		} else {
 			LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
 					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.curDir.getCanonicalName(), lfnOrGuid));
+					JAliEnCOMMander.getCurrentDir().getCanonicalName(), lfnOrGuid));
 			guid = lfn.guid.toString();
 		}
 		// what message in case of error?

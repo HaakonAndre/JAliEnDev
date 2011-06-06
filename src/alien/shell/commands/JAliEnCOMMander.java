@@ -17,7 +17,7 @@ import alien.user.UsersHelper;
 public class JAliEnCOMMander {
 
 	private static final String[] commandList = new String[] { "ls", "get",
-			"cat", "whoami", "whereis", "cp", "cd" ,"time"};
+			"cat", "whoami", "whereis", "cp", "cd" ,"time","mkdir"};
 	
 
 	protected static AliEnPrincipal user = AuthorizationFactory
@@ -28,8 +28,9 @@ public class JAliEnCOMMander {
 
 	private static String myHome = UsersHelper.getHomeDir(user.getName());
 
-	protected static LFN curDir = CatalogueApiUtils.getLFN(myHome);
+	protected static LFN curDir = null;
 
+	
 	/**
 	 * get list of commands
 	 * 
@@ -72,6 +73,8 @@ public class JAliEnCOMMander {
 	 * @return LFN of the current directory
 	 */
 	public static LFN getCurrentDir() {
+		if(curDir==null)
+			curDir = CatalogueApiUtils.getLFN(myHome);
 		return curDir;
 
 	}
@@ -81,7 +84,8 @@ public class JAliEnCOMMander {
 	* @return name of the current directory, ~ places home 
 	*/
 	public static String getCurrentDirTilded() {
-		return curDir.getCanonicalName().replace(myHome, "~");
+		
+		return getCurrentDir().getCanonicalName().substring(0,getCurrentDir().getCanonicalName().length()-1).replace(myHome.substring(0,myHome.length()-1), "~");
 	}
 	
 	/**
@@ -102,7 +106,6 @@ public class JAliEnCOMMander {
 	* @param the list of arguments
 	*/
 	private static void execute(String comm, ArrayList<String> args) {
-
 		if (!Arrays.asList(commandList).contains(comm)) {
 
 			System.err.println("Command [" + comm + "] not found!");
@@ -125,6 +128,8 @@ public class JAliEnCOMMander {
 					&& !args.contains("-h")
 					&& (args.size() != 0 || jcommand.canRunWithoutArguments())) {
 				jcommand.execute();
+			}else{
+				jcommand.printHelp();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -10,7 +10,6 @@ import java.io.PrintWriter;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
 import alien.config.JAliEnIAm;
-import alien.shell.commands.GridFileCompletor;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
@@ -20,7 +19,7 @@ import alien.taskQueue.TaskQueueUtils;
  * @since Feb, 2011
  */
 public class BusyBox {
-
+	
 	private static final String promptPrefix = "@" + JAliEnIAm.whatsMyName()
 			+ ":";
 	private static final String promptSuffix = "$> ";
@@ -47,6 +46,7 @@ public class BusyBox {
 	 * @throws IOException 
 	 */
 	public BusyBox() throws IOException {
+		
 
 		out = new PrintWriter(System.out);
 
@@ -59,7 +59,7 @@ public class BusyBox {
 		reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
 
 		reader.addCompletor(new SimpleCompletor(JAliEnCOMMander.getCommandList()));
-		reader.addCompletor(new GridFileCompletor());
+//		reader.addCompletor(new GridFileCompletor());
 //		reader.addCompletor(new FileNameCompletor());
 
 
@@ -97,7 +97,6 @@ public class BusyBox {
 	 */
 	public void executeCommand(String args[]) {
 	
-
 		if (!"".equals(args[0])) {
 			if (args[0].equals(".")) {
 				String command = "";

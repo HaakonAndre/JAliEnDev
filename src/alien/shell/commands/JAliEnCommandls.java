@@ -71,12 +71,12 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		int iDirs = alPaths.size();
 
 		if (iDirs == 0)
-			alPaths.add(JAliEnCOMMander.curDir.getCanonicalName());
+			alPaths.add(JAliEnCOMMander.getCurrentDir().getCanonicalName());
 
 		for (String sPath : alPaths) {
 			// listing current directory
 			if (!sPath.startsWith("/"))
-				sPath = JAliEnCOMMander.curDir.getCanonicalName() + sPath;
+				sPath = JAliEnCOMMander.getCurrentDir().getCanonicalName() + sPath;
 
 			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
 
