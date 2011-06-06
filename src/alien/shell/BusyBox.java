@@ -20,7 +20,7 @@ import alien.taskQueue.TaskQueueUtils;
  */
 public class BusyBox {
 	
-	private static final String promptPrefix = "@" + JAliEnIAm.whatsMyName()
+	private static final String promptPrefix = "@" + JAliEnIAm.myPromptName()
 			+ ":";
 	private static final String promptSuffix = "$> ";
 

@@ -10,8 +10,17 @@ public class JAliEnIAm {
 	private static final String thathsMe = "jAliEn";
 	
 	private static final String myVersion = "v0.3";
+	
+	private static final String alienshprompt = "jaliensh";
 
 	private static final String myFullName = thathsMe +" "+myVersion; 
+	
+	/**
+	 * @return the name for the shell prompt
+	 */
+	public static String myPromptName(){
+		return alienshprompt;
+	}
 	
 	/**
 	 * @return my name
