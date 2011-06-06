@@ -11,7 +11,7 @@ public class JAliEnIAm {
 	
 	private static final String myVersion = "v0.3";
 	
-	private static final String alienshprompt = "jaliensh";
+	private static final String alienshprompt = "Jaliensh[alice]";
 
 	private static final String myFullName = thathsMe +" "+myVersion; 
 	
