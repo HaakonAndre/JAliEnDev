@@ -1,4 +1,7 @@
-package alien.site;
+package alien;
+
+import alien.site.JobAgent;
+import alien.site.JobAgentUtils;
 
 
 /**

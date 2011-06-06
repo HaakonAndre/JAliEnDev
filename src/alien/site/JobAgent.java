@@ -35,7 +35,10 @@ public class JobAgent extends Thread {
 	private JDL jdl = null;
 	private Job job = null;
 
-	JobAgent(Job job) {
+	/**
+	 * @param job
+	 */
+	public JobAgent(Job job) {
 		this.job = job;
 		try {
 			jdl = new JDL(job.getJDL());
