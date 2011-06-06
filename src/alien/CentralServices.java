@@ -3,9 +3,9 @@ package alien;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import alien.broker.SimpleJobBroker;
+import alien.api.SimpleCatalogueApiService;
+import alien.api.SimpleTaskQueueApiService;
 import alien.config.ConfigUtils;
-import alien.ui.SimpleApi;
 
 
 /**
@@ -27,10 +27,10 @@ public class CentralServices {
 		logger.setLevel(Level.WARNING);
 
 		try {
-			SimpleApi api = new SimpleApi();
-			api.start();
-			SimpleJobBroker jb = new SimpleJobBroker();
-			jb.start();
+			SimpleCatalogueApiService catalogueAPIService = new SimpleCatalogueApiService();
+			catalogueAPIService.start();
+			SimpleTaskQueueApiService taskqueueAPIService = new SimpleTaskQueueApiService();
+			taskqueueAPIService.start();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
