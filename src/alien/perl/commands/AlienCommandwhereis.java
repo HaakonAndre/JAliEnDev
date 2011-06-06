@@ -93,6 +93,7 @@ public class AlienCommandwhereis extends AlienCommand {
 	 *            the directory from the user issued the command
 	 * @param sCommand
 	 *            the command requested through the SOAP request
+	 * @param iDebugLevel 
 	 * @param alArguments
 	 *            command arguments, can be size 0 or null
 	 * @throws Exception

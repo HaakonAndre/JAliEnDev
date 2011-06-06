@@ -6,9 +6,16 @@ import java.util.List;
 
 import alien.user.AliEnPrincipal;
 
+/**
+ * @author ron
+ *
+ */
 public class AlienCommandError extends AlienCommand {
 
 	
+	/**
+	 * 
+	 */
 	public String errorMessage = "";
 	
 	/**
