@@ -12,7 +12,7 @@ public class ComputingElement {
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void submitJobAgent() throws Exception {
 
 		JobAgent jA = new JobAgent(TaskQueueApiUtils.getJob());
 		jA.start();
