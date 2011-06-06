@@ -2,9 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.perl.commands.AlienTime;
-import alien.ui.api.CatalogueApiUtils;
 
 /**
  * @author ron

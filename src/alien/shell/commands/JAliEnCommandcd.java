@@ -2,9 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
-import alien.ui.api.CatalogueApiUtils;
 import alien.user.UsersHelper;
 
 /**

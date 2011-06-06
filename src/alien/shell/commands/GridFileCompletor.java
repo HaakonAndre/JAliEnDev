@@ -5,9 +5,9 @@ import java.util.Collections;
 import java.util.List;
 
 import jline.FileNameCompletor;
+import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
-import alien.ui.api.CatalogueApiUtils;
 
 /**
  * @author ron

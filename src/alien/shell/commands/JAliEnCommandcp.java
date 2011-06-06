@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
@@ -14,7 +15,6 @@ import alien.catalogue.PFN;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.perl.commands.AlienTime;
-import alien.ui.api.CatalogueApiUtils;
 
 /**
  * @author ron

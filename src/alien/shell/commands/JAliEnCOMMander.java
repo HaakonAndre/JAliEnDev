@@ -3,10 +3,10 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
-import alien.ui.api.CatalogueApiUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
 
