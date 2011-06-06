@@ -231,6 +231,25 @@ public class CatalogueApiUtils {
 		return null;
 	}
 	
+	/**
+	 * find bases on pattern
+	 * @param path 
+	 * @param pattern 
+	 * @param flags 
+	 * @return result LFNs 
+	 */
+	public static List<LFN> find(String path, String pattern, int flags) {
+		try {
+			FindfromString f = (FindfromString) Dispatcher.execute(new FindfromString(path,pattern,flags),true);
+
+			return f.getLFNs();
+		} catch (IOException e) {
+			System.out.println("Unable to execute find: path (" + path +"), pattern ("+pattern
+				+ "), flags ("+flags+")");
+			e.printStackTrace();
+		}
+		return null;	}
+	
 	
 	/**
 	 * Get an SE by its name

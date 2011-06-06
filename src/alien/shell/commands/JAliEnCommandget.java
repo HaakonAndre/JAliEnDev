@@ -74,7 +74,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 
 		while (it.hasNext()) {
 			String arg = it.next();
-			if ("-s".equals(arg)) {
+			if ("-S".equals(arg)) {
 				ses = new ArrayList<String>();
 				exses = new ArrayList<String>();
 				final StringTokenizer st = new StringTokenizer(it.next(), ",");
