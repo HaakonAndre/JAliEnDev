@@ -493,7 +493,7 @@ public class Xrootd extends Protocol {
 					command.add("-returnEnvelope");
 				command.add(pfn.getPFN());
 	
-				if (hasSignedEnvelope)
+				if (hasSignedEnvelope && returnEnvelope)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 	
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
