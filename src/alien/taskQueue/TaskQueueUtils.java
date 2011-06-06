@@ -167,7 +167,6 @@ public class TaskQueueUtils {
 	 * @param jobs
 	 * @return the same masterjobs and the respective subjob statistics
 	 */
-	@SuppressWarnings("null")
 	public static Map<Job, Map<String, Integer>> getMasterjobStats(final List<Job> jobs){
 		final Map<Job, Map<String, Integer>> ret = new TreeMap<Job, Map<String, Integer>>();
 		
