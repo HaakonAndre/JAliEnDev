@@ -4,7 +4,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
+import lazyj.cache.ExpirationCache;
+
 import alien.api.catalogue.LFNfromString;
+import alien.communications.SimpleClient;
 import alien.config.ConfigUtils;
 
 /**
@@ -13,6 +16,7 @@ import alien.config.ConfigUtils;
  */
 public class Dispatcher {
 
+	private static final ExpirationCache<String, Request> cache = new ExpirationCache<String, Request>(10240);
 
 	/**
 	 * @param r request to execute
@@ -36,7 +40,31 @@ public class Dispatcher {
 			return r;
 		}
 
-		//System.out.println("Running remote: " + r.toString());
+		if (r instanceof Cacheable){
+			final Cacheable c = (Cacheable) r;
+			
+			final String key = r.getClass().getCanonicalName()+"#"+c.getKey();
+			
+			Request ret = cache.get(key);
+			
+			if (ret!=null)
+				return ret;
+			
+			ret = dispatchRequest(r);
+			
+			if (ret!=null && (ret instanceof Cacheable)){
+				final Cacheable retc = (Cacheable) ret;
+				
+				cache.put(key, ret, retc.getTimeout());
+			}
+			
+			return ret;
+		}
+		
+		return dispatchRequest(r);
+	}
+	
+	private static Request dispatchRequest(final Request r) throws IOException {
 		return SimpleCatalogueApiClient.dispatchRequest(r);
 	}
 
@@ -63,7 +91,7 @@ public class Dispatcher {
 			//System.err.println(response);
 		}
 		
-		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+SimpleCatalogueApiClient.lSerialization);
+		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+SimpleClient.lSerialization);
 		
 		// dry run
 		

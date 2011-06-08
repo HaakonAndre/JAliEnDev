@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import alien.api.Cacheable;
 import alien.api.Request;
 import alien.se.SE;
 import alien.se.SEUtils;
@@ -9,7 +10,7 @@ import alien.se.SEUtils;
  * @author ron
  * @since Jun 03, 2011
  */
-public class SEfromString extends Request {
+public class SEfromString extends Request implements Cacheable {
 
 	private static final long serialVersionUID = 8631851052133487066L;
 	private final String sSE;
@@ -54,7 +55,17 @@ public class SEfromString extends Request {
 	public String toString() {
 		if(sSE!=null)
 			return "Asked for : "+this.sSE+", reply is:\n"+this.se;
-		else 
+		 
 		return "Asked for No: "+this.seNo+", reply is:\n"+this.se;
+	}
+
+	@Override
+	public String getKey() {
+		return this.sSE+"#"+this.seNo;
+	}
+
+	@Override
+	public long getTimeout() {
+		return 1000*60*60;
 	}
 }
