@@ -332,6 +332,8 @@ public class JDL implements Serializable {
 		List<String> retf = getInputList(false, "OutputFile");
 		if (retf != null)
 			ret.addAll(retf);
+		else 
+			ret = new LinkedList<String>();
 		List<String> reta = getInputList(false, "OutputArchive");
 		if (reta != null)
 			ret.addAll(retf);
@@ -355,7 +357,7 @@ public class JDL implements Serializable {
 	 * @return executable
 	 */
 	public List<String> getExecutable() {
-		return getInputList(false, "Executeable");
+		return getInputList(false, "Executable");
 	}
 
 	/**
@@ -409,7 +411,7 @@ public class JDL implements Serializable {
 
 				if (o2 instanceof String) {
 					final String s = (String) o2;
-
+					System.out.println("some jdl line is: "+s);
 					if (bNodownloadIncluded || s.indexOf(",nodownload") < 0)
 						ret.add(removeLF(s));
 				}

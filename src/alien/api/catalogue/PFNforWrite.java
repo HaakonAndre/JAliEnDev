@@ -88,6 +88,8 @@ public class PFNforWrite extends Request {
 	@Override
 	public void run() {
 
+		
+		
 		if ((ses == null) && (qosType == null)) {
 
 			final Set<String> defaultQos = LDAPHelper.checkLdapInformation(
@@ -100,6 +102,7 @@ public class PFNforWrite extends Request {
 
 			String defQos = defaultQos.iterator().next();
 
+
 			qosType = defQos.substring(0, defQos.indexOf('='));
 			qosCount = Integer
 					.parseInt(defQos.substring(defQos.indexOf('=') + 1));
@@ -107,6 +110,7 @@ public class PFNforWrite extends Request {
 
 		}
 
+		
 		List<SE> SEs = SEUtils.getSEs(ses);
 
 		List<SE> exSEs = SEUtils.getSEs(exses);
@@ -217,16 +221,17 @@ public class PFNforWrite extends Request {
 	 * @return PFNs to write on
 	 */
 	public List<PFN> getPFNs() {
+
 		return pfns;
 	}
 
 	@Override
 	public String toString() {
 		if (lfn != null)
-			return "Asked for write: " + this.lfn + " (" + "), reply is: "
+			return "Asked for write: " + this.lfn + " (" + this.site + ","+ this.qosType+ ","+this.qosCount+ ","+ this.ses+ ","+ this.exses+"), reply is: "
 					+ this.pfns;
 		else if (guid != null)
-			return "Asked for write: " + this.guid + " (" + "), reply is: "
+			return "Asked for write: " + this.guid + " (" + this.site + ","+ this.qosType+ ","+this.qosCount+ ","+ this.ses+ ","+ this.exses+"), reply is: "
 					+ this.pfns;
 		else
 			return "Asked for write: unspecified target!";

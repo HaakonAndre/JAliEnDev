@@ -14,7 +14,8 @@ import alien.communications.SimpleClient;
 
 	private static final int defaultPort = 5283;
 	private static final String defaultHost = "localhost";
-	private static final String serviceName = "brokerApiService";
+	private static final String serviceName = "taskQueueApiService";
+
 
 	private static String addr = null;
 	private static int port = 0;
@@ -33,8 +34,10 @@ import alien.communications.SimpleClient;
 			throws IOException {
 		addr = ConfigUtils.getConfig().gets(serviceName).trim();
 
+
 		if (addr.length() == 0) {
 			addr = defaultHost;
+			port = defaultPort;
 		} else {
 
 			String address = addr;
@@ -44,12 +47,10 @@ import alien.communications.SimpleClient;
 			if (idx >= 0) {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1));
-					address = address.substring(0, idx);
+					addr = address.substring(0, idx);
 				} catch (Exception e) {
 				}
 			}
-			if (port == 0)
-				port = defaultPort;
 
 		}
 		return SimpleClient.dispatchRequest(r, addr, port);

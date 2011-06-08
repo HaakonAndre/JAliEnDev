@@ -146,11 +146,11 @@ public class JobAgent extends Thread {
 				err.write(exitStatus.getStdErr());
 				err.close();
 
-				System.out.println("ran, stdout+stderr should be there now");
+				System.out.println("we ran, stdout+stderr should be there now.");
 			}
 
-			System.out.println("ran, stdout: " + exitStatus.getStdOut());
-			System.out.println("ran, stderr: " + exitStatus.getStdErr());
+			System.out.println("A local cat on stdout: " + exitStatus.getStdOut());
+			System.out.println("A local cat on stderr: " + exitStatus.getStdErr());
 
 		} catch (final InterruptedException ie) {
 			System.err
@@ -234,62 +234,68 @@ public class JobAgent extends Thread {
 								JAliEnCOMMander.getSite(), lfn, null, null,
 								null, 0);
 
-						ArrayList<String> envelopes = new ArrayList<String>(
-								pfns.size());
-						for (PFN pfn : pfns) {
+						if (pfns != null) {
+							ArrayList<String> envelopes = new ArrayList<String>(
+									pfns.size());
+							for (PFN pfn : pfns) {
 
-							List<Protocol> protocols = Transfer
-									.getAccessProtocols(pfn);
-							for (final Protocol protocol : protocols) {
+								List<Protocol> protocols = Transfer
+										.getAccessProtocols(pfn);
+								for (final Protocol protocol : protocols) {
 
-								envelopes.add(protocol.put(pfn, localFile));
-								break;
+									envelopes.add(protocol.put(pfn, localFile));
+									break;
+
+								}
 
 							}
 
-						}
+							// drop the following three lines once put replies
+							// correctly
+							// with the signed envelope
+							envelopes.clear();
+							for (PFN pfn : pfns)
+								envelopes.add(pfn.ticket.envelope
+										.getSignedEnvelope());
 
-						// drop the following three lines once put replies
-						// correctly
-						// with the signed envelope
-						envelopes.clear();
-						for (PFN pfn : pfns)
-							envelopes.add(pfn.ticket.envelope
-									.getSignedEnvelope());
+							List<PFN> pfnsok = CatalogueApiUtils
+									.registerEnvelopes(
+											JAliEnCOMMander.getUser(),
+											envelopes);
+							if (!pfns.equals(pfnsok)) {
+								if (pfnsok != null && pfnsok.size() > 0) {
+									System.out.println("Only " + pfnsok.size()
+											+ " could be uploaded");
+									uploadedNotAllCopies = true;
+								} else {
 
-						List<PFN> pfnsok = CatalogueApiUtils.registerEnvelopes(
-								JAliEnCOMMander.getUser(), envelopes);
-						if (!pfns.equals(pfnsok)) {
-							if (pfnsok != null && pfnsok.size() > 0) {
-								System.out.println("Only " + pfnsok.size()
-										+ " could be uploaded");
-								uploadedNotAllCopies = true;
-							} else {
-
-								System.err.println("Upload failed, sorry!");
-								uploadedAllOutFiles = false;
-								break;
+									System.err.println("Upload failed, sorry!");
+									uploadedAllOutFiles = false;
+									break;
+								}
 							}
+						} else {
+							System.out.println("Couldn't get write envelopes for output file"); 
 						}
 					} else {
-						System.out.println("Can't upload output file"
+						System.out.println("Can't upload output file "
 								+ localFile.getName()
 								+ ", does not exist or has zero size.");
 					}
+
 				} catch (IOException e) {
 					e.printStackTrace();
 					uploadedAllOutFiles = false;
 				}
 			}
 		}
-		if(uploadedNotAllCopies)
+		if (uploadedNotAllCopies)
 			TaskQueueApiUtils.setJobStatus(job.queueId, "DONE_WARN");
 		else if (uploadedAllOutFiles)
 			TaskQueueApiUtils.setJobStatus(job.queueId, "DONE");
-		else 
+		else
 			TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_SV");
 
-		
 		return uploadedAllOutFiles;
 	}
 

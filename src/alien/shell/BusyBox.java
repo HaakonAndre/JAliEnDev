@@ -102,7 +102,7 @@ public class BusyBox {
 				for (int c = 1; c < args.length; c++)
 					command += args[c] + " ";
 				syscall(command);
-			} else if (args[0].equals("gbox")) {
+			} else if (args[0].equals("gbbox")) {
 				String command = "alien -s -e ";
 				for (int c = 1; c < args.length; c++)
 					command += args[c] + " ";

@@ -22,7 +22,8 @@ public class SimpleCatalogueApiService extends Thread {
 	
 
 	private static final int defaultPort = 5282;
-	private static final String servicePort = "catalogueApiService";
+	private static final String serviceName = "catalogueApiService";
+
 
 	
 	
@@ -32,9 +33,21 @@ public class SimpleCatalogueApiService extends Thread {
 	public void run(){
 		
 		int port = 0;
-		try{
-		port = Integer.parseInt(ConfigUtils.getConfig().gets(servicePort).trim());
-		} catch(NumberFormatException e){}
+		
+		String address = ConfigUtils.getConfig().gets(serviceName).trim();
+
+		if (address.length() != 0) {
+
+			int idx = address.indexOf(':');
+
+			if (idx >= 0) {
+				try {
+					port = Integer.parseInt(address.substring(idx + 1));
+					address = address.substring(0, idx);
+				} catch (Exception e) {
+				}
+			}
+		}
 		
 		if(port==0)
 			port = defaultPort;
