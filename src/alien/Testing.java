@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import lazyj.Utils;
 import utils.XRDChecker;
 import alien.catalogue.BookingTable;
-import alien.catalogue.CatalogueUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -27,7 +26,6 @@ import alien.io.xrootd.XrootdFile;
 import alien.io.xrootd.XrootdListing;
 import alien.se.SE;
 import alien.se.SEUtils;
-import alien.services.XrootDEnvelopeSigner;
 import alien.user.UserFactory;
 
 /**

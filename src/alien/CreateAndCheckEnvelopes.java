@@ -17,7 +17,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 
 import alien.config.ConfigUtils;
-import alien.tsealedEnvelope.EncryptedAuthzToken;
+import alien.io.xrootd.envelopes.EncryptedAuthzToken;
 
 public class CreateAndCheckEnvelopes {
 
