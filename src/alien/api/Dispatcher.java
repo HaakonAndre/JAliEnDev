@@ -52,10 +52,8 @@ public class Dispatcher {
 			
 			ret = dispatchRequest(r);
 			
-			if (ret!=null && (ret instanceof Cacheable)){
-				final Cacheable retc = (Cacheable) ret;
-				
-				cache.put(key, ret, retc.getTimeout());
+			if (ret!=null){
+				cache.put(key, ret, c.getTimeout());
 			}
 			
 			return ret;
