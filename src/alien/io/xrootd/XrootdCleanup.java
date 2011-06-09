@@ -193,6 +193,9 @@ public class XrootdCleanup {
 		try{
 			final XrootdListing listing = new XrootdListing(server, path);
 			
+			if (se.getName().toLowerCase().contains("dcache"))
+				listing.setSE(se);
+			
 			for (final XrootdFile file: listing.getFiles()){
 				fileCheck(file);
 			}

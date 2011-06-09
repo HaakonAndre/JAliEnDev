@@ -3,6 +3,7 @@ package alien.io.xrootd;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -11,6 +12,13 @@ import java.util.concurrent.TimeUnit;
 
 import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExitStatus;
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.XrootDEnvelope;
+import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
+import alien.se.SE;
 
 /**
  * @author costing
@@ -50,10 +58,53 @@ public class XrootdListing {
 		init();
 	}
 	
+	private SE se = null;
+	
+	/**
+	 * If this is defined then envelopes are used for listing the content
+	 * 
+	 * @param se
+	 */
+	public void setSE(final SE se){
+		this.se = se;
+	}
+	
 	private void init() throws IOException{
 		entries = new TreeSet<XrootdFile>();
 		
-		final List<String> command = Arrays.asList("xrd", server, "ls "+path);
+		String xrdcommand = "ls "+path;
+		
+		if (se!=null){
+			// dcache requires envelopes for listing
+			
+			GUID guid = GUIDUtils.createGuid();
+			
+			final PFN pfn = new PFN(guid, se);
+			
+			pfn.pfn = se.generateProtocol()+path;
+					
+			final XrootDEnvelope env =  new XrootDEnvelope(AccessType.READ, pfn);
+
+			try {
+				if (se.needsEncryptedEnvelope){
+						XrootDEnvelopeSigner.encryptEnvelope(env);
+				}
+				else{
+					// new xrootd implementations accept signed-only envelopes
+					XrootDEnvelopeSigner.signEnvelope(env);	
+				}
+			}
+			catch (final GeneralSecurityException e) {
+				e.printStackTrace();
+				return;
+			}
+			
+			String envelope = env.getEncryptedEnvelope();
+			
+			xrdcommand+="?authz=" + envelope;
+		}
+		
+		final List<String> command = Arrays.asList("xrd", server, xrdcommand);
 		
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 		
