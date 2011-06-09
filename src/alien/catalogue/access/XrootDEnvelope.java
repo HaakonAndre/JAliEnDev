@@ -77,7 +77,7 @@ public class XrootDEnvelope implements Serializable {
 	public XrootDEnvelope(String envelope) {
 
 		StringTokenizer st = new StringTokenizer(envelope, "\\&");
-		String pfn = "";
+		String spfn = "";
 		String turl = "";
 		String lfn = "";
 		String guid = "";
@@ -107,7 +107,7 @@ public class XrootDEnvelope implements Serializable {
 				else if ("turl".equals(key))
 					turl = value;
 				else if ("pfn".equals(key))
-					pfn = value;
+					spfn = value;
 				else if ("lfn".equals(key))
 					lfn = value;
 				else if ("guid".equals(key))
@@ -124,18 +124,18 @@ public class XrootDEnvelope implements Serializable {
 
 		g.md5 = md5;
 		g.size = size;
-		if(turl.endsWith(pfn))
-			pfn = turl;
+		if(turl.endsWith(spfn))
+			spfn = turl;
 		else{
 			//turl has #archive
 			if(turl.contains("#"))
 				turl = turl.substring(0,turl.indexOf('#'));
 			//turl has LFN rewrite for dCache etc
 			if(turl.endsWith(lfn))
-					turl = turl.replace(lfn, pfn);
+					turl = turl.replace(lfn, spfn);
 		}
 
-		this.pfn = new PFN(pfn, g, SEUtils.getSE(se));
+		this.pfn = new PFN(spfn, g, SEUtils.getSE(se));
 
 		signedEnvelope = envelope;
 	}
@@ -160,18 +160,29 @@ public class XrootDEnvelope implements Serializable {
 
 		final String access = type.toString().replace("write", "write-once");
 
-		final String[] pfnsplit = pfn.getPFN().split("//");
+		String sPFN = pfn.getPFN();
 
-		if (pfnsplit.length<3){
-			System.err.println("Split is not ok : "+pfnsplit.length+" for "+pfn.getPFN());
-			return null;
+		final SE se = SEUtils.getSE(pfn.seNumber);
+		
+		String sStoragePrefix = se.generateProtocol();
+		
+		if (sPFN.startsWith(sStoragePrefix)){
+			sPFN = sPFN.substring(sStoragePrefix.length());
+		}
+		else{
+			final String[] pfnsplit = pfn.getPFN().split("//");
+
+			if (pfnsplit.length<3){
+				System.err.println("Split is not ok : "+pfnsplit.length+" for "+pfn.getPFN());
+				return null;
+			}
+			
+			sPFN = "/"+pfnsplit[2];
 		}
 		
 		final GUID guid = pfn.getGuid();
 
 		final Set<LFN> lfns = guid.getLFNs();
-
-		final SE se = SEUtils.getSE(pfn.seNumber);
 
 		String ret = "<authz>\n  <file>\n" + "    <access>" + access
 				+ "</access>\n";
@@ -200,7 +211,7 @@ public class XrootDEnvelope implements Serializable {
 		ret += "    <size>" + refGUID.size + "</size>" + "\n" + "    <guid>"
 				+ Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n"
 				+ "    <md5>" + Format.escHtml(refGUID.md5) + "</md5>\n"
-				+ "    <pfn>" + Format.escHtml("/" + pfnsplit[2]) + "</pfn>\n"
+				+ "    <pfn>" + Format.escHtml(sPFN) + "</pfn>\n"
 				+ "    <se>" + Format.escHtml(se.getName()) + "</se>\n"
 				+ "  </file>\n</authz>\n";
 
