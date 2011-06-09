@@ -162,6 +162,11 @@ public class XrootDEnvelope implements Serializable {
 
 		final String[] pfnsplit = pfn.getPFN().split("//");
 
+		if (pfnsplit.length<3){
+			System.err.println("Split is not ok : "+pfnsplit.length+" for "+pfn.getPFN());
+			return null;
+		}
+		
 		final GUID guid = pfn.getGuid();
 
 		final Set<LFN> lfns = guid.getLFNs();
