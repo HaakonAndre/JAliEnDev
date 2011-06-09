@@ -147,6 +147,9 @@ public class XrootdListing {
         			iae.printStackTrace();
         		}
         	}
+        	else{
+        		System.err.println(sLine);
+        	}
         }
 	}
 	
