@@ -38,6 +38,8 @@ public class XrootdListing {
 	
 	private Set<XrootdFile> entries;
 	
+	private SE se = null;
+	
 	/**
 	 * @param server server host and port
 	 * @throws IOException 
@@ -52,21 +54,21 @@ public class XrootdListing {
 	 * @throws IOException 
 	 */
 	public XrootdListing(final String server, final String path) throws IOException{
-		this.server = server;
-		this.path = path;
-		
-		init();
+		this(server, path, null);
 	}
 	
-	private SE se = null;
-	
 	/**
-	 * If this is defined then envelopes are used for listing the content
-	 * 
-	 * @param se
+	 * @param server server host and port
+	 * @param path starting path
+	 * @param se 
+	 * @throws IOException 
 	 */
-	public void setSE(final SE se){
+	public XrootdListing(final String server, final String path, final SE se) throws IOException{
+		this.server = server;
+		this.path = path;
 		this.se = se;
+		
+		init();
 	}
 	
 	private void init() throws IOException{

@@ -191,16 +191,10 @@ public class XrootdCleanup {
 		dirsSeen.incrementAndGet();
 		
 		try{
-			final XrootdListing listing = new XrootdListing(server, path);
+			final boolean setSE = se.getName().toLowerCase().contains("dcache");  
 			
-			if (se.getName().toLowerCase().contains("dcache")){
-				System.err.println("Setting SE to : "+se);
-				listing.setSE(se);
-			}
-			else{
-				System.err.println("Not setting SE to : "+se);
-			}
-			
+			final XrootdListing listing = new XrootdListing(server, path, setSE ? se : null) ;
+						
 			for (final XrootdFile file: listing.getFiles()){
 				fileCheck(file);
 			}
