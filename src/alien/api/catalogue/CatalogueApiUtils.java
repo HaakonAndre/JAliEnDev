@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -35,7 +36,15 @@ public class CatalogueApiUtils {
 	 * @return the LFN objects
 	 */
 	public static List<LFN> getLFNs(String slfn) {
-		return getLFNs(slfn);
+
+		try {
+			LFNListingfromString rlfn = (LFNListingfromString) Dispatcher.execute(new LFNListingfromString(slfn),true);
+			return rlfn.getLFNs();
+		} catch (IOException e) {
+			System.out.println("Could not get LFN: " + slfn);
+			e.printStackTrace();
+		}
+		return null;
 	}
 	
 	/**

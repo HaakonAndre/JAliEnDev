@@ -15,46 +15,43 @@ import alien.catalogue.LFNUtils;
  */
 public class LFNListingfromString extends Request {
 
-	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -7167353294190733455L;
 	private final String path;
-	private final boolean evenIfDoesNotExist;
 
-	private List<LFN> lfns;
-	
+	private List<LFN> lfns = null;
+
 	/**
 	 * @param path
 	 * @param evenIfDoesNotExist
 	 */
-	public LFNListingfromString(final String path, final boolean evenIfDoesNotExist){
+	public LFNListingfromString(final String path) {
 		this.path = path;
-		this.evenIfDoesNotExist = evenIfDoesNotExist;
 	}
-	
+
 	@Override
 	public void run() {
-		LFN entry = LFNUtils.getLFN(path,evenIfDoesNotExist);
+		LFN entry = LFNUtils.getLFN(path, false);
 
 		if (entry != null) {
-			if (entry.type == 'd') {
+			if (entry.type == 'd')
 				this.lfns = entry.list();
-			} else
+			else
 				this.lfns = Arrays.asList(entry);
 		}
 	}
-	
+
 	/**
 	 * @return the requested LFN
 	 */
-	public List<LFN> getLFNs(){
+	public List<LFN> getLFNs() {
 		return this.lfns;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "Asked for : "+this.path+" ("+this.evenIfDoesNotExist+"), reply is: "+this.lfns;
+		return "Asked for : " + this.path + " reply is: " + this.lfns;
 	}
 }

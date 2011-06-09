@@ -12,14 +12,25 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 	public void execute() throws Exception {
 
+		if (alArguments.size() < 2) {
+			printHelp();
+			return;
+		}
+
 		ArrayList<String> args = new ArrayList<String>();
 		args.addAll(alArguments);
-		String command = alArguments.get(0);
-		args.remove(alArguments.get(0));
-		int times = Integer.parseInt(alArguments.get(1));
+		int times = 0;
+		try {
+			times = Integer.parseInt(alArguments.get(0));
+			args.remove(alArguments.get(0));
+		} catch (NumberFormatException e) {
+			printHelp();
+		}
+		String command = alArguments.get(1);
 		args.remove(alArguments.get(1));
-		JAliEnBaseCommand comm = (JAliEnBaseCommand) JAliEnCOMMander.getCommand(
-				command, new Object[] { args });
+
+		JAliEnBaseCommand comm = (JAliEnBaseCommand) JAliEnCOMMander
+				.getCommand(command, new Object[] { args });
 		comm.silent();
 
 		ArrayList<Long> timings = new ArrayList<Long>(times);
@@ -30,9 +41,10 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 			timings.add(System.currentTimeMillis() - lStart);
 		}
 		long total = 0;
-		for(Long t: timings)
+		for (Long t : timings)
 			total += t;
-		System.out.println("We executed: "+ times + " command " + command + ", avr msecs: " + (total/times) + ", total msecs:" +total);
+		System.out.println("We executed: " + times + " command " + command
+				+ ", avr msecs: " + (total / times) + ", total msecs:" + total);
 
 	}
 
@@ -41,10 +53,8 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 
-		System.out.println(AlienTime.getStamp() + "Usage: cat  ... ");
-		System.out.println("		-g : get file by GUID");
-		System.out.println("		-s : se,se2,!se3,se4,!se5");
-		System.out.println("		-o : outputfilename");
+		System.out.println(AlienTime.getStamp()
+				+ "Usage: time <times>  <command> [command_arguments] ");
 	}
 
 	/**

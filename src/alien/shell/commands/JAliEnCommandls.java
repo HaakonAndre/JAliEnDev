@@ -59,12 +59,15 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		ArrayList<String> alPaths = new ArrayList<String>(alArguments.size());
 
 		for (String arg : alArguments) {
-			if ("-b".equals(arg))
+			if ("-l".equals(arg))
+				bL = true;
+			else if ("-bulk".equals(arg))
+				bBulk = true;
+			else if ("-b".equals(arg))
 				bB = true;
 			else if ("-a".equals(arg))
 				bA = true;
-			else if ("-l".equals(arg))
-				bL = true;
+
 			else if ("-F".equals(arg))
 				bF = true;
 			else
@@ -100,13 +103,10 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 				} else {
 					if (!silent)
 						System.out.println("No such file or directory");
-					// what message in case of error?
-
 				}
-				// if (iDirs != 1) {
-				// System.out.println(sPath + "\n");
-				// }
+			}
 
+			if (directory != null) {
 				for (LFN localLFN : directory) {
 
 					if (!bA && localLFN.getFileName().startsWith("."))
@@ -142,6 +142,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 						System.out.println(ret);
 				}
 			}
+
 		}
 		// timingChallenge = (System.currentTimeMillis() - lStart);
 		// System.err.println("jAliEn TIMING CHALLENGE : "+ timingChallenge );
