@@ -397,12 +397,10 @@ public class Xrootd extends Protocol {
 					command.add("-OD&authz="
 							+ pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null) {
-					System.out.println("we have a signed envelope:"
-							+ pfn.ticket.envelope.getSignedEnvelope());
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+
 				}
 			}
-			System.out.println("WILL CALL: + " +command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
@@ -490,7 +488,7 @@ public class Xrootd extends Protocol {
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope)
 			throws IOException {
-		return xrdstat(pfn, returnEnvelope, true);
+		return xrdstat(pfn, returnEnvelope, true, false);
 	}
 
 	/**
@@ -500,35 +498,49 @@ public class Xrootd extends Protocol {
 	 * @param pfn
 	 * @param returnEnvelope
 	 * @param retryWithDelay
+	 * @param forceRecalcMd5 
 	 * @return the signed envelope from the storage, if it knows how to generate
 	 *         one
 	 * @throws IOException
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope,
-			final boolean retryWithDelay) throws IOException {
-
-		final boolean hasEnvelope = pfn.ticket != null
-				&& (pfn.ticket.envelope != null);
-		final boolean hasOnlySignedEnvelope = hasEnvelope
-				&& pfn.ticket.envelope.getEncryptedEnvelope() == null;
+			final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
 
 		for (int statRetryCounter = 0; statRetryCounter < statRetryTimes.length; statRetryCounter++) {
 			try {
 				final List<String> command = new LinkedList<String>();
-				command.add("xrdstat");
 
-				command.addAll(getCommonArguments());
 
-				if (hasOnlySignedEnvelope && returnEnvelope)
-					command.add("-returnEnvelope");
-				command.add(pfn.getPFN());
+				if (returnEnvelope) {
+					// e.g. xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+					// TODO: 
+					// clean the following up, it's working but not very good looking 
+					command.add("xrd");
+					String qProt = pfn.getPFN().substring(7);
+					String host = qProt.substring(0,qProt.indexOf(':'));
+					String port = qProt.substring(qProt.indexOf(':')+1,qProt.indexOf('/'));	
+					try{
+						int pno = Integer.parseInt(port);
+						pno++;
+						port = "" + pno;
+					} catch(NumberFormatException n) {}
+					command.add(host + ":" + port);
+					command.add("query");
+					command.add("32");
+					String qpfn = qProt.substring(qProt.indexOf('/')+1) + "?getrespenv=1";
 
-				if (hasOnlySignedEnvelope && returnEnvelope)
-					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+					if (forceRecalcMd5)
+						qpfn += "\\&recomputemd5=1";
+					command.add(qpfn);
+					
+				} else {
+					command.add("xrdstat");
+					command.addAll(getCommonArguments());
+					command.add(pfn.getPFN());
 
-				System.out.println("calling xrdstat: " + command);
-				
+				}
+
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 						command);
 
@@ -562,22 +574,18 @@ public class Xrootd extends Protocol {
 					continue;
 				}
 
-				if (hasOnlySignedEnvelope && returnEnvelope) {
-					System.out.println("reply ticket coming:" + exitStatus.getStdOut());
+				if (returnEnvelope) 
 					return exitStatus.getStdOut();
-				} else {
-					System.out.println("Going to old way ... " + exitStatus.getStdOut());
+				else {
 					long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 
-					if (pfn.getGuid().size == filesize) {
+					if (pfn.getGuid().size == filesize)
 						return exitStatus.getStdOut();
-					}
 				}
 
-				if (sleep == 0 || !retryWithDelay) {
+				if (sleep == 0 || !retryWithDelay)
 					throw new IOException(
 							"The xrdstat could not confirm the upload.");
-				}
 
 				Thread.sleep(sleep * 1000);
 				continue;

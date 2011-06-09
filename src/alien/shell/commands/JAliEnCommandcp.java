@@ -208,7 +208,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 		
-		System.out.println("will ask to register this stuff: " + envelopes);
 		List<PFN> pfnsok = 	CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.user, envelopes);
 		if(pfns.equals(pfnsok))
 			System.out.println("File successfully uploaded.");

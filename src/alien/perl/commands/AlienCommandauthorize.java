@@ -472,7 +472,7 @@ public class AlienCommandauthorize extends AlienCommand {
 					System.err
 							.println("Sorry ... Could not sign the envelope!");
 				}
-				String addEnv = pfn.ticket.envelope.getSignedEnvelope();
+				String addEnv = pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\&");
 
 				// drop the following once LDAP schema is updated and version
 				// number properly on

@@ -186,7 +186,7 @@ public class XrootDEnvelopeSigner {
 		
 		signer.update(toBeSigned.getBytes());
 
-		envelope.setSignedEnvelope((toBeSigned + "&signature=" + Base64.encode(signer.sign())).replace("&", "\\&"));
+		envelope.setSignedEnvelope(toBeSigned + "&signature=" + Base64.encode(signer.sign()));
 
 	}
 
@@ -219,8 +219,10 @@ public class XrootDEnvelopeSigner {
 		HashMap<String, String> env = new HashMap<String, String>();
 
 		String signedEnvelope = "";
+		if(envelope.contains("\\&"))
+			envelope.replace("\\&", "&");
 
-		StringTokenizer st = new StringTokenizer(envelope, "\\&");
+		StringTokenizer st = new StringTokenizer(envelope, "&");
 
 		while (st.hasMoreTokens()) {
 			String tok = st.nextToken();
