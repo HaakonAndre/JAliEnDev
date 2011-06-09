@@ -189,6 +189,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		}
 		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
+		ArrayList<String> registerPFNs = new ArrayList<String>(pfns.size());
+
 
 		for (PFN pfn : pfns) {
 
@@ -199,8 +201,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					if (!silent)
 						System.out.println("Uploading file "
 								+ source.getCanonicalPath() + " to "+ pfn.getPFN());
-					if(target!=null)
-						envelopes.add(target);
+					if(target!=null){
+						if(pfn.ticket!=null && pfn.ticket.envelope!=null && pfn.ticket.envelope.getSignedEnvelope()!=null)
+							if(pfn.ticket.envelope.getEncryptedEnvelope()==null)
+							envelopes.add(target);
+						else 
+							envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+					}
 					break;
 				} catch (IOException e) {
 					// ignore
@@ -208,11 +215,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 		
-		List<PFN> pfnsok = 	CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.user, envelopes);
-		if(pfns.equals(pfnsok))
+		if(envelopes.size()!=0)
+			CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.user, envelopes);
+		if(registerPFNs.size()!=0)
+			CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.user, envelopes);
+		
+		if(pfns.size()==(envelopes.size()+registerPFNs.size()))
 			System.out.println("File successfully uploaded.");
-		else if(pfnsok!=null && pfnsok.size()>0)
-			System.err.println("Only " + pfnsok.size()+ " PFNs could be uploaded");
+		else if((envelopes.size()+registerPFNs.size())>0)
+			System.err.println("Only " + (envelopes.size()+registerPFNs.size())+ " PFNs could be uploaded");
 		else 
 			System.out.println("Upload failed, sorry!");
 
