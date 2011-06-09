@@ -103,8 +103,10 @@ public class XrootdListing {
 			
 			xrdcommand+="?authz=" + envelope;
 		}
-		
+				
 		final List<String> command = Arrays.asList("xrd", server, xrdcommand);
+		
+		System.err.println("Executing:\n"+command);
 		
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 		

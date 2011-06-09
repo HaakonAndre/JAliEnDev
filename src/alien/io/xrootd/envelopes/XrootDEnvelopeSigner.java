@@ -273,7 +273,7 @@ public class XrootDEnvelopeSigner {
 
 		final String plainEnvelope = envelope.getUnEncryptedEnvelope(); 
 		
-		//System.err.println("Encrypting:\n"+plainEnvelope);
+		System.err.println("Encrypting:\n"+plainEnvelope);
 		
 		envelope.setEncryptedEnvelope(authz.encrypt(plainEnvelope));
 	}
