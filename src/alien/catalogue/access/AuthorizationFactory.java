@@ -186,12 +186,11 @@ public final class AuthorizationFactory {
 
 			try {
 				final SE se = SEUtils.getSE(pfn.seNumber);
+				XrootDEnvelopeSigner.signEnvelope(env);
 
 				if (se != null && se.needsEncryptedEnvelope) {
+					System.out.println("SE needs encrypted envelope");
 					XrootDEnvelopeSigner.encryptEnvelope(env);
-				} else {
-					// new xrootd implementations accept signed-only envelopes
-					XrootDEnvelopeSigner.signEnvelope(env);
 				}
 			} catch (GeneralSecurityException gse) {
 				logger.log(Level.SEVERE, "Cannot sign and encrypt envelope",

@@ -114,6 +114,9 @@ public class SE implements Serializable, Comparable<SE>{
 		seVersion = db.geti("seVersion");
 		
 		needsEncryptedEnvelope = (seVersion < 200);
+		//TODO: remove this, when the version in the DB is working and not anymore overwritten to null
+		if("alice::cern::setest".equals(seName.toLowerCase()))
+			needsEncryptedEnvelope=false;
 		
 		seioDaemons = db.gets("seioDaemons");
 		

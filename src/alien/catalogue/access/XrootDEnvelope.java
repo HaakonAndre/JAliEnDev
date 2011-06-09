@@ -155,6 +155,8 @@ public class XrootDEnvelope implements Serializable {
 	 * @return envelope xml
 	 */
 	public String getUnEncryptedEnvelope() {
+		
+		System.out.println("OLDENV: Preparing encrypted envelope.");
 
 		final String access = type.toString().replace("write", "write-once");
 
@@ -281,7 +283,10 @@ public class XrootDEnvelope implements Serializable {
 			e.put("md5", archiveAnchorGUID.md5);
 
 		}
-		e.put("se", se.getName());
+		if("alice::cern::setest".equals(se.getName().toLowerCase()))
+			e.put("se", "alice::cern::testse");
+		else 
+			e.put("se", se.getName());
 		
 		e.put("xurl",addXURLForSpecialSEs(e.get("lfn")));
 		
@@ -290,7 +295,7 @@ public class XrootDEnvelope implements Serializable {
 		String ret = "";
 		String usedHashOrd = "";
 		
-		System.out.println("Creating envelope:");
+		System.out.println("Creating unsigned envelope:");
 		
 		while (hash.hasMoreTokens()) {
 			String key = hash.nextToken();

@@ -178,42 +178,42 @@ public class PFNforWrite extends Request {
 			}
 
 		}
-
-		for (PFN pfn : pfns) {
-			if (pfn.ticket.envelope == null) {
-				System.err.println("Sorry ... Envelope is null!");
-			} else {
-				pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
-				try {
-					// we need to both encrypt and sign, the later is not
-					// automatic
-					XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-				} catch (SignatureException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				} catch (InvalidKeyException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				} catch (NoSuchAlgorithmException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				}
-				String addEnv = pfn.ticket.envelope.getSignedEnvelope();
-
-				// drop the following once LDAP schema is updated and version
-				// number properly on
-				if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber)
-						.getName().toLowerCase())) {
-					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
-						addEnv += "\\&oldEnvelope="
-								+ pfn.ticket.envelope.getEncryptedEnvelope();
-						System.out.println("Creating ticket (encrypted): "
-								+ pfn.ticket.envelope.getUnEncryptedEnvelope());
-					}
-				}
-
-			}
-		}
+//
+//		for (PFN pfn : pfns) {
+//			if (pfn.ticket.envelope == null) {
+//				System.err.println("Sorry ... Envelope is null!");
+//			} else {
+//				pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
+//				try {
+//					// we need to both encrypt and sign, the later is not
+//					// automatic
+//					XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
+//				} catch (SignatureException e) {
+//					System.err
+//							.println("Sorry ... Could not sign the envelope!");
+//				} catch (InvalidKeyException e) {
+//					System.err
+//							.println("Sorry ... Could not sign the envelope!");
+//				} catch (NoSuchAlgorithmException e) {
+//					System.err
+//							.println("Sorry ... Could not sign the envelope!");
+//				}
+//				String addEnv = pfn.ticket.envelope.getSignedEnvelope();
+//
+//				// drop the following once LDAP schema is updated and version
+//				// number properly on
+//				if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber)
+//						.getName().toLowerCase())) {
+//					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
+//						addEnv += "\\&oldEnvelope="
+//								+ pfn.ticket.envelope.getEncryptedEnvelope();
+//						System.out.println("Creating ticket (encrypted): "
+//								+ pfn.ticket.envelope.getUnEncryptedEnvelope());
+//					}
+//				}
+//
+//			}
+//		}
 
 	}
 

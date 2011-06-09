@@ -51,7 +51,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				ses = new ArrayList<String>();
 				exses = new ArrayList<String>();
 				final StringTokenizer st = new StringTokenizer(it.next(), ",");
-				if (st.hasMoreTokens()) {
+				while (st.hasMoreTokens()) {
 					String se = st.nextToken();
 					if (se.indexOf('!') == 0)
 						exses.add(se.substring(1));
@@ -188,6 +188,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			pfns = CatalogueApiUtils.getPFNsToWrite(JAliEnCOMMander.user,JAliEnCOMMander.site, lfn, ses, exses,null,0);
 
 		}
+		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
 
 		for (PFN pfn : pfns) {
 
@@ -196,9 +197,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				try {
 					target = protocol.put(pfn, source);
 					if (!silent)
-						System.out.println("Downloaded file to "
-								+ source.getCanonicalPath());
-
+						System.out.println("Uploading file "
+								+ source.getCanonicalPath() + " to "+ pfn.getPFN());
+					if(target!=null)
+						envelopes.add(target);
 					break;
 				} catch (IOException e) {
 					// ignore
@@ -206,14 +208,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 		
-		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
-		for (PFN pfn : pfns)
-			envelopes.add(pfn.ticket.envelope.getSignedEnvelope()); 
+		System.out.println("will ask to register this stuff: " + envelopes);
 		List<PFN> pfnsok = 	CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.user, envelopes);
 		if(pfns.equals(pfnsok))
 			System.out.println("File successfully uploaded.");
 		else if(pfnsok!=null && pfnsok.size()>0)
-			System.err.println("Only " + pfnsok.size()+ " could be uploaded");
+			System.err.println("Only " + pfnsok.size()+ " PFNs could be uploaded");
 		else 
 			System.out.println("Upload failed, sorry!");
 
@@ -226,10 +226,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	public void printHelp() {
 		System.out
 				.println(AlienTime.getStamp()
-						+ "Usage: cp  [file:///localfile /gridfile] or  [/gridfile file:///localfile]");
+						+ "Usage: cp  <file:///localfile /gridfile> or  </gridfile file:///localfile>");
 		System.out.println("		-g : get by GUID");
-		System.out.println("		-s : se,se2,!se3,se4,!se5,disk=3,tape=1");
-		System.out.println("		-o : outputfilename");
+		System.out.println("		-S : [se,se2,!se3,se4,!se5,disk=3,tape=1]");
+		System.out.println("		-s : execute command silent");
+
 	}
 
 	/**
