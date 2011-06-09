@@ -28,6 +28,16 @@ public class CatalogueApiUtils {
 		return getLFN(slfn, false);
 	}
 
+
+	/**
+	 * Get LFNs from String as a directory listing, only if it exists
+	 * @param slfn name of the LFN
+	 * @return the LFN objects
+	 */
+	public static List<LFN> getLFNs(String slfn) {
+		return getLFNs(slfn);
+	}
+	
 	/**
 	 * Get LFN from String
 	 * @param slfn name of the LFN

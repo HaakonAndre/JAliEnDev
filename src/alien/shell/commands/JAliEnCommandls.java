@@ -39,6 +39,11 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	private boolean bB = false;
 
+	/**
+	 * marker for -bulk argument
+	 */
+	private boolean bBulk = false;
+
 	// public long timingChallenge = 0;
 
 	/**
@@ -76,20 +81,28 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		for (String sPath : alPaths) {
 			// listing current directory
 			if (!sPath.startsWith("/"))
-				sPath = JAliEnCOMMander.getCurrentDir().getCanonicalName() + sPath;
+				sPath = JAliEnCOMMander.getCurrentDir().getCanonicalName()
+						+ sPath;
 
 			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
 
-			final LFN entry = CatalogueApiUtils.getLFN(sPath);
+			if (bBulk) {
+				directory = CatalogueApiUtils.getLFNs(sPath);
+			} else {
+				LFN entry = CatalogueApiUtils.getLFN(sPath);
 
-			// what message in case of error?
-			if (entry != null) {
+				if (entry != null) {
 
-				if (entry.type == 'd') {
-					directory = entry.list();
-				} else
-					directory = Arrays.asList(entry);
+					if (entry.type == 'd') {
+						directory = entry.list();
+					} else
+						directory = Arrays.asList(entry);
+				} else {
+					if (!silent)
+						System.out.println("No such file or directory");
+					// what message in case of error?
 
+				}
 				// if (iDirs != 1) {
 				// System.out.println(sPath + "\n");
 				// }
@@ -128,9 +141,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					if (!silent)
 						System.out.println(ret);
 				}
-			} else {
-				if (!silent)
-					System.out.println("No such file or directory");
 			}
 		}
 		// timingChallenge = (System.currentTimeMillis() - lStart);
