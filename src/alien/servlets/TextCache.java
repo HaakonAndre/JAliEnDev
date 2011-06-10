@@ -12,6 +12,7 @@ import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
 import lazyj.ExtendedServlet;
+import lazyj.Format;
 import lazyj.LRUMap;
 import lia.util.StringFactory;
 import alien.monitoring.Monitor;
@@ -243,7 +244,26 @@ public class TextCache extends ExtendedServlet {
 			}
 			else{
 				for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
-					pwOut.println(entry.getKey()+" : "+entry.getValue().size());
+					final Map<String, CacheValue> cache = entry.getValue();
+					
+					int min = -1;
+					int max = 0;
+					long total = 0;
+					double avg ;
+					
+					synchronized (cache){
+						for (final CacheValue c: cache.values()){
+							final int size = c.value.length();
+							
+							min = (min<0 || size<min) ? size : min;
+							max = Math.max(max, size);
+							total += size;
+						}
+						
+						avg = (double) total / cache.size();
+					}
+					
+					pwOut.println(entry.getKey()+" : "+cache.size()+" (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+")");
 				}				
 			}
 			pwOut.flush();
