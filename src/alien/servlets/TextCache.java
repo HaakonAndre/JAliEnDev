@@ -243,28 +243,61 @@ public class TextCache extends ExtendedServlet {
 				}
 			}
 			else{
-				for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
-					final Map<String, CacheValue> cache = entry.getValue();
-					
-					int min = -1;
-					int max = 0;
-					long total = 0;
-					double avg ;
-					
-					synchronized (cache){
-						for (final CacheValue c: cache.values()){
-							final int size = c.value.length();
+				if (gets("ns").length()==0){				
+					for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
+						final Map<String, CacheValue> cache = entry.getValue();
+						
+						int min = -1;
+						int max = 0;
+						long total = 0;
+						double avg ;
+						
+						synchronized (cache){
+							for (final CacheValue c: cache.values()){
+								final int size = c.value.length();
+								
+								min = (min<0 || size<min) ? size : min;
+								max = Math.max(max, size);
+								total += size;
+							}
 							
-							min = (min<0 || size<min) ? size : min;
-							max = Math.max(max, size);
-							total += size;
+							avg = (double) total / cache.size();
 						}
 						
-						avg = (double) total / cache.size();
-					}
+						pwOut.println(entry.getKey()+" : "+cache.size()+" (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+")");
+					}				
+				}
+				else{
+					final Map<String, CacheValue> cache = namespaces.get(ns);
 					
-					pwOut.println(entry.getKey()+" : "+cache.size()+" (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+")");
-				}				
+					if (cache==null || cache.size()==0){
+						pwOut.println("Namespace is empty");
+					}
+					else{
+						int min = -1;
+						int max = 0;
+						long total = 0;
+						double avg ;						
+						
+						final boolean values = gets("values").length()>0;
+						
+						synchronized (cache){
+							for (final Map.Entry<String, CacheValue> me: cache.entrySet()){
+								final int size = me.getValue().value.length();
+								
+								min = (min<0 || size<min) ? size : min;
+								max = Math.max(max, size);
+								total += size;
+								
+								pwOut.println(me.getKey()+" : "+size+(values ? " : "+me.getValue().value : ""));
+							}
+							
+							avg = (double) total / cache.size();
+						}
+						
+						pwOut.println("\n\n----------------\n\n"+cache.size()+" entries (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+")");
+					}
+				}
 			}
 			pwOut.flush();
 			
