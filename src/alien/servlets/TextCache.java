@@ -252,6 +252,8 @@ public class TextCache extends ExtendedServlet {
 						long total = 0;
 						double avg ;
 						
+						long hits = 0;
+						
 						synchronized (cache){
 							for (final CacheValue c: cache.values()){
 								final int size = c.value.length();
@@ -259,12 +261,14 @@ public class TextCache extends ExtendedServlet {
 								min = (min<0 || size<min) ? size : min;
 								max = Math.max(max, size);
 								total += size;
+								
+								hits += c.accesses;
 							}
 							
 							avg = (double) total / cache.size();
 						}
 						
-						pwOut.println(entry.getKey()+" : "+cache.size()+" (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+")");
+						pwOut.println(entry.getKey()+" : "+cache.size()+" (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+") : "+hits+" hits");
 					}				
 				}
 				else{
@@ -277,25 +281,30 @@ public class TextCache extends ExtendedServlet {
 						int min = -1;
 						int max = 0;
 						long total = 0;
-						double avg ;						
+						double avg ;		
+						int hits = 0;
 						
 						final boolean values = gets("values").length()>0;
 						
 						synchronized (cache){
 							for (final Map.Entry<String, CacheValue> me: cache.entrySet()){
-								final int size = me.getValue().value.length();
+								final CacheValue cv = me.getValue();
+								
+								final int size = cv.value.length();
 								
 								min = (min<0 || size<min) ? size : min;
 								max = Math.max(max, size);
 								total += size;
 								
-								pwOut.println(me.getKey()+" : "+size+(values ? " : "+me.getValue().value : ""));
+								hits += cv.accesses;
+								
+								pwOut.println(me.getKey()+" : size "+size+", "+cv.accesses+" hits"+(values ? " : "+cv.value : ""));
 							}
 							
 							avg = (double) total / cache.size();
 						}
 						
-						pwOut.println("\n\n----------------\n\n"+cache.size()+" entries (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+")");
+						pwOut.println("\n\n----------------\n\n"+cache.size()+" entries (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+") : "+hits+" hits");
 					}
 				}
 			}
