@@ -53,7 +53,7 @@ public class RemoveSERequirements {
 	 * @param gets
 	 */
 	private static void cleanupRequirements(final int queueId, final String jdl) {
-		int idx = jdl.indexOf("Requirements = ");
+		int idx = jdl.indexOf(" Requirements = ");
 		
 		if (idx<0)
 			return;
@@ -67,7 +67,7 @@ public class RemoveSERequirements {
 		
 		String requirements = jdl.substring(idx, idx2);
 		
-		requirements = requirements.replaceAll("member\\(other.CloseSE,\".+::.+::.+\"\\)", "true");
+		requirements = requirements.replaceAll("member\\(other.CloseSE,\\\".+::.+::.+\\\"\\)", "true");
 		
 		newJDL += requirements;
 		
