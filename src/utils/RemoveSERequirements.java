@@ -55,8 +55,10 @@ public class RemoveSERequirements {
 	private static void cleanupRequirements(final int queueId, final String jdl) {
 		int idx = jdl.indexOf(" Requirements = ");
 		
-		if (idx<0)
+		if (idx<0){
+			System.err.println(queueId+" : could not locate Requirements");
 			return;
+		}
 		
 		String newJDL = jdl.substring(0, idx);
 		
@@ -67,14 +69,25 @@ public class RemoveSERequirements {
 		
 		String requirements = jdl.substring(idx, idx2);
 		
+		System.err.println(queueId+" : old requirements : "+requirements);
+		
 		requirements = requirements.replaceAll("member\\(other.CloseSE,\\\".+::.+::.+\\\"\\)", "true");
+
+		System.err.println(queueId+" : new requirements : "+requirements);
 		
 		newJDL += requirements;
 		
 		if (idx2<jdl.length())
 			newJDL += jdl.substring(idx2);
 		
-		System.err.println("New JDL for "+queueId+" is \n"+newJDL);
+		final DBFunctions db = TaskQueueUtils.getDB();
+		
+		final boolean ok = db.query("UPDATE QUEUE SET jdl='"+Format.escSQL(newJDL)+"' WHERE queueId="+queueId+" AND status='WAITING'");
+		
+		if (ok && db.getUpdateCount()==1)
+			System.err.println(queueId+" : queue updated successfully");
+		else
+			System.err.println(queueId+" : failed to update the waiting job : queue ok="+ok+", update count="+db.getUpdateCount());
 	}
 	
 }
