@@ -22,7 +22,10 @@ public class RemoveSERequirements {
 		final DBFunctions db = TaskQueueUtils.getDB();
 		
 		if (args.length==0){			
-			db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*';");
+			if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*';")){
+				System.err.println("Could not query the QUEUE, check your config/password.properies and config/processes.properties");
+				return;
+			}
 			
 			while (db.moveNext()){
 				cleanupRequirements(db.geti(1), db.gets(2));
@@ -33,13 +36,19 @@ public class RemoveSERequirements {
 				try{
 					final int queueId = Integer.parseInt(arg);
 					
-					db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and queueId="+queueId+" AND jdl rlike '.*other.CloseSE.*';");
+					if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and queueId="+queueId+" AND jdl rlike '.*other.CloseSE.*';")){
+						System.err.println("Could not query the QUEUE, check your config/password.properies and config/processes.properties");
+						return;
+					}
 					
 					if (db.moveNext())
 						cleanupRequirements(db.geti(1), db.gets(2));
 				}
 				catch (NumberFormatException nfe){
-					db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*"+Format.escSQL(arg)+".*';");
+					if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*"+Format.escSQL(arg)+".*';")){
+						System.err.println("Could not query the QUEUE, check your config/password.properies and config/processes.properties");
+						return;
+					}					
 					
 					if (db.moveNext())
 						cleanupRequirements(db.geti(1), db.gets(2));					
