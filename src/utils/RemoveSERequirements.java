@@ -91,8 +91,8 @@ public class RemoveSERequirements {
 		
 		final DBFunctions db = TaskQueueUtils.getDB();
 		
-		//final boolean ok = db.query("UPDATE QUEUE SET jdl='"+Format.escSQL(newJDL)+"' WHERE queueId="+queueId+" AND status='WAITING'");
-		final boolean ok = false;
+		final boolean ok = db.query("UPDATE QUEUE SET jdl='"+Format.escSQL(newJDL)+"' WHERE queueId="+queueId+" AND status='WAITING'");
+		//final boolean ok = false;
 		
 		if (ok && db.getUpdateCount()==1)
 			System.err.println(queueId+" : queue updated successfully");
