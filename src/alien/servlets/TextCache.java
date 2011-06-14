@@ -6,8 +6,12 @@ package alien.servlets;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,7 +29,7 @@ import alien.monitoring.MonitorFactory;
 public class TextCache extends ExtendedServlet {
 	private static final long serialVersionUID = 6024682549531639348L;
 	
-	private static final class CacheValue {
+	private static final class CacheValue{
 		public final String value;
 		
 		public final long expires;
@@ -37,6 +41,22 @@ public class TextCache extends ExtendedServlet {
 			this.expires = expires;
 		}
 	}
+	
+	private static final class EntryComparator implements Comparator <Map.Entry<String, CacheValue>>{
+
+		@Override
+		public int compare(final Entry<String, CacheValue> o1, final Entry<String, CacheValue> o2) {
+			final int diff = o2.getValue().accesses - o1.getValue().accesses;
+			
+			if (diff!=0)
+				return diff;
+			
+			return o2.getKey().compareTo(o1.getKey());
+		}
+		
+	}
+	
+	private static final EntryComparator entryComparator = new EntryComparator();
 
 	private static final class CleanupThread extends Thread{
 		public CleanupThread() {
@@ -287,7 +307,11 @@ public class TextCache extends ExtendedServlet {
 						final boolean values = gets("values").length()>0;
 						
 						synchronized (cache){
-							for (final Map.Entry<String, CacheValue> me: cache.entrySet()){
+							final ArrayList<Map.Entry<String, CacheValue>> entries = new ArrayList<Map.Entry<String,CacheValue>>(cache.entrySet());
+							
+							Collections.sort(entries, entryComparator);
+							
+							for (final Map.Entry<String, CacheValue> me: entries){
 								final CacheValue cv = me.getValue();
 								
 								final int size = cv.value.length();
