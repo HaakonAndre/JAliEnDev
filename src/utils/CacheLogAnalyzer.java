@@ -120,11 +120,11 @@ public class CacheLogAnalyzer {
 			if (tok.startsWith("pass"))
 				incStats("access", "pass", tok, hit);
 			else
-			if (tok.equals("ESDs"))
-				incStats("access", "data", "ESDs", hit);
-			else
 			if (tok.equals("AOD"))
 				incStats("access", "data", "AOD", hit);
+			else
+			if (tok.equals("ESDs"))
+				incStats("access", "data", "ESDs", hit);
 			else
 			if (tok.equals("raw"))
 				incStats("access", "data", "raw", hit);
@@ -141,6 +141,7 @@ public class CacheLogAnalyzer {
 				
 				incStats("access", "OCDB_DET", tok2, hit);
 			}
+			
 			if (!runfound && RUNNO2.matcher(tok).matches()){
 				runfound = true;
 				String run = tok.substring(3, tok.indexOf('_'));
@@ -179,15 +180,23 @@ public class CacheLogAnalyzer {
 				processEnvelope(hits, key);
 		}
 		
-		for (Map.Entry<String, Map<String, Map<String, AtomicInteger>>> me: stats.entrySet()){
+		for (final Map.Entry<String, Map<String, Map<String, AtomicInteger>>> me: stats.entrySet()){
 			System.err.println("********************* "+me.getKey());
 			
-			for (Map.Entry<String, Map<String, AtomicInteger>> me2: me.getValue().entrySet()){
+			for (final Map.Entry<String, Map<String, AtomicInteger>> me2: me.getValue().entrySet()){
 				System.err.println("+++++++++++++++++++ "+me2.getKey()+" ++++++++++++++++++++++");
+
+				long lTotal = 0;
 				
-				for (Map.Entry<String, AtomicInteger> me3: sortByAccesses(me2.getValue())){
-					System.err.println(me3.getKey()+" : "+me3.getValue());
+				for (final Map.Entry<String, AtomicInteger> me3: sortByAccesses(me2.getValue())){
+					final AtomicInteger ai = me3.getValue(); 
+					
+					System.err.println(me3.getKey()+" : "+ai);
+					
+					lTotal += ai.intValue();
 				}
+				
+				System.err.println("TOTAL : "+lTotal);
 			}
 		}
 	}
