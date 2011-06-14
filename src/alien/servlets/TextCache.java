@@ -44,6 +44,10 @@ public class TextCache extends ExtendedServlet {
 	
 	private static final class EntryComparator implements Comparator <Map.Entry<String, CacheValue>>{
 
+		public EntryComparator() {
+			// nothing
+		}
+
 		@Override
 		public int compare(final Entry<String, CacheValue> o1, final Entry<String, CacheValue> o2) {
 			final int diff = o2.getValue().accesses - o1.getValue().accesses;
