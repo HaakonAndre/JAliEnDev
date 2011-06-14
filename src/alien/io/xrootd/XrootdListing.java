@@ -10,8 +10,8 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
-import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
@@ -103,6 +103,7 @@ public class XrootdListing {
 			
 			String envelope = env.getEncryptedEnvelope();
 			
+			//xrdcommand+="?authz=" + Format.encode(Format.replace(envelope, "\n", ""));
 			xrdcommand+="?authz=" + envelope;
 		}
 				
