@@ -80,7 +80,7 @@ public class CacheLogAnalyzer {
 		String image = key.substring(idx+1);
 		
 		incStats("access", "image_no", image, hit);
-		System.out.println("Incrementing image_no "+image+" with "+hit);
+		//System.out.println("Incrementing image_no "+image+" with "+hit);
 		
 		int idx2 = key.lastIndexOf('_', idx-1);
 		
@@ -111,7 +111,7 @@ public class CacheLogAnalyzer {
 		}
 		
 		incStats("access", "hot_lfns", lfn, hit);
-		System.out.println("Incrementing lfn "+lfn+" with "+hit);
+		//System.out.println("Incrementing lfn "+lfn+" with "+hit);
 		
 		if (lfn.startsWith("/alice/data/")){
 			if (lfn.indexOf("/OCDB/")>=0){
