@@ -11,8 +11,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import lazyj.Format;
 
 /**
  * @author costing
@@ -22,40 +26,97 @@ public class CacheLogAnalyzer {
 
 	private static final Map<String, Map<String, Map<String, AtomicInteger>>> stats = new TreeMap<String, Map<String, Map<String, AtomicInteger>>>();
 	
+	private static String cachedFirstLevelKey = null;
+	private static Map<String, Map<String, AtomicInteger>> cachedFirstLevel = null;
+	
+	private static String cachedSecondLevelKey = null;
+	private static Map<String, AtomicInteger> cachedSecondLevel = null;
+	
+	private static String cachedKey = null;
+	private static AtomicInteger cached = null;
+	
 	private static void incStats(final String ns1, final String ns2, final String key, final int hit){
-		Map<String, Map<String, AtomicInteger>> h1 = stats.get(ns1);
+		Map<String, Map<String, AtomicInteger>> h1;
+		Map<String, AtomicInteger> h2;
+		AtomicInteger ai;
 		
-		if (h1==null){
-			h1 = new TreeMap<String, Map<String, AtomicInteger>>();
-			stats.put(ns1, h1);
+		if (ns1.equals(cachedFirstLevelKey)){
+			if (ns2.equals(cachedSecondLevelKey)){				
+				if (key.equals(cachedKey)){
+					cached.addAndGet(hit);
+					return;
+				}
+
+				h2 = cachedSecondLevel;
+				ai = null;
+			}
+			else{
+				h2 = null;
+				ai = null;
+			}
+			
+			h1 = cachedFirstLevel;
+		}
+		else{
+			h1 = stats.get(ns1);
+					
+			if (h1==null){
+				h1 = new TreeMap<String, Map<String, AtomicInteger>>();
+				stats.put(ns1, h1);
+			}
+			
+			cachedFirstLevelKey = ns1;
+			cachedFirstLevel = h1;
+			
+			h2 = null;
+			ai = null;
 		}
 		
-		Map<String, AtomicInteger> h2 = h1.get(ns2);
-		
-		if (h2==null){
-			h2 = new TreeMap<String, AtomicInteger>();
-			h1.put(ns2, h2);
+		if (h2 == null){
+			h2 = h1.get(ns2);
+				
+			if (h2==null){
+				h2 = new ConcurrentHashMap<String, AtomicInteger>(10240);
+				h1.put(ns2, h2);
+			}
+			
+			cachedSecondLevelKey = ns2;
+			cachedSecondLevel = h2;
 		}
 		
-		AtomicInteger ai = h2.get(key);
-		
+		ai = h2.get(key);
+			
 		if (ai==null){
 			ai = new AtomicInteger(hit);
 			h2.put(key, ai);
 		}
+			
+		cachedKey = key;
+		cached = ai;
 		
 		ai.addAndGet(hit);
 	}
 	
 	private static final Pattern SE_NAME_PATTERN = Pattern.compile("^.+::.+::.+$");
 	
-	private static final Pattern YEAR = Pattern.compile("^20[01][0-9]$");
+	private static final Pattern RAW = Pattern.compile("^/alice/data/(20[01][0-9])/(LHC[^/]+)/[0]{0,3}([0-9]{6,9})/.*");
 	
-	private static final Pattern RUNNO = Pattern.compile("^\\d{6,9}$");
+	private static final Pattern ESD = Pattern.compile(".*/ESDs/(pass[^/]+)/.*");
 	
-	private static final Pattern RUNNO2 = Pattern.compile("^Run\\d{6,9}\\_");
+	private static final Pattern AOD = Pattern.compile(".*/ESDs/(pass[^/]+)/AOD[0-9]{3}/.*");
 	
-	private static void processAccess(final int hit, final String key){
+	private static final Pattern RAWOCDB = Pattern.compile("^/alice/data/(20[01][0-9])/OCDB/([^/]+)/.*");
+	
+	// /alice/sim/LHC11b10b/146824/AOD046/0091/
+	private static final Pattern SIM = Pattern.compile("^/alice/sim/(LHC[^/]+)/([0-9]{6,9})/.*");
+	
+	private static final Pattern SIM_OCDB = Pattern.compile("^/alice/simulation/20[01][0-9]/[^/]+/(Ideal|Residual|Full)/([^/]+)/.*");
+	
+	/**
+	 * @param hit
+	 * @param key
+	 */
+	static void processAccess(final int hit, final String key){
 		int idx = key.lastIndexOf('_');
 		
 		String image = key.substring(idx+1);
@@ -85,72 +146,130 @@ public class CacheLogAnalyzer {
 		
 		String lfn = key.substring(0, idx4);
 		
-		// now let's analyze the LFN for interesting bits
-		
-		final StringTokenizer st = new StringTokenizer(lfn, "/");
-				
-		boolean runfound = false;
-		boolean yearfound = false;
-		boolean periodfound = false;
-		
-		while (st.hasMoreTokens()){
-			final String tok = st.nextToken();
-			
-			if (tok.equals("data"))
-				incStats("access", "data_type", "raw", hit);
-			else
-			if (tok.equals("sim"))
-				incStats("access", "data_type", "sim", hit);
-			else
-			if (!yearfound && !runfound && !periodfound && YEAR.matcher(tok).matches()){
-				yearfound = true;
-				incStats("access", "year", tok, hit);
-			}
-			else
-			if (!runfound && RUNNO.matcher(tok).matches()){
-				runfound = true;				
-				String run = tok;
-				
-				while (run.length()>0 && run.charAt(0)=='0')
-					run=run.substring(1);
-				
-				incStats("access", "runno", run, hit);
-			}
-			else
-			if (tok.startsWith("pass"))
-				incStats("access", "pass", tok, hit);
-			else
-			if (tok.equals("AOD"))
-				incStats("access", "data", "AOD", hit);
-			else
-			if (tok.equals("ESDs"))
-				incStats("access", "data", "ESDs", hit);
-			else
-			if (tok.equals("raw"))
-				incStats("access", "data", "raw", hit);
-			else
-			if (!periodfound && tok.startsWith("LHC1")){
-				periodfound = true;
-				incStats("access", "period", tok, hit);
-			}
-			else
-			if (tok.equals("OCDB")){
-				incStats("access", "data", "OCDB", hit);
-				
-				String tok2 = st.nextToken();
-				
-				incStats("access", "OCDB_DET", tok2, hit);
-			}
-			
-			if (!runfound && RUNNO2.matcher(tok).matches()){
-				runfound = true;
-				String run = tok.substring(3, tok.indexOf('_'));
-				incStats("access", "runno", run, hit);
-			}
+		if (lfn.equals("/alice/data/OCDBFoldervsRunRange.xml")){
+			incStats("access", "data_type", "raw_ocdb_range_xml", hit);
+			return;
 		}
+		
+		if (lfn.startsWith("/alice/data/")){
+			
+			if (lfn.indexOf("/OCDB/")>=0){
+				Matcher mocdb = RAWOCDB.matcher(lfn);
+				
+				if (mocdb.matches()){
+					incStats("access", "data_type", "raw_ocdb", hit);
+					
+					String year = mocdb.group(1);
+					
+					String det = mocdb.group(2);
+					
+					incStats("access", "raw_ocdb_year", year, hit);
+					
+					incStats("access", "raw_ocdb_det", det, hit);
+					
+					return;
+				}
+			}
+			
+			Matcher mraw = RAW.matcher(lfn);
+			
+			if (mraw.matches()){
+				incStats("access", "data_type", "raw", hit);
+				
+				String year = mraw.group(1);
+				
+				incStats("access", "raw_year", year, hit);
+				
+				String period = mraw.group(2);
+				
+				incStats("access", "raw_period", period, hit);
+				
+				String run = mraw.group(3);
+				
+				incStats("access", "raw_run", run, hit);
+				
+				Matcher m = lfn.indexOf("/AOD")>=0 ? AOD.matcher(lfn) : null;
+				
+				if (m!=null && m.matches()){
+					incStats("access", "raw_data", "AOD", hit);
+					
+					incStats("access", "raw_data_pass", m.group(1), hit);
+				}
+				else{
+					m = lfn.indexOf("/ESDs/")>=0 ? ESD.matcher(lfn) : null;
+					
+					if (m!=null && m.matches()){
+						incStats("access", "raw_data", "ESDs", hit);
+						
+						incStats("access", "raw_data_pass", m.group(1), hit);
+					}
+					else
+					if (lfn.indexOf("/raw/")>=0){
+						incStats("access", "raw_data", "raw", hit);
+					}
+				}
+				
+				return;
+			}
+			
+			System.out.println("What is this raw data file : "+lfn);
+			
+			return;
+		}
+		
+		if (lfn.startsWith("/alice/simulation/")){
+			Matcher m = SIM_OCDB.matcher(lfn);
+			
+			if (m.matches()){
+				String type = m.group(1);
+				String det = m.group(2);
+				
+				incStats("access", "data_type", "sim_ocdb_"+type, hit);
+				incStats("access", "sim_ocdb_det", det, hit);
+				
+				return;
+			}
+			
+			System.out.println("What is this simulation file : "+lfn);
+			
+			return;
+		}
+		
+		if (lfn.startsWith("/alice/sim/")){
+			// /alice/sim/LHC11b10b/146824/AOD046/0091/
+			
+			Matcher m = SIM.matcher(lfn);
+			
+			if (m.matches()){
+				String period = m.group(1);
+				String run = m.group(2);
+				
+				incStats("access", "data_type", "sim", hit);
+				incStats("access", "sim_period", period, hit);
+				incStats("access", "sim_run", run, hit);
+				
+				return;
+			}
+			
+			System.out.println("What is this sim file : "+lfn);
+			
+			return;
+		}
+		
+		if (lfn.startsWith("/alice/cern.ch/user/")){
+			incStats("access", "data_type", "user", hit);
+			
+			return;
+		}
+		
+		System.out.println("What is this other file : "+lfn);
 	}
 	
-	private static void processEnvelope(final int hit, final String key){
+	/**
+	 * @param hit
+	 * @param key
+	 */
+	static void processEnvelope(final int hit, final String key){
 		incStats("envelope", "account", key.substring(0, key.indexOf('_')), hit);
 	}
 	
@@ -159,8 +278,8 @@ public class CacheLogAnalyzer {
 	 * @throws NumberFormatException
 	 * @throws IOException
 	 */
-	public static void main(String args[]) throws NumberFormatException, IOException{
-		BufferedReader br = new BufferedReader(new FileReader("cache.log"));
+	public static void main(final String args[]) throws NumberFormatException, IOException{
+		final BufferedReader br = new BufferedReader(new FileReader("cache.log"));
 		
 		String sLine;
 		
@@ -179,7 +298,7 @@ public class CacheLogAnalyzer {
 			if (namespace.equals("envelope"))
 				processEnvelope(hits, key);
 		}
-		
+
 		for (final Map.Entry<String, Map<String, Map<String, AtomicInteger>>> me: stats.entrySet()){
 			System.err.println("********************* "+me.getKey());
 			
@@ -188,15 +307,19 @@ public class CacheLogAnalyzer {
 
 				long lTotal = 0;
 				
-				for (final Map.Entry<String, AtomicInteger> me3: sortByAccesses(me2.getValue())){
-					final AtomicInteger ai = me3.getValue(); 
-					
-					System.err.println(me3.getKey()+" : "+ai);
-					
+				for (final AtomicInteger ai: me2.getValue().values()){
 					lTotal += ai.intValue();
 				}
 				
-				System.err.println("TOTAL : "+lTotal);
+				for (final Map.Entry<String, AtomicInteger> me3: sortByAccesses(me2.getValue())){
+					final AtomicInteger ai = me3.getValue(); 
+					
+					final double percentage = ai.intValue() * 100d / lTotal;
+					
+					System.err.println(me3.getKey()+" : "+ai+" : "+Format.point(percentage)+"%");
+				}
+				
+				System.err.println("TOTAL : "+lTotal+" ("+me2.getValue().size()+" entries)");
 			}
 		}
 	}
