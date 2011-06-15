@@ -170,6 +170,10 @@ public class CacheLogAnalyzer {
 					
 					return;
 				}
+
+				System.out.println("This LFN contains /OCDB/ but doesn't match the pattern : "+lfn);
+				
+				return;
 			}
 			
 			Matcher mraw = RAW.matcher(lfn);
@@ -207,6 +211,9 @@ public class CacheLogAnalyzer {
 					else
 					if (lfn.indexOf("/raw/")>=0){
 						incStats("access", "raw_data", "raw", hit);
+					}
+					else{
+						System.out.println("What is this raw file ? "+lfn);
 					}
 				}
 				
