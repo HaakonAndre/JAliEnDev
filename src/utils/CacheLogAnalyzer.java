@@ -169,7 +169,7 @@ public class CacheLogAnalyzer {
 			
 			// timestamp
 			st.nextToken();
-			final int hits = Integer.parseInt(st.nextToken())+1;
+			final int hits = Integer.parseInt(st.nextToken());
 			final String namespace = st.nextToken();
 			final String key = st.nextToken();
 			
