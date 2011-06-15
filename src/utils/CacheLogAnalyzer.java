@@ -316,7 +316,12 @@ public class CacheLogAnalyzer {
 
 		@Override
 		public int compare(Entry<String, AtomicInteger> o1, Entry<String, AtomicInteger> o2) {
-			return o2.getValue().intValue() - o1.getValue().intValue();
+			final int diff = o2.getValue().intValue() - o1.getValue().intValue();
+			
+			if (diff!=0)
+				return diff;
+			
+			return o1.getKey().compareToIgnoreCase(o2.getKey());
 		}
 	
 	}; 
