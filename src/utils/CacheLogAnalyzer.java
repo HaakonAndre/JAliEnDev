@@ -25,75 +25,33 @@ import lazyj.Format;
 public class CacheLogAnalyzer {
 
 	private static final Map<String, Map<String, Map<String, AtomicInteger>>> stats = new TreeMap<String, Map<String, Map<String, AtomicInteger>>>();
-	
-	private static String cachedFirstLevelKey = null;
-	private static Map<String, Map<String, AtomicInteger>> cachedFirstLevel = null;
-	
-	private static String cachedSecondLevelKey = null;
-	private static Map<String, AtomicInteger> cachedSecondLevel = null;
-	
-	private static String cachedKey = null;
-	private static AtomicInteger cached = null;
-	
-	private static void incStats(final String ns1, final String ns2, final String key, final int hit){
+		
+	private static void incStats(final String ns1, final String ns2, final String key, final int hit) {
 		Map<String, Map<String, AtomicInteger>> h1;
 		Map<String, AtomicInteger> h2;
 		AtomicInteger ai;
-		
-		if (ns1.equals(cachedFirstLevelKey)){
-			if (ns2.equals(cachedSecondLevelKey)){				
-				if (key.equals(cachedKey)){
-					cached.addAndGet(hit);
-					return;
-				}
 
-				h2 = cachedSecondLevel;
-				ai = null;
-			}
-			else{
-				h2 = null;
-				ai = null;
-			}
-			
-			h1 = cachedFirstLevel;
+		h1 = stats.get(ns1);
+
+		if (h1 == null) {
+			h1 = new TreeMap<String, Map<String, AtomicInteger>>();
+			stats.put(ns1, h1);
 		}
-		else{
-			h1 = stats.get(ns1);
-					
-			if (h1==null){
-				h1 = new TreeMap<String, Map<String, AtomicInteger>>();
-				stats.put(ns1, h1);
-			}
-			
-			cachedFirstLevelKey = ns1;
-			cachedFirstLevel = h1;
-			
-			h2 = null;
-			ai = null;
+
+		h2 = h1.get(ns2);
+
+		if (h2 == null) {
+			h2 = new ConcurrentHashMap<String, AtomicInteger>(10240);
+			h1.put(ns2, h2);
 		}
-		
-		if (h2 == null){
-			h2 = h1.get(ns2);
-				
-			if (h2==null){
-				h2 = new ConcurrentHashMap<String, AtomicInteger>(10240);
-				h1.put(ns2, h2);
-			}
-			
-			cachedSecondLevelKey = ns2;
-			cachedSecondLevel = h2;
-		}
-		
+
 		ai = h2.get(key);
-			
-		if (ai==null){
+
+		if (ai == null) {
 			ai = new AtomicInteger(hit);
 			h2.put(key, ai);
 		}
-			
-		cachedKey = key;
-		cached = ai;
-		
+
 		ai.addAndGet(hit);
 	}
 	
