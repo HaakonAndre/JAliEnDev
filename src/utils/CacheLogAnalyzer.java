@@ -51,8 +51,8 @@ public class CacheLogAnalyzer {
 			ai = new AtomicInteger(hit);
 			h2.put(key, ai);
 		}
-
-		ai.addAndGet(hit);
+		else
+			ai.addAndGet(hit);
 	}
 	
 	private static final Pattern SE_NAME_PATTERN = Pattern.compile("^.+::.+::.+$");
@@ -295,6 +295,8 @@ public class CacheLogAnalyzer {
 				System.err.println("TOTAL : "+lTotal+" ("+me2.getValue().size()+" entries)");
 			}
 		}
+		
+		System.out.flush();
 	}
 	
 	private static final Comparator<Map.Entry<String, AtomicInteger>> entryComparator = new Comparator<Map.Entry<String,AtomicInteger>>(){
