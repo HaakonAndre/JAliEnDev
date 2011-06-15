@@ -359,8 +359,14 @@ public class TextCache extends ExtendedServlet {
 					monitor.incrementCounter("SET_EOF_"+ns);
 			}
 			
+			CacheValue old;
+			
 			synchronized(cache){
-				cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", 60*60)*1000));
+				old = cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", 60*60)*1000));
+			}
+			
+			if (old!=null){
+				notifyEntryRemoved(ns, key, old);
 			}
 			
 			return;
