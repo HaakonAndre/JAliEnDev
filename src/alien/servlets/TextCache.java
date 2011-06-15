@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import lazyj.ExtendedServlet;
 import lazyj.Format;
@@ -34,7 +35,7 @@ public class TextCache extends ExtendedServlet {
 		
 		public final long expires;
 		
-		public int accesses = 0;
+		public final AtomicInteger accesses = new AtomicInteger(1);
 		
 		public CacheValue(final String value, final long expires){
 			this.value = value;
@@ -50,7 +51,7 @@ public class TextCache extends ExtendedServlet {
 
 		@Override
 		public int compare(final Entry<String, CacheValue> o1, final Entry<String, CacheValue> o2) {
-			final int diff = o2.getValue().accesses - o1.getValue().accesses;
+			final int diff = o2.getValue().accesses.intValue() - o1.getValue().accesses.intValue();
 			
 			if (diff!=0)
 				return diff;
@@ -286,7 +287,7 @@ public class TextCache extends ExtendedServlet {
 								max = Math.max(max, size);
 								total += size;
 								
-								hits += c.accesses;
+								hits += c.accesses.intValue();
 							}
 							
 							avg = (double) total / cache.size();
@@ -324,7 +325,7 @@ public class TextCache extends ExtendedServlet {
 								max = Math.max(max, size);
 								total += size;
 								
-								hits += cv.accesses;
+								hits += cv.accesses.intValue();
 								
 								pwOut.println(me.getKey()+" : size "+size+", "+cv.accesses+" hits"+(values ? " : "+cv.value : ""));
 							}
@@ -389,7 +390,7 @@ public class TextCache extends ExtendedServlet {
 			return;			
 		}
 		
-		existing.accesses++;
+		existing.accesses.incrementAndGet();
 				
 		if (monitor != null)
 			monitor.incrementCounter("HIT_"+ns);
