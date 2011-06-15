@@ -151,8 +151,9 @@ public class CacheLogAnalyzer {
 			return;
 		}
 		
+		incStats("access", "hot_lfns", lfn, hit);
+		
 		if (lfn.startsWith("/alice/data/")){
-			
 			if (lfn.indexOf("/OCDB/")>=0){
 				Matcher mocdb = RAWOCDB.matcher(lfn);
 				
@@ -311,12 +312,17 @@ public class CacheLogAnalyzer {
 					lTotal += ai.intValue();
 				}
 				
+				int iCount = 0;
+				
 				for (final Map.Entry<String, AtomicInteger> me3: sortByAccesses(me2.getValue())){
 					final AtomicInteger ai = me3.getValue(); 
 					
 					final double percentage = ai.intValue() * 100d / lTotal;
 					
 					System.err.println(me3.getKey()+" : "+ai+" : "+Format.point(percentage)+"%");
+					
+					if ((++iCount)==100 && me2.getKey().equals("hot_lfns"))
+						break;
 				}
 				
 				System.err.println("TOTAL : "+lTotal+" ("+me2.getValue().size()+" entries)");
