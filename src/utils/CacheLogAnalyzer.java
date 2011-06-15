@@ -112,6 +112,8 @@ public class CacheLogAnalyzer {
 		
 		incStats("access", "hot_lfns", lfn, hit);
 		//System.out.println("Incrementing lfn "+lfn+" with "+hit);
+
+		incStats("access", "cache_access_histogram", String.valueOf(hit), 1);
 		
 		if (lfn.startsWith("/alice/data/")){
 			if (lfn.indexOf("/OCDB/")>=0){
@@ -265,6 +267,9 @@ public class CacheLogAnalyzer {
 			else
 			if (namespace.equals("envelope"))
 				processEnvelope(hits, key);
+			else
+			if (namespace.equals("find"))
+				processFind(hits, key);
 		}
 
 		for (final Map.Entry<String, Map<String, Map<String, AtomicInteger>>> me: stats.entrySet()){
@@ -288,7 +293,7 @@ public class CacheLogAnalyzer {
 					
 					System.err.println(me3.getKey()+" : "+ai+" : "+Format.point(percentage)+"%");
 					
-					if ((++iCount)==100 && me2.getKey().equals("hot_lfns"))
+					if ((++iCount)==100 && me2.getKey().startsWith("hot"))
 						break;
 				}
 				
@@ -299,6 +304,14 @@ public class CacheLogAnalyzer {
 		System.out.flush();
 	}
 	
+	/**
+	 * @param hits
+	 * @param key
+	 */
+	private static void processFind(final int hits, final String key) {
+		incStats("find", "hot_find", key, hits);
+	}
+
 	private static final Comparator<Map.Entry<String, AtomicInteger>> entryComparator = new Comparator<Map.Entry<String,AtomicInteger>>(){
 
 		@Override
