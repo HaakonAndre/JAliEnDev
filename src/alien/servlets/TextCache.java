@@ -160,7 +160,7 @@ public class TextCache extends ExtendedServlet {
 	static synchronized void notifyEntryRemoved(final String namespace, final String key, final CacheValue value){
 		if (requestLogger==null){
 			try {
-				requestLogger = new PrintWriter(new FileWriter("cache.log"));
+				requestLogger = new PrintWriter(new FileWriter("cache.log", true));
 			}
 			catch (IOException e) {
 				return;
