@@ -59,7 +59,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * nonimplemented command's silence trigger, cd is never silent
+	 * nonimplemented command's silence trigger, cat is never silent
 	 */
 	public void silent() {
 
