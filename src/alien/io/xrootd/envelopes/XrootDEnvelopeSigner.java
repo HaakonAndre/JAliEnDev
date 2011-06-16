@@ -174,7 +174,7 @@ public class XrootDEnvelopeSigner {
 			SignatureException {
 
 		final long issued = System.currentTimeMillis() / 1000L;
-		final long expires = issued + 86400;
+		final long expires = issued + 60*60*24;
 
 		final String toBeSigned = envelope.getUnsignedEnvelope()
 				+ "-issuer-issued-expires&issuer="+JAliEnIAm.whatsMyName()+"@"+getLocalHostName()+
@@ -273,7 +273,7 @@ public class XrootDEnvelopeSigner {
 
 		final String plainEnvelope = envelope.getUnEncryptedEnvelope(); 
 		
-		System.err.println("Encrypting:\n"+plainEnvelope);
+		//System.err.println("Encrypting:\n"+plainEnvelope);
 		
 		envelope.setEncryptedEnvelope(authz.encrypt(plainEnvelope));
 	}
