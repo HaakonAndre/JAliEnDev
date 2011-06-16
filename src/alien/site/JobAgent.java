@@ -4,6 +4,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -12,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.api.catalogue.CatalogueApiUtils;
+import alien.api.taskQueue.JobSigner;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -50,6 +54,7 @@ public class JobAgent extends Thread {
 	}
 
 	public void run() {
+		if(verifiedJob()){
 		TaskQueueApiUtils.setJobStatus(job.queueId, "STARTED");
 		if (createTempDir())
 			if (getInputFiles()) {
@@ -60,9 +65,26 @@ public class JobAgent extends Thread {
 				System.out.println("Could not get input files.");
 				TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_IB");
 			}
+		} else {
+			TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_VER");
+		}
 
 	}
 
+	private boolean verifiedJob(){
+		try {
+			return JobSigner.verifyEnvelope(jdl.getPlainJDL());
+		} catch (InvalidKeyException e) {
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		} catch (SignatureException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	
 	private boolean getInputFiles() {
 
 		boolean gotAllInputFiles = true;

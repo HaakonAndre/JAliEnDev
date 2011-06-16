@@ -32,7 +32,8 @@ public class JDL implements Serializable {
 	 */
 	private static final long serialVersionUID = -4803377858842338873L;
 	private final Map<String, Object> jdlContent = new HashMap<String, Object>();
-
+	private String plainJDL = null;
+	
 	/**
 	 * A file in the catalogue
 	 * 
@@ -64,6 +65,8 @@ public class JDL implements Serializable {
 			throw new IOException("Content is "
 					+ (content == null ? "null" : "empty"));
 		}
+		
+		plainJDL = content;
 
 		int iPrevPos = 0;
 
@@ -142,6 +145,15 @@ public class JDL implements Serializable {
 
 		return output;
 	}
+	
+	
+	/**
+	 * @return the original JDL String
+	 */
+	public String getPlainJDL(){
+		return plainJDL;
+	}
+	
 
 	/**
 	 * Get the value of a key

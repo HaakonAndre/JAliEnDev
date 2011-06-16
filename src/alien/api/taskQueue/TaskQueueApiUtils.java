@@ -48,4 +48,20 @@ public class TaskQueueApiUtils {
 		}
 	}
 
+	/**
+	 * Submit a job
+	 * @param jdl 
+	 */
+	public static void submitStatus(String jdl) {
+
+		try {
+			Dispatcher.execute(new SubmitJob(jdl),true);
+
+		} catch (IOException e) {
+			System.out.println("Could not submit a JDL: ");
+			e.printStackTrace();
+		}
+	}
+
+	
 }

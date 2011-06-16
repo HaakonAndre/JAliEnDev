@@ -42,13 +42,34 @@ public class TaskQueueFakeUtils {
 		return j;
 	}
 	
+	
+	/**
+	 * Submit a job 
+	 * @param jdl 
+	 */
+	public static void submitJob(String jdl){
+		Job j = new Job();
+		jobcounter++;
+		j.queueId = jobcounter;
+		
+		j.status = "WAITING";
+		
+		j.jdl = jdl;
+		
+		j.site = "";
+		j.started = 0;
+		queue.put(jobcounter,j);
+		System.out.println("RECEIVED JDL: " + queue.put(jobcounter,j));
+	}
+	
+	
 	/**
 	 * @param jobnumber
 	 * @param status
 	 */
 	public static void setJobStatus(int jobnumber, String status){
 		queue.get(jobnumber).status = status;
-		System.out.println("Setting job [" + jobnumber + "] to status <"+ status + ">");
+		System.out.println("Submitting job [" + jobnumber + "] to status <"+ status + ">");
 	}
 
 }

@@ -18,7 +18,7 @@ public class JAliEnCOMMander {
 
 	private static final String[] commandList = new String[] { "ls", "get",
 			"cat", "whoami", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog" };
+			"scrlog","submit" };
 
 	protected static AliEnPrincipal user = AuthorizationFactory
 			.getDefaultUser();
