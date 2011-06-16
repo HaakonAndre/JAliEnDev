@@ -31,7 +31,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 		JAliEnBaseCommand comm = (JAliEnBaseCommand) JAliEnCOMMander
 				.getCommand(command, new Object[] { args });
-		comm.silent();
+		//comm.silent();
 
 		ArrayList<Long> timings = new ArrayList<Long>(times);
 		for (int t = 0; t < times; t++) {
@@ -43,8 +43,9 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		long total = 0;
 		for (Long t : timings)
 			total += t;
-		System.out.println("We executed: " + times + " command " + command
-				+ ", avr msecs: " + (total / times) + ", total msecs:" + total);
+		for(String s:args)
+			command += " " + s;
+		System.out.println("\""+command+ "\" with #" + times+ " tries,\tavr/total msec:\t\t"+(total / times)+"/"+total);
 
 	}
 

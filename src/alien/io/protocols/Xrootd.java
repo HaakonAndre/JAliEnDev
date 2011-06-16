@@ -402,8 +402,6 @@ public class Xrootd extends Protocol {
 				}
 			}
 			
-			System.out.println("exec put: " + command);
-
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
 
@@ -542,8 +540,6 @@ public class Xrootd extends Protocol {
 					command.add(pfn.getPFN());
 
 				}
-				System.out.println("xrdstat put: " + command);
-
 
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 						command);
