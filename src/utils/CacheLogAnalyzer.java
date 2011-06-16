@@ -174,6 +174,10 @@ public class CacheLogAnalyzer {
 					if (lfn.indexOf("/raw/")>=0){
 						incStats("access", "raw_data", "raw", hit);
 					}
+					else
+					if (lfn.indexOf("/pass0/")>=0){
+						incStats("access", "raw_data", "pass0", hit);
+					}
 					else{
 						System.out.println("What is this raw file ? "+lfn);
 					}
