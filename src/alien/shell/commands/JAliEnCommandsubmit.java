@@ -17,14 +17,14 @@ import alien.perl.commands.AlienTime;
  * @since June 9, 2011
  */
 public class JAliEnCommandsubmit extends JAliEnBaseCommand {
-
+	
 	public void execute() throws Exception {
 
 		String jdl = getJDLFile(alArguments);
 		if(jdl!=null)
-			System.out.println("escaped JDL:" + JobSigner.signJob(jdl,JAliEnCOMMander.getUsername()));
+			System.out.println("escaped JDL:" + JobSigner.signJob(jdl,commander.getUsername()));
 		
-			TaskQueueApiUtils.submitStatus(JobSigner.signJob(jdl,JAliEnCOMMander.getUsername()));
+			TaskQueueApiUtils.submitStatus(JobSigner.signJob(jdl,commander.getUsername()));
 		
 		
 		
@@ -35,7 +35,7 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 		String retJDL = null;
 		System.out.println("getting jdl file: " + alArguments);
 		try {
-			JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander.getCommand("get",
+			JAliEnCommandget get = (JAliEnCommandget) commander.getCommand("get",
 					new Object[] { alArguments });
 
 			get.silent();
@@ -85,12 +85,12 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandsubmit(final ArrayList<String> alArguments) {
-		super(alArguments);
-	}
+	public JAliEnCommandsubmit(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+		super(commander, out, alArguments);
+=	}
 }

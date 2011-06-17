@@ -41,12 +41,12 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		} catch(NumberFormatException e){}
 
 				lfns = CatalogueApiUtils.find(FileSystemUtils
-						.getAbsolutePath(JAliEnCOMMander.user.getName(),
-								JAliEnCOMMander.getCurrentDir().getCanonicalName(),alArguments.get(0)), alArguments.get(1), flags);
+						.getAbsolutePath(commander.user.getName(),
+								commander.getCurrentDir().getCanonicalName(),alArguments.get(0)), alArguments.get(1), flags);
 		
 		if(lfns!=null && !silent){
 			for (LFN lfn : lfns){
-				System.out.println(lfn.getCanonicalName());
+				out.printOutln(lfn.getCanonicalName());
 			}
 		}
 		
@@ -57,9 +57,9 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 
-		System.out.println(AlienTime.getStamp() + "Usage: find <path> <pattern>  flags ");
-		System.out.println("Possible flags are:");
-		System.out.println("		coming soon");
+		out.printOutln(AlienTime.getStamp() + "Usage: find <path> <pattern>  flags ");
+		out.printOutln("Possible flags are:");
+		out.printOutln("		coming soon");
 	}
 
 	/**
@@ -84,13 +84,13 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandfind(final ArrayList<String> alArguments) {
-		super(alArguments);
+	public JAliEnCommandfind(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+		super(commander, out, alArguments);
 	}
 
 }

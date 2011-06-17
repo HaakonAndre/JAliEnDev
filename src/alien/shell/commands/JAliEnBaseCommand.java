@@ -1,7 +1,6 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 import alien.catalogue.GUIDUtils;
@@ -19,19 +18,33 @@ public abstract class JAliEnBaseCommand {
 	static transient final Logger logger = ConfigUtils
 			.getLogger(GUIDUtils.class.getCanonicalName());
 	
+	/**
+	 * The JAliEnCOMMander
+	 */
+	protected JAliEnCOMMander commander ;
+	
 	
 	/**
-	 * the argument list for the command received through the request
+	 * The UIPrintWriter to return stdout+stderr
 	 */
-	protected List<String> alArguments ;
+	protected UIPrintWriter out ;
 	
+	
+	protected final ArrayList<String> alArguments;
+
 	
 	/**
 	 * Constructor based on the array received from the request 
+	 * @param commander 
+	 * @param out 
 	 * @param alArguments 
 	 */
-	public JAliEnBaseCommand(final ArrayList<String> alArguments){
+	public JAliEnBaseCommand(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments){
+		this.commander = commander;
+		this.out = out;
 		this.alArguments = alArguments;
+
 	}
 	
 	/**
@@ -58,7 +71,7 @@ public abstract class JAliEnBaseCommand {
 	 * 
 	 */
 	public abstract void silent();
-	
+		
 	
 	/**
 	 * @param s

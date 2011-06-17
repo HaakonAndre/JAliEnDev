@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -36,24 +39,13 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 */
 	public void execute() {
 
-		final Iterator<String> it = alArguments.iterator();
-
-		while (it.hasNext()) {
-			String arg = it.next();
-			if ("-g".equals(arg))
-				bG = true;
-			else
-				lfnOrGuid = arg;
-		}
-
-		String guid = null;
-
+		String guid;
 		if (bG) {
 			guid = lfnOrGuid;
 		} else {
 			LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
-					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.getCurrentDir().getCanonicalName(), lfnOrGuid));
+					commander.user.getName(), commander.getCurrentDir()
+							.getCanonicalName(), lfnOrGuid));
 			guid = lfn.guid.toString();
 		}
 		// what message in case of error?
@@ -70,7 +62,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 								.getPFNs();
 
 			if (!silent)
-				System.out.println(AlienTime.getStamp()
+				out.printOutln(AlienTime.getStamp()
 						+ "The file "
 						+ lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1,
 								lfnOrGuid.length()) + " is in\n");
@@ -78,12 +70,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 				String se = CatalogueApiUtils.getSE(pfn.seNumber).seName;
 				if (!silent)
-					System.out.println("\t\t SE => " + padRight(se, 30)
-							+ " pfn =>" + pfn.pfn + "\n");
+					out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>"
+							+ pfn.pfn + "\n");
 			}
 		} else {
 			if (!silent)
-				System.out.println(AlienTime.getStamp()
+				out.printOutln(AlienTime.getStamp()
 						+ "No such file or directory\n");
 		}
 	}
@@ -92,14 +84,14 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		System.out.println("Usage:\n");
-		System.out.println("	whereis [-rg] \n");
-		System.out.println("\n");
-		System.out.println("Options:\n");
-		System.out.println("	-g: Use the lfn as guid\n");
+		out.printOutln("Usage:\n");
+		out.printOutln("	whereis [-rg] \n");
+		out.printOutln("\n");
+		out.printOutln("Options:\n");
+		out.printOutln("	-g: Use the lfn as guid\n");
 		System.out
 				.println("	-r: Resolve links (do not give back pointers to zip archives)\n");
-		System.out.println("	-s: Silent\n");
+		out.printOutln("	-s: Silent\n");
 	}
 
 	/**
@@ -129,8 +121,22 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandwhereis(final ArrayList<String> alArguments) {
-		super(alArguments);
+	public JAliEnCommandwhereis(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
+		super(commander, out,alArguments);
+
+		final OptionParser parser = new OptionParser();
+		parser.accepts("g");
+
+		final OptionSet options = parser.parse(alArguments
+				.toArray(new String[] {}));
+		
+		bG = options.has("g");
+
+		if (options.nonOptionArguments().size() != 1)
+			printHelp();
+		else
+			lfnOrGuid = options.nonOptionArguments().get(0);
 	}
 
 }

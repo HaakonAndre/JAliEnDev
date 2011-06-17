@@ -15,28 +15,27 @@ import alien.perl.commands.AlienTime;
  */
 public class JAliEnCommandcat extends JAliEnBaseCommand {
 
+	
 	public void execute() throws Exception {
 
-		ArrayList<String> args = new ArrayList<String>();
-		args.addAll(alArguments);
 		JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander.getCommand(
-				"get", new Object[] { args });
+				"get", new Object[] { commander, out,alArguments });
 		get.silent();
 		get.execute();
-		File out = get.getOutputFile();
-		if (out != null && out.isFile() && out.canRead()) {
-			FileInputStream fstream = new FileInputStream(out);
+		File fout = get.getOutputFile();
+		if (fout != null && fout.isFile() && fout.canRead()) {
+			FileInputStream fstream = new FileInputStream(fout);
 
 			DataInputStream in = new DataInputStream(fstream);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			String strLine;
+			String strLine = "";
 
-			while ((strLine = br.readLine()) != null) {
+			while ((strLine += br.readLine()) != null) {}
+			
+			out.printOutln(strLine);
 
-				System.out.println(strLine);
-			}
-
-		}
+		} else
+			out.printErrln("Not able to get the file.");
 	}
 
 	/**
@@ -44,10 +43,10 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 
-		System.out.println(AlienTime.getStamp() + "Usage: cat  ... ");
-		System.out.println("		-g : get file by GUID");
-		System.out.println("		-s : se,se2,!se3,se4,!se5");
-		System.out.println("		-o : outputfilename");
+		out.printOutln(AlienTime.getStamp() + "Usage: cat  ... ");
+		out.printOutln("		-g : get file by GUID");
+		out.printOutln("		-s : se,se2,!se3,se4,!se5");
+		out.printOutln("		-o : outputfilename");
 	}
 
 	/**
@@ -71,7 +70,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcat(final ArrayList<String> alArguments){
-		super(alArguments);
+	public JAliEnCommandcat(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+		super(commander, out, alArguments);
 	}
 }

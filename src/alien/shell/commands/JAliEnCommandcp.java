@@ -7,6 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
@@ -30,7 +33,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	private List<String> ses = null;
 	private List<String> exses = null;
 
-
 	/**
 	 * marker for -a argument
 	 */
@@ -42,29 +44,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	// public boolean isATimeChallenge = false;
 
 	public void execute() {
-
-		final Iterator<String> it = alArguments.iterator();
-
-		while (it.hasNext()) {
-			String arg = it.next();
-			if ("-S".equals(arg)) {
-				ses = new ArrayList<String>();
-				exses = new ArrayList<String>();
-				final StringTokenizer st = new StringTokenizer(it.next(), ",");
-				while (st.hasMoreTokens()) {
-					String se = st.nextToken();
-					if (se.indexOf('!') == 0)
-						exses.add(se.substring(1));
-					else
-						ses.add(se);
-				}
-			} else if ("-g".equals(arg))
-				bG = true;
-			else if (source != null)
-				target = arg;
-			else
-				source = arg;
-		}
 
 		if (!source.startsWith("file://") && target.startsWith("file://")) {
 			File outFile = new File(target.replace("file://", ""));
@@ -83,7 +62,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				System.err
 						.println("A local file with this name does not exists.");
 		} else
-			System.err.println("You have to specify a grid and a local file");
+			out.printErrln("You have to specify a grid and a local file");
 
 	}
 
@@ -101,14 +80,14 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		if (bG) {
 			GUID guid = CatalogueApiUtils.getGUID(source);
-			pfns = CatalogueApiUtils.getPFNsToRead(JAliEnCOMMander.user,
-					JAliEnCOMMander.site, guid, ses, exses);
+			pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+					commander.site, guid, ses, exses);
 		} else {
 			LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
-					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.getCurrentDir().getCanonicalName(), source));
-			pfns = CatalogueApiUtils.getPFNsToRead(JAliEnCOMMander.user,
-					JAliEnCOMMander.site, lfn, ses, exses);
+					commander.user.getName(), commander.getCurrentDir()
+							.getCanonicalName(), source));
+			pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+					commander.site, lfn, ses, exses);
 
 		}
 
@@ -119,7 +98,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				try {
 					target = protocol.get(pfn, target);
 					if (!silent)
-						System.out.println("Downloaded file to "
+						out.printOutln("Downloaded file to "
 								+ target.getCanonicalPath());
 
 					break;
@@ -129,7 +108,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 		if (!target.exists())
-			System.out.println("Could not get the file.");
+			out.printOutln("Could not get the file.");
 	}
 
 	/**
@@ -143,13 +122,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	public void copyLocalToGrid(File source, String target) {
 
 		if (!source.exists() || !source.isFile() || !source.canRead()) {
-			System.err.println("Could not get the local file: " + source.getAbsolutePath());
+			out.printErrln("Could not get the local file: "
+					+ source.getAbsolutePath());
 			return;
 		}
 
 		long size = source.length();
 		if (size <= 0) {
-			System.err.println("Local file has size zero: " + source.getAbsolutePath());
+			out.printErrln("Local file has size zero: "
+					+ source.getAbsolutePath());
 			return;
 		}
 		String md5 = null;
@@ -159,7 +140,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		}
 		if (md5 == null) {
 			System.err
-					.println("Could not calculate md5 checksum of the local file: " + source.getAbsolutePath());
+					.println("Could not calculate md5 checksum of the local file: "
+							+ source.getAbsolutePath());
 			return;
 		}
 
@@ -170,27 +152,27 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		if (bG) {
 			guid = CatalogueApiUtils.getGUID(target, true);
-			pfns = CatalogueApiUtils.getPFNsToWrite(JAliEnCOMMander.user,
-					JAliEnCOMMander.site, guid, ses, exses,null,0);
+			pfns = CatalogueApiUtils.getPFNsToWrite(commander.user,
+					commander.site, guid, ses, exses, null, 0);
 			guid.size = size;
 			guid.md5 = md5;
-			System.err.println("Not working yet...");
+			out.printErrln("Not working yet...");
 			return;
 		} else {
 			lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
-					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.getCurrentDir().getCanonicalName(), target), true);
+					commander.user.getName(), commander.getCurrentDir()
+							.getCanonicalName(), target), true);
 			guid = null;
 			// lfn.guid=... for user's specification
 			lfn.size = size;
 			lfn.md5 = md5;
 
-			pfns = CatalogueApiUtils.getPFNsToWrite(JAliEnCOMMander.user,JAliEnCOMMander.site, lfn, ses, exses,null,0);
+			pfns = CatalogueApiUtils.getPFNsToWrite(commander.user,
+					commander.site, lfn, ses, exses, null, 0);
 
 		}
 		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
 		ArrayList<String> registerPFNs = new ArrayList<String>(pfns.size());
-
 
 		for (PFN pfn : pfns) {
 
@@ -199,14 +181,18 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				try {
 					target = protocol.put(pfn, source);
 					if (!silent)
-						System.out.println("Uploading file "
-								+ source.getCanonicalPath() + " to "+ pfn.getPFN());
-					if(target!=null){
-						if(pfn.ticket!=null && pfn.ticket.envelope!=null && pfn.ticket.envelope.getSignedEnvelope()!=null)
-							if(pfn.ticket.envelope.getEncryptedEnvelope()==null)
-							envelopes.add(target);
-						else 
-							envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+						out.printOutln("Uploading file "
+								+ source.getCanonicalPath() + " to "
+								+ pfn.getPFN());
+					if (target != null) {
+						if (pfn.ticket != null
+								&& pfn.ticket.envelope != null
+								&& pfn.ticket.envelope.getSignedEnvelope() != null)
+							if (pfn.ticket.envelope.getEncryptedEnvelope() == null)
+								envelopes.add(target);
+							else
+								envelopes.add(pfn.ticket.envelope
+										.getSignedEnvelope());
 					}
 					break;
 				} catch (IOException e) {
@@ -214,21 +200,21 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 			}
 		}
-		
-		if(envelopes.size()!=0)
-			CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.user, envelopes);
-		if(registerPFNs.size()!=0)
-			CatalogueApiUtils.registerEnvelopes(JAliEnCOMMander.user, envelopes);
-		
-		if(pfns.size()==(envelopes.size()+registerPFNs.size()))
-			System.out.println("File successfully uploaded.");
-		else if((envelopes.size()+registerPFNs.size())>0)
-			System.err.println("Only " + (envelopes.size()+registerPFNs.size())+ " PFNs could be uploaded");
-		else 
-			System.out.println("Upload failed, sorry!");
+
+		if (envelopes.size() != 0)
+			CatalogueApiUtils.registerEnvelopes(commander.user, envelopes);
+		if (registerPFNs.size() != 0)
+			CatalogueApiUtils.registerEnvelopes(commander.user, envelopes);
+
+		if (pfns.size() == (envelopes.size() + registerPFNs.size()))
+			out.printOutln("File successfully uploaded.");
+		else if ((envelopes.size() + registerPFNs.size()) > 0)
+			out.printErrln("Only " + (envelopes.size() + registerPFNs.size())
+					+ " PFNs could be uploaded");
+		else
+			out.printOutln("Upload failed, sorry!");
 
 	}
-
 
 	/**
 	 * printout the help info
@@ -237,9 +223,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		System.out
 				.println(AlienTime.getStamp()
 						+ "Usage: cp  <file:///localfile /gridfile> or  </gridfile file:///localfile>");
-		System.out.println("		-g : get by GUID");
-		System.out.println("		-S : [se,se2,!se3,se4,!se5,disk=3,tape=1]");
-		System.out.println("		-s : execute command silent");
+		out.printOutln("		-g : get by GUID");
+		out.printOutln("		-S : [se,se2,!se3,se4,!se5,disk=3,tape=1]");
+		out.printOutln("		-s : execute command silent");
 
 	}
 
@@ -265,13 +251,44 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcp(final ArrayList<String> alArguments) {
-		super(alArguments);
+	public JAliEnCommandcp(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
+		super(commander, out,alArguments);
+		
+
+		final OptionParser parser = new OptionParser();
+
+		parser.accepts("S");
+		parser.accepts("g");
+
+		final OptionSet options = parser.parse(alArguments
+				.toArray(new String[] {}));
+
+		if (options.nonOptionArguments().size() != 2) {
+			printHelp();
+			return;
+		}
+
+		if (options.has("S") && options.hasArgument("S")) {
+			final StringTokenizer st = new StringTokenizer(
+					((String) options.valueOf("S")), ",");
+			while (st.hasMoreTokens()) {
+				String se = st.nextToken();
+				if (se.indexOf('!') == 0)
+					exses.add(se.substring(1));
+				else
+					ses.add(se);
+			}
+		}
+		bG = options.has("g");
+
+		source = options.nonOptionArguments().get(0);
+		target = options.nonOptionArguments().get(1);
 	}
 
 }

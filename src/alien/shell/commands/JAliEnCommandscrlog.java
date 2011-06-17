@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import alien.perl.commands.AlienTime;
 
 /**
@@ -15,7 +18,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	/**
 	 * marker for -c argument
 	 */
-	private boolean bC = false;
+	private final boolean bC;
 
 	/**
 	 * the HashMap for the log screens
@@ -23,26 +26,14 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	private static HashMap<Integer, List<String>> scrlogs = new HashMap<Integer, List<String>>(
 			10);
 
+	private int logno = -1;
+
 	/**
 	 * execute the sclog
 	 */
 	public void execute() {
-
-		int logno = 0;
-
-		for (String arg : alArguments) {
-			if ("-c".equals(arg))
-				bC = true;
-			else
-				try {
-					logno = Integer.parseInt(arg);
-				} catch (NumberFormatException n) {
-				}
-		}
-
-		if (logno > 9)
-			printHelp();
-		else if (bC)
+		if(logno != -1){
+		if (bC)
 			scrlogs.put(logno, new ArrayList<String>());
 		else if (scrlogs.get(logno) != null){
 			System.out.println(":"+logno+" [screenlog pasting]");
@@ -51,7 +42,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 			}
 		}else
 			System.out.println(":"+logno+" [screenlog is empty]");
-
+}
 	}
 
 	/**
@@ -62,9 +53,9 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	protected static void addScreenLogLine(int logno, String line) {
 		if (scrlogs.get(logno) == null)
 			scrlogs.put(logno, new ArrayList<String>());
-//		ArrayList<String> buf = (ArrayList<String>) scrlogs.get(logno);
-//		buf.add(line);
-//		scrlogs.put(logno,buf);
+		// ArrayList<String> buf = (ArrayList<String>) scrlogs.get(logno);
+		// buf.add(line);
+		// scrlogs.put(logno,buf);
 		scrlogs.get(logno).add(line);
 	}
 
@@ -99,13 +90,35 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
-	 * @param alArguments
-	 *            the arguments of the command
+	 * out.printOutln( the arguments of the command
 	 */
-	public JAliEnCommandscrlog(final ArrayList<String> alArguments) {
-		super(alArguments);
-	}
+	public JAliEnCommandscrlog(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
+		super(commander, out, alArguments);
+		
+		
 
+
+		final OptionParser parser = new OptionParser();
+		parser.accepts("c");
+
+		final OptionSet options = parser.parse(alArguments
+				.toArray(new String[] {}));
+
+		if (options.nonOptionArguments().size() != 1)
+			printHelp();
+		else
+			try {
+				logno = Integer.parseInt(options.nonOptionArguments().get(0));
+			} catch (NumberFormatException n) {
+			}
+		
+		bC = options.has("c");
+
+
+		if (logno > 9)
+			printHelp();
+	}
 }

@@ -1,16 +1,26 @@
 package alien.shell;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.Socket;
 
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
 import alien.config.JAliEnIAm;
+import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JAliEnShPrintWriter;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 
@@ -19,64 +29,125 @@ import alien.taskQueue.TaskQueueUtils;
  * @since Feb, 2011
  */
 public class BusyBox {
-	
-	private static final String promptPrefix = "/" + JAliEnIAm.myPromptName() + " ";
+
+	private static final String promptPrefix = "/" + JAliEnIAm.myPromptName()
+			+ " ";
 	private static final String promptSuffix = " > ";
 
 	private ConsoleReader reader;
 	private PrintWriter out;
 
-	
+	private String currentDir;
+
 	/**
 	 * print welcome
 	 */
 	public void welcome() {
-
-		out.println("Welcome to " + JAliEnIAm.whatsMyFullName() + ".");
-		out.println("May the force be with u, " + JAliEnCOMMander.getUsername() + " !");
+		out.println("Hello " + callJAliEnGetString("whoami") + ",");
+		out.println(JAliEnIAm.whatsMyFullName() + ", have a cup!");
 		out.println();
 		out.println("Cheers, AJs aka ACS");
 		out.println();
 
 	}
 
+	private Socket s = null;
+
+	private InputStream is;
+
+	private OutputStream os;
+
+	private void connect() {
+
+		String addr = null;
+		String password = null;
+		int p = 0;
+
+		File f = new File(System.getProperty("user.home") + "/.alien/.uisession");
+		if (f.exists()) {
+			byte[] buffer = new byte[(int) f.length()];
+			BufferedInputStream fi = null;
+			try {
+				fi = new BufferedInputStream(new FileInputStream(f));
+				fi.read(buffer);
+			} catch (IOException e) {
+			} finally {
+				if (fi != null)
+					try {
+						fi.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+			}
+			String[] specs = new String(buffer).split("\n");
+			String[] connect = specs[0].split(":");
+			addr = connect[0];
+			try {
+				p = Integer.parseInt(connect[1]);
+			} catch (NumberFormatException e) {
+				e.printStackTrace();
+			}
+			password = specs[1] + "\n";
+
+		}
+
+		if (addr!=null && p != 0 && password!=null) {
+
+			try {
+				s = new Socket(addr, p);
+
+				is = s.getInputStream();
+				os = s.getOutputStream();
+				
+				os.write(password.getBytes());
+				os.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	/**
 	 * the JAliEn busy box
-	 * @throws IOException 
+	 * 
+	 * @throws IOException
 	 */
 	public BusyBox() throws IOException {
-		
 
-		out = new PrintWriter(System.out);
+		connect();
 
-		welcome();
-		out.flush();
+		if (s != null) {
+			out = new PrintWriter(System.out);
 
+			currentDir = callJAliEnGetString("cdir");
 
-		reader = new ConsoleReader();
-		reader.setBellEnabled(false);
-		reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
-
-		reader.addCompletor(new SimpleCompletor(JAliEnCOMMander.getCommandList()));
-//		reader.addCompletor(new GridFileCompletor());
-//		reader.addCompletor(new FileNameCompletor());
-
-
-		String line;
-		while ((line = reader.readLine(getPromptDisplay())) != null) {
-
+			welcome();
 			out.flush();
 
-			line = line.trim();
+			reader = new ConsoleReader();
+			reader.setBellEnabled(false);
+			reader.setDebug(new PrintWriter(
+					new FileWriter("writer.debug", true)));
 
-			if (line.equalsIgnoreCase("quit") || line.equalsIgnoreCase("exit")) {
-				break;
+			reader.addCompletor(new SimpleCompletor(
+					callJAliEnGetString("commandlist")));
+			// reader.addCompletor(new GridFileCompletor());
+			// reader.addCompletor(new FileNameCompletor());
+
+			String line;
+			while ((line = reader.readLine(getPromptDisplay())) != null) {
+
+				out.flush();
+				line = line.trim();
+
+				if (line.equalsIgnoreCase("quit")
+						|| line.equalsIgnoreCase("exit")) 
+					break;
+				
+
+				executeCommand(line);
+
 			}
-
-			String[] args = line.split("\\s");
-			executeCommand(args);
-			out.flush();
-
 		}
 	}
 
@@ -84,18 +155,77 @@ public class BusyBox {
 	 * get the formatted prompt for user+dir
 	 */
 	private String getPromptDisplay() {
-		return JAliEnCOMMander.getUsername()
-				+ promptPrefix +
-				JAliEnCOMMander.getCurrentDirTilded()
-				+ promptSuffix;
+		return callJAliEnGetString("whoami") + promptPrefix
+				+ callJAliEnGetString("cdirtiled") + promptSuffix;
+	}
+
+	private String callJAliEnGetString(String line) {
+		try {
+			line +="\n";
+			callJAliEn("setshell jaliensh");
+
+			os.write(line.getBytes());
+			os.flush();
+			
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+			String ret = "";	
+			String sLine;
+			
+			while ( (sLine = br.readLine()) != null ){
+				if(JAliEnShPrintWriter.lastLineTag.equals(sLine))
+					break;
+				ret += sLine + "\n";
+			}
+			if(ret.length()>0)
+				ret = ret.substring(0,ret.length()-1);
+
+			return ret;
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
+
+	private void callJAliEn(String line) {
+		try {
+
+			line +="\n";
+			os.write(line.getBytes());
+			os.flush();
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+			String sLine;
+			while ( (sLine = br.readLine()) != null ){
+				if(JAliEnShPrintWriter.lastLineTag.equals(sLine))
+					break;
+				if(sLine.startsWith(JAliEnShPrintWriter.errTag))
+					System.err.println("Error: "+ sLine.substring(JAliEnShPrintWriter.errTag.length()));
+				else {
+					out.println(sLine);
+					out.flush();
+				}
+			}
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
-	 * execute a command 
-	 * @param args arguments of the command, first one is the command
+	 * execute a command
+	 * 
+	 * @param args
+	 *            arguments of the command, first one is the command
 	 */
-	public void executeCommand(String args[]) {
-	
+	public void executeCommand(String callLine) {
+
+		String args[] = callLine.split("\\s");
+
 		if (!"".equals(args[0])) {
 			if (args[0].equals(".")) {
 				String command = "";
@@ -109,17 +239,21 @@ public class BusyBox {
 				syscall(command);
 			} else if (args[0].equals("help")) {
 				usage();
-			} else
-				JAliEnCOMMander.run(args);
-
+			} else {
+				callJAliEn("setshell jaliensh");
+				callJAliEn("setshell jaliensh");
+				callJAliEn("cd " + currentDir);
+				callJAliEn(callLine);
+			}
 		}
 	}
 
 	/**
-	 * print some help message 
+	 * print some help message
 	 */
 	public void usage() {
-		out.println("JAliEn Grid Client, started in 2010, Version: " + JAliEnIAm.whatsVersion());
+		out.println("JAliEn Grid Client, started in 2010, Version: "
+				+ JAliEnIAm.whatsVersion());
 		out.println("Press <tab><tab> to see the available commands.");
 	}
 
@@ -181,62 +315,5 @@ public class BusyBox {
 			System.out.println(e);
 		}
 	}
-//
-//	private void timingChallenge(ArrayList<String> args) {
-//
-//		System.out.println("args: " + args);
-//		
-//		
-//		int times = 100;
-//		String sTimes = args.get(0);
-//		args.remove(0);
-//		if(Integer.parseInt(sTimes)>1)
-//			times = Integer.parseInt(sTimes);
-//		
-//		String command = args.get(0);
-//		args.remove(0);
-//		
-//		ArrayList<Long> timings = new ArrayList<Long>(times);
-//
-//		
-//		if (command.equals("ls")) {
-//			for (int t = 0; t < times; t++) {
-//				try {
-//					JAliEnCommandls ls = new JAliEnCommandls(user, currentDir,
-//							args);
-//					ls.executeCommand();
-//					timings.add(ls.timingChallenge);
-//				} catch (Exception e1) {
-//					e1.printStackTrace();
-//				}
-//			}
-//		} else if (command.equals("get")) {
-//			for (int t = 0; t < times; t++) {
-//				try {
-//					JAliEnCommandget get = new JAliEnCommandget(user,
-//							currentDir, mySite, args);
-//					get.isATimeChallenge = true;
-//					get.executeCommand();
-//					timings.add(get.timingChallenge);
-//				} catch (Exception e) {
-//					e.printStackTrace();
-//				}
-//			}
-//
-//		}
-//
-//		System.out.println("The row:" + timings);
-//		Iterator<Long> it = timings.iterator();
-//		long alltime = (long) 0;
-//		float avr = 0;
-//		while(it.hasNext()){
-//			alltime = alltime + it.next();
-//		}
-//		avr = alltime / times;
-//		avr = avr /1000;
-//		
-//		System.out.println(command + " with " +times+" tries, average: " + avr + ", total: " + alltime);
-//
-//	}
 
 }

@@ -1,7 +1,10 @@
 package alien.shell.commands;
 
+import java.io.OutputStream;
+import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
@@ -15,28 +18,50 @@ import alien.user.UsersHelper;
  * @since June 4, 2011
  */
 public class JAliEnCOMMander {
+	
+	
 
+	/**
+	 * The commands that are advertised on the shell, e.g. by tab+tab
+	 */
 	private static final String[] commandList = new String[] { "ls", "get",
-			"cat", "whoami", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog","submit" };
+			"cat","whoami", "whereis", "cp", "cd", "time", "mkdir", "find",
+			"scrlog", "submit" };
+	
+	/**
+	 * The commands that have a JAliEnCommand* implementation
+	 */
+	private static final String[] jAliEnCommandList = new String[] { "ls", "get",
+		"cat",  "whereis",  "cp", "cd", "time", "mkdir", "find",
+		"scrlog", "submit" };
+	
+	/**
+	 * Commands to let UI talk internally with us here
+	 */
+	private static final String[] hiddenCommandList = new String[] { "whoami",
+			"cdir", "commandlist", "gfilecomplete", "cdirtiled" };
 
-	protected static AliEnPrincipal user = AuthorizationFactory
-			.getDefaultUser();
+	private UIPrintWriter out = null;
 
-	protected static String site = ConfigUtils.getConfig()
-			.gets("alice_close_site").trim();
+	protected AliEnPrincipal user = AuthorizationFactory.getDefaultUser();
 
-	private static String myHome = UsersHelper.getHomeDir(user.getName());
+	protected String site = ConfigUtils.getConfig().gets("alice_close_site")
+			.trim();
 
-	protected static LFN curDir = null;
+	private String myHome = UsersHelper.getHomeDir(user.getName());
+
+	protected LFN curDir = null;
 
 	/**
 	 * get list of commands
 	 * 
 	 * @return array of commands
 	 */
-	public static String[] getCommandList() {
-		return commandList;
+	public static String getCommandList() {
+		String commands = "";
+		for(int i=0;i<commandList.length;i++)
+			commands += commandList[i]+" ";
+		return commands;
 	}
 
 	/**
@@ -44,7 +69,7 @@ public class JAliEnCOMMander {
 	 * 
 	 * @return user
 	 */
-	public static AliEnPrincipal getUser() {
+	protected AliEnPrincipal getUser() {
 		return user;
 	}
 
@@ -53,16 +78,16 @@ public class JAliEnCOMMander {
 	 * 
 	 * @return site
 	 */
-	public static String getSite() {
+	protected String getSite() {
 		return site;
 	}
 
 	/**
 	 * get the user's name
 	 * 
-	 * @return username
+	 * @return user name
 	 */
-	public static String getUsername() {
+	protected String getUsername() {
 		return user.getName();
 	}
 
@@ -71,7 +96,7 @@ public class JAliEnCOMMander {
 	 * 
 	 * @return LFN of the current directory
 	 */
-	public static LFN getCurrentDir() {
+	public LFN getCurrentDir() {
 		if (curDir == null)
 			curDir = CatalogueApiUtils.getLFN(myHome);
 		return curDir;
@@ -79,33 +104,54 @@ public class JAliEnCOMMander {
 	}
 
 	/**
+	 * get the current directory as string
+	 * 
+	 * @return String of the current directory
+	 */
+	public String getCurrentDirName() {
+		return getCurrentDir().getCanonicalName();
+	}
+
+	/**
 	 * get the current directory, replace home with ~
 	 * 
 	 * @return name of the current directory, ~ places home
 	 */
-	public static String getCurrentDirTilded() {
+	public String getCurrentDirTilded() {
 
 		return getCurrentDir().getCanonicalName()
 				.substring(0, getCurrentDir().getCanonicalName().length() - 1)
 				.replace(myHome.substring(0, myHome.length() - 1), "~");
 	}
 
-	/**
-	 * run a signature/line from the prompt
-	 * 
-	 * @param args
-	 *            first element is command, which needs to be in command list,
-	 *            following entries are arguments
-	 */
-	public static void run(String[] args) {
-		ArrayList<String> argList = new ArrayList<String>(Arrays.asList(args));
-		argList.remove(args[0]);
-		try {
-			execute(args[0], argList);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.out.println("Command failed. See above.");
-		}
+	// /**
+	// * run a signature/line from the prompt
+	// *
+	// * @param args
+	// * first element is command, which needs to be in command list,
+	// * following entries are arguments
+	// */
+	// public void run(String[] args) {
+	// ArrayList<String> argList = new ArrayList<String>(Arrays.asList(args));
+	// argList.remove(args[0]);
+	// try {
+	// execute(null, null, args[0], argList);
+	// } catch (Exception e) {
+	// e.printStackTrace();
+	// System.out.println("Command failed. See above.");
+	// }
+	// }
+
+	private String gridFileCompletetion(ArrayList<String> args) {
+		// TODO:
+		return "";
+	}
+
+	private void setShellPrintWriter(OutputStream os, String shelltype) {
+		if (shelltype.equals("jaliensh"))
+			out = new JAliEnShPrintWriter(os);
+		else
+			out = new RootPrintWriter(os);
 	}
 
 	/**
@@ -117,52 +163,82 @@ public class JAliEnCOMMander {
 	 * @param the
 	 *            list of arguments
 	 */
-	private static void execute(String comm, ArrayList<String> args) {
-		if (!Arrays.asList(commandList).contains(comm)) {
+	public void execute(OutputStream os, String[] arg) {
 
-			System.err.println("Command [" + comm + "] not found!");
-			return;
+		String comm = arg[0];
+
+		if ("setshell".equals(comm)) {
+			setShellPrintWriter(os, arg[1]);
+		} else if (out == null) {
+			out = new RootPrintWriter(os);
 		}
 
-		final Object[] param = { args };
-		JAliEnBaseCommand jcommand = null;
-		try {
-			jcommand = getCommand(comm, param);
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.err.println("Command [" + comm
-					+ "] not found! (Class implementation not found.)");
-		}
-		try {
-			if (args.contains("-s")) {
-				jcommand.silent();
-				// TODO: we have to drop -s here
+		ArrayList<String> args = new ArrayList<String>(Arrays.asList(arg));
+		args.remove(arg[0]);
+
+		if (!Arrays.asList(jAliEnCommandList).contains(comm)) {
+
+			if (Arrays.asList(hiddenCommandList).contains(comm)) {
+				if ("cdir".equals(comm))
+					out.printOutln(getCurrentDirName());
+				else if ("cdirtiled".equals(comm))
+					out.printOutln(getCurrentDirTilded());
+				else if ("commandlist".equals(comm))
+					out.printOutln(getCommandList());
+				else if ("gfilecomplete".equals(comm))
+					out.printOutln(gridFileCompletetion(args));
+				else if ("whoami".equals(comm))
+					out.printOutln(getUsername());
+			} else if (!"setshell".equals(comm)){
+				out.printErrln("Command [" + comm + "] not found!");
 			}
-			if (args.size() != 0 && args.get(args.size() - 1).startsWith("&")) {
-				int logno = 0;
-				if (args.get(args.size() - 1).length() > 1) {
-					try {
-						logno = Integer.parseInt(args.get(args.size() - 1)
-								.substring(1));
-					} catch (NumberFormatException n) {
-					}
+		} else {
+
+			final Object[] param = { this, out, args };
+			JAliEnBaseCommand jcommand = null;
+			try {
+				jcommand = getCommand(comm, param);
+			} catch (Exception e) {
+				e.printStackTrace();
+				out.printErrln("Command [" + comm
+						+ "] not found! (Class implementation not found.)");
+			}
+			try {
+				if (args.contains("-s")) {
+					jcommand.silent();
+					// TODO: we have to drop -s here
 				}
-				JAliEnCommandscrlog.addScreenLogLine(logno,
-						"we will screen to" + logno);
-				args.remove(args.size() - 1);
-			}
+				if (args.size() != 0
+						&& args.get(args.size() - 1).startsWith("&")) {
+					int logno = 0;
+					if (args.get(args.size() - 1).length() > 1) {
+						try {
+							logno = Integer.parseInt(args.get(args.size() - 1)
+									.substring(1));
+						} catch (NumberFormatException n) {
+						}
+					}
+					JAliEnCommandscrlog.addScreenLogLine(logno,
+							"we will screen to" + logno);
+					args.remove(args.size() - 1);
+				}
 
-			if (!args.contains("--help") && !args.contains("-help")
-					&& !args.contains("-h")
-					&& (args.size() != 0 || jcommand.canRunWithoutArguments())) {
-				jcommand.execute();
-			} else {
-				jcommand.printHelp();
+				if (!args.contains("--help")
+						&& !args.contains("-help")
+						&& !args.contains("-h")
+						&& (args.size() != 0 || jcommand
+								.canRunWithoutArguments())) {
+					jcommand.execute();
+				} else {
+					jcommand.printHelp();
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+				out.printErrln("Error executing the command [" + comm
+						+ "].");
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.err.println("Error executing the command [" + comm + "].");
 		}
+		out.flush();
 	}
 
 	/**
@@ -187,8 +263,8 @@ public class JAliEnCOMMander {
 		// ".JAliEnCommand"
 				+ classSuffix);
 		@SuppressWarnings({ "rawtypes", "unchecked" })
-		java.lang.reflect.Constructor co = cl
-				.getConstructor((new Class[] { ArrayList.class }));
+		java.lang.reflect.Constructor co = cl.getConstructor((new Class[] {
+				JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class }));
 		return (JAliEnBaseCommand) co.newInstance(objectParm);
 	}
 }

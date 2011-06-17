@@ -7,6 +7,9 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import lazyj.Log;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
@@ -46,6 +49,9 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	// public long timingChallenge = 0;
 
+	private final ArrayList<String> alPaths;
+
+	
 	/**
 	 * list of the LFNs that came up by the ls command
 	 */
@@ -56,35 +62,18 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	public void execute() {
 
-		ArrayList<String> alPaths = new ArrayList<String>(alArguments.size());
-
-		for (String arg : alArguments) {
-			if ("-l".equals(arg))
-				bL = true;
-			else if ("-bulk".equals(arg))
-				bBulk = true;
-			else if ("-b".equals(arg))
-				bB = true;
-			else if ("-a".equals(arg))
-				bA = true;
-
-			else if ("-F".equals(arg))
-				bF = true;
-			else
-				alPaths.add(arg);
-		}
-
+	
 		// long lStart = System.currentTimeMillis();
 
 		int iDirs = alPaths.size();
 
 		if (iDirs == 0)
-			alPaths.add(JAliEnCOMMander.getCurrentDir().getCanonicalName());
+			alPaths.add(commander.getCurrentDir().getCanonicalName());
 
 		for (String sPath : alPaths) {
 			// listing current directory
 			if (!sPath.startsWith("/"))
-				sPath = JAliEnCOMMander.getCurrentDir().getCanonicalName()
+				sPath = commander.getCurrentDir().getCanonicalName()
 						+ sPath;
 
 			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
@@ -102,7 +91,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 						directory = Arrays.asList(entry);
 				} else {
 					if (!silent)
-						System.out.println("No such file or directory");
+						out.printOutln("No such file or directory");
 				}
 			}
 
@@ -139,7 +128,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 							ret += "/";
 					}
 					if (!silent)
-						System.out.println(ret);
+						out.printOutln(ret);
 				}
 			}
 
@@ -168,13 +157,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		System.out.println(AlienTime.getStamp()
+		out.printOutln(AlienTime.getStamp()
 				+ "Usage: ls [-laFn|b|h] [<directory>]");
-		System.out.println("		-l : long format");
-		System.out.println("		-a : show hidden .* files");
-		System.out.println("		-F : add trailing / to directory names");
-		System.out.println("		-b : print in guid format");
-		System.out.println("		-h : print the help text");
+		out.printOutln("		-l : long format");
+		out.printOutln("		-a : show hidden .* files");
+		out.printOutln("		-F : add trailing / to directory names");
+		out.printOutln("		-b : print in guid format");
+		out.printOutln("		-h : print the help text");
 	}
 
 	/**
@@ -199,13 +188,31 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandls(final ArrayList<String> alArguments) {
-		super(alArguments);
+	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+		super(commander, out, alArguments);
+		final OptionParser parser = new OptionParser();
+		
+		parser.accepts("l");
+		parser.accepts("bulk");
+		parser.accepts("b");
+		parser.accepts("a");
+		parser.accepts("F");
+		
+		final OptionSet options = parser.parse(alArguments.toArray(new String[]{}));
+		
+		alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+		alPaths.addAll(options.nonOptionArguments());
+		
+				bL = options.has("l");
+				bBulk = options.has("bulk");
+				bB = options.has("b");
+				bA = options.has("a");
+				bF = options.has("F");
 	}
 
 }

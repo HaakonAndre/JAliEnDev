@@ -286,6 +286,8 @@ public class Xrootd extends Protocol {
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					command);
+			
+			System.out.println("calling: " + command);
 
 			pBuilder.returnOutputOnExit(true);
 

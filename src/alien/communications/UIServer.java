@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
+import alien.shell.commands.JAliEnCOMMander;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -109,15 +110,17 @@ public class UIServer extends Thread {
 				
 				String sLine = br.readLine();
 				
+				if(sLine.equals(password))
+					System.out.println("password accepted");
+			
+				
 				if (sLine==null || !sLine.equals(password))
 					return;
-				
+				JAliEnCOMMander jcomm = new JAliEnCOMMander();
 				while ( (sLine = br.readLine()) != null ){
-					String response = "Echo : "+sLine+"\n";
-					
-					os.write(response.getBytes());
-					os.flush();
-					// TODO implement this
+					System.out.println("we received call: "+ sLine);
+					jcomm.execute(os, sLine.trim().split(" "));
+					os.flush();					
 				}
 			}
 			catch (IOException e) {

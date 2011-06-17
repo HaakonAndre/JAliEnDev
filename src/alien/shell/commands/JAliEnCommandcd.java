@@ -12,24 +12,24 @@ import alien.user.UsersHelper;
  * @since June 4, 2011
  */
 public class JAliEnCommandcd extends JAliEnBaseCommand {
-
+	
 	public void execute() {
 
 		LFN newDir = null;
 
 		if (alArguments.size() > 0)
 			newDir = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
-					JAliEnCOMMander.user.getName(),
-					JAliEnCOMMander.getCurrentDir().getCanonicalName(),
+					commander.user.getName(),
+					commander.getCurrentDir().getCanonicalName(),
 					alArguments.get(0)));
 		else
 			newDir = CatalogueApiUtils.getLFN(UsersHelper
-					.getHomeDir(JAliEnCOMMander.user.getName()));
+					.getHomeDir(commander.user.getName()));
 
 		if (newDir != null)
-			JAliEnCOMMander.curDir = newDir;
+			commander.curDir = newDir;
 		else
-			System.err.println("No such directory.");
+			out.printErrln("No such directory.");
 
 	}
 
@@ -55,12 +55,12 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcd(final ArrayList<String> alArguments){
-		super(alArguments);
+	public JAliEnCommandcd(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+		super(commander, out,alArguments);
 	}
 }

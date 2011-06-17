@@ -10,6 +10,7 @@ import alien.perl.commands.AlienTime;
  */
 public class JAliEnCommandtime extends JAliEnBaseCommand {
 
+
 	public void execute() throws Exception {
 
 		if (alArguments.size() < 2) {
@@ -29,7 +30,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		String command = alArguments.get(1);
 		args.remove(alArguments.get(1));
 
-		JAliEnBaseCommand comm = (JAliEnBaseCommand) JAliEnCOMMander
+		JAliEnBaseCommand comm = (JAliEnBaseCommand) commander
 				.getCommand(command, new Object[] { args });
 		//comm.silent();
 
@@ -45,7 +46,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 			total += t;
 		for(String s:args)
 			command += " " + s;
-		System.out.println("\""+command+ "\" with #" + times+ " tries,\tavr/total msec:\t\t"+(total / times)+"/"+total);
+		out.printOutln("\""+command+ "\" with #" + times+ " tries,\tavr/total msec:\t\t"+(total / times)+"/"+total);
 
 	}
 
@@ -54,7 +55,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 
-		System.out.println(AlienTime.getStamp()
+		out.printOutln(AlienTime.getStamp()
 				+ "Usage: time <times>  <command> [command_arguments] ");
 	}
 
@@ -75,12 +76,12 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandtime(final ArrayList<String> alArguments) {
-		super(alArguments);
+	public JAliEnCommandtime(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+		super(commander, out,alArguments);
 	}
 }

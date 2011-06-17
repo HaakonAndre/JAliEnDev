@@ -7,6 +7,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
@@ -70,29 +73,6 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	 */
 	public void execute() {
 
-		final Iterator<String> it = alArguments.iterator();
-
-		while (it.hasNext()) {
-			String arg = it.next();
-			if ("-S".equals(arg)) {
-				ses = new ArrayList<String>();
-				exses = new ArrayList<String>();
-				final StringTokenizer st = new StringTokenizer(it.next(), ",");
-				while (st.hasMoreTokens()) {
-					String se = st.nextToken();
-					if (se.indexOf('!') == 0)
-						exses.add(se.substring(1));
-					else
-						ses.add(se);
-				}
-			} else if ("-g".equals(arg))
-				bG = true;
-			else if ("-o".equals(arg))
-				outputFileName = it.next();
-			else
-				lfnOrGuid = arg;
-		}
-
 		if (lfnOrGuid != null) {
 
 			List<PFN> pfns = null;
@@ -101,19 +81,19 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 
 			if (bG) {
 				GUID guid = CatalogueApiUtils.getGUID(lfnOrGuid);
-				pfns = CatalogueApiUtils.getPFNsToRead(JAliEnCOMMander.user,
-						JAliEnCOMMander.site, guid, ses, exses);
+				pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+						commander.site, guid, ses, exses);
 			} else {
-				LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils
-						.getAbsolutePath(JAliEnCOMMander.user.getName(),
-								JAliEnCOMMander.getCurrentDir().getCanonicalName(),
-								lfnOrGuid));
-				pfns = CatalogueApiUtils.getPFNsToRead(JAliEnCOMMander.user,
-						JAliEnCOMMander.site, lfn, ses, exses);
+				LFN lfn = CatalogueApiUtils
+						.getLFN(FileSystemUtils.getAbsolutePath(commander.user
+								.getName(), commander.getCurrentDir()
+								.getCanonicalName(), lfnOrGuid));
+				pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+						commander.site, lfn, ses, exses);
 
 			}
 			// timingChallenge = (System.currentTimeMillis() - lStart);
-			// System.err.println("jAliEn TIMING CHALLENGE : "+timingChallenge);
+			// out.printErrln("jAliEn TIMING CHALLENGE : "+timingChallenge);
 			//
 			// if(!isATimeChallenge){
 
@@ -123,22 +103,22 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 				for (final Protocol protocol : protocols) {
 					try {
 
-						if (outputFileName != null)
+						if (outputFileName != null) {
 							outputFile = new File(outputFileName);
+						}
 						outputFile = protocol.get(pfn, outputFile);
 						if (!silent)
-							System.out.println("Downloaded file to "
+							out.printOutln("Downloaded file to "
 									+ outputFile.getCanonicalPath());
 
 						break;
 					} catch (IOException e) {
-						// ignore
+						e.printStackTrace();
 					}
-					// }
 				}
-				if (!outputFile.exists())
+				if (outputFile == null || !outputFile.exists())
 
-					System.out.println("Could not get the file.");
+					out.printErrln("Could not get the file.");
 			}
 		}
 	}
@@ -148,10 +128,10 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 
-		System.out.println(AlienTime.getStamp() + "Usage: get  ... ");
-		System.out.println("		-g : get by GUID");
-		System.out.println("		-s : se,se2,!se3,se4,!se5");
-		System.out.println("		-o : outputfilename");
+		out.printOutln(AlienTime.getStamp() + "Usage: get  ... ");
+		out.printOutln("		-g : get by GUID");
+		out.printOutln("		-s : se,se2,!se3,se4,!se5");
+		out.printOutln("		-o : outputfilename");
 	}
 
 	/**
@@ -176,13 +156,27 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandget(final ArrayList<String> alArguments) {
-		super(alArguments);
+	public JAliEnCommandget(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
+		super(commander, out,alArguments);
+
+		final OptionParser parser = new OptionParser();
+		parser.accepts("g");
+
+		final OptionSet options = parser.parse(alArguments
+				.toArray(new String[] {}));
+		
+		bG = options.has("g");
+
+		if (options.nonOptionArguments().size() != 1)
+			printHelp();
+		else
+			lfnOrGuid = options.nonOptionArguments().get(0);
 	}
 
 }

@@ -2,6 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.perl.commands.AlienTime;
@@ -15,29 +18,23 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	/**
 	 * marker for -p argument
 	 */
-	private boolean bP = false;
-
+	private final boolean bP;
+	private final ArrayList<String> alPaths;
 	
 	public void execute() {
-		ArrayList<String> alPaths = new ArrayList<String>(alArguments.size());
-		for (String arg : alArguments){
-			if ("-p".equals(arg))
-				bP = true;
-			else
-				alPaths.add(arg);
-		}
+
 		for (String path: alPaths){
 			if(bP)
-				if(CatalogueApiUtils.createCatalogueDirectory(JAliEnCOMMander.user, FileSystemUtils.getAbsolutePath(
-						JAliEnCOMMander.user.getName(),
-						JAliEnCOMMander.getCurrentDir().getCanonicalName(),path),true)==null)
-					System.err.println("Could not create directory (or non-existing parents): " + path);
+				if(CatalogueApiUtils.createCatalogueDirectory(commander.user, FileSystemUtils.getAbsolutePath(
+						commander.user.getName(),
+						commander.getCurrentDir().getCanonicalName(),path),true)==null)
+					out.printErrln("Could not create directory (or non-existing parents): " + path);
 		
 			else 
-				if(CatalogueApiUtils.createCatalogueDirectory(JAliEnCOMMander.user, FileSystemUtils.getAbsolutePath(
-						JAliEnCOMMander.user.getName(),
-						JAliEnCOMMander.getCurrentDir().getCanonicalName(),path))==null)
-					System.err.println("Could not create directory: " + path);
+				if(CatalogueApiUtils.createCatalogueDirectory(commander.user, FileSystemUtils.getAbsolutePath(
+						commander.user.getName(),
+						commander.getCurrentDir().getCanonicalName(),path))==null)
+					out.printErrln("Could not create directory: " + path);
 				
 		}
 	}
@@ -46,10 +43,10 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		System.out.println(AlienTime.getStamp()
+		out.printOutln(AlienTime.getStamp()
 				+ "Usage: mkdir [-ps] <directory> [<directory>] ...");
-		System.out.println("		-p : create parents as needed");
-		System.out.println("		-s : silent");
+		out.printOutln("		-p : create parents as needed");
+		out.printOutln("		-s : silent");
 
 	}
 
@@ -71,12 +68,24 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandmkdir(final ArrayList<String> alArguments){
-		super(alArguments);
+	public JAliEnCommandmkdir(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+		super(commander, out, alArguments);
+		
+		final OptionParser parser = new OptionParser();
+		
+		parser.accepts("p");
+		
+		final OptionSet options = parser.parse(alArguments.toArray(new String[]{}));
+		
+		alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+		alPaths.addAll(options.nonOptionArguments());
+		
+		bP = options.has("p");
+		
 	}
 }
