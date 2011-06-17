@@ -35,7 +35,6 @@ public class RegisterEnvelopes extends Request {
 	 * Register PFNs with envelopes
 	 * 
 	 * @param user
-	 * @param site
 	 * @param envelopes 
 	 */
 	public RegisterEnvelopes(AliEnPrincipal user,

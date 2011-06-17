@@ -25,7 +25,6 @@ public class LFNListingfromString extends Request {
 
 	/**
 	 * @param path
-	 * @param evenIfDoesNotExist
 	 */
 	public LFNListingfromString(final String path) {
 		this.path = path;
