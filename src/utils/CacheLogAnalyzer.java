@@ -59,9 +59,9 @@ public class CacheLogAnalyzer {
 	
 	private static final Pattern RAW = Pattern.compile("^/alice/data/(20[01][0-9])/(LHC[^/]+)/[0]{0,3}([0-9]{6,9})/.*");
 	
-	private static final Pattern ESD = Pattern.compile(".*/ESDs/(pass[^/]+)/.*");
+	private static final Pattern ESD = Pattern.compile(".*/ESDs/([pP]ass[^/]+)/.*");
 	
-	private static final Pattern AOD = Pattern.compile(".*/ESDs/(pass[^/]+)/AOD[0-9]{3}/.*");
+	private static final Pattern AOD = Pattern.compile(".*/ESDs/([pP]ass[^/]+)/AOD[0-9]{3}/.*");
 	
 	private static final Pattern RAWOCDB = Pattern.compile("^/alice/data/(20[01][0-9])/OCDB/([^/]+)/.*");
 	
@@ -160,7 +160,7 @@ public class CacheLogAnalyzer {
 				if (m!=null && m.matches()){
 					incStats("access", "raw_data", "AOD", hit);
 					
-					incStats("access", "raw_data_pass", m.group(1), hit);
+					incStats("access", "raw_data_pass", m.group(1).toLowerCase(), hit);
 				}
 				else{
 					m = lfn.indexOf("/ESDs/")>=0 ? ESD.matcher(lfn) : null;
@@ -168,7 +168,7 @@ public class CacheLogAnalyzer {
 					if (m!=null && m.matches()){
 						incStats("access", "raw_data", "ESDs", hit);
 						
-						incStats("access", "raw_data_pass", m.group(1), hit);
+						incStats("access", "raw_data_pass", m.group(1).toLowerCase(), hit);
 					}
 					else
 					if (lfn.indexOf("/raw/")>=0){
