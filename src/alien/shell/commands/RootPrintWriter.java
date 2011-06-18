@@ -115,4 +115,10 @@ class RootPrintWriter extends UIPrintWriter{
 	protected void printErrln(String line) {
 		print(errTag + line + "\n");
 	}
+
+	@Override
+	protected void flush() {
+		// TODO Auto-generated method stub
+		
+	}
 }

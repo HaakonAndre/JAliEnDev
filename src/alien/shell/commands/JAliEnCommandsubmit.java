@@ -92,5 +92,5 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	 */
 	public JAliEnCommandsubmit(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
 		super(commander, out, alArguments);
-=	}
+	}
 }

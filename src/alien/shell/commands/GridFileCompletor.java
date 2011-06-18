@@ -55,9 +55,9 @@ public class GridFileCompletor extends FileNameCompletor {
 		// translated = separator
 		// + translated;
 		// }
-		translated = FileSystemUtils.getAbsolutePath(
-				JAliEnCOMMander.user.getName(),
-				JAliEnCOMMander.getCurrentDir().getCanonicalName(), translated);
+//		translated = FileSystemUtils.getAbsolutePath(
+//				JAliEnCOMMander.user.getName(),
+//				JAliEnCOMMander.getCurrentDir().getCanonicalName(), translated);
 		LFN lfn = CatalogueApiUtils.getLFN(translated);
 
 		final LFN dir;
