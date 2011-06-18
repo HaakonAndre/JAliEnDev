@@ -4,13 +4,25 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.openssl.PEMReader;
+
+import alien.api.Authenticate;
 import alien.api.Request;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthenticationChecker;
+import alien.user.UserFactory;
 
 /**
  * @author costing
@@ -40,6 +52,9 @@ public class SimpleServer extends Thread {
 	private final ObjectOutputStream oos;
 	
 	private final OutputStream os;
+	
+	private Authenticate authN = null;
+	private AliEnPrincipal user = null;
 	
 	/**
 	 * @param connection
@@ -80,6 +95,7 @@ public class SimpleServer extends Thread {
 						
 						long lStart = System.currentTimeMillis();
 						
+						r.user = user;
 						r.run();
 						
 						lLasted += (System.currentTimeMillis() - lStart);
@@ -150,12 +166,73 @@ public class SimpleServer extends Thread {
 			
 				logger.log(Level.INFO, "Got a connection from : "+s.getInetAddress());
 				
-				new SimpleServer(s).start();
+				SimpleServer serv = new SimpleServer(s);
+				System.out.println("Initiating Challenge, Response...");
+				if(serv.authenticate()){
+					System.out.println("Successfully authenticated. Have fun.");
+					
+					serv.user = UserFactory
+							.getByCertificate(new X509Certificate[] { ((X509Certificate) new PEMReader(new StringReader(serv.authN.getPubCert()))
+							.readObject()) });
+					serv.start();
+				} else
+					System.out.println("Authentication failed.");
+				
 			}
 			catch (IOException ioe){
 				logger.log(Level.WARNING, "Exception treating a client", ioe);
 			}
 		}
+	}
+	
+
+
+	/**
+	 * Total amount of time (in milliseconds) spent in writing objects to the socket.
+	 */
+	public static long lSerialization = 0;
+	
+	/**
+	 * @param authN 
+	 * @return 
+	 * @throws IOException 
+	 * 
+	 */
+	public
+	synchronized boolean authenticate() throws IOException {
+
+		
+		AuthenticationChecker authCh = new AuthenticationChecker(); 
+		
+		authN = new Authenticate(authCh.challenge());
+
+			long lStart = System.currentTimeMillis();
+			
+			this.oos.writeObject(authN);
+			//c.oos.reset();		
+			this.oos.flush();
+			this.os.flush();
+			
+			lSerialization += System.currentTimeMillis() - lStart;
+			
+			Authenticate authNResp;
+			try {
+				authNResp = (Authenticate) this.ois.readObject();
+			}
+			catch (ClassNotFoundException e) {
+				throw new IOException(e.getMessage());
+			}
+			
+			try {
+				return authCh.verify(authNResp.getPubCert(), authNResp.getResponse());
+			} catch (InvalidKeyException e) {
+				e.printStackTrace();
+			} catch (SignatureException e) {
+				e.printStackTrace();
+			} catch (NoSuchAlgorithmException e) {
+				e.printStackTrace();
+			}
+			return false;
 	}
 	
 }

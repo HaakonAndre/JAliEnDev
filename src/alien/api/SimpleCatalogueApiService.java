@@ -70,7 +70,12 @@ public class SimpleCatalogueApiService extends Thread {
 			
 				logger.log(Level.INFO, "Got a connection from : "+s.getInetAddress());
 				
-				new SimpleServer(s).start();
+				
+				SimpleServer serv = new SimpleServer(s);
+				if(serv.authenticate())
+					serv.start();
+				
+				
 			}
 			catch (IOException ioe){
 				logger.log(Level.WARNING, "Exception treating a client", ioe);

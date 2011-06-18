@@ -1,6 +1,7 @@
 package alien.communications;
 
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -10,13 +11,19 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.Security;
+import java.util.Arrays;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.openssl.EncryptionException;
+import org.bouncycastle.openssl.PasswordFinder;
+
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.user.AuthenticationChecker;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -29,6 +36,7 @@ public class UIServer extends Thread {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(UIServer.class.getCanonicalName());
+	
 	
 	private final int port;
 	
@@ -198,7 +206,48 @@ public class UIServer extends Thread {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+
+		
+		String pass = "";
+			 Console cons;
+			 char[] passwd = new char[] {};
+			 if((cons = System.console()) == null)
+				 System.out.println("console null");
+			 
+			 if ((cons = System.console()) != null &&
+			     (passwd = cons.readPassword("[%s]", "Private key password: ")) != null)
+				 	pass = String.valueOf(passwd);
+			 
+			 Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+			System.out.println("pass is: " + pass);
+		PasswordFinder pf = new DefaultPasswordFinder(
+				passwd);
+		try{
+		AuthenticationChecker.loadPrivKey(pf);
 		startUIServer();
+
+		}
+		catch(EncryptionException e ){
+			System.err.println("Invalid password.");
+		}
+		catch(IOException e){
+			System.err.println("Not able to find Grid certificate.");
+		}
+		
+	}
+	
+	private static class DefaultPasswordFinder implements PasswordFinder {
+
+		private final char[] password;
+
+		private DefaultPasswordFinder(char[] password) {
+			this.password = password;
+		}
+
+		@Override
+		public char[] getPassword() {
+			return Arrays.copyOf(password, password.length);
+		}
 	}
 	
 }

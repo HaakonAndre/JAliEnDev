@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.HashMap;
 
+import alien.api.Authenticate;
 import alien.api.Request;
 
 /**
@@ -64,7 +65,9 @@ public class SimpleClient extends Thread {
 
 			
 			Socket s = new Socket(addr, p);
-			instance.put(p, new SimpleClient(s));
+			SimpleClient sc = new SimpleClient(s);
+			sc.authenticate();
+			instance.put(p, sc);
 		
 		}
 		return instance.get(p);
@@ -189,4 +192,77 @@ public class SimpleClient extends Thread {
 		}
 	}
 	
+	
+	/**
+	 * 
+	 */
+	public void authenticate() {
+
+	long lLasted = 0;
+	
+	long lSerialization = 0;
+	
+	try{
+	
+			final Object o = ois.readObject();
+			
+			if (o!=null){					
+				if (o instanceof Authenticate){
+					final Authenticate authN = (Authenticate) o;
+
+					
+					long lStart = System.currentTimeMillis();
+					
+					authN.run();
+					
+					lLasted += (System.currentTimeMillis() - lStart);
+					
+					long lSer = System.currentTimeMillis();
+					
+					oos.writeObject(authN);
+					oos.flush();
+					os.flush();
+					
+					lSerialization += System.currentTimeMillis() - lSer;
+					
+					
+				}
+				else{
+					System.out.println("I don't know what to do with an object of type "+o.getClass().getCanonicalName());
+				}
+			}
+		}
+	
+	catch (Exception e){
+		System.err.println("Lasted : "+lLasted+", serialization : "+lSerialization);
+		
+		if (ois!=null){
+			try{
+				ois.close();
+			}
+			catch (IOException ioe){
+				// ignore
+			}
+		}
+		
+		if (oos!=null){
+			try{
+				oos.close();
+			}
+			catch (IOException ioe){
+				// ignore
+			}
+		}
+		
+		if (connection!=null){
+			try{
+				connection.close();
+			}
+			catch (IOException ioe){
+				// ignore
+			}
+		}
+	}
+	}
+
 }

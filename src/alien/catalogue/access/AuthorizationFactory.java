@@ -8,15 +8,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.Security;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
-
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.openssl.PEMReader;
 
 import alien.catalogue.GUID;
 import alien.catalogue.PFN;
@@ -40,6 +39,9 @@ public final class AuthorizationFactory {
 			.getLogger(AuthorizationFactory.class.getCanonicalName());
 
 	private static AliEnPrincipal defaultAccount = null;
+	
+	private static AliEnPrincipal user = null;
+
 
 	static {
 		String file = System.getenv("X509_USER_CERT");
@@ -99,6 +101,15 @@ public final class AuthorizationFactory {
 		setDefaultUser(user);
 	}
 
+	/**
+	 * @param cert
+	 */
+	public AuthorizationFactory(X509Certificate cert) {
+		user = UserFactory
+		.getByCertificate(new X509Certificate[] { cert });
+	}
+	
+	
 	/**
 	 * Set the default account of this environment
 	 * 
