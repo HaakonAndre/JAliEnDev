@@ -39,7 +39,6 @@ public class AuthenticationChecker {
 	public static  void loadPrivKey(PasswordFinder pFinder) throws IOException {
 
 		if(privKey==null){
-
 			BufferedReader priv = new BufferedReader(new FileReader(ConfigUtils
 					.getConfig().gets("user.cert.priv.location").trim()));
 
