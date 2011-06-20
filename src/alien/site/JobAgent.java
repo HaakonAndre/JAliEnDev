@@ -22,9 +22,10 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
-import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
+import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 
 /**
  * @author ron
@@ -40,19 +41,29 @@ public class JobAgent extends Thread {
 	private JDL jdl = null;
 	private Job job = null;
 
+	private final AliEnPrincipal user;
+	
+	private static final String site = null;	// TODO : how to determine the site where we currently run ?
+	
 	/**
 	 * @param job
 	 */
 	public JobAgent(Job job) {
 		this.job = job;
+		
+		this.user = UserFactory.getByUsername(job.getOwner());
+		
 		try {
 			jdl = new JDL(job.getJDL());
+			
+			
 		} catch (IOException e) {
 			System.err.println("Unable to get JDL from Job.");
 			e.printStackTrace();
 		}
 	}
 
+	@Override
 	public void run() {
 		if(verifiedJob()){
 		TaskQueueApiUtils.setJobStatus(job.queueId, "STARTED");
@@ -102,9 +113,7 @@ public class JobAgent extends Thread {
 				System.out.println("Getting input file: " + slfn);
 				LFN lfn = CatalogueApiUtils.getLFN(slfn);
 				System.out.println("Getting input file lfn: " + lfn);
-				List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
-						JAliEnCOMMander.getUser(), JAliEnCOMMander.getSite(),
-						lfn, null, null);
+				List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(user, site, lfn, null, null);
 				System.out.println("Getting input file pfns: " + pfns);
 
 				for (PFN pfn : pfns) {
@@ -200,23 +209,21 @@ public class JobAgent extends Thread {
 
 		System.out.println("Full catpath of outDir is: "
 				+ FileSystemUtils.getAbsolutePath(
-						JAliEnCOMMander.getUsername(), "~", outputDir));
+						user.getName(), "~", outputDir));
 
-		if (CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
-				JAliEnCOMMander.getUsername(), null, outputDir)) != null) {
+		if (CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(user.getName(), null, outputDir)) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
 			return false;
 		}
 
-		LFN outDir = CatalogueApiUtils.createCatalogueDirectory(
-				JAliEnCOMMander.getUser(), outputDir);
+		LFN outDir = CatalogueApiUtils.createCatalogueDirectory(user, outputDir);
 
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir
 					+ "].");
 			uploadedAllOutFiles = false;
 		}
-		if (uploadedAllOutFiles) {
+		else{
 			for (String slfn : jdl.getOutputFiles()) {
 				File localFile;
 				try {
@@ -235,26 +242,22 @@ public class JobAgent extends Thread {
 						try {
 							md5 = FileSystemUtils.calculateMD5(localFile);
 						} catch (Exception e1) {
+							// ignore, treated below
 						}
+						
 						if (md5 == null) {
-							System.err
-									.println("Could not calculate md5 checksum of the local file: "
-											+ localFile.getAbsolutePath());
+							System.err.println("Could not calculate md5 checksum of the local file: " + localFile.getAbsolutePath());
 						}
 
 						List<PFN> pfns = null;
 
 						LFN lfn = null;
-						lfn = CatalogueApiUtils.getLFN(
-								outDir.getCanonicalName() + slfn, true);
+						lfn = CatalogueApiUtils.getLFN(outDir.getCanonicalName() + slfn, true);
 
 						lfn.size = size;
 						lfn.md5 = md5;
 
-						pfns = CatalogueApiUtils.getPFNsToWrite(
-								JAliEnCOMMander.getUser(),
-								JAliEnCOMMander.getSite(), lfn, null, null,
-								null, 0);
+						pfns = CatalogueApiUtils.getPFNsToWrite(user, site, lfn, null, null, null, 0);
 
 						if (pfns != null) {
 							ArrayList<String> envelopes = new ArrayList<String>(
@@ -280,10 +283,7 @@ public class JobAgent extends Thread {
 								envelopes.add(pfn.ticket.envelope
 										.getSignedEnvelope());
 
-							List<PFN> pfnsok = CatalogueApiUtils
-									.registerEnvelopes(
-											JAliEnCOMMander.getUser(),
-											envelopes);
+							List<PFN> pfnsok = CatalogueApiUtils.registerEnvelopes(user, envelopes);
 							if (!pfns.equals(pfnsok)) {
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size()
@@ -311,6 +311,7 @@ public class JobAgent extends Thread {
 				}
 			}
 		}
+		
 		if (uploadedNotAllCopies)
 			TaskQueueApiUtils.setJobStatus(job.queueId, "DONE_WARN");
 		else if (uploadedAllOutFiles)
