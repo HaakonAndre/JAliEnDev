@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -476,6 +477,13 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		return (type=='d');
 	}
 	
+	/**
+	 * @return <code>true</code> if this is a native collection
+	 */
+	public boolean isCollection(){
+		return type=='c';
+	}
+	
 	private static final String e(final String s){
 		if (s==null)
 			return "null";
@@ -560,4 +568,30 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				
 		return ret;
 	}
+	
+	/**
+	 * @return the set of files in this collection, or <code>null</code> if this is not a collection
+	 */
+	public Set<String> listCollection(){
+		if (!isCollection() || !exists)
+			return null;
+		
+		final DBFunctions db = ConfigUtils.getDB("alice_data");
+		
+		if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary('"+guid.toString()+"');"))
+			return null;
+
+		final int count = db.count();
+				
+		final TreeSet<String> ret = new TreeSet<String>();
+
+		if (count<=0)
+			return new TreeSet<String>();
+
+		while (db.moveNext()){
+			ret.add(db.gets(1));
+		}
+		
+		return ret;
+	}	
 }
