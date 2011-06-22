@@ -15,11 +15,10 @@ import alien.perl.commands.AlienTime;
  */
 public class JAliEnCommandcat extends JAliEnBaseCommand {
 
-	
 	public void execute() throws Exception {
 
 		JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander.getCommand(
-				"get", new Object[] { commander, out,alArguments });
+				"get", new Object[] { commander, out, alArguments });
 		get.silent();
 		get.execute();
 		File fout = get.getOutputFile();
@@ -28,11 +27,13 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 			DataInputStream in = new DataInputStream(fstream);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			String strLine = "";
+			String file = "";
+			String line;
+			while ((line = br.readLine()) != null) {
+				file += line+"\n";
+			}
 
-			while ((strLine += br.readLine()) != null) {}
-			
-			out.printOutln(strLine);
+			out.printOutln(file);
 
 		} else
 			out.printErrln("Not able to get the file.");
@@ -50,7 +51,8 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * cat cannot run without arguments 
+	 * cat cannot run without arguments
+	 * 
 	 * @return <code>false</code>
 	 */
 	public boolean canRunWithoutArguments() {
@@ -70,7 +72,8 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcat(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+	public JAliEnCommandcat(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 	}
 }

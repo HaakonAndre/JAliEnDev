@@ -30,8 +30,8 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		String command = alArguments.get(1);
 		args.remove(alArguments.get(1));
 
-		JAliEnBaseCommand comm = (JAliEnBaseCommand) commander
-				.getCommand(command, new Object[] { args });
+		JAliEnBaseCommand comm = JAliEnCOMMander
+				.getCommand(command, new Object[] {  commander, out,args });
 		//comm.silent();
 
 		ArrayList<Long> timings = new ArrayList<Long>(times);
@@ -72,11 +72,13 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 * nonimplemented command's silence trigger, cd is never silent
 	 */
 	public void silent() {
-
+		//ignore
 	}
 
 	/**
 	 * Constructor needed for the command factory in commander
+	 * @param commander 
+	 * @param out 
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command

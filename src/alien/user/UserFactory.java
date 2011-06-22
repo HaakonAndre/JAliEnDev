@@ -1,6 +1,8 @@
 package alien.user;
 
+import java.io.ByteArrayInputStream;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -36,10 +38,27 @@ public final class UserFactory {
 	 * @param certChain
 	 * @return account, or <code>null</code> if no account has this certificate associated to it
 	 */
+	public static AliEnPrincipal getByCertificate(final javax.security.cert.X509Certificate[] certChain) {
+		ArrayList<X509Certificate> certs = new ArrayList<X509Certificate>(certChain.length);
+		for(javax.security.cert.X509Certificate c: certChain)
+			certs.add(convert(c));		
+		if(certs.isEmpty())
+			return null;
+		
+		X509Certificate[] c = new X509Certificate[certs.size()];
+		certs.toArray(c);
+		return getByCertificate(c);
+	}
+	
+	/**
+	 * Get the account corresponding to this certificate chain
+	 * 
+	 * @param certChain
+	 * @return account, or <code>null</code> if no account has this certificate associated to it
+	 */
 	public static AliEnPrincipal getByCertificate(final X509Certificate[] certChain) {
 		for (int i=0; i<certChain.length; i++){
 			final String sDN = certChain[i].getSubjectX500Principal().getName();
-		
 			final String sDNTransformed = transformDN(sDN);
 			
 			final AliEnPrincipal p = getByDN(sDNTransformed);
@@ -130,4 +149,43 @@ public final class UserFactory {
 		
 		return null;			
 	}
+	
+	
+	public static X509Certificate convert(javax.security.cert.X509Certificate cert) {
+	    try {
+	        byte[] encoded = cert.getEncoded();
+	        ByteArrayInputStream bis = new ByteArrayInputStream(encoded);
+	        java.security.cert.CertificateFactory cf
+	            = java.security.cert.CertificateFactory.getInstance("X.509");
+	        return (java.security.cert.X509Certificate)cf.generateCertificate(bis);
+	    } catch (java.security.cert.CertificateEncodingException e) {
+	    	//ignore
+	    } catch (javax.security.cert.CertificateEncodingException e) {
+	    	//ignore
+
+	    } catch (java.security.cert.CertificateException e) {
+	    	//ignore
+
+	    }
+	    return null;
+	}
+
+
+	public static javax.security.cert.X509Certificate convert(X509Certificate cert) {
+	    try {
+	        byte[] encoded = cert.getEncoded();
+	        return javax.security.cert.X509Certificate.getInstance(encoded);
+	    } catch (java.security.cert.CertificateEncodingException e) {
+	    	//ignore
+
+	    } catch (javax.security.cert.CertificateEncodingException e) {
+	    	//ignore
+
+	    } catch (javax.security.cert.CertificateException e) {
+	    	//ignore
+
+	    }
+	    return null;
+	}
+	
 }

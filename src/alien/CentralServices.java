@@ -1,11 +1,12 @@
 package alien;
 
+import java.security.KeyStoreException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import alien.api.SimpleCatalogueApiService;
-import alien.api.SimpleTaskQueueApiService;
+import alien.api.DispatchSSLServer;
 import alien.config.ConfigUtils;
+import alien.user.JAKeyStore;
 
 
 /**
@@ -16,21 +17,29 @@ public class CentralServices {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(Testing.class
+	static transient final Logger logger = ConfigUtils.getLogger(CentralServices.class
 			.getCanonicalName());
 
 	/**
 	 * @param args
+	 * @throws KeyStoreException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws KeyStoreException {
+		
+		try {
+			JAKeyStore.loadServerKeyStorage();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
 		
 		logger.setLevel(Level.WARNING);
 
 		try {
-			SimpleCatalogueApiService catalogueAPIService = new SimpleCatalogueApiService();
-			catalogueAPIService.start();
-			SimpleTaskQueueApiService taskqueueAPIService = new SimpleTaskQueueApiService();
-			taskqueueAPIService.start();
+//			SimpleCatalogueApiService catalogueAPIService = new SimpleCatalogueApiService();
+//			catalogueAPIService.start();
+			DispatchSSLServer.runService();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

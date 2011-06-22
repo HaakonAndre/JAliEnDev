@@ -1,10 +1,10 @@
 package alien.shell.commands;
 
+import java.io.File;
 import java.io.OutputStream;
-import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashMap;
 
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
@@ -43,13 +43,44 @@ public class JAliEnCOMMander {
 
 	private UIPrintWriter out = null;
 
+	/**
+	 * 
+	 */
 	protected AliEnPrincipal user = AuthorizationFactory.getDefaultUser();
 
+	/**
+	 * 
+	 */
 	protected String site = ConfigUtils.getConfig().gets("alice_close_site")
 			.trim();
 
 	private String myHome = UsersHelper.getHomeDir(user.getName());
+	
+	private HashMap<String,File> localFileCash = new HashMap<String,File>();
+	
+	
+	/**
+	 * @param md5
+	 * @param localFile
+	 */
+	protected void cashFile(String md5, File localFile){
+		localFileCash.put(md5, localFile);
+	}
 
+	/**
+	 * @param md5
+	 * @return local file name
+	 */
+	protected File checkLocalFileCache(String md5){
+		if(md5!=null && localFileCash.containsKey(md5))
+			return localFileCash.get(md5);
+		return null;
+	}
+	
+
+	/**
+	 * 
+	 */
 	protected LFN curDir = null;
 
 	/**
@@ -124,25 +155,7 @@ public class JAliEnCOMMander {
 				.replace(myHome.substring(0, myHome.length() - 1), "~");
 	}
 
-	// /**
-	// * run a signature/line from the prompt
-	// *
-	// * @param args
-	// * first element is command, which needs to be in command list,
-	// * following entries are arguments
-	// */
-	// public void run(String[] args) {
-	// ArrayList<String> argList = new ArrayList<String>(Arrays.asList(args));
-	// argList.remove(args[0]);
-	// try {
-	// execute(null, null, args[0], argList);
-	// } catch (Exception e) {
-	// e.printStackTrace();
-	// System.out.println("Command failed. See above.");
-	// }
-	// }
-
-	private String gridFileCompletetion(ArrayList<String> args) {
+	private String gridFileCompletetion(@SuppressWarnings("unused") ArrayList<String> args) {
 		// TODO:
 		return "";
 	}
@@ -156,12 +169,8 @@ public class JAliEnCOMMander {
 
 	/**
 	 * execute a command line
-	 * 
-	 * @param the
-	 *            command, which needs to be in command list and will search for
-	 *            class as suffix, with JAliEnCommand<command>
-	 * @param the
-	 *            list of arguments
+	 * @param os 
+	 * @param arg 
 	 */
 	public void execute(OutputStream os, String[] arg) {
 
@@ -202,6 +211,7 @@ public class JAliEnCOMMander {
 				e.printStackTrace();
 				out.printErrln("Command [" + comm
 						+ "] not found! (Class implementation not found.)");
+				return;
 			}
 			try {
 				if (args.contains("-s")) {
@@ -216,6 +226,7 @@ public class JAliEnCOMMander {
 							logno = Integer.parseInt(args.get(args.size() - 1)
 									.substring(1));
 						} catch (NumberFormatException n) {
+							//ignore
 						}
 					}
 					JAliEnCommandscrlog.addScreenLogLine(logno,
@@ -244,14 +255,14 @@ public class JAliEnCOMMander {
 	/**
 	 * create and return a object of
 	 * alien.shell.commands.JAliEnCommand.JAliEnCommand<classSuffix>
-	 * 
-	 * @param the
+	 * @param classSuffix the
 	 *            name of the shell command, which will be taken as the suffix
 	 *            for the classname
-	 * @param array
+	 * @param objectParm array
 	 *            of argument objects, need to fit to the class
 	 * @return an instance of
 	 *         alien.shell.commands.JAliEnCommand.JAliEnCommand<classSuffix>
+	 * @throws Exception 
 	 */
 	protected static JAliEnBaseCommand getCommand(String classSuffix,
 			Object[] objectParm) throws Exception {

@@ -1,25 +1,19 @@
 package alien.shell;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
+import alien.JAliEnSh;
 import alien.config.JAliEnIAm;
-import alien.monitoring.MonitorFactory;
-import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JAliEnShPrintWriter;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
@@ -57,44 +51,16 @@ public class BusyBox {
 
 	private OutputStream os;
 
-	private void connect() {
+	
+	
+	private void connect(String addr, int port, String password) {
 
-		String addr = null;
-		String password = null;
-		int p = 0;
 
-		File f = new File(System.getProperty("user.home") + "/.alien/.uisession");
-		if (f.exists()) {
-			byte[] buffer = new byte[(int) f.length()];
-			BufferedInputStream fi = null;
-			try {
-				fi = new BufferedInputStream(new FileInputStream(f));
-				fi.read(buffer);
-			} catch (IOException e) {
-			} finally {
-				if (fi != null)
-					try {
-						fi.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-			}
-			String[] specs = new String(buffer).split("\n");
-			String[] connect = specs[0].split(":");
-			addr = connect[0];
-			try {
-				p = Integer.parseInt(connect[1]);
-			} catch (NumberFormatException e) {
-				e.printStackTrace();
-			}
-			password = specs[1] + "\n";
 
-		}
-
-		if (addr!=null && p != 0 && password!=null) {
+		if (addr!=null && port != 0 && password!=null) {
 
 			try {
-				s = new Socket(addr, p);
+				s = new Socket(addr, port);
 
 				is = s.getInputStream();
 				os = s.getOutputStream();
@@ -102,19 +68,28 @@ public class BusyBox {
 				os.write(password.getBytes());
 				os.flush();
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.err.println("Could not connect to API Service.");
 			}
 		}
 	}
 
+	
+	private void reconnect(){
+		// TODO:
+	}
+	
+	
 	/**
 	 * the JAliEn busy box
+	 * @param addr 
+	 * @param port 
+	 * @param password 
 	 * 
 	 * @throws IOException
 	 */
-	public BusyBox() throws IOException {
+	public BusyBox(String addr,int port, String password) throws IOException {
 
-		connect();
+		connect(addr, port, password);
 
 		if (s != null) {
 			out = new PrintWriter(System.out);
@@ -189,7 +164,7 @@ public class BusyBox {
 		return "";
 	}
 
-	private void callJAliEn(String line) {
+	private void callJAliEn(String line){
 		try {
 
 			line +="\n";
@@ -218,8 +193,7 @@ public class BusyBox {
 
 	/**
 	 * execute a command
-	 * 
-	 * @param args
+	 * @param callLine 
 	 *            arguments of the command, first one is the command
 	 */
 	public void executeCommand(String callLine) {

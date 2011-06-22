@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.security.cert.X509Certificate;
 
 import lazyj.DBFunctions;
 import lia.util.StringFactory;
@@ -127,6 +128,11 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * jdl
 	 */
 	public String jdl;
+	
+	/**
+	 * the submitter's certificate (public)
+	 */
+	public X509Certificate userCertificate;
 	
 	/**
 	 * path

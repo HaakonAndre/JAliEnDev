@@ -7,8 +7,8 @@ import java.io.ObjectOutputStream;
 import lazyj.cache.ExpirationCache;
 
 import alien.api.catalogue.LFNfromString;
-import alien.communications.SimpleClient;
 import alien.config.ConfigUtils;
+import alien.site.JobAgentDispatchClient;
 
 /**
  * @author costing
@@ -62,8 +62,21 @@ public class Dispatcher {
 		return dispatchRequest(r);
 	}
 	
+	private static boolean JAdispatchOverwrite = false;
+	
+	
+	/**
+	 * trigger to use JobAgentDispatchClient
+	 */
+	public static void setJADispatcher(){
+		JAdispatchOverwrite = true;
+	}
+	
+	
 	private static Request dispatchRequest(final Request r) throws IOException {
-		return SimpleCatalogueApiClient.dispatchRequest(r);
+		if(JAdispatchOverwrite)
+			return JobAgentDispatchClient.dispatchRequest(r);
+		return DispatchSSLClient.dispatchRequest(r);
 	}
 
 	/**
@@ -89,7 +102,7 @@ public class Dispatcher {
 			//System.err.println(response);
 		}
 		
-		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+SimpleClient.lSerialization);
+		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+DispatchSSLClient.lSerialization);
 		
 		// dry run
 		

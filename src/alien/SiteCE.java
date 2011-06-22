@@ -16,7 +16,8 @@ public class SiteCE {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		ComputingElement.submitJobAgent();
+		ComputingElement ce = new  ComputingElement();
+		ce.start();
 
 	}
 }

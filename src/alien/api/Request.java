@@ -5,6 +5,8 @@ import java.net.InetAddress;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.security.cert.X509Certificate;
+
 import alien.catalogue.access.AuthorizationFactory;
 import alien.user.AliEnPrincipal;
 
@@ -73,6 +75,12 @@ public abstract class Request implements Serializable, Runnable {
 	/**
 	 * Set on receiving a request over the network
 	 */
+	private transient X509Certificate[] partner_certificate = null;
+
+	
+	/**
+	 * Set on receiving a request over the network
+	 */
 	private transient InetAddress partner_address = null;
 
 	/**
@@ -111,16 +119,37 @@ public abstract class Request implements Serializable, Runnable {
 	}
 
 	/**
+	 * @return certificate of the partner, set on receiving a request over the wire
+	 */
+	public final X509Certificate[] getPartnerCertificate() {
+		return partner_certificate;
+	}
+	
+	/**
 	 * @param id
 	 *            identity of the partner. This is called on receiving a request
 	 *            over the wire.
 	 */
-	public final void setPartnerIdentity(final AliEnPrincipal id) {
+	protected final void setPartnerIdentity(final AliEnPrincipal id) {
 		if (partner_identity != null)
 			throw new IllegalAccessError(
 					"You are not allowed to overwrite this field!");
 
 		partner_identity = id;
+	}
+	
+
+	/**
+	 * @param cert 
+	 *            certificate of the partner. This is called on receiving a request
+	 *            over the wire.
+	 */
+	protected final void setPartnerCertificate(final X509Certificate[]  cert) {
+		if (partner_certificate != null)
+			throw new IllegalAccessError(
+					"You are not allowed to overwrite this field!");
+
+		partner_certificate = cert;
 	}
 
 	/**
@@ -141,12 +170,6 @@ public abstract class Request implements Serializable, Runnable {
 
 		this.partner_address = ip;
 	}
-
-	/**
-	* This field will be used by all commands that need to check authorization.
-	* It is set by the Server, after successful authentication.
-	*/
-	public AliEnPrincipal user = null;
 
 	/**
 	 * Return a command info as a String

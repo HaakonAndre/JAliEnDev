@@ -364,6 +364,16 @@ public class JDL implements Serializable {
 	}
 	
 	/**
+	 * Get the user name of the job
+	 * 
+	 * @return user
+	 */
+	public String getUser() {
+		return gets("User");
+	}
+	
+	
+	/**
 	 * Get the executable
 	 * 
 	 * @return executable
@@ -423,7 +433,6 @@ public class JDL implements Serializable {
 
 				if (o2 instanceof String) {
 					final String s = (String) o2;
-					System.out.println("some jdl line is: "+s);
 					if (bNodownloadIncluded || s.indexOf(",nodownload") < 0)
 						ret.add(removeLF(s));
 				}

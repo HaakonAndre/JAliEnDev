@@ -6,12 +6,17 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.cert.Certificate;
+
+import javax.net.ssl.KeyManagerFactory;
 
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
@@ -31,6 +36,31 @@ public class AuthenticationChecker {
 	
 	private static String challenge = null;
 
+	
+	static{
+		
+		try {
+		
+				privKey = (RSAPrivateKey) JAKeyStore.ks.getKey("User.cert", JAKeyStore.pass);
+			
+			
+			Certificate[] usercert = JAKeyStore.ks.getCertificateChain("User.cert");
+			pubKey = (RSAPublicKey) usercert[0].getPublicKey();
+
+			
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		
+		} catch (UnrecoverableKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
 
 	/**
 	 * @param pFinder

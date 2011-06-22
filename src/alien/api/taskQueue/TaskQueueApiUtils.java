@@ -1,10 +1,15 @@
 package alien.api.taskQueue;
 
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 
 import alien.api.Dispatcher;
 import alien.taskQueue.Job;
-
+import alien.taskQueue.JobSigner;
+import alien.taskQueue.JobSubmissionException;
+import alien.user.JAKeyStore;
 
 /**
  * Get the JDL object
@@ -13,14 +18,14 @@ import alien.taskQueue.Job;
  * @since Jun 05, 2011
  */
 public class TaskQueueApiUtils {
-	
+
 	/**
 	 * @return a Job
 	 */
 	public static Job getJob() {
 
 		try {
-			GetJob job = (GetJob) Dispatcher.execute(new GetJob(),true);
+			GetJob job = (GetJob) Dispatcher.execute(new GetJob(), true);
 
 			return job.getJob();
 		} catch (IOException e) {
@@ -30,17 +35,17 @@ public class TaskQueueApiUtils {
 		return null;
 
 	}
-	
-	
+
 	/**
 	 * Set a job's status
-	 * @param jobnumber 
-	 * @param status 
+	 * 
+	 * @param jobnumber
+	 * @param status
 	 */
 	public static void setJobStatus(int jobnumber, String status) {
 
 		try {
-			Dispatcher.execute(new SetJobStatus(jobnumber,status),true);
+			Dispatcher.execute(new SetJobStatus(jobnumber, status), true);
 
 		} catch (IOException e) {
 			System.out.println("Could not a JDL: ");
@@ -50,18 +55,29 @@ public class TaskQueueApiUtils {
 
 	/**
 	 * Submit a job
-	 * @param jdl 
+	 * 
+	 * @param jdl
+	 * @param user 
+	 * @return
+	 * @throws JobSubmissionException
 	 */
-	public static void submitStatus(String jdl) {
+	public static int submitJob(String jdl, String user) throws JobSubmissionException {
 
 		try {
-			Dispatcher.execute(new SubmitJob(jdl),true);
+			
+			SubmitJob j;
+				j = new SubmitJob(JobSigner.signJob(
+						JAKeyStore.clientCert, "User.cert", JAKeyStore.pass,
+						user, jdl));
 
-		} catch (IOException e) {
+			Dispatcher.execute(j, true);
+			return j.getJobID();
+
+		} catch (Exception e) {
 			System.out.println("Could not submit a JDL: ");
 			e.printStackTrace();
 		}
+		return 0;
 	}
 
-	
 }

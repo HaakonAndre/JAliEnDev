@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.security.InvalidKeyException;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
@@ -12,10 +13,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import javax.security.cert.X509Certificate;
+
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.api.catalogue.CatalogueApiUtils;
-import alien.api.taskQueue.JobSigner;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -24,8 +26,8 @@ import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
-import alien.user.AliEnPrincipal;
-import alien.user.UserFactory;
+import alien.taskQueue.JobSigner;
+import alien.taskQueue.JobSubmissionException;
 
 /**
  * @author ron
@@ -38,103 +40,108 @@ public class JobAgent extends Thread {
 
 	private static final String defaultOutputDirPrefix = "~/jalien-job-";
 
+	private ComputingElement ce = null;
 	private JDL jdl = null;
+	private String sjdl = null;
 	private Job job = null;
 
-	private final AliEnPrincipal user;
-	
-	private static final String site = null;	// TODO : how to determine the site where we currently run ?
-	
 	/**
+	 * @param ce
+	 *            .commander
 	 * @param job
 	 */
-	public JobAgent(Job job) {
+	public JobAgent(ComputingElement ce, Job job) {
+		this.ce = ce;
 		this.job = job;
-		
-		this.user = UserFactory.getByUsername(job.getOwner());
-		
 		try {
+			sjdl = job.getOriginalJDL();
+			System.out.println("started JA with: " + sjdl);
 			jdl = new JDL(job.getJDL());
-			
-			
 		} catch (IOException e) {
 			System.err.println("Unable to get JDL from Job.");
 			e.printStackTrace();
 		}
 	}
 
-	@Override
 	public void run() {
-		if(verifiedJob()){
-		TaskQueueApiUtils.setJobStatus(job.queueId, "STARTED");
-		if (createTempDir())
-			if (getInputFiles()) {
-				if (execute())
-					if (uploadOutputFiles())
-						System.out.println("Job sucessfully executed.");
-			} else {
-				System.out.println("Could not get input files.");
-				TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_IB");
-			}
+		if (verifiedJob()) {
+			TaskQueueApiUtils.setJobStatus(job.queueId, "STARTED");
+			if (createTempDir())
+				if (getInputFiles()) {
+					if (execute())
+						if (uploadOutputFiles())
+							System.out.println("Job sucessfully executed.");
+				} else {
+					System.out.println("Could not get input files.");
+					TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_IB");
+				}
 		} else {
 			TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_VER");
 		}
 
 	}
 
-	private boolean verifiedJob(){
+	private boolean verifiedJob() {
 		try {
-			return JobSigner.verifyEnvelope(jdl.getPlainJDL());
+			return JobSigner.verifyJobToRun(
+					new X509Certificate[] { job.userCertificate }, sjdl);
+
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
 		} catch (NoSuchAlgorithmException e) {
 			e.printStackTrace();
 		} catch (SignatureException e) {
 			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			e.printStackTrace();
+		} catch (JobSubmissionException e) {
+			e.printStackTrace();
 		}
 		return false;
 	}
-	
-	
+
 	private boolean getInputFiles() {
 
 		boolean gotAllInputFiles = true;
+		if (jdl.getInputFiles()!=null && jdl.getInputFiles().size() > 0)
+			for (String slfn : jdl.getInputFiles()) {
+				File localFile;
+				try {
+					localFile = new File(tempDir.getCanonicalFile() + "/"
+							+ slfn.substring(slfn.lastIndexOf('/') + 1));
 
-		for (String slfn : jdl.getInputFiles()) {
-			File localFile;
-			try {
-				localFile = new File(tempDir.getCanonicalFile() + "/"
-						+ slfn.substring(slfn.lastIndexOf('/') + 1));
+					System.out.println("Getting input file into local file: "
+							+ tempDir.getCanonicalFile() + "/"
+							+ slfn.substring(slfn.lastIndexOf('/') + 1));
 
-				System.out.println("Getting input file into local file: "
-						+ tempDir.getCanonicalFile() + "/"
-						+ slfn.substring(slfn.lastIndexOf('/') + 1));
+					System.out.println("Getting input file: " + slfn);
+					LFN lfn = CatalogueApiUtils.getLFN(slfn);
+					System.out.println("Getting input file lfn: " + lfn);
+					List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
+							ce.commander.getUser(), ce.commander.getSite(),
+							lfn, null, null);
+					System.out.println("Getting input file pfns: " + pfns);
 
-				System.out.println("Getting input file: " + slfn);
-				LFN lfn = CatalogueApiUtils.getLFN(slfn);
-				System.out.println("Getting input file lfn: " + lfn);
-				List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(user, site, lfn, null, null);
-				System.out.println("Getting input file pfns: " + pfns);
+					for (PFN pfn : pfns) {
 
-				for (PFN pfn : pfns) {
+						List<Protocol> protocols = Transfer
+								.getAccessProtocols(pfn);
+						for (final Protocol protocol : protocols) {
 
-					List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-					for (final Protocol protocol : protocols) {
+							localFile = protocol.get(pfn, localFile);
+							break;
 
-						localFile = protocol.get(pfn, localFile);
-						break;
-
+						}
+						System.out.println("Suppossed to have input file: "
+								+ localFile.getCanonicalPath());
 					}
-					System.out.println("Suppossed to have input file: "
-							+ localFile.getCanonicalPath());
-				}
-				if (!localFile.exists())
+					if (!localFile.exists())
+						gotAllInputFiles = false;
+				} catch (IOException e) {
+					e.printStackTrace();
 					gotAllInputFiles = false;
-			} catch (IOException e) {
-				e.printStackTrace();
-				gotAllInputFiles = false;
+				}
 			}
-		}
 		return gotAllInputFiles;
 
 	}
@@ -177,11 +184,14 @@ public class JobAgent extends Thread {
 				err.write(exitStatus.getStdErr());
 				err.close();
 
-				System.out.println("we ran, stdout+stderr should be there now.");
+				System.out
+						.println("we ran, stdout+stderr should be there now.");
 			}
 
-			System.out.println("A local cat on stdout: " + exitStatus.getStdOut());
-			System.out.println("A local cat on stderr: " + exitStatus.getStdErr());
+			System.out.println("A local cat on stdout: "
+					+ exitStatus.getStdOut());
+			System.out.println("A local cat on stderr: "
+					+ exitStatus.getStdErr());
 
 		} catch (final InterruptedException ie) {
 			System.err
@@ -208,22 +218,24 @@ public class JobAgent extends Thread {
 		System.out.println("QueueID: " + job.queueId);
 
 		System.out.println("Full catpath of outDir is: "
-				+ FileSystemUtils.getAbsolutePath(
-						user.getName(), "~", outputDir));
+				+ FileSystemUtils.getAbsolutePath(ce.commander.getUsername(),
+						"~", outputDir));
 
-		if (CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(user.getName(), null, outputDir)) != null) {
+		if (CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+				ce.commander.getUsername(), null, outputDir)) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
 			return false;
 		}
 
-		LFN outDir = CatalogueApiUtils.createCatalogueDirectory(user, outputDir);
+		LFN outDir = CatalogueApiUtils.createCatalogueDirectory(
+				ce.commander.getUser(), outputDir);
 
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir
 					+ "].");
 			uploadedAllOutFiles = false;
 		}
-		else{
+		if (uploadedAllOutFiles) {
 			for (String slfn : jdl.getOutputFiles()) {
 				File localFile;
 				try {
@@ -242,22 +254,25 @@ public class JobAgent extends Thread {
 						try {
 							md5 = FileSystemUtils.calculateMD5(localFile);
 						} catch (Exception e1) {
-							// ignore, treated below
 						}
-						
 						if (md5 == null) {
-							System.err.println("Could not calculate md5 checksum of the local file: " + localFile.getAbsolutePath());
+							System.err
+									.println("Could not calculate md5 checksum of the local file: "
+											+ localFile.getAbsolutePath());
 						}
 
 						List<PFN> pfns = null;
 
 						LFN lfn = null;
-						lfn = CatalogueApiUtils.getLFN(outDir.getCanonicalName() + slfn, true);
+						lfn = CatalogueApiUtils.getLFN(
+								outDir.getCanonicalName() + slfn, true);
 
 						lfn.size = size;
 						lfn.md5 = md5;
 
-						pfns = CatalogueApiUtils.getPFNsToWrite(user, site, lfn, null, null, null, 0);
+						pfns = CatalogueApiUtils.getPFNsToWrite(
+								ce.commander.getUser(), ce.commander.getSite(),
+								lfn, null, null, null, 0);
 
 						if (pfns != null) {
 							ArrayList<String> envelopes = new ArrayList<String>(
@@ -283,7 +298,9 @@ public class JobAgent extends Thread {
 								envelopes.add(pfn.ticket.envelope
 										.getSignedEnvelope());
 
-							List<PFN> pfnsok = CatalogueApiUtils.registerEnvelopes(user, envelopes);
+							List<PFN> pfnsok = CatalogueApiUtils
+									.registerEnvelopes(ce.commander.getUser(),
+											envelopes);
 							if (!pfns.equals(pfnsok)) {
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size()
@@ -297,7 +314,8 @@ public class JobAgent extends Thread {
 								}
 							}
 						} else {
-							System.out.println("Couldn't get write envelopes for output file"); 
+							System.out
+									.println("Couldn't get write envelopes for output file");
 						}
 					} else {
 						System.out.println("Can't upload output file "
@@ -311,7 +329,6 @@ public class JobAgent extends Thread {
 				}
 			}
 		}
-		
 		if (uploadedNotAllCopies)
 			TaskQueueApiUtils.setJobStatus(job.queueId, "DONE_WARN");
 		else if (uploadedAllOutFiles)

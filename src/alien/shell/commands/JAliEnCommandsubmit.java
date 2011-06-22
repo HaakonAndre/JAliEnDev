@@ -8,56 +8,77 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import alien.api.taskQueue.JobSigner;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.perl.commands.AlienTime;
+import alien.taskQueue.JobSigner;
+import alien.taskQueue.JobSubmissionException;
+import alien.user.JAKeyStore;
 
 /**
  * @author ron
  * @since June 9, 2011
  */
 public class JAliEnCommandsubmit extends JAliEnBaseCommand {
-	
+
 	public void execute() throws Exception {
 
 		String jdl = getJDLFile(alArguments);
-		if(jdl!=null)
-			System.out.println("escaped JDL:" + JobSigner.signJob(jdl,commander.getUsername()));
-		
-			TaskQueueApiUtils.submitStatus(JobSigner.signJob(jdl,commander.getUsername()));
-		
-		
-		
+		if (!jdl.equals(""))
+
+			jdl = analyzeAndPrepareJDL(jdl);
+
+		if (jdl != null) {
+
+//			System.out.println("signed JDL:\n"
+//					+ JobSigner.signJob(JAKeyStore.clientCert, "User.cert",
+//							JAKeyStore.pass, commander.getUsername(), jdl));
+
+			
+			try {
+				int jobID = TaskQueueApiUtils.submitJob(jdl,commander.getUsername());
+				out.printOutln("[" + jobID + "] Job successfully submitted.");
+			} catch (JobSubmissionException e) {
+				out.printErrln("Submission failed:");
+				out.printErrln(e.getMessage());
+			}
+
+		}
 
 	}
 
-	private String getJDLFile(List<String> alArguments) {
-		String retJDL = null;
-		System.out.println("getting jdl file: " + alArguments);
-		try {
-			JAliEnCommandget get = (JAliEnCommandget) commander.getCommand("get",
-					new Object[] { alArguments });
+	private String analyzeAndPrepareJDL(String jdl) {
 
+		return jdl + "\nUser = {\"" + commander.getUsername() + "\"};\n";
+	}
+
+	private String getJDLFile(List<String> alArguments) {
+		String file = "";
+		out.printOutln("Submitting JDL: " + alArguments);
+		try {
+
+			JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander
+					.getCommand("get", new Object[] { commander, out,
+							alArguments });
 			get.silent();
 			get.execute();
-			File out = get.getOutputFile();
-			if (out != null && out.isFile() && out.canRead()) {
-				FileInputStream fstream = new FileInputStream(out);
+			File fout = get.getOutputFile();
+			if (fout != null && fout.isFile() && fout.canRead()) {
+				FileInputStream fstream = new FileInputStream(fout);
 
 				DataInputStream in = new DataInputStream(fstream);
 				BufferedReader br = new BufferedReader(
 						new InputStreamReader(in));
+				String line;
+				while ((line = br.readLine()) != null) {
+					file += line + "\n";
+				}
 
-				String strLine;
-				retJDL = "";
-				while ((strLine = br.readLine()) != null)
-					retJDL += strLine;
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("JDL IS: " + retJDL);
-		return retJDL;
+	//	out.printOutln("JDL IS: |" + file+"|");
+		return file;
 	}
 
 	/**
@@ -65,7 +86,7 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 
-		System.out.println(AlienTime.getStamp() + "Usage: submit  ... ");
+		out.printOutln(AlienTime.getStamp() + "Usage: submit  ... ");
 	}
 
 	/**
@@ -81,7 +102,7 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	 * nonimplemented command's silence trigger, submit is never silent
 	 */
 	public void silent() {
-
+      //ignore
 	}
 
 	/**
@@ -90,7 +111,8 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandsubmit(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+	public JAliEnCommandsubmit(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 	}
 }

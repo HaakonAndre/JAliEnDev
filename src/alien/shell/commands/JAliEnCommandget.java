@@ -31,6 +31,11 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	private boolean bG = false;
 
 	/**
+	 * marker for -x argument
+	 */
+	private boolean bX = false;
+
+	/**
 	 * list of SEs to priorize
 	 */
 	private List<String> ses = null;
@@ -78,9 +83,11 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 			List<PFN> pfns = null;
 
 			// long lStart = System.currentTimeMillis();
+			String md5 = null;
 
 			if (bG) {
 				GUID guid = CatalogueApiUtils.getGUID(lfnOrGuid);
+				md5 = guid.md5;
 				pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
 						commander.site, guid, ses, exses);
 			} else {
@@ -88,38 +95,51 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 						.getLFN(FileSystemUtils.getAbsolutePath(commander.user
 								.getName(), commander.getCurrentDir()
 								.getCanonicalName(), lfnOrGuid));
+				md5 = lfn.md5;
 				pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
 						commander.site, lfn, ses, exses);
 
 			}
-			// timingChallenge = (System.currentTimeMillis() - lStart);
-			// out.printErrln("jAliEn TIMING CHALLENGE : "+timingChallenge);
-			//
-			// if(!isATimeChallenge){
+			
+			outputFile = commander.checkLocalFileCache(md5);
 
-			for (PFN pfn : pfns) {
+			if (bX || outputFile == null || !outputFile.exists()) {
 
-				List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-				for (final Protocol protocol : protocols) {
-					try {
+				try {
+					for (PFN pfn : pfns) {
 
-						if (outputFileName != null) {
-							outputFile = new File(outputFileName);
+						List<Protocol> protocols = Transfer
+								.getAccessProtocols(pfn);
+						for (final Protocol protocol : protocols) {
+							try {
+
+								if (outputFileName != null) {
+									outputFile = new File(outputFileName);
+								}
+								outputFile = protocol.get(pfn, outputFile);
+								commander.cashFile(md5, outputFile);
+								break;
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
 						}
-						outputFile = protocol.get(pfn, outputFile);
-						if (!silent)
-							out.printOutln("Downloaded file to "
-									+ outputFile.getCanonicalPath());
+						if (outputFile == null || !outputFile.exists())
 
-						break;
-					} catch (IOException e) {
-						e.printStackTrace();
+							out.printErrln("Could not get the file.");
 					}
+				} catch (Exception e) {
+					out.printErrln("Problems parsing the PFNs of this file.");
 				}
-				if (outputFile == null || !outputFile.exists())
-
-					out.printErrln("Could not get the file.");
 			}
+			
+			if (outputFile.isFile() && outputFile.exists() && !silent)
+				try {
+					out.printOutln("Downloaded file to "
+							+ outputFile.getCanonicalPath());
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+				
 		}
 	}
 
@@ -163,15 +183,17 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	 */
 	public JAliEnCommandget(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
-		super(commander, out,alArguments);
+		super(commander, out, alArguments);
 
 		final OptionParser parser = new OptionParser();
 		parser.accepts("g");
+		parser.accepts("x");
 
 		final OptionSet options = parser.parse(alArguments
 				.toArray(new String[] {}));
-		
+
 		bG = options.has("g");
+		bX = options.has("x");
 
 		if (options.nonOptionArguments().size() != 1)
 			printHelp();
