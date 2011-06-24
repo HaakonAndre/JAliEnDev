@@ -344,8 +344,6 @@ public class JDL implements Serializable {
 		List<String> retf = getInputList(false, "OutputFile");
 		if (retf != null)
 			ret.addAll(retf);
-		else 
-			ret = new LinkedList<String>();
 		List<String> reta = getInputList(false, "OutputArchive");
 		if (reta != null)
 			ret.addAll(retf);
