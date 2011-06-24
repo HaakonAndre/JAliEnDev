@@ -506,7 +506,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * @return <code>true</code> if the new entry was inserted, <code>false</code> if the query failed
 	 */
 	boolean insert(){
-		String q = "INSERT INTO L"+indexTableEntry.tableName+"L (owner, ctime, replicated, aclId, lfn, expiretime, size, "+
+		final String q = "INSERT INTO L"+indexTableEntry.tableName+"L (owner, ctime, replicated, aclId, lfn, expiretime, size, "+
 		"dir, gowner, type, perm, guid, md5, guidtime, broken, jobid) VALUES ("+
 		e(owner)+","+
 		e(format(ctime))+","+
@@ -526,9 +526,37 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		(jobid>0 ? ""+jobid : "null")+
 		");";
 		
-		DBFunctions db = indexTableEntry.getDB();
+		final DBFunctions db = indexTableEntry.getDB();
 		
-		return db.query(q);
+		final boolean result = db.query(q);
+		
+		if (result){
+			db.query("SELECT entryId FROM L"+indexTableEntry.tableName+"L WHERE lfn="+e(lfn));
+			
+			if (db.moveNext()){
+				exists = true;
+				entryId = db.getl(1);
+			}
+		}
+		
+		return result;
+	}
+	
+	/**
+	 * @return <code>true</code> if the database entry was updated
+	 */
+	boolean update(){
+		if (!exists)
+			return false;
+		
+		final String q = "UPDATE L"+indexTableEntry.tableName+"L SET "+
+			"size="+size+","+
+			"ctime="+e(format(ctime))+
+			" WHERE entryId="+entryId;
+		
+		final DBFunctions db = indexTableEntry.getDB();
+		
+		return db.query(q);		
 	}
 	
 	/**
