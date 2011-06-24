@@ -39,26 +39,12 @@ public class AuthenticationChecker {
 	
 	static{
 		
-		try {
-		
-				privKey = (RSAPrivateKey) JAKeyStore.ks.getKey("User.cert", JAKeyStore.pass);
+				privKey = null; // (RSAPrivateKey) JAKeyStore.ks.getKey("User.cert", JAKeyStore.pass);
 			
 			
-			Certificate[] usercert = JAKeyStore.ks.getCertificateChain("User.cert");
-			pubKey = (RSAPublicKey) usercert[0].getPublicKey();
+			Certificate[] usercert = null; //JAKeyStore.ks.getCertificateChain("User.cert");
+			pubKey = null; //(RSAPublicKey) usercert[0].getPublicKey();
 
-			
-		} catch (KeyStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		
-		} catch (UnrecoverableKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 	}
 	
 

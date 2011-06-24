@@ -5,7 +5,6 @@ import java.security.SecureRandom;
 
 import alien.api.DispatchSSLServer;
 import alien.api.taskQueue.TaskQueueApiUtils;
-import alien.shell.commands.JobAgentCOMMander;
 import alien.taskQueue.Job;
 import alien.user.JAKeyStore;
 

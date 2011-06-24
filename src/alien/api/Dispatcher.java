@@ -8,7 +8,6 @@ import lazyj.cache.ExpirationCache;
 
 import alien.api.catalogue.LFNfromString;
 import alien.config.ConfigUtils;
-import alien.site.JobAgentDispatchClient;
 
 /**
  * @author costing
