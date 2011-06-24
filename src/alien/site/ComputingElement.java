@@ -1,7 +1,9 @@
 package alien.site;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 
+import alien.api.DispatchSSLServer;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.shell.commands.JobAgentCOMMander;
 import alien.taskQueue.Job;
@@ -16,46 +18,38 @@ public class ComputingElement extends Thread  {
 	/**
 	 * 
 	 */
-	public JobAgentCOMMander commander;
-	
-	static {
-		try {
-			JAKeyStore.loadPilotKeyStorage();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
 	
 	
 	/**
 	 * 
 	 */
 	public ComputingElement() {
+		try {
+			JAKeyStore.loadClientKeyStorage();
 
-			commander = new JobAgentCOMMander();
+			JAKeyStore.loadServerKeyStorage();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 
 	@SuppressWarnings("static-access")
 	public void run(){
 
-		while (true) {
-			Job j = TaskQueueApiUtils.getJob();
-			if (j != null) {
-				
-				JobAgent jA = new JobAgent(this, j);
-				jA.start();
-				
-			} else{
-				System.out.println("Nothing to run right now. Idling 5secs...");
-				try {
-					Thread.currentThread().sleep(5000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-
+		DispatchSSLServer.overWriteServiceAndForward("siteProxyService");
+		
+		try {
+			DispatchSSLServer.runService();
+		} catch (IOException e1) {
+			e1.printStackTrace();
 		}
+
+		
+	//	while (true) {
+		// here we would have to poll the queue info and submit jobAgents....
+
+	//	}
 
 	}
 }

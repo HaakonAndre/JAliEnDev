@@ -62,20 +62,8 @@ public class Dispatcher {
 		return dispatchRequest(r);
 	}
 	
-	private static boolean JAdispatchOverwrite = false;
-	
-	
-	/**
-	 * trigger to use JobAgentDispatchClient
-	 */
-	public static void setJADispatcher(){
-		JAdispatchOverwrite = true;
-	}
-	
 	
 	private static Request dispatchRequest(final Request r) throws IOException {
-		if(JAdispatchOverwrite)
-			return JobAgentDispatchClient.dispatchRequest(r);
 		return DispatchSSLClient.dispatchRequest(r);
 	}
 

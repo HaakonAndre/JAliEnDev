@@ -56,7 +56,19 @@ public class DispatchSSLServer extends Thread {
 	private X509Certificate partnerCerts[] = null;
 
 	private static final int defaultPort = 5282;
-	private static final String serviceName = "apiService";
+	private static String serviceName = "apiService";
+	
+	private static boolean forwardRequest = false;
+	
+	/**
+	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
+	 * @param serviceName name of the config parameter for the host:port settings
+	 */
+	public static void overWriteServiceAndForward(String servName){
+		//TODO: we could drop the serviceName overwrite, once we assume to run not on one single host everything
+		serviceName = servName;
+		forwardRequest = true;
+	}
 
 	/**
 	 * @param connection
@@ -92,14 +104,17 @@ public class DispatchSSLServer extends Thread {
 
 				if (o != null) {
 					if (o instanceof Request) {
-						final Request r = (Request) o;
+						Request r = (Request) o;
 
 						long lStart = System.currentTimeMillis();
 
 						r.setPartnerIdentity(UserFactory.getByCertificate(partnerCerts));
 						r.setPartnerCertificate(partnerCerts);
 
-						r.run();
+						if(forwardRequest)
+							r = DispatchSSLClient.dispatchRequest(r);
+						else
+							r.run();
 
 						lLasted += (System.currentTimeMillis() - lStart);
 

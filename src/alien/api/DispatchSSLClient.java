@@ -36,7 +36,7 @@ public class DispatchSSLClient extends Thread {
 	
 	private static final int defaultPort = 5282;
 	private static final String defaultHost = "localhost";
-	private static final String serviceName = "apiService";
+	private static String serviceName = "apiService";
 
 	private static String addr = null;
 	private static int port = 0;
@@ -48,6 +48,19 @@ public class DispatchSSLClient extends Thread {
 
 	private final OutputStream os;
 
+	
+	
+	private static boolean forwardRequest = false;
+	
+	/**
+	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
+	 * @param serviceName name of the config parameter for the host:port settings
+	 */
+	public static void overWriteServiceAndForward(String servName){
+		//TODO: we could drop the serviceName overwrite, once we assume to run not on one single host everything
+		serviceName = servName;
+	}
+	
 	
 	/**
 	 * @param connection

@@ -22,12 +22,14 @@ import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobSigner;
 import alien.taskQueue.JobSubmissionException;
+import alien.user.AliEnPrincipal;
 
 /**
  * @author ron
@@ -40,45 +42,62 @@ public class JobAgent extends Thread {
 
 	private static final String defaultOutputDirPrefix = "~/jalien-job-";
 
-	private ComputingElement ce = null;
+	private AliEnPrincipal user = null;
+	private String site;
+
 	private JDL jdl = null;
 	private String sjdl = null;
 	private Job job = null;
 
 	/**
-	 * @param ce
-	 *            .commander
-	 * @param job
 	 */
-	public JobAgent(ComputingElement ce, Job job) {
-		this.ce = ce;
+	public JobAgent() {
+		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
+
+	}
+
+	public void run() {
+
+		while (true) {
+			Job j = TaskQueueApiUtils.getJob();
+			if (j != null)
+				handleJob(j);
+			else {
+				System.out.println("Nothing to run right now. Idling 5secs...");
+				try {
+					sleep(5000);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
+
+	private void handleJob(Job job) {
 		this.job = job;
 		try {
 			sjdl = job.getOriginalJDL();
 			System.out.println("started JA with: " + sjdl);
 			jdl = new JDL(job.getJDL());
+
+			if (verifiedJob()) {
+				TaskQueueApiUtils.setJobStatus(job.queueId, "STARTED");
+				if (createTempDir())
+					if (getInputFiles()) {
+						if (execute())
+							if (uploadOutputFiles())
+								System.out.println("Job sucessfully executed.");
+					} else {
+						System.out.println("Could not get input files.");
+						TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_IB");
+					}
+			} else {
+				TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_VER");
+			}
 		} catch (IOException e) {
 			System.err.println("Unable to get JDL from Job.");
 			e.printStackTrace();
 		}
-	}
-
-	public void run() {
-		if (verifiedJob()) {
-			TaskQueueApiUtils.setJobStatus(job.queueId, "STARTED");
-			if (createTempDir())
-				if (getInputFiles()) {
-					if (execute())
-						if (uploadOutputFiles())
-							System.out.println("Job sucessfully executed.");
-				} else {
-					System.out.println("Could not get input files.");
-					TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_IB");
-				}
-		} else {
-			TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_VER");
-		}
-
 	}
 
 	private boolean verifiedJob() {
@@ -103,7 +122,7 @@ public class JobAgent extends Thread {
 	private boolean getInputFiles() {
 
 		boolean gotAllInputFiles = true;
-		if (jdl.getInputFiles()!=null && jdl.getInputFiles().size() > 0)
+		if (jdl.getInputFiles() != null && jdl.getInputFiles().size() > 0)
 			for (String slfn : jdl.getInputFiles()) {
 				File localFile;
 				try {
@@ -117,9 +136,8 @@ public class JobAgent extends Thread {
 					System.out.println("Getting input file: " + slfn);
 					LFN lfn = CatalogueApiUtils.getLFN(slfn);
 					System.out.println("Getting input file lfn: " + lfn);
-					List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(
-							ce.commander.getUser(), ce.commander.getSite(),
-							lfn, null, null);
+					List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(user,
+							site, lfn, null, null);
 					System.out.println("Getting input file pfns: " + pfns);
 
 					for (PFN pfn : pfns) {
@@ -218,17 +236,17 @@ public class JobAgent extends Thread {
 		System.out.println("QueueID: " + job.queueId);
 
 		System.out.println("Full catpath of outDir is: "
-				+ FileSystemUtils.getAbsolutePath(ce.commander.getUsername(),
-						"~", outputDir));
+				+ FileSystemUtils.getAbsolutePath(user.getName(), "~",
+						outputDir));
 
 		if (CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
-				ce.commander.getUsername(), null, outputDir)) != null) {
+				user.getName(), null, outputDir)) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
 			return false;
 		}
 
-		LFN outDir = CatalogueApiUtils.createCatalogueDirectory(
-				ce.commander.getUser(), outputDir);
+		LFN outDir = CatalogueApiUtils
+				.createCatalogueDirectory(user, outputDir);
 
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir
@@ -254,6 +272,7 @@ public class JobAgent extends Thread {
 						try {
 							md5 = FileSystemUtils.calculateMD5(localFile);
 						} catch (Exception e1) {
+							// ignore
 						}
 						if (md5 == null) {
 							System.err
@@ -270,8 +289,7 @@ public class JobAgent extends Thread {
 						lfn.size = size;
 						lfn.md5 = md5;
 
-						pfns = CatalogueApiUtils.getPFNsToWrite(
-								ce.commander.getUser(), ce.commander.getSite(),
+						pfns = CatalogueApiUtils.getPFNsToWrite(user, site,
 								lfn, null, null, null, 0);
 
 						if (pfns != null) {
@@ -299,8 +317,7 @@ public class JobAgent extends Thread {
 										.getSignedEnvelope());
 
 							List<PFN> pfnsok = CatalogueApiUtils
-									.registerEnvelopes(ce.commander.getUser(),
-											envelopes);
+									.registerEnvelopes(user, envelopes);
 							if (!pfns.equals(pfnsok)) {
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size()

@@ -100,7 +100,7 @@ public class JAliEnCOMMander {
 	 * 
 	 * @return user
 	 */
-	protected AliEnPrincipal getUser() {
+	public AliEnPrincipal getUser() {
 		return user;
 	}
 
@@ -109,7 +109,7 @@ public class JAliEnCOMMander {
 	 * 
 	 * @return site
 	 */
-	protected String getSite() {
+	public String getSite() {
 		return site;
 	}
 
@@ -118,7 +118,7 @@ public class JAliEnCOMMander {
 	 * 
 	 * @return user name
 	 */
-	protected String getUsername() {
+	public String getUsername() {
 		return user.getName();
 	}
 
