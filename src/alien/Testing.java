@@ -6,10 +6,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 import lazyj.Utils;
 import utils.XRDChecker;
@@ -47,6 +51,14 @@ public class Testing {
 		//removeFZK();
 			
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+		
+		if (true){
+			LFN lfn = LFNUtils.getLFN("/alice/data/2011/LHC11c/000154138/collection");
+			
+			System.err.println(lfn);
+			
+			return;
+		}
 		
 		if (true){
 			String spfn = "root://pcaliense01.cern.ch:1094//01/19968/a1784140-8c50-11e0-9ec0-0019bbc62419";
@@ -108,6 +120,32 @@ public class Testing {
 		System.err.println("finish : "+cnt);
 	}
 		
+	private static void checkOptions() {
+		OptionParser parser = new OptionParser();
+		
+		parser.accepts("part", "Should be in parts");
+		parser.accepts("p", "argument p doc");
+		parser.accepts("a", "argument a");
+		parser.accepts("l", "argument l");
+		parser.accepts("h", "for help");
+		
+		final OptionSet options = parser.parse(new String[]{"-part", "-pl", "-a", "bubu", "-h"});
+		
+		for (String s: Arrays.asList("part", "p", "a", "l")){
+			System.err.println("Has "+s+" : "+options.has(s));
+		}
+		
+		if (options.has("h")){
+			try {
+				parser.printHelpOn(System.out);
+			}
+			catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private static void removeFZK() throws IOException {
 		final BufferedReader br = new BufferedReader(new StringReader(Utils.download("http://www-ekp.physik.uni-karlsruhe.de/~jung/errors_gka5407_gka5407", null)));
 			
