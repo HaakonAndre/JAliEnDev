@@ -217,10 +217,15 @@ public class LFNUtils {
 		if (!guid.update())
 			return null;
 		
-		if (insertLFN(lfn))
-			return lfn;
+		if (!insertLFN(lfn))
+			return null;
 		
-		return null;
+		final DBFunctions db = ConfigUtils.getDB("alice_data");
+
+		if (!db.query("INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary('"+lfn.guid.toString()+"'));"))
+			return null;
+		
+		return lfn;
 	}
 	
 	/**
