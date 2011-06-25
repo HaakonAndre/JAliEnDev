@@ -222,7 +222,11 @@ public class LFNUtils {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 
-		if (!db.query("INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary('"+lfn.guid.toString()+"'));"))
+		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary('"+lfn.guid.toString()+"'));"; 
+		
+		System.err.println(q);
+		
+		if (!db.query(q))
 			return null;
 		
 		return lfn;
