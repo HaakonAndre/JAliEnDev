@@ -7,14 +7,15 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import lazyj.Utils;
 import utils.XRDChecker;
 import alien.catalogue.BookingTable;
@@ -53,9 +54,27 @@ public class Testing {
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
 		
 		if (true){
-			LFN lfn = LFNUtils.getLFN("/alice/data/2011/LHC11c/000154138/collection");
+			LFN c = LFNUtils.createCollection("/alice/cern.ch/user/g/grigoras/testCollection", UserFactory.getByUsername("grigoras"));
 			
-			System.err.println(lfn);
+			System.err.println("Create collection : "+c);
+			
+			LFN l1 = LFNUtils.getLFN("/alice/cern.ch/user/g/grigoras/myNewFile");
+			LFN l2 = LFNUtils.getLFN("/alice/cern.ch/user/g/grigoras/run_selection.xml");
+			LFN l3 = LFNUtils.getLFN("/alice/cern.ch/user/g/grigoras/test");
+			
+			Set<LFN> toAdd = new LinkedHashSet<LFN>();
+			toAdd.add(l1);
+			toAdd.add(l2);
+			toAdd.add(l3);
+			
+			System.err.println("Add lfns : "+LFNUtils.addToCollection(c, toAdd));
+			
+			System.err.println("After adding : "+c);
+			
+			System.err.println("Contains : "+c.listCollection());
+			//LFN lfn = LFNUtils.getLFN("/alice/data/2011/LHC11c/000154138/collection");
+			
+			//System.err.println(lfn);
 			
 			return;
 		}
