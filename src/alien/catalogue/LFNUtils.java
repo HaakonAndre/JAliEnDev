@@ -183,8 +183,12 @@ public class LFNUtils {
 		
 		final LFN lfn = getLFN(collectionName, true);
 		
-		if (lfn.exists)
+		if (lfn.exists){
+			if (lfn.isCollection() && AuthorizationChecker.canWrite(lfn, owner))
+				return lfn;
+			
 			return null;
+		}
 		
 		LFN parentDir = lfn.getParentDir();
 		
