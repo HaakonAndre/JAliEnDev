@@ -28,7 +28,7 @@ public class JAliEnSh {
 			JAliEnSh.killAPIService();
 		else {
 
-			JAliEnSh.startAPIService();
+			//JAliEnSh.startAPIService();
 			if (JAliEnSh.APIServiceRunning())
 				new BusyBox(addr, port, password);
 			else
