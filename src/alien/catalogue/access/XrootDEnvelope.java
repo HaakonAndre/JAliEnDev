@@ -93,7 +93,7 @@ public class XrootDEnvelope implements Serializable {
 
 		StringTokenizer st = new StringTokenizer(envelope, "\\&");
 		String spfn = "";
-		String turl = "";
+		turl = "";
 		String lfn = "";
 		String guid = "";
 		String se = "";
@@ -207,11 +207,11 @@ public class XrootDEnvelope implements Serializable {
 		String ret = "<authz>\n  <file>\n" + "    <access>" + access
 				+ "</access>\n";
 
-		String turl = pfn.getPFN();
+		String sturl = pfn.getPFN();
 		if (archiveAnchorLFN != null)
-			turl += "#" + archiveAnchorLFN.getFileName();
+			sturl += "#" + archiveAnchorLFN.getFileName();
 
-		ret += "    <turl>" + Format.escHtml(turl) + "</turl>\n";
+		ret += "    <turl>" + Format.escHtml(sturl) + "</turl>\n";
 
 		LFN refLFN = null;
 		GUID refGUID = guid;
