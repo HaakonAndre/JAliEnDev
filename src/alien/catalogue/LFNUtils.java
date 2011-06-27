@@ -237,14 +237,113 @@ public class LFNUtils {
 	/**
 	 * @param collection
 	 * @param lfns
-	 * @return <code>true</code> if anything was changed
+	 * @return <code>true</code> if the collection was modified
 	 */
-	public static boolean addToCollection(final LFN collection, final Set<LFN> lfns){
-		final DBFunctions db = ConfigUtils.getDB("alice_data");
-		
+	public static boolean removeFromCollection(final LFN collection, final Set<LFN> lfns){
 		if (!collection.exists || !collection.isCollection() || lfns==null || lfns.size()==0){
 			return false;
 		}
+		
+		final DBFunctions db = ConfigUtils.getDB("alice_data");
+		
+		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary('"+collection.guid.toString()+"');");
+		
+		if (!db.moveNext())
+			return false;
+		
+		final int collectionId = db.geti(1);
+		
+		final Set<String> currentLFNs = collection.listCollection();
+
+		final GUID guid = GUIDUtils.getGUID(collection.guid);
+		
+		boolean updated = false;
+		
+		boolean shouldUpdateSEs = false;
+		
+		for (final LFN l: lfns){
+			if (!currentLFNs.contains(l.getCanonicalName()))
+				continue;
+			
+			if (!db.query("DELETE FROM COLLECTIONS_ELEM where collectionId="+collectionId+" AND origLFN='"+Format.escSQL(l.getCanonicalName())+"' AND guid=string2binary('"+l.guid.toString()+"');"))
+				continue;
+			
+			if (db.getUpdateCount()!=1)
+				continue;
+			
+			guid.size -= l.size;
+			updated = true;
+			
+			if (!shouldUpdateSEs){
+				final Set<PFN> whereis = l.whereisReal();
+				
+				if (whereis!=null){
+					for (final PFN p: whereis){
+						if (!guid.seStringList.contains(Integer.valueOf(p.seNumber))){
+							shouldUpdateSEs = true;
+							break;
+						}
+					}
+				}
+			}
+		}
+		
+		if (updated){
+			collection.size = guid.size;
+			
+			collection.ctime = guid.ctime = new Date();
+			
+			if (shouldUpdateSEs){
+				Set<Integer> ses = null;
+				
+				final Set<String> remainingLFNs = collection.listCollection();
+				
+				for (final String s: remainingLFNs){
+					if (ses==null || ses.size()>0){
+						final LFN l = LFNUtils.getLFN(s);
+						
+						if (l==null)
+							continue;
+						
+						final Set<PFN> whereis = l.whereisReal();
+						
+						final Set<Integer> lses = new HashSet<Integer>();
+						
+						for (final PFN pfn: whereis){
+							lses.add(Integer.valueOf(pfn.seNumber));
+						}
+						
+						if (ses!=null)
+							ses.retainAll(ses);
+						else
+							ses = lses;
+					}
+				}
+				
+				if (ses!=null)
+					guid.seStringList = ses;
+			}
+			
+			guid.update();
+			collection.update();
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * @param collection
+	 * @param lfns
+	 * @return <code>true</code> if anything was changed
+	 */
+	public static boolean addToCollection(final LFN collection, final Set<LFN> lfns){		
+		if (!collection.exists || !collection.isCollection() || lfns==null || lfns.size()==0){
+			return false;
+		}
+		
+		final DBFunctions db = ConfigUtils.getDB("alice_data");
 		
 		final Set<String> currentLFNs = collection.listCollection();
 		
@@ -269,32 +368,33 @@ public class LFNUtils {
 		
 		final GUID guid = GUIDUtils.getGUID(collection.guid);
 		
-		Set<Integer> commonSEs = guid.size==0 ? null : new HashSet<Integer>(guid.seStringList);
+		Set<Integer> commonSEs = guid.size==0 && guid.seStringList.size()==0 ? null : new HashSet<Integer>(guid.seStringList);
 			
+		boolean updated = false;
+		
 		for (final LFN lfn: toAdd){
 			if (commonSEs==null || commonSEs.size()>0){
 				final Set<PFN> pfns = lfn.whereisReal();
 				
 				final Set<Integer> ses = new HashSet<Integer>();
 		
-				for (PFN pfn: pfns){
+				for (final PFN pfn: pfns){
 					ses.add(Integer.valueOf(pfn.seNumber));
 				}
 				
-				if (ses.size()>0){
-					if (commonSEs!=null)
-						commonSEs.retainAll(ses);
-					else
-						commonSEs = ses;
-				}
+				if (commonSEs!=null)
+					commonSEs.retainAll(ses);
+				else
+					commonSEs = ses;
 			}
 			
 			if (db.query("INSERT INTO COLLECTIONS_ELEM (collectionId,origLFN,guid) VALUES ("+collectionId+", '"+Format.escSQL(lfn.getCanonicalName())+"', string2binary('"+lfn.guid.toString()+"'));")){
 				guid.size += lfn.size;
+				updated = true;
 			}
 		}
 		
-		if (collection.size == guid.size)
+		if (!updated)
 			return false;	// nothing changed
 		
 		if (commonSEs!=null)

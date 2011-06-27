@@ -74,8 +74,26 @@ public class Testing {
 			System.err.println("Contains : "+c.listCollection());
 			//LFN lfn = LFNUtils.getLFN("/alice/data/2011/LHC11c/000154138/collection");
 			
+			GUID g = GUIDUtils.getGUID(c.guid);
+
+			System.err.println("GUID is in : "+g.seStringList);
+			
 			//System.err.println(lfn);
 			
+			Set<LFN> toRemove = new LinkedHashSet<LFN>();
+			toRemove.add(l3);
+			toRemove.add(l1);
+			
+			System.err.println("Remove lfns: "+LFNUtils.removeFromCollection(c, toRemove));
+			
+			System.err.println("After removing : "+c);
+			
+			System.err.println("Contains : "+c.listCollection());
+
+			g = GUIDUtils.getGUID(c.guid);
+
+			System.err.println("GUID is in : "+g.seStringList);
+
 			return;
 		}
 		

@@ -1,5 +1,4 @@
 Collections
-	- Delete entries from a collection 
 	- Cascade deleting from COLLECTION* on delete from LFN
 	
 Metadata operations

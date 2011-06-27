@@ -606,7 +606,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 		
-		if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary('"+guid.toString()+"');"))
+		if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary('"+guid.toString()+"') ORDER BY 1;"))
 			return null;
 
 		final int count = db.count();
