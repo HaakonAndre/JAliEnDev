@@ -31,8 +31,6 @@ public class XrootDEnvelope implements Serializable {
 	 * the order the key-vals have to appear for sign and verify
 	 */
 	public static final String hashord = "turl-xurl-access-lfn-guid-zguid-size-md5-se";
-	
-	
 
 	/**
 	 * the access ticket this envelope belongs to
@@ -51,9 +49,24 @@ public class XrootDEnvelope implements Serializable {
 	private LFN archiveAnchorLFN;
 
 	/**
+	 * Signed transaction url
+	 */
+	protected String turl;
+
+	/**
 	 * Signed envelope
 	 */
 	protected String signedEnvelope;
+
+	/**
+	 * UnSigned envelope
+	 */
+	protected String unSignedEnvelope;
+
+	/**
+	 * UnEncrypted envelope
+	 */
+	protected String unEncryptedEnvelope;
 
 	/**
 	 * Encrypted envelope
@@ -124,20 +137,20 @@ public class XrootDEnvelope implements Serializable {
 
 		g.md5 = md5;
 		g.size = size;
-		if(turl.endsWith(spfn))
+		if (turl.endsWith(spfn))
 			spfn = turl;
-		else{
-			//turl has #archive
-			if(turl.contains("#"))
-				turl = turl.substring(0,turl.indexOf('#'));
-			//turl has LFN rewrite for dCache etc
-			if(turl.endsWith(lfn))
-					turl = turl.replace(lfn, spfn);
+		else {
+			// turl has #archive
+			if (turl.contains("#"))
+				turl = turl.substring(0, turl.indexOf('#'));
+			// turl has LFN rewrite for dCache etc
+			if (turl.endsWith(lfn))
+				turl = turl.replace(lfn, spfn);
 		}
 
 		this.pfn = new PFN(spfn, g, SEUtils.getSE(se));
 
-		signedEnvelope = envelope;
+		unSignedEnvelope = envelope;
 	}
 
 	/**
@@ -155,7 +168,14 @@ public class XrootDEnvelope implements Serializable {
 	 * @return envelope xml
 	 */
 	public String getUnEncryptedEnvelope() {
-		
+		return unEncryptedEnvelope;
+	}
+
+	/**
+	 * set envelope
+	 */
+	public void setUnEncryptedEnvelope() {
+
 		System.out.println("OLDENV: Preparing encrypted envelope.");
 
 		final String access = type.toString().replace("write", "write-once");
@@ -163,23 +183,23 @@ public class XrootDEnvelope implements Serializable {
 		String sPFN = pfn.getPFN();
 
 		final SE se = SEUtils.getSE(pfn.seNumber);
-		
+
 		String sStoragePrefix = se.generateProtocol();
-		
-		if (sPFN.startsWith(sStoragePrefix)){
+
+		if (sPFN.startsWith(sStoragePrefix)) {
 			sPFN = sPFN.substring(sStoragePrefix.length());
-		}
-		else{
+		} else {
 			final String[] pfnsplit = pfn.getPFN().split("//");
 
-			if (pfnsplit.length<3){
-				System.err.println("Split is not ok : "+pfnsplit.length+" for "+pfn.getPFN());
-				return null;
+			if (pfnsplit.length < 3) {
+				System.err.println("Split is not ok : " + pfnsplit.length
+						+ " for " + pfn.getPFN());
+				// return null;
 			}
-			
-			sPFN = "/"+pfnsplit[2];
+
+			sPFN = "/" + pfnsplit[2];
 		}
-		
+
 		final GUID guid = pfn.getGuid();
 
 		final Set<LFN> lfns = guid.getLFNs();
@@ -211,11 +231,11 @@ public class XrootDEnvelope implements Serializable {
 		ret += "    <size>" + refGUID.size + "</size>" + "\n" + "    <guid>"
 				+ Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n"
 				+ "    <md5>" + Format.escHtml(refGUID.md5) + "</md5>\n"
-				+ "    <pfn>" + Format.escHtml(sPFN) + "</pfn>\n"
-				+ "    <se>" + Format.escHtml(se.getName()) + "</se>\n"
+				+ "    <pfn>" + Format.escHtml(sPFN) + "</pfn>\n" + "    <se>"
+				+ Format.escHtml(se.getName()) + "</se>\n"
 				+ "  </file>\n</authz>\n";
 
-		return ret;
+		unEncryptedEnvelope = ret;
 	}
 
 	/**
@@ -229,10 +249,16 @@ public class XrootDEnvelope implements Serializable {
 	 *         most cases it is the PFN but for DCACHE it is a special path ...
 	 */
 	public String getTransactionURL() {
-		final SE se = SEUtils.getSE(pfn.seNumber);
 
-		if (se == null)
-			return null;
+		return turl;
+	}
+
+	/**
+		 *
+		 */
+	public void setTransactionURL() {
+		final SE se = SEUtils.getSE(pfn.seNumber);
+		System.out.println("Got the SE");
 
 		if (se.seName.indexOf("DCACHE") > 0) {
 			final GUID guid = pfn.getGuid();
@@ -240,53 +266,64 @@ public class XrootDEnvelope implements Serializable {
 			final Set<LFN> lfns = guid.getLFNs();
 
 			if (lfns != null && lfns.size() > 0)
-				return se.seioDaemons + "/"
+				turl = se.seioDaemons + "/"
 						+ lfns.iterator().next().getCanonicalName();
+			else
+			turl =  se.seioDaemons + "//NOLFN";
+		} else {
 
-			return se.seioDaemons + "//NOLFN";
-		}
+			final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
 
-		final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
-
-		if (m.matches()) {
+			if (m.matches()) {
+				if (archiveAnchorLFN != null)
+					turl =  se.seioDaemons + "/" + m.group(4) + "#"
+							+ archiveAnchorLFN.getFileName();
+				else
+					turl =  se.seioDaemons + "/" + m.group(4);
+			}
 			if (archiveAnchorLFN != null)
-				return se.seioDaemons + "/" + m.group(4) + "#"
-						+ archiveAnchorLFN.getFileName();
-			return se.seioDaemons + "/" + m.group(4);
+				turl =  pfn.pfn + "#" + archiveAnchorLFN.getFileName();
+			else 
+			turl =  pfn.pfn;
 		}
-		if (archiveAnchorLFN != null)
-			return pfn.pfn + "#" + archiveAnchorLFN.getFileName();
-		return pfn.pfn;
 	}
 
 	/**
 	 * @return url envelope
 	 */
 	public String getUnsignedEnvelope() {
-				
+		return unSignedEnvelope;
+	}
+
+	/**
+	 * set url envelope
+	 */
+	public void setUnsignedEnvelope() {
+		
+		setTransactionURL();
+
 		final GUID guid = pfn.getGuid();
 
-		
 		final Set<LFN> lfns = guid.getLFNs();
-		
+
 		final SE se = SEUtils.getSE(pfn.seNumber);
-		
-		HashMap<String,String> e = new HashMap<String,String>(8);
-		
+
+		HashMap<String, String> e = new HashMap<String, String>(8);
+
 		e.put("turl", pfn.getPFN());
-		if(archiveAnchorLFN!=null)
-			e.put("turl", pfn.getPFN()+ "#" + archiveAnchorLFN.getFileName());
-		
+		if (archiveAnchorLFN != null)
+			e.put("turl", pfn.getPFN() + "#" + archiveAnchorLFN.getFileName());
+
 		e.put("access", type.toString());
-		
+
 		e.put("lfn", "/NOLFN");
-		
-		if(archiveAnchorLFN!=null)
-			e.put("lfn",archiveAnchorLFN.getCanonicalName());
-		else if (lfns!=null && lfns.size()>0)
-			e.put("lfn",lfns.iterator().next().getCanonicalName());		
-			
-		if(archiveAnchorLFN==null){
+
+		if (archiveAnchorLFN != null)
+			e.put("lfn", archiveAnchorLFN.getCanonicalName());
+		else if (lfns != null && lfns.size() > 0)
+			e.put("lfn", lfns.iterator().next().getCanonicalName());
+
+		if (archiveAnchorLFN == null) {
 			e.put("guid", guid.getName());
 			e.put("size", String.valueOf(guid.size));
 			e.put("md5", guid.md5);
@@ -295,36 +332,36 @@ public class XrootDEnvelope implements Serializable {
 			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
 			e.put("zguid", guid.getName());
 			e.put("guid", archiveAnchorGUID.getName());
-					e.put("size", String.valueOf(archiveAnchorGUID.size));
+			e.put("size", String.valueOf(archiveAnchorGUID.size));
 			e.put("md5", archiveAnchorGUID.md5);
 
 		}
-		if("alice::cern::setest".equals(se.getName().toLowerCase()))
+		if ("alice::cern::setest".equals(se.getName().toLowerCase()))
 			e.put("se", "alice::cern::testse");
-		else 
+		else
 			e.put("se", se.getName());
-		
-		e.put("xurl",addXURLForSpecialSEs(e.get("lfn")));
-		
-		StringTokenizer hash = new StringTokenizer(hashord,"-");
+
+		e.put("xurl", addXURLForSpecialSEs(e.get("lfn")));
+
+		StringTokenizer hash = new StringTokenizer(hashord, "-");
 
 		String ret = "";
 		String usedHashOrd = "";
-		
+
 		System.out.println("Creating unsigned envelope:");
-		
+
 		while (hash.hasMoreTokens()) {
 			String key = hash.nextToken();
-			if(e.get(key)!=null){
+			if (e.get(key) != null) {
 				ret += key + "=" + e.get(key) + "&";
 				usedHashOrd += key + "-";
-				System.out.println(key + ": "+ e.get(key));
+				System.out.println(key + ": " + e.get(key));
 			}
 		}
-		
-		ret += "hashord=" +usedHashOrd + "hashord";
-		
-		return ret;
+
+		ret += "hashord=" + usedHashOrd + "hashord";
+
+		unSignedEnvelope = ret;
 	}
 
 	private String addXURLForSpecialSEs(String lfn) {
@@ -335,7 +372,7 @@ public class XrootDEnvelope implements Serializable {
 		// $se =~ /alice::((RAL)|(CNAF))::castor/i
 		// $se =~ /alice::RAL::castor2_test/i
 		if ((se.seName.toLowerCase()).contains("dcache"))
-			return  se.seioDaemons + "/" + lfn;
+			return se.seioDaemons + "/" + lfn;
 		return null;
 	}
 
