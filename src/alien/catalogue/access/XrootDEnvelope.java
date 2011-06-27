@@ -80,6 +80,8 @@ public class XrootDEnvelope implements Serializable {
 	public XrootDEnvelope(final AccessType type, final PFN pfn) {
 		this.type = type;
 		this.pfn = pfn;
+		setUnsignedEnvelope();
+		setUnEncryptedEnvelope();
 	}
 
 	/**
