@@ -104,13 +104,9 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 
 				try {
 					for (PFN pfn : pfns) {
-
-						out.printOutln("Got PFN: " + pfn.getPFN());
 						List<Protocol> protocols = Transfer
 								.getAccessProtocols(pfn);
-						out.printOutln("Got Protocols");
 						for (final Protocol protocol : protocols) {
-							out.printOutln("Protocol: " + protocol);
 
 							try {
 
@@ -118,7 +114,6 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 									outputFile = new File(outputFileName);
 								}
 								outputFile = protocol.get(pfn, outputFile);
-								out.printOutln("Got it...");
 
 								commander.cashFile(md5, outputFile);
 								break;

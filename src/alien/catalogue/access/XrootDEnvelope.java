@@ -178,8 +178,6 @@ public class XrootDEnvelope implements Serializable {
 	 */
 	public void setUnEncryptedEnvelope() {
 
-		System.out.println("OLDENV: Preparing encrypted envelope.");
-
 		final String access = type.toString().replace("write", "write-once");
 
 		String sPFN = pfn.getPFN();
@@ -260,7 +258,6 @@ public class XrootDEnvelope implements Serializable {
 		 */
 	public void setTransactionURL() {
 		final SE se = SEUtils.getSE(pfn.seNumber);
-		System.out.println("Got the SE");
 
 		if (se.seName.indexOf("DCACHE") > 0) {
 			final GUID guid = pfn.getGuid();

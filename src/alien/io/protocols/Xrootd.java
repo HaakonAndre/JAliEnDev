@@ -268,13 +268,9 @@ public class Xrootd extends Protocol {
 			command.addAll(getCommonArguments());
 
 			String transactionURL = pfn.pfn;
-			System.out.println("getting by xrootd");
-
 
 			if (pfn.ticket.envelope != null) {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
-				System.out.println("TURL:" + transactionURL);
-
 			}
 
 			command.add(transactionURL);
