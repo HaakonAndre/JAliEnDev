@@ -10,9 +10,7 @@ import java.util.List;
 
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.perl.commands.AlienTime;
-import alien.taskQueue.JobSigner;
 import alien.taskQueue.JobSubmissionException;
-import alien.user.JAKeyStore;
 
 /**
  * @author ron
@@ -107,6 +105,8 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
+	 * @param commander 
+	 * @param out 
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command

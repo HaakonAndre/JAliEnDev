@@ -3,13 +3,10 @@ package alien.shell.commands;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
@@ -177,6 +174,8 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
+	 * @param commander 
+	 * @param out 
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command

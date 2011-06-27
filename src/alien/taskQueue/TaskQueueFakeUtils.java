@@ -64,6 +64,7 @@ public class TaskQueueFakeUtils {
 	 * @param jdl
 	 * @param user
 	 * @param cert
+	 * @return job id
 	 * @throws JobSubmissionException
 	 */
 	public static int submitJob(String jdl, AliEnPrincipal user,
@@ -112,6 +113,8 @@ public class TaskQueueFakeUtils {
 	}
 
 	/**
+	 * 
+	 * @param jobID 
 	 * @param jobnumber
 	 * @param status
 	 */
@@ -121,6 +124,9 @@ public class TaskQueueFakeUtils {
 				+ status + ">");
 	}
 
+	/**
+	 * @param jobID
+	 */
 	public static String getJobStatus(int jobID) {
 		if (jobID != 0 && queue.containsKey(jobID))
 			if (queue.get(jobID) != null)

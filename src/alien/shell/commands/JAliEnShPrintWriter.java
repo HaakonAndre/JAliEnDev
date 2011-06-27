@@ -7,6 +7,10 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 
+/**
+ * @author ron
+ * @since July 15, 2011
+ */
 public class JAliEnShPrintWriter extends UIPrintWriter{
 
 	/**
@@ -15,8 +19,14 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 	static transient final Logger logger = ConfigUtils
 			.getLogger(JAliEnShPrintWriter.class.getCanonicalName());
 
+	/**
+	 * error string tag to mark a println for stderr
+	 */
 	public static final String errTag = ":::STDERR:";
 	
+	/**
+	 * string tag to mark the last line of an output
+	 */
 	public static final String lastLineTag = ":::LINEFLUSH:";
 
 	private OutputStream os;

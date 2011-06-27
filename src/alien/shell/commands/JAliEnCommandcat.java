@@ -68,6 +68,8 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * @param commander 
+	 * @param out 
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command

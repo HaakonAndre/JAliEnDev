@@ -1,11 +1,8 @@
 package alien.site;
 
 import java.io.IOException;
-import java.security.SecureRandom;
 
 import alien.api.DispatchSSLServer;
-import alien.api.taskQueue.TaskQueueApiUtils;
-import alien.taskQueue.Job;
 import alien.user.JAKeyStore;
 
 /**
@@ -33,7 +30,6 @@ public class ComputingElement extends Thread  {
 	}
 
 
-	@SuppressWarnings("static-access")
 	public void run(){
 
 		DispatchSSLServer.overWriteServiceAndForward("siteProxyService");

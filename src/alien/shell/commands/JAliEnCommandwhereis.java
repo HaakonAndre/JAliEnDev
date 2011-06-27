@@ -1,12 +1,10 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Set;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -117,6 +115,8 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
+	 * @param commander 
+	 * @param out 
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command

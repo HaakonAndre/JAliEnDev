@@ -6,7 +6,6 @@ import java.util.List;
 
 import jline.FileNameCompletor;
 import alien.api.catalogue.CatalogueApiUtils;
-import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 
 /**

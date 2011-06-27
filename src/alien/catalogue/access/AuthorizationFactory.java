@@ -40,8 +40,6 @@ public final class AuthorizationFactory {
 
 	private static AliEnPrincipal defaultAccount = null;
 	
-	private static AliEnPrincipal user = null;
-
 
 	static {
 		String file = System.getenv("X509_USER_CERT");
@@ -99,14 +97,6 @@ public final class AuthorizationFactory {
 		}
 
 		setDefaultUser(user);
-	}
-
-	/**
-	 * @param cert
-	 */
-	public AuthorizationFactory(X509Certificate cert) {
-		user = UserFactory
-		.getByCertificate(new X509Certificate[] { cert });
 	}
 	
 	

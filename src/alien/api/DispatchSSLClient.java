@@ -49,11 +49,9 @@ public class DispatchSSLClient extends Thread {
 	private final OutputStream os;
 
 	
-	
-	private static boolean forwardRequest = false;
-	
 	/**
 	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
+	 * @param servName 
 	 * @param serviceName name of the config parameter for the host:port settings
 	 */
 	public static void overWriteServiceAndForward(String servName){
@@ -188,6 +186,7 @@ public class DispatchSSLClient extends Thread {
 	}
 
 	
+	@SuppressWarnings("unused")
 	private void close() {
 		if (ois != null) {
 			try {

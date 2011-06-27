@@ -3,13 +3,11 @@ package alien.shell.commands;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import lazyj.Log;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
@@ -42,13 +40,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	private boolean bB = false;
 
-	/**
-	 * marker for -bulk argument
-	 */
-	private boolean bBulk = false;
-
-	// public long timingChallenge = 0;
-
 	private final ArrayList<String> alPaths;
 
 	
@@ -61,9 +52,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * execute the ls
 	 */
 	public void execute() {
-
-	
-		// long lStart = System.currentTimeMillis();
 
 		int iDirs = alPaths.size();
 
@@ -78,22 +66,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
 
-			if (bBulk) {
 				directory = CatalogueApiUtils.getLFNs(sPath);
-			} else {
-				LFN entry = CatalogueApiUtils.getLFN(sPath);
 
-				if (entry != null) {
-
-					if (entry.type == 'd') {
-						directory = entry.list();
-					} else
-						directory = Arrays.asList(entry);
-				} else {
-					if (!silent)
-						out.printOutln("No such file or directory");
-				}
-			}
 
 			if (directory != null) {
 				for (LFN localLFN : directory) {
@@ -133,8 +107,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			}
 
 		}
-		// timingChallenge = (System.currentTimeMillis() - lStart);
-		// System.err.println("jAliEn TIMING CHALLENGE : "+ timingChallenge );
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat(
@@ -158,12 +130,12 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 		out.printOutln(AlienTime.getStamp()
-				+ "Usage: ls [-laFn|b|h] [<directory>]");
-		out.printOutln("		-l : long format");
-		out.printOutln("		-a : show hidden .* files");
-		out.printOutln("		-F : add trailing / to directory names");
-		out.printOutln("		-b : print in guid format");
-		out.printOutln("		-h : print the help text");
+				+ "Usage: ls [-laFn|b|h] [<directory>]\n"
+				+"		-l : long format\n"
+				+"		-a : show hidden .* files\n"
+				+"		-F : add trailing / to directory names\n"
+				+"		-b : print in guid format\n"
+				+"		-h : print the help text");
 	}
 
 	/**
@@ -189,6 +161,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
+	 * @param commander 
+	 * @param out 
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
@@ -209,7 +183,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		alPaths.addAll(options.nonOptionArguments());
 		
 				bL = options.has("l");
-				bBulk = options.has("bulk");
+//				bBulk = options.has("bulk");
 				bB = options.has("b");
 				bA = options.has("a");
 				bF = options.has("F");

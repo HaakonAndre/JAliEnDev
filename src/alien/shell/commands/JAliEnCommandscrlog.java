@@ -48,7 +48,6 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	/**
 	 * get the directory listing of the ls
 	 * 
-	 * @return list of the LFNs
 	 */
 	protected static void addScreenLogLine(int logno, String line) {
 		if (scrlogs.get(logno) == null)
@@ -93,6 +92,9 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 * 
 	 * out.printOutln( the arguments of the command
+	 * @param commander 
+	 * @param out 
+	 * @param alArguments 
 	 */
 	public JAliEnCommandscrlog(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {

@@ -155,7 +155,7 @@ public class JAliEnCOMMander {
 				.replace(myHome.substring(0, myHome.length() - 1), "~");
 	}
 
-	private String gridFileCompletetion(@SuppressWarnings("unused") ArrayList<String> args) {
+	private String gridFileCompletetion(ArrayList<String> args) {
 		// TODO:
 		return "";
 	}

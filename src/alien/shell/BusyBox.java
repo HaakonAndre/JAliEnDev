@@ -8,11 +8,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.net.SocketException;
 
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
-import alien.JAliEnSh;
 import alien.config.JAliEnIAm;
 import alien.shell.commands.JAliEnShPrintWriter;
 import alien.taskQueue.Job;
@@ -74,6 +72,7 @@ public class BusyBox {
 	}
 
 	
+	@SuppressWarnings("unused")
 	private void reconnect(){
 		// TODO:
 	}
