@@ -27,7 +27,14 @@ import alien.user.JAKeyStore;
  * 
  */
 public class DispatchSSLClient extends Thread {
-
+	
+	/**
+	 * Reset the object stream every this many objects sent
+	 */
+	private static final int RESET_OBJECT_STREAM_COUNTER = 1000;
+	
+	private int objectsSentCounter = 0;
+	
 	/**
 	 * Logger
 	 */
@@ -51,8 +58,7 @@ public class DispatchSSLClient extends Thread {
 	
 	/**
 	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
-	 * @param servName 
-	 * @param serviceName name of the config parameter for the host:port settings
+	 * @param servName name of the config parameter for the host:port settings
 	 */
 	public static void overWriteServiceAndForward(String servName){
 		//TODO: we could drop the serviceName overwrite, once we assume to run not on one single host everything
@@ -93,17 +99,16 @@ public class DispatchSSLClient extends Thread {
 		new HashMap<Integer, DispatchSSLClient>(20);
 
 	/**
-	 * @param addr
+	 * @param address
 	 * @param p
 	 * @return instance
 	 * @throws IOException
 	 */
-	public static DispatchSSLClient getInstance(String addr, int p)
-			throws IOException {
+	public static DispatchSSLClient getInstance(final String address, int p) throws IOException {
 
-		if (!instance.containsKey(p) || instance.get(p) == null) {
+		if (instance.get(Integer.valueOf(p)) == null) {
 			// connect to the other end
-			System.out.println("Connecting to " + addr + ":" + p);
+			System.out.println("Connecting to " + address + ":" + p);
 
 			Security.addProvider(new BouncyCastleProvider());
 
@@ -131,7 +136,7 @@ public class DispatchSSLClient extends Thread {
 
 				SSLSocketFactory f = ssc.getSocketFactory();
 
-				SSLSocket client = (SSLSocket) f.createSocket(addr, p);
+				SSLSocket client = (SSLSocket) f.createSocket(address, p);
 				
 				// print info
 				printSocketInfo(client);
@@ -169,7 +174,7 @@ public class DispatchSSLClient extends Thread {
 
 					DispatchSSLClient sc = new DispatchSSLClient(client);
 
-					instance.put(p, sc);
+					instance.put(Integer.valueOf(p), sc);
 
 				} else
 					System.err
@@ -182,7 +187,8 @@ public class DispatchSSLClient extends Thread {
 			}
 
 		}
-		return instance.get(p);
+		
+		return instance.get(Integer.valueOf(p));
 	}
 
 	
@@ -260,7 +266,7 @@ public class DispatchSSLClient extends Thread {
 			}
 			catch (IOException e){
 				// Now let's try, if we can reconnect
-				instance.put(port, null);
+				instance.put(Integer.valueOf(port), null);
 				try {
 					return dispatchARequest(r);
 				} catch (IOException e1) {
@@ -288,7 +294,12 @@ public class DispatchSSLClient extends Thread {
 			long lStart = System.currentTimeMillis();
 
 			c.oos.writeObject(r);
-			// c.oos.reset();
+			
+			if (++c.objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER){
+				c.oos.reset();
+				c.objectsSentCounter = 0;
+			}
+			
 			c.oos.flush();
 			c.os.flush();
 
