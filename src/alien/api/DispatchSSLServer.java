@@ -29,6 +29,11 @@ import alien.user.UserFactory;
  * 
  */
 public class DispatchSSLServer extends Thread {
+	
+	/**
+	 * Reset the object stream every this many objects sent
+	 */
+	private static final int RESET_OBJECT_STREAM_COUNTER = 1000;
 
 	/**
 	 * Logger
@@ -59,6 +64,8 @@ public class DispatchSSLServer extends Thread {
 	private static String serviceName = "apiService";
 
 	private static boolean forwardRequest = false;
+	
+	private int objectsSentCounter = 0;
 
 	/**
 	 * E.g. the CE proxy should act as a fowarding bridge between JA and central
@@ -100,8 +107,6 @@ public class DispatchSSLServer extends Thread {
 	public void run() {
 		long lLasted = 0;
 
-		long lSerialization = 0;
-
 		try {
 			while (true) {
 				final Object o = ois.readObject();
@@ -112,8 +117,8 @@ public class DispatchSSLServer extends Thread {
 
 						long lStart = System.currentTimeMillis();
 
-						r.setPartnerIdentity(UserFactory
-								.getByCertificate(partnerCerts));
+						r.setPartnerIdentity(UserFactory.getByCertificate(partnerCerts));
+						
 						r.setPartnerCertificate(partnerCerts);
 
 						if (forwardRequest)
@@ -126,8 +131,15 @@ public class DispatchSSLServer extends Thread {
 						long lSer = System.currentTimeMillis();
 
 						oos.writeObject(r);
+
+						if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER){
+							oos.reset();
+							objectsSentCounter = 0;
+						}
+						
 						oos.flush();
 						os.flush();
+						
 
 						lSerialization += System.currentTimeMillis() - lSer;
 
