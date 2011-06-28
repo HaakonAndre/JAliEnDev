@@ -148,6 +148,11 @@ public class LFNUtils {
 	public static final int FIND_INCLUDE_DIRS = 2;
 	
 	/**
+	 * the "-y" flag of AliEn `find`
+	 */
+	public static final int FIND_BIGGEST_VERSION = 4;
+	
+	/**
 	 * @param path
 	 * @param pattern
 	 * @param flags a combination of FIND_* flags
@@ -168,6 +173,54 @@ public class LFNUtils {
 		}
 		
 		return ret;		
+	}
+	
+	/**
+	 * @param path
+	 * @param tag
+	 * @return metadata table where this tag can be found for this path, or <code>null</code> if there is no such entry
+	 */
+	public static String getTagTableName(final String path, final String tag){
+		final DBFunctions db = ConfigUtils.getDB("alice_data");
+		
+		db.query("SELECT tableName FROM TAG0 WHERE tagName='"+Format.escSQL(tag)+"' AND '"+Format.escSQL(path)+"' LIKE concat(path,'%') ORDER BY length(path) DESC LIMIT 1;");
+		
+		if (db.moveNext())
+			return db.gets(1);
+		
+		return null;	
+	}
+	
+	/**
+	 * @param path
+	 * @param pattern
+	 * @param tag
+	 * @param query
+	 * @param flags
+	 * @return the files that match the metadata query
+	 */
+	public static Set<String> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags){
+		final String tableName = getTagTableName(path, tag);
+		
+		if (tableName==null)
+			return null;
+		
+		final DBFunctions db = ConfigUtils.getDB("alice_data");
+		
+		String q = "SELECT file FROM "+tableName+" WHERE file LIKE '"+Format.escSQL(path+"%"+pattern+"%")+"' AND "+Format.escSQL(query)+" ORDER BY version DESC";
+		
+		if ((flags & FIND_BIGGEST_VERSION) != 0)
+			q += " LIMIT 1";
+		
+		if (!db.query(q))
+			return null;
+		
+		final Set<String> ret = new LinkedHashSet<String>();
+		
+		while (db.moveNext())
+			ret.add(db.gets(1));
+		
+		return ret;
 	}
 	
 	/**
