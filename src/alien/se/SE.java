@@ -10,6 +10,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.StringFactory;
 import alien.catalogue.GUID;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
@@ -105,7 +106,7 @@ public class SE implements Serializable, Comparable<SE>{
 	 * @param db
 	 */
 	SE(final DBFunctions db){
-		seName = db.gets("seName").toUpperCase();
+		seName = StringFactory.get(db.gets("seName").toUpperCase());
 		
 		seNumber = db.geti("seNumber");
 		
@@ -118,9 +119,9 @@ public class SE implements Serializable, Comparable<SE>{
 		if("alice::cern::setest".equals(seName.toLowerCase()))
 			needsEncryptedEnvelope=false;
 		
-		seioDaemons = db.gets("seioDaemons");
+		seioDaemons = StringFactory.get(db.gets("seioDaemons"));
 		
-		seStoragePath = db.gets("seStoragePath");
+		seStoragePath = StringFactory.get(db.gets("seStoragePath"));
 		
 		seUsedSpace = db.getl("seUsedSpace");
 		
@@ -128,7 +129,7 @@ public class SE implements Serializable, Comparable<SE>{
 		
 		seMinSize = db.getl("seMinSize");
 		
-		seType = db.gets("seType");
+		seType = StringFactory.get(db.gets("seType"));
 		
 		exclusiveUsers = parseArray(db.gets("exclusiveUsers"));
 		
@@ -197,7 +198,7 @@ public class SE implements Serializable, Comparable<SE>{
 		
 		ret += "/"+twoDigits.format(guid.getCHash())+"/"+fiveDigits.format(guid.getHash())+"/"+guid.guid.toString();
 		
-		return ret;
+		return StringFactory.get(ret);
 	}
 	
 	/**
@@ -213,7 +214,7 @@ public class SE implements Serializable, Comparable<SE>{
 		final StringTokenizer st = new StringTokenizer(s, ",");
 		
 		while (st.hasMoreTokens()){
-			final String tok = st.nextToken().trim();
+			final String tok = StringFactory.get(st.nextToken().trim());
 			
 			if (tok.length()>0)
 				ret.add(tok);
