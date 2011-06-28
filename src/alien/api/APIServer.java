@@ -113,12 +113,13 @@ public class APIServer extends Thread {
 
 				String sLine = br.readLine();
 
-				if (sLine.equals(password))
+				if (sLine!=null && sLine.equals(password))
 					System.out.println("password accepted");
-
-				if (sLine == null || !sLine.equals(password))
+				else
 					return;
+				
 				JAliEnCOMMander jcomm = new JAliEnCOMMander();
+				
 				while ((sLine = br.readLine()) != null) {
 					System.out.println("we received call: " + sLine);
 					jcomm.execute(os, sLine.trim().split(" "));
