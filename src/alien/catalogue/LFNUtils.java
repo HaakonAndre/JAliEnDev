@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
@@ -218,7 +219,7 @@ public class LFNUtils {
 		final Set<String> ret = new LinkedHashSet<String>();
 		
 		while (db.moveNext())
-			ret.add(db.gets(1));
+			ret.add(StringFactory.get(db.gets(1)));
 		
 		return ret;
 	}

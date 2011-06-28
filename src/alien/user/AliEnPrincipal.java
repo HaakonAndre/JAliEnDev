@@ -6,6 +6,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+import lazyj.StringFactory;
+
 /**
  * Implements java.security.Principal
  * 
@@ -41,7 +43,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @param username
 	 */
 	AliEnPrincipal(final String username) {
-		this.username = username;
+		this.username = StringFactory.get(username);
 	}
 
 	/**
@@ -64,7 +66,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 		sUsernames = new LinkedHashSet<String>(names);
 		
 		if (!sUsernames.contains(username))
-			sUsernames.add(username);
+			sUsernames.add(StringFactory.get(username));
 	}
 
 	/**
@@ -100,8 +102,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 		for (String sUsername : getNames()) {
 			final Set<String> sRoles = LDAPHelper.checkLdapInformation("users=" + sUsername, "ou=Roles,", "uid");
 
-			if (sRoles != null)
-				ret.addAll(sRoles);
+			if (sRoles != null){
+				for (final String s: sRoles)
+					ret.add(StringFactory.get(s));
+			}
 		}
 
 		roles = ret;

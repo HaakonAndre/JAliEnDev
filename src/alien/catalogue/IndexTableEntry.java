@@ -12,6 +12,7 @@ import alien.monitoring.MonitorFactory;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lazyj.StringFactory;
 
 /**
  * Wrapper around a row in INDEXTABLE
@@ -64,7 +65,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		indexId = db.geti("indexId");
 		hostIndex = db.geti("hostIndex");
 		tableName = db.geti("tableName");
-		lfn = db.gets("lfn");
+		lfn = StringFactory.get(db.gets("lfn"));
 	}
 	
 	@Override

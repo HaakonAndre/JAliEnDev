@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lazyj.StringFactory;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
@@ -318,9 +319,9 @@ public class BookingTable {
 		
 		if (!guid.exists()){
 			guid.size = db.getl("size");
-			guid.md5 = db.gets("md5sum");
-			guid.owner = db.gets("owner");
-			guid.gowner = db.gets("gowner");
+			guid.md5 = StringFactory.get(db.gets("md5sum"));
+			guid.owner = StringFactory.get(db.gets("owner"));
+			guid.gowner = StringFactory.get(db.gets("gowner"));
 			guid.perm = "755";
 			guid.ctime = new Date();
 			guid.expiretime = null;

@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -161,7 +162,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		ctime = db.getDate("ctime");
 		
-		owner = db.gets("owner");
+		owner = StringFactory.get(db.gets("owner"));
 		
 		ref = db.geti("ref");
 		
@@ -175,7 +176,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		size = db.getl("size");
 		
-		gowner = db.gets("gowner");
+		gowner = StringFactory.get(db.gets("gowner"));
 		
 		final byte[] guidBytes = db.getBytes("guid");
 		
@@ -188,9 +189,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		if (sTemp.length()>0)
 			type = sTemp.charAt(0);
 		
-		md5 = db.gets("md5");
+		md5 = StringFactory.get(db.gets("md5"));
 		
-		perm = db.gets("perm");
+		perm = StringFactory.get(db.gets("perm"));
 	}
 	
 	/**

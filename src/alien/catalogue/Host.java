@@ -4,6 +4,7 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
+import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 
 /**
@@ -54,10 +55,10 @@ public class Host implements Comparable<Host>{
 	 */
 	Host(final DBFunctions db){
 		hostIndex = db.geti("hostIndex");
-		address = db.gets("address");
-		this.db = db.gets("db");
-		driver = db.gets("driver").toLowerCase();
-		organization = db.gets("organization");
+		address = StringFactory.get(db.gets("address"));
+		this.db = StringFactory.get(db.gets("db"));
+		driver = StringFactory.get(db.gets("driver").toLowerCase());
+		organization = StringFactory.get(db.gets("organization"));
 		
 		final ExtProperties parent = ConfigUtils.getDBConfiguration().get("alice_users");
 		

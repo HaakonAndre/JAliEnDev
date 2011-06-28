@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.StringFactory;
 import alien.catalogue.access.AccessTicket;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -95,7 +96,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 	private void init(final DBFunctions db){
 		guidId = db.geti("guidId");
 		
-		pfn = db.gets("pfn");
+		pfn = StringFactory.get(db.gets("pfn"));
 		
 		seNumber = db.geti("seNumber");
 		

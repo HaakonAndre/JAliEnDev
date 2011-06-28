@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 
 /**
@@ -225,7 +226,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		entryId = db.getl("entryId");
 		
-		owner = db.gets("owner");
+		owner = StringFactory.get(db.gets("owner"));
 		
 		ctime = db.getDate("ctime", null);
 		
@@ -233,7 +234,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		aclId = db.geti("aclId", -1);
 		
-		lfn = db.gets("lfn");
+		lfn = StringFactory.get(db.gets("lfn"));
 		
 		expiretime = db.getDate("expiretime", null);
 		
@@ -241,11 +242,11 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		dir = db.geti("dir");
 		
-		gowner = db.gets("gowner");
+		gowner = StringFactory.get(db.gets("gowner"));
 		
 		type = db.gets("type").charAt(0);
 		
-		perm = db.gets("perm");
+		perm = StringFactory.get(db.gets("perm"));
 		
 		byte[] guidBytes = db.getBytes("guid");
 		
@@ -254,9 +255,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		else
 			guid = null;
 		
-		md5 = db.gets("md5");
+		md5 = StringFactory.get(db.gets("md5"));
 		
-		guidtime = db.gets("guidtime");
+		guidtime = StringFactory.get(db.gets("guidtime"));
 		
 		broken = db.getb("broken", false);
 		
@@ -318,6 +319,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			canonicalName = sLFN + "/" + lfn;
 		else	
 			canonicalName = sLFN + lfn;
+		
+		canonicalName = StringFactory.get(canonicalName);
 		
 		return canonicalName;
 	}
@@ -617,7 +620,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			return new TreeSet<String>();
 
 		while (db.moveNext()){
-			ret.add(db.gets(1));
+			ret.add(StringFactory.get(db.gets(1)));
 		}
 		
 		return ret;
