@@ -308,12 +308,22 @@ public class CacheLogAnalyzer {
 		System.out.flush();
 	}
 	
+	private static final Pattern FIND_DET = Pattern.compile("/alice/((data/20../OCDB)|(simulation/20../([^/]+)/Ideal))/([^/]+)/");
+	
 	/**
 	 * @param hits
 	 * @param key
 	 */
 	private static void processFind(final int hits, final String key) {
 		incStats("find", "hot_find", key, hits);
+		
+		Matcher m = FIND_DET.matcher(key);
+		
+		if (m.matches()){
+			String det = m.group(5);
+			
+			incStats("find", "by_det", det, hits);
+		}
 	}
 
 	private static final Comparator<Map.Entry<String, AtomicInteger>> entryComparator = new Comparator<Map.Entry<String,AtomicInteger>>(){
