@@ -308,7 +308,7 @@ public class CacheLogAnalyzer {
 		System.out.flush();
 	}
 	
-	private static final Pattern FIND_DET = Pattern.compile("/alice/((data/20../OCDB)|(simulation/20../([^/]+)/Ideal))/([^/]+)/");
+	private static final Pattern FIND_DET = Pattern.compile("^/alice/((data/20../OCDB)|(simulation/20../([^/]+)/Ideal))/([^/]+)/.*");
 	
 	/**
 	 * @param hits
