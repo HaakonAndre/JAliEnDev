@@ -23,11 +23,14 @@ public class JAliEnSh {
 	 */
 	public static void main(String[] args) throws Exception {
 
+		File f = new File(System.getProperty("user.home"));
+		System.out.println("And we are in: " + f.getCanonicalPath());
+
 		if (args.length > 0 && args[0].equals("-k"))
 			JAliEnSh.killAPIService();
 		else {
 
-			//JAliEnSh.startAPIService();
+			// JAliEnSh.startAPIService();
 			if (JAliEnSh.APIServiceRunning())
 				new BusyBox(addr, port, password);
 			else
@@ -46,27 +49,25 @@ public class JAliEnSh {
 
 	private static void startAPIService() {
 		if (!JAliEnSh.APIServiceRunning()) {
-			
-			
-			//APIServer.startAPIService();
-			
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					new String[] { "nohup","./run.sh","alien.APIService","&" });
 
-	
+			// APIServer.startAPIService();
+
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
+					new String[] { "nohup", "./run.sh", "alien.APIService", "&" });
+
 			pBuilder.returnOutputOnExit(false);
 			pBuilder.redirectErrorStream(false);
 
 			pBuilder.timeout(356, TimeUnit.DAYS);
-//			try {
-//				pBuilder.start();
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//				System.err.println("Could not start APIService.");
-//			}
+			// try {
+			// pBuilder.start();
+			// } catch (Exception e) {
+			// e.printStackTrace();
+			// System.err.println("Could not start APIService.");
+			// }
 			System.out.println();
 		}
-			JAliEnSh.getAPIServicePID();
+		JAliEnSh.getAPIServicePID();
 	}
 
 	private static void killAPIService() {
@@ -98,9 +99,12 @@ public class JAliEnSh {
 
 		JAliEnSh.getAPIServicePID();
 
-		if(port==0)
+		if (!(new File(fuser)).exists())
+			return true;
+
+		if (port == 0)
 			return false;
-		
+
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 				new String[] { fuser, port + "/tcp" });
 
