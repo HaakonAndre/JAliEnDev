@@ -97,10 +97,11 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 						commander.site, lfn, ses, exses);
 
 			}
-			
-			outputFile = commander.checkLocalFileCache(md5);
 
-			if (bX || outputFile == null || !outputFile.exists()) {
+			if (!bX)
+				outputFile = commander.checkLocalFileCache(md5);
+
+			if (outputFile == null || !outputFile.exists()) {
 
 				try {
 					for (PFN pfn : pfns) {
@@ -129,7 +130,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 					out.printErrln("Problems parsing the PFNs of this file.");
 				}
 			}
-			
+
 			if (outputFile.isFile() && outputFile.exists() && !silent)
 				try {
 					out.printOutln("Downloaded file to "
@@ -137,7 +138,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 				} catch (IOException e) {
 					e.printStackTrace();
 				}
-				
+
 		}
 	}
 
@@ -175,8 +176,9 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
