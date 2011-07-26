@@ -13,6 +13,7 @@ import jline.ConsoleReader;
 import jline.SimpleCompletor;
 import alien.config.JAliEnIAm;
 import alien.shell.commands.JAliEnShPrintWriter;
+import alien.shell.commands.RootPrintWriter;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 
@@ -94,7 +95,6 @@ public class BusyBox {
 			out = new PrintWriter(System.out);
 
 			currentDir = callJAliEnGetString("cdir");
-
 			welcome();
 			out.flush();
 
@@ -146,15 +146,25 @@ public class BusyBox {
 
 			String ret = "";	
 			String sLine;
-			
+
 			while ( (sLine = br.readLine()) != null ){
-				if(JAliEnShPrintWriter.lastLineTag.equals(sLine))
+				if(sLine.endsWith(JAliEnShPrintWriter.streamend))
 					break;
+
 				ret += sLine + "\n";
 			}
+			
 			if(ret.length()>0)
 				ret = ret.substring(0,ret.length()-1);
+			
+			out.println("RAW RETURN:"+ RootPrintWriter.testMakeTagsVisible(ret));
+			out.flush();
 
+			
+
+			ret = ret.substring(ret.indexOf(RootPrintWriter.fieldseparator)+1,ret.indexOf(RootPrintWriter.stderrindicator));
+
+			out.println("STDOUT RETURN:"+ ret);
 			return ret;
 
 		} catch (IOException e) {
@@ -173,12 +183,14 @@ public class BusyBox {
 			BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
 			String sLine;
+			
 			while ( (sLine = br.readLine()) != null ){
-				if(JAliEnShPrintWriter.lastLineTag.equals(sLine))
+				if(sLine.endsWith(JAliEnShPrintWriter.streamend))
 					break;
 				if(sLine.startsWith(JAliEnShPrintWriter.errTag))
-					System.err.println("Error: "+ sLine.substring(JAliEnShPrintWriter.errTag.length()));
+					System.err.println("Error: "+ sLine.substring(1));
 				else {
+					sLine = RootPrintWriter.testMakeTagsVisible(sLine);
 					out.println(sLine);
 					out.flush();
 				}
@@ -190,6 +202,11 @@ public class BusyBox {
 		}
 	}
 
+	
+
+	
+
+	
 	/**
 	 * execute a command
 	 * @param callLine 
