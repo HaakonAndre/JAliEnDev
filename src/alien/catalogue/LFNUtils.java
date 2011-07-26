@@ -73,6 +73,13 @@ public class LFNUtils {
 			idx = processedFileName.indexOf("/../");
 		}
 		
+		if (processedFileName.endsWith("/..")){
+			int idx2 = processedFileName.lastIndexOf('/', processedFileName.length()-4);
+			
+			if (idx2>0)
+				processedFileName = processedFileName.substring(0, idx2);
+		}
+		
 		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(processedFileName);
 		
 		if (ite==null){
