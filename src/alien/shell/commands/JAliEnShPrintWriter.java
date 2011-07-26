@@ -19,15 +19,17 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 	static transient final Logger logger = ConfigUtils
 			.getLogger(JAliEnShPrintWriter.class.getCanonicalName());
 
-	/**
-	 * error string tag to mark a println for stderr
-	 */
-	public static final String errTag = ":::STDERR:";
 	
 	/**
-	 * string tag to mark the last line of an output
+	 * error String tag to mark a println for stderr
 	 */
-	public static final String lastLineTag = ":::LINEFLUSH:";
+	public static final String errTag = String.valueOf('5');
+	
+	/**
+	 * String tag to mark the last line of an output
+	 */
+	public static String streamend  = String.valueOf('0');
+
 
 	private OutputStream os;
 
@@ -53,7 +55,11 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 		print(errTag + line + "\n");
 	}
 	
+	protected void setenv(String env) {
+		//void
+	}
+	
 	protected void flush(){
-		print(lastLineTag+"\n");
+		print(streamend+"\n");
 	}
 }

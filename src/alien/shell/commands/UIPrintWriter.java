@@ -13,7 +13,11 @@ abstract class UIPrintWriter {
 	 */
 	abstract protected void printErrln(String line);
 	
-
+	/**
+	 * Set the env for the client (needed for gapi)
+	 */
+	abstract protected void setenv(String env);
+	
 	/**
 	 * Flush a set of lines as one transaction
 	 */

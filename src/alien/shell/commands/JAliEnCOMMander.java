@@ -176,11 +176,13 @@ public class JAliEnCOMMander {
 
 		String comm = arg[0];
 
-		if ("setshell".equals(comm)) {
-			setShellPrintWriter(os, arg[1]);
-		} else if (out == null) {
+		System.out.println("Command [" + comm + "] called!");
+		
+		//if ("setshell".equals(comm)) {
+		//	setShellPrintWriter(os, arg[1]);
+		//} else if (out == null) {
 			out = new RootPrintWriter(os);
-		}
+		//}
 
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(arg));
 		args.remove(arg[0]);
@@ -211,6 +213,7 @@ public class JAliEnCOMMander {
 				e.printStackTrace();
 				out.printErrln("Command [" + comm
 						+ "] not found! (Class implementation not found.)");
+				out.flush();
 				return;
 			}
 			try {
@@ -249,6 +252,7 @@ public class JAliEnCOMMander {
 						+ "].");
 			}
 		}
+		out.setenv(getCurrentDirName());
 		out.flush();
 	}
 
