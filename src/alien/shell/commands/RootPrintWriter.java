@@ -28,7 +28,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	private ArrayList<String> stdout = new ArrayList<String>();
 	private ArrayList<String> stderr = new ArrayList<String>();
 
-	private ArrayList<String> args;
+	private String args;
 
 	/**
 	 * Logger
@@ -53,10 +53,15 @@ public class RootPrintWriter extends UIPrintWriter {
 	protected void setenv(String env) {
 		clientenv = env;
 	}
+	
+	protected boolean isRootPrinter(){
+		return true;
+	}
 
-	protected void setReturnArgs(ArrayList<String> args) {
+	protected void setReturnArgs(String args) {
 		this.args = args;
 	}
+	
 
 	protected void flush() {
 
@@ -69,27 +74,21 @@ public class RootPrintWriter extends UIPrintWriter {
 			returnstderrstream += columnseparator + fieldseparator + err;
 		}
 
-		String returnargstream = "";
-
-		// foreach either __result__ or fieldname
-
-		returnargstream += columnseparator + fielddescriptor + "__result__"
-				 + fieldseparator + "asdf";
-
-		// end of foreach
 		
 		System.out.println(testMakeTagsVisible(stdoutindicator + returnstdoutstream
 				+ stderrindicator + returnstderrstream
-				+ outputindicator + returnargstream
+				+ outputindicator + args
 				+ outputterminator
-				+ clientenv  ));
+				+ columnseparator + fielddescriptor + "pwd"
+						 + fieldseparator + clientenv  ));
 
 		try {
 			os.write((stdoutindicator + returnstdoutstream
 					+ stderrindicator + returnstderrstream
-					+ outputindicator + returnargstream
+					+ outputindicator + args
 					+ outputterminator
-					+ clientenv  + "\n" + streamend + "\n")
+					+ columnseparator + fielddescriptor + "pwd"
+					 + fieldseparator + clientenv  + "\n" + streamend + "\n")
 					.getBytes());
 			os.flush();
 		} catch (IOException e) {

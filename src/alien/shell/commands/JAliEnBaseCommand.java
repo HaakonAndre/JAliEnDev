@@ -73,6 +73,16 @@ public abstract class JAliEnBaseCommand {
 	public abstract void silent();
 		
 	
+	
+	/**
+	 * serialize return values for gapi/root 
+	 * @return serialized return
+	 */
+	public String deserializeForRoot(){
+		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
+				 + RootPrintWriter.fieldseparator;
+	}
+	
 	/**
 	 * @param s
 	 * @param n

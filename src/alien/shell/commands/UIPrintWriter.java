@@ -22,4 +22,20 @@ abstract class UIPrintWriter {
 	 * Flush a set of lines as one transaction
 	 */
 	abstract protected void flush();
+	
+	/**
+	 * identify the RootPrinter from above 
+	 * @return if it is a RootPrinter
+	 */
+	protected boolean isRootPrinter(){
+		return false;
+	}
+
+	
+	/**
+	 * dummy for RootPrinter
+	 */
+	protected void setReturnArgs(String args) {
+		//void
+	}
 }

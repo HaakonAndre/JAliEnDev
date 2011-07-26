@@ -107,6 +107,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			}
 
 		}
+		if(out.isRootPrinter())
+			out.setReturnArgs(deserializeForRoot());
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat(
@@ -159,6 +161,44 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		silent = true;
 	}
 
+	
+	/**
+	 * serialize return values for gapi/root 
+	 * @return serialized return
+	 */
+	public String deserializeForRoot(){
+		String ret = RootPrintWriter.columnseparator;
+
+		if (directory != null) {
+			String desc = RootPrintWriter.fielddescriptor;
+			String sep = RootPrintWriter.fieldseparator;
+			for (LFN lfn : directory) {
+				ret+= desc+ "aclId"+sep+ lfn.aclId;
+				ret+= desc+ "lfn"+sep+ lfn.lfn;
+				ret+= desc+ "broken"+sep+ lfn.broken;
+				ret+= desc+ "dir"+sep+ lfn.dir;
+				ret+= desc+ "size"+sep+ lfn.size;
+				ret+= desc+ "gowner"+sep+ lfn.gowner;
+				ret+= desc+ "guid"+sep+ lfn.guid;
+				ret+= desc+ "owner"+sep+ lfn.owner;
+				ret+= desc+ "replicated"+sep+ lfn.replicated;
+				ret+= desc+ "ctime"+sep+ lfn.ctime;
+				ret+= desc+ "entryId"+sep+ lfn.entryId;
+				ret+= desc+ "guidtime"+sep+ lfn.guidtime;
+				ret+= desc+ "expiretime"+sep+ lfn.expiretime;
+				ret+= desc+ "type"+sep+ lfn.type;
+				ret+= desc+ "md5"+sep+ lfn.md5;
+				ret+= desc+ "perm"+sep+ lfn.perm;
+			}
+			return ret;
+		}
+		else 
+			return super.deserializeForRoot();
+		
+	}
+	
+	
+	
 	/**
 	 * Constructor needed for the command factory in commander
 	 * @param commander 
