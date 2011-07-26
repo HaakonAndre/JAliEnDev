@@ -38,7 +38,7 @@ public class LFNUtils {
 	public static LFN getLFN(final String fileName){
 		return getLFN(fileName, false);
 	}
-
+	
 	/**
 	 * Get the LFN entry for this catalog filename, optionally returning an empty object
 	 * if the entry doesn't exist (yet)
@@ -57,18 +57,34 @@ public class LFNUtils {
 		while (processedFileName.indexOf("//")>=0)
 			processedFileName = Format.replace(processedFileName, "//", "/");
 		
-		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(fileName);
+		processedFileName = Format.replace(processedFileName, "/./", "/");
+
+		int idx = processedFileName.indexOf("/../");
+		
+		while (idx>0){
+			int idx2 = processedFileName.lastIndexOf("/", idx-1);
+			
+			if (idx2>0){
+				processedFileName = processedFileName.substring(0, idx2) + processedFileName.substring(idx+3);
+			}
+			
+			System.err.println("After replacing .. : "+processedFileName);
+			
+			idx = processedFileName.indexOf("/../");
+		}
+		
+		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(processedFileName);
 		
 		if (ite==null){
-			logger.log(Level.FINE, "IndexTableEntry is null for: "+fileName+" (even if doesn't exist: "+evenIfDoesntExist+")");
+			logger.log(Level.FINE, "IndexTableEntry is null for: "+processedFileName+" (even if doesn't exist: "+evenIfDoesntExist+")");
 			
 			return null;
 		}
 		
 		if (logger.isLoggable(Level.FINER))
-			logger.log(Level.FINER, "Using "+ite+" for: "+fileName);
+			logger.log(Level.FINER, "Using "+ite+" for: "+processedFileName);
 		
-		return ite.getLFN(fileName, evenIfDoesntExist);
+		return ite.getLFN(processedFileName, evenIfDoesntExist);
 	}
 	
 	/**
