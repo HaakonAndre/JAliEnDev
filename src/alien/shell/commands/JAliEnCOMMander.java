@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.access.AuthorizationFactory;
@@ -77,9 +80,13 @@ public class JAliEnCOMMander {
 		return null;
 	}
 	
-
 	/**
-	 * 
+	 * Debug level as the status
+	 */
+	protected int debug = 0;
+	
+	/**
+	 * Current directory as the status
 	 */
 	protected LFN curDir = null;
 
@@ -217,10 +224,30 @@ public class JAliEnCOMMander {
 				return;
 			}
 			try {
-				if (args.contains("-s")) {
+				final OptionParser parser = new OptionParser();
+				parser.accepts("h");
+				parser.accepts("help");
+				parser.accepts("s");
+				parser.accepts("pwd");
+				parser.accepts("debug");
+				final OptionSet preopts = parser.parse(args.toArray(new String[]{}));
+				if(preopts.has("s")){
 					jcommand.silent();
-					// TODO: we have to drop -s here
+					args.remove("-s");
 				}
+				if(preopts.has("pwd") && preopts.hasArgument("pwd")){
+					curDir = CatalogueApiUtils.getLFN((String) preopts.valueOf("pwd"));
+					args.remove("-pwd="+preopts.valueOf("pwd"));
+				}
+				if(preopts.has("debug") && preopts.hasArgument("debug")){
+					try {
+						debug = Integer.parseInt((String) preopts.valueOf("debug"));
+					} catch (NumberFormatException n) {
+						//ignore
+					}
+					args.remove("-debug="+preopts.valueOf("debug"));
+				}
+
 				if (args.size() != 0
 						&& args.get(args.size() - 1).startsWith("&")) {
 					int logno = 0;
@@ -237,9 +264,8 @@ public class JAliEnCOMMander {
 					args.remove(args.size() - 1);
 				}
 
-				if (!args.contains("--help")
-						&& !args.contains("-help")
-						&& !args.contains("-h")
+				if (!preopts.has("h")
+						&& !preopts.has("help")
 						&& (args.size() != 0 || jcommand
 								.canRunWithoutArguments())) {
 					jcommand.execute();
