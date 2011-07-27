@@ -102,17 +102,19 @@ public class RootPrintWriter extends UIPrintWriter {
 	
 	// testcode end
 	
-	public static String testMakeTagsVisible(String line){
+	public static String testMakeTagsVisible(final String line){
+		String line1; 
 		
-		line = line.replace(streamend, "::streamend::");
-		line = line.replace(fieldseparator, "::fieldseparator::");
-		line = line.replace(fielddescriptor, "::fielddescriptor::");
-		line = line.replace(columnseparator, "::columnseparator::");
-		line = line.replace(stdoutindicator, "::stdoutindicator::");
-		line = line.replace(stderrindicator, "::stderrindicator::");
-		line = line.replace(outputindicator, "::outputindicator::");
-		line = line.replace(outputterminator, "::outputterminator::");
-		return line;
+		line1 = line.replace(streamend, "::streamend::");
+		line1 = line1.replace(fieldseparator, "::fieldseparator::");
+		line1 = line1.replace(fielddescriptor, "::fielddescriptor::");
+		line1 = line1.replace(columnseparator, "::columnseparator::");
+		line1 = line1.replace(stdoutindicator, "::stdoutindicator::");
+		line1 = line1.replace(stderrindicator, "::stderrindicator::");
+		line1 = line1.replace(outputindicator, "::outputindicator::");
+		line1 = line1.replace(outputterminator, "::outputterminator::");
+		
+		return line1;
 	}
 	// testcode end
 	
