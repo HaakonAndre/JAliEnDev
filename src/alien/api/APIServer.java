@@ -115,9 +115,13 @@ public class APIServer extends Thread {
 
 				if (sLine!=null && sLine.equals(password))
 					System.out.println("password accepted");
-				else
+					os.write("PASSACK".getBytes());
+					os.flush();
+				else{
+					os.write("NOPASSACK".getBytes());
+					os.flush();
 					return;
-				
+				}
 				JAliEnCOMMander jcomm = new JAliEnCOMMander();
 				
 				while ((sLine = br.readLine()) != null) {
