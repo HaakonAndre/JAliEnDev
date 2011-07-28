@@ -68,7 +68,7 @@ public class LFNUtils {
 				processedFileName = processedFileName.substring(0, idx2) + processedFileName.substring(idx+3);
 			}
 			
-			System.err.println("After replacing .. : "+processedFileName);
+//			System.err.println("After replacing .. : "+processedFileName);
 			
 			idx = processedFileName.indexOf("/../");
 		}
