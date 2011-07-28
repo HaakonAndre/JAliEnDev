@@ -14,14 +14,14 @@ import alien.config.ConfigUtils;
  */
 public class RootPrintWriter extends UIPrintWriter {
 
-	public static String streamend  = String.valueOf('0');
-	public static String fieldseparator = String.valueOf('1');
-	public static String fielddescriptor = String.valueOf('2');
-	public static String columnseparator = String.valueOf('3');
-	public static String stdoutindicator = String.valueOf('4');
-	public static String stderrindicator = String.valueOf('5');
-	public static String outputindicator = String.valueOf('6');
-	public static String outputterminator = String.valueOf('7');
+	public static char streamend  = 0;
+	public static char fieldseparator = 1;
+	public static char fielddescriptor = 2;
+	public static char columnseparator = 3;
+	public static char stdoutindicator = 4;
+	public static char stderrindicator = 5;
+	public static char outputindicator = 6;
+	public static char outputterminator = 7;
 
 	private String clientenv = "";
 
@@ -105,14 +105,14 @@ public class RootPrintWriter extends UIPrintWriter {
 	public static String testMakeTagsVisible(final String line){
 		String line1; 
 		
-		line1 = line.replace(streamend, "::streamend::");
-		line1 = line1.replace(fieldseparator, "::fieldseparator::");
-		line1 = line1.replace(fielddescriptor, "::fielddescriptor::");
-		line1 = line1.replace(columnseparator, "::columnseparator::");
-		line1 = line1.replace(stdoutindicator, "::stdoutindicator::");
-		line1 = line1.replace(stderrindicator, "::stderrindicator::");
-		line1 = line1.replace(outputindicator, "::outputindicator::");
-		line1 = line1.replace(outputterminator, "::outputterminator::");
+		line1 = line.replace(streamend+"", "::streamend::");
+		line1 = line1.replace(fieldseparator+"", "::fieldseparator::");
+		line1 = line1.replace(fielddescriptor+"", "::fielddescriptor::");
+		line1 = line1.replace(columnseparator+"", "::columnseparator::");
+		line1 = line1.replace(stdoutindicator+"", "::stdoutindicator::");
+		line1 = line1.replace(stderrindicator+"", "::stderrindicator::");
+		line1 = line1.replace(outputindicator+"", "::outputindicator::");
+		line1 = line1.replace(outputterminator+"", "::outputterminator::");
 		
 		return line1;
 	}
