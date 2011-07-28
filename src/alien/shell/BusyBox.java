@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.StringTokenizer;
 
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
@@ -30,13 +31,15 @@ public class BusyBox {
 	private ConsoleReader reader;
 	private PrintWriter out;
 
+	private String whoami;
 	private String currentDir;
+	private String currentDirTiled;
 
 	/**
 	 * print welcome
 	 */
 	public void welcome() {
-		out.println("Hello " + callJAliEnGetString("whoami") + ",");
+		out.println("Hello " + whoami + ",");
 		out.println(JAliEnIAm.whatsMyFullName() + ", have a cup!");
 		out.println();
 		out.println("Cheers, AJs aka ACS");
@@ -49,6 +52,8 @@ public class BusyBox {
 	private InputStream is;
 
 	private OutputStream os;
+	
+	private String prompt;
 
 	
 	
@@ -66,6 +71,7 @@ public class BusyBox {
 				
 				os.write(password.getBytes());
 				os.flush();
+				callJAliEnGetString("setshell jaliensh");
 			} catch (IOException e) {
 				System.err.println("Could not connect to API Service.");
 			}
@@ -94,7 +100,7 @@ public class BusyBox {
 		if (s != null) {
 			out = new PrintWriter(System.out);
 
-			currentDir = callJAliEnGetString("cdir");
+			//currentDir = callJAliEnGetString("cdir");
 			welcome();
 			out.flush();
 
@@ -109,7 +115,8 @@ public class BusyBox {
 			// reader.addCompletor(new FileNameCompletor());
 
 			String line;
-			while ((line = reader.readLine(getPromptDisplay())) != null) {
+			
+			while ((line = reader.readLine(whoami + promptPrefix + currentDirTiled + promptSuffix)) != null) {
 
 				out.flush();
 				line = line.trim();
@@ -125,18 +132,9 @@ public class BusyBox {
 		}
 	}
 
-	/**
-	 * get the formatted prompt for user+dir
-	 */
-	private String getPromptDisplay() {
-		return callJAliEnGetString("whoami") + promptPrefix
-				+ callJAliEnGetString("cdirtiled") + promptSuffix;
-	}
-
 	private String callJAliEnGetString(String line) {
 		try {
 			line +="\n";
-			callJAliEn("setshell jaliensh");
 
 			os.write(line.getBytes());
 			os.flush();
@@ -148,23 +146,17 @@ public class BusyBox {
 			String sLine;
 
 			while ( (sLine = br.readLine()) != null ){
-				if(sLine.endsWith(JAliEnShPrintWriter.streamend))
+				if(sLine.startsWith(JAliEnShPrintWriter.outputterminator))
+					updateEnvironment(sLine);
+				else if(sLine.endsWith(JAliEnShPrintWriter.streamend))
 					break;
-
+				else 
 				ret += sLine + "\n";
 			}
 			
 			if(ret.length()>0)
 				ret = ret.substring(0,ret.length()-1);
-			
-			out.println("RAW RETURN:"+ RootPrintWriter.testMakeTagsVisible(ret));
-			out.flush();
 
-			
-
-			ret = ret.substring(ret.indexOf(RootPrintWriter.fieldseparator)+1,ret.indexOf(RootPrintWriter.stderrindicator));
-
-			out.println("STDOUT RETURN:"+ ret);
 			return ret;
 
 		} catch (IOException e) {
@@ -172,6 +164,8 @@ public class BusyBox {
 		}
 		return "";
 	}
+	
+
 
 	private void callJAliEn(String line){
 		try {
@@ -185,12 +179,14 @@ public class BusyBox {
 			String sLine;
 			
 			while ( (sLine = br.readLine()) != null ){
-				if(sLine.endsWith(JAliEnShPrintWriter.streamend))
+				if(sLine.startsWith(JAliEnShPrintWriter.outputterminator))
+					updateEnvironment(sLine);
+				else if(sLine.endsWith(JAliEnShPrintWriter.streamend))
 					break;
-				if(sLine.startsWith(JAliEnShPrintWriter.errTag))
+				else if(sLine.startsWith(JAliEnShPrintWriter.errTag))
 					System.err.println("Error: "+ sLine.substring(1));
 				else {
-					sLine = RootPrintWriter.testMakeTagsVisible(sLine);
+					//sLine = RootPrintWriter.testMakeTagsVisible(sLine);
 					out.println(sLine);
 					out.flush();
 				}
@@ -205,6 +201,17 @@ public class BusyBox {
 	
 
 	
+	private void updateEnvironment(String env){
+
+			final StringTokenizer st = new StringTokenizer(env.substring(1),JAliEnShPrintWriter.fieldseparator);
+			
+			if(st.hasMoreTokens())
+					currentDir = st.nextToken();
+			if(st.hasMoreTokens())
+					whoami = st.nextToken();
+			if(st.hasMoreTokens())
+					currentDirTiled = st.nextToken();
+	}
 
 	
 	/**
@@ -230,9 +237,6 @@ public class BusyBox {
 			} else if (args[0].equals("help")) {
 				usage();
 			} else {
-				callJAliEn("setshell jaliensh");
-				callJAliEn("setshell jaliensh");
-				callJAliEn("cd " + currentDir);
 				callJAliEn(callLine);
 			}
 		}

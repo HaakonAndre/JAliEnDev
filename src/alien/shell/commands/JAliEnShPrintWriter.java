@@ -23,12 +23,22 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 	/**
 	 * error String tag to mark a println for stderr
 	 */
-	public static final String errTag = String.valueOf('5');
+	public static final String errTag = String.valueOf((char) 5);
 	
 	/**
 	 * String tag to mark the last line of an output
 	 */
-	public static String streamend  = String.valueOf('0');
+	public static String outputterminator = String.valueOf((char) 7);
+
+	/**
+	 * String tag to mark the last line of an transaction stream
+	 */
+	public static String streamend  = String.valueOf((char) 0);
+	
+	/**
+	 * String tag to mark separated fields
+	 */
+	public static String fieldseparator = String.valueOf((char) 1);
 
 
 	private OutputStream os;
@@ -55,8 +65,9 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 		print(errTag + line + "\n");
 	}
 	
-	protected void setenv(String env) {
-		//void
+
+	protected void setenv(String cDir, String user, String cDirtiled) {
+		print(outputterminator+cDir + fieldseparator + user + fieldseparator + cDirtiled +"\n");
 	}
 	
 	protected void flush(){

@@ -10,18 +10,18 @@ import alien.config.ConfigUtils;
 
 /**
  * @author ron
- *
+ * 
  */
 public class RootPrintWriter extends UIPrintWriter {
 
-	public static String streamend  = String.valueOf( (char) 0 );
-	public static String fieldseparator = String.valueOf( (char)1);
-	public static String fielddescriptor = String.valueOf( (char)2);
-	public static String columnseparator = String.valueOf( (char)3);
-	public static String stdoutindicator = String.valueOf( (char)4);
-	public static String stderrindicator = String.valueOf( (char)5);
-	public static String outputindicator = String.valueOf( (char)6);
-	public static String outputterminator = String.valueOf( (char)7);
+	public static String streamend = String.valueOf((char) 0);
+	public static String fieldseparator = String.valueOf((char) 1);
+	public static String fielddescriptor = String.valueOf((char) 2);
+	public static String columnseparator = String.valueOf((char) 3);
+	public static String stdoutindicator = String.valueOf((char) 4);
+	public static String stderrindicator = String.valueOf((char) 5);
+	public static String outputindicator = String.valueOf((char) 6);
+	public static String outputterminator = String.valueOf((char) 7);
 
 	private String clientenv = "";
 
@@ -43,150 +43,145 @@ public class RootPrintWriter extends UIPrintWriter {
 	}
 
 	protected void printOutln(String line) {
-		stdout.add(line);
+		stdout.add(line+"\n");
+		System.out.println(line);
 	}
 
 	protected void printErrln(String line) {
-		stderr.add(line);
+		stderr.add(line + "\n");
 	}
 
-	protected void setenv(String env) {
-		clientenv = env;
+	protected void setenv(String cDir, String user, String cDirtiled) {
+		clientenv = cDir;
 	}
-	
-	protected boolean isRootPrinter(){
+
+	protected boolean isRootPrinter() {
 		return true;
 	}
 
 	protected void setReturnArgs(String args) {
 		this.args = args;
 	}
-	
 
-	protected void flush() {
-
-		String returnstdoutstream = "";
-		for (String out : stdout) {
-			returnstdoutstream += columnseparator + fieldseparator + out;
-		}
-		String returnstderrstream = "";
-		for (String err : stderr) {
-			returnstderrstream += columnseparator + fieldseparator + err;
-		}
-
-		
-		System.out.println(testMakeTagsVisible("\""+stdoutindicator + returnstdoutstream
-				+ stderrindicator + returnstderrstream
-				+ outputindicator + args
-				+ outputterminator
-				+ columnseparator + fielddescriptor + "pwd"
-						 + fieldseparator + clientenv  + "\n" + streamend+"\""));
-
+	private void print(String line) {
 		try {
-			os.write((stdoutindicator + returnstdoutstream
-					+ stderrindicator + returnstderrstream
-					+ outputindicator + args
-					+ outputterminator
-					+ columnseparator + fielddescriptor + "pwd"
-					 + fieldseparator + clientenv  + "\n" + streamend)
-					.getBytes());
-			os.flush();
+			os.write(line.getBytes());
+
 		} catch (IOException e) {
 			e.printStackTrace();
 			logger.log(Level.FINE, "Could not write to OutputStream", e);
 		}
 	}
-	
-	
-	
-	
+
+	protected void flush() {
+		try {
+		
+
+			os.write(stdoutindicator.getBytes());
+		for (String out : stdout) 
+			os.write((columnseparator + fieldseparator+ out).getBytes());
+				
+				os.write(stderrindicator.getBytes());
+		for (String err : stderr) 
+			os.write((columnseparator + fieldseparator + err).getBytes());
+
+				os.write((outputindicator + args
+				+ outputterminator
+				+ columnseparator + fielddescriptor + "pwd"
+						 + fieldseparator + clientenv + streamend).getBytes());
+				os.flush();
+
+		} catch (IOException e) {
+			e.printStackTrace();
+			logger.log(Level.FINE, "Could not write to OutputStream", e);
+		}
+	}
+
 	// testcode end
-	
-	public static String testMakeTagsVisible(final String line){
-		String line1; 
-		
-		line1 = line.replace(streamend+"", "::streamend::");
-		line1 = line1.replace(fieldseparator+"", "::fieldseparator::");
-		line1 = line1.replace(fielddescriptor+"", "::fielddescriptor::");
-		line1 = line1.replace(columnseparator+"", "::columnseparator::");
-		line1 = line1.replace(stdoutindicator+"", "::stdoutindicator::");
-		line1 = line1.replace(stderrindicator+"", "::stderrindicator::");
-		line1 = line1.replace(outputindicator+"", "::outputindicator::");
-		line1 = line1.replace(outputterminator+"", "::outputterminator::");
-		
+
+	public static String testMakeTagsVisible(final String line) {
+		String line1;
+
+		line1 = line.replace(streamend + "", "::streamend::");
+		line1 = line1.replace(fieldseparator + "", "::fieldseparator::");
+		line1 = line1.replace(fielddescriptor + "", "::fielddescriptor::");
+		line1 = line1.replace(columnseparator + "", "::columnseparator::");
+		line1 = line1.replace(stdoutindicator + "", "::stdoutindicator::");
+		line1 = line1.replace(stderrindicator + "", "::stderrindicator::");
+		line1 = line1.replace(outputindicator + "", "::outputindicator::");
+		line1 = line1.replace(outputterminator + "", "::outputterminator::");
+
 		return line1;
 	}
 	// testcode end
-	
-	
-	
-//	
-//	  my $calledfunction = shift @args;
-//	    if ($calledfunction eq "AliEn::Catalogue") {
-//	        $Data::Dumper::Indent = 0;
-//	        $returnargstream .= $columnseparator;
-//	        $returnargstream .= $fielddescriptor;
-//	        $returnargstream .= "__Dumper__";
-//	        $returnargstream .= $fieldseparator;
-//	        $returnargstream .= Dumper($result);
-//	    } else {
-//	        my $type = ref($result);
-//
-//	        if ( $type eq "HASH" ) {
-//	            $returnargstream .= $columnseparator;
-//	            foreach ( keys %$result ) {
-//	                $returnargstream .= $fielddescriptor;
-//	                $returnargstream .= $_;
-//	                $returnargstream .= $fieldseparator;
-//	                $returnargstream .= $result->{$_};
-//
-//	            }
-//	        }
-//
-//	        if ( ($type eq "SCALAR") || ($type eq "") ) {
-//	            my $cscalar = \$result;
-//	            if ( ref($cscalar) eq "SCALAR" ) {
-//	                $returnargstream .= $columnseparator;
-//	                $returnargstream .= $fielddescriptor;
-//	                $returnargstream .= "__result__";
-//	                $returnargstream .= $fieldseparator;
-//	                $returnargstream .= $result;
-//	            }
-//	            if ( ref($cscalar) eq "ARRAY" ) {
-//	                foreach (@$cscalar) {
-//	                    $returnargstream .= $columnseparator;
-//	                    $returnargstream .= $fielddescriptor;
-//	                    $returnargstream .= "__result__";
-//	                    $returnargstream .= $fieldseparator;
-//	                    $returnargstream .= $_;
-//	                }
-//	            }
-//	        }
-//
-//	        if ( $type eq "ARRAY") {
-//	            my $larray;
-//	            foreach $larray ( @$result ) {
-//	                $returnargstream .= $columnseparator;
-//	                if ( ref($larray) eq "HASH" ) {
-//	                    my $lkeys;
-//	                    foreach $lkeys ( keys %$larray ) {
-//	                        $returnargstream .= $fielddescriptor;
-//	                        $returnargstream .= $lkeys;
-//	                        $returnargstream .= $fieldseparator;
-//	                        $returnargstream .= $larray->{$lkeys};
-//
-//	                    }
-//	                }
-//	                if ( (ref($larray) eq "SCALAR") || (ref($larray) eq "") ){
-//	                    $returnargstream .= $fielddescriptor;
-//	                    $returnargstream .= "__result__";
-//	                    $returnargstream .= $fieldseparator;
-//	                    $returnargstream .= $larray;
-//	                }
-//	            }
-//	        }
-//
-//	
+
+	//
+	// my $calledfunction = shift @args;
+	// if ($calledfunction eq "AliEn::Catalogue") {
+	// $Data::Dumper::Indent = 0;
+	// $returnargstream .= $columnseparator;
+	// $returnargstream .= $fielddescriptor;
+	// $returnargstream .= "__Dumper__";
+	// $returnargstream .= $fieldseparator;
+	// $returnargstream .= Dumper($result);
+	// } else {
+	// my $type = ref($result);
+	//
+	// if ( $type eq "HASH" ) {
+	// $returnargstream .= $columnseparator;
+	// foreach ( keys %$result ) {
+	// $returnargstream .= $fielddescriptor;
+	// $returnargstream .= $_;
+	// $returnargstream .= $fieldseparator;
+	// $returnargstream .= $result->{$_};
+	//
+	// }
+	// }
+	//
+	// if ( ($type eq "SCALAR") || ($type eq "") ) {
+	// my $cscalar = \$result;
+	// if ( ref($cscalar) eq "SCALAR" ) {
+	// $returnargstream .= $columnseparator;
+	// $returnargstream .= $fielddescriptor;
+	// $returnargstream .= "__result__";
+	// $returnargstream .= $fieldseparator;
+	// $returnargstream .= $result;
+	// }
+	// if ( ref($cscalar) eq "ARRAY" ) {
+	// foreach (@$cscalar) {
+	// $returnargstream .= $columnseparator;
+	// $returnargstream .= $fielddescriptor;
+	// $returnargstream .= "__result__";
+	// $returnargstream .= $fieldseparator;
+	// $returnargstream .= $_;
+	// }
+	// }
+	// }
+	//
+	// if ( $type eq "ARRAY") {
+	// my $larray;
+	// foreach $larray ( @$result ) {
+	// $returnargstream .= $columnseparator;
+	// if ( ref($larray) eq "HASH" ) {
+	// my $lkeys;
+	// foreach $lkeys ( keys %$larray ) {
+	// $returnargstream .= $fielddescriptor;
+	// $returnargstream .= $lkeys;
+	// $returnargstream .= $fieldseparator;
+	// $returnargstream .= $larray->{$lkeys};
+	//
+	// }
+	// }
+	// if ( (ref($larray) eq "SCALAR") || (ref($larray) eq "") ){
+	// $returnargstream .= $fielddescriptor;
+	// $returnargstream .= "__result__";
+	// $returnargstream .= $fieldseparator;
+	// $returnargstream .= $larray;
+	// }
+	// }
+	// }
+	//
+	//
 
 	// # stream special characters according to CODEC.h
 	// my $streamend = chr 0;

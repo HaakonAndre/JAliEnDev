@@ -22,23 +22,21 @@ import alien.user.UsersHelper;
  * @since June 4, 2011
  */
 public class JAliEnCOMMander {
-	
-	
 
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
 	 */
 	private static final String[] commandList = new String[] { "ls", "get",
-			"cat","whoami", "whereis", "cp", "cd", "time", "mkdir", "find",
+			"cat", "whoami", "whereis", "cp", "cd", "time", "mkdir", "find",
 			"scrlog", "submit" };
-	
+
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] { "ls", "get",
-		"cat",  "whereis",  "cp", "cd", "time", "mkdir", "find",
-		"scrlog", "submit" };
-	
+	private static final String[] jAliEnCommandList = new String[] { "ls",
+			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
+			"scrlog", "submit" };
+
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
@@ -59,15 +57,14 @@ public class JAliEnCOMMander {
 			.trim();
 
 	private String myHome = UsersHelper.getHomeDir(user.getName());
-	
-	private HashMap<String,File> localFileCash = new HashMap<String,File>();
-	
-	
+
+	private HashMap<String, File> localFileCash = new HashMap<String, File>();
+
 	/**
 	 * @param md5
 	 * @param localFile
 	 */
-	protected void cashFile(String md5, File localFile){
+	protected void cashFile(String md5, File localFile) {
 		localFileCash.put(md5, localFile);
 	}
 
@@ -75,17 +72,17 @@ public class JAliEnCOMMander {
 	 * @param md5
 	 * @return local file name
 	 */
-	protected File checkLocalFileCache(String md5){
-		if(md5!=null && localFileCash.containsKey(md5))
+	protected File checkLocalFileCache(String md5) {
+		if (md5 != null && localFileCash.containsKey(md5))
 			return localFileCash.get(md5);
 		return null;
 	}
-	
+
 	/**
 	 * Debug level as the status
 	 */
 	protected int debug = 0;
-	
+
 	/**
 	 * Current directory as the status
 	 */
@@ -98,8 +95,8 @@ public class JAliEnCOMMander {
 	 */
 	public static String getCommandList() {
 		String commands = "";
-		for(int i=0;i<commandList.length;i++)
-			commands += commandList[i]+" ";
+		for (int i = 0; i < commandList.length; i++)
+			commands += commandList[i] + " ";
 		return commands;
 	}
 
@@ -177,70 +174,66 @@ public class JAliEnCOMMander {
 
 	/**
 	 * execute a command line
-	 * @param os 
-	 * @param arg 
+	 * 
+	 * @param os
+	 * @param arg
 	 */
 	public void execute(OutputStream os, String[] arg) {
 
 		boolean help = false;
-		
+
+		boolean silent = false;
+
 		String comm = arg[0];
 
 		System.out.println("Command [" + comm + "] called!");
-		
-		//if ("setshell".equals(comm)) {
-		//	setShellPrintWriter(os, arg[1]);
-		//} else if (out == null) {
-			out = new RootPrintWriter(os);
-		//}
+
+		 if ("setshell".equals(comm)) {
+		  setShellPrintWriter(os, arg[1]);
+		} else if (out == null) {
+		   out = new RootPrintWriter(os);
+		}
 
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(arg));
 		args.remove(arg[0]);
-		
-		final OptionParser parser = new OptionParser();
-		parser.accepts("h");
-		parser.accepts("help");
-		parser.accepts("s");
-		parser.accepts("pwd").withRequiredArg();
-		parser.accepts("debug").withRequiredArg();
-		OptionSet preopts = parser.parse("");
-		try{
-		 preopts = parser.parse(args.toArray(new String[]{}));
-		}
-		catch(OptionException e){
-			//ignore
-		}
-		if(preopts.has("s"))
-			args.remove("-s");
-		if(preopts.has("pwd") && preopts.hasArgument("pwd")){
-			curDir = CatalogueApiUtils.getLFN((String) preopts.valueOf("pwd"));
-			args.remove("-pwd="+preopts.valueOf("pwd"));
-		}
-		if(preopts.has("debug") && preopts.hasArgument("debug")){
-			try {
-				debug = Integer.parseInt((String) preopts.valueOf("debug"));
-			} catch (NumberFormatException n) {
-				//ignore
+
+		for (int i = 1; i < arg.length; i++)
+			if (arg[i].startsWith("-pwd=")) {
+				curDir = CatalogueApiUtils.getLFN(arg[i].substring(arg[i]
+						.indexOf('=') + 1));
+				args.remove(arg[i]);
+			} else if (arg[i].startsWith("-debug=")) {
+				try {
+					debug = Integer.parseInt(arg[i].substring(arg[i]
+							.indexOf('=') + 1));
+				} catch (NumberFormatException n) {
+					// ignore
+				}
+				args.remove(arg[i]);
+			} else if ("-s".equals(arg[i])) {
+				silent = true;
+				args.remove(arg[i]);
+			} else if (("-h".equals(arg[i])) || ("--h".equals(arg[i]))
+					|| ("-help".equals(arg[i])) || ("--help".equals(arg[i]))) {
+				help = true;
+				args.remove(arg[i]);
 			}
-			args.remove("-debug="+preopts.valueOf("debug"));
-		}
-		
-		
 
 		if (!Arrays.asList(jAliEnCommandList).contains(comm)) {
 
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
-				if ("cdir".equals(comm))
-					out.printOutln(getCurrentDirName());
-				else if ("cdirtiled".equals(comm))
-					out.printOutln(getCurrentDirTilded());
-				else if ("commandlist".equals(comm))
+				//if ("cdir".equals(comm))
+				//	out.printOutln(getCurrentDirName());
+				//else if ("cdirtiled".equals(comm))
+				//	out.printOutln(getCurrentDirTilded());
+				 
+					if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
 				else if ("gfilecomplete".equals(comm))
 					out.printOutln(gridFileCompletetion(args));
 				else if ("whoami".equals(comm))
 					out.printOutln(getUsername());
-			} else if (!"setshell".equals(comm)){
+			} else if (!"setshell".equals(comm)) {
 				out.printErrln("Command [" + comm + "] not found!");
 			}
 		} else {
@@ -256,12 +249,11 @@ public class JAliEnCOMMander {
 				out.flush();
 				return;
 			}
-			
-			if(preopts.has("s"))
+
+			if (silent)
 				jcommand.silent();
-				
+
 			try {
-				
 
 				if (args.size() != 0
 						&& args.get(args.size() - 1).startsWith("&")) {
@@ -271,7 +263,7 @@ public class JAliEnCOMMander {
 							logno = Integer.parseInt(args.get(args.size() - 1)
 									.substring(1));
 						} catch (NumberFormatException n) {
-							//ignore
+							// ignore
 						}
 					}
 					JAliEnCommandscrlog.addScreenLogLine(logno,
@@ -279,8 +271,7 @@ public class JAliEnCOMMander {
 					args.remove(args.size() - 1);
 				}
 
-				if (!help && !preopts.has("h")
-						&& !preopts.has("help")
+				if (!help
 						&& (args.size() != 0 || jcommand
 								.canRunWithoutArguments())) {
 					jcommand.execute();
@@ -289,25 +280,25 @@ public class JAliEnCOMMander {
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
-				out.printErrln("Error executing the command [" + comm
-						+ "].");
+				out.printErrln("Error executing the command [" + comm + "].");
 			}
 		}
-		out.setenv(getCurrentDirName());
+		out.setenv(getCurrentDirName(),getUsername(),getCurrentDirTilded());
 		out.flush();
 	}
 
 	/**
 	 * create and return a object of
 	 * alien.shell.commands.JAliEnCommand.JAliEnCommand<classSuffix>
-	 * @param classSuffix the
-	 *            name of the shell command, which will be taken as the suffix
-	 *            for the classname
-	 * @param objectParm array
-	 *            of argument objects, need to fit to the class
+	 * 
+	 * @param classSuffix
+	 *            the name of the shell command, which will be taken as the
+	 *            suffix for the classname
+	 * @param objectParm
+	 *            array of argument objects, need to fit to the class
 	 * @return an instance of
 	 *         alien.shell.commands.JAliEnCommand.JAliEnCommand<classSuffix>
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	protected static JAliEnBaseCommand getCommand(String classSuffix,
 			Object[] objectParm) throws Exception {

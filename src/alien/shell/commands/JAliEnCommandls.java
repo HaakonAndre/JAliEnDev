@@ -42,7 +42,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	private final ArrayList<String> alPaths;
 
-	
 	/**
 	 * list of the LFNs that came up by the ls command
 	 */
@@ -61,13 +60,11 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		for (String sPath : alPaths) {
 			// listing current directory
 			if (!sPath.startsWith("/"))
-				sPath = commander.getCurrentDir().getCanonicalName()
-						+ sPath;
+				sPath = commander.getCurrentDir().getCanonicalName() + sPath;
 
 			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
 
-				directory = CatalogueApiUtils.getLFNs(sPath);
-
+			directory = CatalogueApiUtils.getLFNs(sPath);
 
 			if (directory != null) {
 				for (LFN localLFN : directory) {
@@ -107,7 +104,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			}
 
 		}
-		if(out.isRootPrinter())
+		if (out.isRootPrinter())
 			out.setReturnArgs(deserializeForRoot());
 	}
 
@@ -133,11 +130,10 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	public void printHelp() {
 		out.printOutln(AlienTime.getStamp()
 				+ "Usage: ls [-laFn|b|h] [<directory>]\n"
-				+"		-l : long format\n"
-				+"		-a : show hidden .* files\n"
-				+"		-F : add trailing / to directory names\n"
-				+"		-b : print in guid format\n"
-				+"		-h : print the help text");
+				+ "		-l : long format\n" + "		-a : show hidden .* files\n"
+				+ "		-F : add trailing / to directory names\n"
+				+ "		-b : print in guid format\n"
+				+ "		-h : print the help text");
 	}
 
 	/**
@@ -161,72 +157,86 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		silent = true;
 	}
 
-	
 	/**
-	 * serialize return values for gapi/root 
+	 * serialize return values for gapi/root
+	 * 
 	 * @return serialized return
 	 */
-	public String deserializeForRoot(){
-		String ret = RootPrintWriter.columnseparator;
-
+	public String deserializeForRoot() {
+		String ret = "";
 		if (directory != null) {
+			String col = RootPrintWriter.columnseparator;
 			String desc = RootPrintWriter.fielddescriptor;
 			String sep = RootPrintWriter.fieldseparator;
-			for (LFN lfn : directory) {
-				ret+= desc+ "aclId"+sep+ lfn.aclId;
-				ret+= desc+ "lfn"+sep+ lfn.lfn;
-				ret+= desc+ "broken"+sep+ lfn.broken;
-				ret+= desc+ "dir"+sep+ lfn.dir;
-				ret+= desc+ "size"+sep+ lfn.size;
-				ret+= desc+ "gowner"+sep+ lfn.gowner;
-				ret+= desc+ "guid"+sep+ lfn.guid;
-				ret+= desc+ "owner"+sep+ lfn.owner;
-				ret+= desc+ "replicated"+sep+ lfn.replicated;
-				ret+= desc+ "ctime"+sep+ lfn.ctime;
-				ret+= desc+ "entryId"+sep+ lfn.entryId;
-				ret+= desc+ "guidtime"+sep+ lfn.guidtime;
-				ret+= desc+ "expiretime"+sep+ lfn.expiretime;
-				ret+= desc+ "type"+sep+ lfn.type;
-				ret+= desc+ "md5"+sep+ lfn.md5;
-				ret+= desc+ "perm"+sep+ lfn.perm;
+
+			if (bL) {
+				for (LFN lfn : directory) {
+					ret += col;
+					ret += desc + "group" + sep + lfn.gowner;
+					ret += desc + "permissions" + sep + lfn.perm;
+					ret += desc + "date" + sep + lfn.ctime;
+					ret += desc + "name" + sep + lfn.lfn;
+					if(bF && (lfn.type == 'd'))
+						ret += "/";
+					ret += desc + "user" + sep + lfn.owner;
+					ret += desc + "path" + sep + lfn.dir;
+					ret += desc + "md5" + sep + lfn.md5;
+					ret += desc + "size" + sep + lfn.size;
+
+				}
+			} else if(bB){
+				for (LFN lfn : directory) {
+					ret += col;
+					ret += desc + "path" + sep + lfn.dir;
+					ret += desc + "guid" + sep + lfn.guid;
+				}
+			}else {
+				for (LFN lfn : directory) {
+					ret += col;
+					ret += desc + "name" + sep + lfn.lfn;
+					if(bF && (lfn.type == 'd'))
+						ret += "/";
+					ret += desc + "path" + sep + lfn.dir;
+				}
 			}
+
 			return ret;
-		}
-		else 
+		} else
 			return super.deserializeForRoot();
-		
+
 	}
-	
-	
-	
+
 	/**
 	 * Constructor needed for the command factory in commander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 		final OptionParser parser = new OptionParser();
-		
+
 		parser.accepts("l");
 		parser.accepts("bulk");
 		parser.accepts("b");
 		parser.accepts("a");
 		parser.accepts("F");
-		
-		final OptionSet options = parser.parse(alArguments.toArray(new String[]{}));
-		
+
+		final OptionSet options = parser.parse(alArguments
+				.toArray(new String[] {}));
+
 		alPaths = new ArrayList<String>(options.nonOptionArguments().size());
 		alPaths.addAll(options.nonOptionArguments());
-		
-				bL = options.has("l");
-//				bBulk = options.has("bulk");
-				bB = options.has("b");
-				bA = options.has("a");
-				bF = options.has("F");
+
+		bL = options.has("l");
+		// bBulk = options.has("bulk");
+		bB = options.has("b");
+		bA = options.has("a");
+		bF = options.has("F");
 	}
 
 }
