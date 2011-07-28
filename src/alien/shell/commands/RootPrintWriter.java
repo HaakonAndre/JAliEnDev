@@ -75,12 +75,12 @@ public class RootPrintWriter extends UIPrintWriter {
 		}
 
 		
-		System.out.println(testMakeTagsVisible(stdoutindicator + returnstdoutstream
+		System.out.println(testMakeTagsVisible("\""+stdoutindicator + returnstdoutstream
 				+ stderrindicator + returnstderrstream
 				+ outputindicator + args
 				+ outputterminator
 				+ columnseparator + fielddescriptor + "pwd"
-						 + fieldseparator + clientenv  ));
+						 + fieldseparator + clientenv  + "\n" + streamend+"\""));
 
 		try {
 			os.write((stdoutindicator + returnstdoutstream
