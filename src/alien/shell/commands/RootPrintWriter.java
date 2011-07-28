@@ -88,7 +88,7 @@ public class RootPrintWriter extends UIPrintWriter {
 					+ outputindicator + args
 					+ outputterminator
 					+ columnseparator + fielddescriptor + "pwd"
-					 + fieldseparator + clientenv  + "\n" + streamend + "\n")
+					 + fieldseparator + clientenv  + "\n" + streamend)
 					.getBytes());
 			os.flush();
 		} catch (IOException e) {
