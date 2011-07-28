@@ -202,7 +202,6 @@ public class JAliEnCOMMander {
 		parser.accepts("help");
 		parser.accepts("s");
 		parser.accepts("pwd").withRequiredArg();
-		//parser.recognizeAlternativeLongOptions(recognize)
 		parser.accepts("debug").withRequiredArg();
 		OptionSet preopts = parser.parse("");
 		try{
