@@ -14,14 +14,14 @@ import alien.config.ConfigUtils;
  */
 public class RootPrintWriter extends UIPrintWriter {
 
-	public static char streamend  = 0;
-	public static char fieldseparator = 1;
-	public static char fielddescriptor = 2;
-	public static char columnseparator = 3;
-	public static char stdoutindicator = 4;
-	public static char stderrindicator = 5;
-	public static char outputindicator = 6;
-	public static char outputterminator = 7;
+	public static String streamend  = String.valueOf( (char) 0 );
+	public static String fieldseparator = String.valueOf( (char)1);
+	public static String fielddescriptor = String.valueOf( (char)2);
+	public static String columnseparator = String.valueOf( (char)3);
+	public static String stdoutindicator = String.valueOf( (char)4);
+	public static String stderrindicator = String.valueOf( (char)5);
+	public static String outputindicator = String.valueOf( (char)6);
+	public static String outputterminator = String.valueOf( (char)7);
 
 	private String clientenv = "";
 
