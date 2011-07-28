@@ -167,11 +167,11 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * @return serialized return
 	 */
 	public String deserializeForRoot(){
-		String ret = RootPrintWriter.columnseparator+"";
+		String ret = RootPrintWriter.columnseparator;
 
 		if (directory != null) {
-			String desc = RootPrintWriter.fielddescriptor+"";
-			String sep = RootPrintWriter.fieldseparator+"";
+			String desc = RootPrintWriter.fielddescriptor;
+			String sep = RootPrintWriter.fieldseparator;
 			for (LFN lfn : directory) {
 				ret+= desc+ "aclId"+sep+ lfn.aclId;
 				ret+= desc+ "lfn"+sep+ lfn.lfn;
