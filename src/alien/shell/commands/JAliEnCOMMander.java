@@ -209,9 +209,7 @@ public class JAliEnCOMMander {
 		 preopts = parser.parse(args.toArray(new String[]{}));
 		}
 		catch(OptionException e){
-			help = true;
-			out.printErrln("Error parsing command arguments: " + e.getMessage());
-			out.flush();
+			//ignore
 		}
 		if(preopts.has("s"))
 			args.remove("-s");
