@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import joptsimple.OptionException;
 
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
@@ -181,6 +182,8 @@ public class JAliEnCOMMander {
 	 */
 	public void execute(OutputStream os, String[] arg) {
 
+		boolean help = false;
+		
 		String comm = arg[0];
 
 		System.out.println("Command [" + comm + "] called!");
@@ -193,6 +196,39 @@ public class JAliEnCOMMander {
 
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(arg));
 		args.remove(arg[0]);
+		
+		final OptionParser parser = new OptionParser();
+		parser.accepts("h");
+		parser.accepts("help");
+		parser.accepts("s");
+		parser.accepts("pwd").withRequiredArg();;
+		//parser.recognizeAlternativeLongOptions(recognize)
+		parser.accepts("debug").withRequiredArg();;
+		OptionSet preopts = parser.parse("");
+		try{
+		 preopts = parser.parse(args.toArray(new String[]{}));
+		}
+		catch(OptionException e){
+			help = true;
+			out.printErrln("Error parsing command arguments: " + e.getMessage());
+			out.flush();
+		}
+		if(preopts.has("s"))
+			args.remove("-s");
+		if(preopts.has("pwd") && preopts.hasArgument("pwd")){
+			curDir = CatalogueApiUtils.getLFN((String) preopts.valueOf("pwd"));
+			args.remove("-pwd="+preopts.valueOf("pwd"));
+		}
+		if(preopts.has("debug") && preopts.hasArgument("debug")){
+			try {
+				debug = Integer.parseInt((String) preopts.valueOf("debug"));
+			} catch (NumberFormatException n) {
+				//ignore
+			}
+			args.remove("-debug="+preopts.valueOf("debug"));
+		}
+		
+		
 
 		if (!Arrays.asList(jAliEnCommandList).contains(comm)) {
 
@@ -223,30 +259,12 @@ public class JAliEnCOMMander {
 				out.flush();
 				return;
 			}
+			
+			if(preopts.has("s"))
+				jcommand.silent();
+				
 			try {
-				final OptionParser parser = new OptionParser();
-				parser.accepts("h");
-				parser.accepts("help");
-				parser.accepts("s");
-				parser.accepts("pwd");
-				parser.accepts("debug");
-				final OptionSet preopts = parser.parse(args.toArray(new String[]{}));
-				if(preopts.has("s")){
-					jcommand.silent();
-					args.remove("-s");
-				}
-				if(preopts.has("pwd") && preopts.hasArgument("pwd")){
-					curDir = CatalogueApiUtils.getLFN((String) preopts.valueOf("pwd"));
-					args.remove("-pwd="+preopts.valueOf("pwd"));
-				}
-				if(preopts.has("debug") && preopts.hasArgument("debug")){
-					try {
-						debug = Integer.parseInt((String) preopts.valueOf("debug"));
-					} catch (NumberFormatException n) {
-						//ignore
-					}
-					args.remove("-debug="+preopts.valueOf("debug"));
-				}
+				
 
 				if (args.size() != 0
 						&& args.get(args.size() - 1).startsWith("&")) {
@@ -264,7 +282,7 @@ public class JAliEnCOMMander {
 					args.remove(args.size() - 1);
 				}
 
-				if (!preopts.has("h")
+				if (!help && !preopts.has("h")
 						&& !preopts.has("help")
 						&& (args.size() != 0 || jcommand
 								.canRunWithoutArguments())) {
