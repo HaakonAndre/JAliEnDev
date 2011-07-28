@@ -115,10 +115,10 @@ public class APIServer extends Thread {
 
 				if (sLine != null && sLine.equals(password)) {
 					System.out.println("password accepted");
-					os.write("PASSACK\n".getBytes());
+					os.write("OKPASSACK".getBytes());
 					os.flush();
 				} else {
-					os.write("NOPASSACK\n".getBytes());
+					os.write("NOPASSACK".getBytes());
 					os.flush();
 					return;
 				}
