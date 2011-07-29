@@ -76,9 +76,11 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	protected void flush() {
 		try {
-
-			printDebug();
-
+			String sDebug = printDebug();
+			
+			System.out.println(sDebug);
+			
+			//os.write((sDebug + ((char) 0)).getBytes());
 			os.write(stdoutindicator.getBytes());
 			
 			if (stdout.size() > 0)
@@ -98,6 +100,7 @@ public class RootPrintWriter extends UIPrintWriter {
 					+ fieldseparator + clientenv + streamend).getBytes());
 			os.flush();
 
+		
 		} catch (IOException e) {
 			e.printStackTrace();
 			logger.log(Level.FINE, "Could not write to OutputStream", e);
@@ -106,7 +109,7 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	// testcode end
 
-	private void printDebug() {
+	private String printDebug() {
 
 		String debug = stdoutindicator;
 		if (stdout.size() > 0)
@@ -122,7 +125,8 @@ public class RootPrintWriter extends UIPrintWriter {
 				+ fielddescriptor + "pwd" + fieldseparator + clientenv
 				+ streamend;
 
-		System.out.println(testMakeTagsVisible(debug));
+		return testMakeTagsVisible(debug);
+
 	}
 
 	public static String testMakeTagsVisible(final String line) {
