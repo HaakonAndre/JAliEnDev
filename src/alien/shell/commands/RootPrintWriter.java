@@ -28,7 +28,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	private ArrayList<String> stdout = new ArrayList<String>();
 	private ArrayList<String> stderr = new ArrayList<String>();
 
-	private String args;
+	private String args = "";
 
 	/**
 	 * Logger
@@ -43,12 +43,13 @@ public class RootPrintWriter extends UIPrintWriter {
 	}
 
 	protected void printOutln(String line) {
-		stdout.add(line+"\n");
+		stdout.add(line + "\n");
 		System.out.println(line);
 	}
 
 	protected void printErrln(String line) {
 		stderr.add(line + "\n");
+		System.out.println("ERROOROROROROORO: " + line);
 	}
 
 	protected void setenv(String cDir, String user, String cDirtiled) {
@@ -75,21 +76,27 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	protected void flush() {
 		try {
-		
+
+			printDebug();
 
 			os.write(stdoutindicator.getBytes());
-		for (String out : stdout) 
-			os.write((columnseparator + fieldseparator+ out).getBytes());
-				
-				os.write(stderrindicator.getBytes());
-		for (String err : stderr) 
-			os.write((columnseparator + fieldseparator + err).getBytes());
+			
+			if (stdout.size() > 0)
+				for (String out : stdout)
+					os.write((columnseparator + fieldseparator + out)
+							.getBytes());
 
-				os.write((outputindicator + args
-				+ outputterminator
-				+ columnseparator + fielddescriptor + "pwd"
-						 + fieldseparator + clientenv + streamend).getBytes());
-				os.flush();
+			os.write(stderrindicator.getBytes());
+						
+			if (stderr.size() > 0)
+				for (String err : stderr)
+					os.write((columnseparator + fieldseparator + err)
+							.getBytes());
+
+			os.write((outputindicator + args + outputterminator
+					+ columnseparator + fielddescriptor + "pwd"
+					+ fieldseparator + clientenv + streamend).getBytes());
+			os.flush();
 
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -99,17 +106,36 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	// testcode end
 
+	private void printDebug() {
+
+		String debug = stdoutindicator;
+		if (stdout.size() > 0)
+			for (String out : stdout)
+				debug += columnseparator + fieldseparator + out;
+
+		debug += stderrindicator;
+		if (stderr.size() > 0)
+			for (String err : stderr)
+				debug += columnseparator + fieldseparator + err;
+
+		debug += outputindicator + args + outputterminator + columnseparator
+				+ fielddescriptor + "pwd" + fieldseparator + clientenv
+				+ streamend;
+
+		System.out.println(testMakeTagsVisible(debug));
+	}
+
 	public static String testMakeTagsVisible(final String line) {
 		String line1;
 
-		line1 = line.replace(streamend + "", "::streamend::");
-		line1 = line1.replace(fieldseparator + "", "::fieldseparator::");
-		line1 = line1.replace(fielddescriptor + "", "::fielddescriptor::");
-		line1 = line1.replace(columnseparator + "", "::columnseparator::");
-		line1 = line1.replace(stdoutindicator + "", "::stdoutindicator::");
-		line1 = line1.replace(stderrindicator + "", "::stderrindicator::");
-		line1 = line1.replace(outputindicator + "", "::outputindicator::");
-		line1 = line1.replace(outputterminator + "", "::outputterminator::");
+		line1 = line.replace(streamend, "::streamend::");
+		line1 = line1.replace(fieldseparator, "::fieldsep::");
+		line1 = line1.replace(fielddescriptor, "::fielddesc::");
+		line1 = line1.replace(columnseparator, "::column::");
+		line1 = line1.replace(stdoutindicator, "::stdoutind::");
+		line1 = line1.replace(stderrindicator, "::stderrind::");
+		line1 = line1.replace(outputindicator, "::outputind::");
+		line1 = line1.replace(outputterminator, "::outputterm::");
 
 		return line1;
 	}
