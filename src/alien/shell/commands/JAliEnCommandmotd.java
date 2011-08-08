@@ -14,7 +14,7 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 	public void execute() throws Exception {
 		System.err.println("trece prin execute");
 		String sMotdMessage = 
-				"###############################################################\n" +
+				"\n###############################################################\n" +
 				"# AliEn Service Message: All is well in the Grid world. Enjoy!#\n"+
 				"##############################################################\n"+
 				"* Operational problems: Latchezar.Betev@cern.ch\n"+
