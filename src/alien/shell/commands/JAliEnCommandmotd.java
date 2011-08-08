@@ -14,12 +14,12 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 	public void execute() throws Exception {
 		System.err.println("trece prin execute");
 		String sMotdMessage = 
-				"###############################################################" +
-				"# AliEn Service Message: All is well in the Grid world. Enjoy!#"+
-				"##############################################################"+
-				"* Operational problems: Latchezar.Betev@cern.ch"+
-				"* Bug reports: http://savannah.cern.ch/bugs/?group=alien&func=additem"+
-				"###############################################################";
+				"###############################################################\n" +
+				"# AliEn Service Message: All is well in the Grid world. Enjoy!#\n"+
+				"##############################################################\n"+
+				"* Operational problems: Latchezar.Betev@cern.ch\n"+
+				"* Bug reports: http://savannah.cern.ch/bugs/?group=alien&func=additem\n"+
+				"###############################################################\n";
 
 		out.printOutln(sMotdMessage);
 
@@ -34,7 +34,7 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 	@Override
 	public boolean canRunWithoutArguments() {
 		// TODO Auto-generated method stub
-		return false;
+		return true;
 	}
 
 	@Override
