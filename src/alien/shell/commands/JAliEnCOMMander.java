@@ -35,7 +35,7 @@ public class JAliEnCOMMander {
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit" };
+			"scrlog", "submit", "motd" };
 
 	/**
 	 * Commands to let UI talk internally with us here
