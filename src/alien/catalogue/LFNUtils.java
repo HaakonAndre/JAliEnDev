@@ -417,6 +417,7 @@ public class LFNUtils {
 	 */
 	public static boolean addToCollection(final LFN collection, final Set<LFN> lfns){		
 		if (!collection.exists || !collection.isCollection() || lfns==null || lfns.size()==0){
+			logger.log(Level.FINER, "Quick exit");
 			return false;
 		}
 		
@@ -426,8 +427,10 @@ public class LFNUtils {
 		
 		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary('"+collection.guid.toString()+"');");
 		
-		if (!db.moveNext())
+		if (!db.moveNext()){
+			logger.log(Level.WARNING, "Didn't find any collectionId for guid " + collection.guid.toString());
 			return false;
+		}
 		
 		final int collectionId = db.geti(1);
 		
@@ -440,8 +443,10 @@ public class LFNUtils {
 			toAdd.add(lfn);
 		}
 		
-		if (toAdd.size()==0)
+		if (toAdd.size()==0){
+			logger.log(Level.INFO, "Nothing to add to "+collection.getCanonicalName()+", all "+lfns.size()+" entries are listed already");
 			return false;
+		}
 		
 		final GUID guid = GUIDUtils.getGUID(collection.guid);
 		
@@ -471,8 +476,10 @@ public class LFNUtils {
 			}
 		}
 		
-		if (!updated)
+		if (!updated){
+			logger.log(Level.FINER, "No change to the collection");
 			return false;	// nothing changed
+		}
 		
 		if (commonSEs!=null)
 			guid.seStringList = commonSEs;
