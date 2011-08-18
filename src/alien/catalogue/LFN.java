@@ -416,7 +416,10 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	@Override
 	public int compareTo(final LFN o) {
-		int diff = indexTableEntry.compareTo(o.indexTableEntry);
+		if (this==o)
+			return 0;
+		
+		final int diff = indexTableEntry.compareTo(o.indexTableEntry);
 		
 		if (diff!=0)
 			return diff;
@@ -426,8 +429,13 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	
 	@Override
 	public boolean equals(final Object obj) {
-		if (! (obj instanceof LFN))
+		if (obj==null || !(obj instanceof LFN))
 			return false;
+		
+		final LFN other = (LFN) obj;
+		
+		if (other==obj)
+			return true;
 		
 		return compareTo((LFN) obj)==0;
 	}
