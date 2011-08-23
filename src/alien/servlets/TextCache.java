@@ -3,6 +3,7 @@
  */
 package alien.servlets;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -19,6 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import lazyj.ExtendedServlet;
 import lazyj.Format;
 import lazyj.LRUMap;
+import lia.Monitor.monitor.ShutdownReceiver;
+import lia.util.ShutdownManager;
 import lia.util.StringFactory;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -136,6 +139,21 @@ public class TextCache extends ExtendedServlet {
 	static{
 		cleanup = new CleanupThread();
 		cleanup.start();
+		
+		ShutdownManager.getInstance().addModule(new ShutdownReceiver() {
+			
+			@Override
+			public void Shutdown() {
+				for (final Map.Entry<String, Map<String, CacheValue>> entry: namespaces.entrySet()){
+					final Map<String, CacheValue> cache = entry.getValue();
+					synchronized(cache){
+						for (final Map.Entry<String, CacheValue> entryToDelete: cache.entrySet()){
+							notifyEntryRemoved(entry.getKey(), entryToDelete.getKey(), entryToDelete.getValue());
+						}
+					}
+				}
+			}
+		});
 	}
 	
 	/**
@@ -149,6 +167,8 @@ public class TextCache extends ExtendedServlet {
 	static transient final Monitor monitor = MonitorFactory.getMonitor(TextCache.class.getCanonicalName());
 	
 	private static PrintWriter requestLogger = null;
+	
+	private static int logCounter = 0;
 	
 	/**
 	 * Call this one entry is removed to log the number of hits
@@ -171,6 +191,17 @@ public class TextCache extends ExtendedServlet {
 		
 		if (requestLogger.checkError())
 			requestLogger = null;
+		else{
+			if (++logCounter > 1000){
+				logCounter = 0;
+				
+				final File f = new File("cache.log");
+				
+				if (!f.exists()){
+					requestLogger = null;
+				}
+			}
+		}
 	}
 	
 	/**
