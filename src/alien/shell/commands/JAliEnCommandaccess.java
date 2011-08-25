@@ -191,6 +191,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 //			String desc = "<fielddescriptor>";
 //			String sep = "<fieldseparator>";
 
+			System.out.println("Preparing ROOT encoding with envelopes...");
+			
 			for (PFN pfn : pfns) {
 				ret += col;
 				
