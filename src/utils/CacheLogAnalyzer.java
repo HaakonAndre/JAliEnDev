@@ -59,9 +59,9 @@ public class CacheLogAnalyzer {
 	
 	private static final Pattern RAW = Pattern.compile("^/alice/data/(20[01][0-9])/(LHC[^/]+)/[0]{0,3}([0-9]{6,9})/.*");
 	
-	private static final Pattern ESD = Pattern.compile(".*/ESDs/([pP]ass[^/]+)/.*");
+	private static final Pattern ESD = Pattern.compile(".*/ESDs/([cC]?[pP]ass[^/]+)/.*");
 	
-	private static final Pattern AOD = Pattern.compile(".*/ESDs/([pP]ass[^/]+)/AOD[0-9]{3}/.*");
+	private static final Pattern AOD = Pattern.compile(".*/ESDs/([cC]?[pP]ass[^/]+)/AOD[0-9]{3}/.*");
 	
 	private static final Pattern RAWOCDB = Pattern.compile("^/alice/data/(20[01][0-9])/OCDB/([^/]+)/.*");
 	
@@ -175,7 +175,7 @@ public class CacheLogAnalyzer {
 						incStats("access", "raw_data", "raw", hit);
 					}
 					else
-					if (lfn.indexOf("/pass0/")>=0){
+					if (lfn.indexOf("/pass0/")>=0 || lfn.indexOf("/cpass0/")>=0){
 						incStats("access", "raw_data", "pass0", hit);
 					}
 					else{
