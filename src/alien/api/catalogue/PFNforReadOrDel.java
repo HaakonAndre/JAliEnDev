@@ -81,17 +81,17 @@ public class PFNforReadOrDel extends Request {
 
 	@Override
 	public void run() {
-
+		
 		if (guid == null)
 			guid = GUIDUtils.getGUID(lfn.guid);
 
 		LFN setArchiveAnchor = null;
 
 		PFN readpfn = null;
-
+		
 		pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true,
 				SEUtils.getSEs(ses), SEUtils.getSEs(exses));
-
+		
 		try {
 			for (PFN pfn : pfns) {
 

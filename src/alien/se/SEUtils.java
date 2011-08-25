@@ -167,16 +167,20 @@ public final class SEUtils {
 
 	/**
 	 * Get all SE objects that have the given names
-	 * @param ses 
+	 * 
+	 * @param ses
 	 * @param seNames
 	 * @return SE objects
 	 */
 	public static List<SE> getSEs(final List<String> ses) {
-		if(ses==null)
+		if (ses == null)
 			return null;
-		final List<SE> ret = new ArrayList<SE>(ses.size());
-		for (String se : ses)
-			ret.add(SEUtils.getSE(se));
+		final List<SE> ret = new ArrayList<SE>();
+		for (String se : ses) {
+			SE maybeSE = SEUtils.getSE(se);
+			if (maybeSE != null)
+				ret.add(maybeSE);
+		}
 		return ret;
 	}
 
@@ -400,7 +404,7 @@ public final class SEUtils {
 	 * @param sSite
 	 * @param removeBrokenSEs
 	 * @param SEs
-	 * @param exSEs 
+	 * @param exSEs
 	 * @return the sorted list of locations
 	 */
 	public static List<PFN> sortBySiteSpecifySEs(final Collection<PFN> pfns,
@@ -409,8 +413,16 @@ public final class SEUtils {
 
 		List<PFN> spfns = sortBySite(pfns, sSite, removeBrokenSEs);
 
-		if (SEs == null && exSEs == null)
+		if (SEs.isEmpty() && exSEs.isEmpty())
 			return spfns;
+
+		System.out.println("sortBySiteSpecifySEs: ses: " + SEs);
+		if (SEs.isEmpty())
+			System.out.println("sortBySiteSpecifySEs: ses empty");
+
+		System.out.println("sortBySiteSpecifySEs: exses: " + exSEs);
+		if (exSEs.isEmpty())
+			System.out.println("sortBySiteSpecifySEs: exses empty");
 
 		for (SE ex : exSEs) {
 			System.out.println("exSEs contains: " + ex.seName);
