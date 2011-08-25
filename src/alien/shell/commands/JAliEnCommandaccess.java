@@ -73,7 +73,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	/**
 	 * return pfns;
 	 */
-	private List<PFN> pfns;
+	private List<PFN> pfns = null;
 
 	/**
 	 * execute the access
@@ -113,7 +113,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			}
 		}
 		
-		out.printOutln("LFN/GUID prepared, let's ask for access.");
+		System.out.println("LFN/GUID prepared, let's ask for access.");
 
 		if (accessRequest == AccessType.WRITE) {
 			if (lfn != null)
@@ -127,11 +127,11 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 		else if (accessRequest == AccessType.READ) {
 			if (lfn != null){
-				out.printOutln("Going to ask for user: " + commander.user.getName());
-				out.printOutln("Going to ask for site: " + site);
-				out.printOutln("Going to ask for lfn: " + lfn);
-				out.printOutln("Going to ask for ses: " + ses);
-				out.printOutln("Going to ask for exxses: " + exxses);
+				System.out.println("Going to ask for user: " + commander.user.getName());
+				System.out.println("Going to ask for site: " + site);
+				System.out.println("Going to ask for lfn: " + lfn);
+				System.out.println("Going to ask for ses: " + ses);
+				System.out.println("Going to ask for exxses: " + exxses);
 				pfns = CatalogueApiUtils.getPFNsToRead(commander.user, site,
 						lfn, ses, exxses);
 			}
@@ -145,9 +145,9 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		else {
 			out.printErrln("Unknown access type [error in processing].");
 		}
-
-//		out.printOutln("Spitting out root format:");
-//		out.printOutln(deserializeForRoot());
+		
+		if (out.isRootPrinter())
+			out.setReturnArgs(deserializeForRoot());
 	}
 
 	/**
@@ -180,8 +180,10 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 */
 	public String deserializeForRoot() {
 
+		System.out.println("Preparing ROOT encoding...");
+
 		String ret = "";
-		if (!pfns.isEmpty()) {
+		if (pfns!= null && !pfns.isEmpty()) {
 			
 			String col = RootPrintWriter.columnseparator;
 			String desc = RootPrintWriter.fielddescriptor;
@@ -191,7 +193,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 //			String desc = "<fielddescriptor>";
 //			String sep = "<fieldseparator>";
 
-			System.out.println("Preparing ROOT encoding with envelopes...");
+			System.out.println("Let's see the envelopes we have ...");
 			
 			for (PFN pfn : pfns) {
 				ret += col;
@@ -201,11 +203,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope)
 						envelope += "&envelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
-				
-				System.out.println();
-				System.out.println("RAW ENVELOPE IS: " + envelope);
-				System.out.println();
-				
+
 				final StringTokenizer st = new StringTokenizer(
 						envelope, "&");
 				while(st.hasMoreTokens()){
@@ -215,6 +213,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					while(et.hasMoreTokens())
 						ret += "=" + et.nextToken();
 				}
+				ret += desc + "nSEs" + sep + pfns.size();
 			}
 			return ret;
 		}
@@ -244,6 +243,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	// <columnseparator>.<fieldseparator>Aug 24 18:20:13 info We sorted inside
 	// ses<>0^sesel>1, outcome:
 	// sesel=1,ses=ALICE::CERN::SE,nSEs=6,sorted=ALICE::CERN::SE,ALICE::CNAF::SE,ALICE::KFKI::SE,ALICE::Legnaro::SE,Alice::NIHAM::FILE,ALICE::FZK::SE
+	
 	// <stderrindicator><columnseparator><fieldseparator>
 
 	// <outputindicator>
@@ -282,7 +282,12 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	// <fielddescriptor>access<fieldseparator>read
 	// <fielddescriptor>nSEs<fieldseparator>6
 	// <fielddescriptor>se<fieldseparator>ALICE::CERN::SE
-	// <fielddescriptor>signature<fieldseparator>i0/bETKqxQdZg4is3NhWOUO1BQjvAFT+4a15P5J9A8L4htvYqOE/Z9yV2/O+VhmBQblYo4+0mg06ulEZk0MzAZABCnL9j0sRFtHDHd3/vbmtZrVX37+SoU4LbaXjJvnhuRG4847/rvwTCccvRmRus2E2X8hHF51Ds/Va0D3gTcM=<fielddescriptor>issued<fieldseparator>1314200567<fielddescriptor>md5<fieldseparator>0<fielddescriptor>expires<fieldseparator>1314286967<outputterminator><columnseparator><fielddescriptor>pwd<fieldseparator>/alice/cern.ch/user/s/sschrein/<streamend>
+	// <fielddescriptor>signature<fieldseparator>i0/bETKqxQdZg4is3NhWOUO1BQjvAFT+4a15P5J9A8L4htvYqOE/Z9yV2/O+VhmBQblYo4+0mg06ulEZk0MzAZABCnL9j0sRFtHDHd3/vbmtZrVX37+SoU4LbaXjJvnhuRG4847/rvwTCccvRmRus2E2X8hHF51Ds/Va0D3gTcM=
+	//<fielddescriptor>issued<fieldseparator>1314200567
+	//<fielddescriptor>md5<fieldseparator>0
+	//<fielddescriptor>expires<fieldseparator>1314286967
+	//<outputterminator><columnseparator>
+	//<fielddescriptor>pwd<fieldseparator>/alice/cern.ch/user/s/sschrein/<streamend>
 	//
 
 	/**

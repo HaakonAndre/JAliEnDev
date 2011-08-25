@@ -77,30 +77,33 @@ public class RootPrintWriter extends UIPrintWriter {
 	protected void flush() {
 		try {
 			String sDebug = printDebug();
-			
+
 			System.out.println(sDebug);
-			
-			//os.write((sDebug + ((char) 0)).getBytes());
+
+			// os.write((sDebug + ((char) 0)).getBytes());
 			os.write(stdoutindicator.getBytes());
-			
-			if (stdout.size() > 0)
+
+			if (stdout.size() > 0) {
 				for (String out : stdout)
 					os.write((columnseparator + fieldseparator + out)
 							.getBytes());
+			} else 
+				os.write((columnseparator + fieldseparator).getBytes());
 
 			os.write(stderrindicator.getBytes());
-						
-			if (stderr.size() > 0)
+
+			if (stderr.size() > 0) {
 				for (String err : stderr)
 					os.write((columnseparator + fieldseparator + err)
 							.getBytes());
+			} else
+				os.write((columnseparator + fieldseparator).getBytes());
 
 			os.write((outputindicator + args + outputterminator
 					+ columnseparator + fielddescriptor + "pwd"
 					+ fieldseparator + clientenv + streamend).getBytes());
 			os.flush();
 
-		
 		} catch (IOException e) {
 			e.printStackTrace();
 			logger.log(Level.FINE, "Could not write to OutputStream", e);
@@ -112,14 +115,18 @@ public class RootPrintWriter extends UIPrintWriter {
 	private String printDebug() {
 
 		String debug = stdoutindicator;
-		if (stdout.size() > 0)
+		if (stdout.size() > 0) {
 			for (String out : stdout)
 				debug += columnseparator + fieldseparator + out;
+		} else
+			debug += columnseparator + fieldseparator;
 
 		debug += stderrindicator;
-		if (stderr.size() > 0)
+		if (stderr.size() > 0) {
 			for (String err : stderr)
 				debug += columnseparator + fieldseparator + err;
+		} else
+			debug += columnseparator + fieldseparator;
 
 		debug += outputindicator + args + outputterminator + columnseparator
 				+ fielddescriptor + "pwd" + fieldseparator + clientenv
@@ -132,14 +139,14 @@ public class RootPrintWriter extends UIPrintWriter {
 	public static String testMakeTagsVisible(final String line) {
 		String line1;
 
-		line1 = line.replace(streamend, "::streamend::");
-		line1 = line1.replace(fieldseparator, "::fieldsep::");
-		line1 = line1.replace(fielddescriptor, "::fielddesc::");
-		line1 = line1.replace(columnseparator, "::column::");
-		line1 = line1.replace(stdoutindicator, "::stdoutind::");
-		line1 = line1.replace(stderrindicator, "::stderrind::");
-		line1 = line1.replace(outputindicator, "::outputind::");
-		line1 = line1.replace(outputterminator, "::outputterm::");
+		line1 = line.replace(streamend, "<<STREAMEND>>");
+		line1 = line1.replace(fieldseparator, "<<FDS>>");
+		line1 = line1.replace(fielddescriptor, "\n<<FDD>>");
+		line1 = line1.replace(columnseparator, "\n<<COL>>");
+		line1 = line1.replace(stdoutindicator, "<<STDOUTIN>>");
+		line1 = line1.replace(stderrindicator, "<<STDERRIN>>");
+		line1 = line1.replace(outputindicator, "<<OUTPUTIN>>");
+		line1 = line1.replace(outputterminator, "<<OUTPUTEND>>");
 
 		return line1;
 	}
