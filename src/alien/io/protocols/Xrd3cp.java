@@ -117,11 +117,14 @@ public class Xrd3cp extends Xrootd {
 					try{
 						final String ret = xrdstat(target, (target.ticket.envelope.getSignedEnvelope()==null));
 						
-						if (ret!=null)
+						if (ret!=null){
+							logger.log(Level.WARNING, "xrdstat is ok, assuming transfer was successful");
+							
 							return ret;
+						}
 					}
 					catch (IOException ioe){
-						// ignore, will throw the original message
+						logger.log(Level.WARNING, "xrdstat throwed exception", ioe);
 					}
 				}
 				
