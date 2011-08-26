@@ -111,7 +111,7 @@ public class Xrd3cp extends Xrootd {
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 				}
 				
-				if (exitStatus.getExtProcExitStatus() == 5 && sMessage.indexOf("source or destination has 0 size")>=0){
+				if (exitStatus.getExtProcExitStatus() == 5 && exitStatus.getStdOut().indexOf("source or destination has 0 size")>=0){
 					logger.log(Level.WARNING, "Retrying xrdstat, maybe the file shows up with the correct size in a few seconds");
 					
 					try{
