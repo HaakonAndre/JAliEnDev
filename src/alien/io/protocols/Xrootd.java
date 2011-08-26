@@ -37,7 +37,7 @@ public class Xrootd extends Protocol {
 	private int timeout = 300;
 
 	// last value must be 0 for a clean exit
-	private static final int statRetryTimes[] = { 6, 12, 30, 0 };
+	private static final int statRetryTimes[] = { 6, 12, 18, 24, 30, 0 };
 
 	/**
 	 * Logger
@@ -576,8 +576,9 @@ public class Xrootd extends Protocol {
 				if (pfn.getGuid().size == filesize)
 					return exitStatus.getStdOut();
 
-				if (sleep == 0 || !retryWithDelay)
-					throw new IOException("The xrdstat could not confirm the upload.");
+				if (sleep == 0 || !retryWithDelay){
+					throw new IOException(command.toString() + ": could not confirm the upload: "+exitStatus.getStdOut());
+				}
 
 				Thread.sleep(sleep * 1000);
 				continue;
