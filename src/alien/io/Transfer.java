@@ -67,9 +67,9 @@ public class Transfer implements Serializable, Runnable {
 	private final int transferId;
 	
 	/**
-	 * Source pfn, package protected
+	 * Source pfns, package protected
 	 */
-	final PFN source;
+	final List<PFN> sources;
 	
 	/**
 	 * Target pfn, package protected
@@ -80,16 +80,18 @@ public class Transfer implements Serializable, Runnable {
 	
 	private String storageReplyEnvelope;
 	
+	private GUID referenceGUID = null;
+	
 	/**
 	 * @param transferId transfer ID
-	 * @param source source PFN
+	 * @param sources source PFNs (one or more, sorted by preference)
 	 * @param target target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
 	 */
-	public Transfer(final int transferId, final PFN source, final PFN target){
-		this.source = source;
+	public Transfer(final int transferId, final List<PFN> sources, final PFN target){
+		this.sources = sources;
 		
-		if (this.source==null)
-			throw new IllegalArgumentException("Source cannot be null");
+		if (this.sources==null || this.sources.size()==0)
+			throw new IllegalArgumentException("No sources for this transfer");
 		
 		this.target = target;
 		
@@ -189,16 +191,22 @@ public class Transfer implements Serializable, Runnable {
 			
 			monitor.incrementCounter("transfer_status_"+exitCode);
 			
-			if (exitCode==0 && source!=null){
-				GUID guid = source.getGuid();
-				
-				if (guid!=null)
-					monitor.addMeasurement("transfer_MB", source.getGuid().size / (1024*1024d));
+			if (exitCode==0 && referenceGUID!=null){
+				monitor.addMeasurement("transfer_MB", referenceGUID.size / (1024*1024d));
 			}
 		}
 	}
 	
 	private void doWork(){
+		for (final PFN source: sources){
+			doWork(source);
+			
+			if (exitCode == OK)
+				break;
+		}
+	}
+	
+	private void doWork(final PFN source){
 		final List<Protocol> protocols = getProtocols(source, target);
 		
 		if (protocols.size()==0){

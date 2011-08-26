@@ -125,22 +125,23 @@ public class TransferBroker {
 				sLFN = resultSet.getString(2);
 				targetSE = resultSet.getString(3);
 			}
+			
+			if (transferId<0){
+				executeClose();
+				return null;
+			}
+
+			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId="+transferId+";");
 		}
 		catch (Exception e){
 			// ignore
 		}
-		
-		if (transferId<0){
+		finally{
+			executeQuery(dbc, "unlock tables;");
 			executeClose();
-			return null;
+			
+			dbc.free();
 		}
-		
-		executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId="+transferId+";");
-		executeQuery(dbc, "unlock tables;");
-		
-		executeClose();
-		
-		dbc.free();
 		
 		final LFN lfn = LFNUtils.getLFN(sLFN);
 		
@@ -189,13 +190,13 @@ public class TransferBroker {
 		
 		final List<PFN> sortedPFNs = SEUtils.sortBySite(pfns, site, false);
 		
-		final PFN source = sortedPFNs.get(0);
-
-		String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
+		for (final PFN source: sortedPFNs){
+			final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
 		
-		if (reason!=null){
-			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Source authorization failed: "+reason);
-			return null;
+			if (reason!=null){
+				markTransfer(transferId, Transfer.FAILED_SYSTEM, "Source authorization failed: "+reason);
+				return null;
+			}
 		}
 				
 		final PFN target;
@@ -204,12 +205,12 @@ public class TransferBroker {
 			target = BookingTable.bookForWriting(lfn, guid, null, 0, se);
 		}
 		catch (IOException ioe){
-			reason = ioe.getMessage();
+			final String reason = ioe.getMessage();
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target authorization failed: "+reason);
 			return null;
 		}
 		
-		final Transfer t = new Transfer(transferId, source, target);
+		final Transfer t = new Transfer(transferId, sortedPFNs, target);
 		
 		return t;
 	}
