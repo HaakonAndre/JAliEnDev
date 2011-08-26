@@ -203,17 +203,38 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope)
 						envelope += "&envelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
+				
+				System.out.println("encrypted envelope is: " + pfn.ticket.envelope.getEncryptedEnvelope());
 
 				final StringTokenizer st = new StringTokenizer(
 						envelope, "&");
 				while(st.hasMoreTokens()){
-					final StringTokenizer et = new StringTokenizer(
-							st.nextToken(), "=");
-					ret += desc + et.nextToken() + sep + et.nextToken();
-					while(et.hasMoreTokens())
-						ret += "=" + et.nextToken();
+					String t = st.nextToken();
+					String key = t.substring(0, t.indexOf('='));
+					String val = t.substring(t.indexOf('=')+1);
+					
+					if(("turl").equals(key)){
+						ret += desc + "url" + sep + val;
+						final StringTokenizer tpfn = new StringTokenizer(
+								val, "////");
+						tpfn.nextToken();
+						tpfn.nextToken();
+						String ttpfn = "/" + tpfn.nextToken();
+						while(tpfn.hasMoreTokens())
+							ttpfn += "/" + tpfn.nextToken();
+						
+						ret += desc + "pfn" + sep + ttpfn;
+					}
+					if(("lfn").equals(key))
+						ret += desc + key + sep + "/alice/cern.ch/user/s/sschrein/whoamI_copyX.jdl";
+					else if(("guid").equals(key))
+						ret += desc + key + sep + val.toUpperCase();
+					else 
+						ret += desc + key + sep + val;
+					
 				}
-				ret += desc + "nSEs" + sep + pfns.size();
+				ret += desc + "nSEs" + sep + pfns.get(0).getGuid().getPFNs().size();
+				ret += desc + "user" + sep + commander.user.getName();
 			}
 			return ret;
 		}

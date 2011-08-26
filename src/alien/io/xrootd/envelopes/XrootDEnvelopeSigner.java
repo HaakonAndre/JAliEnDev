@@ -177,7 +177,7 @@ public class XrootDEnvelopeSigner {
 		final long expires = issued + 60*60*24;
 
 		final String toBeSigned = envelope.getUnsignedEnvelope()
-				+ "-issuer-issued-expires&issuer="+JAliEnIAm.whatsMyName()+"@"+getLocalHostName()+
+				+ "-issuer-issued-expires&issuer="+JAliEnIAm.whatsMyName()+"_"+getLocalHostName()+
 				"&issued=" + issued + "&expires=" + expires;
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
