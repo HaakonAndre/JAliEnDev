@@ -27,6 +27,8 @@ public class Xrd3cp extends Xrootd {
 		// package protected
 	}
 	
+	private static final String QUOTES = "";	//
+	
 	/* (non-Javadoc)
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
@@ -49,20 +51,32 @@ public class Xrd3cp extends Xrootd {
 			command.add("xrd3cp");
 			command.add("-m");
 			command.add("-S");
-			command.add(source.pfn);
-			command.add(target.pfn);
+			
+			final boolean sourceEnvelope = source.ticket!=null && source.ticket.envelope!=null;
+			
+			final boolean targetEnvelope = target.ticket!=null && target.ticket.envelope!=null;
+			
+			if (sourceEnvelope)
+				command.add(source.ticket.envelope.getTransactionURL());
+			else
+				command.add(source.pfn);
+			
+			if (targetEnvelope)
+				command.add(target.ticket.envelope.getTransactionURL());
+			else
+				command.add(target.pfn);
 
-			if (source.ticket.envelope!=null){
+			if (sourceEnvelope){
 				if (source.ticket.envelope.getEncryptedEnvelope()!=null)
-					command.add("\"authz="+source.ticket.envelope.getEncryptedEnvelope()+"\"");
+					command.add(QUOTES + "authz="+source.ticket.envelope.getEncryptedEnvelope() + QUOTES);
 				else
 					if (source.ticket.envelope.getSignedEnvelope()!=null)
 						command.add(source.ticket.envelope.getSignedEnvelope());
 			}
 
-			if (target.ticket.envelope!=null){
+			if (targetEnvelope){
 				if (target.ticket.envelope.getEncryptedEnvelope()!=null)
-					command.add("\"authz="+target.ticket.envelope.getEncryptedEnvelope()+"\"");
+					command.add(QUOTES + "authz="+target.ticket.envelope.getEncryptedEnvelope() + QUOTES);
 				else
 					if (target.ticket.envelope.getSignedEnvelope()!=null)
 						command.add(target.ticket.envelope.getSignedEnvelope());
