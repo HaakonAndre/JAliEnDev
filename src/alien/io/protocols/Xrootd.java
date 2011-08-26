@@ -97,6 +97,17 @@ public class Xrootd extends Protocol {
 				}
 			}
 		}
+		
+		idx = message.lastIndexOf("\tretc=");
+		
+		if (idx >= 0){
+			int idx2 = message.indexOf('\n', idx);
+			
+			if (idx2<0)
+				idx2 = message.length();
+			
+			return message.substring(idx+1, idx2);
+		}
 
 		return null;
 	}
