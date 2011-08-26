@@ -23,6 +23,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	
 	public void execute() {
 
+		System.out.println("We are called as mkdir!");
+		
 		for (String path: alPaths){
 			if(bP)
 				if(CatalogueApiUtils.createCatalogueDirectory(commander.user, FileSystemUtils.getAbsolutePath(

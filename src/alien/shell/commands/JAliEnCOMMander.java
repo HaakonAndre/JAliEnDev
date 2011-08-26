@@ -35,12 +35,12 @@ public class JAliEnCOMMander {
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit", "motd", "access" };
+			"scrlog", "submit", "motd", "access", "pwd" };
 
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", "access",
+	private static final String[] hiddenCommandList = new String[] { "whoami", "access", "pwd",
 			"cdir", "commandlist", "gfilecomplete", "cdirtiled" };
 
 	private UIPrintWriter out = null;
