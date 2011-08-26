@@ -42,8 +42,7 @@ public class Xrootd extends Protocol {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class
-			.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
 
 	/**
 	 * package protected
@@ -58,8 +57,7 @@ public class Xrootd extends Protocol {
 	private static final long serialVersionUID = -7442913364052285097L;
 
 	/**
-	 * @param level
-	 *            xrdcp debug level
+	 * @param level xrdcp debug level
 	 */
 	public void setDebugLevel(final int level) {
 		xrdcpdebuglevel = level;
@@ -122,10 +120,8 @@ public class Xrootd extends Protocol {
 
 	@Override
 	public boolean delete(final PFN pfn) throws IOException {
-		if (pfn == null || pfn.ticket == null
-				|| pfn.ticket.type != AccessType.DELETE) {
-			throw new IOException(
-					"You didn't get the rights to delete this PFN");
+		if (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE) {
+			throw new IOException("You didn't get the rights to delete this PFN");
 		}
 
 		try {
@@ -169,7 +165,8 @@ public class Xrootd extends Protocol {
 				}
 
 				command.add(transactionURL);
-			} else {
+			}
+			else {
 				final Matcher m = XrootDEnvelope.PFN_EXTRACT.matcher(pfn.pfn);
 
 				if (!m.matches()) {
@@ -187,8 +184,7 @@ public class Xrootd extends Protocol {
 
 			// System.err.println(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					command);
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -200,11 +196,12 @@ public class Xrootd extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
-			} catch (final InterruptedException ie) {
-				throw new IOException(
-						"Interrupted while waiting for the following command to finish : "
-								+ command.toString());
-			} finally {
+			}
+			catch (final InterruptedException ie) {
+				throw new IOException("Interrupted while waiting for the following command to finish : "
+					+ command.toString());
+			}
+			finally {
 				if (fAuthz != null)
 					fAuthz.delete();
 			}
@@ -212,16 +209,17 @@ public class Xrootd extends Protocol {
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				System.err.println("xrdrm error\n" + exitStatus.getStdOut());
 
-				throw new IOException("Exit code "
-						+ exitStatus.getExtProcExitStatus());
+				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
 			}
 
 			// System.err.println(exitStatus.getStdOut());
 
 			return true;
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("delete aborted because " + t);
@@ -231,7 +229,6 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN,
 	 * alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
@@ -241,9 +238,8 @@ public class Xrootd extends Protocol {
 
 		if (localFile != null) {
 			if (localFile.exists())
-				throw new IOException("Local file "
-						+ localFile.getCanonicalPath()
-						+ " exists already. Xrdcp would fail.");
+				throw new IOException("Local file " + localFile.getCanonicalPath()
+					+ " exists already. Xrdcp would fail.");
 			target = localFile;
 		}
 
@@ -251,14 +247,12 @@ public class Xrootd extends Protocol {
 			target = File.createTempFile("xrootd-get", null);
 
 			if (!target.delete())
-				logger.log(Level.WARNING,
-						"Could not delete the just created temporary file: "
-								+ target);
+				logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
 		}
 
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ) {
 			throw new IOException("The envelope for PFN " + pfn.toString()
-					+ " could not be found or is not a READ one.");
+				+ " could not be found or is not a READ one.");
 		}
 
 		try {
@@ -278,16 +272,12 @@ public class Xrootd extends Protocol {
 
 			if (pfn.ticket.envelope != null) {
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OS&authz="
-							+ pfn.ticket.envelope.getEncryptedEnvelope());
+					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					command);
-			
-			System.out.println("calling: " + command);
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -304,47 +294,41 @@ public class Xrootd extends Protocol {
 					exitStatus = p.waitFor();
 				else
 					throw new IOException("Cannot start the process");
-			} catch (final InterruptedException ie) {
-				throw new IOException(
-						"Interrupted while waiting for the following command to finish : "
-								+ command.toString());
+			}
+			catch (final InterruptedException ie) {
+				throw new IOException("Interrupted while waiting for the following command to finish : "
+					+ command.toString());
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
 				logger.log(Level.WARNING,
-						"GET failed with " + exitStatus.getStdOut()
-								+ "\nCommand: " + command.toString());
+					"GET failed with " + exitStatus.getStdOut() + "\nCommand: " + command.toString());
 
 				if (sMessage != null) {
-					sMessage = "xrdcpapmon exited with "
-							+ exitStatus.getExtProcExitStatus() + ": "
-							+ sMessage;
-				} else {
-					sMessage = "Exit code was "
-							+ exitStatus.getExtProcExitStatus()
-							+ " for command : " + command.toString();
+					sMessage = "xrdcpapmon exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				}
+				else {
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : "
+						+ command.toString();
 				}
 
 				throw new IOException(sMessage);
 			}
 
 			if (!checkDownloadedFile(target, pfn))
-				throw new IOException(
-						"Local file doesn't match catalogue details");
-		} catch (final IOException ioe) {
+				throw new IOException("Local file doesn't match catalogue details");
+		}
+		catch (final IOException ioe) {
 			if (!target.delete())
-				logger.log(Level.WARNING,
-						"Could not delete temporary file on IO exception: "
-								+ target);
+				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			if (!target.delete())
-				logger.log(Level.WARNING,
-						"Could not delete temporary file on throwable: "
-								+ target);
+				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
@@ -356,14 +340,12 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN,
 	 * alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
 	 */
 	@Override
 	public String put(final PFN pfn, final File localFile) throws IOException {
-		if (localFile == null || !localFile.exists() || !localFile.isFile()
-				|| !localFile.canRead())
+		if (localFile == null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
 			throw new IOException("Local file " + localFile + " cannot be read");
 
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE) {
@@ -371,8 +353,7 @@ public class Xrootd extends Protocol {
 		}
 
 		if (localFile.length() != pfn.getGuid().size) {
-			throw new IOException("Difference in sizes: local="
-					+ localFile.length() + " / pfn=" + pfn.getGuid().size);
+			throw new IOException("Difference in sizes: local=" + localFile.length() + " / pfn=" + pfn.getGuid().size);
 		}
 
 		try {
@@ -396,16 +377,14 @@ public class Xrootd extends Protocol {
 
 			if (pfn.ticket.envelope != null) {
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OD&authz="
-							+ pfn.ticket.envelope.getEncryptedEnvelope());
+					command.add("-OD&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null) {
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 
 				}
 			}
-			
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					command);
+
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -417,26 +396,23 @@ public class Xrootd extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
-			} catch (final InterruptedException ie) {
-				throw new IOException(
-						"Interrupted while waiting for the following command to finish : "
-								+ command.toString());
+			}
+			catch (final InterruptedException ie) {
+				throw new IOException("Interrupted while waiting for the following command to finish : "
+					+ command.toString());
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
-				logger.log(Level.WARNING,
-						"PUT failed with " + exitStatus.getStdOut());
+				logger.log(Level.WARNING, "PUT failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null) {
-					sMessage = "xrdcpapmon exited with "
-							+ exitStatus.getExtProcExitStatus() + ": "
-							+ sMessage;
-				} else {
-					sMessage = "Exit code was "
-							+ exitStatus.getExtProcExitStatus()
-							+ " for command : " + command.toString();
+					sMessage = "xrdcpapmon exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				}
+				else {
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : "
+						+ command.toString();
 				}
 
 				throw new IOException(sMessage);
@@ -446,9 +422,11 @@ public class Xrootd extends Protocol {
 				return xrdstat(pfn, false);
 
 			return xrdstat(pfn, true);
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("Get aborted because " + t);
@@ -485,11 +463,10 @@ public class Xrootd extends Protocol {
 	 * @param returnEnvelope
 	 * @return the signed envelope from the storage, if it knows how to generate
 	 *         one
-	 * @throws IOException
-	 *             if the remote file properties are not what is expected
+	 * @throws IOException if the remote file properties are not what is
+	 *             expected
 	 */
-	public String xrdstat(final PFN pfn, final boolean returnEnvelope)
-			throws IOException {
+	public String xrdstat(final PFN pfn, final boolean returnEnvelope) throws IOException {
 		return xrdstat(pfn, returnEnvelope, true, false);
 	}
 
@@ -500,51 +477,57 @@ public class Xrootd extends Protocol {
 	 * @param pfn
 	 * @param returnEnvelope
 	 * @param retryWithDelay
-	 * @param forceRecalcMd5 
+	 * @param forceRecalcMd5
 	 * @return the signed envelope from the storage, if it knows how to generate
 	 *         one
-	 * @throws IOException
-	 *             if the remote file properties are not what is expected
+	 * @throws IOException if the remote file properties are not what is
+	 *             expected
 	 */
-	public String xrdstat(final PFN pfn, final boolean returnEnvelope,
-			final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
+	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay,
+		final boolean forceRecalcMd5) throws IOException {
 
 		for (int statRetryCounter = 0; statRetryCounter < statRetryTimes.length; statRetryCounter++) {
 			try {
 				final List<String> command = new LinkedList<String>();
 
-
 				if (returnEnvelope) {
-					// e.g. xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
-					// TODO: 
-					// clean the following up, it's working but not very good looking 
+					// e.g. xrd pcaliense01:1095 query 32
+					// /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+					// TODO:
+					// clean the following up, it's working but not very good
+					// looking
 					command.add("xrd");
 					String qProt = pfn.getPFN().substring(7);
-					String host = qProt.substring(0,qProt.indexOf(':'));
-					String port = qProt.substring(qProt.indexOf(':')+1,qProt.indexOf('/'));	
-					try{
+					String host = qProt.substring(0, qProt.indexOf(':'));
+					String port = qProt.substring(qProt.indexOf(':') + 1, qProt.indexOf('/'));
+					
+					try {
 						int pno = Integer.parseInt(port);
 						pno++;
 						port = "" + pno;
-					} catch(NumberFormatException n) {}
+					}
+					catch (NumberFormatException n) {
+						// port was not a number, keeping the default port
+					}
+					
 					command.add(host + ":" + port);
 					command.add("query");
 					command.add("32");
-					String qpfn = qProt.substring(qProt.indexOf('/')+1) + "?getrespenv=1";
+					String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
 
 					if (forceRecalcMd5)
 						qpfn += "\\&recomputemd5=1";
 					command.add(qpfn);
-					
-				} else {
+
+				}
+				else {
 					command.add("xrdstat");
 					command.addAll(getCommonArguments());
 					command.add(pfn.getPFN());
 
 				}
 
-				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-						command);
+				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 				pBuilder.returnOutputOnExit(true);
 
@@ -556,49 +539,46 @@ public class Xrootd extends Protocol {
 
 				try {
 					exitStatus = pBuilder.start().waitFor();
-				} catch (final InterruptedException ie) {
-					throw new IOException(
-							"Interrupted while waiting for the following command to finish : "
-									+ command.toString());
+				}
+				catch (final InterruptedException ie) {
+					throw new IOException("Interrupted while waiting for the following command to finish : "
+						+ command.toString());
 				}
 
 				final int sleep = statRetryTimes[statRetryCounter];
 
 				if (exitStatus.getExtProcExitStatus() != 0) {
 					if (sleep == 0 || !retryWithDelay) {
-						throw new IOException("Exit code was "
-								+ exitStatus.getExtProcExitStatus()
-								+ ", output was " + exitStatus.getStdOut()
-								+ ", " + "for command : " + command.toString());
+						throw new IOException("Exit code was " + exitStatus.getExtProcExitStatus() + ", output was "
+							+ exitStatus.getStdOut() + ", " + "for command : " + command.toString());
 					}
 
 					Thread.sleep(sleep * 1000);
 					continue;
 				}
 
-				if (returnEnvelope) 
+				if (returnEnvelope)
 					return exitStatus.getStdOut();
-				else {
-					long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 
-					if (pfn.getGuid().size == filesize)
-						return exitStatus.getStdOut();
-				}
+				final long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
+
+				if (pfn.getGuid().size == filesize)
+					return exitStatus.getStdOut();
 
 				if (sleep == 0 || !retryWithDelay)
-					throw new IOException(
-							"The xrdstat could not confirm the upload.");
+					throw new IOException("The xrdstat could not confirm the upload.");
 
 				Thread.sleep(sleep * 1000);
 				continue;
 
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				throw ioe;
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				logger.log(Level.WARNING, "Caught exception", t);
 
-				final IOException ioe = new IOException(
-						"xrdstat internal failure " + t);
+				final IOException ioe = new IOException("xrdstat internal failure " + t);
 
 				ioe.setStackTrace(t.getStackTrace());
 
@@ -611,22 +591,20 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
 	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
 	 * alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
-	public String transfer(final PFN source, final PFN target)
-			throws IOException {
+	public String transfer(final PFN source, final PFN target) throws IOException {
 		final File temp = get(source, null);
 
 		try {
 			return put(target, temp);
-		} finally {
+		}
+		finally {
 			if (!temp.delete()) {
-				logger.log(Level.WARNING, "Could not delete temporary file : "
-						+ temp);
+				logger.log(Level.WARNING, "Could not delete temporary file : " + temp);
 			}
 		}
 	}
@@ -650,7 +628,8 @@ public class Xrootd extends Protocol {
 				}
 			}
 
-		} catch (IOException e) {
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
 		return size;
@@ -658,7 +637,6 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
