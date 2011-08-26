@@ -304,7 +304,7 @@ public class Transfer implements Serializable, Runnable {
 				storageReplyEnvelope = p.transfer(source, target);
 				
 				exitCode = OK;
-				failureReason = null;
+				failureReason = "OK: "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+")";
 				
 				targetPFN = target.pfn;
 				
@@ -322,7 +322,9 @@ public class Transfer implements Serializable, Runnable {
 		}
 		
 		exitCode = FAILED_SYSTEM;
-		failureReason = "None of the protocols supported transferring";
+		
+		if (failureReason==null)
+			failureReason = "None of the protocols managed to perform the transfer";
 	}
 	
 	/**
