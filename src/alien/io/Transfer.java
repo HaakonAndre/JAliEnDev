@@ -199,6 +199,9 @@ public class Transfer implements Serializable, Runnable {
 	
 	private void doWork(){
 		for (final PFN source: sources){
+			if (referenceGUID==null)
+				referenceGUID = source.getGuid();
+			
 			doWork(source);
 			
 			if (exitCode == OK)
@@ -277,10 +280,7 @@ public class Transfer implements Serializable, Runnable {
 					failureReason = null;
 					
 					targetPFN = target.pfn;
-					
-					if (!temp.delete())
-						logger.log(Level.WARNING, "Could not delete temporary file after successful transfer "+transferId+" : "+temp);
-					
+										
 					return;
 				}
 				catch (UnsupportedOperationException uoe){
@@ -290,10 +290,11 @@ public class Transfer implements Serializable, Runnable {
 					exitCode = FAILED_TARGET;
 					failureReason = ioe.getMessage();
 				}
+				finally{
+					if (!temp.delete())
+						logger.log(Level.WARNING, "Could not delete temporary file "+temp);
+				}
 			}
-			
-			if (!temp.delete())
-				logger.log(Level.WARNING, "Could not remove temporary file "+temp);
 			
 			return;
 		}
@@ -315,6 +316,8 @@ public class Transfer implements Serializable, Runnable {
 			catch (final IOException e){
 				exitCode = FAILED_TARGET;
 				failureReason = e.getMessage();
+				
+				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with "+failureReason);
 			}
 		}
 		
