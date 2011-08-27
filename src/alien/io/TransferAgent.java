@@ -80,6 +80,8 @@ public class TransferAgent extends Thread {
 		
 		final int workers = config.geti("alien.io.TransferAgent.workers", 5);
 		
+		logger.log(Level.INFO, "Starting "+workers+" workers");
+		
 		final List<TransferAgent> agents = new ArrayList<TransferAgent>(workers);
 		
 		for (int i=0; i<workers; i++){
