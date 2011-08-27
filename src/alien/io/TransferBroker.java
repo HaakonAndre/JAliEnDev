@@ -113,7 +113,7 @@ public class TransferBroker {
 		final DBConnection dbc = db.getConnection();
 		
 		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write;");
-		executeQuery(dbc, "select transferId,lfn,destination from TRANSFERS_DIRECT where status='WAITING' order by transferId asc limit 1;");
+		executeQuery(dbc, "select transferId,lfn,destination from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and current_transfers<max_transfers order by transferId asc limit 1;");
 	
 		int transferId = -1;
 		String sLFN = null;
@@ -132,6 +132,7 @@ public class TransferBroker {
 			}
 
 			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId="+transferId+";");
+			executeQuery(dbc, "update PROTOCOLS set current_transfers=current_transfers+1 WHERE sename='"+Format.escSQL(targetSE)+"'");
 		}
 		catch (Exception e){
 			// ignore
