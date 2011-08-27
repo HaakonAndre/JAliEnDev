@@ -104,7 +104,7 @@ public class TransferBroker {
 	/**
 	 * @return the next transfer to be performed, or <code>null</code> if there is nothing to do
 	 */
-	public Transfer getWork(){
+	public synchronized Transfer getWork(){
 		final DBFunctions db = ConfigUtils.getDB("transfers");
 		
 		if (db==null)
