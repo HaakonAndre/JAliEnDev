@@ -129,8 +129,13 @@ public class TransferBroker {
 				sLFN = resultSet.getString(2);
 				targetSE = resultSet.getString(3);
 			}
+			else{
+				logger.log(Level.INFO, "There is no waiting transfer in the queue");
+				return null;
+			}
 			
-			if (transferId<0){
+			if (transferId<0 || sLFN==null || sLFN.length()==0 || targetSE==null || targetSE.length()==0){
+				logger.log(Level.INFO, "Transfer details are wrong");
 				return null;
 			}
 
@@ -138,6 +143,7 @@ public class TransferBroker {
 			executeQuery(dbc, "update PROTOCOLS set current_transfers=current_transfers+1 WHERE sename='"+Format.escSQL(targetSE)+"'");
 		}
 		catch (Exception e){
+			logger.log(Level.WARNING, "Exception fetching data from the query", e);
 			// ignore
 		}
 		finally{
