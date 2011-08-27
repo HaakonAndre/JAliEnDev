@@ -98,7 +98,7 @@ public class TransferBroker {
 			}
 		}
 		catch (SQLException e){
-			// ignore
+			logger.log(Level.WARNING, "Exception executing the query", e);
 		}
 	}
 	
