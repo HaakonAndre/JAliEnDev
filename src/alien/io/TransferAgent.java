@@ -22,11 +22,18 @@ public class TransferAgent extends Thread {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(TransferAgent.class.getCanonicalName());
 	
+	private final int transferAgentID;
+	
 	/**
 	 * 
 	 */
-	public TransferAgent() {
-		super("TransferAgent");
+	/**
+	 * @param transferAgentID unique identifier
+	 */
+	public TransferAgent(final int transferAgentID) {
+		super("TransferAgent "+transferAgentID);
+		
+		this.transferAgentID = transferAgentID;
 		
 		setDaemon(false);
 	}
@@ -58,6 +65,8 @@ public class TransferAgent extends Thread {
 			}
 			else{
 				try{
+					logger.log(Level.INFO, "Agent "+transferAgentID+" : no work for me");
+					
 					Thread.sleep(1000*30);	// try in 30 seconds again to see if there is anything for it to do
 				}
 				catch (InterruptedException ie){
@@ -85,7 +94,7 @@ public class TransferAgent extends Thread {
 		final List<TransferAgent> agents = new ArrayList<TransferAgent>(workers);
 		
 		for (int i=0; i<workers; i++){
-			final TransferAgent ta = new TransferAgent();
+			final TransferAgent ta = new TransferAgent(i);
 			
 			ta.start();
 			

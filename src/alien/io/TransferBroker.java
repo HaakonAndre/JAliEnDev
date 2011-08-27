@@ -10,6 +10,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -107,8 +108,11 @@ public class TransferBroker {
 	public synchronized Transfer getWork(){
 		final DBFunctions db = ConfigUtils.getDB("transfers");
 		
-		if (db==null)
+		if (db==null){
+			logger.log(Level.WARNING, "Could not connect to the transfers database");
+			
 			return null;
+		}
 		
 		final DBConnection dbc = db.getConnection();
 		
@@ -127,7 +131,6 @@ public class TransferBroker {
 			}
 			
 			if (transferId<0){
-				executeClose();
 				return null;
 			}
 
@@ -147,11 +150,13 @@ public class TransferBroker {
 		final LFN lfn = LFNUtils.getLFN(sLFN);
 		
 		if (!lfn.exists){
+			logger.log(Level.WARNING, "LFN '"+sLFN+"' doesn't exist in the catalogue for transfer ID "+transferId);
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "LFN doesn't exist in the catalogue");
 			return null;
 		}
 		
 		if (lfn.guid==null){
+			logger.log(Level.WARNING, "GUID '"+lfn.guid+"' is null for transfer ID "+transferId+", lfn '"+sLFN+"'");
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID is null for this LFN");
 			return null;
 		}
@@ -159,6 +164,7 @@ public class TransferBroker {
 		final GUID guid = GUIDUtils.getGUID(lfn.guid);
 		
 		if (guid==null){
+			logger.log(Level.WARNING, "GUID '"+lfn.guid+"' doesn't exist in the catalogue for transfer ID "+transferId+", lfn '"+sLFN+"'");
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID was not found in the database");
 			return null;
 		}
@@ -166,6 +172,7 @@ public class TransferBroker {
 		final SE se = SEUtils.getSE(targetSE);
 		
 		if (se==null){
+			logger.log(Level.WARNING, "Target SE '"+targetSE+"' doesn't exist for transfer ID "+transferId);
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target SE doesn't exist");
 			return null;
 		}
@@ -173,12 +180,14 @@ public class TransferBroker {
 		final Set<PFN> pfns = lfn.whereisReal();
 		
 		if (pfns==null || pfns.size()==0){
+			logger.log(Level.WARNING, "No existing replicas to mirror for transfer ID "+transferId);
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "No replicas to mirror");
 			return null;
 		}
 		
 		for (final PFN pfn: pfns){
 			if (pfn.seNumber == se.seNumber){
+				logger.log(Level.WARNING, "There already exists a replica of '"+sLFN+"' on '"+targetSE+"' for transfer ID "+transferId);
 				markTransfer(transferId, Transfer.FAILED_SYSTEM, "There is already a replica on this storage");
 				return null;
 			}
@@ -195,6 +204,7 @@ public class TransferBroker {
 			final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
 		
 			if (reason!=null){
+				logger.log(Level.WARNING, "Could not obtain source authorization for transfer ID "+transferId+" : "+reason);
 				markTransfer(transferId, Transfer.FAILED_SYSTEM, "Source authorization failed: "+reason);
 				return null;
 			}
@@ -207,6 +217,7 @@ public class TransferBroker {
 		}
 		catch (IOException ioe){
 			final String reason = ioe.getMessage();
+			logger.log(Level.WARNING, "Could not obtain target authorization for transfer ID "+transferId+" : "+reason);
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target authorization failed: "+reason);
 			return null;
 		}
