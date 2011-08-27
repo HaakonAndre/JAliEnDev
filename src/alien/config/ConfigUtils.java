@@ -57,6 +57,8 @@ public class ConfigUtils {
 			sConfigFolder = System.getProperty("AliEnConfig", "config");
 
 			final File f = new File(sConfigFolder);
+			
+			System.err.println("Config folder: "+f.getCanonicalPath());
 
 			if (f.exists() && f.isDirectory() && f.canRead()) {
 				final File[] list = f.listFiles();
@@ -66,6 +68,8 @@ public class ConfigUtils {
 						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
 							String sName = sub.getName();
 							sName = sName.substring(0, sName.lastIndexOf('.'));
+							
+							System.err.println("Found configuration file: "+sName);
 
 							final ExtProperties prop = new ExtProperties(sConfigFolder, sName);
 							prop.makeReadOnly();
