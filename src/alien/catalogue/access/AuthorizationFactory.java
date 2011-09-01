@@ -115,6 +115,62 @@ public final class AuthorizationFactory {
 	public static final AliEnPrincipal getDefaultUser() {
 		return defaultAccount;
 	}
+	
+	/**
+	 * Request access to all PFNs of this GUID, in the name of the default identity of this JVM
+	 * 
+	 * @param guid
+	 * @param access
+	 * @return the failure reason, if any, or <code>null</code> if the access was granted
+	 */
+	public static String fillAccess(final GUID guid, final AccessType access){
+		if (defaultAccount == null)
+			return "There is no default account set";
+		
+		return fillAccess(defaultAccount, guid, access);
+	}
+	
+	/**
+	 * Request access to all PFNs of this GUID
+	 * 
+	 * @param user
+	 * @param guid
+	 * @param access
+	 * @return the failure reason, if any, or <code>null</code> if the access was granted
+	 */
+	public static String fillAccess(final AliEnPrincipal user, final GUID guid, final AccessType access){
+		final Set<PFN> pfns = guid.getPFNs();
+		
+		if (pfns==null || pfns.size()==0)
+			return null;
+		
+		String reason = null;
+		
+		for (final PFN pfn: pfns){
+			final Set<PFN> realPfns = pfn.getRealPFNs();
+			
+			if (realPfns==null || realPfns.size()==0){
+				System.err.println("No real pfns for "+pfn.pfn);
+				continue;
+			}
+	
+			for (final PFN realPfn: realPfns){
+				// request access to this file
+				reason = AuthorizationFactory.fillAccess(user, realPfn, access);
+			
+				if (reason!=null){
+					System.err.println("Cannot grant access to "+realPfn.pfn+" : "+reason);
+					
+					// we don't have access to this file
+					continue;
+				}
+
+//				System.err.println("Granted access to "+realPfn.pfn);
+			}
+		}
+		
+		return reason;
+	}
 
 	/**
 	 * Request access to this GUID, with the priviledges of the default account

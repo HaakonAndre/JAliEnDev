@@ -8,12 +8,18 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lazyj.Utils;
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
+import alien.config.ConfigUtils;
 import alien.io.protocols.Protocol;
 
 /**
@@ -22,6 +28,11 @@ import alien.io.protocols.Protocol;
  * @author costing
  */
 public class IOUtils {
+	
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(IOUtils.class.getCanonicalName());
 
 	/**
 	 * @param f
@@ -78,34 +89,42 @@ public class IOUtils {
 	 * @return the temporary file name. You should handle the deletion of this temporary file!
 	 */
 	public static File get(final GUID guid){
+		return get(guid, null);
+	}
+	
+	/**
+	 * Download the file in a specified location
+	 * 
+	 * @param guid
+	 * @param localFile path where the file should be downloaded. Can be <code>null</code> in which case a temporary location will be used
+	 * @return the downloaded file, or <code>null</code> if the file could not be retrieved
+	 */
+	public static File get(final GUID guid, final File localFile){
 		final Set<PFN> pfns = guid.getPFNs();
 		
 		if (pfns==null || pfns.size()==0)
 			return null;
 		
 		for (final PFN pfn: pfns){
-			Set<PFN> realPfns = pfn.getRealPFNs();
+			final Set<PFN> realPfns = pfn.getRealPFNs();
 			
 			if (realPfns==null || realPfns.size()==0)
 				continue;
 			
 			for (final PFN realPfn: realPfns){
+				if (realPfn.ticket==null){
+					System.err.println("Missing ticket for "+realPfn.pfn);
+					continue;	// no access to this guy
+				}
+				
 				final List<Protocol> protocols = Transfer.getAccessProtocols(realPfn);
 			
 				if (protocols==null || protocols.size()==0)
 					continue;
 			
-				// request access to this file
-				final String reason = AuthorizationFactory.fillAccess(pfn, AccessType.READ);
-			
-				if (reason!=null){
-					// we don't have access to this file
-					continue;
-				}
-			
 				for (final Protocol protocol: protocols){
 					try{
-						final File f = protocol.get(pfn, null);
+						final File f = protocol.get(pfn, localFile);
 					
 						return f;
 					}
@@ -124,6 +143,11 @@ public class IOUtils {
 	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
 	 */
 	public static String getContents(final GUID guid) {
+		final String reason = AuthorizationFactory.fillAccess(guid, AccessType.READ);
+		
+		if (reason!=null)
+			return null;
+		
 		final File f = get(guid);
 		
 		if (f!=null){
@@ -134,11 +158,31 @@ public class IOUtils {
 				// ignore, shouldn't be ...
 			}
 			finally{
-				f.delete();
+				if (f.exists() && !f.delete())
+					logger.log(Level.WARNING, "Could not delete temporary download file "+f.getAbsolutePath());
 			}
 		}
 		
 		return null;
+	}
+	
+	/**
+	 * @param lfn
+	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
+	 */
+	public static String getContents(final LFN lfn){
+		if (lfn==null)
+			return null;
+		
+		return getContents(GUIDUtils.getGUID(lfn.guid));
+	}
+	
+	/**
+	 * @param lfn
+	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
+	 */
+	public static String getContents(final String lfn){
+		return getContents(LFNUtils.getLFN(lfn));
 	}
 	
 }
