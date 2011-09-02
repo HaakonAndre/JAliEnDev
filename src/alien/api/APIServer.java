@@ -42,13 +42,19 @@ public class APIServer extends Thread {
 	final String password;
 
 	/**
+	 * Debug level received from the user
+	 * */
+	final int iDebugLevel;
+	
+	/**
 	 * Start the server on a given port
 	 * 
 	 * @param listeningPort
 	 * @throws IOException
 	 */
-	private APIServer(final int listeningPort) throws IOException {
+	private APIServer(final int listeningPort, int iDebug) throws Exception {
 		this.port = listeningPort;
+		this.iDebugLevel = iDebug;
 
 		InetAddress localhost = InetAddress.getByName("127.0.0.1");
 
@@ -58,6 +64,12 @@ public class APIServer extends Thread {
 
 		password = UUID.randomUUID().toString();
 
+		//should check if the file was written and if not then exit.
+		if (!writeTokenFile(listeningPort, password, "agrigora", this.iDebugLevel)){ //user should ben taken from certificate, debug level from command line
+			throw new Exception("Could not write the token file! No application can connect to the APIServer");
+			
+		}
+		
 		final File fHome = new File(System.getProperty("user.home"));
 
 		final File f = new File(fHome, ".alien");
@@ -78,12 +90,16 @@ public class APIServer extends Thread {
 			throw e;
 		}
 		
-		writeTokenFile(listeningPort, password, "agrigora", 2); //user should ben taken from certificate, debug level from command line
+		
 	}
 
 	/**
 	 * write the configuration file that is used by the gapi <br />
 	 * the filename = /tmp/jclient_token_$uid
+	 * @param iPort port number for listening
+	 * @param sPassword the password used by other application to connect to the APIServer
+	 * @param sUser the user from the certificate
+	 * @param iDebugLevel the debug level received from the command line
 	 * @return true if the file was written, false if not
 	 */
 	private boolean writeTokenFile(int iPort, String sPassword, String sUser, int iDebugLevel){
@@ -217,20 +233,20 @@ public class APIServer extends Thread {
 	/**
 	 * Start once the UIServer
 	 */
-	private static synchronized void startAPIServer() {
+	private static synchronized void startAPIServer(int iDebugLevel) {
 		if (server != null)
 			return;
 
 		for (int port = 10100; port < 10200; port++) {
 			try {
-				server = new APIServer(port);
+				server = new APIServer(port, iDebugLevel);
 				server.start();
 
 				logger.log(Level.INFO, "UIServer listening on port " + port);
 				System.err.println("Listening on " + port);
 
 				break;
-			} catch (IOException ioe) {
+			} catch (Exception ioe) {
 				System.err.println(ioe);
 				ioe.printStackTrace();
 				logger.log(Level.FINE, "Could not listen on port " + port, ioe);
@@ -242,10 +258,10 @@ public class APIServer extends Thread {
 	 * 
 	 * Load necessary keys and start APIServer
 	 */
-	public static void startAPIService() {
+	public static void startAPIService(int iDebugLevel) {
 		try {
 			JAKeyStore.loadClientKeyStorage();
-			APIServer.startAPIServer();
+			APIServer.startAPIServer(iDebugLevel);
 		} catch (org.bouncycastle.openssl.EncryptionException e) {
 			System.err.println("Wrong password!");
 		} catch (javax.crypto.BadPaddingException e) {
