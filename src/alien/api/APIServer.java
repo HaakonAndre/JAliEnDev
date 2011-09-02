@@ -77,8 +77,54 @@ public class APIServer extends Thread {
 
 			throw e;
 		}
+		
+		writeTokenFile(listeningPort, password, "agrigora", 2); //user should ben taken from certificate, debug level from command line
 	}
 
+	/**
+	 * write the configuration file that is used by the gapi <br />
+	 * the filename = /tmp/jclient_token_$uid
+	 * @return true if the file was written, false if not
+	 */
+	private boolean writeTokenFile(int iPort, String sPassword, String sUser, int iDebugLevel){
+		String sUserId = System.getProperty("userid");
+		
+		if(sUserId == null || sUserId.length() == 0){
+			logger.severe("User Id empty! Could not get the token file name");
+			return false;
+		}
+		
+		try {
+			int iUserId = Integer.parseInt(sUserId);
+			
+			String sFileName = "/tmp/jclient_token_"+iUserId;
+			
+			try {
+				FileWriter fw = new FileWriter(sFileName);
+				
+				fw.write("Host = 127.0.0.1\n");
+				fw.write("Port = "+iPort+"\n");
+				fw.write("User = "+sUser+"\n");
+				fw.write("Passwd = "+sPassword+"\n");
+				fw.write("Debug = "+iDebugLevel+"\n");
+				
+				fw.flush();
+				fw.close();
+				
+				return true;
+				
+			} catch (Exception e1) {
+				logger.severe("Could not open file "+sFileName+ " to write");
+				e1.printStackTrace();
+				return false;
+			}
+		} catch (Exception e) {
+			logger.severe("Could not get user id! No token file name ");
+			e.printStackTrace();
+			return false;
+		}
+	}
+	
 	/**
 	 * One UI connection
 	 * 
