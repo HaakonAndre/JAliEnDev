@@ -11,4 +11,4 @@ done
 
 export CLASSPATH
 
-java "$@"
+java -Duserid=$(id -u) "$@"
