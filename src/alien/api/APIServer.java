@@ -14,9 +14,11 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 
 /**
@@ -65,7 +67,7 @@ public class APIServer extends Thread {
 		password = UUID.randomUUID().toString();
 
 		//should check if the file was written and if not then exit.
-		if (!writeTokenFile(listeningPort, password, "agrigora", this.iDebugLevel)){ //user should ben taken from certificate, debug level from command line
+		if (!writeTokenFile(listeningPort, password, "agrigora", this.iDebugLevel)){ //user should be taken from certificate
 			throw new Exception("Could not write the token file! No application can connect to the APIServer");
 			
 		}
@@ -99,10 +101,10 @@ public class APIServer extends Thread {
 	 * @param iPort port number for listening
 	 * @param sPassword the password used by other application to connect to the APIServer
 	 * @param sUser the user from the certificate
-	 * @param iDebugLevel the debug level received from the command line
+	 * @param iDebug the debug level received from the command line
 	 * @return true if the file was written, false if not
 	 */
-	private boolean writeTokenFile(int iPort, String sPassword, String sUser, int iDebugLevel){
+	private boolean writeTokenFile(int iPort, String sPassword, String sUser, int iDebug){
 		String sUserId = System.getProperty("userid");
 		
 		if(sUserId == null || sUserId.length() == 0){
@@ -119,10 +121,21 @@ public class APIServer extends Thread {
 				FileWriter fw = new FileWriter(sFileName);
 				
 				fw.write("Host = 127.0.0.1\n");
+				logger.fine("Host = 127.0.0.1");
+				
 				fw.write("Port = "+iPort+"\n");
-				fw.write("User = "+sUser+"\n");
+				logger.fine("Port = "+iPort);
+				
+				AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
+	
+				fw.write("User = "+alUser.getName()+"\n");
+				logger.fine("User = "+alUser.getName());
+				
 				fw.write("Passwd = "+sPassword+"\n");
-				fw.write("Debug = "+iDebugLevel+"\n");
+				logger.fine("Passwd = "+sPassword);
+				
+				fw.write("Debug = "+iDebug+"\n");
+				logger.fine("Debug = "+iDebug);
 				
 				fw.flush();
 				fw.close();
@@ -135,7 +148,7 @@ public class APIServer extends Thread {
 				return false;
 			}
 		} catch (Exception e) {
-			logger.severe("Could not get user id! No token file name ");
+			logger.severe("Could not get user id! The token file could not be created ");
 			e.printStackTrace();
 			return false;
 		}
@@ -258,10 +271,10 @@ public class APIServer extends Thread {
 	 * 
 	 * Load necessary keys and start APIServer
 	 */
-	public static void startAPIService(int iDebugLevel) {
+	public static void startAPIService(int iDebug) {
 		try {
 			JAKeyStore.loadClientKeyStorage();
-			APIServer.startAPIServer(iDebugLevel);
+			APIServer.startAPIServer(iDebug);
 		} catch (org.bouncycastle.openssl.EncryptionException e) {
 			System.err.println("Wrong password!");
 		} catch (javax.crypto.BadPaddingException e) {
