@@ -46,12 +46,12 @@ public class XrootDEnvelopeSigner {
 
 	private static final String AuthenPrivLocation;
 	private static final String AuthenPubLocation;
-//	private static final String SEPrivLocation;
+	private static final String SEPrivLocation;
 	private static final String SEPubLocation;
 
 	private static final RSAPrivateKey AuthenPrivKey;
 	private static final RSAPublicKey AuthenPubKey;
-//	private static final RSAPrivateKey SEPrivKey;
+	private static final RSAPrivateKey SEPrivKey;
 	private static final RSAPublicKey SEPubKey;
 	
 	/**
@@ -70,12 +70,12 @@ public class XrootDEnvelopeSigner {
 		
 		AuthenPrivLocation = authenKeysLocation+"lpriv.pem";
 		AuthenPubLocation = authenKeysLocation+"lpub.pem";
-//		SEPrivLocation = seKeysLocation+"rpriv.pem";
+		SEPrivLocation = seKeysLocation+"rpriv.pem";
 		SEPubLocation = seKeysLocation+"rpub.pem";
 
 		RSAPrivateKey authenPrivKey = null;
 		RSAPublicKey  authenPubKey = null;
-//		RSAPrivateKey sePrivKey = null;
+		RSAPrivateKey sePrivKey = null;
 		RSAPublicKey  sePubKey = null;
 		
 		BufferedReader authenPriv = null;
@@ -109,28 +109,28 @@ public class XrootDEnvelopeSigner {
 				}
 		}
 		
-//		BufferedReader sePriv = null;
+		BufferedReader sePriv = null;
 		BufferedReader sePub  = null;
 		
 		try{
-//			sePriv = new BufferedReader(new FileReader(SEPrivLocation)); 
+			sePriv = new BufferedReader(new FileReader(SEPrivLocation)); 
 			sePub  = new BufferedReader(new FileReader(SEPubLocation));
 			
-//			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(sePriv).readObject()).getPrivate();
+			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(sePriv).readObject()).getPrivate();
 			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(sePub).readObject()).getPublicKey();
 		}
 		catch (IOException ioe){
 			logger.log(Level.WARNING, "SE keys could not be loaded from "+seKeysLocation);
 		}
 		finally{
-//			if (sePriv!=null){
-//				try {
-//					sePriv.close();
-//				}
-//				catch (IOException e) {
-//					// ignore
-//				}
-//			}
+			if (sePriv!=null){
+				try {
+					sePriv.close();
+				}
+				catch (IOException e) {
+					// ignore
+				}
+			}
 			if (sePub!=null){
 				try {
 					sePub.close();
@@ -143,7 +143,7 @@ public class XrootDEnvelopeSigner {
 		
 		AuthenPrivKey = authenPrivKey;
 		AuthenPubKey = authenPubKey;
-//		SEPrivKey = sePrivKey;
+		SEPrivKey = sePrivKey;
 		SEPubKey = sePubKey;
 	}
 	
@@ -270,13 +270,24 @@ public class XrootDEnvelopeSigner {
 	 */
 	public static void encryptEnvelope(final XrootDEnvelope envelope) throws GeneralSecurityException {
 		final EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey, false);
-
-		final String plainEnvelope = envelope.getUnEncryptedEnvelope(); 
 		
-		//System.err.println("Encrypting:\n"+plainEnvelope);
-		
-		envelope.setEncryptedEnvelope(authz.encrypt(plainEnvelope));
+		envelope.setEncryptedEnvelope(authz.encrypt(envelope.getUnEncryptedEnvelope()));
 	}
+	
+	
+	/**
+	 * @param envelope
+	 * @param size 
+	 * @param md5 
+	 * @return a loaded XrootDEnvelope with the verified values
+	 * @throws GeneralSecurityException
+	 */
+	public static XrootDEnvelope decryptEnvelope(final String envelope) throws GeneralSecurityException {
+		final EncryptedAuthzToken authz = new EncryptedAuthzToken(SEPrivKey, AuthenPubKey, true);
+		
+		return new XrootDEnvelope(authz.decrypt(envelope));
+	}
+	
 
 	/**
 	 * @param args

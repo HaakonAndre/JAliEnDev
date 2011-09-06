@@ -6,6 +6,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 
 import alien.api.Dispatcher;
+import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobSigner;
 import alien.taskQueue.JobSubmissionException;
@@ -57,18 +58,18 @@ public class TaskQueueApiUtils {
 	 * Submit a job
 	 * 
 	 * @param jdl
-	 * @param user 
+	 * @param user
 	 * @return
 	 * @throws JobSubmissionException
 	 */
-	public static int submitJob(String jdl, String user) throws JobSubmissionException {
+	public static int submitJob(String jdl, String user)
+			throws JobSubmissionException {
 
 		try {
-			
+			JDL ojdl = new JDL(jdl);
 			SubmitJob j;
-				j = new SubmitJob(JobSigner.signJob(
-						JAKeyStore.clientCert, "User.cert", JAKeyStore.pass,
-						user, jdl));
+			j = new SubmitJob(JobSigner.signJob(JAKeyStore.clientCert,
+					"User.cert", JAKeyStore.pass, user,ojdl, jdl));
 
 			Dispatcher.execute(j, true);
 			return j.getJobID();

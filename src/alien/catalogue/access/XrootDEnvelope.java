@@ -85,6 +85,91 @@ public class XrootDEnvelope implements Serializable {
 	}
 
 	/**
+	 * Create a encrypted envelope along verification only
+	 * 
+	 * @param envelope
+	 * @param eSize
+	 * @param eMd5
+	 */
+	public XrootDEnvelope(String envelope, int eSize, String eMd5) {
+
+		String spfn = "";
+		turl = "";
+		String lfn = "";
+		String guid = "";
+		String se = "";
+		int size = 0;
+		String md5 = "";
+
+		unEncryptedEnvelope = envelope;
+
+		
+
+		if (envelope.contains("<authz>")) {
+			envelope = envelope.substring(envelope.indexOf("<file>")+7,
+					envelope.indexOf("</file>")-2);
+
+			StringTokenizer st = new StringTokenizer(envelope, "\n");
+			
+			while (st.hasMoreTokens()) {
+				String tok = st.nextToken();
+				String key = tok.substring(tok.indexOf('<') + 1,
+						tok.indexOf('>'));
+				String value = tok.substring(tok.indexOf('>') + 1,
+						tok.lastIndexOf('<'));
+
+
+				System.out.println( key + " == " + value);
+
+				
+				if ("access".equals(key))
+					if (value.startsWith("write")) {
+						type = AccessType.WRITE;
+					} else if (value.equals("read")) {
+						type = AccessType.READ;
+					} else if (value.equals("delete")) {
+						type = AccessType.DELETE;
+					} else {
+						System.err.println("illegal access type!");
+					}
+				else if ("turl".equals(key))
+					turl = value;
+				else if ("pfn".equals(key))
+					spfn = value;
+				else if ("lfn".equals(key))
+					lfn = value;
+				else if ("guid".equals(key))
+					guid = value;
+				else if ("size".equals(key))
+					size = Integer.parseInt(value);
+				else if ("md5".equals(key))
+					md5 = value;
+				else if ("se".equals(key))
+					se = value;
+			}
+
+			GUID g = GUIDUtils.getGUID(UUID.fromString(guid), true);
+
+			g.md5 = md5;
+			g.size = size;
+			if (turl.endsWith(spfn))
+				spfn = turl;
+			else {
+				// turl has #archive
+				if (turl.contains("#"))
+					turl = turl.substring(0, turl.indexOf('#'));
+				// turl has LFN rewrite for dCache etc
+				if (turl.endsWith(lfn))
+					turl = turl.replace(lfn, spfn);
+			}
+			
+			this.pfn = new PFN(spfn, g, SEUtils.getSE(se));
+
+		} else
+			this.pfn = null;
+	}
+
+	/**
 	 * Create a signed only envelope in order to verify it
 	 * 
 	 * @param envelope
@@ -108,7 +193,7 @@ public class XrootDEnvelope implements Serializable {
 			if (idx >= 0) {
 				String key = tok.substring(0, idx);
 				String value = tok.substring(idx + 1);
-
+				
 				if ("access".equals(key))
 					if (value.startsWith("write")) {
 						type = AccessType.WRITE;
@@ -268,22 +353,22 @@ public class XrootDEnvelope implements Serializable {
 				turl = se.seioDaemons + "/"
 						+ lfns.iterator().next().getCanonicalName();
 			else
-			turl =  se.seioDaemons + "//NOLFN";
+				turl = se.seioDaemons + "//NOLFN";
 		} else {
 
 			final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
 
 			if (m.matches()) {
 				if (archiveAnchorLFN != null)
-					turl =  se.seioDaemons + "/" + m.group(4) + "#"
+					turl = se.seioDaemons + "/" + m.group(4) + "#"
 							+ archiveAnchorLFN.getFileName();
 				else
-					turl =  se.seioDaemons + "/" + m.group(4);
+					turl = se.seioDaemons + "/" + m.group(4);
 			}
 			if (archiveAnchorLFN != null)
-				turl =  pfn.pfn + "#" + archiveAnchorLFN.getFileName();
-			else 
-			turl =  pfn.pfn;
+				turl = pfn.pfn + "#" + archiveAnchorLFN.getFileName();
+			else
+				turl = pfn.pfn;
 		}
 	}
 
@@ -298,7 +383,7 @@ public class XrootDEnvelope implements Serializable {
 	 * set url envelope
 	 */
 	public void setUnsignedEnvelope() {
-		
+
 		setTransactionURL();
 
 		final GUID guid = pfn.getGuid();
