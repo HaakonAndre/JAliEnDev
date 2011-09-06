@@ -35,7 +35,7 @@ public class JAliEnCOMMander {
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit", "motd", "access", "pwd" };
+			"scrlog", "submit", "motd", "access", "commit", "pwd" };
 
 	/**
 	 * Commands to let UI talk internally with us here
@@ -86,7 +86,7 @@ public class JAliEnCOMMander {
 	/**
 	 * Current directory as the status
 	 */
-	protected LFN curDir = null;
+	protected LFN curDir = CatalogueApiUtils.getLFN(UsersHelper.getHomeDir(user.getName()));
 
 	/**
 	 * get list of commands
