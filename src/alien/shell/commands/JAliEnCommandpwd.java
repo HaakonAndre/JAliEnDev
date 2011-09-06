@@ -16,7 +16,7 @@ import alien.se.SEUtils;
 
 /**
  * @author ron
- * @since June 4, 2011
+ * @since August 26, 2011
  */
 public class JAliEnCommandpwd extends JAliEnBaseCommand {
 
@@ -24,7 +24,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	 * execute the pwd
 	 */
 	public void execute() {
-		out.printOutln(commander.curDir.getCanonicalName());
+		out.printErrln(commander.curDir.getCanonicalName());
 	}
 
 	/**
@@ -49,7 +49,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	public void silent() {
 		// ignore
 	}
-
+	
 
 	/**
 	 * Constructor needed for the command factory in commander
