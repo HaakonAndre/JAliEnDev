@@ -4,13 +4,13 @@ if [ "$1" == "login" ]; then
 
 
         cd $JALIEN_HOME
-        nohup ./run.sh alien.APIService
+        ./run.sh alien.APIService $@
 
 else 
 
 
 	cd $JALIEN_HOME
-	./run.sh alien.JAliEnSh
+	./run.sh alien.JAliEnSh $@
 
 
 fi
