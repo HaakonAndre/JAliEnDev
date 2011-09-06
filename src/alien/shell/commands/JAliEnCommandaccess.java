@@ -69,6 +69,11 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * access QoS count of replicas requested
 	 */
 	private int qosCount = 0;
+	
+	/**
+	 * access md5 requested
+	 */
+	private String md5 = "00000000000000000000000000000000";
 
 	/**
 	 * return pfns;
@@ -93,6 +98,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				out.printErrln("Not able to retrieve GUID from Catalogue [error in processing].");
 				return;
 			}
+			guid.size = size;
+			guid.md5 = md5;
 		} else {
 			lfn = CatalogueApiUtils.getLFN(lfnOrGIUD, evenIfNotExists);
 			if (lfn == null) {
@@ -100,8 +107,10 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				return;
 			}
 			if (lfn.guid == null) {
-				if ("".equals(requireguid))
+				if ("".equals(requireguid)){
 					guid = GUIDUtils.createGuid();
+					
+				}
 				else
 					guid = CatalogueApiUtils.getGUID(requireguid,
 							evenIfNotExists);
@@ -109,6 +118,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
 				guid.lfnCache.add(lfn);
 				guid.size = size;
+				guid.md5 = md5;
 			} else {
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
 			}
@@ -121,10 +131,11 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				qosCount=1;
 			}
 
-			if (lfn != null)
-				pfns = CatalogueApiUtils.getPFNsToWrite(commander.user, site,
-						lfn, ses, exxses, qosType, qosCount);
-			else if (guid != null)
+//			if (lfn != null)
+//				pfns = CatalogueApiUtils.getPFNsToWrite(commander.user, site,
+//						lfn, ses, exxses, qosType, qosCount);
+//			else
+				if (guid != null)
 				pfns = CatalogueApiUtils.getPFNsToWrite(commander.user, site,
 						guid, ses, exxses, qosType, qosCount);
 			else

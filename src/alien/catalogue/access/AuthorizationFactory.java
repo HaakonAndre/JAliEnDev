@@ -241,6 +241,8 @@ public final class AuthorizationFactory {
 		if (pfn.getPFN().startsWith("root://")) {
 			env = new XrootDEnvelope(access, pfn);
 
+			System.out.println("GRON: " + pfn.pfn + ", e: " + env.pfn.pfn);
+			
 			try {
 				final SE se = SEUtils.getSE(pfn.seNumber);
 				XrootDEnvelopeSigner.signEnvelope(env);

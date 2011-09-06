@@ -19,8 +19,8 @@ import alien.user.AliEnPrincipal;
  * @author costing
  * @since Nov 4, 2010
  */
-public class SE implements Serializable, Comparable<SE>{
-	
+public class SE implements Serializable, Comparable<SE> {
+
 	/**
 	 * 
 	 */
@@ -29,68 +29,70 @@ public class SE implements Serializable, Comparable<SE>{
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(SE.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(SE.class
+			.getCanonicalName());
 
 	/**
 	 * SE name
 	 */
 	public String seName;
-	
+
 	/**
 	 * SE number
 	 */
 	public int seNumber;
 
 	/**
-	 * SE version number, if < 219, then triggers encrypted xrootd envelope creation over boolean needsEncryptedEnvelope
+	 * SE version number, if < 219, then triggers encrypted xrootd envelope
+	 * creation over boolean needsEncryptedEnvelope
 	 */
 	public int seVersion;
-	
+
 	/**
 	 * QoS associated to this storage elements
 	 */
 	public Set<String> qos;
-	
+
 	/**
 	 * IO daemons
 	 */
 	public String seioDaemons;
-	
+
 	/**
 	 * SE storage path
 	 */
 	public String seStoragePath;
-	
+
 	/**
 	 * SE used space
 	 */
 	public long seUsedSpace;
-	
+
 	/**
 	 * Number of files
 	 */
 	public long seNumFiles;
-	
+
 	/**
 	 * Minimum size
 	 */
 	public long seMinSize;
-	
+
 	/**
 	 * SE type
 	 */
 	public String seType;
-	
+
 	/**
 	 * Access restricted to this users
 	 */
 	public Set<String> exclusiveUsers;
-	
+
 	/**
 	 * Exclusive write
 	 */
 	public Set<String> seExclusiveWrite;
-	
+
 	/**
 	 * Exclusive read
 	 */
@@ -100,126 +102,127 @@ public class SE implements Serializable, Comparable<SE>{
 	 * triggered by the seVersion if < 200
 	 */
 	public boolean needsEncryptedEnvelope;
-	
-	
+
 	/**
 	 * @param db
 	 */
-	SE(final DBFunctions db){
+	SE(final DBFunctions db) {
 		seName = StringFactory.get(db.gets("seName").toUpperCase());
-		
+
 		seNumber = db.geti("seNumber");
-		
+
 		qos = parseArray(db.gets("seQoS"));
-		
+
 		seVersion = db.geti("seVersion");
-		
+
 		needsEncryptedEnvelope = (seVersion < 200);
-		//TODO: remove this, when the version in the DB is working and not anymore overwritten to null
-		if("alice::cern::setest".equals(seName.toLowerCase()))
-			needsEncryptedEnvelope=false;
-		
+		// TODO: remove this, when the version in the DB is working and not
+		// anymore overwritten to null
+		if ("alice::cern::setest".equals(seName.toLowerCase()))
+			needsEncryptedEnvelope = false;
+
 		seioDaemons = StringFactory.get(db.gets("seioDaemons"));
-		
+
 		seStoragePath = StringFactory.get(db.gets("seStoragePath"));
-		
+
 		seUsedSpace = db.getl("seUsedSpace");
-		
+
 		seNumFiles = db.getl("seNumFiles");
-		
+
 		seMinSize = db.getl("seMinSize");
-		
+
 		seType = StringFactory.get(db.gets("seType"));
-		
+
 		exclusiveUsers = parseArray(db.gets("exclusiveUsers"));
-		
+
 		seExclusiveRead = parseArray(db.gets("seExclusiveRead"));
-		
+
 		seExclusiveWrite = parseArray(db.gets("seExclusiveWrite"));
 	}
-	
+
 	@Override
 	public String toString() {
-		return "SE: seName: "+seName+"\n"+
-			"seNumber\t: "+seNumber+"\n"+
-			"seVersion\t: "+seVersion+"\n"+
-			"qos\t: "+qos+"\n"+
-			"seioDaemons\t: "+seioDaemons+"\n"+
-			"seStoragePath\t: "+seStoragePath+"\n"+
-			"seUsedSpace\t: "+seUsedSpace+"\n"+
-			"seNumFiles\t: "+seNumFiles+"\n"+
-			"seMinSize\t: "+seMinSize+"\n"+
-			"seType\t: "+seType+"\n"+
-			"exclusiveUsers\t: "+exclusiveUsers+"\n"+
-			"seExclusiveRead\t: "+seExclusiveRead+"\n"+
-			"seExclusiveWrite\t: "+seExclusiveWrite;
+		return "SE: seName: " + seName + "\n" + "seNumber\t: " + seNumber
+				+ "\n" + "seVersion\t: " + seVersion + "\n" + "qos\t: " + qos
+				+ "\n" + "seioDaemons\t: " + seioDaemons + "\n"
+				+ "seStoragePath\t: " + seStoragePath + "\n"
+				+ "seUsedSpace\t: " + seUsedSpace + "\n" + "seNumFiles\t: "
+				+ seNumFiles + "\n" + "seMinSize\t: " + seMinSize + "\n"
+				+ "seType\t: " + seType + "\n" + "exclusiveUsers\t: "
+				+ exclusiveUsers + "\n" + "seExclusiveRead\t: "
+				+ seExclusiveRead + "\n" + "seExclusiveWrite\t: "
+				+ seExclusiveWrite;
 	}
-	
+
 	/**
 	 * @return SE name
 	 */
-	public String getName(){
+	public String getName() {
 		return seName;
 	}
-	
+
 	private static final NumberFormat twoDigits = new DecimalFormat("00");
 	private static final NumberFormat fiveDigits = new DecimalFormat("00000");
-	
+
 	/**
 	 * @return the protocol part
 	 */
-	public String generateProtocol(){
-		if (seioDaemons==null || seioDaemons.length()==0)
+	public String generateProtocol() {
+		if (seioDaemons == null || seioDaemons.length() == 0)
 			return null;
-	
+
 		String ret = seioDaemons;
-		
-		if (!ret.endsWith("/") && (seStoragePath==null || !seStoragePath.startsWith("/")))
-			ret += "/";
-		
-		if (seStoragePath!=null)
-			ret += seStoragePath;
-		
+
 		if (!ret.endsWith("/"))
 			ret += "/";
+
+		if (seStoragePath == null)
+			ret += "/";
+		if (!seStoragePath.startsWith("/"))
+				ret += "/";
+
+		if ((seStoragePath != null) && !seStoragePath.equals("/"))
+			ret += seStoragePath;
 		
 		return ret;
 	}
-	
+
 	/**
 	 * @param guid
 	 * @return the PFN for this storage
 	 */
-	public String generatePFN(final GUID guid){
+	public String generatePFN(final GUID guid) {
 		String ret = generateProtocol();
-		
-		if (ret==null)
+
+		if (ret == null)
 			return ret;
-		
-		ret += "/"+twoDigits.format(guid.getCHash())+"/"+fiveDigits.format(guid.getHash())+"/"+guid.guid.toString();
-		
+
+		ret += "/" + twoDigits.format(guid.getCHash()) + "/"
+				+ fiveDigits.format(guid.getHash()) + "/"
+				+ guid.guid.toString();
+		System.out.println("GRON CREATED: " + ret);
 		return StringFactory.get(ret);
 	}
-	
+
 	/**
 	 * @param s
 	 * @return the set of elements
 	 */
-	public static Set<String> parseArray(final String s){
-		if (s==null)
+	public static Set<String> parseArray(final String s) {
+		if (s == null)
 			return null;
-		
+
 		final Set<String> ret = new HashSet<String>();
-		
+
 		final StringTokenizer st = new StringTokenizer(s, ",");
-		
-		while (st.hasMoreTokens()){
+
+		while (st.hasMoreTokens()) {
 			final String tok = StringFactory.get(st.nextToken().trim());
-			
-			if (tok.length()>0)
+
+			if (tok.length() > 0)
 				ret.add(tok);
 		}
-		
+
 		return Collections.unmodifiableSet(ret);
 	}
 
@@ -227,46 +230,46 @@ public class SE implements Serializable, Comparable<SE>{
 	public int compareTo(final SE o) {
 		return seName.compareToIgnoreCase(o.seName);
 	}
-	
+
 	@Override
 	public boolean equals(final Object obj) {
-		if ( ! (obj instanceof SE) )
+		if (!(obj instanceof SE))
 			return false;
-		
-		return compareTo((SE) obj)==0;
+
+		return compareTo((SE) obj) == 0;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return seName.toUpperCase().hashCode();
 	}
-	
+
 	/**
 	 * Check if the user is allowed to read files from this storage element
 	 * 
 	 * @param user
 	 * @return <code>true</code> if allowed
 	 */
-	public boolean canRead(final AliEnPrincipal user){
-		if (seExclusiveRead.size()==0)
+	public boolean canRead(final AliEnPrincipal user) {
+		if (seExclusiveRead.size() == 0)
 			return true;
-		
+
 		return seExclusiveRead.contains(user.getName());
 	}
-	
+
 	/**
 	 * Check if the user is allowed to write files in this storage element
 	 * 
 	 * @param user
 	 * @return <code>true</code> if allowed
 	 */
-	public boolean canWrite(final AliEnPrincipal user){
-		if (seExclusiveWrite.size()==0)
+	public boolean canWrite(final AliEnPrincipal user) {
+		if (seExclusiveWrite.size() == 0)
 			return true;
-		
+
 		final boolean allowed = seExclusiveWrite.contains(user.getName());
-					
+
 		return allowed;
 	}
-	
+
 }

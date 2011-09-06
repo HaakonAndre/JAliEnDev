@@ -84,8 +84,6 @@ public class PFNforWrite extends Request {
 	@Override
 	public void run() {
 
-		
-		
 		if ((ses == null) && (qosType == null)) {
 
 			final Set<String> defaultQos = LDAPHelper.checkLdapInformation(
@@ -98,15 +96,12 @@ public class PFNforWrite extends Request {
 
 			String defQos = defaultQos.iterator().next();
 
-
 			qosType = defQos.substring(0, defQos.indexOf('='));
 			qosCount = Integer
 					.parseInt(defQos.substring(defQos.indexOf('=') + 1));
 
-
 		}
 
-		
 		List<SE> SEs = SEUtils.getSEs(ses);
 
 		List<SE> exSEs = SEUtils.getSEs(exses);
@@ -118,21 +113,24 @@ public class PFNforWrite extends Request {
 		pfns = new ArrayList<PFN>(count);
 
 		LFN setArchiveAnchor = null;
-
-		if (lfn.guid == null)
+		if (lfn != null) {
+			if (lfn.guid == null)
 				guid = GUIDUtils.createGuid();
-		else
-			guid = GUIDUtils.getGUID(lfn.guid, true);
-		lfn.guid = guid.guid;
-		guid.lfnCache = new LinkedHashSet<LFN>(1);
-		guid.lfnCache.add(lfn);
-		guid.size = lfn.size;
-		guid.md5 = lfn.md5;
-
+			else
+				guid = GUIDUtils.getGUID(lfn.guid, true);
+			lfn.guid = guid.guid;
+			guid.lfnCache = new LinkedHashSet<LFN>(1);
+			guid.lfnCache.add(lfn);
+			guid.size = lfn.size;
+			guid.md5 = lfn.md5;
+		} else if (guid != null) {
+			if(guid.lfnCache.size()>0)
+				lfn = guid.lfnCache.iterator().next();
+		}
+		
 		// statis list of specified SEs
 		if (ses != null) {
 			for (SE se : SEs) {
-
 
 				if (!se.canWrite(user)) {
 					System.err
@@ -150,7 +148,7 @@ public class PFNforWrite extends Request {
 		}
 
 		if (qosCount > 0) {
-			if(exSEs!=null)
+			if (exSEs != null)
 				SEs.addAll(exSEs);
 			SEs = SEUtils.getClosestSEs(site, SEs);
 			final Iterator<SE> it = SEs.iterator();
@@ -174,42 +172,42 @@ public class PFNforWrite extends Request {
 			}
 
 		}
-//
-//		for (PFN pfn : pfns) {
-//			if (pfn.ticket.envelope == null) {
-//				System.err.println("Sorry ... Envelope is null!");
-//			} else {
-//				pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
-//				try {
-//					// we need to both encrypt and sign, the later is not
-//					// automatic
-//					XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-//				} catch (SignatureException e) {
-//					System.err
-//							.println("Sorry ... Could not sign the envelope!");
-//				} catch (InvalidKeyException e) {
-//					System.err
-//							.println("Sorry ... Could not sign the envelope!");
-//				} catch (NoSuchAlgorithmException e) {
-//					System.err
-//							.println("Sorry ... Could not sign the envelope!");
-//				}
-//				String addEnv = pfn.ticket.envelope.getSignedEnvelope();
-//
-//				// drop the following once LDAP schema is updated and version
-//				// number properly on
-//				if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber)
-//						.getName().toLowerCase())) {
-//					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
-//						addEnv += "\\&oldEnvelope="
-//								+ pfn.ticket.envelope.getEncryptedEnvelope();
-//						System.out.println("Creating ticket (encrypted): "
-//								+ pfn.ticket.envelope.getUnEncryptedEnvelope());
-//					}
-//				}
-//
-//			}
-//		}
+		//
+		// for (PFN pfn : pfns) {
+		// if (pfn.ticket.envelope == null) {
+		// System.err.println("Sorry ... Envelope is null!");
+		// } else {
+		// pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
+		// try {
+		// // we need to both encrypt and sign, the later is not
+		// // automatic
+		// XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
+		// } catch (SignatureException e) {
+		// System.err
+		// .println("Sorry ... Could not sign the envelope!");
+		// } catch (InvalidKeyException e) {
+		// System.err
+		// .println("Sorry ... Could not sign the envelope!");
+		// } catch (NoSuchAlgorithmException e) {
+		// System.err
+		// .println("Sorry ... Could not sign the envelope!");
+		// }
+		// String addEnv = pfn.ticket.envelope.getSignedEnvelope();
+		//
+		// // drop the following once LDAP schema is updated and version
+		// // number properly on
+		// if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber)
+		// .getName().toLowerCase())) {
+		// if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
+		// addEnv += "\\&oldEnvelope="
+		// + pfn.ticket.envelope.getEncryptedEnvelope();
+		// System.out.println("Creating ticket (encrypted): "
+		// + pfn.ticket.envelope.getUnEncryptedEnvelope());
+		// }
+		// }
+		//
+		// }
+		// }
 
 	}
 
@@ -224,11 +222,13 @@ public class PFNforWrite extends Request {
 	@Override
 	public String toString() {
 		if (lfn != null)
-			return "Asked for write: " + this.lfn + " (" + this.site + ","+ this.qosType+ ","+this.qosCount+ ","+ this.ses+ ","+ this.exses+"), reply is: "
-					+ this.pfns;
+			return "Asked for write: " + this.lfn + " (" + this.site + ","
+					+ this.qosType + "," + this.qosCount + "," + this.ses + ","
+					+ this.exses + "), reply is: " + this.pfns;
 		else if (guid != null)
-			return "Asked for write: " + this.guid + " (" + this.site + ","+ this.qosType+ ","+this.qosCount+ ","+ this.ses+ ","+ this.exses+"), reply is: "
-					+ this.pfns;
+			return "Asked for write: " + this.guid + " (" + this.site + ","
+					+ this.qosType + "," + this.qosCount + "," + this.ses + ","
+					+ this.exses + "), reply is: " + this.pfns;
 		else
 			return "Asked for write: unspecified target!";
 	}
