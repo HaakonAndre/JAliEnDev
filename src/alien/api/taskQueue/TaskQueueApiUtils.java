@@ -62,14 +62,14 @@ public class TaskQueueApiUtils {
 	 * @return
 	 * @throws JobSubmissionException
 	 */
-/*	public static int submitJob(String jdl, String user)
+	public static int submitJob(String jdl, String user)
 			throws JobSubmissionException {
 
 		try {
 			JDL ojdl = new JDL(jdl);
 			SubmitJob j;
 			j = new SubmitJob(JobSigner.signJob(JAKeyStore.clientCert,
-					"User.cert", JAKeyStore.pass, user,ojdl, jdl));
+					"User.cert", JAKeyStore.pass, user, jdl));	// TODO : why was ojdl passed here ?
 
 			Dispatcher.execute(j, true);
 			return j.getJobID();
@@ -80,5 +80,5 @@ public class TaskQueueApiUtils {
 		}
 		return 0;
 	}
-*/
+
 }
