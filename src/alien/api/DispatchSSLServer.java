@@ -7,6 +7,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -220,15 +221,22 @@ public class DispatchSSLServer extends Thread {
 
 			kmf.init(JAKeyStore.hostCert, JAKeyStore.pass);
 			
-			System.out.println("Running central service with host cert: "
-					+ ((java.security.cert.X509Certificate) JAKeyStore.hostCert
-							.getCertificateChain("Host.cert")[0])
-							.getSubjectDN());
+			String logCertInfo = "Running central service with host cert: ";
 					
-			logger.log(Level.INFO,"Running central service with host cert: "
-					+ ((java.security.cert.X509Certificate) JAKeyStore.hostCert
-							.getCertificateChain("Host.cert")[0])
-							.getSubjectDN());
+			try{
+				((java.security.cert.X509Certificate) JAKeyStore.hostCert
+						.getCertificateChain("Host.cert")[0]).checkValidity();
+			}
+			catch(CertificateException e){
+				logCertInfo = "Our host certificate expired or is invalid!";
+			}
+			logCertInfo += ((java.security.cert.X509Certificate) JAKeyStore.hostCert
+													.getCertificateChain("Host.cert")[0])
+													.getSubjectDN();
+							
+			System.out.println(logCertInfo);
+					
+			logger.log(Level.INFO,logCertInfo);
 
 			SSLContext sc = SSLContext.getInstance("TLS");
 
@@ -243,6 +251,7 @@ public class DispatchSSLServer extends Thread {
 
 			server = (SSLServerSocket) ssf.createServerSocket(port);
 
+			server.setWantClientAuth(true);
 			server.setNeedClientAuth(true);
 
 			server.setUseClientMode(false);
