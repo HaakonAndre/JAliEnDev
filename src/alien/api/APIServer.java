@@ -69,6 +69,9 @@ public class APIServer extends Thread {
 		
 		AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
 		
+		System.out.println(alUser);
+		System.out.println(alUser.getName());
+		
 		//should check if the file was written and if not then exit.
 		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), this.iDebugLevel)){ //user should be taken from certificate
 			throw new Exception("Could not write the token file! No application can connect to the APIServer");
