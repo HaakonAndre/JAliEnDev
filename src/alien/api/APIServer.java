@@ -69,8 +69,8 @@ public class APIServer extends Thread {
 		
 		AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
 		
-		System.out.println(alUser);
-		System.out.println(alUser.getName());
+		System.out.println("alUser: " + alUser);
+		System.out.println("alUser.getName: " + alUser.getName());
 		
 		if(alUser==null || alUser.getName()==null)
 			throw new Exception("Could not get your username. FATAL!");
