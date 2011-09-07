@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -183,10 +184,15 @@ public class APIServer extends Thread {
 		@Override
 		public void run() {
 			try {
+				
 				BufferedReader br = new BufferedReader(
 						new InputStreamReader(is));
 
+				Scanner scanner = new Scanner(br);
+		        scanner.useDelimiter(String.valueOf((char) 0));
+		        
 				String sLine = br.readLine();
+				//String sLine = scanner.next();
 
 				if (sLine != null && sLine.equals(password)) {
 					System.out.println("password accepted");
@@ -199,9 +205,10 @@ public class APIServer extends Thread {
 				}
 				JAliEnCOMMander jcomm = new JAliEnCOMMander();
 
-				while ((sLine = br.readLine()) != null) {
-					System.out.println("we received call: " + sLine);
-					jcomm.execute(os, sLine.trim().split(" "));
+		        while (scanner.hasNext()) {
+		        	String line = scanner.next();
+		        	System.out.println("WE received call: " + line);
+		        	jcomm.execute(os, line.split(String.valueOf((char) 1)));
 					os.flush();
 				}
 			} catch (IOException e) {
