@@ -185,13 +185,18 @@ public class APIServer extends Thread {
 		public void run() {
 			try {
 				
+				final String lineTerm = String.valueOf((char) 0);
+				final String SpaceSep = String.valueOf((char) 1);
+				
 				BufferedReader br = new BufferedReader(
 						new InputStreamReader(is));
 
 				Scanner scanner = new Scanner(br);
-		        scanner.useDelimiter(String.valueOf((char) 0));
+		        scanner.useDelimiter(lineTerm);
 		        
-				String sLine = scanner.next();
+				String sLine = null;
+				if(scanner.hasNext()) 
+					sLine = scanner.next();
 
 				if (sLine != null && sLine.equals(password)) {
 					System.out.println("password accepted");
@@ -206,8 +211,7 @@ public class APIServer extends Thread {
 
 		        while (scanner.hasNext()) {
 		        	String line = scanner.next();
-		        	System.out.println("WE received call: " + line);
-		        	jcomm.execute(os, line.split(String.valueOf((char) 1)));
+		        	jcomm.execute(os, line.split(String.valueOf(SpaceSep)));
 					os.flush();
 				}
 			} catch (IOException e) {
