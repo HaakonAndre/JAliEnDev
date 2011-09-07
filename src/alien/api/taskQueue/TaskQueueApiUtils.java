@@ -62,7 +62,7 @@ public class TaskQueueApiUtils {
 	 * @return
 	 * @throws JobSubmissionException
 	 */
-	public static int submitJob(String jdl, String user)
+/*	public static int submitJob(String jdl, String user)
 			throws JobSubmissionException {
 
 		try {
@@ -80,5 +80,5 @@ public class TaskQueueApiUtils {
 		}
 		return 0;
 	}
-
+*/
 }
