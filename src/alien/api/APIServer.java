@@ -33,7 +33,7 @@ public class APIServer extends Thread {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils
-			.getLogger(APIServer.class.getCanonicalName());
+	.getLogger(APIServer.class.getCanonicalName());
 
 	private final int port;
 
@@ -48,7 +48,7 @@ public class APIServer extends Thread {
 	 * Debug level received from the user
 	 * */
 	final int iDebugLevel;
-	
+
 	/**
 	 * Start the server on a given port
 	 * 
@@ -66,11 +66,17 @@ public class APIServer extends Thread {
 		ssocket = new ServerSocket(port, 10, localhost);
 
 		password = UUID.randomUUID().toString();
-
+		
+		AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
+		
 		//should check if the file was written and if not then exit.
-		if (!writeTokenFile(listeningPort, password, "agrigora", this.iDebugLevel)){ //user should be taken from certificate
+		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), this.iDebugLevel)){ //user should be taken from certificate
 			throw new Exception("Could not write the token file! No application can connect to the APIServer");
-			
+
+		}
+
+		if(!writeEnvFile("127.0.0.1", listeningPort, alUser.getName())){
+			throw new Exception("Could not write the env file! Root will not be able to connect to APIServer");
 		}
 		
 		final File fHome = new File(System.getProperty("user.home"));
@@ -92,57 +98,57 @@ public class APIServer extends Thread {
 
 			throw e;
 		}
-		
-		
+
+
 	}
 
 	/**
-	 * write the configuration file that is used by the gapi <br />
+	 * write the configuration file that is used by gapi <br />
 	 * the filename = /tmp/jclient_token_$uid
+	 * @param sHost hostname to connect to, by default localhost
 	 * @param iPort port number for listening
 	 * @param sPassword the password used by other application to connect to the APIServer
 	 * @param sUser the user from the certificate
 	 * @param iDebug the debug level received from the command line
 	 * @return true if the file was written, false if not
+	 * @author Alina Grigoras
 	 */
-	private boolean writeTokenFile(int iPort, String sPassword, String sUser, int iDebug){
+	private boolean writeTokenFile(String sHost, int iPort, String sPassword, String sUser, int iDebug){
 		String sUserId = System.getProperty("userid");
-		
+
 		if(sUserId == null || sUserId.length() == 0){
 			logger.severe("User Id empty! Could not get the token file name");
 			return false;
 		}
-		
+
 		try {
 			int iUserId = Integer.parseInt(sUserId);
-			
+
 			String sFileName = "/tmp/jclient_token_"+iUserId;
-			
+
 			try {
 				FileWriter fw = new FileWriter(sFileName);
-				
-				fw.write("Host = 127.0.0.1\n");
-				logger.fine("Host = 127.0.0.1");
-				
+
+				fw.write("Host = "+sHost+"\n");
+				logger.fine("Host = "+sHost);
+
 				fw.write("Port = "+iPort+"\n");
 				logger.fine("Port = "+iPort);
-				
-				AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
-	
-				fw.write("User = "+alUser.getName()+"\n");
-				logger.fine("User = "+alUser.getName());
-				
+
+				fw.write("User = "+sUser+"\n");
+				logger.fine("User = "+sUser);
+
 				fw.write("Passwd = "+sPassword+"\n");
 				logger.fine("Passwd = "+sPassword);
-				
+
 				fw.write("Debug = "+iDebug+"\n");
 				logger.fine("Debug = "+iDebug);
-				
+
 				fw.flush();
 				fw.close();
-				
+
 				return true;
-				
+
 			} catch (Exception e1) {
 				logger.severe("Could not open file "+sFileName+ " to write");
 				e1.printStackTrace();
@@ -154,7 +160,73 @@ public class APIServer extends Thread {
 			return false;
 		}
 	}
-	
+
+	/**
+	 * Writes the environment file used by ROOT <br />
+	 * It needs to ne named /tmp/gclient_env_$UID and to contain:
+	 * <ol>
+	 * <li>alien_API_HOST</li>
+	 * <li>alien_API_PORT</li>
+	 * <li>alien_API_USER</li>
+	 * <li>LD/DYLD_LIBRARY_PATH</li>
+	 * </ol>
+	 * @param iPort
+	 * @param sPassword
+	 * @param sUser
+	 * @return
+	 */
+	private boolean writeEnvFile(String sHost, int iPort, String sUser){
+		String sUserId = System.getProperty("userid");
+
+		if(sUserId == null || sUserId.length() == 0){
+			logger.severe("User Id empty! Could not get the env file name");
+			return false;
+		}
+
+		String sAlienRoot = System.getenv("ALIEN_ROOT");
+		
+		if(sAlienRoot == null || sAlienRoot.length() ==0 ){
+			logger.severe("No ALIEN_ROOT found. Please set ALIEN_ROOT environment variable");
+			return false;
+		}
+		
+		try {
+			int iUserId = Integer.parseInt(sUserId);
+
+			String sFileName = "/tmp/gclient_env_"+iUserId;
+
+			try {
+				FileWriter fw = new FileWriter(sFileName);
+				
+				fw.write("export alien_API_HOST="+sHost+"\n");
+				logger.fine("export alien_API_HOST="+sHost);
+
+				fw.write("export alien_API_PORT="+iPort+"\n");
+				logger.fine("export alien_API_PORT="+iPort);
+
+				fw.write("export alien_API_USER="+sUser+"\n");
+				logger.fine("export alien_API_USER="+sUser);
+				
+				fw.write("export LD_LIBRARY_PATH="+sAlienRoot+"/lib:"+sAlienRoot+"/api/lib:$LD_LIBRARY_PATH");
+				logger.fine("export LD_LIBRARY_PATH="+sAlienRoot+"/lib:"+sAlienRoot+"/api/lib:$LD_LIBRARY_PATH");
+				
+				fw.flush();
+				fw.close();
+
+				return true;
+
+			} catch (Exception e1) {
+				logger.severe("Could not open file "+sFileName+ " to write");
+				e1.printStackTrace();
+				return false;
+			}
+		} catch (Exception e) {
+			logger.severe("Could not get user id! The env file could not be created ");
+			e.printStackTrace();
+			return false;
+		}
+	}
+
 	/**
 	 * One UI connection
 	 * 
@@ -184,16 +256,16 @@ public class APIServer extends Thread {
 		@Override
 		public void run() {
 			try {
-				
+
 				final String lineTerm = String.valueOf((char) 0);
 				final String SpaceSep = String.valueOf((char) 1);
-				
+
 				BufferedReader br = new BufferedReader(
 						new InputStreamReader(is));
 
 				Scanner scanner = new Scanner(br);
-		        scanner.useDelimiter(lineTerm);
-		        
+				scanner.useDelimiter(lineTerm);
+
 				String sLine = null;
 				if(scanner.hasNext()) 
 					sLine = scanner.next();
@@ -209,9 +281,9 @@ public class APIServer extends Thread {
 				}
 				JAliEnCOMMander jcomm = new JAliEnCOMMander();
 
-		        while (scanner.hasNext()) {
-		        	String line = scanner.next();
-		        	jcomm.execute(os, line.split(String.valueOf(SpaceSep)));
+				while (scanner.hasNext()) {
+					String line = scanner.next();
+					jcomm.execute(os, line.split(String.valueOf(SpaceSep)));
 					os.flush();
 				}
 			} catch (IOException e) {
