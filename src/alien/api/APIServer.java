@@ -191,8 +191,7 @@ public class APIServer extends Thread {
 				Scanner scanner = new Scanner(br);
 		        scanner.useDelimiter(String.valueOf((char) 0));
 		        
-				String sLine = br.readLine();
-				//String sLine = scanner.next();
+				String sLine = scanner.next();
 
 				if (sLine != null && sLine.equals(password)) {
 					System.out.println("password accepted");
