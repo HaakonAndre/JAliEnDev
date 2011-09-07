@@ -72,6 +72,9 @@ public class APIServer extends Thread {
 		System.out.println(alUser);
 		System.out.println(alUser.getName());
 		
+		if(alUser==null || alUser.getName()==null)
+			throw new Exception("Could not get your username. FATAL!");
+		
 		//should check if the file was written and if not then exit.
 		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), this.iDebugLevel)){ //user should be taken from certificate
 			throw new Exception("Could not write the token file! No application can connect to the APIServer");
