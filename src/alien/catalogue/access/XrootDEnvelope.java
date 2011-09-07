@@ -91,7 +91,20 @@ public class XrootDEnvelope implements Serializable {
 	 * @param eSize
 	 * @param eMd5
 	 */
-	public XrootDEnvelope(String envelope, int eSize, String eMd5) {
+	public XrootDEnvelope(String envelope) {
+		this(envelope,false);
+	}
+
+	/**
+	 * Create a signed only envelope in order to verify it
+	 * 
+	 * @param envelope
+	 * @param oldEnvelope 
+	 */
+	public XrootDEnvelope(String envelope, boolean oldEnvelope) {
+		
+		if(oldEnvelope){
+		
 
 		String spfn = "";
 		turl = "";
@@ -117,10 +130,6 @@ public class XrootDEnvelope implements Serializable {
 						tok.indexOf('>'));
 				String value = tok.substring(tok.indexOf('>') + 1,
 						tok.lastIndexOf('<'));
-
-
-				System.out.println( key + " == " + value);
-
 				
 				if ("access".equals(key))
 					if (value.startsWith("write")) {
@@ -167,14 +176,8 @@ public class XrootDEnvelope implements Serializable {
 
 		} else
 			this.pfn = null;
-	}
-
-	/**
-	 * Create a signed only envelope in order to verify it
-	 * 
-	 * @param envelope
-	 */
-	public XrootDEnvelope(String envelope) {
+		
+	} else {
 
 		StringTokenizer st = new StringTokenizer(envelope, "\\&");
 		String spfn = "";
@@ -238,6 +241,7 @@ public class XrootDEnvelope implements Serializable {
 		this.pfn = new PFN(spfn, g, SEUtils.getSE(se));
 
 		unSignedEnvelope = envelope;
+	}
 	}
 
 	/**
@@ -437,7 +441,6 @@ public class XrootDEnvelope implements Serializable {
 			if (e.get(key) != null) {
 				ret += key + "=" + e.get(key) + "&";
 				usedHashOrd += key + "-";
-				System.out.println(key + ": " + e.get(key));
 			}
 		}
 

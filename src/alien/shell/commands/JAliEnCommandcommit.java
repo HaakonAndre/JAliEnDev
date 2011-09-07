@@ -2,8 +2,10 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import alien.api.catalogue.CatalogueApiUtils;
+import alien.catalogue.PFN;
 
 /**
  * @author ron
@@ -62,15 +64,22 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * execute the commit
 	 */
 	public void execute() {
-
-		if(rawenvelope.contains("signature="))
-			CatalogueApiUtils.registerEnvelopes(commander.user,new ArrayList<String>(Arrays.asList(rawenvelope)));
-		else
-			CatalogueApiUtils.registerEncryptedEnvelope(commander.user,rawenvelope,size,lfn,perm,expire,pfn,se,guid,md5);
+		
+		List<PFN> pfns = null;
+		if(rawenvelope.contains("signature=")){
+			pfns = CatalogueApiUtils.registerEnvelopes(commander.user,new ArrayList<String>(Arrays.asList(rawenvelope)));
+			
+		}
+		else{
+			pfns = CatalogueApiUtils.registerEncryptedEnvelope(commander.user,rawenvelope,size,md5,lfn,perm,expire,pfn,se,guid);
+		}
 			
 
 		if (out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot());
+			if(pfns!=null && pfns.size()>0)
+				out.setReturnArgs(deserializeForRoot());
+			else 
+				out.setReturnArgs(super.deserializeForRoot());
 	}
 
 	/**
@@ -102,8 +111,11 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * @return serialized return
 	 */
 	public String deserializeForRoot() {
-
-		return super.deserializeForRoot();
+		
+		return RootPrintWriter.columnseparator 
+				//+ RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1" 
+				+ RootPrintWriter.fielddescriptor + "lfn" + RootPrintWriter.fieldseparator + "0";
+		
 	}
 
 	/**
@@ -144,6 +156,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 				guid = arg.next();
 			if (arg.hasNext())
 				md5 = arg.next();
+
 
 		} else
 			out.printErrln("No envelope to register passed.");

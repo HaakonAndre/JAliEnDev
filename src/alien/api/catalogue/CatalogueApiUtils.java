@@ -284,12 +284,12 @@ public class CatalogueApiUtils {
 	 * @return PFNs that were successfully registered
 	 */
 	public static List<PFN> registerEncryptedEnvelope(AliEnPrincipal user,
-			String encryptedEnvelope, int size, String lfn, String perm,
-			String expire, String pfn, String se, String guid, String md5) {
+			String encryptedEnvelope, int size, String md5, String lfn, String perm,
+			String expire, String pfn, String se, String guid) {
 		try {
 			RegisterEnvelopes register = (RegisterEnvelopes) Dispatcher
 					.execute(new RegisterEnvelopes(user, encryptedEnvelope,
-							size, lfn, perm, expire, pfn, se, guid, md5), true);
+							size, md5, lfn, perm, expire, pfn, se, guid), true);
 			return register.getPFNs();
 		} catch (IOException e) {
 			System.out.println("Could not get PFNs for: " + encryptedEnvelope);

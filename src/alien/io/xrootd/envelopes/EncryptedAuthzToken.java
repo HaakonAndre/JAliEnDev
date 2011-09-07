@@ -282,10 +282,10 @@ public class EncryptedAuthzToken {
 		// get RSA-sealed cipher (aka session- or symmetric key(
 		decryptSealedCipher();
 
-		System.out.println("sealed cipher decrypted");
+		//System.out.println("sealed cipher decrypted");
 		// decrypt signature and envelope with symmetric key using Blowfish
 		decryptSealedEnvelope();
-		System.out.println("sealed envelope decrypted");
+		//System.out.println("sealed envelope decrypted");
 		// verify envelope using the signature
 		if (!verifyEnvelope()) {
 			System.out.println("VERIFICATION FAILED!");

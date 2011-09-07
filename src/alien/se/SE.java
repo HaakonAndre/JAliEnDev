@@ -200,7 +200,6 @@ public class SE implements Serializable, Comparable<SE> {
 		ret += "/" + twoDigits.format(guid.getCHash()) + "/"
 				+ fiveDigits.format(guid.getHash()) + "/"
 				+ guid.guid.toString();
-		System.out.println("GRON CREATED: " + ret);
 		return StringFactory.get(ret);
 	}
 

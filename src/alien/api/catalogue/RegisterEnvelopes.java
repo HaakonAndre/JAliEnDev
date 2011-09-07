@@ -32,6 +32,8 @@ public class RegisterEnvelopes extends Request {
 
 	private String encryptedEnvelope = null;
 	private int size = 0;
+	private String md5 = null;
+
 	@SuppressWarnings("unused")
 	private String lfn = null;
 	@SuppressWarnings("unused")
@@ -44,7 +46,6 @@ public class RegisterEnvelopes extends Request {
 	private String se = null;
 	@SuppressWarnings("unused")
 	private String GUID = null;
-	private String md5 = null;
 
 	/**
 	 * Register PFNs with envelopes
@@ -72,10 +73,12 @@ public class RegisterEnvelopes extends Request {
 	 * @param md5 
 	 */
 	public RegisterEnvelopes(AliEnPrincipal user, String encryptedEnvelope,
-			int size, String lfn, String perm, String expire, String pfn,
-			String se, String GUID, String md5) {
+			int size, String md5, String lfn, String perm, String expire, String pfn,
+			String se, String GUID) {
 		this.user = user;
 		this.encryptedEnvelope = encryptedEnvelope;
+		this.size = size;
+		this.md5 = md5;
 	}
 
 	@Override
@@ -85,9 +88,6 @@ public class RegisterEnvelopes extends Request {
 			pfns = new ArrayList<PFN>(signedEnvelopes.size());
 
 			for (String env : signedEnvelopes) {
-
-				System.out.println("We received an envelope for registration: "
-						+ env);
 
 				try {
 
@@ -132,13 +132,23 @@ public class RegisterEnvelopes extends Request {
 				}
 			}
 		} else if (encryptedEnvelope != null) {
-
+			pfns = new ArrayList<PFN>(1);
+			XrootDEnvelope xenv = null;
 			try {
-				XrootDEnvelope xenv = XrootDEnvelopeSigner
+				xenv = XrootDEnvelopeSigner
 						.decryptEnvelope(encryptedEnvelope);
+			} catch (Exception e) {
+				System.err.println("Sorry ... Error decrypting envelope: " + e);
+			}
+			
 				if (xenv != null) {
-					PFN pfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
-
+					PFN pfn = null;
+					try{
+					                                                                                 pfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
+					} catch (Exception e) {
+						System.err.println("Sorry ... Error getting the PFN: " + e);
+					}
+					
 					if (pfn != null) {
 
 						if (size != 0)
@@ -146,16 +156,26 @@ public class RegisterEnvelopes extends Request {
 						if (md5 != null && md5 != "" && md5 != "0")
 							pfn.getGuid().md5 = md5;
 
+						try{
 						if (BookingTable.commit(user, pfn)) {
-							System.out.println("Successfully moved "
+							
+								System.out.println("Successfully moved "
 									+ xenv.pfn.pfn + " to the Catalogue");
-							pfns.add(xenv.pfn);
+						
+								
+							pfns.add(pfn);
+						}else {
+							System.err.println("Unable to register "
+									+ xenv.pfn.pfn + " in the Catalogue");
+						}
+						} catch (Exception e) {
+							e.printStackTrace();
+							System.err.println("Sorry ... Error registering the PFN: " + e);
 						}
 					}
+
 				}
-			} catch (Exception e) {
-				System.err.println("Sorry ... Error registering the PFN!");
-			}
+			
 		}
 	}
 

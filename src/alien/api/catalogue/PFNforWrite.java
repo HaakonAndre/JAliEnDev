@@ -172,6 +172,10 @@ public class PFNforWrite extends Request {
 			}
 
 		}
+		
+		System.out.println(this);
+		
+		
 		//
 		// for (PFN pfn : pfns) {
 		// if (pfn.ticket.envelope == null) {
