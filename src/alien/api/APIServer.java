@@ -282,7 +282,8 @@ public class APIServer extends Thread {
 				JAliEnCOMMander jcomm = new JAliEnCOMMander();
 
 				while (scanner.hasNext()) {
-					String line = scanner.next();
+					String line = scanner.next();			
+		        	System.out.println("RECEIVING CALL: " + line.replace((char) 1, ' '));
 					jcomm.execute(os, line.split(String.valueOf(SpaceSep)));
 					os.flush();
 				}
