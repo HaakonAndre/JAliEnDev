@@ -49,7 +49,6 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	protected void printErrln(String line) {
 		stderr.add(line + "\n");
-		System.out.println("ERROOROROROROORO: " + line);
 	}
 
 	protected void setenv(String cDir, String user, String cDirtiled) {
