@@ -200,7 +200,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				
 				if (!"alice::cern::setest".equals(CatalogueApiUtils.getSE(pfn.seNumber)
 						.getName().toLowerCase()))
-					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope)
+					if (CatalogueApiUtils.getSE(pfn.seNumber).needsEncryptedEnvelope)
 						envelope += "&envelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
 
