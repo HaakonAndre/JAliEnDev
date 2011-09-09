@@ -154,12 +154,16 @@ public class APIServer extends Thread {
 
 			} catch (Exception e1) {
 				logger.severe("Could not open file "+sFileName+ " to write");
+				logger.severe(e1.getMessage());
+				
 				e1.printStackTrace();
 				return false;
 			}
 		} catch (Exception e) {
 			logger.severe("Could not get user id! The token file could not be created ");
+			logger.severe(e.getMessage());
 			e.printStackTrace();
+			
 			return false;
 		}
 	}
