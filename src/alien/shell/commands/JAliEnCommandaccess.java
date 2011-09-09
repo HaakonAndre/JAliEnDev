@@ -198,13 +198,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 				String envelope = pfn.ticket.envelope.getSignedEnvelope();
 				
-				if(pfn == null){
-					System.err.println("PFN NULLLL");
-					return "";
-				}else
-					System.err.println("PFN = "+pfn);
-				
-				if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber)
+				if (!"alice::cern::setest".equals(CatalogueApiUtils.getSE(pfn.seNumber)
 						.getName().toLowerCase()))
 					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope)
 						envelope += "&envelope="
