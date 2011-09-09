@@ -26,10 +26,14 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 			newDir = CatalogueApiUtils.getLFN(UsersHelper
 					.getHomeDir(commander.user.getName()));
 
-		if (newDir != null)
+		if (newDir != null){
 			commander.curDir = newDir;
-		else
+			out.setReturnArgs(deserializeForRoot(1));
+		}
+		else{
 			out.printErrln("No such directory.");
+			out.setReturnArgs(deserializeForRoot(0));
+		}
 
 	}
 
@@ -54,6 +58,20 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 	public void silent() {
 	}
 
+	
+
+	/**
+	 * serialize return values for gapi/root
+	 * 
+	 * @return serialized return
+	 */
+	public String deserializeForRoot(int state) {
+		
+		return RootPrintWriter.columnseparator 
+				+ RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator + state;
+	}
+	
+	
 	/**
 	 * Constructor needed for the command factory in commander
 	 * @param commander 

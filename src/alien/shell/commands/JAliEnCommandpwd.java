@@ -25,6 +25,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	 */
 	public void execute() {
 		out.printErrln(commander.curDir.getCanonicalName());
+		out.setReturnArgs(deserializeForRoot());
 	}
 
 	/**
@@ -49,6 +50,19 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	public void silent() {
 		// ignore
 	}
+	
+	
+	/**
+	 * serialize return values for gapi/root
+	 * 
+	 * @return serialized return
+	 */
+	public String deserializeForRoot() {
+		
+		return RootPrintWriter.columnseparator 
+				+ RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator + "1";
+	}
+	
 	
 
 	/**
