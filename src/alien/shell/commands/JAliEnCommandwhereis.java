@@ -133,10 +133,11 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 		
 		bG = options.has("g");
 
-		if (options.nonOptionArguments().size() != 1)
+		if (options.nonOptionArguments().iterator().hasNext())
+			lfnOrGuid = options.nonOptionArguments().iterator().next();
+		else 
 			printHelp();
-		else
-			lfnOrGuid = options.nonOptionArguments().get(0);
+		
 	}
 
 }
