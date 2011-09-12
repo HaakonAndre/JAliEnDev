@@ -72,8 +72,11 @@ public class APIServer extends Thread {
 		if(alUser==null || alUser.getName()==null)
 			throw new Exception("Could not get your username. FATAL!");
 		
+		//here we should get home directory
+		String sHomeUser = "/alice/cern.ch/user/a/agrigora/";
+		
 		//should check if the file was written and if not then exit.
-		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), this.iDebugLevel)){ //user should be taken from certificate
+		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)){ //user should be taken from certificate
 			throw new Exception("Could not write the token file! No application can connect to the APIServer");
 
 		}
@@ -116,7 +119,7 @@ public class APIServer extends Thread {
 	 * @return true if the file was written, false if not
 	 * @author Alina Grigoras
 	 */
-	private boolean writeTokenFile(String sHost, int iPort, String sPassword, String sUser, int iDebug){
+	private boolean writeTokenFile(String sHost, int iPort, String sPassword, String sUser, String sHomeUser, int iDebug){
 		String sUserId = System.getProperty("userid");
 
 		if(sUserId == null || sUserId.length() == 0){
@@ -141,6 +144,9 @@ public class APIServer extends Thread {
 				fw.write("User = "+sUser+"\n");
 				logger.fine("User = "+sUser);
 
+				fw.write("Home = "+sHomeUser+"\n");
+				logger.fine("Home = "+sHomeUser);
+				
 				fw.write("Passwd = "+sPassword+"\n");
 				logger.fine("Passwd = "+sPassword);
 
