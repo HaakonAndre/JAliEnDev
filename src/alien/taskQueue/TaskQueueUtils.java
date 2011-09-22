@@ -470,17 +470,18 @@ public class TaskQueueUtils {
 	 * Submit the JDL indicated by this file
 	 * 
 	 * @param file the catalogue name of the JDL to be submitted
+	 * @param account account from where the submit command was received, in the form "username@hostname"
 	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the job ID
 	 * @throws IOException in case of problems like downloading the respective JDL or not enough arguments provided to it 
 	 */
-	public static int submit(final LFN file, final String[] arguments) throws IOException {
+	public static int submit(final LFN file, final String account, final String[] arguments) throws IOException {
 		final String jdlContents = IOUtils.getContents(file);
 		
 		if (jdlContents==null || jdlContents.length()==0)
 			throw new IOException("Could not download "+file.getCanonicalName());
 		
-		return submit(jdlContents, arguments);
+		return submit(jdlContents, account, arguments);
 	}
 	
 	private static final Pattern p = Pattern.compile("\\$(\\d+)");
@@ -489,11 +490,12 @@ public class TaskQueueUtils {
 	 * Submit this JDL body
 	 * 
 	 * @param jdl job description, in plain text
+	 * @param account account from where the submit command was received, in the form "username@hostname"
 	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the job ID
 	 * @throws IOException in case of problems such as the number of provided arguments is not enough
 	 */
-	public static int submit(final String jdl, final String... arguments) throws IOException{
+	public static int submit(final String jdl, final String account, final String... arguments) throws IOException{
 		String jdlToSubmit = jdl;
 		
 		Matcher m = p.matcher(jdlToSubmit);
@@ -515,7 +517,7 @@ public class TaskQueueUtils {
 		
 		final Map<String, Object> values = new HashMap<String, Object>();
 		
-		JDL j = new JDL(jdlToSubmit);
+		final JDL j = new JDL(jdlToSubmit);
 		
 		String executable = j.getExecutable();
 		String sPrice = j.gets("Price");
@@ -532,27 +534,22 @@ public class TaskQueueUtils {
 		values.put("name", executable);
 		values.put("status", "INSERTING");
 		values.put("received", Long.valueOf(System.currentTimeMillis()/1000));
-		values.put("submitHost", "user@machine");
+		values.put("submitHost", account);
 		values.put("jdl", jdlToSubmit);
 		values.put("price", price);
 		
 		final String insert = DBFunctions.composeInsert("QUEUE", values);
 		
+		db.setLastGeneratedKey(true);
+		
 		if (!db.query(insert))
 			throw new IOException("Could not insert the job in the queue");
 		
-		// TODO : get the last inserted ID from the database
+		final Integer pid = db.getLastGeneratedKey();
 		
-		return -1;
-	}
-	
-	public static void main(String[] args) {
-		final DBFunctions db = getDB();
+		if (pid==null)
+			return -1;
 		
-		db.setLastGeneratedKey(true);
-		
-		db.query("INSERT INTO testingtable (x) VALUES ('x');");
-		
-		System.err.println("And the id is : "+db.getLastGeneratedKey());
+		return pid.intValue();
 	}
 }
