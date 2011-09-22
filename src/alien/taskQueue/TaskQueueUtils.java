@@ -1,5 +1,6 @@
 package alien.taskQueue;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,10 +10,16 @@ import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import sun.security.krb5.Config;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import alien.catalogue.LFN;
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.user.LDAPHelper;
@@ -461,4 +468,93 @@ public class TaskQueueUtils {
 		return ret;
 	}
 	
+	/**
+	 * Submit the JDL indicated by this file
+	 * 
+	 * @param file the catalogue name of the JDL to be submitted
+	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
+	 * @return the job ID
+	 * @throws IOException in case of problems like downloading the respective JDL or not enough arguments provided to it 
+	 */
+	public static int submit(final LFN file, final String[] arguments) throws IOException {
+		final String jdlContents = IOUtils.getContents(file);
+		
+		if (jdlContents==null || jdlContents.length()==0)
+			throw new IOException("Could not download "+file.getCanonicalName());
+		
+		return submit(jdlContents, arguments);
+	}
+	
+	private static final Pattern p = Pattern.compile("\\$(\\d+)");
+	
+	/**
+	 * Submit this JDL body
+	 * 
+	 * @param jdl job description, in plain text
+	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
+	 * @return the job ID
+	 * @throws IOException in case of problems such as the number of provided arguments is not enough
+	 */
+	public static int submit(final String jdl, final String... arguments) throws IOException{
+		String jdlToSubmit = jdl;
+		
+		Matcher m = p.matcher(jdlToSubmit);
+		
+		while (m.find()){
+			final String s = m.group(1);
+			
+			final int i = Integer.parseInt(s);
+			
+			if (arguments==null || arguments.length<i)
+				throw new IOException("JDL indicates argument $"+i+" but you haven't provided it");
+			
+			jdlToSubmit = jdlToSubmit.replaceAll("\\$"+i+"(?!\\d)", arguments[i-1]);
+			
+			m = p.matcher(jdlToSubmit);
+		}
+		
+		final DBFunctions db = getDB();
+		
+		final Map<String, Object> values = new HashMap<String, Object>();
+		
+		JDL j = new JDL(jdlToSubmit);
+		
+		String executable = j.getExecutable();
+		String sPrice = j.gets("Price");
+		
+		Float price;
+		
+		try{
+			price = Float.valueOf(sPrice);
+		}
+		catch (Throwable t){
+			price = Float.valueOf(1);
+		}
+		
+		values.put("name", executable);
+		values.put("status", "INSERTING");
+		values.put("received", Long.valueOf(System.currentTimeMillis()/1000));
+		values.put("submitHost", "user@machine");
+		values.put("jdl", jdlToSubmit);
+		values.put("price", price);
+		
+		final String insert = DBFunctions.composeInsert("QUEUE", values);
+		
+		if (!db.query(insert))
+			throw new IOException("Could not insert the job in the queue");
+		
+		// TODO : get the last inserted ID from the database
+		
+		return -1;
+	}
+	
+	public static void main(String[] args) {
+		final DBFunctions db = getDB();
+		
+		db.setLastGeneratedKey(true);
+		
+		db.query("INSERT INTO testingtable (x) VALUES ('x');");
+		
+		System.err.println("And the id is : "+db.getLastGeneratedKey());
+	}
 }
