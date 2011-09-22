@@ -376,8 +376,8 @@ public class JDL implements Serializable {
 	 * 
 	 * @return executable
 	 */
-	public List<String> getExecutable() {
-		return getInputList(false, "Executable");
+	public String getExecutable() {
+		return gets("Executable");
 	}
 
 	/**
@@ -385,8 +385,8 @@ public class JDL implements Serializable {
 	 * 
 	 * @return output directory
 	 */
-	public List<String> getOutputDirectory() {
-		return getInputList(false, "OutputDir");
+	public String getOutputDirectory() {
+		return gets("OutputDir");
 	}
 	
 	/**
