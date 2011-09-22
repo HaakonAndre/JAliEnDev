@@ -13,8 +13,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import sun.security.krb5.Config;
-
 import lazyj.DBFunctions;
 import lazyj.Format;
 import alien.catalogue.LFN;
