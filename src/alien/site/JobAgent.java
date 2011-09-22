@@ -168,7 +168,10 @@ public class JobAgent extends Thread {
 
 		boolean ran = true;
 
-		LinkedList<String> command = (LinkedList<String>) jdl.getExecutable();
+		final LinkedList<String> command = new LinkedList<String>();
+		
+		command.add(jdl.getExecutable());
+		
 		if (jdl.getArguments() != null)
 			command.addAll(jdl.getArguments());
 
