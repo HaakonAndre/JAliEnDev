@@ -73,7 +73,8 @@ public class APIServer extends Thread {
 			throw new Exception("Could not get your username. FATAL!");
 		
 		//here we should get home directory
-		String sHomeUser = "/alice/cern.ch/user/a/agrigora/";
+		//String sHomeUser = "/alice/cern.ch/user/a/agrigora/";
+		String sHomeUser = ConfigUtils.getConfig().gets("alien.users.basehomedir", "/alice/cern.ch/user/");
 		
 		//should check if the file was written and if not then exit.
 		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)){ //user should be taken from certificate
