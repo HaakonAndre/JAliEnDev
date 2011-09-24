@@ -73,8 +73,7 @@ public class APIServer extends Thread {
 			throw new Exception("Could not get your username. FATAL!");
 		
 		//here we should get home directory
-		//String sHomeUser = "/alice/cern.ch/user/a/agrigora/";
-		String sHomeUser = ConfigUtils.getConfig().gets("alien.users.basehomedir", "/alice/cern.ch/user/");
+		String sHomeUser = "/alice/cern.ch/user/a/agrigora/";
 		
 		//should check if the file was written and if not then exit.
 		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)){ //user should be taken from certificate
@@ -85,28 +84,6 @@ public class APIServer extends Thread {
 		if(!writeEnvFile("127.0.0.1", listeningPort, alUser.getName())){
 			throw new Exception("Could not write the env file! Root will not be able to connect to APIServer");
 		}
-		
-		final File fHome = new File(System.getProperty("user.home"));
-
-		final File f = new File(fHome, ".alien");
-
-		f.mkdirs();
-
-		FileWriter fw;
-		try {
-			fw = new FileWriter(new File(f, ".uisession"));
-
-			fw.write("127.0.0.1:" + port + "\n" + password + "\n"
-					+ MonitorFactory.getSelfProcessID() + "\n");
-			fw.flush();
-			fw.close();
-		} catch (IOException e) {
-			ssocket.close();
-
-			throw e;
-		}
-
-
 	}
 
 	/**
@@ -153,6 +130,9 @@ public class APIServer extends Thread {
 
 				fw.write("Debug = "+iDebug+"\n");
 				logger.fine("Debug = "+iDebug);
+				
+				fw.write("PID = "+MonitorFactory.getSelfProcessID() +"\n");
+				logger.fine("PID = "+MonitorFactory.getSelfProcessID());
 
 				fw.flush();
 				fw.close();
@@ -297,8 +277,7 @@ public class APIServer extends Thread {
 
 				while (scanner.hasNext()) {
 					String line = scanner.next();			
-		        	System.out.println("RECEIVING CALL: " + line.replace((char) 1, ' '));
-					jcomm.execute(os, line.split(String.valueOf(SpaceSep)));
+					jcomm.execute(os, line.split(SpaceSep));
 					os.flush();
 				}
 			} catch (IOException e) {

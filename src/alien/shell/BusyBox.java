@@ -24,6 +24,11 @@ import alien.taskQueue.TaskQueueUtils;
  */
 public class BusyBox {
 
+
+
+	private static final String lineTerm = String.valueOf((char) 0);
+	private static final String SpaceSep = String.valueOf((char) 1);
+	
 	private static final String promptPrefix = "/" + JAliEnIAm.myPromptName()
 			+ " ";
 	private static final String promptSuffix = " > ";
@@ -69,7 +74,7 @@ public class BusyBox {
 				is = s.getInputStream();
 				os = s.getOutputStream();
 				
-				os.write(password.getBytes());
+				os.write((password+lineTerm).getBytes());
 				os.flush();
 				callJAliEnGetString("setshell jaliensh");
 			} catch (IOException e) {
@@ -134,7 +139,8 @@ public class BusyBox {
 
 	private String callJAliEnGetString(String line) {
 		try {
-			line +="\n";
+			//line +="\n";
+			line = line.replace(" ", SpaceSep) + lineTerm;
 
 			os.write(line.getBytes());
 			os.flush();
@@ -170,7 +176,9 @@ public class BusyBox {
 	private void callJAliEn(String line){
 		try {
 
-			line +="\n";
+			//line +="\n";
+			line = line.replace(" ", SpaceSep) + lineTerm;
+			
 			os.write(line.getBytes());
 			os.flush();
 
@@ -221,7 +229,7 @@ public class BusyBox {
 	 */
 	public void executeCommand(String callLine) {
 
-		String args[] = callLine.split("\\s");
+		String args[] = callLine.split(SpaceSep);
 
 		if (!"".equals(args[0])) {
 			if (args[0].equals(".")) {

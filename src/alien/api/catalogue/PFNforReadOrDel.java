@@ -3,6 +3,7 @@ package alien.api.catalogue;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -43,12 +44,13 @@ public class PFNforReadOrDel extends Request {
 
 	/**
 	 * Get PFNs to read
-	 * @param user 
-	 * @param site 
-	 * @param access 
-	 * @param lfn 
-	 * @param ses 
-	 * @param exses 
+	 * 
+	 * @param user
+	 * @param site
+	 * @param access
+	 * @param lfn
+	 * @param ses
+	 * @param exses
 	 */
 	public PFNforReadOrDel(AliEnPrincipal user, String site, AccessType access,
 			LFN lfn, List<String> ses, List<String> exses) {
@@ -62,12 +64,13 @@ public class PFNforReadOrDel extends Request {
 
 	/**
 	 * Get PFNs to read
-	 * @param user 
-	 * @param site 
-	 * @param access 
-	 * @param guid 
-	 * @param ses 
-	 * @param exses 
+	 * 
+	 * @param user
+	 * @param site
+	 * @param access
+	 * @param guid
+	 * @param ses
+	 * @param exses
 	 */
 	public PFNforReadOrDel(AliEnPrincipal user, String site, AccessType access,
 			GUID guid, List<String> ses, List<String> exses) {
@@ -81,102 +84,118 @@ public class PFNforReadOrDel extends Request {
 
 	@Override
 	public void run() {
-		
+
 		if (guid == null)
 			guid = GUIDUtils.getGUID(lfn.guid);
 
 		LFN setArchiveAnchor = null;
 
 		PFN readpfn = null;
-		
-		pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true,
-				SEUtils.getSEs(ses), SEUtils.getSEs(exses));
-		
-		try {
-			for (PFN pfn : pfns) {
 
-				System.out.println("Asking read for " + user.getName() + " to "
-						+ guid.guid);
-				String reason = AuthorizationFactory.fillAccess(user, pfn,
-						access);
+		if (guid.getPFNs() != null) {
 
-				if (reason != null) {
-					System.err.println("Access refused because: " + reason);
-					continue;
-				}
-				UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
-				if (archiveLinkedTo != null) {
-					GUID archiveguid = GUIDUtils
-							.getGUID(archiveLinkedTo, false);
-					setArchiveAnchor = lfn;
-					List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(
-							GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID())
-									.getPFNs(), site, true,
-							SEUtils.getSEs(ses), SEUtils.getSEs(exses));
-					if (!AuthorizationChecker.canRead(archiveguid, user)) {
-						System.err
-								.println("Access refused because: Not allowed to read sub-archive");
+			pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true,
+					SEUtils.getSEs(ses), SEUtils.getSEs(exses));
+
+			try {
+				for (PFN pfn : pfns) {
+
+					System.out.println("Asking read for " + user.getName()
+							+ " to " + guid.guid);
+					String reason = AuthorizationFactory.fillAccess(user, pfn,
+							access);
+
+					if (reason != null) {
+						System.err.println("Access refused because: " + reason);
 						continue;
 					}
-
-					for (PFN apfn : apfns) {
-
-						reason = AuthorizationFactory.fillAccess(user, apfn,
-								access);
-
-						if (reason != null) {
-							System.err.println("Access refused because: "
-									+ reason);
+					UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
+					if (archiveLinkedTo != null) {
+						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo,
+								false);
+						setArchiveAnchor = lfn;
+						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(
+								GUIDUtils.getGUID(
+										pfn.retrieveArchiveLinkedGUID())
+										.getPFNs(), site, true, SEUtils
+										.getSEs(ses), SEUtils.getSEs(exses));
+						if (!AuthorizationChecker.canRead(archiveguid, user)) {
+							System.err
+									.println("Access refused because: Not allowed to read sub-archive");
 							continue;
 						}
-						System.out.println("We have an evenlope candidate: "
-								+ apfn.getPFN());
-						readpfn = apfn;
-						break;
 
+						for (PFN apfn : apfns) {
+
+							reason = AuthorizationFactory.fillAccess(user,
+									apfn, access);
+
+							if (reason != null) {
+								System.err.println("Access refused because: "
+										+ reason);
+								continue;
+							}
+							System.out
+									.println("We have an evenlope candidate: "
+											+ apfn.getPFN());
+							readpfn = apfn;
+							break;
+
+						}
+					} else {
+						readpfn = pfn;
 					}
-				} else {
-					readpfn = pfn;
+					break;
+
 				}
-				break;
 
+				pfns.clear();
+				if(readpfn!=null)
+					pfns.add(readpfn);
+
+			} catch (Exception e) {
+				System.out.println("WE HAVE AN Exception: " + e.toString());
 			}
-
-			pfns.clear();
-			pfns.add(readpfn);
-
-		} catch (Exception e) {
-			System.out.println("WE HAVE AN Exception: " + e.toString());
-		}
-
-		for (PFN pfn : pfns) {
-			if (pfn.ticket.envelope == null) {
-				System.err.println("Sorry ... Envelope is null!");
-			} else {
-				pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
-				try {
-					// we need to both encrypt and sign, the later is not
-					// automatic
-					XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-				} catch (SignatureException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				} catch (InvalidKeyException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				} catch (NoSuchAlgorithmException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
+			if (pfns != null) {
+				for (PFN pfn : pfns) {
+					if (pfn.ticket.envelope == null) {
+						System.err.println("Sorry ... Envelope is null!");
+					} else {
+						pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
+						try {
+							// we need to both encrypt and sign, the later is
+							// not
+							// automatic
+							XrootDEnvelopeSigner
+									.signEnvelope(pfn.ticket.envelope);
+						} catch (SignatureException e) {
+							System.err
+									.println("Sorry ... Could not sign the envelope!");
+						} catch (InvalidKeyException e) {
+							System.err
+									.println("Sorry ... Could not sign the envelope!");
+						} catch (NoSuchAlgorithmException e) {
+							System.err
+									.println("Sorry ... Could not sign the envelope!");
+						}
+					}
 				}
-			}
-		}
-
+			}else 
+				System.err
+				.println("Sorry ... No PFN to make an envelope for!");
+		}else
+			System.err
+			.println("Sorry ... No PFNs for the file's GUID!");
+		if(pfns==null)
+			pfns = new ArrayList<PFN>(0);
 	}
 
 	/**
 	 * @return PFNs to read from
 	 */
 	public List<PFN> getPFNs() {
+		if(pfns==null)
+			System.out.println("will return pfns=null");
 		return pfns;
 	}
 

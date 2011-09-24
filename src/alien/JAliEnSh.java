@@ -45,7 +45,7 @@ public class JAliEnSh {
 	private static String addr;
 	private static String password;
 	private static int port = 0;
-	private static int pid;
+	private static int pid = 0;
 
 	private static void startAPIService() {
 		if (!JAliEnSh.APIServiceRunning()) {
@@ -104,6 +104,9 @@ public class JAliEnSh {
 
 		if (port == 0)
 			return false;
+		
+		if(pid==0)
+			return true;  //fake code
 
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 				new String[] { fuser, port + "/tcp" });
@@ -160,9 +163,14 @@ public class JAliEnSh {
 
 	private static void getAPIServicePID() {
 
-		File f = new File(System.getProperty("user.home")
-				+ "/.alien/.uisession");
+		//File f = new File(System.getProperty("user.home")
+		//		+ "/.alien/.uisession");
+		
+		
+		File f = new File("/tmp/jclient_token_"+System.getProperty("userid"));
+
 		if (f.exists()) {
+
 			byte[] buffer = new byte[(int) f.length()];
 			BufferedInputStream fi = null;
 			try {
@@ -179,19 +187,35 @@ public class JAliEnSh {
 						// ignore
 					}
 			}
+			// Host = 127.0.0.1
+			// Port = 10100
+			// User = sschrein
+			// Home = /alice/cern.ch/user/a/agrigora/
+			// Passwd = 5e050c46-8753-45b6-9622-6ebc12712801
+			// Debug = 0
+
 			String[] specs = new String(buffer).split("\n");
-			String[] connect = specs[0].split(":");
-			addr = connect[0];
-			try {
-				port = Integer.parseInt(connect[1]);
-			} catch (NumberFormatException e) {
-				port = 0;
-			}
-			password = specs[1] + "\n";
-			try {
-				pid = Integer.parseInt(specs[2]);
-			} catch (Exception e) {
-				pid = 0;
+
+			for (String spec : specs) {
+				String[] kval = new String(spec).split("=");
+
+				if (("Host").equals(kval[0].trim())) {
+					addr = kval[1].trim();
+				} else if (("Port").equals(kval[0].trim())) {
+					try {
+						port = Integer.parseInt(kval[1].trim());
+					} catch (NumberFormatException e) {
+						port = 0;
+					}
+				 } else if (("PID").equals(kval[0].trim())) {
+						try {
+							pid = Integer.parseInt(kval[1].trim());
+						} catch (NumberFormatException e) {
+							pid = 0;
+						}
+				} else if (("Passwd").equals(kval[0].trim())) {
+					password = kval[1].trim();
+				}
 			}
 		}
 	}
