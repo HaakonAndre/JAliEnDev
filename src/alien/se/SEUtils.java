@@ -413,7 +413,7 @@ public final class SEUtils {
 
 		List<PFN> spfns = sortBySite(pfns, sSite, removeBrokenSEs);
 
-		if (SEs.isEmpty() && exSEs.isEmpty())
+		if ((SEs==null || SEs.isEmpty()) && (exSEs==null || exSEs.isEmpty()))
 			return spfns;
 
 		System.out.println("sortBySiteSpecifySEs: ses: " + SEs);
