@@ -48,19 +48,42 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (!outFile.exists())
 				copyGridToLocal(source, outFile);
 			else
-				System.err
-						.println("A local file already exists with this name.");
+				out.printErrln("A local file already exists with this name.");
 		} else if (source.startsWith("file://")
 				&& !target.startsWith("file://")) {
 			File sourceFile = new File(source.replace("file://", ""));
-			if (sourceFile.exists())
-				copyLocalToGrid(sourceFile, target);
+			if (!targetLFNExists(target))
+				if (sourceFile.exists())
+					copyLocalToGrid(sourceFile, target);
+				else
+					out.printErrln("A local file with this name does not exists.");
+		} else {
+			if (!targetLFNExists(target)) {
+				final boolean preSilent=silent;
+				silent = true;
+				File localFile = copyGridToLocal(source, null);
+				if (localFile != null && localFile.exists()
+						&& localFile.length() > 0)
+					if (copyLocalToGrid(localFile, target))
+						if(!preSilent)
+							out.printOutln("Copy successful.");
+					else
+						out.printErrln("Could copy to the target.");
+				else
+					out.printErrln("Could not get the source.");
+			}
+		}
+	}
 
-			else
-				System.err
-						.println("A local file with this name does not exists.");
-		} else
-			out.printErrln("You have to specify a grid and a local file");
+	private boolean targetLFNExists(String target) {
+		LFN tLFN = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+				commander.user.getName(), commander.getCurrentDir()
+						.getCanonicalName(), target));
+		if (tLFN != null){
+			out.printErrln("The target LFN already exists.");
+			return true;
+		}
+		return false;
 
 	}
 
@@ -71,8 +94,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            Grid filename
 	 * @param target
 	 *            local file
+	 * @return local target file
 	 */
-	public void copyGridToLocal(String source, File target) {
+	public File copyGridToLocal(String source, File target) {
 
 		List<PFN> pfns = null;
 
@@ -95,9 +119,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			for (final Protocol protocol : protocols) {
 				try {
 					target = protocol.get(pfn, target);
-					if (!silent)
+					if(!silent)
 						out.printOutln("Downloaded file to "
-								+ target.getCanonicalPath());
+							+ target.getCanonicalPath());
 
 					break;
 				} catch (IOException e) {
@@ -105,8 +129,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 			}
 		}
-		if (!target.exists())
-			out.printOutln("Could not get the file.");
+		if (!target.exists() || target.length() <= 0)
+			out.printErrln("Could not get the file.");
+		else
+			return target;
+		return null;
 	}
 
 	/**
@@ -116,20 +143,21 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            local filename
 	 * @param target
 	 *            Grid filename
+	 * @return status of the upload
 	 */
-	public void copyLocalToGrid(File source, String target) {
+	public boolean copyLocalToGrid(File source, String target) {
 
 		if (!source.exists() || !source.isFile() || !source.canRead()) {
 			out.printErrln("Could not get the local file: "
 					+ source.getAbsolutePath());
-			return;
+			return false;
 		}
 
 		long size = source.length();
 		if (size <= 0) {
 			out.printErrln("Local file has size zero: "
 					+ source.getAbsolutePath());
-			return;
+			return false;
 		}
 		String md5 = null;
 		try {
@@ -140,7 +168,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			System.err
 					.println("Could not calculate md5 checksum of the local file: "
 							+ source.getAbsolutePath());
-			return;
+			return false;
 		}
 
 		List<PFN> pfns = null;
@@ -155,7 +183,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			guid.size = size;
 			guid.md5 = md5;
 			out.printErrln("Not working yet...");
-			return;
+			return false;
 		} else {
 			lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
@@ -204,13 +232,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (registerPFNs.size() != 0)
 			CatalogueApiUtils.registerEnvelopes(commander.user, envelopes);
 
-		if (pfns.size() == (envelopes.size() + registerPFNs.size()))
-			out.printOutln("File successfully uploaded.");
-		else if ((envelopes.size() + registerPFNs.size()) > 0)
+		if (pfns.size() == (envelopes.size() + registerPFNs.size())) {
+			if(!silent)
+				out.printOutln("File successfully uploaded.");
+			return true;
+		} else if ((envelopes.size() + registerPFNs.size()) > 0)
 			out.printErrln("Only " + (envelopes.size() + registerPFNs.size())
 					+ " PFNs could be uploaded");
 		else
 			out.printOutln("Upload failed, sorry!");
+		return false;
 
 	}
 
@@ -218,8 +249,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		System.out
-				.println(AlienTime.getStamp()
+		out.printOutln(AlienTime.getStamp()
 						+ "Usage: cp  <file:///localfile /gridfile> or  </gridfile file:///localfile>");
 		out.printOutln("		-g : get by GUID");
 		out.printOutln("		-S : [se,se2,!se3,se4,!se5,disk=3,tape=1]");
@@ -250,16 +280,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
 	public JAliEnCommandcp(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
-		super(commander, out,alArguments);
-		
+		super(commander, out, alArguments);
 
 		final OptionParser parser = new OptionParser();
 
