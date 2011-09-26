@@ -159,7 +159,7 @@ public class DispatchSSLServer extends Thread {
 			}
 		} catch (Throwable e) {
 			logger.log(Level.WARNING, "Lasted : " + lLasted
-					+ ", serialization : " + lSerialization);
+					+ ", serialization : " + lSerialization, e);
 
 			if (ois != null) {
 				try {
