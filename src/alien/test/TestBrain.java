@@ -34,6 +34,16 @@ public class TestBrain {
 	 */
 	public static String cCp = "";
 	
+	/**
+	 * location of the slapd binary
+	 */
+	public static String cSlapd = "";
+
+	/**
+	 * location of the slapd binary
+	 */
+	public static String cSlappasswd = "";
+	
 	
 	/**
 	 * @return if we found all commands
@@ -61,8 +71,15 @@ public class TestBrain {
 		cChmod = Functions.which("chmod");
 		if(cChmod==null)
 			state = false;
-
 		
+		cSlapd = Functions.which("slapd");
+		if(cSlapd==null)
+			state = false;
+		
+		cSlappasswd = Functions.which("slappasswd");
+		if(cSlappasswd==null)
+			state = false;
+		 
 		return state;
 		
 	}

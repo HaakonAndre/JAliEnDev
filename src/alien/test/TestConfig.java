@@ -153,13 +153,16 @@ public class TestConfig {
 
 		full_host_name = InetAddress.getByName("127.0.0.1")
 				.getCanonicalHostName();
+		
+		
 
 		String[] host = full_host_name.split(".");
 		// fixed overwrite:
-		host = new String[] { "jtvo", "cern", "ch" };
-		ldap_root = "o=" + host[0] + ",dc=" + host[1] + ",dc=" + host[2];
-		ldap_suffix = "dc=" + host[1] + ",dc=" + host[2];
-		base_home_dir = "/" + host[2] + "/" + host[1] + "." + host[2]
+		//host = new String[] { "jtvo", "cern", "ch" };
+		host = new String[] { "localhost", "localdomain"};
+		ldap_suffix = "dc=" + host[1]; // + ",dc=" + host[2];
+		ldap_root = "cn=Manager,"+TestConfig.ldap_suffix;
+		base_home_dir = "/" + host[1] + "/" + host[0] // + "." + host[2]
 				+ "/user/";
 
 	}

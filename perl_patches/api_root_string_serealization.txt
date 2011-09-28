@@ -1,8 +1,15 @@
 
 the command list from Andreas:
-ls, cd, pwd, register,rm,mkdir,rmdir,
-type,find,listFilesFromCollection,getdataset,
-ps2,access,commit
+ls, cd, pwd, register,find,access,commit
+
+rm,
+mkdir,rmdir,
+
+listFilesFromCollection - do we really have this one???
+
+type,getdataset,
+
+ps2,submit,packman
 
 
 
