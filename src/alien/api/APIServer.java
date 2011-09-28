@@ -109,7 +109,7 @@ public class APIServer extends Thread {
 		try {
 			int iUserId = Integer.parseInt(sUserId);
 
-			String sFileName = "/tmp/jclient_token_"+iUserId;
+			String sFileName = "/tmp/gclient_token_"+iUserId;
 
 			try {
 				FileWriter fw = new FileWriter(sFileName);
