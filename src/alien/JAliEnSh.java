@@ -23,14 +23,15 @@ public class JAliEnSh {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		File f = new File(System.getProperty("user.home"));
-		System.out.println("And we are in: " + f.getCanonicalPath());
+		//File f = new File(System.getProperty("user.home"));
+		//System.out.println("And we are in: " + f.getCanonicalPath());
 
 		if (args.length > 0 && args[0].equals("-k"))
 			JAliEnSh.killAPIService();
 		else {
 
 			// JAliEnSh.startAPIService();
+			
 			if (JAliEnSh.APIServiceRunning())
 				new BusyBox(addr, port, password);
 			else
@@ -102,8 +103,10 @@ public class JAliEnSh {
 		if (!(new File(fuser)).exists())
 			return true;
 
-		if (port == 0)
+		if (port == 0){
+			System.err.println("Port info is zero.");
 			return false;
+		}
 		
 		if(pid==0)
 			return true;  //fake code
@@ -128,10 +131,13 @@ public class JAliEnSh {
 			// 10100/tcp: 5995
 			String line[] = exitStatus.getStdOut().trim().split(":");
 			if (!line[0].trim().equals(port + "/tcp")
-					|| !line[1].trim().equals(pid + ""))
+					|| !line[1].trim().equals(pid + "")){
+				System.err.println("Could not get proper information from fuser.");
 				return false;
+			}
 
 		} else {
+			System.err.println("Could not get information from fuser.");
 			return false;
 		}
 
@@ -158,15 +164,12 @@ public class JAliEnSh {
 			if (buffer.contains("alien.APIService"))
 				return true;
 		}
+		System.err.println("Could not get information from /proc.");
 		return false;
 	}
 
 	private static void getAPIServicePID() {
 
-		//File f = new File(System.getProperty("user.home")
-		//		+ "/.alien/.uisession");
-		
-		
 		File f = new File("/tmp/jclient_token_"+System.getProperty("userid"));
 
 		if (f.exists()) {
@@ -177,6 +180,7 @@ public class JAliEnSh {
 				fi = new BufferedInputStream(new FileInputStream(f));
 				fi.read(buffer);
 			} catch (IOException e) {
+				System.err.println("Exception while reading token file.");
 				port = 0;
 				return;
 			} finally {
@@ -198,10 +202,12 @@ public class JAliEnSh {
 
 			for (String spec : specs) {
 				String[] kval = new String(spec).split("=");
+				System.out.println("Greping key: " + kval[0]);
 
 				if (("Host").equals(kval[0].trim())) {
 					addr = kval[1].trim();
 				} else if (("Port").equals(kval[0].trim())) {
+					System.out.println("Greping api port...");
 					try {
 						port = Integer.parseInt(kval[1].trim());
 					} catch (NumberFormatException e) {
@@ -218,6 +224,8 @@ public class JAliEnSh {
 				}
 			}
 		}
+		else
+			System.err.println("Token file does not exists.");
 	}
 
 }
