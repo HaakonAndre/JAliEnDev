@@ -115,7 +115,7 @@ public class BusyBox {
 					new FileWriter("writer.debug", true)));
 
 			reader.addCompletor(new SimpleCompletor(
-					callJAliEnGetString("commandlist")));
+					callJAliEnGetString("commandlist").split(" ")));
 			// reader.addCompletor(new GridFileCompletor());
 			// reader.addCompletor(new FileNameCompletor());
 
