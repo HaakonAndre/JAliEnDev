@@ -202,12 +202,10 @@ public class JAliEnSh {
 
 			for (String spec : specs) {
 				String[] kval = new String(spec).split("=");
-				System.out.println("Greping key: " + kval[0]);
 
 				if (("Host").equals(kval[0].trim())) {
 					addr = kval[1].trim();
 				} else if (("Port").equals(kval[0].trim())) {
-					System.out.println("Greping api port...");
 					try {
 						port = Integer.parseInt(kval[1].trim());
 					} catch (NumberFormatException e) {

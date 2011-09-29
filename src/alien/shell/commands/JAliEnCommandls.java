@@ -36,6 +36,11 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	private boolean bF = false;
 
 	/**
+	 * marker for -c argument
+	 */
+	private boolean bC = false;
+	
+	/**
 	 * marker for -b argument
 	 */
 	private boolean bB = false;
@@ -79,9 +84,11 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 						ret += localLFN.guid.toString().toUpperCase() + "	"
 								+ localLFN.getName();
 					} else {
-
-						if (bL)
-							ret += FileSystemUtils
+						if(bC)
+							ret += localLFN.getCanonicalName();
+						else{
+							if (bL)
+								ret += FileSystemUtils
 									.getFormatedTypeAndPerm(localLFN)
 									+ "   "
 									+ localLFN.owner
@@ -92,11 +99,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 									+ " "
 									+ format(localLFN.ctime)
 									+ "            " + localLFN.getFileName();
-						else
-							ret += localLFN.getFileName();
+					
+							else
+								ret += localLFN.getFileName();
 
-						if (bF && (localLFN.type == 'd'))
-							ret += "/";
+							if (bF && (localLFN.type == 'd'))
+								ret += "/";
+						}
 					}
 					if (!silent)
 						out.printOutln(ret);
@@ -129,10 +138,11 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 		out.printOutln(AlienTime.getStamp()
-				+ "Usage: ls [-laFn|b|h] [<directory>]\n"
+				+ "Usage: ls [-a(b|(Fl|c)|h] [<directory>]\n"
 				+ "		-l : long format\n" + "		-a : show hidden .* files\n"
 				+ "		-F : add trailing / to directory names\n"
 				+ "		-b : print in guid format\n"
+				+ "		-c : print canonical paths\n"
 				+ "		-h : print the help text");
 	}
 
@@ -225,6 +235,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		parser.accepts("b");
 		parser.accepts("a");
 		parser.accepts("F");
+		parser.accepts("c");
 
 		final OptionSet options = parser.parse(alArguments
 				.toArray(new String[] {}));
@@ -237,6 +248,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		bB = options.has("b");
 		bA = options.has("a");
 		bF = options.has("F");
+		bC = options.has("c");
 	}
 
 }

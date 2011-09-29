@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import joptsimple.OptionException;
 
 import alien.api.catalogue.CatalogueApiUtils;
@@ -16,6 +14,7 @@ import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
+
 
 /**
  * @author ron
@@ -242,10 +241,14 @@ public class JAliEnCOMMander {
 			JAliEnBaseCommand jcommand = null;
 			try {
 				jcommand = getCommand(comm, param);
+			} catch (OptionException oe){
+				out.printErrln(oe.getMessage());
+				out.flush();
+				return;
 			} catch (Exception e) {
 				e.printStackTrace();
 				out.printErrln("Command [" + comm
-						+ "] not found! (Class implementation not found.)");
+						+ "] execution failed! (Potentially class implementation not found.)");
 				out.flush();
 				return;
 			}

@@ -10,9 +10,12 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.StringTokenizer;
 
+import jline.ArgumentCompletor;
+import jline.Completor;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
 import alien.config.JAliEnIAm;
+import alien.shell.GridLocalFileCompletor;
 import alien.shell.commands.JAliEnShPrintWriter;
 import alien.shell.commands.RootPrintWriter;
 import alien.taskQueue.Job;
@@ -40,6 +43,15 @@ public class BusyBox {
 	private String currentDir;
 	private String currentDirTiled;
 
+	
+	/**
+	 * 
+	 * @return the current directory
+	 */
+	public String getCurrentDir(){
+		return currentDir;
+	}
+	
 	/**
 	 * print welcome
 	 */
@@ -105,7 +117,7 @@ public class BusyBox {
 		if (s != null) {
 			out = new PrintWriter(System.out);
 
-			//currentDir = callJAliEnGetString("cdir");
+			
 			welcome();
 			out.flush();
 
@@ -114,11 +126,12 @@ public class BusyBox {
 			reader.setDebug(new PrintWriter(
 					new FileWriter("writer.debug", true)));
 
-			reader.addCompletor(new SimpleCompletor(
-					callJAliEnGetString("commandlist").split(" ")));
-			// reader.addCompletor(new GridFileCompletor());
-			// reader.addCompletor(new FileNameCompletor());
-
+			Completor[] comp = new Completor[]{
+		            new SimpleCompletor(callJAliEnGetString("commandlist").split(" ")),
+		            new GridLocalFileCompletor(this)
+		        };
+		    reader.addCompletor (new ArgumentCompletor(comp));
+					
 			String line;
 			
 			while ((line = reader.readLine(whoami + promptPrefix + currentDirTiled + promptSuffix)) != null) {
@@ -137,7 +150,7 @@ public class BusyBox {
 		}
 	}
 
-	private String callJAliEnGetString(String line) {
+	protected String callJAliEnGetString(String line) {
 		try {
 			//line +="\n";
 			line = line.replace(" ", SpaceSep) + lineTerm;
@@ -162,7 +175,7 @@ public class BusyBox {
 			
 			if(ret.length()>0)
 				ret = ret.substring(0,ret.length()-1);
-
+			
 			return ret;
 
 		} catch (IOException e) {
