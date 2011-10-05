@@ -170,7 +170,7 @@ public class JAliEnSh {
 
 	private static void getAPIServicePID() {
 
-		File f = new File("/tmp/jclient_token_"+System.getProperty("userid"));
+		File f = new File("/tmp/gclient_token_"+System.getProperty("userid"));
 
 		if (f.exists()) {
 

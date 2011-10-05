@@ -89,7 +89,7 @@ public class APIServer extends Thread {
 
 	/**
 	 * write the configuration file that is used by gapi <br />
-	 * the filename = /tmp/jclient_token_$uid
+	 * the filename = /tmp/gclient_token_$uid
 	 * @param sHost hostname to connect to, by default localhost
 	 * @param iPort port number for listening
 	 * @param sPassword the password used by other application to connect to the APIServer
