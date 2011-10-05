@@ -17,11 +17,15 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 	public void execute() throws Exception {
 
-		JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander.getCommand(
-				"get", new Object[] { commander, out, alArguments });
-		get.silent();
-		get.execute();
-		File fout = get.getOutputFile();
+		ArrayList<String> args = new ArrayList<String>(alArguments.size()+1);
+		args.add("-t");
+		args.addAll(alArguments);
+		
+		JAliEnCommandcp cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand(
+				"cp", new Object[] { commander, out, args });
+		cp.silent();
+		cp.execute();
+		File fout = cp.getOutputFile();
 		if(fout==null)
 			return;
 		

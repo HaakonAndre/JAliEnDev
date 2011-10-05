@@ -97,7 +97,8 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 									: "");
 				}	
 				else
-					name = lfn.substring(lfn.lastIndexOf('/') + 1);
+					name = lfn.substring(lfn.lastIndexOf('/') + 1) + ((matches == 1) ? " "
+							: "");
 			
 				candidates.add(name);
 			}

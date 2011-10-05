@@ -25,6 +25,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	private boolean bG = false;
 
+	private boolean bT = false;
+	
 	/**
 	 * marker for -l argument
 	 */
@@ -36,19 +38,24 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 */
 	private String source = null;
 	private String target = null;
+	
+	private File localFile = null;
 
 	// public long timingChallenge = 0;
 
 	// public boolean isATimeChallenge = false;
 
 	public void execute() {
-
-		if (!source.startsWith("file://") && target.startsWith("file://")) {
-			File outFile = new File(target.replace("file://", ""));
-			if (!outFile.exists())
-				copyGridToLocal(source, outFile);
+		if (bT) {
+			localFile = copyGridToLocal(source, null);
+			
+		} else if (!source.startsWith("file://") && target.startsWith("file://")) {
+			localFile = new File(target.replace("file://", ""));
+			if (!localFile.exists())
+				copyGridToLocal(source, localFile);
 			else
 				out.printErrln("A local file already exists with this name.");
+			
 		} else if (source.startsWith("file://")
 				&& !target.startsWith("file://")) {
 			File sourceFile = new File(source.replace("file://", ""));
@@ -57,11 +64,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					copyLocalToGrid(sourceFile, target);
 				else
 					out.printErrln("A local file with this name does not exists.");
-		} else {
-			if (!targetLFNExists(target)) {
+			
+		} else if (!targetLFNExists(target)){
 				final boolean preSilent=silent;
 				silent = true;
-				File localFile = copyGridToLocal(source, null);
+				localFile = copyGridToLocal(source, null);
 				if (localFile != null && localFile.exists()
 						&& localFile.length() > 0)
 					if (copyLocalToGrid(localFile, target))
@@ -71,11 +78,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						out.printErrln("Could not copy to the target.");
 				else
 					out.printErrln("Could not get the source.");
-			}
 		}
 	}
 	
-	
+	/**
+	 * @return local File after get/pull
+	 */
+	protected File getOutputFile(){
+		return localFile;
+	}
 
 	
 	
@@ -191,10 +202,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 			}
 		}
-		if (!target.exists() || target.length() <= 0)
-			out.printErrln("Could not get the file.");
-		else
+		if (target.exists() && target.length() > 0)
 			return target;
+		out.printErrln("Could not get the file.");
 		return null;
 	}
 
@@ -320,10 +330,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 		out.printOutln(AlienTime.getStamp()
-						+ "Usage: cp  <file:///localfile /gridfile> or  </gridfile file:///localfile>");
+						+ "Usage: cp  < file:///localfile /gridfile >  |  < /gridfile file:///localfile >  |  < -t /gridfile >");
 		out.printOutln("		-g : get by GUID");
 		out.printOutln("		-S : [se,se2,!se3,se4,!se5,disk=3,tape=1]");
 		out.printOutln("		-s : execute command silent");
+		out.printOutln("		-t : create a local temp file.");
 
 	}
 
@@ -365,11 +376,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		parser.accepts("S");
 		parser.accepts("g");
+		parser.accepts("t");
 
 		final OptionSet options = parser.parse(alArguments
 				.toArray(new String[] {}));
 
-		if (options.nonOptionArguments().size() != 2) {
+		if ((options.nonOptionArguments().size() != 2) && !(options.nonOptionArguments().size() == 1 && options.has("t"))) {
 			printHelp();
 			return;
 		}
@@ -386,9 +398,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 		bG = options.has("g");
-
+		bT = options.has("t");
+		
 		source = options.nonOptionArguments().get(0);
-		target = options.nonOptionArguments().get(1);
+		if(!(options.nonOptionArguments().size() == 1 && options.has("t")))
+			target = options.nonOptionArguments().get(1);
 	}
 
 }
