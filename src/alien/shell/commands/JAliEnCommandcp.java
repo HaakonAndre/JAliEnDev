@@ -68,7 +68,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						if(!preSilent)
 							out.printOutln("Copy successful.");
 					else
-						out.printErrln("Could copy to the target.");
+						out.printErrln("Could not copy to the target.");
 				else
 					out.printErrln("Could not get the source.");
 			}
