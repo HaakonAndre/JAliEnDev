@@ -109,6 +109,11 @@ public class RootPrintWriter extends UIPrintWriter {
 		}
 	}
 
+	
+	protected void pending(){
+		//ignore - not to be implemented in the root printer
+	}
+	
 	// testcode end
 
 	private String printDebug() {

@@ -39,7 +39,12 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 	 * String tag to mark separated fields
 	 */
 	public static String fieldseparator = String.valueOf((char) 1);
-
+	
+	/**
+	 * String tag to signal pending action
+	 */
+	public static String pendingSignal = String.valueOf((char) 9);
+	
 
 	private OutputStream os;
 
@@ -71,6 +76,11 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 	}
 	
 	protected void flush(){
-		print(streamend+"\n");
+		print(streamend + "\n");
 	}
+	
+	protected void pending(){
+		print(pendingSignal + "\n");
+	}
+	
 }

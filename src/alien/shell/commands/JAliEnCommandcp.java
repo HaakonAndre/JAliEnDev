@@ -74,6 +74,61 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 	}
+	
+	
+
+	
+	
+	/**
+	 * @author ron
+	 * @since October 5, 2011
+	 */
+	protected class ProtocolAction extends Thread {
+		private final Protocol proto;
+		private final File file;
+		private final PFN pfn;
+		private boolean pull;
+		private String back = null;
+		private File output = null;
+		
+		ProtocolAction(final Protocol protocol, final File source, final PFN target){
+			proto = protocol;
+			file = source;
+			pfn = target;
+			pull = false;
+		}
+		
+		ProtocolAction(final Protocol protocol, final PFN source, final File target){
+			proto = protocol;
+			file = target;
+			pfn = source;
+			pull = true;
+		}
+		
+		public void run() {
+			try{
+	       if(pull)
+	    	  output = proto.get(pfn, file);
+	       else
+	    	   back =  proto.put(pfn,file);
+			} catch (IOException e) {
+				e.getStackTrace();
+			}
+	    }
+		/**
+		 * @return return string from call
+		 */
+		public String getReturn(){
+			return back;
+		}
+		/**
+		 * @return local output file
+		 */
+		public File getFile(){
+			return output;
+		}
+	}
+	
 
 	private boolean targetLFNExists(String target) {
 		LFN tLFN = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
@@ -117,14 +172,21 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 			for (final Protocol protocol : protocols) {
+				ProtocolAction pA = new ProtocolAction(protocol,pfn, target);
 				try {
-					target = protocol.get(pfn, target);
+					pA.start();
+					while(pA.isAlive()){
+						Thread.sleep(500);
+						out.pending();
+					}
+					target = pA.getFile();
+					
 					if(!silent)
 						out.printOutln("Downloaded file to "
 							+ target.getCanonicalPath());
 
 					break;
-				} catch (IOException e) {
+				} catch (Exception e) {
 					e.getStackTrace();
 				}
 			}
@@ -163,6 +225,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		try {
 			md5 = FileSystemUtils.calculateMD5(source);
 		} catch (Exception e1) {
+			e1.printStackTrace();
 		}
 		if (md5 == null) {
 			System.err
@@ -204,8 +267,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 			for (final Protocol protocol : protocols) {
+				ProtocolAction pA = new ProtocolAction(protocol, source, pfn);
 				try {
-					target = protocol.put(pfn, source);
+					pA.start();
+					while(pA.isAlive()){
+						Thread.sleep(500);
+						out.pending();
+					}
+					
+					target = pA.getReturn();
 					if (!silent)
 						out.printOutln("Uploading file "
 								+ source.getCanonicalPath() + " to "
@@ -221,8 +291,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 										.getSignedEnvelope());
 					}
 					break;
-				} catch (IOException e) {
-					// ignore
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}

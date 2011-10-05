@@ -1,6 +1,10 @@
 package alien.shell.commands;
 
 
+/**
+ * @author ron
+ * @since July 15, 2011
+ */
 abstract class UIPrintWriter {
 
 	/**
@@ -23,6 +27,9 @@ abstract class UIPrintWriter {
 	 * Flush a set of lines as one transaction
 	 */
 	abstract protected void flush();
+	
+	
+	abstract protected void pending();
 	
 	/**
 	 * identify the RootPrinter from above 

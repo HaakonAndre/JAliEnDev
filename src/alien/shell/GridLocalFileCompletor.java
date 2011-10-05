@@ -24,16 +24,16 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 
 	public int complete(String buf, int cursor,
 			@SuppressWarnings("rawtypes") final List candidates) {
-
-		if (buf.contains("file://") && cursor >= buf.indexOf("file://"))
+	
+		if (buf!=null && buf.contains("file://") && cursor >= buf.indexOf("file://"))
 			return super.complete(buf.replace("file://", ""), cursor - 7,
 					candidates) + 7;
-		else
-			return gridComplete(buf, cursor, candidates);
+		return gridComplete(buf, cursor, candidates);
 	}
 
-	private int gridComplete(final String buf, final int cursor,
+	private int gridComplete(final String buf, @SuppressWarnings("unused") final int cursor,
 			@SuppressWarnings("rawtypes") final List candidates) {
+		
 		String buffer = (buf == null) ? "" : buf;
 
 		String translated = buffer;
@@ -55,7 +55,7 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 		else
 			dir = translated.substring(0, translated.lastIndexOf('/'));
 	
-		final String listing = busy.callJAliEnGetString("ls -c " + dir);
+		final String listing = busy.callJAliEnGetString("ls -ca " + dir);
 
 		final StringTokenizer tk = new StringTokenizer(listing);
 		List<String> entries = new ArrayList<String>();
@@ -86,17 +86,25 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 			if (lfn.startsWith(translated))
 				matches++;
 
-		for (String lfn : entries)
+		for (String lfn : entries){
+			
 			if (lfn.startsWith(translated)) {
-				String name = lfn.substring(lfn.lastIndexOf('/') + 1)
-						+ (((matches == 1) && lfn.endsWith("/")) ? File.separator
-								: " ");
-
+				String name = null;
+				if(lfn.endsWith("/")){
+					lfn = lfn.substring(0,lfn.length()-1);
+					name = lfn.substring(lfn.lastIndexOf('/') + 1)
+							+ ((matches == 1) ? "/"
+									: "");
+				}	
+				else
+					name = lfn.substring(lfn.lastIndexOf('/') + 1);
+			
 				candidates.add(name);
 			}
+		}
 
-		final int index = buffer.lastIndexOf(File.separator);
+		final int index = buffer.lastIndexOf("/");
 
-		return index + File.separator.length();
+		return index + 1;
 	}
 }

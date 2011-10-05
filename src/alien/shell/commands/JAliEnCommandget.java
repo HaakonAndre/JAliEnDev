@@ -22,6 +22,7 @@ import alien.perl.commands.AlienTime;
  */
 public class JAliEnCommandget extends JAliEnBaseCommand {
 
+	
 	/**
 	 * marker for -g argument
 	 */
@@ -74,71 +75,88 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	 * execute the get
 	 */
 	public void execute() {
-
+			
 		if (lfnOrGuid != null) {
 
 			List<PFN> pfns = null;
 
 			// long lStart = System.currentTimeMillis();
 			String md5 = null;
+			
+			GUID guid = null;
+			LFN lfn = null;
+			
 
 			if (bG) {
-				GUID guid = CatalogueApiUtils.getGUID(lfnOrGuid);
+				guid = CatalogueApiUtils.getGUID(lfnOrGuid);
 				md5 = guid.md5;
-				pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
-						commander.site, guid, ses, exses);
+				
 			} else {
-				LFN lfn = CatalogueApiUtils
+				lfn = CatalogueApiUtils
 						.getLFN(FileSystemUtils.getAbsolutePath(commander.user
 								.getName(), commander.getCurrentDir()
 								.getCanonicalName(), lfnOrGuid));
 				md5 = lfn.md5;
-				pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
-						commander.site, lfn, ses, exses);
-
+				if(lfn.type=='d'){
+					out.printErrln("["+ lfnOrGuid + "] is a directory!");
+					lfn=null;
+				}
+					
 			}
+			
+			if(guid!=null | lfn!=null)
+			{
 
-			if (!bX)
-				outputFile = commander.checkLocalFileCache(md5);
+				if (!bX)
+					outputFile = commander.checkLocalFileCache(md5);
 
-			if (outputFile == null || !outputFile.exists()) {
+				if (outputFile == null || !outputFile.exists()) {
 
-				try {
-					for (PFN pfn : pfns) {
-						List<Protocol> protocols = Transfer
-								.getAccessProtocols(pfn);
-						for (final Protocol protocol : protocols) {
+					if (guid != null)
+						pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+								commander.site, guid, ses, exses);
+					else if (lfn != null)
+						pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+								commander.site, lfn, ses, exses);
 
-							try {
+					try {
+						for (PFN pfn : pfns) {
+							List<Protocol> protocols = Transfer
+									.getAccessProtocols(pfn);
+							for (final Protocol protocol : protocols) {
 
-								if (outputFileName != null) {
-									outputFile = new File(outputFileName);
+								try {
+
+									if (outputFileName != null) {
+										outputFile = new File(outputFileName);
+									}
+
+									outputFile = protocol.get(pfn, outputFile);
+
+									commander.cashFile(md5, outputFile);
+									break;
+								} catch (IOException e) {
+									e.printStackTrace();
 								}
-								outputFile = protocol.get(pfn, outputFile);
-
-								commander.cashFile(md5, outputFile);
-								break;
-							} catch (IOException e) {
-								e.printStackTrace();
 							}
+							if (outputFile == null || !outputFile.exists())
+
+								out.printErrln("Could not get the file.");
 						}
-						if (outputFile == null || !outputFile.exists())
-
-							out.printErrln("Could not get the file.");
+					} catch (Exception e) {
+						out.printErrln("Problems parsing the PFNs of this file.");
 					}
-				} catch (Exception e) {
-					out.printErrln("Problems parsing the PFNs of this file.");
 				}
+
+				if (outputFile.isFile() && outputFile.exists() && !silent)
+					try {
+						out.printOutln("Downloaded file to "
+								+ outputFile.getCanonicalPath());
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+
 			}
-
-			if (outputFile.isFile() && outputFile.exists() && !silent)
-				try {
-					out.printOutln("Downloaded file to "
-							+ outputFile.getCanonicalPath());
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
 		}
 	}
 

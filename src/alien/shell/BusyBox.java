@@ -15,9 +15,7 @@ import jline.Completor;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
 import alien.config.JAliEnIAm;
-import alien.shell.GridLocalFileCompletor;
 import alien.shell.commands.JAliEnShPrintWriter;
-import alien.shell.commands.RootPrintWriter;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 
@@ -28,9 +26,13 @@ import alien.taskQueue.TaskQueueUtils;
 public class BusyBox {
 
 
-
+	
 	private static final String lineTerm = String.valueOf((char) 0);
 	private static final String SpaceSep = String.valueOf((char) 1);
+	
+	private static final String pendSignal = String.valueOf((char) 9);
+	private static int pender = 0;
+	private static final String[] pends = {".   "," .  ","  . ","   ."};
 	
 	private static final String promptPrefix = "/" + JAliEnIAm.myPromptName()
 			+ " ";
@@ -200,25 +202,46 @@ public class BusyBox {
 			String sLine;
 			
 			while ( (sLine = br.readLine()) != null ){
-				if(sLine.startsWith(JAliEnShPrintWriter.outputterminator))
-					updateEnvironment(sLine);
-				else if(sLine.endsWith(JAliEnShPrintWriter.streamend))
+				if(sLine.startsWith(JAliEnShPrintWriter.outputterminator)){
+					updateEnvironment(sLine);}
+				
+				else if(sLine.endsWith(pendSignal))
+					pending(br);
+				else if(sLine.endsWith(lineTerm))
 					break;
 				else if(sLine.startsWith(JAliEnShPrintWriter.errTag))
 					System.err.println("Error: "+ sLine.substring(1));
 				else {
-					//sLine = RootPrintWriter.testMakeTagsVisible(sLine);
 					out.println(sLine);
 					out.flush();
 				}
 			}
 
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
+	
+	private void pending(BufferedReader br){
+		String sLine;
+		try {
+			while ( (sLine = br.readLine()) != null ){
+				if(!sLine.endsWith(pendSignal))
+					break;
+				System.out.print("\rI/O ["+ pends[pender] + "]");
+				pender++;
+				if(pender>=pends.length)
+					pender = 0;
+			}
+		} catch (IOException e) {
+			// ignore
+		}
+		finally{
+			pender = 0;
+			System.out.print("\r");
+		}
+	}
 	
 
 	
