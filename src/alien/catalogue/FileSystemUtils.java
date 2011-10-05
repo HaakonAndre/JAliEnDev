@@ -51,7 +51,7 @@ public final class FileSystemUtils {
 			path = path.substring(0,path.length()-1);
 
 		final LFN lfn = LFNUtils.getLFN(path, true);
-		LFN parent = LFNUtils.getLFN(path.substring(0,path.lastIndexOf('/')));
+		LFN parent = lfn.getParentDir();
 		
 		if(!path.endsWith("/"))
 			path += "/";
