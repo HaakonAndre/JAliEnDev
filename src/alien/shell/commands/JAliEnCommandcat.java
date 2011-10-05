@@ -22,7 +22,10 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 		get.silent();
 		get.execute();
 		File fout = get.getOutputFile();
-		if (fout != null && fout.isFile() && fout.canRead()) {
+		if(fout==null)
+			return;
+		
+		if (fout.isFile() && fout.canRead()) {
 			FileInputStream fstream = new FileInputStream(fout);
 
 			DataInputStream in = new DataInputStream(fstream);
