@@ -25,19 +25,22 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
 		System.out.println("We are called as mkdir!");
 		
+		
+		
 		for (String path: alPaths){
-			if(bP)
+
+			if(bP){
 				if(CatalogueApiUtils.createCatalogueDirectory(commander.user, FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path),true)==null)
 					out.printErrln("Could not create directory (or non-existing parents): " + path);
-		
-			else 
+			}
+			else {
 				if(CatalogueApiUtils.createCatalogueDirectory(commander.user, FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path))==null)
 					out.printErrln("Could not create directory: " + path);
-				
+			}
 		}
 	}
 
