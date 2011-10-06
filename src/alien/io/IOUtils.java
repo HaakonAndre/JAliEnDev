@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -21,6 +22,7 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.io.protocols.Protocol;
+import alien.se.SEUtils;
 
 /**
  * Helper functions for IO
@@ -105,32 +107,41 @@ public class IOUtils {
 		if (pfns==null || pfns.size()==0)
 			return null;
 		
+		final Set<PFN> realPFNsSet = new HashSet<PFN>();
+		
 		for (final PFN pfn: pfns){
-			final Set<PFN> realPfns = pfn.getRealPFNs();
+			final Set<PFN> realPfnsTemp = pfn.getRealPFNs();
 			
-			if (realPfns==null || realPfns.size()==0)
+			if (realPfnsTemp==null || realPfnsTemp.size()==0)
 				continue;
 			
-			for (final PFN realPfn: realPfns){
-				if (realPfn.ticket==null){
-					System.err.println("Missing ticket for "+realPfn.pfn);
-					continue;	// no access to this guy
-				}
+			for (PFN realPFN: realPfnsTemp)
+				realPFNsSet.add(realPFN);
+		}
+		
+		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
+		
+		final List<PFN> sortedRealPFNs = SEUtils.sortBySite(realPFNsSet, site, false);
+			
+		for (final PFN realPfn: sortedRealPFNs){
+			if (realPfn.ticket==null){
+				System.err.println("Missing ticket for "+realPfn.pfn);
+				continue;	// no access to this guy
+			}
 				
-				final List<Protocol> protocols = Transfer.getAccessProtocols(realPfn);
+			final List<Protocol> protocols = Transfer.getAccessProtocols(realPfn);
 			
-				if (protocols==null || protocols.size()==0)
-					continue;
+			if (protocols==null || protocols.size()==0)
+				continue;
 			
-				for (final Protocol protocol: protocols){
-					try{
-						final File f = protocol.get(pfn, localFile);
-					
-						return f;
-					}
-					catch (IOException e){
-						// ignore
-					}
+			for (final Protocol protocol: protocols){
+				try{
+					final File f = protocol.get(realPfn, localFile);
+				
+					return f;
+				}
+				catch (IOException e){
+					// ignore
 				}
 			}
 		}
