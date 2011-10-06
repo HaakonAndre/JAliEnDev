@@ -5,6 +5,7 @@ import java.util.Hashtable;
 import java.util.UUID;
 
 import javax.naming.Context;
+import javax.naming.NameAlreadyBoundException;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
@@ -227,14 +228,26 @@ public class CreateLDAP {
 			
 //			
 			   Attributes attrs = new BasicAttributes();
+			   
+			   Attribute objClasses = new BasicAttribute("objectClass");
+		       objClasses.add("top");
+		       objClasses.add("domain");
+		      
 			   attrs.put(new BasicAttribute("objectClass","top"));
 			   attrs.put(new BasicAttribute("objectClass","domain"));
-			   attrs.put(new BasicAttribute("dc","localdomain"));
+			  // attrs.put(new BasicAttribute("dc","localdomain"));
 //			     
-			   context.modifyAttributes("o=horschd,dc=localdomain",
-					   DirContext.ADD_ATTRIBUTE,attrs);
-//			   
-//			   context.createSubcontext("dc=localdomain", attrs);
+			   Attribute cn = new BasicAttribute("dc", "localdomain");
+			  // context.modifyAttributes("dc=localdomain",
+			//		   DirContext.ADD_ATTRIBUTE,attrs);
+			   
+			   
+			   try{
+				   context.createSubcontext("dc=localdomain", attrs);
+			   }
+			   catch(NameAlreadyBoundException e){
+				   System.out.println("Entry Already Exists Exception.");
+			   }
 //			   
 //			   context.bind("dc=localdomain", attrs);
 			   
@@ -242,14 +255,35 @@ public class CreateLDAP {
 			   attrs = new BasicAttributes();
 			   attrs.put(new BasicAttribute("objectClass","top"));
 			   attrs.put(new BasicAttribute("objectClass","organization"));
-			   attrs.put(new BasicAttribute("o","horschd"));
+			  // attrs.put(new BasicAttribute("dc","localdomain"));
+			  attrs.put(new BasicAttribute("o","horschd"));
+			  
+			   try{
+			   context.createSubcontext("o=horschd,dc=localdomain", attrs);
+		}
+		   catch(NameAlreadyBoundException e){
+			   System.out.println("Entry Already Exists Exception.");
+		   }
+			   //context.modifyAttributes("o=horschd,dc=localdomain",
+			//		   DirContext.ADD_ATTRIBUTE,attrs);
 			     
 			//   context.modifyAttributes("o=horschd",
 			//		   DirContext.ADD_ATTRIBUTE,attrs);
 			   
 			//   context.createSubcontext("o=horschd", attrs);
 			   
-			   context.bind("o=horschd", attrs);
+			   
+			   
+			   attrs = new BasicAttributes();
+			   attrs.put(new BasicAttribute("objectClass","top"));
+			   attrs.put(new BasicAttribute("objectClass","organizationalUnit"));
+			  // attrs.put(new BasicAttribute("dc","localdomain"));
+			  attrs.put(new BasicAttribute("ou","Packages"));
+			   
+			   context.createSubcontext("ou=Packages,o=horschd,dc=localdomain", attrs);
+
+			   
+			//   context.bind("o=horschd", attrs);
 //			   
 //			   
 //			
