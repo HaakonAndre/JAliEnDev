@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
+import alien.config.ConfigUtils;
 import alien.shell.BusyBox;
 
 /**
@@ -17,6 +18,11 @@ import alien.shell.BusyBox;
  * @since Jun 21, 2011
  */
 public class JAliEnSh {
+	
+	static {
+		ConfigUtils.getVersion();
+	}
+	
 	/**
 	 * @param args
 	 * @throws Exception
