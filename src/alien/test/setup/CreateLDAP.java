@@ -432,7 +432,7 @@ public class CreateLDAP {
 //	        context.createSubcontext("o=horschd,dc=localdomain", container);
 //	
 			
-			System.out.println("Context::: " + context);
+		//	System.out.println("Context::: " + context);
 			
 			context.close();
 			   

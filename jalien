@@ -10,7 +10,7 @@ else
 
 
 	cd $JALIEN_HOME
-	./run.sh alien.JAliEnSh $@
+	./run.sh -DAliEnConfig=${HOME}/.alien/config alien.JAliEnSh $@
 
 
 fi

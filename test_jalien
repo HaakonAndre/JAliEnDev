@@ -1,10 +1,19 @@
 #!/bin/bash
 
 
+if [ "$1" == "shutdown" ]; then
+
+	cd $JALIEN_HOME
+	./test.sh -DAliEnConfig=${HOME}/.alien/testVO/config -Dlia.Monitor.ConfigURL=file:///${HOME}/.alien/testVO/config/logging.properties  alien.test.ShutdownTestVO $@
+
+else
+
+
+
+
 
 	cd $JALIEN_HOME
 	./test.sh -DAliEnConfig=${HOME}/.alien/testVO/config -Dlia.Monitor.ConfigURL=file:///${HOME}/.alien/testVO/config/logging.properties  alien.test.SetupTestVO $@
 
 
-
-
+fi

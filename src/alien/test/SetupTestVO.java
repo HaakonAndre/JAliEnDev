@@ -62,8 +62,10 @@ public class SetupTestVO {
 		}
 		
 		TestConfig.initialize();
-
 		
+		System.out.println();
+		System.out.println();
+		System.out.println("Now let's start the work...");
 		System.out.println("Creating TestVO in: " + TestConfig.tvo_real_home);
 
 		if (!(new File(TestConfig.tvo_real_home)).mkdirs()) {
