@@ -172,9 +172,18 @@ public class TestConfig {
 	 */
 	public static void createConfig() throws Exception {
 		File config = new File(tvo_config);
-		if (config.mkdir())
+		if (config.mkdir()){
 			Functions.writeOutFile(tvo_config + "/config.properties",
 					getConfigProperties());
+			Functions.writeOutFile(tvo_config + "/alice_data.properties",
+					getDatabaseProperties("pass","alice_data"));
+			Functions.writeOutFile(tvo_config + "/alice_users.properties",
+					getDatabaseProperties("pass","alice_users"));
+			Functions.writeOutFile(tvo_config + "/processes.properties",
+					getDatabaseProperties("pass","processes"));
+			Functions.writeOutFile(tvo_config + "/logging.properties",
+					getLoggingProperties());
+		}
 		File logs = new File(tvo_logs);
 		if (!logs.mkdir())
 			throw new TestException("Could not create log directory: " + tvo_logs);
@@ -196,6 +205,37 @@ public class TestConfig {
 		
 		
 		+"\n";
+	}
+	
+	/**
+	 * @return the content for the config.properties file
+	 */
+	private static String getDatabaseProperties(String pass,String db) {
+			return 	"\n" 
+				+ "password=" + pass + "\n"
+				+ "driver=com.mysql.jdbc.Driver\n"
+				+ "host=127.0.0.1\n"
+				+ "port=3307\n"
+				+ "database="+db+"\n"
+				+ "user=root\n";
+	}
+
+	/**
+	 * @return the content for the config.properties file
+	 */
+	private static String getLoggingProperties() {
+		return "\n"
+				+ "handlers= java.util.logging.FileHandler\n"
+				+ "java.util.logging.FileHandler.formatter = java.util.logging.SimpleFormatter\n"
+				+ "java.util.logging.FileHandler.limit = 1000000\n"
+				+ "java.util.logging.FileHandler.count = 4\n"
+				+ "java.util.logging.FileHandler.append = true\n"
+				+ "java.util.logging.FileHandler.pattern = alien%g.log\n"
+				+ ".level = OFF\n" + "alien.level = OFF\n"
+				+ "lia.level = OFF\n" + "lazyj.level = OFF\n"
+				+ "apmon.level = OFF\n"
+				+ "# tell LazyJ to use the same logging facilities\n"
+				+ "use_java_logger=true\n";
 	}
 
 }

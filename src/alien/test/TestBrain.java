@@ -43,7 +43,11 @@ public class TestBrain {
 	 * location of the slapd binary
 	 */
 	public static String cSlappasswd = "";
-	
+
+	/**
+	 * location of the mysql binary
+	 */
+	public static String cMysql = "";
 	
 	/**
 	 * @return if we found all commands
@@ -53,32 +57,52 @@ public class TestBrain {
 		boolean state = true;
 
 		cBash = Functions.which("bash");
-		if(cBash==null)
+		if(cBash==null){
+			System.err.println("Couldn't find command: bash");
 			state = false;
+		}
 
 		cKill = Functions.which("kill");
-		if(cKill==null)
+		if(cKill==null){
+			System.err.println("Couldn't find command: kill");
 			state = false;
-
+		}
+		
 		cOpenssl = Functions.which("openssl");
-		if(cOpenssl==null)
+		if(cOpenssl==null){
+			System.err.println("Couldn't find command: openssl");
 			state = false;
+		}
 		
 		cCp = Functions.which("cp");
-		if(cCp==null)
+		if(cCp==null){
+			System.err.println("Couldn't find command: cp");
 			state = false;
+		}
 		
 		cChmod = Functions.which("chmod");
-		if(cChmod==null)
+		if(cChmod==null){
+			System.err.println("Couldn't find command: chmod");
 			state = false;
+		}
 		
 		cSlapd = Functions.which("slapd");
-		if(cSlapd==null)
+		if(cSlapd==null){
+			System.err.println("Couldn't find command: slapd");
 			state = false;
+		}
 		
 		cSlappasswd = Functions.which("slappasswd");
-		if(cSlappasswd==null)
+		if(cSlappasswd==null){
+			System.err.println("Couldn't find command: slappasswd");
 			state = false;
+		}
+		
+		cMysql = Functions.which("mysql");
+		if(cMysql==null){
+			System.err.println("Couldn't find command: mysql");
+			state = false;
+		}
 		 
 		return state;
 		

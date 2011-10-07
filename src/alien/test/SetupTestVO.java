@@ -21,6 +21,14 @@ public class SetupTestVO {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		
+		System.out.println();
+		System.out.println();
+		System.out.println();
+		System.out.println("---- jAliEn Test System ----");
+		System.out.println("Starting ...");
+		
+		
 
 		if (!TestBrain.findCommands()) {
 			interrupt("Necessary programs missing.");
@@ -55,6 +63,7 @@ public class SetupTestVO {
 		
 		TestConfig.initialize();
 
+		
 		System.out.println("Creating TestVO in: " + TestConfig.tvo_real_home);
 
 		if (!(new File(TestConfig.tvo_real_home)).mkdirs()) {
