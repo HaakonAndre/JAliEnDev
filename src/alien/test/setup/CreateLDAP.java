@@ -1,7 +1,10 @@
 package alien.test.setup;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.UUID;
 
 import javax.naming.Context;
@@ -237,33 +240,129 @@ public class CreateLDAP {
 			   attrs.put(new BasicAttribute("objectClass","domain"));
 			  // attrs.put(new BasicAttribute("dc","localdomain"));
 //			     
-			   Attribute cn = new BasicAttribute("dc", "localdomain");
+			 //  Attribute cn = new BasicAttribute("dc", "localdomain");
 			  // context.modifyAttributes("dc=localdomain",
 			//		   DirContext.ADD_ATTRIBUTE,attrs);
 			   
 			   
-			   try{
-				   context.createSubcontext("dc=localdomain", attrs);
-			   }
-			   catch(NameAlreadyBoundException e){
-				   System.out.println("Entry Already Exists Exception.");
-			   }
+//			   try{
+//				   context.createSubcontext("dc=localdomain", attrs);
+//			   }
+//			   catch(NameAlreadyBoundException e){
+//				   System.out.println("Entry Already Exists Exception.");
+			// }
+			   
+			   String orgName = "o=horschd," + dirRoot;
+			 
+					   
+			   
+			addToLDAP(context, "top/domain", dirRoot);
+			addToLDAP(context, "top/organization", orgName);
+			addToLDAP(context, "top/organizationalUnit",
+					"ou=Packages,"+orgName);
+			addToLDAP(context, "top/organizationalUnit",
+					"ou=Institutions,"+orgName);
+			addToLDAP(context, "top/organizationalUnit",
+					"ou=Partitions,"+orgName);
+			addToLDAP(context, "top/organizationalUnit",
+					"ou=People,"+orgName);
+			addToLDAP(context, "top/organizationalUnit",
+					"ou=Roles,"+orgName);
+			addToLDAP(context, "top/organizationalUnit",
+					"ou=Services,"+orgName);
+			addToLDAP(context, "top/organizationalUnit",
+					"ou=Sites,"+orgName);
+
+			HashMap<String, String> config = new HashMap<String, String>();
+			config.put("objectClass", "top");
+			config.put("objectClass", "AliEnVOConfig");
+			config.put("authPort", "8080");
+			config.put("catalogPort", "8081");
+			config.put("queuePort", "8082");
+			config.put("logPort", "8082");
+			config.put("isPort", "8082");
+			config.put("clustermonitorPort", "8082");
+			config.put("brokerPort", "8082");
+			config.put("ldapmanager", TestConfig.ldap_suffix);
+			config.put("processPort", "8082");
+			config.put("processPort", "8082");
+			config.put("brokerHost", "8082");
+			config.put("isHost", "8082");
+			config.put("logHost", "8082");
+			config.put("catalogHost", "8082");
+			config.put("queueHost", "8082");
+			config.put("authHost", "8082");
+					
+			config.put("authenDatabase", "ADMIN");
+			config.put("catalogDatabase", "8082");
+			config.put("isDatabase", "8082");
+			config.put("queueDatabase", "8082");
+			config.put("isDbHost", "8082");
+			config.put("queueDbHost", "8082");
+			config.put("catalogHost", "8082");
+			config.put("authenHost", "8082");
+			config.put("queueDriver", "8082");
+			config.put("catalogDriver", "8082");
+			config.put("authenDriver", "8082");
+					
+					
+			config.put("isDriver", "testVO/user");
+			config.put("userDir", "8082");
+			config.put("clusterMonitorUser", "8082");
+			config.put("transferManagerAddress", "8082");
+			config.put("transferBrokerAddress", "8082");
+			config.put("transferOptimizerAddress", "8082");
+			config.put("transferDatabase", "8082");
+			config.put("jobOptimizerAddress", "8082");
+			config.put("jobDatabase", "8082");
+			config.put("catalogueOptimizerAddress", "8082");
+			config.put("catalogueDatabase", "8082");
+			config.put("lbsgAddress", "8082");
+			config.put("lbsgDatabase", "8082");
+			config.put("jobManagerAddress", "8082");
+			config.put("jobBrokerAddress", "8082");
+			config.put("authenSubject", "8082");
+			config.put("packmanmasterAddress", "8082");
+			config.put("messagesmasterAddress", "8082");
+			config.put("semasterManagerAddress", "8082");
+			config.put("semasterDatabase", "8082");
+			config.put("jobinfoManagerAddress", "8082");
+
+			addToLDAP(context, config, "ou=Config,"+orgName);
+			
+			addRoleToLDAP(context, orgName, "admin");
+			addRoleToLDAP(context, orgName, "jalien");
+			
+			String sitename = "JTestSite";
+			String domain = "cerno.ch";
+			String logdir = "/tmp";
+			String cachedir = "/tmp";
+			String tmpdir = "/tmp";
+			
+			
+			
+			addSiteToLDAP(context, orgName, sitename, domain, logdir, cachedir,
+					tmpdir);
+
+			  
+			  
+			 // addToLDAP(context, "top/domain","dc=localdomain");
 //			   
 //			   context.bind("dc=localdomain", attrs);
 			   
 //			   
-			   attrs = new BasicAttributes();
-			   attrs.put(new BasicAttribute("objectClass","top"));
-			   attrs.put(new BasicAttribute("objectClass","organization"));
-			  // attrs.put(new BasicAttribute("dc","localdomain"));
-			  attrs.put(new BasicAttribute("o","horschd"));
-			  
-			   try{
-			   context.createSubcontext("o=horschd,dc=localdomain", attrs);
-		}
-		   catch(NameAlreadyBoundException e){
-			   System.out.println("Entry Already Exists Exception.");
-		   }
+//			   attrs = new BasicAttributes();
+//			   attrs.put(new BasicAttribute("objectClass","top"));
+//			   attrs.put(new BasicAttribute("objectClass","organization"));
+//			  // attrs.put(new BasicAttribute("dc","localdomain"));
+//			  attrs.put(new BasicAttribute("o","horschd"));
+//			  
+//			   try{
+//			   context.createSubcontext("o=horschd,dc=localdomain", attrs);
+//		}
+//		   catch(NameAlreadyBoundException e){
+//			   System.out.println("Entry Already Exists Exception.");
+//		   }
 			   //context.modifyAttributes("o=horschd,dc=localdomain",
 			//		   DirContext.ADD_ATTRIBUTE,attrs);
 			     
@@ -274,14 +373,18 @@ public class CreateLDAP {
 			   
 			   
 			   
-			   attrs = new BasicAttributes();
-			   attrs.put(new BasicAttribute("objectClass","top"));
-			   attrs.put(new BasicAttribute("objectClass","organizationalUnit"));
-			  // attrs.put(new BasicAttribute("dc","localdomain"));
-			  attrs.put(new BasicAttribute("ou","Packages"));
-			   
-			   context.createSubcontext("ou=Packages,o=horschd,dc=localdomain", attrs);
-
+//			   attrs = new BasicAttributes();
+//			   attrs.put(new BasicAttribute("objectClass","top"));
+//			   attrs.put(new BasicAttribute("objectClass","organizationalUnit"));
+//			  // attrs.put(new BasicAttribute("dc","localdomain"));
+//			  attrs.put(new BasicAttribute("ou","Packages"));
+//			   
+//			  try{
+//			   context.createSubcontext("ou=Packages,o=horschd,dc=localdomain", attrs);
+//			  }
+//		   catch(NameAlreadyBoundException e){
+//			   System.out.println("Entry Already Exists Exception.");
+//		   }
 			   
 			//   context.bind("o=horschd", attrs);
 //			   
@@ -341,6 +444,84 @@ public class CreateLDAP {
 		
 	}
 	
+	
+	
+	private static void addSiteToLDAP(final DirContext context, final String orgName,
+			final String sitename, final String domain,
+			final String logdir, final String cachedir, final String tmpdir) {
+
+		HashMap<String, String> config = new HashMap<String, String>();
+		config.put("objectClass", "top");
+		config.put("objectClass", "organizationalUnit");
+		config.put("objectClass", "AliEnSite");
+		config.put("domain", domain);
+		config.put("logdir", logdir);
+		config.put("cachedir", cachedir);
+		config.put("tmpdir", tmpdir);
+		addToLDAP(context, config, "ou=" + sitename + ",ou=Sites," + orgName);
+
+		config = new HashMap<String, String>();
+		config.put("objectClass", "top");
+		config.put("objectClass", "organizationalUnit");
+		config.put("ou", "Config");
+		addToLDAP(context, config, "ou=Config,ou=" + sitename + ",ou=Sites,"
+				+ orgName);
+
+		config = new HashMap<String, String>();
+		config.put("objectClass", "top");
+		config.put("objectClass", "organizationalUnit");
+		config.put("ou", "Services");
+		addToLDAP(context, config, "ou=Services,ou=" + sitename + ",ou=Sites,"
+				+ orgName);
+
+		final String[] services = { "SE", "CE", "FTD", "PackMan" };
+
+		for (String service : Arrays.asList(services)) {
+
+			config = new HashMap<String, String>();
+			config.put("objectClass", "top");
+			config.put("objectClass", "organizationalUnit");
+			config.put("ou", service);
+			addToLDAP(context, config, "ou=" + service + ",ou=Services,ou="
+					+ sitename + ",ou=Sites," + orgName);
+		}
+
+	}
+
+	private static void addRoleToLDAP(final DirContext context, final String orgName, final String role){
+		HashMap<String, String> config = new HashMap<String, String>();
+		config.put("objectClass", "top");
+		config.put("objectClass","AliEnRole");			
+		addToLDAP(context, config, "uid="+role+",ou=Roles," + orgName);
+	}
+	
+	
+	private static void addToLDAP(final DirContext context,
+			final String objClassDesc, final String attribute) {
+		HashMap<String,String> objDesc = new HashMap<String,String>();
+		for(String val: Arrays.asList(objClassDesc.split("/")))				
+			objDesc.put("objectClass",val);
+				
+		addToLDAP(context,objDesc,attribute);
+	}
+	
+	private static void addToLDAP(final DirContext context,
+			final HashMap<String,String> objDesc, final String attribute) {
+
+		Attributes attrs = new BasicAttributes();
+
+			for(String key: objDesc.keySet())
+				attrs.put(new BasicAttribute(key, objDesc.get(key)));
+
+		try {
+			context.createSubcontext(attribute, attrs);
+		} catch (NameAlreadyBoundException e) {
+			System.out.println("Entry Already Exists Exception.");
+		} catch (NamingException e) {
+			e.printStackTrace();
+		}
+
+	}
 	
 	/**
 	 * @param ldapRoot 
