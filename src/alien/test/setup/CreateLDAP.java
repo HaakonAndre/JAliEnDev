@@ -4,20 +4,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
-import java.util.UUID;
 
 import javax.naming.Context;
 import javax.naming.NameAlreadyBoundException;
 import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.ModificationItem;
-
 
 import alien.test.TestBrain;
 import alien.test.TestConfig;
@@ -31,12 +26,10 @@ import alien.test.utils.TestException;
  */
 public class CreateLDAP {
 
-
 	/**
 	 * the LDAP location
 	 */
-	public static final String ldap_home = TestConfig.jalien_home + "/slapd";
-
+	public static final String ldap_schema = TestConfig.jalien_home + "/slapd_schema";
 
 	/**
 	 * the LDAP args file
@@ -69,7 +62,7 @@ public class CreateLDAP {
 
 		Thread.sleep(2000); 
 		
-		addDefaultEntries();
+		initializeLDAP();
 		return true;
 	}
 	
@@ -107,32 +100,11 @@ public class CreateLDAP {
 			return link.getStdOut();
 		return null;
 	}
-	
-	private static void addDefaultEntries(){
-		
-		String s_orgName = "alicechen";
-		
-		
-		ArrayList<String> vals = new ArrayList<String>();
-	//	vals.add("o");
-		vals.add(s_orgName);
-		vals.add("objectClass");
-		vals.add("organization");
 
-		addLdapEntry("o="+s_orgName,"dc="+TestConfig.ldap_suffix,"o",vals);
-		
-	}
-	
-	
 	/**
 	 * @throws Exception
 	 */
 	public static void createConfig() throws Exception {
-
-		TestConfig.ldap_pass =  UUID.randomUUID().toString();
-		
-		TestConfig.ldap_pass = "abc";
-		
 			
 		
 			Functions.writeOutFile(TestConfig.ldap_conf_file,
@@ -152,10 +124,10 @@ public class CreateLDAP {
 			"# This file should NOT be world readable.\n"+
 			"#\n"+
 			"\n"+
-			"include         "+ ldap_home+"/schema/core.schema\n"+
-			"include         "+ ldap_home+"/schema/cosine.schema\n"+
-			"include         "+ ldap_home+"/schema/nis.schema\n"+
-			"include         "+ ldap_home+"/schema/alien.schema\n"+
+			"include         "+ ldap_schema+"/core.schema\n"+
+			"include         "+ ldap_schema+"/cosine.schema\n"+
+			"include         "+ ldap_schema+"/nis.schema\n"+
+			"include         "+ ldap_schema+"/alien.schema\n"+
 			"\n"+
 			"#referral      ldap://root.openldap.org/\n"+
 			"\n"+
@@ -176,7 +148,7 @@ public class CreateLDAP {
 			"# cleartext passwords, especially for the rootdn, should\n"+
 			"# be avoid.  See slapd.conf(5) for details.\n"+
 			"\n"+
-			"directory    "+ ldap_home+"\n"+
+			"directory    "+ TestConfig.ldap_home+"\n"+
 //			"\n"+
 //			"TLSCipherSuite         ALL\n"+
 //			"TLSCertificateFile     "+TestConfig.host_cert+"\n"+
@@ -204,235 +176,32 @@ public class CreateLDAP {
 	 * @param lValues 
 	 * @return status of the entry add
 	 */
-	public static final boolean addLdapEntry(final String sParam, final String sRootExt, final String sKey,  ArrayList<String> lValues){
+	public static final boolean initializeLDAP(){
 		
 
 		try {
-			final String dirRoot = TestConfig.ldap_suffix;
-//			final String dirRoot = sRootExt+ldapRoot;
 
-			final DirContext context = getLdapContext(dirRoot);
-		//	DirContext schema = context.getSchema("");
-//
-//			dn: dc=localdomain
-//					dc: localdomain
-//					description: The best company in the whole world
-//					objectClass: dcObject
-//					objectClass: organization
-//					o: localhost
-		//	Attributes container = new BasicAttributes(true);
+			final DirContext context = getLdapContext(TestConfig.ldap_suffix);
+			final String orgName = "o="+TestConfig.host_name+"," + TestConfig.ldap_suffix;		 
+		
+			addBaseTypesToLDAP(context, orgName);
+			   
+			addInitConfigToLDAP(context, orgName);
 			
-		//	Attribute objClasses = new BasicAttribute("o","horschd");
-			//container.add("top");
-			//container.add("organization");
-		//	container.put(objClasses);
-			//context.modifyAttributes(
-			//	    "cn=localdomain,", DirContext.ADD_ATTRIBUTE, container);
+			addUserToLDAP(context,orgName,"jalien","1001","admin");
 			
-//			
-			   Attributes attrs = new BasicAttributes();
-			   
-			   Attribute objClasses = new BasicAttribute("objectClass");
-		       objClasses.add("top");
-		       objClasses.add("domain");
-		      
-			   attrs.put(new BasicAttribute("objectClass","top"));
-			   attrs.put(new BasicAttribute("objectClass","domain"));
-			  // attrs.put(new BasicAttribute("dc","localdomain"));
-//			     
-			 //  Attribute cn = new BasicAttribute("dc", "localdomain");
-			  // context.modifyAttributes("dc=localdomain",
-			//		   DirContext.ADD_ATTRIBUTE,attrs);
-			   
-			   
-//			   try{
-//				   context.createSubcontext("dc=localdomain", attrs);
-//			   }
-//			   catch(NameAlreadyBoundException e){
-//				   System.out.println("Entry Already Exists Exception.");
-			// }
-			   
-			   String orgName = "o=horschd," + dirRoot;
-			 
-					   
-			   
-			addToLDAP(context, "top/domain", dirRoot);
-			addToLDAP(context, "top/organization", orgName);
-			addToLDAP(context, "top/organizationalUnit",
-					"ou=Packages,"+orgName);
-			addToLDAP(context, "top/organizationalUnit",
-					"ou=Institutions,"+orgName);
-			addToLDAP(context, "top/organizationalUnit",
-					"ou=Partitions,"+orgName);
-			addToLDAP(context, "top/organizationalUnit",
-					"ou=People,"+orgName);
-			addToLDAP(context, "top/organizationalUnit",
-					"ou=Roles,"+orgName);
-			addToLDAP(context, "top/organizationalUnit",
-					"ou=Services,"+orgName);
-			addToLDAP(context, "top/organizationalUnit",
-					"ou=Sites,"+orgName);
-
-			HashMap<String, String> config = new HashMap<String, String>();
-			config.put("objectClass", "top");
-			config.put("objectClass", "AliEnVOConfig");
-			config.put("authPort", "8080");
-			config.put("catalogPort", "8081");
-			config.put("queuePort", "8082");
-			config.put("logPort", "8082");
-			config.put("isPort", "8082");
-			config.put("clustermonitorPort", "8082");
-			config.put("brokerPort", "8082");
-			config.put("ldapmanager", TestConfig.ldap_suffix);
-			config.put("processPort", "8082");
-			config.put("processPort", "8082");
-			config.put("brokerHost", "8082");
-			config.put("isHost", "8082");
-			config.put("logHost", "8082");
-			config.put("catalogHost", "8082");
-			config.put("queueHost", "8082");
-			config.put("authHost", "8082");
-					
-			config.put("authenDatabase", "ADMIN");
-			config.put("catalogDatabase", "8082");
-			config.put("isDatabase", "8082");
-			config.put("queueDatabase", "8082");
-			config.put("isDbHost", "8082");
-			config.put("queueDbHost", "8082");
-			config.put("catalogHost", "8082");
-			config.put("authenHost", "8082");
-			config.put("queueDriver", "8082");
-			config.put("catalogDriver", "8082");
-			config.put("authenDriver", "8082");
-					
-					
-			config.put("isDriver", "testVO/user");
-			config.put("userDir", "8082");
-			config.put("clusterMonitorUser", "8082");
-			config.put("transferManagerAddress", "8082");
-			config.put("transferBrokerAddress", "8082");
-			config.put("transferOptimizerAddress", "8082");
-			config.put("transferDatabase", "8082");
-			config.put("jobOptimizerAddress", "8082");
-			config.put("jobDatabase", "8082");
-			config.put("catalogueOptimizerAddress", "8082");
-			config.put("catalogueDatabase", "8082");
-			config.put("lbsgAddress", "8082");
-			config.put("lbsgDatabase", "8082");
-			config.put("jobManagerAddress", "8082");
-			config.put("jobBrokerAddress", "8082");
-			config.put("authenSubject", "8082");
-			config.put("packmanmasterAddress", "8082");
-			config.put("messagesmasterAddress", "8082");
-			config.put("semasterManagerAddress", "8082");
-			config.put("semasterDatabase", "8082");
-			config.put("jobinfoManagerAddress", "8082");
-
-			addToLDAP(context, config, "ou=Config,"+orgName);
+			addRoleToLDAP(context, orgName, "admin", "jalien");
+			addRoleToLDAP(context, orgName, "jalien", "jalien");
 			
-			addRoleToLDAP(context, orgName, "admin");
-			addRoleToLDAP(context, orgName, "jalien");
 			
 			String sitename = "JTestSite";
-			String domain = "cerno.ch";
 			String logdir = "/tmp";
 			String cachedir = "/tmp";
 			String tmpdir = "/tmp";
 			
-			
-			
-			addSiteToLDAP(context, orgName, sitename, domain, logdir, cachedir,
+			addSiteToLDAP(context, orgName, sitename, TestConfig.domain, logdir, cachedir,
 					tmpdir);
 
-			  
-			  
-			 // addToLDAP(context, "top/domain","dc=localdomain");
-//			   
-//			   context.bind("dc=localdomain", attrs);
-			   
-//			   
-//			   attrs = new BasicAttributes();
-//			   attrs.put(new BasicAttribute("objectClass","top"));
-//			   attrs.put(new BasicAttribute("objectClass","organization"));
-//			  // attrs.put(new BasicAttribute("dc","localdomain"));
-//			  attrs.put(new BasicAttribute("o","horschd"));
-//			  
-//			   try{
-//			   context.createSubcontext("o=horschd,dc=localdomain", attrs);
-//		}
-//		   catch(NameAlreadyBoundException e){
-//			   System.out.println("Entry Already Exists Exception.");
-//		   }
-			   //context.modifyAttributes("o=horschd,dc=localdomain",
-			//		   DirContext.ADD_ATTRIBUTE,attrs);
-			     
-			//   context.modifyAttributes("o=horschd",
-			//		   DirContext.ADD_ATTRIBUTE,attrs);
-			   
-			//   context.createSubcontext("o=horschd", attrs);
-			   
-			   
-			   
-//			   attrs = new BasicAttributes();
-//			   attrs.put(new BasicAttribute("objectClass","top"));
-//			   attrs.put(new BasicAttribute("objectClass","organizationalUnit"));
-//			  // attrs.put(new BasicAttribute("dc","localdomain"));
-//			  attrs.put(new BasicAttribute("ou","Packages"));
-//			   
-//			  try{
-//			   context.createSubcontext("ou=Packages,o=horschd,dc=localdomain", attrs);
-//			  }
-//		   catch(NameAlreadyBoundException e){
-//			   System.out.println("Entry Already Exists Exception.");
-//		   }
-			   
-			//   context.bind("o=horschd", attrs);
-//			   
-//			   
-//			
-//		    ModificationItem[] mods = new ModificationItem[2];
-//			mods[0] = new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("o", "horschd"));
-//			mods[1] = new ModificationItem(DirContext.ADD_ATTRIBUTE, new BasicAttribute("o", "horschd"));
-//
-//			
-//			context.modifyAttributes(dirRoot, mods);
-//			
-//			context.modifyAttributes("dc=localdomain",
-//					   DirContext.ADD_ATTRIBUTE,
-//					   new BasicAttributes("domain", "top"));
-//			
-//			context.modifyAttributes("o=horsch,dc=localdomain",
-//					   DirContext.ADD_ATTRIBUTE,
-//					   new BasicAttributes("organization","o"));
-//			
-//			context.modifyAttributes("uid=alee,ou=people,o=horsch,dc=localdomain",
-//					   DirContext.ADD_ATTRIBUTE,
-//					   new BasicAttributes("title", "CTO"));
-			
-			
-			
-			
-//			   Attributes attrs = new BasicAttributes(true);
-//			   Attribute objclass = new BasicAttribute("organization");
-//			   objclass.add("dcObject");
-//			  // objclass.add("organization");
-//			   attrs.put(objclass);\
-//			
-//			 container = new BasicAttributes(true);
-//
-//			objClasses = new BasicAttribute("objectClass");
-//	        objClasses.add("top");
-//	        objClasses.add("organization");
-//	        Attribute cn = new BasicAttribute("o","horschd");
-//	      //  cn.add("horschd");
-//	        container.put(objClasses);
-//	        container.put(cn);
-////			   attrs.put(sParam+","+sRootExt+","+sKey,"asdf");
-////			   attrs.put("o, dc=localdomain, localhorschd"
-//	        context.createSubcontext("o=horschd,dc=localdomain", container);
-//	
-			
-		//	System.out.println("Context::: " + context);
 			
 			context.close();
 			   
@@ -450,65 +219,170 @@ public class CreateLDAP {
 			final String sitename, final String domain,
 			final String logdir, final String cachedir, final String tmpdir) {
 
-		HashMap<String, String> config = new HashMap<String, String>();
-		config.put("objectClass", "top");
-		config.put("objectClass", "organizationalUnit");
-		config.put("objectClass", "AliEnSite");
+		ArrayList<String> objClasses = new ArrayList<String>(2);
+		objClasses.add("organizationalUnit");
+		objClasses.add("AliEnSite");
+		HashMap<String, Object> config = new HashMap<String, Object>();
 		config.put("domain", domain);
 		config.put("logdir", logdir);
 		config.put("cachedir", cachedir);
 		config.put("tmpdir", tmpdir);
-		addToLDAP(context, config, "ou=" + sitename + ",ou=Sites," + orgName);
+		addToLDAP(context, objClasses, config, "ou=" + sitename + ",ou=Sites," + orgName);
 
-		config = new HashMap<String, String>();
-		config.put("objectClass", "top");
-		config.put("objectClass", "organizationalUnit");
+		objClasses = new ArrayList<String>(1);
+		objClasses.add("organizationalUnit");
+		config = new HashMap<String, Object>();
 		config.put("ou", "Config");
-		addToLDAP(context, config, "ou=Config,ou=" + sitename + ",ou=Sites,"
+		addToLDAP(context, objClasses, config, "ou=Config,ou=" + sitename + ",ou=Sites,"
 				+ orgName);
-
-		config = new HashMap<String, String>();
-		config.put("objectClass", "top");
-		config.put("objectClass", "organizationalUnit");
+		
+		config = new HashMap<String, Object>();
 		config.put("ou", "Services");
-		addToLDAP(context, config, "ou=Services,ou=" + sitename + ",ou=Sites,"
+		addToLDAP(context, objClasses, config, "ou=Services,ou=" + sitename + ",ou=Sites,"
 				+ orgName);
 
 		final String[] services = { "SE", "CE", "FTD", "PackMan" };
 
 		for (String service : Arrays.asList(services)) {
-
-			config = new HashMap<String, String>();
-			config.put("objectClass", "top");
-			config.put("objectClass", "organizationalUnit");
+			config = new HashMap<String, Object>();
 			config.put("ou", service);
-			addToLDAP(context, config, "ou=" + service + ",ou=Services,ou="
+			addToLDAP(context, objClasses, config, "ou=" + service + ",ou=Services,ou="
 					+ sitename + ",ou=Sites," + orgName);
 		}
 
 	}
 
-	private static void addRoleToLDAP(final DirContext context, final String orgName, final String role){
-		HashMap<String, String> config = new HashMap<String, String>();
-		config.put("objectClass", "top");
-		config.put("objectClass","AliEnRole");			
-		addToLDAP(context, config, "uid="+role+",ou=Roles," + orgName);
+	private static void addRoleToLDAP(final DirContext context, final String orgName, final String role, final String user){
+		ArrayList<String> objClasses = new ArrayList<String>(1);
+		objClasses.add("AliEnRole");
+		HashMap<String, Object> config = new HashMap<String, Object>();	
+		config.put("users", user);			
+		addToLDAP(context, objClasses, config, "uid="+role+",ou=Roles," + orgName);
 	}
 	
-	
-	private static void addToLDAP(final DirContext context,
-			final String objClassDesc, final String attribute) {
-		HashMap<String,String> objDesc = new HashMap<String,String>();
-		for(String val: Arrays.asList(objClassDesc.split("/")))				
-			objDesc.put("objectClass",val);
-				
-		addToLDAP(context,objDesc,attribute);
-	}
-	
-	private static void addToLDAP(final DirContext context,
-			final HashMap<String,String> objDesc, final String attribute) {
 
+	private static void addUserToLDAP(final DirContext context, final String orgName, final String user,final String uid, final String roles){
+
+		ArrayList<String> objClasses = new ArrayList<String>(3);
+		objClasses.add("posixAccount");
+		objClasses.add("AliEnUser");
+		objClasses.add("pkiUser");
+		
+		HashMap<String, Object> config = new HashMap<String, Object>();
+		config.put("cn",user);
+		config.put("uid",user);
+		config.put("uidNumber",uid);
+		config.put("gidNumber","1");
+		config.put("homeDirectory",TestConfig.base_home_dir+"/"+user.substring(0,1)+"/"+user);
+		config.put("userPassword","{crypt}x");
+		config.put("loginShell","false");
+		config.put("subject",TestConfig.certSubjectuser);
+		config.put("roles", roles);			
+		
+		
+		addToLDAP(context, objClasses, config, "uid="+user+",ou=People," + orgName);
+	}
+	
+	private static void addBaseTypesToLDAP(final DirContext context, final String orgName){
+		addToLDAP(context, "domain", TestConfig.ldap_suffix);
+		addToLDAP(context, "organization", orgName);
+		addToLDAP(context, "organizationalUnit",
+				"ou=Packages,"+orgName);
+		addToLDAP(context, "organizationalUnit",
+				"ou=Institutions,"+orgName);
+		addToLDAP(context, "organizationalUnit",
+				"ou=Partitions,"+orgName);
+		addToLDAP(context, "organizationalUnit",
+				"ou=People,"+orgName);
+		addToLDAP(context, "organizationalUnit",
+				"ou=Roles,"+orgName);
+		addToLDAP(context, "organizationalUnit",
+				"ou=Services,"+orgName);
+		addToLDAP(context, "organizationalUnit",
+				"ou=Sites,"+orgName);
+
+	}
+	
+	private static void addInitConfigToLDAP(final DirContext context, final String orgName){
+
+		
+		ArrayList<String> objClasses = new ArrayList<String>(1);
+		objClasses.add("AliEnVOConfig");
+		HashMap<String, Object> config = new HashMap<String, Object>();
+		config.put("authPort", "8080");
+		config.put("catalogPort", "8081");
+		config.put("queuePort", "8082");
+		config.put("logPort", "8082");
+		config.put("isPort", "8082");
+		config.put("clustermonitorPort", "8082");
+		config.put("brokerPort", "8082");
+		config.put("ldapmanager", TestConfig.ldap_suffix);
+		config.put("processPort", "8082");
+		config.put("processPort", "8082");
+		config.put("brokerHost", "8082");
+		config.put("isHost", "8082");
+		config.put("logHost", "8082");
+		config.put("catalogHost", "8082");
+		config.put("queueHost", "8082");
+		config.put("authHost", "8082");
+				
+		config.put("authenDatabase", "ADMIN");
+		config.put("catalogDatabase", "8082");
+		config.put("isDatabase", "8082");
+		config.put("queueDatabase", "8082");
+		config.put("isDbHost", "8082");
+		config.put("queueDbHost", "8082");
+		config.put("catalogHost", "8082");
+		config.put("authenHost", "8082");
+		config.put("queueDriver", "8082");
+		config.put("catalogDriver", "8082");
+		config.put("authenDriver", "8082");
+				
+				
+		config.put("isDriver", "testVO/user");
+		config.put("userDir", "8082");
+		config.put("clusterMonitorUser", "8082");
+		config.put("transferManagerAddress", "8082");
+		config.put("transferBrokerAddress", "8082");
+		config.put("transferOptimizerAddress", "8082");
+		config.put("transferDatabase", "8082");
+		config.put("jobOptimizerAddress", "8082");
+		config.put("jobDatabase", "8082");
+		config.put("catalogueOptimizerAddress", "8082");
+		config.put("catalogueDatabase", "8082");
+		config.put("lbsgAddress", "8082");
+		config.put("lbsgDatabase", "8082");
+		config.put("jobManagerAddress", "8082");
+		config.put("jobBrokerAddress", "8082");
+		config.put("authenSubject", TestConfig.certSubjectuser);
+		config.put("packmanmasterAddress", "8082");
+		config.put("messagesmasterAddress", "8082");
+		config.put("semasterManagerAddress", "8082");
+		config.put("semasterDatabase", "8082");
+		config.put("jobinfoManagerAddress", "8082");
+
+		addToLDAP(context, objClasses, config, "ou=Config,"+orgName);
+	}
+	
+	
+	
+	private static void addToLDAP(final DirContext context, 
+			final String objClass, final String attribute) {
+
+				ArrayList<String> objClasses = new ArrayList<String>(1);
+				objClasses.add(objClass);
+		addToLDAP(context,objClasses, new HashMap<String,Object>(0),attribute);
+	}
+	
+	private static void addToLDAP(final DirContext context, final ArrayList<String> objClasses,
+			final HashMap<String,Object> objDesc, final String attribute) {
+
+		BasicAttribute objClass = new BasicAttribute("objectClass","top");
+		for(String objc: objClasses)
+			objClass.add(objc);
+		
 		Attributes attrs = new BasicAttributes();
+		attrs.put(objClass);
 
 			for(String key: objDesc.keySet())
 				attrs.put(new BasicAttribute(key, objDesc.get(key)));
@@ -523,65 +397,37 @@ public class CreateLDAP {
 
 	}
 	
+	
+	
+	
 	/**
-	 * @param ldapRoot 
+	 * @param ldapRoot
 	 * @return connected LDAP context
 	 */
-	public static DirContext getLdapContext(String ldapRoot){
+	public static DirContext getLdapContext(String ldapRoot) {
 		DirContext ctx = null;
-		try{
+		try {
 			Hashtable<String, String> env = new Hashtable<String, String>();
-			env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+			env.put(Context.INITIAL_CONTEXT_FACTORY,
+					"com.sun.jndi.ldap.LdapCtxFactory");
 			env.put(Context.SECURITY_AUTHENTICATION, "Simple");
-			env.put(Context.SECURITY_PRINCIPAL,  TestConfig.ldap_root);
-			System.out.println("SECURITY_PRINCIPAL:" +  TestConfig.ldap_root);
+			env.put(Context.SECURITY_PRINCIPAL, TestConfig.ldap_root);
+			System.out.println("LDAP LOGIN:" + TestConfig.ldap_root);
 			env.put(Context.SECURITY_CREDENTIALS, TestConfig.ldap_pass);
-			System.out.println("SECURITY_CREDENTIALS:" + TestConfig.ldap_pass);
-			env.put(Context.PROVIDER_URL, "ldap://localhost:"+TestConfig.ldap_port+"/");
-			
-			System.out.println("PROVIDER_URL: ldap://localhost:"+TestConfig.ldap_port+"/");
- 	      // 	env.put(Context.SECURITY_PROTOCOL, "none");
+			System.out.println("LDAP PASS:" + TestConfig.ldap_pass);
+			env.put(Context.PROVIDER_URL, "ldap://localhost:"
+					+ TestConfig.ldap_port + "/");
 
- 	  //     env.put(LdapContext.CONTROL_FACTORIES, "com.sun.jndi.ldap.ControlFactory");
- 	       	
-			//ctx = new InitialLdapContext(env,null);
-	        
-                // obtain initial directory context using the environment
-                ctx = new InitialDirContext( env );
-                
-                
-             // List the objects 
-//                NamingEnumeration namingEnum = ctx.list(TestConfig.ldap_suffix);
-//                while (namingEnum.hasMore()) {
-//                     System.out.println(namingEnum.next());
-//                }
-               // ctx.close();
-                
-                
-                // now, create the root context, which is just a subcontext
-                // of this initial directory context.
-                // ctx.createSubcontext( TestConfig.ldap_suffix);
-       
-	        // Now return the root directory context.
-	        //
-	        
-//			ctx = new InitialDirContext(env);
-			System.out.println("Connection Successful.");
-			
-//			try {
-				//return (DirContext)(ctx.lookup("cn"));
-				return ctx;
-//			} catch (NamingException e) {
-//				
-//				e.printStackTrace();
-//			}
-			
-		}catch(NamingException nex){
+			System.out.println("LDAP URL: ldap://localhost:"
+					+ TestConfig.ldap_port + "/");
+
+			ctx = new InitialDirContext(env);
+
+		} catch (NamingException nex) {
 			System.out.println("LDAP Connection: FAILED");
 			System.out.println("suffix: " + TestConfig.ldap_suffix);
 			nex.printStackTrace();
 		}
-//		return ctx;
 
 		return ctx;
 	}

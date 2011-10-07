@@ -2,6 +2,10 @@ package alien.test;
 
 import alien.test.setup.CreateLDAP;
 
+/**
+ * @author ron
+ * @since Sep 09, 2011
+ */
 public class ShutdownTestVO {
 
 

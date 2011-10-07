@@ -1,9 +1,8 @@
 package alien.test;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
+import alien.config.ConfigUtils;
 import alien.test.setup.CreateCertificates;
 import alien.test.setup.CreateLDAP;
 import alien.test.utils.TestCommand;
@@ -15,6 +14,10 @@ import alien.test.utils.TestException;
  */
 public class SetupTestVO {
 
+	
+	static{
+		ConfigUtils.getVersion();
+	}
 	
 	/**
 	 * @param args
@@ -83,20 +86,27 @@ public class SetupTestVO {
 
 		
 		// step 1
+		System.out.println("----- STEP1 [start]: Certificates -----");
 		if (!CreateCertificates.doit(verbose))
 			throw new TestException("Creating Certificates failed.");
+		System.out.println("----- STEP1 [done]: Certificates -----");
+		
+		
 		// step 2
+		System.out.println("----- STEP2 [start]: Config -----");
 		TestConfig.createConfig();
+		System.out.println("----- STEP2 [done]: Config -----");
 		
 		// step 3
+		System.out.println("----- STEP3 [start]: LDAP -----");
 		CreateLDAP.rampUpLDAP();
-
+		System.out.println("----- STEP3 [done]: LDAP -----");
 		
 		return true;
 	}
 
 	private static void interrupt(String message) {
-		System.err.println("We have a fatal problem: " + message);
+//		System.err.println("We have a fatal problem: " + message);
 		System.err.println("Shutting down...");
 		System.err.println();
 		System.err.println("May the force be with u next time!");

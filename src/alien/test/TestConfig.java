@@ -57,16 +57,34 @@ public class TestConfig {
 	 */
 	public static final String tvo_logs = tvo_home + "/logs";
 	
-
+	/**
+	 * the testVO certificate subject for the CA
+	 */
+	public static final String certSubjectCA = 	"/C=CH/O=jAliEn/CN=jAlienCA";
+	
+	/**
+	 * the testVO certificate subject for the user cert
+	 */
+	public static final String certSubjectuser = 	"/C=CH/O=jAliEn/CN=jTestUser";
+	
+	
+	
 	/**
 	 * the testVO ldap config location
 	 */
 	public static final String ldap_config = tvo_config + "/ldap.config";
 	
+
+	/**
+	 * the LDAP location
+	 */
+	public static final String ldap_home = TestConfig.tvo_home + "/slapd";
+	
+	
 	/**
 	 * the testVO ldap conf file location
 	 */
-	public static final String ldap_conf_file = tvo_config + "/slapd.conf";
+	public static final String ldap_conf_file = ldap_home + "/slapd.conf";
 
 	/**
 	 * the testVO ldap log file location
@@ -126,6 +144,16 @@ public class TestConfig {
 	public static String full_host_name;
 
 	/**
+	 * the fully qualified host name
+	 */
+	public static String host_name;
+
+	/**
+	 * the fully qualified host name
+	 */
+	public static String domain;
+
+	/**
 	 * the LDAP root string
 	 */
 	public static String ldap_root;
@@ -138,7 +166,14 @@ public class TestConfig {
 	/**
 	 * the LDAP pass string
 	 */
-	public static String ldap_pass;
+	//public static String ldap_pass = UUID.randomUUID().toString(); 
+	public static String ldap_pass = "pass";
+	
+	/**
+	 * the LDAP pass string
+	 */
+	//public static String mysql_pass = UUID.randomUUID().toString(); 
+	public static String mysql_pass = "pass";
 
 	/**
 	 * the LDAP root string
@@ -151,19 +186,26 @@ public class TestConfig {
 	 */
 	public static void initialize() throws Exception {
 
-		full_host_name = InetAddress.getByName("127.0.0.1")
+		
+		if(InetAddress.getByName("127.0.0.1")
+				.getCanonicalHostName().contains(".")){
+			full_host_name = InetAddress.getByName("127.0.0.1")
 				.getCanonicalHostName();
+			host_name = full_host_name.substring(0, full_host_name.indexOf("."));
+			domain = full_host_name.substring(full_host_name.indexOf(".")+1);
+		} else {
+			host_name = "localhost";
+			domain = "localdomain";
+			full_host_name = host_name + "." + domain;
+		}
 		
+		System.out.println("Your local hostname is: " + full_host_name);
+		System.out.println("domain/DC/VO will be: " + domain);
+		System.out.println("O/VO will be: " + host_name);
+		ldap_suffix = "dc=" + domain;
 		
-
-		String[] host = full_host_name.split(".");
-		// fixed overwrite:
-		//host = new String[] { "jtvo", "cern", "ch" };
-		host = new String[] { "localhost", "localdomain"};
-		ldap_suffix = "dc=" + host[1]; // + ",dc=" + host[2];
-		ldap_root = "cn=Manager,"+TestConfig.ldap_suffix;
-		base_home_dir = "/" + host[1] + "/" + host[0] // + "." + host[2]
-				+ "/user/";
+		ldap_root = "cn=Manager,"+ldap_suffix;
+		base_home_dir = "/" + domain + "/" + "/user/";
 
 	}
 
@@ -176,17 +218,20 @@ public class TestConfig {
 			Functions.writeOutFile(tvo_config + "/config.properties",
 					getConfigProperties());
 			Functions.writeOutFile(tvo_config + "/alice_data.properties",
-					getDatabaseProperties("pass","alice_data"));
+					getDatabaseProperties("alice_data"));
 			Functions.writeOutFile(tvo_config + "/alice_users.properties",
-					getDatabaseProperties("pass","alice_users"));
+					getDatabaseProperties("alice_users"));
 			Functions.writeOutFile(tvo_config + "/processes.properties",
-					getDatabaseProperties("pass","processes"));
+					getDatabaseProperties("processes"));
 			Functions.writeOutFile(tvo_config + "/logging.properties",
 					getLoggingProperties());
 		}
 		File logs = new File(tvo_logs);
 		if (!logs.mkdir())
 			throw new TestException("Could not create log directory: " + tvo_logs);
+		File ldap = new File(ldap_home);
+		if (!ldap.mkdir())
+			throw new TestException("Could not create ldap directory: " + ldap_home);
 	}
 
 	/**
@@ -210,9 +255,9 @@ public class TestConfig {
 	/**
 	 * @return the content for the config.properties file
 	 */
-	private static String getDatabaseProperties(String pass,String db) {
+	private static String getDatabaseProperties(String db) {
 			return 	"\n" 
-				+ "password=" + pass + "\n"
+				+ "password=" + mysql_pass + "\n"
 				+ "driver=com.mysql.jdbc.Driver\n"
 				+ "host=127.0.0.1\n"
 				+ "port=3307\n"
