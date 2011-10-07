@@ -77,13 +77,9 @@ public class ConfigUtils {
 
 							if (sName.equals("logging")) {
 								logging = new LoggingConfigurator(prop);
-							}
-							else if (sName.equals("config")) {
-								applicationConfig = prop;
-
+								
 								if (System.getProperty("lia.Monitor.ConfigURL") == null) {
-									// give the ML components the same
-									// configuration file if not explicitly set
+									// give the ML components the same logging configuration file if not explicitly set
 									try {
 										System.setProperty("lia.Monitor.ConfigURL", "file:" + sub.getCanonicalPath());
 									}
@@ -95,6 +91,9 @@ public class ConfigUtils {
 									// instantiates correctly
 									AppConfig.lastReloaded();
 								}
+							}
+							else if (sName.equals("config")) {
+								applicationConfig = prop;
 							}
 							else if (prop.gets("driver").length() > 0) {
 								dbconfig.put(sName, prop);
