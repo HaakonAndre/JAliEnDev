@@ -131,7 +131,7 @@ public class TestConfig {
 	/**
 	 * port number for the SQL server
 	 */
-	public static final int sql_port = 8389;
+	public static final int sql_port = 3307;
 
 	/**
 	 * port number for the API server
@@ -146,7 +146,7 @@ public class TestConfig {
 	/**
 	 * the fully qualified host name
 	 */
-	public static String host_name;
+	public static String VO_name;
 
 	/**
 	 * the fully qualified host name
@@ -169,16 +169,37 @@ public class TestConfig {
 	//public static String ldap_pass = UUID.randomUUID().toString(); 
 	public static String ldap_pass = "pass";
 	
+	
+	/**
+	 * the user base directory in the catalogue
+	 */
+	public static String base_home_dir;
+	
+	
+
+	/**
+	 * the LDAP location
+	 */
+	public static final String sql_home = TestConfig.tvo_home + "/sql";
+	
+	
+	/**
+	 * the testVO ldap conf file location
+	 */
+	public static final String mysql_conf_file = sql_home + "/mysqld.conf";
+	
+	
 	/**
 	 * the LDAP pass string
 	 */
 	//public static String mysql_pass = UUID.randomUUID().toString(); 
-	public static String mysql_pass = "pass";
+	public static String sql_pass = "pass";
 
 	/**
-	 * the LDAP root string
+	 * the test SEs' home directories
 	 */
-	public static String base_home_dir;
+	public static final String se_home = TestConfig.tvo_home + "/SE_storage";
+	
 
 	/**
 	 * @param tvohome
@@ -191,24 +212,39 @@ public class TestConfig {
 				.getCanonicalHostName().contains(".")){
 			full_host_name = InetAddress.getByName("127.0.0.1")
 				.getCanonicalHostName();
-			host_name = full_host_name.substring(0, full_host_name.indexOf("."));
+			VO_name = full_host_name.substring(0, full_host_name.indexOf("."));
 			domain = full_host_name.substring(full_host_name.indexOf(".")+1);
 		} else {
-			host_name = "localhost";
+			VO_name = "localhost";
 			domain = "localdomain";
-			full_host_name = host_name + "." + domain;
+			full_host_name = VO_name + "." + domain;
 		}
 		
 		System.out.println("Your local hostname is: " + full_host_name);
 		System.out.println("domain/DC/VO will be: " + domain);
-		System.out.println("O/VO will be: " + host_name);
+		System.out.println("O/VO will be: " + VO_name);
 		ldap_suffix = "dc=" + domain;
 		
 		ldap_root = "cn=Manager,"+ldap_suffix;
-		base_home_dir = "/" + domain + "/" + "/user/";
+		base_home_dir = "/" + domain + "/user/";
 
 	}
 
+	/**
+	 * name of the data database
+	 */
+	public static final String dataDB = "testVO_data";
+	
+	/**
+	 * name of the users database
+	 */
+	public static final String userDB = "testVO_users";
+	
+	/**
+	 *  name of the processes database
+	 */
+	public static final String processesDB = "processes";
+	
 	/**
 	 * @throws Exception
 	 */
@@ -218,9 +254,9 @@ public class TestConfig {
 			Functions.writeOutFile(tvo_config + "/config.properties",
 					getConfigProperties());
 			Functions.writeOutFile(tvo_config + "/alice_data.properties",
-					getDatabaseProperties("alice_data"));
+					getDatabaseProperties(dataDB));
 			Functions.writeOutFile(tvo_config + "/alice_users.properties",
-					getDatabaseProperties("alice_users"));
+					getDatabaseProperties(userDB));
 			Functions.writeOutFile(tvo_config + "/processes.properties",
 					getDatabaseProperties("processes"));
 			Functions.writeOutFile(tvo_config + "/logging.properties",
@@ -232,6 +268,13 @@ public class TestConfig {
 		File ldap = new File(ldap_home);
 		if (!ldap.mkdir())
 			throw new TestException("Could not create ldap directory: " + ldap_home);
+		File mysql = new File(sql_home);
+		if (!mysql.mkdir())
+			throw new TestException("Could not create mysql directory: " + sql_home);
+		File se = new File(se_home);
+		if (!se.mkdir())
+			throw new TestException("Could not create SE directory: " + se_home);
+		
 	}
 
 	/**
@@ -257,7 +300,7 @@ public class TestConfig {
 	 */
 	private static String getDatabaseProperties(String db) {
 			return 	"\n" 
-				+ "password=" + mysql_pass + "\n"
+				+ "password=" + sql_pass + "\n"
 				+ "driver=com.mysql.jdbc.Driver\n"
 				+ "host=127.0.0.1\n"
 				+ "port=3307\n"

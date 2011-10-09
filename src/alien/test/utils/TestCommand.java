@@ -19,6 +19,8 @@ public class TestCommand {
 	private String stdout = "";
 
 	private boolean verbose = false;
+	
+	private boolean daemonize = false;
 
 	private ArrayList<String> command = new ArrayList<String>();
 
@@ -83,6 +85,13 @@ public class TestCommand {
 	}
 	
 	/**
+	 * set daemonize
+	 */
+	public void daemonize(){
+		daemonize = true;
+	}
+	
+	/**
 	 * @return success of the shell execution
 	 */
 	public boolean exec() {
@@ -103,6 +112,11 @@ public class TestCommand {
 
 		try {
 			final ExitStatus exitStatus;
+			
+			if(daemonize){
+				pBuilder.start();
+				return true;
+			}
 
 			exitStatus = pBuilder.start().waitFor();
 

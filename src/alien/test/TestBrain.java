@@ -15,6 +15,11 @@ public class TestBrain {
 	public static String cBash = "";
 
 	/**
+	 * location of the nohup binary
+	 */
+	public static String cNohup = "";
+
+	/**
 	 * location of the bash binary
 	 */
 	public static String cKill = "";
@@ -48,6 +53,17 @@ public class TestBrain {
 	 * location of the mysql binary
 	 */
 	public static String cMysql = "";
+
+	/**
+	 * location of the mysqld_safe binary
+	 */
+	public static String cMysqldSafe = "";
+	
+	/**
+	 * location of the mysql_install_db binary
+	 */
+	public static String cMysqlInstallDB = "";
+	
 	
 	/**
 	 * @return if we found all commands
@@ -61,7 +77,13 @@ public class TestBrain {
 			System.err.println("Couldn't find command: bash");
 			state = false;
 		}
-
+		
+		cNohup = Functions.which("nohup");
+		if(cNohup==null){
+			System.err.println("Couldn't find command: nohup");
+			state = false;
+		}
+		
 		cKill = Functions.which("kill");
 		if(cKill==null){
 			System.err.println("Couldn't find command: kill");
@@ -103,7 +125,20 @@ public class TestBrain {
 			System.err.println("Couldn't find command: mysql");
 			state = false;
 		}
-		 
+		
+		cMysqldSafe = Functions.which("mysqld_safe");
+		if(cMysqldSafe==null){
+			System.err.println("Couldn't find command: mysqld_safe");
+			state = false;
+		}
+		
+		cMysqlInstallDB = Functions.which("mysql_install_db");
+		if(cMysqlInstallDB==null){
+			System.err.println("Couldn't find command: mysql_install_db");
+			state = false;
+		} 
+		
+		
 		return state;
 		
 	}

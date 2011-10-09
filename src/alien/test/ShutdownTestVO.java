@@ -1,5 +1,6 @@
 package alien.test;
 
+import alien.test.setup.CreateDB;
 import alien.test.setup.CreateLDAP;
 
 /**
@@ -23,6 +24,8 @@ public class ShutdownTestVO {
 
 		
 	CreateLDAP.stopLDAP();
+	
+	CreateDB.stopDatabase();
 	
 	}
 }
