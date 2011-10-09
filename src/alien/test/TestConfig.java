@@ -281,10 +281,10 @@ public class TestConfig {
 	 * @return the content for the config.properties file
 	 */
 	private static String getConfigProperties() {
-		return "\n" + "ldap_server = " + full_host_name + ":" + ldap_port
+		return "\n" + "ldap_server = 127.0.0.1:" + ldap_port
 				+ "\n" + "ldap_root = " + ldap_root + "\n"
 				+ "alien.users.basehomedir = " + base_home_dir + "\n" + "\n"
-				+ "apiService = + " + full_host_name + ":" + api_port + "\n"
+				+ "apiService = 127.0.0.1:" + api_port + "\n"
 				+ "\n" + "trusted.certificates.location = + " + tvo_trusts
 				+ "\n" + "host.cert.priv.location = + " + host_key + "\n"
 				+ "host.cert.pub.location = + " + host_cert + "\n"

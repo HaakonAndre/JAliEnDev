@@ -865,7 +865,7 @@ public class CreateDB {
 			
 			String[] subfolders = TestConfig.base_home_dir.split("/");
 			
-			String[] queries = new String[subfolders.length - 1 + 15];
+			String[] queries = new String[subfolders.length - 1 + 18];
 			int b = 0;
 			queries[b++] = "USE `"+ TestConfig.dataDB +"`;";
 			queries[b++] = "LOCK TABLES `INDEXTABLE` WRITE;";
@@ -894,6 +894,10 @@ public class CreateDB {
 			queries[b++] = "LOCK TABLES `HOSTS` WRITE;";
 			queries[b++] = "INSERT INTO `HOSTS` VALUES (1,'" + TestConfig.full_host_name + ":" + TestConfig.sql_port +"','"+TestConfig.dataDB+"','mysql',NULL);";   
 			queries[b++] = "INSERT INTO `HOSTS` VALUES (2,'" + TestConfig.full_host_name + ":" + TestConfig.sql_port +"','"+TestConfig.userDB+"','mysql',NULL);";  
+			queries[b++] = "LOCK TABLES `INDEXTABLE` WRITE;";
+			queries[b++] = "INSERT INTO `INDEXTABLE` VALUES (0,1,0,'/')";
+			queries[b++] = "INSERT INTO `INDEXTABLE` VALUES (0,2,0,'/localdomain/');";
+			
 			queries[b++] = "UNLOCK TABLES;";
 		
 			return queries;
@@ -949,11 +953,9 @@ public class CreateDB {
 				   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
 				   
 				   "LOCK TABLES `L"+uid+"L` WRITE;",
-				   "INSERT INTO `L1L` VALUES (5,'"+username +"',0,'2011-10-06 17:07:51',NULL,NULL,NULL,'',0,NULL,0,4,'admin','d',NULL,NULL,'755');",
+				   "INSERT INTO `L"+uid+"L` VALUES (5,'"+username +"',0,'2011-10-06 17:07:51',NULL,NULL,NULL,'',0,NULL,0,4,'admin','d',NULL,NULL,'755');",
 				
 				   "LOCK TABLES `INDEXTABLE` WRITE;",
-				   "INSERT INTO `INDEXTABLE` VALUES (0,1,0,'/')",
-				   "INSERT INTO `INDEXTABLE` VALUES (0,2,0,'/localdomain/');",
 				   "INSERT INTO `INDEXTABLE` VALUES (0,3,"+uid+",'"+CreateLDAP.getUserHome(username)+"');",
 
 

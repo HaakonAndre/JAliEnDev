@@ -1,8 +1,11 @@
 package alien.test.chapters;
 
+import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.test.TestConfig;
+import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 
 
 /**
@@ -23,11 +26,18 @@ public class TestCentralUtils {
 		System.out.println("aliConfig is: "+System.getProperty("AliEnConfig"));
 		
 		String getIt = TestConfig.base_home_dir;
-		getIt = "/localdomain/";
+		getIt = "/";
 		System.out.println("getIt: " + getIt);
 		
 		LFN l1 = LFNUtils.getLFN(getIt);
 
+		System.out.println("user admin: " + UserFactory.getByUsername("jalien").getName());
+		
+		FileSystemUtils.createCatalogueDirectory(UserFactory.getByUsername("admin"),
+				"/fuckit");
+		
+		l1 = LFNUtils.getLFN("/fuckit");
+		
 		System.out.println("---");
 		if(l1!=null){
 			System.out.println("LFN: " + l1.getCanonicalName());

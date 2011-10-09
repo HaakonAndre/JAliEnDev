@@ -88,7 +88,9 @@ public class SetupTestVO {
 	
 		boolean ret = true;
 		
-		if(!ManageSysEntities.addUser("jalien","1","admin"))
+		if(!ManageSysEntities.addUser("admin","1","admin"))
+			ret = false;
+		if(!ManageSysEntities.addUser("jalien","2","admin"))
 			ret = false;
 		if(!ManageSysEntities.addSite("JTestSite", TestConfig.domain, "/tmp", "/tmp", "/tmp"))
 			ret = false;
