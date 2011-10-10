@@ -215,7 +215,7 @@ public class LFNUtils {
 		while (parent!=null && !parent.exists)
 			parent = parent.getParentDir(true);
 		
-		if (AuthorizationChecker.canWrite(parent, owner)){
+		if (parent!=null && parent.isDirectory() && AuthorizationChecker.canWrite(parent, owner)){
 			return ensureDir(lfn);
 		}
 		
