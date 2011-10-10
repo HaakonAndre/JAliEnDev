@@ -469,7 +469,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 */
 	@Override
 	public String getPermissions() {
-		return perm;
+		return perm!=null ? perm : "755";
 	}
 	
 	/* (non-Javadoc)
@@ -517,13 +517,24 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * @return <code>true</code> if the new entry was inserted, <code>false</code> if the query failed
 	 */
 	boolean insert(){
+		String lfnToInsert = lfn;
+		
+		if (type=='d'){
+			if (!lfnToInsert.endsWith("/"))
+				lfnToInsert += "/";
+		}
+		else{
+			while (lfnToInsert.endsWith("/"))
+				lfnToInsert = lfnToInsert.substring(0, lfnToInsert.length()-1);
+		}
+		
 		final String q = "INSERT INTO L"+indexTableEntry.tableName+"L (owner, ctime, replicated, aclId, lfn, expiretime, size, "+
 		"dir, gowner, type, perm, guid, md5, guidtime, broken, jobid) VALUES ("+
 		e(owner)+","+
 		e(format(ctime))+","+
 		(replicated ? "1" : "0")+","+
 		(aclId>0 ? ""+aclId : "null")+","+
-		e(lfn)+","+
+		e(lfnToInsert)+","+
 		e(format(expiretime))+","+
 		size+","+
 		dir+","+
@@ -542,7 +553,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		final boolean result = db.query(q);
 		
 		if (result){
-			db.query("SELECT entryId FROM L"+indexTableEntry.tableName+"L WHERE lfn="+e(lfn));
+			db.query("SELECT entryId FROM L"+indexTableEntry.tableName+"L WHERE lfn="+e(lfnToInsert));
 			
 			if (db.moveNext()){
 				exists = true;
