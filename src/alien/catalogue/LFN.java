@@ -550,15 +550,13 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
+		db.setLastGeneratedKey(true);
+		
 		final boolean result = db.query(q);
 		
 		if (result){
-			db.query("SELECT entryId FROM L"+indexTableEntry.tableName+"L WHERE lfn="+e(lfnToInsert));
-			
-			if (db.moveNext()){
-				exists = true;
-				entryId = db.getl(1);
-			}
+			exists = true;
+			entryId = db.getLastGeneratedKey().intValue();
 		}
 		
 		return result;
