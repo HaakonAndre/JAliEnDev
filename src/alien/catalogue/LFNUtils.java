@@ -104,11 +104,15 @@ public class LFNUtils {
 		if (lfn.exists)
 			return lfn;
 		
+		if (lfn.perm==null)
+			lfn.perm = "755";
+		
 		LFN parent = lfn.getParentDir(true);
 		
 		if (!parent.exists){
 			parent.owner = lfn.owner;
 			parent.gowner = lfn.gowner;
+			parent.perm = lfn.perm;
 			parent = ensureDir(parent);
 		}
 		
@@ -120,6 +124,100 @@ public class LFNUtils {
 		
 		if (insertLFN(lfn))
 			return lfn;
+		
+		return null;
+	}
+	
+	/**
+	 * Create a new directory with a given owner
+	 * 
+	 * @param owner owner of the newly created structure(s)
+	 * @param path the path to be created
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
+	 */
+	public static LFN mkdir(final AliEnPrincipal owner, final String path){
+		return mkdir(owner, path, false);
+	}
+	
+	/**
+	 * Create a new directory hierarchy with a given owner
+	 * 
+	 * @param owner owner of the newly created structure(s)
+	 * @param path the path to be created
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
+	 */
+	public static LFN mkdirs(final AliEnPrincipal owner, final String path){
+		return mkdir(owner, path, true);
+	}
+	
+	/**
+	 * Create a new directory (hierarchy) with a given owner
+	 * 
+	 * @param owner owner of the newly created structure(s)
+	 * @param path the path to be created
+	 * @param createMissingParents if <code>true</code> then it will try to create any number of intermediate directories, otherwise the direct parent must already exist
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
+	 */
+	public static LFN mkdir(final AliEnPrincipal owner, final String path, final boolean createMissingParents){
+		final LFN lfn = LFNUtils.getLFN(path, true);
+		
+		return mkdir(owner, lfn, createMissingParents);
+	}
+	
+	/**
+	 * Create a new directory with a given owner
+	 * 
+	 * @param owner owner of the newly created structure(s)
+	 * @param lfn the path to be created
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
+	 */
+	public static LFN mkdir(final AliEnPrincipal owner, final LFN lfn){
+		return mkdir(owner, lfn, false);
+	}
+
+	/**
+	 * Create a new directory hierarchy with a given owner
+	 * 
+	 * @param owner owner of the newly created structure(s)
+	 * @param lfn the path to be created
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
+	 */
+	public static LFN mkdirs(final AliEnPrincipal owner, final LFN lfn){
+		return mkdir(owner, lfn, true);
+	}
+
+	/**
+	 * Create a new directory (hierarchy) with a given owner
+	 * 
+	 * @param owner owner of the newly created structure(s)
+	 * @param lfn the path to be created
+	 * @param createMissingParents if <code>true</code> then it will try to create any number of intermediate directories, otherwise the direct parent must already exist
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
+	 */
+	public static LFN mkdir(final AliEnPrincipal owner, final LFN lfn, final boolean createMissingParents){
+		if (lfn.exists){
+			if (lfn.isDirectory() && AuthorizationChecker.canWrite(lfn, owner))
+				return lfn;
+			
+			return null;
+		}
+		
+		lfn.owner = owner.getName();
+		lfn.gowner = lfn.owner;
+
+		lfn.size = 0;
+		
+		LFN parent = lfn.getParentDir(true);
+		
+		if (!parent.exists && !createMissingParents)
+			return null;
+		
+		while (parent!=null && !parent.exists)
+			parent = parent.getParentDir(true);
+		
+		if (AuthorizationChecker.canWrite(parent, owner)){
+			return ensureDir(lfn);
+		}
 		
 		return null;
 	}
