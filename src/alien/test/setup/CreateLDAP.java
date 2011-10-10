@@ -50,12 +50,7 @@ public class CreateLDAP {
 	 * the LDAP context
 	 */
 	public static DirContext context;
-	
-	/**
-	 * the LDAP orgName
-	 */
-	public final static String orgName = "o="+TestConfig.VO_name+"," + TestConfig.ldap_suffix;	
-	
+
 	
 	/**
 	 * @return state of rampUp
@@ -86,7 +81,7 @@ public class CreateLDAP {
 				TestBrain.cSlapd, "-d","1","-s","0","-h","ldap://127.0.0.1:"+ TestConfig.ldap_port, "-f",
 						TestConfig.ldap_conf_file, ">",TestConfig.ldap_log,"2>&1"});//,"&"});
 		slapd.daemonize();
-		//slapd.verbose();
+		slapd.verbose();
 		slapd.exec();		
 	}
 
@@ -154,7 +149,7 @@ public class CreateLDAP {
 			"\n"+
 			"database       bdb\n"+
 			"suffix         \""+TestConfig.ldap_suffix+"\"\n"+
-			"rootdn         \""+TestConfig.ldap_root+"\"\n"+
+			"rootdn         \""+TestConfig.ldap_cred+"\"\n"+
 			"rootpw         "+pass_hash+"\n"+
 			"\n"+
 			"# cleartext passwords, especially for the rootdn, should\n"+
@@ -221,19 +216,19 @@ public class CreateLDAP {
 		config.put("logdir", logdir);
 		config.put("cachedir", cachedir);
 		config.put("tmpdir", tmpdir);
-		addToLDAP(objClasses, config, "ou=" + sitename + ",ou=Sites," + orgName);
+		addToLDAP(objClasses, config, "ou=" + sitename + ",ou=Sites," + TestConfig.ldap_root);
 
 		objClasses = new ArrayList<String>(1);
 		objClasses.add("organizationalUnit");
 		config = new HashMap<String, Object>();
 		config.put("ou", "Config");
 		addToLDAP(objClasses, config, "ou=Config,ou=" + sitename + ",ou=Sites,"
-				+ orgName);
+				+ TestConfig.ldap_root);
 		
 		config = new HashMap<String, Object>();
 		config.put("ou", "Services");
 		addToLDAP(objClasses, config, "ou=Services,ou=" + sitename + ",ou=Sites,"
-				+ orgName);
+				+ TestConfig.ldap_root);
 
 		final String[] services = { "SE", "CE", "FTD", "PackMan" };
 
@@ -241,7 +236,7 @@ public class CreateLDAP {
 			config = new HashMap<String, Object>();
 			config.put("ou", service);
 			addToLDAP(objClasses, config, "ou=" + service + ",ou=Services,ou="
-					+ sitename + ",ou=Sites," + orgName);
+					+ sitename + ",ou=Sites," + TestConfig.ldap_root);
 		}
 		context.close();
 
@@ -270,7 +265,7 @@ public class CreateLDAP {
 		config.put("QoS", qos);
 		config.put("ftdprotocol", "cp");
 		
-		addToLDAP(objClasses, config, "name=" + seName + ",ou=SE,ou=Services,ou=" + sitename + ",ou=Sites," + orgName);
+		addToLDAP(objClasses, config, "name=" + seName + ",ou=SE,ou=Services,ou=" + sitename + ",ou=Sites," + TestConfig.ldap_root);
 		context.close();
 
 	}
@@ -283,7 +278,7 @@ public class CreateLDAP {
 		objClasses.add("AliEnRole");
 		HashMap<String, Object> config = new HashMap<String, Object>();	
 		config.put("users", user);			
-		addToLDAP(objClasses, config, "uid="+role+",ou=Roles," + orgName);
+		addToLDAP(objClasses, config, "uid="+role+",ou=Roles," + TestConfig.ldap_root);
 		context.close();
 	}
 	
@@ -307,7 +302,7 @@ public class CreateLDAP {
 		config.put("subject",TestConfig.certSubjectuser);
 		config.put("roles", roles);			
 		
-		addToLDAP(objClasses, config, "uid="+user+",ou=People," + orgName);
+		addToLDAP(objClasses, config, "uid="+user+",ou=People," + TestConfig.ldap_root);
 		context.close();
 	}
 	
@@ -323,21 +318,21 @@ public class CreateLDAP {
 	private static void addBaseTypesToLDAP(){
 		
 		addToLDAP("domain", TestConfig.ldap_suffix);
-		addToLDAP("organization", orgName);
+		addToLDAP("organization", TestConfig.ldap_root);
 		addToLDAP("organizationalUnit",
-				"ou=Packages,"+orgName);
+				"ou=Packages,"+TestConfig.ldap_root);
 		addToLDAP("organizationalUnit",
-				"ou=Institutions,"+orgName);
+				"ou=Institutions,"+TestConfig.ldap_root);
 		addToLDAP("organizationalUnit",
-				"ou=Partitions,"+orgName);
+				"ou=Partitions,"+TestConfig.ldap_root);
 		addToLDAP("organizationalUnit",
-				"ou=People,"+orgName);
+				"ou=People,"+TestConfig.ldap_root);
 		addToLDAP("organizationalUnit",
-				"ou=Roles,"+orgName);
+				"ou=Roles,"+TestConfig.ldap_root);
 		addToLDAP("organizationalUnit",
-				"ou=Services,"+orgName);
+				"ou=Services,"+TestConfig.ldap_root);
 		addToLDAP("organizationalUnit",
-				"ou=Sites,"+orgName);
+				"ou=Sites,"+TestConfig.ldap_root);
 
 	}
 	
@@ -397,7 +392,7 @@ public class CreateLDAP {
 		config.put("semasterDatabase", "8082");
 		config.put("jobinfoManagerAddress", "8082");
 
-		addToLDAP(objClasses, config, "ou=Config,"+orgName);
+		addToLDAP(objClasses, config, "ou=Config,"+TestConfig.ldap_root);
 	}
 	
 	
@@ -447,7 +442,7 @@ public class CreateLDAP {
 			env.put(Context.INITIAL_CONTEXT_FACTORY,
 					"com.sun.jndi.ldap.LdapCtxFactory");
 			env.put(Context.SECURITY_AUTHENTICATION, "Simple");
-			env.put(Context.SECURITY_PRINCIPAL, TestConfig.ldap_root);
+			env.put(Context.SECURITY_PRINCIPAL, TestConfig.ldap_cred);
 			//System.out.println("LDAP LOGIN:" + TestConfig.ldap_root);
 			env.put(Context.SECURITY_CREDENTIALS, TestConfig.ldap_pass);
 			//System.out.println("LDAP PASS:" + TestConfig.ldap_pass);

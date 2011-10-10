@@ -880,7 +880,7 @@ public class CreateDB {
 			queries[b++] = "INSERT INTO `L0L` VALUES ("+dirIndex+",'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'',0,NULL,0,"+parentdir+",'admin','d',NULL,NULL,'755');";
 		
 			
-			String path = "/"+ subfolders[0];
+			String path = subfolders[0];
 			for(int a=1; a< subfolders.length; a++){
 				dirIndex++;
 				path = path + subfolders[a] + "/";
@@ -906,8 +906,8 @@ public class CreateDB {
 		
 		private static String[] userAddIndexTable(String username, String uid) {
 			
-			String homeEntryID = queryDB("select entryID from " + TestConfig.dataDB + ".L0L where lfn = '" + TestConfig.base_home_dir + "';","entryID");
-				
+			String homeEntryID = queryDB("select entryID from " + TestConfig.dataDB + ".L0L where lfn = '" + TestConfig.base_home_dir.substring(1) + "';","entryID");
+
 			return new String[] {
 				   "USE `"+ TestConfig.userDB +"`;",
 				   "DROP TABLE IF EXISTS `L"+uid+"L`;",
@@ -958,10 +958,9 @@ public class CreateDB {
 				   "LOCK TABLES `INDEXTABLE` WRITE;",
 				   "INSERT INTO `INDEXTABLE` VALUES (0,3,"+uid+",'"+CreateLDAP.getUserHome(username)+"');",
 
-
 				   "USE `"+ TestConfig.dataDB +"`;",
 				   "LOCK TABLES `L0L` WRITE;",
-				   "INSERT INTO `L0L` VALUES (0,'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'"+ TestConfig.base_home_dir+username.substring(0,1)+"/" +"',0,NULL,0,"+homeEntryID+",'admin','d',NULL,NULL,'755');",
+				   "INSERT INTO `L0L` VALUES (0,'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'"+ TestConfig.base_home_dir.substring(1) + username.substring(0,1)+"/" +"',0,NULL,0,"+homeEntryID+",'admin','d',NULL,NULL,'755');",
 				   "LOCK TABLES `INDEXTABLE` WRITE;",
 				   "INSERT INTO `INDEXTABLE` VALUES (0,3,"+uid+",'"+CreateLDAP.getUserHome(username)+"');",
 				   

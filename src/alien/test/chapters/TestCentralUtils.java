@@ -26,7 +26,7 @@ public class TestCentralUtils {
 		System.out.println("aliConfig is: "+System.getProperty("AliEnConfig"));
 		
 		String getIt = TestConfig.base_home_dir;
-		getIt = "/";
+		//getIt = "/";
 		System.out.println("getIt: " + getIt);
 		
 		LFN l1 = LFNUtils.getLFN(getIt);
@@ -34,9 +34,9 @@ public class TestCentralUtils {
 		System.out.println("user admin: " + UserFactory.getByUsername("jalien").getName());
 		
 		FileSystemUtils.createCatalogueDirectory(UserFactory.getByUsername("admin"),
-				"/fuckit");
+				"/fuju");
 		
-		l1 = LFNUtils.getLFN("/fuckit");
+		l1 = LFNUtils.getLFN("/fuju");
 		
 		System.out.println("---");
 		if(l1!=null){

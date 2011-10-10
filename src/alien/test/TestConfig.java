@@ -157,6 +157,11 @@ public class TestConfig {
 	 * the LDAP root string
 	 */
 	public static String ldap_root;
+
+	/**
+	 * the LDAP root credential
+	 */
+	public static String ldap_cred;
 	
 	/**
 	 * the LDAP suffix string
@@ -225,8 +230,9 @@ public class TestConfig {
 		System.out.println("O/VO will be: " + VO_name);
 		ldap_suffix = "dc=" + domain;
 		
-		ldap_root = "cn=Manager,"+ldap_suffix;
-		base_home_dir = "/" + domain + "/user/";
+		ldap_cred = "cn=Manager,"+ldap_suffix;
+		ldap_root = "o=" + VO_name + ","+ldap_suffix;
+		base_home_dir = "/" + VO_name + "/" + domain + "/user/";
 
 	}
 
