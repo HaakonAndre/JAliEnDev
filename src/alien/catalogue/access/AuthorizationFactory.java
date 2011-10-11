@@ -42,17 +42,15 @@ public final class AuthorizationFactory {
 	
 
 	static {
-		String file = System.getenv("X509_USER_CERT");
 
-		if (file == null)
-			file = System.getenv("X509_USER_PROXY");
-
-		if (file == null)
-			file = System.getProperty("user.home") + "/.globus/usercert.der";
+		String file = ConfigUtils.getConfig().gets(
+				"user.cert.pub.location",
+				System.getProperty("user.home")
+						+ System.getProperty("file.separator")
+						+ "globus"
+						+ System.getProperty("file.separator")
+						+ "usercert.pem");
 		
-		// TODO: Clean this up ...
-		file = System.getProperty("user.home") + "/.globus/usercert.pem";
-
 		File f = new File(file);
 
 		AliEnPrincipal user = null;
