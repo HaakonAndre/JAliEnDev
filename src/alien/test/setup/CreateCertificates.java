@@ -26,11 +26,12 @@ public final class CreateCertificates {
 		if (!Functions.makeDirs(TestConfig.tvo_trusts))
 			return false;
 		
-		String usereq = TestConfig.tvo_certs + "/userreq.pem";
+		String userreq = TestConfig.tvo_certs + "/userreq.pem";
+		String hostreq = TestConfig.tvo_certs + "/hostreq.pem";
 
 		ArrayList<TestCommand> commands = new ArrayList<TestCommand>();
 
-		
+		// CA CERT/KEY:
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "genrsa", "-out", TestConfig.ca_key, "1024"}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "400", TestConfig.ca_key}));
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "req", "-new", "-batch", "-key", TestConfig.ca_key
@@ -43,18 +44,50 @@ public final class CreateCertificates {
 
 		String hash = Functions.callGetStdOut(new String[] {TestBrain.cOpenssl,"x509", "-hash", "-noout", "-in", TestConfig.ca_cert});
 		
-		commands.add(new TestCommand(new String[] {TestBrain.cCp, TestConfig.ca_cert, TestConfig.tvo_trusts+"/"
-				+ hash + ".0"}));
-		// COMMANDS[6]="rm -rf $HOME/.globus;ln -s  $USERDIR $HOME/.globus"
-		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "req", "-nodes", "-newkey", "rsa:1024", "-out ", usereq
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl,"x509", "-inform","PEM","-in", TestConfig.ca_cert
+				,"-outform","DER","-out",TestConfig.tvo_trusts+"/" + hash + ".der"}));
+
+		
+		
+		// USER CERT/KEY:
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "req", "-nodes", "-newkey", "rsa:1024", "-out ", userreq
 				,"-keyout", TestConfig.user_key
 				,"-subj", TestConfig.certSubjectuser}));
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "x509", "-req", "-in"
-				,usereq
+				,userreq
 				,"-CA", TestConfig.ca_cert, "-CAkey", TestConfig.ca_key, "-CAcreateserial", "-out", TestConfig.user_cert}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "640", TestConfig.user_cert}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "400", TestConfig.user_key}));
-				
+		
+		Functions.execShell(commands,verbose);
+		commands.clear();
+		
+		hash = Functions.callGetStdOut(new String[] {TestBrain.cOpenssl,"x509", "-hash", "-noout", "-in", TestConfig.user_cert});
+
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl,"x509", "-inform","PEM","-in", TestConfig.user_cert
+				,"-outform","DER","-out",TestConfig.tvo_trusts+"/" + hash + ".der"}));
+		
+		
+		// HOST CERT/KEY:
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "req", "-nodes", "-newkey", "rsa:1024", "-out ", hostreq
+				,"-keyout", TestConfig.host_key
+				,"-subj", TestConfig.certSubjecthost}));
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "x509", "-req", "-in"
+				,hostreq
+				,"-CA", TestConfig.ca_cert, "-CAkey", TestConfig.ca_key, "-CAcreateserial", "-out", TestConfig.host_cert}));
+		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "640", TestConfig.host_cert}));
+		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "400", TestConfig.host_key}));
+		
+		Functions.execShell(commands,verbose);
+		commands.clear();
+
+		hash = Functions.callGetStdOut(new String[] {TestBrain.cOpenssl,"x509", "-hash", "-noout", "-in", TestConfig.host_cert});
+		
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl,"x509", "-inform","PEM","-in", TestConfig.host_cert
+				,"-outform","DER","-out",TestConfig.tvo_trusts+"/" + hash + ".der"}));
+		
+		
+		
 		
 		return Functions.execShell(commands,verbose);
 

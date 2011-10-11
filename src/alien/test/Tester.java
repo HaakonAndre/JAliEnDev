@@ -1,7 +1,12 @@
 package alien.test;
 
+import java.util.logging.Logger;
+
+import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 import alien.test.chapters.TestCentralUtils;
+import alien.test.setup.CreateDB;
+import alien.test.setup.CreateLDAP;
 import alien.test.utils.TestException;
 
 
@@ -12,10 +17,17 @@ import alien.test.utils.TestException;
  */
 public class Tester {
 
+
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils
+			.getLogger(CatalogueUtils.class.getCanonicalName());
+
 	
-	static{
-		ConfigUtils.getVersion();
-	}
+//	static{
+//		ConfigUtils.getVersion();
+//	}
 	
 	
 
@@ -29,6 +41,7 @@ public class Tester {
 		System.out.println();
 		System.out.println();
 		System.out.println("---- jAliEn Test System ----");
+		
 		System.out.println("Starting ...");
 		
 		
@@ -38,6 +51,16 @@ public class Tester {
 			return;
 		}
 
+
+		try {
+			CreateLDAP.stopLDAP();
+			CreateDB.stopDatabase();
+		} catch (Exception e) {
+			//ignore
+		}
+		
+		
+		
 		try {
 			if (SetupTestVO.setupVO()) 
 				System.out.println("VO Setup successful.");
@@ -45,7 +68,7 @@ public class Tester {
 				System.out.println("VO Setup failed. No exceptions.");
 			
 			
-			if (TestCentralUtils.testChaper()) 
+			if (TestCentralUtils.runTestChapter())
 				System.out.println("TestCentralUtils successful.");
 			else
 				System.out.println("TestCentralUtils failed. No exceptions.");

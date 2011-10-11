@@ -4,6 +4,8 @@ import java.io.File;
 
 import javax.naming.NamingException;
 
+import com.mysql.jdbc.exceptions.MySQLSyntaxErrorException;
+
 import alien.test.TestConfig;
 import alien.test.utils.TestException;
 
@@ -27,14 +29,27 @@ public class ManageSysEntities {
 			CreateLDAP.addUserToLDAP(username, uid, role);
 			CreateLDAP.addRoleToLDAP(username, username);
 			CreateLDAP.addRoleToLDAP(role, username);
-			
-			CreateDB.addUserToDB(username, uid);
-			
+						
 		} catch (Exception e) {
+			System.out.println("LDAP Exception...");
 			e.printStackTrace();
 			return false;
 		}
 
+		try {
+			
+			CreateDB.addUserToDB(username, uid);
+
+		} catch (MySQLSyntaxErrorException e) {
+			System.out.println("DB Syntax Exception: ");
+			e.printStackTrace();
+			return false;
+		} catch (Exception e) {
+			System.out.println("DB Exception...");
+			e.printStackTrace();
+			return false;
+		}
+		
 		return true;
 	}
 

@@ -57,6 +57,12 @@ public class TestConfig {
 	 */
 	public static final String tvo_logs = tvo_home + "/logs";
 	
+
+	/**
+	 * the jalien user name of the test user
+	 */
+	public static final String testUser = 	"jalien";
+	
 	/**
 	 * the testVO certificate subject for the CA
 	 */
@@ -66,6 +72,11 @@ public class TestConfig {
 	 * the testVO certificate subject for the user cert
 	 */
 	public static final String certSubjectuser = 	"/C=CH/O=jAliEn/CN=jTestUser";
+	
+	/**
+	 * the testVO certificate subject for the user cert
+	 */
+	public static String certSubjecthost = "";
 	
 	
 	
@@ -234,8 +245,15 @@ public class TestConfig {
 		ldap_root = "o=" + VO_name + ","+ldap_suffix;
 		base_home_dir = "/" + VO_name + "/" + domain + "/user/";
 
+		
+		certSubjecthost =	"/C=CH/O=jAliEn/CN=" + full_host_name;
 	}
-
+	
+	/**
+	 * name of the system database
+	 */
+	public static final String systemDB = "testVO_system";
+	
 	/**
 	 * name of the data database
 	 */
@@ -291,11 +309,11 @@ public class TestConfig {
 				+ "\n" + "ldap_root = " + ldap_root + "\n"
 				+ "alien.users.basehomedir = " + base_home_dir + "\n" + "\n"
 				+ "apiService = 127.0.0.1:" + api_port + "\n"
-				+ "\n" + "trusted.certificates.location = + " + tvo_trusts
-				+ "\n" + "host.cert.priv.location = + " + host_key + "\n"
-				+ "host.cert.pub.location = + " + host_cert + "\n"
-				+ "user.cert.priv.location = + " + user_key + "\n"
-				+ "user.cert.pub.location = + " + user_cert + "\n"
+				+ "\n" + "trusted.certificates.location = " + tvo_trusts
+				+ "\n" + "host.cert.priv.location = " + host_key + "\n"
+				+ "host.cert.pub.location = " + host_cert + "\n"
+				+ "user.cert.priv.location = " + user_key + "\n"
+				+ "user.cert.pub.location = " + user_cert + "\n"
 		
 		
 		+"\n";
@@ -325,9 +343,11 @@ public class TestConfig {
 				+ "java.util.logging.FileHandler.count = 4\n"
 				+ "java.util.logging.FileHandler.append = true\n"
 				+ "java.util.logging.FileHandler.pattern = alien%g.log\n"
-				+ ".level = OFF\n" + "alien.level = OFF\n"
-				+ "lia.level = OFF\n" + "lazyj.level = OFF\n"
-				+ "apmon.level = OFF\n"
+				+ ".level = WARNING\n"
+				+ "lia.level = WARNING\n"
+				+ "lazyj.level = WARNING\n"
+				+ "apmon.level = WARNING\n"
+				+ "alien.level = INFO\n"
 				+ "# tell LazyJ to use the same logging facilities\n"
 				+ "use_java_logger=true\n";
 	}

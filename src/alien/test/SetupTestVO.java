@@ -49,18 +49,18 @@ public class SetupTestVO {
 		
 		boolean verbose = false;
 
+
 		
 		// step 1
-		System.out.println("----- STEP1 [INIT]: Certificates -----");
-		if (!CreateCertificates.doit(verbose))
-			throw new TestException("Creating Certificates failed.");
-		System.out.println("----- STEP1 [DONE]: Certificates -----");
-		
+		System.out.println("----- STEP1 [INIT]: Config -----");
+		TestConfig.createConfig();
+		System.out.println("----- STEP1 [DONE]: Config -----");
 		
 		// step 2
-		System.out.println("----- STEP2 [INIT]: Config -----");
-		TestConfig.createConfig();
-		System.out.println("----- STEP2 [DONE]: Config -----");
+		System.out.println("----- STEP2 [INIT]: Certificates -----");
+		if (!CreateCertificates.doit(verbose))
+			throw new TestException("Creating Certificates failed.");
+		System.out.println("----- STEP2 [DONE]: Certificates -----");
 		
 		// step 3
 		System.out.println("----- STEP3 [INIT]: LDAP -----");
@@ -84,13 +84,13 @@ public class SetupTestVO {
 	}
 	
 	
-	private static boolean rampUpVO() throws Exception{
+	private static boolean rampUpVO(){
 	
 		boolean ret = true;
 		
 		if(!ManageSysEntities.addUser("admin","1","admin"))
 			ret = false;
-		if(!ManageSysEntities.addUser("jalien","2","admin"))
+		if(!ManageSysEntities.addUser(TestConfig.testUser,"2","admin"))
 			ret = false;
 		if(!ManageSysEntities.addSite("JTestSite", TestConfig.domain, "/tmp", "/tmp", "/tmp"))
 			ret = false;

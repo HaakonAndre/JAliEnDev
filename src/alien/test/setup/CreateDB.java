@@ -20,18 +20,18 @@ public class CreateDB {
 	/**
 	 * the SQL socket
 	 */
-	public static final String sql_socket = TestConfig.sql_home + "/jalien.mysql.sock";
+	public static final String sql_socket = TestConfig.sql_home + "/jalien-mysql.sock";
 	
 
 	/**
 	 * the SQL pid file
 	 */
-	public static final String sql_pid_file = "/tmp/jalien.mysql.pid";
+	public static final String sql_pid_file = "/tmp/jalien-mysql.pid";
 
 	/**
 	 * the SQL log file
 	 */
-	public static final String sql_log = TestConfig.sql_home + "/jalien.mysql.log";
+	public static final String sql_log = TestConfig.sql_home + "/jalien-mysql.log";
 
 	/**
 	 * the SQL connection
@@ -44,12 +44,12 @@ public class CreateDB {
 	 * @throws Exception
 	 */
 	public static boolean rampUpDB() throws Exception{
-		try{
-		stopDatabase();
-		} catch(Exception e){
+		//try{
+		//stopDatabase();
+		//} catch(Exception e){
 			// ignore
 			//e.printStackTrace();
-		}
+		//}
 		initializeDatabase();
 		startDatabase();
 
@@ -57,10 +57,14 @@ public class CreateDB {
 		connect();
 		
 		fillDatabase(mysql_passwd);
-		fillDatabase(dataDB_content);
-		fillDatabase(userDB_content);
+		createCatalogueDB(TestConfig.systemDB);
+		createCatalogueDB(TestConfig.dataDB);
+		createCatalogueDB(TestConfig.userDB);
+		
+		//fillDatabase(dataDB_content);
+		//fillDatabase(userDB_content);
 
-		fillDatabase(catalogueInitialDirectories());
+		catalogueInitialDirectories();
 
 		return true;
 	}
@@ -75,7 +79,7 @@ public class CreateDB {
 		
 	
 		TestCommand db = new TestCommand(new String[] {TestBrain.cKill,"-9",sql_pid});
-		db.verbose();
+		//db.verbose();
 		if(!db.exec()){
 			throw new TestException("Could not stop LDAP: \n STDOUT: " + db.getStdOut()+"\n STDERR: " + db.getStdErr());
 		}
@@ -123,7 +127,8 @@ public class CreateDB {
 	 */
 	public static void addUserToDB(final String username, final String uid) throws Exception{
 		
-		fillDatabase(userAddIndexTable(username, uid));
+		userAddSubTable(username, uid);
+		userAddIndexTable(username, uid);
 	}
 	
 	/**
@@ -161,10 +166,11 @@ public class CreateDB {
 	
 	
 	private static void fillDatabase(final String[] queries) throws Exception{
-
-		for (String query: Arrays.asList(queries))
-			cn.createStatement().execute(query);	
-				
+		for(int a = 0; a < queries.length; a++)
+			if(queries[a]!=null)
+				cn.createStatement().execute(queries[a]);
+			else
+				System.err.println("Query entry ["+a+"] null!");
 	}
 	
 	
@@ -191,14 +197,76 @@ public class CreateDB {
 		//"insert into host VALUES(\"localhost\",\"%\",'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');",
 		"GRANT ALL PRIVILEGES ON *.* TO root IDENTIFIED BY '"+TestConfig.sql_pass+"' WITH GRANT OPTION;",
 		"GRANT ALL PRIVILEGES ON *.* TO root@localhost IDENTIFIED BY '"+TestConfig.sql_pass+"' WITH GRANT OPTION;",
-		//"GRANT ALL PRIVILEGES ON *.* TO root@localhost IDENTIFIED BY '"+TestConfig.sql_pass+"' WITH GRANT OPTION;",
 		"flush privileges;",
 		
-		//"create database if not exists alien_system;",
+		"CREATE DATABASE IF NOT EXISTS `"+TestConfig.systemDB+"` DEFAULT CHARACTER SET latin1;",
 		//"create database if not exists processes;",
 		//"create database if not exists transfers;",
 		//"create database if not exists INFORMATIONSERVICE;",
-		"create database if not exists ADMIN;",
+		"CREATE DATABASE IF NOT EXISTS `ADMIN` DEFAULT CHARACTER SET latin1;",
+		
+		"USE  mysql;",
+        "DROP TABLE IF EXISTS `proc`;",
+        "CREATE TABLE `proc` ("+
+        "  `db` char(64) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',"+
+        "  `name` char(64) NOT NULL DEFAULT '',"+
+        "  `type` enum('FUNCTION','PROCEDURE') NOT NULL,"+
+        "  `specific_name` char(64) NOT NULL DEFAULT '',"+
+        "  `language` enum('SQL') NOT NULL DEFAULT 'SQL',"+
+        "  `sql_data_access` enum('CONTAINS_SQL','NO_SQL','READS_SQL_DATA','MODIFIES_SQL_DATA') NOT NULL DEFAULT 'CONTAINS_SQL',"+
+        "  `is_deterministic` enum('YES','NO') NOT NULL DEFAULT 'NO',"+
+        "  `security_type` enum('INVOKER','DEFINER') NOT NULL DEFAULT 'DEFINER',"+
+        "  `param_list` blob NOT NULL,"+
+        "  `returns` longblob NOT NULL,"+
+        "  `body` longblob NOT NULL,"+
+        "  `definer` char(77) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',"+
+        "  `created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"+
+        "  `modified` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',"+
+        "  `sql_mode` set('REAL_AS_FLOAT','PIPES_AS_CONCAT','ANSI_QUOTES','IGNORE_SPACE','NOT_USED','ONLY_FULL_GROUP_BY','NO_UNSIGNED_SUBTRACTION','NO_DIR_IN_CREATE','POSTGRESQL','ORACLE','MSSQL','DB2','MAXDB','NO_KEY_OPTIONS','NO_TABLE_OPTIONS','NO_FIELD_OPTIONS','MYSQL323','MYSQL40','ANSI','NO_AUTO_VALUE_ON_ZERO','NO_BACKSLASH_ESCAPES','STRICT_TRANS_TABLES','STRICT_ALL_TABLES','NO_ZERO_IN_DATE','NO_ZERO_DATE','INVALID_DATES','ERROR_FOR_DIVISION_BY_ZERO','TRADITIONAL','NO_AUTO_CREATE_USER','HIGH_NOT_PRECEDENCE','NO_ENGINE_SUBSTITUTION','PAD_CHAR_TO_FULL_LENGTH') NOT NULL DEFAULT '',"+
+        "  `comment` char(64) CHARACTER SET utf8 COLLATE utf8_bin NOT NULL DEFAULT '',"+
+        "  `character_set_client` char(32) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,"+
+        "  `collation_connection` char(32) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,"+
+        "  `db_collation` char(32) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,"+
+        "  `body_utf8` longblob,"+
+        "  PRIMARY KEY (`db`,`name`,`type`)"+
+        ") ENGINE=MyISAM DEFAULT CHARSET=utf8 COMMENT='Stored Procedures';",
+        
+        "LOCK TABLES `proc` WRITE;",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.systemDB +"','string2binary','FUNCTION','string2binary','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid varchar(36)','binary(16)','return unhex(replace(my_uuid, \\'-\\', \\'\\'))','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return unhex(replace(my_uuid, \\'-\\', \\'\\'))');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.systemDB +"','binary2string','FUNCTION','binary2string','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid binary(16)','varchar(36) CHARSET latin1','return insert(insert(insert(insert(hex(my_uuid),9,0,\\'-\\'),14,0,\\'-\\'),19,0,\\'-\\'),24,0,\\'-\\')','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return insert(insert(insert(insert(hex(my_uuid),9,0,\\'-\\'),14,0,\\'-\\'),19,0,\\'-\\'),24,0,\\'-\\')');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.systemDB +"','binary2date','FUNCTION','binary2date','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid binary(16)','char(16) CHARSET latin1','return upper(concat(right(left(hex(my_uuid),16),4), right(left(hex(my_uuid),12),4),left(hex(my_uuid),8)))','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return upper(concat(right(left(hex(my_uuid),16),4), right(left(hex(my_uuid),12),4),left(hex(my_uuid),8)))');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.systemDB +"','string2date','FUNCTION','string2date','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid varchar(36)','char(16) CHARSET latin1','return upper(concat(right(left(my_uuid,18),4), right(left(my_uuid,13),4),left(my_uuid,8)))','admin@%','2011-10-06 17:07:19','2011-10-06 17:07:19','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return upper(concat(right(left(my_uuid,18),4), right(left(my_uuid,13),4),left(my_uuid,8)))');",
+       
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.dataDB +"','string2binary','FUNCTION','string2binary','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid varchar(36)','binary(16)','return unhex(replace(my_uuid, \\'-\\', \\'\\'))','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return unhex(replace(my_uuid, \\'-\\', \\'\\'))');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.dataDB +"','binary2string','FUNCTION','binary2string','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid binary(16)','varchar(36) CHARSET latin1','return insert(insert(insert(insert(hex(my_uuid),9,0,\\'-\\'),14,0,\\'-\\'),19,0,\\'-\\'),24,0,\\'-\\')','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return insert(insert(insert(insert(hex(my_uuid),9,0,\\'-\\'),14,0,\\'-\\'),19,0,\\'-\\'),24,0,\\'-\\')');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.dataDB +"','binary2date','FUNCTION','binary2date','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid binary(16)','char(16) CHARSET latin1','return upper(concat(right(left(hex(my_uuid),16),4), right(left(hex(my_uuid),12),4),left(hex(my_uuid),8)))','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return upper(concat(right(left(hex(my_uuid),16),4), right(left(hex(my_uuid),12),4),left(hex(my_uuid),8)))');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.dataDB +"','string2date','FUNCTION','string2date','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid varchar(36)','char(16) CHARSET latin1','return upper(concat(right(left(my_uuid,18),4), right(left(my_uuid,13),4),left(my_uuid,8)))','admin@%','2011-10-06 17:07:19','2011-10-06 17:07:19','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return upper(concat(right(left(my_uuid,18),4), right(left(my_uuid,13),4),left(my_uuid,8)))');",
+       
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.userDB +"','string2binary','FUNCTION','string2binary','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid varchar(36)','binary(16)','return unhex(replace(my_uuid, \\'-\\', \\'\\'))','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return unhex(replace(my_uuid, \\'-\\', \\'\\'))');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.userDB +"','binary2string','FUNCTION','binary2string','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid binary(16)','varchar(36) CHARSET latin1','return insert(insert(insert(insert(hex(my_uuid),9,0,\\'-\\'),14,0,\\'-\\'),19,0,\\'-\\'),24,0,\\'-\\')','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return insert(insert(insert(insert(hex(my_uuid),9,0,\\'-\\'),14,0,\\'-\\'),19,0,\\'-\\'),24,0,\\'-\\')');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.userDB +"','binary2date','FUNCTION','binary2date','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid binary(16)','char(16) CHARSET latin1','return upper(concat(right(left(hex(my_uuid),16),4), right(left(hex(my_uuid),12),4),left(hex(my_uuid),8)))','admin@%','2011-10-06 17:07:18','2011-10-06 17:07:18','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return upper(concat(right(left(hex(my_uuid),16),4), right(left(hex(my_uuid),12),4),left(hex(my_uuid),8)))');",
+        "INSERT INTO `proc` VALUES ('"+ TestConfig.userDB +"','string2date','FUNCTION','string2date','SQL','CONTAINS_SQL','YES','INVOKER','my_uuid varchar(36)','char(16) CHARSET latin1','return upper(concat(right(left(my_uuid,18),4), right(left(my_uuid,13),4),left(my_uuid,8)))','admin@%','2011-10-06 17:07:19','2011-10-06 17:07:19','','','latin1','latin1_swedish_ci','latin1_swedish_ci','return upper(concat(right(left(my_uuid,18),4), right(left(my_uuid,13),4),left(my_uuid,8)))');",
+       
+        
+        "UNLOCK TABLES;",
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 	};
 	
 	
@@ -277,12 +345,12 @@ public class CreateDB {
 	   + "\n";
 
 	
-
-		
-		
-		static final String[] dataDB_content = {
-		   "CREATE DATABASE IF NOT EXISTS `"+ TestConfig.dataDB +"` DEFAULT CHARACTER SET latin1;",
-		   "USE `"+ TestConfig.dataDB +"`;",
+	   
+		private static void createCatalogueDB(String catDB) throws Exception{
+			
+			fillDatabase(new String[] {
+		   "CREATE DATABASE IF NOT EXISTS `"+ catDB +"` DEFAULT CHARACTER SET latin1;",
+		   "USE `"+ catDB +"`;",
 
 		   "DROP TABLE IF EXISTS `ACL`;",
 		   "CREATE TABLE `ACL` ("
@@ -589,7 +657,8 @@ public class CreateDB {
 
 		   
 		   
-			};
+			});
+		}
 
 		
 
@@ -854,61 +923,148 @@ public class CreateDB {
 
 
 		
+		private static void addToINDEXTABLE(final String hostIndex, final String tableName, final String lfn) throws Exception{
+			fillDatabase( new String[] {
+			"USE `"+ TestConfig.systemDB +"`;",
+			"LOCK TABLES `INDEXTABLE` WRITE;",
+			"INSERT INTO `INDEXTABLE` VALUES (0,"+hostIndex+","+tableName+",'"+lfn+"')",
+			"USE `"+ TestConfig.dataDB +"`;",
+			"LOCK TABLES `INDEXTABLE` WRITE;",
+			"INSERT INTO `INDEXTABLE` VALUES (0,"+hostIndex+","+tableName+",'"+lfn+"')",
+			"USE `"+ TestConfig.userDB +"`;",
+			"LOCK TABLES `INDEXTABLE` WRITE;",
+			"INSERT INTO `INDEXTABLE` VALUES (0,"+hostIndex+","+tableName+",'"+lfn+"')",
+			"UNLOCK TABLES;"});
+		}
+		
+		
+		private static void addToHOSTSTABLE(final String hostIndex, final String address, final String db) throws Exception{
+			fillDatabase( new String[] {
+			"USE `"+ TestConfig.systemDB +"`;",
+			"LOCK TABLES `HOSTS` WRITE;",
+			"INSERT INTO `HOSTS` VALUES ("+hostIndex+",'" + address +"','"+db+"','mysql',NULL);",
+			"USE `"+ TestConfig.dataDB +"`;",
+			"LOCK TABLES `HOSTS` WRITE;",
+			"INSERT INTO `HOSTS` VALUES ("+hostIndex+",'" + address +"','"+db+"','mysql',NULL);",
+			"USE `"+ TestConfig.userDB +"`;",
+			"LOCK TABLES `HOSTS` WRITE;",
+			"INSERT INTO `HOSTS` VALUES ("+hostIndex+",'" + address +"','"+db+"','mysql',NULL);",
+			"UNLOCK TABLES;"});
+		}
+		
+		
+		private static void addToGUIDINDEXTABLE(final String guidIndex, final String table) throws Exception{
+			fillDatabase( new String[] {
+			"USE `"+ TestConfig.systemDB +"`;",
+			"LOCK TABLES `GUIDINDEX` WRITE",
+			"INSERT INTO `GUIDINDEX` VALUES ("+guidIndex+",'"+table+"');",
+			"UNLOCK TABLES;",
+			"USE `"+ TestConfig.dataDB +"`;",
+			"LOCK TABLES `GUIDINDEX` WRITE",
+			"INSERT INTO `GUIDINDEX` VALUES ("+guidIndex+",'"+table+"');",
+			"UNLOCK TABLES;",
+			"USE `"+ TestConfig.userDB +"`;",
+			"LOCK TABLES `GUIDINDEX` WRITE",
+			"INSERT INTO `GUIDINDEX` VALUES ("+guidIndex+",'"+table+"');",
+			"UNLOCK TABLES;"});
+		}
 		
 		
 		
 		
-		
-		
-		
-		private static String[] catalogueInitialDirectories(){
+		private static void catalogueInitialDirectories() throws Exception{
+			
+			
+			fillDatabase(userDB_content);
+			addToGUIDINDEXTABLE("0", "");
+			addToINDEXTABLE("1","0","/");
+			addToINDEXTABLE("2","0",TestConfig.base_home_dir);
+			addToHOSTSTABLE("1",TestConfig.full_host_name + ":" + TestConfig.sql_port,TestConfig.dataDB);
+			addToHOSTSTABLE("2",TestConfig.full_host_name + ":" + TestConfig.sql_port,TestConfig.userDB);
+			
+			
 			
 			String[] subfolders = TestConfig.base_home_dir.split("/");
+			System.out.println("base_home_dir:"+TestConfig.base_home_dir);
 			
-			String[] queries = new String[subfolders.length - 1 + 18];
-			int b = 0;
-			queries[b++] = "USE `"+ TestConfig.dataDB +"`;";
-			queries[b++] = "LOCK TABLES `INDEXTABLE` WRITE;";
-			queries[b++] = "INSERT INTO `INDEXTABLE` VALUES (0,1,0,'/');";
-			queries[b++] = "INSERT INTO `INDEXTABLE` VALUES (0,2,0,'/localdomain/');";
-			queries[b++] = "LOCK TABLES `HOSTS` WRITE;";
-			queries[b++] = "INSERT INTO `HOSTS` VALUES (1,'" + TestConfig.full_host_name + ":" + TestConfig.sql_port +"','"+TestConfig.dataDB+"','mysql',NULL);";   
-			queries[b++] = "INSERT INTO `HOSTS` VALUES (2,'" + TestConfig.full_host_name + ":" + TestConfig.sql_port +"','"+TestConfig.userDB+"','mysql',NULL);";  
-			queries[b++] = "LOCK TABLES `L0L` WRITE;";
-			int dirIndex = 1;
-			int parentdir = dirIndex;
-			queries[b++] = "INSERT INTO `L0L` VALUES ("+dirIndex+",'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'',0,NULL,0,"+parentdir+",'admin','d',NULL,NULL,'755');";
-		
+			fillDatabase(new String[] {
+				"USE `"+ TestConfig.dataDB +"`;",
+				"LOCK TABLES `L0L` WRITE;",
+				"INSERT INTO `L0L` VALUES (0,'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'',0,NULL,0,NULL,'admin','d',NULL,NULL,'755');",
+				"UNLOCK TABLES;"
+			});
+			String parentDir = queryDB("select entryId from " + TestConfig.dataDB + ".L0L where lfn = '';","entryId");
 			
-			String path = subfolders[0];
+			
+			String path = "";
 			for(int a=1; a< subfolders.length; a++){
-				dirIndex++;
+
 				path = path + subfolders[a] + "/";
-				System.out.println("path is: -" + path + "-");
-				queries[b++] = "INSERT INTO `L0L` VALUES ("+dirIndex+",'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'"+ path +"',0,NULL,0,"+parentdir+",'admin','d',NULL,NULL,'755');";
-				parentdir++;
+				fillDatabase(new String[] {
+					"USE `"+ TestConfig.dataDB +"`;",
+					"LOCK TABLES `L0L` WRITE;",
+					"INSERT INTO `L0L` VALUES (0,'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'"+ path +"',0,NULL,0,"+parentDir+",'admin','d',NULL,NULL,'755');",
+					"UNLOCK TABLES;"
+				});
+				parentDir = queryDB("select entryId from " + TestConfig.dataDB + ".L0L where lfn = '"+ path +"';","entryId");
 			}
 			
-			queries[b++] = "UNLOCK TABLES;";
-			queries[b++] = "USE `"+ TestConfig.userDB +"`;";
-			queries[b++] = "LOCK TABLES `HOSTS` WRITE;";
-			queries[b++] = "INSERT INTO `HOSTS` VALUES (1,'" + TestConfig.full_host_name + ":" + TestConfig.sql_port +"','"+TestConfig.dataDB+"','mysql',NULL);";   
-			queries[b++] = "INSERT INTO `HOSTS` VALUES (2,'" + TestConfig.full_host_name + ":" + TestConfig.sql_port +"','"+TestConfig.userDB+"','mysql',NULL);";  
-			queries[b++] = "LOCK TABLES `INDEXTABLE` WRITE;";
-			queries[b++] = "INSERT INTO `INDEXTABLE` VALUES (0,1,0,'/')";
-			queries[b++] = "INSERT INTO `INDEXTABLE` VALUES (0,2,0,'/localdomain/');";
-			
-			queries[b++] = "UNLOCK TABLES;";
 		
-			return queries;
+			parentDir = queryDB("select entryId from " + TestConfig.dataDB + ".L0L where lfn = '" + path + "';","entryId");
+			System.out.println("Querying:  select entryId from " + TestConfig.dataDB + ".L0L where lfn = '" + path + "';");
+			System.out.println("Adding to parentDir ["+path+"]: " + parentDir + "|");
+
+			fillDatabase(new String[] {
+			"UNLOCK TABLES;",
+			"USE `"+ TestConfig.userDB +"`;",
+			"LOCK TABLES `L0L` WRITE;",
+			"INSERT INTO `L0L` VALUES (0,'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'',0,NULL,0,"+parentDir+",'admin','d',NULL,NULL,'755');",
+			"UNLOCK TABLES;"});
+		
 		}
 
 		
-		private static String[] userAddIndexTable(String username, String uid) {
+		private static void userAddSubTable(String username, String uid) throws Exception{
 			
-			String homeEntryID = queryDB("select entryID from " + TestConfig.dataDB + ".L0L where lfn = '" + TestConfig.base_home_dir.substring(1) + "';","entryID");
+			String parentDir = queryDB("select entryId from " + TestConfig.userDB + ".L0L where lfn = '';","entryId");
+			System.out.println("select entryId from " + TestConfig.userDB + ".L0L where lfn = '';");
+			System.out.println("Adding home index to parentDir: " + parentDir);
 
-			return new String[] {
+			System.out.println("user home: " + CreateLDAP.getUserHome(username));
+			addToINDEXTABLE("2",uid,CreateLDAP.getUserHome(username));
+			
+			fillDatabase(new String[] {
+				   "USE `"+ TestConfig.userDB +"`;",
+				   "LOCK TABLES `L0L` WRITE;",
+				   "INSERT INTO `L0L` VALUES (0,'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'"+ username.substring(0,1)+"/',0,NULL,0,"+parentDir+",'admin','d',NULL,NULL,'755');",
+				   "UNLOCK TABLES;",
+			});
+			
+			parentDir = queryDB("select entryId from " + TestConfig.userDB + ".L0L where lfn = '"+ username.substring(0,1)+"/';","entryId");
+			
+			fillDatabase(new String[] {
+					   "USE `"+ TestConfig.userDB +"`;",
+					   "LOCK TABLES `L0L` WRITE;",
+					   "INSERT INTO `L0L` VALUES (0,'"+username+"',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'"+ username.substring(0,1)+"/"+username+"/',0,NULL,0,"+parentDir+",'admin','d',NULL,NULL,'755');",
+					   "UNLOCK TABLES;",
+				});
+		}
+	   
+				   
+				   
+		private static void userAddIndexTable(String username, String uid) throws Exception{
+			
+			System.out.println("select entryId from " + TestConfig.userDB + ".L0L where lfn = '" + 
+						 username.substring(0,1) + "/';");
+
+			String parentDir = queryDB("select entryId from " + TestConfig.userDB + ".L0L where lfn = '" + 
+						 username.substring(0,1) + "/';","entryId");
+			System.out.println("Adding to user home to parentDir: " + parentDir);
+			
+			
+		
+			fillDatabase(new String[] {
+				   
 				   "USE `"+ TestConfig.userDB +"`;",
 				   "DROP TABLE IF EXISTS `L"+uid+"L`;",
 				   "CREATE TABLE `L"+uid+"L` ("
@@ -953,20 +1109,11 @@ public class CreateDB {
 				   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
 				   
 				   "LOCK TABLES `L"+uid+"L` WRITE;",
-				   "INSERT INTO `L"+uid+"L` VALUES (5,'"+username +"',0,'2011-10-06 17:07:51',NULL,NULL,NULL,'',0,NULL,0,4,'admin','d',NULL,NULL,'755');",
-				
-				   "LOCK TABLES `INDEXTABLE` WRITE;",
-				   "INSERT INTO `INDEXTABLE` VALUES (0,3,"+uid+",'"+CreateLDAP.getUserHome(username)+"');",
+				   "INSERT INTO `L"+uid+"L` VALUES (0,'"+username +"',0,'2011-10-06 17:07:51',NULL,NULL,NULL,'',0,NULL,0,'"+parentDir+"','admin','d',NULL,NULL,'755');",
 
-				   "USE `"+ TestConfig.dataDB +"`;",
-				   "LOCK TABLES `L0L` WRITE;",
-				   "INSERT INTO `L0L` VALUES (0,'admin',0,'2011-10-06 17:07:26',NULL,NULL,NULL,'"+ TestConfig.base_home_dir.substring(1) + username.substring(0,1)+"/" +"',0,NULL,0,"+homeEntryID+",'admin','d',NULL,NULL,'755');",
-				   "LOCK TABLES `INDEXTABLE` WRITE;",
-				   "INSERT INTO `INDEXTABLE` VALUES (0,3,"+uid+",'"+CreateLDAP.getUserHome(username)+"');",
-				   
 				   "UNLOCK TABLES;",
 				
-				};
+			});
 		}
 	   
 	

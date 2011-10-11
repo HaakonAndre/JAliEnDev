@@ -57,11 +57,11 @@ public class CreateLDAP {
 	 * @throws Exception
 	 */
 	public static boolean rampUpLDAP() throws Exception{
-		try{
-		stopLDAP();
-		} catch(Exception e){
-			// ignore
-		}
+		//try{
+		//stopLDAP();
+		//} catch(Exception e){
+		//	// ignore
+		//}
 		createConfig();
 		startLDAP();
 
