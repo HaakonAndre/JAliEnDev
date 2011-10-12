@@ -312,7 +312,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	@Override
 	public String toString() {
 		return "guidID\t\t: "+guidId+"\n"+
-		       "ctime\t\t: "+ctime.toString()+"\n"+
+		       "ctime\t\t: "+(ctime!=null ? ctime.toString() : "null")+"\n"+
 		       "owner\t\t: "+owner+":"+gowner+"\n"+
 		       "SE lists\t: "+seStringList+" , "+seAutoStringList+"\n"+
 		       "aclId\t\t: "+aclId+"\n"+
