@@ -291,9 +291,11 @@ public final class GUIDUtils {
 	 */
 	public static GUID createGuid(){
 		UUID id;
-		do{
-			id = generateTimeUUID();
-		} while (getGUID(id) != null);
+//		do{
+//			id = generateTimeUUID();
+//		} while (getGUID(id) != null);
+		
+		id = generateTimeUUID();
 		
 		return new GUID(id);
 	}
