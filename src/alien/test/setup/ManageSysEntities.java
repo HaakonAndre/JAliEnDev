@@ -1,10 +1,9 @@
 package alien.test.setup;
 
 import java.io.File;
+import java.sql.SQLException;
 
 import javax.naming.NamingException;
-
-import com.mysql.jdbc.exceptions.MySQLSyntaxErrorException;
 
 import alien.test.TestConfig;
 import alien.test.utils.TestException;
@@ -40,7 +39,7 @@ public class ManageSysEntities {
 			
 			CreateDB.addUserToDB(username, uid);
 
-		} catch (MySQLSyntaxErrorException e) {
+		} catch (SQLException e) {
 			System.out.println("DB Syntax Exception: ");
 			e.printStackTrace();
 			return false;
