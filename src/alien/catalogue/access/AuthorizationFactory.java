@@ -213,8 +213,8 @@ public final class AuthorizationFactory {
 
 			if (!AuthorizationChecker.canWrite(guid, user))
 				return "User is not allowed to write this entry";
-
-			if (pfns.contains(pfn))
+			
+			if (pfns!=null && pfns.contains(pfn))
 				return "PFN already associated to the GUID";
 		} else if (access == AccessType.DELETE || access == AccessType.READ) {
 			// PFN must be a part of the ones registered to the GUID
@@ -229,30 +229,27 @@ public final class AuthorizationFactory {
 				}
 			}
 
-			if (!pfns.contains(pfn))
+			if (pfns==null || !pfns.contains(pfn))
 				return "PFN is not registered";
 		} else
 			return "Unknown access type : " + access;
 
 		XrootDEnvelope env = null;
-
-		if (pfn.getPFN().startsWith("root://")) {
 			env = new XrootDEnvelope(access, pfn);
-			
-			try {
-				final SE se = SEUtils.getSE(pfn.seNumber);
-				XrootDEnvelopeSigner.signEnvelope(env);
 
-				if (se != null && se.needsEncryptedEnvelope) {
-					//System.out.println("SE needs encrypted envelope");
-					XrootDEnvelopeSigner.encryptEnvelope(env);
+			try {			
+				XrootDEnvelopeSigner.signEnvelope(env);
+				if (pfn.getPFN().startsWith("root://")) {
+					final SE se = SEUtils.getSE(pfn.seNumber);
+					if (se != null && se.needsEncryptedEnvelope) {
+						// System.out.println("SE needs encrypted envelope");
+						XrootDEnvelopeSigner.encryptEnvelope(env);
+					}
 				}
 			} catch (GeneralSecurityException gse) {
 				logger.log(Level.SEVERE, "Cannot sign and encrypt envelope",
 						gse);
 			}
-
-		}
 
 		pfn.ticket = new AccessTicket(access, env);
 
