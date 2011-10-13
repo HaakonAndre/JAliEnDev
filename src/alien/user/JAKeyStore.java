@@ -47,14 +47,14 @@ public class JAKeyStore {
 	 */
 	public static KeyStore hostCert = null;
 
-	/**
-	 * 
-	 */
-	public static KeyStore authenKeys;
-	/**
-	 * 
-	 */
-	public static KeyStore seKeys;
+//	/**
+//	 * 
+//	 */
+//	public static KeyStore authenKeys;
+//	/**
+//	 * 
+//	 */
+//	public static KeyStore seKeys;
 
 	/**
 	 * 
@@ -329,11 +329,11 @@ public class JAKeyStore {
 
 		hostCert = KeyStore.getInstance("JKS");
 		hostCert.load(null, pass);
-		authenKeys = KeyStore.getInstance("JKS");
-		authenKeys.load(null, pass);
-
-		seKeys = KeyStore.getInstance("JKS");
-		seKeys.load(null, pass);
+//		authenKeys = KeyStore.getInstance("JKS");
+//		authenKeys.load(null, pass);
+//
+//		seKeys = KeyStore.getInstance("JKS");
+//		seKeys.load(null, pass);
 		
 		addKeyPairToKeyStore(
 				hostCert,
@@ -353,49 +353,49 @@ public class JAKeyStore {
 								+ System.getProperty("file.separator")
 								+ "hostcert.pem"), null);
 
-		addKeyPairToKeyStore(
-				authenKeys,
-				"Authen.keys",
-				config.gets(
-						"Authen.keys.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".alien"
-								+ System.getProperty("file.separator")
-								+ "authen"
-								+ System.getProperty("file.separator"))
-						+ "lpriv.pem",
-				config.gets(
-						"Authen.keys.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".alien"
-								+ System.getProperty("file.separator")
-								+ "authen"
-								+ System.getProperty("file.separator"))
-						+ "lpub.pem", null);
-
-		addKeyPairToKeyStore(
-				seKeys,
-				"SE.keys",
-				config.gets(
-						"Authen.keys.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".alien"
-								+ System.getProperty("file.separator")
-								+ "authen"
-								+ System.getProperty("file.separator"))
-						+ "rpriv.pem",
-				config.gets(
-						"Authen.keys.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".alien"
-								+ System.getProperty("file.separator")
-								+ "authen"
-								+ System.getProperty("file.separator"))
-						+ "rpub.pem", null);
+//		addKeyPairToKeyStore(
+//				authenKeys,
+//				"Authen.keys",
+//				config.gets(
+//						"Authen.keys.location",
+//						System.getProperty("user.home")
+//								+ System.getProperty("file.separator")
+//								+ ".alien"
+//								+ System.getProperty("file.separator")
+//								+ "authen"
+//								+ System.getProperty("file.separator"))
+//						+ "lpriv.pem",
+//				config.gets(
+//						"Authen.keys.location",
+//						System.getProperty("user.home")
+//								+ System.getProperty("file.separator")
+//								+ ".alien"
+//								+ System.getProperty("file.separator")
+//								+ "authen"
+//								+ System.getProperty("file.separator"))
+//						+ "lpub.pem", null);
+//
+//		addKeyPairToKeyStore(
+//				seKeys,
+//				"SE.keys",
+//				config.gets(
+//						"Authen.keys.location",
+//						System.getProperty("user.home")
+//								+ System.getProperty("file.separator")
+//								+ ".alien"
+//								+ System.getProperty("file.separator")
+//								+ "authen"
+//								+ System.getProperty("file.separator"))
+//						+ "rpriv.pem",
+//				config.gets(
+//						"Authen.keys.location",
+//						System.getProperty("user.home")
+//								+ System.getProperty("file.separator")
+//								+ ".alien"
+//								+ System.getProperty("file.separator")
+//								+ "authen"
+//								+ System.getProperty("file.separator"))
+//						+ "rpub.pem", null);
 
 		loadTrusts();
 
