@@ -150,6 +150,10 @@ public class Transfer implements Serializable, Runnable {
 		if (s.equals("torrent")){
 			ret.add(Factory.torrent);
 		}
+		else
+		if (s.equals("file")){
+				ret.add(Factory.cp);
+			}
 		
 		return ret;
 	}
