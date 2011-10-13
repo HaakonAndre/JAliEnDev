@@ -15,14 +15,13 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.ExtProperties;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 
@@ -44,13 +43,13 @@ public class XrootDEnvelopeSigner {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(XrootDEnvelopeSigner.class.getCanonicalName());
 
-	private static final String AuthenPrivLocation;
-	private static final String AuthenPubLocation;
+	private static final String JAuthZPrivLocation;
+	private static final String JAuthZPubLocation;
 	private static final String SEPrivLocation;
 	private static final String SEPubLocation;
 
-	private static final RSAPrivateKey AuthenPrivKey;
-	private static final RSAPublicKey AuthenPubKey;
+	private static final RSAPrivateKey JAuthZPrivKey;
+	private static final RSAPublicKey JAuthZPubKey;
 	private static final RSAPrivateKey SEPrivKey;
 	private static final RSAPublicKey SEPubKey;
 	
@@ -62,47 +61,45 @@ public class XrootDEnvelopeSigner {
 	static{
 		Security.addProvider(new BouncyCastleProvider());
 
-		ExtProperties config = ConfigUtils.getConfig();
-		
-		final String authenKeysLocation = config.gets("Authen.keys.location", System.getProperty("user.home")+System.getProperty("file.separator")+".alien"+System.getProperty("file.separator")+"authen"+System.getProperty("file.separator"));
-		
-		final String seKeysLocation = config.gets("SE.keys.location", authenKeysLocation);
-		
-		AuthenPrivLocation = authenKeysLocation+"lpriv.pem";
-		AuthenPubLocation = authenKeysLocation+"lpub.pem";
-		SEPrivLocation = seKeysLocation+"rpriv.pem";
-		SEPubLocation = seKeysLocation+"rpub.pem";
+		JAuthZPrivLocation = ConfigUtils.getConfig().gets("jAuthZ.priv.key.location", System.getProperty("user.home")+System.getProperty("file.separator")+".alien"+System.getProperty("file.separator")+"authen"+System.getProperty("file.separator")+"lpriv.pem");
+		JAuthZPubLocation = ConfigUtils.getConfig().gets("jAuthZ.pub.key.location", System.getProperty("user.home")+System.getProperty("file.separator")+".alien"+System.getProperty("file.separator")+"authen"+System.getProperty("file.separator")+"lpub.pem");
+		SEPrivLocation = ConfigUtils.getConfig().gets("SE.priv.key.location", System.getProperty("user.home")+System.getProperty("file.separator")+".alien"+System.getProperty("file.separator")+"authen"+System.getProperty("file.separator")+"rpriv.pem");
+		SEPubLocation = ConfigUtils.getConfig().gets("SE.pub.key.location", System.getProperty("user.home")+System.getProperty("file.separator")+".alien"+System.getProperty("file.separator")+"authen"+System.getProperty("file.separator")+"rpub.pem");
 
-		RSAPrivateKey authenPrivKey = null;
-		RSAPublicKey  authenPubKey = null;
+		//System.out.println("Using private JAuthZ Key: " + JAuthZPrivLocation + "/" + JAuthZPubLocation);
+		//System.out.println("Using private SE Key: " + SEPrivLocation + "/" + SEPubLocation);
+		
+		
+		RSAPrivateKey jAuthZPrivKey = null;
+		RSAPublicKey  jAuthZPubKey = null;
 		RSAPrivateKey sePrivKey = null;
 		RSAPublicKey  sePubKey = null;
 		
-		BufferedReader authenPriv = null;
-		BufferedReader authenPub  = null;
+		BufferedReader jAuthZPriv = null;
+		BufferedReader jAuthZPub  = null;
 		
 		try{
-			authenPriv = new BufferedReader(new FileReader(AuthenPrivLocation));
-			authenPub  = new BufferedReader(new FileReader(AuthenPubLocation));
+			jAuthZPriv = new BufferedReader(new FileReader(JAuthZPrivLocation));
+			jAuthZPub  = new BufferedReader(new FileReader(JAuthZPubLocation));
 			
-			authenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(authenPriv).readObject()).getPrivate();
-			authenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(authenPub).readObject()).getPublicKey();
+			jAuthZPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(jAuthZPriv).readObject()).getPrivate();
+			jAuthZPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(jAuthZPub).readObject()).getPublicKey();
 		}
 		catch (IOException ioe){
-			logger.log(Level.WARNING, "Authen keys could not be loaded from "+authenKeysLocation);
+			logger.log(Level.WARNING, "Authen keys could not be loaded from "+JAuthZPrivLocation +"/" + JAuthZPubLocation);
 		}
 		finally{
-			if (authenPriv!=null)
+			if (jAuthZPriv!=null)
 				try {
-					authenPriv.close();
+					jAuthZPriv.close();
 				}
 				catch (IOException e) {
 					// ignore
 				}
 			
-			if (authenPub!=null)
+			if (jAuthZPub!=null)
 				try {
-					authenPub.close();
+					jAuthZPub.close();
 				}
 				catch (IOException e) {
 					// ignore
@@ -120,7 +117,7 @@ public class XrootDEnvelopeSigner {
 			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(sePub).readObject()).getPublicKey();
 		}
 		catch (IOException ioe){
-			logger.log(Level.WARNING, "SE keys could not be loaded from "+seKeysLocation);
+			logger.log(Level.WARNING, "SE keys could not be loaded from "+SEPrivLocation + "/"+ SEPubLocation);
 		}
 		finally{
 			if (sePriv!=null){
@@ -141,8 +138,8 @@ public class XrootDEnvelopeSigner {
 			}
 		}
 		
-		AuthenPrivKey = authenPrivKey;
-		AuthenPubKey = authenPubKey;
+		JAuthZPrivKey = jAuthZPrivKey;
+		JAuthZPubKey = jAuthZPubKey;
 		SEPrivKey = sePrivKey;
 		SEPubKey = sePubKey;
 	}
@@ -172,7 +169,7 @@ public class XrootDEnvelopeSigner {
 	public static void signEnvelope(final XrootDEnvelope envelope)
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
-
+		
 		final long issued = System.currentTimeMillis() / 1000L;
 		final long expires = issued + 60*60*24;
 
@@ -182,7 +179,7 @@ public class XrootDEnvelopeSigner {
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 		
-		signer.initSign(AuthenPrivKey);
+		signer.initSign(JAuthZPrivKey);
 		
 		signer.update(toBeSigned.getBytes());
 
@@ -243,18 +240,18 @@ public class XrootDEnvelopeSigner {
 		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.lastIndexOf("&"));
 		
 		// TODO: this needs to go in already by the SE. Drop it here, when the SE places it itself.
-		System.out.println("envelope is before hashord padding:" + signedEnvelope);
+		//System.out.println("envelope is before hashord padding:" + signedEnvelope);
 		if(!selfSigned)
 			signedEnvelope += "&" + "hashord=" + env.get("hashord");
 		
-		System.out.println("plain envelope is : " + signedEnvelope);
-		System.out.println("sign for envelope is : " + env.get("signature"));
+		//System.out.println("plain envelope is : " + signedEnvelope);
+		//System.out.println("sign for envelope is : " + env.get("signature"));
 
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 
 		if (selfSigned) {
-			signer.initVerify(AuthenPubKey);
+			signer.initVerify(JAuthZPubKey);
 		}
 		else {
 			signer.initVerify(SEPubKey);
@@ -269,7 +266,7 @@ public class XrootDEnvelopeSigner {
 	 * @throws GeneralSecurityException
 	 */
 	public static void encryptEnvelope(final XrootDEnvelope envelope) throws GeneralSecurityException {
-		final EncryptedAuthzToken authz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey, false);
+		final EncryptedAuthzToken authz = new EncryptedAuthzToken(JAuthZPrivKey, SEPubKey, false);
 		
 		envelope.setEncryptedEnvelope(authz.encrypt(envelope.getUnEncryptedEnvelope()));
 	}
@@ -283,7 +280,7 @@ public class XrootDEnvelopeSigner {
 	 * @throws GeneralSecurityException
 	 */
 	public static XrootDEnvelope decryptEnvelope(final String envelope) throws GeneralSecurityException {
-		final EncryptedAuthzToken authz = new EncryptedAuthzToken(SEPrivKey, AuthenPubKey, true);
+		final EncryptedAuthzToken authz = new EncryptedAuthzToken(SEPrivKey, JAuthZPubKey, true);
 		
 		return new XrootDEnvelope(authz.decrypt(envelope));
 	}
@@ -313,7 +310,7 @@ public class XrootDEnvelopeSigner {
 			"  </file>\n"+
 			"</authz>";
 			
-			EncryptedAuthzToken enAuthz = new EncryptedAuthzToken(AuthenPrivKey, SEPubKey,false);
+			EncryptedAuthzToken enAuthz = new EncryptedAuthzToken(JAuthZPrivKey, SEPubKey,false);
 
 			String enticket = enAuthz.encrypt(ticket);
 			
