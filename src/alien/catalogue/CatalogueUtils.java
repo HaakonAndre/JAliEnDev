@@ -149,7 +149,7 @@ public final class CatalogueUtils {
 			old = idx;
 		}
 		
-		return null;
+		return old;
 	}
 	
 	/**
