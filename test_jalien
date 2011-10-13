@@ -4,16 +4,14 @@
 if [ "$1" == "shutdown" ]; then
 
 	cd $JALIEN_HOME
-	./test.sh -DAliEnConfig=${HOME}/.alien/testVO/config -Dlia.Monitor.ConfigURL=file:///${HOME}/.alien/testVO/config/logging.properties  alien.test.ShutdownTestVO $@
+	./test.sh alien.test.ShutdownTestVO 
 
-else
-
-
-
-
+elif [ "$1" == "run" ]; then
 
 	cd $JALIEN_HOME
-	./test.sh -DAliEnConfig=${HOME}/.alien/testVO/config -Dlia.Monitor.ConfigURL=file:///${HOME}/.alien/testVO/config/logging.properties  alien.test.SetupTestVO $@
+	./test.sh alien.test.Tester
+
+
 
 
 fi

@@ -11,9 +11,8 @@ done
 
 CLASSPATH="$CLASSPATH:alien.jar"
 
-
 export CLASSPATH
 
-java -Duserid=$(id -u) -XX:CompileThreshold=5 -Dsun.security.ssl.allowUnsafeRenegotiation=true  "$@"
+java -Duserid=$(id -u) -DAliEnConfig=$HOME/.alien/testVO/config -XX:CompileThreshold=5 -Dsun.security.ssl.allowUnsafeRenegotiation=true  "$@" $(pwd) 
 #java -XX:CompileThreshold=5   "$@"
 

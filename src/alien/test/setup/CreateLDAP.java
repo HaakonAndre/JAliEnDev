@@ -1,5 +1,7 @@
 package alien.test.setup;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -29,7 +31,7 @@ public class CreateLDAP {
 	/**
 	 * the LDAP location
 	 */
-	public static final String ldap_schema = TestConfig.jalien_home + "/slapd_schema";
+	public static final String ldap_schema = TestConfig.ldap_home + "/";
 
 	/**
 	 * the LDAP args file
@@ -62,6 +64,7 @@ public class CreateLDAP {
 		//} catch(Exception e){
 		//	// ignore
 		//}
+		extractLDAPSchema();
 		createConfig();
 		startLDAP();
 
@@ -122,6 +125,15 @@ public class CreateLDAP {
 
 	}
 	
+	private static void extractLDAPSchema(){
+		try {
+			Functions.unzip(new File(TestConfig.ldap_schema_zip) ,new File(ldap_schema));
+		} catch (IOException e) {
+			e.printStackTrace();
+			System.err.println("error unzipping ldap schema");
+		}
+	}
+	
 	private static String slapd_config_content(String pass_hash){
 		
 	return 
@@ -131,10 +143,10 @@ public class CreateLDAP {
 			"# This file should NOT be world readable.\n"+
 			"#\n"+
 			"\n"+
-			"include         "+ ldap_schema+"/core.schema\n"+
-			"include         "+ ldap_schema+"/cosine.schema\n"+
-			"include         "+ ldap_schema+"/nis.schema\n"+
-			"include         "+ ldap_schema+"/alien.schema\n"+
+			"include         "+ ldap_schema+"schema/core.schema\n"+
+			"include         "+ ldap_schema+"schema/cosine.schema\n"+
+			"include         "+ ldap_schema+"schema/nis.schema\n"+
+			"include         "+ ldap_schema+"schema/alien.schema\n"+
 			"\n"+
 			"#referral      ldap://root.openldap.org/\n"+
 			"\n"+

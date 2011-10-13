@@ -1,14 +1,20 @@
 package alien.test.utils;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Scanner;
 import java.util.concurrent.TimeUnit;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 
 import lia.util.process.ExternalProcess.ExitStatus;
@@ -150,4 +156,42 @@ public class Functions {
 
 	}
 
+	
+	/**
+	 * @param zip
+	 * @param extractTo
+	 * @throws IOException
+	 */
+	public static final void unzip(File zip, File extractTo) throws IOException {
+		
+	    ZipFile archive = new ZipFile(zip);
+	    Enumeration<? extends ZipEntry> e = archive.entries();
+	    while (e.hasMoreElements()) {
+	      ZipEntry entry = (ZipEntry) e.nextElement();
+	      File file = new File(extractTo, entry.getName());
+	      if (entry.isDirectory() && !file.exists()) {
+	        file.mkdirs();
+	      } else {
+	        if (!file.getParentFile().exists()) {
+	          file.getParentFile().mkdirs();
+	        }
+
+	        InputStream in = archive.getInputStream(entry);
+	        BufferedOutputStream out = new BufferedOutputStream(
+	            new FileOutputStream(file));
+
+	        byte[] buffer = new byte[8192];
+	        int read;
+
+	        while (-1 != (read = in.read(buffer))) {
+	          out.write(buffer, 0, read);
+	        }
+
+	        in.close();
+	        out.close();
+	      }
+	    }
+	  }
+	
+	
 }

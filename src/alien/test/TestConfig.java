@@ -14,17 +14,16 @@ import alien.test.utils.TestException;
  */
 public class TestConfig {
 
-	
 	/**
-	 * default home of jalien
+	 * default home of j
 	 */
-	public static final String jalien_home = System.getProperty("user.home")
+	public static final String j_home = System.getProperty("user.home")
 			+ "/.alien";
 	
 	/**
 	 * default home of the testVO
 	 */
-	public static final String tvo_home = jalien_home + "/testVO";
+	public static final String tvo_home = j_home + "/testVO";
 
 	/**
 	 * testVO creation time stamp
@@ -89,6 +88,11 @@ public class TestConfig {
 	/**
 	 * the testVO ldap config location
 	 */
+	public static final String ldap_schema_zip = "testsys/ldap_schema.zip";
+	
+	/**
+	 * the testVO ldap config location
+	 */
 	public static final String ldap_config = tvo_config + "/ldap.config";
 	
 
@@ -108,8 +112,6 @@ public class TestConfig {
 	 */
 	public static final String ldap_log = tvo_logs + "/lapd.log";
 	
-	
-
 	/**
 	 * the user's private key
 	 */
