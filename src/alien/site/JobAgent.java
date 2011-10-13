@@ -293,7 +293,7 @@ public class JobAgent extends Thread {
 						lfn.md5 = md5;
 
 						pfns = CatalogueApiUtils.getPFNsToWrite(user, site,
-								lfn, null, null, null, 0);
+								lfn, null, null, null, null, 0);
 
 						if (pfns != null) {
 							ArrayList<String> envelopes = new ArrayList<String>(
