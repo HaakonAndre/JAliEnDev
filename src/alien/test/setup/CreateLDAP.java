@@ -391,6 +391,7 @@ public class CreateLDAP {
 		config.put("semasterManagerAddress", "8082");
 		config.put("semasterDatabase", "8082");
 		config.put("jobinfoManagerAddress", "8082");
+		config.put("sedefaultQosandCount","disk=1");
 
 		addToLDAP(objClasses, config, "ou=Config,"+TestConfig.ldap_root);
 	}

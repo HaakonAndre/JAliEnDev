@@ -63,6 +63,12 @@ public class TestConfig {
 	 */
 	public static final String testUser = 	"jalien";
 	
+
+	/**
+	 * the jalien test site name
+	 */
+	public static final String testSite = 	"JTestSite";
+	
 	/**
 	 * the testVO certificate subject for the CA
 	 */
@@ -133,7 +139,38 @@ public class TestConfig {
 	 * the host's cert
 	 */
 	public static String host_cert = tvo_certs + "/hostcert.pem";
+	
 
+	/**
+	 * central jAuthZ private key for storage
+	 */
+	public static String jAuthZ_priv = tvo_certs + "/AuthZ_priv.pem";
+
+	/**
+	 * central jAuthZ public key for storage
+	 */
+	public static String jAuthZ_pub = tvo_certs + "/AuthZ_pub.pem";
+	
+	/**
+	 * central jAuthZ's subject
+	 */
+	public static final String certSubjectjAuthZ = 	"/C=CH/O=jAliEn/CN=jAuthZ";
+
+	/**
+	 * SE's private key for storage
+	 */
+	public static String SE_priv = tvo_certs + "/SE_priv.pem";
+
+	/**
+	 * SE's public key for storage
+	 */
+	public static String SE_pub = tvo_certs + "/SE_pub.pem";
+
+	/**
+	 * central SE's subject
+	 */
+	public static final String certSubjectSE = 	"/C=CH/O=jAliEn/CN=TESTSE";
+	
 	/**
 	 * port number for the LDAP server
 	 */
@@ -314,7 +351,13 @@ public class TestConfig {
 				+ "host.cert.pub.location = " + host_cert + "\n"
 				+ "user.cert.priv.location = " + user_key + "\n"
 				+ "user.cert.pub.location = " + user_cert + "\n"
-		
+				+ "alice_close_site = " + TestConfig.testSite + "\n"
+				+"\n"
+				+ "jAuthZ.priv.key.location = " + jAuthZ_priv + "\n"
+				+ "jAuthZ.pub.key.location = " + jAuthZ_pub + "\n"
+				+ "SE.priv.key.location = " + SE_priv + "\n"
+				+ "SE.pub.key.location = " + SE_pub + "\n"
+	
 		
 		+"\n";
 	}

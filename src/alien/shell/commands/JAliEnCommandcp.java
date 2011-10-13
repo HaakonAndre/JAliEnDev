@@ -11,6 +11,7 @@ import joptsimple.OptionSet;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.io.Transfer;
@@ -180,7 +181,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		}
 
 		for (PFN pfn : pfns) {
-
 			List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 			for (final Protocol protocol : protocols) {
 				ProtocolAction pA = new ProtocolAction(protocol,pfn, target);
@@ -202,7 +202,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 			}
 		}
-		if (target.exists() && target.length() > 0)
+		
+		if (target!= null && target.exists() && target.length() > 0)
 			return target;
 		out.printErrln("Could not get the file.");
 		return null;
@@ -265,16 +266,22 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			// lfn.guid=... for user's specification
 			lfn.size = size;
 			lfn.md5 = md5;
+			
+			try {
+				guid = GUIDUtils.createGuid(source, commander.user);
+				
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 			pfns = CatalogueApiUtils.getPFNsToWrite(commander.user,
-					commander.site, lfn, ses, exses, null, 0);
+					commander.site, lfn, guid, ses, exses, null, 0);
 
 		}
 		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
 		ArrayList<String> registerPFNs = new ArrayList<String>(pfns.size());
-
 		for (PFN pfn : pfns) {
-
 			List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 			for (final Protocol protocol : protocols) {
 				ProtocolAction pA = new ProtocolAction(protocol, source, pfn);
@@ -306,7 +313,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 			}
 		}
-
+		
 		if (envelopes.size() != 0)
 			CatalogueApiUtils.registerEnvelopes(commander.user, envelopes);
 		if (registerPFNs.size() != 0)

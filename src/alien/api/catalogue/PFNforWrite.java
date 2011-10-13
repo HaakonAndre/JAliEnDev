@@ -9,7 +9,6 @@ import java.util.Set;
 import alien.api.Request;
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
-import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.se.SE;
@@ -48,11 +47,12 @@ public class PFNforWrite extends Request {
 	 * @param qosType
 	 * @param qosCount
 	 */
-	public PFNforWrite(AliEnPrincipal user, String site, LFN lfn,
+	public PFNforWrite(AliEnPrincipal user, String site, LFN lfn, GUID guid,
 			List<String> ses, List<String> exses, String qosType, int qosCount) {
 		this.user = user;
 		this.site = site;
 		this.lfn = lfn;
+		this.guid = guid;
 		this.ses = ses;
 		this.exses = exses;
 		this.qosType = qosType;
@@ -114,11 +114,14 @@ public class PFNforWrite extends Request {
 
 		LFN setArchiveAnchor = null;
 		if (lfn != null) {
+			if(guid==null){
+				System.err
+				.println("Cannot get PFNforWrite with guid=null, for lfn: " + lfn);
+				return;
+			}
+			
 			if (lfn.guid == null)
-				guid = GUIDUtils.createGuid();
-			else
-				guid = GUIDUtils.getGUID(lfn.guid, true);
-			lfn.guid = guid.guid;
+				lfn.guid = guid.guid;
 			guid.lfnCache = new LinkedHashSet<LFN>(1);
 			guid.lfnCache.add(lfn);
 			guid.size = lfn.size;

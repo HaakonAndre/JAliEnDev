@@ -206,12 +206,12 @@ public class CatalogueApiUtils {
 	 *         and authorized
 	 */
 	public static List<PFN> getPFNsToWrite(AliEnPrincipal user, String site,
-			LFN lfn, List<String> ses, List<String> exses, String qosType,
+			LFN lfn, GUID guid, List<String> ses, List<String> exses, String qosType,
 			int qosCount) {
 
 		try {
 			PFNforWrite writeFile = (PFNforWrite) Dispatcher.execute(
-					new PFNforWrite(user, site, lfn, ses, exses, qosType,
+					new PFNforWrite(user, site, lfn, guid, ses, exses, qosType,
 							qosCount), true);
 			return writeFile.getPFNs();
 		} catch (IOException e) {

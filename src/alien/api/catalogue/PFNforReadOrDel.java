@@ -100,8 +100,6 @@ public class PFNforReadOrDel extends Request {
 			try {
 				for (PFN pfn : pfns) {
 
-					System.out.println("Asking read for " + user.getName()
-							+ " to " + guid.guid);
 					String reason = AuthorizationFactory.fillAccess(user, pfn,
 							access);
 
@@ -194,8 +192,6 @@ public class PFNforReadOrDel extends Request {
 	 * @return PFNs to read from
 	 */
 	public List<PFN> getPFNs() {
-		if(pfns==null)
-			System.out.println("will return pfns=null");
 		return pfns;
 	}
 

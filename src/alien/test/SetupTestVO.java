@@ -92,9 +92,9 @@ public class SetupTestVO {
 			ret = false;
 		if(!ManageSysEntities.addUser(TestConfig.testUser,"2","admin"))
 			ret = false;
-		if(!ManageSysEntities.addSite("JTestSite", TestConfig.domain, "/tmp", "/tmp", "/tmp"))
+		if(!ManageSysEntities.addSite(TestConfig.testSite, TestConfig.domain, "/tmp", "/tmp", "/tmp"))
 			ret = false;
-		if(!ManageSysEntities.addSE("firstse","1","JTestSite", TestConfig.full_host_name+":8092", "disk"))
+		if(!ManageSysEntities.addSE("firstse","1",TestConfig.testSite, TestConfig.full_host_name+":8092", "disk"))
 			ret = false;
 		
 		return ret;

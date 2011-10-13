@@ -87,9 +87,26 @@ public final class CreateCertificates {
 				,"-outform","DER","-out",TestConfig.tvo_trusts+"/" + hash + ".der"}));
 		
 		
-		
+		createAuthenAndSEKey();
 		
 		return Functions.execShell(commands,verbose);
 
 	}
+	
+	/**
+	 * 
+	 */
+	public static void createAuthenAndSEKey(){
+		
+		Functions.callGetStdOut(new String[] {TestBrain.cOpenssl, "req", "-x509", "-nodes", "-days", "365"
+				, "-newkey", "rsa:1024", "-keyout", TestConfig.jAuthZ_priv, "-out", TestConfig.jAuthZ_pub, "-subj", TestConfig.certSubjectjAuthZ});
+		
+		
+		Functions.callGetStdOut(new String[] {TestBrain.cOpenssl, "req", "-x509", "-nodes", "-days", "365"
+				, "-newkey", "rsa:1024", "-keyout", TestConfig.SE_priv, "-out", TestConfig.SE_pub, "-subj", TestConfig.certSubjectSE});
+		
+	}
+	
+	
+	
 }
