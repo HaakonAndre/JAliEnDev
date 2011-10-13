@@ -28,4 +28,10 @@ public final class Factory {
 	 * Torrent protocol
 	 */
 	public static final Torrent torrent = new Torrent();
+	
+
+	/**
+	 * local cp protocol
+	 */
+	public static final CpForTest cp = new CpForTest();
 }
