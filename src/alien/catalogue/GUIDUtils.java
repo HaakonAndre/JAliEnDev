@@ -115,7 +115,6 @@ public final class GUIDUtils {
 	 */
 	public static GUID getGUID(final UUID guid, final boolean evenIfDoesntExist) {
 		final int host = getGUIDHost(guid);
-//		final int host = 1; //gron
 		
 		if (host < 0)
 			return null;
@@ -131,7 +130,6 @@ public final class GUIDUtils {
 			return null;
 		
 		final int tableName = GUIDUtils.getTableNameForGUID(guid);
-//		final int tableName=0; //gron
 		
 		if (tableName < 0)
 			return null;
@@ -139,8 +137,9 @@ public final class GUIDUtils {
 		if (monitor != null)
 			monitor.incrementCounter("GUID_db_lookup");
 	
-		db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary('"
-				+ guid + "');");
+		if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary('"+ guid + "');")){
+			throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
+		}
 
 		if (!db.moveNext()) {
 			if (evenIfDoesntExist) {

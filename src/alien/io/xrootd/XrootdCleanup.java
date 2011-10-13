@@ -14,9 +14,7 @@ import java.util.regex.Pattern;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import lazyj.Format;
-
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
@@ -339,7 +337,7 @@ public class XrootdCleanup {
 			}
 		}
 		catch (Exception e){
-			// ignore
+			System.err.println(e.getMessage());
 		}
 		
 		processed.incrementAndGet();
