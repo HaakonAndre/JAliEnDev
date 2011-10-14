@@ -7,11 +7,11 @@ package alien.config;
  */
 public class JAliEnIAm {
 	
-	private static final String thathsMe = "jAliEn";
+	private static final String thathsMe = "jSh";
 	
-	private static final String myVersion = "v0.3";
+	private static final String myVersion = "v0.7";
 	
-	private static final String alienshprompt = "Jaliensh[alice]";
+	private static final String alienshprompt = "JSh[alice]";
 
 	private static final String myFullName = thathsMe +" "+myVersion; 
 	

@@ -28,13 +28,13 @@ import alien.user.UsersHelper;
  * 
  * @author costing
  */
-public class APIServer extends Thread {
+public class JBoxServer extends Thread {
 
 	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils
-	.getLogger(APIServer.class.getCanonicalName());
+	.getLogger(JBoxServer.class.getCanonicalName());
 
 	private final int port;
 
@@ -56,7 +56,7 @@ public class APIServer extends Thread {
 	 * @param listeningPort
 	 * @throws IOException
 	 */
-	private APIServer(final int listeningPort, int iDebug) throws Exception {
+	private JBoxServer(final int listeningPort, int iDebug) throws Exception {
 		this.port = listeningPort;
 		this.iDebugLevel = iDebug;
 
@@ -78,12 +78,12 @@ public class APIServer extends Thread {
 		
 		//should check if the file was written and if not then exit.
 		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)){ //user should be taken from certificate
-			throw new Exception("Could not write the token file! No application can connect to the APIServer");
+			throw new Exception("Could not write the token file! No application can connect to JBox");
 
 		}
 
 		if(!writeEnvFile("127.0.0.1", listeningPort, alUser.getName())){
-			throw new Exception("Could not write the env file! Root will not be able to connect to APIServer");
+			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
 	}
 
@@ -92,7 +92,7 @@ public class APIServer extends Thread {
 	 * the filename = /tmp/gclient_token_$uid
 	 * @param sHost hostname to connect to, by default localhost
 	 * @param iPort port number for listening
-	 * @param sPassword the password used by other application to connect to the APIServer
+	 * @param sPassword the password used by other application to connect to the JBoxServer
 	 * @param sUser the user from the certificate
 	 * @param iDebug the debug level received from the command line
 	 * @return true if the file was written, false if not
@@ -318,18 +318,18 @@ public class APIServer extends Thread {
 		}
 	}
 
-	private static APIServer server = null;
+	private static JBoxServer server = null;
 
 	/**
 	 * Start once the UIServer
 	 */
-	private static synchronized void startAPIServer(int iDebugLevel) {
+	private static synchronized void startJBoxServer(int iDebugLevel) {
 		if (server != null)
 			return;
 
 		for (int port = 10100; port < 10200; port++) {
 			try {
-				server = new APIServer(port, iDebugLevel);
+				server = new JBoxServer(port, iDebugLevel);
 				server.start();
 
 				logger.log(Level.INFO, "UIServer listening on port " + port);
@@ -346,12 +346,12 @@ public class APIServer extends Thread {
 
 	/**
 	 * 
-	 * Load necessary keys and start APIServer
+	 * Load necessary keys and start JBoxServer
 	 */
 	public static void startAPIService(int iDebug) {
 		try {
 			JAKeyStore.loadClientKeyStorage();
-			APIServer.startAPIServer(iDebug);
+			JBoxServer.startJBoxServer(iDebug);
 		} catch (org.bouncycastle.openssl.EncryptionException e) {
 			System.err.println("Wrong password!");
 		} catch (javax.crypto.BadPaddingException e) {
