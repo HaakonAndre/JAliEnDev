@@ -261,7 +261,7 @@ public class JAKeyStore {
 						"user.cert.priv.location",
 						System.getProperty("user.home")
 								+ System.getProperty("file.separator")
-								+ "globus"
+								+ ".globus"
 								+ System.getProperty("file.separator")
 								+ "userkey.pem"),
 				config.gets(
