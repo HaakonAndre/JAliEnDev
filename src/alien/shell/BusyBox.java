@@ -119,10 +119,6 @@ public class BusyBox {
 		if (s != null) {
 			out = new PrintWriter(System.out);
 
-			
-			welcome();
-			out.flush();
-
 			reader = new ConsoleReader();
 			reader.setBellEnabled(false);
 			reader.setDebug(new PrintWriter(
@@ -134,6 +130,12 @@ public class BusyBox {
 		        };
 		    reader.addCompletor (new ArgumentCompletor(comp));
 					
+
+			
+			welcome();
+			out.flush();
+
+		    
 			String line;
 			
 			while ((line = reader.readLine(whoami + promptPrefix + currentDirTiled + promptSuffix)) != null) {
