@@ -33,16 +33,16 @@ public class JSh {
 		//System.out.println("And we are in: " + f.getCanonicalPath());
 
 		if (args.length > 0 && args[0].equals("-k"))
-			JSh.killAPIService();
+			JSh.killJBox();
 		else {
 
-			// JAliEnSh.startAPIService();
+			// JAliEnSh.startJBox();
 			
-			if (JSh.APIServiceRunning())
+			if (JSh.JBoxRunning())
 				new BusyBox(addr, port, password);
 			else
 				System.err
-						.println("APIService isn't running/couldn't be started, so we won't start jaliensh.");
+						.println("JBox isn't running/couldn't be started, so we won't start JSh.");
 		}
 	}
 
@@ -54,13 +54,13 @@ public class JSh {
 	private static int port = 0;
 	private static int pid = 0;
 
-	private static void startAPIService() {
-		if (!JSh.APIServiceRunning()) {
+	private static void startJBox() {
+		if (!JSh.JBoxRunning()) {
 
-			// APIServer.startAPIService();
+			// APIServer.startJBox();
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					new String[] { "nohup", "./run.sh", "alien.APIService", "&" });
+					new String[] { "nohup", "./run.sh", "alien.JBox", "&" });
 
 			pBuilder.returnOutputOnExit(false);
 			pBuilder.redirectErrorStream(false);
@@ -70,15 +70,15 @@ public class JSh {
 			// pBuilder.start();
 			// } catch (Exception e) {
 			// e.printStackTrace();
-			// System.err.println("Could not start APIService.");
+			// System.err.println("Could not start JBox.");
 			// }
 			System.out.println();
 		}
-		JSh.getAPIServicePID();
+		JSh.getJBoxPID();
 	}
 
-	private static void killAPIService() {
-		if (JSh.APIServiceRunning()) {
+	private static void killJBox() {
+		if (JSh.JBoxRunning()) {
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					new String[] { kill, pid + "" });
@@ -90,21 +90,21 @@ public class JSh {
 			try {
 				exitStatus = pBuilder.start().waitFor();
 				if (exitStatus.getExtProcExitStatus() == 0)
-					System.out.println("[" + pid + "] APIService killed.");
+					System.out.println("[" + pid + "] JBox killed.");
 				else
-					System.err.println("Could not kill the APIService, PID:"
+					System.err.println("Could not kill the JBox, PID:"
 							+ pid);
 
 			} catch (Exception e) {
-				System.err.println("Could not kill the APIService, PID:" + pid);
+				System.err.println("Could not kill the JBox, PID:" + pid);
 			}
 		} else
-			System.out.println("We didn't find any APIService running.");
+			System.out.println("We didn't find any JBox running.");
 	}
 
-	private static boolean APIServiceRunning() {
+	private static boolean JBoxRunning() {
 
-		JSh.getAPIServicePID();
+		JSh.getJBoxPID();
 
 		if (!(new File(fuser)).exists())
 			return true;
@@ -167,14 +167,14 @@ public class JSh {
 						// ignore
 					}
 			}
-			if (buffer.contains("alien.APIService"))
+			if (buffer.contains("alien.JBox"))
 				return true;
 		}
 		System.err.println("Could not get information from /proc.");
 		return false;
 	}
 
-	private static void getAPIServicePID() {
+	private static void getJBoxPID() {
 
 		File f = new File("/tmp/gclient_token_"+System.getProperty("userid"));
 

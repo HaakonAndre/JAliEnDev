@@ -6,7 +6,7 @@ import java.security.KeyStoreException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
-import alien.api.APIServer;
+import alien.api.JBoxServer;
 
 /**
  * @author ron
@@ -41,7 +41,7 @@ public class JBox {
 		}
 
 
-		APIServer.startAPIService(iDebug);
+		JBoxServer.startAPIService(iDebug);
 
 
 	}
