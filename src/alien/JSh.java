@@ -17,7 +17,7 @@ import alien.shell.BusyBox;
  * @author ron
  * @since Jun 21, 2011
  */
-public class JAliEnSh {
+public class JSh {
 	
 	static {
 		ConfigUtils.getVersion();
@@ -33,12 +33,12 @@ public class JAliEnSh {
 		//System.out.println("And we are in: " + f.getCanonicalPath());
 
 		if (args.length > 0 && args[0].equals("-k"))
-			JAliEnSh.killAPIService();
+			JSh.killAPIService();
 		else {
 
 			// JAliEnSh.startAPIService();
 			
-			if (JAliEnSh.APIServiceRunning())
+			if (JSh.APIServiceRunning())
 				new BusyBox(addr, port, password);
 			else
 				System.err
@@ -55,7 +55,7 @@ public class JAliEnSh {
 	private static int pid = 0;
 
 	private static void startAPIService() {
-		if (!JAliEnSh.APIServiceRunning()) {
+		if (!JSh.APIServiceRunning()) {
 
 			// APIServer.startAPIService();
 
@@ -74,11 +74,11 @@ public class JAliEnSh {
 			// }
 			System.out.println();
 		}
-		JAliEnSh.getAPIServicePID();
+		JSh.getAPIServicePID();
 	}
 
 	private static void killAPIService() {
-		if (JAliEnSh.APIServiceRunning()) {
+		if (JSh.APIServiceRunning()) {
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					new String[] { kill, pid + "" });
@@ -104,7 +104,7 @@ public class JAliEnSh {
 
 	private static boolean APIServiceRunning() {
 
-		JAliEnSh.getAPIServicePID();
+		JSh.getAPIServicePID();
 
 		if (!(new File(fuser)).exists())
 			return true;

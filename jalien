@@ -4,13 +4,13 @@ if [ "$1" == "login" ]; then
 
 
         cd $JALIEN_HOME
-        ./run.sh alien.APIService $@
+        ./run.sh -DAliEnConfig=${HOME}/.j/config alien.JBox $@
 
 else 
 
 
 	cd $JALIEN_HOME
-	./run.sh -DAliEnConfig=${HOME}/.alien/config alien.JAliEnSh $@
+	./run.sh -DAliEnConfig=${HOME}/.j/config alien.JSh $@
 
 
 fi

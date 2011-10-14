@@ -12,7 +12,7 @@ import alien.api.APIServer;
  * @author ron
  * @since Jun 21, 2011
  */
-public class APIService {
+public class JBox {
 
 	/**
 	 * Debugging method
