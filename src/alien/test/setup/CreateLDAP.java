@@ -106,7 +106,7 @@ public class CreateLDAP {
 		TestCommand slapd = new TestCommand(new String[] {
 				TestBrain.cNohup,ldap_starter});
 		slapd.daemonize();
-		slapd.run();		
+		slapd.exec();		
 	}
 
 	/**
