@@ -88,7 +88,7 @@ public class TestConfig {
 	/**
 	 * the testVO ldap config location
 	 */
-	public static final String ldap_schema_zip = "testsys/ldap_schema2.zip";
+	public static final String ldap_schema_zip = "testsys/ldap_schema_config.zip";
 	
 	/**
 	 * the testVO ldap config location
