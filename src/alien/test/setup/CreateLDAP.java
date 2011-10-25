@@ -87,7 +87,7 @@ public class CreateLDAP {
 	public static void startLDAP() throws Exception{
 		TestCommand slapd = new TestCommand(new String[] {
 				//TestBrain.cBash,"-c",
-				TestBrain.cSlapd, "-d","1","-s","0","-h","ldap://127.0.0.1:"+ TestConfig.ldap_port, "-F",
+				TestBrain.cSlapd, "-d","1","-s","0","-h","ldap://:"+ TestConfig.ldap_port,"ldapi://:"+ TestConfig.ldap_port, "-F",
 						TestConfig.ldap_conf_dir, ">",TestConfig.ldap_log,"2>&1"});//,"&"});
 		slapd.daemonize();
 		slapd.verbose();
