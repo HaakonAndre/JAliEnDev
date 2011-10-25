@@ -102,13 +102,15 @@ public class TestCommand {
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 				new ArrayList<String>(command));
 		
-		pBuilder.returnOutputOnExit(true);
+		if(!daemonize)
+			pBuilder.returnOutputOnExit(true);
 		
 		// pBuilder.directory();
 
-		pBuilder.timeout(10, TimeUnit.MINUTES);
+		pBuilder.timeout(30, TimeUnit.SECONDS);
 
-		pBuilder.redirectErrorStream(true);
+		if(!daemonize)
+			pBuilder.redirectErrorStream(true);
 
 		try {
 			final ExitStatus exitStatus;

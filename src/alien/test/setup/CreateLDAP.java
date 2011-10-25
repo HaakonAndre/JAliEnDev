@@ -27,11 +27,16 @@ import alien.test.utils.TestException;
  * @since Sep 16, 2011
  */
 public class CreateLDAP {
+	
+	/**
+	 * the ldap module path of the machine, this is an assumption !
+	 */
+	public static final String ldap_module_path = "/usr/lib/ldap";
 
 	/**
-	 * the LDAP location
+	 * the testVO ldap cn config location
 	 */
-	public static final String ldap_schema = TestConfig.ldap_home + "/";
+	public static final String ldap_conf_cn_dir = TestConfig.ldap_conf_dir + "/cn=config";
 
 	/**
 	 * the LDAP args file
@@ -64,8 +69,9 @@ public class CreateLDAP {
 		//} catch(Exception e){
 		//	// ignore
 		//}
-		extractLDAPSchema();
+
 		createConfig();
+		extractLDAPSchema();
 		startLDAP();
 
 		Thread.sleep(2000); 
@@ -81,8 +87,8 @@ public class CreateLDAP {
 	public static void startLDAP() throws Exception{
 		TestCommand slapd = new TestCommand(new String[] {
 				//TestBrain.cBash,"-c",
-				TestBrain.cSlapd, "-d","1","-s","0","-h","ldap://127.0.0.1:"+ TestConfig.ldap_port, "-f",
-						TestConfig.ldap_conf_file, ">",TestConfig.ldap_log,"2>&1"});//,"&"});
+				TestBrain.cSlapd, "-d","1","-s","0","-h","ldap://127.0.0.1:"+ TestConfig.ldap_port, "-F",
+						TestConfig.ldap_conf_dir, ">",TestConfig.ldap_log,"2>&1"});//,"&"});
 		slapd.daemonize();
 		slapd.verbose();
 		slapd.exec();		
@@ -115,75 +121,33 @@ public class CreateLDAP {
 	 * @throws Exception
 	 */
 	public static void createConfig() throws Exception {
-			
 		
-			Functions.writeOutFile(TestConfig.ldap_conf_file,
-					slapd_config_content(hashPassword(TestConfig.ldap_pass)));
+			if(!(new File(ldap_conf_cn_dir)).mkdirs())
+				throw new TestException("Could not create LDAP conf directory: [" + ldap_conf_cn_dir + "]");
+		
+				Functions.writeOutFile(ldap_conf_cn_file());
+				Functions.writeOutFile(ldap_conf_db_backend_file());
+				Functions.writeOutFile(ldap_conf_db_config_file());
+				Functions.writeOutFile(ldap_conf_db_frontend_file());
+				Functions.writeOutFile(ldap_conf_db_hdb_file());
+				Functions.writeOutFile(ldap_conf_db_mod_file());
+
+				
+			//hashPassword(TestConfig.ldap_pass)
 			
 			Functions.writeOutFile(TestConfig.ldap_config,
 					"password="+ TestConfig.ldap_pass +"\n");
+					
 
 	}
 	
 	private static void extractLDAPSchema(){
 		try {
-			Functions.unzip(new File(TestConfig.ldap_schema_zip) ,new File(ldap_schema));
+			Functions.unzip(new File(TestConfig.ldap_schema_zip) ,new File(ldap_conf_cn_dir));
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.err.println("error unzipping ldap schema");
 		}
-	}
-	
-	private static String slapd_config_content(String pass_hash){
-		
-	return 
-	"\n"+
-			"#\n"+
-			"# See slapd.conf(5) for details on configuration options.\n"+
-			"# This file should NOT be world readable.\n"+
-			"#\n"+
-			"\n"+
-			"include         "+ ldap_schema+"schema/core.schema\n"+
-			"include         "+ ldap_schema+"schema/cosine.schema\n"+
-			"include         "+ ldap_schema+"schema/nis.schema\n"+
-			"include         "+ ldap_schema+"schema/alien.schema\n"+
-			"\n"+
-			"#referral      ldap://root.openldap.org/\n"+
-			"\n"+
-			"pidfile        "+ldap_pid_file+"\n"+
-			"argsfile       "+ldap_args_file+"\n"+
-			"\n"+
-			"#######################################################################\n"+
-			"# ldbm database definitions\n"+
-			"#######################################################################\n"+
-			"\n"+
-			"moduleload back_bdb.la\n"+
-			"\n"+
-			"database       bdb\n"+
-			"suffix         \""+TestConfig.ldap_suffix+"\"\n"+
-			"rootdn         \""+TestConfig.ldap_cred+"\"\n"+
-			"rootpw         "+pass_hash+"\n"+
-			"\n"+
-			"# cleartext passwords, especially for the rootdn, should\n"+
-			"# be avoid.  See slapd.conf(5) for details.\n"+
-			"\n"+
-			"directory    "+ TestConfig.ldap_home+"\n"+
-//			"\n"+
-//			"TLSCipherSuite         ALL\n"+
-//			"TLSCertificateFile     "+TestConfig.host_cert+"\n"+
-//			"TLSCertificateKeyFile  "+TestConfig.host_key+"\n"+
-//			"TLSVerifyClient allow\n"+
-			"\n"+
-			"cachesize 2000\n"+
-			"\n"+
-			"# Any user with cn that contain Manager will not be listed when browsing\n"+
-			"access to dn=\"uid=.*Manager,ou=People,o=.*,"+TestConfig.ldap_suffix+"\" attr=\"userpassword\" by self write \n"+
-			"access to dn=\"uid=.*Manager,ou=People,o=.*,"+TestConfig.ldap_suffix+"\" by self read by * none \n"+
-			"access to * by * read\n"+
-		//	"\n"+
-		//	"access to dn=\"ou=.*,ou=Sites,o=alice,dc=cern,dc=ch\" by self write\n"+
-			"\n"
-		;
 	}
 	
 	
@@ -472,4 +436,178 @@ public class CreateLDAP {
 
 		return ctx;
 	}
+	
+	
+
+	private static final String[] ldap_conf_cn_file(){
+		
+		return new String[] { TestConfig.ldap_conf_dir  + "/cn=config.ldif",
+		//
+		"dn: cn=config\n"
+		+ "objectClass: olcGlobal\n"
+		+ "cn: config\n"
+		//+ "olcConfigFile: slapd.conf\n"
+		+ "olcConfigDir: slapd.d\n"
+		+ "olcArgsFile: "+ldap_args_file+"\n"
+		+ "olcAttributeOptions: lang-\n"
+		+ "olcAuthzPolicy: none\n"
+		+ "olcConcurrency: 0\n"
+		+ "olcConnMaxPending: 100\n"
+		+ "olcConnMaxPendingAuth: 1000\n"
+		+ "olcGentleHUP: FALSE\n"
+		+ "olcIdleTimeout: 0\n"
+		+ "olcIndexSubstrIfMaxLen: 4\n"
+		+ "olcIndexSubstrIfMinLen: 2\n"
+		+ "olcIndexSubstrAnyLen: 4\n"
+		+ "olcIndexSubstrAnyStep: 2\n"
+		+ "olcIndexIntLen: 4\n"
+		+ "olcLocalSSF: 71\n"
+		+ "olcPidFile: "+ldap_pid_file+"\n"
+		+ "olcReadOnly: FALSE\n"
+		+ "olcReverseLookup: FALSE\n"
+		+ "olcSaslSecProps: noplain,noanonymous\n"
+		+ "olcSockbufMaxIncoming: 262143\n"
+		+ "olcSockbufMaxIncomingAuth: 16777215\n"
+		+ "olcThreads: 16\n"
+		+ "olcTLSVerifyClient: never\n"
+		+ "olcToolThreads: 1\n"
+		+ "olcWriteTimeout: 0\n"
+		+ "structuralObjectClass: olcGlobal\n"
+		+ "entryUUID: 3ea36e88-928c-1030-8269-d50de8eaff50\n"
+		+ "creatorsName: cn=config\n"
+		+ "createTimestamp: 20111024130300Z\n"
+		+ "entryCSN: 20111024130300.108563Z#000000#000#000000\n"
+		+ "modifiersName: cn=config\n"
+		+ "modifyTimestamp: 20111024130300Z\n"
+		//
+		};
+	}
+	
+	private static final String[] ldap_conf_db_config_file(){
+		
+		return new String[] { ldap_conf_cn_dir  + "/olcDatabase={0}config.ldif",
+			//
+			"dn: olcDatabase={0}config\n"
+			+ "objectClass: olcDatabaseConfig\n"
+			+ "olcDatabase: {0}config\n"
+			+ "olcAccess: {0}to *  by * none\n"
+			+ "olcAddContentAcl: TRUE\n"
+			+ "olcLastMod: TRUE\n"
+			+ "olcMaxDerefDepth: 15\n"
+			+ "olcReadOnly: FALSE\n"
+		//	+ "olcRootDN: "+TestConfig.ldap_cred+"\n"
+		//	+ "olcRootPW: "+TestConfig.ldap_pass+"\n"
+			+ "olcSyncUseSubentry: FALSE\n"
+			+ "olcMonitoring: FALSE\n"
+			+ "structuralObjectClass: olcDatabaseConfig\n"
+			+ "entryUUID: 3ea3de2c-928c-1030-8270-d50de8eaff50\n"
+			+ "creatorsName: cn=config\n"
+			+ "createTimestamp: 20111024130300Z\n"
+			+ "entryCSN: 20111024130300.108563Z#000000#000#000000\n"
+			+ "modifiersName: cn=config\n"
+			+ "modifyTimestamp: 20111024130300Z\n"
+			//
+		};
+	}
+	
+	
+	private static final String[] ldap_conf_db_frontend_file(){
+		
+		return new String[] { ldap_conf_cn_dir  + "/olcDatabase={-1}frontend.ldif",
+	
+	//
+		"dn: olcDatabase={-1}frontend\n"
+		+ "objectClass: olcDatabaseConfig\n"
+		+ "objectClass: olcFrontendConfig\n"
+		+ "olcDatabase: {-1}frontend\n"
+		+ "olcAddContentAcl: FALSE\n"
+		+ "olcLastMod: TRUE\n"
+		+ "olcMaxDerefDepth: 0\n"
+		+ "olcReadOnly: FALSE\n"
+		+ "olcSchemaDN: cn=Subschema\n"
+		+ "olcSyncUseSubentry: FALSE\n"
+		+ "olcMonitoring: FALSE\n"
+		+ "structuralObjectClass: olcDatabaseConfig\n"
+		+ "entryUUID: 3ea3db5c-928c-1030-826f-d50de8eaff50\n"
+		+ "creatorsName: cn=config\n"
+		+ "createTimestamp: 20111024130300Z\n"
+		+ "entryCSN: 20111024130300.108563Z#000000#000#000000\n"
+		+ "modifiersName: cn=config\n"
+		+ "modifyTimestamp: 20111024130300Z\n"
+	//
+		};
+	}
+	
+	private static final String[] ldap_conf_db_hdb_file(){
+		
+		return new String[] { ldap_conf_cn_dir  + "/olcDatabase={1}hdb.ldif",
+			//
+		"dn: olcDatabase={1}hdb\n"
+		+ "objectClass: olcDatabaseConfig\n"
+		+ "objectClass: olcHdbConfig\n"
+		+ "olcDatabase: {1}hdb\n"
+		+ "olcDbDirectory: "+TestConfig.ldap_home+"\n"
+		+ "olcSuffix: "+TestConfig.ldap_suffix+"\n"
+		+ "olcAccess: {0}to attrs=userPassword,shadowLastChange by self write by anonymou\n"
+		+ " s auth by dn=\""+TestConfig.ldap_cred+"\" write by * none\n"
+		+ "olcAccess: {1}to dn.base=\"\" by * read\n"
+		+ "olcAccess: {2}to * by self write by dn=\""+TestConfig.ldap_cred+"\" write by * read\n"
+		+ "olcLastMod: TRUE\n"
+		+ "olcRootDN: "+TestConfig.ldap_cred+"\n"
+		+ "olcRootPW: "+TestConfig.ldap_pass+"\n"
+		+ "olcDbCheckpoint: 512 30\n"
+		+ "olcDbConfig: {0}set_cachesize 0 2097152 0\n"
+		+ "olcDbConfig: {1}set_lk_max_objects 1500\n"
+		+ "olcDbConfig: {2}set_lk_max_locks 1500\n"
+		+ "olcDbConfig: {3}set_lk_max_lockers 1500\n"
+		+ "olcDbIndex: objectClass eq\n"
+		+ "structuralObjectClass: olcHdbConfig\n"
+		+ "entryUUID: 95a9db0e-7941-1030-99f4-f301eb8bc9b9\n"
+		+ "creatorsName: cn=config\n"
+		+ "createTimestamp: 20110922083534Z\n"
+		+ "entryCSN: 20110922083534.788341Z#000000#000#000000\n"
+		+ "modifiersName: cn=config\n"
+		+ "modifyTimestamp: 20110922083534Z\n"
+			//
+		};
+	}
+				
+	private static final String[] ldap_conf_db_backend_file(){
+		
+		return new String[] { ldap_conf_cn_dir  + "/olcBackend={0}hdb.ldif",
+			//
+		"dn: olcBackend={0}hdb\n"
+		+ "objectClass: olcBackendConfig\n"
+		+ "olcBackend: {0}hdb\n"
+		+ "structuralObjectClass: olcBackendConfig\n"
+		+ "entryUUID: 95a9d4e2-7941-1030-99f3-f301eb8bc9b9\n"
+		+ "creatorsName: cn=config\n"
+		+ "createTimestamp: 20110922083534Z\n"
+		+ "entryCSN: 20110922083534.788182Z#000000#000#000000\n"
+		+ "modifiersName: cn=config\n"
+		+ "modifyTimestamp: 20110922083534Z\n"
+			//
+		};
+	}
+	
+	private static final String[] ldap_conf_db_mod_file(){
+		
+		return new String[] { ldap_conf_cn_dir  + "/cn=module{0}.ldif",
+			//
+		"dn: cn=module{0}\n"
+		+ "objectClass: olcModuleList\n"
+		+ "cn: module{0}\n"
+		+ "olcModulePath: "+ldap_module_path+"\n"
+		+ "olcModuleLoad: {0}back_hdb\n"
+		+ "structuralObjectClass: olcModuleList\n"
+		+ "entryUUID: 95a9a684-7941-1030-99f2-f301eb8bc9b9\n"
+		+ "creatorsName: cn=config\n"
+		+ "createTimestamp: 20110922083534Z\n"
+		+ "entryCSN: 20110922083534.786996Z#000000#000#000000\n"
+		+ "modifiersName: cn=config\n"
+		+ "modifyTimestamp: 20110922083534Z\n"
+			//
+		};
+	}
+	
 }

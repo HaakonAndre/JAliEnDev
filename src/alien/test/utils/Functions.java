@@ -114,12 +114,22 @@ public class Functions {
 		return text.toString();
 	}
 	
+	
+	/**
+	 * Write String[] as a file, with String[0] as file name and String[1] as file content
+	 * @param file
+	 * @throws Exception
+	 */
+	public static void writeOutFile(String[] file) throws Exception {
+		writeOutFile(file[0],file[1]);
+	}
+	
 	/**
 	 * @param file_name
 	 * @param content
 	 * @throws Exception
 	 */
-	public static void writeOutFile(String file_name,String content) throws Exception {
+	public static void writeOutFile(String file_name, String content) throws Exception {
 		 Writer out = new OutputStreamWriter(new FileOutputStream(file_name));
 		    try {
 		      out.write(content);

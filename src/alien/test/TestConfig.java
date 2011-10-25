@@ -88,7 +88,7 @@ public class TestConfig {
 	/**
 	 * the testVO ldap config location
 	 */
-	public static final String ldap_schema_zip = "testsys/ldap_schema.zip";
+	public static final String ldap_schema_zip = "testsys/ldap_schema2.zip";
 	
 	/**
 	 * the testVO ldap config location
@@ -105,7 +105,8 @@ public class TestConfig {
 	/**
 	 * the testVO ldap conf file location
 	 */
-	public static final String ldap_conf_file = ldap_home + "/slapd.conf";
+	public static final String ldap_conf_dir = ldap_home + "/slapd.d";
+	
 
 	/**
 	 * the testVO ldap log file location
@@ -202,7 +203,12 @@ public class TestConfig {
 	 * the fully qualified host name
 	 */
 	public static String domain;
-
+	
+	/**
+	 * the LDAP root string
+	 */
+	public static String ldap_suffix;
+	
 	/**
 	 * the LDAP root string
 	 */
@@ -212,12 +218,7 @@ public class TestConfig {
 	 * the LDAP root credential
 	 */
 	public static String ldap_cred;
-	
-	/**
-	 * the LDAP suffix string
-	 */
-	public static String ldap_suffix;
-	
+
 	/**
 	 * the LDAP pass string
 	 */
@@ -278,12 +279,12 @@ public class TestConfig {
 		System.out.println("Your local hostname is: " + full_host_name);
 		System.out.println("domain/DC/VO will be: " + domain);
 		System.out.println("O/VO will be: " + VO_name);
-		ldap_suffix = "dc=" + domain;
-		
-		ldap_cred = "cn=Manager,"+ldap_suffix;
-		ldap_root = "o=" + VO_name + ","+ldap_suffix;
-		base_home_dir = "/" + VO_name + "/" + domain + "/user/";
+        ldap_suffix = "dc=" + domain;
 
+        ldap_cred = "cn=Manager,"+ldap_suffix;
+        ldap_root = "o=" + VO_name + ","+ldap_suffix;
+
+		base_home_dir = "/" + VO_name + "/" + domain + "/user/";
 		
 		certSubjecthost =	"/C=CH/O=jAliEn/CN=" + full_host_name;
 	}
