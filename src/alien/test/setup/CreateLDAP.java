@@ -92,7 +92,7 @@ public class CreateLDAP {
 		
 		Functions.writeOutFile(ldap_starter, "#!/bin/bash\n" + 
 				TestBrain.cSlapd + " -d -1 -s 0 -h ldap://:" + TestConfig.ldap_port + 
-				" ldapi://:"+ TestConfig.ldap_port + " -F " + 
+				" -F " + 
 				TestConfig.ldap_conf_dir + " > " + TestConfig.ldap_log + " 2>&1\n");
 		new File(ldap_starter).setExecutable(true, true);
 	}
