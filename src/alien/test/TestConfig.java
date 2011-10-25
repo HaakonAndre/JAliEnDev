@@ -18,7 +18,7 @@ public class TestConfig {
 	 * default home of j
 	 */
 	public static final String j_home = System.getProperty("user.home")
-			+ "/.alien";
+			+ "/.j";
 	
 	/**
 	 * default home of the testVO
@@ -318,8 +318,10 @@ public class TestConfig {
 	 * @throws Exception
 	 */
 	public static void createConfig() throws Exception {
-		File config = new File(tvo_config);
-		if (config.mkdir()){
+
+		(new File(tvo_home)).mkdirs();
+		
+		if ((new File(tvo_config)).mkdir()){
 			Functions.writeOutFile(tvo_config + "/config.properties",
 					getConfigProperties());
 			Functions.writeOutFile(tvo_config + "/alice_data.properties",
