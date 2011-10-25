@@ -16,8 +16,6 @@ import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
-import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
-
 import alien.test.TestBrain;
 import alien.test.TestConfig;
 import alien.test.utils.Functions;
