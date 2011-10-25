@@ -19,6 +19,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Random;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -38,6 +39,13 @@ import alien.config.ConfigUtils;
  */
 public class JAKeyStore {
 
+	
+	
+	/**
+	 * length for the password generator
+	 */
+	private static final int passLength = 30;
+	
 	/**
 	 * 
 	 */
@@ -70,6 +78,7 @@ public class JAKeyStore {
 	 * 
 	 */
 	public static char[] pass;
+	
 
 	/**
 	 * 
@@ -238,13 +247,21 @@ public class JAKeyStore {
 	 * @throws Exception
 	 */
 	public static void loadClientKeyStorage() throws Exception {
+		loadClientKeyStorage(false);
+	}
+	
+	/**
+	 * @param noUserPass 
+	 * @throws Exception
+	 */
+	public static void loadClientKeyStorage(final boolean noUserPass) throws Exception {
 
 		ExtProperties config = ConfigUtils.getConfig();
 
 		clientCert = KeyStore.getInstance("JKS");
 
 		try {
-			pass = "a8ha17asd8f9iasklA82jekdj0Dp".toCharArray();
+			pass = getRandomString();
 
 			clientCert.load(null, pass);
 		} catch (NoSuchAlgorithmException e) {
@@ -254,6 +271,18 @@ public class JAKeyStore {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		
+		
+		JPasswordFinder jpf;
+		
+		
+		
+		if(noUserPass)
+		 jpf = new JPasswordFinder(new char[]{});
+		else
+		 jpf =	getPassword("Grid certificate");
+		
+		
 		addKeyPairToKeyStore(
 				clientCert,
 				"User.cert",
@@ -271,7 +300,8 @@ public class JAKeyStore {
 								+ ".globus"
 								+ System.getProperty("file.separator")
 								+ "usercert.pem"),
-				getPassword("Grid certificate"));
+								jpf
+				);
 
 		loadTrusts();
 
@@ -287,7 +317,7 @@ public class JAKeyStore {
 		clientCert = KeyStore.getInstance("JKS");
 
 		try {
-			pass = "a8ha17asd8f9iasklA82jekdj0Dp".toCharArray();
+			pass = getRandomString();
 
 			clientCert.load(null, pass);
 		} catch (NoSuchAlgorithmException e) {
@@ -325,7 +355,7 @@ public class JAKeyStore {
 	public static void loadServerKeyStorage() throws Exception {
 
 		ExtProperties config = ConfigUtils.getConfig();
-		pass = "a8ha17asd8f9iasklA82jekdj0Dp".toCharArray();
+		pass = getRandomString();
 
 		hostCert = KeyStore.getInstance("JKS");
 		hostCert.load(null, pass);
@@ -422,8 +452,7 @@ public class JAKeyStore {
 	@SuppressWarnings("unused")
 	private static void createKeyStore(KeyStore ks, String keyStoreName) {
 
-		// TODO: randomize pass
-		pass = "a8ha17asd8f9iasklA82jekdj0Dp".toCharArray();
+		pass  = getRandomString();
 
 		FileInputStream f = null;
 		try {
@@ -556,5 +585,18 @@ public class JAKeyStore {
 			return Arrays.copyOf(password, password.length);
 		}
 	}
+	
+    private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
+	
+    public static char[] getRandomString() {
+        Random ran = new Random(System.currentTimeMillis());
+        StringBuffer s = new StringBuffer();
+        for (int i = 0; i < passLength; i++) {
+            int pos = ran.nextInt(charString.length());
+            
+            s.append(charString.charAt(pos));
+        }
+        return s.toString().toCharArray();
+    }
 
 }
