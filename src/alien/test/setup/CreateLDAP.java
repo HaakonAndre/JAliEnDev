@@ -16,6 +16,8 @@ import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
+
 import alien.test.TestBrain;
 import alien.test.TestConfig;
 import alien.test.utils.Functions;
@@ -48,6 +50,12 @@ public class CreateLDAP {
 	 */
 	public static String ldap_pid_file = "/tmp/jalien-slapd.pid";
 	
+	
+	/**
+	 * the LDAP starter file
+	 */
+	public static String ldap_starter =  TestConfig.tvo_bin + "/LDAP_starter";
+	
 	/**
 	 * the LDAP pid
 	 */
@@ -72,6 +80,7 @@ public class CreateLDAP {
 
 		createConfig();
 		extractLDAPSchema();
+		createLDAPStarter();
 		startLDAP();
 
 		Thread.sleep(2000); 
@@ -79,19 +88,27 @@ public class CreateLDAP {
 		initializeLDAP();
 		return true;
 	}
+
 	
+	private static void createLDAPStarter()throws Exception{
+		
+		Functions.writeOutFile(ldap_starter, "#!/bin/bash\n" + 
+				TestBrain.cSlapd + " -d -1 -s 0 -h ldap://:" + TestConfig.ldap_port + 
+				" ldapi://:"+ TestConfig.ldap_port + " -F " + 
+				TestConfig.ldap_conf_dir + " > " + TestConfig.ldap_log + " 2>&1\n");
+		new File(ldap_starter).setExecutable(true, true);
+	}
 	
 	/**
 	 * @throws Exception 
 	 */
 	public static void startLDAP() throws Exception{
+		
+		
 		TestCommand slapd = new TestCommand(new String[] {
-				//TestBrain.cBash,"-c",
-				TestBrain.cSlapd, "-d","1","-s","0","-h","ldap://:"+ TestConfig.ldap_port,"ldapi://:"+ TestConfig.ldap_port, "-F",
-						TestConfig.ldap_conf_dir, ">",TestConfig.ldap_log,"2>&1"});//,"&"});
+				TestBrain.cNohup,ldap_starter});
 		slapd.daemonize();
-		slapd.verbose();
-		slapd.exec();		
+		slapd.run();		
 	}
 
 	/**

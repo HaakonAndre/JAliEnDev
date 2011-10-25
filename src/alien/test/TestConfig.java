@@ -49,6 +49,11 @@ public class TestConfig {
 	 * the testVO config location
 	 */
 	public static final String tvo_config = tvo_home + "/config";
+
+	/**
+	 * the testVO config location
+	 */
+	public static final String tvo_bin = tvo_home + "/bin";
 	
 
 	/**
@@ -326,17 +331,20 @@ public class TestConfig {
 			Functions.writeOutFile(tvo_config + "/logging.properties",
 					getLoggingProperties());
 		}
-		File logs = new File(tvo_logs);
-		if (!logs.mkdir())
+
+		if (!(new File(tvo_logs)).mkdir())
 			throw new TestException("Could not create log directory: " + tvo_logs);
-		File ldap = new File(ldap_home);
-		if (!ldap.mkdir())
+		
+		if (!(new File(tvo_bin)).mkdir())
+			throw new TestException("Could not create log directory: " + tvo_bin);
+
+		if (!(new File(ldap_home)).mkdir())
 			throw new TestException("Could not create ldap directory: " + ldap_home);
-		File mysql = new File(sql_home);
-		if (!mysql.mkdir())
+
+		if (!(new File(sql_home)).mkdir())
 			throw new TestException("Could not create mysql directory: " + sql_home);
-		File se = new File(se_home);
-		if (!se.mkdir())
+
+		if (!(new File(se_home)).mkdir())
 			throw new TestException("Could not create SE directory: " + se_home);
 		
 	}
