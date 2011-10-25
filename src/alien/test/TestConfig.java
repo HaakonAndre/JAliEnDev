@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import alien.config.JAliEnIAm;
 import alien.test.utils.Functions;
 import alien.test.utils.TestException;
 
@@ -65,7 +66,7 @@ public class TestConfig {
 	/**
 	 * the jalien user name of the test user
 	 */
-	public static final String testUser = 	"jalien";
+	public static final String testUser = 	JAliEnIAm.whoamIPlain();
 	
 
 	/**
@@ -76,12 +77,12 @@ public class TestConfig {
 	/**
 	 * the testVO certificate subject for the CA
 	 */
-	public static final String certSubjectCA = 	"/C=CH/O=jAliEn/CN=jAlienCA";
+	public static final String certSubjectCA = 	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN="+JAliEnIAm.whoamI()+"CA";
 	
 	/**
 	 * the testVO certificate subject for the user cert
 	 */
-	public static final String certSubjectuser = 	"/C=CH/O=jAliEn/CN=jTestUser";
+	public static final String certSubjectuser = 	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN=jTestUser";
 	
 	/**
 	 * the testVO certificate subject for the user cert
@@ -162,7 +163,7 @@ public class TestConfig {
 	/**
 	 * central jAuthZ's subject
 	 */
-	public static final String certSubjectjAuthZ = 	"/C=CH/O=jAliEn/CN=jAuthZ";
+	public static final String certSubjectjAuthZ = 	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN=jAuthZ";
 
 	/**
 	 * SE's private key for storage
@@ -177,7 +178,7 @@ public class TestConfig {
 	/**
 	 * central SE's subject
 	 */
-	public static final String certSubjectSE = 	"/C=CH/O=jAliEn/CN=TESTSE";
+	public static final String certSubjectSE = 	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN=TESTSE";
 	
 	/**
 	 * port number for the LDAP server
@@ -291,7 +292,7 @@ public class TestConfig {
 
 		base_home_dir = "/" + VO_name + "/" + domain + "/user/";
 		
-		certSubjecthost =	"/C=CH/O=jAliEn/CN=" + full_host_name;
+		certSubjecthost =	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN=" + full_host_name;
 	}
 	
 	/**

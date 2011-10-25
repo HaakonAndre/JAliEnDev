@@ -323,7 +323,7 @@ public class JBoxServer extends Thread {
 	/**
 	 * Start once the UIServer
 	 */
-	private static synchronized void startJBoxServer(int iDebugLevel) {
+	public static synchronized void startJBoxServer(int iDebugLevel) {
 		if (server != null)
 			return;
 

@@ -11,9 +11,19 @@ public class JAliEnIAm {
 	
 	private static final String myVersion = "v0.7";
 	
+	private static final String myFullName = thathsMe +" "+myVersion; 
+	
 	private static final String alienshprompt = "JSh[alice]";
 
-	private static final String myFullName = thathsMe +" "+myVersion; 
+	private static final String Iam = "JAliEn";
+	
+	private static final String IamPlain = "jalien";
+	
+	private static final String IamFullName = Iam +" "+myVersion; 
+	
+	
+	
+	
 	
 	/**
 	 * @return the name for the shell prompt
@@ -39,6 +49,25 @@ public class JAliEnIAm {
 	 */
 	public static String whatsVersion(){
 		return myVersion;
+	}
+	
+	/**
+	 * @return my version
+	 */
+	public static String whoamI(){
+		return Iam;
+	}
+	/**
+	 * @return my version
+	 */
+	public static String whoamIPlain(){
+		return IamPlain;
+	}
+	/**
+	 * @return my version
+	 */
+	public static String whoamIFullName(){
+		return IamFullName;
 	}
 	
 }

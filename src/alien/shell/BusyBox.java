@@ -129,13 +129,21 @@ public class BusyBox {
 		            new GridLocalFileCompletor(this)
 		        };
 		    reader.addCompletor (new ArgumentCompletor(comp));
-					
-
 			
 			welcome();
 			out.flush();
 
-		    
+	
+		}
+	}
+	
+	
+	/**
+	 * loop the prompt for the user
+	 * @throws IOException
+	 */
+	public void prompt() throws IOException {
+	    
 			String line;
 			
 			while ((line = reader.readLine(whoami + promptPrefix + currentDirTiled + promptSuffix)) != null) {
@@ -151,10 +159,9 @@ public class BusyBox {
 				executeCommand(line);
 
 			}
-		}
 	}
 
-	protected String callJAliEnGetString(String line) {
+	public String callJAliEnGetString(String line) {
 		try {
 			//line +="\n";
 			line = line.replace(" ", SpaceSep) + lineTerm;

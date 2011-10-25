@@ -23,6 +23,8 @@ public class JSh {
 		ConfigUtils.getVersion();
 	}
 	
+	private static BusyBox boombox = null;
+	
 	/**
 	 * @param args
 	 * @throws Exception
@@ -38,8 +40,10 @@ public class JSh {
 
 			// JAliEnSh.startJBox();
 			
-			if (JSh.JBoxRunning())
-				new BusyBox(addr, port, password);
+			if (JSh.JBoxRunning()){
+				boombox = new BusyBox(addr, port, password);
+				boombox.prompt();
+			}
 			else
 				System.err
 						.println("JBox isn't running/couldn't be started, so we won't start JSh.");
@@ -231,5 +235,17 @@ public class JSh {
 		else
 			System.err.println("Token file does not exists.");
 	}
+	
 
+	/**
+	 * @return BusyBox of JSh
+	 * @throws IOException 
+	 */
+	public static BusyBox getBusyBox() throws IOException{
+		getJBoxPID();
+		boombox = new BusyBox(addr, port, password);
+		return boombox;
+	}
+	
+	
 }

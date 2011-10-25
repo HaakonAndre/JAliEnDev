@@ -201,10 +201,6 @@ public class CreateDB {
 		
 	}
 	
-	// (5,0,'','pcepalice12::CERN::OTHERSE',',tape,','/tmp/pcepalice12/log/OTHER_SE_DATA','File',NULL,NULL,'','file://localhost:8062','')
-	// 'File',NULL,NULL,'','file://localhost.localdomain:8092','')
-	
-	
 	private static void fillDatabase(final String[] queries) throws Exception{
 		for(int a = 0; a < queries.length; a++)
 			if(queries[a]!=null)
@@ -212,8 +208,6 @@ public class CreateDB {
 			else
 				System.err.println("Query entry ["+a+"] null!");
 	}
-	
-	
 
 	private static String queryDB(final String query, final String column){
 		
@@ -234,15 +228,12 @@ public class CreateDB {
 	final static String[] mysql_passwd = {
 		"update mysql.user set password=PASSWORD('"+TestConfig.sql_pass+"') where User='root';",
 		"delete from mysql.user where user !='root';",
-		//"insert into host VALUES(\"localhost\",\"%\",'Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y','Y');",
 		"GRANT ALL PRIVILEGES ON *.* TO root IDENTIFIED BY '"+TestConfig.sql_pass+"' WITH GRANT OPTION;",
 		"GRANT ALL PRIVILEGES ON *.* TO root@localhost IDENTIFIED BY '"+TestConfig.sql_pass+"' WITH GRANT OPTION;",
 		"flush privileges;",
 		
 		"CREATE DATABASE IF NOT EXISTS `"+TestConfig.systemDB+"` DEFAULT CHARACTER SET latin1;",
-		//"create database if not exists processes;",
-		//"create database if not exists transfers;",
-		//"create database if not exists INFORMATIONSERVICE;",
+
 		"CREATE DATABASE IF NOT EXISTS `ADMIN` DEFAULT CHARACTER SET latin1;",
 		
 		"USE  mysql;",
@@ -290,61 +281,7 @@ public class CreateDB {
         
         "UNLOCK TABLES;",
 
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
 	};
-	
-	
-	
-//	#AliEn Organisations
-//
-//	ALIEN_ORGANISATIONS="pcepalice12:3307"
-//			Functions.writeOutFile(TestConfig.mysql_conf_file,
-//					mysql_config_content());
-//	
-//	private static mysql_config_content(){
-//		
-//	}
-	
-	
-	
-	
-//	CREATE DATABASE IF NOT EXISTS `ADMIN` DEFAULT CHARACTER SET latin1;
-//	USE `ADMIN`;
-//
-//
-//
-//	LOCK TABLES `USERS_LDAP` WRITE;
-//	INSERT INTO `USERS_LDAP` VALUES ('newuser',1,'/C=CH/O=AliEn/CN=test user cert'),('ali',1,'/C=CH/O=AliEn/CN=test user cert');
-//	UNLOCK TABLES;
-//
-//	
-//	DROP TABLE IF EXISTS `USERS_LDAP_ROLE`;
-//	CREATE TABLE `USERS_LDAP_ROLE` (
-//			`user` varchar(15) COLLATE latin1_general_cs NOT NULL,
-//			`role` varchar(15) COLLATE latin1_general_cs DEFAULT NULL,
-//			`up` smallint(6) DEFAULT NULL
-//			) ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;
-//
-//	LOCK TABLES `USERS_LDAP_ROLE` WRITE;
-//	INSERT INTO `USERS_LDAP_ROLE` VALUES ('ali','aliprod',1),('ali','admin',1);
-//	UNLOCK TABLES;
-
 
 	   
 		final static String my_cnf = TestConfig.sql_home+"/my.cnf";
@@ -704,279 +641,6 @@ public class CreateDB {
 		}
 
 		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-		
-//
-//		static final String[] userDB_content = {
-//		   "CREATE DATABASE IF NOT EXISTS `"+ TestConfig.userDB +"` DEFAULT CHARACTER SET latin1;",
-//		   "USE `"+ TestConfig.userDB +"`;",
-//
-//		   "DROP TABLE IF EXISTS `ACL`;",
-//		   "CREATE TABLE `ACL` ("
-//		   + "  `entryId` int(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `owner` char(10) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `aclId` int(11) NOT NULL,"
-//		   + "  `perm` char(4) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  PRIMARY KEY (`entryId`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `ACTIONS`;",
-//		   "CREATE TABLE `ACTIONS` ("
-//		   + "  `action` char(40) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `todo` int(1) NOT NULL DEFAULT '0',"
-//		   + "  PRIMARY KEY (`action`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `COLLECTIONS`;",
-//		   "CREATE TABLE `COLLECTIONS` ("
-//		   + "  `collectionId` int(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `collGUID` binary(16) DEFAULT NULL,"
-//		   + "  PRIMARY KEY (`collectionId`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `COLLECTIONS_ELEM`;",
-//		   "CREATE TABLE `COLLECTIONS_ELEM` ("
-//		   + "  `collectionId` int(11) NOT NULL,"
-//		   + "  `localName` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `data` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `origLFN` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `guid` binary(16) DEFAULT NULL,"
-//		   + "  KEY `collectionId` (`collectionId`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `CONSTANTS`;",
-//		   "CREATE TABLE `CONSTANTS` ("
-//		   + "  `name` varchar(100) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `value` int(11) DEFAULT NULL,"
-//		   + "  PRIMARY KEY (`name`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `ENVIRONMENT`;",
-//		   "CREATE TABLE `ENVIRONMENT` ("
-//		   + "  `userName` char(20) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `env` char(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  PRIMARY KEY (`userName`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `FQUOTAS`;",
-//		   "CREATE TABLE `FQUOTAS` ("
-//		   + "  `user` varchar(64) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `maxNbFiles` int(11) NOT NULL DEFAULT '0',"
-//		   + "  `nbFiles` int(11) NOT NULL DEFAULT '0',"
-//		   + "  `tmpIncreasedTotalSize` bigint(20) NOT NULL DEFAULT '0',"
-//		   + "  `maxTotalSize` bigint(20) NOT NULL DEFAULT '0',"
-//		   + "  `tmpIncreasedNbFiles` int(11) NOT NULL DEFAULT '0',"
-//		   + "  `totalSize` bigint(20) NOT NULL DEFAULT '0',"
-//		   + "  PRIMARY KEY (`user`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `G0L`;",
-//		   "CREATE TABLE `G0L` ("
-//		   + "  `guidId` int(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `ctime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-//		   + "  `owner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `ref` int(11) DEFAULT '0',"
-//		   + "  `jobid` int(11) DEFAULT NULL,"
-//		   + "  `seStringlist` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT ',',"
-//		   + "  `seAutoStringlist` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT ',',"
-//		   + "  `aclId` int(11) DEFAULT NULL,"
-//		   + "  `expiretime` datetime DEFAULT NULL,"
-//		   + "  `size` bigint(20) NOT NULL DEFAULT '0',"
-//		   + "  `gowner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `guid` binary(16) DEFAULT NULL,"
-//		   + "  `type` char(1) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `md5` varchar(32) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `perm` char(3) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  PRIMARY KEY (`guidId`),"
-//		   + "  UNIQUE KEY `guid` (`guid`),"
-//		   + "  KEY `seStringlist` (`seStringlist`),"
-//		   + "  KEY `ctime` (`ctime`)"
-//		   + ") ENGINE=MyISAM AUTO_INCREMENT=34 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `G0L_PFN`;",
-//		   "CREATE TABLE `G0L_PFN` ("
-//		   + "  `guidId` int(11) NOT NULL,"
-//		   + "  `pfn` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `seNumber` int(11) NOT NULL,"
-//		   + "  KEY `guid_ind` (`guidId`),"
-//		   + "  KEY `seNumber` (`seNumber`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `G0L_QUOTA`;",
-//		   "CREATE TABLE `G0L_QUOTA` ("
-//		   + "  `user` varchar(64) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `nbFiles` int(11) NOT NULL,"
-//		   + "  `totalSize` bigint(20) NOT NULL,"
-//		   + "  KEY `user_ind` (`user`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//		   
-//		   "DROP TABLE IF EXISTS `G0L_REF`;",
-//		   "CREATE TABLE `G0L_REF` ("
-//		   + "  `guidId` int(11) NOT NULL,"
-//		   + "  `lfnRef` varchar(20) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  KEY `guidId` (`guidId`),"
-//		   + "  KEY `lfnRef` (`lfnRef`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `GL_ACTIONS`;",
-//		   "CREATE TABLE `GL_ACTIONS` ("
-//		   + "  `tableNumber` int(11) NOT NULL,"
-//		   + "  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-//		   + "  `action` char(40) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `extra` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  UNIQUE KEY `tableNumber` (`tableNumber`,`action`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `GL_STATS`;",
-//		   "CREATE TABLE `GL_STATS` ("
-//		   + "  `tableNumber` int(11) NOT NULL,"
-//		   + "  `seNumFiles` bigint(20) DEFAULT NULL,"
-//		   + "  `seNumber` int(11) NOT NULL,"
-//		   + "  `seUsedSpace` bigint(20) DEFAULT NULL,"
-//		   + "  UNIQUE KEY `tableNumber` (`tableNumber`,`seNumber`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `GROUPS`;",
-//		   "CREATE TABLE `GROUPS` ("
-//		   + "  `Userid` int(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `PrimaryGroup` int(1) DEFAULT NULL,"
-//		   + "  `Groupname` char(85) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `Username` char(20) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  PRIMARY KEY (`Userid`)"
-//		   + ") ENGINE=MyISAM AUTO_INCREMENT=5 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `GUIDINDEX`;",
-//		   "CREATE TABLE `GUIDINDEX` ("
-//		   + "  `tableName` int(11) NOT NULL,"
-//		   + "  `guidTime` varchar(16) COLLATE latin1_general_cs DEFAULT '0',"
-//		   + "  PRIMARY KEY (`tableName`),"
-//		   + "  UNIQUE KEY `guidTime` (`guidTime`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `INDEXTABLE`;",
-//		   "CREATE TABLE `INDEXTABLE` ("
-//		   + "  `indexId` int(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `hostIndex` int(11) NOT NULL,"
-//		   + "  `tableName` int(11) NOT NULL,"
-//		   + "  `lfn` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  PRIMARY KEY (`indexId`),"
-//		   + "  UNIQUE KEY `lfn` (`lfn`)"
-//		   + ") ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `L0L`;",
-//		   "CREATE TABLE `L0L` ("
-//		   + "  `entryId` bigint(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `owner` varchar(20) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `replicated` smallint(1) NOT NULL DEFAULT '0',"
-//		   + "  `ctime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,"
-//		   + "  `guidtime` varchar(8) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `jobid` int(11) DEFAULT NULL,"
-//		   + "  `aclId` mediumint(11) DEFAULT NULL,"
-//		   + "  `lfn` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `broken` smallint(1) NOT NULL DEFAULT '0',"
-//		   + "  `expiretime` datetime DEFAULT NULL,"
-//		   + "  `size` bigint(20) NOT NULL DEFAULT '0',"
-//		   + "  `dir` bigint(11) DEFAULT NULL,"
-//		   + "  `gowner` varchar(20) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `type` char(1) COLLATE latin1_general_cs NOT NULL DEFAULT 'f',"
-//		   + "  `guid` binary(16) DEFAULT NULL,"
-//		   + "  `md5` varchar(32) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `perm` char(3) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  PRIMARY KEY (`entryId`),"
-//		   + "  UNIQUE KEY `lfn` (`lfn`),"
-//		   + "  KEY `dir` (`dir`),"
-//		   + "  KEY `guid` (`guid`),"
-//		   + "  KEY `type` (`type`),"
-//		   + "  KEY `ctime` (`ctime`),"
-//		   + "  KEY `guidtime` (`guidtime`)"
-//		   + ") ENGINE=MyISAM AUTO_INCREMENT=42 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `L0L_QUOTA`;",
-//		   "CREATE TABLE `L0L_QUOTA` ("
-//		   + "  `user` varchar(64) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `nbFiles` int(11) NOT NULL,"
-//		   + "  `totalSize` bigint(20) NOT NULL,"
-//		   + "  KEY `user_ind` (`user`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `L0L_broken`;",
-//		   "CREATE TABLE `L0L_broken` ("
-//		   + "  `entryId` bigint(11) NOT NULL,"
-//		   + "  PRIMARY KEY (`entryId`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `LFN_BOOKED`;",
-//		   "CREATE TABLE `LFN_BOOKED` ("
-//		   + "  `lfn` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT '',"
-//		   + "  `owner` varchar(20) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,"
-//		   + "  `quotaCalculated` smallint(6) DEFAULT NULL,"
-//		   + "  `existing` smallint(1) DEFAULT NULL,"
-//		   + "  `jobid` int(11) DEFAULT NULL,"
-//		   + "  `md5sum` varchar(32) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `expiretime` int(11) DEFAULT NULL,"
-//		   + "  `size` bigint(20) DEFAULT NULL,"
-//		   + "  `pfn` varchar(255) COLLATE latin1_general_cs NOT NULL DEFAULT '',"
-//		   + "  `se` varchar(100) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,"
-//		   + "  `gowner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  `user` varchar(20) CHARACTER SET latin1 COLLATE latin1_general_ci DEFAULT NULL,"
-//		   + "  `guid` binary(16) NOT NULL DEFAULT '\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0',"
-//		   + "  PRIMARY KEY (`lfn`,`pfn`,`guid`),"
-//		   + "  KEY `pfn` (`pfn`),"
-//		   + "  KEY `guid` (`guid`),"
-//		   + "  KEY `jobid` (`jobid`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `LFN_UPDATES`;",
-//		   "CREATE TABLE `LFN_UPDATES` ("
-//		   + "  `guid` binary(16) DEFAULT NULL,"
-//		   + "  `entryId` int(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `action` char(10) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  PRIMARY KEY (`entryId`),"
-//		   + "  KEY `guid` (`guid`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `LL_ACTIONS`;",
-//		   "CREATE TABLE `LL_ACTIONS` ("
-//		   + "  `tableNumber` int(11) NOT NULL,"
-//		   + "  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,"
-//		   + "  `action` char(40) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `extra` varchar(255) COLLATE latin1_general_cs DEFAULT NULL,"
-//		   + "  UNIQUE KEY `tableNumber` (`tableNumber`,`action`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `LL_STATS`;",
-//		   "CREATE TABLE `LL_STATS` ("
-//		   + "  `tableNumber` int(11) NOT NULL,"
-//		   + "  `max_time` char(20) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  `min_time` char(20) COLLATE latin1_general_cs NOT NULL,"
-//		   + "  UNIQUE KEY `tableNumber` (`tableNumber`)"
-//		   + ") ENGINE=MyISAM DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   "DROP TABLE IF EXISTS `HOSTS`;",
-//		   "CREATE TABLE `HOSTS` ("
-//		   + "  `hostIndex` int(11) NOT NULL AUTO_INCREMENT,"
-//		   + "  `address` char(50) COLLATE latin1_general_cs,"
-//		   + "  `db` char(40) COLLATE latin1_general_cs,"
-//		   + "  `driver` char(10) COLLATE latin1_general_cs,"
-//		   + "  `organisation` char(40) COLLATE latin1_general_cs,"
-//	       + "  PRIMARY KEY (`hostIndex`)"
-// 		   + ") ENGINE=MyISAM AUTO_INCREMENT=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;",
-//
-//		   
-//		   
-//		};
-
-
-		
 		private static void addToINDEXTABLE(final String hostIndex, final String tableName, final String lfn) throws Exception{
 			fillDatabase( new String[] {
 			"USE `"+ TestConfig.systemDB +"`;",
@@ -1027,9 +691,7 @@ public class CreateDB {
 		
 		
 		private static void catalogueInitialDirectories() throws Exception{
-			
-			
-			//fillDatabase(userDB_content);
+
 			addToGUIDINDEXTABLE("1","1", "0", "", "");
 			addToINDEXTABLE("1","0","/");
 			addToINDEXTABLE("2","0",TestConfig.base_home_dir);
@@ -1037,9 +699,7 @@ public class CreateDB {
 			addToHOSTSTABLE("2",TestConfig.full_host_name + ":" + TestConfig.sql_port,TestConfig.userDB);
 			
 			
-			
 			String[] subfolders = TestConfig.base_home_dir.split("/");
-			System.out.println("base_home_dir:"+TestConfig.base_home_dir);
 			
 			fillDatabase(new String[] {
 				"USE `"+ TestConfig.dataDB +"`;",
@@ -1065,8 +725,6 @@ public class CreateDB {
 			
 		
 			parentDir = queryDB("select entryId from " + TestConfig.dataDB + ".L0L where lfn = '" + path + "';","entryId");
-			System.out.println("Querying:  select entryId from " + TestConfig.dataDB + ".L0L where lfn = '" + path + "';");
-			System.out.println("Adding to parentDir ["+path+"]: " + parentDir + "|");
 
 			fillDatabase(new String[] {
 			"UNLOCK TABLES;",
@@ -1081,10 +739,7 @@ public class CreateDB {
 		private static void userAddSubTable(String username, String uid) throws Exception{
 			
 			String parentDir = queryDB("select entryId from " + TestConfig.userDB + ".L0L where lfn = '';","entryId");
-			System.out.println("select entryId from " + TestConfig.userDB + ".L0L where lfn = '';");
-			System.out.println("Adding home index to parentDir: " + parentDir);
 
-			System.out.println("user home: " + CreateLDAP.getUserHome(username));
 			addToINDEXTABLE("2",uid,CreateLDAP.getUserHome(username));
 			
 			fillDatabase(new String[] {
@@ -1108,14 +763,9 @@ public class CreateDB {
 				   
 		private static void userAddIndexTable(String username, String uid) throws Exception{
 			
-			System.out.println("select entryId from " + TestConfig.userDB + ".L0L where lfn = '" + 
-						 username.substring(0,1) + "/';");
-
 			String parentDir = queryDB("select entryId from " + TestConfig.userDB + ".L0L where lfn = '" + 
 						 username.substring(0,1) + "/';","entryId");
-			System.out.println("Adding to user home to parentDir: " + parentDir);
-			
-			
+
 		
 			fillDatabase(new String[] {
 				   

@@ -21,6 +21,7 @@ public class TestCentralUtils {
 	
 	private static int cno = 0;
 	
+	private static boolean finalStatus = true; 
 	
 	
 	/**
@@ -28,106 +29,101 @@ public class TestCentralUtils {
 	 */
 	public static boolean runTestChapter(){
 		
-		tno = 3; 
+		tno = 14; 
 		cno = 1;
 		
-		System.out.println("------------------------------------------------");	
+		System.out.println();
+		System.out.println("-----------------  Testing LDAP plain access -----------------");	
+		
+		test("get user ["+ TestConfig.testUser +"]" ,possibleToGetUserOverLDAP(TestConfig.testUser));
+		
+		AliEnPrincipal user = UserFactory.getByUsername(TestConfig.testUser);
+		
+		System.out.println();
+		System.out.println("-----------------  Testing DB plain access   -----------------");	
 		test("get /  ",possibleToGetCatalogueEntry("/"));
-		System.out.println();
-		test("get usr",possibleToGetCatalogueEntry(TestConfig.base_home_dir));
-		System.out.println();
-		test("get j/  ",possibleToGetCatalogueEntry(TestConfig.base_home_dir + TestConfig.testUser.substring(0,1)+"/"));
-		System.out.println();
-		test("get ~  ",possibleToGetCatalogueEntry(CreateLDAP.getUserHome("jalien")));
-		
-		System.out.println("==================");
-		
-		System.out.println();
-		System.out.println("aliConfig is: "+System.getProperty("AliEnConfig"));
-		
-		String getIt = TestConfig.base_home_dir;
-		//getIt = "/";
-		System.out.println("getIt: " + getIt);
-		
-		LFN l1 = LFNUtils.getLFN(getIt);
 
-		AliEnPrincipal user = UserFactory.getByUsername("admin");
-		System.out.println("user: " + user.getName());
-		
-		String create = CreateLDAP.getUserHome("jalien")+"fuju";
-		System.out.println("Create test: " + create);
-		
-		System.out.println("--------------------------------------");	
-		possibleToAccessEntry(LFNUtils.getLFN("/"), user);
-		System.out.println("--------------------------------------");	
-		possibleToAccessEntry(LFNUtils.getLFN(CreateLDAP.getUserHome("jalien")), user);
-		System.out.println("--------------------------------------");	
-		possibleToAccessEntry(LFNUtils.getLFN(create,true), user);
-		System.out.println("--------------------------------------");	
+		test("get "+TestConfig.base_home_dir,possibleToGetCatalogueEntry(TestConfig.base_home_dir));
 
-		
-		//FileSystemUtils.createCatalogueDirectory(user,  create,true);
-		l1 = LFNUtils.mkdir(user, create);
-		
-		//l1 = LFNUtils.getLFN(create);
-		
-		if(l1!=null){
-			System.out.println("LFN: " + l1.getCanonicalName());
-			System.out.println("LFN: " + l1.list());
-		}
-		else
-			System.out.println(create + " is null.");
+		test("get "+TestConfig.base_home_dir + TestConfig.testUser.substring(0,1)+"/"
+				,possibleToGetCatalogueEntry(TestConfig.base_home_dir + TestConfig.testUser.substring(0,1)+"/"));
+
+		test("get "+CreateLDAP.getUserHome(TestConfig.testUser),possibleToGetCatalogueEntry(CreateLDAP.getUserHome(TestConfig.testUser)));
+
+		System.out.println();
+		System.out.println("-----------------    Testing user access     -----------------");	
 	
-		System.out.println("----- TEST2 [DONE]: ooooooo -----");
+		
+		test("access-read / ", possibleToAccessEntry(user, LFNUtils.getLFN("/"), true, false));
+		
+		test("access-write / ", possibleToAccessEntry(user, LFNUtils.getLFN("/"), true, false));
 
+		test("access-read "+TestConfig.base_home_dir, possibleToAccessEntry(user, LFNUtils.getLFN(TestConfig.base_home_dir), false, true));
+
+		test("access-write "+TestConfig.base_home_dir, possibleToAccessEntry(user, LFNUtils.getLFN(TestConfig.base_home_dir), true, false));
+
+		test("access-read "+TestConfig.base_home_dir + TestConfig.testUser.substring(0,1)+"/", 
+				possibleToAccessEntry(user, LFNUtils.getLFN(TestConfig.base_home_dir + TestConfig.testUser.substring(0,1)+"/"), false, true));
+
+		test("access-write "+TestConfig.base_home_dir + TestConfig.testUser.substring(0,1)+"/", 
+				possibleToAccessEntry(user, LFNUtils.getLFN(TestConfig.base_home_dir + TestConfig.testUser.substring(0,1)+"/"), true, false));
+
+		test("access-read "+CreateLDAP.getUserHome(TestConfig.testUser),
+				possibleToAccessEntry(user, LFNUtils.getLFN(CreateLDAP.getUserHome(TestConfig.testUser)), false, true));
+
+		test("access-write "+CreateLDAP.getUserHome(TestConfig.testUser),
+				possibleToAccessEntry(user, LFNUtils.getLFN(CreateLDAP.getUserHome(TestConfig.testUser)), true, true));
+		
+		test("createDir "+CreateLDAP.getUserHome(TestConfig.testUser) + "bin",
+				possibleToCreateDir(user,CreateLDAP.getUserHome(TestConfig.testUser) + "bin"));
 	
 		System.out.println("--------------------------------------");	
 	
-		return true;
+		return finalStatus;
 	
 	}
 	
-	
+	private static boolean possibleToGetUserOverLDAP(String username){
+		
+		return (username.equals(UserFactory.getByUsername(username).getName()));
+
+	}
+
 	private static boolean possibleToGetCatalogueEntry(String name){
-		System.out.println("Get LFN test: [" + name + "]");
 		LFN lfn = LFNUtils.getLFN(name);
-		if(lfn!=null){
-			System.out.println("LFN is: " + lfn.getCanonicalName());
-			System.out.println("LFN parent: " + lfn.dir);
-			
-		}
-		cno++;
 		if(lfn!=null)
 			return true;
 		return false;
 	}
+	
+	private static boolean possibleToCreateDir(final AliEnPrincipal user, String dirname){
+		LFN l = LFNUtils.mkdir(user, dirname);
+		if(l==null)
+			return false;
+		return true;
+	}
 
 	
-	private static void possibleToAccessEntry(LFN lfn,
-			AliEnPrincipal user) {
-
-		if (AuthorizationChecker.canRead(lfn, user))
-			System.out.println(user.getName() + " can read "
-					+ lfn.getCanonicalName());
-		else
-			System.out.println(user.getName() + " canNOT read "
-					+ lfn.getCanonicalName());
-		if (AuthorizationChecker.canWrite(lfn, user))
-			System.out.println(user.getName() + " can write "
-					+ lfn.getCanonicalName());
-		else
-			System.out.println(user.getName() + " canNOT write "
-					+ lfn.getCanonicalName());
-
+	private static boolean possibleToAccessEntry(
+			final AliEnPrincipal user, final LFN lfn, final boolean writeTest, final boolean weWanted){
+			
+		if(writeTest)
+			return (AuthorizationChecker.canWrite(lfn, user) == weWanted);
+		else 
+			return (AuthorizationChecker.canRead(lfn, user) == weWanted);
 	}
 		
 		
 	private static void test(final String desc,final boolean res){
-		System.out.print("----- TestCentralUtils "+cno+"/"+tno+" ["+desc+"]: ooooooo --------");
-		if(res)
-			System.out.println(" [ok]");
-		else 
-			System.out.println("!{NO}");
+		System.out.print("----- jCentral UtilsTest "+cno+"/"+tno);
+		if(res) {
+			System.out.print(" [ok] ");
+		}else {
+			System.out.print(" {NO} !!!!!!");
+			finalStatus = false;
+		}	
+		System.out.println("    , which was: "+ desc);
+		cno++;
 	}
 	
 	

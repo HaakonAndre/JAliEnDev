@@ -414,7 +414,8 @@ public class CreateLDAP {
 		try {
 			context.createSubcontext(attribute, attrs);
 		} catch (NameAlreadyBoundException e) {
-			System.out.println("Entry Already Exists Exception.");
+			//ignore
+			//System.out.println("Entry Already Exists Exception for: [" + attribute +"]");
 		} catch (NamingException e) {
 			e.printStackTrace();
 		}

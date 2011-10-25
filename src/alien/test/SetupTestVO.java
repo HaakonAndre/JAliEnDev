@@ -2,12 +2,16 @@ package alien.test;
 
 import java.io.File;
 
+import alien.api.DispatchSSLServer;
+import alien.api.JBoxServer;
 import alien.test.setup.CreateCertificates;
 import alien.test.setup.CreateDB;
 import alien.test.setup.CreateLDAP;
 import alien.test.setup.ManageSysEntities;
 import alien.test.utils.TestCommand;
 import alien.test.utils.TestException;
+import alien.test.utils.TestService;
+import alien.user.JAKeyStore;
 
 /**
  * @author ron
@@ -99,6 +103,75 @@ public class SetupTestVO {
 		
 		return ret;
 	
+	}
+	
+	
+	/**
+	 * @return jCentral started successfully
+	 * @throws Exception 
+	 */
+	public static boolean startJCentral() throws Exception {
+ 
+			TestService jcentral = new TestService("jcentral");
+
+			jcentral.start();
+
+			Thread.sleep(2000);
+			
+			jcentral.interrupt();
+			
+			if(jcentral.getStatus()!=0)
+				throw new TestException("The Thread of jCentral had an exception.");
+			
+			jcentral.interrupt();
+
+
+		return true;
+	}
+	
+	/**
+	 * @return jBox started successfully
+	 * @throws Exception 
+	 */
+	public static boolean startJBox() throws Exception {
+
+			TestService jbox = new TestService("jbox");
+
+			jbox.start();
+
+			Thread.sleep(2000);
+			
+			jbox.interrupt();
+			
+			if(jbox.getStatus()!=0)
+				throw new TestException("The Thread of jBox had an exception.");
+			
+			jbox.interrupt();
+
+
+		return true;
+	}
+	
+	
+	/**
+	 * @return jBox started successfully
+	 * @throws Exception 
+	 */
+	public static boolean startJShTests() throws Exception {
+
+			TestService jsh = new TestService("jsh");
+
+			jsh.start();
+
+			jsh.wait();
+			
+			if(jsh.getStatus()!=0)
+				throw new TestException("The Thread of jSh had an exception.");
+			
+			jsh.interrupt();
+
+
+		return true;
 	}
 	
 }
