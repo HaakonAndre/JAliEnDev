@@ -46,26 +46,27 @@ public class JobSigner {
 
 	}
 
-	private static final String sJDLDelimOn = "<SJDL>\n";
-	private static final String sJDLDelimOff = "</SJDL>\n";
+	protected static final String sJDLDelimOn = "<SJDL>\n";
+	protected static final String sJDLDelimOff = "</SJDL>\n";
 
-	private static final String signatureDelimOn = "<SJDL_SIGNTATURE>";
-	private static final String signatureDelimOff = "</SJDL_SIGNTATURE>\n";
+	protected static final String signatureDelimOn = "<SJDL_SIGNTATURE>";
+	protected static final String signatureDelimOff = "</SJDL_SIGNTATURE>\n";
 
-	private static final String issuedDelimOn = "<SJDL_ISSUED>";
-	private static final String issuedDelimOff = "</SJDL_ISSUED>\n";
+	protected static final String issuedDelimOn = "<SJDL_ISSUED>";
+	protected static final String issuedDelimOff = "</SJDL_ISSUED>\n";
 
-	private static final String expiresDelimOn = "<SJDL_EXPIRES>";
-	private static final String expiresDelimOff = "</SJDL_EXPIRES>\n";
+	protected static final String expiresDelimOn = "<SJDL_EXPIRES>";
+	protected static final String expiresDelimOff = "</SJDL_EXPIRES>\n";
 
-	private static final String JDLDelimOn = "<Nested_JDL>\n";
-	private static final String JDLDelimOff = "</Nested_JDL>\n";
+	protected static final String JDLDelimOn = "<Nested_JDL>\n";
+	protected static final String JDLDelimOff = "</Nested_JDL>\n";
 
 	/**
 	 * @param ks
 	 * @param keyAlias
 	 * @param pass
 	 * @param alienUsername
+	 * @param ojdl
 	 * @param origjdl
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
@@ -73,9 +74,15 @@ public class JobSigner {
 	 * @return the signature of the jdl
 	 */
 	public static String signJob(KeyStore ks, String keyAlias, char[] pass,
-			String alienUsername, String origjdl)
+			String alienUsername, JDL ojdl, String origjdl)
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
+
+		if (ojdl != null) {
+			System.out.println(".. with " + ojdl.toString());
+			System.out.println("Calling JDL parser...");
+			String lala = parseJDLToSignString(ojdl);
+		}
 
 		final long issued = System.currentTimeMillis() / 1000L;
 		String jdl = issuedDelimOn + issued + issuedDelimOff;
@@ -136,14 +143,16 @@ public class JobSigner {
 	public static boolean verifyJobToRun(X509Certificate[] cert, String sjdl)
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException, KeyStoreException, JobSubmissionException {
-		
-		Certificate[] ts = JAKeyStore.clientCert.getCertificateChain("User.cert");
+
+		Certificate[] ts = JAKeyStore.clientCert
+				.getCertificateChain("User.cert");
 		X509Certificate[] tts = new X509Certificate[ts.length];
-		for(int a=0;a<ts.length;a++)
-			tts[a]= UserFactory.convert((java.security.cert.X509Certificate) ts[a]);
-		
+		for (int a = 0; a < ts.length; a++)
+			tts[a] = UserFactory
+					.convert((java.security.cert.X509Certificate) ts[a]);
+
 		System.out.println("Verifying central service signature...");
-		if (verifyJob(tts,null, sjdl)) {
+		if (verifyJob(tts, null, sjdl)) {
 			final String nestedjdl = sjdl.substring(sjdl.indexOf(sJDLDelimOn)
 					+ sJDLDelimOn.length(), sjdl.lastIndexOf(signatureDelimOn));
 			System.out.println("Verifying user signature...");
@@ -171,31 +180,31 @@ public class JobSigner {
 			JobSubmissionException {
 
 		try {
-			//System.out.println("we are verifying as JDL...:" + sjdl);
-			//if(user!=null)
-			//System.out.println("verifying user:" + user.getName());
+			// System.out.println("we are verifying as JDL...:" + sjdl);
+			// if(user!=null)
+			// System.out.println("verifying user:" + user.getName());
 
 			final String jdl = sjdl.substring(sjdl.indexOf(sJDLDelimOn)
 					+ sJDLDelimOn.length(), sjdl.lastIndexOf(signatureDelimOn));
 
-		//	System.out.println("jdl:|" + jdl + "|");
+			// System.out.println("jdl:|" + jdl + "|");
 
 			final String signature = sjdl.substring(
 					sjdl.lastIndexOf(signatureDelimOn)
 							+ signatureDelimOn.length(),
 					sjdl.lastIndexOf(signatureDelimOff));
 
-		//	System.out.println("signature:|" + signature + "|");
+			// System.out.println("signature:|" + signature + "|");
 
 			if (user != null) {
 				JDL j;
 				try {
 					j = new JDL(sjdl);
-				//	System.out.println("user would be: " + j.getUser());
+					// System.out.println("user would be: " + j.getUser());
 					if (!user.canBecome(j.getUser()))
 						throw new JobSubmissionException(user.getName()
 								+ " cannot become " + j.getUser());
-					//System.out.println("user authorized.");
+					// System.out.println("user authorized.");
 
 				} catch (IOException e) {
 					throw new JobSubmissionException(
@@ -240,11 +249,12 @@ public class JobSigner {
 				verifyer.update(jdl.getBytes());
 
 				if (verifyer.verify(Base64.decode(signature))) {
-					System.out.println("Job signature verified:" + c.getSubjectDN());
+					System.out.println("Job signature verified:"
+							+ c.getSubjectDN());
 					return true;
 				}
-			//	System.out.println("This wasn't it:" + c.getSubjectDN());
-				
+				// System.out.println("This wasn't it:" + c.getSubjectDN());
+
 			}
 
 		} catch (Exception e) {
@@ -255,5 +265,41 @@ public class JobSigner {
 		}
 		throw new JobSubmissionException(
 				"Invalid JDL Signature, [not verifyable]");
+	}
+
+	private static String parseJDLToSignString(JDL jdl) {
+
+		if (jdl.getExecutable().size() > 0) {
+			String sjdl = "Executeable={\"" + jdl.getExecutable().get(0)
+					+ "\"};\n";
+
+			sjdl += "Arguments={";
+			if (jdl.getArguments().size() > 0)
+				for (String arg : jdl.getArguments())
+					sjdl += "\"" + arg + "\",";
+			if (sjdl.lastIndexOf(',') == sjdl.length() - 1)
+				sjdl = sjdl.substring(0, sjdl.length() - 1);
+			sjdl += "};\n";
+			
+			if (!jdl.getUser().isEmpty())
+				sjdl += "User={\""+jdl.getUser()+ "\"};\n";
+			
+			sjdl += "Output={";
+			if (jdl.getOutputFiles().size() > 0)
+				for (String arg : jdl.getOutputFiles())
+					sjdl += "\"" + arg + "\",";
+			if (sjdl.lastIndexOf(',') == sjdl.length() - 1)
+				sjdl = sjdl.substring(0, sjdl.length() - 1);
+			sjdl += "};\n";
+
+			sjdl += "hashOrd=Executeable-Arguments-Output;\n";
+
+			System.out.println("parsed JDL:" + sjdl);
+			return sjdl;
+		} 
+		System.out.println("error parsing JDL!");
+		
+		return "";
+
 	}
 }
