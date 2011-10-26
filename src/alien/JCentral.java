@@ -14,6 +14,13 @@ import alien.user.JAKeyStore;
  * @since Jun 6, 2011
  */
 public class JCentral {
+	
+	
+	static {
+		ConfigUtils.getVersion();
+	}
+	
+	
 	/**
 	 * Logger
 	 */
