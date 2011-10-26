@@ -360,6 +360,7 @@ public class TaskQueueUtils {
 	 * @return the ps listing
 	 */
 	public static List<Job> getPS(final boolean running){
+				
 		final DBFunctions db = getDB();
 		
 		if (db==null)
@@ -378,14 +379,13 @@ public class TaskQueueUtils {
 //		if (!sSearch.endsWith("/"))
 //			q += " OR lfn='"+Format.escSQL(sSearch)+"/'";
 		
-		final String q = "SELECT queueId,status FROM QUEUE WHERE "+ where + " order by queueId desc limit 10;";
+		final String q = "SELECT queueId,status,submitHost FROM QUEUE WHERE "+ where + " order by queueId desc limit 10;";
 	
 		if (!db.query(q))
 			return null;
 		
 		while (db.moveNext()){
 			final Job j = new Job(db, false);
-			
 			ret.add(j);
 		}
 		

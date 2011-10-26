@@ -89,7 +89,7 @@ public class JAKeyStore {
 	static {
 		Security.addProvider(new BouncyCastleProvider());
 
-	//	loadTrustedCertificates();
+		//loadTrustedCertificates();
 
 	}
 
@@ -99,8 +99,8 @@ public class JAKeyStore {
 //			File trustsDir = new File(ConfigUtils.getConfig().gets(
 //					"trusted.certificates.location",
 //					System.getProperty("user.home")
-//							+ System.getProperty("file.separator") + ".alien"
-//							+ System.getProperty("file.separator") + "trusted"));
+//							+ System.getProperty("file.separator") + ".j"
+//							+ System.getProperty("file.separator") + "trusts"));
 //
 //			if (trustsDir.exists() && trustsDir.isDirectory()) {
 //				CertificateFactory cf;
@@ -148,8 +148,8 @@ public class JAKeyStore {
 			File trustsDir = new File(ConfigUtils.getConfig().gets(
 					"trusted.certificates.location",
 					System.getProperty("user.home")
-							+ System.getProperty("file.separator") + ".alien"
-							+ System.getProperty("file.separator") + "trusted"));
+							+ System.getProperty("file.separator") + ".j"
+							+ System.getProperty("file.separator") + "trusts"));
 
 			if (trustsDir.exists() && trustsDir.isDirectory()) {
 				CertificateFactory cf;
@@ -169,7 +169,7 @@ public class JAKeyStore {
 								logger.log(Level.INFO,"Trusting now: "
 										+ c.getSubjectDN());
 							}
-							
+
 							trustStore.setEntry(
 									trust.getName().substring(0,
 											trust.getName().indexOf(".der")),
@@ -204,6 +204,12 @@ public class JAKeyStore {
 						}
 					}
 				}
+			} else{
+				if (logger.isLoggable(Level.INFO)) {
+					logger.log(Level.INFO,"Found no trusts to load in: " + trustsDir);
+				}
+				System.out.println("Found no trusts to load in: " + trustsDir);
+
 			}
 
 			tmf.init(trustStore);

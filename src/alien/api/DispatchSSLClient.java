@@ -109,8 +109,9 @@ public class DispatchSSLClient extends Thread {
 
 		if (instance.get(Integer.valueOf(p)) == null) {
 			// connect to the other end
-			logger.log(Level.INFO,"Connecting to " + address + ":" + p);
-
+			logger.log(Level.INFO,"Connecting to JCentral on " + address + ":" + p);
+			System.out.println("Connecting to JCentral on " + address + ":" + p);
+			
 			Security.addProvider(new BouncyCastleProvider());
 
 			try {

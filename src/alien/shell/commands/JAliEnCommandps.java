@@ -5,10 +5,9 @@ import java.util.List;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
+import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.perl.commands.AlienTime;
 import alien.taskQueue.Job;
-import alien.taskQueue.TaskQueueUtils;
 
 /**
  * @author ron
@@ -24,14 +23,28 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	public void execute() throws Exception {
 		
-		List<Job> ps = TaskQueueUtils.getPS(bR);
+		List<Job> ps = TaskQueueApiUtils.getPS(bR);
 		
-		for(Job j: ps){
-			System.out.println("j");
-		}
+		String Whatever = "  0 ";
+		if(ps!=null)
+			for(Job j: ps){
+				out.printOutln("  "+j.getOwner() + " "+ j.queueId + "  " + Whatever+ "  "+  abbrvStatus(j.status));
+			}
 
 	}
 
+	private static String abbrvStatus(String status){
+		if(status==null)
+			return "-";
+		if(status.equals("WAITING"))
+				return "W";
+		else if(status.equals("DONE"))
+				return "D";
+				
+		return "-";
+	}
+	
+	
 
 	/**
 	 * printout the help info
@@ -93,7 +106,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * @return <code>false</code>
 	 */
 	public boolean canRunWithoutArguments() {
-		return false;
+		return true;
 	}
 
 	/**

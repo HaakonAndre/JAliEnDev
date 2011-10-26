@@ -221,7 +221,7 @@ public class DispatchSSLServer extends Thread {
 
 			kmf.init(JAKeyStore.hostCert, JAKeyStore.pass);
 			
-			String logCertInfo = "Running central service with host cert: ";
+			String logCertInfo = "Running JCentral with host cert: ";
 					
 			try{
 				((java.security.cert.X509Certificate) JAKeyStore.hostCert
@@ -255,15 +255,10 @@ public class DispatchSSLServer extends Thread {
 			server.setNeedClientAuth(true);
 
 			server.setUseClientMode(false);
-
-			System.out.println(printServerSocketInfo(server));
 			
-			System.out.println("Central service listening now on " + server.getLocalPort());
-			
-
-			logger.log(Level.INFO,printServerSocketInfo(server));
-			
-			logger.log(Level.INFO, "Central service listening now on  "+server.getLocalPort());
+			System.out.println("JCentral listening on " + server.getLocalPort());
+						
+			logger.log(Level.INFO, "JCentral listening on  "+server.getLocalPort());
 
 			while (true) {
 				try {
