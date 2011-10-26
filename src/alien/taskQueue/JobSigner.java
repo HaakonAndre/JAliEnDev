@@ -269,8 +269,8 @@ public class JobSigner {
 
 	private static String parseJDLToSignString(JDL jdl) {
 
-		if (jdl.getExecutable().size() > 0) {
-			String sjdl = "Executeable={\"" + jdl.getExecutable().get(0)
+		if (jdl.getExecutable().length() > 0) {
+			String sjdl = "Executeable={\"" + jdl.getExecutable()
 					+ "\"};\n";
 
 			sjdl += "Arguments={";
