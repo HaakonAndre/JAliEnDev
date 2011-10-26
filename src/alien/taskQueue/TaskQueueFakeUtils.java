@@ -1,5 +1,6 @@
 package alien.taskQueue;
 
+import java.io.IOException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -81,8 +82,17 @@ public class TaskQueueFakeUtils {
 				j.status = "WAITING";
 				j.userCertificate = cert[0];
 
+				JDL ojdl = null;
+				try {
+					System.out.println("creating JDL with String:" + jdl);
+					ojdl = new JDL(jdl);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+
 				j.jdl = JobSigner.signJob(JAKeyStore.hostCert, "Host.cert",
-						JAKeyStore.pass, user.getName(), jdl);
+						JAKeyStore.pass, user.getName(), ojdl, jdl);
 
 				j.site = "";
 				j.started = 0;
@@ -114,14 +124,14 @@ public class TaskQueueFakeUtils {
 
 	/**
 	 * 
-	 * @param jobID 
+	 * @param jobID
 	 * @param jobnumber
 	 * @param status
 	 */
 	public static void setJobStatus(int jobID, String status) {
 		queue.get(jobID).status = status;
-		System.out.println("Setting job [" + jobID + "] to status <"
-				+ status + ">");
+		System.out.println("Setting job [" + jobID + "] to status <" + status
+				+ ">");
 	}
 
 	/**
