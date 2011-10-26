@@ -31,9 +31,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	/**
 	 * marker for -l argument
 	 */
-	private List<String> ses = null;
-	private List<String> exses = null;
-
+	private List<String> ses = new ArrayList<String>();
+	private List<String> exses = new ArrayList<String>();
+	
 	/**
 	 * marker for -a argument
 	 */
