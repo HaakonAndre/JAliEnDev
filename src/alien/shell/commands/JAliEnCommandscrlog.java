@@ -19,7 +19,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	/**
 	 * marker for -c argument
 	 */
-	private final boolean bC;
+	private boolean bC = false;
 
 	/**
 	 * the HashMap for the log screens
@@ -48,6 +48,8 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 
 	/**
 	 * get the directory listing of the ls
+	 * @param logno 
+	 * @param line 
 	 * 
 	 */
 	protected static void addScreenLogLine(int logno, String line) {
@@ -87,6 +89,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * nonimplemented command's silence trigger, scrlog is never silent
 	 */
 	public void silent() {
+		//ignore
 	}
 
 	/**
@@ -116,6 +119,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 					logno = Integer.parseInt(options.nonOptionArguments()
 							.get(0));
 				} catch (NumberFormatException n) {
+					//ignore
 				}
 
 			bC = options.has("c");
