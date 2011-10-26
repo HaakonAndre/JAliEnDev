@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -378,38 +379,43 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	public JAliEnCommandcp(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
+		try {
+			final OptionParser parser = new OptionParser();
 
-		final OptionParser parser = new OptionParser();
+			parser.accepts("S");
+			parser.accepts("g");
+			parser.accepts("t");
 
-		parser.accepts("S");
-		parser.accepts("g");
-		parser.accepts("t");
+			final OptionSet options = parser.parse(alArguments
+					.toArray(new String[] {}));
 
-		final OptionSet options = parser.parse(alArguments
-				.toArray(new String[] {}));
-
-		if ((options.nonOptionArguments().size() != 2) && !(options.nonOptionArguments().size() == 1 && options.has("t"))) {
-			printHelp();
-			return;
-		}
-
-		if (options.has("S") && options.hasArgument("S")) {
-			final StringTokenizer st = new StringTokenizer(
-					((String) options.valueOf("S")), ",");
-			while (st.hasMoreTokens()) {
-				String se = st.nextToken();
-				if (se.indexOf('!') == 0)
-					exses.add(se.substring(1));
-				else
-					ses.add(se);
+			if ((options.nonOptionArguments().size() != 2)
+					&& !(options.nonOptionArguments().size() == 1 && options
+							.has("t"))) {
+				printHelp();
+				return;
 			}
+
+			if (options.has("S") && options.hasArgument("S")) {
+				final StringTokenizer st = new StringTokenizer(
+						((String) options.valueOf("S")), ",");
+				while (st.hasMoreTokens()) {
+					String se = st.nextToken();
+					if (se.indexOf('!') == 0)
+						exses.add(se.substring(1));
+					else
+						ses.add(se);
+				}
+			}
+			bG = options.has("g");
+			bT = options.has("t");
+
+			source = options.nonOptionArguments().get(0);
+			if (!(options.nonOptionArguments().size() == 1 && options.has("t")))
+				target = options.nonOptionArguments().get(1);
+		} catch (OptionException e) {
+			printHelp();
 		}
-		bG = options.has("g");
-		bT = options.has("t");
-		
-		source = options.nonOptionArguments().get(0);
-		if(!(options.nonOptionArguments().size() == 1 && options.has("t")))
-			target = options.nonOptionArguments().get(1);
 	}
 
 }

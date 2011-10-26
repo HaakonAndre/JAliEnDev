@@ -8,8 +8,6 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import joptsimple.OptionException;
-
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
@@ -170,10 +168,6 @@ public class JAliEnCOMMander {
 				.replace(myHome.substring(0, myHome.length() - 1), "~");
 	}
 
-	private String gridFileCompletetion(ArrayList<String> args) {
-		// TODO:
-		return "";
-	}
 
 	private void setShellPrintWriter(OutputStream os, String shelltype) {
 		if (shelltype.equals("jaliensh"))
@@ -224,7 +218,7 @@ public class JAliEnCOMMander {
 					// ignore
 				}
 				args.remove(arg[i]);
-			} else if ("-s".equals(arg[i])) {
+			} else if ("-silent".equals(arg[i])) {
 				silent = true;
 				args.remove(arg[i]);
 			} else if (("-h".equals(arg[i])) || ("--h".equals(arg[i]))
@@ -236,15 +230,8 @@ public class JAliEnCOMMander {
 		if (!Arrays.asList(jAliEnCommandList).contains(comm)) {
 
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
-				//if ("cdir".equals(comm))
-				//	out.printOutln(getCurrentDirName());
-				//else if ("cdirtiled".equals(comm))
-				//	out.printOutln(getCurrentDirTilded());
-				 
 					if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
-				else if ("gfilecomplete".equals(comm))
-					out.printOutln(gridFileCompletetion(args));
 				else if ("whoami".equals(comm))
 					out.printOutln(getUsername());
 			} else if (!"setshell".equals(comm)) {
@@ -256,11 +243,6 @@ public class JAliEnCOMMander {
 			JAliEnBaseCommand jcommand = null;
 			try {
 				jcommand = getCommand(comm, param);
-			} catch (OptionException oe){
-				System.out.println("Catched an option exeption.");
-				out.printErrln(oe.getMessage());
-				out.flush();
-				return;
 			} catch (Exception e) {
 				e.printStackTrace();
 				out.printErrln("Command [" + comm
@@ -324,9 +306,6 @@ public class JAliEnCOMMander {
 
 		@SuppressWarnings("rawtypes")
 		Class cl = Class.forName("alien.shell.commands.JAliEnCommand"
-		// Class cl =
-		// Class.forName(JAliEnCOMMander.class.getPackage().toString() +
-		// ".JAliEnCommand"
 				+ classSuffix);
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		java.lang.reflect.Constructor co = cl.getConstructor((new Class[] {

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import lazyj.Log;
@@ -45,7 +46,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	private boolean bB = false;
 
-	private final ArrayList<String> alPaths;
+	private ArrayList<String> alPaths = null;
 
 	/**
 	 * list of the LFNs that came up by the ls command
@@ -211,8 +212,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			}
 
 			return ret;
-		} else
-			return super.deserializeForRoot();
+		}
+		return super.deserializeForRoot();
 
 	}
 
@@ -228,27 +229,32 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
-		final OptionParser parser = new OptionParser();
+		try {
 
-		parser.accepts("l");
-		parser.accepts("bulk");
-		parser.accepts("b");
-		parser.accepts("a");
-		parser.accepts("F");
-		parser.accepts("c");
+			final OptionParser parser = new OptionParser();
 
-		final OptionSet options = parser.parse(alArguments
-				.toArray(new String[] {}));
+			parser.accepts("l");
+			parser.accepts("bulk");
+			parser.accepts("b");
+			parser.accepts("a");
+			parser.accepts("F");
+			parser.accepts("c");
 
-		alPaths = new ArrayList<String>(options.nonOptionArguments().size());
-		alPaths.addAll(options.nonOptionArguments());
+			final OptionSet options = parser.parse(alArguments
+					.toArray(new String[] {}));
 
-		bL = options.has("l");
-		// bBulk = options.has("bulk");
-		bB = options.has("b");
-		bA = options.has("a");
-		bF = options.has("F");
-		bC = options.has("c");
+			alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+			alPaths.addAll(options.nonOptionArguments());
+
+			bL = options.has("l");
+			// bBulk = options.has("bulk");
+			bB = options.has("b");
+			bA = options.has("a");
+			bF = options.has("F");
+			bC = options.has("c");
+		} catch (OptionException e) {
+			printHelp();
+		}
 	}
 
 }

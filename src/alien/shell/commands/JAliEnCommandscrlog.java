@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -99,28 +100,31 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	public JAliEnCommandscrlog(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
-		
-		
 
+		try {
 
-		final OptionParser parser = new OptionParser();
-		parser.accepts("c");
+			final OptionParser parser = new OptionParser();
+			parser.accepts("c");
 
-		final OptionSet options = parser.parse(alArguments
-				.toArray(new String[] {}));
+			final OptionSet options = parser.parse(alArguments
+					.toArray(new String[] {}));
 
-		if (options.nonOptionArguments().size() != 1)
+			if (options.nonOptionArguments().size() != 1)
+				printHelp();
+			else
+				try {
+					logno = Integer.parseInt(options.nonOptionArguments()
+							.get(0));
+				} catch (NumberFormatException n) {
+				}
+
+			bC = options.has("c");
+
+			if (logno > 9)
+				printHelp();
+		} catch (OptionException e) {
 			printHelp();
-		else
-			try {
-				logno = Integer.parseInt(options.nonOptionArguments().get(0));
-			} catch (NumberFormatException n) {
-			}
-		
-		bC = options.has("c");
-
-
-		if (logno > 9)
-			printHelp();
+		}
 	}
+
 }

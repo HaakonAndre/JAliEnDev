@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -204,21 +205,25 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	public JAliEnCommandget(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
+		try {
 
-		final OptionParser parser = new OptionParser();
-		parser.accepts("g");
-		parser.accepts("x");
+			final OptionParser parser = new OptionParser();
+			parser.accepts("g");
+			parser.accepts("x");
 
-		final OptionSet options = parser.parse(alArguments
-				.toArray(new String[] {}));
+			final OptionSet options = parser.parse(alArguments
+					.toArray(new String[] {}));
 
-		bG = options.has("g");
-		bX = options.has("x");
+			bG = options.has("g");
+			bX = options.has("x");
 
-		if (options.nonOptionArguments().size() != 1)
+			if (options.nonOptionArguments().size() != 1)
+				printHelp();
+			else
+				lfnOrGuid = options.nonOptionArguments().get(0);
+		} catch (OptionException e) {
 			printHelp();
-		else
-			lfnOrGuid = options.nonOptionArguments().get(0);
+		}
 	}
 
 }

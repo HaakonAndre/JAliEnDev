@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.Set;
 
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -124,20 +125,22 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	public JAliEnCommandwhereis(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
 		super(commander, out,alArguments);
+		try {
+			final OptionParser parser = new OptionParser();
+			parser.accepts("g");
 
-		final OptionParser parser = new OptionParser();
-		parser.accepts("g");
+			final OptionSet options = parser.parse(alArguments
+					.toArray(new String[] {}));
 
-		final OptionSet options = parser.parse(alArguments
-				.toArray(new String[] {}));
-		
-		bG = options.has("g");
+			bG = options.has("g");
 
-		if (options.nonOptionArguments().iterator().hasNext())
-			lfnOrGuid = options.nonOptionArguments().iterator().next();
-		else 
+			if (options.nonOptionArguments().iterator().hasNext())
+				lfnOrGuid = options.nonOptionArguments().iterator().next();
+			else
+				printHelp();
+		} catch (OptionException e) {
 			printHelp();
-		
+		}
 	}
 
 }

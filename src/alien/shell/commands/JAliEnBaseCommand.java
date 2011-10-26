@@ -3,8 +3,6 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-import joptsimple.OptionException;
-
 import alien.catalogue.GUIDUtils;
 import alien.config.ConfigUtils;
 
@@ -32,6 +30,9 @@ public abstract class JAliEnBaseCommand {
 	protected UIPrintWriter out ;
 	
 	
+	/**
+	 * 
+	 */
 	protected final ArrayList<String> alArguments;
 
 	
@@ -40,10 +41,9 @@ public abstract class JAliEnBaseCommand {
 	 * @param commander 
 	 * @param out 
 	 * @param alArguments 
-	 * @throws OptionException 
 	 */
 	public JAliEnBaseCommand(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException{
+			final ArrayList<String> alArguments){
 		this.commander = commander;
 		this.out = out;
 		this.alArguments = alArguments;

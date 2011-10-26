@@ -1,6 +1,5 @@
 package alien.api.taskQueue;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import alien.api.Request;
@@ -39,6 +38,8 @@ public class GetPS extends Request {
 	
 	private final List<String> jobid;
 	
+	private final boolean masterOnly;
+	
 	private int  limit = 0;
 	
 	/**
@@ -46,7 +47,7 @@ public class GetPS extends Request {
 	 * @param running 
 	 */
 	public GetPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final int limit){
+			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final boolean masterOnly, final int limit){
 		this.states = states;
 		this.users = users;
 		this.sites = sites;
@@ -54,11 +55,12 @@ public class GetPS extends Request {
 		this.mjobs = mjobs;
 		this.jobid = jobid;
 		this.limit = limit;
+		this.masterOnly = masterOnly;
 	}
 	
 	@Override
 	public void run() {
-		this.jobs = TaskQueueUtils.getPS(states, users, sites, nodes, mjobs, jobid, limit);
+		this.jobs = TaskQueueUtils.getPS(states, users, sites, nodes, mjobs, jobid, masterOnly, limit);
 	}
 	
 	/**

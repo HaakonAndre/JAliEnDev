@@ -30,10 +30,10 @@ public class TaskQueueApiUtils {
 	 * @return a PS listing
 	 */
 	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final int limit) {
+			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final boolean masterOnly, final int limit) {
 
 		try {
-			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(states, users, sites, nodes, mjobs, jobid, limit), true);
+			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(states, users, sites, nodes, mjobs, jobid, masterOnly, limit), true);
 
 			return ps.returnPS();
 		} catch (IOException e) {

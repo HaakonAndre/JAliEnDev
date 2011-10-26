@@ -356,11 +356,18 @@ public class TaskQueueUtils {
 	
 	
 	/**
-	 * @param running 
+	 * @param states 
+	 * @param users 
+	 * @param sites 
+	 * @param nodes 
+	 * @param mjobs 
+	 * @param jobids 
+	 * @param masterOnly 
+	 * @param limit 
 	 * @return the ps listing
 	 */
 	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final int limit){
+			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final boolean masterOnly, final int limit){
 				
 		final DBFunctions db = getDB();
 		
@@ -405,7 +412,6 @@ public class TaskQueueUtils {
 				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
 		
-		
 		if (sites != null && sites.size()>0){
 			String whe = " ( ";
 			for (String s : sites){
@@ -433,18 +439,18 @@ public class TaskQueueUtils {
 				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
 
-//		if (mjobs != null && mjobs.size()>0{
-//			String whe = " ( ";
-//			for (String m : mjobs){
-//				if("%".equals(m)){
-//					whe = "";
-//					break;
-//				}
-//				whe += "queueId = '" + Format.escSQL(m)  + "' or ";
-//			}
-//			if(whe.length()>0)
-//				where += whe.substring(0, whe.length()-3) + " ) and ";
-//		}
+		if (mjobs != null && mjobs.size()>0){
+			String whe = " ( ";
+			for (String m : mjobs){
+				if("%".equals(m)){
+					whe = "";
+					break;
+				}
+				whe += "split = '" + Format.escSQL(m)  + "' or ";
+			}
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
 		
 		if (jobids != null && jobids.size()>0){
 			String whe = " ( ";
@@ -458,6 +464,10 @@ public class TaskQueueUtils {
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
+		
+		if(masterOnly)
+			where += " masterjob=1 and ";
+		
 					
 		if(where.endsWith(" and "))
 			where = where.substring(0,where.length()-5);

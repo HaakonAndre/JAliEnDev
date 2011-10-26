@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -18,8 +19,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	/**
 	 * marker for -p argument
 	 */
-	private final boolean bP;
-	private final ArrayList<String> alPaths;
+	private boolean bP = false;
+	private ArrayList<String> alPaths = null;
 	
 	public void execute() {
 
@@ -69,7 +70,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 * nonimplemented command's silence trigger, cd is never silent
 	 */
 	public void silent() {
-
+		//ignore
 	}
 
 	/**
@@ -80,19 +81,24 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandmkdir(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
+	public JAliEnCommandmkdir(JAliEnCOMMander commander, UIPrintWriter out,
+			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
-		
-		final OptionParser parser = new OptionParser();
-		
-		parser.accepts("p");
-		
-		final OptionSet options = parser.parse(alArguments.toArray(new String[]{}));
-		
-		alPaths = new ArrayList<String>(options.nonOptionArguments().size());
-		alPaths.addAll(options.nonOptionArguments());
-		
-		bP = options.has("p");
-		
+
+		try {
+			final OptionParser parser = new OptionParser();
+
+			parser.accepts("p");
+
+			final OptionSet options = parser.parse(alArguments
+					.toArray(new String[] {}));
+
+			alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+			alPaths.addAll(options.nonOptionArguments());
+
+			bP = options.has("p");
+		} catch (OptionException e) {
+			printHelp();
+		}
 	}
 }

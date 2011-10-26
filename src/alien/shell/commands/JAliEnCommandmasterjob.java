@@ -16,7 +16,7 @@ import alien.taskQueue.Job;
  * @author ron
  * @since June 9, 2011
  */
-public class JAliEnCommandps extends JAliEnBaseCommand {
+public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	/**
 	 * marker for -a argument
@@ -186,6 +186,26 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		out.printOutln("		-b do only black-white output [black-white anyway, so ignored]");
 		out.printOutln("		-jdl   <jobid>                          : display the job jdl");
 		out.printOutln("		-trace <jobid> [trace-tag[,trace-tag]] : display the job trace information"); // TODO:
+//
+//aliensh:[alice] [24] /alice/cern.ch/user/s/sschrein/ >masterjob 
+//Oct 26 23:30:04  info	Not enough arguments in 'masterJob': missing queueId
+//masterJob: prints information about a job that has been split in several subjobs. Usage:
+//	masterJob <jobId> [-status <status>] [-site] [-printid] [-id <id>] [merge|kill|resubmit]
+//
+//Options:
+//    -status <status>: display only the subjobs with that status
+//    -id <id>:   display only the subjobs with that id
+//    -site <id>: display only the subjobs on that site
+//    -printid:   print also the id of all the subjobs
+//    -printsite: split the number of jobs according to the execution site
+//    merge:      collect the output of all the subjobs that have already finished
+//    kill:       kill all the subjobs
+//    resubmit:   resubmit all the subjobs selected
+//    expunge:    delete completely the subjobs
+//
+//You can combine kill and resubmit with '-status <status>' and '-id <id>'. For instance, if you do something like 'masterjob <jobId> -status ERROR_IB resubmit', all the subjobs with status ERROR_IB will be resubmitted
+//
+//aliensh:[alice] [25] /alice/cern.ch/user/s/sschrein/ >
 
 	}
 
@@ -214,7 +234,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandps(JAliEnCOMMander commander, UIPrintWriter out,
+	public JAliEnCommandmasterjob(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 
