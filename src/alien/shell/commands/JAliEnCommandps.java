@@ -249,6 +249,7 @@ final OptionParser parser = new OptionParser();
 		
 		if (options.nonOptionArguments() != null
 				&& options.nonOptionArguments().size() != 0) {
+			
 			if (options.nonOptionArguments().get(0) != null) {
 				final StringTokenizer st = new StringTokenizer(options
 						.nonOptionArguments().get(0), ",");
@@ -256,42 +257,42 @@ final OptionParser parser = new OptionParser();
 					states.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().get(1) != null) {
+			if (options.nonOptionArguments().size()>1  && options.nonOptionArguments().get(1) != null) {
 				final StringTokenizer st = new StringTokenizer(options
 						.nonOptionArguments().get(1), ",");
 				while (st.hasMoreTokens())
 					users.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().get(2) != null) {
+			if (options.nonOptionArguments().size()>2  && options.nonOptionArguments().get(2) != null) {
 				final StringTokenizer st = new StringTokenizer(options
 						.nonOptionArguments().get(2), ",");
 				while (st.hasMoreTokens())
 					sites.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().get(3) != null) {
+			if (options.nonOptionArguments().size()>3  && options.nonOptionArguments().get(3) != null) {
 				final StringTokenizer st = new StringTokenizer(options
 						.nonOptionArguments().get(3), ",");
 				while (st.hasMoreTokens())
 					nodes.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().get(4) != null) {
+			if (options.nonOptionArguments().size()>4  && options.nonOptionArguments().get(4) != null) {
 				final StringTokenizer st = new StringTokenizer(options
 						.nonOptionArguments().get(3), ",");
 				while (st.hasMoreTokens())
 					mjobs.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().get(5) != null) {
+			if (options.nonOptionArguments().size()>5  && options.nonOptionArguments().get(5) != null) {
 				final StringTokenizer st = new StringTokenizer(options
 						.nonOptionArguments().get(3), ",");
 				while (st.hasMoreTokens())
 					jobid.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().get(6) != null) {
+			if (options.nonOptionArguments().size()>6  && options.nonOptionArguments().get(6) != null) {
 				try {
 					int lim = Integer.parseInt(options.nonOptionArguments()
 							.get(6));
