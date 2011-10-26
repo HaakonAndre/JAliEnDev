@@ -274,7 +274,8 @@ public class CreateLDAP {
 	}
 	
 
-	protected static void addUserToLDAP(final String user,final String uid, final String roles) throws NamingException{
+	protected static void addUserToLDAP(final String user,final String uid, final String roles,
+			final String certSubject) throws NamingException{
 	
 		context = getLdapContext(); 
 		ArrayList<String> objClasses = new ArrayList<String>(3);
@@ -290,7 +291,7 @@ public class CreateLDAP {
 		config.put("homeDirectory",getUserHome(user));
 		config.put("userPassword","{crypt}x");
 		config.put("loginShell","false");
-		config.put("subject",TestConfig.certSubjectuser);
+		config.put("subject",certSubject);
 		config.put("roles", roles);			
 		
 		addToLDAP(objClasses, config, "uid="+user+",ou=People," + TestConfig.ldap_root);

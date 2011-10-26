@@ -4,6 +4,7 @@ import java.io.File;
 
 import alien.api.DispatchSSLServer;
 import alien.api.JBoxServer;
+import alien.config.JAliEnIAm;
 import alien.test.setup.CreateCertificates;
 import alien.test.setup.CreateDB;
 import alien.test.setup.CreateLDAP;
@@ -92,9 +93,9 @@ public class SetupTestVO {
 	
 		boolean ret = true;
 		
-		if(!ManageSysEntities.addUser("admin","1","admin"))
+		if(!ManageSysEntities.addUser("admin","1","admin","/C=CH/O="+JAliEnIAm.whoamI()+"/CN=NOadmin"))
 			ret = false;
-		if(!ManageSysEntities.addUser(TestConfig.testUser,"2","admin"))
+		if(!ManageSysEntities.addUser(TestConfig.testUser,"2","admin",TestConfig.certSubjectuser))
 			ret = false;
 		if(!ManageSysEntities.addSite(TestConfig.testSite, TestConfig.domain, "/tmp", "/tmp", "/tmp"))
 			ret = false;

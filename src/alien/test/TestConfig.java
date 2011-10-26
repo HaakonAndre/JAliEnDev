@@ -82,7 +82,7 @@ public class TestConfig {
 	/**
 	 * the testVO certificate subject for the user cert
 	 */
-	public static final String certSubjectuser = 	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN=jTestUser";
+	public static final String certSubjectuser = "/C=CH/O="+JAliEnIAm.whoamI()+"/CN="+testUser;
 	
 	/**
 	 * the testVO certificate subject for the user cert

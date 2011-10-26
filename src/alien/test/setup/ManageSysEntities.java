@@ -22,11 +22,11 @@ public class ManageSysEntities {
 	 * @return status of the user add
 	 */
 	public static boolean addUser(final String username, final String uid,
-			final String role) {
+			final String role, final String certSubject) {
 
 		try {
-			CreateLDAP.addUserToLDAP(username, uid, role);
-			CreateLDAP.addRoleToLDAP(username, username);
+			CreateLDAP.addUserToLDAP(username, uid, role,certSubject);
+			//CreateLDAP.addRoleToLDAP(username, username);
 			CreateLDAP.addRoleToLDAP(role, username);
 						
 		} catch (Exception e) {
