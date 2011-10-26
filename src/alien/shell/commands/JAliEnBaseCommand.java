@@ -3,6 +3,8 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import joptsimple.OptionException;
+
 import alien.catalogue.GUIDUtils;
 import alien.config.ConfigUtils;
 
@@ -38,9 +40,10 @@ public abstract class JAliEnBaseCommand {
 	 * @param commander 
 	 * @param out 
 	 * @param alArguments 
+	 * @throws OptionException 
 	 */
 	public JAliEnBaseCommand(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments){
+			final ArrayList<String> alArguments) throws OptionException{
 		this.commander = commander;
 		this.out = out;
 		this.alArguments = alArguments;
@@ -99,6 +102,28 @@ public abstract class JAliEnBaseCommand {
 	 */
 	public static String padRight(String s, int n) {
 	     return String.format("%1$-" + n + "s", s);  
+	}
+	
+	/**
+	 * @param n
+	 * @return n count spaces as String
+	 */
+	public static String padSpace(int n) {
+		String s = "";
+		for(int a=0;a<n;a++)
+			s += " ";
+		return s;
+	}
+	
+	/**
+	 * @param n
+	 * @return n count tabs as String
+	 */
+	public static String padTab(int n) {
+		String s = "";
+		for(int a=0;a<n;a++)
+			s += "\t";
+		return s;
 	}
 	
 }

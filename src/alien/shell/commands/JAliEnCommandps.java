@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.api.taskQueue.TaskQueueApiUtils;
@@ -16,184 +17,170 @@ import alien.taskQueue.Job;
  * @since June 9, 2011
  */
 public class JAliEnCommandps extends JAliEnBaseCommand {
-	
+
 	/**
 	 * marker for -a argument
 	 */
-	private final boolean bA;
-	
-	/**
-	 * marker for -r argument
-	 */
-	private final boolean bR;
-	
-	/**
-	 * marker for -f argument
-	 */
-	private final boolean bF;
-	
-	/**
-	 * marker for -d argument
-	 */
-	private final boolean bD;
-	
-	/**
-	 * marker for -t argument
-	 */
-	private final boolean bT;
+	private boolean bA = false;
 
 	/**
-	 * marker for -q argument
+	 * marker for -x argument
 	 */
-	private final boolean bQ;
+	private boolean bL = false;
 
 	/**
-	 * marker for -s argument
+	 * id of the job to get the JDL for
 	 */
-	private final boolean bS;
-	
+	private int getJDL = 0;
+
+	/**
+	 * id of the job to get the trace for
+	 */
+	private int getTrace = 0;
 
 	private List<String> states = new ArrayList<String>();
-	
+
 	private List<String> users = new ArrayList<String>();
-	
+
 	private List<String> sites = new ArrayList<String>();
-	
+
 	private List<String> nodes = new ArrayList<String>();
-	
+
 	private List<String> mjobs = new ArrayList<String>();
-	
+
 	private List<String> jobid = new ArrayList<String>();
-	
-	private int  limit = 0;
-	
-	
+
+	private int limit = 0;
 
 	public void execute() throws Exception {
-		
-		if(bA)
-			states.addAll(allJobStates());
-		if(bR)
-			states.addAll(runningJobStates());
-		if(bF)
-			states.addAll(errorJobStates());
-		if(bD)
-			states.addAll(doneJobStates());
-		if(bT)
-			states.addAll(finalJobStates());
-		if(bQ)
-			states.addAll(queuedJobStates());
-		if(bS)
-			states.addAll(prerunJobStates());
-		
-		if(states.size()==0)
-			states.addAll(defJobStates());
-		
-		if(users.size()==0)
-			users.add(commander.getUsername());
-		
-		System.out.println("We will ask for PS:");
-		System.out.println("states: " + states);
-		System.out.println("users: " + users);
-		System.out.println("sites: " + sites);
-		System.out.println("nodes: " + nodes);
-		System.out.println("mjobs: " + mjobs);
-		System.out.println("jobid: " + jobid);
-		System.out.println("limit: " + limit);
-		
-		List<Job> ps = TaskQueueApiUtils.getPS(states, users, sites, nodes, mjobs, jobid, limit);
-		
-		String Whatever = "  0 ";
-		if(ps!=null)
-			for(Job j: ps){
-				out.printOutln("  "+j.getOwner() + " "+ j.queueId + "  " + Whatever+ "  "+  abbrvStatus(j.status));
-			}
 
+		if (getJDL != 0) {
+			String jdl = TaskQueueApiUtils.getJDL(getJDL);
+			if (jdl != null)
+				out.printOutln(jdl);
+		} else if (getTrace != 0) {
+			String tracelog = TaskQueueApiUtils.getTraceLog(getTrace);
+			if (tracelog != null)
+				out.printOutln(tracelog);
+		} else {
+
+			if (states.size() == 0)
+				states.addAll(defJobStates());
+			if (users.size() == 0)
+				users.add(commander.getUsername());
+
+			List<Job> ps = TaskQueueApiUtils.getPS(states, users, sites, nodes,
+					mjobs, jobid, limit);
+
+			if (ps != null) {
+				for (Job j : ps) {
+
+					String owner = (j.getOwner() != null) ? j.getOwner() : "";
+
+					String status = (j.status != null) ? abbrvStatus(j.status)
+							: "";
+					String name = (j.name != null) ? j.name.substring(j.name
+							.lastIndexOf('/') + 1) : "";
+
+					if (bL) {
+						String site = (j.site != null) ? j.site : "";
+						String node = (j.node != null) ? j.node : "";
+						out.printOutln(padLeft(String.valueOf(owner), 10)
+								+ padSpace(17)
+								+ padLeft(String.valueOf(j.queueId), 10)
+								+ padSpace(2) + padLeft(String.valueOf("0"), 3)
+								+ padSpace(2)
+								+ padLeft(String.valueOf(site), 30)
+								+ padSpace(2)
+								+ padLeft(String.valueOf(node), 30)
+								+ padSpace(2)
+								+ padLeft(String.valueOf(status), 3)
+								+ padSpace(2)
+								+ padLeft(String.valueOf(name), 32));
+					} else
+						out.printOutln(padLeft(String.valueOf(owner), 10)
+								+ padSpace(1)
+								+ padLeft(String.valueOf(j.queueId), 10)
+								+ padSpace(2) + padLeft(String.valueOf("0"), 3)
+								+ padSpace(2)
+								+ padLeft(String.valueOf(status), 3)
+								+ padSpace(2)
+								+ padLeft(String.valueOf(name), 32));
+
+				}
+			}
+		}
 	}
 
-	private static String abbrvStatus(String status){
-		if(status==null)
+	private static String abbrvStatus(String status) {
+		if (status == null)
 			return "-";
-		if(status.equals("INDERTING"))
+		if (status.equals("INDERTING"))
 			return "I";
-		if(status.equals("WAITING"))
+		if (status.equals("WAITING"))
 			return "W";
-		else if(status.equals("ASSIGEND"))
+		if (status.equals("EXPIRED"))
+			return "EX";
+		else if (status.equals("ASSIGEND"))
 			return "A";
-		else if(status.equals("QUEUED"))
+		else if (status.equals("QUEUED"))
 			return "Q";
-		else if(status.equals("STARTED"))
+		else if (status.equals("STARTED"))
 			return "S";
-		else if(status.equals("RUNNING"))
+		else if (status.equals("RUNNING"))
 			return "R";
-		else if(status.equals("DONE"))
+		else if (status.equals("DONE"))
 			return "D";
-		else if(status.equals("ERROR_A"))
+		else if (status.equals("ERROR_A"))
 			return "EA";
-		else if(status.equals("ERROR_S"))
+		else if (status.equals("ERROR_S"))
 			return "ES";
-		else if(status.equals("ERROR_I"))
+		else if (status.equals("ERROR_I"))
 			return "EI";
-		else if(status.equals("ERROR_IB"))
+		else if (status.equals("ERROR_IB"))
 			return "EIB";
-		else if(status.equals("ERROR_E"))
+		else if (status.equals("ERROR_E"))
 			return "EE";
-		else if(status.equals("ERROR_R"))
+		else if (status.equals("ERROR_R"))
 			return "ER";
-		else if(status.equals("ERROR_V"))
+		else if (status.equals("ERROR_V"))
 			return "EV";
-		else if(status.equals("ERROR_VN"))
+		else if (status.equals("ERROR_VN"))
 			return "EVN";
-		else if(status.equals("ERROR_VT"))
+		else if (status.equals("ERROR_VT"))
 			return "EVT";
 		return status;
 	}
-	
-	
 
 	/**
 	 * printout the help info
 	 */
 	public void printHelp() {
 
-		out.printOutln(AlienTime.getStamp() + "Usage: ps2 <flags|status> <users> <sites> <nodes> <masterjobs> <order> <jobid> <limit> <sql>");		
-		out.printOutln("	<flags> 	: -a all jobs");
-		out.printOutln("			: -r all running jobs");
-		out.printOutln("			: -f all failed/error jobs");
-		out.printOutln("			: -d all done jobs");
-		out.printOutln("			: -t all final state jobs (done/error)");
-		out.printOutln("			: -q all queued jobs (queued/assigned)");
-		out.printOutln("			: -s all pre-running jobs (inserting/waiting/assigned/queued/over_quota_*)");
-		out.printOutln("			: -arfdtqs combinations");
-		out.printOutln("			: default '-' = 'all non final-states'");
+		out.printOutln(AlienTime.getStamp() + "usage: ps 	 ");
+		out.printOutln("		-F {l} (output format)");
+		out.printOutln("		-f <flags/status>");
+		out.printOutln("		-u <userlist>");
+		out.printOutln("		-s <sitelist>");
+		out.printOutln("		-n <nodelist>");
+		out.printOutln("		-m <masterjoblist>");
+		out.printOutln("		-o <sortkey>"); // TODO:
+		out.printOutln("		-j <jobidlist>");
+		out.printOutln("		-l <query-limit>");
+		out.printOutln("		-q <sql query> [not implemented, since an admin-only feature]");
 		out.printOutln();
-		out.printOutln("	<status> 	: <status-1>[,<status-N]*");
-		out.printOutln("			:  INSERTING,WAITING,OVER_WAITING,ASSIGEND,QUEUED,STARTED,RUNNING,DONE,ERROR_%[A,S,I,IB,E,R,V,VN,VT]");
-		out.printOutln("			: default '-' = 'as specified by <flags>'");
-		out.printOutln();
-		out.printOutln("	<users> 	: <user-1>[,<user-N]*");
-		out.printOutln("			: % to wildcard all users");
-		out.printOutln();
-		out.printOutln("	<sites> 	: <site-1>[,<site-N]*");
-		out.printOutln("			: default '%' or '-' to all sites");
-		out.printOutln();
-		out.printOutln("	<nodes> 	: <node-1>[,<node-N]*");
-		out.printOutln("			: default '%' or '-' to all nodes");
-		out.printOutln();
-		out.printOutln("	<mjobs> 	: <mjob-1>[,<mjob-N]*");
-		out.printOutln("			: default '%' or '-' to all jobs");
-		out.printOutln("			: <sort-key>");
-		out.printOutln("			: default '-' or 'queueId'");
-		out.printOutln("	<jobid> 	: <jobid-1>[,<jobid-N]*");
-		out.printOutln("			: default '%' or '-' to use the specified <flags>");
-		out.printOutln();
-		out.printOutln("	<limit> 	: <n> - maximum number of queried jobs");
-		out.printOutln("			: regular users: default limit = 2000;");
-		out.printOutln("			: admin        : default limit = unlimited;");
-		out.printOutln();
-		out.printOutln("Usage: ps2 -trace <jobid> 	: get the job trace");
-		out.printOutln("Usage: ps2 -jdl   <jobid> 	: get the job JDL");
-		out.printOutln();
+		out.printOutln("		-M show only masterjobs"); // TODO:
+		out.printOutln("		-X active jobs in extended format");
+		out.printOutln("		-A select all owned jobs of you");
+		out.printOutln("		-W select all jobs which are waiting for execution of you");
+		out.printOutln("		-E select all jobs which are in error state of you");
+		out.printOutln("		-D select all done jobs of you");
+		out.printOutln("		-R select all running jobs of you");
+		out.printOutln("		-Q select all queued jobs of you");
+		out.printOutln("		-a select jobs of all users");
+		out.printOutln("		-b do only black-white output [black-white anyway, so ignored]");
+		out.printOutln("		-jdl   <jobid>                          : display the job jdl");
+		out.printOutln("		-trace <jobid> [trace-tag[,trace-targ]] : display the job trace information");
 
 	}
 
@@ -210,134 +197,190 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * nonimplemented command's silence trigger, submit is never silent
 	 */
 	public void silent() {
-      //ignore
+		// ignore
 	}
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandps(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		
-final OptionParser parser = new OptionParser();
 
+		final OptionParser parser = new OptionParser();
+
+		parser.accepts("F").withRequiredArg();
+		parser.accepts("f").withRequiredArg();
+		parser.accepts("u").withRequiredArg();
+		parser.accepts("s").withRequiredArg();
+		parser.accepts("n").withRequiredArg();
+		parser.accepts("m").withRequiredArg();
+		parser.accepts("o").withRequiredArg();
+		parser.accepts("j").withRequiredArg();
+		parser.accepts("l").withRequiredArg();
+		parser.accepts("q").withRequiredArg();
+
+		parser.accepts("M");
+		parser.accepts("X");
+		parser.accepts("A");
+		parser.accepts("W");
+		parser.accepts("E");
 		parser.accepts("a");
-		parser.accepts("r");
-		parser.accepts("f");
-		parser.accepts("d");
-		parser.accepts("t");
-		parser.accepts("q");
-		parser.accepts("s");
-		
-		final OptionSet options = parser.parse(alArguments.toArray(new String[]{}));
-		
+		parser.accepts("b");
+		parser.accepts("jdl").withRequiredArg();
+		parser.accepts("trace").withRequiredArg();
 
-		bA = options.has("a");
-		bR = options.has("r");
-		bF = options.has("f");
-		bD = options.has("d");
-		bT = options.has("t");
-		bQ = options.has("q");
-		bS = options.has("s");
-		
-		
-		if (options.nonOptionArguments() != null
-				&& options.nonOptionArguments().size() != 0) {
-			
-			if (options.nonOptionArguments().get(0) != null) {
-				final StringTokenizer st = new StringTokenizer(options
-						.nonOptionArguments().get(0), ",");
+		final OptionSet options = parser.parse(alArguments
+				.toArray(new String[] {}));
+
+		if (options.has("jdl") && options.hasArgument("jdl")) {
+			try {
+				getJDL = Integer.parseInt((String) options.valueOf("jdl"));
+			} catch (NumberFormatException e) {
+				out.printErrln("Illegal job ID.");
+				getJDL = -1;
+			}
+
+		} else if (options.has("trace") && options.hasArgument("trace")) {
+			try {
+				getTrace = Integer.parseInt((String) options.valueOf("trace"));
+			} catch (NumberFormatException e) {
+				out.printErrln("Illegal job ID.");
+				getTrace = -1;
+			}
+
+		} else {
+
+			if (options.has("f") && options.hasArgument("f")) {
+				final StringTokenizer st = new StringTokenizer(
+						(String) options.valueOf("f"), ",");
 				while (st.hasMoreTokens())
 					states.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().size()>1  && options.nonOptionArguments().get(1) != null) {
-				final StringTokenizer st = new StringTokenizer(options
-						.nonOptionArguments().get(1), ",");
+			if (options.has("u") && options.hasArgument("u")) {
+				final StringTokenizer st = new StringTokenizer(
+						(String) options.valueOf("u"), ",");
 				while (st.hasMoreTokens())
 					users.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().size()>2  && options.nonOptionArguments().get(2) != null) {
-				final StringTokenizer st = new StringTokenizer(options
-						.nonOptionArguments().get(2), ",");
+			if (options.has("s") && options.hasArgument("s")) {
+				final StringTokenizer st = new StringTokenizer(
+						(String) options.valueOf("s"), ",");
 				while (st.hasMoreTokens())
 					sites.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().size()>3  && options.nonOptionArguments().get(3) != null) {
-				final StringTokenizer st = new StringTokenizer(options
-						.nonOptionArguments().get(3), ",");
+			if (options.has("n") && options.hasArgument("n")) {
+				final StringTokenizer st = new StringTokenizer(
+						(String) options.valueOf("n"), ",");
 				while (st.hasMoreTokens())
 					nodes.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().size()>4  && options.nonOptionArguments().get(4) != null) {
-				final StringTokenizer st = new StringTokenizer(options
-						.nonOptionArguments().get(3), ",");
+			if (options.has("m") && options.hasArgument("m")) {
+				final StringTokenizer st = new StringTokenizer(
+						(String) options.valueOf("m"), ",");
 				while (st.hasMoreTokens())
 					mjobs.add(st.nextToken());
 			}
 
-			if (options.nonOptionArguments().size()>5  && options.nonOptionArguments().get(5) != null) {
-				final StringTokenizer st = new StringTokenizer(options
-						.nonOptionArguments().get(3), ",");
+			if (options.has("j") && options.hasArgument("j")) {
+				final StringTokenizer st = new StringTokenizer(
+						(String) options.valueOf("j"), ",");
 				while (st.hasMoreTokens())
 					jobid.add(st.nextToken());
+				states.add("%");
 			}
 
-			if (options.nonOptionArguments().size()>6  && options.nonOptionArguments().get(6) != null) {
+			if (options.has("l") && options.hasArgument("l")) {
 				try {
-					int lim = Integer.parseInt(options.nonOptionArguments()
-							.get(6));
+					int lim = Integer.parseInt((String) options.valueOf("l"));
 					if (lim > 0)
 						limit = lim;
 				} catch (NumberFormatException e) {
 					// ignore
 				}
 			}
+
+			bA = options.has("a");
+
+			if (options.has("F") && options.hasArgument("F")
+					&& "l".equals(options.valueOf("F")))
+				bL = true;
+
+			if (options.has("A")) {
+				states.addAll(allJobStates());
+				users.add(commander.getUsername());
+			}
+			if (options.has("W")) {
+				states.addAll(prerunJobStates());
+				users.add(commander.getUsername());
+			}
+			if (options.has("W")) {
+				states.addAll(errorJobStates());
+				users.add(commander.getUsername());
+			}
+			if (options.has("D")) {
+				states.addAll(doneJobStates());
+				users.add(commander.getUsername());
+			}
+			if (options.has("R")) {
+				states.addAll(runningJobStates());
+				users.add(commander.getUsername());
+			}
+			if (options.has("Q")) {
+				states.addAll(queuedJobStates());
+				users.add(commander.getUsername());
+			}
+
+			if (options.has("X"))
+				bL = true;
+
+			if (options.has("a")) {
+				users.add("%");
+			}
 		}
-
-	}
-	
-	private static List<String> defJobStates(){
-		return Arrays.asList(new String[]{"INSERTING","WAITING"
-				,"ASSIGEND","QUEUED","STARTED","RUNNING"});
-	}
-	
-	
-	private static List<String> allJobStates(){
-		return Arrays.asList(new String[]{"INSERTING","WAITING"
-				,"ASSIGEND","QUEUED","STARTED","RUNNING","DONE","ERROR_%"});
-	}
-	
-	private static List<String> runningJobStates(){
-		return Arrays.asList(new String[]{"RUNNING"});
-	}
-	
-	private static List<String> errorJobStates(){
-		return Arrays.asList(new String[]{"ERROR_%"});
-	}
-	
-	private static List<String> doneJobStates(){
-		return Arrays.asList(new String[]{"DONE"});
 	}
 
-	private static List<String> finalJobStates(){
-		return Arrays.asList(new String[]{"DONE","ERROR_%"});
-	}	
-	
-	private static List<String> queuedJobStates(){
-		return Arrays.asList(new String[]{"QUEUED"});
+	private static List<String> defJobStates() {
+		return Arrays.asList(new String[] { "INSERTING", "WAITING", "ASSIGEND",
+				"QUEUED", "STARTED", "RUNNING" });
 	}
-	
-	private static List<String> prerunJobStates(){
-		return Arrays.asList(new String[]{"WAITING","INSERTING","ASSIGNED"});
+
+	private static List<String> allJobStates() {
+		return Arrays
+				.asList(new String[] { "INSERTING", "WAITING", "EXPIRED",
+						"ASSIGEND", "QUEUED", "STARTED", "RUNNING", "DONE",
+						"ERROR_%" });
+	}
+
+	private static List<String> runningJobStates() {
+		return Arrays.asList(new String[] { "RUNNING" });
+	}
+
+	private static List<String> errorJobStates() {
+		return Arrays.asList(new String[] { "ERROR_%" });
+	}
+
+	private static List<String> doneJobStates() {
+		return Arrays.asList(new String[] { "DONE" });
+	}
+
+	private static List<String> queuedJobStates() {
+		return Arrays.asList(new String[] { "QUEUED" });
+	}
+
+	private static List<String> prerunJobStates() {
+		return Arrays
+				.asList(new String[] { "WAITING", "INSERTING", "ASSIGNED" });
 	}
 }

@@ -257,6 +257,7 @@ public class JAliEnCOMMander {
 			try {
 				jcommand = getCommand(comm, param);
 			} catch (OptionException oe){
+				System.out.println("Catched an option exeption.");
 				out.printErrln(oe.getMessage());
 				out.flush();
 				return;

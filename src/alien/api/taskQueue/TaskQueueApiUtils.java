@@ -20,7 +20,13 @@ public class TaskQueueApiUtils {
 
 	
 	/**
-	 * @param running 
+	 * @param states 
+	 * @param users 
+	 * @param sites 
+	 * @param nodes 
+	 * @param mjobs 
+	 * @param jobid 
+	 * @param limit 
 	 * @return a PS listing
 	 */
 	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
@@ -37,7 +43,43 @@ public class TaskQueueApiUtils {
 		return null;
 
 	}
+
 	
+	/**
+	 * @param queueId 
+	 * @return a JDL as String
+	 */
+	public static String getTraceLog(final int queueId) {
+
+		try {
+			GetTraceLog trace = (GetTraceLog) Dispatcher.execute(new GetTraceLog(queueId), true);
+
+			return trace.getTraceLog();
+		} catch (IOException e) {
+			System.out.println("Could get not a TraceLog: ");
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+	
+	/**
+	 * @param queueId 
+	 * @return a JDL as String
+	 */
+	public static String getJDL(final int queueId) {
+
+		try {
+			GetJDL jdl = (GetJDL) Dispatcher.execute(new GetJDL(queueId), true);
+
+			return jdl.getJDL();
+		} catch (IOException e) {
+			System.out.println("Could get not a JDL: ");
+			e.printStackTrace();
+		}
+		return null;
+
+	}
 	
 	/**
 	 * @return a Job
@@ -49,7 +91,7 @@ public class TaskQueueApiUtils {
 
 			return job.getJob();
 		} catch (IOException e) {
-			System.out.println("Could not a JDL: ");
+			System.out.println("Could get not a JDL: ");
 			e.printStackTrace();
 		}
 		return null;
@@ -68,7 +110,7 @@ public class TaskQueueApiUtils {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status), true);
 
 		} catch (IOException e) {
-			System.out.println("Could not a JDL: ");
+			System.out.println("Could get not a Job's status: ");
 			e.printStackTrace();
 		}
 	}
@@ -78,7 +120,7 @@ public class TaskQueueApiUtils {
 	 * 
 	 * @param jdl
 	 * @param user
-	 * @return
+	 * @return int
 	 * @throws JobSubmissionException
 	 */
 	public static int submitJob(String jdl, String user)
@@ -88,7 +130,7 @@ public class TaskQueueApiUtils {
 			JDL ojdl = new JDL(jdl);
 			SubmitJob j;
 			j = new SubmitJob(JobSigner.signJob(JAKeyStore.clientCert,
-					"User.cert", JAKeyStore.pass, user, jdl));	// TODO : why was ojdl passed here ?
+					"User.cert", JAKeyStore.pass, user, ojdl, jdl));	// TODO : why was ojdl passed here ?
 
 			Dispatcher.execute(j, true);
 			return j.getJobID();

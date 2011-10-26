@@ -81,7 +81,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					if (bB) {
 						if (localLFN.type == 'd')
 							continue;
-						ret += localLFN.guid.toString().toUpperCase() + "	"
+						ret += localLFN.guid.toString().toUpperCase() + padSpace(3)
 								+ localLFN.getName();
 					} else {
 						if(bC)
@@ -90,15 +90,15 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 							if (bL)
 								ret += FileSystemUtils
 									.getFormatedTypeAndPerm(localLFN)
-									+ "   "
-									+ localLFN.owner
-									+ " "
-									+ localLFN.gowner
-									+ " "
+									+ padSpace(3)
+									+ padLeft(localLFN.owner, 8)
+									+ padSpace(1)
+									+ padLeft(localLFN.gowner, 8)
+									+ padSpace(1)
 									+ padLeft(String.valueOf(localLFN.size), 12)
-									+ " "
+									+ padSpace(1)
 									+ format(localLFN.ctime)
-									+ "            " + localLFN.getFileName();
+									+ padSpace(4) + localLFN.getFileName();
 					
 							else
 								ret += localLFN.getFileName();

@@ -360,7 +360,7 @@ public class TaskQueueUtils {
 	 * @return the ps listing
 	 */
 	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final int limit){
+			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final int limit){
 				
 		final DBFunctions db = getDB();
 		
@@ -378,38 +378,91 @@ public class TaskQueueUtils {
 			lim = limit;
 
 		String where = "";
-		if (states != null){
-			where += " ( ";
-			for (String s : states)
-				where += "status='" + Format.escSQL(s) + "' or ";
-					where = where.substring(0, where.length()-3) + " ) ";
+
+		if (states != null && states.size()>0){
+			String whe = " ( ";
+			for (String s : states){
+				if("%".equals(s)){
+					whe = "";
+					break;
+				}
+				whe += "status = '" + Format.escSQL(s) + "' or ";
+			}
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
+					
+		if (users != null && users.size()>0){
+			String whe = " ( ";
+			for (String u : users){
+				if("%".equals(u)){
+					whe = "";
+					break;
+				}
+				whe += "submitHost like '" + Format.escSQL(u) + "@%' or ";
+			}
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
 		
-		where += " and ";
 		
-					
-		if (users != null){
-			where += " ( ";
-			for (String u : users)
-				where += "submitHost like '" + Format.escSQL(u) + "@%' or ";
-			where = where.substring(0, where.length()-3) + " ) ";
+		if (sites != null && sites.size()>0){
+			String whe = " ( ";
+			for (String s : sites){
+				if("%".equals(s)){
+					whe = "";
+					break;
+				}
+				whe += "site = '" + Format.escSQL(s) + "' or ";
+			}
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
+		
+		
+		if (nodes != null && nodes.size()>0){
+			String whe = " ( ";
+			for (String n : nodes){
+				if("%".equals(n)){
+					whe = "";
+					break;
+				}
+				whe += "node = '" + Format.escSQL(n)  + "' or ";
+			}
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
 
-//		if (sites != null)
-//			for (String s : sites)
-//				where += "status='" + Format.escSQL(s) + "' or ";
-//		if (nodes != null)
-//			for (String n : nodes)
-//				where += "status='" + Format.escSQL(n) + "' or ";
-//		if (mjobs != null)
-//			for (String m : mjobs)
-//				where += "status='" + Format.escSQL(m) + "' or ";
-//		if (jobid != null)
-//			for (String j : jobid )
-//				where += "queueId='" + Format.escSQL(j) + "' or ";
-					
+//		if (mjobs != null && mjobs.size()>0{
+//			String whe = " ( ";
+//			for (String m : mjobs){
+//				if("%".equals(m)){
+//					whe = "";
+//					break;
+//				}
+//				whe += "queueId = '" + Format.escSQL(m)  + "' or ";
+//			}
+//			if(whe.length()>0)
+//				where += whe.substring(0, whe.length()-3) + " ) and ";
+//		}
 		
-		final String q = "SELECT queueId,status,submitHost FROM QUEUE WHERE "+ where + " order by queueId asc limit "+lim+";";
+		if (jobids != null && jobids.size()>0){
+			String whe = " ( ";
+			for (String i : jobids){
+				if("%".equals(i)){
+					whe = "";
+					break;
+				}
+				whe += "queueId = '" + Format.escSQL(i) + "' or ";
+			}
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
+					
+		if(where.endsWith(" and "))
+			where = where.substring(0,where.length()-5);
+		
+		final String q = "SELECT * FROM QUEUE WHERE "+ where + " order by queueId asc limit "+lim+";";
 		
 		System.out.println(" SQL IN OPERATION:\n"+ q);
 	

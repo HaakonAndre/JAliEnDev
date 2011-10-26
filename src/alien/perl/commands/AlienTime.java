@@ -19,7 +19,8 @@ public class AlienTime {
 	 */
 	public static String getStamp() {
 		synchronized (formatter){
-			return formatter.format(new Date())+"	"+ JAliEnIAm.whatsMyFullName()+"		";
+			// return formatter.format(new Date())+"	"+ JAliEnIAm.whatsMyFullName()+"		";
+			return JAliEnIAm.whatsMyFullName()+",";
 		}
 	}
 
