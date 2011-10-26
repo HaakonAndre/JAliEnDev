@@ -463,9 +463,7 @@ public class TaskQueueUtils {
 			where = where.substring(0,where.length()-5);
 		
 		final String q = "SELECT * FROM QUEUE WHERE "+ where + " order by queueId asc limit "+lim+";";
-		
-		System.out.println(" SQL IN OPERATION:\n"+ q);
-	
+			
 		if (!db.query(q))
 			return null;
 		
