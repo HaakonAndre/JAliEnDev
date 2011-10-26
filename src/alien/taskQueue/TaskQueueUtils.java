@@ -381,6 +381,10 @@ public class TaskQueueUtils {
 		if (states != null)
 			for (String s : states)
 				where += "status='" + Format.escSQL(s) + "' or ";
+		
+		where = where.substring(0, where.length()-3) + " and ";
+		
+					
 		if (users != null)
 			for (String u : users)
 				where += "submitHost like '" + Format.escSQL(u) + "@%' or ";
@@ -399,7 +403,7 @@ public class TaskQueueUtils {
 //			for (String j : jobid )
 //				where += "queueId='" + Format.escSQL(j) + "' or ";
 					
-		
+		where = where.substring(0, where.length()-3);
 		
 		final String q = "SELECT queueId,status,submitHost FROM QUEUE WHERE "+ where + " order by queueId asc limit "+lim+";";
 	

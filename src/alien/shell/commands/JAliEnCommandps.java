@@ -91,8 +91,16 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		
 		if(users.size()==0)
 			users.add(commander.getUsername());
-
-
+		
+		System.out.println("We will ask for PS:");
+		System.out.println("states: " + states);
+		System.out.println("users: " + users);
+		System.out.println("sites: " + sites);
+		System.out.println("nodes: " + nodes);
+		System.out.println("mjobs: " + mjobs);
+		System.out.println("jobid: " + jobid);
+		System.out.println("limit: " + limit);
+		
 		List<Job> ps = TaskQueueApiUtils.getPS(states, users, sites, nodes, mjobs, jobid, limit);
 		
 		String Whatever = "  0 ";
@@ -238,56 +246,60 @@ final OptionParser parser = new OptionParser();
 		bQ = options.has("q");
 		bS = options.has("s");
 		
-		if(options.nonOptionArguments().get(0) !=null){
-			final StringTokenizer st = new StringTokenizer(
-					options.nonOptionArguments().get(0), ",");
-			while (st.hasMoreTokens())
-				states.add(st.nextToken());
-		}
 		
-		if(options.nonOptionArguments().get(1) !=null){
-			final StringTokenizer st = new StringTokenizer(
-					options.nonOptionArguments().get(1), ",");
-			while (st.hasMoreTokens())
-				users.add(st.nextToken());
-		}
-		
-		if(options.nonOptionArguments().get(2) !=null){
-			final StringTokenizer st = new StringTokenizer(
-					options.nonOptionArguments().get(2), ",");
-			while (st.hasMoreTokens())
-				sites.add(st.nextToken());
-		}
-		
-		if(options.nonOptionArguments().get(3) !=null){
-			final StringTokenizer st = new StringTokenizer(
-					options.nonOptionArguments().get(3), ",");
-			while (st.hasMoreTokens())
-				nodes.add(st.nextToken());
-		}
-		
-		if(options.nonOptionArguments().get(4) !=null){
-			final StringTokenizer st = new StringTokenizer(
-					options.nonOptionArguments().get(3), ",");
-			while (st.hasMoreTokens())
-				mjobs.add(st.nextToken());
-		}
-		
-		if(options.nonOptionArguments().get(5) !=null){
-			final StringTokenizer st = new StringTokenizer(
-					options.nonOptionArguments().get(3), ",");
-			while (st.hasMoreTokens())
-				jobid.add(st.nextToken());
-		}
-		
-		if(options.nonOptionArguments().get(6) !=null){
-			try{
-				int lim = Integer.parseInt(options.nonOptionArguments().get(6));
-				if(lim>0)
-					limit = lim;
+		if (options.nonOptionArguments() != null
+				&& options.nonOptionArguments().size() != 0) {
+			if (options.nonOptionArguments().get(0) != null) {
+				final StringTokenizer st = new StringTokenizer(options
+						.nonOptionArguments().get(0), ",");
+				while (st.hasMoreTokens())
+					states.add(st.nextToken());
 			}
-			catch(NumberFormatException e){
-				//ignore
+
+			if (options.nonOptionArguments().get(1) != null) {
+				final StringTokenizer st = new StringTokenizer(options
+						.nonOptionArguments().get(1), ",");
+				while (st.hasMoreTokens())
+					users.add(st.nextToken());
+			}
+
+			if (options.nonOptionArguments().get(2) != null) {
+				final StringTokenizer st = new StringTokenizer(options
+						.nonOptionArguments().get(2), ",");
+				while (st.hasMoreTokens())
+					sites.add(st.nextToken());
+			}
+
+			if (options.nonOptionArguments().get(3) != null) {
+				final StringTokenizer st = new StringTokenizer(options
+						.nonOptionArguments().get(3), ",");
+				while (st.hasMoreTokens())
+					nodes.add(st.nextToken());
+			}
+
+			if (options.nonOptionArguments().get(4) != null) {
+				final StringTokenizer st = new StringTokenizer(options
+						.nonOptionArguments().get(3), ",");
+				while (st.hasMoreTokens())
+					mjobs.add(st.nextToken());
+			}
+
+			if (options.nonOptionArguments().get(5) != null) {
+				final StringTokenizer st = new StringTokenizer(options
+						.nonOptionArguments().get(3), ",");
+				while (st.hasMoreTokens())
+					jobid.add(st.nextToken());
+			}
+
+			if (options.nonOptionArguments().get(6) != null) {
+				try {
+					int lim = Integer.parseInt(options.nonOptionArguments()
+							.get(6));
+					if (lim > 0)
+						limit = lim;
+				} catch (NumberFormatException e) {
+					// ignore
+				}
 			}
 		}
 
