@@ -61,11 +61,19 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 			logger.log(Level.FINE, "Could not write to OutputStream" + line, e);
 		}
 	}
-
+	
+	protected void printOutln() {
+		printOutln("");
+	}
+	
 	protected void printOutln(String line) {
 		print(line + "\n");
 	}
 
+	protected void printErrln() {
+		printErrln("");
+	}
+	
 	protected void printErrln(String line) {
 		print(errTag + line + "\n");
 	}

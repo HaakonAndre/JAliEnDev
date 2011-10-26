@@ -41,12 +41,20 @@ public class RootPrintWriter extends UIPrintWriter {
 	RootPrintWriter(OutputStream os) {
 		this.os = os;
 	}
+	
+	protected void printOutln() {
+		printOutln("");
+	}
 
 	protected void printOutln(String line) {
 		stdout.add(line + "\n");
 		System.out.println(line);
 	}
-
+	
+	protected void printErrln() {
+		printErrln("");
+	}
+	
 	protected void printErrln(String line) {
 		stderr.add(line + "\n");
 	}

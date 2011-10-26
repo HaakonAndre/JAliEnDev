@@ -8,10 +8,20 @@ package alien.shell.commands;
 abstract class UIPrintWriter {
 
 	/**
+	 * Print empty stdout line 
+	 */
+	abstract protected void printOutln();
+	
+	/**
 	 * Print stdout after appending line feed 
 	 */
 	abstract protected void printOutln(String line);
 
+	/**
+	 * Print empty stderr line 
+	 */
+	abstract protected void printErrln();
+	
 	/**
 	 * Print stderr after appending line feed 
 	 */
