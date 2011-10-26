@@ -62,8 +62,6 @@ public class JBoxServer extends Thread {
 
 		InetAddress localhost = InetAddress.getByName("127.0.0.1");
 
-		System.err.println("Trying to bind to " + localhost + " : " + port);
-
 		ssocket = new ServerSocket(port, 10, localhost);
 
 		password = UUID.randomUUID().toString();
@@ -266,7 +264,6 @@ public class JBoxServer extends Thread {
 					sLine = scanner.next();
 
 				if (sLine != null && sLine.equals(password)) {
-					System.out.println("password accepted");
 					os.write("OKPASSACK".getBytes());
 					os.flush();
 				} else {
@@ -333,7 +330,7 @@ public class JBoxServer extends Thread {
 				server.start();
 
 				logger.log(Level.INFO, "UIServer listening on port " + port);
-				System.err.println("Listening on " + port);
+				System.out.println("Listening.");
 
 				break;
 			} catch (Exception ioe) {
@@ -353,12 +350,15 @@ public class JBoxServer extends Thread {
 			JAKeyStore.loadClientKeyStorage();
 			JBoxServer.startJBoxServer(iDebug);
 		} catch (org.bouncycastle.openssl.EncryptionException e) {
+			logger.log(Level.SEVERE, "Wrong password!");
 			System.err.println("Wrong password!");
 		} catch (javax.crypto.BadPaddingException e) {
+			logger.log(Level.SEVERE, "Wrong password!");
 			System.err.println("Wrong password!");
 		}
 
 		catch (Exception e) {
+			logger.log(Level.SEVERE, "Error loading the key");
 			System.err.println("Error loading the key");
 			e.printStackTrace();
 		}

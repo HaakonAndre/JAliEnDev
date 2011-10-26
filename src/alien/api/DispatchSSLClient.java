@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.util.HashMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -108,7 +109,7 @@ public class DispatchSSLClient extends Thread {
 
 		if (instance.get(Integer.valueOf(p)) == null) {
 			// connect to the other end
-			System.out.println("Connecting to " + address + ":" + p);
+			logger.log(Level.INFO,"Connecting to " + address + ":" + p);
 
 			Security.addProvider(new BouncyCastleProvider());
 
@@ -118,8 +119,7 @@ public class DispatchSSLClient extends Thread {
 				KeyManagerFactory kmf = KeyManagerFactory.getInstance(
 						"SunX509", "SunJSSE");
 
-				System.out
-						.println("Connecting with client cert: "
+				logger.log(Level.INFO,"Connecting with client cert: "
 								+ ((java.security.cert.X509Certificate) JAKeyStore.clientCert
 										.getCertificateChain("User.cert")[0])
 										.getSubjectDN());
@@ -149,27 +149,25 @@ public class DispatchSSLClient extends Thread {
 
 				if (peerCerts != null) {
 
-					System.out.println("Printing client information:");
+					logger.log(Level.INFO,"Printing peer's information:");
 
 					for (int i = 0; i < peerCerts.length; i++) {
 
-						System.out.println("Peer Certificate [" + i
-								+ "] Information:");
-						System.out.println("- Subject: "
-								+ peerCerts[i].getSubjectDN().getName());
-						System.out.println("- Issuer: "
-								+ peerCerts[i].getIssuerDN().getName());
-						System.out.println("- Version: "
-								+ peerCerts[i].getVersion());
-						System.out.println("- Start Time: "
-								+ peerCerts[i].getNotBefore().toString());
-						System.out.println("- End Time: "
-								+ peerCerts[i].getNotAfter().toString());
-						System.out.println("- Signature Algorithm: "
-								+ peerCerts[i].getSigAlgName());
-						System.out.println("- Serial Number: "
-								+ peerCerts[i].getSerialNumber());
+						logger.log(Level.INFO,
+								"Peer's Certificate Information:\n"
+										+ Level.INFO, "- Subject: "
+										+ peerCerts[i].getSubjectDN().getName()
+										+ "\n"
+										+ peerCerts[i].getIssuerDN().getName()
+										+ "\n"
+										+ Level.INFO
+										+ "- Start Time: "
+										+ peerCerts[i].getNotBefore()
+												.toString() + "\n" + Level.INFO
+										+ "- End Time: "
+										+ peerCerts[i].getNotAfter().toString()
 
+						);
 					}
 
 					DispatchSSLClient sc = new DispatchSSLClient(client);
@@ -177,12 +175,10 @@ public class DispatchSSLClient extends Thread {
 					instance.put(Integer.valueOf(p), sc);
 
 				} else
-					System.err
-							.println("We didn't get any peer/service cert. NOT GOOD!");
+					logger.log(Level.SEVERE,"We didn't get any peer/service cert. NOT GOOD!");
 
 			} catch (Exception e) {
-				System.err
-				.println("Could not initiate SSL connection to the server.");
+				logger.log(Level.SEVERE,"Could not initiate SSL connection to the server.");
 				e.printStackTrace();
 			}
 
@@ -271,7 +267,7 @@ public class DispatchSSLClient extends Thread {
 					return dispatchARequest(r);
 				} catch (IOException e1) {
 					// This time we give up
-					System.err.println("Error running request, potential connection error.");
+					logger.log(Level.SEVERE,"Error running request, potential connection error.");
 					return null;
 				}
 			}
@@ -317,20 +313,13 @@ public class DispatchSSLClient extends Thread {
 	}
 
 	private static void printSocketInfo(SSLSocket s) {
-		System.out.println("Socket class: " + s.getClass());
-		System.out.println("   Remote address = "
-				+ s.getInetAddress().toString());
-		System.out.println("   Remote port = " + s.getPort());
-		System.out.println("   Local socket address = "
+		
+		logger.log(Level.INFO,"Remote address: " + s.getInetAddress().toString() +":"+ s.getPort());
+		logger.log(Level.INFO,"   Local socket address = "
 				+ s.getLocalSocketAddress().toString());
-		System.out.println("   Local address = "
-				+ s.getLocalAddress().toString());
-		System.out.println("   Local port = " + s.getLocalPort());
-		System.out.println("   Need client authentication = "
-				+ s.getNeedClientAuth());
-		SSLSession ss = s.getSession();
-		System.out.println("   Cipher suite = " + ss.getCipherSuite());
-		System.out.println("   Protocol = " + ss.getProtocol());
+
+		logger.log(Level.INFO,"   Cipher suite = " + s.getSession().getCipherSuite());
+		logger.log(Level.INFO,"   Protocol = " + s.getSession().getProtocol());
 	}
 
 }

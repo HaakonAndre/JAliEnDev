@@ -20,6 +20,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -30,6 +32,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
 
+import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 
 /**
@@ -39,6 +42,12 @@ import alien.config.ConfigUtils;
  */
 public class JAKeyStore {
 
+	
+
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
 	
 	
 	/**
@@ -50,19 +59,11 @@ public class JAKeyStore {
 	 * 
 	 */
 	public static KeyStore clientCert = null;
+	
 	/**
 	 * 
 	 */
 	public static KeyStore hostCert = null;
-
-//	/**
-//	 * 
-//	 */
-//	public static KeyStore authenKeys;
-//	/**
-//	 * 
-//	 */
-//	public static KeyStore seKeys;
 
 	/**
 	 * 
@@ -88,72 +89,51 @@ public class JAKeyStore {
 	static {
 		Security.addProvider(new BouncyCastleProvider());
 
-		loadTrustedCertificates();
+	//	loadTrustedCertificates();
 
 	}
 
-	private static void loadTrustedCertificates() {
-		try {
-		//	trustStore = KeyStore.getInstance("JKS");
-
-		//	trustStore.load(null, pass);
-
-		//	TrustManagerFactory tmf;
-
-		//	tmf = TrustManagerFactory.getInstance("SunX509");
-
-			File trustsDir = new File(ConfigUtils.getConfig().gets(
-					"trusted.certificates.location",
-					System.getProperty("user.home")
-							+ System.getProperty("file.separator") + ".alien"
-							+ System.getProperty("file.separator") + "trusted"));
-
-			if (trustsDir.exists() && trustsDir.isDirectory()) {
-				CertificateFactory cf;
-
-				cf = CertificateFactory.getInstance("X.509");
-
-				trustedCertificates = new X509Certificate[trustsDir.listFiles().length+1];
-				int ccount = 1;
-				
-				for (File trust : trustsDir.listFiles()) {
-
-					if (trust.getName().endsWith("der")) {
-
-						try {
-							X509Certificate c = (X509Certificate) cf
-									.generateCertificate(new FileInputStream(
-											trust));
-							System.out.println("Trusting now: "
-									+ c.getSubjectDN());
-							trustedCertificates[ccount] = c;
-							ccount++;
-
-						} catch (Exception e) {
-							e.printStackTrace();
-						}
-					}
-				}
-			}
-
-			//tmf.init(trustStore);
-			//trusts = tmf.getTrustManagers();
-
-			// for (TrustManager trustManager :
-			// trustManagerFactory.getTrustManagers()) {
-			// System.out.println(trustManager);
-			//
-			// if (trustManager instanceof X509TrustManager) {
-			// X509TrustManager x509TrustManager =
-			// (X509TrustManager)trustManager;
-			// System.out.println("\tAccepted issuers count : " +
-			// x509TrustManager.getAcceptedIssuers().length);
-			// }
-			// }
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	private static void loadTrustedCertificates() {
+//		try {
+//
+//			File trustsDir = new File(ConfigUtils.getConfig().gets(
+//					"trusted.certificates.location",
+//					System.getProperty("user.home")
+//							+ System.getProperty("file.separator") + ".alien"
+//							+ System.getProperty("file.separator") + "trusted"));
+//
+//			if (trustsDir.exists() && trustsDir.isDirectory()) {
+//				CertificateFactory cf;
+//
+//				cf = CertificateFactory.getInstance("X.509");
+//
+//				trustedCertificates = new X509Certificate[trustsDir.listFiles().length+1];
+//				int ccount = 1;
+//				
+//				for (File trust : trustsDir.listFiles()) {
+//
+//					if (trust.getName().endsWith("der")) {
+//
+//						try {
+//							X509Certificate c = (X509Certificate) cf
+//									.generateCertificate(new FileInputStream(
+//											trust));
+//							System.out.println("Trusting now: "
+//									+ c.getSubjectDN());
+//							trustedCertificates[ccount] = c;
+//							ccount++;
+//
+//						} catch (Exception e) {
+//							e.printStackTrace();
+//						}
+//					}
+//				}
+//			}
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	private static void loadTrusts() {
 		try {
@@ -185,9 +165,11 @@ public class JAKeyStore {
 							X509Certificate c = (X509Certificate) cf
 									.generateCertificate(new FileInputStream(
 											trust));
-							System.out.println("Trusting now: "
-									+ c.getSubjectDN());
-									
+							if (logger.isLoggable(Level.INFO)) {
+								logger.log(Level.INFO,"Trusting now: "
+										+ c.getSubjectDN());
+							}
+							
 							trustStore.setEntry(
 									trust.getName().substring(0,
 											trust.getName().indexOf(".der")),
@@ -227,17 +209,6 @@ public class JAKeyStore {
 			tmf.init(trustStore);
 			trusts = tmf.getTrustManagers();
 
-			// for (TrustManager trustManager :
-			// trustManagerFactory.getTrustManagers()) {
-			// System.out.println(trustManager);
-			//
-			// if (trustManager instanceof X509TrustManager) {
-			// X509TrustManager x509TrustManager =
-			// (X509TrustManager)trustManager;
-			// System.out.println("\tAccepted issuers count : " +
-			// x509TrustManager.getAcceptedIssuers().length);
-			// }
-			// }
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -272,16 +243,12 @@ public class JAKeyStore {
 			e.printStackTrace();
 		}
 		
-		
 		JPasswordFinder jpf;
 		
-		
-		
 		if(noUserPass)
-		 jpf = new JPasswordFinder(new char[]{});
+			jpf =  new JPasswordFinder(new char[]{});
 		else
-		 jpf =	getPassword("Grid certificate");
-		
+			jpf =  getPassword("Grid certificate");
 		
 		addKeyPairToKeyStore(
 				clientCert,
@@ -359,11 +326,6 @@ public class JAKeyStore {
 
 		hostCert = KeyStore.getInstance("JKS");
 		hostCert.load(null, pass);
-//		authenKeys = KeyStore.getInstance("JKS");
-//		authenKeys.load(null, pass);
-//
-//		seKeys = KeyStore.getInstance("JKS");
-//		seKeys.load(null, pass);
 		
 		addKeyPairToKeyStore(
 				hostCert,
@@ -383,50 +345,6 @@ public class JAKeyStore {
 								+ System.getProperty("file.separator")
 								+ "hostcert.pem"), null);
 
-//		addKeyPairToKeyStore(
-//				authenKeys,
-//				"Authen.keys",
-//				config.gets(
-//						"Authen.keys.location",
-//						System.getProperty("user.home")
-//								+ System.getProperty("file.separator")
-//								+ ".alien"
-//								+ System.getProperty("file.separator")
-//								+ "authen"
-//								+ System.getProperty("file.separator"))
-//						+ "lpriv.pem",
-//				config.gets(
-//						"Authen.keys.location",
-//						System.getProperty("user.home")
-//								+ System.getProperty("file.separator")
-//								+ ".alien"
-//								+ System.getProperty("file.separator")
-//								+ "authen"
-//								+ System.getProperty("file.separator"))
-//						+ "lpub.pem", null);
-//
-//		addKeyPairToKeyStore(
-//				seKeys,
-//				"SE.keys",
-//				config.gets(
-//						"Authen.keys.location",
-//						System.getProperty("user.home")
-//								+ System.getProperty("file.separator")
-//								+ ".alien"
-//								+ System.getProperty("file.separator")
-//								+ "authen"
-//								+ System.getProperty("file.separator"))
-//						+ "rpriv.pem",
-//				config.gets(
-//						"Authen.keys.location",
-//						System.getProperty("user.home")
-//								+ System.getProperty("file.separator")
-//								+ ".alien"
-//								+ System.getProperty("file.separator")
-//								+ "authen"
-//								+ System.getProperty("file.separator"))
-//						+ "rpub.pem", null);
-
 		loadTrusts();
 
 	}
@@ -437,8 +355,11 @@ public class JAKeyStore {
 		Console cons;
 		char[] passwd = new char[] {};
 		if ((cons = System.console()) == null)
-			System.out
+			System.err
 					.println("Could not get console to request key password.");
+		if (logger.isLoggable(Level.SEVERE)) {
+			logger.log(Level.SEVERE, "Could not get console to request key password.");
+		}
 
 		if ((cons = System.console()) != null
 				&& (passwd = cons.readPassword("[%s]", consoleMessage
@@ -462,7 +383,6 @@ public class JAKeyStore {
 				e.printStackTrace();
 			}
 
-			// ks.getDefaultType();
 			try {
 				ks.load(null, pass);
 			} catch (NoSuchAlgorithmException e) {
@@ -537,8 +457,10 @@ public class JAKeyStore {
 	 */
 	public static PrivateKey loadPrivX509(String keyFileLocation,
 			PasswordFinder pFinder) throws Exception {
-		System.out.println("Loading private key ... " + keyFileLocation);
 
+		if (logger.isLoggable(Level.INFO)) {
+			logger.log(Level.INFO,"Loading private key ... " + keyFileLocation);
+		}
 		BufferedReader priv = new BufferedReader(
 				new FileReader(keyFileLocation));
 
@@ -551,18 +473,19 @@ public class JAKeyStore {
 	}
 
 	/**
-	 * @param keyFileLocation
+	 * @param certFileLocation
 	 * @return Cert chain
 	 * @throws IOException
 	 */
-	public static Certificate[] loadPubX509(String keyFileLocation)
+	public static Certificate[] loadPubX509(String certFileLocation)
 			throws IOException {
 
-		System.out.println("Loading public ... " + keyFileLocation);
-		BufferedReader pub = new BufferedReader(new FileReader(keyFileLocation));
+		if (logger.isLoggable(Level.INFO)) {
+			logger.log(Level.INFO,"Loading public ... " + certFileLocation);
+		}
+
+		BufferedReader pub = new BufferedReader(new FileReader(certFileLocation));
 		try {
-			//trustedCertificates[0] = (X509Certificate) new PEMReader(pub).readObject();
-			//return trustedCertificates;
 			return new Certificate[] { (Certificate) new PEMReader(pub)
 					.readObject() };
 
@@ -571,6 +494,7 @@ public class JAKeyStore {
 		}
 		return null;
 	}
+	
 
 	private static class JPasswordFinder implements PasswordFinder {
 
@@ -588,6 +512,10 @@ public class JAKeyStore {
 	
     private static final String charString = "!0123456789abcdefghijklmnopqrstuvwxyz@#$%^&*()-+=_{}[]:;|?/>.,<";
 	
+    
+    /**
+     * @return randomized char array of passLength length
+     */
     public static char[] getRandomString() {
         Random ran = new Random(System.currentTimeMillis());
         StringBuffer s = new StringBuffer();

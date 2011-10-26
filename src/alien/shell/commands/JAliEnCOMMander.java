@@ -5,9 +5,12 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import joptsimple.OptionException;
 
+import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.access.AuthorizationFactory;
@@ -22,6 +25,14 @@ import alien.user.UsersHelper;
  */
 public class JAliEnCOMMander {
 
+
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils
+	.getLogger(JBoxServer.class.getCanonicalName());
+
+	
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
 	 */
@@ -185,7 +196,11 @@ public class JAliEnCOMMander {
 
 		String comm = arg[0];
 
-		System.out.println("Command [" + comm + "] called!");
+		System.out.println("Received JSh call [" + comm + "].");
+		
+		if (logger.isLoggable(Level.INFO)) {
+			logger.log(Level.INFO, "Received JSh call [" + comm + "].");
+		}
 
 		 if ("setshell".equals(comm)) {
 		  setShellPrintWriter(os, arg[1]);
