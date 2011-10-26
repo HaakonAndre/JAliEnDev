@@ -9,6 +9,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -353,6 +354,47 @@ public class TaskQueueUtils {
 		return db.gets(1);
 	}
 	
+	
+	/**
+	 * @param running 
+	 * @return the ps listing
+	 */
+	public static List<Job> getPS(final boolean running){
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return null;
+		
+		final List<Job> ret = new ArrayList<Job>();
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+		}
+		
+		String where = " status='WAITING' or  status='DONE' ";
+		if(running)
+			where += " or status='RUNNING'";
+		
+//		if (!sSearch.endsWith("/"))
+//			q += " OR lfn='"+Format.escSQL(sSearch)+"/'";
+		
+		final String q = "SELECT queueId,status FROM QUEUE WHERE "+ where + " order by queueId desc limit 10;";
+	
+		if (!db.query(q))
+			return null;
+		
+		while (db.moveNext()){
+			final Job j = new Job(db, false);
+			
+			ret.add(j);
+		}
+		
+		return ret;
+
+	}
+	
+	
+	
 	/**
 	 * @return matching jobs histograms
 	 */
@@ -552,4 +594,25 @@ public class TaskQueueUtils {
 		
 		return pid.intValue();
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }

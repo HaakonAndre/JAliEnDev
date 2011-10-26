@@ -1,17 +1,34 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 import alien.perl.commands.AlienTime;
+import alien.taskQueue.Job;
+import alien.taskQueue.TaskQueueUtils;
 
 /**
  * @author ron
  * @since June 9, 2011
  */
 public class JAliEnCommandps extends JAliEnBaseCommand {
+	
+	/**
+	 * marker for -r argument
+	 */
+	private final boolean bR;
+	
 
 	public void execute() throws Exception {
-		out.printOutln("PS : " + alArguments);
+		
+		List<Job> ps = TaskQueueUtils.getPS(bR);
+		
+		for(Job j: ps){
+			System.out.println("j");
+		}
 
 	}
 
@@ -97,5 +114,14 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	public JAliEnCommandps(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
+		
+final OptionParser parser = new OptionParser();
+		
+		parser.accepts("r");
+		
+		final OptionSet options = parser.parse(alArguments.toArray(new String[]{}));
+
+		
+		bR = options.has("r");
 	}
 }

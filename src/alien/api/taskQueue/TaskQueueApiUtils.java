@@ -1,9 +1,7 @@
 package alien.api.taskQueue;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
+import java.util.List;
 
 import alien.api.Dispatcher;
 import alien.taskQueue.JDL;
@@ -20,6 +18,26 @@ import alien.user.JAKeyStore;
  */
 public class TaskQueueApiUtils {
 
+	
+	/**
+	 * @param running 
+	 * @return a PS listing
+	 */
+	public static List<Job> getPS(final boolean running) {
+
+		try {
+			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(running), true);
+
+			return ps.returnPS();
+		} catch (IOException e) {
+			System.out.println("Could get a PS listing: ");
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+	
+	
 	/**
 	 * @return a Job
 	 */
