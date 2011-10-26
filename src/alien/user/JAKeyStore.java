@@ -77,7 +77,7 @@ public class JAKeyStore {
 	/**
 	 * 
 	 */
-	public static char[] pass;
+	public static char[] pass = getRandomString();
 	
 
 	/**
@@ -261,7 +261,7 @@ public class JAKeyStore {
 		clientCert = KeyStore.getInstance("JKS");
 
 		try {
-			pass = getRandomString();
+			//pass = getRandomString();
 
 			clientCert.load(null, pass);
 		} catch (NoSuchAlgorithmException e) {
@@ -317,7 +317,7 @@ public class JAKeyStore {
 		clientCert = KeyStore.getInstance("JKS");
 
 		try {
-			pass = getRandomString();
+			//pass = getRandomString();
 
 			clientCert.load(null, pass);
 		} catch (NoSuchAlgorithmException e) {
@@ -355,7 +355,7 @@ public class JAKeyStore {
 	public static void loadServerKeyStorage() throws Exception {
 
 		ExtProperties config = ConfigUtils.getConfig();
-		pass = getRandomString();
+		//pass = getRandomString();
 
 		hostCert = KeyStore.getInstance("JKS");
 		hostCert.load(null, pass);
@@ -452,7 +452,7 @@ public class JAKeyStore {
 	@SuppressWarnings("unused")
 	private static void createKeyStore(KeyStore ks, String keyStoreName) {
 
-		pass  = getRandomString();
+		//pass  = getRandomString();
 
 		FileInputStream f = null;
 		try {
