@@ -378,17 +378,22 @@ public class TaskQueueUtils {
 			lim = limit;
 
 		String where = "";
-		if (states != null)
+		if (states != null){
+			where += " ( ";
 			for (String s : states)
 				where += "status='" + Format.escSQL(s) + "' or ";
+					where = where.substring(0, where.length()-3) + " ) ";
+		}
 		
-		where = where.substring(0, where.length()-3) + " and ";
+		where += " and ";
 		
 					
-		if (users != null)
+		if (users != null){
+			where += " ( ";
 			for (String u : users)
 				where += "submitHost like '" + Format.escSQL(u) + "@%' or ";
-
+			where = where.substring(0, where.length()-3) + " ) ";
+		}
 
 //		if (sites != null)
 //			for (String s : sites)
@@ -403,9 +408,10 @@ public class TaskQueueUtils {
 //			for (String j : jobid )
 //				where += "queueId='" + Format.escSQL(j) + "' or ";
 					
-		where = where.substring(0, where.length()-3);
 		
 		final String q = "SELECT queueId,status,submitHost FROM QUEUE WHERE "+ where + " order by queueId asc limit "+lim+";";
+		
+		System.out.println(" SQL IN OPERATION:\n"+ q);
 	
 		if (!db.query(q))
 			return null;
