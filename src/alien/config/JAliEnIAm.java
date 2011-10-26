@@ -13,7 +13,9 @@ public class JAliEnIAm {
 	
 	private static final String myFullName = thathsMe +" "+myVersion; 
 	
-	private static final String alienshprompt = "JSh[alice]";
+	private static final String myVO = "alice";
+	
+	private static final String jshprompt = "JSh:["+myVO+"]";
 
 	private static final String Iam = "JAliEn";
 	
@@ -28,8 +30,8 @@ public class JAliEnIAm {
 	/**
 	 * @return the name for the shell prompt
 	 */
-	public static String myPromptName(){
-		return alienshprompt;
+	public static String myJShPrompt(){
+		return jshprompt;
 	}
 	
 	/**

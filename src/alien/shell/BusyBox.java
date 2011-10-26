@@ -34,9 +34,10 @@ public class BusyBox {
 	private static int pender = 0;
 	private static final String[] pends = {".   "," .  ","  . ","   ."};
 	
-	private static final String promptPrefix = "/" + JAliEnIAm.myPromptName()
-			+ " ";
+	private static final String promptPrefix = JAliEnIAm.myJShPrompt() + " ";
 	private static final String promptSuffix = " > ";
+	
+	private static int commNo = 1;
 
 	private ConsoleReader reader;
 	private PrintWriter out;
@@ -58,12 +59,10 @@ public class BusyBox {
 	 * print welcome
 	 */
 	public void welcome() {
-		out.println("Hello " + whoami + ",");
-		out.println(JAliEnIAm.whatsMyFullName() + ", have a cup!");
+		out.println("Hi jedi " + whoami + ",");
+		out.println("this is " + JAliEnIAm.whatsMyFullName() + ".");
+		out.println("Have a cup! Cheers, ACS");
 		out.println();
-		out.println("Cheers, AJs aka ACS");
-		out.println();
-
 	}
 
 	private Socket s = null;
@@ -146,7 +145,7 @@ public class BusyBox {
 	    
 			String line;
 			
-			while ((line = reader.readLine(whoami + promptPrefix + currentDirTiled + promptSuffix)) != null) {
+			while ((line = reader.readLine(promptPrefix + "["+commNo+ "] " + currentDir + promptSuffix)) != null) {
 
 				out.flush();
 				line = line.trim();
@@ -157,6 +156,7 @@ public class BusyBox {
 				
 
 				executeCommand(line);
+				commNo++;
 
 			}
 	}

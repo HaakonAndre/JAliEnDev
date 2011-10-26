@@ -330,7 +330,7 @@ public class JBoxServer extends Thread {
 				server.start();
 
 				logger.log(Level.INFO, "UIServer listening on port " + port);
-				System.out.println("Listening.");
+				System.out.println("JBox is listening...");
 
 				break;
 			} catch (Exception ioe) {
