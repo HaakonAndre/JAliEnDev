@@ -23,10 +23,11 @@ public class TaskQueueApiUtils {
 	 * @param running 
 	 * @return a PS listing
 	 */
-	public static List<Job> getPS(final boolean running) {
+	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
+			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final int limit) {
 
 		try {
-			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(running), true);
+			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(states, users, sites, nodes, mjobs, jobid, limit), true);
 
 			return ps.returnPS();
 		} catch (IOException e) {

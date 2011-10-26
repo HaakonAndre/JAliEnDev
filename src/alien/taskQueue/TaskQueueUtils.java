@@ -359,7 +359,8 @@ public class TaskQueueUtils {
 	 * @param running 
 	 * @return the ps listing
 	 */
-	public static List<Job> getPS(final boolean running){
+	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
+			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final int limit){
 				
 		final DBFunctions db = getDB();
 		
@@ -372,14 +373,35 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_db_lookup");
 		}
 		
-		String where = " status='WAITING' or  status='DONE' ";
-		if(running)
-			where += " or status='RUNNING'";
+		int lim = 2000;
+		if(limit>0 && limit<2000)
+			lim = limit;
+
+		String where = "";
+		if (states != null)
+			for (String s : states)
+				where += "status='" + Format.escSQL(s) + "' or ";
+		if (users != null)
+			for (String u : users)
+				where += "submitHost like '" + Format.escSQL(u) + "@%' or ";
+
+
+//		if (sites != null)
+//			for (String s : sites)
+//				where += "status='" + Format.escSQL(s) + "' or ";
+//		if (nodes != null)
+//			for (String n : nodes)
+//				where += "status='" + Format.escSQL(n) + "' or ";
+//		if (mjobs != null)
+//			for (String m : mjobs)
+//				where += "status='" + Format.escSQL(m) + "' or ";
+//		if (jobid != null)
+//			for (String j : jobid )
+//				where += "queueId='" + Format.escSQL(j) + "' or ";
+					
 		
-//		if (!sSearch.endsWith("/"))
-//			q += " OR lfn='"+Format.escSQL(sSearch)+"/'";
 		
-		final String q = "SELECT queueId,status,submitHost FROM QUEUE WHERE "+ where + " order by queueId desc limit 10;";
+		final String q = "SELECT queueId,status,submitHost FROM QUEUE WHERE "+ where + " order by queueId asc limit "+lim+";";
 	
 		if (!db.query(q))
 			return null;
