@@ -9,7 +9,6 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.api.taskQueue.TaskQueueApiUtils;
-import alien.perl.commands.AlienTime;
 import alien.taskQueue.Job;
 
 /**
@@ -96,22 +95,22 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 						String site = (j.site != null) ? j.site : "";
 						String node = (j.node != null) ? j.node : "";
 						out.printOutln(padLeft(String.valueOf(owner), 10)
-								+ padSpace(17)
+								+ padSpace(10)
 								+ padLeft(jId, 10)
 								+ padSpace(2)
 								+ printPriority(j.status,j.priority)
 								+ padSpace(2)
-								+ padLeft(String.valueOf(site), 30)
+								+ padLeft(String.valueOf(site), 35)
 								+ padSpace(2)
-								+ padLeft(String.valueOf(node), 30)
+								+ padLeft(String.valueOf(node), 35)
 								+ padSpace(2)
 								+ abbrvStatus(j.status)
 								+ padSpace(2)
-								+ padLeft(String.valueOf(name), 32));
+								+ padLeft(String.valueOf(name), 30));
 					} else
 						out.printOutln(padLeft(String.valueOf(owner), 10)
 								+ padSpace(1)
-								+ padLeft(String.valueOf(j.queueId), 10)
+								+ padLeft(jId, 10)
 								+ padSpace(2)
 								+ printPriority(j.status,j.priority)
 								+ padSpace(2)
