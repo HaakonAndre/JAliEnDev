@@ -38,14 +38,15 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 */
 	public void execute() {
 
-		String guid;
+		String guid = null;
 		if (bG) {
 			guid = lfnOrGuid;
 		} else {
 			LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), lfnOrGuid));
-			guid = lfn.guid.toString();
+			if(lfn!=null && lfn.guid!=null)
+				guid = lfn.guid.toString();
 		}
 		// what message in case of error?
 		if (guid != null) {
@@ -74,8 +75,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			}
 		} else {
 			if (!silent)
-				out.printOutln(AlienTime.getStamp()
-						+ "No such file or directory\n");
+				out.printOutln("No such file: [" + lfnOrGuid + "]");
 		}
 	}
 
@@ -83,14 +83,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		out.printOutln("Usage:\n");
-		out.printOutln("	whereis [-rg] \n");
-		out.printOutln("\n");
-		out.printOutln("Options:\n");
-		out.printOutln("	-g: Use the lfn as guid\n");
-		System.out
-				.println("	-r: Resolve links (do not give back pointers to zip archives)\n");
-		out.printOutln("	-s: Silent\n");
+		
+		out.printOutln();
+		out.printOutln(helpUsage("whereis","[-options] [<filename>]"));
+		out.printOutln(helpStartOptions());
+		out.printOutln(helpOption("-g","use the lfn as guid"));
+		out.printOutln(helpOption("-r","resolve links (do not give back pointers to zip archives)"));
 	}
 
 	/**
@@ -121,9 +119,10 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandwhereis(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out,alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
@@ -140,6 +139,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				printHelp();
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
 

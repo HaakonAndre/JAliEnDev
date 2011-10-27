@@ -50,11 +50,11 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-
-		out.printOutln(AlienTime.getStamp() + "Usage: cat  ... ");
-		out.printOutln("		-g : get file by GUID");
-		out.printOutln("		-s : se,se2,!se3,se4,!se5");
-		out.printOutln("		-o : outputfilename");
+		out.printOutln();
+		out.printOutln(helpUsage("cat","[-options] [<filename>]"));
+		out.printOutln(helpStartOptions());
+		out.printOutln(helpOption("-g","get file by GUID"));
+		out.printOutln(helpOption("-o","outputfilename"));
 	}
 
 	/**

@@ -41,7 +41,7 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 	 * printout the help info, none for this command
 	 */
 	public void printHelp() {
-
+		//ignore
 	}
 
 	/**

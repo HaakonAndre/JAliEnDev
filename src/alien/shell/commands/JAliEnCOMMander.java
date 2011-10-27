@@ -8,6 +8,10 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import javax.swing.text.html.HTMLDocument.HTMLReader.IsindexAction;
+
+import joptsimple.OptionException;
+
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.LFN;
@@ -244,9 +248,15 @@ public class JAliEnCOMMander {
 			try {
 				jcommand = getCommand(comm, param);
 			} catch (Exception e) {
-				e.printStackTrace();
-				out.printErrln("Command [" + comm
-						+ "] execution failed! (Potentially class implementation not found.)");
+
+				if(e.getCause() instanceof OptionException){
+					out.printErrln("Wrong arguments.");
+					out.flush();
+				} else {
+					out.printErrln("Error executing command [" + comm
+							+ "] (Potentially class implementation not found).");
+					e.printStackTrace();
+				}
 				out.flush();
 				return;
 			}

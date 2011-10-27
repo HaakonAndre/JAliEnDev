@@ -40,14 +40,23 @@ public class GetPS extends Request {
 	
 	private final boolean masterOnly;
 	
+	private final String orderByKey;
+	
 	private int  limit = 0;
 	
 	/**
-	 * @param loadJDL 
-	 * @param running 
+	 * @param states 
+	 * @param users 
+	 * @param sites 
+	 * @param nodes 
+	 * @param mjobs 
+	 * @param jobid 
+	 * @param masterOnly 
+	 * @param orderByKey 
+	 * @param limit 
 	 */
 	public GetPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final boolean masterOnly, final int limit){
+			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final boolean masterOnly, final String orderByKey, final int limit){
 		this.states = states;
 		this.users = users;
 		this.sites = sites;
@@ -56,11 +65,12 @@ public class GetPS extends Request {
 		this.jobid = jobid;
 		this.limit = limit;
 		this.masterOnly = masterOnly;
+		this.orderByKey = orderByKey;
 	}
 	
 	@Override
 	public void run() {
-		this.jobs = TaskQueueUtils.getPS(states, users, sites, nodes, mjobs, jobid, masterOnly, limit);
+		this.jobs = TaskQueueUtils.getPS(states, users, sites, nodes, mjobs, jobid, masterOnly, orderByKey, limit);
 	}
 	
 	/**

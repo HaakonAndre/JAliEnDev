@@ -35,6 +35,10 @@ public abstract class JAliEnBaseCommand {
 	 */
 	protected final ArrayList<String> alArguments;
 
+	private final static int padHelpUsage = 20;
+	
+	private final static int padHelpOption = 21;
+	
 	
 	/**
 	 * Constructor based on the array received from the request 
@@ -62,7 +66,68 @@ public abstract class JAliEnBaseCommand {
 	 * 
 	 */
 	public abstract void printHelp();
+	
+	
+	/**
+	 * @param name
+	 * @return usage tag for help
+	 */
+	protected String helpUsage(final String name){
+		return helpUsage(name,"");
+	}
+	
+	/**
+	 * @param name
+	 * @param desc 
+	 * @return usage tag for help
+	 */
+	protected String helpUsage(final String name, String desc){
+		if(desc!=null && desc.length()>0)
+			desc = padSpace(3) + desc;
+		else
+			desc = "";
+		return padRight("usage: " + name + desc, padHelpUsage);
+	}
+	
+	/**
+	 * @return
+	 */
+	protected String helpStartOptions(){
+		return "\noptions:";
+	}
+	
+	
+	/**
+	 * @param opt 
+	 * @return option tag for help
+	 */
+	protected String helpOption(final String opt){
+		return helpOption(opt, "");
+	}
+	
+	/**
+	 * @param opt 
+	 * @param desc 
+	 * @return option tag for help
+	 */
+	protected String helpOption(final String opt, String desc){
+		if(desc!=null && desc.length()>0)
+			desc = "  :  " + desc;
+		else
+			desc = "";
+		return padSpace(padHelpUsage) + padRight(opt,padHelpOption) + desc;
+	}
 
+	/**
+	 * @param opt 
+	 * @param desc 
+	 * @return option tag for help
+	 */
+	protected String helpParameter(final String desc){
+		return padSpace(padHelpUsage) + desc;
+	}
+	
+	
 	/**
 	 * Abstract class to check if this command can run without arguments
 	 * @return true if this command can run without arguments

@@ -99,9 +99,10 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * @param commander 
 	 * @param out 
 	 * @param alArguments 
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandscrlog(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException{
 		super(commander, out, alArguments);
 
 		try {
@@ -128,6 +129,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 				printHelp();
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
 

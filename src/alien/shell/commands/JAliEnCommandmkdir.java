@@ -49,11 +49,12 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		out.printOutln(AlienTime.getStamp()
-				+ "Usage: mkdir [-ps] <directory> [<directory>] ...");
-		out.printOutln("		-p : create parents as needed");
-		out.printOutln("		-s : silent");
 
+		out.printOutln();
+		out.printOutln(helpUsage("mkdir","[-options] <directory> [<directory>[,<directory>]]"));
+		out.printOutln(helpStartOptions());
+		out.printOutln(helpOption("-p","create parents as needed"));
+		out.printOutln(helpOption("-silent","execute command silently"));
 	}
 
 	/**
@@ -80,9 +81,10 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandmkdir(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		try {
@@ -99,6 +101,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			bP = options.has("p");
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
 }

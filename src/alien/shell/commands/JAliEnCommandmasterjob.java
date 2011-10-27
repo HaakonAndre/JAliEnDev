@@ -233,9 +233,10 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandmasterjob(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		try {
@@ -382,8 +383,12 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 			}
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
+	
+	
+	
 
 	private static List<String> defJobStates() {
 		return Arrays.asList(new String[] { "INSERTING", "WAITING", "ASSIGEND",

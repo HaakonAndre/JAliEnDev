@@ -337,13 +337,14 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		out.printOutln(AlienTime.getStamp()
-						+ "Usage: cp  < file:///localfile /gridfile >  |  < /gridfile file:///localfile >  |  < -t /gridfile >");
-		out.printOutln("		-g : get by GUID");
-		out.printOutln("		-S : [se,se2,!se3,se4,!se5,disk=3,tape=1]");
-		out.printOutln("		-s : execute command silent");
-		out.printOutln("		-t : create a local temp file.");
-
+		
+		out.printOutln();
+		out.printOutln(helpUsage("cp","[-options] < file:///localfile /gridfile >  |  < /gridfile file:///localfile >  |  < -t /gridfile >"));
+		out.printOutln(helpStartOptions());
+		out.printOutln(helpOption("-g","get by GUID"));
+		out.printOutln(helpOption("-S","[se[,se2[,!se3[,se4]]]]"));
+		out.printOutln(helpOption("-t","create a local temp file"));
+		out.printOutln(helpOption("-silent","execute command silently"));
 	}
 
 	/**
@@ -375,14 +376,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandcp(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
 
-			parser.accepts("S");
+			parser.accepts("S").withRequiredArg();
 			parser.accepts("g");
 			parser.accepts("t");
 
@@ -415,6 +417,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				target = options.nonOptionArguments().get(1);
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
 

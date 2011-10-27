@@ -19,11 +19,6 @@ import alien.taskQueue.Job;
 public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	/**
-	 * marker for -a argument
-	 */
-	private boolean bA = false;
-
-	/**
 	 * marker for -l argument
 	 */
 	private boolean bL = false;
@@ -54,6 +49,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	private List<String> mjobs = new ArrayList<String>();
 
 	private List<String> jobid = new ArrayList<String>();
+	
+	private String orderByKey = "queueId";
 
 	private int limit = 0;
 
@@ -75,7 +72,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				users.add(commander.getUsername());
 
 			List<Job> ps = TaskQueueApiUtils.getPS(states, users, sites, nodes,
-					mjobs, jobid, bM, limit);
+					mjobs, jobid, bM, orderByKey, limit);
 
 			if (ps != null) {
 				for (Job j : ps) {
@@ -161,31 +158,33 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-
-		out.printOutln(AlienTime.getStamp() + "usage: ps 	 ");
-		out.printOutln("		-F {l} (output format)");
-		out.printOutln("		-f <flags/status>");
-		out.printOutln("		-u <userlist>");
-		out.printOutln("		-s <sitelist>");
-		out.printOutln("		-n <nodelist>");
-		out.printOutln("		-m <masterjoblist>");
-		out.printOutln("		-o <sortkey>"); // TODO:
-		out.printOutln("		-j <jobidlist>");
-		out.printOutln("		-l <query-limit>");
-		out.printOutln("		-q <sql query> [not implemented, since an admin-only feature]");
+		
 		out.printOutln();
-		out.printOutln("		-M show only masterjobs");
-		out.printOutln("		-X active jobs in extended format");
-		out.printOutln("		-A select all owned jobs of you");
-		out.printOutln("		-W select all jobs which are waiting for execution of you");
-		out.printOutln("		-E select all jobs which are in error state of you");
-		out.printOutln("		-D select all done jobs of you");
-		out.printOutln("		-R select all running jobs of you");
-		out.printOutln("		-Q select all queued jobs of you");
-		out.printOutln("		-a select jobs of all users");
-		out.printOutln("		-b do only black-white output [black-white anyway, so ignored]");
-		out.printOutln("		-jdl   <jobid>                          : display the job jdl");
-		out.printOutln("		-trace <jobid> [trace-tag[,trace-tag]] : display the job trace information"); // TODO:
+		out.printOutln(helpUsage("ps","[-options]"));
+		out.printOutln(helpStartOptions());
+		out.printOutln(helpOption("-F {l}","(output format)"));
+		out.printOutln(helpOption("-f <flags/status>"));
+		out.printOutln(helpOption("-u <userlist>"));
+		out.printOutln(helpOption("-s <sitelist>"));
+		out.printOutln(helpOption("-n <nodelist>"));
+		out.printOutln(helpOption("-m <masterjoblist>"));
+		out.printOutln(helpOption("-o <sortkey>"));
+		out.printOutln(helpOption("-j <jobidlist>"));
+		out.printOutln(helpOption("-l <query-limit>"));
+		
+		out.printOutln();
+		out.printOutln(helpOption("-M","show only masterjobs"));
+		out.printOutln(helpOption("-X","active jobs in extended format"));
+		out.printOutln(helpOption("-A","select all owned jobs of you"));
+		out.printOutln(helpOption("-W","select all jobs which are waiting for execution of you"));
+		out.printOutln(helpOption("-E","select all jobs which are in error state of you"));
+		out.printOutln(helpOption("-D","select all done jobs of you"));
+		out.printOutln(helpOption("-R","select all running jobs of you"));
+		out.printOutln(helpOption("-Q","select all queued jobs of you"));
+		out.printOutln(helpOption("-a","select jobs of all users"));
+		out.printOutln(helpOption("-b","do only black-white output [black-white anyway, so ignored]"));
+		out.printOutln(helpOption("-jdl <jobid>","display the job jdl"));
+		out.printOutln(helpOption("-trace <jobid> <tag>*","display the job trace information (not working yet!)")); // TODO:
 
 	}
 
@@ -213,9 +212,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandps(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		try {
@@ -322,12 +322,14 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					}
 				}
 
-				bA = options.has("a");
 
 				if (options.has("X")
 						|| (options.has("F") && options.hasArgument("F") && "l"
 								.equals(options.valueOf("F"))))
 					bL = true;
+				
+				if ((options.has("o") && options.hasArgument("o")))
+					orderByKey = (String) options.valueOf("o");
 
 				if (options.has("A")) {
 					states.addAll(allJobStates());
@@ -353,6 +355,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					states.addAll(queuedJobStates());
 					users.add(commander.getUsername());
 				}
+				
 
 				bM = options.has("M");
 
@@ -362,8 +365,11 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			}
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
+	
+	
 
 	private static List<String> defJobStates() {
 		return Arrays.asList(new String[] { "INSERTING", "WAITING", "ASSIGEND",

@@ -83,12 +83,12 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-
-		out.printOutln(AlienTime.getStamp() + "Usage: submit  <URL>");		
-		out.printOutln("		<URL> => alien://<lfn>");
-		out.printOutln("		<URL> => /alien<lfn>");
-		out.printOutln("		<URL> => <local path>");
-		out.printOutln("		-h");
+		out.printOutln();
+		out.printOutln(helpUsage("submit","<URL>"));
+		out.printOutln();
+		out.printOutln(helpParameter("<URL> => alien://<lfn>"));
+		out.printOutln(helpParameter("<URL> => /alien<lfn>"));
+		out.printOutln(helpParameter("<URL> => <local path>"));
 	}
 
 	/**

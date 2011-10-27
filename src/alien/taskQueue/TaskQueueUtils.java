@@ -363,11 +363,12 @@ public class TaskQueueUtils {
 	 * @param mjobs 
 	 * @param jobids 
 	 * @param masterOnly 
+	 * @param orderByKey 
 	 * @param limit 
 	 * @return the ps listing
 	 */
 	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final boolean masterOnly, final int limit){
+			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final boolean masterOnly, final String orderByKey, final int limit){
 				
 		final DBFunctions db = getDB();
 		
@@ -472,7 +473,13 @@ public class TaskQueueUtils {
 		if(where.endsWith(" and "))
 			where = where.substring(0,where.length()-5);
 		
-		final String q = "SELECT * FROM QUEUE WHERE "+ where + " order by queueId asc limit "+lim+";";
+		String orderBy = " order by ";
+		if (orderByKey==null || orderByKey.length()==0)
+			orderBy +=  " queueId asc ";
+		else
+			orderBy += orderByKey + " asc ";
+		
+		final String q = "SELECT * FROM QUEUE WHERE "+ where + orderBy +" limit "+lim+";";
 			
 		if (!db.query(q))
 			return null;

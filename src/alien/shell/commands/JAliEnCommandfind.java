@@ -57,9 +57,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	public void printHelp() {
 
-		out.printOutln(AlienTime.getStamp() + "Usage: find <path> <pattern>  flags ");
-		out.printOutln("Possible flags are:");
-		out.printOutln("		coming soon");
+		out.printOutln();
+		out.printOutln(helpUsage("find","<path> <pattern>  flags"));
+		out.printOutln();
+		out.printOutln(helpUsage("Possible flags are coming soon..."));
+	
 	}
 
 	/**

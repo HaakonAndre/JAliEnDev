@@ -111,7 +111,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					if (!silent)
 						out.printOutln(ret);
 				}
-			}
+			}else
+				out.printOutln("No such file or directory: [" + sPath + "]");
 
 		}
 		if (out.isRootPrinter())
@@ -138,13 +139,14 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * printout the help info
 	 */
 	public void printHelp() {
-		out.printOutln(AlienTime.getStamp()
-				+ "Usage: ls [-a(b|(Fl|c)|h] [<directory>]\n"
-				+ "		-l : long format\n" + "		-a : show hidden .* files\n"
-				+ "		-F : add trailing / to directory names\n"
-				+ "		-b : print in guid format\n"
-				+ "		-c : print canonical paths\n"
-				+ "		-h : print the help text");
+		out.printOutln();
+		out.printOutln(helpUsage("ls","[-options] [<directory>]"));
+		out.printOutln(helpStartOptions());
+		out.printOutln(helpOption("-l","long format"));
+		out.printOutln(helpOption("-a","show hidden .* files"));
+		out.printOutln(helpOption("-F","add trailing / to directory names"));
+		out.printOutln(helpOption("-b","print in guid format"));
+		out.printOutln(helpOption("-c","print canonical paths"));
 	}
 
 	/**
@@ -225,9 +227,10 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 
@@ -254,6 +257,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			bC = options.has("c");
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
 

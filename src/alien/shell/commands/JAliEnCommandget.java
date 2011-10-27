@@ -201,9 +201,10 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	public JAliEnCommandget(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 
@@ -223,6 +224,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 				lfnOrGuid = options.nonOptionArguments().get(0);
 		} catch (OptionException e) {
 			printHelp();
+			throw e;
 		}
 	}
 

@@ -2,12 +2,20 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+/**
+ * @author ron
+ *
+ */
 public class JAliEnCommandmotd extends JAliEnBaseCommand {
 
+	/**
+	 * @param commander
+	 * @param out
+	 * @param alArguments
+	 */
 	public JAliEnCommandmotd(JAliEnCOMMander commander, UIPrintWriter out,
 			ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -27,20 +35,18 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		// TODO Auto-generated method stub
+		//ignore
 
 	}
 
 	@Override
 	public boolean canRunWithoutArguments() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 
 	@Override
 	public void silent() {
-		// TODO Auto-generated method stub
-
+		//ignore
 	}
 
 }
