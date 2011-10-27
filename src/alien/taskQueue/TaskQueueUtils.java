@@ -21,6 +21,7 @@ import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
 
 /**
@@ -607,6 +608,21 @@ public class TaskQueueUtils {
 		
 		return ret;
 	}
+	
+	
+	
+	/**
+	 * Kill a job in the queue 
+	 * 
+	 * @param user
+	 * @param queueId
+	 * @return status of the kill
+	 */
+	public static boolean submit(final AliEnPrincipal user, final int queueId){
+		// TODO check if the user is allowed to kill and do it
+		return false;
+	}
+	
 	
 	/**
 	 * Submit the JDL indicated by this file

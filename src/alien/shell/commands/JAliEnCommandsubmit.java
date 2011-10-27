@@ -41,6 +41,9 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 			}
 
 		}
+		
+		out.printErrln("--- not implemented yet ---");
+
 
 	}
 

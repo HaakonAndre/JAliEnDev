@@ -29,18 +29,21 @@ public class SubmitJob extends Request {
 		this.jdl = jdl;
 	}
 
-	@Override
 	public void run() {
-		System.out.println("received jdl submit...");
-		try {
-			this.jobID = TaskQueueFakeUtils.submitJob(this.jdl,
-					this.getPartnerIdentity(), this.getPartnerCertificate());
-			System.out.println("submitted job with ID:" + this.jobID);
-		} catch (JobSubmissionException e) {
-			this.reason = e.getMessage();
-			System.out.println("caught JobSubmissionException: "
-					+ e.getMessage());
-		}
+		
+		jobID = 00000001;
+		
+		
+//		System.out.println("received jdl submit...");
+//		try {
+//			this.jobID = TaskQueueFakeUtils.submitJob(this.jdl,
+//					this.getPartnerIdentity(), this.getPartnerCertificate());
+//			System.out.println("submitted job with ID:" + this.jobID);
+//		} catch (JobSubmissionException e) {
+//			this.reason = e.getMessage();
+//			System.out.println("caught JobSubmissionException: "
+//					+ e.getMessage());
+//		}
 
 	}
 
@@ -61,7 +64,7 @@ public class SubmitJob extends Request {
 		return this.jobID;
 	}
 
-	@Override
+
 	public String toString() {
 		return "Asked to submit JDL: " + this.jdl;
 	}
