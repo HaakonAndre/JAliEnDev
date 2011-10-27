@@ -15,7 +15,7 @@ import jline.Completor;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
 import alien.config.JAliEnIAm;
-import alien.shell.commands.JAliEnShPrintWriter;
+import alien.shell.commands.JShPrintWriter;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 
@@ -176,9 +176,9 @@ public class BusyBox {
 			String sLine;
 
 			while ( (sLine = br.readLine()) != null ){
-				if(sLine.startsWith(JAliEnShPrintWriter.outputterminator))
+				if(sLine.startsWith(JShPrintWriter.outputterminator))
 					updateEnvironment(sLine);
-				else if(sLine.endsWith(JAliEnShPrintWriter.streamend))
+				else if(sLine.endsWith(JShPrintWriter.streamend))
 					break;
 				else 
 				ret += sLine + "\n";
@@ -211,14 +211,14 @@ public class BusyBox {
 			String sLine;
 			
 			while ( (sLine = br.readLine()) != null ){
-				if(sLine.startsWith(JAliEnShPrintWriter.outputterminator)){
+				if(sLine.startsWith(JShPrintWriter.outputterminator)){
 					updateEnvironment(sLine);}
 				
 				else if(sLine.endsWith(pendSignal))
 					pending(br);
 				else if(sLine.endsWith(lineTerm))
 					break;
-				else if(sLine.startsWith(JAliEnShPrintWriter.errTag))
+				else if(sLine.startsWith(JShPrintWriter.errTag))
 					System.err.println("Error: "+ sLine.substring(1));
 				else {
 					out.println(sLine);
@@ -256,7 +256,7 @@ public class BusyBox {
 	
 	private void updateEnvironment(String env){
 
-			final StringTokenizer st = new StringTokenizer(env.substring(1),JAliEnShPrintWriter.fieldseparator);
+			final StringTokenizer st = new StringTokenizer(env.substring(1),JShPrintWriter.fieldseparator);
 			
 			if(st.hasMoreTokens())
 					currentDir = st.nextToken();
