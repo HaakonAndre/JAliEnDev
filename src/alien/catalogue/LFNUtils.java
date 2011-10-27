@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
@@ -93,6 +92,26 @@ public class LFNUtils {
 		
 		return ite.getLFN(processedFileName, evenIfDoesntExist);
 	}
+	
+
+	/**
+	 * @param owner
+	 * @param lfn
+	 * @return status of the removal
+	 */
+	public static boolean rmLFN(final AliEnPrincipal owner, final LFN lfn) {
+		if (lfn!=null && lfn.exists && !lfn.isDirectory()){
+			if(AuthorizationChecker.canWrite(lfn, owner)){
+				// TODO
+				return false;
+			} else
+				return false;
+			
+		} 
+		
+		return false;
+	}
+	
 	
 	/**
 	 * Make sure the parent directory exists
@@ -223,6 +242,27 @@ public class LFNUtils {
 	}
 	
 	/**
+	 * @param owner
+	 * @param lfn
+	 * @return status of the removal
+	 */
+	public static boolean rmdir(final AliEnPrincipal owner, final LFN lfn) {
+		if (lfn!=null && lfn.exists && lfn.isDirectory()){
+			if(AuthorizationChecker.canWrite(lfn, owner)){
+				// TODO
+				return false;
+			} else
+				return false;
+			
+		} 
+		
+		return false;
+	}
+	
+	
+	
+	
+	/**
 	 * Insert an LFN in the catalogue
 	 * 
 	 * @param lfn
@@ -258,6 +298,7 @@ public class LFNUtils {
 		
 		return lfn.insert();
 	}
+	
 	
 	/**
 	 * the "-s" flag of AliEn `find`

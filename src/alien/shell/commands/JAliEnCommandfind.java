@@ -61,6 +61,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		out.printOutln(helpUsage("find","<path> <pattern>  flags"));
 		out.printOutln();
 		out.printOutln(helpUsage("Possible flags are coming soon..."));
+		
+		out.printOutln();
 	
 	}
 

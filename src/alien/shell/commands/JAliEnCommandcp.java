@@ -345,6 +345,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		out.printOutln(helpOption("-S","[se[,se2[,!se3[,se4]]]]"));
 		out.printOutln(helpOption("-t","create a local temp file"));
 		out.printOutln(helpOption("-silent","execute command silently"));
+		out.printOutln();
 	}
 
 	/**

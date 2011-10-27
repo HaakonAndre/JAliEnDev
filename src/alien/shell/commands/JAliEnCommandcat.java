@@ -55,6 +55,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 		out.printOutln(helpStartOptions());
 		out.printOutln(helpOption("-g","get file by GUID"));
 		out.printOutln(helpOption("-o","outputfilename"));
+		out.printOutln();
 	}
 
 	/**

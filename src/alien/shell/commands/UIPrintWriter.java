@@ -7,6 +7,24 @@ package alien.shell.commands;
  */
 abstract class UIPrintWriter {
 
+	
+
+	/**
+	 * Print set output black'n white
+	 */
+	abstract protected void blackwhitemode();
+
+	/**
+	 * Print set output mode to colour
+	 */
+	abstract protected void colourmode();
+
+	/**
+	 * Print get the colour output mode
+	 */
+	abstract protected boolean colour();
+	
+	
 	/**
 	 * Print empty stdout line 
 	 */

@@ -147,6 +147,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		out.printOutln(helpOption("-F","add trailing / to directory names"));
 		out.printOutln(helpOption("-b","print in guid format"));
 		out.printOutln(helpOption("-c","print canonical paths"));
+		out.printOutln();
 	}
 
 	/**

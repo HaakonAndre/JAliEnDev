@@ -72,6 +72,29 @@ public class CatalogueApiUtils {
 		return null;
 
 	}
+	
+
+	/**
+	 * Remove a LFN in the Catalogue
+	 * @param p 
+	 * @param path
+	 * @return state of the LFN's deletion
+	 *         <code>null</code>
+	 */
+	public static boolean removeLFN(AliEnPrincipal p, String path) {
+
+		try {
+			RemoveLFNfromString rse = (RemoveLFNfromString) Dispatcher
+					.execute(new RemoveLFNfromString(p,path), true);
+
+			return rse.wasRemoved();
+		} catch (IOException e) {
+			System.out.println("Could not remove the LFN: " + path);
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
 
 	/**
 	 * Get GUID from String
@@ -194,6 +217,7 @@ public class CatalogueApiUtils {
 	 *            site the user is matched to
 	 * @param lfn
 	 *            LFN of the entry as String
+	 * @param guid 
 	 * @param ses
 	 *            SEs to priorize to read from
 	 * @param exses
@@ -281,6 +305,14 @@ public class CatalogueApiUtils {
 	 * @param user
 	 *            asking for access
 	 * @param encryptedEnvelope
+	 * @param size 
+	 * @param md5 
+	 * @param lfn 
+	 * @param perm 
+	 * @param expire 
+	 * @param pfn 
+	 * @param se 
+	 * @param guid 
 	 * @return PFNs that were successfully registered
 	 */
 	public static List<PFN> registerEncryptedEnvelope(AliEnPrincipal user,
@@ -334,6 +366,28 @@ public class CatalogueApiUtils {
 		return null;
 	}
 
+	/**
+	 * Remove a directory in the Catalogue
+	 * @param p 
+	 * @param path
+	 * @return state of directory's deletion
+	 *         <code>null</code>
+	 */
+	public static boolean removeCatalogueDirectory(AliEnPrincipal p, String path) {
+
+		try {
+			RemoveCatDirfromString rse = (RemoveCatDirfromString) Dispatcher
+					.execute(new RemoveCatDirfromString(p,path), true);
+
+			return rse.wasRemoved();
+		} catch (IOException e) {
+			System.out.println("Could not remove the CatDir: " + path);
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
+	
 	/**
 	 * find bases on pattern
 	 * 

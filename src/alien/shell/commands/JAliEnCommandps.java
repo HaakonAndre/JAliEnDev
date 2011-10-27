@@ -49,21 +49,29 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	private List<String> mjobs = new ArrayList<String>();
 
 	private List<String> jobid = new ArrayList<String>();
-	
+
 	private String orderByKey = "queueId";
 
 	private int limit = 0;
 
 	public void execute() throws Exception {
-
+		
 		if (getJDL != 0) {
 			String jdl = TaskQueueApiUtils.getJDL(getJDL);
-			if (jdl != null)
-				out.printOutln(jdl);
+			if (jdl != null){
+				if(bColour)
+					out.printOutln(textred + jdl + textnormal);
+				else
+					out.printOutln(jdl);
+			}
 		} else if (getTrace != 0) {
 			String tracelog = TaskQueueApiUtils.getTraceLog(getTrace);
 			if (tracelog != null)
-				out.printOutln(tracelog);
+				if(bColour)
+					out.printOutln(textblue + tracelog + textnormal);
+				
+			out.printOutln("--- not implemented yet ---");
+			
 		} else {
 
 			if (states.size() == 0)
@@ -78,9 +86,9 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				for (Job j : ps) {
 
 					String owner = (j.getOwner() != null) ? j.getOwner() : "";
+					
+					String jId = bColour ? textbold + j.queueId + textnormal : String.valueOf(j.queueId);
 
-					String status = (j.status != null) ? abbrvStatus(j.status)
-							: "";
 					String name = (j.name != null) ? j.name.substring(j.name
 							.lastIndexOf('/') + 1) : "";
 
@@ -89,23 +97,25 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 						String node = (j.node != null) ? j.node : "";
 						out.printOutln(padLeft(String.valueOf(owner), 10)
 								+ padSpace(17)
-								+ padLeft(String.valueOf(j.queueId), 10)
-								+ padSpace(2) + padLeft(String.valueOf("___"), 3)
+								+ padLeft(jId, 10)
+								+ padSpace(2)
+								+ printPriority(j.status,j.priority)
 								+ padSpace(2)
 								+ padLeft(String.valueOf(site), 30)
 								+ padSpace(2)
 								+ padLeft(String.valueOf(node), 30)
 								+ padSpace(2)
-								+ padLeft(String.valueOf(status), 3)
+								+ abbrvStatus(j.status)
 								+ padSpace(2)
 								+ padLeft(String.valueOf(name), 32));
 					} else
 						out.printOutln(padLeft(String.valueOf(owner), 10)
 								+ padSpace(1)
 								+ padLeft(String.valueOf(j.queueId), 10)
-								+ padSpace(2) + padLeft(String.valueOf("___"), 3)
 								+ padSpace(2)
-								+ padLeft(String.valueOf(status), 3)
+								+ printPriority(j.status,j.priority)
+								+ padSpace(2)
+								+ abbrvStatus(j.status)
 								+ padSpace(2)
 								+ padLeft(String.valueOf(name), 32));
 
@@ -114,55 +124,112 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		}
 	}
 
-	private static String abbrvStatus(String status) {
-		if (status == null)
-			return "-";
-		if (status.equals("INDERTING"))
-			return "I";
-		if (status.equals("WAITING"))
-			return "W";
-		if (status.equals("EXPIRED"))
-			return "EX";
-		else if (status.equals("ASSIGEND"))
-			return "A";
-		else if (status.equals("QUEUED"))
-			return "Q";
-		else if (status.equals("STARTED"))
-			return "S";
-		else if (status.equals("RUNNING"))
-			return "R";
-		else if (status.equals("DONE"))
-			return "D";
-		else if (status.equals("ERROR_A"))
-			return "EA";
-		else if (status.equals("ERROR_S"))
-			return "ES";
-		else if (status.equals("ERROR_I"))
-			return "EI";
-		else if (status.equals("ERROR_IB"))
-			return "EIB";
-		else if (status.equals("ERROR_E"))
-			return "EE";
-		else if (status.equals("ERROR_R"))
-			return "ER";
-		else if (status.equals("ERROR_V"))
-			return "EV";
-		else if (status.equals("ERROR_VN"))
-			return "EVN";
-		else if (status.equals("ERROR_VT"))
-			return "EVT";
-		return status;
+	private String printPriority(final String status, final int priority) {
+
+		if ("INSERTING".equals(status) || "WAITING".equals(status)) {
+			if (bColour) {
+				String cTag = "";
+				if (priority <= 0)
+					cTag = textblueerror;
+				else if (priority < 70)
+					cTag = textblue;
+				else
+					cTag = textgreen;
+				return cTag + padLeft( String.valueOf(priority),3) + textnormal;
+			}
+			return padLeft( String.valueOf(priority),3) ;
+		}
+		return "___";
+	}
+
+	private String abbrvStatus(String status) {
+		
+		if(status==null)
+			return padLeft("?",3);
+
+		if ("KILLED".equals(status)) {
+			if (bColour)
+				return textred + padLeft("  K",3) + textnormal;
+			return padLeft("  K",3);
+		} else if ("RUNNING".equals(status)) {
+			if (bColour)
+				return textgreen + padLeft("  R",3) + textnormal;
+			return padLeft("  R",3);
+		} else if ("STARTED".equals(status)) {
+			if (bColour)
+				return textgreen + padLeft(" ST",3) + textnormal;
+			return padLeft(" ST",3);
+		} else if ("DONE".equals(status)) {
+			if (bColour)
+				return textnormal + padLeft("  D",3) + textnormal;
+			return padLeft("  D",3);
+		} else if ("WAITING".equals(status)) {
+			if (bColour)
+				return textblue + padLeft("  W",3) + textnormal;
+			return padLeft("  W",3);
+		} else if ("EXPIRED".equals(status)) {
+			return padLeft(" EX",3);
+		} else if ("INSERTING".equals(status)) {
+			if (bColour)
+				return textyellow + padLeft("  I",3) + textnormal;
+			return padLeft("  I",3);
+		} else if ("SPLIT".equals(status))
+			return padLeft("  S",3);
+		else if ("SPLITTING".equals(status))
+			return padLeft(" SP",3);
+		else if ("SAVING".equals(status)) {
+			if (bColour)
+				return textgreen + padLeft(" SV",3) + textnormal;
+			return padLeft(" SV",3);
+		} else if ("SAVED".equals(status))
+			return padLeft("SVD",3);
+		else {
+			String e = "";
+			if ("ERROR_A".equals(status))
+				e = " EQ";
+			else if ("ERROR_E".equals(status))
+				e = " EE";
+			else if ("ERROR_I".equals(status))
+				e = " EI";
+			else if ("ERROR_IB".equals(status))
+				e = "EIB";
+			else if ("ERROR_R".equals(status))
+				e = " ER";
+			else if ("ERROR_S".equals(status))
+				e = " ES";
+			else if ("ERROR_SV".equals(status))
+				e = "ESV";
+			else if ("ERROR_V".equals(status))
+				e = " EV";
+			else if ("ERROR_VN".equals(status))
+				e = "EVN";
+			else if ("ERROR_VT".equals(status))
+				e = "EVT";
+			else if ("ERROR_SPLT".equals(status))
+				e = "ESP";
+			else if ("FAILED".equals(status))
+				e = " FF";
+			else if ("ZOMBIE".equals(status))
+				e = "  Z";
+			else
+				e = status;
+
+			if (bColour)
+				return textblueerror + padLeft(e,3) + textnormal;
+			return padLeft(e,3);
+		}
+
 	}
 
 	/**
 	 * printout the help info
 	 */
 	public void printHelp() {
-		
+
 		out.printOutln();
-		out.printOutln(helpUsage("ps","[-options]"));
+		out.printOutln(helpUsage("ps", "[-options]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-F {l}","(output format)"));
+		out.printOutln(helpOption("-F {l}", "(output format)"));
 		out.printOutln(helpOption("-f <flags/status>"));
 		out.printOutln(helpOption("-u <userlist>"));
 		out.printOutln(helpOption("-s <sitelist>"));
@@ -171,20 +238,24 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		out.printOutln(helpOption("-o <sortkey>"));
 		out.printOutln(helpOption("-j <jobidlist>"));
 		out.printOutln(helpOption("-l <query-limit>"));
-		
+
 		out.printOutln();
-		out.printOutln(helpOption("-M","show only masterjobs"));
-		out.printOutln(helpOption("-X","active jobs in extended format"));
-		out.printOutln(helpOption("-A","select all owned jobs of you"));
-		out.printOutln(helpOption("-W","select all jobs which are waiting for execution of you"));
-		out.printOutln(helpOption("-E","select all jobs which are in error state of you"));
-		out.printOutln(helpOption("-D","select all done jobs of you"));
-		out.printOutln(helpOption("-R","select all running jobs of you"));
-		out.printOutln(helpOption("-Q","select all queued jobs of you"));
-		out.printOutln(helpOption("-a","select jobs of all users"));
-		out.printOutln(helpOption("-b","do only black-white output [black-white anyway, so ignored]"));
-		out.printOutln(helpOption("-jdl <jobid>","display the job jdl"));
-		out.printOutln(helpOption("-trace <jobid> <tag>*","display the job trace information (not working yet!)")); // TODO:
+		out.printOutln(helpOption("-M", "show only masterjobs"));
+		out.printOutln(helpOption("-X", "active jobs in extended format"));
+		out.printOutln(helpOption("-A", "select all owned jobs of you"));
+		out.printOutln(helpOption("-W",
+				"select all jobs which are waiting for execution of you"));
+		out.printOutln(helpOption("-E",
+				"select all jobs which are in error state of you"));
+		out.printOutln(helpOption("-D", "select all done jobs of you"));
+		out.printOutln(helpOption("-R", "select all running jobs of you"));
+		out.printOutln(helpOption("-Q", "select all queued jobs of you"));
+		out.printOutln(helpOption("-a", "select jobs of all users"));
+		out.printOutln(helpOption("-b", "do only black-white output"));
+		out.printOutln(helpOption("-jdl <jobid>", "display the job jdl"));
+		out.printOutln(helpOption("-trace <jobid> <tag>*",
+				"display the job trace information (not working yet!)")); // TODO:
+		out.printOutln();
 
 	}
 
@@ -212,7 +283,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
 	public JAliEnCommandps(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) throws OptionException {
@@ -322,12 +393,11 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					}
 				}
 
-
 				if (options.has("X")
 						|| (options.has("F") && options.hasArgument("F") && "l"
 								.equals(options.valueOf("F"))))
 					bL = true;
-				
+
 				if ((options.has("o") && options.hasArgument("o")))
 					orderByKey = (String) options.valueOf("o");
 
@@ -355,7 +425,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					states.addAll(queuedJobStates());
 					users.add(commander.getUsername());
 				}
-				
 
 				bM = options.has("M");
 
@@ -363,13 +432,15 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					users.add("%");
 				}
 			}
+
+			if(options.has("b"))
+				bColour = false;
+
 		} catch (OptionException e) {
 			printHelp();
 			throw e;
 		}
 	}
-	
-	
 
 	private static List<String> defJobStates() {
 		return Arrays.asList(new String[] { "INSERTING", "WAITING", "ASSIGEND",

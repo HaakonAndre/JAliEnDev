@@ -89,6 +89,7 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 		out.printOutln(helpParameter("<URL> => alien://<lfn>"));
 		out.printOutln(helpParameter("<URL> => /alien<lfn>"));
 		out.printOutln(helpParameter("<URL> => <local path>"));
+		out.printOutln();
 	}
 
 	/**

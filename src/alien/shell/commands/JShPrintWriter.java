@@ -6,18 +6,19 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import alien.shell.ShellColor;
 
 /**
  * @author ron
  * @since July 15, 2011
  */
-public class JAliEnShPrintWriter extends UIPrintWriter{
+public class JShPrintWriter extends UIPrintWriter{
 
 	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils
-			.getLogger(JAliEnShPrintWriter.class.getCanonicalName());
+			.getLogger(JShPrintWriter.class.getCanonicalName());
 
 	
 	/**
@@ -46,9 +47,32 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 	public static String pendingSignal = String.valueOf((char) 9);
 	
 
+
+	/**
+	 * marker for -Colour argument
+	 */
+	protected boolean bColour = true;
+	
+	protected void blackwhitemode(){
+		bColour = false;
+	}
+	
+	protected void colourmode(){
+		bColour = true;
+	}
+	
+	/**
+	 * color status
+	 * @return
+	 */
+	protected boolean colour(){
+		return bColour;
+	}
+	
+	
 	private OutputStream os;
 
-	JAliEnShPrintWriter(OutputStream os) {
+	JShPrintWriter(OutputStream os) {
 		this.os = os;
 	}
 
@@ -75,10 +99,12 @@ public class JAliEnShPrintWriter extends UIPrintWriter{
 	}
 	
 	protected void printErrln(String line) {
-		print(errTag + line + "\n");
+		if(bColour)
+			print(errTag + ShellColor.boldRed() + line + ShellColor.reset() + "\n");
+		else
+			print(errTag + line + "\n");
 	}
 	
-
 	protected void setenv(String cDir, String user, String cDirtiled) {
 		print(outputterminator+cDir + fieldseparator + user + fieldseparator + cDirtiled +"\n");
 	}

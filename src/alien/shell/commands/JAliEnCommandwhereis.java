@@ -89,6 +89,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 		out.printOutln(helpStartOptions());
 		out.printOutln(helpOption("-g","use the lfn as guid"));
 		out.printOutln(helpOption("-r","resolve links (do not give back pointers to zip archives)"));
+		out.printOutln();
 	}
 
 	/**

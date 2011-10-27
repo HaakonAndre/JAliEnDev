@@ -39,21 +39,21 @@ public class JAliEnCOMMander {
 	 * The commands that are advertised on the shell, e.g. by tab+tab
 	 */
 	private static final String[] commandList = new String[] { "ls", "get",
-			"cat", "whoami", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit", "ps" };
+			"cat", "whoami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
+			"scrlog", "submit", "ps","blackwhite","color", "masterjob" };
 
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" };
+			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm", "masterjob"};
 
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", "access", "pwd",
-			"cdir", "commandlist", "gfilecomplete", "cdirtiled" };
+	private static final String[] hiddenCommandList = new String[] { "whoami", 
+			"cdir", "commandlist", "gfilecomplete", "cdirtiled" ,"blackwhite","color" };
 
 	private UIPrintWriter out = null;
 
@@ -175,7 +175,7 @@ public class JAliEnCOMMander {
 
 	private void setShellPrintWriter(OutputStream os, String shelltype) {
 		if (shelltype.equals("jaliensh"))
-			out = new JAliEnShPrintWriter(os);
+			out = new JShPrintWriter(os);
 		else
 			out = new RootPrintWriter(os);
 	}
@@ -238,6 +238,10 @@ public class JAliEnCOMMander {
 					out.printOutln(getCommandList());
 				else if ("whoami".equals(comm))
 					out.printOutln(getUsername());
+				else if ("blackwhite".equals(comm))
+					out.blackwhitemode();
+				else if ("color".equals(comm))
+					out.colourmode();
 			} else if (!"setshell".equals(comm)) {
 				out.printErrln("Command [" + comm + "] not found!");
 			}

@@ -12,6 +12,7 @@ import alien.config.ConfigUtils;
  */
 public abstract class JAliEnBaseCommand {
 
+	
 	/**
 	 * Logger
 	 */
@@ -28,6 +29,25 @@ public abstract class JAliEnBaseCommand {
 	 * The UIPrintWriter to return stdout+stderr
 	 */
 	protected UIPrintWriter out ;
+	
+	
+
+	
+	protected final static String textnormal = "\033[0m";
+	protected final static String  textblack = "\033[49;30m";
+	protected final static String  textred = "\033[49;31m";
+	protected final static String  textrederror = "\033[47;31;1m";
+	protected final static String  textblueerror = "\033[47;34;1m";
+	protected final static String  textgreen = "\033[49;32m";
+	protected final static String  textyellow = "\033[49;33m";
+	protected final static String  textblue = "\033[49;34m";
+	protected final static String  textbold = "\033[1m";
+	protected final static String  textunbold = "\033[0m";
+
+	/**
+	 * marker for -Colour argument
+	 */
+	protected boolean bColour;
 	
 	
 	/**
@@ -51,6 +71,7 @@ public abstract class JAliEnBaseCommand {
 		this.commander = commander;
 		this.out = out;
 		this.alArguments = alArguments;
+		this.bColour = out.colour();
 
 	}
 	

@@ -23,10 +23,6 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	private ArrayList<String> alPaths = null;
 	
 	public void execute() {
-
-		System.out.println("We are called as mkdir!");
-		
-		
 		
 		for (String path: alPaths){
 
@@ -55,6 +51,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 		out.printOutln(helpStartOptions());
 		out.printOutln(helpOption("-p","create parents as needed"));
 		out.printOutln(helpOption("-silent","execute command silently"));
+		out.printOutln();
 	}
 
 	/**

@@ -122,6 +122,22 @@ public class RootPrintWriter extends UIPrintWriter {
 		//ignore - not to be implemented in the root printer
 	}
 	
+	protected void blackwhitemode(){
+		//ignore - not to be implemented in the root printer
+	}
+	
+	protected void colourmode(){
+		//ignore - not to be implemented in the root printer
+	}
+	
+	/**
+	 * the root printer is always BW
+	 * @return true
+	 */
+	protected boolean colour(){
+		return false;
+	}
+	
 	// testcode end
 
 	private String printDebug() {
@@ -148,6 +164,10 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	}
 
+	/**
+	 * @param line
+	 * @return
+	 */
 	public static String testMakeTagsVisible(final String line) {
 		String line1;
 
