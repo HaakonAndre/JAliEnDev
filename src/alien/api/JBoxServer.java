@@ -274,8 +274,31 @@ public class JBoxServer extends Thread {
 				JAliEnCOMMander jcomm = new JAliEnCOMMander();
 
 				while (scanner.hasNext()) {
-					String line = scanner.next();			
-					jcomm.execute(os, line.split(SpaceSep));
+					String line = scanner.next();	
+					if("SIGINT".equals(line)){
+						 synchronized (jcomm) {
+					        	jcomm.killRunningCommand();
+					        }
+					}
+						
+					try {
+						if(jcomm.isAlive() && !jcomm.getState().equals(State.WAITING)){
+					        synchronized (jcomm) {
+					        	jcomm.wait();
+					        }
+						}
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+					jcomm.setLine(os, line.split(SpaceSep));
+
+					if(!jcomm.isAlive())
+						jcomm.start();
+					else if(jcomm.getState().equals(State.WAITING)){
+				        synchronized (jcomm) {
+				        	jcomm.notify();
+				        }
+					}
 					os.flush();
 				}
 			} catch (IOException e) {
@@ -300,7 +323,6 @@ public class JBoxServer extends Thread {
 		}
 	}
 
-	@Override
 	public void run() {
 		while (true) {
 			try {

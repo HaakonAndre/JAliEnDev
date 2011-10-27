@@ -19,7 +19,7 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 	}
 
 	@Override
-	public void execute() throws Exception {
+	public void run(){
 
 		String sMotdMessage = 
 				"\n###############################################################\n" +

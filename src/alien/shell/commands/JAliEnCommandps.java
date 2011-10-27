@@ -53,7 +53,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	private int limit = 0;
 
-	public void execute() throws Exception {
+	public void run() {
 		
 		if (getJDL != 0) {
 			String jdl = TaskQueueApiUtils.getJDL(getJDL);

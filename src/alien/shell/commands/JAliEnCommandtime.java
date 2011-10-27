@@ -11,7 +11,7 @@ import alien.perl.commands.AlienTime;
 public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 
-	public void execute() throws Exception {
+	public void run() {
 
 		if (alArguments.size() < 2) {
 			printHelp();
@@ -30,15 +30,21 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		String command = alArguments.get(1);
 		args.remove(alArguments.get(1));
 
-		JAliEnBaseCommand comm = JAliEnCOMMander
-				.getCommand(command, new Object[] {  commander, out,args });
+		JAliEnBaseCommand comm = null;
+		try {
+			comm = JAliEnCOMMander
+					.getCommand(command, new Object[] {  commander, out,args });
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
 		//comm.silent();
 
 		ArrayList<Long> timings = new ArrayList<Long>(times);
 		for (int t = 0; t < times; t++) {
 			long lStart = System.currentTimeMillis();
 
-			comm.execute();
+			comm.run();
 			timings.add(System.currentTimeMillis() - lStart);
 		}
 		long total = 0;

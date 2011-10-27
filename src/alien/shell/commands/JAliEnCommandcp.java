@@ -47,7 +47,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	// public boolean isATimeChallenge = false;
 
-	public void execute() {
+	public void run() {
 		if (bT) {
 			localFile = copyGridToLocal(source, null);
 			

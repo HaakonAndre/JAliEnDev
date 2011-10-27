@@ -56,7 +56,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	/**
 	 * execute the ls
 	 */
-	public void execute() {
+	public void run() {
 
 		int iDirs = alPaths.size();
 
@@ -64,6 +64,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			alPaths.add(commander.getCurrentDir().getCanonicalName());
 
 		for (String sPath : alPaths) {
+			
 			// listing current directory
 			if (!sPath.startsWith("/"))
 				sPath = commander.getCurrentDir().getCanonicalName() + sPath;
@@ -74,7 +75,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			if (directory != null) {
 				for (LFN localLFN : directory) {
-
+					
 					if (!bA && localLFN.getFileName().startsWith("."))
 						continue;
 

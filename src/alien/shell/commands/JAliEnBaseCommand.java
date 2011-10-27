@@ -10,7 +10,7 @@ import alien.config.ConfigUtils;
  * @author ron
  * @since June 4, 2011
  */
-public abstract class JAliEnBaseCommand {
+public abstract class JAliEnBaseCommand extends Thread{
 
 	
 	/**
@@ -76,11 +76,10 @@ public abstract class JAliEnBaseCommand {
 	}
 	
 	/**
-	 * Abstract class to execute the command
-	 * @throws Exception 
+	 * Abstract class to execute the command / run the thread
 	 * 
 	 */
-	public abstract void execute() throws Exception;
+	public abstract void run();
 
 	/**
 	 * Abstract class to printout the help info of the command

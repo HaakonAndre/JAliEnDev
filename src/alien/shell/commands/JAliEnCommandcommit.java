@@ -63,7 +63,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	/**
 	 * execute the commit
 	 */
-	public void execute() {
+	public void run() {
 		
 		List<PFN> pfns = null;
 		if(rawenvelope.contains("signature=")){

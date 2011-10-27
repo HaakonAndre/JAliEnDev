@@ -32,7 +32,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	/**
 	 * execute the sclog
 	 */
-	public void execute() {
+	public void run() {
 		if(logno != -1){
 		if (bC)
 			scrlogs.put(logno, new ArrayList<String>());

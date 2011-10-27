@@ -36,7 +36,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	/**
 	 * execute the whereis
 	 */
-	public void execute() {
+	public void run() {
 
 		String guid = null;
 		if (bG) {

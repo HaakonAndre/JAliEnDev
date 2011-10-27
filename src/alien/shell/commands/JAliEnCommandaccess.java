@@ -83,7 +83,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	/**
 	 * execute the access
 	 */
-	public void execute() {
+	public void run() {
 
 		LFN lfn = null;
 		GUID guid = null;

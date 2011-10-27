@@ -22,7 +22,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	private boolean bP = false;
 	private ArrayList<String> alPaths = null;
 	
-	public void execute() {
+	public void run() {
 		
 		for (String path: alPaths){
 

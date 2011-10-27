@@ -14,7 +14,7 @@ import alien.user.AuthorizationChecker;
  */
 public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
-	public void execute() {
+	public void run() {
 
 		for (String path : alArguments) {
 

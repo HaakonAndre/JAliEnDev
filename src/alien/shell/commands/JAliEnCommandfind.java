@@ -28,7 +28,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	/**
 	 * execute the get
 	 */
-	public void execute() {
+	public void run() {
 
 		if(alArguments.size()<2 || alArguments.size()>3){
 			printHelp();

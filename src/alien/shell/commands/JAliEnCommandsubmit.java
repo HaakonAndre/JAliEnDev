@@ -18,7 +18,7 @@ import alien.taskQueue.JobSubmissionException;
  */
 public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 
-	public void execute() throws Exception {
+	public void run(){
 
 		String jdl = getJDLFile(alArguments);
 		if (!jdl.equals(""))
@@ -61,7 +61,7 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 					.getCommand("get", new Object[] { commander, out,
 							alArguments });
 			get.silent();
-			get.execute();
+			get.run();
 			File fout = get.getOutputFile();
 			if (fout != null && fout.isFile() && fout.canRead()) {
 				FileInputStream fstream = new FileInputStream(fout);

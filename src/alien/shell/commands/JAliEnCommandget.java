@@ -75,7 +75,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	/**
 	 * execute the get
 	 */
-	public void execute() {
+	public void run() {
 			
 		if (lfnOrGuid != null) {
 

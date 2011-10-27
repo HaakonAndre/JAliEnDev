@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 
@@ -15,29 +17,46 @@ import alien.perl.commands.AlienTime;
  */
 public class JAliEnCommandcat extends JAliEnBaseCommand {
 
-	public void execute() throws Exception {
+	public void run() {
 
 		ArrayList<String> args = new ArrayList<String>(alArguments.size()+1);
 		args.add("-t");
 		args.addAll(alArguments);
 		
-		JAliEnCommandcp cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand(
-				"cp", new Object[] { commander, out, args });
+		JAliEnCommandcp cp;
+		try {
+			cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand(
+					"cp", new Object[] { commander, out, args });
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
 		cp.silent();
-		cp.execute();
+		cp.run();
 		File fout = cp.getOutputFile();
 		if(fout==null)
 			return;
 		
 		if (fout.isFile() && fout.canRead()) {
-			FileInputStream fstream = new FileInputStream(fout);
+			FileInputStream fstream = null;
+			try {
+				fstream = new FileInputStream(fout);
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 
 			DataInputStream in = new DataInputStream(fstream);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));
 			String file = "";
 			String line;
-			while ((line = br.readLine()) != null) {
-				file += line+"\n";
+			try {
+				while ((line = br.readLine()) != null) {
+					file += line+"\n";
+				}
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 
 			out.printOutln(file);

@@ -13,7 +13,7 @@ import alien.user.UsersHelper;
  */
 public class JAliEnCommandcd extends JAliEnBaseCommand {
 	
-	public void execute() {
+	public void run() {
 
 		LFN newDir = null;
 

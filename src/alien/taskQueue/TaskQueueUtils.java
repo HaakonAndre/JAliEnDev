@@ -713,7 +713,13 @@ public class TaskQueueUtils {
 	
 	
 	
-	
+	/**
+	 * @param queueId
+	 * @return state of the kill operation
+	 */
+	public static boolean killJob(final int queueId){
+		return false;
+	}
 	
 	
 	

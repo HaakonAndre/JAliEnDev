@@ -25,7 +25,7 @@ import alien.user.UsersHelper;
  * @author ron
  * @since June 4, 2011
  */
-public class JAliEnCOMMander {
+public class JAliEnCOMMander extends Thread {
 
 
 	/**
@@ -180,13 +180,41 @@ public class JAliEnCOMMander {
 			out = new RootPrintWriter(os);
 	}
 
+	
+	private OutputStream os = null;
+	
+	private String[] arg = null;
+	
+	private JAliEnBaseCommand jcommand = null;
+	
+	public synchronized void run() {
+		while (true) {
+			execute();
+			try {
+				synchronized (this) {
+					wait();
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	/**
-	 * execute a command line
-	 * 
 	 * @param os
 	 * @param arg
 	 */
-	public void execute(OutputStream os, String[] arg) {
+	public void setLine(OutputStream os, String[] arg) {
+		this.os = os;
+		this.arg = arg;
+	}
+	
+	
+	/**
+	 * execute a command line
+	 * 
+	 */
+	public void execute() {
 
 		boolean help = false;
 
@@ -248,7 +276,7 @@ public class JAliEnCOMMander {
 		} else {
 
 			final Object[] param = { this, out, args };
-			JAliEnBaseCommand jcommand = null;
+
 			try {
 				jcommand = getCommand(comm, param);
 			} catch (Exception e) {
@@ -289,7 +317,15 @@ public class JAliEnCOMMander {
 				if (!help
 						&& (args.size() != 0 || jcommand
 								.canRunWithoutArguments())) {
-					jcommand.execute();
+					jcommand.start();
+					try {
+						synchronized (jcommand) {
+							jcommand.wait();
+						}
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				} else {
 					jcommand.printHelp();
 				}
@@ -300,6 +336,22 @@ public class JAliEnCOMMander {
 		}
 		out.setenv(getCurrentDirName(),getUsername(),getCurrentDirTilded());
 		out.flush();
+	}
+	
+	/**
+	 * 
+	 */
+	public void killRunningCommand(){
+//		System.out.println("Issueing SIGINT.");
+//		if(jcommand!=null){
+//			synchronized (jcommand) {
+//				jcommand.interrupt();
+//				jcommand = null;
+//			}
+//			synchronized (this) {
+//				notify();
+//			}
+//		}
 	}
 
 	/**

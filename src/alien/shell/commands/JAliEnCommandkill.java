@@ -57,7 +57,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 	private int limit = 0;
 
-	public void execute() throws Exception {
+	public void run() {
 		
 		out.printErrln("--- not implemented yet ---");
 
