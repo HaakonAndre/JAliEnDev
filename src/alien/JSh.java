@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.TimeUnit;
 
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
+
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.config.ConfigUtils;
@@ -19,9 +22,17 @@ import alien.shell.BusyBox;
  */
 public class JSh {
 	
+	
+	private class SigHandler implements SignalHandler{
+		public void handle(Signal sig) {
+            System.out.println("got SIGINT!");
+        }
+	}
+	
 	static {
 		ConfigUtils.getVersion();
 	}
+    
 	
 	private static BusyBox boombox = null;
 	
@@ -31,6 +42,13 @@ public class JSh {
 	 */
 	public static void main(String[] args) throws Exception {
 
+		 Signal.handle(new Signal("INT"), new SignalHandler () {
+			    public void handle(Signal sig) {
+			      System.out.println(
+			        "Sorry, the command interrupt doesn't work yet!!");
+			    }
+			  });
+		
 		//File f = new File(System.getProperty("user.home"));
 		//System.out.println("And we are in: " + f.getCanonicalPath());
 
