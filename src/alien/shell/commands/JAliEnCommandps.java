@@ -95,14 +95,14 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 						String site = (j.site != null) ? j.site : "";
 						String node = (j.node != null) ? j.node : "";
 						out.printOutln(padLeft(String.valueOf(owner), 10)
-								+ padSpace(10)
+								+ padSpace(4)
 								+ padLeft(jId, 10)
 								+ padSpace(2)
 								+ printPriority(j.status,j.priority)
 								+ padSpace(2)
-								+ padLeft(String.valueOf(site), 35)
+								+ padLeft(String.valueOf(site), 38)
 								+ padSpace(2)
-								+ padLeft(String.valueOf(node), 35)
+								+ padLeft(String.valueOf(node), 40)
 								+ padSpace(2)
 								+ abbrvStatus(j.status)
 								+ padSpace(2)
