@@ -33,7 +33,7 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 
 			
 			try {
-				int jobID = commander.q_api.submitJob(jdl,commander.getUsername());
+				int jobID = commander.q_api.submitJob(jdl);
 				out.printOutln("[" + jobID + "] Job successfully submitted.");
 			} catch (JobSubmissionException e) {
 				out.printErrln("Submission failed:");

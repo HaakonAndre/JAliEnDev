@@ -64,17 +64,17 @@ public class JobAgent extends Thread {
 	public void run() {
 
 		while (true) {
-			Job j = q_api.getJob();
-			if (j != null)
-				handleJob(j);
-			else {
-				System.out.println("Nothing to run right now. Idling 5secs...");
-				try {
-					sleep(5000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
+//			Job j = q_api.getJob();
+//			if (j != null)
+//				handleJob(j);
+//			else {
+//				System.out.println("Nothing to run right now. Idling 5secs...");
+//				try {
+//					sleep(5000);
+//				} catch (InterruptedException e) {
+//					e.printStackTrace();
+//				}
+//			}
 		}
 	}
 
