@@ -24,10 +24,9 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	 * execute the pwd
 	 */
 	public void run() {
-		out.printErrln(commander.curDir.getCanonicalName());
+		out.printOutln(commander.curDir.getCanonicalName());
 		out.setReturnArgs(deserializeForRoot());
 	}
-	public void execute() {}
 
 	/**
 	 * printout the help info
