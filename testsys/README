@@ -1,0 +1,12 @@
+
+
+to use the test system...
+
+
+REQUIREMENTS:
+
+install on your machine:
+
+java sdk
+slapd
+mysql (server + client)
