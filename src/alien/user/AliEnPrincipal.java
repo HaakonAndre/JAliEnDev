@@ -2,6 +2,7 @@ package alien.user;
 
 import java.io.Serializable;
 import java.security.Principal;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -15,6 +16,15 @@ import lazyj.StringFactory;
  * @since 02-04-2007
  */
 public class AliEnPrincipal implements Principal, Serializable {
+	
+	
+
+	
+	private final static String userRole = "users";
+	
+	private final static String[] admins = new String[] {"admin"};
+	
+	
 	/**
 	 * 
 	 */
@@ -87,6 +97,18 @@ public class AliEnPrincipal implements Principal, Serializable {
 	public String toString() {
 		return getNames().toString();
 	}
+	
+
+
+	/**
+	 * Check if two principals are the same user
+	 * @param user to compare
+	 * @return outcome of equals
+	 */
+	public boolean equals(AliEnPrincipal user) {
+		return getName().equals(user.getName());
+	}
+	
 
 	/**
 	 * Get all the roles associated with this principal
@@ -124,11 +146,12 @@ public class AliEnPrincipal implements Principal, Serializable {
 		if (role == null || role.length() == 0)
 			return false;
 
-		if ("users".equals(role))
+		if (userRole.equals(role))
 			return true;
 
 		return getRoles().contains(role);
 	}
+
 
 	/**
 	 * Check if this principal can become the given user/role
@@ -162,5 +185,24 @@ public class AliEnPrincipal implements Principal, Serializable {
 			return true;
 
 		return false;
+	}
+	
+	
+	/**
+	 * Return the default user role
+	 * 
+	 * @return user role 
+	 */
+	public static String userRole(){
+		return userRole;
+	}
+	
+	/**
+	 * Check if that role name authorizes admin privileges
+	 * @param role
+	 * @return is admin privileged or not
+	 */
+	public static boolean roleIsAdmin(final String role){
+		return Arrays.asList(admins).contains(role);
 	}
 }
