@@ -6,6 +6,7 @@ package alien.user;
 import java.util.Set;
 
 import alien.catalogue.CatalogEntity;
+import alien.taskQueue.Job;
 
 /**
  * @author costing
@@ -99,6 +100,23 @@ public final class AuthorizationChecker {
 	 */
 	public static boolean canExecute(final CatalogEntity entity, final AliEnPrincipal user){
 		return (getPermissions(entity, user) & 1) == 1;
+	}
+	
+	/**
+	 * Check if the user can modify the job
+	 * @param job 
+	 * 
+	 * @param user
+	 * @param role 
+	 * @return true if the user can execute it
+	 */
+	public static boolean canModifyJob(final Job job,
+			final AliEnPrincipal user, final String role) {
+		if(job.getOwner().equals(user.getName()) || 
+				job.getOwner().equals(role) ||
+				AliEnPrincipal.roleIsAdmin(role))
+			return true;
+		return false;
 	}
 
 }
