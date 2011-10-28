@@ -282,6 +282,9 @@ public class TextCache extends ExtendedServlet {
 		
 		final String key = gets("key");
 		
+		//TODO: 'response' creates compilation error, saying
+		//TODO: //The type javax.servlet.http.HttpServletResponse 
+		//TODO: cannot be resolved. It is indirectly referenced from required .class files//
 		response.setContentType("text/plain");
 		
 		if (key.length()==0){
