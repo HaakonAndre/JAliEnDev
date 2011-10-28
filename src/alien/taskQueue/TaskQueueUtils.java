@@ -22,6 +22,7 @@ import alien.io.IOUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
 
 /**
@@ -363,13 +364,12 @@ public class TaskQueueUtils {
 	 * @param nodes 
 	 * @param mjobs 
 	 * @param jobids 
-	 * @param masterOnly 
 	 * @param orderByKey 
 	 * @param limit 
 	 * @return the ps listing
 	 */
 	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final boolean masterOnly, final String orderByKey, final int limit){
+			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final String orderByKey, final int limit){
 				
 		final DBFunctions db = getDB();
 		
@@ -444,11 +444,10 @@ public class TaskQueueUtils {
 		if (mjobs != null && mjobs.size()>0){
 			String whe = " ( ";
 			for (String m : mjobs){
-				if("%".equals(m)){
-					whe = "";
-					break;
-				}
-				whe += "split = '" + Format.escSQL(m)  + "' or ";
+				if("%".equals(m))
+					whe += "split <> '0' or ";
+				else
+					whe += "split = '" + Format.escSQL(m)  + "' or ";
 			}
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
@@ -466,10 +465,6 @@ public class TaskQueueUtils {
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
-		
-		if(masterOnly)
-			where += " masterjob=1 and ";
-		
 					
 		if(where.endsWith(" and "))
 			where = where.substring(0,where.length()-5);
@@ -480,7 +475,12 @@ public class TaskQueueUtils {
 		else
 			orderBy += orderByKey + " asc ";
 		
-		final String q = "SELECT * FROM QUEUE WHERE "+ where + orderBy +" limit "+lim+";";
+		if(where.length()>0)
+			where = " WHERE " + where;
+		
+		final String q = "SELECT * FROM QUEUE "+ where + orderBy +" limit "+lim+";";
+		
+		System.out.println("SQL IS: " + q);
 			
 		if (!db.query(q))
 			return null;
@@ -714,10 +714,21 @@ public class TaskQueueUtils {
 	
 	
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param queueId
 	 * @return state of the kill operation
 	 */
-	public static boolean killJob(final int queueId){
+	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId){
+			if(AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId),
+					user, role)){
+		System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + 
+				user.getName() + "/" + role +"].");
+		return false;
+		// TODO:
+		}
+		System.out.println("Job kill authorization failed for [" + queueId + "] by user/role [" + 
+					user.getName() + "/" + role +"].");
 		return false;
 	}
 	

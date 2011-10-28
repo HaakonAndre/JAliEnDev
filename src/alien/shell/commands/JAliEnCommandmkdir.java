@@ -1,14 +1,10 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
-import alien.perl.commands.AlienTime;
 
 /**
  * @author ron
@@ -27,13 +23,13 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 		for (String path: alPaths){
 
 			if(bP){
-				if(CatalogueApiUtils.createCatalogueDirectory(commander.user, FileSystemUtils.getAbsolutePath(
+				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path),true)==null)
 					out.printErrln("Could not create directory (or non-existing parents): " + path);
 			}
 			else {
-				if(CatalogueApiUtils.createCatalogueDirectory(commander.user, FileSystemUtils.getAbsolutePath(
+				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path))==null)
 					out.printErrln("Could not create directory: " + path);

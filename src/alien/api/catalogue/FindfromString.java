@@ -5,6 +5,7 @@ import java.util.List;
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * 
@@ -23,11 +24,15 @@ public class FindfromString extends Request {
 	private List<LFN>  lfns;
 
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param path 
 	 * @param pattern 
 	 * @param flags 
 	 */
-	public FindfromString(final String path, final String pattern, final int flags) {
+	public FindfromString(final AliEnPrincipal user, final String role, final String path, final String pattern, final int flags) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.path = path;
 		this.pattern = pattern;
 		this.flags = flags;

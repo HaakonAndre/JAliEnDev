@@ -7,7 +7,7 @@ package alien.config;
  */
 public class JAliEnIAm {
 	
-	private static final String thathsMe = "jSh";
+	private static final String thathsMe = "jsh";
 	
 	private static final String myVersion = "v0.7";
 	
@@ -15,7 +15,7 @@ public class JAliEnIAm {
 	
 	private static final String myVO = "alice";
 	
-	private static final String jshprompt = "JSh:["+myVO+"]";
+	private static final String jshprompt = ":["+myVO+"]";
 
 	private static final String Iam = "JAliEn";
 	

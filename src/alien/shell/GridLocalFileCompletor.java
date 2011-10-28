@@ -55,7 +55,7 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 		else
 			dir = translated.substring(0, translated.lastIndexOf('/'));
 	
-		final String listing = busy.callJAliEnGetString("ls -ca " + dir);
+		final String listing = busy.callJBoxGetString("ls -ca " + dir);
 
 		final StringTokenizer tk = new StringTokenizer(listing);
 		List<String> entries = new ArrayList<String>();

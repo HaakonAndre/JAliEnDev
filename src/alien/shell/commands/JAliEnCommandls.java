@@ -10,10 +10,8 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import lazyj.Log;
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
-import alien.perl.commands.AlienTime;
 
 /**
  * @author ron
@@ -71,7 +69,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
 
-			directory = CatalogueApiUtils.getLFNs(sPath);
+			directory = commander.c_api.getLFNs(sPath);
 
 			if (directory != null) {
 				for (LFN localLFN : directory) {

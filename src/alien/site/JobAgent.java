@@ -25,6 +25,7 @@ import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
+import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobSigner;
@@ -48,6 +49,10 @@ public class JobAgent extends Thread {
 	private JDL jdl = null;
 	private String sjdl = null;
 	private Job job = null;
+	
+	private CatalogueApiUtils c_api = null;
+	
+	private TaskQueueApiUtils q_api = null;
 
 	/**
 	 */
@@ -59,7 +64,7 @@ public class JobAgent extends Thread {
 	public void run() {
 
 		while (true) {
-			Job j = TaskQueueApiUtils.getJob();
+			Job j = q_api.getJob();
 			if (j != null)
 				handleJob(j);
 			else {
@@ -81,7 +86,7 @@ public class JobAgent extends Thread {
 			jdl = new JDL(job.getJDL());
 
 			if (verifiedJob()) {
-				TaskQueueApiUtils.setJobStatus(job.queueId, "STARTED");
+				q_api.setJobStatus(job.queueId, "STARTED");
 				if (createTempDir())
 					if (getInputFiles()) {
 						if (execute())
@@ -89,10 +94,10 @@ public class JobAgent extends Thread {
 								System.out.println("Job sucessfully executed.");
 					} else {
 						System.out.println("Could not get input files.");
-						TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_IB");
+						q_api.setJobStatus(job.queueId, "ERROR_IB");
 					}
 			} else {
-				TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_VER");
+				q_api.setJobStatus(job.queueId, "ERROR_VER");
 			}
 		} catch (IOException e) {
 			System.err.println("Unable to get JDL from Job.");
@@ -134,9 +139,9 @@ public class JobAgent extends Thread {
 							+ slfn.substring(slfn.lastIndexOf('/') + 1));
 
 					System.out.println("Getting input file: " + slfn);
-					LFN lfn = CatalogueApiUtils.getLFN(slfn);
+					LFN lfn = c_api.getLFN(slfn);
 					System.out.println("Getting input file lfn: " + lfn);
-					List<PFN> pfns = CatalogueApiUtils.getPFNsToRead(user,
+					List<PFN> pfns = c_api.getPFNsToRead(
 							site, lfn, null, null);
 					System.out.println("Getting input file pfns: " + pfns);
 
@@ -190,7 +195,7 @@ public class JobAgent extends Thread {
 		try {
 			final ExitStatus exitStatus;
 
-			TaskQueueApiUtils.setJobStatus(job.queueId, "RUNNING");
+			q_api.setJobStatus(job.queueId, "RUNNING");
 
 			exitStatus = pBuilder.start().waitFor();
 
@@ -229,7 +234,7 @@ public class JobAgent extends Thread {
 
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
-		TaskQueueApiUtils.setJobStatus(job.queueId, "SAVING");
+		q_api.setJobStatus(job.queueId, "SAVING");
 
 		String outputDir = jdl.getOutputDir();
 
@@ -242,14 +247,14 @@ public class JobAgent extends Thread {
 				+ FileSystemUtils.getAbsolutePath(user.getName(), "~",
 						outputDir));
 
-		if (CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+		if (c_api.getLFN(FileSystemUtils.getAbsolutePath(
 				user.getName(), null, outputDir)) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
 			return false;
 		}
 
-		LFN outDir = CatalogueApiUtils
-				.createCatalogueDirectory(user, outputDir);
+		LFN outDir = c_api
+				.createCatalogueDirectory(outputDir);
 
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir
@@ -286,13 +291,13 @@ public class JobAgent extends Thread {
 						List<PFN> pfns = null;
 
 						LFN lfn = null;
-						lfn = CatalogueApiUtils.getLFN(
+						lfn = c_api.getLFN(
 								outDir.getCanonicalName() + slfn, true);
 
 						lfn.size = size;
 						lfn.md5 = md5;
 
-						pfns = CatalogueApiUtils.getPFNsToWrite(user, site,
+						pfns = c_api.getPFNsToWrite(site,
 								lfn, null, null, null, null, 0);
 
 						if (pfns != null) {
@@ -319,8 +324,8 @@ public class JobAgent extends Thread {
 								envelopes.add(pfn.ticket.envelope
 										.getSignedEnvelope());
 
-							List<PFN> pfnsok = CatalogueApiUtils
-									.registerEnvelopes(user, envelopes);
+							List<PFN> pfnsok = c_api
+									.registerEnvelopes(envelopes);
 							if (!pfns.equals(pfnsok)) {
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size()
@@ -350,11 +355,11 @@ public class JobAgent extends Thread {
 			}
 		}
 		if (uploadedNotAllCopies)
-			TaskQueueApiUtils.setJobStatus(job.queueId, "DONE_WARN");
+			q_api.setJobStatus(job.queueId, "DONE_WARN");
 		else if (uploadedAllOutFiles)
-			TaskQueueApiUtils.setJobStatus(job.queueId, "DONE");
+			q_api.setJobStatus(job.queueId, "DONE");
 		else
-			TaskQueueApiUtils.setJobStatus(job.queueId, "ERROR_SV");
+			q_api.setJobStatus(job.queueId, "ERROR_SV");
 
 		return uploadedAllOutFiles;
 	}

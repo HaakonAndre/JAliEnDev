@@ -26,7 +26,6 @@ public class RegisterEnvelopes extends Request {
 	 * 
 	 */
 	private static final long serialVersionUID = 8844570313869928918L;
-	private AliEnPrincipal user = null;
 	private List<String> signedEnvelopes = null;
 	private List<PFN> pfns = null;
 
@@ -51,17 +50,20 @@ public class RegisterEnvelopes extends Request {
 	 * Register PFNs with envelopes
 	 * 
 	 * @param user
+	 * @param role 
 	 * @param signedEnvelopes
 	 */
-	public RegisterEnvelopes(AliEnPrincipal user, List<String> signedEnvelopes) {
-		this.user = user;
+	public RegisterEnvelopes(final AliEnPrincipal user, final String role, List<String> signedEnvelopes) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.signedEnvelopes = signedEnvelopes;
 	}
 
 	/**
 	 * Register PFNs with envelopes
+	 * @param user 
+	 * @param role 
 	 * 
-	 * @param user
 	 * @param encryptedEnvelope 
 	 * @param size 
 	 * @param lfn 
@@ -72,10 +74,11 @@ public class RegisterEnvelopes extends Request {
 	 * @param GUID 
 	 * @param md5 
 	 */
-	public RegisterEnvelopes(AliEnPrincipal user, String encryptedEnvelope,
+	public RegisterEnvelopes(final AliEnPrincipal user, final String role, String encryptedEnvelope,
 			int size, String md5, String lfn, String perm, String expire, String pfn,
 			String se, String GUID) {
-		this.user = user;
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.encryptedEnvelope = encryptedEnvelope;
 		this.size = size;
 		this.md5 = md5;
@@ -95,7 +98,7 @@ public class RegisterEnvelopes extends Request {
 						XrootDEnvelope xenv = new XrootDEnvelope(env);
 						System.out.println("Self Signature VERIFIED! : "
 								+ xenv.pfn.pfn);
-						if (BookingTable.commit(user,
+						if (BookingTable.commit(getEffectiveRequester(),
 								BookingTable.getBookedPFN(xenv.pfn.pfn))) {
 							System.out.println("Successfully moved "
 									+ xenv.pfn.pfn + " to the Catalogue");
@@ -107,7 +110,7 @@ public class RegisterEnvelopes extends Request {
 						XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
 						System.out.println("SE Signature VERIFIED! : "
 								+ xenv.pfn.pfn);
-						if (BookingTable.commit(user,
+						if (BookingTable.commit(getEffectiveRequester(),
 								BookingTable.getBookedPFN(xenv.pfn.pfn))) {
 							System.out.println("Successfully moved "
 									+ xenv.pfn.pfn + " to the Catalogue");
@@ -157,7 +160,7 @@ public class RegisterEnvelopes extends Request {
 							pfn.getGuid().md5 = md5;
 
 						try{
-						if (BookingTable.commit(user, pfn)) {
+						if (BookingTable.commit(getEffectiveRequester(), pfn)) {
 							
 								System.out.println("Successfully moved "
 									+ xenv.pfn.pfn + " to the Catalogue");

@@ -25,7 +25,6 @@ public class PFNforWrite extends Request {
 
 	private static final long serialVersionUID = 6219657670649893255L;
 
-	private AliEnPrincipal user = null;
 	private String site = null;
 	private LFN lfn = null;
 	private GUID guid = null;
@@ -40,16 +39,19 @@ public class PFNforWrite extends Request {
 	 * Get PFNs to write
 	 * 
 	 * @param user
+	 * @param role 
 	 * @param site
 	 * @param lfn
+	 * @param guid 
 	 * @param ses
 	 * @param exses
 	 * @param qosType
 	 * @param qosCount
 	 */
-	public PFNforWrite(AliEnPrincipal user, String site, LFN lfn, GUID guid,
+	public PFNforWrite(final AliEnPrincipal user, final String role, String site, LFN lfn, GUID guid,
 			List<String> ses, List<String> exses, String qosType, int qosCount) {
-		this.user = user;
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.site = site;
 		this.lfn = lfn;
 		this.guid = guid;
@@ -63,6 +65,7 @@ public class PFNforWrite extends Request {
 	 * Get PFNs to write
 	 * 
 	 * @param user
+	 * @param role 
 	 * @param site
 	 * @param guid
 	 * @param ses
@@ -70,9 +73,10 @@ public class PFNforWrite extends Request {
 	 * @param qosType
 	 * @param qosCount
 	 */
-	public PFNforWrite(AliEnPrincipal user, String site, GUID guid,
+	public PFNforWrite(final AliEnPrincipal user, final String role, String site, GUID guid,
 			List<String> ses, List<String> exses, String qosType, int qosCount) {
-		this.user = user;
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.site = site;
 		this.guid = guid;
 		this.ses = ses;
@@ -135,13 +139,13 @@ public class PFNforWrite extends Request {
 		if (ses != null) {
 			for (SE se : SEs) {
 
-				if (!se.canWrite(user)) {
+				if (!se.canWrite(getEffectiveRequester())) {
 					System.err
 							.println("You are not allowed to write to this SE.");
 					continue;
 				}
 				try {
-					pfns.add(BookingTable.bookForWriting(user, lfn, guid, null,
+					pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), lfn, guid, null,
 							0, se));
 				} catch (Exception e) {
 					System.out.println("Error for the request on "
@@ -160,11 +164,11 @@ public class PFNforWrite extends Request {
 			while (counter < qosCount && it.hasNext()) {
 				SE se = it.next();
 
-				if (!se.canWrite(user))
+				if (!se.canWrite(getEffectiveRequester()))
 					continue;
 
 				try {
-					pfns.add(BookingTable.bookForWriting(user, lfn, guid, null,
+					pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), lfn, guid, null,
 							0, se));
 				} catch (Exception e) {
 					System.out.println("Error for the request on "

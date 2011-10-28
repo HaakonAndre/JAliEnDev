@@ -8,7 +8,6 @@ import java.util.List;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
@@ -89,11 +88,11 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 			
 
 			if (bG) {
-				guid = CatalogueApiUtils.getGUID(lfnOrGuid);
+				guid = commander.c_api.getGUID(lfnOrGuid);
 				md5 = guid.md5;
 				
 			} else {
-				lfn = CatalogueApiUtils
+				lfn = commander.c_api
 						.getLFN(FileSystemUtils.getAbsolutePath(commander.user
 								.getName(), commander.getCurrentDir()
 								.getCanonicalName(), lfnOrGuid));
@@ -114,10 +113,10 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 				if (outputFile == null || !outputFile.exists()) {
 
 					if (guid != null)
-						pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+						pfns = commander.c_api.getPFNsToRead(
 								commander.site, guid, ses, exses);
 					else if (lfn != null)
-						pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+						pfns = commander.c_api.getPFNsToRead(
 								commander.site, lfn, ses, exses);
 
 					try {

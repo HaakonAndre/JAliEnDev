@@ -66,49 +66,5 @@ public class Dispatcher {
 		return DispatchSSLClient.dispatchRequest(r);
 	}
 
-	/**
-	 * Debug method
-	 * 
-	 * @param args
-	 * @throws IOException 
-	 */
-	public static void main(String[] args) throws IOException {
-		LFNfromString request = new LFNfromString("/alice/cern.ch/user/g/grigoras/myNewFile", false);
-		
-		LFNfromString response = (LFNfromString) execute(request);
-		
-		System.out.println("We received: " + response.getLFN().getFileName()  );
-		
-		long lStart = System.currentTimeMillis();
-		
-		for (int i=0; i<100; i++){
-			request = new LFNfromString("/alice/cern.ch/user/g/grigoras/myNewFile", false);
-			
-			response = (LFNfromString) execute(request);
-		
-			//System.err.println(response);
-		}
-		
-		System.err.println("Lasted : "+(System.currentTimeMillis() - lStart)+", "+DispatchSSLClient.lSerialization);
-		
-		// dry run
-		
-		final long lStartDry = System.currentTimeMillis();
-		
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ObjectOutputStream oos = new ObjectOutputStream(baos);
-		
-		for (int i=0; i<100; i++){
-			request = new LFNfromString("/alice/cern.ch/user/g/grigoras/myNewFile", false);
-			
-			oos.writeObject(request);
-			oos.flush();
-			baos.flush();
-		}
-		
-		oos.close();
-		
-		System.err.println("Dry run took "+(System.currentTimeMillis() - lStartDry));
-	}
 	
 }

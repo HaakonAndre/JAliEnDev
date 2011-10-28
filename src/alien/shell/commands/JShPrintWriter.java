@@ -63,7 +63,7 @@ public class JShPrintWriter extends UIPrintWriter{
 	
 	/**
 	 * color status
-	 * @return
+	 * @return state of the color mode
 	 */
 	protected boolean colour(){
 		return bColour;
@@ -99,14 +99,14 @@ public class JShPrintWriter extends UIPrintWriter{
 	}
 	
 	protected void printErrln(String line) {
-		if(bColour)
-			print(errTag + ShellColor.boldRed() + line + ShellColor.reset() + "\n");
-		else
+		//if(bColour)
+		//	print(errTag + ShellColor.boldRed() + line + ShellColor.reset() + "\n");
+		//else
 			print(errTag + line + "\n");
 	}
 	
-	protected void setenv(String cDir, String user, String cDirtiled) {
-		print(outputterminator+cDir + fieldseparator + user + fieldseparator + cDirtiled +"\n");
+	protected void setenv(String cDir, String user, String cRole) {
+		print(outputterminator+cDir + fieldseparator + user + fieldseparator + cRole +"\n");
 	}
 	
 	protected void flush(){

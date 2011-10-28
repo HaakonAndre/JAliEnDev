@@ -6,7 +6,6 @@ import java.util.Set;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
@@ -42,7 +41,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 		if (bG) {
 			guid = lfnOrGuid;
 		} else {
-			LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), lfnOrGuid));
 			if(lfn!=null && lfn.guid!=null)
@@ -51,13 +50,13 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 		// what message in case of error?
 		if (guid != null) {
 
-			Set<PFN> pfns = CatalogueApiUtils.getPFNs(guid);
+			Set<PFN> pfns = commander.c_api.getPFNs(guid);
 
 			if (bR)
 				if (pfns.toArray()[0] != null)
 					if (((PFN) pfns.toArray()[0]).pfn.toLowerCase().startsWith(
 							"guid://"))
-						pfns = CatalogueApiUtils.getGUID(
+						pfns = commander.c_api.getGUID(
 								((PFN) pfns.toArray()[0]).pfn.substring(8, 44))
 								.getPFNs();
 
@@ -68,7 +67,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 								lfnOrGuid.length()) + " is in\n");
 			for (PFN pfn : pfns) {
 
-				String se = CatalogueApiUtils.getSE(pfn.seNumber).seName;
+				String se = commander.c_api.getSE(pfn.seNumber).seName;
 				if (!silent)
 					out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>"
 							+ pfn.pfn + "\n");

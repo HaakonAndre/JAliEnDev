@@ -4,6 +4,7 @@ import alien.api.Request;
 import alien.taskQueue.TaskQueueFakeUtils;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
@@ -20,8 +21,13 @@ public class GetJDL extends Request {
 	private String jdl;
 	
 	/**
+	 * @param user 
+	 * @param role 
+	 * @param queueId 
 	 */
-	public GetJDL(final int queueId){
+	public GetJDL(final AliEnPrincipal user, final String role, final int queueId){
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.queueId = queueId;
 	}
 	

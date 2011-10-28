@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.PFN;
 
 /**
@@ -67,11 +66,11 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 		
 		List<PFN> pfns = null;
 		if(rawenvelope.contains("signature=")){
-			pfns = CatalogueApiUtils.registerEnvelopes(commander.user,new ArrayList<String>(Arrays.asList(rawenvelope)));
+			pfns = commander.c_api.registerEnvelopes(new ArrayList<String>(Arrays.asList(rawenvelope)));
 			
 		}
 		else{
-			pfns = CatalogueApiUtils.registerEncryptedEnvelope(commander.user,rawenvelope,size,md5,lfn,perm,expire,pfn,se,guid);
+			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope,size,md5,lfn,perm,expire,pfn,se,guid);
 		}
 			
 

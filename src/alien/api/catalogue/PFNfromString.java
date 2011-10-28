@@ -7,6 +7,7 @@ import alien.api.Cacheable;
 import alien.api.Request;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
+import alien.user.AliEnPrincipal;
 
 /**
  * 
@@ -23,9 +24,13 @@ public class PFNfromString extends Request implements Cacheable{
 
 	/**
 	 * Get PFNs by String
+	 * @param user 
+	 * @param role 
 	 * @param sguid
 	 */
-	public PFNfromString(final String sguid) {
+	public PFNfromString(final AliEnPrincipal user, final String role, final String sguid) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.sguid = sguid;
 	}
 

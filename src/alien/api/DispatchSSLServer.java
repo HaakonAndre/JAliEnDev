@@ -124,9 +124,12 @@ public class DispatchSSLServer extends Thread {
 
 						if (forwardRequest)
 							r = DispatchSSLClient.dispatchRequest(r);
-						else
+						else{
+							
+							r.authorizeUserAndRole();
 							r.run();
-
+						}
+							
 						lLasted += (System.currentTimeMillis() - lStart);
 
 						long lSer = System.currentTimeMillis();

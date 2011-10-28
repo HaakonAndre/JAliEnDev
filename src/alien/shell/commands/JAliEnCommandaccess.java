@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.StringTokenizer;
-
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -93,7 +91,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			evenIfNotExists = true;
 
 		if (GUIDUtils.isValidGUID(lfnOrGIUD)) {
-			guid = CatalogueApiUtils.getGUID(lfnOrGIUD, evenIfNotExists);
+			guid = commander.c_api.getGUID(lfnOrGIUD, evenIfNotExists);
 			if (guid == null) {
 				out.printErrln("Not able to retrieve GUID from Catalogue [error in processing].");
 				return;
@@ -101,7 +99,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			guid.size = size;
 			guid.md5 = md5;
 		} else {
-			lfn = CatalogueApiUtils.getLFN(lfnOrGIUD, evenIfNotExists);
+			lfn = commander.c_api.getLFN(lfnOrGIUD, evenIfNotExists);
 			if (lfn == null) {
 				out.printErrln("Not able to retrieve LFN from Catalogue [error in processing].");
 				return;
@@ -112,7 +110,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					
 				}
 				else
-					guid = CatalogueApiUtils.getGUID(requireguid,
+					guid = commander.c_api.getGUID(requireguid,
 							evenIfNotExists);
 				lfn.guid = guid.guid;
 				guid.lfnCache = new LinkedHashSet<LFN>(1);
@@ -132,20 +130,20 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			}
 
 //			if (lfn != null)
-//				pfns = CatalogueApiUtils.getPFNsToWrite(commander.user, site,
+//				pfns = commander.c_api.getPFNsToWrite(commander.user, site,
 //						lfn, ses, exxses, qosType, qosCount);
 //			else
 				if (guid != null)
-				pfns = CatalogueApiUtils.getPFNsToWrite(commander.user, site,
+				pfns = commander.c_api.getPFNsToWrite(site,
 						guid, ses, exxses, qosType, qosCount);
 			else
 				out.printErrln("Not able to get request LFN/GUID [error in processing].");
 		} else if (accessRequest == AccessType.READ) {
 			if (lfn != null)
-				pfns = CatalogueApiUtils.getPFNsToRead(commander.user, site,
+				pfns = commander.c_api.getPFNsToRead(site,
 						lfn, ses, exxses);
 			else if (guid != null)
-				pfns = CatalogueApiUtils.getPFNsToRead(commander.user, site,
+				pfns = commander.c_api.getPFNsToRead(site,
 						guid, ses, exxses);
 			else
 				out.printErrln("Not able to get request LFN/GUID [error in processing].");
@@ -198,9 +196,9 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 				String envelope = pfn.ticket.envelope.getSignedEnvelope();
 				
-				if (!"alice::cern::setest".equals(CatalogueApiUtils.getSE(pfn.seNumber)
+				if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber)
 						.getName().toLowerCase()))
-					if (CatalogueApiUtils.getSE(pfn.seNumber).needsEncryptedEnvelope)
+					if (commander.c_api.getSE(pfn.seNumber).needsEncryptedEnvelope)
 						envelope += "&envelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
 

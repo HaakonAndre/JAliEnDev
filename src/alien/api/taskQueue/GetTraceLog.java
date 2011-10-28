@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lazyj.Utils;
 import alien.api.Request;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get a TraceLog object
@@ -36,9 +37,13 @@ public class GetTraceLog extends Request {
 	}
 	
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param queueId 
 	 */
-	public GetTraceLog(final int queueId){
+	public GetTraceLog(final AliEnPrincipal user, final String role, final int queueId){
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.queueId = queueId;
 	}
 	

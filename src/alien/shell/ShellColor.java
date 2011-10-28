@@ -15,15 +15,48 @@ public class ShellColor {
 
 
 	
+	/**
+	 * @return color code
+	 */
 	public static String reset(){
 		return genTag(ForeColor.NONE, BackColor.NONE, Style.CLEAR);
 	}
 	
+	
+	/**
+	 * @return color code
+	 */
+	public static String errorMessage(){
+		return boldRed();
+	}
+	
+	/**
+	 * @return color code
+	 */
 	public static String boldRed(){
 		return genTag(ForeColor.RED, BackColor.NONE, Style.BOLD);
 	}
 	
+	/**
+	 * @return color code
+	 */
+	public static String blue(){
+		return genTag(ForeColor.BLUE, BackColor.NONE, Style.NONE);
+	}
 	
+	/**
+	 * @return color code
+	 */
+	public static String black(){
+		return genTag(ForeColor.BLACK, BackColor.NONE, Style.NONE);
+	}
+	
+	/**
+	 * @return color code
+	 */
+	public static String boldBlack(){
+		return genTag(ForeColor.BLACK, BackColor.NONE, Style.BOLD);
+	}
 	
 	private static String genTag(final ForeColor fc, final BackColor bc, final Style st) {
 		return prefix + fc.getCode() + sep + bc.getCode() + sep + st.getCode() + suffix;

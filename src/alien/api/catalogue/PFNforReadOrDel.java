@@ -33,7 +33,6 @@ public class PFNforReadOrDel extends Request {
 
 	private AccessType access = null;
 
-	private AliEnPrincipal user = null;
 	private String site = null;
 	private LFN lfn = null;
 	private GUID guid = null;
@@ -46,15 +45,17 @@ public class PFNforReadOrDel extends Request {
 	 * Get PFNs to read
 	 * 
 	 * @param user
+	 * @param role 
 	 * @param site
 	 * @param access
 	 * @param lfn
 	 * @param ses
 	 * @param exses
 	 */
-	public PFNforReadOrDel(AliEnPrincipal user, String site, AccessType access,
+	public PFNforReadOrDel(final AliEnPrincipal user, final String role, String site, AccessType access,
 			LFN lfn, List<String> ses, List<String> exses) {
-		this.user = user;
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.site = site;
 		this.lfn = lfn;
 		this.access = access;
@@ -66,15 +67,17 @@ public class PFNforReadOrDel extends Request {
 	 * Get PFNs to read
 	 * 
 	 * @param user
+	 * @param role 
 	 * @param site
 	 * @param access
 	 * @param guid
 	 * @param ses
 	 * @param exses
 	 */
-	public PFNforReadOrDel(AliEnPrincipal user, String site, AccessType access,
+	public PFNforReadOrDel(final AliEnPrincipal user, final String role, String site, AccessType access,
 			GUID guid, List<String> ses, List<String> exses) {
-		this.user = user;
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.site = site;
 		this.guid = guid;
 		this.access = access;
@@ -100,7 +103,7 @@ public class PFNforReadOrDel extends Request {
 			try {
 				for (PFN pfn : pfns) {
 
-					String reason = AuthorizationFactory.fillAccess(user, pfn,
+					String reason = AuthorizationFactory.fillAccess(pfn,
 							access);
 
 					if (reason != null) {
@@ -117,7 +120,7 @@ public class PFNforReadOrDel extends Request {
 										pfn.retrieveArchiveLinkedGUID())
 										.getPFNs(), site, true, SEUtils
 										.getSEs(ses), SEUtils.getSEs(exses));
-						if (!AuthorizationChecker.canRead(archiveguid, user)) {
+						if (!AuthorizationChecker.canRead(archiveguid, getEffectiveRequester())) {
 							System.err
 									.println("Access refused because: Not allowed to read sub-archive");
 							continue;
@@ -125,7 +128,7 @@ public class PFNforReadOrDel extends Request {
 
 						for (PFN apfn : apfns) {
 
-							reason = AuthorizationFactory.fillAccess(user,
+							reason = AuthorizationFactory.fillAccess(getEffectiveRequester(),
 									apfn, access);
 
 							if (reason != null) {

@@ -3,6 +3,7 @@ package alien.api.taskQueue;
 import alien.api.Request;
 import alien.taskQueue.JobSubmissionException;
 import alien.taskQueue.TaskQueueFakeUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
@@ -23,9 +24,13 @@ public class SubmitJob extends Request {
 	private String reason = null;
 
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param jdl
 	 */
-	public SubmitJob(String jdl) {
+	public SubmitJob(final AliEnPrincipal user, final String role, final String jdl) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.jdl = jdl;
 	}
 

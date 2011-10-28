@@ -5,6 +5,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import javax.swing.event.ListSelectionEvent;
+
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -21,12 +23,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * marker for -l argument
 	 */
 	private boolean bL = false;
-
-	/**
-	 * marker for -M argument
-	 */
-	private boolean bM = false;
-
+	
 	/**
 	 * id of the job to get the JDL for
 	 */
@@ -56,7 +53,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	public void run() {
 		
 		if (getJDL != 0) {
-			String jdl = TaskQueueApiUtils.getJDL(getJDL);
+			String jdl = commander.q_api.getJDL(getJDL);
 			if (jdl != null){
 				if(bColour)
 					out.printOutln(textred + jdl + textnormal);
@@ -64,7 +61,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					out.printOutln(jdl);
 			}
 		} else if (getTrace != 0) {
-			String tracelog = TaskQueueApiUtils.getTraceLog(getTrace);
+			String tracelog = commander.q_api.getTraceLog(getTrace);
 			if (tracelog != null)
 				if(bColour)
 					out.printOutln(textblue + tracelog + textnormal);
@@ -73,13 +70,13 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			
 		} else {
 
-			if (states.size() == 0)
-				states.addAll(defJobStates());
+			//if (states.size() == 0)
+			//	states.addAll(defJobStates());
 			if (users.size() == 0)
 				users.add(commander.getUsername());
 
-			List<Job> ps = TaskQueueApiUtils.getPS(states, users, sites, nodes,
-					mjobs, jobid, bM, orderByKey, limit);
+			List<Job> ps = commander.q_api.getPS(states, users, sites, nodes,
+					mjobs, jobid, orderByKey, limit);
 
 			if (ps != null) {
 				for (Job j : ps) {
@@ -228,8 +225,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		out.printOutln();
 		out.printOutln(helpUsage("ps", "[-options]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-F {l}", "(output format)"));
-		out.printOutln(helpOption("-f <flags/status>"));
+		out.printOutln(helpOption("-F l | -Fl | -L", "long output format"));
+		out.printOutln(helpOption("-f <flags|status>"));
 		out.printOutln(helpOption("-u <userlist>"));
 		out.printOutln(helpOption("-s <sitelist>"));
 		out.printOutln(helpOption("-n <nodelist>"));
@@ -246,9 +243,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				"select all jobs which are waiting for execution of you"));
 		out.printOutln(helpOption("-E",
 				"select all jobs which are in error state of you"));
-		out.printOutln(helpOption("-D", "select all done jobs of you"));
-		out.printOutln(helpOption("-R", "select all running jobs of you"));
-		out.printOutln(helpOption("-Q", "select all queued jobs of you"));
 		out.printOutln(helpOption("-a", "select jobs of all users"));
 		out.printOutln(helpOption("-b", "do only black-white output"));
 		out.printOutln(helpOption("-jdl <jobid>", "display the job jdl"));
@@ -293,6 +287,9 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			final OptionParser parser = new OptionParser();
 
 			parser.accepts("F").withRequiredArg();
+			parser.accepts("Fl");
+			parser.accepts("L");
+			
 			parser.accepts("f").withRequiredArg();
 			parser.accepts("u").withRequiredArg();
 			parser.accepts("s").withRequiredArg();
@@ -336,10 +333,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			} else {
 
 				if (options.has("f") && options.hasArgument("f")) {
-					final StringTokenizer st = new StringTokenizer(
-							(String) options.valueOf("f"), ",");
-					while (st.hasMoreTokens())
-						states.add(st.nextToken());
+					decodeFlagsAndStates((String) options.valueOf("f"));
 				}
 
 				if (options.has("u") && options.hasArgument("u")) {
@@ -392,40 +386,40 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					}
 				}
 
-				if (options.has("X")
-						|| (options.has("F") && options.hasArgument("F") && "l"
-								.equals(options.valueOf("F"))))
+				if (options.has("X")){
 					bL = true;
+					states.addAll(flag_r());
+					states.addAll(flag_s());
+				}
+					
+					
+				if(options.has("Fl") || options.has("L") || (options.has("F") && "l".equals(options.valueOf("F"))) )
+					bL = true;
+				
 
 				if ((options.has("o") && options.hasArgument("o")))
 					orderByKey = (String) options.valueOf("o");
 
+//
+//		        case 'M':
+//		          st_masterjobs = "\\\\0";
+
 				if (options.has("A")) {
-					states.addAll(allJobStates());
+					states.add("%");
+					users.add(commander.getUsername());
+				}
+				if (options.has("E")) {
+					states.addAll(flag_f());
 					users.add(commander.getUsername());
 				}
 				if (options.has("W")) {
-					states.addAll(prerunJobStates());
-					users.add(commander.getUsername());
-				}
-				if (options.has("W")) {
-					states.addAll(errorJobStates());
-					users.add(commander.getUsername());
-				}
-				if (options.has("D")) {
-					states.addAll(doneJobStates());
-					users.add(commander.getUsername());
-				}
-				if (options.has("R")) {
-					states.addAll(runningJobStates());
-					users.add(commander.getUsername());
-				}
-				if (options.has("Q")) {
-					states.addAll(queuedJobStates());
+					states.addAll(flag_s());
 					users.add(commander.getUsername());
 				}
 
-				bM = options.has("M");
+				if(options.has("M"))
+					mjobs.add("%");
+
 
 				if (options.has("a")) {
 					users.add("%");
@@ -434,6 +428,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 			if(options.has("b"))
 				bColour = false;
+			
+			System.out.println("states: [" + states + "]");
+			
+			System.out.println("users: [" + users + "]");
 
 		} catch (OptionException e) {
 			printHelp();
@@ -441,36 +439,76 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		}
 	}
 
-	private static List<String> defJobStates() {
-		return Arrays.asList(new String[] { "INSERTING", "WAITING", "ASSIGEND",
-				"QUEUED", "STARTED", "RUNNING" });
+	private void decodeFlagsAndStates(final String line) {
+		
+		if(line==null || line.length()<1)
+			return;
+
+		boolean all = false;
+
+		if (line.startsWith("-")) {
+			if ((line.length() == 1) || ("-a".equals(line)))
+				all = true;
+			else{
+				char[] flags = line.toCharArray();
+				for (char f: flags) {
+					if(f=='r'){
+						all = true;
+						break;
+					}else if(f=='r')
+						states.addAll(flag_r());
+					else if(f=='q')
+						states.addAll(flag_q());
+					else if(f=='f')
+						states.addAll(flag_f());
+					else if(f=='d')
+						states.addAll(flag_d());
+					else if(f=='t')
+						states.addAll(flag_t());
+					else if(f=='s')
+						states.addAll(flag_s());
+				}
+			}
+		} else {
+
+			final StringTokenizer st = new StringTokenizer(line, ",");
+			while (st.hasMoreTokens()) {
+				String o = st.nextToken();
+				if (o.length() < 1)
+					continue;
+				if ("%".equals(o)) {
+					all = true;
+					break;
+				}
+				states.add(o);
+			}
+		}
+		if (all)
+			states = new ArrayList<String>(Arrays.asList("%"));
 	}
 
-	private static List<String> allJobStates() {
-		return Arrays
-				.asList(new String[] { "INSERTING", "WAITING", "EXPIRED",
-						"ASSIGEND", "QUEUED", "STARTED", "RUNNING", "DONE",
-						"ERROR_%" });
+	private static List<String> flag_f() {
+		return Arrays.asList(new String[] { "ERROR&","FAILED","EXPIRED"});
 	}
 
-	private static List<String> runningJobStates() {
-		return Arrays.asList(new String[] { "RUNNING" });
-	}
-
-	private static List<String> errorJobStates() {
-		return Arrays.asList(new String[] { "ERROR_%" });
-	}
-
-	private static List<String> doneJobStates() {
+	private static List<String> flag_d() {
 		return Arrays.asList(new String[] { "DONE" });
 	}
 
-	private static List<String> queuedJobStates() {
-		return Arrays.asList(new String[] { "QUEUED" });
+	private static List<String> flag_t() {
+		return Arrays.asList(new String[] { "DONE", "ERROR%" });
 	}
 
-	private static List<String> prerunJobStates() {
-		return Arrays
-				.asList(new String[] { "WAITING", "INSERTING", "ASSIGNED" });
+	private static List<String> flag_s() {
+		return Arrays.asList(new String[] { "INSERTING", "EXPIRED", "WAITING", "ASSIGNED", "QUEUED"});
 	}
+
+	private static List<String> flag_q() {
+		return Arrays.asList(new String[] { "QUEUED", "ASSIGNED"});
+	}
+
+	private static List<String> flag_r() {
+		return Arrays.asList(new String[] { "RUNNING", "STARTED", "SAVING"});
+	}
+
 }

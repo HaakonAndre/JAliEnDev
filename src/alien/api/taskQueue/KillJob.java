@@ -4,6 +4,7 @@ import alien.api.Request;
 import alien.taskQueue.JobSubmissionException;
 import alien.taskQueue.TaskQueueFakeUtils;
 import alien.taskQueue.TaskQueueUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
@@ -24,22 +25,26 @@ public class KillJob extends Request {
 	private boolean wasKilled = false;
 
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param queueId
 	 */
-	public KillJob(final int queueId) {
+	public KillJob(final AliEnPrincipal user, final String role, final int queueId) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.queueId = queueId;
 	}
 
 
 	public void run() {
-		this.wasKilled = TaskQueueUtils.killJob(queueId);
+		this.wasKilled = TaskQueueUtils.killJob(getEffectiveRequester(),getEffectiveRequesterRole(),queueId);
 	}
 
 	/**
 	 * @return success of the kill
 	 */
 	public boolean wasKilled(){
-		return this.wasKilled();
+		return this.wasKilled;
 	}
 
 	public String toString() {

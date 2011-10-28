@@ -10,17 +10,41 @@ import alien.config.ConfigUtils;
 
 /**
  * @author ron
- * 
+ * @since July 15, 2011
  */
 public class RootPrintWriter extends UIPrintWriter {
 
+	/**
+	 * 
+	 */
 	public static String streamend = String.valueOf((char) 0);
+	/**
+	 * 
+	 */
 	public static String fieldseparator = String.valueOf((char) 1);
+	/**
+	 * 
+	 */
 	public static String fielddescriptor = String.valueOf((char) 2);
+	/**
+	 * 
+	 */
 	public static String columnseparator = String.valueOf((char) 3);
+	/**
+	 * 
+	 */
 	public static String stdoutindicator = String.valueOf((char) 4);
+	/**
+	 * 
+	 */
 	public static String stderrindicator = String.valueOf((char) 5);
+	/**
+	 * 
+	 */
 	public static String outputindicator = String.valueOf((char) 6);
+	/**
+	 * 
+	 */
 	public static String outputterminator = String.valueOf((char) 7);
 
 	private String clientenv = "";
@@ -59,7 +83,7 @@ public class RootPrintWriter extends UIPrintWriter {
 		stderr.add(line + "\n");
 	}
 
-	protected void setenv(String cDir, String user, String cDirtiled) {
+	protected void setenv(String cDir, String user, String cRole) {
 		clientenv = cDir;
 	}
 
@@ -166,7 +190,7 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	/**
 	 * @param line
-	 * @return
+	 * @return visible tagged line
 	 */
 	public static String testMakeTagsVisible(final String line) {
 		String line1;

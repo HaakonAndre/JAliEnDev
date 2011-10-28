@@ -15,6 +15,7 @@ import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.config.ConfigUtils;
 import alien.shell.BusyBox;
+import alien.shell.ShellColor;
 
 /**
  * @author ron
@@ -23,11 +24,13 @@ import alien.shell.BusyBox;
 public class JSh {
 	
 	
-	private class SigHandler implements SignalHandler{
-		public void handle(Signal sig) {
-            System.out.println("got SIGINT!");
-        }
-	}
+//	private class SigHandler implements SignalHandler{
+//		public void handle(Signal sig) {
+//            System.out.println("got SIGINT!");
+//            if(boombox!=null)
+//            	boombox.callJAliEnGetString("SIGINT");
+//        }
+//	}
 	
 	static {
 		ConfigUtils.getVersion();
@@ -44,8 +47,8 @@ public class JSh {
 
 		 Signal.handle(new Signal("INT"), new SignalHandler () {
 			    public void handle(Signal sig) {
-			      System.out.println(
-			        "Sorry, the command interrupt doesn't work yet!!");
+			      if(boombox!=null)
+		            	boombox.callJBoxGetString("SIGINT");
 			    }
 			  });
 		
@@ -63,8 +66,7 @@ public class JSh {
 				boombox.prompt();
 			}
 			else
-				System.err
-						.println("JBox isn't running/couldn't be started, so we won't start JSh.");
+				printErrNoJBox();
 		}
 	}
 
@@ -126,77 +128,78 @@ public class JSh {
 
 	private static boolean JBoxRunning() {
 
-		JSh.getJBoxPID();
+		if (JSh.getJBoxPID()) {
 
-		if (!(new File(fuser)).exists())
-			return true;
-
-		if (port == 0){
-			System.err.println("Port info is zero.");
-			return false;
-		}
-		
-		if(pid==0)
-			return true;  //fake code
-
-		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-				new String[] { fuser, port + "/tcp" });
-
-		pBuilder.returnOutputOnExit(true);
-		pBuilder.timeout(2, TimeUnit.SECONDS);
-		pBuilder.redirectErrorStream(true);
-		final ExitStatus exitStatus;
-		try {
-			exitStatus = pBuilder.start().waitFor();
-		} catch (Exception e) {
-			e.printStackTrace();
-			System.err.println("Could not get information on port/PID over.");
-			return false;
-		}
-		if (exitStatus.getExtProcExitStatus() == 0) {
-			// To check what process (if any) is listening on a given port:
-			// fuser 10100/tcp
-			// 10100/tcp: 5995
-			String line[] = exitStatus.getStdOut().trim().split(":");
-			if (!line[0].trim().equals(port + "/tcp")
-					|| !line[1].trim().equals(pid + "")){
-				System.err.println("Could not get proper information from fuser.");
-				return false;
-			}
-
-		} else {
-			System.err.println("Could not get information from fuser.");
-			return false;
-		}
-
-		File f = new File("/proc/" + pid + "/cmdline");
-		if (f.exists()) {
-			String buffer = "";
-			BufferedReader fi = null;
-			try {
-				fi = new BufferedReader(new InputStreamReader(
-						new FileInputStream(f)));
-				buffer = fi.readLine();
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.err.println("Could not get information on PID.");
-				return false;
-			} finally {
-				if (fi != null)
-					try {
-						fi.close();
-					} catch (IOException e) {
-						// ignore
-					}
-			}
-			if (buffer.contains("alien.JBox"))
+			if (!(new File(fuser)).exists())
 				return true;
+
+			if (port == 0) {
+				// System.err.println("Port info is zero.");
+				return false;
+			}
+
+			if (pid == 0)
+				return true; // fake code
+
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
+					new String[] { fuser, port + "/tcp" });
+
+			pBuilder.returnOutputOnExit(true);
+			pBuilder.timeout(2, TimeUnit.SECONDS);
+			pBuilder.redirectErrorStream(true);
+			final ExitStatus exitStatus;
+			try {
+				exitStatus = pBuilder.start().waitFor();
+			} catch (Exception e) {
+				// e.printStackTrace();
+				// System.err.println("Could not get information on port/PID over.");
+				return false;
+			}
+			if (exitStatus.getExtProcExitStatus() == 0) {
+				// To check what process (if any) is listening on a given port:
+				// fuser 10100/tcp
+				// 10100/tcp: 5995
+				String line[] = exitStatus.getStdOut().trim().split(":");
+				if (!line[0].trim().equals(port + "/tcp")
+						|| !line[1].trim().equals(pid + "")) {
+					// System.err.println("Could not get proper information from fuser.");
+					return false;
+				}
+
+			} else {
+				// System.err.println("Could not get information from fuser.");
+				return false;
+			}
+
+			File f = new File("/proc/" + pid + "/cmdline");
+			if (f.exists()) {
+				String buffer = "";
+				BufferedReader fi = null;
+				try {
+					fi = new BufferedReader(new InputStreamReader(
+							new FileInputStream(f)));
+					buffer = fi.readLine();
+				} catch (IOException e) {
+					// e.printStackTrace();
+					// System.err.println("Could not get information on PID.");
+					return false;
+				} finally {
+					if (fi != null)
+						try {
+							fi.close();
+						} catch (IOException e) {
+							// ignore
+						}
+				}
+				if (buffer.contains("alien.JBox"))
+					return true;
+			}
 		}
-		System.err.println("Could not get information from /proc.");
+		// System.err.println("Could not get information from /proc.");
 		return false;
 	}
 
-	private static void getJBoxPID() {
+	private static boolean getJBoxPID() {
 
 		File f = new File("/tmp/gclient_token_"+System.getProperty("userid"));
 
@@ -208,9 +211,9 @@ public class JSh {
 				fi = new BufferedInputStream(new FileInputStream(f));
 				fi.read(buffer);
 			} catch (IOException e) {
-				System.err.println("Exception while reading token file.");
+				//System.err.println("Exception while reading token file.");
 				port = 0;
-				return;
+				return false;
 			} finally {
 				if (fi != null)
 					try {
@@ -249,9 +252,11 @@ public class JSh {
 					password = kval[1].trim();
 				}
 			}
+			return true;
 		}
-		else
-			System.err.println("Token file does not exists.");
+		// else
+		//	System.err.println("Token file does not exists.");
+		return false;
 	}
 	
 
@@ -264,6 +269,64 @@ public class JSh {
 		boombox = new BusyBox(addr, port, password);
 		return boombox;
 	}
+
+	/**
+	 * @return PID of JBox
+	 */
+	public static int getPID(){
+		return pid;
+	}
 	
+	/**
+	 * @return port of JBox
+	 */
+	public static int getPort(){
+		return port;
+	}
+	
+	
+	/**
+	 * @return addr of JBox
+	 */
+	public static String getAddr(){
+		return addr;
+	}
+	
+	/**
+	 * @return pass of JBox
+	 */
+	public static String getPassword(){
+		return password;
+	}
+	
+	/**
+	 * reconnect 
+	 * @return success
+	 */
+	public static boolean reconnect(){
+		
+		return JSh.JBoxRunning();
+
+	}
+	
+	
+	private static void printErrNoJBox(){
+		printErr("JBox isn't running, so we won't start JSh.");
+	}
+
+	
+	/**
+	 * @param message
+	 */
+	public static void printErr(String message){
+		System.err.println(ShellColor.errorMessage() + message + ShellColor.reset());
+	}
+	
+	/**
+	 * @param message
+	 */
+	public static void printOut(String message){
+		System.out.println(ShellColor.errorMessage() + message + ShellColor.reset());
+	}
 	
 }

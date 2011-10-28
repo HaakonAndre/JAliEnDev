@@ -3,6 +3,7 @@ package alien.api.catalogue;
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get the LFN object for this path
@@ -23,10 +24,14 @@ public class LFNfromString extends Request {
 	private LFN lfn;
 	
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param path
 	 * @param evenIfDoesNotExist
 	 */
-	public LFNfromString(final String path, final boolean evenIfDoesNotExist){
+	public LFNfromString(final AliEnPrincipal user, final String role, final String path, final boolean evenIfDoesNotExist){
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.path = path;
 		this.evenIfDoesNotExist = evenIfDoesNotExist;
 	}

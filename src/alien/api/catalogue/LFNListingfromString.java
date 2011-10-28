@@ -6,6 +6,7 @@ import java.util.List;
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get the LFN object for this path
@@ -24,9 +25,13 @@ public class LFNListingfromString extends Request {
 	private List<LFN> lfns = null;
 
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param path
 	 */
-	public LFNListingfromString(final String path) {
+	public LFNListingfromString(final AliEnPrincipal user, final String role, final String path) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.path = path;
 	}
 

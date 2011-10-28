@@ -4,6 +4,7 @@ import alien.api.Cacheable;
 import alien.api.Request;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * 
@@ -20,18 +21,26 @@ public class SEfromString extends Request implements Cacheable {
 	
 	/**
 	 * Get SE by name
+	 * @param user 
+	 * @param role 
 	 * @param se
 	 */
-	public SEfromString(final String se){
+	public SEfromString(final AliEnPrincipal user, final String role, final String se){
+		setRequestUser(user);
+		setRoleRequest(role);
 		sSE = se;
 		seNo = 0;
 	}
 	
 	/**
 	 * Get SE by number
+	 * @param user 
+	 * @param role 
 	 * @param seno 
 	 */
-	public SEfromString(final int seno){
+	public SEfromString(final AliEnPrincipal user, final String role, final int seno){
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.seNo = seno;
 		sSE = null;
 	}

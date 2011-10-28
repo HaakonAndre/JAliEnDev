@@ -18,24 +18,24 @@ public class RemoveLFNfromString extends Request {
 	 */
 	private static final long serialVersionUID = 8507879864667855615L;
 	private final String path;
-	private AliEnPrincipal user = null;
-
 	
 	private boolean wasRemoved = false;
 
 	/**
 	 * @param user 
+	 * @param role 
 	 * @param path
 	 */
-	public RemoveLFNfromString(AliEnPrincipal user, final String path) {
-		this.user = user;
+	public RemoveLFNfromString(final AliEnPrincipal user, final String role, final String path) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.path = path;
 	}
 
 	public void run() {
 		LFN lfn = LFNUtils.getLFN(path);
 		if(lfn!=null)
-			wasRemoved = LFNUtils.rmLFN(user, lfn);		
+			wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn);		
 
 	}
 

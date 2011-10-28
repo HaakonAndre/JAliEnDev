@@ -9,7 +9,6 @@ import java.util.StringTokenizer;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -144,7 +143,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	
 
 	private boolean targetLFNExists(String target) {
-		LFN tLFN = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+		LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 				commander.user.getName(), commander.getCurrentDir()
 						.getCanonicalName(), target));
 		if (tLFN != null){
@@ -169,14 +168,14 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		List<PFN> pfns = null;
 
 		if (bG) {
-			GUID guid = CatalogueApiUtils.getGUID(source);
-			pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+			GUID guid = commander.c_api.getGUID(source);
+			pfns = commander.c_api.getPFNsToRead(
 					commander.site, guid, ses, exses);
 		} else {
-			LFN lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), source));
-			pfns = CatalogueApiUtils.getPFNsToRead(commander.user,
+			pfns = commander.c_api.getPFNsToRead(
 					commander.site, lfn, ses, exses);
 
 		}
@@ -252,15 +251,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		GUID guid = null;
 
 		if (bG) {
-			guid = CatalogueApiUtils.getGUID(target, true);
-			pfns = CatalogueApiUtils.getPFNsToWrite(commander.user,
+			guid = commander.c_api.getGUID(target, true);
+			pfns = commander.c_api.getPFNsToWrite(
 					commander.site, guid, ses, exses, null, 0);
 			guid.size = size;
 			guid.md5 = md5;
 			out.printErrln("Not working yet...");
 			return false;
 		} else {
-			lfn = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), target), true);
 			guid = null;
@@ -276,7 +275,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				e.printStackTrace();
 			}
 
-			pfns = CatalogueApiUtils.getPFNsToWrite(commander.user,
+			pfns = commander.c_api.getPFNsToWrite(
 					commander.site, lfn, guid, ses, exses, null, 0);
 
 		}
@@ -316,9 +315,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		}
 		
 		if (envelopes.size() != 0)
-			CatalogueApiUtils.registerEnvelopes(commander.user, envelopes);
+			commander.c_api.registerEnvelopes(envelopes);
 		if (registerPFNs.size() != 0)
-			CatalogueApiUtils.registerEnvelopes(commander.user, envelopes);
+			commander.c_api.registerEnvelopes(envelopes);
 
 		if (pfns.size() == (envelopes.size() + registerPFNs.size())) {
 			if(!silent)

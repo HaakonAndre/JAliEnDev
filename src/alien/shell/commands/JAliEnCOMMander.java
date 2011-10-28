@@ -8,12 +8,10 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.text.html.HTMLDocument.HTMLReader.IsindexAction;
-
 import joptsimple.OptionException;
-
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
+import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
@@ -33,26 +31,37 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	static transient final Logger logger = ConfigUtils
 	.getLogger(JBoxServer.class.getCanonicalName());
-
+	
+	
+	/**
+	 *
+	 */
+	protected final CatalogueApiUtils c_api = new CatalogueApiUtils(this);
+	
+	/**
+	 * 
+	 */
+	protected final TaskQueueApiUtils q_api = new TaskQueueApiUtils(this);
 	
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
 	 */
 	private static final String[] commandList = new String[] { "ls", "get",
-			"cat", "whoami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
-			"scrlog", "submit", "ps","blackwhite","color", "masterjob" };
+			"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
+			"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"};
 
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm", "masterjob"};
+			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm",
+			"masterjob","user", "role"  , "kill"};
 
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", 
+	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami",
 			"cdir", "commandlist", "gfilecomplete", "cdirtiled" ,"blackwhite","color" };
 
 	private UIPrintWriter out = null;
@@ -61,6 +70,12 @@ public class JAliEnCOMMander extends Thread {
 	 * 
 	 */
 	protected AliEnPrincipal user = AuthorizationFactory.getDefaultUser();
+	
+
+	/**
+	 * 
+	 */
+	protected String role = AliEnPrincipal.userRole();
 
 	/**
 	 * 
@@ -98,7 +113,7 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * Current directory as the status
 	 */
-	protected LFN curDir = CatalogueApiUtils.getLFN(UsersHelper.getHomeDir(user.getName()));
+	protected LFN curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
 
 	/**
 	 * get list of commands
@@ -138,6 +153,16 @@ public class JAliEnCOMMander extends Thread {
 	public String getUsername() {
 		return user.getName();
 	}
+	
+	/**
+	 * get the user's role
+	 * 
+	 * @return user role
+	 */
+	public String getRole() {
+		return role;
+	}
+	
 
 	/**
 	 * get the current directory
@@ -146,7 +171,7 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	public LFN getCurrentDir() {
 		if (curDir == null)
-			curDir = CatalogueApiUtils.getLFN(myHome);
+			curDir = c_api.getLFN(myHome);
 		return curDir;
 
 	}
@@ -187,7 +212,7 @@ public class JAliEnCOMMander extends Thread {
 	
 	private JAliEnBaseCommand jcommand = null;
 	
-	public synchronized void run() {
+	public void run() {
 		while (true) {
 			execute();
 			try {
@@ -239,7 +264,7 @@ public class JAliEnCOMMander extends Thread {
 
 		for (int i = 1; i < arg.length; i++)
 			if (arg[i].startsWith("-pwd=")) {
-				curDir = CatalogueApiUtils.getLFN(arg[i].substring(arg[i]
+				curDir = c_api.getLFN(arg[i].substring(arg[i]
 						.indexOf('=') + 1));
 				args.remove(arg[i]);
 			} else if (arg[i].startsWith("-debug=")) {
@@ -266,6 +291,8 @@ public class JAliEnCOMMander extends Thread {
 					out.printOutln(getCommandList());
 				else if ("whoami".equals(comm))
 					out.printOutln(getUsername());
+				else if ("roleami".equals(comm))
+					out.printOutln(getRole());
 				else if ("blackwhite".equals(comm))
 					out.blackwhitemode();
 				else if ("color".equals(comm))
@@ -334,7 +361,7 @@ public class JAliEnCOMMander extends Thread {
 				out.printErrln("Error executing the command [" + comm + "].");
 			}
 		}
-		out.setenv(getCurrentDirName(),getUsername(),getCurrentDirTilded());
+		out.setenv(getCurrentDirName(),getUsername(),getRole());
 		out.flush();
 	}
 	
@@ -342,16 +369,13 @@ public class JAliEnCOMMander extends Thread {
 	 * 
 	 */
 	public void killRunningCommand(){
-//		System.out.println("Issueing SIGINT.");
-//		if(jcommand!=null){
-//			synchronized (jcommand) {
-//				jcommand.interrupt();
-//				jcommand = null;
-//			}
-//			synchronized (this) {
-//				notify();
-//			}
-//		}
+		if(jcommand!=null){
+			synchronized (jcommand) {
+				jcommand.interrupt();
+				jcommand = null;
+			}
+			out.flush();
+		}
 	}
 
 	/**

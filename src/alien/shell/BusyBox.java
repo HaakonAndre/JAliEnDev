@@ -8,12 +8,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.StringTokenizer;
 
 import jline.ArgumentCompletor;
 import jline.Completor;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
+import alien.JSh;
 import alien.config.JAliEnIAm;
 import alien.shell.commands.JShPrintWriter;
 import alien.taskQueue.Job;
@@ -25,7 +27,12 @@ import alien.taskQueue.TaskQueueUtils;
  */
 public class BusyBox {
 
-
+	private final static int tryreconnect = 2;
+	
+	
+	private int remainreconnect = tryreconnect;
+	
+	private static final String noSignal = String.valueOf((char) 33);
 	
 	private static final String lineTerm = String.valueOf((char) 0);
 	private static final String SpaceSep = String.valueOf((char) 1);
@@ -34,7 +41,7 @@ public class BusyBox {
 	private static int pender = 0;
 	private static final String[] pends = {".   "," .  ","  . ","   ."};
 	
-	private static final String promptPrefix = JAliEnIAm.myJShPrompt() + " ";
+	private static final String promptPrefix =  ShellColor.boldBlack() + JAliEnIAm.whatsMyName() + ShellColor.reset() + JAliEnIAm.myJShPrompt() + " ";
 	private static final String promptSuffix = " > ";
 	
 	private static int commNo = 1;
@@ -42,9 +49,11 @@ public class BusyBox {
 	private ConsoleReader reader;
 	private PrintWriter out;
 
-	private String whoami;
+	private String username;
+	private String role;
+	
 	private String currentDir;
-	private String currentDirTiled;
+	
 
 	
 	/**
@@ -59,7 +68,7 @@ public class BusyBox {
 	 * print welcome
 	 */
 	public void welcome() {
-		out.println("Hi jedi " + whoami + ",");
+		out.println("Hi jedi " + username + ",");
 		out.println("this is " + JAliEnIAm.whatsMyFullName() + ".");
 		out.println("Have a cup! Cheers, ACS");
 		out.println();
@@ -71,11 +80,10 @@ public class BusyBox {
 
 	private OutputStream os;
 	
-	private String prompt;
 
 	
 	
-	private void connect(String addr, int port, String password) {
+	private boolean connect(String addr, int port, String password) {
 
 
 
@@ -89,17 +97,36 @@ public class BusyBox {
 				
 				os.write((password+lineTerm).getBytes());
 				os.flush();
-				callJAliEnGetString("setshell jaliensh");
+				
+				return (!noSignal.equals(callJBoxGetString("setshell jaliensh")));
 			} catch (IOException e) {
-				System.err.println("Could not connect to API Service.");
+				return false;
 			}
 		}
+		return false;
 	}
 
 	
-	@SuppressWarnings("unused")
-	private void reconnect(){
-		// TODO:
+	private boolean reconnect(){
+		if(remainreconnect<1){
+			printErrShutdown();
+			Runtime.getRuntime().exit(1);
+		}
+		remainreconnect--;
+		
+		String whoami = this.username;
+		String roleami = this.role;
+		String currentDir = this.currentDir;
+		
+		if(JSh.reconnect())
+			if(connect(JSh.getAddr(), JSh.getPort(), JSh.getPassword()))
+				if(callJBox("user " + whoami))
+					if(callJBox("role " + roleami))
+						return callJBox("cd " + currentDir);
+	
+		printErrRestartJBox();
+		return false;
+	
 	}
 	
 	
@@ -113,9 +140,7 @@ public class BusyBox {
 	 */
 	public BusyBox(String addr,int port, String password) throws IOException {
 
-		connect(addr, port, password);
-
-		if (s != null) {
+		if (connect(addr, port, password)) {
 			out = new PrintWriter(System.out);
 
 			reader = new ConsoleReader();
@@ -124,7 +149,7 @@ public class BusyBox {
 					new FileWriter("writer.debug", true)));
 
 			Completor[] comp = new Completor[]{
-		            new SimpleCompletor(callJAliEnGetString("commandlist").split(" ")),
+		            new SimpleCompletor(callJBoxGetString("commandlist").split(" ")),
 		            new GridLocalFileCompletor(this)
 		        };
 		    reader.addCompletor (new ArgumentCompletor(comp));
@@ -133,7 +158,8 @@ public class BusyBox {
 			out.flush();
 
 	
-		}
+		} else 
+			printInitConnError();
 	}
 	
 	
@@ -145,14 +171,20 @@ public class BusyBox {
 	    
 			String line;
 			
-			while ((line = reader.readLine(promptPrefix + "["+commNo+ "] " + currentDir + promptSuffix)) != null) {
+		String prefixCNo = "0";
+			while ((line = reader.readLine(promptPrefix + "["+ prefixCNo + commNo+ "] " + currentDir + promptSuffix)) != null) {
 
+				if(commNo==9)
+					prefixCNo = "";
+				
 				out.flush();
 				line = line.trim();
 
 				if (line.equalsIgnoreCase("quit")
-						|| line.equalsIgnoreCase("exit")) 
+						|| line.equalsIgnoreCase("exit")){
+					printGoodBye();
 					break;
+				}
 				
 
 				executeCommand(line);
@@ -161,74 +193,109 @@ public class BusyBox {
 			}
 	}
 
-	public String callJAliEnGetString(String line) {
-		try {
-			//line +="\n";
-			line = line.replace(" ", SpaceSep) + lineTerm;
+	/**
+	 * @param line
+	 * @return response from JBox
+	 */
+	public String callJBoxGetString(String line) {
+		do {
+			try {
 
-			os.write(line.getBytes());
-			os.flush();
-			
+				if (socketThere(s)) {
+					// line +="\n";
+					line = line.replace(" ", SpaceSep) + lineTerm;
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+					os.write(line.getBytes());
+					os.flush();
 
-			String ret = "";	
-			String sLine;
+					BufferedReader br = new BufferedReader(
+							new InputStreamReader(is));
 
-			while ( (sLine = br.readLine()) != null ){
-				if(sLine.startsWith(JShPrintWriter.outputterminator))
-					updateEnvironment(sLine);
-				else if(sLine.endsWith(JShPrintWriter.streamend))
-					break;
-				else 
-				ret += sLine + "\n";
+					String ret = "";
+					String sLine = null;
+					boolean signal = false;
+
+					while ((sLine = br.readLine()) != null) {
+						signal = true;
+						if (sLine.startsWith(JShPrintWriter.outputterminator))
+							updateEnvironment(sLine);
+						else if (sLine.endsWith(JShPrintWriter.streamend))
+							break;
+						else
+							ret += sLine + "\n";
+					}
+
+					if (ret.length() > 0)
+						ret = ret.substring(0, ret.length() - 1);
+
+					remainreconnect = tryreconnect; // reset reconnection trials
+													// to
+													// default on every success
+					if (signal)
+						return ret;
+				}
+
+			} catch (Exception e) {
+				//e.printStackTrace();
 			}
-			
-			if(ret.length()>0)
-				ret = ret.substring(0,ret.length()-1);
-			
-			return ret;
+		} while (reconnect());
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return "";
+		printConnError();
+		return noSignal;
 	}
 	
 
+	private boolean callJBox(String line) {
+		do {
+			try {
 
-	private void callJAliEn(String line){
-		try {
+				if (socketThere(s)) {
+					// line +="\n";
+					line = line.replace(" ", SpaceSep) + lineTerm;
 
-			//line +="\n";
-			line = line.replace(" ", SpaceSep) + lineTerm;
-			
-			os.write(line.getBytes());
-			os.flush();
+					os.write(line.getBytes());
+					os.flush();
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+					BufferedReader br = new BufferedReader(
+							new InputStreamReader(is));
 
-			String sLine;
-			
-			while ( (sLine = br.readLine()) != null ){
-				if(sLine.startsWith(JShPrintWriter.outputterminator)){
-					updateEnvironment(sLine);}
-				
-				else if(sLine.endsWith(pendSignal))
-					pending(br);
-				else if(sLine.endsWith(lineTerm))
-					break;
-				else if(sLine.startsWith(JShPrintWriter.errTag))
-					System.err.println("Error: "+ sLine.substring(1));
-				else {
-					out.println(sLine);
-					out.flush();
+					String sLine;
+					boolean signal = false;
+					
+					while ((sLine = br.readLine()) != null) {
+						signal = true;
+						if (sLine.startsWith(JShPrintWriter.outputterminator)) {
+							updateEnvironment(sLine);
+						}
+
+						else if (sLine.endsWith(pendSignal))
+							pending(br);
+						else if (sLine.endsWith(lineTerm))
+							break;
+						else if (sLine.startsWith(JShPrintWriter.errTag))
+							JSh.printErr("Error: " + sLine.substring(1));
+						else {
+							out.println(sLine);
+							out.flush();
+						}
+
+					}
+
+					remainreconnect = tryreconnect; // reset reconnection trials
+													// to
+													// default on every success
+					if (signal)
+						return true;
 				}
-			}
 
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+			} catch (Exception e) {
+				// ignore
+				//e.printStackTrace();
+			}
+		} while (reconnect());
+
+		printConnError();
+		return false;
 	}
 
 	
@@ -261,9 +328,9 @@ public class BusyBox {
 			if(st.hasMoreTokens())
 					currentDir = st.nextToken();
 			if(st.hasMoreTokens())
-					whoami = st.nextToken();
+					username = st.nextToken();
 			if(st.hasMoreTokens())
-					currentDirTiled = st.nextToken();
+				role = st.nextToken();
 	}
 
 	
@@ -274,8 +341,9 @@ public class BusyBox {
 	 */
 	public void executeCommand(String callLine) {
 
-		String args[] = callLine.split(SpaceSep);
-
+		//String args[] = callLine.split(SpaceSep);
+		String args[] = callLine.split(" ");
+		
 		if (!"".equals(args[0])) {
 			if (args[0].equals(".")) {
 				String command = "";
@@ -287,10 +355,31 @@ public class BusyBox {
 				for (int c = 1; c < args.length; c++)
 					command += args[c] + " ";
 				syscall(command);
+			} else if (args[0].equals("edit")) {
+				
+				
+				System.out.println("Sorry, we're still working on [edit] ...");
+//				String localFile  = callJAliEnGetString("cp -t "+ args[1]);
+//				localFile = localFile.replace("\n", "").replace("Downloaded file to ", "").trim();
+//				System.out.println("received: " + localFile);
+//				ShellEditor.editOnConsole(localFile);
+				
+				
+				
+				
+				//syscall(Functions.which("vim")+" "+localFile);
+//				try {
+//					Runtime.getRuntime().exec(Functions.which("vim")+" "+localFile);
+//					Console console = new 
+//					 new console.SystemShell();
+//				} catch (IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
 			} else if (args[0].equals("help")) {
 				usage();
 			} else {
-				callJAliEn(callLine);
+				callJBox(callLine);
 			}
 		}
 	}
@@ -362,5 +451,34 @@ public class BusyBox {
 			System.out.println(e);
 		}
 	}
+	
+	private static boolean socketThere(Socket s){
+		return (!s.isClosed() && s.isBound() &&
+		s.isConnected() && !s.isInputShutdown()
+		&& !s.isOutputShutdown());
+	}
+	
+	private void printInitConnError(){
+		JSh.printErr("Could not connect to JBox.");
+	}
+	
+	private void printErrShutdown(){
+		JSh.printErr("Shutting down...");
+		printGoodBye();
+	}
+	
+	
+	private void printGoodBye(){
+		JSh.printOut("GoodBye.");
+	}
+	
+	private void printErrRestartJBox(){
+		JSh.printErr("JBox seems to be dead, please restart it.");
+	}
+	
+	private void printConnError(){
+		JSh.printErr("Connection to JBox interrupted.");
+	}
+
 
 }

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import alien.api.Dispatcher;
+import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobSigner;
@@ -17,6 +18,16 @@ import alien.user.JAKeyStore;
  * @since Jun 05, 2011
  */
 public class TaskQueueApiUtils {
+	
+	private final JAliEnCOMMander commander;
+	
+	
+	/**
+	 * @param commander
+	 */
+	public TaskQueueApiUtils(JAliEnCOMMander commander){
+		this.commander = commander;
+	}
 
 	
 	/**
@@ -26,16 +37,15 @@ public class TaskQueueApiUtils {
 	 * @param nodes 
 	 * @param mjobs 
 	 * @param jobid 
-	 * @param masterOnly 
 	 * @param orderByKey 
 	 * @param limit 
 	 * @return a PS listing
 	 */
-	public static List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final boolean masterOnly, final String orderByKey, final int limit) {
+	public List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
+			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final String orderByKey, final int limit) {
 
 		try {
-			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(states, users, sites, nodes, mjobs, jobid, masterOnly, orderByKey, limit), true);
+			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit), true);
 
 			return ps.returnPS();
 		} catch (IOException e) {
@@ -51,10 +61,10 @@ public class TaskQueueApiUtils {
 	 * @param queueId 
 	 * @return a JDL as String
 	 */
-	public static String getTraceLog(final int queueId) {
+	public String getTraceLog(final int queueId) {
 
 		try {
-			GetTraceLog trace = (GetTraceLog) Dispatcher.execute(new GetTraceLog(queueId), true);
+			GetTraceLog trace = (GetTraceLog) Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId), true);
 
 			return trace.getTraceLog();
 		} catch (IOException e) {
@@ -69,10 +79,10 @@ public class TaskQueueApiUtils {
 	 * @param queueId 
 	 * @return a JDL as String
 	 */
-	public static String getJDL(final int queueId) {
+	public String getJDL(final int queueId) {
 
 		try {
-			GetJDL jdl = (GetJDL) Dispatcher.execute(new GetJDL(queueId), true);
+			GetJDL jdl = (GetJDL) Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId), true);
 
 			return jdl.getJDL();
 		} catch (IOException e) {
@@ -84,29 +94,48 @@ public class TaskQueueApiUtils {
 	}
 	
 	/**
+	 * @param queueId 
 	 * @return a Job
 	 */
-	public static Job getJob() {
+	public Job getJob(final int queueId) {
 
 		try {
-			GetJob job = (GetJob) Dispatcher.execute(new GetJob(), true);
+			GetJob job = (GetJob) Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId), true);
 
 			return job.getJob();
 		} catch (IOException e) {
-			System.out.println("Could get not a JDL: ");
+			System.out.println("Could get not the Job: ");
 			e.printStackTrace();
 		}
 		return null;
 
 	}
+	
+	/**
+	 * @param queueIds
+	 * @return a Job
+	 */
+	public List<Job> getJobs(final List<Integer> queueIds) {
 
+		try {
+			GetJobs job = (GetJobs) Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds), true);
+
+			return job.getJobs();
+		} catch (IOException e) {
+			System.out.println("Could get not the Jobs: ");
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+	
 	/**
 	 * Set a job's status
 	 * 
 	 * @param jobnumber
 	 * @param status
 	 */
-	public static void setJobStatus(int jobnumber, String status) {
+	public void setJobStatus(int jobnumber, String status) {
 
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status), true);
@@ -121,18 +150,16 @@ public class TaskQueueApiUtils {
 	 * Submit a job
 	 * 
 	 * @param jdl
-	 * @param user
-	 * @return int
 	 * @throws JobSubmissionException
 	 */
-	public static int submitJob(String jdl, String user)
+	public int submitJob(String jdl)
 			throws JobSubmissionException {
 
 		try {
 			JDL ojdl = new JDL(jdl);
 			SubmitJob j;
-			j = new SubmitJob(JobSigner.signJob(JAKeyStore.clientCert,
-					"User.cert", JAKeyStore.pass, user, ojdl, jdl));	// TODO : why was ojdl passed here ?
+			j = new SubmitJob(commander.getUser(), commander.getRole(), JobSigner.signJob(JAKeyStore.clientCert,
+					"User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl, jdl));	// TODO : why was ojdl passed here ?
 
 			Dispatcher.execute(j, true);
 			return j.getJobID();
@@ -142,6 +169,27 @@ public class TaskQueueApiUtils {
 			e.printStackTrace();
 		}
 		return 0;
+	}
+	
+	/**
+	 * Kill a job
+	 * @param queueId 
+	 * 
+	 * @return status of the kill 
+	 */
+	public boolean killJob(int queueId){
+
+		try {
+			KillJob j = new KillJob(commander.getUser(), commander.getRole(),queueId);
+
+			Dispatcher.execute(j, true);
+			return j.wasKilled();
+
+		} catch (Exception e) {
+			System.out.println("Could not kill the job  with id: [" + queueId+ "]");
+			e.printStackTrace();
+		}
+		return false;
 	}
 
 }

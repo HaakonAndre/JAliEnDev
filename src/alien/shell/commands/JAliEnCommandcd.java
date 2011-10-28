@@ -1,8 +1,6 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.user.UsersHelper;
@@ -18,12 +16,12 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		LFN newDir = null;
 
 		if (alArguments!= null && alArguments.size() > 0)
-			newDir = CatalogueApiUtils.getLFN(FileSystemUtils.getAbsolutePath(
+			newDir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(),
 					commander.getCurrentDir().getCanonicalName(),
 					alArguments.get(0)));
 		else
-			newDir = CatalogueApiUtils.getLFN(UsersHelper
+			newDir = commander.c_api.getLFN(UsersHelper
 					.getHomeDir(commander.user.getName()));
 
 		if (newDir != null){

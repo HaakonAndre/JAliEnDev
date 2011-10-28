@@ -17,25 +17,26 @@ public class CreateCatDirfromString extends Request {
 	 */
 	private static final long serialVersionUID = -8266256263179660234L;
 	private final String path;
-	private AliEnPrincipal user = null;
 	private boolean createNonExistentParents = false;
 
 	private LFN lfn;
 
 	/**
 	 * @param user
+	 * @param role 
 	 * @param path
 	 * @param createNonExistentParents 
 	 */
-	public CreateCatDirfromString(AliEnPrincipal user, final String path,boolean createNonExistentParents) {
-		this.user = user;
+	public CreateCatDirfromString(final AliEnPrincipal user, final String role, final String path,boolean createNonExistentParents) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.path = path;
 		this.createNonExistentParents = createNonExistentParents;
 	}
 
 	public void run() {
 		// if(createNonExistentParents)
-		this.lfn = FileSystemUtils.createCatalogueDirectory(user, path,createNonExistentParents);
+		this.lfn = FileSystemUtils.createCatalogueDirectory(getEffectiveRequester(), path,createNonExistentParents);
 		// else 
 		// 	this.lfn = FileSystemUtils.createCatalogueDirectory(user, path);
 

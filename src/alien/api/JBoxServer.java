@@ -36,6 +36,11 @@ public class JBoxServer extends Thread {
 	static transient final Logger logger = ConfigUtils
 	.getLogger(JBoxServer.class.getCanonicalName());
 
+	
+	public static final String passACK = "OKPASSACK";
+	
+	public static final String passNOACK = "NOPASSACK";
+	
 	private final int port;
 
 	private ServerSocket ssocket;
@@ -264,40 +269,42 @@ public class JBoxServer extends Thread {
 					sLine = scanner.next();
 
 				if (sLine != null && sLine.equals(password)) {
-					os.write("OKPASSACK".getBytes());
+					os.write(passACK.getBytes());
 					os.flush();
 				} else {
-					os.write("NOPASSACK".getBytes());
+					os.write(passNOACK.getBytes());
 					os.flush();
 					return;
 				}
-				JAliEnCOMMander jcomm = new JAliEnCOMMander();
+				JAliEnCOMMander commander = new JAliEnCOMMander();
 
 				while (scanner.hasNext()) {
 					String line = scanner.next();	
+
 					if("SIGINT".equals(line)){
-						 synchronized (jcomm) {
-					        	jcomm.killRunningCommand();
-					        }
-					}
+					        	commander.killRunningCommand();
+					} else {
 						
 					try {
-						if(jcomm.isAlive() && !jcomm.getState().equals(State.WAITING)){
-					        synchronized (jcomm) {
-					        	jcomm.wait();
-					        }
+						while(commander.isAlive() && !commander.getState().equals(State.WAITING)){
+					       // synchronized (commander) {
+					       // 	commander.wait();
+					       // }
+							Thread.sleep(1);
 						}
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
-					jcomm.setLine(os, line.split(SpaceSep));
+					commander.setLine(os, line.split(SpaceSep));
 
-					if(!jcomm.isAlive())
-						jcomm.start();
-					else if(jcomm.getState().equals(State.WAITING)){
-				        synchronized (jcomm) {
-				        	jcomm.notify();
+					if(!commander.isAlive()){
+						commander.start();
+					}
+					else if(commander.getState().equals(State.WAITING)){
+				        synchronized (commander) {
+				        	commander.notify();
 				        }
+					}
 					}
 					os.flush();
 				}
@@ -367,7 +374,7 @@ public class JBoxServer extends Thread {
 	 * 
 	 * Load necessary keys and start JBoxServer
 	 */
-	public static void startAPIService(int iDebug) {
+	public static void startJBoxService(int iDebug) {
 		try {
 			JAKeyStore.loadClientKeyStorage();
 			JBoxServer.startJBoxServer(iDebug);

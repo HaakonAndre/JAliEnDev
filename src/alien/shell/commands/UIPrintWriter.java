@@ -15,12 +15,13 @@ abstract class UIPrintWriter {
 	abstract protected void blackwhitemode();
 
 	/**
-	 * Print set output mode to colour
+	 * Print set output mode to color
 	 */
 	abstract protected void colourmode();
 
 	/**
-	 * Print get the colour output mode
+	 * Print get the color output mode
+	 * @return state of the color mode
 	 */
 	abstract protected boolean colour();
 	
@@ -32,6 +33,7 @@ abstract class UIPrintWriter {
 	
 	/**
 	 * Print stdout after appending line feed 
+	 * @param line 
 	 */
 	abstract protected void printOutln(String line);
 
@@ -42,13 +44,17 @@ abstract class UIPrintWriter {
 	
 	/**
 	 * Print stderr after appending line feed 
+	 * @param line 
 	 */
 	abstract protected void printErrln(String line);
 	
 	/**
 	 * Set the env for the client (needed for gapi)
+	 * @param cDir 
+	 * @param user 
+	 * @param cRole 
 	 */
-	abstract protected void setenv(String cDir, String user, String cDirtiled);
+	abstract protected void setenv(String cDir, String user, String cRole);
 	
 	
 	/**
@@ -70,6 +76,7 @@ abstract class UIPrintWriter {
 	
 	/**
 	 * dummy for RootPrinter
+	 * @param args 
 	 */
 	protected void setReturnArgs(String args) {
 		//void

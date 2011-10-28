@@ -36,29 +36,29 @@ public class TestJShOverJBox {
 
 		if (boombox != null){
 			System.out.println("Output of BOOMBOX ls:\n"
-					+ boombox.callJAliEnGetString("ls -la"));
-			boombox.callJAliEnGetString("cd ..");
+					+ boombox.callJBoxGetString("ls -la"));
+			boombox.callJBoxGetString("cd ..");
 			System.out.println("Output of BOOMBOX ls:\n"
-					+ boombox.callJAliEnGetString("ls -la"));
-			boombox.callJAliEnGetString("cd ..");
+					+ boombox.callJBoxGetString("ls -la"));
+			boombox.callJBoxGetString("cd ..");
 			System.out.println("Output of BOOMBOX ls:\n"
-					+ boombox.callJAliEnGetString("ls -la"));
-			boombox.callJAliEnGetString("cd ..");
+					+ boombox.callJBoxGetString("ls -la"));
+			boombox.callJBoxGetString("cd ..");
 			System.out.println("Output of BOOMBOX ls:\n"
-					+ boombox.callJAliEnGetString("ls -la"));
-			boombox.callJAliEnGetString("cd ..");
+					+ boombox.callJBoxGetString("ls -la"));
+			boombox.callJBoxGetString("cd ..");
 			System.out.println("Output of BOOMBOX ls:\n"
-					+ boombox.callJAliEnGetString("ls -la"));
-			boombox.callJAliEnGetString("cd ..");
+					+ boombox.callJBoxGetString("ls -la"));
+			boombox.callJBoxGetString("cd ..");
 			System.out.println("Output of BOOMBOX ls:\n"
-					+ boombox.callJAliEnGetString("ls -la"));
+					+ boombox.callJBoxGetString("ls -la"));
 		}
 	}
 	
 	private static boolean jShConnected() throws Exception{
 		if(boombox==null)
 			throw new TestException("JSh's busybox is null.");
-		String pwd = boombox.callJAliEnGetString("pwd");
+		String pwd = boombox.callJBoxGetString("pwd");
 		String config = CreateLDAP.getUserHome(TestConfig.testUser);
 		if(pwd==null)
 			throw new TestException("JSh's busybox does not respond on pwd.");

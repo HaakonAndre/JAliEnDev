@@ -5,6 +5,7 @@ import java.util.UUID;
 import alien.api.Request;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * 
@@ -23,10 +24,14 @@ public class GUIDfromString extends Request {
 	private GUID guid;
 
 	/**
+	 * @param user 
+	 * @param role 
 	 * @param sguid
 	 * @param evenIfDoesNotExist
 	 */
-	public GUIDfromString(final String sguid, final boolean evenIfDoesNotExist) {
+	public GUIDfromString(final AliEnPrincipal user, final String role, final String sguid, final boolean evenIfDoesNotExist) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.sguid = sguid;
 		this.evenIfDoesNotExist = evenIfDoesNotExist;
 	}

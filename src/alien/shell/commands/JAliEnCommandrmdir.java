@@ -3,7 +3,6 @@ package alien.shell.commands;
 import java.util.ArrayList;
 
 import joptsimple.OptionException;
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.user.AuthorizationChecker;
@@ -18,7 +17,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
 		for (String path : alArguments) {
 
-			LFN dir = CatalogueApiUtils.getLFN(FileSystemUtils
+			LFN dir = commander.c_api.getLFN(FileSystemUtils
 					.getAbsolutePath(commander.user
 							.getName(), commander
 							.getCurrentDir()
@@ -28,8 +27,8 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 				if (dir.isDirectory()) {
 					if (AuthorizationChecker.canWrite(dir, commander.user)) {
 
-						if (!CatalogueApiUtils
-								.removeCatalogueDirectory(commander.user, dir.getCanonicalName())) {
+						if (!commander.c_api
+								.removeCatalogueDirectory(dir.getCanonicalName())) {
 							out.printErrln("Could not remove directory: "
 									+ path);
 							out.printErrln("Sorry, this command is not implemented yet.");

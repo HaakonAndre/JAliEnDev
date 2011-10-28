@@ -3,6 +3,8 @@ package alien.api.taskQueue;
 import alien.api.Request;
 import alien.taskQueue.TaskQueueFakeUtils;
 import alien.taskQueue.Job;
+import alien.taskQueue.TaskQueueUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
@@ -18,20 +20,44 @@ public class GetJob extends Request {
 	 * 
 	 */
 	private static final long serialVersionUID = -3575992501982425989L;
+	
 	private Job job;
 	
+	private final int queueId;
+	private final boolean loadJDL;
+	
 	/**
+	 * @param user 
+	 * @param role 
+	 * @param queueId 
+	 * @param loadJDL 
 	 */
-	public GetJob(){
+	public GetJob(final AliEnPrincipal user, final String role, final int queueId, final boolean loadJDL){
+		setRequestUser(user);
+		setRoleRequest(role);
+		this.queueId = queueId;
+		this.loadJDL = loadJDL;
+	}
+	
+	/**
+	 * @param user 
+	 * @param role 
+	 * @param queueId 
+	 */
+	public GetJob(final AliEnPrincipal user, final String role, final int queueId){
+		setRequestUser(user);
+		setRoleRequest(role);
+		this.queueId = queueId;
+		this.loadJDL = false;
 	}
 	
 	@Override
 	public void run() {
-		this.job = TaskQueueFakeUtils.getJob();
+		this.job = TaskQueueUtils.getJob(queueId, loadJDL);
 	}
 	
 	/**
-	 * @return a JDL
+	 * @return the Job
 	 */
 	public Job getJob(){
 		return this.job;
@@ -39,6 +65,6 @@ public class GetJob extends Request {
 	
 	@Override
 	public String toString() {
-		return "Asked for JDL :  reply is: "+this.job;
+		return "Asked for Job :  reply is: "+this.job;
 	}
 }

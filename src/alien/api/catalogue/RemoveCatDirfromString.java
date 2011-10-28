@@ -18,24 +18,24 @@ public class RemoveCatDirfromString extends Request {
 	private static final long serialVersionUID = 5481660419374953794L;
 	
 	private final String path;
-	private AliEnPrincipal user = null;
-
 	
 	private boolean wasRemoved = false;
 
 	/**
 	 * @param user 
+	 * @param role 
 	 * @param path
 	 */
-	public RemoveCatDirfromString(AliEnPrincipal user, final String path) {
-		this.user = user;
+	public RemoveCatDirfromString(final AliEnPrincipal user, final String role, final String path) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.path = path;
 	}
 
 	public void run() {
 		LFN lfn = LFNUtils.getLFN(path);
 		if(lfn!=null)
-			wasRemoved = LFNUtils.rmdir(user, lfn);		
+			wasRemoved = LFNUtils.rmdir(getEffectiveRequester(), lfn);		
 
 	}
 

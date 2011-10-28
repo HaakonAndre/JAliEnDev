@@ -3,7 +3,6 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.perl.commands.AlienTime;
@@ -40,7 +39,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 				flags = Integer.parseInt(alArguments.get(2));
 		} catch(NumberFormatException e){}
 
-				lfns = CatalogueApiUtils.find(FileSystemUtils
+				lfns = commander.c_api.find(FileSystemUtils
 						.getAbsolutePath(commander.user.getName(),
 								commander.getCurrentDir().getCanonicalName(),alArguments.get(0)), alArguments.get(1), flags);
 		

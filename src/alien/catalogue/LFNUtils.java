@@ -95,17 +95,19 @@ public class LFNUtils {
 	
 
 	/**
-	 * @param owner
+	 * @param user
 	 * @param lfn
 	 * @return status of the removal
 	 */
-	public static boolean rmLFN(final AliEnPrincipal owner, final LFN lfn) {
+	public static boolean rmLFN(final AliEnPrincipal user, final LFN lfn) {
 		if (lfn!=null && lfn.exists && !lfn.isDirectory()){
-			if(AuthorizationChecker.canWrite(lfn, owner)){
+			if(AuthorizationChecker.canWrite(lfn, user)){
+				System.out.println("Unimplemented request from [" + user.getName() + "], rm ["
+						+lfn.getCanonicalName() + "]");
 				// TODO
 				return false;
-			} else
-				return false;
+			} 
+			return false;
 			
 		} 
 		
@@ -242,17 +244,19 @@ public class LFNUtils {
 	}
 	
 	/**
-	 * @param owner
+	 * @param user
 	 * @param lfn
 	 * @return status of the removal
 	 */
-	public static boolean rmdir(final AliEnPrincipal owner, final LFN lfn) {
+	public static boolean rmdir(final AliEnPrincipal user, final LFN lfn) {
 		if (lfn!=null && lfn.exists && lfn.isDirectory()){
-			if(AuthorizationChecker.canWrite(lfn, owner)){
+			if(AuthorizationChecker.canWrite(lfn, user)){
+				System.out.println("Unimplemented request from [" + user.getName() + "], rmdir ["
+						+lfn.getCanonicalName() + "]");
 				// TODO
 				return false;
-			} else
-				return false;
+			}
+			return false;
 			
 		} 
 		
