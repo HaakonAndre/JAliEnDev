@@ -64,11 +64,11 @@ public class JSh {
 		    });
 		    
 
-		if(("-h".equals(args[0])) || ("-help".equals(args[0])) ||
+		if(args.length>0 &&(("-h".equals(args[0])) || ("-help".equals(args[0])) ||
 				("--h".equals(args[0])) || ("--help".equals(args[0]))
-				|| ("help".equals(args[0])))
+				|| ("help".equals(args[0]))))
 			printHelp();
-		else if ("-k".equals(args[0]))
+		else if (args.length>0 && ("-k".equals(args[0])))
 			JSh.killJBox();
 		else {
 
@@ -78,7 +78,7 @@ public class JSh {
 		
 			if (JSh.JBoxRunning()){
 				boombox = new BusyBox(addr, port, password);
-				if("-e".equals(args[0])){
+				if(args.length>0 && "-e".equals(args[0])){
 					final StringTokenizer st = new StringTokenizer(joinSecondArgs(args),",");
 					while (st.hasMoreTokens())
 						boombox.callJBox(st.nextToken().trim());
