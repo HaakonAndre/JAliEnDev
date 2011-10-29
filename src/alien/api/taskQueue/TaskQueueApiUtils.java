@@ -71,7 +71,7 @@ public class TaskQueueApiUtils {
 	 * @param bExpunge 
 	 * @return a PS listing
 	 */
-	public List<Job> getMasterjob(final String status, final String id, final String jobId, final String site, final boolean bPrintId,
+	public List<Job> getMasterjob( final String jobId, final String status, final String id,final String site, final boolean bPrintId,
 			final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {

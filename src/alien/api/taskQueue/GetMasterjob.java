@@ -74,11 +74,38 @@ public class GetMasterjob extends Request {
 		this.bKill = bKill;
 		this.bResubmit = bResubmit;
 		this.bExpunge = bExpunge;
+		
+		if(bKill)
+			System.out.println("sending: " + jobId );
 	}
 	
 	
 	@Override
 	public void run() {
+		
+		System.out.println("Running masterjob <IN>");
+		if(jobId!=null)
+			System.out.println("jobId: " + jobId );
+		if(status!=null)
+			System.out.println("status: " + status );
+		if(id!=null)
+			System.out.println("id: " + id );
+		if(site!=null)
+			System.out.println("site: " + site );
+		if(bPrintId)
+			System.out.println("bPrintId");
+		if(bPrintSite)
+			System.out.println("bPrintSite");
+		if(bKill)
+			System.out.println("kill");
+		if(bResubmit)
+			System.out.println("resubmit");
+		if(bExpunge)
+			System.out.println("bExpunge" );
+		if(bMerge)
+			System.out.println("bMerge");
+		System.out.println("Running masterjob <IN>");
+
 		//this.jobs = 
 	}
 	
@@ -86,8 +113,26 @@ public class GetMasterjob extends Request {
 	 * @return a JDL
 	 */
 	public List<Job> returnMasterjob(){
+		if(jobId!=null)
+			System.out.println("jobId: " + jobId );
+		if(status!=null)
+			System.out.println("status: " + status );
+		if(id!=null)
+			System.out.println("id: " + id );
+		if(site!=null)
+			System.out.println("site: " + site );
+		if(bPrintId)
+			System.out.println("bPrintId");
+		if(bPrintSite)
+			System.out.println("bPrintSite");
 		if(bKill)
-			System.out.println("status: " + jobId );
+			System.out.println("kill");
+		if(bResubmit)
+			System.out.println("resubmit");
+		if(bExpunge)
+			System.out.println("bExpunge" );
+		if(bMerge)
+			System.out.println("bMerge");
 		return this.jobs;
 	}
 	

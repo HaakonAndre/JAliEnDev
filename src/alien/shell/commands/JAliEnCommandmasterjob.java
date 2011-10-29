@@ -123,6 +123,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 		try {
 			if (alArguments.size() > 0) {
 				jobId = alArguments.get(0);
+				System.out.println("jobId " + jobId);
 
 				final OptionParser parser = new OptionParser();
 
