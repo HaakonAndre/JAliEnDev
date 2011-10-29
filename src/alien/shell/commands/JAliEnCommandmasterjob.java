@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import alien.taskQueue.Job;
 
@@ -46,9 +47,9 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	private boolean bPrintSite = false;
 	
 
-	private final String jobId;
+	private final int jobId;
 
-	private String id = "";
+	private int id = 0;
 	
 	private String status = "";
 	
@@ -58,10 +59,10 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	public void run() {
 		
 
-		List<Job> ps = commander.q_api.getMasterjob(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+		Map<Job, Map<String, Integer>> subjs = commander.q_api.getMasterJobStatus(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
 		
 		
-		out.printErrln("--- not implemented yet ---");
+		out.printErrln("Subjobs: " + subjs);
 
 	}
 
@@ -122,16 +123,24 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 		try {
 			if (alArguments.size() > 0) {
-				jobId = alArguments.get(0);
-				System.out.println("jobId " + jobId);
-
+				
+				{
+					try{
+						jobId = Integer.parseInt(alArguments.get(0));
+					}
+					catch(NumberFormatException e){
+						throw new JAliEnCommandException();
+					}
+				}
+				
 				final OptionParser parser = new OptionParser();
 
 				parser.accepts("status").withRequiredArg();
 				parser.accepts("id").withRequiredArg();
 				parser.accepts("site").withRequiredArg();
 
-				parser.accepts("kill");
+				parser.accepts("printid");
+				parser.accepts("printsite");
 
 				final OptionSet options = parser.parse(alArguments
 						.toArray(new String[] {}));
@@ -139,11 +148,21 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				if (options.has("status"))
 					status = (String) options.valueOf("status");
 
-				if (options.has("id"))
-					id = (String) options.valueOf("id");
+				if (options.has("id")){
+					try{
+						id = Integer.parseInt((String) options.valueOf("id"));
+					}
+					catch(NumberFormatException e){
+						//ignore
+					}
+				}
 
 				if (options.has("site"))
 					site = (String) options.valueOf("site");
+				
+				bPrintId = options.has("printid");	
+				bPrintSite = options.has("printsite");
+
 
 				String flag = alArguments.get(alArguments.size() - 1);
 

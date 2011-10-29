@@ -1,6 +1,7 @@
 package alien.api.taskQueue;
 
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,13 +34,15 @@ public class GetMasterjob extends Request {
 	/**
 	 * 
 	 */
-	private List<Job> jobs = null;
+	private Map<Job, Map<String, Integer>>  subJobStats = null;
+	
+	
 
-	private final String jobId;
+	private final int jobId;
 	
 	private final String status;
 	
-	private final String id;
+	private final int id;
 	
 	private final String site;
 	
@@ -69,7 +72,7 @@ public class GetMasterjob extends Request {
 	 * @param bResubmit 
 	 * @param bExpunge 
 	 */
-	public GetMasterjob(final AliEnPrincipal user, final String role, final String jobId, final String status, final String id, final String site,
+	public GetMasterjob(final AliEnPrincipal user, final String role, final int jobId, final String status, final int id, final String site,
 			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge){
 		setRequestUser(user);
 		setRoleRequest(role);
@@ -92,41 +95,21 @@ public class GetMasterjob extends Request {
 	@Override
 	public void run() {
 		
-		logger.log(Level.INFO, "Running masterjob <IN>");
-		if(jobId!=null)
-			logger.log(Level.INFO, "jobId: " + jobId );
-		if(status!=null)
-			logger.log(Level.INFO, "status: " + status );
-		if(id!=null)
-			logger.log(Level.INFO, "id: " + id );
-		if(site!=null)
-			logger.log(Level.INFO, "site: " + site );
-		if(bPrintId)
-			logger.log(Level.INFO, "bPrintId");
-		if(bPrintSite)
-			logger.log(Level.INFO, "bPrintSite");
-		if(bKill)
-			logger.log(Level.INFO, "kill");
-		if(bResubmit)
-			logger.log(Level.INFO, "resubmit");
-		if(bExpunge)
-			logger.log(Level.INFO, "bExpunge" );
-		if(bMerge)
-			logger.log(Level.INFO, "bMerge");
-		logger.log(Level.INFO, "Running masterjob <IN>");
+		
+		subJobStats = TaskQueueUtils.getMasterjobStats(TaskQueueUtils.getSubjobs(jobId));
 
-		//this.jobs = 
+		
 	}
 	
 	/**
 	 * @return a JDL
 	 */
-	public List<Job> returnMasterjob(){
-		if(jobId!=null)
+	public Map<Job, Map<String, Integer>> returnMasterJobStatus(){
+		
 			System.out.println("jobId: " + jobId );
 		if(status!=null)
 			System.out.println("status: " + status );
-		if(id!=null)
+
 			System.out.println("id: " + id );
 		if(site!=null)
 			System.out.println("site: " + site );
@@ -142,11 +125,12 @@ public class GetMasterjob extends Request {
 			System.out.println("bExpunge" );
 		if(bMerge)
 			System.out.println("bMerge");
-		return this.jobs;
+		
+		return this.subJobStats;
 	}
 	
 	@Override
 	public String toString() {
-		return "Asked for Masterjob :  reply is: "+this.jobs;
+		return "Asked for Masterjob status :  reply is: "+this.subJobStats;
 	}
 }

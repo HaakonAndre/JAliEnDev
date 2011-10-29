@@ -2,6 +2,7 @@ package alien.api.taskQueue;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import alien.api.Dispatcher;
 import alien.shell.commands.JAliEnCOMMander;
@@ -71,14 +72,14 @@ public class TaskQueueApiUtils {
 	 * @param bExpunge 
 	 * @return a PS listing
 	 */
-	public List<Job> getMasterjob( final String jobId, final String status, final String id,final String site, final boolean bPrintId,
+	public Map<Job, Map<String, Integer>>  getMasterJobStatus( final int jobId, final String status, final int id,final String site, final boolean bPrintId,
 			final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {
 			GetMasterjob mj = (GetMasterjob) Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(),
 					jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge), true);
 
-			return mj.returnMasterjob();
+			return mj.returnMasterJobStatus();
 		} catch (IOException e) {
 			System.out.println("Could get a PS listing: ");
 			e.printStackTrace();
