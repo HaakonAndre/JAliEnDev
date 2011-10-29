@@ -1,9 +1,13 @@
 package alien.api.taskQueue;
 
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import alien.api.Request;
+import alien.config.ConfigUtils;
 import alien.taskQueue.Job;
+import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -15,6 +19,11 @@ import alien.user.AliEnPrincipal;
 public class GetMasterjob extends Request {
 
 
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(TaskQueueUtils.class.getCanonicalName());
+	
 
 	/**
 	 * 
@@ -83,28 +92,28 @@ public class GetMasterjob extends Request {
 	@Override
 	public void run() {
 		
-		System.out.println("Running masterjob <IN>");
+		logger.log(Level.INFO, "Running masterjob <IN>");
 		if(jobId!=null)
-			System.out.println("jobId: " + jobId );
+			logger.log(Level.INFO, "jobId: " + jobId );
 		if(status!=null)
-			System.out.println("status: " + status );
+			logger.log(Level.INFO, "status: " + status );
 		if(id!=null)
-			System.out.println("id: " + id );
+			logger.log(Level.INFO, "id: " + id );
 		if(site!=null)
-			System.out.println("site: " + site );
+			logger.log(Level.INFO, "site: " + site );
 		if(bPrintId)
-			System.out.println("bPrintId");
+			logger.log(Level.INFO, "bPrintId");
 		if(bPrintSite)
-			System.out.println("bPrintSite");
+			logger.log(Level.INFO, "bPrintSite");
 		if(bKill)
-			System.out.println("kill");
+			logger.log(Level.INFO, "kill");
 		if(bResubmit)
-			System.out.println("resubmit");
+			logger.log(Level.INFO, "resubmit");
 		if(bExpunge)
-			System.out.println("bExpunge" );
+			logger.log(Level.INFO, "bExpunge" );
 		if(bMerge)
-			System.out.println("bMerge");
-		System.out.println("Running masterjob <IN>");
+			logger.log(Level.INFO, "bMerge");
+		logger.log(Level.INFO, "Running masterjob <IN>");
 
 		//this.jobs = 
 	}
