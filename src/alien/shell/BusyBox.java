@@ -157,8 +157,10 @@ public class BusyBox {
 		        };
 		    reader.addCompletor (new ArgumentCompletor(comp));
 
-		} else 
+		} else {
 			printInitConnError();
+			throw new IOException();
+		}
 	}
 
 	/**
