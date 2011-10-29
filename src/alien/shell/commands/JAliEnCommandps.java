@@ -5,12 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import javax.swing.event.ListSelectionEvent;
-
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.taskQueue.Job;
 
 /**

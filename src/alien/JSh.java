@@ -6,7 +6,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -16,6 +20,7 @@ import lia.util.process.ExternalProcessBuilder;
 import alien.config.ConfigUtils;
 import alien.shell.BusyBox;
 import alien.shell.ShellColor;
+import alien.shell.commands.JAliEnBaseCommand;
 
 /**
  * @author ron
@@ -47,23 +52,39 @@ public class JSh {
 
 		 Signal.handle(new Signal("INT"), new SignalHandler () {
 			    public void handle(Signal sig) {
-			      if(boombox!=null && boombox.prompting())
+			      if(boombox!=null)
 		            	boombox.callJBoxGetString("SIGINT");
 			    }
 			  });
-		
-		//File f = new File(System.getProperty("user.home"));
-		//System.out.println("And we are in: " + f.getCanonicalPath());
+		 Runtime.getRuntime().addShutdownHook(new Thread() {
+		      public void run() {
+		    	  if(boombox!=null && boombox.prompting())
+		    		  System.out.println("exit");  
+		      }
+		    });
+		    
 
-		if (args.length > 0 && args[0].equals("-k"))
+		if(("-h".equals(args[0])) || ("-help".equals(args[0])) ||
+				("--h".equals(args[0])) || ("--help".equals(args[0]))
+				|| ("help".equals(args[0])))
+			printHelp();
+		else if ("-k".equals(args[0]))
 			JSh.killJBox();
 		else {
 
+			
 			// JAliEnSh.startJBox();
 			
+		
 			if (JSh.JBoxRunning()){
 				boombox = new BusyBox(addr, port, password);
-				boombox.prompt();
+				if("-e".equals(args[0])){
+					final StringTokenizer st = new StringTokenizer(joinSecondArgs(args),",");
+					while (st.hasMoreTokens())
+						boombox.callJBox(st.nextToken().trim());
+				}
+				else
+					boombox.prompt();
 			}
 			else
 				printErrNoJBox();
@@ -310,6 +331,14 @@ public class JSh {
 	}
 	
 	
+	private static String joinSecondArgs(String[] args){
+		String ret = "";
+		for(int a=1;a<args.length;a++)
+			ret += args[a] + " ";
+		return ret;
+	}
+	
+	
 	private static void printErrNoJBox(){
 		printErr("JBox isn't running, so we won't start JSh.");
 	}
@@ -327,6 +356,17 @@ public class JSh {
 	 */
 	public static void printOut(String message){
 		System.out.println(ShellColor.errorMessage() + message + ShellColor.reset());
+	}
+	
+	private static void printHelp(){
+		BusyBox.welcome();
+		System.out.println(JAliEnBaseCommand.helpUsage("jsh", "[-options]"));
+		System.out.println(JAliEnBaseCommand.helpStartOptions());
+		System.out.println(JAliEnBaseCommand.helpOption("-e <cmd>[,<cmd>]","execute directly a comma separated list of commands"));
+		System.out.println(JAliEnBaseCommand.helpOption("-h | -help", "this help"));
+		System.out.println();
+		System.out.println(JAliEnBaseCommand.helpParameter("more info to come."));
+	
 	}
 	
 }

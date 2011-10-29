@@ -65,11 +65,10 @@ public class BusyBox {
 	/**
 	 * print welcome
 	 */
-	public void welcome() {
-		out.println("Hi jedi " + username + ",");
-		out.println("this is " + JAliEnIAm.whatsMyFullName() + ".");
-		out.println("Have a cup! Cheers, ACS");
-		out.println();
+	public static void welcome() {
+		System.out.println("Welcome to " + JAliEnIAm.whatsMyFullName());
+		System.out.println("Have a cup! Cheers, ACS");
+		System.out.println();
 	}
 
 	private Socket s = null;
@@ -170,7 +169,7 @@ public class BusyBox {
 	 */
 	public void prompt() throws IOException {
 
-		welcome();
+		BusyBox.welcome();
 		out.flush();
 		prompting = true;
 
@@ -251,7 +250,11 @@ public class BusyBox {
 	
 	
 
-	private boolean callJBox(final String line) {
+	/**
+	 * @param line
+	 * @return
+	 */
+	public boolean callJBox(final String line) {
 		return callJBox(line, true);
 	}
 

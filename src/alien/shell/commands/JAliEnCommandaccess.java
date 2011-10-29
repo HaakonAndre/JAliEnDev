@@ -1,16 +1,15 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.StringTokenizer;
+
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
-import alien.se.SEUtils;
 
 /**
  * @author ron

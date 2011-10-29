@@ -92,7 +92,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param name
 	 * @return usage tag for help
 	 */
-	protected String helpUsage(final String name){
+	public static String helpUsage(final String name){
 		return helpUsage(name,"");
 	}
 	
@@ -101,7 +101,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param desc 
 	 * @return usage tag for help
 	 */
-	protected String helpUsage(final String name, String desc){
+	public static String helpUsage(final String name, String desc){
 		if(desc!=null && desc.length()>0)
 			desc = padSpace(3) + desc;
 		else
@@ -110,9 +110,9 @@ public abstract class JAliEnBaseCommand extends Thread{
 	}
 	
 	/**
-	 * @return
+	 * @return options tag
 	 */
-	protected String helpStartOptions(){
+	public static String helpStartOptions(){
 		return "\noptions:";
 	}
 	
@@ -121,7 +121,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param opt 
 	 * @return option tag for help
 	 */
-	protected String helpOption(final String opt){
+	public static String helpOption(final String opt){
 		return helpOption(opt, "");
 	}
 	
@@ -130,7 +130,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param desc 
 	 * @return option tag for help
 	 */
-	protected String helpOption(final String opt, String desc){
+	public static String helpOption(final String opt, String desc){
 		if(desc!=null && desc.length()>0)
 			desc = "  :  " + desc;
 		else
@@ -143,7 +143,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param desc 
 	 * @return option tag for help
 	 */
-	protected String helpParameter(final String desc){
+	public static String helpParameter(final String desc){
 		return padSpace(padHelpUsage) + desc;
 	}
 	

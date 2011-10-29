@@ -16,7 +16,6 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
-import alien.perl.commands.AlienTime;
 
 /**
  * @author ron

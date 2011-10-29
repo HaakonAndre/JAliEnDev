@@ -1,15 +1,9 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.StringTokenizer;
 
 import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import alien.api.taskQueue.TaskQueueApiUtils;
-import alien.perl.commands.AlienTime;
 import alien.taskQueue.Job;
 import alien.user.AuthorizationChecker;
 

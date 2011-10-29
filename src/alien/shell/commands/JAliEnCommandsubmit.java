@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-import alien.api.taskQueue.TaskQueueApiUtils;
-import alien.perl.commands.AlienTime;
 import alien.taskQueue.JobSubmissionException;
 
 /**

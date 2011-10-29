@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import joptsimple.OptionException;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.user.AliEnPrincipal;
-import alien.user.UserFactory;
 
 /**
  * @author ron
