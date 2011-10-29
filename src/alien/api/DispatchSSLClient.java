@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -178,9 +179,13 @@ public class DispatchSSLClient extends Thread {
 				} else
 					logger.log(Level.SEVERE,"We didn't get any peer/service cert. NOT GOOD!");
 
+			} catch (ConnectException e) {
+				logger.log(Level.SEVERE, "Could not connect to JCentral: [" + e.getMessage() + "].");
+				System.err.println("Could not connect to JCentral: [" + e.getMessage() + "].");
 			} catch (Exception e) {
 				logger.log(Level.SEVERE,"Could not initiate SSL connection to the server.");
-				e.printStackTrace();
+				//e.printStackTrace();
+				System.err.println("Could not initiate SSL connection to the server.");
 			}
 
 		}

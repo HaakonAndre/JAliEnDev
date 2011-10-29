@@ -65,6 +65,9 @@ abstract class UIPrintWriter {
 	
 	abstract protected void pending();
 	
+	abstract protected void degraded();
+	
+	
 	/**
 	 * identify the RootPrinter from above 
 	 * @return if it is a RootPrinter

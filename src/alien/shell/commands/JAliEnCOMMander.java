@@ -24,29 +24,33 @@ import alien.user.UsersHelper;
  * @since June 4, 2011
  */
 public class JAliEnCOMMander extends Thread {
+	
+	private final static int maxTryConnect = 3;
 
+	private int triedConnects = 0;
 
 	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils
 	.getLogger(JBoxServer.class.getCanonicalName());
-	
+
+	private final JBoxServer jbox;
 	
 	/**
 	 *
 	 */
-	protected final CatalogueApiUtils c_api = new CatalogueApiUtils(this);
+	protected final CatalogueApiUtils c_api;
 	
 	/**
 	 * 
 	 */
-	protected final TaskQueueApiUtils q_api = new TaskQueueApiUtils(this);
+	protected final TaskQueueApiUtils q_api;
 	
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
 	 */
-	private static final String[] commandList = new String[] { "ls", "get",
+	private static final String[] commandList = new String[] {"shutdown", "ls", "get",
 			"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
 			"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"};
 
@@ -62,30 +66,63 @@ public class JAliEnCOMMander extends Thread {
 	 * Commands to let UI talk internally with us here
 	 */
 	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami",
-			"cdir", "commandlist", "gfilecomplete", "cdirtiled" ,"blackwhite","color" };
+			"cdir", "commandlist", "gfilecomplete", "cdirtiled" ,"blackwhite","color",
+			"setshell"};
 
 	private UIPrintWriter out = null;
 
 	/**
 	 * 
 	 */
-	protected AliEnPrincipal user = AuthorizationFactory.getDefaultUser();
+	protected AliEnPrincipal user;
 	
 
 	/**
 	 * 
 	 */
-	protected String role = AliEnPrincipal.userRole();
+	protected String role;
 
 	/**
 	 * 
 	 */
-	protected String site = ConfigUtils.getConfig().gets("alice_close_site")
-			.trim();
+	protected String site;
 
-	private String myHome = UsersHelper.getHomeDir(user.getName());
+	private String myHome;
 
-	private HashMap<String, File> localFileCash = new HashMap<String, File>();
+	private HashMap<String, File> localFileCash;
+	
+	private boolean degraded = false;
+
+	/**
+	 * @param jbox
+	 */
+	public JAliEnCOMMander(JBoxServer jbox) {
+		
+		this.jbox = jbox;
+
+		c_api = new CatalogueApiUtils(this);
+
+		q_api = new TaskQueueApiUtils(this);
+
+		user = AuthorizationFactory.getDefaultUser();
+		role = AliEnPrincipal.userRole();
+		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
+		myHome = UsersHelper.getHomeDir(user.getName());
+		localFileCash = new HashMap<String, File>();
+		initializeJCentralConnection();
+
+	}
+
+	private boolean initializeJCentralConnection() {
+		triedConnects++;
+		try {
+			curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
+			degraded = false;
+		} catch (Exception e) {
+			degraded = true;
+		}
+		return !degraded;
+	}
 
 	/**
 	 * @param md5
@@ -113,7 +150,7 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * Current directory as the status
 	 */
-	protected LFN curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
+	protected LFN curDir;
 
 	/**
 	 * get list of commands
@@ -170,8 +207,8 @@ public class JAliEnCOMMander extends Thread {
 	 * @return LFN of the current directory
 	 */
 	public LFN getCurrentDir() {
-		if (curDir == null)
-			curDir = c_api.getLFN(myHome);
+//		if (curDir == null)
+//			curDir = c_api.getLFN(myHome);
 		return curDir;
 
 	}
@@ -211,16 +248,41 @@ public class JAliEnCOMMander extends Thread {
 	private String[] arg = null;
 	
 	private JAliEnBaseCommand jcommand = null;
-	
+
+
 	public void run() {
 		while (true) {
-			execute();
-			try {
-				synchronized (this) {
-					wait();
+			
+			if(out==null)
+				if ("setshell".equals(arg[0]))
+				 setShellPrintWriter(os, arg[1]);
+			  else
+				  out = new RootPrintWriter(os);
+
+			if(degraded){
+				 if(triedConnects<maxTryConnect){			
+					 if(!initializeJCentralConnection())
+						flush();
+					 if(triedConnects<maxTryConnect){		
+						try {
+								Thread.sleep(triedConnects*maxTryConnect*500);							
+						} catch (InterruptedException e) {
+							//	e.printStackTrace();
+						}
+					 }
+				 }else{
+					 System.out.println("Giving up...");
+					 break;
+				 }
+			} else {
+				execute();
+				try {
+					synchronized (this) {
+						wait();
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
 				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
 			}
 		}
 	}
@@ -251,12 +313,6 @@ public class JAliEnCOMMander extends Thread {
 		
 		if (logger.isLoggable(Level.INFO)) {
 			logger.log(Level.INFO, "Received JSh call [" + comm + "].");
-		}
-
-		 if ("setshell".equals(comm)) {
-		  setShellPrintWriter(os, arg[1]);
-		} else if (out == null) {
-		   out = new RootPrintWriter(os);
 		}
 
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(arg));
@@ -297,9 +353,12 @@ public class JAliEnCOMMander extends Thread {
 					out.blackwhitemode();
 				else if ("color".equals(comm))
 					out.colourmode();
-			} else if (!"setshell".equals(comm)) {
-				out.printErrln("Command [" + comm + "] not found!");
-			}
+				//else if ("shutdown".equals(comm))
+				//	jbox.shutdown();
+			//} else if (!"setshell".equals(comm)) {
+			} else
+			out.printErrln("Command [" + comm + "] not found!");
+			//}
 		} else {
 
 			final Object[] param = { this, out, args };
@@ -350,8 +409,7 @@ public class JAliEnCOMMander extends Thread {
 							jcommand.wait();
 						}
 					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+						// ignore
 					}
 				} else {
 					jcommand.printHelp();
@@ -361,7 +419,17 @@ public class JAliEnCOMMander extends Thread {
 				out.printErrln("Error executing the command [" + comm + "].");
 			}
 		}
-		out.setenv(getCurrentDirName(),getUsername(),getRole());
+		flush();
+	}
+
+	
+	
+	private void flush(){
+		if(degraded){
+			out.degraded();
+			out.setenv(UsersHelper.getHomeDir(user.getName()),getUsername(),getRole());
+		} else 
+			out.setenv(getCurrentDirName(),getUsername(),getRole());
 		out.flush();
 	}
 	

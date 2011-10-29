@@ -6,7 +6,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
-import alien.shell.ShellColor;
 
 /**
  * @author ron
@@ -20,6 +19,26 @@ public class JShPrintWriter extends UIPrintWriter{
 	static transient final Logger logger = ConfigUtils
 			.getLogger(JShPrintWriter.class.getCanonicalName());
 
+	
+	/**
+	 * 
+	 */
+	public static final String degradedSignal = String.valueOf((char) 25);
+	
+	
+	/**
+	 * 
+	 */
+	public static final String lineTerm = String.valueOf((char) 0);
+	/**
+	 * 
+	 */
+	public static final String SpaceSep = String.valueOf((char) 1);
+	
+	/**
+	 * 
+	 */
+	public static final String pendSignal = String.valueOf((char) 9);
 	
 	/**
 	 * error String tag to mark a println for stderr
@@ -115,6 +134,11 @@ public class JShPrintWriter extends UIPrintWriter{
 	
 	protected void pending(){
 		print(pendingSignal + "\n");
+	}
+
+	
+	protected void degraded(){
+		print(degradedSignal);
 	}
 	
 }

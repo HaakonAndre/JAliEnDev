@@ -47,7 +47,7 @@ public class JSh {
 
 		 Signal.handle(new Signal("INT"), new SignalHandler () {
 			    public void handle(Signal sig) {
-			      if(boombox!=null)
+			      if(boombox!=null && boombox.prompting())
 		            	boombox.callJBoxGetString("SIGINT");
 			    }
 			  });

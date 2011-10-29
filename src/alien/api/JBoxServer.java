@@ -1,7 +1,6 @@
 package alien.api;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +28,7 @@ import alien.user.UsersHelper;
  * @author costing
  */
 public class JBoxServer extends Thread {
-
+	
 	/**
 	 * Logger
 	 */
@@ -37,13 +36,21 @@ public class JBoxServer extends Thread {
 	.getLogger(JBoxServer.class.getCanonicalName());
 
 	
+	/**
+	 * 
+	 */
 	public static final String passACK = "OKPASSACK";
 	
+	/**
+	 * 
+	 */
 	public static final String passNOACK = "NOPASSACK";
 	
 	private final int port;
 
 	private ServerSocket ssocket;
+	
+	private UIConnection connection;
 
 	/**
 	 * The password
@@ -231,20 +238,27 @@ public class JBoxServer extends Thread {
 	 * @author costing
 	 */
 	private class UIConnection extends Thread {
+		
 		private final Socket s;
+		
+		private final JBoxServer jbox;
 
 		private final InputStream is;
 
 		private final OutputStream os;
+		
+		private JAliEnCOMMander commander;
 
 		/**
 		 * One UI connection identified by the socket
 		 * 
 		 * @param s
+		 * @param jbox 
 		 * @throws IOException
 		 */
-		public UIConnection(final Socket s) throws IOException {
+		public UIConnection(final Socket s, final JBoxServer jbox) throws IOException {
 			this.s = s;
+			this.jbox = jbox;
 			is = s.getInputStream();
 			os = s.getOutputStream();
 
@@ -253,93 +267,107 @@ public class JBoxServer extends Thread {
 
 		@Override
 		public void run() {
-			try {
+				try {
 
-				final String lineTerm = String.valueOf((char) 0);
-				final String SpaceSep = String.valueOf((char) 1);
+					final String lineTerm = String.valueOf((char) 0);
+					final String SpaceSep = String.valueOf((char) 1);
 
-				BufferedReader br = new BufferedReader(
-						new InputStreamReader(is));
+					BufferedReader br = new BufferedReader(
+							new InputStreamReader(is));
 
-				Scanner scanner = new Scanner(br);
-				scanner.useDelimiter(lineTerm);
+					Scanner scanner = new Scanner(br);
+					scanner.useDelimiter(lineTerm);
 
-				String sLine = null;
-				if(scanner.hasNext()) 
-					sLine = scanner.next();
+					String sLine = null;
+					if (scanner.hasNext())
+						sLine = scanner.next();
 
-				if (sLine != null && sLine.equals(password)) {
-					os.write(passACK.getBytes());
-					os.flush();
-				} else {
-					os.write(passNOACK.getBytes());
-					os.flush();
-					return;
-				}
-				JAliEnCOMMander commander = new JAliEnCOMMander();
-
-				while (scanner.hasNext()) {
-					String line = scanner.next();	
-
-					if("SIGINT".equals(line)){
-					        	commander.killRunningCommand();
+					if (sLine != null && sLine.equals(password)) {
+						os.write(passACK.getBytes());
+						os.flush();
 					} else {
-						
-					try {
-						while(commander.isAlive() && !commander.getState().equals(State.WAITING)){
-					       // synchronized (commander) {
-					       // 	commander.wait();
-					       // }
-							Thread.sleep(1);
+						os.write(passNOACK.getBytes());
+						os.flush();
+						return;
+					}
+					commander = new JAliEnCOMMander(jbox);
+
+					while (scanner.hasNext()) {
+						String line = scanner.next();
+						if ("SIGINT".equals(line)){
+							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+							commander.killRunningCommand();
+						}else if("shutdown".equals(line)){
+							logger.log(Level.INFO, "Received [shutdown] from JSh.");
+								Runtime.getRuntime().exit(1);
+						}else {
+
+							try {
+								while (commander.isAlive()
+										&& !commander.getState().equals(
+												State.WAITING)) {
+									Thread.sleep(1);
+								}
+							} catch (InterruptedException e) {
+								e.printStackTrace();
+							}
+							commander.setLine(os, line.split(SpaceSep));
+
+							
+							try{
+								if (!commander.isAlive()) 
+								commander.start();
+							}
+							catch(IllegalThreadStateException e){
+								//ignore
+							}
+							//if (!commander.isAlive()) {
+							//	commander.start();
+							//} else 
+								if (commander.getState().equals(
+									State.WAITING)) {
+								synchronized (commander) {
+									commander.notify();
+								}
+							}
 						}
-					} catch (InterruptedException e) {
-						e.printStackTrace();
+						os.flush();
 					}
-					commander.setLine(os, line.split(SpaceSep));
-
-					if(!commander.isAlive()){
-						commander.start();
+				} catch (Exception e) {
+					logger.log(Level.INFO, "Error running the commander.");
+				} finally {
+					try {
+						s.shutdownOutput();
+					} catch (Exception e) {
+						// nothing particular
 					}
-					else if(commander.getState().equals(State.WAITING)){
-				        synchronized (commander) {
-				        	commander.notify();
-				        }
+					try {
+						s.shutdownInput();
+					} catch (Exception e) {
+						// ignore
 					}
+					try {
+						s.close();
+					} catch (Exception e) {
+						// ignore
 					}
-					os.flush();
 				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-				try {
-					s.shutdownOutput();
-				} catch (IOException e) {
-					// nothing particular
-				}
-				try {
-					s.shutdownInput();
-				} catch (IOException e) {
-					// ignore
-				}
-				try {
-					s.close();
-				} catch (IOException e) {
-					// ignore
-				}
-			}
 		}
+		
 	}
-
+	
 	public void run() {
+		
 		while (true) {
 			try {
 				final Socket s = ssocket.accept();
-
-				final UIConnection conn = new UIConnection(s);
-
-				conn.start();
+				
+				connection = new UIConnection(s,this);
+				
+				connection.start();
+				
 			} catch (IOException e) {
-				continue;
+				//ignore
 			}
 		}
 	}
@@ -348,6 +376,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Start once the UIServer
+	 * @param iDebugLevel 
 	 */
 	public static synchronized void startJBoxServer(int iDebugLevel) {
 		if (server != null)
@@ -360,19 +389,20 @@ public class JBoxServer extends Thread {
 
 				logger.log(Level.INFO, "UIServer listening on port " + port);
 				System.out.println("JBox is listening...");
-
+				
 				break;
 			} catch (Exception ioe) {
 				System.err.println(ioe);
 				ioe.printStackTrace();
 				logger.log(Level.FINE, "Could not listen on port " + port, ioe);
 			}
-		}
+		}	
 	}
 
 	/**
 	 * 
 	 * Load necessary keys and start JBoxServer
+	 * @param iDebug 
 	 */
 	public static void startJBoxService(int iDebug) {
 		try {
@@ -391,7 +421,6 @@ public class JBoxServer extends Thread {
 			System.err.println("Error loading the key");
 			e.printStackTrace();
 		}
-
 	}
-
+	
 }

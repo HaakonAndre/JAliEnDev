@@ -42,7 +42,6 @@ public class JBox {
 
 
 		JBoxServer.startJBoxService(iDebug);
-
-
+		
 	}
 }
