@@ -366,7 +366,8 @@ public class JSh {
 		System.out.println(JAliEnBaseCommand.helpOption("-h | -help", "this help"));
 		System.out.println();
 		System.out.println(JAliEnBaseCommand.helpParameter("more info to come."));
-	
+		System.out.println();
+		
 	}
 	
 }

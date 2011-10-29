@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +25,7 @@ import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
 
 /**
- * @author steffen
+ * @author ron
  * @since Mar 1, 2011
  */
 public class TaskQueueUtils {

@@ -55,6 +55,38 @@ public class TaskQueueApiUtils {
 		return null;
 
 	}
+	
+
+	
+	/**
+	 * @param status 
+	 * @param id 
+	 * @param jobId 
+	 * @param site 
+	 * @param bPrintId 
+	 * @param bPrintSite 
+	 * @param bMerge 
+	 * @param bKill 
+	 * @param bResubmit 
+	 * @param bExpunge 
+	 * @return a PS listing
+	 */
+	public List<Job> getMasterjob(final String status, final String id, final String jobId, final String site, final boolean bPrintId,
+			final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
+
+		try {
+			GetMasterjob mj = (GetMasterjob) Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(),
+					jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge), true);
+
+			return mj.returnMasterjob();
+		} catch (IOException e) {
+			System.out.println("Could get a PS listing: ");
+			e.printStackTrace();
+		}
+		return null;
+
+	}
+
 
 	
 	/**
@@ -150,6 +182,7 @@ public class TaskQueueApiUtils {
 	 * Submit a job
 	 * 
 	 * @param jdl
+	 * @return queueId
 	 * @throws JobSubmissionException
 	 */
 	public int submitJob(String jdl)
