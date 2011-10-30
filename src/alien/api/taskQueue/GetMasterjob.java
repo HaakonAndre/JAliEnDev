@@ -1,9 +1,10 @@
 package alien.api.taskQueue;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import com.sun.java.swing.plaf.windows.WindowsTreeUI.CollapsedIcon;
 
 import alien.api.Request;
 import alien.config.ConfigUtils;
@@ -34,8 +35,9 @@ public class GetMasterjob extends Request {
 	/**
 	 * 
 	 */
-	private Map<Job, Map<String, Integer>>  subJobStats = null;
+	private Collection<Job>  subJobs = null;
 	
+	private Job masterJob = null;
 	
 
 	private final int jobId;
@@ -95,42 +97,34 @@ public class GetMasterjob extends Request {
 	@Override
 	public void run() {
 		
+		masterJob = TaskQueueUtils.getJob(jobId);
 		
-		subJobStats = TaskQueueUtils.getMasterjobStats(TaskQueueUtils.getSubjobs(jobId));
+		subJobs = TaskQueueUtils.getMasterjobStats(TaskQueueUtils.getSubjobs(jobId)).keySet();
 
 		
 	}
+	
+	
+	/**
+	 * 
+	 * @return the masterjob
+	 */
+	public Job masterJob(){
+		
+		return this.masterJob;
+	}
+	
 	
 	/**
 	 * @return a JDL
 	 */
-	public Map<Job, Map<String, Integer>> returnMasterJobStatus(){
-		
-			System.out.println("jobId: " + jobId );
-		if(status!=null)
-			System.out.println("status: " + status );
+	public Collection<Job> returnSubJobs(){
 
-			System.out.println("id: " + id );
-		if(site!=null)
-			System.out.println("site: " + site );
-		if(bPrintId)
-			System.out.println("bPrintId");
-		if(bPrintSite)
-			System.out.println("bPrintSite");
-		if(bKill)
-			System.out.println("kill");
-		if(bResubmit)
-			System.out.println("resubmit");
-		if(bExpunge)
-			System.out.println("bExpunge" );
-		if(bMerge)
-			System.out.println("bMerge");
-		
-		return this.subJobStats;
+		return this.subJobs;
 	}
 	
 	@Override
 	public String toString() {
-		return "Asked for Masterjob status :  reply is: "+this.subJobStats;
+		return "Asked for Masterjob status :  reply is: "+this.masterJob;
 	}
 }

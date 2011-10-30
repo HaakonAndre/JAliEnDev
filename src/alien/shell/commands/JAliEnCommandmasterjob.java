@@ -1,6 +1,8 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,10 +61,38 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	public void run() {
 		
 
-		Map<Job, Map<String, Integer>> subjs = commander.q_api.getMasterJobStatus(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+		HashMap<Job,Collection<Job>>  masterjobstatus = commander.q_api.getMasterJobStatus(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
 		
 		
-		out.printErrln("Subjobs: " + subjs);
+		out.printOutln("Checking the masterjob " + jobId);
+		out.printOutln("The job " + jobId + " is in status: " + status);
+		out.printOutln("It has the following subjobs:");
+		
+		for (Job j : masterjobstatus.keySet()) {
+			if (j != null) {
+				out.printOutln("Checking the masterjob " + j.queueId);
+				out.printOutln("The job " + j.queueId + " is in status: "
+						+ status);
+				out.printOutln("It has the following subjobs:");
+
+				HashMap<String, Integer> stateCount = new HashMap<String, Integer>();
+				for(Job sj: masterjobstatus.get(j)){
+					// count the states the subjobs have
+					System.out.println(" sj: " + sj.queueId + ", " + sj.status);
+					if (stateCount.containsKey(sj.status))
+							stateCount.put(sj.status, stateCount.get(sj.status) + 1);
+						else
+							stateCount.put(sj.status, 1);
+					}
+
+				//
+				for (String state : stateCount.keySet())
+					out.printOutln(padSpace(16) + "Subjobs in " + state + ": "
+							+ stateCount.get(state));
+
+			}
+
+		}
 
 	}
 
