@@ -1,6 +1,7 @@
 package alien.api.taskQueue;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -35,7 +36,7 @@ public class GetMasterjob extends Request {
 	/**
 	 * 
 	 */
-	private Collection<Job>  subJobs = null;
+	private List<Job>  subJobs = null;
 	
 	private Job masterJob = null;
 	
@@ -99,7 +100,7 @@ public class GetMasterjob extends Request {
 		
 		masterJob = TaskQueueUtils.getJob(jobId);
 		
-		subJobs = TaskQueueUtils.getMasterjobStats(TaskQueueUtils.getSubjobs(jobId)).keySet();
+		subJobs = TaskQueueUtils.getSubjobs(jobId);
 
 		
 	}
@@ -118,7 +119,7 @@ public class GetMasterjob extends Request {
 	/**
 	 * @return a JDL
 	 */
-	public Collection<Job> returnSubJobs(){
+	public List<Job> subJobs(){
 
 		return this.subJobs;
 	}

@@ -61,7 +61,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	public void run() {
 		
 
-		HashMap<Job,Collection<Job>>  masterjobstatus = commander.q_api.getMasterJobStatus(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+		HashMap<Job,List<Job>>  masterjobstatus = commander.q_api.getMasterJobStatus(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
 		
 		
 		out.printOutln("Checking the masterjob " + jobId);
