@@ -283,6 +283,115 @@ public class TaskQueueUtils {
 		return ret;		
 	}
 	
+	
+	
+
+	/**
+	 * Get the subjob status of this masterjob
+	 * 
+	 * @param queueId
+	 * @param status 
+	 * @param id 
+	 * @param site 
+	 * @param bPrintId 
+	 * @param bPrintSite 
+	 * @param bMerge 
+	 * @param bKill 
+	 * @param bResubmit 
+	 * @param bExpunge 
+	 * @param loadJDL 
+	 * @return the subjobs, if any
+	 */
+	public static HashMap<Job,List<Job>> getMasterJobStat(final int queueId, final List<String> status, final List<Integer> id, final List<String> site,
+			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge){
+	
+		
+		Job masterjob = getJob(queueId);
+		
+		
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return null;
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+		}
+
+		String where = "";
+
+		if (status != null && status.size()>0){
+			String whe = " ( ";
+			for (String s : status){
+				if("%".equals(s)){
+					whe = "";
+					break;
+				}
+				whe += "status = '" + Format.escSQL(s) + "' or ";
+			}
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
+		
+		if (status != null && status.size()>0){
+			String whe = " ( ";
+			for (String s : status)
+				whe += "status = '" + Format.escSQL(s) + "' or ";
+			
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
+			
+		if (id != null && id.size()>0){
+			String whe = " ( ";
+			for (int i : id)
+				whe += "queueId = '" + Format.escSQL(i+"") + "' or ";
+			
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
+		
+		if (site != null && site.size()>0){
+			String whe = " ( ";
+			for (String s : site)
+				whe += "site like '%@" + Format.escSQL(s) + "' or ";
+			
+			if(whe.length()>0)
+				where += whe.substring(0, whe.length()-3) + " ) and ";
+		}
+		
+		if(where.endsWith(" and "))
+			where = where.substring(0,where.length()-5);
+
+		
+		if(where.length()>0)
+			where = " WHERE " + where;
+		
+		final String q = "SELECT "+ ALL_BUT_JDL +" FROM QUEUE "+ where + " ORDER BY queueId ASC;";
+					
+		if (!db.query(q))
+			return null;
+		
+		
+		
+		final List<Job> ret = new ArrayList<Job>();
+
+		db.query(q);
+
+		while (db.moveNext()){
+			ret.add(new Job(db, false));
+		}
+		
+		HashMap<Job,List<Job>> masterjobstatus = new HashMap<Job,List<Job>>(1);
+		
+		masterjobstatus.put(masterjob, ret);
+					
+		return masterjobstatus;
+
+	}
+	
+	
+	
 	/**
 	 * @param jobs
 	 * @return the jobs grouped by their state
@@ -477,10 +586,8 @@ public class TaskQueueUtils {
 		if(where.length()>0)
 			where = " WHERE " + where;
 		
-		final String q = "SELECT * FROM QUEUE "+ where + orderBy +" limit "+lim+";";
-		
-		System.out.println("SQL IS: " + q);
-			
+		final String q = "SELECT "+ ALL_BUT_JDL +" FROM QUEUE "+ where + orderBy +" limit "+lim+";";
+					
 		if (!db.query(q))
 			return null;
 		

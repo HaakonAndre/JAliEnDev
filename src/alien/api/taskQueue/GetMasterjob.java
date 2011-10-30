@@ -1,6 +1,7 @@
 package alien.api.taskQueue;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -36,18 +37,16 @@ public class GetMasterjob extends Request {
 	/**
 	 * 
 	 */
-	private List<Job>  subJobs = null;
-	
-	private Job masterJob = null;
+	private HashMap<Job,List<Job>>   masterJobStat = null;
 	
 
 	private final int jobId;
 	
-	private final String status;
+	private final List<String> status;
 	
-	private final int id;
+	private final List<Integer> id;
 	
-	private final String site;
+	private final List<String> site;
 	
 	private final boolean bPrintId;
 
@@ -75,7 +74,7 @@ public class GetMasterjob extends Request {
 	 * @param bResubmit 
 	 * @param bExpunge 
 	 */
-	public GetMasterjob(final AliEnPrincipal user, final String role, final int jobId, final String status, final int id, final String site,
+	public GetMasterjob(final AliEnPrincipal user, final String role, final int jobId,  final List<String> status, final List<Integer> id, final List<String> site,
 			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge){
 		setRequestUser(user);
 		setRoleRequest(role);
@@ -89,19 +88,13 @@ public class GetMasterjob extends Request {
 		this.bKill = bKill;
 		this.bResubmit = bResubmit;
 		this.bExpunge = bExpunge;
-		
-		if(bKill)
-			System.out.println("sending: " + jobId );
 	}
 	
 	
 	@Override
 	public void run() {
 		
-		masterJob = TaskQueueUtils.getJob(jobId);
-		
-		subJobs = TaskQueueUtils.getSubjobs(jobId);
-
+		masterJobStat = TaskQueueUtils.getMasterJobStat(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
 		
 	}
 	
@@ -110,22 +103,14 @@ public class GetMasterjob extends Request {
 	 * 
 	 * @return the masterjob
 	 */
-	public Job masterJob(){
+	public HashMap<Job,List<Job>> masterJobStatus(){
 		
-		return this.masterJob;
+		return this.masterJobStat;
 	}
 	
-	
-	/**
-	 * @return a JDL
-	 */
-	public List<Job> subJobs(){
-
-		return this.subJobs;
-	}
 	
 	@Override
 	public String toString() {
-		return "Asked for Masterjob status :  reply is: "+this.masterJob;
+		return "Asked for Masterjob status :  reply is: "+this.masterJobStat;
 	}
 }

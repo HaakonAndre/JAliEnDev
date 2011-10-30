@@ -1,10 +1,12 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 import alien.taskQueue.Job;
 
@@ -51,11 +53,11 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	private final int jobId;
 
-	private int id = 0;
+	private List<Integer> id = new ArrayList<Integer>();
+
+	private List<String> status = new ArrayList<String>();
 	
-	private String status = "";
-	
-	private String site = "";
+	private List<String> site = new ArrayList<String>();
 	
 	
 	public void run() {
@@ -75,20 +77,44 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 						+ status);
 				out.printOutln("It has the following subjobs:");
 
-				HashMap<String, Integer> stateCount = new HashMap<String, Integer>();
+				HashMap<String, List<Job>> stateCount = new HashMap<String, List<Job>>();
+				
+				ArrayList<String> sites = new ArrayList<String>();
+				ArrayList<String> states = new ArrayList<String>();
+				
+				
 				for(Job sj: masterjobstatus.get(j)){
 					// count the states the subjobs have
-					System.out.println(" sj: " + sj.queueId + ", " + sj.status);
-					if (stateCount.containsKey(sj.status))
-							stateCount.put(sj.status, stateCount.get(sj.status) + 1);
-						else
-							stateCount.put(sj.status, 1);
+					
+					if (stateCount.containsKey(sj.execHost+"/"+sj.status))
+							stateCount.get(sj.status).add(sj);
+						else{
+							stateCount.put(sj.status, new ArrayList<Job>(Arrays.asList(sj)));
+						}
 					}
 
 				//
-				for (String state : stateCount.keySet())
-					out.printOutln(padSpace(16) + "Subjobs in " + state + ": "
-							+ stateCount.get(state));
+				List<Job> subjobs;
+				for (String site : sites)
+					for (String state : states)
+						if ((subjobs = stateCount.get(site + "/" + state)) != null) {
+
+							String ret = padSpace(16) + "Subjobs in " + state;
+							if (bPrintSite)
+								ret += " (" + site + ")";
+							ret += ": " + stateCount.get(state).size();
+							if (bPrintId) {
+								ret += "(ids: ";
+								for (Job sj : subjobs)
+									ret += sj.queueId + ",";
+								ret += ret.substring(0, ret.length() - 1) + ")";
+							}
+
+							out.printOutln(ret);
+
+						}
+				out.printOutln();
+				out.printOutln("In total, there are "+ masterjobstatus.get(j).size() +" subjobs");
 
 			}
 
@@ -175,21 +201,38 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				final OptionSet options = parser.parse(alArguments
 						.toArray(new String[] {}));
 
-				if (options.has("status"))
-					status = (String) options.valueOf("status");
-
-				if (options.has("id")){
-					try{
-						id = Integer.parseInt((String) options.valueOf("id"));
-					}
-					catch(NumberFormatException e){
-						//ignore
+				if (options.has("status") && options.hasArgument("status")) {
+					final StringTokenizer st = new StringTokenizer(
+							(String) options.valueOf("status"), ",");
+					while (st.hasMoreTokens()){
+						String state = st.nextToken();
+						status.add(state);
+						if("ERROR_ALL".equals(state))
+							status.addAll(new ArrayList<String>(Arrays.asList("EXPIRED",
+									"ERROR_IB","ERROR_V","ERROR_E","FAILED","ERROR_SV",
+									"ERROR_A", "ERROR_VN")));
 					}
 				}
 
-				if (options.has("site"))
-					site = (String) options.valueOf("site");
-				
+				if (options.has("id") && options.hasArgument("id")) {
+					final StringTokenizer st = new StringTokenizer(
+							(String) options.valueOf("id"), ",");
+					while (st.hasMoreTokens())
+						try{
+							id.add(Integer.parseInt(st.nextToken()));
+						}
+						catch(NumberFormatException e){
+							//ignore
+						}
+				}
+
+				if (options.has("site") && options.hasArgument("site")) {
+					final StringTokenizer st = new StringTokenizer(
+							(String) options.valueOf("site"), ",");
+					while (st.hasMoreTokens())
+						site.add(st.nextToken());
+				}
+
 				bPrintId = options.has("printid");	
 				bPrintSite = options.has("printsite");
 
