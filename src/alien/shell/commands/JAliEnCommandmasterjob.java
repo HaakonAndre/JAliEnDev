@@ -2,17 +2,14 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
-
-import alien.taskQueue.Job;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import alien.taskQueue.Job;
 
 /**
  * @author ron

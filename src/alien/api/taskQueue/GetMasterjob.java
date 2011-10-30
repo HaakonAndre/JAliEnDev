@@ -1,12 +1,8 @@
 package alien.api.taskQueue;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
-
-import com.sun.java.swing.plaf.windows.WindowsTreeUI.CollapsedIcon;
 
 import alien.api.Request;
 import alien.config.ConfigUtils;
@@ -93,7 +89,7 @@ public class GetMasterjob extends Request {
 	
 	@Override
 	public void run() {
-		
+
 		masterJobStat = TaskQueueUtils.getMasterJobStat(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
 		
 	}
