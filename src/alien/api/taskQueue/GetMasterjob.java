@@ -20,15 +20,16 @@ public class GetMasterjob extends Request {
 
 
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2299330738741897654L;
+
+
+	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(TaskQueueUtils.class.getCanonicalName());
 	
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -453943843524253526L;
 
 	/**
 	 * 
