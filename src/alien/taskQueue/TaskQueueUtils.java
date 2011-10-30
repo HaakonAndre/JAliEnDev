@@ -302,12 +302,8 @@ public class TaskQueueUtils {
 	 * @param loadJDL 
 	 * @return the subjobs, if any
 	 */
-	public static HashMap<Job,List<Job>> getMasterJobStat(final int queueId, final List<String> status, final List<Integer> id, final List<String> site,
+	public static List<Job> getMasterJobStat(final int queueId, final List<String> status, final List<Integer> id, final List<String> site,
 			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge){
-	
-		
-		Job masterjob = getJob(queueId);
-		
 		
 		final DBFunctions db = getDB();
 		
@@ -381,12 +377,8 @@ public class TaskQueueUtils {
 		while (db.moveNext()){
 			ret.add(new Job(db, false));
 		}
-		
-		HashMap<Job,List<Job>> masterjobstatus = new HashMap<Job,List<Job>>(1);
-		
-		masterjobstatus.put(masterjob, ret);
-					
-		return masterjobstatus;
+
+		return ret;
 
 	}
 	

@@ -34,8 +34,10 @@ public class GetMasterjob extends Request {
 	/**
 	 * 
 	 */
-	private HashMap<Job,List<Job>>   masterJobStat = null;
+	private List<Job>   subJobs = null;
 	
+	private  Job   masterJob = null;
+
 
 	private final int jobId;
 	
@@ -91,7 +93,9 @@ public class GetMasterjob extends Request {
 	@Override
 	public void run() {
 
-		masterJobStat = TaskQueueUtils.getMasterJobStat(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+		subJobs = TaskQueueUtils.getMasterJobStat(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+		
+		masterJob = TaskQueueUtils.getJob(jobId);
 		
 	}
 	
@@ -101,13 +105,17 @@ public class GetMasterjob extends Request {
 	 * @return the masterjob
 	 */
 	public HashMap<Job,List<Job>> masterJobStatus(){
+
+		HashMap<Job,List<Job>> masterjobstatus = new HashMap<Job,List<Job>>(1);
 		
-		return this.masterJobStat;
+		masterjobstatus.put(this.masterJob, this.subJobs);		
+		
+		return masterjobstatus;
 	}
 	
 	
 	@Override
 	public String toString() {
-		return "Asked for Masterjob status :  reply is: "+this.masterJobStat;
+		return "Asked for Masterjob status :  reply is: "+this.masterJob;
 	}
 }
