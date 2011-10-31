@@ -186,7 +186,7 @@ public class BusyBox {
 			line = line.trim();
 
 			if (line.equalsIgnoreCase("quit") || line.equalsIgnoreCase("exit")) {
-				printGoodBye();
+				JSh.noAppendOnExit();
 				break;
 			}
 
@@ -489,12 +489,6 @@ public class BusyBox {
 	
 	private void printErrShutdown(){
 		JSh.printErr("Shutting down...");
-		printGoodBye();
-	}
-	
-	
-	private void printGoodBye(){
-		JSh.printOut("GoodBye.");
 	}
 	
 	private void printErrRestartJBox(){

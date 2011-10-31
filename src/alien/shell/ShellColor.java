@@ -19,51 +19,78 @@ public class ShellColor {
 	 * @return color code
 	 */
 	public static String reset(){
-		return genTag(ForeColor.NONE, BackColor.NONE, Style.CLEAR);
+		return genTag(Style.CLEAR);
 	}
 	
 	
 	/**
-	 * @return color code
+	 * @return color code for error Message
 	 */
 	public static String errorMessage(){
 		return boldRed();
 	}
 	
 	/**
+	 * @return color code for info Message
+	 */
+	public static String infoMessage(){
+		return boldWhite();
+	}
+	
+	
+	/**
 	 * @return color code
 	 */
 	public static String boldRed(){
-		return genTag(ForeColor.RED, BackColor.NONE, Style.BOLD);
+		return genTag(ForeColor.RED, Style.BOLD);
+	}
+	
+
+	/**
+	 * @return color code
+	 */
+	public static String boldWhite(){
+		return genTag(ForeColor.WHITE, Style.BOLD);
 	}
 	
 	/**
 	 * @return color code
 	 */
 	public static String blue(){
-		return genTag(ForeColor.BLUE, BackColor.NONE, Style.NONE);
+		return genTag(ForeColor.BLUE);
 	}
 	
 	/**
 	 * @return color code
 	 */
 	public static String black(){
-		return genTag(ForeColor.BLACK, BackColor.NONE, Style.NONE);
+		return genTag(ForeColor.BLACK, Style.NONE);
 	}
 	
 	/**
 	 * @return color code
 	 */
 	public static String boldBlack(){
-		return genTag(ForeColor.BLACK, BackColor.NONE, Style.BOLD);
+		return genTag(ForeColor.BLACK, Style.BOLD);
 	}
+	private static String genTag(final ShellCol one) {
+		return prefix + one.getCode() + suffix;
+	}
+
+
 	
-	private static String genTag(final ForeColor fc, final BackColor bc, final Style st) {
-		return prefix + fc.getCode() + sep + bc.getCode() + sep + st.getCode() + suffix;
+	private static String genTag(final ShellCol one, final ShellCol two) {
+		return prefix + one.getCode() + sep + two.getCode() + suffix;
+	}
+
+	
+	private static String genTag(final ShellCol one, final ShellCol two, final Style three) {
+		return prefix + one.getCode() + sep + two.getCode() + sep + three.getCode() + suffix;
 	}
 
 
-	private enum ForeColor {
+
+	private enum ForeColor implements ShellCol{
 
 		BLACK("30"), RED("31"), GREEN("32"), YELLOW("33"), BLUE("34"), MAGENTA(
 				"35"), CYAN("36"), WHITE("37"), NONE("");
@@ -74,13 +101,13 @@ public class ShellColor {
 			this.code = code;
 		}
 
-		protected String getCode() {
+		public String getCode() {
 			return this.code;
 		}
 
 	}
 
-	private enum BackColor {
+	private enum BackColor implements ShellCol{
 
 		BLACK("40"), RED("41"), GREEN("42"), YELLOW("43"), BLUE("44"), MAGENTA(
 				"45"), CYAN("46"), WHITE("47"), NONE("");
@@ -91,13 +118,13 @@ public class ShellColor {
 			this.code = code;
 		}
 
-		protected String getCode() {
+		public String getCode() {
 			return this.code;
 		}
 
 	}
 
-	private enum Style {
+	private enum Style implements ShellCol{
 
 		CLEAR("0"), BOLD("1"), LIGHT("1"), DARK("2"), UNDERLINE("4"), REVERSE(
 				"7"), HIDDEN("8"), NONE("");
@@ -108,10 +135,15 @@ public class ShellColor {
 			this.code = code;
 		}
 
-		protected String getCode() {
+		public String getCode() {
 			return this.code;
 		}
 
+	}
+	
+	private interface ShellCol {
+		abstract public String getCode();
+		
 	}
 
 }
