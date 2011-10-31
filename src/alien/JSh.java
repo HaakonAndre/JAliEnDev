@@ -40,7 +40,7 @@ public class JSh {
 	static {
 		ConfigUtils.getVersion();
 	}
-    
+	
 	
 	private static BusyBox boombox = null;
 	
@@ -58,8 +58,9 @@ public class JSh {
 			  });
 		 Runtime.getRuntime().addShutdownHook(new Thread() {
 		      public void run() {
-		    	  if(boombox!=null && boombox.prompting())
+		    	  if(boombox!=null && boombox.prompting() && appendOnExit)
 		    		  System.out.println("exit");  
+		    	  JSh.printGoodBye();
 		      }
 		    });
 		    
@@ -91,6 +92,19 @@ public class JSh {
 		}
 	}
 
+	private static boolean appendOnExit = true;
+	
+	
+    /**
+     * Trigger no 'exit\n' to be written out on exit
+     */
+    public static void noAppendOnExit(){
+    	appendOnExit = false;
+    }
+	
+	
+	
+	
 	private static final String kill = "/bin/kill";
 	private static final String fuser = "/bin/fuser";
 
@@ -355,7 +369,7 @@ public class JSh {
 	 * @param message
 	 */
 	public static void printOut(String message){
-		System.out.println(ShellColor.errorMessage() + message + ShellColor.reset());
+		System.out.println(ShellColor.infoMessage() + message + ShellColor.reset());
 	}
 	
 	private static void printHelp(){
@@ -368,6 +382,11 @@ public class JSh {
 		System.out.println(JAliEnBaseCommand.helpParameter("more info to come."));
 		System.out.println();
 		
+	}
+
+	
+	private static void printGoodBye(){
+		JSh.printOut("GoodBye.");
 	}
 	
 }
