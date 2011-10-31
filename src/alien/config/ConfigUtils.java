@@ -61,6 +61,9 @@ public class ConfigUtils {
 //			System.err.println("Config folder: "+f.getCanonicalPath());
 
 			if (f.exists() && f.isDirectory() && f.canRead()) {
+				if (System.getProperty("lazyj.config.folder") == null)
+					System.setProperty("lazyj.config.folder", sConfigFolder);
+				
 				final File[] list = f.listFiles();
 
 				if (list != null) {
