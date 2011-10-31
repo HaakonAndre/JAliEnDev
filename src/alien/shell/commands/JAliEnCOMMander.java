@@ -219,7 +219,9 @@ public class JAliEnCOMMander extends Thread {
 	 * @return String of the current directory
 	 */
 	public String getCurrentDirName() {
-		return getCurrentDir().getCanonicalName();
+		if(getCurrentDir()!=null)
+			return getCurrentDir().getCanonicalName();
+		return "[none]";
 	}
 
 	/**
