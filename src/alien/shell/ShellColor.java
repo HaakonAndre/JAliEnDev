@@ -34,7 +34,7 @@ public class ShellColor {
 	 * @return color code for info Message
 	 */
 	public static String infoMessage(){
-		return boldWhite();
+		return boldBlack();
 	}
 	
 	
