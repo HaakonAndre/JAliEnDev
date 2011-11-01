@@ -299,7 +299,6 @@ public class TaskQueueUtils {
 	 * @param bKill 
 	 * @param bResubmit 
 	 * @param bExpunge 
-	 * @param loadJDL 
 	 * @return the subjobs, if any
 	 */
 	public static List<Job> getMasterJobStat(final int queueId, final List<String> status, final List<Integer> id, final List<String> site,
