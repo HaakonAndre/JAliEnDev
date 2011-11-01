@@ -5,6 +5,7 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import lazyj.StringFactory;
@@ -16,14 +17,9 @@ import lazyj.StringFactory;
  * @since 02-04-2007
  */
 public class AliEnPrincipal implements Principal, Serializable {
-	
-	
-
-	
 	private final static String userRole = "users";
 	
-	private final static String[] admins = new String[] {"admin"};
-	
+	private final static List<String> admins = Arrays.asList("admin");
 	
 	/**
 	 * 
@@ -173,7 +169,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 		if (names.contains(role))
 			return true;
 
-		if ("users".equals(role))
+		if (userRole.equals(role))
 			return true;
 
 		final Set<String> sRoles = getRoles();
@@ -203,6 +199,6 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @return is admin privileged or not
 	 */
 	public static boolean roleIsAdmin(final String role){
-		return Arrays.asList(admins).contains(role);
+		return admins.contains(role);
 	}
 }
