@@ -6,17 +6,13 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.cert.Certificate;
-
-import javax.net.ssl.KeyManagerFactory;
 
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
@@ -38,13 +34,10 @@ public class AuthenticationChecker {
 
 	
 	static{
-		
-				privKey = null; // (RSAPrivateKey) JAKeyStore.ks.getKey("User.cert", JAKeyStore.pass);
+		privKey = null; // (RSAPrivateKey) JAKeyStore.ks.getKey("User.cert", JAKeyStore.pass);		
 			
-			
-			Certificate[] usercert = null; //JAKeyStore.ks.getCertificateChain("User.cert");
-			pubKey = null; //(RSAPublicKey) usercert[0].getPublicKey();
-
+		Certificate[] usercert = null; //JAKeyStore.ks.getCertificateChain("User.cert");
+		pubKey = null; //(RSAPublicKey) usercert[0].getPublicKey();
 	}
 	
 
@@ -74,13 +67,11 @@ public class AuthenticationChecker {
 
 		try {
 			StringReader pub = new StringReader(pubCert);
-			 cert = ((X509Certificate) new PEMReader(pub)
-			.readObject());
+			 cert = ((X509Certificate) new PEMReader(pub).readObject());
 			
 			pubKey = (RSAPublicKey) cert.getPublicKey();
 		} catch (IOException e) {
 			e.printStackTrace();
-		} finally {
 		}
 	}
 
@@ -114,7 +105,6 @@ public class AuthenticationChecker {
 
 	/**
 	 * sign the challenge as a response
-	 * @param pf
 	 * @param challenge
 	 * @return the response
 	 * @throws SignatureException
@@ -151,10 +141,9 @@ public class AuthenticationChecker {
 		if (verifier.verify(Hex.decode(signature))) {
 			System.out.println("Access granted for user: " + cert.getSubjectDN());
 			return true;
-		} else {
-			System.out.println("Access denied");
-			return false;
 		}
+		
+		System.out.println("Access denied");
+		return false;
 	}
-
 }
