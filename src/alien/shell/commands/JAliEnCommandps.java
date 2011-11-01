@@ -160,6 +160,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			if (bColour)
 				return textblue + padLeft("  W",3) + textnormal;
 			return padLeft("  W",3);
+		} else if ("OVER_WAITING".equals(status)) {
+			return padLeft("  OW",3);
 		} else if ("EXPIRED".equals(status)) {
 			return padLeft(" EX",3);
 		} else if ("INSERTING".equals(status)) {
