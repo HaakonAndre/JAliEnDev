@@ -418,18 +418,39 @@ public class TaskQueueUtils {
 		final JobTraceLog trace = new JobTraceLog(queueId);
 		return trace.getTraceLog();
 	}
+
+	/**
+	 * @param job
+	 * @param newStatus
+	 * @return <code>true</code> if the job status was changed
+	 */
+	public static boolean setJobStatus(final int job, final String newStatus){
+		return setJobStatus(job, newStatus, null);
+	}
 	
 	/**
 	 * @param job
 	 * @param newStatus
+	 * @param oldStatusConstraint change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status. 
+	 * @return <code>true</code> if the job status was changed
 	 */
-	public static void setJobStatus(final int job, final String newStatus){
+	public static boolean setJobStatus(final int job, final String newStatus, final String oldStatusConstraint){
 		final DBFunctions db = getDB();
 		
 		if (db==null)
-			return;
+			return false;
+				
+		String q = "UPDATE QUEUE SET status='"+Format.escSQL(newStatus)+"' WHERE queueId="+job+" AND status";
 		
-		db.query("UPDATE QUEUE SET status='"+Format.escSQL(newStatus)+"' WHERE queueId="+job+" AND status!='"+Format.escSQL(newStatus)+"'");
+		if (oldStatusConstraint==null)
+			q += "!='"+Format.escSQL(newStatus)+"'";
+		else
+			q += "='"+Format.escSQL(oldStatusConstraint)+"'";
+		
+		if (!db.query(q))
+			return false;
+		
+		return db.getUpdateCount()!=0;
 	}
 	
 	/**
@@ -807,8 +828,6 @@ public class TaskQueueUtils {
 		
 		return pid.intValue();
 	}
-	
-	
 	
 	/**
 	 * @param user 
