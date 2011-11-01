@@ -339,11 +339,12 @@ public class TaskQueueUtils {
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
-		
+	
 		if (site != null && site.size()>0){
 			String whe = " ( ";
 			for (String s : site)
-				whe += "site like '%@" + Format.escSQL(s) + "' or ";
+			//	whe += "site like '%@" + Format.escSQL(s) + "' or ";
+				whe += "ifnull(substring(exechost,POSITION('\\@' in exechost)+1),'')='" + Format.escSQL(s) + "' or ";
 			
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
@@ -362,16 +363,10 @@ public class TaskQueueUtils {
 			lim = limit;
 
 		
-		final String q = "SELECT queueId,status,split,site FROM QUEUE "+ where + " ORDER BY queueId ASC limit "+ lim+";";
-		
-		System.out.println("SQL: " + q);
-
+		final String q = "SELECT queueId,status,split,execHost FROM QUEUE "+ where + " ORDER BY queueId ASC limit "+ lim+";";
 					
-		//if (!db.query(q))
-		if(q!=null)
+		if (!db.query(q))
 			return null;
-		
-		
 		
 		final List<Job> ret = new ArrayList<Job>();
 

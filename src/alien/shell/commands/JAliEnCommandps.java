@@ -372,6 +372,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					while (st.hasMoreTokens())
 						jobid.add(st.nextToken());
 					states.add("%");
+					users.add("%");
 				}
 
 				if (options.has("l") && options.hasArgument("l")) {
@@ -427,10 +428,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 			if(options.has("b"))
 				bColour = false;
-			
-			System.out.println("states: [" + states + "]");
-			
-			System.out.println("users: [" + users + "]");
 
 		} catch (OptionException e) {
 			printHelp();
