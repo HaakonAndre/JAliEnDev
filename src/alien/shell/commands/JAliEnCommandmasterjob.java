@@ -60,62 +60,76 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	public void run() {
 		
 
-		HashMap<Job,List<Job>>  masterjobstatus = commander.q_api.getMasterJobStatus(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+		Job j = commander.q_api.getJob(jobId);
 		
 		
-		out.printOutln("Checking the masterjob " + jobId);
-		out.printOutln("The job " + jobId + " is in status: " + status);
-		out.printOutln("It has the following subjobs:");
+		List<Job>  subjobstates = null;
 		
-		for (Job j : masterjobstatus.keySet()) {
-			if (j != null) {
+		//for (Job j : masterjobstatus.keySet()) {
+			if (j!=null)
+				subjobstates = commander.q_api.getMasterJobStatus(jobId, status, 
+						id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+			else 
+				return;
+					
+			
 				out.printOutln("Checking the masterjob " + j.queueId);
 				out.printOutln("The job " + j.queueId + " is in status: "
 						+ status);
-				out.printOutln("It has the following subjobs:");
+				
+				
 
 				HashMap<String, List<Job>> stateCount = new HashMap<String, List<Job>>();
 				
 				ArrayList<String> sites = new ArrayList<String>();
 				ArrayList<String> states = new ArrayList<String>();
 				
-				
-				for(Job sj: masterjobstatus.get(j)){
-					// count the states the subjobs have
+				if (subjobstates != null) {
 					
-					if (stateCount.containsKey(sj.execHost+"/"+sj.status))
+					out.printOutln("It has the following subjobs:");
+
+					for (Job sj : subjobstates) {
+						// count the states the subjobs have
+
+						if (stateCount.containsKey(sj.execHost + "/"
+								+ sj.status))
 							stateCount.get(sj.status).add(sj);
-						else{
-							stateCount.put(sj.status, new ArrayList<Job>(Arrays.asList(sj)));
+						else {
+							stateCount.put(sj.status,
+									new ArrayList<Job>(Arrays.asList(sj)));
 						}
 					}
 
-				//
-				List<Job> subjobs;
-				for (String site : sites)
-					for (String state : states)
-						if ((subjobs = stateCount.get(site + "/" + state)) != null) {
+					//
+					List<Job> subjobs;
+					for (String site : sites)
+						for (String state : states)
+							if ((subjobs = stateCount.get(site + "/" + state)) != null) {
 
-							String ret = padSpace(16) + "Subjobs in " + state;
-							if (bPrintSite)
-								ret += " (" + site + ")";
-							ret += ": " + stateCount.get(state).size();
-							if (bPrintId) {
-								ret += "(ids: ";
-								for (Job sj : subjobs)
-									ret += sj.queueId + ",";
-								ret += ret.substring(0, ret.length() - 1) + ")";
+								String ret = padSpace(16) + "Subjobs in "
+										+ state;
+								if (bPrintSite)
+									ret += " (" + site + ")";
+								ret += ": " + stateCount.get(state).size();
+								if (bPrintId) {
+									ret += "(ids: ";
+									for (Job sj : subjobs)
+										ret += sj.queueId + ",";
+									ret += ret.substring(0, ret.length() - 1)
+											+ ")";
+								}
+
+								out.printOutln(ret);
+
 							}
+					out.printOutln();
+					out.printOutln("In total, there are "
+							+ subjobstates.size() + " subjobs");
 
-							out.printOutln(ret);
+				}
+			//}
 
-						}
-				out.printOutln();
-				out.printOutln("In total, there are "+ masterjobstatus.get(j).size() +" subjobs");
-
-			}
-
-		}
+		//}
 
 	}
 

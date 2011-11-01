@@ -302,7 +302,8 @@ public class TaskQueueUtils {
 	 * @return the subjobs, if any
 	 */
 	public static List<Job> getMasterJobStat(final int queueId, final List<String> status, final List<Integer> id, final List<String> site,
-			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge){
+			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, 
+			final boolean bResubmit, final boolean bExpunge, final int limit){
 		
 		final DBFunctions db = getDB();
 		
@@ -315,18 +316,11 @@ public class TaskQueueUtils {
 
 		String where = "";
 
-		if (status != null && status.size()>0){
-			String whe = " ( ";
-			for (String s : status){
-				if("%".equals(s)){
-					whe = "";
-					break;
-				}
-				whe += "status = '" + Format.escSQL(s) + "' or ";
-			}
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
-		}
+		if (queueId>0)
+			where = " split = '" + Format.escSQL(queueId+"") + "' and ";
+		else
+			return null;
+		
 		
 		if (status != null && status.size()>0){
 			String whe = " ( ";
@@ -362,9 +356,19 @@ public class TaskQueueUtils {
 		if(where.length()>0)
 			where = " WHERE " + where;
 		
-		final String q = "SELECT "+ ALL_BUT_JDL +" FROM QUEUE "+ where + " ORDER BY queueId ASC;";
+
+		int lim = 10000;
+		if(limit>0 && limit<10000)
+			lim = limit;
+
+		
+		final String q = "SELECT queueId,status,split,site FROM QUEUE "+ where + " ORDER BY queueId ASC limit "+ lim+";";
+		
+		System.out.println("SQL: " + q);
+
 					
-		if (!db.query(q))
+		//if (!db.query(q))
+		if(q!=null)
 			return null;
 		
 		
@@ -564,9 +568,6 @@ public class TaskQueueUtils {
 		if (mjobs != null && mjobs.size()>0){
 			String whe = " ( ";
 			for (String m : mjobs){
-				if("%".equals(m))
-					whe += "split <> '0' or ";
-				else
 					whe += "split = '" + Format.escSQL(m)  + "' or ";
 			}
 			if(whe.length()>0)

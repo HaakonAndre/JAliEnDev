@@ -92,13 +92,30 @@ public class GetMasterjob extends Request {
 	
 	@Override
 	public void run() {
+		
+		System.out.println("running with GetMasterJob");
 
-		subJobs = TaskQueueUtils.getMasterJobStat(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+
+		subJobs = TaskQueueUtils.getMasterJobStat(jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, 
+				bResubmit, bExpunge,10000);
+		
+		System.out.println("got subjosb, in GetMasterJob");
+
 		
 		masterJob = TaskQueueUtils.getJob(jobId);
 		
+		System.out.println("done with GetMasterJob");
+		
 	}
 	
+
+	/**
+	 * 
+	 * @return the masterjob
+	 */
+	public List<Job> subJobStatus(){
+		return  this.subJobs;
+	}
 	
 	/**
 	 * 
@@ -106,7 +123,7 @@ public class GetMasterjob extends Request {
 	 */
 	public HashMap<Job,List<Job>> masterJobStatus(){
 
-		HashMap<Job,List<Job>> masterjobstatus = new HashMap<Job,List<Job>>(1);
+		HashMap<Job,List<Job>> masterjobstatus = new HashMap<Job,List<Job>>();
 		
 		masterjobstatus.put(this.masterJob, this.subJobs);		
 		

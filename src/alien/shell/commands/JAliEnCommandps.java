@@ -415,7 +415,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				}
 
 				if(options.has("M"))
-					mjobs.add("%");
+					mjobs.add("0");
 
 
 				if (options.has("a")) {

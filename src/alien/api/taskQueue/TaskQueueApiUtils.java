@@ -72,14 +72,15 @@ public class TaskQueueApiUtils {
 	 * @param bExpunge 
 	 * @return a PS listing
 	 */
-	public HashMap<Job,List<Job>>  getMasterJobStatus( final int jobId, final List<String> status, final List<Integer> id, final List<String> site, final boolean bPrintId,
+	public List<Job>  getMasterJobStatus( final int jobId, final List<String> status, final List<Integer> id, final List<String> site, final boolean bPrintId,
 			final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {
 			GetMasterjob mj = (GetMasterjob) Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(),
 					jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge), true);
 						
-			return mj.masterJobStatus();
+//			return mj.masterJobStatus();
+			return mj.subJobStatus();
 			
 		} catch (IOException e) {
 			System.out.println("Could get a PS listing: ");
