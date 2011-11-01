@@ -14,12 +14,14 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
+import alien.user.UserFactory;
 import alien.user.UsersHelper;
 
 /**
@@ -35,6 +37,8 @@ public class JBoxServer extends Thread {
 	static transient final Logger logger = ConfigUtils
 	.getLogger(JBoxServer.class.getCanonicalName());
 
+	// this triggers to ask for the user home LFN before doing anything else
+	private static boolean preemptJCentralConnection=true;
 	
 	/**
 	 * 
@@ -69,6 +73,15 @@ public class JBoxServer extends Thread {
 	 * @throws IOException
 	 */
 	private JBoxServer(final int listeningPort, int iDebug) throws Exception {
+		
+		
+		if(preemptJCentralConnection){
+			PreemptJCentralConnection preempt = new PreemptJCentralConnection();
+			preempt.start();
+			preemptJCentralConnection=false;
+		}
+		
+		
 		this.port = listeningPort;
 		this.iDebugLevel = iDebug;
 
@@ -231,7 +244,21 @@ public class JBoxServer extends Thread {
 			return false;
 		}
 	}
-
+	
+	
+	/**
+     * ramp up the ssl to JCentral
+     * 
+	 * @author gron
+	 */
+	public class PreemptJCentralConnection extends Thread {
+		
+		public void run() {
+			new JAliEnCOMMander(null);
+		}
+	}
+	
+	
 	/**
 	 * One UI connection
 	 * 
@@ -358,6 +385,7 @@ public class JBoxServer extends Thread {
 	
 	public void run() {
 		
+		
 		while (true) {
 			try {
 				final Socket s = ssocket.accept();
@@ -384,6 +412,7 @@ public class JBoxServer extends Thread {
 
 		for (int port = 10100; port < 10200; port++) {
 			try {
+		
 				server = new JBoxServer(port, iDebugLevel);
 				server.start();
 
