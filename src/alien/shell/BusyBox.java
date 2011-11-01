@@ -65,7 +65,9 @@ public class BusyBox {
 	/**
 	 * print welcome
 	 */
-	public static void welcome() {
+	public void welcome() {
+		System.out.println("Hello " + username + ",");
+		System.out.println();
 		System.out.println("Welcome to " + JAliEnIAm.whatsMyFullName());
 		System.out.println("Have a cup! Cheers, ACS");
 		System.out.println();
@@ -131,6 +133,7 @@ public class BusyBox {
 	
 	}
 	
+
 	
 	/**
 	 * the JAliEn busy box
@@ -141,9 +144,33 @@ public class BusyBox {
 	 * @throws IOException
 	 */
 	public BusyBox(String addr,int port, String password) throws IOException {
+		this(addr,port,password,null,false);
+	}
 
+	/**
+	 * the JAliEn busy box
+	 * 
+	 * @param addr
+	 * @param port
+	 * @param password
+	 * @param username 
+	 * @param startPrompt
+	 * 
+	 * @throws IOException
+	 */
+	public BusyBox(String addr,int port, final String password, final String username, final boolean startPrompt) throws IOException {
+		
+		out = new PrintWriter(System.out);
+		
+		if(startPrompt){
+			this.username = username;
+			welcome();
+			out.flush();
+			prompting = true;
+		}
+		
 		if (connect(addr, port, password)) {
-			out = new PrintWriter(System.out);
+			
 
 			reader = new ConsoleReader();
 			reader.setBellEnabled(false);
@@ -160,6 +187,10 @@ public class BusyBox {
 			printInitConnError();
 			throw new IOException();
 		}
+		
+		if(startPrompt){
+			prompt();
+		}
 	}
 
 	/**
@@ -168,10 +199,6 @@ public class BusyBox {
 	 * @throws IOException
 	 */
 	public void prompt() throws IOException {
-
-		BusyBox.welcome();
-		out.flush();
-		prompting = true;
 
 		String line;
 

@@ -173,7 +173,7 @@ public class DispatchSSLClient extends Thread {
 					}
 
 					DispatchSSLClient sc = new DispatchSSLClient(client);
-
+					System.out.println("Connection to JCentral established.");
 					instance.put(Integer.valueOf(p), sc);
 
 				} else

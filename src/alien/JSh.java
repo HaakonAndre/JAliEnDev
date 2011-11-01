@@ -18,6 +18,7 @@ import sun.misc.SignalHandler;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.config.ConfigUtils;
+import alien.config.JAliEnIAm;
 import alien.shell.BusyBox;
 import alien.shell.ShellColor;
 import alien.shell.commands.JAliEnBaseCommand;
@@ -58,9 +59,12 @@ public class JSh {
 			  });
 		 Runtime.getRuntime().addShutdownHook(new Thread() {
 		      public void run() {
-		    	  if(boombox!=null && boombox.prompting() && appendOnExit)
-		    		  System.out.println("exit");  
-		    	  JSh.printGoodBye();
+		    	  if(boombox!=null)
+		    		  if(boombox.prompting()){
+		    			if(appendOnExit)
+		    			  		System.out.println("exit");  
+		    	  			JSh.printGoodBye();
+		    		  }
 		      }
 		    });
 		    
@@ -78,14 +82,19 @@ public class JSh {
 			
 		
 			if (JSh.JBoxRunning()){
-				boombox = new BusyBox(addr, port, password);
 				if(args.length>0 && "-e".equals(args[0])){
-					final StringTokenizer st = new StringTokenizer(joinSecondArgs(args),",");
-					while (st.hasMoreTokens())
-						boombox.callJBox(st.nextToken().trim());
+					boombox = new BusyBox(addr, port, password);
+					if(boombox!=null){
+						final StringTokenizer st = new StringTokenizer(joinSecondArgs(args),",");
+						while (st.hasMoreTokens())
+							boombox.callJBox(st.nextToken().trim());
+					}
+					else
+						printErrConnJBox();
+					
 				}
 				else
-					boombox.prompt();
+					boombox = new BusyBox(addr, port, password, user, true);
 			}
 			else
 				printErrNoJBox();
@@ -101,7 +110,13 @@ public class JSh {
     public static void noAppendOnExit(){
     	appendOnExit = false;
     }
-	
+    
+    /**
+     * Trigger no 'exit\n' to be written out on exit
+     */
+    public static void appendOnExit(){
+    	appendOnExit = true;
+    }
 	
 	
 	
@@ -109,6 +124,7 @@ public class JSh {
 	private static final String fuser = "/bin/fuser";
 
 	private static String addr;
+	private static String user;
 	private static String password;
 	private static int port = 0;
 	private static int pid = 0;
@@ -285,6 +301,8 @@ public class JSh {
 						}
 				} else if (("Passwd").equals(kval[0].trim())) {
 					password = kval[1].trim();
+				} else if (("User").equals(kval[0].trim())) {
+					user = kval[1].trim();
 				}
 			}
 			return true;
@@ -301,8 +319,7 @@ public class JSh {
 	 */
 	public static BusyBox getBusyBox() throws IOException{
 		getJBoxPID();
-		boombox = new BusyBox(addr, port, password);
-		return boombox;
+		return new BusyBox(addr, port, password);
 	}
 
 	/**
@@ -357,6 +374,11 @@ public class JSh {
 		printErr("JBox isn't running, so we won't start JSh.");
 	}
 
+
+	private static void printErrConnJBox(){
+		printErr("Error connecting JBox.");
+	}
+
 	
 	/**
 	 * @param message
@@ -373,7 +395,9 @@ public class JSh {
 	}
 	
 	private static void printHelp(){
-		BusyBox.welcome();
+		System.out.println(JAliEnIAm.whatsMyFullName());
+		System.out.println("Have a cup! Cheers, ACS");
+		System.out.println();
 		System.out.println(JAliEnBaseCommand.helpUsage("jsh", "[-options]"));
 		System.out.println(JAliEnBaseCommand.helpStartOptions());
 		System.out.println(JAliEnBaseCommand.helpOption("-e <cmd>[,<cmd>]","execute directly a comma separated list of commands"));
