@@ -83,29 +83,46 @@ public class JobToken implements Comparable<JobToken> {
 	
 	
 	/**
-	 * Create a 32 chars long token (job token)
+	 * Create a new JobToken object
 	 * @param token value
 	 */
 	JobToken(final int jobId, final String username){
-
-			  String token = "";
-			  for (int i = 0 ; i < 32 ; i++)
-				  token += tokenStreet[(new Random(System.currentTimeMillis())).nextInt() % tokenStreet.length];
-		      this.token = token;
-		
 		this.jobId = jobId;
+		
 		this.username = username;
 		
 		this.exists = false;
-
 	}
 
+	/**
+	 * Create a 32 chars long token (job token)
+	 * @param db 
+	 */
+	public void spawnToken(final DBFunctions db){
+
+			 String token = "";
+  	         final Random ran = new Random(System.currentTimeMillis());
+
+			 for (int i = 0 ; i < 32 ; i++)
+				 token += tokenStreet[ran.nextInt(tokenStreet.length)];
+			 
+		      this.token = token;
+				System.out.println("token generated: " + token);
+				
+				update(db);
+
+	}
+	
+	
+
 	private void init(final DBFunctions db){
-		jobId = db.geti("jobId");
+		this.jobId = db.geti("jobId");
 		
-		username = StringFactory.get(db.gets("userName"));
+		this.username = StringFactory.get(db.gets("userName"));
 		
-		token = StringFactory.get(db.gets("jobToken"));
+		this.token = StringFactory.get(db.gets("jobToken"));
+		
+		this.exists = true;
 		
 	}
 	
@@ -115,6 +132,7 @@ public class JobToken implements Comparable<JobToken> {
 		String q = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES ('"+
 					jobId+"','"+ username +"','"+ token +"');";
 	
+		System.out.println("SQL: " + q);
 		
 		if (db.query(q)){
 			if (monitor != null)
@@ -148,10 +166,14 @@ public class JobToken implements Comparable<JobToken> {
 		}
 			
 		if (!exists){
+			System.out.println("inserting...");
 			final boolean insertOK = insert(db);
-			
 			return insertOK;
 		}
+		
+
+		System.out.println("SQL UPDATE jobToken SET jobToken='"+token+"' WHERE jobId="+jobId);
+
 		
 		// only the token list can change
 		if (!db.query("UPDATE jobToken SET jobToken='"+token+"' WHERE jobId="+jobId)){
@@ -227,8 +249,6 @@ public class JobToken implements Comparable<JobToken> {
 		}
 		return false;
 	}
-	
-	
 	
 	
 }

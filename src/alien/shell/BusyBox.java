@@ -37,7 +37,11 @@ public class BusyBox {
 	private static int pender = 0;
 	private static final String[] pends = {".   "," .  ","  . ","   ."};
 	
-	private static final String promptPrefix =  ShellColor.boldBlack() + JAliEnIAm.whatsMyName() + ShellColor.reset() + JAliEnIAm.myJShPrompt() + " ";
+	private static final String promptPrefix =  JAliEnIAm.whatsMyName()+ JAliEnIAm.myJShPrompt() + " ";
+
+	private static final String promptColorPrefix =  ShellColor.boldBlack() + JAliEnIAm.whatsMyName() + ShellColor.reset() + JAliEnIAm.myJShPrompt() + " ";
+
+	
 	private static final String promptSuffix = " > ";
 	
 	private static int commNo = 1;
@@ -46,7 +50,7 @@ public class BusyBox {
 	private PrintWriter out;
 
 	private boolean prompting = false;
-	
+
 	private String username;
 	private String role;
 	
@@ -145,6 +149,7 @@ public class BusyBox {
 	 */
 	public BusyBox(String addr,int port, String password) throws IOException {
 		this(addr,port,password,null,false);
+		
 	}
 
 	/**
@@ -193,6 +198,12 @@ public class BusyBox {
 		}
 	}
 
+	private String genPromptPrefix(){
+		if(JSh.doWeColor())
+			return promptColorPrefix;
+		return promptPrefix;
+	}
+	
 	/**
 	 * loop the prompt for the user
 	 * 
@@ -201,9 +212,11 @@ public class BusyBox {
 	public void prompt() throws IOException {
 
 		String line;
+		
 
+		
 		String prefixCNo = "0";
-		while ((line = reader.readLine(promptPrefix + "[" + prefixCNo + commNo
+		while ((line = reader.readLine(genPromptPrefix() + "[" + prefixCNo + commNo
 				+ "] " + currentDir + promptSuffix)) != null) {
 
 			if (commNo == 9)
@@ -228,6 +241,9 @@ public class BusyBox {
 	 * @return response from JBox
 	 */
 	public String callJBoxGetString(String line) {
+		
+		checkColorSwitch(line);
+		
 		do {
 			try {
 
@@ -286,6 +302,10 @@ public class BusyBox {
 	}
 
 	private boolean callJBox(String line, final boolean tryReconnect) {
+
+		
+		checkColorSwitch(line);
+		
 		do {
 			try {
 
@@ -324,6 +344,7 @@ public class BusyBox {
 						}
 
 					}
+
 					
 					if (signal)
 						return true;
@@ -478,6 +499,15 @@ public class BusyBox {
 		return prompting;
 	}
 	
+
+	
+	private void checkColorSwitch(final String line){
+		if("blackwhite".equals(line))
+			JSh.blackwhite();
+		else if("color".equals(line))
+			JSh.color();
+	}
+
 	
 	private static boolean socketThere(Socket s){
 		return (!s.isClosed() && s.isBound() &&

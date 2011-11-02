@@ -52,7 +52,8 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	private static final String[] commandList = new String[] {"shutdown", "ls", "get",
 			"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
-			"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"};
+			"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
+			, "lfn2guid", "guid2lfn"};
 
 	/**
 	 * The commands that have a JAliEnCommand* implementation
@@ -60,7 +61,7 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
 			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm",
-			"masterjob","user", "role"  , "kill"};
+			"masterjob","user", "role"  , "kill", "lfn2guid", "guid2lfn"};
 
 	/**
 	 * Commands to let UI talk internally with us here

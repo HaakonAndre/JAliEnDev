@@ -61,7 +61,7 @@ public class TaskQueueUtils {
 	 * @return the database connection to 'ADMIN'
 	 */
 	public static DBFunctions getAdminDB(){
-		final DBFunctions db = ConfigUtils.getDB("ADMIN");
+		final DBFunctions db = ConfigUtils.getDB("admin");
 		return db;
 	}
 
@@ -854,30 +854,28 @@ public class TaskQueueUtils {
 		System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + 
 				user.getName() + "/" + role +"].");
 		
-		// TODO:
 		Job j = getJob(queueId,true);
 		
-		//setJobStatus(j, JobStatus.KILLED,"");
+		//setJobStatus(j, JobStatus.KILLED,"",null,null,null);
+		
 		
 		if(j.execHost!=null && false){
+			
 //		    my ($port) = $self->{DB}->getFieldFromHosts($data->{exechost}, "hostport")
 //		      or $self->info("Unable to fetch hostport for host $data->{exechost}")
 //		      and return (-1, "unable to fetch hostport for host $data->{exechost}");
 //
 //		    $DEBUG and $self->debug(1, "Sending a signal to $data->{exechost} $port to kill the process... ");
-			String target = ""; // TODO
-			
-			Date expires = new Date();
-			//expires. TODO: add 300 seconds
+			String target = j.execHost.substring(j.execHost.indexOf('@'+1));
+
+			int expires = (int) (System.currentTimeMillis()/1000)+300;
 			
 			insertMessage(target, "ClusterMonitor", "killProcess", j.queueId+"", expires);
 			
 		}
 
-//		  # remove the proc entries
-//	      my $procDir = AliEn::Util::getProcDir(undef, $j->{submitHost}, $j->{queueId});
+		//The removal has to be done properly, in Perl it was just the default !/alien-job directory
 //	      $self->{CATALOGUE}->execute("rmdir", $procDir, "-r")
-//	        or $self->{LOGGER}->error("JobManager", "In killProcess error deleting $procDir");
 
 		return false;
 
@@ -992,39 +990,34 @@ public class TaskQueueUtils {
  	
 	
 	private static boolean setJobStatus(final Job j,
-			final JobStatus newStatus, final String site){
-//		  if ($site =~ /requirements/i) {
-//			    $self->info("Warning!! got a message directly from a JobAgent");
-//			    unshift @_, $site;
-//			    $site = "";
-//			  }
-
-//		  my $error  = (shift or "");
-//		  my $node   = (shift or "");
-//		  my $spyurl = (shift or "");
-//
-//		  ($spyurl) and $set->{spyurl} = $spyurl;
-//		  ($site)   and $set->{site}   = $site;
-//		  ($node)   and $set->{node}   = $node;
+			final JobStatus newStatus, final String arg, final String site, final String spyurl,
+			final String node
+			){
 		
 		String time = System.currentTimeMillis()/1000+"";
 		
 		HashMap<String,String> jdltags = new HashMap<String,String>();
 		jdltags.put("procinfotime",time);
-
+		if(spyurl!=null)
+			jdltags.put("spyurl",spyurl);
+		if(site!=null)
+			jdltags.put("site",site);
+		if(node!=null)
+			jdltags.put("node",node);
+		
 		if(newStatus.is(JobStatus.WAITING))
-				jdltags.put("exechost","0"); // TODO: fifth arg above: $error
+				jdltags.put("exechost",arg); 
 		else if(newStatus.is(JobStatus.RUNNING))
 				jdltags.put("started",time);
 		else if(newStatus.is(JobStatus.STARTED)){
 						jdltags.put("started",time);
-						jdltags.put("batchid","0"); // TODO $error and $set->{batchid} = $error;
+						jdltags.put("batchid",arg); 
 		} else if(newStatus.is(JobStatus.SAVING))
-				jdltags.put("error","0"); // TODO  fifth arg above: $error
-		else if((newStatus.is(JobStatus.SAVED) && true) // TODO true replace by $error!=nullor""
+				jdltags.put("error",arg); 
+		else if((newStatus.is(JobStatus.SAVED) && arg!=null && !"".equals(arg))
 					|| newStatus.is(JobStatus.ERROR_V)
 					|| newStatus.is(JobStatus.STAGING))
-					jdltags.put("jdl","0"); // TODO  fifth arg above: $error
+					jdltags.put("jdl",arg);
 		else if(newStatus.is(JobStatus.DONE)) {
 				jdltags.put("finished",time); 
 
@@ -1081,7 +1074,7 @@ public class TaskQueueUtils {
 		
 		putJobLog(j.queueId,"state",message,joblogtags);
 	
-//
+		if(site!=null){
 //  # lock queues with submission errors ....
 //  if ($status eq "ERROR_S") {
 //    $self->_setSiteQueueBlocked($site)
@@ -1095,9 +1088,9 @@ public class TaskQueueUtils {
 //      }
 //    }
 //  }
-
-			return success;
 		}
+		return success;
+	}
 	
 	
 	private boolean updateJDLAndProcInfo(final Job j, final Map<String,String> jdltags,
@@ -1120,22 +1113,18 @@ public class TaskQueueUtils {
 		
 	}
 
-	private static boolean insertMessage(final String target, final String service, final String message, final String messageArgs, final Date expires){
+	private static boolean insertMessage(final String target, final String service, 
+			final String message, final String messageArgs, final int expires){
 		final DBFunctions db = getQueueDB();
 		
-		String q = "";
-				
-		 synchronized (formatter){
-			
-			q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('"
+		String q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('"
 					+ Format.escSQL(target)+"','"
 					+ Format.escSQL(service) +"','"
-					+ Format.escSQL(message) +"'"
-					+ Format.escSQL(messageArgs) +"'"
-					+ (expires==null ? ",null" : ",'"+formatter.format(expires)+"'") 
+					+ Format.escSQL(message) +"','"
+					+ Format.escSQL(messageArgs) +"',"
+					+ Format.escSQL(expires+"")
 					+ ");";
-			
-		 }
+		 
 			
 			if (db.query(q)){
 				if (monitor != null)
@@ -1148,19 +1137,60 @@ public class TaskQueueUtils {
 	}
 	
 
-	private static JobToken insertJobToken(final int jobId, final String username) {
+	private static JobToken insertJobToken(final int jobId, final String username, 
+			final boolean forceUpdate) {
 		final DBFunctions db = getAdminDB();
 		
-		JobToken jb = new JobToken(jobId,username);
+		JobToken jb = getJobToken(jobId);
 		
-		jb.update(db);
+		if(jb!=null)
+			System.out.println("TOKEN EXISTED");
+
+		
+		if(jb!=null && !forceUpdate)
+			return null;
+	
+		if(jb==null)
+			jb = new JobToken(jobId,username);
+		
+		jb.spawnToken(db);
+	
+		
+		System.out.println("forceUpdate token: " + jb.toString());
 		
 		if(jb.exists())
 			return jb;
 		
+		System.out.println("jb does not exist");
 		return null;
 		
 	}
+	
+
+	private static JobToken getJobToken(final int jobId){
+		final DBFunctions db = getAdminDB();
+		
+		if (monitor!=null){
+			monitor.incrementCounter("ADM_db_lookup");
+			monitor.incrementCounter("ADM_jobtokendetails");
+		}
+		
+		final long lQueryStart = System.currentTimeMillis();
+
+		final String q = "SELECT * FROM jobToken WHERE jobId="+jobId;
+	
+		if (!db.query(q))
+			return null;
+		
+		monitor.addMeasurement("ADM_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+		
+		if (!db.moveNext()){
+			return null;
+		}
+		
+		return new JobToken(db);
+	}
+	
 	
 	
 	private static boolean deleteJobToken(final int queueId){
@@ -1259,5 +1289,37 @@ public class TaskQueueUtils {
 			
 		return true;
 	}
+	
+	
+
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args){
+		System.out.println("QUEUE TESTING...");
+		
+		if(getAdminDB()==null)
+			System.out.println("ADMIN DB NULL.");
+
+		
+		System.out.println("---------------------------------------------------------------------");
+		
+		if(insertJobToken(12341234, "me",true)==null)
+			System.out.println("exists, update refused.");
+		
+		System.out.println("---------------------------------------------------------------------");
+		
+		if(insertJobToken(12341234, "me",true)==null)
+			System.out.println("exists, update refused.");
+		
+		System.out.println("---------------------------------------------------------------------");
+
+		deleteJobToken(12341234);
+	
+		
+	}
+	
+	
+	
 	
 }

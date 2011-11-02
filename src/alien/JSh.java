@@ -45,6 +45,31 @@ public class JSh {
 	
 	private static BusyBox boombox = null;
 	
+	private static boolean color = true;
+	
+	/**
+	 * enable color output mode
+	 */
+	public static void color(){
+		color = true;
+	}
+	
+	/**
+	 * disable color output mode
+	 */
+	public static void blackwhite(){
+		color = false;
+	}
+	
+
+	/**
+	 * is color output mode enabled
+	 * @return 
+	 */
+	public static boolean doWeColor(){
+		return color;
+	}
+	
 	/**
 	 * @param args
 	 * @throws Exception
@@ -78,11 +103,9 @@ public class JSh {
 		else {
 
 			
-			// JAliEnSh.startJBox();
-			
-		
 			if (JSh.JBoxRunning()){
 				if(args.length>0 && "-e".equals(args[0])){
+					color = false;
 					boombox = new BusyBox(addr, port, password);
 					if(boombox!=null){
 						final StringTokenizer st = new StringTokenizer(joinSecondArgs(args),",");
@@ -185,12 +208,11 @@ public class JSh {
 				return true;
 
 			if (port == 0) {
-				// System.err.println("Port info is zero.");
 				return false;
 			}
 
 			if (pid == 0)
-				return true; // fake code
+				return true; 
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
 					new String[] { fuser, port + "/tcp" });
@@ -202,23 +224,16 @@ public class JSh {
 			try {
 				exitStatus = pBuilder.start().waitFor();
 			} catch (Exception e) {
-				// e.printStackTrace();
-				// System.err.println("Could not get information on port/PID over.");
 				return false;
 			}
 			if (exitStatus.getExtProcExitStatus() == 0) {
-				// To check what process (if any) is listening on a given port:
-				// fuser 10100/tcp
-				// 10100/tcp: 5995
 				String line[] = exitStatus.getStdOut().trim().split(":");
 				if (!line[0].trim().equals(port + "/tcp")
 						|| !line[1].trim().equals(pid + "")) {
-					// System.err.println("Could not get proper information from fuser.");
 					return false;
 				}
 
 			} else {
-				// System.err.println("Could not get information from fuser.");
 				return false;
 			}
 
@@ -231,8 +246,6 @@ public class JSh {
 							new FileInputStream(f)));
 					buffer = fi.readLine();
 				} catch (IOException e) {
-					// e.printStackTrace();
-					// System.err.println("Could not get information on PID.");
 					return false;
 				} finally {
 					if (fi != null)
@@ -246,7 +259,6 @@ public class JSh {
 					return true;
 			}
 		}
-		// System.err.println("Could not get information from /proc.");
 		return false;
 	}
 
@@ -262,7 +274,6 @@ public class JSh {
 				fi = new BufferedInputStream(new FileInputStream(f));
 				fi.read(buffer);
 			} catch (IOException e) {
-				//System.err.println("Exception while reading token file.");
 				port = 0;
 				return false;
 			} finally {
@@ -273,12 +284,6 @@ public class JSh {
 						// ignore
 					}
 			}
-			// Host = 127.0.0.1
-			// Port = 10100
-			// User = sschrein
-			// Home = /alice/cern.ch/user/a/agrigora/
-			// Passwd = 5e050c46-8753-45b6-9622-6ebc12712801
-			// Debug = 0
 
 			String[] specs = new String(buffer).split("\n");
 
@@ -383,15 +388,21 @@ public class JSh {
 	/**
 	 * @param message
 	 */
-	public static void printErr(String message){
-		System.err.println(ShellColor.errorMessage() + message + ShellColor.reset());
+	public static void printErr(final String message){
+		if(color)
+			System.err.println(ShellColor.errorMessage() + message + ShellColor.reset());
+		else 
+			System.err.println(message);
 	}
 	
 	/**
 	 * @param message
 	 */
-	public static void printOut(String message){
-		System.out.println(ShellColor.infoMessage() + message + ShellColor.reset());
+	public static void printOut(final String message){
+		if(color)
+			System.out.println(ShellColor.infoMessage() + message + ShellColor.reset());
+		else 
+			System.err.println(message);
 	}
 	
 	private static void printHelp(){
