@@ -93,13 +93,13 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 								+ padSpace(4)
 								+ padLeft(jId, 10)
 								+ padSpace(2)
-								+ printPriority(j.status,j.priority)
+								+ printPriority(j.status(),j.priority)
 								+ padSpace(2)
 								+ padLeft(String.valueOf(site), 38)
 								+ padSpace(2)
 								+ padLeft(String.valueOf(node), 40)
 								+ padSpace(2)
-								+ abbrvStatus(j.status)
+								+ abbrvStatus(j.status())
 								+ padSpace(2)
 								+ padLeft(String.valueOf(name), 30));
 					} else
@@ -107,9 +107,9 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 								+ padSpace(1)
 								+ padLeft(jId, 10)
 								+ padSpace(2)
-								+ printPriority(j.status,j.priority)
+								+ printPriority(j.status(),j.priority)
 								+ padSpace(2)
-								+ abbrvStatus(j.status)
+								+ abbrvStatus(j.status())
 								+ padSpace(2)
 								+ padLeft(String.valueOf(name), 32));
 
@@ -118,7 +118,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		}
 	}
 
-	private String printPriority(final String status, final int priority) {
+	private String printPriority(final JobStatus status, final int priority) {
 
 		if ("INSERTING".equals(status) || "WAITING".equals(status)) {
 			if (bColour) {
@@ -136,79 +136,77 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		return "___";
 	}
 
-	private String abbrvStatus(String status) {
+	private String abbrvStatus(JobStatus status) {
 		
 		if(status==null)
 			return padLeft("?",3);
 
-		if ("KILLED".equals(status)) {
+		if (JobStatus.KILLED.equals(status)) {
 			if (bColour)
 				return textred + padLeft("  K",3) + textnormal;
 			return padLeft("  K",3);
-		} else if ("RUNNING".equals(status)) {
+		} else if (JobStatus.RUNNING.equals(status)) {
 			if (bColour)
 				return textgreen + padLeft("  R",3) + textnormal;
 			return padLeft("  R",3);
-		} else if ("STARTED".equals(status)) {
+		} else if (JobStatus.STARTED.equals(status)) {
 			if (bColour)
 				return textgreen + padLeft(" ST",3) + textnormal;
 			return padLeft(" ST",3);
-		} else if ("DONE".equals(status)) {
+		} else if (JobStatus.DONE.equals(status)) {
 			if (bColour)
 				return textnormal + padLeft("  D",3) + textnormal;
 			return padLeft("  D",3);
-		} else if ("WAITING".equals(status)) {
+		} else if (JobStatus.WAITING.equals(status)) {
 			if (bColour)
 				return textblue + padLeft("  W",3) + textnormal;
 			return padLeft("  W",3);
-		} else if ("OVER_WAITING".equals(status)) {
+		} else if (JobStatus.OVER_WAITING.equals(status)) {
 			return padLeft("  OW",3);
-		} else if ("EXPIRED".equals(status)) {
+		} else if (JobStatus.EXPIRED.equals(status)) {
 			return padLeft(" EX",3);
-		} else if ("INSERTING".equals(status)) {
+		} else if (JobStatus.INSERTING.equals(status)) {
 			if (bColour)
 				return textyellow + padLeft("  I",3) + textnormal;
 			return padLeft("  I",3);
-		} else if ("SPLIT".equals(status))
+		} else if (JobStatus.SPLIT.equals(status))
 			return padLeft("  S",3);
-		else if ("SPLITTING".equals(status))
+		else if (JobStatus.SPLITTING.equals(status))
 			return padLeft(" SP",3);
-		else if ("SAVING".equals(status)) {
+		else if (JobStatus.SAVING.equals(status)) {
 			if (bColour)
 				return textgreen + padLeft(" SV",3) + textnormal;
 			return padLeft(" SV",3);
-		} else if ("SAVED".equals(status))
+		} else if (JobStatus.SAVED.equals(status))
 			return padLeft("SVD",3);
 		else {
 			String e = "";
-			if ("ERROR_A".equals(status))
+			if (JobStatus.ERROR_A.equals(status))
 				e = " EQ";
-			else if ("ERROR_E".equals(status))
+			else if (JobStatus.ERROR_E.equals(status))
 				e = " EE";
-			else if ("ERROR_I".equals(status))
+			else if (JobStatus.ERROR_I.equals(status))
 				e = " EI";
-			else if ("ERROR_IB".equals(status))
+			else if (JobStatus.ERROR_IB.equals(status))
 				e = "EIB";
-			else if ("ERROR_R".equals(status))
-				e = " ER";
-			else if ("ERROR_S".equals(status))
+			else if (JobStatus.ERROR_S.equals(status))
 				e = " ES";
-			else if ("ERROR_SV".equals(status))
+			else if (JobStatus.ERROR_SV.equals(status))
 				e = "ESV";
-			else if ("ERROR_V".equals(status))
+			else if (JobStatus.ERROR_V.equals(status))
 				e = " EV";
-			else if ("ERROR_VN".equals(status))
+			else if (JobStatus.ERROR_VN.equals(status))
 				e = "EVN";
-			else if ("ERROR_VT".equals(status))
+			else if (JobStatus.ERROR_VT.equals(status))
 				e = "EVT";
-			else if ("ERROR_SPLT".equals(status))
+			else if (JobStatus.ERROR_SPLT.equals(status))
 				e = "ESP";
-			else if ("FAILED".equals(status))
+			else if (JobStatus.FAILED.equals(status))
 				e = " FF";
-			else if ("ZOMBIE".equals(status))
+			else if (JobStatus.ZOMBIE.equals(status))
 				e = "  Z";
 			else
-				e = status;
+				e = status.toString();
 
 			if (bColour)
 				return textblueerror + padLeft(e,3) + textnormal;

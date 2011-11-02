@@ -435,31 +435,6 @@ public class BusyBox {
 		out.println("Press <tab><tab> to see the available commands.");
 	}
 
-	@SuppressWarnings("unused")
-	private void executePS(String args[]) {
-		if (args.length < 2) {
-			out.println("no ps parameters given.");
-		} else if (args[1].equals("jdl")) {
-			int jobID = Integer.parseInt(args[2]);
-			Job job = TaskQueueUtils.getJob(jobID);
-			out.println("JDL of job id " + jobID + " :");
-			String jdl = job.getJDL();
-			out.println(jdl);
-		} else if (args[1].equals("status")) {
-			int jobID = Integer.parseInt(args[2]);
-			Job job = TaskQueueUtils.getJob(jobID);
-			out.println("Status of job id " + jobID + " :");
-			String status = "null";
-			if (job.status != null)
-				status = job.status;
-			out.println(status);
-		} else if (args[1].equals("trace")) {
-			int jobID = Integer.parseInt(args[2]);
-			String trace = TaskQueueUtils.getJobTraceLog(jobID);
-			out.println("TraceLog of job id " + jobID + " :");
-			out.println(trace);
-		}
-	}
 
 	/**
 	 * do a call to the underlying system shell

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -13,6 +14,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.swing.text.StyleContext.SmallAttributeSet;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -169,81 +172,81 @@ public class TaskQueueUtils {
 		
 		return ret;
 	}
-	
-	/**
-	 * @param account
-	 * @return the masterjobs for this account and the subjob statistics for them
-	 */
-	public static Map<Job, Map<String, Integer>> getMasterjobStats(final String account){
-		return getMasterjobStats(getMasterjobs(account));
-	}
-	
-	/**
-	 * @param jobs
-	 * @return the same masterjobs and the respective subjob statistics
-	 */
-	public static Map<Job, Map<String, Integer>> getMasterjobStats(final List<Job> jobs){
-		final Map<Job, Map<String, Integer>> ret = new TreeMap<Job, Map<String, Integer>>();
-		
-		if (jobs.size()==0)
-			return ret;
-		
-		final DBFunctions db = getQueueDB();
-
-		final StringBuilder sb = new StringBuilder(jobs.size() * 10);
-		
-		final Map<Integer, Job> reverse = new HashMap<Integer, Job>(); 
-		
-		for (final Job j: jobs){
-			if (sb.length()>0)
-				sb.append(',');
-			
-			sb.append(j.queueId);
-			
-			reverse.put(Integer.valueOf(j.queueId), j);
-		}
-
-		if (monitor!=null){
-			monitor.incrementCounter("TQ_db_lookup");
-			monitor.incrementCounter("TQ_getmasterjob_stats");
-		}
-		
-		final long lQueryStart = System.currentTimeMillis();
-
-		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
-		
-		if (monitor!=null)
-			monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
-			
-		Map<String, Integer> m = null;
-		int oldJobID = -1;
-			
-		while (db.moveNext()){
-			final int j = db.geti(1);
-			
-			if (j!=oldJobID){
-				m = new HashMap<String, Integer>();
-
-				final Integer jobId = Integer.valueOf(j);
-				ret.put(reverse.get(jobId), m);
-				reverse.remove(jobId);
-				
-				oldJobID = j;
-			}
-			
-			// ignore the NPE warning, this cannot be null
-			m.put(db.gets(2), Integer.valueOf(db.geti(3)));
-		}
-		
-		// now, what is left, something that doesn't have subjobs ?
-		for (final Job j: reverse.values()){
-			m = new HashMap<String, Integer>(1);
-			m.put(j.status, Integer.valueOf(1));
-			ret.put(j, m);
-		}
-				
-		return ret;
-	}
+//	
+//	/**
+//	 * @param account
+//	 * @return the masterjobs for this account and the subjob statistics for them
+//	 */
+//	public static Map<Job, Map<JobStatus, Integer>> getMasterjobStats(final String account){
+//		return getMasterjobStats(getMasterjobs(account));
+//	}
+//	
+//	/**
+//	 * @param jobs
+//	 * @return the same masterjobs and the respective subjob statistics
+//	 */
+//	public static Map<Job, Map<JobStatus, Integer>> getMasterjobStats(final List<Job> jobs){
+//		final Map<Job, Map<JobStatus, Integer>> ret = new TreeMap<Job, Map<JobStatus, Integer>>();
+//		
+//		if (jobs.size()==0)
+//			return ret;
+//		
+//		final DBFunctions db = getQueueDB();
+//
+//		final StringBuilder sb = new StringBuilder(jobs.size() * 10);
+//		
+//		final Map<Integer, Job> reverse = new HashMap<Integer, Job>(); 
+//		
+//		for (final Job j: jobs){
+//			if (sb.length()>0)
+//				sb.append(',');
+//			
+//			sb.append(j.queueId);
+//			
+//			reverse.put(Integer.valueOf(j.queueId), j);
+//		}
+//
+//		if (monitor!=null){
+//			monitor.incrementCounter("TQ_db_lookup");
+//			monitor.incrementCounter("TQ_getmasterjob_stats");
+//		}
+//		
+//		final long lQueryStart = System.currentTimeMillis();
+//
+//		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
+//		
+//		if (monitor!=null)
+//			monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+//			
+//		Map<JobStatus, Integer> m = null;
+//		int oldJobID = -1;
+//			
+//		while (db.moveNext()){
+//			final int j = db.geti(1);
+//			
+//			if (j!=oldJobID){
+//				m = new HashMap<JobStatus, Integer>();
+//
+//				final Integer jobId = Integer.valueOf(j);
+//				ret.put(reverse.get(jobId), m);
+//				reverse.remove(jobId);
+//				
+//				oldJobID = j;
+//			}
+//			
+//			// ignore the NPE warning, this cannot be null
+//			m.put(JobStatus.get(db.gets(2)), Integer.valueOf(db.geti(3)));
+//		}
+//		
+//		// now, what is left, something that doesn't have subjobs ?
+//		for (final Job j: reverse.values()){
+//			m = new HashMap<JobStatus, Integer>(1);
+//			m.put(j.status(), Integer.valueOf(1));
+//			ret.put(j, m);
+//		}
+//				
+//		return ret;
+//	}
 
 	/**
 	 * Get the subjobs of this masterjob
@@ -307,7 +310,7 @@ public class TaskQueueUtils {
 	 * @param limit 
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final int queueId, final List<String> status, final List<Integer> id, final List<String> site,
+	public static List<Job> getMasterJobStat(final int queueId, final List<JobStatus> status, final List<Integer> id, final List<String> site,
 			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, 
 			final boolean bResubmit, final boolean bExpunge, final int limit){
 		
@@ -330,8 +333,8 @@ public class TaskQueueUtils {
 		
 		if (status != null && status.size()>0){
 			String whe = " ( ";
-			for (String s : status)
-				whe += "status = '" + Format.escSQL(s) + "' or ";
+			for (JobStatus s : status)
+				whe += "status = '" + Format.escSQL(s+"") + "' or ";
 			
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
@@ -392,21 +395,21 @@ public class TaskQueueUtils {
 	 * @param jobs
 	 * @return the jobs grouped by their state
 	 */
-	public static Map<String, List<Job>> groupByStates(final List<Job> jobs){
+	public static Map<JobStatus, List<Job>> groupByStates(final List<Job> jobs){
 		if (jobs==null)
 			return null;
 		
-		final Map<String, List<Job>> ret = new TreeMap<String, List<Job>>();
+		final Map<JobStatus, List<Job>> ret = new TreeMap<JobStatus, List<Job>>();
 		
 		if (jobs.size()==0)
 			return ret;
 		
 		for (final Job j: jobs){
-			List<Job> l = ret.get(j.status);
+			List<Job> l = ret.get(j.status());
 			
 			if (l==null){
 				l = new ArrayList<Job>();
-				ret.put(j.status, l);
+				ret.put(j.status(), l);
 			}
 			
 			l.add(j);
@@ -954,7 +957,7 @@ public class TaskQueueUtils {
 		if(j.split!=0)
 			setSubJobMerges(j);
 			  
-		if(!j.status.equals(newStatus)){
+		if(!j.status().equals(newStatus)){
 			if(newStatus.is(JobStatus.ASSIGNED)){
 				// $self->_do("UPDATE $self->{SITEQUEUETABLE} SET $status=$status+1 where site=?", {bind_values => [$dbsite]})
 			       //TODO:

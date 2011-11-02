@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 import alien.api.Request;
 import alien.config.ConfigUtils;
 import alien.taskQueue.Job;
+import alien.taskQueue.JobStatus;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
@@ -41,7 +42,7 @@ public class GetMasterjob extends Request {
 
 	private final int jobId;
 	
-	private final List<String> status;
+	private final List<JobStatus> status;
 	
 	private final List<Integer> id;
 	
@@ -73,7 +74,7 @@ public class GetMasterjob extends Request {
 	 * @param bResubmit 
 	 * @param bExpunge 
 	 */
-	public GetMasterjob(final AliEnPrincipal user, final String role, final int jobId,  final List<String> status, final List<Integer> id, final List<String> site,
+	public GetMasterjob(final AliEnPrincipal user, final String role, final int jobId,  final List<JobStatus> status, final List<Integer> id, final List<String> site,
 			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge){
 		setRequestUser(user);
 		setRoleRequest(role);

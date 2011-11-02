@@ -49,7 +49,7 @@ public class TaskQueueFakeUtils {
 		jobcounter++;
 		j.queueId = jobcounter;
 
-		j.status = "WAITING";
+		//j.status = "WAITING";
 
 		j.jdl = Utils.readFile("/tmp/myFirst.jdl");
 
@@ -79,7 +79,7 @@ public class TaskQueueFakeUtils {
 				System.out.println("Assigning jobID: " + jobcounter);
 				j.queueId = jobcounter;
 
-				j.status = "WAITING";
+				//j.status = "WAITING";
 				j.userCertificate = cert[0];
 
 				JDL ojdl = null;
@@ -129,7 +129,7 @@ public class TaskQueueFakeUtils {
 	 * @param status
 	 */
 	public static void setJobStatus(int jobID, String status) {
-		queue.get(jobID).status = status;
+		//queue.get(jobID).status = status;
 		System.out.println("Setting job [" + jobID + "] to status <" + status
 				+ ">");
 	}
@@ -138,9 +138,10 @@ public class TaskQueueFakeUtils {
 	 * @param jobID
 	 */
 	public static String getJobStatus(int jobID) {
-		if (jobID != 0 && queue.containsKey(jobID))
-			if (queue.get(jobID) != null)
-				return queue.get(jobID).status;
+		//if (jobID != 0 && queue.containsKey(jobID))
+		//	if (queue.get(jobID) != null)
+				//ignore
+				//return queue.get(jobID).status;
 		return null;
 	}
 

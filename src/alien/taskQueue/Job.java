@@ -77,7 +77,7 @@ public class Job  implements Comparable<Job>,Serializable {
 	/**
 	 * Job status
 	 */
-	public String status;
+	private String status;
 	
 	/**
 	 * splitting
