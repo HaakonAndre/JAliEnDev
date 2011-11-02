@@ -11,6 +11,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
+import alien.taskQueue.JobStatusFactory;
 
 /**
  * @author ron
@@ -252,7 +253,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 							(String) options.valueOf("status"), ",");
 					while (st.hasMoreTokens()) {
 						String state = st.nextToken();
-						status.add(JobStatus.get(state));
+						status.add(JobStatusFactory.getByStatusName(state));
 						if ("ERROR_ALL".equals(state))
 							status = JobStatus.errorneousStates();
 					}
