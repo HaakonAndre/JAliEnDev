@@ -264,7 +264,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 							(String) options.valueOf("id"), ",");
 					while (st.hasMoreTokens())
 						try {
-							id.add(Integer.parseInt(st.nextToken()));
+							id.add(Integer.valueOf(st.nextToken()));
 						} catch (NumberFormatException e) {
 							// ignore
 						}
