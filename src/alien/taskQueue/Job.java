@@ -372,10 +372,10 @@ public class Job  implements Comparable<Job>,Serializable {
 	
 	
 	/**
-	 * @return
+	 * @return the status, as object
 	 */
 	public JobStatus status(){
-		return JobStatus.get(status);
+		return JobStatusFactory.getByStatusName(status);
 	}
 	
 	/**
