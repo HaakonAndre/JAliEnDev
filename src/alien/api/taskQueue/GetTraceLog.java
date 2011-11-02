@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import lazyj.Utils;
 import alien.api.Request;
+import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -49,14 +50,8 @@ public class GetTraceLog extends Request {
 	
 	@Override
 	public void run() {
-		final String queueId = String.valueOf(this.queueId);
-		try{
-			System.out.println("Trying to get job trace: " + jobTraceLogURLPrefix + queueId.substring(0,4) + "/" + queueId + ".log");
-			trace = Utils.download(jobTraceLogURLPrefix + queueId.substring(0,4) + "/" + queueId + ".log" , null);
-		}
-		catch (IOException ioe){
-			// ignore
-		}
+
+		trace = TaskQueueUtils.getJobTraceLog(queueId);
 	}
 	
 	/**

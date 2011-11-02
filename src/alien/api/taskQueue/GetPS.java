@@ -4,6 +4,7 @@ import java.util.List;
 
 import alien.api.Request;
 import alien.taskQueue.Job;
+import alien.taskQueue.JobStatus;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
@@ -27,7 +28,7 @@ public class GetPS extends Request {
 	 */
 	private List<Job> jobs;
 
-	private final List<String> states;
+	private final List<JobStatus> states;
 	
 	private final List<String> users;
 	
@@ -55,7 +56,7 @@ public class GetPS extends Request {
 	 * @param orderByKey 
 	 * @param limit 
 	 */
-	public GetPS(final AliEnPrincipal user, final String role, final List<String> states,final List<String> users,final List<String> sites,
+	public GetPS(final AliEnPrincipal user, final String role, final List<JobStatus> states,final List<String> users,final List<String> sites,
 			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final String orderByKey, final int limit){
 		setRequestUser(user);
 		setRoleRequest(role);

@@ -19,7 +19,7 @@ public class RemoveSERequirements {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
-		final DBFunctions db = TaskQueueUtils.getDB();
+		final DBFunctions db = TaskQueueUtils.getQueueDB();
 		
 		if (args.length==0){			
 			if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*';")){
@@ -89,7 +89,7 @@ public class RemoveSERequirements {
 		if (idx2<jdl.length())
 			newJDL += jdl.substring(idx2);
 		
-		final DBFunctions db = TaskQueueUtils.getDB();
+		final DBFunctions db = TaskQueueUtils.getQueueDB();
 		
 		final boolean ok = db.query("UPDATE QUEUE SET jdl='"+Format.escSQL(newJDL)+"' WHERE queueId="+queueId+" AND status='WAITING'");
 		//final boolean ok = false;

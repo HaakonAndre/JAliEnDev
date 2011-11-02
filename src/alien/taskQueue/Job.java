@@ -11,7 +11,7 @@ import lia.util.StringFactory;
 
 
 /**
- * @author steffen
+ * @author ron
  * @since Mar 1, 2011
  */
 
@@ -370,6 +370,14 @@ public class Job  implements Comparable<Job>,Serializable {
 		return ret;
 	}
 	
+	
+	/**
+	 * @return
+	 */
+	public JobStatus status(){
+		return JobStatus.get(status);
+	}
+	
 	/**
 	 * @return <code>true</code> if the job has finished successfully
 	 */
@@ -396,6 +404,14 @@ public class Job  implements Comparable<Job>,Serializable {
 	 */
 	public boolean isActive(){
 		return !isFinalState();
+	}
+	
+	
+	/**
+	 * @return <code>true</code> if the job is a master job
+	 */
+	public boolean isMaster(){
+		return masterjob;
 	}
 	
 }

@@ -9,6 +9,7 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobSigner;
+import alien.taskQueue.JobStatus;
 import alien.taskQueue.JobSubmissionException;
 import alien.user.JAKeyStore;
 
@@ -42,7 +43,7 @@ public class TaskQueueApiUtils {
 	 * @param limit 
 	 * @return a PS listing
 	 */
-	public List<Job> getPS(final List<String> states,final List<String> users,final List<String> sites,
+	public List<Job> getPS(final List<JobStatus> states,final List<String> users,final List<String> sites,
 			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final String orderByKey, final int limit) {
 
 		try {

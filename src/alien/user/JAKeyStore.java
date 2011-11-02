@@ -523,7 +523,7 @@ public class JAKeyStore {
      * @return randomized char array of passLength length
      */
     public static char[] getRandomString() {
-        Random ran = new Random(System.currentTimeMillis());
+        final Random ran = new Random(System.currentTimeMillis());
         StringBuffer s = new StringBuffer();
         for (int i = 0; i < passLength; i++) {
             int pos = ran.nextInt(charString.length());

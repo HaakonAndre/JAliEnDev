@@ -9,6 +9,7 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.taskQueue.Job;
+import alien.taskQueue.JobStatus;
 
 /**
  * @author ron
@@ -31,7 +32,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 */
 	private int getTrace = 0;
 
-	private List<String> states = new ArrayList<String>();
+	private List<JobStatus> states = new ArrayList<JobStatus>();
 
 	private List<String> users = new ArrayList<String>();
 
@@ -347,7 +348,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 							(String) options.valueOf("s"), ",");
 					while (st.hasMoreTokens())
 						sites.add(st.nextToken());
-					states.add("%");
+					states.add(JobStatus.ANY);
 				}
 
 				if (options.has("n") && options.hasArgument("n")) {
@@ -355,7 +356,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 							(String) options.valueOf("n"), ",");
 					while (st.hasMoreTokens())
 						nodes.add(st.nextToken());
-					states.add("%");
+					states.add(JobStatus.ANY);
 				}
 
 				if (options.has("m") && options.hasArgument("m")) {
@@ -363,7 +364,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 							(String) options.valueOf("m"), ",");
 					while (st.hasMoreTokens())
 						mjobs.add(st.nextToken());
-					states.add("%");
+					states.add(JobStatus.ANY);
 				}
 
 				if (options.has("j") && options.hasArgument("j")) {
@@ -371,7 +372,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 							(String) options.valueOf("j"), ",");
 					while (st.hasMoreTokens())
 						jobid.add(st.nextToken());
-					states.add("%");
+					states.add(JobStatus.ANY);
 					users.add("%");
 				}
 
@@ -405,7 +406,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 //		          st_masterjobs = "\\\\0";
 
 				if (options.has("A")) {
-					states.add("%");
+					states.add(JobStatus.ANY);
 					users.add(commander.getUsername());
 				}
 				if (options.has("E")) {
@@ -476,35 +477,35 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					all = true;
 					break;
 				}
-				states.add(o);
+				states.add(JobStatus.get(o));
 			}
 		}
 		if (all)
-			states = new ArrayList<String>(Arrays.asList("%"));
+			states = Arrays.asList(JobStatus.ANY);
 	}
 
-	private static List<String> flag_f() {
-		return Arrays.asList(new String[] { "ERROR&","FAILED","EXPIRED"});
+	private static List<JobStatus> flag_f() {
+		return JobStatus.errorneousStates();
 	}
 
-	private static List<String> flag_d() {
-		return Arrays.asList(new String[] { "DONE" });
+	private static List<JobStatus> flag_d() {
+		return Arrays.asList(JobStatus.DONE);
 	}
 
-	private static List<String> flag_t() {
-		return Arrays.asList(new String[] { "DONE", "ERROR%" });
+	private static List<JobStatus> flag_t() {
+		return JobStatus.finalStates();
 	}
 
-	private static List<String> flag_s() {
-		return Arrays.asList(new String[] { "INSERTING", "EXPIRED", "WAITING", "ASSIGNED", "QUEUED"});
+	private static List<JobStatus> flag_s() {
+		return JobStatus.waitingStates();
 	}
 
-	private static List<String> flag_q() {
-		return Arrays.asList(new String[] { "QUEUED", "ASSIGNED"});
+	private static List<JobStatus> flag_q() {
+		return JobStatus.queuedStates();
 	}
 
-	private static List<String> flag_r() {
-		return Arrays.asList(new String[] { "RUNNING", "STARTED", "SAVING"});
+	private static List<JobStatus> flag_r() {
+		return JobStatus.runningStates();
 	}
 
 }
