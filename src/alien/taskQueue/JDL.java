@@ -118,7 +118,7 @@ public class JDL implements Serializable {
 			// System.err.println(sKey +" = "+value);
 
 			if (value != null) {
-				jdlContent.put(sKey.toLowerCase(), value);
+				jdlContent.put(sKey, value);
 			}
 
 			iPrevPos = idxEnd + 1;
@@ -163,7 +163,12 @@ public class JDL implements Serializable {
 	 * @return the value, can be a String, a List ...
 	 */
 	public Object get(final String key) {
-		return jdlContent.get(key.toLowerCase());
+		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
+			if (entry.getKey().equalsIgnoreCase(key))
+				return entry.getValue();
+		}
+		
+		return null;
 	}
 
 	/**
