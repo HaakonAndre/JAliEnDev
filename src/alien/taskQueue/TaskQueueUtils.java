@@ -1,6 +1,8 @@
 package alien.taskQueue;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +15,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import java.util.Date;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -40,6 +44,10 @@ public class TaskQueueUtils {
 	 * Monitoring component
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(TaskQueueUtils.class.getCanonicalName());
+	
+	
+	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
+
 	
 	/**
 	 * @return the database connection to 'processes'
@@ -837,6 +845,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return state of the kill operation
 	 */
+	@SuppressWarnings("unused")
 	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId){
 			if(AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId),
 					user, role)){
@@ -844,34 +853,30 @@ public class TaskQueueUtils {
 				user.getName() + "/" + role +"].");
 		
 		// TODO:
-		//setJobStatus(queueId, JobStatus.ANY, JobStatus.KILLED);
-
+		Job j = getJob(queueId,true);
 		
-//		  if ($data->{exechost}) {
-//			    my ($port) = $self->{DB}->getFieldFromHosts($data->{exechost}, "hostport")
-//			      or $self->info("Unable to fetch hostport for host $data->{exechost}")
-//			      and return (-1, "unable to fetch hostport for host $data->{exechost}");
+		//setJobStatus(j, JobStatus.KILLED,"");
+		
+		if(j.execHost!=null && false){
+//		    my ($port) = $self->{DB}->getFieldFromHosts($data->{exechost}, "hostport")
+//		      or $self->info("Unable to fetch hostport for host $data->{exechost}")
+//		      and return (-1, "unable to fetch hostport for host $data->{exechost}");
 //
-//			    $DEBUG and $self->debug(1, "Sending a signal to $data->{exechost} $port to kill the process... ");
-//			    my $current = time() + 300;
-//			    ($ok) = $self->{DB}->insertMessage(
-//			      { TargetHost    => $data->{exechost},
-//			        TargetService => 'ClusterMonitor',
-//			        Message       => 'killProcess',
-//			        MessageArgs   => $queueId,
-//
-//			        #       Expires=>'UNIX_TIMESTAMP(Now())+300'});
-//			        Expires => $current
-//			      }
-//			    );
+//		    $DEBUG and $self->debug(1, "Sending a signal to $data->{exechost} $port to kill the process... ");
+			String target = ""; // TODO
+			
+			Date expires = new Date();
+			//expires. TODO: add 300 seconds
+			
+			insertMessage(target, "ClusterMonitor", "killProcess", j.queueId+"", expires);
+			
+		}
 
 //		  # remove the proc entries
 //	      my $procDir = AliEn::Util::getProcDir(undef, $j->{submitHost}, $j->{queueId});
 //	      $self->{CATALOGUE}->execute("rmdir", $procDir, "-r")
 //	        or $self->{LOGGER}->error("JobManager", "In killProcess error deleting $procDir");
 
-		
-		
 		return false;
 
 		}
@@ -883,7 +888,7 @@ public class TaskQueueUtils {
 	
 	
 	//status and jdl
-	private static boolean updateStatus(final Job j, final JobStatus newStatus,
+	private static boolean updateJob(final Job j, final JobStatus newStatus,
 			final Map<String,String> jdltags){
 			
 		
@@ -1000,15 +1005,17 @@ public class TaskQueueUtils {
 //		  ($site)   and $set->{site}   = $site;
 //		  ($node)   and $set->{node}   = $node;
 		
+		String time = System.currentTimeMillis()/1000+"";
+		
 		HashMap<String,String> jdltags = new HashMap<String,String>();
-		jdltags.put("procinfotime","0"); //TODO get time stamp (in perl 'time')
+		jdltags.put("procinfotime",time);
 
 		if(newStatus.is(JobStatus.WAITING))
 				jdltags.put("exechost","0"); // TODO: fifth arg above: $error
 		else if(newStatus.is(JobStatus.RUNNING))
-				jdltags.put("started","0"); //TODO get time stamp (in perl 'time')
+				jdltags.put("started",time);
 		else if(newStatus.is(JobStatus.STARTED)){
-						jdltags.put("started","0"); //TODO get time stamp (in perl 'time')
+						jdltags.put("started",time);
 						jdltags.put("batchid","0"); // TODO $error and $set->{batchid} = $error;
 		} else if(newStatus.is(JobStatus.SAVING))
 				jdltags.put("error","0"); // TODO  fifth arg above: $error
@@ -1017,73 +1024,61 @@ public class TaskQueueUtils {
 					|| newStatus.is(JobStatus.STAGING))
 					jdltags.put("jdl","0"); // TODO  fifth arg above: $error
 		else if(newStatus.is(JobStatus.DONE)) {
-				jdltags.put("finished","0"); // TODO get time stamp (in perl 'time')
-	
+				jdltags.put("finished",time); 
 
-//    $data->{host} =~ s/^.*\@//;
-//    my $validate = 0;
-//    $data->{jdl} =~ /validate\s*=\s*1/i and $validate = 1;
-//
-//    my $port = $self->{CONFIG}->{CLUSTERMONITOR_PORT};
-//    if ($validate) {
-//      $self->info("Submitting the validation job");
-//
-//      my $executable = "";
-//      $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and $executable = $1;
-//      $executable =~ s/\"//g;
-//      my $validatejdl = "[
-//Executable=\"$executable.validate\";
-//Arguments=\"$queueId $data->{host} $port\";
-//Requirements= member(other.GridPartition,\"Validation\");
-//Type=\"Job\";
-//			]";
-//      $DEBUG and $self->debug(1, "In changeStatusCommand sending the command to validate the result of $queueId...");
-//      $self->enterCommand("$data->{submithost}", "$validatejdl");
-//    }
-  }
+
+				
+				
+				if(j.usesValidation()){
+					String host = j.execHost.substring(j.execHost.indexOf('@')+1);
+					int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
+					
+
+//			      my $executable = "";
+//			      $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and $executable = $1;
+//			      $executable =~ s/\"//g;
+//			      my $validatejdl = "[
+			//Executable=\"$executable.validate\";
+			//Arguments=\"$queueId $data->{host} $port\";
+			//Requirements= member(other.GridPartition,\"Validation\");
+			//Type=\"Job\";
+//						]";
+//			      $DEBUG and $self->debug(1, "In changeStatusCommand sending the command to validate the result of $queueId...");
+//			      $self->enterCommand("$data->{submithost}", "$validatejdl");
+//			    }
+					
+				}
+
+  
 		
-		if(newStatus.isErrorState()
+		} else if(newStatus.isErrorState()
 					||newStatus.is(JobStatus.SAVED_WARN)
 					||newStatus.is(JobStatus.SAVED)
 					||newStatus.is(JobStatus.KILLED)
 					||newStatus.is(JobStatus.EXPIRED)){
 			
 			jdltags.put("spyurl",""); 
-			jdltags.put("finished","0"); // TODO get time stamp (in perl 'time')
+			jdltags.put("finished", time); 
 			deleteJobToken(j.queueId);
 			
 			
 		}
-			
-// put the JobLog message
+		// put the JobLog message
 
-//  my $putlog = "";
-//  foreach (keys %$set) {
-//    $putlog .= "$_: $set->{$_} ";
-//  }
-//
-//  my $from = "";
-//  $oldStatus !~ /^%$/ and $from = sprintf " from %-10s", $oldStatus;
-//
-//  my $message = sprintf "Job state transition$from to %-10s |=| ", $status;
-//
-//  my ($ok) = $self->{DB}->updateStatus($queueId, $oldStatus, $status, $set, $self);
-		if(!updateStatus(j, newStatus, jdltags))
-				return false;
-//
-//  ($ok) or $message = "FAILED $message";
-//
-//  $self->putJobLog($queueId, "state", $message, $putlog);
-//  
-  
+		HashMap<String,String> joblogtags = new HashMap<String,String>();
+		for(String key: jdltags.keySet())
+			joblogtags.put(key, jdltags.get(key));
+				
+		String message = "Job state transition from " + j.getStatusName() + " to " + newStatus;		
+				
+		final boolean success = updateJob(j, newStatus, jdltags);
 		
-//
-//  if (!$ok) {
-//    my $error = ($AliEn::Logger::ERROR_MSG || "updating job $queueId from $oldStatus to $status");
-//    $self->{LOGGER}->error("JobManager", "In changeStatusCommand $error");
-//    return (-1, $error);
-//  }
-
+		if(!success)
+				message = "FAILED: " + message;
+		
+		
+		putJobLog(j.queueId,"state",message,joblogtags);
+	
 //
 //  # lock queues with submission errors ....
 //  if ($status eq "ERROR_S") {
@@ -1099,11 +1094,11 @@ public class TaskQueueUtils {
 //    }
 //  }
 
-  return true;
-}
+			return success;
+		}
 	
 	
-	private boolean updateJob(final Job j, final Map<String,String> jdltags,
+	private boolean updateJDLAndProcInfo(final Job j, final Map<String,String> jdltags,
 			final Map<String,String> procInfo){
 		
 //		  my $procSet = {};
@@ -1123,7 +1118,32 @@ public class TaskQueueUtils {
 		
 	}
 
-	
+	private static boolean insertMessage(final String target, final String service, final String message, final String messageArgs, final Date expires){
+		final DBFunctions db = getQueueDB();
+		
+		String q = "";
+				
+		 synchronized (formatter){
+			
+			q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('"
+					+ Format.escSQL(target)+"','"
+					+ Format.escSQL(service) +"','"
+					+ Format.escSQL(message) +"'"
+					+ Format.escSQL(messageArgs) +"'"
+					+ (expires==null ? ",null" : ",'"+formatter.format(expires)+"'") 
+					+ ");";
+			
+		 }
+			
+			if (db.query(q)){
+				if (monitor != null)
+					monitor.incrementCounter("Message_db_insert");
+			
+				return true;
+			}
+			
+			return false;
+	}
 	
 
 	private static JobToken insertJobToken(final int jobId, final String username) {
@@ -1164,6 +1184,13 @@ public class TaskQueueUtils {
 		return false;
 
 	}
+	
+	private static boolean putJobLog(final int queueId, final String action,
+			final String message, final HashMap<String,String> joblogtags){
+		return true;
+		// TODO:
+	}
+
 	
 
 	private static boolean deleteJobAgent(final int jobagentId){

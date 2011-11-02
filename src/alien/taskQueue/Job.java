@@ -421,4 +421,18 @@ public class Job  implements Comparable<Job>,Serializable {
 		return masterjob;
 	}
 	
+	
+	/**
+	 * @return <code>true</code> if the job has a validation flag
+	 */
+	public boolean usesValidation(){
+		//
+		//		TODO:
+		//		grep the JDL for the validation flag, perl did the following:
+		//	    $data->{jdl} =~ /validate\s*=\s*1/i and $validate = 1;
+
+		return false;
+	}
+	
+	
 }
