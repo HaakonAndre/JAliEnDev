@@ -205,7 +205,7 @@ public class JBoxServer extends Thread {
 		
 		if(sAlienRoot == null || sAlienRoot.length() ==0 ){
 			logger.severe("No ALIEN_ROOT found. Please set ALIEN_ROOT environment variable");
-			return false;
+			System.out.println("You don't have $ALIEN_ROOT set. You will not be able to copy files.");
 		}
 		
 		try {
