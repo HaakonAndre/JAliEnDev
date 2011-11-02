@@ -195,7 +195,7 @@ public enum JobStatus {
 	 * All error_*, expired and failed states
 	 */
 	public static List<JobStatus> errorneousStates(){
-		return errorneousStates();
+		return errorneousStates;
 	}
 	
 
@@ -206,7 +206,7 @@ public enum JobStatus {
 	 * All running states 
 	 */
 	public static List<JobStatus> runningStates(){
-		return runningStates();
+		return runningStates;
 	}
 	
 
@@ -217,7 +217,7 @@ public enum JobStatus {
 	 * All queued states 
 	 */
 	public static List<JobStatus> queuedStates(){
-		return queuedStates();
+		return queuedStates;
 	}
 
 	/**
