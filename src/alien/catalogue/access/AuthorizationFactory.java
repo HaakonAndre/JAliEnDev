@@ -148,7 +148,7 @@ public final class AuthorizationFactory {
 			final Set<PFN> realPfns = pfn.getRealPFNs();
 			
 			if (realPfns==null || realPfns.size()==0){
-				System.err.println("No real pfns for "+pfn.pfn);
+				logger.log(Level.WARNING, "No real pfns for "+pfn.pfn);
 				continue;
 			}
 	
@@ -157,7 +157,7 @@ public final class AuthorizationFactory {
 				reason = AuthorizationFactory.fillAccess(user, realPfn, access);
 			
 				if (reason!=null){
-					System.err.println("Cannot grant access to "+realPfn.pfn+" : "+reason);
+					logger.log(Level.WARNING, "Cannot grant access to "+realPfn.pfn+" : "+reason);
 					
 					// we don't have access to this file
 					continue;
