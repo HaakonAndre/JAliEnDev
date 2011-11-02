@@ -379,6 +379,13 @@ public class Job  implements Comparable<Job>,Serializable {
 	}
 	
 	/**
+	 * @return status name
+	 */
+	public String getStatusName(){
+		return status;
+	}
+	
+	/**
 	 * @return <code>true</code> if the job has finished successfully
 	 */
 	public boolean isDone(){
