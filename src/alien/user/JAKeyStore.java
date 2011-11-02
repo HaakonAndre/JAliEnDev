@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -88,52 +89,8 @@ public class JAKeyStore {
 
 	static {
 		Security.addProvider(new BouncyCastleProvider());
-
-		//loadTrustedCertificates();
-
 	}
 
-//	private static void loadTrustedCertificates() {
-//		try {
-//
-//			File trustsDir = new File(ConfigUtils.getConfig().gets(
-//					"trusted.certificates.location",
-//					System.getProperty("user.home")
-//							+ System.getProperty("file.separator") + ".j"
-//							+ System.getProperty("file.separator") + "trusts"));
-//
-//			if (trustsDir.exists() && trustsDir.isDirectory()) {
-//				CertificateFactory cf;
-//
-//				cf = CertificateFactory.getInstance("X.509");
-//
-//				trustedCertificates = new X509Certificate[trustsDir.listFiles().length+1];
-//				int ccount = 1;
-//				
-//				for (File trust : trustsDir.listFiles()) {
-//
-//					if (trust.getName().endsWith("der")) {
-//
-//						try {
-//							X509Certificate c = (X509Certificate) cf
-//									.generateCertificate(new FileInputStream(
-//											trust));
-//							System.out.println("Trusting now: "
-//									+ c.getSubjectDN());
-//							trustedCertificates[ccount] = c;
-//							ccount++;
-//
-//						} catch (Exception e) {
-//							e.printStackTrace();
-//						}
-//					}
-//				}
-//			}
-//
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//		}
-//	}
 
 	private static void loadTrusts() {
 		try {
@@ -205,10 +162,10 @@ public class JAKeyStore {
 					}
 				}
 			} else{
-				if (logger.isLoggable(Level.INFO)) {
-					logger.log(Level.INFO,"Found no trusts to load in: " + trustsDir);
+				if (logger.isLoggable(Level.SEVERE)) {
+					logger.log(Level.SEVERE,"Found no trusts to load in: " + trustsDir);
 				}
-				System.out.println("Found no trusts to load in: " + trustsDir);
+				System.err.println("Found no trusts to load in: " + trustsDir);
 
 			}
 
@@ -216,38 +173,132 @@ public class JAKeyStore {
 			trusts = tmf.getTrustManagers();
 
 		} catch (Exception e) {
-			e.printStackTrace();
+			//ignore
 		}
 	}
 
+	
+	
+	private static boolean checkKeyPermissions(final String user_key, final String user_cert) {
+		try {
+			File key = new File(user_key);
+			if (key.exists() && key.canRead()) {
+				Process child = Runtime.getRuntime().exec("ls -la " + user_key);
+				child.waitFor();
+				String perms = (new BufferedReader(new InputStreamReader(
+						child.getInputStream()))).readLine();
+				if (perms != null)
+					if (!perms.startsWith("-r--------"))
+						changeMod("key", key, 400);
+				child = Runtime.getRuntime().exec("ls -la " + user_key);
+				child.waitFor();
+				perms = (new BufferedReader(new InputStreamReader(
+						child.getInputStream()))).readLine();
+				if (perms != null)
+					if (!perms.startsWith("-r--------"))
+						return false;
+			}else
+				return false;
+
+			File cert = new File(user_cert);
+			if (cert.exists() && cert.canRead()) {
+				Process child = Runtime.getRuntime()
+						.exec("ls -la " + user_cert);
+				child.waitFor();
+				String perms = (new BufferedReader(new InputStreamReader(
+						child.getInputStream()))).readLine();
+				if (perms != null)
+					if (!perms.startsWith("-r--r-----"))
+						changeMod("certificate", cert, 440);
+				child = Runtime.getRuntime()
+						.exec("ls -la " + user_cert);
+				child.waitFor();
+				perms = (new BufferedReader(new InputStreamReader(
+						child.getInputStream()))).readLine();
+				if (perms != null)
+					if (!perms.startsWith("-r--r-----"))
+						return false;
+				return true;
+			}else
+				return false;
+		} catch (Exception e) {
+			// ignore
+			return false;
+		}
+	}
+	
+	
+	private static boolean changeMod(final String name, final File file, final int chmod) {
+		try {
+			String ack="";
+
+			Console cons = System.console();
+			if(cons==null)
+				return false;
+			System.out.println("Your Grid " + name + " file has wrong permissions.");
+			System.out.println("The file [ " + file.getCanonicalPath() + " ] should have permissions: [ " + chmod + " ]");
+			
+			if ((ack = cons.readLine("%s", "Would you correct this now[Yes/no]?")) != null)
+				if ("y".equals(ack.toLowerCase())
+						|| "yes".equals(ack.toLowerCase())|| "".equals(ack)) {
+					Process child = Runtime.getRuntime().exec(
+							"chmod " + chmod + " " + file.getCanonicalPath());
+					
+					child.waitFor();
+					String err = (new BufferedReader(new InputStreamReader(
+						child.getErrorStream()))).readLine();
+					if(err!=null && !"".equals(err))
+						System.err.println("ERROR: " + err);
+					else return true;
+				}
+		} catch (Exception e) {
+			//ignore
+		}
+		return false;
+	}
+	
+	
 	/**
 	 * @throws Exception
 	 */
-	public static void loadClientKeyStorage() throws Exception {
-		loadClientKeyStorage(false);
+	public static boolean loadClientKeyStorage() throws Exception {
+		return loadClientKeyStorage(false);
 	}
 	
 	/**
 	 * @param noUserPass 
 	 * @throws Exception
 	 */
-	public static void loadClientKeyStorage(final boolean noUserPass) throws Exception {
+	public static boolean loadClientKeyStorage(final boolean noUserPass) throws Exception {
 
 		ExtProperties config = ConfigUtils.getConfig();
-
+		
+		String user_key = config.gets(
+				"user.cert.priv.location",
+				System.getProperty("user.home")
+						+ System.getProperty("file.separator")
+						+ ".globus"
+						+ System.getProperty("file.separator")
+						+ "userkey.pem");
+		
+		String user_cert = config.gets(
+				"user.cert.pub.location",
+				System.getProperty("user.home")
+						+ System.getProperty("file.separator")
+						+ ".globus"
+						+ System.getProperty("file.separator")
+						+ "usercert.pem");
+		
+		if(!checkKeyPermissions(user_key, user_cert))
+			return false;
+		
 		clientCert = KeyStore.getInstance("JKS");
 
 		try {
-			//pass = getRandomString();
-
 			clientCert.load(null, pass);
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (CertificateException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		} catch (Exception e) {
+			//ignore
+		} 
 		
 		JPasswordFinder jpf;
 		
@@ -259,24 +310,13 @@ public class JAKeyStore {
 		addKeyPairToKeyStore(
 				clientCert,
 				"User.cert",
-				config.gets(
-						"user.cert.priv.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".globus"
-								+ System.getProperty("file.separator")
-								+ "userkey.pem"),
-				config.gets(
-						"user.cert.pub.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".globus"
-								+ System.getProperty("file.separator")
-								+ "usercert.pem"),
-								jpf
+				user_key,
+				user_cert,
+				jpf
 				);
 
 		loadTrusts();
+		return true;
 
 	}
 

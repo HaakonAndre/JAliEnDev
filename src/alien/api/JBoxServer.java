@@ -435,8 +435,12 @@ public class JBoxServer extends Thread {
 	 */
 	public static void startJBoxService(int iDebug) {
 		try {
-			JAKeyStore.loadClientKeyStorage();
-			JBoxServer.startJBoxServer(iDebug);
+			if(!JAKeyStore.loadClientKeyStorage()){
+				System.err.println("Grid Certificate could not be loaded.");
+				System.err.println("Exiting...");
+			}
+			else 
+				JBoxServer.startJBoxServer(iDebug);
 		} catch (org.bouncycastle.openssl.EncryptionException e) {
 			logger.log(Level.SEVERE, "Wrong password!");
 			System.err.println("Wrong password!");
