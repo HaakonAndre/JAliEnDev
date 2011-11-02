@@ -8,6 +8,7 @@ import java.util.StringTokenizer;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import alien.shell.ShellColor;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
 import alien.taskQueue.JobStatusFactory;
@@ -55,7 +56,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			String jdl = commander.q_api.getJDL(getJDL);
 			if (jdl != null){
 				if(bColour)
-					out.printOutln(textred + jdl + textnormal);
+					out.printOutln( ShellColor.jobStateRed() + jdl + ShellColor.reset());
 				else
 					out.printOutln(jdl);
 			}
@@ -63,14 +64,12 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			String tracelog = commander.q_api.getTraceLog(getTrace);
 			if (tracelog != null)
 				if(bColour)
-					out.printOutln(textblue + tracelog + textnormal);
+					out.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
 				
 			out.printOutln("--- not implemented yet ---");
 			
 		} else {
 
-			//if (states.size() == 0)
-			//	states.addAll(defJobStates());
 			if (users.size() == 0)
 				users.add(commander.getUsername());
 
@@ -82,7 +81,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 					String owner = (j.getOwner() != null) ? j.getOwner() : "";
 					
-					String jId = bColour ? textbold + j.queueId + textnormal : String.valueOf(j.queueId);
+					String jId = bColour ? ShellColor.bold() + j.queueId +
+							ShellColor.reset() : String.valueOf(j.queueId);
 
 					String name = (j.name != null) ? j.name.substring(j.name
 							.lastIndexOf('/') + 1) : "";
@@ -125,12 +125,12 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			if (bColour) {
 				String cTag = "";
 				if (priority <= 0)
-					cTag = textblueerror;
+					cTag = ShellColor.jobStateBlueError();
 				else if (priority < 70)
-					cTag = textblue;
+					cTag = ShellColor.jobStateBlue();
 				else
-					cTag = textgreen;
-				return cTag + padLeft( String.valueOf(priority),3) + textnormal;
+					cTag = ShellColor.jobStateGreen();
+				return cTag + padLeft( String.valueOf(priority),3) + ShellColor.reset();
 			}
 			return padLeft( String.valueOf(priority),3) ;
 		}
@@ -143,32 +143,31 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			return padLeft("?",3);
 
 		if (JobStatus.KILLED.equals(status)) {
+			System.out.println("status is indeed: " + status);
 			if (bColour)
-				return textred + padLeft("  K",3) + textnormal;
+				return ShellColor.jobStateRed() + padLeft("  K",3) + ShellColor.reset();
 			return padLeft("  K",3);
 		} else if (JobStatus.RUNNING.equals(status)) {
 			if (bColour)
-				return textgreen + padLeft("  R",3) + textnormal;
+				return ShellColor.jobStateGreen() + padLeft("  R",3) + ShellColor.reset();
 			return padLeft("  R",3);
 		} else if (JobStatus.STARTED.equals(status)) {
 			if (bColour)
-				return textgreen + padLeft(" ST",3) + textnormal;
+				return ShellColor.jobStateGreen() + padLeft(" ST",3) + ShellColor.reset();
 			return padLeft(" ST",3);
 		} else if (JobStatus.DONE.equals(status)) {
-			if (bColour)
-				return textnormal + padLeft("  D",3) + textnormal;
 			return padLeft("  D",3);
 		} else if (JobStatus.WAITING.equals(status)) {
 			if (bColour)
-				return textblue + padLeft("  W",3) + textnormal;
+				return ShellColor.jobStateBlue() + padLeft("  W",3) + ShellColor.reset();
 			return padLeft("  W",3);
 		} else if (JobStatus.OVER_WAITING.equals(status)) {
 			return padLeft("  OW",3);
 		} else if (JobStatus.EXPIRED.equals(status)) {
-			return padLeft(" EX",3);
+			return padLeft(" XP",3);
 		} else if (JobStatus.INSERTING.equals(status)) {
 			if (bColour)
-				return textyellow + padLeft("  I",3) + textnormal;
+				return ShellColor.jobStateYellow() + padLeft("  I",3) + ShellColor.reset();
 			return padLeft("  I",3);
 		} else if (JobStatus.SPLIT.equals(status))
 			return padLeft("  S",3);
@@ -176,7 +175,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			return padLeft(" SP",3);
 		else if (JobStatus.SAVING.equals(status)) {
 			if (bColour)
-				return textgreen + padLeft(" SV",3) + textnormal;
+				return ShellColor.jobStateGreen() + padLeft(" SV",3) + ShellColor.reset();
 			return padLeft(" SV",3);
 		} else if (JobStatus.SAVED.equals(status))
 			return padLeft("SVD",3);
@@ -210,7 +209,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				e = status.toString();
 
 			if (bColour)
-				return textblueerror + padLeft(e,3) + textnormal;
+				return ShellColor.jobStateRedError() + padLeft(e,3) + ShellColor.reset();
 			return padLeft(e,3);
 		}
 
@@ -477,6 +476,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					break;
 				}
 				states.add(JobStatusFactory.getByStatusName(o));
+				System.out.println("added status: " + states);
 			}
 		}
 		if (all)

@@ -609,6 +609,8 @@ public class TaskQueueUtils {
 			where = " WHERE " + where;
 		
 		final String q = "SELECT "+ ALL_BUT_JDL +" FROM QUEUE "+ where + orderBy +" limit "+lim+";";
+		
+		System.out.println("SQL: " + q);
 					
 		if (!db.query(q))
 			return null;

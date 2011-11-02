@@ -72,6 +72,9 @@ public class GetPS extends Request {
 	
 	@Override
 	public void run() {
+		
+		System.out.println("states: " + states);
+		
 		this.jobs = TaskQueueUtils.getPS(states, users, sites, nodes, mjobs, jobid, orderByKey, limit);
 	}
 	

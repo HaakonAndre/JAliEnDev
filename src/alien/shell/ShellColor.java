@@ -22,6 +22,14 @@ public class ShellColor {
 		return genTag(Style.CLEAR);
 	}
 	
+
+	/**
+	 * @return color code
+	 */
+	public static String bold(){
+		return genTag(Style.CLEAR);
+	}
+	
 	
 	/**
 	 * @return color code for error Message
@@ -73,6 +81,52 @@ public class ShellColor {
 	public static String boldBlack(){
 		return genTag(ForeColor.BLACK, Style.BOLD);
 	}
+	
+	
+	/**
+	 * @return color code
+	 */
+	public static String jobStateRed(){
+		return genTag(ForeColor.RED,BackColor.BLACK);
+	}
+	
+	/**
+	 * @return color code
+	 */
+	public static String jobStateRedError(){
+		return genTag(ForeColor.RED, BackColor.NEUUNFVIERZIG);
+	}
+	
+	/**
+	 * @return color code
+	 */
+	public static String jobStateBlue(){
+		return genTag(ForeColor.BLUE);
+	}
+	
+	/**
+	 * @return color code
+	 */
+	public static String jobStateBlueError(){
+		return genTag(ForeColor.BLUE, BackColor.NEUUNFVIERZIG);
+	}
+	
+	/**
+	 * @return color code
+	 */
+	public static String jobStateGreen(){
+		return genTag(ForeColor.GREEN);
+	}
+	
+	/**
+	 * @return color code
+	 */
+	public static String jobStateYellow(){
+		return genTag(ForeColor.YELLOW);
+	}
+	
+	
+	
 	private static String genTag(final ShellCol one) {
 		return prefix + one.getCode() + suffix;
 	}
@@ -110,7 +164,7 @@ public class ShellColor {
 	private enum BackColor implements ShellCol{
 
 		BLACK("40"), RED("41"), GREEN("42"), YELLOW("43"), BLUE("44"), MAGENTA(
-				"45"), CYAN("46"), WHITE("47"), NONE("");
+				"45"), CYAN("46"), WHITE("47"),  NEUUNFVIERZIG("49"), NONE("");
 
 		private final String code;
 		
