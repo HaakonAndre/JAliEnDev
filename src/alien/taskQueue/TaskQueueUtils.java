@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -14,8 +13,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import javax.swing.text.StyleContext.SmallAttributeSet;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -247,55 +244,52 @@ public class TaskQueueUtils {
 				
 		return ret;
 	}
-//
-//	/**
-//	 * Get the subjobs of this masterjob
-//	 * 
-//	 * @param queueId
-//	 * @return the subjobs, if any
-//	 */
-//	public static List<Job> getSubjobs(final int queueId){
-//		return getSubjobs(queueId, false);
-//	}
-//		
-//	/**
-//	 * Get the subjobs of this masterjob
-//	 * 
-//	 * @param queueId
-//	 * @param loadJDL 
-//	 * @return the subjobs, if any
-//	 */
-//	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL){
-//		final DBFunctions db = getQueueDB();
-//		
-//		if (db==null)
-//			return null;
-//		
-//		if (monitor!=null){
-//			monitor.incrementCounter("TQ_db_lookup");
-//			monitor.incrementCounter("TQ_getsubjobs");
-//		}
-//		
-//		final String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split="+Format.escSQL(queueId+"")+" ORDER BY queueId ASC;";
-//		
-//		final List<Job> ret = new ArrayList<Job>();
-//		
-//		final long lQueryStart = System.currentTimeMillis();
-//
-//		db.query(q);
-//		
-//		if (monitor!=null)
-//			monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
-//		
-//		while (db.moveNext()){
-//			ret.add(new Job(db, loadJDL));
-//		}
-//		
-//		return ret;		
-//	}
-//	
-	
-	
+
+	/**
+	 * Get the subjobs of this masterjob
+	 * 
+	 * @param queueId
+	 * @return the subjobs, if any
+	 */
+	public static List<Job> getSubjobs(final int queueId){
+		return getSubjobs(queueId, false);
+	}
+		
+	/**
+	 * Get the subjobs of this masterjob
+	 * 
+	 * @param queueId
+	 * @param loadJDL 
+	 * @return the subjobs, if any
+	 */
+	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL){
+		final DBFunctions db = getQueueDB();
+		
+		if (db==null)
+			return null;
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_getsubjobs");
+		}
+		
+		final String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split="+Format.escSQL(queueId+"")+" ORDER BY queueId ASC;";
+		
+		final List<Job> ret = new ArrayList<Job>();
+		
+		final long lQueryStart = System.currentTimeMillis();
+
+		db.query(q);
+		
+		if (monitor!=null)
+			monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+		
+		while (db.moveNext()){
+			ret.add(new Job(db, loadJDL));
+		}
+		
+		return ret;		
+	}
 
 	/**
 	 * Get the subjob status of this masterjob
