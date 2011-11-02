@@ -299,6 +299,7 @@ public class TaskQueueUtils {
 	 * @param bKill 
 	 * @param bResubmit 
 	 * @param bExpunge 
+	 * @param limit 
 	 * @return the subjobs, if any
 	 */
 	public static List<Job> getMasterJobStat(final int queueId, final List<String> status, final List<Integer> id, final List<String> site,
@@ -831,33 +832,14 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return state of the kill operation
 	 */
-	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId){
-			if(AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId),
-					user, role)){
-		System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + 
-				user.getName() + "/" + role +"].");
-		return false;
-		// TODO:
+	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId) {
+		if (AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId), user, role)) {
+			System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
+			return false;
+			// TODO:
 		}
-		System.out.println("Job kill authorization failed for [" + queueId + "] by user/role [" + 
-					user.getName() + "/" + role +"].");
+		
+		System.out.println("Job kill authorization failed for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
 		return false;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 }
