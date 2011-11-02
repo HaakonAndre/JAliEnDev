@@ -10,6 +10,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
+import alien.taskQueue.JobStatusFactory;
 
 /**
  * @author ron
@@ -475,7 +476,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					all = true;
 					break;
 				}
-				states.add(JobStatus.get(o));
+				states.add(JobStatusFactory.getByStatusName(o));
 			}
 		}
 		if (all)
