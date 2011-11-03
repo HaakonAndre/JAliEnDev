@@ -50,6 +50,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	private int limit = 0;
 
+	@Override
 	public void run() {
 		
 		if (getJDL != 0) {
@@ -237,6 +238,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 
 		out.printOutln();
