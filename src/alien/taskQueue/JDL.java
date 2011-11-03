@@ -37,6 +37,13 @@ public class JDL implements Serializable {
 	private String plainJDL = null;
 	
 	/**
+	 * Empty constructor. The values can be populated with {@link #set(String, Object)}  and {@link #append(String, String)}
+	 */
+	public JDL(){
+		// empty
+	}
+	
+	/**
 	 * A file in the catalogue
 	 * 
 	 * @param file
@@ -73,7 +80,7 @@ public class JDL implements Serializable {
 	 * @throws IOException
 	 */
 	public JDL(final int jobID) throws IOException{
-		this(TaskQueueUtils.getJDL(jobID));
+		this(Job.sanitizeJDL(TaskQueueUtils.getJDL(jobID)));
 	}
 
 	/**
@@ -197,7 +204,7 @@ public class JDL implements Serializable {
 	 * @param key
 	 * 
 	 * @return the single value if this was a String, the first entry of a
-	 *         List...
+	 *         Collection (based on the iterator)...
 	 */
 	public String gets(final String key) {
 		final Object o = get(key);
@@ -460,8 +467,8 @@ public class JDL implements Serializable {
 			return ret;
 		}
 
-		if (o instanceof List<?>) {
-			final Iterator<?> it = ((List<?>) o).iterator();
+		if (o instanceof Collection<?>) {
+			final Iterator<?> it = ((Collection<?>) o).iterator();
 
 			while (it.hasNext()) {
 				final Object o2 = it.next();
@@ -687,11 +694,11 @@ public class JDL implements Serializable {
 		if (o instanceof Collection){
 			sb.append("{");
 			
-			Collection<?> c = (Collection<?>) o;
+			final Collection<?> c = (Collection<?>) o;
 			
 			boolean first = true;
 			
-			for (Object o2: c){
+			for (final Object o2: c){
 				if (!first)
 					sb.append(",");
 				else
@@ -704,5 +711,102 @@ public class JDL implements Serializable {
 		}
 		else
 			sb.append(o);
+	}
+	
+	/**
+	 * Delete a key
+	 * 
+	 * @param key
+	 * @return the old value, if any 
+	 */
+	public Object delete(final String key){
+		final Iterator<Map.Entry<String, Object>> it = jdlContent.entrySet().iterator();
+		
+		while (it.hasNext()){
+			final Map.Entry<String, Object> entry = it.next();
+			
+			if (entry.getKey().equalsIgnoreCase(key)){
+				it.remove();
+				return entry.getValue();
+			}
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Set the value of a key. As value you can pass either:<br>
+	 * <ul>
+	 * <li>a String object, the value of which is to be put in quotes</li>
+	 * <li>a StringBuilder object, then the content is set in the JDL without quotes (for example the Requirements field)</li>
+	 * <li>a Collection, the values of which will be saved as an array of strings in the JDL</li>
+	 * <li>a Number object, which will be saved without quotes</li>
+	 * <li>any other Object, for which toString() will be called</li>
+	 * </ul>
+	 * 
+	 * @param key JDL key name
+	 * @param value (new) value
+	 * @return the previously set value, if any
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public Object set(final String key, final Object value){
+		if (value==null){
+			return delete(key);
+		}
+		
+		final Object old = get(key);
+
+		Object newValue = value;
+		
+		if (newValue instanceof Collection){
+			newValue = new LinkedList((Collection<?>)newValue);
+		}
+		
+		if (old!=null){
+			for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
+				if (entry.getKey().equalsIgnoreCase(key)){
+					entry.setValue(newValue);
+				}
+			}
+		}
+		else{
+			jdlContent.put(key, newValue);
+		}
+		
+		return old;
+	}
+	
+	/**
+	 * Append a String value to an array. If there is a previously set single value then it is transformed in an array and the previously set value is kept as the first entry
+	 * of it. 
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	@SuppressWarnings("unchecked")
+	public void append(final String key, final String value){
+		if (key==null || value==null)
+			return;
+		
+		final Object old = get(key);
+		
+		final Collection<String> values;
+		
+		if (old==null){
+			values = new LinkedList<String>();
+			jdlContent.put(key, values);
+		}
+		else
+		if (old instanceof Collection){
+			values = (Collection<String>) old;
+		}
+		else{
+			values = new LinkedList<String>();
+			values.add(old.toString());
+			
+			jdlContent.put(key, values);
+		}
+		
+		values.add(value.toString());
 	}
 }
