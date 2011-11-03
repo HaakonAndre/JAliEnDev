@@ -156,8 +156,11 @@ public class IOUtils {
 	public static String getContents(final GUID guid) {
 		final String reason = AuthorizationFactory.fillAccess(guid, AccessType.READ);
 		
-		if (reason!=null)
+		if (reason!=null){
+			logger.log(Level.WARNING, "Access denied: "+reason);
+			
 			return null;
+		}
 		
 		final File f = get(guid);
 		
