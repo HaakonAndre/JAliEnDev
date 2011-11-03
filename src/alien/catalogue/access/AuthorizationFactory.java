@@ -47,7 +47,7 @@ public final class AuthorizationFactory {
 				"user.cert.pub.location",
 				System.getProperty("user.home")
 						+ System.getProperty("file.separator")
-						+ "globus"
+						+ ".globus"
 						+ System.getProperty("file.separator")
 						+ "usercert.pem");
 		
