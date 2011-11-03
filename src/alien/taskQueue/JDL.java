@@ -766,6 +766,7 @@ public class JDL implements Serializable {
 			for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
 				if (entry.getKey().equalsIgnoreCase(key)){
 					entry.setValue(newValue);
+					break;
 				}
 			}
 		}
@@ -803,8 +804,19 @@ public class JDL implements Serializable {
 		else{
 			values = new LinkedList<String>();
 			values.add(old.toString());
+
+			boolean added = false;
 			
-			jdlContent.put(key, values);
+			for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
+				if (entry.getKey().equalsIgnoreCase(key)){
+					added = true;
+					entry.setValue(values);
+					break;
+				}
+			}
+			
+			if (!added)
+				jdlContent.put(key, values);
 		}
 		
 		values.add(value.toString());
