@@ -16,8 +16,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import java.util.Date;
-
 import lazyj.DBFunctions;
 import lazyj.Format;
 import alien.catalogue.LFN;
@@ -979,12 +977,6 @@ public class TaskQueueUtils {
 
 			 return true;
 	}
-	
-	
-	
-	
-	
- 	
 	
 	private static boolean setJobStatus(final Job j,
 			final JobStatus newStatus, final String arg, final String site, final String spyurl,
