@@ -9,9 +9,6 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
@@ -64,7 +61,7 @@ public class JSh {
 
 	/**
 	 * is color output mode enabled
-	 * @return 
+	 * @return enabled or not
 	 */
 	public static boolean doWeColor(){
 		return color;
@@ -144,7 +141,7 @@ public class JSh {
 	
 	
 	private static final String kill = "/bin/kill";
-	private static final String fuser = "/bin/fuser";
+	//private static final String fuser = "/bin/fuser";
 
 	private static String addr;
 	private static String user;
@@ -203,39 +200,40 @@ public class JSh {
 	private static boolean JBoxRunning() {
 
 		if (JSh.getJBoxPID()) {
-
-			if (!(new File(fuser)).exists())
-				return true;
-
-			if (port == 0) {
-				return false;
-			}
-
-			if (pid == 0)
-				return true; 
-
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					new String[] { fuser, port + "/tcp" });
-
-			pBuilder.returnOutputOnExit(true);
-			pBuilder.timeout(2, TimeUnit.SECONDS);
-			pBuilder.redirectErrorStream(true);
-			final ExitStatus exitStatus;
-			try {
-				exitStatus = pBuilder.start().waitFor();
-			} catch (Exception e) {
-				return false;
-			}
-			if (exitStatus.getExtProcExitStatus() == 0) {
-				String line[] = exitStatus.getStdOut().trim().split(":");
-				if (!line[0].trim().equals(port + "/tcp")
-						|| !line[1].trim().equals(pid + "")) {
-					return false;
-				}
-
-			} else {
-				return false;
-			}
+//			timeStamp("got JBOX PID: ");
+//
+//			if (!(new File(fuser)).exists())
+//				return true;
+//
+//			if (port == 0) {
+//				return false;
+//			}
+//
+//			if (pid == 0)
+//				return true; 
+//
+//			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
+//					new String[] { fuser, port + "/tcp" });
+//
+//			pBuilder.returnOutputOnExit(true);
+//			pBuilder.timeout(2, TimeUnit.SECONDS);
+//			pBuilder.redirectErrorStream(true);
+//			final ExitStatus exitStatus;
+//			try {
+//				exitStatus = pBuilder.start().waitFor();
+//			} catch (Exception e) {
+//				return false;
+//			}
+//			if (exitStatus.getExtProcExitStatus() == 0) {
+//				String line[] = exitStatus.getStdOut().trim().split(":");
+//				if (!line[0].trim().equals(port + "/tcp")
+//						|| !line[1].trim().equals(pid + "")) {
+//					return false;
+//				}
+//
+//			} else {
+//				return false;
+//			}
 
 			File f = new File("/proc/" + pid + "/cmdline");
 			if (f.exists()) {

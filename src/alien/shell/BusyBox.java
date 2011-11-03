@@ -17,8 +17,6 @@ import jline.SimpleCompletor;
 import alien.JSh;
 import alien.config.JAliEnIAm;
 import alien.shell.commands.JShPrintWriter;
-import alien.taskQueue.Job;
-import alien.taskQueue.TaskQueueUtils;
 
 /**
  * @author ron
@@ -174,21 +172,7 @@ public class BusyBox {
 			prompting = true;
 		}
 		
-		if (connect(addr, port, password)) {
-			
-
-			reader = new ConsoleReader();
-			reader.setBellEnabled(false);
-			reader.setDebug(new PrintWriter(
-					new FileWriter("writer.debug", true)));
-
-			Completor[] comp = new Completor[]{
-		            new SimpleCompletor(callJBoxGetString("commandlist").split(" ")),
-		            new GridLocalFileCompletor(this)
-		        };
-		    reader.addCompletor (new ArgumentCompletor(comp));
-
-		} else {
+		if (!connect(addr, port, password)) {
 			printInitConnError();
 			throw new IOException();
 		}
@@ -212,9 +196,18 @@ public class BusyBox {
 	public void prompt() throws IOException {
 
 		String line;
-		
 
-		
+		reader = new ConsoleReader();
+		reader.setBellEnabled(false);
+		reader.setDebug(new PrintWriter(
+				new FileWriter("writer.debug", true)));
+		Completor[] comp = new Completor[]{
+				
+	            new SimpleCompletor(callJBoxGetString("commandlist").split(" ")),
+	            new GridLocalFileCompletor(this)
+	        };
+	    reader.addCompletor (new ArgumentCompletor(comp));
+
 		String prefixCNo = "0";
 		while ((line = reader.readLine(genPromptPrefix() + "[" + prefixCNo + commNo
 				+ "] " + currentDir + promptSuffix)) != null) {
@@ -295,7 +288,7 @@ public class BusyBox {
 
 	/**
 	 * @param line
-	 * @return
+	 * @return success of the call
 	 */
 	public boolean callJBox(final String line) {
 		return callJBox(line, true);
