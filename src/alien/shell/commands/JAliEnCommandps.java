@@ -138,52 +138,37 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	}
 
 	private String abbrvStatus(JobStatus status) {
-		
 		if(status==null)
-			return padLeft("?",3);
+			return padLeft("NUL",3);
 
-		if (JobStatus.KILLED == status) {
-			System.out.println("status is indeed: " + status);
-			if (bColour)
-				return ShellColor.jobStateRed() + padLeft("  K",3) + ShellColor.reset();
-			return padLeft("  K",3);
-		} else if (JobStatus.RUNNING == status) {
-			if (bColour)
-				return ShellColor.jobStateGreen() + padLeft("  R",3) + ShellColor.reset();
-			return padLeft("  R",3);
-		} else if (JobStatus.STARTED == status) {
-			if (bColour)
-				return ShellColor.jobStateGreen() + padLeft(" ST",3) + ShellColor.reset();
-			return padLeft(" ST",3);
-		} else if (JobStatus.DONE == status) {
-			return padLeft("  D",3);
-		} else if (JobStatus.WAITING == status) {
-			if (bColour)
-				return ShellColor.jobStateBlue() + padLeft("  W",3) + ShellColor.reset();
-			return padLeft("  W",3);
-		} else if (JobStatus.OVER_WAITING == status) {
-			return padLeft("  OW",3);
-		} else if (JobStatus.EXPIRED == status) {
-			return padLeft(" XP",3);
-		} else if (JobStatus.INSERTING == status) {
-			if (bColour)
-				return ShellColor.jobStateYellow() + padLeft("  I",3) + ShellColor.reset();
-			return padLeft("  I",3);
-		} else if (JobStatus.SPLIT == status)
-			return padLeft("  S",3);
-		else if (JobStatus.SPLITTING == status)
-			return padLeft(" SP",3);
-		else if (JobStatus.SAVING == status) {
-			if (bColour)
-				return ShellColor.jobStateGreen() + padLeft(" SV",3) + ShellColor.reset();
-			return padLeft(" SV",3);
-		} else if (JobStatus.SAVED == status)
-			return padLeft("SVD",3);
-		else {
-			String e = "";
-			
+		String e = "";
+		
+		if (bColour){
 			switch (status){
-				case ERROR_A  : e = " EQ"; break;
+				case KILLED       : return ShellColor.jobStateRed()   + padLeft("  K",3) + ShellColor.reset();
+				case RUNNING      : return ShellColor.jobStateGreen() + padLeft("  R",3) + ShellColor.reset();
+				case STARTED      : return ShellColor.jobStateGreen() + padLeft(" ST",3) + ShellColor.reset();
+				case DONE         : return padLeft("  D",3);
+				case DONE_WARN    : return padLeft(" DW",3);
+				case WAITING      : return ShellColor.jobStateBlue() + padLeft("  W",3) + ShellColor.reset();
+				case OVER_WAITING : return padLeft(" OW",3);
+				case INSERTING    : return ShellColor.jobStateYellow() + padLeft("  I",3) + ShellColor.reset();
+				case SPLIT        : return padLeft("  S",3);
+				case SPLITTING    : return padLeft(" SP",3);
+				case SAVING       : return ShellColor.jobStateGreen() + padLeft(" SV",3) + ShellColor.reset();
+				case SAVED        : return padLeft("SVD",3);
+				case ANY          : return padLeft("ANY",3);	// shouldn't happen!
+				case ASSIGNED     : return padLeft("ASG",3);
+				case A_STAGED     : return padLeft("AST",3);
+				case FORCEMERGE   : return padLeft(" FM",3);  
+				case IDLE         : return padLeft("IDL",3);
+				case INTERACTIV   : return padLeft("INT",3);
+				case MERGING      : return padLeft("  M",3);
+				case QUEUED       : return padLeft("  Q",3);
+				case SAVED_WARN   : return padLeft(" SW",3);
+				case STAGING      : return padLeft(" ST",3);
+				case TO_STAGE     : return padLeft("TST",3);
+				case ERROR_A  : e = " EA"; break;
 				case ERROR_E  : e = " EE"; break;
 				case ERROR_I  : e = " EI"; break;
 				case ERROR_IB : e = "EIB"; break;
@@ -198,15 +183,55 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				case ERROR_W  : e = " EW"; break;
 				case FAILED   : e = " FF"; break;
 				case ZOMBIE   : e = "  Z"; break;
-				default: e = status.toString();
+				case EXPIRED  : e = " XP"; break;
 			}
 			
-			if (bColour)
-				return ShellColor.jobStateRedError() + padLeft(e,3) + ShellColor.reset();
-			
-			return padLeft(e,3);
+			return ShellColor.jobStateRedError() + padLeft(e,3) + ShellColor.reset();
 		}
-
+		
+		switch (status){
+			case KILLED       : return padLeft("  K",3);
+			case RUNNING      : return padLeft("  R",3);
+			case STARTED      : return padLeft(" ST",3);
+			case DONE         : return padLeft("  D",3);
+			case DONE_WARN    : return padLeft(" DW",3);
+			case WAITING      : return padLeft("  W",3);
+			case OVER_WAITING : return padLeft(" OW",3);
+			case INSERTING    : return padLeft("  I",3);
+			case SPLIT        : return padLeft("  S",3);
+			case SPLITTING    : return padLeft(" SP",3);
+			case SAVING       : return padLeft(" SV",3);
+			case SAVED        : return padLeft("SVD",3);
+			case ANY          : return padLeft("ANY",3);	// shouldn't happen!
+			case ASSIGNED     : return padLeft("ASG",3);
+			case A_STAGED     : return padLeft("AST",3);
+			case FORCEMERGE   : return padLeft(" FM",3);  
+			case IDLE         : return padLeft("IDL",3);
+			case INTERACTIV   : return padLeft("INT",3);
+			case MERGING      : return padLeft("  M",3);
+			case QUEUED       : return padLeft("  Q",3);
+			case SAVED_WARN   : return padLeft(" SW",3);
+			case STAGING      : return padLeft(" ST",3);
+			case TO_STAGE     : return padLeft("TST",3);
+			case ERROR_A  : e = " EA"; break;
+			case ERROR_E  : e = " EE"; break;
+			case ERROR_I  : e = " EI"; break;
+			case ERROR_IB : e = "EIB"; break;
+			case ERROR_M  : e = " EM"; break;
+			case ERROR_RE : e = "ERE"; break;
+			case ERROR_S  : e = " ES"; break;
+			case ERROR_SV : e = "ESV"; break;
+			case ERROR_V  : e = " EV"; break;
+			case ERROR_VN : e = "EVN"; break;
+			case ERROR_VT : e = "EVT"; break;
+			case ERROR_SPLT:e = "ESP"; break;
+			case ERROR_W  : e = " EW"; break;
+			case FAILED   : e = " FF"; break;
+			case ZOMBIE   : e = "  Z"; break;
+			case EXPIRED  : e = " XP"; break;
+		}
+		
+		return padLeft(e,3);
 	}
 
 	/**
