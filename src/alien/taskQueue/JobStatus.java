@@ -1,252 +1,344 @@
 package alien.taskQueue;
 
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.List;
-
-@SuppressWarnings("javadoc")
-
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author ron
  * @since Mar 1, 2011
  */
-public enum JobStatus {
+public enum JobStatus{
 
-	INSERTING("INSERTING"), SPLITTING("SPLITTING"), SPLIT("SPLIT"), TO_STAGE(
-			"TO_STAGE"), A_STAGED("A_STAGED"), STAGING("STAGING"), WAITING(
-			"WAITING"), OVER_WAITING("OVER_WAITING"), ASSIGNED("ASSIGNED"), QUEUED(
-			"QUEUED"), STARTED("STARTED"), IDLE("IDLE"), INTERACTIV(
-			"INTERACTIV"), RUNNING("RUNNING"), SAVING("SAVING"), SAVED("SAVED"), DONE(
-			"DONE"), SAVED_WARN("SAVED_WARN"), DONE_WARN("DONE_WARN"), ERROR_A(
-			"ERROR_A"), ERROR_I("ERROR_I"), ERROR_E("ERROR_E"), ERROR_IB(
-			"ERROR_IB"), ERROR_M("ERROR_M"), ERROR_RE("ERROR_RE"), ERROR_S(
-			"ERROR_S"), ERROR_SV("ERROR_SV"), ERROR_V("ERROR_V"), ERROR_VN(
-			"ERROR_VN"), ERROR_VT("ERROR_VT"), ERROR_SPLT("ERROR_SPLT"), EXPIRED(
-			"EXPIRED"), FAILED("FAILED"), KILLED("KILLED"), FORCEMERGE(
-			"FORCEMERGE"), MERGING("MERGING"), ZOMBIE("ZOMBIE"),
-			//
-			ANY("%");
+	/**
+	 * Any state (wildcard)
+	 */
+	ANY(-1),
+	/**
+	 * Inserting job (10)
+	 */
+	INSERTING(10),
+	/**
+	 * Splitting (15)
+	 */
+	SPLITTING(15),
+	/**
+	 * Waiting for files to be staged (16)
+	 */
+	TO_STAGE(16),
+	/**
+	 * (17)
+	 */
+	A_STAGED(17),
+	/**
+	 * Split job (18)
+	 */
+	SPLIT(18),
+	/**
+	 * Currently staging (19)
+	 */
+	STAGING(19),
+	/**
+	 * Waiting to be picked up (20)
+	 */
+	WAITING(20),
+	/**
+	 * User ran out of quota (21)
+	 */
+	OVER_WAITING(21), 
+	/**
+	 * Assigned to a site (25)
+	 */
+	ASSIGNED(25),
+	/**
+	 * Queued (30)
+	 */
+	QUEUED(30),
+	/**
+	 * Job agent has started the job (40)
+	 */
+	STARTED(40),
+	/**
+	 * Idle, doing what ? (50) 
+	 */
+	IDLE(45),
+	/**
+	 * (50)
+	 */
+	INTERACTIV(46),
+	/**
+	 * Currently running on the WN (50)
+	 */
+	RUNNING(50),
+	/**
+	 * Saving its output (60)
+	 */
+	SAVING(60),
+	/**
+	 * Output saved, waiting for CS to acknowledge this (70)
+	 */
+	SAVED(70),
+	/**
+	 * Files were saved, with some errors (71)
+	 */
+	SAVED_WARN(71),
+	/**
+	 * Zombie (999)
+	 */
+	ZOMBIE(600),
+	/**
+	 * Force merge (950)
+	 */
+	FORCEMERGE(700),
+	/**
+	 * Currently merging  (970)
+	 */
+	MERGING(701),
+	/**
+	 * Fantastic, job successfully completed (980)
+	 */
+	DONE(800),
+	/**
+	 * Job is successfully done, but saving saw some errors (981)
+	 */
+	DONE_WARN(801),
+	/**
+	 * ERROR_A (990)
+	 */
+	ERROR_A(900),
+	/**
+	 * Error inserting (990)
+	 */
+	ERROR_I(901),
+	/**
+	 * Error executing (over TTL, memory limits etc) (990)
+	 */
+	ERROR_E(902),
+	/**
+	 * Error downloading the input files (990)
+	 */
+	ERROR_IB(903),
+	/**
+	 * Error merging (990)
+	 */
+	ERROR_M(904),
+	/**
+	 * Error registering (990)
+	 */
+	ERROR_RE(905),
+	/**
+	 * ERROR_S (990)
+	 */
+	ERROR_S(906),
+	/**
+	 * Error saving output files (990)
+	 */
+	ERROR_SV(907),
+	/**
+	 * Validation error (990)
+	 */
+	ERROR_V(908),
+	/**
+	 * Cannot run the indicated validation code (990)
+	 */
+	ERROR_VN(909),
+	/**
+	 * ERROR_VT (990)
+	 */
+	ERROR_VT(910),
+	/**
+	 * Waiting time expired (LPMActivity JDL tag) (990)
+	 */
+	ERROR_W(911),
+	/**
+	 * Error splitting (990)
+	 */
+	ERROR_SPLT(912),
+	/**
+	 * Job didn't report for too long (1000)
+	 */
+	EXPIRED(1000),
+	/**
+	 * Failed (1000)
+	 */
+	FAILED(1001),
+	/**
+	 * Terminated (1001)
+	 */
+	KILLED(1002);	
 
-	private final static HashMap<String,Integer> jobstatuslevel  = new HashMap<String,Integer>();
+	private final int level;
 
-	
-	static{
-		jobstatuslevel.put("INSERTING",10);
-		jobstatuslevel.put("SPLITTING",15);
-		jobstatuslevel.put("SPLIT",18);
-		jobstatuslevel.put("TO_STAGE",16);
-		jobstatuslevel.put("A_STAGED",17);
-		jobstatuslevel.put("STAGING",19);
-		jobstatuslevel.put("WAITING",20);
-		jobstatuslevel.put("OVER_WAITING",21);
-		jobstatuslevel.put("ASSIGNED",25);
-		jobstatuslevel.put("QUEUED",30);
-		jobstatuslevel.put("STARTED",40);
-		jobstatuslevel.put("IDLE",50);
-		jobstatuslevel.put("INTERACTIV",50);
-		jobstatuslevel.put("RUNNING",50);
-		jobstatuslevel.put("SAVING",60);
-		jobstatuslevel.put("SAVED",70);
-		jobstatuslevel.put("DONE",980);
-		jobstatuslevel.put("SAVED_WARN",71);
-		jobstatuslevel.put("DONE_WARN",981);
-		jobstatuslevel.put("ERROR_A",990);
-		jobstatuslevel.put("ERROR_I",990);
-		jobstatuslevel.put("ERROR_E",990);
-		jobstatuslevel.put("ERROR_IB",990);
-		jobstatuslevel.put("ERROR_M",990);
-		jobstatuslevel.put("ERROR_RE",990);
-		jobstatuslevel.put("ERROR_S",990);
-		jobstatuslevel.put("ERROR_SV",990);
-		jobstatuslevel.put("ERROR_V",990);
-		jobstatuslevel.put("ERROR_VN",990);
-		jobstatuslevel.put("ERROR_VT",990);
-		jobstatuslevel.put("ERROR_SPLT",990);
-		jobstatuslevel.put("EXPIRED",1000);
-		jobstatuslevel.put("FAILED",1000);
-		jobstatuslevel.put("KILLED",1001);
-		jobstatuslevel.put("FORCEMERGE",950);
-		jobstatuslevel.put("MERGING",970);
-		jobstatuslevel.put("ZOMBIE",999);
-		//
-		jobstatuslevel.put("ANY",-1);
-	};
-
-	
-	
-	public static JobStatus get(final String status){
-		if(status.equals("INSERTING")) return JobStatus.INSERTING;
-		else if(status.equals("SPLITTING")) return JobStatus.SPLITTING;
-		else if(status.equals("SPLIT")) return JobStatus.SPLIT;
-		else if(status.equals("TO_STAGE")) return JobStatus.TO_STAGE;
-		else if(status.equals("A_STAGED")) return JobStatus.A_STAGED;
-		else if(status.equals("STAGING")) return JobStatus.STAGING;
-		else if(status.equals("WAITING")) return JobStatus.WAITING;
-		else if(status.equals("OVER_WAITING")) return JobStatus.OVER_WAITING;
-		else if(status.equals("ASSIGNED")) return JobStatus.ASSIGNED;
-		else if(status.equals("QUEUED")) return JobStatus.QUEUED;
-		else if(status.equals("STARTED")) return JobStatus.STARTED;
-		else if(status.equals("IDLE")) return JobStatus.IDLE;
-		else if(status.equals("INTERACTIV")) return JobStatus.INTERACTIV;
-		else if(status.equals("RUNNING")) return JobStatus.RUNNING;
-		else if(status.equals("SAVING")) return JobStatus.SAVING;
-		else if(status.equals("SAVED")) return JobStatus.SAVED;
-		else if(status.equals("DONE")) return JobStatus.DONE;
-		else if(status.equals("SAVED_WARN")) return JobStatus.SAVED_WARN;
-		else if(status.equals("DONE_WARN")) return JobStatus.DONE_WARN;
-		else if(status.equals("ERROR_A")) return JobStatus.ERROR_A;
-		else if(status.equals("ERROR_I")) return JobStatus.ERROR_I;
-		else if(status.equals("ERROR_E")) return JobStatus.ERROR_E;
-		else if(status.equals("ERROR_IB")) return JobStatus.ERROR_IB;
-		else if(status.equals("ERROR_M")) return JobStatus.ERROR_M;
-		else if(status.equals("ERROR_RE")) return JobStatus.ERROR_RE;
-		else if(status.equals("ERROR_S")) return JobStatus.ERROR_S;
-		else if(status.equals("ERROR_SV")) return JobStatus.ERROR_SV;
-		else if(status.equals("ERROR_V")) return JobStatus.ERROR_V;
-		else if(status.equals("ERROR_VN")) return JobStatus.ERROR_VN;
-		else if(status.equals("ERROR_VT")) return JobStatus.ERROR_VT;
-		else if(status.equals("ERROR_SPLT")) return JobStatus.ERROR_SPLT;
-		else if(status.equals("EXPIRED")) return JobStatus.EXPIRED;
-		else if(status.equals("FAILED")) return JobStatus.FAILED;
-		else if(status.equals("KILLED")) return JobStatus.KILLED;
-		else if(status.equals("FORCEMERGE")) return JobStatus.FORCEMERGE;
-		else if(status.equals("MERGING")) return JobStatus.MERGING;
-		else if(status.equals("ZOMBIE")) return JobStatus.ZOMBIE;
-		else return null;
+	private JobStatus(final int level) {
+		this.level = level;
 	}
 	
+	private static Map<String, JobStatus> stringToStatus = new HashMap<String, JobStatus>();
 	
+	private static Map<Integer, JobStatus> intToStatus = new HashMap<Integer, JobStatus>();
 	
-
-	private final String status;
-
-	JobStatus(final String status) {
-		this.status = status;
+	static {
+		for (final JobStatus status: JobStatus.values()){
+			stringToStatus.put(status.name(), status);
+			
+			intToStatus.put(Integer.valueOf(status.level()), status);
+		}
+		
+		stringToStatus.put("%", ANY);
+	}
+	
+	/**
+	 * @param status
+	 * @return the status indicated by this name
+	 */
+	public static final JobStatus getStatus(final String status){
+		return stringToStatus.get(status);
+		
+	}
+	
+	/**
+	 * @param level
+	 * @return the status indicated by this level
+	 */
+	public static final JobStatus getStatus(final Integer level){
+		return intToStatus.get(level);
 	}
 	
 	/**
 	 * Is this job status older/more final than the other one
+	 * @param another 
+	 * @return true if state is larger than
 	 */
 	public boolean biggerThan(final JobStatus another){
-		return (jobstatuslevel.get(this)>jobstatuslevel.get(another));
-	}
-	
-	/**
-	 * Is this job status older/more final than or equals the other one
-	 */
-	public boolean biggerThanEquals(final JobStatus another){
-		return (jobstatuslevel.get(this)>=jobstatuslevel.get(another));
+		return level > another.level;
 	}
 
 	/**
 	 * Is this job status younger/less final than the other one
+	 * @param another 
+	 * @return level is smaller than
 	 */
 	public boolean smallerThan(final JobStatus another){
-		return (jobstatuslevel.get(this)<jobstatuslevel.get(another));
+		return this.level < another.level;
 	}
 
 	/**
 	 * Is this job status younger/less final than or equals the other one
+	 * @param another 
+	 * @return level is smaller or equal with
 	 */
 	public boolean smallerThanEquals(final JobStatus another){
-		return (jobstatuslevel.get(this)<=jobstatuslevel.get(another));
+		return this.level <= another.level;
 	}
-	
 
 	/**
 	 * Does this job status equals the other one
+	 * @param another 
+	 * @return true if level is identical in both
 	 */
 	public boolean equals(final JobStatus another){
-		return status.equals(another.toString());
+		return this.level == another.level;
 	}
 	
 	/**
-	 * Is this status equal to another one
-	 */
-	public boolean is(final JobStatus another){
-		return equals(another);
-	}
-	
-	/**
-	 * Id this status a ERROR_*
+	 * Id this status a ERROR_
+	 * @return true if this is any ERROR_ state
 	 */
 	public boolean isERROR_(){
-		return status.startsWith("ERROR_");
+		return level>=900 && level<1000;
 	}
 	
 	/**
 	 * Is this status a n error state: ERROR_*|FAILED
+	 * @return true if any error state
 	 */
 	public boolean isErrorState(){
-		if(isERROR_() || is(FAILED) )
-			return true;
-		return false;
+		return isERROR_() || this==FAILED;
 	}
 	
-	private static final List<JobStatus> errorneousStates = Arrays.asList(
-			JobStatus.ERROR_A, JobStatus.ERROR_I, JobStatus.ERROR_E,
-			JobStatus.ERROR_IB, JobStatus.ERROR_M, JobStatus.ERROR_RE,
-			JobStatus.ERROR_S, JobStatus.ERROR_SV, JobStatus.ERROR_V,
-			JobStatus.ERROR_VN, JobStatus.ERROR_VT, JobStatus.ERROR_SPLT,
-			JobStatus.EXPIRED, JobStatus.FAILED);
-	
+	private static final Set<JobStatus> errorneousStates = Collections.unmodifiableSet(EnumSet.range(ERROR_A, FAILED)); 
+			
 	/**
 	 * All error_*, expired and failed states
+	 * @return true if any
 	 */
-	public static List<JobStatus> errorneousStates(){
+	public static final Set<JobStatus> errorneousStates(){
 		return errorneousStates;
 	}
 	
 
-	private static final List<JobStatus> runningStates = Arrays.asList(
-			JobStatus.RUNNING, JobStatus.STARTED, JobStatus.SAVING);
+	private static final Set<JobStatus> runningStates = Collections.unmodifiableSet(EnumSet.of(RUNNING, STARTED, SAVING));
 	
 	/**
 	 * All running states 
+	 * @return the set of active states
 	 */
-	public static List<JobStatus> runningStates(){
+	public static final Set<JobStatus> runningStates(){
 		return runningStates;
 	}
 	
 
-	private static final List<JobStatus> queuedStates = Arrays.asList(
-			JobStatus.QUEUED, JobStatus.ASSIGNED);
+	private static final Set<JobStatus> queuedStates = Collections.unmodifiableSet(EnumSet.of(QUEUED, ASSIGNED));
 	
 	/**
 	 * All queued states 
+	 * @return the set of queued states
 	 */
-	public static List<JobStatus> queuedStates(){
+	public static final Set<JobStatus> queuedStates(){
 		return queuedStates;
 	}
 
+	private static final Set<JobStatus> finalStates = Collections.unmodifiableSet(EnumSet.range(DONE, KILLED));
+	
 	/**
 	 * All queued states 
+	 * @return the set of error states
 	 */
-	public static List<JobStatus> finalStates(){
-		List<JobStatus> err = errorneousStates;
-		err.add(DONE);
-		return err;
+	public static final Set<JobStatus> finalStates(){
+		return finalStates;
 	}
 	
-	private static final List<JobStatus> waitingStates = Arrays.asList(
-			JobStatus.INSERTING, JobStatus.EXPIRED, JobStatus.WAITING, JobStatus.ASSIGNED, JobStatus.QUEUED);
+	private static final Set<JobStatus> doneStates = Collections.unmodifiableSet(EnumSet.range(DONE, DONE_WARN));
+	
+	/**
+	 * @return done states
+	 */
+	public static final Set<JobStatus> doneStates(){
+		return doneStates;
+	}
+	
+	private static final Set<JobStatus> waitingStates = Collections.unmodifiableSet(EnumSet.of(INSERTING, EXPIRED, WAITING, ASSIGNED, QUEUED));
+	
 	/**
 	 * All waiting states
+	 * @return waiting states
 	 */
-	public static List<JobStatus> waitingStates(){
+	public static final Set<JobStatus> waitingStates(){
 		return waitingStates;
 	}
 	
 	/**
 	 * The level/index/age of this job status
+	 * @return numeric level
 	 */
 	public int level(){
-		return jobstatuslevel.get(status);
+		return level;
 	}
 
 	@Override
 	public String toString() {
-		return status;
+		return name();
+	}
+	
+	/**
+	 * @return the SQL selection for this level only
+	 */
+	public String toSQL(){
+		if (level==-1)
+			return "%";
+		
+		return name();
 	}
 }
