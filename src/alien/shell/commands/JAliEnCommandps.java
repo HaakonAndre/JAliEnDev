@@ -490,17 +490,32 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		} else {
 			final StringTokenizer st = new StringTokenizer(line, ",");
 			while (st.hasMoreTokens()) {
-				String o = st.nextToken();
+				final String o = st.nextToken().toUpperCase();
+				
 				if (o.length() < 1)
 					continue;
 				
-				if ("%".equals(o)) {
+				if ("%".equals(o) || "ANY".equals(o)) {
 					all = true;
 					break;
 				}
 				
-				states.add(JobStatus.getStatus(o));
-				System.out.println("added status: " + states);
+				if ("ERROR_ALL".equals(o) || "ERROR_ANY".equals(o)){
+					states.addAll(JobStatus.errorneousStates());
+					continue;
+				}
+				
+				if ("DONE_ANY".equals(o)){
+					states.addAll(JobStatus.doneStates());
+					continue;
+				}
+				
+				final JobStatus status = JobStatus.getStatus(o);
+				
+				if (status!=null)
+					states.add(status);
+				
+//				System.out.println("added status: " + states);
 			}
 		}
 		
