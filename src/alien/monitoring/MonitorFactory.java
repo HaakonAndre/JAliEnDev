@@ -73,12 +73,22 @@ public final class MonitorFactory {
 	private static int selfProcessID = 0;
 	
 	static {
-		if (getConfigBoolean("System", "enabled", true))
-			enableSystemMonitoring();
+		final Thread t = new Thread(){
+			@Override
+			public void run() {
+				if (getConfigBoolean("System", "enabled", true))
+					enableSystemMonitoring();
+				
+				if (getConfigBoolean("Self", "enabled", true))
+					enableSelfMonitoring();
+			}
+		};
 		
-		if (getConfigBoolean("Self", "enabled", true))
-			enableSelfMonitoring();
+		t.setDaemon(true);
+		t.start();
 	}
+	
+	
 	
 	private MonitorFactory(){
 		// disable this constructor, only static methods
