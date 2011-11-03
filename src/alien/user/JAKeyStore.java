@@ -236,9 +236,9 @@ public class JAKeyStore {
 			if(cons==null)
 				return false;
 			System.out.println("Your Grid " + name + " file has wrong permissions.");
-			System.out.println("The file [ " + file.getCanonicalPath() + " ] should have permissions: [ " + chmod + " ]");
+			System.out.println("The file [ " + file.getCanonicalPath() + " ] should have permissions [ " + chmod + " ].");
 			
-			if ((ack = cons.readLine("%s", "Would you correct this now[Yes/no]?")) != null)
+			if ((ack = cons.readLine("%s", "Would you correct this now [Yes/no]?")) != null)
 				if ("y".equals(ack.toLowerCase())
 						|| "yes".equals(ack.toLowerCase())|| "".equals(ack)) {
 					Process child = Runtime.getRuntime().exec(
