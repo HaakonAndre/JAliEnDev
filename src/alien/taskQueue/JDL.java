@@ -65,6 +65,16 @@ public class JDL implements Serializable {
 	public JDL(final File file) throws IOException {
 		this(Utils.readFile(file.getAbsolutePath()));
 	}
+	
+	/**
+	 * a job ID
+	 * 
+	 * @param jobID
+	 * @throws IOException
+	 */
+	public JDL(final int jobID) throws IOException{
+		this(TaskQueueUtils.getJDL(jobID));
+	}
 
 	/**
 	 * the full contents
@@ -74,8 +84,7 @@ public class JDL implements Serializable {
 	 */
 	public JDL(final String content) throws IOException {
 		if (content == null || content.length() == 0) {
-			throw new IOException("Content is "
-					+ (content == null ? "null" : "empty"));
+			throw new IOException("Content is " + (content == null ? "null" : "empty"));
 		}
 		
 		plainJDL = content;
