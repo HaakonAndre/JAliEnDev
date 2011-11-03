@@ -315,7 +315,7 @@ public class TaskQueueUtils {
 	 * @param limit 
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final int queueId, final List<JobStatus> status, final List<Integer> id, final List<String> site,
+	public static List<Job> getMasterJobStat(final int queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site,
 			final boolean bPrintId, final boolean bPrintSite, final boolean bMerge, final boolean bKill, 
 			final boolean bResubmit, final boolean bExpunge, final int limit){
 		
@@ -336,10 +336,11 @@ public class TaskQueueUtils {
 			return null;
 		
 		
-		if (status != null && status.size()>0){
+		if (status != null && status.size()>0 && !status.contains(JobStatus.ANY)){
 			String whe = " ( ";
-			for (JobStatus s : status)
-				whe += "status = '" + Format.escSQL(s+"") + "' or ";
+			for (final JobStatus s : status){
+				whe += "status = '" + s.toSQL() + "' or ";
+			}
 			
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
@@ -521,15 +522,11 @@ public class TaskQueueUtils {
 
 		String where = "";
 
-		if (states != null && states.size()>0){
+		if (states != null && states.size()>0 && !states.contains(JobStatus.ANY)){
 			String whe = " ( ";
-			for (JobStatus s : states){
-				if(JobStatus.ANY.equals(s)){
-					whe = "";
-					break;
-				}
-				whe += "status = '" + Format.escSQL(s+"") + "' or ";
-			}
+			for (final JobStatus s : states)
+				whe += "status = '" + s.toSQL() + "' or ";
+			
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
@@ -893,9 +890,9 @@ public class TaskQueueUtils {
 			
 		
 		if(newStatus.smallerThanEquals(j.status()) &&
-			(j.status().is(JobStatus.ZOMBIE) ||
-					j.status().is(JobStatus.IDLE) ||
-					j.status().is(JobStatus.INTERACTIV))
+			(j.status() == JobStatus.ZOMBIE ||
+					j.status() == JobStatus.IDLE ||
+					j.status() == JobStatus.INTERACTIV)
 		&& j.isMaster()){
 			
 
@@ -928,7 +925,7 @@ public class TaskQueueUtils {
 		}
 			
 			
-		if(j.status().is(JobStatus.WAITING) && j.jobagentId>0)
+		if(j.status() == JobStatus.WAITING && j.jobagentId>0)
 			if(!deleteJobAgent(j.jobagentId))
 				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.jobagentId + "].");
 
@@ -959,8 +956,8 @@ public class TaskQueueUtils {
 		if(j.split!=0)
 			setSubJobMerges(j);
 			  
-		if(!j.status().equals(newStatus)){
-			if(newStatus.is(JobStatus.ASSIGNED)){
+		if(j.status() != newStatus){
+			if(newStatus == JobStatus.ASSIGNED){
 				// $self->_do("UPDATE $self->{SITEQUEUETABLE} SET $status=$status+1 where site=?", {bind_values => [$dbsite]})
 			       //TODO:
 			}else{
@@ -970,9 +967,9 @@ public class TaskQueueUtils {
 			}
 		}
 
-		if(newStatus.is(JobStatus.KILLED) || newStatus.is(JobStatus.SAVED) 
-				|| newStatus.equals(JobStatus.SAVED_WARN) 
-				|| newStatus.equals(JobStatus.STAGING))
+		if(newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED 
+				|| newStatus == JobStatus.SAVED_WARN 
+				|| newStatus == JobStatus.STAGING)
 					setAction(newStatus);
 			
 
@@ -1005,20 +1002,20 @@ public class TaskQueueUtils {
 		if(node!=null)
 			jdltags.put("node",node);
 		
-		if(newStatus.is(JobStatus.WAITING))
+		if(newStatus == JobStatus.WAITING)
 				jdltags.put("exechost",arg); 
-		else if(newStatus.is(JobStatus.RUNNING))
+		else if(newStatus == JobStatus.RUNNING)
 				jdltags.put("started",time);
-		else if(newStatus.is(JobStatus.STARTED)){
+		else if(newStatus == JobStatus.STARTED){
 						jdltags.put("started",time);
 						jdltags.put("batchid",arg); 
-		} else if(newStatus.is(JobStatus.SAVING))
+		} else if(newStatus == JobStatus.SAVING)
 				jdltags.put("error",arg); 
-		else if((newStatus.is(JobStatus.SAVED) && arg!=null && !"".equals(arg))
-					|| newStatus.is(JobStatus.ERROR_V)
-					|| newStatus.is(JobStatus.STAGING))
+		else if((newStatus == JobStatus.SAVED && arg!=null && !"".equals(arg))
+					|| newStatus == JobStatus.ERROR_V
+					|| newStatus == JobStatus.STAGING)
 					jdltags.put("jdl",arg);
-		else if(newStatus.is(JobStatus.DONE)) {
+		else if(newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
 				jdltags.put("finished",time); 
 
 
@@ -1047,10 +1044,10 @@ public class TaskQueueUtils {
   
 		
 		} else if(newStatus.isErrorState()
-					||newStatus.is(JobStatus.SAVED_WARN)
-					||newStatus.is(JobStatus.SAVED)
-					||newStatus.is(JobStatus.KILLED)
-					||newStatus.is(JobStatus.EXPIRED)){
+					||newStatus == JobStatus.SAVED_WARN
+					||newStatus == JobStatus.SAVED
+					||newStatus == JobStatus.KILLED
+					||newStatus == JobStatus.EXPIRED){
 			
 			jdltags.put("spyurl",""); 
 			jdltags.put("finished", time); 
@@ -1277,12 +1274,11 @@ public class TaskQueueUtils {
 		final DBFunctions db = getQueueDB();
 		
 		if (monitor!=null){
-			monitor.incrementCounter("TQ_db_lookup");
-			monitor.incrementCounter("TQ_ACTIONS_lookup");
+			monitor.incrementCounter("TQ_db_update");
+			monitor.incrementCounter("TQ_ACTIONS_update");
 		}
-	
-		final String q = "UPDATE ACTIONS SET todo=1 WHERE action='" 
-				+ Format.escSQL(status.toString()) + "';";
+		
+		final String q = "UPDATE ACTIONS SET todo=1 WHERE action='" + status.toSQL() + "' AND todo=0;";
 	
 		if (!db.query(q))
 			return false;

@@ -217,6 +217,7 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * Fake a job, needs to be removed one day!
 	 */
 	public Job(){
+		// nothing
 	}
 	
 	/**
@@ -375,7 +376,7 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * @return the status, as object
 	 */
 	public JobStatus status(){
-		return JobStatusFactory.getByStatusName(status);
+		return JobStatus.getStatus(status);
 	}
 	
 	/**

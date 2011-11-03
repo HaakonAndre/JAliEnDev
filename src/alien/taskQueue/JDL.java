@@ -5,12 +5,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,8 +33,18 @@ public class JDL implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -4803377858842338873L;
-	private final Map<String, Object> jdlContent = new HashMap<String, Object>();
+	private final Map<String, Object> jdlContent = new TreeMap<String, Object>();
 	private String plainJDL = null;
+	
+	/**
+	 * A file in the catalogue
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	public JDL(final LFN file) throws IOException {
+		this(IOUtils.getContents(file));
+	}
 	
 	/**
 	 * A file in the catalogue
@@ -110,8 +122,7 @@ public class JDL implements Serializable {
 				idxEnd++;
 			}
 
-			final String sValue = content.substring(idxEqual + 1, idxEnd)
-					.trim();
+			final String sValue = content.substring(idxEqual + 1, idxEnd).trim();
 
 			final Object value = parseValue(sValue);
 
@@ -160,7 +171,7 @@ public class JDL implements Serializable {
 	 * 
 	 * @param key
 	 * 
-	 * @return the value, can be a String, a List ...
+	 * @return the value, can be a String, a Number, a Collection ...
 	 */
 	public Object get(final String key) {
 		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
@@ -189,19 +200,16 @@ public class JDL implements Serializable {
 		if (o == null)
 			return null;
 
-		if (o instanceof String)
-			return (String) o;
+		if (o instanceof Collection<?>) {
+			final Collection<?> c = (Collection<?>) o;
 
-		if (o instanceof List<?>) {
-			final List<?> l = (List<?>) o;
-
-			if (l.size() > 0)
-				return getString(l.get(0));
+			if (c.size() > 0)
+				return getString(c.iterator().next());
 		}
 
 		return o.toString();
 	}
-
+	
 	private static final Object parseValue(final String value) {
 		if (value.startsWith("\"") && value.endsWith("\"")) {
 			return value.substring(1, value.length() - 1);
@@ -211,7 +219,22 @@ public class JDL implements Serializable {
 			return toList(value.substring(1, value.length() - 1));
 		}
 
-		return value;
+		try{
+			return Integer.valueOf(value);
+		}
+		catch (NumberFormatException nfe){
+			// ignore
+		}
+		
+		try{
+			return Double.valueOf(value);
+		}
+		catch (NumberFormatException nfe){
+			// ignore
+		}
+
+		// signal that this is not a string in quotes
+		return new StringBuilder(value);
 	}
 
 	private static final Pattern PANDA_RUN_NO = Pattern
@@ -419,8 +442,8 @@ public class JDL implements Serializable {
 
 		final List<String> ret = new LinkedList<String>();
 
-		if (o instanceof String) {
-			final String s = (String) o;
+		if (o instanceof CharSequence) {
+			final String s = ((CharSequence) o).toString();
 
 			if (bNodownloadIncluded || s.indexOf(",nodownload") < 0)
 				ret.add(removeLF(s));
@@ -627,5 +650,50 @@ public class JDL implements Serializable {
 		}
 
 		return -1;
+	}
+	
+	@Override
+	public String toString(){
+		final StringBuilder sb = new StringBuilder();
+		
+		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
+			if (sb.length()>0)
+				sb.append('\n');
+			
+			sb.append(entry.getKey()).append(" = ");
+			
+			append(sb, entry.getValue());
+			
+			sb.append(";\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	private static final void append(final StringBuilder sb, final Object o){
+		if (o instanceof String){
+			sb.append('"').append((String) o).append('"');
+		}
+		else
+		if (o instanceof Collection){
+			sb.append("{");
+			
+			Collection<?> c = (Collection<?>) o;
+			
+			boolean first = true;
+			
+			for (Object o2: c){
+				if (!first)
+					sb.append(",");
+				else
+					first = false;
+				
+				sb.append("\n  \"").append(o2).append("\"");
+			}
+			
+			sb.append("\n}");
+		}
+		else
+			sb.append(o);
 	}
 }

@@ -2,7 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import joptsimple.OptionException;
@@ -11,7 +13,6 @@ import joptsimple.OptionSet;
 import alien.shell.ShellColor;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-import alien.taskQueue.JobStatusFactory;
 
 /**
  * @author ron
@@ -121,7 +122,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	private String printPriority(final JobStatus status, final int priority) {
 
-		if ("INSERTING".equals(status) || "WAITING".equals(status)) {
+		if (JobStatus.INSERTING == status || JobStatus.WAITING ==status) {
 			if (bColour) {
 				String cTag = "";
 				if (priority <= 0)
@@ -142,74 +143,68 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		if(status==null)
 			return padLeft("?",3);
 
-		if (JobStatus.KILLED.equals(status)) {
+		if (JobStatus.KILLED == status) {
 			System.out.println("status is indeed: " + status);
 			if (bColour)
 				return ShellColor.jobStateRed() + padLeft("  K",3) + ShellColor.reset();
 			return padLeft("  K",3);
-		} else if (JobStatus.RUNNING.equals(status)) {
+		} else if (JobStatus.RUNNING == status) {
 			if (bColour)
 				return ShellColor.jobStateGreen() + padLeft("  R",3) + ShellColor.reset();
 			return padLeft("  R",3);
-		} else if (JobStatus.STARTED.equals(status)) {
+		} else if (JobStatus.STARTED == status) {
 			if (bColour)
 				return ShellColor.jobStateGreen() + padLeft(" ST",3) + ShellColor.reset();
 			return padLeft(" ST",3);
-		} else if (JobStatus.DONE.equals(status)) {
+		} else if (JobStatus.DONE == status) {
 			return padLeft("  D",3);
-		} else if (JobStatus.WAITING.equals(status)) {
+		} else if (JobStatus.WAITING == status) {
 			if (bColour)
 				return ShellColor.jobStateBlue() + padLeft("  W",3) + ShellColor.reset();
 			return padLeft("  W",3);
-		} else if (JobStatus.OVER_WAITING.equals(status)) {
+		} else if (JobStatus.OVER_WAITING == status) {
 			return padLeft("  OW",3);
-		} else if (JobStatus.EXPIRED.equals(status)) {
+		} else if (JobStatus.EXPIRED == status) {
 			return padLeft(" XP",3);
-		} else if (JobStatus.INSERTING.equals(status)) {
+		} else if (JobStatus.INSERTING == status) {
 			if (bColour)
 				return ShellColor.jobStateYellow() + padLeft("  I",3) + ShellColor.reset();
 			return padLeft("  I",3);
-		} else if (JobStatus.SPLIT.equals(status))
+		} else if (JobStatus.SPLIT == status)
 			return padLeft("  S",3);
-		else if (JobStatus.SPLITTING.equals(status))
+		else if (JobStatus.SPLITTING == status)
 			return padLeft(" SP",3);
-		else if (JobStatus.SAVING.equals(status)) {
+		else if (JobStatus.SAVING == status) {
 			if (bColour)
 				return ShellColor.jobStateGreen() + padLeft(" SV",3) + ShellColor.reset();
 			return padLeft(" SV",3);
-		} else if (JobStatus.SAVED.equals(status))
+		} else if (JobStatus.SAVED == status)
 			return padLeft("SVD",3);
 		else {
 			String e = "";
-			if (JobStatus.ERROR_A.equals(status))
-				e = " EQ";
-			else if (JobStatus.ERROR_E.equals(status))
-				e = " EE";
-			else if (JobStatus.ERROR_I.equals(status))
-				e = " EI";
-			else if (JobStatus.ERROR_IB.equals(status))
-				e = "EIB";
-			else if (JobStatus.ERROR_S.equals(status))
-				e = " ES";
-			else if (JobStatus.ERROR_SV.equals(status))
-				e = "ESV";
-			else if (JobStatus.ERROR_V.equals(status))
-				e = " EV";
-			else if (JobStatus.ERROR_VN.equals(status))
-				e = "EVN";
-			else if (JobStatus.ERROR_VT.equals(status))
-				e = "EVT";
-			else if (JobStatus.ERROR_SPLT.equals(status))
-				e = "ESP";
-			else if (JobStatus.FAILED.equals(status))
-				e = " FF";
-			else if (JobStatus.ZOMBIE.equals(status))
-				e = "  Z";
-			else
-				e = status.toString();
-
+			
+			switch (status){
+				case ERROR_A  : e = " EQ"; break;
+				case ERROR_E  : e = " EE"; break;
+				case ERROR_I  : e = " EI"; break;
+				case ERROR_IB : e = "EIB"; break;
+				case ERROR_M  : e = " EM"; break;
+				case ERROR_RE : e = "ERE"; break;
+				case ERROR_S  : e = " ES"; break;
+				case ERROR_SV : e = "ESV"; break;
+				case ERROR_V  : e = " EV"; break;
+				case ERROR_VN : e = "EVN"; break;
+				case ERROR_VT : e = "EVT"; break;
+				case ERROR_SPLT:e = "ESP"; break;
+				case ERROR_W  : e = " EW"; break;
+				case FAILED   : e = " FF"; break;
+				case ZOMBIE   : e = "  Z"; break;
+				default: e = status.toString();
+			}
+			
 			if (bColour)
 				return ShellColor.jobStateRedError() + padLeft(e,3) + ShellColor.reset();
+			
 			return padLeft(e,3);
 		}
 
@@ -255,6 +250,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return true;
 	}
@@ -262,6 +258,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	/**
 	 * nonimplemented command's silence trigger, submit is never silent
 	 */
+	@Override
 	public void silent() {
 		// ignore
 	}
@@ -465,46 +462,47 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				}
 			}
 		} else {
-
 			final StringTokenizer st = new StringTokenizer(line, ",");
 			while (st.hasMoreTokens()) {
 				String o = st.nextToken();
 				if (o.length() < 1)
 					continue;
+				
 				if ("%".equals(o)) {
 					all = true;
 					break;
 				}
-				states.add(JobStatusFactory.getByStatusName(o));
+				
+				states.add(JobStatus.getStatus(o));
 				System.out.println("added status: " + states);
 			}
 		}
+		
 		if (all)
 			states = Arrays.asList(JobStatus.ANY);
 	}
 
-	private static List<JobStatus> flag_f() {
+	private static Set<JobStatus> flag_f() {
 		return JobStatus.errorneousStates();
 	}
 
-	private static List<JobStatus> flag_d() {
-		return Arrays.asList(JobStatus.DONE);
+	private static Set<JobStatus> flag_d() {
+		return JobStatus.doneStates();
 	}
 
-	private static List<JobStatus> flag_t() {
+	private static Set<JobStatus> flag_t() {
 		return JobStatus.finalStates();
 	}
 
-	private static List<JobStatus> flag_s() {
+	private static Set<JobStatus> flag_s() {
 		return JobStatus.waitingStates();
 	}
 
-	private static List<JobStatus> flag_q() {
+	private static Set<JobStatus> flag_q() {
 		return JobStatus.queuedStates();
 	}
 
-	private static List<JobStatus> flag_r() {
+	private static Set<JobStatus> flag_r() {
 		return JobStatus.runningStates();
 	}
-
 }

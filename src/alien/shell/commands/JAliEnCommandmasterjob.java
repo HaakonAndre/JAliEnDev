@@ -3,7 +3,9 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import joptsimple.OptionException;
@@ -11,7 +13,6 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-import alien.taskQueue.JobStatusFactory;
 
 /**
  * @author ron
@@ -53,7 +54,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	private List<Integer> id = new ArrayList<Integer>();
 
-	private List<JobStatus> status = new ArrayList<JobStatus>();
+	private Set<JobStatus> status = new HashSet<JobStatus>();
 
 	private List<String> sites = new ArrayList<String>();
 
@@ -113,11 +114,12 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 					stateCount.put(key, new ArrayList<Job>(Arrays.asList(sj)));
 				}
 
-				if (statesIn.size() <= 0 && !allStates.contains(sj.status().toString()))
+				if (statesIn.size() <= 0 && !allStates.contains(sj.status()))
 					allStates.add(sj.status());
 			}
 			if (statesIn.size() <= 0)
 				statesIn = allStates;
+			
 			if (sitesIn.size() <= 0)
 				sitesIn = allSites;
 
@@ -249,13 +251,16 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 						.toArray(new String[] {}));
 
 				if (options.has("status") && options.hasArgument("status")) {
-					final StringTokenizer st = new StringTokenizer(
-							(String) options.valueOf("status"), ",");
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("status"), ",");
 					while (st.hasMoreTokens()) {
-						String state = st.nextToken();
-						status.add(JobStatusFactory.getByStatusName(state));
-						if ("ERROR_ALL".equals(state))
+						final String state = st.nextToken();
+						
+						if ("ERROR_ALL".equals(state)){
 							status = JobStatus.errorneousStates();
+							break;
+						}
+						
+						status.add(JobStatus.getStatus(state));
 					}
 				}
 
