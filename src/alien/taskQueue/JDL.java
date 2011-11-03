@@ -8,11 +8,11 @@ import java.io.StringReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +33,7 @@ public class JDL implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = -4803377858842338873L;
-	private final Map<String, Object> jdlContent = new TreeMap<String, Object>();
+	private final Map<String, Object> jdlContent = new LinkedHashMap<String, Object>();
 	private String plainJDL = null;
 	
 	/**
