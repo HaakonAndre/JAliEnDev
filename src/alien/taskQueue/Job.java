@@ -356,10 +356,11 @@ public class Job  implements Comparable<Job>,Serializable {
 	}
 	
 	/**
-	 * @return the JDL contents, without the enclosing []
+	 * @param jdlContent
+	 * @return the JDL content without the enclosing [] if any
 	 */
-	public String getJDL(){
-		String ret = getOriginalJDL();
+	public static String sanitizeJDL(final String jdlContent){
+		String ret = jdlContent;
 		
 		final Matcher m = pJDLContent.matcher(ret);
 		
@@ -369,6 +370,13 @@ public class Job  implements Comparable<Job>,Serializable {
 		ret = ret.replaceAll("(^|\\n)\\s{1,8}", "$1");
 		
 		return ret;
+	}
+	
+	/**
+	 * @return the JDL contents, without the enclosing []
+	 */
+	public String getJDL(){
+		return sanitizeJDL(getOriginalJDL());
 	}
 	
 	
