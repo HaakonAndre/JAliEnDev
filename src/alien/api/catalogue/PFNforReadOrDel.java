@@ -111,8 +111,7 @@ public class PFNforReadOrDel extends Request {
 			try {
 				for (PFN pfn : pfns) {
 
-					String reason = AuthorizationFactory.fillAccess(pfn,
-							access);
+					String reason = AuthorizationFactory.fillAccess(getEffectiveRequester(), pfn, access);
 
 					if (reason != null) {
 						logger.log(Level.WARNING, "Access refused because: " + reason);
