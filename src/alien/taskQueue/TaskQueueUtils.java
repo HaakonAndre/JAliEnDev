@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lazyj.StringFactory;
 import alien.catalogue.LFN;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
@@ -1388,7 +1389,7 @@ public class TaskQueueUtils {
 		db.query(q);
 		
 		while (db.moveNext()){
-			ret.put(db.gets(1), Integer.valueOf(db.geti(2)));
+			ret.put(StringFactory.get(db.gets(1)), Integer.valueOf(db.geti(2)));
 		}
 		
 		return ret;
