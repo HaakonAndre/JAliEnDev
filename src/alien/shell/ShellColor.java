@@ -138,9 +138,9 @@ public class ShellColor {
 	}
 
 	
-	private static String genTag(final ShellCol one, final ShellCol two, final Style three) {
-		return prefix + one.getCode() + sep + two.getCode() + sep + three.getCode() + suffix;
-	}
+//	private static String genTag(final ShellCol one, final ShellCol two, final Style three) {
+//		return prefix + one.getCode() + sep + two.getCode() + sep + three.getCode() + suffix;
+//	}
 
 
 
@@ -155,6 +155,7 @@ public class ShellColor {
 			this.code = code;
 		}
 
+		@Override
 		public String getCode() {
 			return this.code;
 		}
@@ -172,6 +173,7 @@ public class ShellColor {
 			this.code = code;
 		}
 
+		@Override
 		public String getCode() {
 			return this.code;
 		}
@@ -189,6 +191,7 @@ public class ShellColor {
 			this.code = code;
 		}
 
+		@Override
 		public String getCode() {
 			return this.code;
 		}
