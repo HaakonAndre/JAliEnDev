@@ -14,6 +14,8 @@ import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
+import lazyj.Utils;
+
 import org.bouncycastle.openssl.PEMReader;
 import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.util.encoders.Hex;
@@ -81,42 +83,34 @@ public class AuthenticationChecker {
 	 * @throws IOException
 	 */
 	public static  String readPubCert() throws IOException {
-
-		BufferedReader pub = new BufferedReader(new FileReader(ConfigUtils
-				.getConfig().gets("user.cert.pub.location").trim()));
-		String pubCert = "";
-		String rLine;
-		while ((rLine = pub.readLine()) != null) {
-			pubCert += rLine + "\n";
-		}
-		return pubCert;
+		String location = ConfigUtils.getConfig().gets("user.cert.pub.location").trim();
+		
+		return Utils.readFile(location);
 	}
-
 
 	/**
 	 * Create a challenge
 	 * @return the challenge
 	 */
 	public String challenge() {
-
 		challenge = Long.toString(System.currentTimeMillis());
 		return challenge;
 	}
 
 	/**
 	 * sign the challenge as a response
-	 * @param challenge
+	 * @param challengeText
 	 * @return the response
 	 * @throws SignatureException
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
 	 */
-	public String response(String challenge)
+	public String response(String challengeText)
 			throws SignatureException, NoSuchAlgorithmException,
 			InvalidKeyException {
 		Signature signature = Signature.getInstance("SHA384withRSA");
 		signature.initSign(privKey);
-		signature.update(challenge.getBytes());
+		signature.update(challengeText.getBytes());
 		byte[] signatureBytes = signature.sign();
 		return new String(Hex.encode(signatureBytes));
 	}
