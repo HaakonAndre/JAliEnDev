@@ -39,7 +39,7 @@ public class XrootDEnvelopeReply implements Serializable {
 	public XrootDEnvelopeReply(String envelope) {
 
 		StringTokenizer st = new StringTokenizer(envelope, "\\&");
-		String pfn = "";
+		String spfn = "";
 		String guid = "";
 		String se = "";
 		int size = 0;
@@ -55,7 +55,7 @@ public class XrootDEnvelopeReply implements Serializable {
 				String value = tok.substring(idx + 1);
 
 				if ("path".equals(key))
-					pfn = value;
+					spfn = value;
 				else if ("size".equals(key))
 					size = Integer.parseInt(value);
 				else if ("md5".equals(key))
@@ -70,23 +70,22 @@ public class XrootDEnvelopeReply implements Serializable {
 
 		final SE rSE = SEUtils.getSE(se);
 
-		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size
+		System.out.println("pfn: " + spfn + " guid: " + guid + " size: " + size
 				+ " md5: " + md5 + " se: " + se);
 
 		final GUID g = GUIDUtils.getGUID(
-				UUID.fromString(pfn.substring(pfn.lastIndexOf('/') + 1)), true);
+				UUID.fromString(spfn.substring(spfn.lastIndexOf('/') + 1)), true);
 		g.md5 = md5;
 		g.size = size;
 
-		if (rSE != null && rSE.seioDaemons != null
-				&& rSE.seioDaemons.length() > 0)
-			pfn = rSE.seioDaemons + "/" + pfn;
+		if (rSE != null && rSE.seioDaemons != null && rSE.seioDaemons.length() > 0)
+			spfn = rSE.seioDaemons + "/" + spfn;
 
-		System.out.println("pfn: " + pfn + " guid: " + guid + " size: " + size
-				+ " md5: " + md5);
-		System.out.println(" se: " + rSE.seName);
+		System.out.println("pfn: " + spfn + " guid: " + guid + " size: " + size + " md5: " + md5);
+		
+		System.out.println(" se: " + (rSE!=null ? rSE.seName : "null"));
 
-		this.pfn = new PFN(pfn, g, SEUtils.getSE(se));
+		this.pfn = new PFN(spfn, g, SEUtils.getSE(se));
 
 		signedEnvelope = envelope;
 	}
