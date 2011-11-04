@@ -1,13 +1,13 @@
 package alien.api.taskQueue;
 
 import java.io.Serializable;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.TreeMap;
 
-import lazyj.DBFunctions;
-import lazyj.StringFactory;
 import alien.api.Cacheable;
 import alien.api.Request;
+import alien.taskQueue.JobStatus;
 import alien.taskQueue.TaskQueueUtils;
 
 /**
@@ -62,25 +62,26 @@ public class GetUptime extends Request implements Cacheable {
 		// nothing
 	}
 	
+	private static EnumSet<JobStatus> activeJobsSet  = EnumSet.range(JobStatus.ASSIGNED, JobStatus.SAVING);
+	private static EnumSet<JobStatus> waitingJobsSet = EnumSet.range(JobStatus.INSERTING, JobStatus.OVER_WAITING);
+	
 	@Override
 	public void run() {
-		final DBFunctions db = TaskQueueUtils.getQueueDB();
-		
 		stats = new TreeMap<String, UserStats>();
 		
-		db.query("select substring_index(submithost,'@',1),count(1) from QUEUE where status in ('ASSIGNED', 'STARTED', 'RUNNING', 'SAVING') group by 1 order by 1;");
+		Map<String, Integer> jobs = TaskQueueUtils.getJobCounters(activeJobsSet);
 		
-		while (db.moveNext()){
+		for (final Map.Entry<String, Integer> entry: jobs.entrySet()){
 			final UserStats u = new UserStats();
-			u.runningJobs = db.geti(2);
+			u.runningJobs = entry.getValue().intValue();
 			
-			stats.put(StringFactory.get(db.gets(1)), u);
+			stats.put(entry.getKey(), u);
 		}
 		
-		db.query("select substring_index(submithost,'@',1),count(1) from QUEUE where status in ('INSERTING', 'WAITING') group by 1 order by 1;");
-		
-		while (db.moveNext()){
-			final String user = StringFactory.get(db.gets(1));
+		jobs = TaskQueueUtils.getJobCounters(waitingJobsSet);
+
+		for (final Map.Entry<String, Integer> entry: jobs.entrySet()){
+			final String user = entry.getKey();
 			
 			UserStats u = stats.get(user);
 			
@@ -89,7 +90,7 @@ public class GetUptime extends Request implements Cacheable {
 				stats.put(user, u);
 			}
 			
-			u.waitingJobs = db.geti(2);
+			u.waitingJobs = entry.getValue().intValue();
 		}
 	}
 	

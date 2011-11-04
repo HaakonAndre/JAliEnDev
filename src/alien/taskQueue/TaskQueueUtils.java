@@ -1352,7 +1352,45 @@ public class TaskQueueUtils {
 		
 	}
 	
-	
-	
-	
+	/**
+	 * Get the number of jobs in the respective state
+	 * 
+	 * @param states
+	 * @return the aggregated number of jobs per user
+	 */
+	public static Map<String, Integer> getJobCounters(final Set<JobStatus> states){
+		final Map<String, Integer> ret = new TreeMap<String, Integer>();
+		
+		final DBFunctions db = getQueueDB();
+		
+		final StringBuilder sb = new StringBuilder();
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+		}
+		
+		if (states!=null && !states.contains(JobStatus.ANY)){
+			for (final JobStatus s: states){
+				if (sb.length()>0)
+					sb.append(',');
+				
+				sb.append('\'').append(s.toSQL()).append('\'');
+			}
+		}
+		
+		String q = "select substring_index(submithost,'@',1),count(1) from QUEUE ";
+		
+		if (sb.length()>0)
+			q += "where status in ("+sb+") ";
+			
+		q += "group by 1 order by 1;";
+		
+		db.query(q);
+		
+		while (db.moveNext()){
+			ret.put(db.gets(1), Integer.valueOf(db.geti(2)));
+		}
+		
+		return ret;
+	}
 }
