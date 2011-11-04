@@ -96,6 +96,7 @@ public class SoapRequestWrapper {
 
 		//being a SOAP request we have to set the headers
 		MimeHeaders mh = new MimeHeaders();
+		@SuppressWarnings("unchecked")
 		Enumeration<String> e = request.getHeaderNames();
 
 		while(e.hasMoreElements()){
