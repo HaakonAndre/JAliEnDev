@@ -25,7 +25,6 @@ public class Authenticate extends Request {
 
 	/**
 	 * @param challenge 
-	 * @param evenIfDoesNotExist
 	 */
 	public Authenticate(final String challenge) {
 		this.challenge = challenge;
