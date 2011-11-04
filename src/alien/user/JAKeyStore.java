@@ -260,7 +260,7 @@ public class JAKeyStore {
 	
 	
 	/**
-	 * @return 
+	 * @return  true if ok
 	 * @throws Exception
 	 */
 	public static boolean loadClientKeyStorage() throws Exception {
@@ -269,7 +269,7 @@ public class JAKeyStore {
 	
 	/**
 	 * @param noUserPass 
-	 * @return 
+	 * @return true if ok
 	 * @throws Exception
 	 */
 	public static boolean loadClientKeyStorage(final boolean noUserPass) throws Exception {
@@ -400,9 +400,10 @@ public class JAKeyStore {
 
 	private static JPasswordFinder getPassword(String consoleMessage) {
 
-		String pass = "";
+		String password = "";
 		Console cons;
-		char[] passwd = new char[] {};
+		char[] passwd;
+		
 		if ((cons = System.console()) == null)
 			System.err
 					.println("Could not get console to request key password.");
@@ -413,10 +414,10 @@ public class JAKeyStore {
 		if ((cons = System.console()) != null
 				&& (passwd = cons.readPassword("[%s]", consoleMessage
 						+ " password: ")) != null)
-			pass = String.valueOf(passwd);
+			password = String.valueOf(passwd);
 
 		// System.out.println("pass is: " + pass);
-		return new JPasswordFinder(pass.toCharArray());
+		return new JPasswordFinder(password.toCharArray());
 	}
 
 	@SuppressWarnings("unused")
