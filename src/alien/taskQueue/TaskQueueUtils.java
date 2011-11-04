@@ -1,9 +1,8 @@
 package alien.taskQueue;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -335,32 +334,54 @@ public class TaskQueueUtils {
 		
 		
 		if (status != null && status.size()>0 && !status.contains(JobStatus.ANY)){
-			String whe = " ( ";
+			final StringBuilder whe = new StringBuilder(" ( status in (");
+			
+			boolean first = true;
+			
 			for (final JobStatus s : status){
-				whe += "status = '" + s.toSQL() + "' or ";
+				if (!first)
+					whe.append(',');
+				else
+					first = false;
+				
+				whe.append('\'').append(s.toSQL()).append('\'');
 			}
 			
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			where += whe+") ) and ";
 		}
 			
 		if (id != null && id.size()>0){
-			String whe = " ( ";
-			for (int i : id)
-				whe += "queueId = '" + Format.escSQL(i+"") + "' or ";
+			final StringBuilder whe = new StringBuilder(" ( queueId in (");
 			
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			boolean first = true;
+			
+			for (int i : id){
+				if (!first)
+					whe.append(',');
+				else
+					first = false;
+				
+				whe.append(i);
+			}
+			
+			where += whe + ") ) and ";
 		}
 	
 		if (site != null && site.size()>0){
-			String whe = " ( ";
-			for (String s : site)
-			//	whe += "site like '%@" + Format.escSQL(s) + "' or ";
-				whe += "ifnull(substring(exechost,POSITION('\\@' in exechost)+1),'')='" + Format.escSQL(s) + "' or ";
+			final StringBuilder whe = new StringBuilder(" ( ");
 			
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			boolean first = true;
+			
+			for (final String s : site){
+				if (!first)
+					whe.append(" or ");
+				else
+					first = false;
+
+				whe.append("ifnull(substring(exechost,POSITION('\\@' in exechost)+1),'')='").append(Format.escSQL(s)).append('\'');
+			}
+			
+			where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
 		
 		if(where.endsWith(" and "))
@@ -390,10 +411,7 @@ public class TaskQueueUtils {
 		}
 
 		return ret;
-
 	}
-	
-	
 	
 	/**
 	 * @param jobs
@@ -500,8 +518,8 @@ public class TaskQueueUtils {
 	 * @param limit 
 	 * @return the ps listing
 	 */
-	public static List<Job> getPS(final List<JobStatus> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobids, final String orderByKey, final int limit){
+	public static List<Job> getPS(final Collection<JobStatus> states,final Collection<String> users,final Collection<String> sites,
+			final Collection<String> nodes,final Collection<Integer> mjobs,final Collection<Integer> jobids, final String orderByKey, final int limit){
 				
 		final DBFunctions db = getQueueDB();
 		
@@ -521,71 +539,111 @@ public class TaskQueueUtils {
 		String where = "";
 
 		if (states != null && states.size()>0 && !states.contains(JobStatus.ANY)){
-			String whe = " ( ";
-			for (final JobStatus s : states)
-				whe += "status = '" + s.toSQL() + "' or ";
+			final StringBuilder whe = new StringBuilder(" (status in (");
 			
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			boolean first = true;
+			
+			for (final JobStatus s : states){
+				if (!first)
+					whe.append(",");
+				else
+					first = false;
+
+				whe.append('\'').append(s.toSQL()).append('\'');
+			}
+			
+			where += whe + ") ) and ";
 		}
 					
 		if (users != null && users.size()>0){
-			String whe = " ( ";
-			for (String u : users){
+			StringBuilder whe = new StringBuilder(" ( ");
+			
+			boolean first = true;
+			
+			for (final String u : users){
+				if (!first)
+					whe.append(" or ");
+				else
+					first = false;
+				
 				if("%".equals(u)){
-					whe = "";
+					whe = null;
 					break;
 				}
-				whe += "submitHost like '" + Format.escSQL(u) + "@%' or ";
+				
+				whe.append("submitHost like '").append(Format.escSQL(u)).append("@%'");
 			}
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			
+			if(whe!=null)
+				where += whe + " ) and ";
 		}
 		
 		if (sites != null && sites.size()>0){
-			String whe = " ( ";
-			for (String s : sites){
+			StringBuilder whe = new StringBuilder(" ( site in (");
+			
+			boolean first = true;
+			
+			for (final String s : sites){
+				if (!first)
+					whe.append(',');
+				else
+					first = false;
+				
 				if("%".equals(s)){
-					whe = "";
+					whe = null;
 					break;
 				}
-				whe += "site = '" + Format.escSQL(s) + "' or ";
+
+				whe.append('\'').append(Format.escSQL(s)).append('\'');
 			}
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			
+			if (whe!=null)
+				where += whe + ") ) and ";
 		}
 		
 		
 		if (nodes != null && nodes.size()>0){
-			String whe = " ( ";
-			for (String n : nodes){
+			StringBuilder whe = new StringBuilder(" ( node in (");
+			
+			boolean first = true;
+			
+			for (final String n : nodes){
+				if (!first)
+					whe.append(',');
+				else
+					first = false;
+
 				if("%".equals(n)){
-					whe = "";
+					whe = null;
 					break;
 				}
-				whe += "node = '" + Format.escSQL(n)  + "' or ";
+				
+				whe.append('\'').append(Format.escSQL(n)).append('\'');
 			}
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			
+			if(whe!=null)
+				where += whe + ") ) and ";
 		}
 
 		if (mjobs != null && mjobs.size()>0){
 			String whe = " ( ";
-			for (String m : mjobs){
-					whe += "split = '" + Format.escSQL(m)  + "' or ";
+			
+			for (Integer m : mjobs){
+					whe += "split = '" + m  + "' or ";
 			}
+			
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
 		
 		if (jobids != null && jobids.size()>0){
 			String whe = " ( ";
-			for (String i : jobids){
+			for (Integer i : jobids){
 				if("%".equals(i)){
 					whe = "";
 					break;
 				}
-				whe += "queueId = '" + Format.escSQL(i) + "' or ";
+				whe += "queueId = '" + i + "' or ";
 			}
 			if(whe.length()>0)
 				where += whe.substring(0, whe.length()-3) + " ) and ";

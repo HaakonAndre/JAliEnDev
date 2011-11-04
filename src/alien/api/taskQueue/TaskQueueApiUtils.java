@@ -1,6 +1,7 @@
 						package alien.api.taskQueue;
 						
 						import java.io.IOException;
+import java.util.Collection;
 						import java.util.List;
 						import java.util.Map;
 						import java.util.Set;
@@ -12,7 +13,7 @@
 						import alien.taskQueue.JobSigner;
 						import alien.taskQueue.JobStatus;
 						import alien.taskQueue.JobSubmissionException;
-						import alien.user.JAKeyStore;
+import alien.user.JAKeyStore;
 						
 						/**
 						 * Get the JDL object
@@ -60,8 +61,8 @@
 	 * @param limit 
 	 * @return a PS listing
 	 */
-	public List<Job> getPS(final List<JobStatus> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final String orderByKey, final int limit) {
+	public List<Job> getPS(final Collection<JobStatus> states,final Collection<String> users,final Collection<String> sites,
+			final Collection<String> nodes,final Collection<Integer> mjobs,final Collection<Integer> jobid, final String orderByKey, final int limit) {
 
 		try {
 			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit), true);

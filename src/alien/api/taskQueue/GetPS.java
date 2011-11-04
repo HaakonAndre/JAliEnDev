@@ -1,5 +1,6 @@
 package alien.api.taskQueue;
 
+import java.util.Collection;
 import java.util.List;
 
 import alien.api.Request;
@@ -28,17 +29,17 @@ public class GetPS extends Request {
 	 */
 	private List<Job> jobs;
 
-	private final List<JobStatus> states;
+	private final Collection<JobStatus> states;
 	
-	private final List<String> users;
+	private final Collection<String> users;
 	
-	private final List<String> sites;
+	private final Collection<String> sites;
 	
-	private final List<String> nodes;
+	private final Collection<String> nodes;
 	
-	private final List<String> mjobs;
+	private final Collection<Integer> mjobs;
 	
-	private final List<String> jobid;
+	private final Collection<Integer> jobid;
 		
 	private final String orderByKey;
 	
@@ -56,8 +57,8 @@ public class GetPS extends Request {
 	 * @param orderByKey 
 	 * @param limit 
 	 */
-	public GetPS(final AliEnPrincipal user, final String role, final List<JobStatus> states,final List<String> users,final List<String> sites,
-			final List<String> nodes,final List<String> mjobs,final List<String> jobid, final String orderByKey, final int limit){
+	public GetPS(final AliEnPrincipal user, final String role, final Collection<JobStatus> states,final Collection<String> users,final Collection<String> sites,
+			final Collection<String> nodes,final Collection<Integer> mjobs,final Collection<Integer> jobid, final String orderByKey, final int limit){
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.states = states;

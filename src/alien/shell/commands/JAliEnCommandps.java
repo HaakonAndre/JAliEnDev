@@ -1,7 +1,8 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -34,17 +35,17 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 */
 	private int getTrace = 0;
 
-	private List<JobStatus> states = new ArrayList<JobStatus>();
+	private Set<JobStatus> states = new HashSet<JobStatus>();
 
-	private List<String> users = new ArrayList<String>();
+	private Set<String> users = new LinkedHashSet<String>();
 
-	private List<String> sites = new ArrayList<String>();
+	private Set<String> sites = new LinkedHashSet<String>();
 
-	private List<String> nodes = new ArrayList<String>();
+	private Set<String> nodes = new LinkedHashSet<String>();
 
-	private List<String> mjobs = new ArrayList<String>();
+	private Set<Integer> mjobs = new LinkedHashSet<Integer>();
 
-	private List<String> jobid = new ArrayList<String>();
+	private Set<Integer> jobid = new LinkedHashSet<Integer>();
 
 	private String orderByKey = "queueId";
 
@@ -375,16 +376,30 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				if (options.has("m") && options.hasArgument("m")) {
 					final StringTokenizer st = new StringTokenizer(
 							(String) options.valueOf("m"), ",");
-					while (st.hasMoreTokens())
-						mjobs.add(st.nextToken());
+					
+					while (st.hasMoreTokens()){
+						try{
+							mjobs.add(Integer.valueOf(st.nextToken()));
+						}
+						catch (NumberFormatException nfe){
+							// ignore
+						}
+					}
+					
 					states.add(JobStatus.ANY);
 				}
 
 				if (options.has("j") && options.hasArgument("j")) {
 					final StringTokenizer st = new StringTokenizer(
 							(String) options.valueOf("j"), ",");
-					while (st.hasMoreTokens())
-						jobid.add(st.nextToken());
+					while (st.hasMoreTokens()){
+						try{
+							jobid.add(Integer.valueOf(st.nextToken()));
+						}
+						catch (NumberFormatException nfe){
+							// ignore
+						}
+					}
 					states.add(JobStatus.ANY);
 					users.add("%");
 				}
@@ -419,6 +434,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 //		          st_masterjobs = "\\\\0";
 
 				if (options.has("A")) {
+					states.clear();
 					states.add(JobStatus.ANY);
 					users.add(commander.getUsername());
 				}
@@ -431,11 +447,13 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					users.add(commander.getUsername());
 				}
 
-				if(options.has("M"))
-					mjobs.add("0");
-
+				if(options.has("M")){
+					mjobs.clear();
+					mjobs.add(Integer.valueOf(0));
+				}
 
 				if (options.has("a")) {
+					users.clear();
 					users.add("%");
 				}
 			}
@@ -511,8 +529,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			}
 		}
 		
-		if (all)
-			states = Arrays.asList(JobStatus.ANY);
+		if (all){
+			states.clear();
+			states.add(JobStatus.ANY);
+		}
 	}
 
 	private static Set<JobStatus> flag_f() {
