@@ -143,12 +143,23 @@ public abstract class JAliEnBaseCommand extends Thread{
 	public abstract boolean canRunWithoutArguments();
 	
 	/**
-	 * Abstract class to to set the command to silent mode
-	 * 
+	 * the command's silence trigger
 	 */
-	public abstract void silent();
-		
+	private boolean silent = false;
+
+	/**
+	 * @return <code>true</code> if the command was silenced
+	 */
+	public final boolean isSilent(){
+		return silent;
+	}
 	
+	/**
+	 * set command's silence trigger
+	 */
+	public final void silent() {
+		silent = true;
+	}
 	
 	/**
 	 * serialize return values for gapi/root 

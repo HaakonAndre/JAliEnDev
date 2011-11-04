@@ -35,6 +35,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	/**
 	 * execute the whereis
 	 */
+	@Override
 	public void run() {
 
 		String guid = null;
@@ -60,7 +61,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 								((PFN) pfns.toArray()[0]).pfn.substring(8, 44))
 								.getPFNs();
 
-			if (!silent)
+			if (!isSilent())
 				out.printOutln(AlienTime.getStamp()
 						+ "The file "
 						+ lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1,
@@ -68,12 +69,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			for (PFN pfn : pfns) {
 
 				String se = commander.c_api.getSE(pfn.seNumber).seName;
-				if (!silent)
+				if (!isSilent())
 					out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>"
 							+ pfn.pfn + "\n");
 			}
 		} else {
-			if (!silent)
+			if (!isSilent())
 				out.printOutln("No such file: [" + lfnOrGuid + "]");
 		}
 	}
@@ -81,6 +82,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		
 		out.printOutln();
@@ -96,20 +98,9 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * the command's silence trigger
-	 */
-	private boolean silent = false;
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		silent = true;
 	}
 
 	/**

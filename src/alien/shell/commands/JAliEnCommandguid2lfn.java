@@ -1,16 +1,9 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.Set;
 
 import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
-import alien.catalogue.LFN;
-import alien.catalogue.PFN;
-import alien.perl.commands.AlienTime;
 
 /**
  * @author ron
@@ -26,6 +19,7 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	/**
 	 * execute the lfn2guid
 	 */
+	@Override
 	public void run() {
 
 			GUID guid = commander.c_api.getGUID(guidName);
@@ -45,6 +39,7 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		
 		out.printOutln();
@@ -57,20 +52,9 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * the command's silence trigger
-	 */
-	private boolean silent = false;
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		silent = true;
 	}
 
 	/**

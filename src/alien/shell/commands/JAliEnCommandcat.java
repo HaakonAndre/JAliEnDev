@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
  */
 public class JAliEnCommandcat extends JAliEnBaseCommand {
 
+	@Override
 	public void run() {
 
 		ArrayList<String> args = new ArrayList<String>(alArguments.size()+1);
@@ -36,36 +38,29 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			return;
 		
 		if (fout.isFile() && fout.canRead()) {
-			FileInputStream fstream = null;
-			try {
-				fstream = new FileInputStream(fout);
-			} catch (FileNotFoundException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			try{
+				final FileReader fr = new FileReader(fout);
+			
+				final char[] buff = new char[(int)fout.length()];
+			
+				fr.read(buff);
+
+				fr.close();
+
+				out.printOutln(new String(buff));
 			}
-
-			DataInputStream in = new DataInputStream(fstream);
-			BufferedReader br = new BufferedReader(new InputStreamReader(in));
-			String file = "";
-			String line;
-			try {
-				while ((line = br.readLine()) != null) {
-					file += line+"\n";
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			catch (IOException e) {
+				out.printErr("Could not read the contents of "+fout.getAbsolutePath());
 			}
-
-			out.printOutln(file);
-
-		} else
+		} 
+		else
 			out.printErrln("Not able to get the file.");
 	}
 
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		out.printOutln();
 		out.printOutln(helpUsage("cat","[-options] [<filename>]"));
@@ -80,15 +75,9 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * nonimplemented command's silence trigger, cat is never silent
-	 */
-	public void silent() {
-
 	}
 
 	/**

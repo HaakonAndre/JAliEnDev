@@ -11,6 +11,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	/**
 	 * execute the pwd
 	 */
+	@Override
 	public void run() {
 		out.printOutln(commander.curDir.getCanonicalName());
 		out.setReturnArgs(deserializeForRoot());
@@ -19,6 +20,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		// ignore
 	}
@@ -28,23 +30,17 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return true;
 	}
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		// ignore
-	}
-	
 	
 	/**
 	 * serialize return values for gapi/root
 	 * 
 	 * @return serialized return
 	 */
+	@Override
 	public String deserializeForRoot() {
 		
 		return RootPrintWriter.columnseparator 

@@ -14,6 +14,7 @@ public class JAliEnCommandrole extends JAliEnBaseCommand {
 	
 	private String role;
 	
+	@Override
 	public void run() {
 		
 		if(AuthorizationFactory.getDefaultUser().hasRole(role)){
@@ -26,6 +27,7 @@ public class JAliEnCommandrole extends JAliEnBaseCommand {
 	/**
 	 * printout the help info, none for this command
 	 */
+	@Override
 	public void printHelp() {
 		out.printOutln();
 		out.printOutln(helpUsage("role","[<role name>]"));
@@ -39,17 +41,10 @@ public class JAliEnCommandrole extends JAliEnBaseCommand {
 	 * role can run without arguments 
 	 * @return <code>true</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return true;
 	}
-
-	/**
-	 * nonimplemented command's silence trigger, role is never silent
-	 */
-	public void silent() {
-		//ignore
-	}
-
 	
 	/**
 	 * Constructor needed for the command factory in commander

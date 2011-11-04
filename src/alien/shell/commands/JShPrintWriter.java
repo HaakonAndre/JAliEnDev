@@ -72,10 +72,12 @@ public class JShPrintWriter extends UIPrintWriter{
 	 */
 	protected boolean bColour = true;
 	
+	@Override
 	protected void blackwhitemode(){
 		bColour = false;
 	}
 	
+	@Override
 	protected void colourmode(){
 		bColour = true;
 	}
@@ -84,6 +86,7 @@ public class JShPrintWriter extends UIPrintWriter{
 	 * color status
 	 * @return state of the color mode
 	 */
+	@Override
 	protected boolean colour(){
 		return bColour;
 	}
@@ -91,7 +94,10 @@ public class JShPrintWriter extends UIPrintWriter{
 	
 	private OutputStream os;
 
-	JShPrintWriter(OutputStream os) {
+	/**
+	 * @param os
+	 */
+	JShPrintWriter(final OutputStream os) {
 		this.os = os;
 	}
 
@@ -105,38 +111,33 @@ public class JShPrintWriter extends UIPrintWriter{
 		}
 	}
 	
-	protected void printOutln() {
-		printOutln("");
+	@Override
+	protected void printOut(final String line) {
+		print(line);
 	}
 	
-	protected void printOutln(String line) {
-		print(line + "\n");
-	}
-
-	protected void printErrln() {
-		printErrln("");
+	@Override
+	protected void printErr(final String line) {
+		print(errTag + line);
 	}
 	
-	protected void printErrln(String line) {
-		//if(bColour)
-		//	print(errTag + ShellColor.boldRed() + line + ShellColor.reset() + "\n");
-		//else
-			print(errTag + line + "\n");
-	}
-	
+	@Override
 	protected void setenv(String cDir, String user, String cRole) {
 		print(outputterminator+cDir + fieldseparator + user + fieldseparator + cRole +"\n");
 	}
 	
+	@Override
 	protected void flush(){
 		print(streamend + "\n");
 	}
 	
+	@Override
 	protected void pending(){
 		print(pendingSignal + "\n");
 	}
 
 	
+	@Override
 	protected void degraded(){
 		print(degradedSignal);
 	}

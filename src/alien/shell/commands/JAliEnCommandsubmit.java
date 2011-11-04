@@ -16,6 +16,7 @@ import alien.taskQueue.JobSubmissionException;
  */
 public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 
+	@Override
 	public void run(){
 
 		String jdl = getJDLFile(alArguments);
@@ -50,14 +51,14 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 		return jdl + "\nUser = {\"" + commander.getUsername() + "\"};\n";
 	}
 
-	private String getJDLFile(List<String> alArguments) {
+	private String getJDLFile(List<String> arguments) {
 		String file = "";
-		out.printOutln("Submitting JDL: " + alArguments);
+		out.printOutln("Submitting JDL: " + arguments);
 		try {
 
 			JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander
 					.getCommand("get", new Object[] { commander, out,
-							alArguments });
+							arguments });
 			get.silent();
 			get.run();
 			File fout = get.getOutputFile();
@@ -83,6 +84,7 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		out.printOutln();
 		out.printOutln(helpUsage("submit","<URL>"));
@@ -98,15 +100,9 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * nonimplemented command's silence trigger, submit is never silent
-	 */
-	public void silent() {
-      //ignore
 	}
 
 	/**

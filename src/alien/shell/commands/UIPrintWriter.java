@@ -25,28 +25,49 @@ abstract class UIPrintWriter {
 	 */
 	abstract protected boolean colour();
 	
+	/**
+	 * Add this line as it is
+	 * 
+	 * @param line
+	 */
+	abstract protected void printOut(String line);
 	
 	/**
 	 * Print empty stdout line 
 	 */
-	abstract protected void printOutln();
+	final protected void printOutln(){
+		printOut("\n");
+	}
 	
 	/**
 	 * Print stdout after appending line feed 
 	 * @param line 
 	 */
-	abstract protected void printOutln(String line);
+	final protected void printOutln(String line){
+		printOut(line+"\n");
+	}
 
 	/**
-	 * Print empty stderr line 
+	 * Print stderr line
+	 * 
+	 * @param line
 	 */
-	abstract protected void printErrln();
+	abstract protected void printErr(String line);
+	
+	/**
+	 * Print empty stderr line
+	 */
+	final protected void printErrln(){
+		printErr("\n");
+	}
 	
 	/**
 	 * Print stderr after appending line feed 
 	 * @param line 
 	 */
-	abstract protected void printErrln(String line);
+	final protected void printErrln(String line){
+		printErr(line+"\n");
+	}
 	
 	/**
 	 * Set the env for the client (needed for gapi)
@@ -63,8 +84,14 @@ abstract class UIPrintWriter {
 	abstract protected void flush();
 	
 	
+	/**
+	 * 
+	 */
 	abstract protected void pending();
 	
+	/**
+	 * 
+	 */
 	abstract protected void degraded();
 	
 	

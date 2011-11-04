@@ -16,6 +16,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 	private final List<Integer> queueIds;
 
+	@Override
 	public void run() {
 		
 		final List<Job> jobs = commander.q_api.getJobs(queueIds);
@@ -32,6 +33,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		
 		out.printOutln();
@@ -44,15 +46,9 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * nonimplemented command's silence trigger, submit is never silent
-	 */
-	public void silent() {
-		// ignore
 	}
 
 	/**
@@ -76,7 +72,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 		
 		for(String id: alArguments){
 			try{
-				queueIds.add(new Integer( Integer.parseInt(id)));
+				queueIds.add(Integer.valueOf(id));
 			}
 			catch(NumberFormatException e ){
 				throw new JAliEnCommandException();

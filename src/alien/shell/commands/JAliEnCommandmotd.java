@@ -44,9 +44,4 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 		return true;
 	}
 
-	@Override
-	public void silent() {
-		//ignore
-	}
-
 }

@@ -74,6 +74,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	/**
 	 * execute the get
 	 */
+	@Override
 	public void run() {
 			
 		if (lfnOrGuid != null) {
@@ -148,7 +149,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 					}
 				}
 
-				if (outputFile.isFile() && outputFile.exists() && !silent)
+				if (outputFile.isFile() && outputFile.exists() && !isSilent())
 					try {
 						out.printOutln("Downloaded file to "
 								+ outputFile.getCanonicalPath());
@@ -163,6 +164,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 
 		out.printOutln(AlienTime.getStamp() + "Usage: get  ... ");
@@ -176,20 +178,9 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * the command's silence trigger
-	 */
-	private boolean silent = false;
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		silent = true;
 	}
 
 	/**

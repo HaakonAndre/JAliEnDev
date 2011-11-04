@@ -62,35 +62,35 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	private OutputStream os;
 
+	/**
+	 * @param os
+	 */
 	RootPrintWriter(OutputStream os) {
 		this.os = os;
 	}
 	
-	protected void printOutln() {
-		printOutln("");
-	}
-
-	protected void printOutln(String line) {
-		stdout.add(line + "\n");
-		System.out.println(line);
+	@Override
+	protected void printOut(final String line) {
+		stdout.add(line);
+		System.out.println(line);		
 	}
 	
-	protected void printErrln() {
-		printErrln("");
-	}
-	
-	protected void printErrln(String line) {
-		stderr.add(line + "\n");
+	@Override
+	protected void printErr(String line) {
+		stderr.add(line);
 	}
 
+	@Override
 	protected void setenv(String cDir, String user, String cRole) {
 		clientenv = cDir;
 	}
 
+	@Override
 	protected boolean isRootPrinter() {
 		return true;
 	}
 
+	@Override
 	protected void setReturnArgs(String args) {
 		this.args = args;
 	}
@@ -105,6 +105,7 @@ public class RootPrintWriter extends UIPrintWriter {
 		}
 	}
 
+	@Override
 	protected void flush() {
 		try {
 			String sDebug = printDebug();
@@ -142,18 +143,22 @@ public class RootPrintWriter extends UIPrintWriter {
 	}
 
 	
+	@Override
 	protected void pending(){
 		//ignore - not to be implemented in the root printer
 	}
 	
+	@Override
 	protected void degraded(){
 		//ignore - not to be implemented in the root printer
 	}
 	
+	@Override
 	protected void blackwhitemode(){
 		//ignore - not to be implemented in the root printer
 	}
 	
+	@Override
 	protected void colourmode(){
 		//ignore - not to be implemented in the root printer
 	}
@@ -162,6 +167,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	 * the root printer is always BW
 	 * @return true
 	 */
+	@Override
 	protected boolean colour(){
 		return false;
 	}
@@ -170,25 +176,27 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	private String printDebug() {
 
-		String debug = stdoutindicator;
+		final StringBuilder debug = new StringBuilder(stdoutindicator);
+		
 		if (stdout.size() > 0) {
 			for (String out : stdout)
-				debug += columnseparator + fieldseparator + out;
+				debug.append(columnseparator).append(fieldseparator).append(out);
 		} else
-			debug += columnseparator + fieldseparator;
+			debug.append(columnseparator).append(fieldseparator);
 
-		debug += stderrindicator;
+		debug.append(stderrindicator);
+		
 		if (stderr.size() > 0) {
 			for (String err : stderr)
-				debug += columnseparator + fieldseparator + err;
+				debug.append(columnseparator).append(fieldseparator).append(err);
 		} else
-			debug += columnseparator + fieldseparator;
+			debug.append(columnseparator).append(fieldseparator);
 
-		debug += outputindicator + args + outputterminator + columnseparator
-				+ fielddescriptor + "pwd" + fieldseparator + clientenv
-				+ streamend;
+		debug.append(outputindicator).append(args).append(outputterminator).append(columnseparator).
+				append(fielddescriptor).append("pwd").append(fieldseparator).append(clientenv).
+				append(streamend);
 
-		return testMakeTagsVisible(debug);
+		return testMakeTagsVisible(debug.toString());
 
 	}
 

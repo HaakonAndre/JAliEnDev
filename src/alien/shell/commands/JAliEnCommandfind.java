@@ -26,33 +26,37 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	/**
 	 * execute the get
 	 */
+	@Override
 	public void run() {
 
-		if(alArguments.size()<2 || alArguments.size()>3){
+		if (alArguments.size() < 2 || alArguments.size() > 3) {
 			printHelp();
-		return;
-	}
+			return;
+		}
 		int flags = 0;
-		try{
-			if(alArguments.size()==3)
+		try {
+			if (alArguments.size() == 3)
 				flags = Integer.parseInt(alArguments.get(2));
-		} catch(NumberFormatException e){}
+		}
+		catch (NumberFormatException e) {
+			// ignore
+		}
 
-				lfns = commander.c_api.find(FileSystemUtils
-						.getAbsolutePath(commander.user.getName(),
-								commander.getCurrentDir().getCanonicalName(),alArguments.get(0)), alArguments.get(1), flags);
-		
-		if(lfns!=null && !silent){
-			for (LFN lfn : lfns){
+		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir()
+			.getCanonicalName(), alArguments.get(0)), alArguments.get(1), flags);
+
+		if (lfns != null && !isSilent()) {
+			for (final LFN lfn : lfns) {
 				out.printOutln(lfn.getCanonicalName());
 			}
 		}
-		
+
 	}
 
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 
 		out.printOutln();
@@ -69,20 +73,9 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * the command's silence trigger
-	 */
-	private boolean silent = false;
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		silent = true;
 	}
 
 	/**

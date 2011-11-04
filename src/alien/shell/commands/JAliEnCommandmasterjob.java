@@ -58,6 +58,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	private List<String> sites = new ArrayList<String>();
 
+	@Override
 	public void run() {
 
 		Job j = commander.q_api.getJob(jobId);
@@ -167,6 +168,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 
 		out.printOutln();
@@ -202,15 +204,9 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * nonimplemented command's silence trigger, submit is never silent
-	 */
-	public void silent() {
-		// ignore
 	}
 
 	/**

@@ -27,23 +27,25 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	private static HashMap<Integer, List<String>> scrlogs = new HashMap<Integer, List<String>>(
 			10);
 
-	private int logno = -1;
+	private Integer logno = new Integer(-1);
 
 	/**
 	 * execute the sclog
 	 */
+	@Override
 	public void run() {
-		if(logno != -1){
-		if (bC)
-			scrlogs.put(logno, new ArrayList<String>());
-		else if (scrlogs.get(logno) != null){
-			System.out.println(":"+logno+" [screenlog pasting]");
-			for (String logline : scrlogs.get(logno)) {
-				System.out.println(logline);
+		if (logno.intValue() != -1) {
+			if (bC)
+				scrlogs.put(logno, new ArrayList<String>());
+			else if (scrlogs.get(logno) != null) {
+				System.out.println(":" + logno + " [screenlog pasting]");
+				for (String logline : scrlogs.get(logno)) {
+					System.out.println(logline);
+				}
 			}
-		}else
-			System.out.println(":"+logno+" [screenlog is empty]");
-}
+			else
+				System.out.println(":" + logno + " [screenlog is empty]");
+		}
 	}
 
 	/**
@@ -52,7 +54,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * @param line 
 	 * 
 	 */
-	protected static void addScreenLogLine(int logno, String line) {
+	protected static void addScreenLogLine(Integer logno, String line) {
 		if (scrlogs.get(logno) == null)
 			scrlogs.put(logno, new ArrayList<String>());
 		// ArrayList<String> buf = (ArrayList<String>) scrlogs.get(logno);
@@ -64,6 +66,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		System.out.println(AlienTime.getStamp() + "Usage: scrlog [-c] <no>");
 		System.out
@@ -81,15 +84,9 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>true</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return true;
-	}
-
-	/**
-	 * nonimplemented command's silence trigger, scrlog is never silent
-	 */
-	public void silent() {
-		//ignore
 	}
 
 	/**
@@ -117,15 +114,14 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 				printHelp();
 			else
 				try {
-					logno = Integer.parseInt(options.nonOptionArguments()
-							.get(0));
+					logno = Integer.valueOf(options.nonOptionArguments().get(0));
 				} catch (NumberFormatException n) {
 					//ignore
 				}
 
 			bC = options.has("c");
 
-			if (logno > 9)
+			if (logno.intValue() > 9)
 				printHelp();
 		} catch (OptionException e) {
 			printHelp();

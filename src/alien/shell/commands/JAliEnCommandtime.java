@@ -11,6 +11,7 @@ import alien.perl.commands.AlienTime;
 public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 
+	@Override
 	public void run() {
 
 		if (alArguments.size() < 2) {
@@ -45,20 +46,22 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 			long lStart = System.currentTimeMillis();
 
 			comm.run();
-			timings.add(System.currentTimeMillis() - lStart);
+			timings.add(Long.valueOf(System.currentTimeMillis() - lStart));
 		}
 		long total = 0;
 		for (Long t : timings)
-			total += t;
+			total += t.longValue();
+		
 		for(String s:args)
 			command += " " + s;
+		
 		out.printOutln("\""+command+ "\" with #" + times+ " tries,\tavr/total msec:\t\t"+(total / times)+"/"+total);
-
 	}
 
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 
 		out.printOutln(AlienTime.getStamp()
@@ -70,15 +73,9 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * nonimplemented command's silence trigger, cd is never silent
-	 */
-	public void silent() {
-		//ignore
 	}
 
 	/**

@@ -54,6 +54,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	/**
 	 * execute the ls
 	 */
+	@Override
 	public void run() {
 
 		int iDirs = alPaths.size();
@@ -107,7 +108,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 								ret += "/";
 						}
 					}
-					if (!silent)
+					if (!isSilent())
 						out.printOutln(ret);
 				}
 			}else
@@ -137,6 +138,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		out.printOutln();
 		out.printOutln(helpUsage("ls","[-options] [<directory>]"));
@@ -154,20 +156,9 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>true</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return true;
-	}
-
-	/**
-	 * the command's silence trigger
-	 */
-	private boolean silent = false;
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		silent = true;
 	}
 
 	/**
@@ -175,6 +166,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * 
 	 * @return serialized return
 	 */
+	@Override
 	public String deserializeForRoot() {
 		String ret = "";
 		if (directory != null) {

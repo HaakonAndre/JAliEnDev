@@ -18,6 +18,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	private boolean bP = false;
 	private ArrayList<String> alPaths = null;
 	
+	@Override
 	public void run() {
 		
 		for (String path: alPaths){
@@ -40,6 +41,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 
 		out.printOutln();
@@ -55,16 +57,9 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-
-	/**
-	 * nonimplemented command's silence trigger, cd is never silent
-	 */
-	public void silent() {
-		//ignore
 	}
 
 	/**

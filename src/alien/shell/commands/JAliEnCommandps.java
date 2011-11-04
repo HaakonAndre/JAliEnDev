@@ -282,14 +282,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * nonimplemented command's silence trigger, submit is never silent
-	 */
-	@Override
-	public void silent() {
-		// ignore
-	}
-
-	/**
 	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param commander

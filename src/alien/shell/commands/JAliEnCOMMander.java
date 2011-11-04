@@ -53,7 +53,7 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] commandList = new String[] {"shutdown", "ls", "get",
 			"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
 			"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
-			, "lfn2guid", "guid2lfn"};
+			, "lfn2guid", "guid2lfn", "w", "uptime"};
 
 	/**
 	 * The commands that have a JAliEnCommand* implementation
@@ -61,7 +61,7 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
 			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm",
-			"masterjob","user", "role"  , "kill", "lfn2guid", "guid2lfn"};
+			"masterjob","user", "role"  , "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
 
 	/**
 	 * Commands to let UI talk internally with us here
@@ -159,10 +159,16 @@ public class JAliEnCOMMander extends Thread {
 	 * @return array of commands
 	 */
 	public static String getCommandList() {
-		String commands = "";
-		for (int i = 0; i < commandList.length; i++)
-			commands += commandList[i] + " ";
-		return commands;
+		final StringBuilder commands = new StringBuilder();
+		
+		for (int i = 0; i < commandList.length; i++){
+			if (i>0)
+				commands.append(' ');
+			
+			commands.append(commandList[i]);
+		}
+		
+		return commands.toString();
 	}
 
 	/**
@@ -253,6 +259,7 @@ public class JAliEnCOMMander extends Thread {
 	private JAliEnBaseCommand jcommand = null;
 
 
+	@Override
 	public void run() {
 		while (true) {
 			

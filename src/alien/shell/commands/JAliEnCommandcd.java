@@ -11,6 +11,7 @@ import alien.user.UsersHelper;
  */
 public class JAliEnCommandcd extends JAliEnBaseCommand {
 	
+	@Override
 	public void run() {
 
 		LFN newDir = null;
@@ -38,6 +39,7 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 	/**
 	 * printout the help info, none for this command
 	 */
+	@Override
 	public void printHelp() {
 		//ignore
 	}
@@ -46,17 +48,10 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 	 * cd can run without arguments 
 	 * @return <code>true</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return true;
 	}
-
-	/**
-	 * nonimplemented command's silence trigger, cd is never silent
-	 */
-	public void silent() {
-	}
-
-	
 
 	/**
 	 * serialize return values for gapi/root

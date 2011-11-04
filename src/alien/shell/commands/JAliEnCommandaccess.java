@@ -80,6 +80,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	/**
 	 * execute the access
 	 */
+	@Override
 	public void run() {
 
 		LFN lfn = null;
@@ -156,6 +157,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 		// ignore
 	}
@@ -165,15 +167,9 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		// ignore
 	}
 
 	/**
@@ -181,6 +177,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * 
 	 * @return serialized return
 	 */
+	@Override
 	public String deserializeForRoot() {
 
 		String ret = "";

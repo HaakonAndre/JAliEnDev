@@ -13,6 +13,7 @@ import alien.user.AuthorizationChecker;
  */
 public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
+	@Override
 	public void run() {
 
 		for (String path : alArguments) {
@@ -35,17 +36,17 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 						}
 
 					} else {
-						if (!silent)
+						if (!isSilent())
 							out.printErrln("Permission denied on directory: ["
 									+ path + "]");
 					}
 
 				} else {
-					if (!silent)
+					if (!isSilent())
 						out.printErrln("Not a directory: [" + path + "]");
 				}
 			} else {
-				if (!silent)
+				if (!isSilent())
 					out.printErrln("No such file or directory: [" + path + "]");
 			}
 		}
@@ -54,6 +55,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	/**
 	 * printout the help info
 	 */
+	@Override
 	public void printHelp() {
 
 		out.printOutln();
@@ -69,20 +71,9 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	 * 
 	 * @return <code>false</code>
 	 */
+	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	/**
-	 * the command's silence trigger
-	 */
-	private boolean silent = false;
-
-	/**
-	 * set command's silence trigger
-	 */
-	public void silent() {
-		silent = true;
 	}
 
 	/**
