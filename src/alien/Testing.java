@@ -409,7 +409,7 @@ public class Testing {
 						}
 					}
 					else{
-						System.err.println((pos+i)+" : ok="+((int) b1[i] & 0xFF) +" - bad="+((int) b2[i] & 0xFF));
+						System.err.println((pos+i)+" : ok="+( b1[i] & 0xFF) +" - bad="+( b2[i] & 0xFF));
 						
 						if (bad_start<0)
 							bad_start = pos+i;
