@@ -51,7 +51,7 @@ public class TaskQueueApiUtils {
 
 			return ps.returnPS();
 		} catch (IOException e) {
-			System.out.println("Could get a PS listing: ");
+			System.out.println("Could not get a PS listing: "+e.getMessage());
 			e.printStackTrace();
 		}
 		return null;
