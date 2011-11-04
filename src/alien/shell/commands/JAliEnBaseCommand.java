@@ -1,24 +1,12 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import alien.catalogue.GUIDUtils;
-import alien.config.ConfigUtils;
 
 /**
  * @author ron
  * @since June 4, 2011
  */
 public abstract class JAliEnBaseCommand extends Thread{
-
-	
-	/**
-	 * Logger
-	 */
-	static transient final Logger logger = ConfigUtils
-			.getLogger(GUIDUtils.class.getCanonicalName());
-	
 	/**
 	 * The JAliEnCOMMander
 	 */
@@ -30,13 +18,11 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 */
 	protected UIPrintWriter out ;
 	
-	
 
 	/**
 	 * marker for -Colour argument
 	 */
 	protected boolean bColour;
-	
 	
 	/**
 	 * 
@@ -54,19 +40,18 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param out 
 	 * @param alArguments 
 	 */
-	public JAliEnBaseCommand(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments){
+	public JAliEnBaseCommand(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments){
 		this.commander = commander;
 		this.out = out;
 		this.alArguments = alArguments;
 		this.bColour = out.colour();
-
 	}
 	
 	/**
 	 * Abstract class to execute the command / run the thread
 	 * 
 	 */
+	@Override
 	public abstract void run();
 
 	/**
@@ -86,21 +71,24 @@ public abstract class JAliEnBaseCommand extends Thread{
 	
 	/**
 	 * @param name
-	 * @param desc 
+	 * @param description
 	 * @return usage tag for help
 	 */
-	public static String helpUsage(final String name, String desc){
+	public static String helpUsage(final String name, final String description){
+		String desc = description;
+		
 		if(desc!=null && desc.length()>0)
 			desc = padSpace(3) + desc;
 		else
 			desc = "";
+		
 		return padRight("usage: " + name + desc, padHelpUsage);
 	}
 	
 	/**
 	 * @return options tag
 	 */
-	public static String helpStartOptions(){
+	public static final String helpStartOptions(){
 		return "\noptions:";
 	}
 	
@@ -115,26 +103,27 @@ public abstract class JAliEnBaseCommand extends Thread{
 	
 	/**
 	 * @param opt 
-	 * @param desc 
+	 * @param description
 	 * @return option tag for help
 	 */
-	public static String helpOption(final String opt, String desc){
+	public static final String helpOption(final String opt, final String description){
+		String desc = description;
+		
 		if(desc!=null && desc.length()>0)
 			desc = "  :  " + desc;
 		else
 			desc = "";
+		
 		return padSpace(padHelpUsage) + padRight(opt,padHelpOption) + desc;
 	}
 
 	/**
-	 * @param opt 
 	 * @param desc 
 	 * @return option tag for help
 	 */
-	public static String helpParameter(final String desc){
+	public static final String helpParameter(final String desc){
 		return padSpace(padHelpUsage) + desc;
 	}
-	
 	
 	/**
 	 * Abstract class to check if this command can run without arguments
@@ -175,7 +164,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param n
 	 * @return left-padded string
 	 */
-	public static String padLeft(final String s, final int n) {
+	public static final String padLeft(final String s, final int n) {
 	    return String.format("%1$#" + n + "s", s);  
 	}
 	
@@ -184,7 +173,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param n
 	 * @return right-padded string
 	 */
-	public static String padRight(String s, int n) {
+	public static final String padRight(final String s, final int n) {
 	     return String.format("%1$-" + n + "s", s);  
 	}
 	
@@ -192,22 +181,26 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param n
 	 * @return n count spaces as String
 	 */
-	public static String padSpace(int n) {
-		String s = "";
+	public static final String padSpace(final int n) {
+		final char[] c = new char[n];
+		
 		for(int a=0;a<n;a++)
-			s += " ";
-		return s;
+			c[a] = ' ';
+		
+		return new String(c);
 	}
 	
 	/**
 	 * @param n
 	 * @return n count tabs as String
 	 */
-	public static String padTab(int n) {
-		String s = "";
+	public static final String padTab(final int n) {
+		final char[] c = new char[n];
+		
 		for(int a=0;a<n;a++)
-			s += "\t";
-		return s;
+			c[a] = '\t';
+		
+		return new String(c);
 	}
 	
 }
