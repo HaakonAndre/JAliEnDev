@@ -9,8 +9,6 @@ import javax.security.cert.X509Certificate;
 
 import alien.catalogue.access.AuthorizationFactory;
 import alien.user.AliEnPrincipal;
-import alien.user.LdapCertificateRealm;
-import alien.user.UserFactory;
 
 /**
  * @author costing
@@ -242,9 +240,4 @@ public abstract class Request implements Serializable, Runnable {
 
 		this.partner_address = ip;
 	}
-
-	/**
-	 * Return a command info as a String
-	 */
-	public abstract String toString();
 }

@@ -14,14 +14,12 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
-import alien.user.UserFactory;
 import alien.user.UsersHelper;
 
 /**
@@ -66,6 +64,14 @@ public class JBoxServer extends Thread {
 	 * */
 	final int iDebugLevel;
 
+	private static synchronized void preempt(){
+		if(preemptJCentralConnection){
+			PreemptJCentralConnection preempt = new PreemptJCentralConnection();
+			preempt.start();
+			preemptJCentralConnection=false;
+		}
+	}
+	
 	/**
 	 * Start the server on a given port
 	 * 
@@ -73,14 +79,7 @@ public class JBoxServer extends Thread {
 	 * @throws IOException
 	 */
 	private JBoxServer(final int listeningPort, int iDebug) throws Exception {
-		
-		
-		if(preemptJCentralConnection){
-			PreemptJCentralConnection preempt = new PreemptJCentralConnection();
-			preempt.start();
-			preemptJCentralConnection=false;
-		}
-		
+		preempt();
 		
 		this.port = listeningPort;
 		this.iDebugLevel = iDebug;
@@ -170,7 +169,7 @@ public class JBoxServer extends Thread {
 				e1.printStackTrace();
 				return false;
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			logger.severe("Could not get user id! The token file could not be created ");
 			logger.severe(e.getMessage());
 			e.printStackTrace();
@@ -251,10 +250,10 @@ public class JBoxServer extends Thread {
      * 
 	 * @author gron
 	 */
-	public class PreemptJCentralConnection extends Thread {
-		
+	static final class PreemptJCentralConnection extends Thread {
+		@Override
 		public void run() {
-			new JAliEnCOMMander(null);
+			new JAliEnCOMMander(null).getId();
 		}
 	}
 	
@@ -360,8 +359,8 @@ public class JBoxServer extends Thread {
 						}
 						os.flush();
 					}
-				} catch (Exception e) {
-					logger.log(Level.INFO, "Error running the commander.");
+				} catch (Throwable e) {
+					logger.log(Level.INFO, "Error running the commander.", e);
 				} finally {
 					try {
 						s.shutdownOutput();
@@ -383,9 +382,8 @@ public class JBoxServer extends Thread {
 		
 	}
 	
+	@Override
 	public void run() {
-		
-		
 		while (true) {
 			try {
 				final Socket s = ssocket.accept();
@@ -393,9 +391,9 @@ public class JBoxServer extends Thread {
 				connection = new UIConnection(s,this);
 				
 				connection.start();
-				
-			} catch (IOException e) {
-				//ignore
+			}
+			catch (IOException e) {
+				logger.log(Level.WARNING, "Cannot accept socket", e);
 			}
 		}
 	}

@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.security.cert.X509Certificate;
@@ -182,8 +181,8 @@ public class DispatchSSLClient extends Thread {
 			} catch (ConnectException e) {
 				logger.log(Level.SEVERE, "Could not connect to JCentral: [" + e.getMessage() + "].");
 				System.err.println("Could not connect to JCentral: [" + e.getMessage() + "].");
-			} catch (Exception e) {
-				logger.log(Level.SEVERE,"Could not initiate SSL connection to the server.");
+			} catch (Throwable e) {
+				logger.log(Level.SEVERE,"Could not initiate SSL connection to the server.", e);
 				//e.printStackTrace();
 				System.err.println("Could not initiate SSL connection to the server.");
 			}

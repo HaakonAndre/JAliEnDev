@@ -206,7 +206,7 @@ public class DispatchSSLServer extends Thread {
 			if (idx >= 0) {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1));
-					address = address.substring(0, idx);
+//					address = address.substring(0, idx);
 				} catch (Exception e) {
 					port = defaultPort;
 				}
@@ -299,9 +299,8 @@ public class DispatchSSLServer extends Thread {
 				}
 			}
 
-		} catch (Exception e) {
-			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket.",
-					e);
+		} catch (Throwable e) {
+			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket.", e);
 		}
 	}
 
@@ -328,13 +327,13 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Print some info on the SSL Socket
 	 */
-	private static String printServerSocketInfo(SSLServerSocket s) {
-		return "Server socket class: " + s.getClass()
-				+ "\n   Socket address = " + s.getInetAddress().toString()
-				+ "\n   Socket port = " + s.getLocalPort()
-				+ "\n   Need client authentication = " + s.getNeedClientAuth()
-				+ "\n   Want client authentication = " + s.getWantClientAuth()
-				+ "\n   Use client mode = " + s.getUseClientMode();
-	}
+//	private static String printServerSocketInfo(SSLServerSocket s) {
+//		return "Server socket class: " + s.getClass()
+//				+ "\n   Socket address = " + s.getInetAddress().toString()
+//				+ "\n   Socket port = " + s.getLocalPort()
+//				+ "\n   Need client authentication = " + s.getNeedClientAuth()
+//				+ "\n   Want client authentication = " + s.getWantClientAuth()
+//				+ "\n   Use client mode = " + s.getUseClientMode();
+//	}
 
 }
