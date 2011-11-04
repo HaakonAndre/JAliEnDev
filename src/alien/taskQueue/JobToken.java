@@ -1,25 +1,13 @@
 package alien.taskQueue;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Random;
-import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
-import lazyj.Format;
 import lazyj.StringFactory;
-import alien.catalogue.CatalogueUtils;
-import alien.catalogue.Host;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
-import alien.se.SE;
 
 /**
  * @author ron
@@ -64,8 +52,6 @@ public class JobToken implements Comparable<JobToken> {
 	 * Load one row from a TOKENS table
 	 * 
 	 * @param db
-	 * @param host 
-	 * @param tableName 
 	 */
 	JobToken(final DBFunctions db){
 		init(db);
@@ -84,7 +70,8 @@ public class JobToken implements Comparable<JobToken> {
 	
 	/**
 	 * Create a new JobToken object
-	 * @param token value
+	 * @param jobId 
+	 * @param username 
 	 */
 	JobToken(final int jobId, final String username){
 		this.jobId = jobId;
@@ -98,21 +85,20 @@ public class JobToken implements Comparable<JobToken> {
 	 * Create a 32 chars long token (job token)
 	 * @param db 
 	 */
-	public void spawnToken(final DBFunctions db){
+	public void spawnToken(final DBFunctions db) {
+		final StringBuilder sb = new StringBuilder(32);
 
-			 String token = "";
-  	         final Random ran = new Random(System.currentTimeMillis());
+		final Random ran = new Random(System.currentTimeMillis());
 
-			 for (int i = 0 ; i < 32 ; i++)
-				 token += tokenStreet[ran.nextInt(tokenStreet.length)];
-			 
-		      this.token = token;
-				System.out.println("token generated: " + token);
-				
-				update(db);
+		for (int i = 0; i < 32; i++)
+			sb.append(tokenStreet[ran.nextInt(tokenStreet.length)]);
 
+		this.token = sb.toString();
+
+		System.out.println("token generated: " + token);
+
+		update(db);
 	}
-	
 	
 
 	private void init(final DBFunctions db){
@@ -156,11 +142,12 @@ public class JobToken implements Comparable<JobToken> {
 	
 
 	/**
-	 * @return update the entry in the database, inserting it if necessary
+	 *  update the entry in the database, inserting it if necessary
+	 * 
+	 * @param db 
+	 * @return <code>true</code> if successful
 	 */
 	boolean update(DBFunctions db){
-		
-
 		if (db == null){
 			return false;
 		}
@@ -171,7 +158,6 @@ public class JobToken implements Comparable<JobToken> {
 			return insertOK;
 		}
 		
-
 		System.out.println("SQL UPDATE jobToken SET jobToken='"+token+"' WHERE jobId="+jobId);
 
 		
