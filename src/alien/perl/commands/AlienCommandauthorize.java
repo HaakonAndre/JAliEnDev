@@ -82,7 +82,7 @@ public class AlienCommandauthorize extends AlienCommand {
 		
 		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
 
-		ArrayList<String> alrcValues = new ArrayList<String>();
+		ArrayList<String> alrcValues;
 		ArrayList<String> alrcMessages = new ArrayList<String>();
 		
 		boolean bDebug = false;
@@ -148,7 +148,6 @@ public class AlienCommandauthorize extends AlienCommand {
 
 	/**
 	 * @param user 
-	 * @param certOwner
 	 * @param p_user
 	 * @param p_dir
 	 * @param access
@@ -157,14 +156,16 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * @param debugLevel 
 	 * @return the list of envelopes
 	 */
-	public List<String> registerEnvelope(AliEnPrincipal user, String p_user,
-			String p_dir, String access, ArrayList<String> envelopes,
-			int jobid, int debugLevel) {
+	public List<String> registerEnvelope(final AliEnPrincipal user, final String p_user,
+			final String p_dir, final String access, final ArrayList<String> envelopes,
+			final int jobid, final int debugLevel) {
 
-		if (user.canBecome(p_user))
-			user = UserFactory.getByUsername(p_user);
+		AliEnPrincipal effectiveUser = user;
+		
+		if (effectiveUser.canBecome(p_user))
+			effectiveUser= UserFactory.getByUsername(p_user);
 		else {
-			System.err.println("You [" + user.getName()
+			System.err.println("You [" + effectiveUser.getName()
 					+ "] have not the rights to become " + p_user);
 			return null;
 		}
@@ -181,7 +182,7 @@ public class AlienCommandauthorize extends AlienCommand {
 					XrootDEnvelope xenv = new XrootDEnvelope(env);
 					System.out.println("Self Signature VERIFIED! : "
 							+ xenv.pfn.pfn);
-					if (BookingTable.commit(user,
+					if (BookingTable.commit(effectiveUser,
 							BookingTable.getBookedPFN(xenv.pfn.pfn))) {
 						System.out.println("Successfully moved " + xenv.pfn.pfn
 								+ " to the Catalogue");
@@ -193,7 +194,7 @@ public class AlienCommandauthorize extends AlienCommand {
 					XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
 					System.out.println("SE Signature VERIFIED! : "
 							+ xenv.pfn.pfn);
-					if (BookingTable.commit(user,
+					if (BookingTable.commit(effectiveUser,
 							BookingTable.getBookedPFN(xenv.pfn.pfn))) {
 						System.out.println("Successfully moved " + xenv.pfn.pfn
 								+ " to the Catalogue");
@@ -219,29 +220,29 @@ public class AlienCommandauthorize extends AlienCommand {
 	}
 
 	/**
-	 * @param user 
-	 * @param certOwner
+	 * @param user
 	 * @param p_user
 	 * @param p_dir
 	 * @param access
 	 * @param optionHash
 	 * @param jobid 
 	 * @param debugLevel 
-	 * @param p_jobid
 	 * @return the list of envelopes
 	 */
-	public List<String> authorizeEnvelope(AliEnPrincipal user, String p_user,
-			String p_dir, String access, Map<String, String> optionHash,
-			int jobid, int debugLevel) {
+	public List<String> authorizeEnvelope(final AliEnPrincipal user, final String p_user,
+			final String p_dir, final String access, final Map<String, String> optionHash,
+			final int jobid, final int debugLevel) {
 
+		AliEnPrincipal effectiveUser = user;
+		
 		System.out.println();
 		System.out.println("JAuthen SOAP request for authorize...");
 
 		boolean evenIfNotExists = false;
-		if (user.canBecome(p_user))
-			user = UserFactory.getByUsername(p_user);
+		if (effectiveUser.canBecome(p_user))
+			effectiveUser = UserFactory.getByUsername(p_user);
 		else {
-			System.err.println("You [" + user.getName()
+			System.err.println("You [" + effectiveUser.getName()
 					+ "] have not the rights to become " + p_user);
 			return null;
 		}
@@ -345,14 +346,14 @@ public class AlienCommandauthorize extends AlienCommand {
 					System.out.println("Trying to book writing on static SE: "
 							+ se.getName());
 
-					if (!se.canWrite(user)) {
+					if (!se.canWrite(effectiveUser)) {
 						System.err
 								.println("You are not allowed to write to this SE.");
 						continue;
 					}
 
 					try {
-						pfns.add(BookingTable.bookForWriting(user, lfn, guid,
+						pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid,
 								null, jobid, se));
 					} catch (Exception e) {
 						System.out.println("Error for the request on "
@@ -369,14 +370,14 @@ public class AlienCommandauthorize extends AlienCommand {
 					while (counter < p_qosCount && it.hasNext()) {
 						SE se = it.next();
 
-						if (!se.canWrite(user))
+						if (!se.canWrite(effectiveUser))
 							continue;
 
 						System.out
 								.println("Trying to book writing on discoverd SE: "
 										+ se.getName());
 						try {
-							pfns.add(BookingTable.bookForWriting(user, lfn,
+							pfns.add(BookingTable.bookForWriting(effectiveUser, lfn,
 									guid, null, jobid, se));
 						} catch (Exception e) {
 							System.out.println("Error for the request on "
@@ -397,9 +398,9 @@ public class AlienCommandauthorize extends AlienCommand {
 
 				for (PFN pfn : pfns) {
 					System.err.println(pfn);
-					System.out.println("Asking read for " + user.getName()
+					System.out.println("Asking read for " + effectiveUser.getName()
 							+ " to " + pfn.getPFN());
-					String reason = AuthorizationFactory.fillAccess(user, pfn,
+					String reason = AuthorizationFactory.fillAccess(effectiveUser, pfn,
 							AccessType.READ);
 
 					if (reason != null) {
@@ -415,7 +416,7 @@ public class AlienCommandauthorize extends AlienCommand {
 								GUIDUtils.getGUID(
 										pfn.retrieveArchiveLinkedGUID())
 										.getPFNs(), p_site, true, ses, exxSes);
-						if (!AuthorizationChecker.canRead(archiveguid, user)) {
+						if (!AuthorizationChecker.canRead(archiveguid, effectiveUser)) {
 							System.err
 									.println("Access refused because: Not allowed to read sub-archive");
 							continue;
@@ -423,7 +424,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 						for (PFN apfn : apfns) {
 
-							reason = AuthorizationFactory.fillAccess(user,
+							reason = AuthorizationFactory.fillAccess(effectiveUser,
 									apfn, AccessType.READ);
 
 							if (reason != null) {
