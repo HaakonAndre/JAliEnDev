@@ -2,7 +2,6 @@ package alien.perl.commands;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import alien.config.JAliEnIAm;
 
