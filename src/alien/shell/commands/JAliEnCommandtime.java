@@ -28,32 +28,35 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		} catch (NumberFormatException e) {
 			printHelp();
 		}
-		String command = alArguments.get(1);
+		
+		final StringBuilder command = new StringBuilder(alArguments.get(1));
 		args.remove(alArguments.get(1));
 
 		JAliEnBaseCommand comm = null;
 		try {
-			comm = JAliEnCOMMander
-					.getCommand(command, new Object[] {  commander, out,args });
+			comm = JAliEnCOMMander.getCommand(command.toString(), new Object[] {  commander, out,args });
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
 		}
 		//comm.silent();
 
-		ArrayList<Long> timings = new ArrayList<Long>(times);
+		final ArrayList<Long> timings = new ArrayList<Long>(times);
+		
 		for (int t = 0; t < times; t++) {
-			long lStart = System.currentTimeMillis();
+			final long lStart = System.currentTimeMillis();
 
 			comm.run();
 			timings.add(Long.valueOf(System.currentTimeMillis() - lStart));
 		}
+		
 		long total = 0;
-		for (Long t : timings)
+		
+		for (final Long t : timings)
 			total += t.longValue();
 		
-		for(String s:args)
-			command += " " + s;
+		for (final String s:args)
+			command.append(' ').append(s);
 		
 		out.printOutln("\""+command+ "\" with #" + times+ " tries,\tavr/total msec:\t\t"+(total / times)+"/"+total);
 	}

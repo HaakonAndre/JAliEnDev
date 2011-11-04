@@ -97,8 +97,7 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * @param jbox
 	 */
-	public JAliEnCOMMander(JBoxServer jbox) {
-		
+	public JAliEnCOMMander(final JBoxServer jbox) {
 		this.jbox = jbox;
 
 		c_api = new CatalogueApiUtils(this);

@@ -1,14 +1,9 @@
 package alien.shell.commands;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
+
+import lazyj.Utils;
 
 /**
  * @author ron
@@ -38,20 +33,12 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			return;
 		
 		if (fout.isFile() && fout.canRead()) {
-			try{
-				final FileReader fr = new FileReader(fout);
+			final String content = Utils.readFile(fout.getAbsolutePath());
 			
-				final char[] buff = new char[(int)fout.length()];
-			
-				fr.read(buff);
-
-				fr.close();
-
-				out.printOutln(new String(buff));
-			}
-			catch (IOException e) {
-				out.printErr("Could not read the contents of "+fout.getAbsolutePath());
-			}
+			if (content!=null)
+				out.printOutln(content);
+			else
+				out.printErrln("Could not read the contents of "+fout.getAbsolutePath());
 		} 
 		else
 			out.printErrln("Not able to get the file.");

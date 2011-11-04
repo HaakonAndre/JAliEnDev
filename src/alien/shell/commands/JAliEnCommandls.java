@@ -168,45 +168,49 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	@Override
 	public String deserializeForRoot() {
-		String ret = "";
+		final StringBuilder ret = new StringBuilder();
+		
 		if (directory != null) {
 			String col = RootPrintWriter.columnseparator;
 			String desc = RootPrintWriter.fielddescriptor;
 			String sep = RootPrintWriter.fieldseparator;
 
 			if (bL) {
-				for (LFN lfn : directory) {
-					ret += col;
-					ret += desc + "group" + sep + lfn.gowner;
-					ret += desc + "permissions" + sep + lfn.perm;
-					ret += desc + "date" + sep + lfn.ctime;
-					ret += desc + "name" + sep + lfn.lfn;
+				for (final LFN lfn : directory) {
+					ret.append(col);
+					ret.append(desc).append("group").append(sep).append(lfn.gowner);
+					ret.append(desc).append("permissions").append(sep).append(lfn.perm);
+					ret.append(desc).append("date").append(sep).append(lfn.ctime);
+					ret.append(desc).append("name").append(sep).append(lfn.lfn);
+					
 					if(bF && (lfn.type == 'd'))
-						ret += "/";
-					ret += desc + "user" + sep + lfn.owner;
-					ret += desc + "path" + sep + lfn.dir;
-					ret += desc + "md5" + sep + lfn.md5;
-					ret += desc + "size" + sep + lfn.size;
-
+						ret.append('/');
+					
+					ret.append(desc).append("user").append(sep).append(lfn.owner);
+					ret.append(desc).append("path").append(sep).append(lfn.dir);
+					ret.append(desc).append("md5").append(sep).append(lfn.md5);
+					ret.append(desc).append("size").append(sep).append(lfn.size);
 				}
 			} else if(bB){
-				for (LFN lfn : directory) {
-					ret += col;
-					ret += desc + "path" + sep + lfn.dir;
-					ret += desc + "guid" + sep + lfn.guid;
+				for (final LFN lfn : directory) {
+					ret.append(col);
+					ret.append(desc).append("path").append(sep).append(lfn.dir);
+					ret.append(desc).append("guid").append(sep).append(lfn.guid);
 				}
 			}else {
-				for (LFN lfn : directory) {
-					ret += col;
-					ret += desc + "name" + sep + lfn.lfn;
+				for (final LFN lfn : directory) {
+					ret.append(col);
+					ret.append(desc).append("name").append(sep).append(lfn.lfn);
 					if(bF && (lfn.type == 'd'))
-						ret += "/";
-					ret += desc + "path" + sep + lfn.dir;
+						ret.append('/');
+					
+					ret.append(desc).append("path").append(sep).append(lfn.dir);
 				}
 			}
 
-			return ret;
+			return ret.toString();
 		}
+		
 		return super.deserializeForRoot();
 
 	}

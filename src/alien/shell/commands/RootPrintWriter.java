@@ -95,16 +95,6 @@ public class RootPrintWriter extends UIPrintWriter {
 		this.args = args;
 	}
 
-	private void print(String line) {
-		try {
-			os.write(line.getBytes());
-
-		} catch (IOException e) {
-			e.printStackTrace();
-			logger.log(Level.FINE, "Could not write to OutputStream", e);
-		}
-	}
-
 	@Override
 	protected void flush() {
 		try {

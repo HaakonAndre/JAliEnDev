@@ -210,11 +210,13 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 								"////");
 						tpfn.nextToken();
 						tpfn.nextToken();
-						String ttpfn = "/" + tpfn.nextToken();
-						while (tpfn.hasMoreTokens())
-							ttpfn += "/" + tpfn.nextToken();
+						StringBuilder ttpfn = new StringBuilder();
+						
+						while (tpfn.hasMoreTokens()){
+							ttpfn.append('/').append(tpfn.nextToken());
+						}
 
-						ret += desc + "pfn" + sep + ttpfn;
+						ret += desc + "pfn" + sep + ttpfn.toString();
 					}
 					// if(("lfn").equals(key))
 					// ret += desc + key + sep +

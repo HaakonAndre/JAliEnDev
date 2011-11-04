@@ -139,28 +139,42 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	}
 
-	private void printSubJobs(final HashMap<String, List<Job>> stateCount,
-			final List<JobStatus> showStatus, String site) {
+	private void printSubJobs(final HashMap<String, List<Job>> stateCount, final List<JobStatus> showStatus, final String site) {
 		String key = "";
+		
 		if (site != null && site.length() > 0)
 			key = "/" + site;
 
-		for (JobStatus state : showStatus) {
-
-			List<Job> subjobs = stateCount.get(state.toString() + key);
+		for (final JobStatus state : showStatus) {
+			final List<Job> subjobs = stateCount.get(state.toString() + key);
 
 			if (subjobs != null && subjobs.size() > 0) {
-				String ret = padSpace(16) + "Subjobs in " + state;
+				final StringBuilder ret = new StringBuilder();
+				
+				ret.append(padSpace(16)).append("Subjobs in ").append(state);
 				if (bPrintSite)
-					ret += " (" + site + ")";
-				ret += ": " + subjobs.size();
+					ret.append(" (").append(site).append(")");
+				
+				ret.append(": ").append(subjobs.size());
+				
 				if (bPrintId) {
-					ret += " (ids: ";
-					for (Job sj : subjobs)
-						ret += sj.queueId + ",";
-					ret = ret.substring(0, ret.length() - 1) + ")";
+					ret.append(" (ids: ");
+					
+					boolean first = true;
+					
+					for (final Job sj : subjobs){
+						if (!first)
+							ret.append(',');
+						else
+							first = false;
+						
+						ret.append(sj.queueId);
+					}
+					
+					ret.append(')');
 				}
-				out.printOutln(ret);
+				
+				out.printOutln(ret.toString());
 			}
 		}
 	}

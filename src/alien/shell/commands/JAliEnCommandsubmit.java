@@ -1,13 +1,10 @@
 package alien.shell.commands;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import lazyj.Utils;
 import alien.taskQueue.JobSubmissionException;
 
 /**
@@ -51,34 +48,26 @@ public class JAliEnCommandsubmit extends JAliEnBaseCommand {
 		return jdl + "\nUser = {\"" + commander.getUsername() + "\"};\n";
 	}
 
-	private String getJDLFile(List<String> arguments) {
-		String file = "";
-		out.printOutln("Submitting JDL: " + arguments);
+	private String getJDLFile(final List<String> arguments) {
+		out.printOutln("Getting JDL: " + arguments);
 		try {
-
-			JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander
-					.getCommand("get", new Object[] { commander, out,
-							arguments });
+			final JAliEnCommandget get = (JAliEnCommandget) JAliEnCOMMander.getCommand("get", new Object[] { commander, out, arguments });
 			get.silent();
 			get.run();
-			File fout = get.getOutputFile();
+			
+			final File fout = get.getOutputFile();
+			
 			if (fout != null && fout.isFile() && fout.canRead()) {
-				FileInputStream fstream = new FileInputStream(fout);
-
-				DataInputStream in = new DataInputStream(fstream);
-				BufferedReader br = new BufferedReader(
-						new InputStreamReader(in));
-				String line;
-				while ((line = br.readLine()) != null) {
-					file += line + "\n";
-				}
-
+				String ret = Utils.readFile(fout.getAbsolutePath());
+				
+				return ret!=null ? ret : "";
 			}
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			e.printStackTrace();
 		}
-	//	out.printOutln("JDL IS: |" + file+"|");
-		return file;
+
+		return "";
 	}
 
 	/**

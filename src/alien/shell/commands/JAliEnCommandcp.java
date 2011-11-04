@@ -175,7 +175,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            local file
 	 * @return local target file
 	 */
-	public File copyGridToLocal(String sourceLFN, File targetFile) {
+	public File copyGridToLocal(final String sourceLFN, final File targetFile) {
+		
+		File targetLocalFile = targetFile;
 
 		List<PFN> pfns = null;
 
@@ -202,11 +204,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						Thread.sleep(500);
 						out.pending();
 					}
-					targetFile = pA.getFile();
+					
+					targetLocalFile = pA.getFile();
 					
 					if(!isSilent())
-						out.printOutln("Downloaded file to "
-							+ targetFile.getCanonicalPath());
+						out.printOutln("Downloaded file to " + targetLocalFile.getCanonicalPath());
 
 					break;
 				} catch (Exception e) {
@@ -215,8 +217,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 		
-		if (targetFile!= null && targetFile.exists() && targetFile.length() > 0)
-			return targetFile;
+		if (targetLocalFile!= null && targetLocalFile.exists() && targetLocalFile.length() > 0)
+			return targetLocalFile;
+		
 		out.printErrln("Could not get the file.");
 		return null;
 	}
@@ -230,7 +233,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            Grid filename
 	 * @return status of the upload
 	 */
-	public boolean copyLocalToGrid(File sourceFile, String targetLFN) {
+	public boolean copyLocalToGrid(final File sourceFile, final String targetLFN) {
 
 		if (!sourceFile.exists() || !sourceFile.isFile() || !sourceFile.canRead()) {
 			out.printErrln("Could not get the local file: "
@@ -264,8 +267,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		if (bG) {
 			guid = commander.c_api.getGUID(targetLFN, true);
-			pfns = commander.c_api.getPFNsToWrite(
-					commander.site, guid, ses, exses, null, 0);
+			pfns = commander.c_api.getPFNsToWrite(commander.site, guid, ses, exses, null, 0);
 			guid.size = size;
 			guid.md5 = md5;
 			out.printErrln("Not working yet...");
@@ -303,20 +305,20 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						out.pending();
 					}
 					
-					targetLFN = pA.getReturn();
+					String targetLFNResult = pA.getReturn();
+					
 					if (!isSilent())
 						out.printOutln("Uploading file "
 								+ sourceFile.getCanonicalPath() + " to "
 								+ pfn.getPFN());
-					if (targetLFN != null) {
+					if (targetLFNResult != null) {
 						if (pfn.ticket != null
 								&& pfn.ticket.envelope != null
 								&& pfn.ticket.envelope.getSignedEnvelope() != null)
 							if (pfn.ticket.envelope.getEncryptedEnvelope() == null)
-								envelopes.add(targetLFN);
+								envelopes.add(targetLFNResult);
 							else
-								envelopes.add(pfn.ticket.envelope
-										.getSignedEnvelope());
+								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 					}
 					break;
 				} catch (Exception e) {
