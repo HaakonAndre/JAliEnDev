@@ -11,12 +11,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Scanner;
-import java.util.concurrent.TimeUnit;
 
-import lia.util.process.ExternalProcess;
-import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 import alien.test.utils.Functions;
 
 /**
