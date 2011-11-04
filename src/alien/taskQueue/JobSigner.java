@@ -46,20 +46,20 @@ public class JobSigner {
 
 	}
 
-	protected static final String sJDLDelimOn = "<SJDL>\n";
-	protected static final String sJDLDelimOff = "</SJDL>\n";
+	private static final String sJDLDelimOn = "<SJDL>\n";
+	private static final String sJDLDelimOff = "</SJDL>\n";
 
-	protected static final String signatureDelimOn = "<SJDL_SIGNTATURE>";
-	protected static final String signatureDelimOff = "</SJDL_SIGNTATURE>\n";
+	private static final String signatureDelimOn = "<SJDL_SIGNTATURE>";
+	private static final String signatureDelimOff = "</SJDL_SIGNTATURE>\n";
 
-	protected static final String issuedDelimOn = "<SJDL_ISSUED>";
-	protected static final String issuedDelimOff = "</SJDL_ISSUED>\n";
+	private static final String issuedDelimOn = "<SJDL_ISSUED>";
+	private static final String issuedDelimOff = "</SJDL_ISSUED>\n";
 
-	protected static final String expiresDelimOn = "<SJDL_EXPIRES>";
-	protected static final String expiresDelimOff = "</SJDL_EXPIRES>\n";
+	private static final String expiresDelimOn = "<SJDL_EXPIRES>";
+	private static final String expiresDelimOff = "</SJDL_EXPIRES>\n";
 
-	protected static final String JDLDelimOn = "<Nested_JDL>\n";
-	protected static final String JDLDelimOff = "</Nested_JDL>\n";
+	private static final String JDLDelimOn = "<Nested_JDL>\n";
+	private static final String JDLDelimOff = "</Nested_JDL>\n";
 
 	/**
 	 * @param ks
@@ -257,7 +257,7 @@ public class JobSigner {
 
 			}
 
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			e.printStackTrace();
 			throw new JobSubmissionException(
 					"Invalid JDL Signature, [not verifyable: Exception]: "
@@ -277,6 +277,7 @@ public class JobSigner {
 			if (jdl.getArguments().size() > 0)
 				for (String arg : jdl.getArguments())
 					sjdl += "\"" + arg + "\",";
+			
 			if (sjdl.lastIndexOf(',') == sjdl.length() - 1)
 				sjdl = sjdl.substring(0, sjdl.length() - 1);
 			sjdl += "};\n";
