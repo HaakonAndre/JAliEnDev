@@ -70,7 +70,7 @@ public class GetUptime extends Request {
 		
 		while (db.moveNext()){
 			final UserStats u = new UserStats();
-			u.runningJobs = db.geti(1);
+			u.runningJobs = db.geti(2);
 			
 			stats.put(db.gets(1), u);
 		}
