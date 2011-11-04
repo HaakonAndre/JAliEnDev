@@ -131,8 +131,10 @@ public class Job  implements Comparable<Job>,Serializable {
 	
 	/**
 	 * the submitter's certificate (public)
+	 * 
+	 * TODO : X509Certificate objects are not serializable, be careful with this field ...
 	 */
-	public X509Certificate userCertificate;
+	public transient X509Certificate userCertificate;
 	
 	/**
 	 * path
