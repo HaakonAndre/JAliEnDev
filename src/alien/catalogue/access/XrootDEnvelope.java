@@ -88,8 +88,6 @@ public class XrootDEnvelope implements Serializable {
 	 * Create a encrypted envelope along verification only
 	 * 
 	 * @param envelope
-	 * @param eSize
-	 * @param eMd5
 	 */
 	public XrootDEnvelope(String envelope) {
 		this(envelope,false);
@@ -98,13 +96,14 @@ public class XrootDEnvelope implements Serializable {
 	/**
 	 * Create a signed only envelope in order to verify it
 	 * 
-	 * @param envelope
+	 * @param xrootdenvelope
 	 * @param oldEnvelope 
 	 */
-	public XrootDEnvelope(String envelope, boolean oldEnvelope) {
+	public XrootDEnvelope(final String xrootdenvelope, boolean oldEnvelope) {
+		
+		String envelope = xrootdenvelope;
 		
 		if(oldEnvelope){
-		
 
 		String spfn = "";
 		turl = "";
@@ -115,8 +114,6 @@ public class XrootDEnvelope implements Serializable {
 		String md5 = "";
 
 		unEncryptedEnvelope = envelope;
-
-		
 
 		if (envelope.contains("<authz>")) {
 			envelope = envelope.substring(envelope.indexOf("<file>")+7,
@@ -431,22 +428,23 @@ public class XrootDEnvelope implements Serializable {
 
 		e.put("xurl", addXURLForSpecialSEs(e.get("lfn")));
 
-		StringTokenizer hash = new StringTokenizer(hashord, "-");
+		final StringTokenizer hash = new StringTokenizer(hashord, "-");
 
-		String ret = "";
-		String usedHashOrd = "";
+		final StringBuilder ret = new StringBuilder();
+		final StringBuilder usedHashOrd = new StringBuilder();
 
 		while (hash.hasMoreTokens()) {
-			String key = hash.nextToken();
+			final String key = hash.nextToken();
+			
 			if (e.get(key) != null) {
-				ret += key + "=" + e.get(key) + "&";
-				usedHashOrd += key + "-";
+				ret.append(key).append('=').append(e.get(key)).append('&');
+				usedHashOrd.append(key).append('-');
 			}
 		}
 
-		ret += "hashord=" + usedHashOrd + "hashord";
+		ret.append("hashord=").append(usedHashOrd).append("hashord");
 
-		unSignedEnvelope = ret;
+		unSignedEnvelope = ret.toString();
 	}
 
 	private String addXURLForSpecialSEs(String lfn) {
