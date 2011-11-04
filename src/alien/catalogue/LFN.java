@@ -431,13 +431,13 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	public boolean equals(final Object obj) {
 		if (obj==null || !(obj instanceof LFN))
 			return false;
-		
-		final LFN other = (LFN) obj;
-		
-		if (other==obj)
+
+		if (this==obj)
 			return true;
+
+		final LFN other = (LFN) obj;		
 		
-		return compareTo((LFN) obj)==0;
+		return compareTo(other)==0;
 	}
 
 	/* (non-Javadoc)
