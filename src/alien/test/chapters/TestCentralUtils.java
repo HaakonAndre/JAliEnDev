@@ -1,6 +1,5 @@
 package alien.test.chapters;
 
-import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.test.TestConfig;
@@ -109,8 +108,8 @@ public class TestCentralUtils {
 			
 		if(writeTest)
 			return (AuthorizationChecker.canWrite(lfn, user) == weWanted);
-		else 
-			return (AuthorizationChecker.canRead(lfn, user) == weWanted);
+		
+		return (AuthorizationChecker.canRead(lfn, user) == weWanted);
 	}
 		
 		

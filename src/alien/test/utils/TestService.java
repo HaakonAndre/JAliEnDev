@@ -1,9 +1,7 @@
 package alien.test.utils;
 
-import alien.JSh;
 import alien.api.DispatchSSLServer;
 import alien.api.JBoxServer;
-import alien.shell.BusyBox;
 import alien.test.chapters.TestJShOverJBox;
 import alien.user.JAKeyStore;
 
@@ -37,6 +35,7 @@ public class TestService extends Thread{
 			jSh = true;
 	}
 	
+	@Override
 	public void run(){
 		if(jCentral)
 			startJCentral();
@@ -46,13 +45,16 @@ public class TestService extends Thread{
 			startJBox();		
 	}
 	
+	/**
+	 * @return status
+	 */
 	public int getStatus(){
 		return status;
 	}
 	
 
 	/**
-	 * @return jCentral started successfully
+	 * jCentral started successfully
 	 */
 	public void startJCentral(){
 		
@@ -79,7 +81,7 @@ public class TestService extends Thread{
 	}
 	
 	/**
-	 * @return jBox started successfully
+	 * jBox started successfully
 	 */
 	public void startJBox(){
 		
@@ -95,7 +97,7 @@ public class TestService extends Thread{
 	}
 	
 	/**
-	 * @return jSh started successfully
+	 * jSh started successfully
 	 */
 	public void startJSh(){
 		

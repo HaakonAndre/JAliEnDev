@@ -1,12 +1,10 @@
 package alien.test.chapters;
 
 import alien.JSh;
-import alien.catalogue.LFNUtils;
 import alien.shell.BusyBox;
 import alien.test.TestConfig;
 import alien.test.setup.CreateLDAP;
 import alien.test.utils.TestException;
-import alien.test.utils.TestService;
 
 /**
  * @author ron

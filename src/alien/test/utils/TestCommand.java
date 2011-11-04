@@ -2,11 +2,10 @@ package alien.test.utils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
-import lia.util.process.ExternalProcessBuilder;
 import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 /**
  * @author ron
@@ -24,15 +23,24 @@ public class TestCommand {
 
 	private ArrayList<String> command = new ArrayList<String>();
 
+	/**
+	 * 
+	 */
 	public TestCommand() {
-
+		// nothing
 	}
 
+	/**
+	 * @param command
+	 */
 	public TestCommand(ArrayList<String> command) {
 		for (String c : command)
 			this.command.add(c.trim());
 	}
 
+	/**
+	 * @param command
+	 */
 	public TestCommand(String[] command) {
 		for (String c : command)
 			this.command.add(c.trim());
@@ -57,10 +65,16 @@ public class TestCommand {
 	 * @return command
 	 */
 	public String getCommand() {
-		String out = "";
-		for (String c : command)
-			out += c + " ";
-		return out.trim();
+		final StringBuilder out = new StringBuilder();
+		
+		for (final String c : command){
+			if (out.length()>0)
+				out.append(' ');
+			
+			out.append(c);
+		}
+		
+		return out.toString();
 	}
 	
 	/**

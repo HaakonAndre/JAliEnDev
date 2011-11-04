@@ -84,7 +84,6 @@ public class Functions {
 	/**
 	 * @param s
 	 *            command, single space separated
-	 * @param verbose
 	 * @return stdout of executed command
 	 */
 	public static String callGetStdOut(String[] s) {
@@ -177,13 +176,26 @@ public class Functions {
 	    ZipFile archive = new ZipFile(zip);
 	    Enumeration<? extends ZipEntry> e = archive.entries();
 	    while (e.hasMoreElements()) {
-	      ZipEntry entry = (ZipEntry) e.nextElement();
+	      ZipEntry entry = e.nextElement();
 	      File file = new File(extractTo, entry.getName());
 	      if (entry.isDirectory() && !file.exists()) {
-	        file.mkdirs();
-	      } else {
+	    	  if (!file.mkdirs()){
+	    		  System.err.println("Cannot create base directory: "+file);
+	    	  }
+	      }
+	      else {
 	        if (!file.getParentFile().exists()) {
-	          file.getParentFile().mkdirs();
+	        	File f = file.getParentFile();
+	        	
+	        	if (f.exists()){
+	        		if (!f.isDirectory()){
+	        			System.err.println("File exists but is not a directory: "+f);
+	        		}
+	        	}
+	        	else
+	        	if (!f.mkdirs()){
+	        		System.err.println("Cannot create directory: "+f);
+	        	}
 	        }
 
 	        InputStream in = archive.getInputStream(entry);

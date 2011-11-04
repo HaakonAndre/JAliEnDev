@@ -3,7 +3,8 @@ package alien.test.setup;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
-import java.util.Arrays;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 import alien.test.TestBrain;
 import alien.test.TestConfig;
@@ -203,29 +204,49 @@ public class CreateDB {
 	
 	private static void fillDatabase(final String[] queries) throws Exception{
 		for(int a = 0; a < queries.length; a++)
-			if(queries[a]!=null)
-				cn.createStatement().execute(queries[a]);
+			if(queries[a]!=null){
+				final Statement s = cn.createStatement();
+				
+				s.execute(queries[a]);
+				
+				s.close();
+			}
 			else
 				System.err.println("Query entry ["+a+"] null!");
 	}
 
 	private static String queryDB(final String query, final String column){
+		Statement s = null;
 		
 		try {
-			ResultSet r = cn.createStatement().executeQuery(query);
+			s = cn.createStatement();
+			
+			ResultSet r = s.executeQuery(query);
+			
 			while (r.next()) 
 				return r.getString("entryID");
-		} catch (Exception e) {
+			
+			r.close();			
+		}
+		catch (Exception e) {
 			System.out.println("Error in SQL query: " + query);
 			e.printStackTrace();
 		}
+		finally{
+			if (s!=null){
+				try{
+					s.close();
+				}
+				catch (SQLException e){
+					// ignore
+				}
+			}
+		}
+		
 		return "";
 	}
 	
-	
-	
-	
-	final static String[] mysql_passwd = {
+	private final static String[] mysql_passwd = {
 		"update mysql.user set password=PASSWORD('"+TestConfig.sql_pass+"') where User='root';",
 		"delete from mysql.user where user !='root';",
 		"GRANT ALL PRIVILEGES ON *.* TO root IDENTIFIED BY '"+TestConfig.sql_pass+"' WITH GRANT OPTION;",
@@ -284,10 +305,10 @@ public class CreateDB {
 	};
 
 	   
-		final static String my_cnf = TestConfig.sql_home+"/my.cnf";
+		private final static String my_cnf = TestConfig.sql_home+"/my.cnf";
 
 	   
-	   final static String my_cnf_content =  
+	   private final static String my_cnf_content =  
 
 	   "[mysqld]\n"
 	   + "user="+ System.getProperty("user.name")+"\n"

@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 
 import javax.naming.Context;
 import javax.naming.NameAlreadyBoundException;
@@ -168,10 +169,6 @@ public class CreateLDAP {
 	
 
 	/**
-	 * @param sParam 
-	 * @param sRootExt 
-	 * @param sKey 
-	 * @param lValues 
 	 * @return status of the entry add
 	 */
 	public static final boolean initializeLDAP(){
@@ -194,6 +191,14 @@ public class CreateLDAP {
 	}
 	
 	
+	/**
+	 * @param sitename
+	 * @param domain
+	 * @param logdir
+	 * @param cachedir
+	 * @param tmpdir
+	 * @throws NamingException
+	 */
 	protected static void addSiteToLDAP(
 			final String sitename, final String domain,
 			final String logdir, final String cachedir, final String tmpdir) throws NamingException {
@@ -234,6 +239,14 @@ public class CreateLDAP {
 	}
 
 	
+	/**
+	 * @param seName
+	 * @param sitename
+	 * @param iodeamon
+	 * @param storedir
+	 * @param qos
+	 * @throws NamingException
+	 */
 	protected static void addSEToLDAP(
 			final String seName, final String sitename, final String iodeamon,
 			final String storedir, final String qos) throws NamingException {
@@ -262,6 +275,11 @@ public class CreateLDAP {
 	}
 	
 	
+	/**
+	 * @param role
+	 * @param user
+	 * @throws NamingException
+	 */
 	protected static void addRoleToLDAP(final String role, final String user) throws NamingException{
 		
 		context = getLdapContext(); 
@@ -274,6 +292,13 @@ public class CreateLDAP {
 	}
 	
 
+	/**
+	 * @param user
+	 * @param uid
+	 * @param roles
+	 * @param certSubject
+	 * @throws NamingException
+	 */
 	protected static void addUserToLDAP(final String user,final String uid, final String roles,
 			final String certSubject) throws NamingException{
 	
@@ -409,8 +434,8 @@ public class CreateLDAP {
 		Attributes attrs = new BasicAttributes();
 		attrs.put(objClass);
 
-		for(String key: objDesc.keySet())
-			attrs.put(new BasicAttribute(key, objDesc.get(key)));
+		for(Map.Entry<String,Object> entry: objDesc.entrySet())
+			attrs.put(new BasicAttribute(entry.getKey(), entry.getValue()));
 
 		try {
 			context.createSubcontext(attribute, attrs);
@@ -425,7 +450,6 @@ public class CreateLDAP {
 	
 	
 	/**
-	 * @param ldapRoot
 	 * @return connected LDAP context
 	 */
 	public static DirContext getLdapContext() {

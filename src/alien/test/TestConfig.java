@@ -264,7 +264,6 @@ public class TestConfig {
 	
 
 	/**
-	 * @param tvohome
 	 * @throws Exception
 	 */
 	public static void initialize() throws Exception {
@@ -320,7 +319,16 @@ public class TestConfig {
 	 */
 	public static void createConfig() throws Exception {
 
-		(new File(tvo_home)).mkdirs();
+		final File home = new File(tvo_home);
+		
+		if (!home.exists()){
+			if (!home.mkdirs())
+				System.err.println("Canont create path: "+home);
+		}
+		else
+		if (!home.isDirectory() || !home.canWrite()){
+			System.err.println("Cannot write here: "+home);
+		}
 		
 		if ((new File(tvo_config)).mkdir()){
 			Functions.writeOutFile(tvo_config + "/config.properties",

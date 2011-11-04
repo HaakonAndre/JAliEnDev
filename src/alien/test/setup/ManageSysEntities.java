@@ -19,6 +19,7 @@ public class ManageSysEntities {
 	 * @param username
 	 * @param uid
 	 * @param role
+	 * @param certSubject 
 	 * @return status of the user add
 	 */
 	public static boolean addUser(final String username, final String uid,
@@ -80,7 +81,6 @@ public class ManageSysEntities {
 	 * @param site 
 	 * @param iodeamon
 	 * @param qos 
-	 * @param storedir
 	 * @return status of the SE add
 	 */
 	public static boolean addSE(final String seName, final String seNumber, final String site,

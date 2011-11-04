@@ -2,8 +2,6 @@ package alien.test;
 
 import java.io.File;
 
-import alien.api.DispatchSSLServer;
-import alien.api.JBoxServer;
 import alien.config.JAliEnIAm;
 import alien.test.setup.CreateCertificates;
 import alien.test.setup.CreateDB;
@@ -12,7 +10,6 @@ import alien.test.setup.ManageSysEntities;
 import alien.test.utils.TestCommand;
 import alien.test.utils.TestException;
 import alien.test.utils.TestService;
-import alien.user.JAKeyStore;
 
 /**
  * @author ron
@@ -21,6 +18,10 @@ import alien.user.JAKeyStore;
 public class SetupTestVO {
 	
 	
+	/**
+	 * @return <code>true</code> if successful
+	 * @throws Exception
+	 */
 	protected static boolean setupVO() throws Exception {
 
 		// step 0
@@ -28,8 +29,12 @@ public class SetupTestVO {
 		File oldLink = new File(TestConfig.tvo_home);
 		if (oldLink.exists()){
 			TestCommand link = new TestCommand(new String[] { "rm", oldLink.getAbsolutePath() });
-			if(!link.exec())
-				oldLink.renameTo(new File(TestConfig.tvo_home+"_movedBy"+TestConfig.now));
+			if(!link.exec()){
+				final File target = new File(TestConfig.tvo_home+"_movedBy"+TestConfig.now);
+				
+				if (!oldLink.renameTo(target))
+					throw new TestException("Cannot rename/move "+oldLink+" to "+target);
+			}
 			if (oldLink.exists())
 				throw new TestException ("Could not handle the old testVO entry: " + oldLink.getAbsolutePath());
 		}
