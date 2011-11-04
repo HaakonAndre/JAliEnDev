@@ -215,11 +215,14 @@ public class XrootDEnvelopeSigner {
 
 		HashMap<String, String> env = new HashMap<String, String>();
 
-		String signedEnvelope = "";
-		if(envelope.contains("\\&"))
-			envelope.replace("\\&", "&");
+		StringBuilder signedEnvelope = new StringBuilder();
+		
+		String sEnvelope = envelope;
+		
+		if(sEnvelope.contains("\\&"))
+			sEnvelope = sEnvelope.replace("\\&", "&");
 
-		StringTokenizer st = new StringTokenizer(envelope, "&");
+		StringTokenizer st = new StringTokenizer(sEnvelope, "&");
 
 		while (st.hasMoreTokens()) {
 			String tok = st.nextToken();
@@ -231,18 +234,26 @@ public class XrootDEnvelopeSigner {
 				String value = tok.substring(idx + 1);
 				env.put(key, value);			}
 		}
+		
 		StringTokenizer hash = new StringTokenizer(env.get("hashord"), "-");
 
 		while (hash.hasMoreTokens()) {
 			String key = hash.nextToken();
-			signedEnvelope += key + "=" + env.get(key) +"&";
+			
+			if (signedEnvelope.length()>0)
+				signedEnvelope.append('&');
+			
+			signedEnvelope.append(key).append('=').append(env.get(key));
 		}
-		signedEnvelope = signedEnvelope.substring(0, signedEnvelope.lastIndexOf("&"));
 		
 		// TODO: this needs to go in already by the SE. Drop it here, when the SE places it itself.
 		//System.out.println("envelope is before hashord padding:" + signedEnvelope);
-		if(!selfSigned)
-			signedEnvelope += "&" + "hashord=" + env.get("hashord");
+		if(!selfSigned){
+			if (signedEnvelope.length()>0)
+				signedEnvelope.append('&');
+			
+			signedEnvelope.append("hashord=").append(env.get("hashord"));
+		}
 		
 		//System.out.println("plain envelope is : " + signedEnvelope);
 		//System.out.println("sign for envelope is : " + env.get("signature"));
@@ -256,7 +267,8 @@ public class XrootDEnvelopeSigner {
 		else {
 			signer.initVerify(SEPubKey);
 		}
-		signer.update(signedEnvelope.getBytes());
+		
+		signer.update(signedEnvelope.toString().getBytes());
 
 		return signer.verify(Base64.decode(env.get("signature")));
 	}
@@ -274,8 +286,6 @@ public class XrootDEnvelopeSigner {
 	
 	/**
 	 * @param envelope
-	 * @param size 
-	 * @param md5 
 	 * @return a loaded XrootDEnvelope with the verified values
 	 * @throws GeneralSecurityException
 	 */
