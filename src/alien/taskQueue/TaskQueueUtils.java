@@ -1096,18 +1096,15 @@ public class TaskQueueUtils {
 			
 		}
 		// put the JobLog message
-
-		HashMap<String,String> joblogtags = new HashMap<String,String>();
-		for(String key: jdltags.keySet())
-			joblogtags.put(key, jdltags.get(key));
-				
+		
+		final HashMap<String,String> joblogtags = new HashMap<String,String>(jdltags);
+						
 		String message = "Job state transition from " + j.getStatusName() + " to " + newStatus;		
 				
 		final boolean success = updateJob(j, newStatus, jdltags);
 		
 		if(!success)
 				message = "FAILED: " + message;
-		
 		
 		putJobLog(j.queueId,"state",message,joblogtags);
 	
