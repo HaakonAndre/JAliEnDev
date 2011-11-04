@@ -22,17 +22,15 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 		busy = box;
 	}
 
-	public int complete(String buf, int cursor,
-			@SuppressWarnings("rawtypes") final List candidates) {
-	
+	@Override
+	public int complete(final String buf, final int cursor, @SuppressWarnings("rawtypes") final List candidates) {
 		if (buf!=null && buf.contains("file://") && cursor >= buf.indexOf("file://"))
-			return super.complete(buf.replace("file://", ""), cursor - 7,
-					candidates) + 7;
+			return super.complete(buf.replace("file://", ""), cursor - 7, candidates) + 7;
+		
 		return gridComplete(buf, cursor, candidates);
 	}
 
-	private int gridComplete(final String buf, @SuppressWarnings("unused") final int cursor,
-			@SuppressWarnings("rawtypes") final List candidates) {
+	private int gridComplete(final String buf, final int cursor, @SuppressWarnings("rawtypes") final List candidates) {
 		
 		String buffer = (buf == null) ? "" : buf;
 
