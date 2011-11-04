@@ -6,6 +6,8 @@ import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import alien.api.Request;
 import alien.catalogue.GUID;
@@ -14,6 +16,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
+import alien.config.ConfigUtils;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
@@ -31,6 +34,11 @@ public class PFNforReadOrDel extends Request {
 	 */
 	private static final long serialVersionUID = 6219657670649893255L;
 
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(PFNforReadOrDel.class.getCanonicalName());
+	
 	private AccessType access = null;
 
 	private String site = null;
@@ -107,7 +115,7 @@ public class PFNforReadOrDel extends Request {
 							access);
 
 					if (reason != null) {
-						System.err.println("Access refused because: " + reason);
+						logger.log(Level.WARNING, "Access refused because: " + reason);
 						continue;
 					}
 					UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
@@ -121,24 +129,19 @@ public class PFNforReadOrDel extends Request {
 										.getPFNs(), site, true, SEUtils
 										.getSEs(ses), SEUtils.getSEs(exses));
 						if (!AuthorizationChecker.canRead(archiveguid, getEffectiveRequester())) {
-							System.err
-									.println("Access refused because: Not allowed to read sub-archive");
+							logger.log(Level.WARNING, "Access refused because: Not allowed to read sub-archive");
 							continue;
 						}
 
 						for (PFN apfn : apfns) {
-
-							reason = AuthorizationFactory.fillAccess(getEffectiveRequester(),
-									apfn, access);
+							reason = AuthorizationFactory.fillAccess(getEffectiveRequester(), apfn, access);
 
 							if (reason != null) {
-								System.err.println("Access refused because: "
-										+ reason);
+								logger.log(Level.WARNING, "Access refused because: " + reason);
 								continue;
 							}
-							System.out
-									.println("We have an evenlope candidate: "
-											+ apfn.getPFN());
+							
+							logger.log(Level.FINE, "We have an evenlope candidate: "+ apfn.getPFN());
 							readpfn = apfn;
 							break;
 
@@ -155,12 +158,12 @@ public class PFNforReadOrDel extends Request {
 					pfns.add(readpfn);
 
 			} catch (Exception e) {
-				System.out.println("WE HAVE AN Exception: " + e.toString());
+				logger.log(Level.SEVERE, "WE HAVE AN Exception", e);
 			}
 			if (pfns != null) {
 				for (PFN pfn : pfns) {
 					if (pfn.ticket.envelope == null) {
-						System.err.println("Sorry ... Envelope is null!");
+						logger.log(Level.WARNING, "Sorry ... Envelope is null!");
 					} else {
 						pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
 						try {
@@ -170,23 +173,21 @@ public class PFNforReadOrDel extends Request {
 							XrootDEnvelopeSigner
 									.signEnvelope(pfn.ticket.envelope);
 						} catch (SignatureException e) {
-							System.err
-									.println("Sorry ... Could not sign the envelope!");
+							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (SignatureException)", e);
 						} catch (InvalidKeyException e) {
-							System.err
-									.println("Sorry ... Could not sign the envelope!");
+							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (InvalidKeyException)", e);
 						} catch (NoSuchAlgorithmException e) {
-							System.err
-									.println("Sorry ... Could not sign the envelope!");
+							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (NoSuchAlgorithmException)", e);
 						}
 					}
 				}
-			}else 
-				System.err
-				.println("Sorry ... No PFN to make an envelope for!");
-		}else
-			System.err
-			.println("Sorry ... No PFNs for the file's GUID!");
+			}
+			else 
+				logger.log(Level.WARNING, "Sorry ... No PFN to make an envelope for!");
+		}
+		else
+			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
+		
 		if(pfns==null)
 			pfns = new ArrayList<PFN>(0);
 	}
