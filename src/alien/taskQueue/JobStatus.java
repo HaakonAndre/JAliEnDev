@@ -232,15 +232,6 @@ public enum JobStatus{
 	public boolean smallerThanEquals(final JobStatus another){
 		return this.level <= another.level;
 	}
-
-	/**
-	 * Does this job status equals the other one
-	 * @param another 
-	 * @return true if level is identical in both
-	 */
-	public boolean equals(final JobStatus another){
-		return this.level == another.level;
-	}
 	
 	/**
 	 * Id this status a ERROR_
