@@ -118,13 +118,13 @@ public class BusyBox {
 		
 		String whoami = this.username;
 		String roleami = this.role;
-		String currentDir = this.currentDir;
+		String currentDirTemp = this.currentDir;
 		
 		if(JSh.reconnect())
 			if(connect(JSh.getAddr(), JSh.getPort(), JSh.getPassword()))
 				if(callJBox("user " + whoami))
 					if(callJBox("role " + roleami))
-						if(callJBox("cd " + currentDir)){
+						if(callJBox("cd " + currentDirTemp)){
 							remainreconnect = tryreconnect;
 							return true;
 						}
@@ -233,24 +233,25 @@ public class BusyBox {
 	 * @param line
 	 * @return response from JBox
 	 */
-	public String callJBoxGetString(String line) {
+	public String callJBoxGetString(final String line){		
+		String sline = line;
 		
-		checkColorSwitch(line);
+		checkColorSwitch(sline);
 		
 		do {
 			try {
 
 				if (socketThere(s)) {
 					// line +="\n";
-					line = line.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
+					sline = sline.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
 
-					os.write(line.getBytes());
+					os.write(sline.getBytes());
 					os.flush();
 
 					BufferedReader br = new BufferedReader(
 							new InputStreamReader(is));
 
-					String ret = "";
+					StringBuilder ret = new StringBuilder();
 					String sLine = null;
 					boolean signal = false;
 
@@ -265,14 +266,16 @@ public class BusyBox {
 							updateEnvironment(sLine);
 						else if (sLine.endsWith(JShPrintWriter.streamend))
 							break;
-						else
-							ret += sLine + "\n";
+						else{
+							if (ret.length()>0)
+								ret.append('\n');
+							
+							ret.append(sLine);
+						}
 					}
 
-					if (ret.length() > 0)
-						ret = ret.substring(0, ret.length() - 1);
 					if (signal)
-						return ret;
+						return ret.toString();
 				}
 
 			} catch (Exception e) {
@@ -294,19 +297,19 @@ public class BusyBox {
 		return callJBox(line, true);
 	}
 
-	private boolean callJBox(String line, final boolean tryReconnect) {
-
+	private boolean callJBox(final String line, final boolean tryReconnect) {
+		String sline = line;
 		
-		checkColorSwitch(line);
+		checkColorSwitch(sline);
 		
 		do {
 			try {
 
 				if (socketThere(s)) {
 					// line +="\n";
-					line = line.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
+					sline = sline.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
 
-					os.write(line.getBytes());
+					os.write(sline.getBytes());
 					os.flush();
 
 					BufferedReader br = new BufferedReader(
@@ -402,15 +405,18 @@ public class BusyBox {
 		
 		if (!"".equals(args[0])) {
 			if (args[0].equals(".")) {
-				String command = "";
+				final StringBuilder command = new StringBuilder();
+				
 				for (int c = 1; c < args.length; c++)
-					command += args[c] + " ";
-				syscall(command);
+					command.append(args[c]).append(' ');
+				
+				syscall(command.toString());
 			} else if (args[0].equals("gbbox")) {
-				String command = "alien -s -e ";
+				StringBuilder command = new StringBuilder("alien -s -e ");
 				for (int c = 1; c < args.length; c++)
-					command += args[c] + " ";
-				syscall(command);
+					command.append(args[c]).append(' ');
+				
+				syscall(command.toString());
 			} else if (args[0].equals("edit")) {
 				
 				
