@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import lazyj.DBFunctions;
+import alien.api.Cacheable;
 import alien.api.Request;
 import alien.taskQueue.TaskQueueUtils;
 
@@ -14,7 +15,7 @@ import alien.taskQueue.TaskQueueUtils;
  * @author costing
  * @since Nov 4, 2011
  */
-public class GetUptime extends Request {
+public class GetUptime extends Request implements Cacheable {
 	/**
 	 * 
 	 */
@@ -101,5 +102,15 @@ public class GetUptime extends Request {
 	@Override
 	public String toString() {
 		return "Asked for uptime, answer is: "+this.stats;
+	}
+
+	@Override
+	public String getKey() {
+		return "uptime";
+	}
+
+	@Override
+	public long getTimeout() {
+		return 1000*60*1;
 	}
 }
