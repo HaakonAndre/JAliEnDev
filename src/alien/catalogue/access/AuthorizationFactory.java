@@ -63,24 +63,26 @@ public final class AuthorizationFactory {
 
 					is = new FileInputStream(f);
 
-					final CertificateFactory cf = CertificateFactory
-							.getInstance("X.509");
-					final X509Certificate cert = (X509Certificate) cf
-							.generateCertificate(is);
-					user = UserFactory
-							.getByCertificate(new X509Certificate[] { cert });
+					final CertificateFactory cf = CertificateFactory.getInstance("X.509");
+					final X509Certificate cert = (X509Certificate) cf.generateCertificate(is);
+					user = UserFactory.getByCertificate(new X509Certificate[] { cert });
 
 				} else {
-
 					Security.addProvider(new BouncyCastleProvider());
 
-					final X509Certificate cert = (X509Certificate) new PEMReader(
-							new BufferedReader(new FileReader(file)))
-							.readObject();
+					PEMReader pr = null;
+					
+					try{
+						pr = new PEMReader(new BufferedReader(new FileReader(file)));
+						
+						final X509Certificate cert = (X509Certificate) pr.readObject();
 
-					user = UserFactory
-							.getByCertificate(new X509Certificate[] { cert });
-
+						user = UserFactory.getByCertificate(new X509Certificate[] { cert });
+					}
+					finally{
+						if (pr!=null)
+							pr.close();
+					}
 				}
 			} catch (Throwable t) {
 				logger.log(Level.WARNING, "Could not read from " + file, t);
