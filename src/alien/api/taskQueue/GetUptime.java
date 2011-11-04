@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import lazyj.DBFunctions;
+import lazyj.StringFactory;
 import alien.api.Cacheable;
 import alien.api.Request;
 import alien.taskQueue.TaskQueueUtils;
@@ -73,13 +74,13 @@ public class GetUptime extends Request implements Cacheable {
 			final UserStats u = new UserStats();
 			u.runningJobs = db.geti(2);
 			
-			stats.put(db.gets(1), u);
+			stats.put(StringFactory.get(db.gets(1)), u);
 		}
 		
 		db.query("select substring_index(submithost,'@',1),count(1) from QUEUE where status in ('INSERTING', 'WAITING') group by 1 order by 1;");
 		
 		while (db.moveNext()){
-			final String user = db.gets(1);
+			final String user = StringFactory.get(db.gets(1));
 			
 			UserStats u = stats.get(user);
 			
