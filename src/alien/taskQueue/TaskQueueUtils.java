@@ -44,7 +44,7 @@ public class TaskQueueUtils {
 	static transient final Monitor monitor = MonitorFactory.getMonitor(TaskQueueUtils.class.getCanonicalName());
 	
 	
-	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
+//	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
 
 	
 	/**
@@ -175,81 +175,81 @@ public class TaskQueueUtils {
 		
 		return ret;
 	}
-//	
-//	/**
-//	 * @param account
-//	 * @return the masterjobs for this account and the subjob statistics for them
-//	 */
-//	public static Map<Job, Map<JobStatus, Integer>> getMasterjobStats(final String account){
-//		return getMasterjobStats(getMasterjobs(account));
-//	}
-//	
-//	/**
-//	 * @param jobs
-//	 * @return the same masterjobs and the respective subjob statistics
-//	 */
-//	public static Map<Job, Map<JobStatus, Integer>> getMasterjobStats(final List<Job> jobs){
-//		final Map<Job, Map<JobStatus, Integer>> ret = new TreeMap<Job, Map<JobStatus, Integer>>();
-//		
-//		if (jobs.size()==0)
-//			return ret;
-//		
-//		final DBFunctions db = getQueueDB();
-//
-//		final StringBuilder sb = new StringBuilder(jobs.size() * 10);
-//		
-//		final Map<Integer, Job> reverse = new HashMap<Integer, Job>(); 
-//		
-//		for (final Job j: jobs){
-//			if (sb.length()>0)
-//				sb.append(',');
-//			
-//			sb.append(j.queueId);
-//			
-//			reverse.put(Integer.valueOf(j.queueId), j);
-//		}
-//
-//		if (monitor!=null){
-//			monitor.incrementCounter("TQ_db_lookup");
-//			monitor.incrementCounter("TQ_getmasterjob_stats");
-//		}
-//		
-//		final long lQueryStart = System.currentTimeMillis();
-//
-//		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
-//		
-//		if (monitor!=null)
-//			monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
-//			
-//		Map<JobStatus, Integer> m = null;
-//		int oldJobID = -1;
-//			
-//		while (db.moveNext()){
-//			final int j = db.geti(1);
-//			
-//			if (j!=oldJobID){
-//				m = new HashMap<JobStatus, Integer>();
-//
-//				final Integer jobId = Integer.valueOf(j);
-//				ret.put(reverse.get(jobId), m);
-//				reverse.remove(jobId);
-//				
-//				oldJobID = j;
-//			}
-//			
-//			// ignore the NPE warning, this cannot be null
-//			m.put(JobStatus.get(db.gets(2)), Integer.valueOf(db.geti(3)));
-//		}
-//		
-//		// now, what is left, something that doesn't have subjobs ?
-//		for (final Job j: reverse.values()){
-//			m = new HashMap<JobStatus, Integer>(1);
-//			m.put(j.status(), Integer.valueOf(1));
-//			ret.put(j, m);
-//		}
-//				
-//		return ret;
-//	}
+	
+	/**
+	 * @param account
+	 * @return the masterjobs for this account and the subjob statistics for them
+	 */
+	public static Map<Job, Map<JobStatus, Integer>> getMasterjobStats(final String account){
+		return getMasterjobStats(getMasterjobs(account));
+	}
+	
+	/**
+	 * @param jobs
+	 * @return the same masterjobs and the respective subjob statistics
+	 */
+	public static Map<Job, Map<JobStatus, Integer>> getMasterjobStats(final List<Job> jobs){
+		final Map<Job, Map<JobStatus, Integer>> ret = new TreeMap<Job, Map<JobStatus, Integer>>();
+		
+		if (jobs.size()==0)
+			return ret;
+		
+		final DBFunctions db = getQueueDB();
+
+		final StringBuilder sb = new StringBuilder(jobs.size() * 10);
+		
+		final Map<Integer, Job> reverse = new HashMap<Integer, Job>(); 
+		
+		for (final Job j: jobs){
+			if (sb.length()>0)
+				sb.append(',');
+			
+			sb.append(j.queueId);
+			
+			reverse.put(Integer.valueOf(j.queueId), j);
+		}
+
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_getmasterjob_stats");
+		}
+		
+		final long lQueryStart = System.currentTimeMillis();
+
+		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
+		
+		if (monitor!=null)
+			monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+			
+		Map<JobStatus, Integer> m = null;
+		int oldJobID = -1;
+			
+		while (db.moveNext()){
+			final int j = db.geti(1);
+			
+			if (j!=oldJobID){
+				m = new HashMap<JobStatus, Integer>();
+
+				final Integer jobId = Integer.valueOf(j);
+				ret.put(reverse.get(jobId), m);
+				reverse.remove(jobId);
+				
+				oldJobID = j;
+			}
+			
+			// ignore the NPE warning, this cannot be null
+			m.put(JobStatus.getStatus(db.gets(2)), Integer.valueOf(db.geti(3)));
+		}
+		
+		// now, what is left, something that doesn't have subjobs ?
+		for (final Job j: reverse.values()){
+			m = new HashMap<JobStatus, Integer>(1);
+			m.put(j.status(), Integer.valueOf(1));
+			ret.put(j, m);
+		}
+				
+		return ret;
+	}
 
 	/**
 	 * Get the subjobs of this masterjob
