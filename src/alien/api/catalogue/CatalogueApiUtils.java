@@ -11,7 +11,6 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.user.AliEnPrincipal;
 
 /**
  * 

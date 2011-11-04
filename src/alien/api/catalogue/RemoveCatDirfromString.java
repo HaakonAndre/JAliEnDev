@@ -32,6 +32,7 @@ public class RemoveCatDirfromString extends Request {
 		this.path = path;
 	}
 
+	@Override
 	public void run() {
 		LFN lfn = LFNUtils.getLFN(path);
 		if(lfn!=null)
@@ -47,6 +48,7 @@ public class RemoveCatDirfromString extends Request {
 	}
 
 
+	@Override
 	public String toString() {
 		return "Asked to remove : " + this.path + ", reply is:\n" + this.wasRemoved;
 	}

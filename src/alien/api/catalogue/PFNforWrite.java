@@ -116,7 +116,8 @@ public class PFNforWrite extends Request {
 
 		pfns = new ArrayList<PFN>(count);
 
-		LFN setArchiveAnchor = null;
+//		LFN setArchiveAnchor = null;
+		
 		if (lfn != null) {
 			if(guid==null){
 				System.err

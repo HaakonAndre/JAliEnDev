@@ -145,28 +145,29 @@ public class RegisterEnvelopes extends Request {
 			}
 			
 				if (xenv != null) {
-					PFN pfn = null;
+					PFN bookedpfn = null;
+					
 					try{
-					                                                                                 pfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
+						bookedpfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
 					} catch (Exception e) {
 						System.err.println("Sorry ... Error getting the PFN: " + e);
 					}
 					
-					if (pfn != null) {
+					if (bookedpfn != null) {
 
 						if (size != 0)
-							pfn.getGuid().size = size;
+							bookedpfn.getGuid().size = size;
 						if (md5 != null && md5 != "" && md5 != "0")
-							pfn.getGuid().md5 = md5;
+							bookedpfn.getGuid().md5 = md5;
 
 						try{
-						if (BookingTable.commit(getEffectiveRequester(), pfn)) {
+						if (BookingTable.commit(getEffectiveRequester(), bookedpfn)) {
 							
 								System.out.println("Successfully moved "
 									+ xenv.pfn.pfn + " to the Catalogue");
 						
 								
-							pfns.add(pfn);
+							pfns.add(bookedpfn);
 						}else {
 							System.err.println("Unable to register "
 									+ xenv.pfn.pfn + " in the Catalogue");
