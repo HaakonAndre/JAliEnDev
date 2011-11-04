@@ -169,7 +169,6 @@ public final class SEUtils {
 	 * Get all SE objects that have the given names
 	 * 
 	 * @param ses
-	 * @param seNames
 	 * @return SE objects
 	 */
 	public static List<SE> getSEs(final List<String> ses) {
@@ -417,34 +416,45 @@ public final class SEUtils {
 			return spfns;
 
 		System.out.println("sortBySiteSpecifySEs: ses: " + SEs);
-		if (SEs.isEmpty())
+		
+		if (SEs==null || SEs.isEmpty())
 			System.out.println("sortBySiteSpecifySEs: ses empty");
 
 		System.out.println("sortBySiteSpecifySEs: exses: " + exSEs);
-		if (exSEs.isEmpty())
+		if (exSEs==null || exSEs.isEmpty())
 			System.out.println("sortBySiteSpecifySEs: exses empty");
 
-		for (SE ex : exSEs) {
-			System.out.println("exSEs contains: " + ex.seName);
+		if (exSEs!=null){
+			for (SE ex : exSEs) {
+				System.out.println("exSEs contains: " + ex.seName);
+			}
 		}
-		for (SE se : SEs) {
-			System.out.println("SEs contains: " + se.seName);
+		
+		if (SEs!=null){
+			for (SE se : SEs) {
+				System.out.println("SEs contains: " + se.seName);
+			}
 		}
 
 		List<PFN> ret = new ArrayList<PFN>(spfns.size());
 
 		for (PFN pfn : spfns) {
-			for (SE ex : exSEs) {
-				if (pfn.seNumber == ex.seNumber) {
-					System.out.println("Hit remove for SE: " + ex.seName);
-					spfns.remove(pfn);
+			if (exSEs != null) {
+				for (SE ex : exSEs) {
+					if (pfn.seNumber == ex.seNumber) {
+						System.out.println("Hit remove for SE: " + ex.seName);
+						spfns.remove(pfn);
+					}
 				}
 			}
-			for (SE se : SEs) {
-				if (pfn.seNumber == se.seNumber) {
-					ret.add(pfn);
-					spfns.remove(pfn);
-					System.out.println("Hit priority for SE: " + se.seName);
+
+			if (SEs != null) {
+				for (SE se : SEs) {
+					if (pfn.seNumber == se.seNumber) {
+						ret.add(pfn);
+						spfns.remove(pfn);
+						System.out.println("Hit priority for SE: " + se.seName);
+					}
 				}
 			}
 		}
