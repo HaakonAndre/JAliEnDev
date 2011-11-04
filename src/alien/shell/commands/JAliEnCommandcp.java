@@ -14,6 +14,7 @@ import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 
@@ -248,15 +249,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			return false;
 		}
 		String md5 = null;
+		
 		try {
-			md5 = FileSystemUtils.calculateMD5(sourceFile);
+			md5 = IOUtils.getMD5(sourceFile);
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
+		
 		if (md5 == null) {
-			System.err
-					.println("Could not calculate md5 checksum of the local file: "
-							+ sourceFile.getAbsolutePath());
+			System.err.println("Could not calculate md5 checksum of the local file: "+ sourceFile.getAbsolutePath());
 			return false;
 		}
 
