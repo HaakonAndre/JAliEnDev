@@ -1,12 +1,8 @@
 package alien.api;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 
 import lazyj.cache.ExpirationCache;
-
-import alien.api.catalogue.LFNfromString;
 import alien.config.ConfigUtils;
 
 /**
@@ -62,7 +58,7 @@ public class Dispatcher {
 	}
 	
 	
-	private static Request dispatchRequest(final Request r) throws IOException {
+	private static Request dispatchRequest(final Request r) {
 		return DispatchSSLClient.dispatchRequest(r);
 	}
 
