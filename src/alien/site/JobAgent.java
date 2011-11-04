@@ -23,9 +23,9 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
-import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobSigner;
@@ -61,6 +61,7 @@ public class JobAgent extends Thread {
 
 	}
 
+	@Override
 	public void run() {
 
 		while (true) {
@@ -78,15 +79,15 @@ public class JobAgent extends Thread {
 		}
 	}
 
-	private void handleJob(Job job) {
-		this.job = job;
+	private void handleJob(final Job thejob) {
+		this.job = thejob;
 		try {
-			sjdl = job.getOriginalJDL();
+			sjdl = thejob.getOriginalJDL();
 			System.out.println("started JA with: " + sjdl);
-			jdl = new JDL(job.getJDL());
+			jdl = new JDL(thejob.getJDL());
 
 			if (verifiedJob()) {
-				q_api.setJobStatus(job.queueId, "STARTED");
+				q_api.setJobStatus(thejob.queueId, "STARTED");
 				if (createTempDir())
 					if (getInputFiles()) {
 						if (execute())
@@ -94,10 +95,10 @@ public class JobAgent extends Thread {
 								System.out.println("Job sucessfully executed.");
 					} else {
 						System.out.println("Could not get input files.");
-						q_api.setJobStatus(job.queueId, "ERROR_IB");
+						q_api.setJobStatus(thejob.queueId, "ERROR_IB");
 					}
 			} else {
-				q_api.setJobStatus(job.queueId, "ERROR_VER");
+				q_api.setJobStatus(thejob.queueId, "ERROR_VER");
 			}
 		} catch (IOException e) {
 			System.err.println("Unable to get JDL from Job.");
@@ -278,7 +279,7 @@ public class JobAgent extends Thread {
 						}
 						String md5 = null;
 						try {
-							md5 = FileSystemUtils.calculateMD5(localFile);
+							md5 = IOUtils.getMD5(localFile);
 						} catch (Exception e1) {
 							// ignore
 						}
@@ -291,8 +292,7 @@ public class JobAgent extends Thread {
 						List<PFN> pfns = null;
 
 						LFN lfn = null;
-						lfn = c_api.getLFN(
-								outDir.getCanonicalName() + slfn, true);
+						lfn = c_api.getLFN(outDir.getCanonicalName() + slfn, true);
 
 						lfn.size = size;
 						lfn.md5 = md5;
