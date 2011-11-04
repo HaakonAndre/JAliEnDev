@@ -213,8 +213,10 @@ public class Xrootd extends Protocol {
 					+ command.toString());
 			}
 			finally {
-				if (fAuthz != null)
-					fAuthz.delete();
+				if (fAuthz != null){
+					if (!fAuthz.delete())
+						logger.log(Level.WARNING, "Could not delete temporary auth token file: "+fAuthz.getAbsolutePath());
+				}
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
