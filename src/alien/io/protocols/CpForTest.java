@@ -52,18 +52,17 @@ public class CpForTest  extends Protocol {
 
 				// command.addAll(getCommonArguments());
 
-				String envelope = null;
+//				String envelope = null;
+//
+//				if (pfn.ticket.envelope != null) {
+//					envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+//
+//					if (envelope == null)
+//						envelope = pfn.ticket.envelope.getSignedEnvelope();
+//				}
 
-				if (pfn.ticket.envelope != null) {
-					envelope = pfn.ticket.envelope.getEncryptedEnvelope();
-
-					if (envelope == null)
-						envelope = pfn.ticket.envelope.getSignedEnvelope();
-				}
-
-					command.add("wouldremove");
-					command.add(getLocalPath(pfn));
-
+				command.add("wouldremove");
+				command.add(getLocalPath(pfn));
 			
 				// System.err.println(command);
 
@@ -83,8 +82,6 @@ public class CpForTest  extends Protocol {
 				catch (final InterruptedException ie) {
 					throw new IOException("Interrupted while waiting for the following command to finish : "
 						+ command.toString());
-				}
-				finally {
 				}
 
 				if (exitStatus.getExtProcExitStatus() != 0) {
@@ -115,16 +112,15 @@ public class CpForTest  extends Protocol {
 		 */
 		@Override
 		public File get(final PFN pfn, final File localFile) throws IOException {
-			File target = null;
+			File target;
 
 			if (localFile != null) {
 				if (localFile.exists())
-					throw new IOException("Local file " + localFile.getCanonicalPath()
-						+ " exists already. Cp would fail.");
+					throw new IOException("Local file " + localFile.getCanonicalPath() + " exists already. Cp would fail.");
+				
 				target = localFile;
 			}
-
-			if (localFile == null) {
+			else{
 				target = File.createTempFile("cp-get", null);
 
 				if (!target.delete())
@@ -132,8 +128,7 @@ public class CpForTest  extends Protocol {
 			}
 
 			if (pfn.ticket == null || pfn.ticket.type != AccessType.READ) {
-				throw new IOException("The envelope for PFN " + pfn.toString()
-					+ " could not be found or is not a READ one.");
+				throw new IOException("The envelope for PFN " + pfn.pfn + " could not be found or is not a READ one.");
 			}
 
 			try {
