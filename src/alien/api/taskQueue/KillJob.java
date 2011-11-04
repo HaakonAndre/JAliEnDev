@@ -1,8 +1,6 @@
 package alien.api.taskQueue;
 
 import alien.api.Request;
-import alien.taskQueue.JobSubmissionException;
-import alien.taskQueue.TaskQueueFakeUtils;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
@@ -36,6 +34,7 @@ public class KillJob extends Request {
 	}
 
 
+	@Override
 	public void run() {
 		this.wasKilled = TaskQueueUtils.killJob(getEffectiveRequester(),getEffectiveRequesterRole(),queueId);
 	}
@@ -47,6 +46,7 @@ public class KillJob extends Request {
 		return this.wasKilled;
 	}
 
+	@Override
 	public String toString() {
 		return "Asked to kill job: " + this.queueId;
 	}

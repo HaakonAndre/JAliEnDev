@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import alien.api.Request;
-import alien.taskQueue.TaskQueueFakeUtils;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
@@ -16,9 +15,11 @@ import alien.user.AliEnPrincipal;
  * @since Oct 28, 2011
  */
 public class GetJobs extends Request {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 385621115781357192L;
 
-
-	
 	private List<Job> jobs;
 	
 	private final List<Integer> queueIds;

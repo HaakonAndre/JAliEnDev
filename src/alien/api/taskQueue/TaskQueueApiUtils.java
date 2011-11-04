@@ -1,36 +1,53 @@
-package alien.api.taskQueue;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Set;
-
-import alien.api.Dispatcher;
-import alien.shell.commands.JAliEnCOMMander;
-import alien.taskQueue.JDL;
-import alien.taskQueue.Job;
-import alien.taskQueue.JobSigner;
-import alien.taskQueue.JobStatus;
-import alien.taskQueue.JobSubmissionException;
-import alien.user.JAKeyStore;
-
-/**
- * Get the JDL object
- * 
- * @author ron
- * @since Jun 05, 2011
- */
-public class TaskQueueApiUtils {
-	
-	private final JAliEnCOMMander commander;
-	
-	
-	/**
-	 * @param commander
-	 */
-	public TaskQueueApiUtils(JAliEnCOMMander commander){
-		this.commander = commander;
+						package alien.api.taskQueue;
+						
+						import java.io.IOException;
+						import java.util.List;
+						import java.util.Map;
+						import java.util.Set;
+						
+						import alien.api.Dispatcher;
+						import alien.shell.commands.JAliEnCOMMander;
+						import alien.taskQueue.JDL;
+						import alien.taskQueue.Job;
+						import alien.taskQueue.JobSigner;
+						import alien.taskQueue.JobStatus;
+						import alien.taskQueue.JobSubmissionException;
+						import alien.user.JAKeyStore;
+						
+						/**
+						 * Get the JDL object
+						 * 
+						 * @author ron
+						 * @since Jun 05, 2011
+						 */
+						public class TaskQueueApiUtils {
+							
+							private final JAliEnCOMMander commander;
+							
+							
+							/**
+							 * @param commander
+							 */
+							public TaskQueueApiUtils(JAliEnCOMMander commander){
+								this.commander = commander;
 	}
 
+	/**
+	 * @return the uptime / w statistics
+	 */
+	public Map<String, GetUptime.UserStats> getUptime(){
+		try{
+			final GetUptime uptime = (GetUptime) Dispatcher.execute(new GetUptime(), false);
+			
+			return uptime.getStats();
+		}
+		catch (IOException ioe){
+			System.out.println("Could not get an uptime stats: "+ioe.getMessage());
+			ioe.printStackTrace();
+		}
+		
+		return null;
+	}
 	
 	/**
 	 * @param states 
@@ -55,7 +72,6 @@ public class TaskQueueApiUtils {
 			e.printStackTrace();
 		}
 		return null;
-
 	}
 	
 

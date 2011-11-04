@@ -1,7 +1,6 @@
 package alien.api.taskQueue;
 
 import alien.api.Request;
-import alien.taskQueue.TaskQueueFakeUtils;
 import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;

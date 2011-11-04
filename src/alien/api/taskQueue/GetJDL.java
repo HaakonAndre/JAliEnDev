@@ -1,8 +1,6 @@
 package alien.api.taskQueue;
 
 import alien.api.Request;
-import alien.taskQueue.TaskQueueFakeUtils;
-import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
@@ -13,8 +11,10 @@ import alien.user.AliEnPrincipal;
  * @since Oct 26, 2011
  */
 public class GetJDL extends Request {
-
-
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5445861914172537974L;
 
 	private final int queueId;
 	
