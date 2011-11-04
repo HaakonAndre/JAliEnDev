@@ -1,10 +1,5 @@
 package alien.catalogue;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.logging.Level;
@@ -38,14 +33,12 @@ public final class FileSystemUtils {
 	
 	/**
 	 * @param user
-	 * @param path
+	 * @param directory
 	 * @return the LFN
 	 */
-	public static LFN createCatalogueDirectory(AliEnPrincipal user,
-			String path) {
+	public static LFN createCatalogueDirectory(final AliEnPrincipal user, final String directory) {
 		
-		path = FileSystemUtils.getAbsolutePath(
-				user.getName(), null, path);
+		String path = FileSystemUtils.getAbsolutePath(user.getName(), null, directory);
 		
 		if(path.endsWith("/"))
 			path = path.substring(0,path.length()-1);
@@ -96,13 +89,13 @@ public final class FileSystemUtils {
 					return null;
 				}
 				return LFNUtils.getLFN(path, true);
-			}else{
-				return lfn;
 			}
-				
+			
+			return lfn;
 		}
-		logger.log(Level.WARNING,
-				"New directory ["+path+"] creation failed. Authorization failed.");
+		
+		logger.log(Level.WARNING, "New directory ["+path+"] creation failed. Authorization failed.");
+		
 		return null;
 	}
 	
@@ -137,25 +130,23 @@ public final class FileSystemUtils {
 				toDo.removeLast();
 			}
 			return ret;
-		} else
-			return createCatalogueDirectory(user,path);
+		}
 		
-		
+		return createCatalogueDirectory(user,path);
 	}
 
 	/**
 	 * Get the absolute path, currentDir can be <code>null</code> then currentDir is set to user's home
 	 * 
 	 * @param user
-	 * @param currentDir
-	 * @param path
+	 * @param currentDirectory
+	 * @param cataloguePath
 	 * @return absolute path, or <code>null</code> if none could be found
 	 */
-	public static String getAbsolutePath(String user, String currentDir,
-			String path) {
-
-		if(currentDir==null)
-			currentDir = UsersHelper.getHomeDir(user);
+	public static String getAbsolutePath(final String user, final String currentDirectory, final String cataloguePath) {
+		String currentDir = currentDirectory!=null ? currentDirectory : UsersHelper.getHomeDir(user); 
+		
+		String path = cataloguePath;
 		
 		if (path.indexOf('~') == 0)
 			path = UsersHelper.getHomeDir(user)
@@ -216,21 +207,5 @@ public final class FileSystemUtils {
 		}
 
 		return ret.toString();
-	}
-
-	/**
-	 * @param file
-	 * @return MD5 checksum of the file
-	 * @throws Exception
-	 */
-	public static String calculateMD5(File file) throws Exception {
-		MessageDigest md = MessageDigest.getInstance("MD5");
-		InputStream fis = new FileInputStream(file);
-		byte[] buffer = new byte[8192];
-		int read = 0;
-		while ((read = fis.read(buffer)) > 0)
-			md.update(buffer, 0, read);
-		BigInteger bi = new BigInteger(1, md.digest());
-		return bi.toString(16);
 	}
 }
