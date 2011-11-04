@@ -9,11 +9,10 @@ import java.io.InputStreamReader;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.shell.BusyBox;
@@ -24,6 +23,7 @@ import alien.shell.commands.JAliEnBaseCommand;
  * @author ron
  * @since Jun 21, 2011
  */
+@SuppressWarnings("restriction")
 public class JSh {
 	
 	
@@ -40,7 +40,10 @@ public class JSh {
 	}
 	
 	
-	private static BusyBox boombox = null;
+	/**
+	 * 
+	 */
+	static BusyBox boombox = null;
 	
 	private static boolean color = true;
 	
@@ -74,13 +77,15 @@ public class JSh {
 	public static void main(String[] args) throws Exception {
 
 		 Signal.handle(new Signal("INT"), new SignalHandler () {
-			    public void handle(Signal sig) {
+			    @Override
+				public void handle(Signal sig) {
 			      if(boombox!=null)
 		            	boombox.callJBoxGetString("SIGINT");
 			    }
 			  });
 		 Runtime.getRuntime().addShutdownHook(new Thread() {
-		      public void run() {
+		      @Override
+			public void run() {
 		    	  if(boombox!=null)
 		    		  if(boombox.prompting()){
 		    			if(appendOnExit)
@@ -121,7 +126,10 @@ public class JSh {
 		}
 	}
 
-	private static boolean appendOnExit = true;
+	/**
+	 * Trigger no 'exit\n' to be written out on exit
+	 */
+	static boolean appendOnExit = true;
 	
 	
     /**
@@ -286,7 +294,7 @@ public class JSh {
 			String[] specs = new String(buffer).split("\n");
 
 			for (String spec : specs) {
-				String[] kval = new String(spec).split("=");
+				String[] kval = spec.split("=");
 
 				if (("Host").equals(kval[0].trim())) {
 					addr = kval[1].trim();
@@ -365,11 +373,13 @@ public class JSh {
 	}
 	
 	
-	private static String joinSecondArgs(String[] args){
-		String ret = "";
+	private static String joinSecondArgs(final String[] args){
+		final StringBuilder ret = new StringBuilder();
+		
 		for(int a=1;a<args.length;a++)
-			ret += args[a] + " ";
-		return ret;
+			ret.append(args[a]).append(' ');
+		
+		return ret.toString();
 	}
 	
 	
@@ -416,9 +426,11 @@ public class JSh {
 		System.out.println();
 		
 	}
-
 	
-	private static void printGoodBye(){
+	/**
+	 * be polite 
+	 */
+	static void printGoodBye(){
 		JSh.printOut("GoodBye.");
 	}
 	

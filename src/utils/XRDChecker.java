@@ -131,8 +131,10 @@ public class XRDChecker {
 			return new XRDStatus(false, ioe.getMessage());
 		}
 		finally{
-			if (f!=null)
-				f.delete();
+			if (f!=null){
+				if (!f.delete())
+					System.err.println("Could not delete: "+f);
+			}
 		}
 		
 		return new XRDStatus(true, null);

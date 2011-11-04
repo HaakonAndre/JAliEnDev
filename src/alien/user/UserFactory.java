@@ -151,6 +151,10 @@ public final class UserFactory {
 	}
 	
 	
+	/**
+	 * @param cert
+	 * @return the other type of certificate
+	 */
 	public static X509Certificate convert(javax.security.cert.X509Certificate cert) {
 	    try {
 	        byte[] encoded = cert.getEncoded();
@@ -171,6 +175,10 @@ public final class UserFactory {
 	}
 
 
+	/**
+	 * @param cert
+	 * @return the other type of certificate
+	 */
 	public static javax.security.cert.X509Certificate convert(X509Certificate cert) {
 	    try {
 	        byte[] encoded = cert.getEncoded();

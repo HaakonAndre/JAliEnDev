@@ -3,7 +3,6 @@ package alien;
 import java.io.File;
 import java.io.IOException;
 
-import alien.test.TestConfig;
 import alien.test.utils.Functions;
 
 /**

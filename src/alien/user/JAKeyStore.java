@@ -219,8 +219,9 @@ public class JAKeyStore {
 					if (!perms.startsWith("-r--r-----"))
 						return false;
 				return true;
-			}else
-				return false;
+			}
+			
+			return false;
 		} catch (Exception e) {
 			// ignore
 			return false;
@@ -259,6 +260,7 @@ public class JAKeyStore {
 	
 	
 	/**
+	 * @return 
 	 * @throws Exception
 	 */
 	public static boolean loadClientKeyStorage() throws Exception {
@@ -267,6 +269,7 @@ public class JAKeyStore {
 	
 	/**
 	 * @param noUserPass 
+	 * @return 
 	 * @throws Exception
 	 */
 	public static boolean loadClientKeyStorage(final boolean noUserPass) throws Exception {
@@ -546,7 +549,7 @@ public class JAKeyStore {
 
 		private final char[] password;
 
-		private JPasswordFinder(char[] password) {
+		JPasswordFinder(char[] password) {
 			this.password = password;
 		}
 

@@ -2,6 +2,7 @@ package alien;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -11,11 +12,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import lazyj.DBFunctions;
+import lazyj.Format;
 import lazyj.Utils;
 import utils.XRDChecker;
 import alien.catalogue.BookingTable;
@@ -24,7 +28,11 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
+import alien.io.Transfer;
+import alien.io.TransferBroker;
 import alien.io.protocols.XRDStatus;
 import alien.io.xrootd.XrootdCleanup;
 import alien.io.xrootd.XrootdFile;
@@ -44,6 +52,91 @@ public class Testing {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Testing.class.getCanonicalName());
+		
+	private static final void performTransfer(final int transferId){
+		
+		final DBFunctions db = ConfigUtils.getDB("transfers");
+		
+		db.query("select lfn,destination from TRANSFERS_DIRECT where transferId="+transferId+";");
+		
+		String sLFN = db.gets(1);
+		String targetSE = db.gets(2);
+		
+		final LFN lfn = LFNUtils.getLFN(sLFN);
+		
+		if (!lfn.exists){
+			System.err.println("LFN doesn't exist : "+lfn);
+			return;
+		}
+		
+		if (lfn.guid==null){
+			System.err.println("GUID is null for this LFN");
+			return;
+		}
+		
+		final GUID guid = GUIDUtils.getGUID(lfn.guid);
+		
+		if (guid==null){
+			System.err.println("GUID was not found in the database");
+			return;
+		}
+		
+		final SE se = SEUtils.getSE(targetSE);
+		
+		if (se==null){
+			System.err.println("Target SE doesn't exist");
+			return;
+		}
+		
+		final Set<PFN> pfns = lfn.whereisReal();
+		
+		if (pfns==null || pfns.size()==0){
+			System.err.println("No replicas to mirror");
+			return;
+		}
+		
+		for (final PFN pfn: pfns){
+			if (pfn.seNumber == se.seNumber){
+				System.err.println("There is already a replica on this storage");
+				return;
+			}
+		}
+		
+		final StringTokenizer st = new StringTokenizer(targetSE, ":");
+		
+		st.nextToken();
+		final String site = st.nextToken();
+		
+		final List<PFN> sortedPFNs = SEUtils.sortBySite(pfns, site, false);
+		
+		for (final PFN source: sortedPFNs){
+			final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
+		
+			if (reason!=null){
+				System.err.println("Source authorization failed: "+reason);
+				return;
+			}
+		}
+				
+		final PFN target;
+		
+		try{
+			target = BookingTable.bookForWriting(lfn, guid, null, 0, se);
+		}
+		catch (IOException ioe){
+			final String reason = ioe.getMessage();
+			System.err.println("Target authorization failed: "+reason);
+			return;
+		}
+		
+		final Transfer t = new Transfer(transferId, sortedPFNs, target);
+		
+		t.run();
+		
+		System.err.println(t);
+		
+		TransferBroker.getInstance().notifyTransferComplete(t);
+	}
 	
 	/**
 	 * @param args
@@ -52,6 +145,30 @@ public class Testing {
 		//removeFZK();
 			
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+		
+		if (true){
+			//performTransfer(28107486);
+			
+			BufferedReader br = new BufferedReader(new FileReader("/home/costing/temp/list.txt"));
+			
+			String sLine;
+			
+			long totalsize = 0;
+			
+			while ( (sLine=br.readLine()) != null ){
+				if (sLine.startsWith("/")){			
+					LFN l = LFNUtils.getLFN(sLine);
+					
+					System.err.println(sLine+"\t\t"+Format.size(l.size));
+					
+					totalsize += l.size;
+				}
+			}
+			
+			System.err.println("Total size : "+totalsize+" ("+Format.size(totalsize)+")");
+			
+			return;
+		}
 		
 		if (true){
 			LFN c = LFNUtils.createCollection("/alice/cern.ch/user/g/grigoras/testCollection", UserFactory.getByUsername("grigoras"));

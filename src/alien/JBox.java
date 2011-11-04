@@ -32,7 +32,7 @@ public class JBox {
 
 			if(options.has("debug")){
 				//iDebug = Integer.parseInt((String) options.valueOf("debug"));
-				iDebug = (Integer) options.valueOf("debug");
+				iDebug = ((Integer) options.valueOf("debug")).intValue();
 			}
 
 		} catch (Exception e) {
