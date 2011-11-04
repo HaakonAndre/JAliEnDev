@@ -102,7 +102,7 @@ public class AuthenServlet extends ExtendedServlet {
 			}
 
 		} catch (Throwable e) {
-			Log.log(Log.ERROR, "Eroaaaree "+e.getStackTrace());
+			Log.log(Log.ERROR, "Eroaaaree "+e.getMessage());
 			e.printStackTrace();
 		}
 		finally{

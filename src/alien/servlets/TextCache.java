@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -46,7 +47,8 @@ public class TextCache extends ExtendedServlet {
 		}
 	}
 	
-	private static final class EntryComparator implements Comparator <Map.Entry<String, CacheValue>>{
+	private static final class EntryComparator implements Comparator<Map.Entry<String, CacheValue>>, Serializable{
+		private static final long serialVersionUID = -6092398826822045152L;
 
 		public EntryComparator() {
 			// nothing
@@ -183,6 +185,7 @@ public class TextCache extends ExtendedServlet {
 				requestLogger = new PrintWriter(new FileWriter("cache.log", true));
 			}
 			catch (IOException e) {
+				System.err.println("Could not write to cache.log");
 				return;
 			}
 		}
