@@ -534,7 +534,7 @@ public class LFNUtils {
 						}
 						
 						if (ses!=null)
-							ses.retainAll(ses);
+							ses.retainAll(lses);
 						else
 							ses = lses;
 					}
