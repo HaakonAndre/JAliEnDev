@@ -101,10 +101,24 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @param user to compare
 	 * @return outcome of equals
 	 */
-	public boolean equals(AliEnPrincipal user) {
-		return getName().equals(user.getName());
+	@Override
+	public boolean equals(Object user) {
+		if (user==null)
+			return false;
+		
+		if (this==user)
+			return true;
+		
+		if (!(user instanceof AliEnPrincipal))
+			return false;
+		
+		return getName().equals(((AliEnPrincipal)user).getName());
 	}
 	
+	@Override
+	public int hashCode(){
+		return getName().hashCode();
+	}
 
 	/**
 	 * Get all the roles associated with this principal
