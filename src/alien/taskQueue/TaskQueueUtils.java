@@ -533,6 +533,7 @@ public class TaskQueueUtils {
 		}
 		
 		int lim = 2000;
+		
 		if(limit>0 && limit<2000)
 			lim = limit;
 
@@ -555,8 +556,8 @@ public class TaskQueueUtils {
 			where += whe + ") ) and ";
 		}
 					
-		if (users != null && users.size()>0){
-			StringBuilder whe = new StringBuilder(" ( ");
+		if (users != null && users.size()>0 && !users.contains("%")){
+			final StringBuilder whe = new StringBuilder(" ( ");
 			
 			boolean first = true;
 			
@@ -565,21 +566,15 @@ public class TaskQueueUtils {
 					whe.append(" or ");
 				else
 					first = false;
-				
-				if("%".equals(u)){
-					whe = null;
-					break;
-				}
-				
+								
 				whe.append("submitHost like '").append(Format.escSQL(u)).append("@%'");
 			}
 			
-			if(whe!=null)
-				where += whe + " ) and ";
+			where += whe + " ) and ";
 		}
 		
-		if (sites != null && sites.size()>0){
-			StringBuilder whe = new StringBuilder(" ( site in (");
+		if (sites != null && sites.size()>0 && !sites.contains("%")){
+			final StringBuilder whe = new StringBuilder(" ( site in (");
 			
 			boolean first = true;
 			
@@ -589,20 +584,13 @@ public class TaskQueueUtils {
 				else
 					first = false;
 				
-				if("%".equals(s)){
-					whe = null;
-					break;
-				}
-
 				whe.append('\'').append(Format.escSQL(s)).append('\'');
 			}
 			
-			if (whe!=null)
-				where += whe + ") ) and ";
-		}
+			where += whe + ") ) and ";
+		}		
 		
-		
-		if (nodes != null && nodes.size()>0){
+		if (nodes != null && nodes.size()>0 && !nodes.contains("%")){
 			StringBuilder whe = new StringBuilder(" ( node in (");
 			
 			boolean first = true;
@@ -613,46 +601,51 @@ public class TaskQueueUtils {
 				else
 					first = false;
 
-				if("%".equals(n)){
-					whe = null;
-					break;
-				}
-				
 				whe.append('\'').append(Format.escSQL(n)).append('\'');
 			}
 			
-			if(whe!=null)
-				where += whe + ") ) and ";
+			where += whe + ") ) and ";
 		}
 
-		if (mjobs != null && mjobs.size()>0){
-			String whe = " ( ";
+		if (mjobs != null && mjobs.size()>0 && !mjobs.contains(Integer.valueOf(0))){
+			final StringBuilder whe = new StringBuilder(" ( split in (");
 			
-			for (Integer m : mjobs){
-					whe += "split = '" + m  + "' or ";
+			boolean first = true;
+						
+			for (final Integer m : mjobs){
+				if (!first)
+					whe.append(',');
+				else
+					first = false;
+				
+				whe.append(m);
 			}
 			
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+			where += whe + ") ) and ";
 		}
 		
-		if (jobids != null && jobids.size()>0){
-			String whe = " ( ";
-			for (Integer i : jobids){
-				if("%".equals(i)){
-					whe = "";
-					break;
-				}
-				whe += "queueId = '" + i + "' or ";
+		if (jobids != null && jobids.size()>0 && !jobids.contains(Integer.valueOf(0))){
+			final StringBuilder whe = new StringBuilder(" ( queueId in (");
+			
+			boolean first = true;
+						
+			for (final Integer i : jobids){
+				if (!first)
+					whe.append(',');
+				else
+					first = false;
+				
+				whe.append(i);
 			}
-			if(whe.length()>0)
-				where += whe.substring(0, whe.length()-3) + " ) and ";
+
+			where += whe + ") ) and ";
 		}
 					
-		if(where.endsWith(" and "))
+		if (where.endsWith(" and "))
 			where = where.substring(0,where.length()-5);
 		
 		String orderBy = " order by ";
+		
 		if (orderByKey==null || orderByKey.length()==0)
 			orderBy +=  " queueId asc ";
 		else
@@ -674,10 +667,7 @@ public class TaskQueueUtils {
 		}
 		
 		return ret;
-
 	}
-	
-	
 	
 	/**
 	 * @return matching jobs histograms
