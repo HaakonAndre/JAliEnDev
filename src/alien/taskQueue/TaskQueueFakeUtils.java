@@ -6,6 +6,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
@@ -20,7 +21,7 @@ import lazyj.Utils;
  */
 public class TaskQueueFakeUtils {
 
-	private static int jobcounter = (int) (System.currentTimeMillis() / 1000L);
+	private static AtomicInteger jobcounter = new AtomicInteger((int) (System.currentTimeMillis() / 1000L));
 
 	private static HashMap<Integer, Job> queue = new HashMap<Integer, Job>();
 
@@ -30,8 +31,8 @@ public class TaskQueueFakeUtils {
 	public static Job getJob() {
 
 		// Job j = fakeJob();
-		if (queue.containsKey(jobcounter) && queue.get(jobcounter) != null) {
-			if (getJobStatus(jobcounter).equals("WAITING")) {
+		if (queue.containsKey(Integer.valueOf(jobcounter.intValue())) && queue.get(Integer.valueOf(jobcounter.intValue())) != null) {
+			if (getJobStatus(jobcounter.intValue()).equals("WAITING")) {
 				Job j = queue.get(jobcounter);
 				System.out.println("submitting job: " + j.jdl);
 				setJobStatus(j.queueId, "ASSIGNED");
@@ -46,8 +47,7 @@ public class TaskQueueFakeUtils {
 	 */
 	public static Job fakeJob() {
 		Job j = new Job();
-		jobcounter++;
-		j.queueId = jobcounter;
+		j.queueId = jobcounter.incrementAndGet();
 
 		//j.status = "WAITING";
 
@@ -55,7 +55,7 @@ public class TaskQueueFakeUtils {
 
 		j.site = "";
 		j.started = 0;
-		queue.put(jobcounter, j);
+		queue.put(Integer.valueOf(j.queueId), j);
 		return j;
 	}
 
@@ -75,9 +75,8 @@ public class TaskQueueFakeUtils {
 			if (JobSigner.verifyJob(cert, user, jdl)) {
 
 				Job j = new Job();
-				jobcounter++;
-				System.out.println("Assigning jobID: " + jobcounter);
-				j.queueId = jobcounter;
+				j.queueId = jobcounter.incrementAndGet();
+				System.out.println("Assigning jobID: " + j.queueId);
 
 				//j.status = "WAITING";
 				j.userCertificate = cert[0];
@@ -97,11 +96,11 @@ public class TaskQueueFakeUtils {
 				j.site = "";
 				j.started = 0;
 
-				queue.put(jobcounter, j);
+				queue.put(Integer.valueOf(j.queueId), j);
 
 				System.out.println("We put the job in the QUEUE: " + j.jdl);
 
-				return jobcounter;
+				return jobcounter.intValue();
 			}
 		} catch (InvalidKeyException e) {
 			e.printStackTrace();
@@ -125,7 +124,6 @@ public class TaskQueueFakeUtils {
 	/**
 	 * 
 	 * @param jobID
-	 * @param jobnumber
 	 * @param status
 	 */
 	public static void setJobStatus(int jobID, String status) {
@@ -136,6 +134,7 @@ public class TaskQueueFakeUtils {
 
 	/**
 	 * @param jobID
+	 * @return the status
 	 */
 	public static String getJobStatus(int jobID) {
 		//if (jobID != 0 && queue.containsKey(jobID))
