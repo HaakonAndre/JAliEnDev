@@ -92,6 +92,8 @@ public class PFNforWrite extends Request {
 
 	@Override
 	public void run() {
+		System.err.println("Request details : ----------------------\n"+guid+"\n ---------------------- \n "+lfn+" \n ---------------------- \n"+getEffectiveRequester());
+		
 		if ((ses == null) && (qosType == null)) {
 			final Set<String> defaultQos = LDAPHelper.checkLdapInformation("(objectClass=AliEnVOConfig)", "ou=Config,", "sedefaultQosandCount");
 
