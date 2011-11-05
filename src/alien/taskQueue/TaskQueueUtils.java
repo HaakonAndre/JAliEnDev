@@ -455,7 +455,7 @@ public class TaskQueueUtils {
 	 * @param newStatus
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final int job, final String newStatus){
+	public static boolean setJobStatus(final int job, final JobStatus newStatus){
 		return setJobStatus(job, newStatus, null);
 	}
 	
@@ -465,23 +465,43 @@ public class TaskQueueUtils {
 	 * @param oldStatusConstraint change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status. 
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final int job, final String newStatus, final String oldStatusConstraint){
+	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint){
 		final DBFunctions db = getQueueDB();
 		
-		if (db==null)
+		if (db==null){
+			logger.log(Level.SEVERE, "Cannot get the queue database entry");
+			
 			return false;
-				
-		String q = "UPDATE QUEUE SET status='"+Format.escSQL(newStatus)+"' WHERE queueId="+job+" AND status";
+		}
 		
-		if (oldStatusConstraint==null)
-			q += "!='"+Format.escSQL(newStatus)+"'";
-		else
-			q += "='"+Format.escSQL(oldStatusConstraint)+"'";
+		if (!db.query("SELECT status FROM QUEUE where queueId="+job)){
+			logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
+			
+			return false;
+		}
 		
-		if (!db.query(q))
+		if (!db.moveNext()){
+			logger.log(Level.FINE, "Could not find queueId "+job+" in the queue");
+			
+			return false;
+		}
+		
+		final JobStatus oldStatus = JobStatus.getStatus(db.gets(1));
+		
+		if (oldStatusConstraint!=null && oldStatus!=oldStatusConstraint){
+			logger.log(Level.FINE, "Refusing to do the update of "+job+" to state "+newStatus.name()+" because old status is not "+oldStatusConstraint.name()+" but "+oldStatus.name());
+			
+			return false;
+		}
+		
+		if (!db.query("UPDATE QUEUE SET status='"+newStatus.toSQL()+"' WHERE queueId="+job))
 			return false;
 		
-		return db.getUpdateCount()!=0;
+		final boolean updated = db.getUpdateCount()!=0;
+
+		putJobLog(job, "state", "Job state transition from "+oldStatus.name()+" to "+newStatus.name(), null);
+		
+		return updated;
 	}
 	
 	/**
@@ -792,7 +812,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return status of the kill
 	 */
-	public static boolean submit(final AliEnPrincipal user, final int queueId){
+	public static boolean kill(final AliEnPrincipal user, final int queueId){
 		// TODO check if the user is allowed to kill and do it
 		return false;
 	}
@@ -807,7 +827,7 @@ public class TaskQueueUtils {
 	 * @return the job ID
 	 * @throws IOException in case of problems like downloading the respective JDL or not enough arguments provided to it 
 	 */
-	public static int submit(final LFN file, final String account, final String[] arguments) throws IOException {
+	public static int submit(final LFN file, final AliEnPrincipal account, final String[] arguments) throws IOException {
 		final String jdlContents = IOUtils.getContents(file);
 		
 		if (jdlContents==null || jdlContents.length()==0)
@@ -827,7 +847,7 @@ public class TaskQueueUtils {
 	 * @return the job ID
 	 * @throws IOException in case of problems such as the number of provided arguments is not enough
 	 */
-	public static int submit(final String jdl, final String account, final String... arguments) throws IOException{
+	public static int submit(final String jdl, final AliEnPrincipal account, final String... arguments) throws IOException{
 		String jdlToSubmit = jdl;
 		
 		Matcher m = p.matcher(jdlToSubmit);
@@ -866,7 +886,7 @@ public class TaskQueueUtils {
 		values.put("name", executable);
 		values.put("status", "INSERTING");
 		values.put("received", Long.valueOf(System.currentTimeMillis()/1000));
-		values.put("submitHost", account);
+		values.put("submitHost", account.getName()+"@localhost");
 		values.put("jdl", jdlToSubmit);
 		values.put("price", price);
 		
@@ -891,40 +911,36 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return state of the kill operation
 	 */
-	@SuppressWarnings("unused")
-	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId){
-			if(AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId),
-					user, role)){
-		System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + 
-				user.getName() + "/" + role +"].");
-		
-		Job j = getJob(queueId,true);
-		
-		//setJobStatus(j, JobStatus.KILLED,"",null,null,null);
-		
-		
-		if(j.execHost!=null && false){
-			
-//		    my ($port) = $self->{DB}->getFieldFromHosts($data->{exechost}, "hostport")
-//		      or $self->info("Unable to fetch hostport for host $data->{exechost}")
-//		      and return (-1, "unable to fetch hostport for host $data->{exechost}");
-//
-//		    $DEBUG and $self->debug(1, "Sending a signal to $data->{exechost} $port to kill the process... ");
-			String target = j.execHost.substring(j.execHost.indexOf('@'+1));
+	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId) {
+		if (AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId), user, role)) {
+			System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
 
-			int expires = (int) (System.currentTimeMillis()/1000)+300;
-			
-			insertMessage(target, "ClusterMonitor", "killProcess", j.queueId+"", expires);
-			
-		}
+			Job j = getJob(queueId, true);
 
-		//The removal has to be done properly, in Perl it was just the default !/alien-job directory
-//	      $self->{CATALOGUE}->execute("rmdir", $procDir, "-r")
+			// setJobStatus(j, JobStatus.KILLED,"",null,null,null);
 
-		return false;
+			if (j.execHost != null && false) {
+
+				// my ($port) = $self->{DB}->getFieldFromHosts($data->{exechost}, "hostport")
+				// or $self->info("Unable to fetch hostport for host $data->{exechost}")
+				// and return (-1, "unable to fetch hostport for host $data->{exechost}");
+				//
+				// $DEBUG and $self->debug(1, "Sending a signal to $data->{exechost} $port to kill the process... ");
+				String target = j.execHost.substring(j.execHost.indexOf('@' + 1));
+
+				int expires = (int) (System.currentTimeMillis() / 1000) + 300;
+
+				insertMessage(target, "ClusterMonitor", "killProcess", j.queueId + "", expires);
+
+			}
+
+			// The removal has to be done properly, in Perl it was just the default !/alien-job directory
+			// $self->{CATALOGUE}->execute("rmdir", $procDir, "-r")
+
+			return false;
 
 		}
-		
+
 		System.out.println("Job kill authorization failed for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
 		return false;
 	}
@@ -932,204 +948,185 @@ public class TaskQueueUtils {
 	
 	
 	//status and jdl
-	private static boolean updateJob(final Job j, final JobStatus newStatus,
-			final Map<String,String> jdltags){
-			
-		
-		if(newStatus.smallerThanEquals(j.status()) &&
-			(j.status() == JobStatus.ZOMBIE ||
-					j.status() == JobStatus.IDLE ||
-					j.status() == JobStatus.INTERACTIV)
-		&& j.isMaster()){
-			
+	private static boolean updateJob(final Job j, final JobStatus newStatus, final Map<String, String> jdltags) {
 
-//		  if ( ($self->{JOBLEVEL}->{$status} <= $self->{JOBLEVEL}->{$dboldstatus})
-//		    && ($dboldstatus !~ /^((ZOMBIE)|(IDLE)|(INTERACTIV))$/)
-//		    && (!$masterjob)) {
-//		    if ($set->{path}) {
-//		      return $self->updateJob($id, {path => $set->{path}});
-//		    }
-//		    my $message =
-//		"The job $id [$dbsite] was in status $dboldstatus [$self->{JOBLEVEL}->{$dboldstatus}] and cannot be changed to $status [$self->{JOBLEVEL}->{$status}]";
-//		    if ($set->{jdl} and $status =~ /^(SAVED)|(SAVED_WARN)|(ERROR_V)$/) {
-//		      $message .= " (although we update the jdl)";
-//		      $self->updateJob($id, {jdl => $set->{jdl}});
-//		    }
-//		    $self->{LOGGER}->set_error_msg("Error updating the job: $message");
-//		    $self->info("Error updating the job: $message", 1);
-//		    return;
-//		  }
-//
-//		  #update the value, it is correct
-//		  if (!$self->updateJob($id, $set, {where => "status=?", bind_values => [$dboldstatus]},)) {
-//		    my $message = "The update failed (the job changed status in the meantime??)";
-//		    $self->{LOGGER}->set_error_msg($message);
-//		    $self->info("There was an error: $message", 1);
-//		    return;
-//		  }
-			
-		return false;
+		if (newStatus.smallerThanEquals(j.status()) && (j.status() == JobStatus.ZOMBIE || j.status() == JobStatus.IDLE || j.status() == JobStatus.INTERACTIV) && j.isMaster()) {
+
+			// if ( ($self->{JOBLEVEL}->{$status} <= $self->{JOBLEVEL}->{$dboldstatus})
+			// && ($dboldstatus !~ /^((ZOMBIE)|(IDLE)|(INTERACTIV))$/)
+			// && (!$masterjob)) {
+			// if ($set->{path}) {
+			// return $self->updateJob($id, {path => $set->{path}});
+			// }
+			// my $message =
+			// "The job $id [$dbsite] was in status $dboldstatus [$self->{JOBLEVEL}->{$dboldstatus}] and cannot be changed to $status [$self->{JOBLEVEL}->{$status}]";
+			// if ($set->{jdl} and $status =~ /^(SAVED)|(SAVED_WARN)|(ERROR_V)$/) {
+			// $message .= " (although we update the jdl)";
+			// $self->updateJob($id, {jdl => $set->{jdl}});
+			// }
+			// $self->{LOGGER}->set_error_msg("Error updating the job: $message");
+			// $self->info("Error updating the job: $message", 1);
+			// return;
+			// }
+			//
+			// #update the value, it is correct
+			// if (!$self->updateJob($id, $set, {where => "status=?", bind_values => [$dboldstatus]},)) {
+			// my $message = "The update failed (the job changed status in the meantime??)";
+			// $self->{LOGGER}->set_error_msg($message);
+			// $self->info("There was an error: $message", 1);
+			// return;
+			// }
+
+			return false;
 		}
-			
-			
-		if(j.status() == JobStatus.WAITING && j.jobagentId>0)
-			if(!deleteJobAgent(j.jobagentId))
+
+		if (j.status() == JobStatus.WAITING && j.jobagentId > 0)
+			if (!deleteJobAgent(j.jobagentId))
 				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.jobagentId + "].");
 
-//			  $self->info("THE UPDATE WORKED!! Let's see if we have to delete an agent $status");
-//			  if ($dboldstatus =~ /WAITING/ and $oldjobinfo->{agentid}) {
-//			    $self->deleteJobAgent($oldjobinfo->{agentid});
-//			  }
-			
-			  
-//		TODO:
-//		# send a job's status to MonaLisa
-//		sub sendJobStatus {
-//		  my $self = shift;
-//		  my ($jobID, $newStatus, $execHost, $submitHost) = @_;
-//
-//		  if ($self->{MONITOR}) {
-//		    my $statusID = AliEn::Util::statusForML($newStatus);
-//		    $execHost = $execHost || "NO_SITE";
-//		    my @params = ("jobID", $jobID, "statusID", $statusID);
-//		    push(@params, "submitHost", "$jobID/$submitHost") if $submitHost;
-//		    $self->{MONITOR}->sendParameters("TaskQueue_Jobs_" . $self->{CONFIG}->{ORG_NAME}, $execHost, @params);
-//		  }
-//		}
+		// $self->info("THE UPDATE WORKED!! Let's see if we have to delete an agent $status");
+		// if ($dboldstatus =~ /WAITING/ and $oldjobinfo->{agentid}) {
+		// $self->deleteJobAgent($oldjobinfo->{agentid});
+		// }
 
-		if(j.notify!=null && !j.notify.equals(""))
+		// TODO:
+		// # send a job's status to MonaLisa
+		// sub sendJobStatus {
+		// my $self = shift;
+		// my ($jobID, $newStatus, $execHost, $submitHost) = @_;
+		//
+		// if ($self->{MONITOR}) {
+		// my $statusID = AliEn::Util::statusForML($newStatus);
+		// $execHost = $execHost || "NO_SITE";
+		// my @params = ("jobID", $jobID, "statusID", $statusID);
+		// push(@params, "submitHost", "$jobID/$submitHost") if $submitHost;
+		// $self->{MONITOR}->sendParameters("TaskQueue_Jobs_" . $self->{CONFIG}->{ORG_NAME}, $execHost, @params);
+		// }
+		// }
+
+		if (j.notify != null && !j.notify.equals(""))
 			sendNotificationMail(j);
 
-		if(j.split!=0)
+		if (j.split != 0)
 			setSubJobMerges(j);
-			  
-		if(j.status() != newStatus){
-			if(newStatus == JobStatus.ASSIGNED){
-				// $self->_do("UPDATE $self->{SITEQUEUETABLE} SET $status=$status+1 where site=?", {bind_values => [$dbsite]})
-			       //TODO:
-			}else{
+
+		if (j.status() != newStatus) {
+			if (newStatus == JobStatus.ASSIGNED) {
+				// $self->_do("UPDATE $self->{SITEQUEUETABLE} SET $status=$status+1 where site=?", {bind_values =>
+				// [$dbsite]})
+				// TODO:
+			}
+			else {
 				// do(
 				// "UPDATE $self->{SITEQUEUETABLE} SET $dboldstatus = $dboldstatus-1, $status=$status+1 where site=?",
-//				          {bind_values => [$dbsite]}
+				// {bind_values => [$dbsite]}
 			}
 		}
 
-		if(newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED 
-				|| newStatus == JobStatus.SAVED_WARN 
-				|| newStatus == JobStatus.STAGING)
-					setAction(newStatus);
-			
+		if (newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.STAGING)
+			setAction(newStatus);
 
-//			  if ($status =~ /^DONE_WARN$/) {
-//			    $self->sendJobStatus($id, "DONE", $execHost, "");
-//			  }
+		// if ($status =~ /^DONE_WARN$/) {
+		// $self->sendJobStatus($id, "DONE", $execHost, "");
+		// }
 
-			 return true;
+		return true;
 	}
 	
-	private static boolean setJobStatus(final Job j,
-			final JobStatus newStatus, final String arg, final String site, final String spyurl,
-			final String node
-			){
-		
-		String time = System.currentTimeMillis()/1000+"";
-		
-		HashMap<String,String> jdltags = new HashMap<String,String>();
-		jdltags.put("procinfotime",time);
-		if(spyurl!=null)
-			jdltags.put("spyurl",spyurl);
-		if(site!=null)
-			jdltags.put("site",site);
-		if(node!=null)
-			jdltags.put("node",node);
-		
-		if(newStatus == JobStatus.WAITING)
-				jdltags.put("exechost",arg); 
-		else if(newStatus == JobStatus.RUNNING)
-				jdltags.put("started",time);
-		else if(newStatus == JobStatus.STARTED){
-						jdltags.put("started",time);
-						jdltags.put("batchid",arg); 
-		} else if(newStatus == JobStatus.SAVING)
-				jdltags.put("error",arg); 
-		else if((newStatus == JobStatus.SAVED && arg!=null && !"".equals(arg))
-					|| newStatus == JobStatus.ERROR_V
-					|| newStatus == JobStatus.STAGING)
-					jdltags.put("jdl",arg);
-		else if(newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
-				jdltags.put("finished",time); 
+	private static boolean setJobStatus(final Job j, final JobStatus newStatus, final String arg, final String site, final String spyurl, final String node) {
 
+		String time = System.currentTimeMillis() / 1000 + "";
 
-				
-				
-				if(j.usesValidation()){
-					String host = j.execHost.substring(j.execHost.indexOf('@')+1);
-					int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
-					
+		HashMap<String, String> jdltags = new HashMap<String, String>();
+		jdltags.put("procinfotime", time);
+		if (spyurl != null)
+			jdltags.put("spyurl", spyurl);
+		if (site != null)
+			jdltags.put("site", site);
+		if (node != null)
+			jdltags.put("node", node);
 
-//			      my $executable = "";
-//			      $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and $executable = $1;
-//			      $executable =~ s/\"//g;
-//			      my $validatejdl = "[
-			//Executable=\"$executable.validate\";
-			//Arguments=\"$queueId $data->{host} $port\";
-			//Requirements= member(other.GridPartition,\"Validation\");
-			//Type=\"Job\";
-//						]";
-//			      $DEBUG and $self->debug(1, "In changeStatusCommand sending the command to validate the result of $queueId...");
-//			      $self->enterCommand("$data->{submithost}", "$validatejdl");
-//			    }
-					
+		if (newStatus == JobStatus.WAITING)
+			jdltags.put("exechost", arg);
+		else
+			if (newStatus == JobStatus.RUNNING)
+				jdltags.put("started", time);
+			else
+				if (newStatus == JobStatus.STARTED) {
+					jdltags.put("started", time);
+					jdltags.put("batchid", arg);
 				}
+				else
+					if (newStatus == JobStatus.SAVING)
+						jdltags.put("error", arg);
+					else
+						if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
+							jdltags.put("jdl", arg);
+						else
+							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
+								jdltags.put("finished", time);
+								if (j.usesValidation()) {
+									String host = j.execHost.substring(j.execHost.indexOf('@') + 1);
+									int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
 
-  
-		
-		} else if(newStatus.isErrorState()
-					||newStatus == JobStatus.SAVED_WARN
-					||newStatus == JobStatus.SAVED
-					||newStatus == JobStatus.KILLED
-					||newStatus == JobStatus.EXPIRED){
-			
-			jdltags.put("spyurl",""); 
-			jdltags.put("finished", time); 
-			deleteJobToken(j.queueId);
-			
-			
-		}
+									// my $executable = "";
+									// $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and $executable = $1;
+									// $executable =~ s/\"//g;
+									// my $validatejdl = "[
+									// Executable=\"$executable.validate\";
+									// Arguments=\"$queueId $data->{host} $port\";
+									// Requirements= member(other.GridPartition,\"Validation\");
+									// Type=\"Job\";
+									// ]";
+									// $DEBUG and $self->debug(1,
+									// "In changeStatusCommand sending the command to validate the result of $queueId...");
+									// $self->enterCommand("$data->{submithost}", "$validatejdl");
+									// }
+
+								}
+
+							}
+							else
+								if (newStatus.isErrorState() || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED || newStatus == JobStatus.KILLED || newStatus == JobStatus.EXPIRED) {
+
+									jdltags.put("spyurl", "");
+									jdltags.put("finished", time);
+									deleteJobToken(j.queueId);
+
+								}
 		// put the JobLog message
-		
-		final HashMap<String,String> joblogtags = new HashMap<String,String>(jdltags);
-						
-		String message = "Job state transition from " + j.getStatusName() + " to " + newStatus;		
-				
+
+		final HashMap<String, String> joblogtags = new HashMap<String, String>(jdltags);
+
+		String message = "Job state transition from " + j.getStatusName() + " to " + newStatus;
+
 		final boolean success = updateJob(j, newStatus, jdltags);
-		
-		if(!success)
-				message = "FAILED: " + message;
-		
-		putJobLog(j.queueId,"state",message,joblogtags);
-	
-		if(site!=null){
-//  # lock queues with submission errors ....
-//  if ($status eq "ERROR_S") {
-//    $self->_setSiteQueueBlocked($site)
-//      or $self->{LOGGER}->error("JobManager", "In changeStatusCommand cannot block site $site for ERROR_S");
-//  } elsif ($status eq "ASSIGNED") {
-//    my $sitestat = $self->getSiteQueueStatistics($site);
-//    if (@$sitestat) {
-//      if (@$sitestat[0]->{'ASSIGNED'} > 5) {
-//        $self->_setSiteQueueBlocked($site)
-//          or $self->{LOGGER}->error("JobManager", "In changeStatusCommand cannot block site $site for ERROR_S");
-//      }
-//    }
-//  }
+
+		if (!success)
+			message = "FAILED: " + message;
+
+		putJobLog(j.queueId, "state", message, joblogtags);
+
+		if (site != null) {
+			// # lock queues with submission errors ....
+			// if ($status eq "ERROR_S") {
+			// $self->_setSiteQueueBlocked($site)
+			// or $self->{LOGGER}->error("JobManager", "In changeStatusCommand cannot block site $site for ERROR_S");
+			// } elsif ($status eq "ASSIGNED") {
+			// my $sitestat = $self->getSiteQueueStatistics($site);
+			// if (@$sitestat) {
+			// if (@$sitestat[0]->{'ASSIGNED'} > 5) {
+			// $self->_setSiteQueueBlocked($site)
+			// or $self->{LOGGER}->error("JobManager", "In changeStatusCommand cannot block site $site for ERROR_S");
+			// }
+			// }
+			// }
 		}
 		return success;
 	}
 	
 	
-	private boolean updateJDLAndProcInfo(final Job j, final Map<String,String> jdltags,
-			final Map<String,String> procInfo){
+	private boolean updateJDLAndProcInfo(final Job j, final Map<String,String> jdltags, final Map<String,String> procInfo){
 		
 //		  my $procSet = {};
 //		  foreach my $key (keys %$set) {
@@ -1201,7 +1198,6 @@ public class TaskQueueUtils {
 		
 	}
 	
-
 	private static JobToken getJobToken(final int jobId){
 		final DBFunctions db = getAdminDB();
 		
@@ -1225,8 +1221,6 @@ public class TaskQueueUtils {
 		
 		return new JobToken(db);
 	}
-	
-	
 	
 	private static boolean deleteJobToken(final int queueId){
 		final DBFunctions db = getAdminDB();
@@ -1252,13 +1246,30 @@ public class TaskQueueUtils {
 
 	}
 	
-	private static boolean putJobLog(final int queueId, final String action,
-			final String message, final HashMap<String,String> joblogtags){
-		return true;
-		// TODO:
+	/**
+	 * @param queueId
+	 * @param action
+	 * @param message
+	 * @param joblogtags
+	 * @return <code>true</code> if the log was successfully added
+	 */
+	public static boolean putJobLog(final int queueId, final String action, final String message, final HashMap<String,String> joblogtags){
+		final DBFunctions db = getQueueDB();
+		
+		if (monitor!=null){
+			monitor.incrementCounter("TQ_db_lookup");
+			monitor.incrementCounter("TQ_JOBMESSAGES_insert");
+		}
+		
+		final Map<String, Object> insertValues = new HashMap<String, Object>(4);
+		
+		insertValues.put("timestamp", Long.valueOf(System.currentTimeMillis()/1000));
+		insertValues.put("jobId", Integer.valueOf(queueId));
+		insertValues.put("procinfo", message);
+		insertValues.put("tag", action);
+		
+		return db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues));
 	}
-
-	
 
 	private static boolean deleteJobAgent(final int jobagentId){
 		System.out.println("We would be asked to kill jobAgent: [" + jobagentId + "].");
@@ -1293,6 +1304,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_db_lookup");
 			monitor.incrementCounter("TQ_JOBSTOMERGE_lookup");
 		}
+		
 		final String q = "INSERT INTO JOBSTOMERGE (masterId) SELECT "
 				+ Format.escSQL(j.split+"")
 					+" FROM DUAL WHERE NOT EXISTS (SELECT "
