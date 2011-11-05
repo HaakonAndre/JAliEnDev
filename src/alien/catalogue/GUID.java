@@ -643,7 +643,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 */
 	@Override
 	public String getPermissions() {
-		return perm;
+		return perm != null ? perm : "644";
 	}
 
 	/* (non-Javadoc)
