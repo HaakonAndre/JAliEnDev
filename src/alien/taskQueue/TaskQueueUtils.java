@@ -1229,7 +1229,6 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("ADM_db_lookup");
 		}
 	
-
 		final String q = "SELECT * FROM jobToken WHERE jobId="+queueId;
 	
 		if (!db.query(q))
@@ -1239,9 +1238,10 @@ public class TaskQueueUtils {
 			return false;
 		}
 		
-		JobToken jb =  new JobToken(db);
-		if(jb.exists())
+		final JobToken jb =  new JobToken(db);
+		if (jb.exists())
 			return jb.destroy(db);
+		
 		return false;
 
 	}
@@ -1305,11 +1305,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_JOBSTOMERGE_lookup");
 		}
 		
-		final String q = "INSERT INTO JOBSTOMERGE (masterId) SELECT "
-				+ Format.escSQL(j.split+"")
-					+" FROM DUAL WHERE NOT EXISTS (SELECT "
-					+ " masterid FROM JOBSTOMERGE WHERE masterid = "
-					+ Format.escSQL(j.split+"")+");";
+		final String q = "INSERT INTO JOBSTOMERGE (masterId) SELECT "+ j.split +" FROM DUAL WHERE NOT EXISTS (SELECT masterid FROM JOBSTOMERGE WHERE masterid = "+ j.split+");";
 					
 		if (!db.query(q))
 			return false;
@@ -1317,7 +1313,6 @@ public class TaskQueueUtils {
 		return setAction(JobStatus.MERGING);
 
 	}
-	
 	
 	private static boolean setAction(final JobStatus status){
 		//$self->update("ACTIONS", {todo => 1}, "action='$status'");
