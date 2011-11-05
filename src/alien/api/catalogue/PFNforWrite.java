@@ -147,7 +147,7 @@ public class PFNforWrite extends Request {
 					pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), lfn, guid, null, 0, se));
 				}
 				catch (Exception e) {
-					logger.log(Level.WARNING, "Error for the request on " + se.getName() + ", message", e);
+					logger.log(Level.WARNING, "Error for the request on " + se.getName() + ", message", e.fillInStackTrace());
 				}
 			}
 		}
@@ -170,7 +170,7 @@ public class PFNforWrite extends Request {
 					pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), lfn, guid, null, 0, se));
 				}
 				catch (Exception e) {
-					logger.log(Level.WARNING, "Error requesting an envelope for " + se.getName(), e);
+					logger.log(Level.WARNING, "Error requesting an envelope for " + se.getName(), e.fillInStackTrace());
 					continue;
 				}
 				counter++;
