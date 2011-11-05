@@ -748,7 +748,6 @@ public class JDL implements Serializable {
 	 * @param value (new) value
 	 * @return the previously set value, if any
 	 */
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Object set(final String key, final Object value){
 		if (value==null){
 			return delete(key);
@@ -759,7 +758,7 @@ public class JDL implements Serializable {
 		Object newValue = value;
 		
 		if (newValue instanceof Collection){
-			newValue = new LinkedList((Collection<?>)newValue);
+			newValue = new LinkedList<Object>((Collection<?>)newValue);
 		}
 		
 		if (old!=null){
