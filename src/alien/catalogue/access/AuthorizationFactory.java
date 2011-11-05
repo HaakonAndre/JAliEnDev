@@ -214,7 +214,7 @@ public final class AuthorizationFactory {
 			// PFN must not be part of the ones already registered to the GUID
 
 			if (!AuthorizationChecker.canWrite(guid, user))
-				return "User is not allowed to write this entry";
+				return "User ("+user+") is not allowed to write this entry: "+guid;
 			
 			if (pfns!=null && pfns.contains(pfn))
 				return "PFN already associated to the GUID";
