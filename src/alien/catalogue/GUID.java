@@ -153,6 +153,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		this.host = GUIDUtils.getGUIDHost(guid);
 		this.tableName = GUIDUtils.getTableNameForGUID(guid);
 		
+		this.perm = "644";
+		
 		seStringList = new LinkedHashSet<Integer>();
 		seAutoStringList = new LinkedHashSet<Integer>();
 	}
