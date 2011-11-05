@@ -4,6 +4,7 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -26,7 +27,6 @@ public class JobToken implements Comparable<JobToken> {
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(JobToken.class.getCanonicalName());
 
-	
 	/**
 	 * jobId
 	 */
@@ -58,14 +58,13 @@ public class JobToken implements Comparable<JobToken> {
 		
 		this.exists = true;
 	}
-	
 
 	private static final char[] tokenStreet = new char[]{
 	    'X', 'Q', 't', '2', '!', '^', '9', '5', '3', '4', '5', 'o', 'r', 't', '{', ')', '}', '[',
 	    ']', 'h', '9', '|', 'm', 'n', 'b', 'v', 'c', 'x', 'z', 'a', 's', 'd', 'f', 'g', 'h', 'j',
 	    'k', 'l', ':', 'p', 'o', 'i', 'u', 'y', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
 	    'A', 'S', 'D', 'F', 'G', 'H', 'J', 'Z', 'X', 'C', 'V', 'B', 'N', 'M'
-	  };
+	};
 	
 	
 	/**
@@ -86,16 +85,16 @@ public class JobToken implements Comparable<JobToken> {
 	 * @param db 
 	 */
 	public void spawnToken(final DBFunctions db) {
-		final StringBuilder sb = new StringBuilder(32);
+		final char[] tok = new char[32];
 
-		final Random ran = new Random(System.currentTimeMillis());
+		final Random ran = new Random(System.nanoTime());
 
 		for (int i = 0; i < 32; i++)
-			sb.append(tokenStreet[ran.nextInt(tokenStreet.length)]);
+			tok[i] = tokenStreet[ran.nextInt(tokenStreet.length)];
 
-		this.token = sb.toString();
+		this.token = new String(tok);
 
-		System.out.println("token generated: " + token);
+//		System.out.println("token generated: " + token);
 
 		update(db);
 	}
@@ -109,37 +108,29 @@ public class JobToken implements Comparable<JobToken> {
 		this.token = StringFactory.get(db.gets("jobToken"));
 		
 		this.exists = true;
-		
 	}
 	
 	private boolean insert(final DBFunctions db){
-
-		
-		String q = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES ('"+
-					jobId+"','"+ username +"','"+ token +"');";
+		String q = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES ("+ jobId+",'"+ Format.escSQL(username) +"','"+ Format.escSQL(token) +"');";
 	
-		System.out.println("SQL: " + q);
+//		System.out.println("SQL: " + q);
+		
+		final boolean lastGeneratedKey = db.setLastGeneratedKey(true);
 		
 		if (db.query(q)){
 			if (monitor != null)
 				monitor.incrementCounter("jobToken_db_insert");
 			
 			exists = true;
-			
-			db.query("SELECT jobId FROM jobToken WHERE Token='"+token+"');");
-			
-			if (!db.moveNext()){
-				// that would be weird, we have just inserted it. but double checking cannot hurt
-				return false;
-			}
-			
-			jobId = db.geti(1);
+					
+			jobId = db.getLastGeneratedKey().intValue();
 			return true;
 		}
 		
+		db.setLastGeneratedKey(lastGeneratedKey);
+		
 		return false;
 	}
-	
 
 	/**
 	 *  update the entry in the database, inserting it if necessary
@@ -147,7 +138,7 @@ public class JobToken implements Comparable<JobToken> {
 	 * @param db 
 	 * @return <code>true</code> if successful
 	 */
-	boolean update(DBFunctions db){
+	boolean update(final DBFunctions db){
 		if (db == null){
 			return false;
 		}
@@ -157,12 +148,13 @@ public class JobToken implements Comparable<JobToken> {
 			final boolean insertOK = insert(db);
 			return insertOK;
 		}
-		
-		System.out.println("SQL UPDATE jobToken SET jobToken='"+token+"' WHERE jobId="+jobId);
 
+		String q = "UPDATE jobToken SET jobToken='"+Format.escSQL(token)+"' WHERE jobId="+jobId;
 		
+//		System.out.println("SQL "+q);
+
 		// only the token list can change
-		if (!db.query("UPDATE jobToken SET jobToken='"+token+"' WHERE jobId="+jobId)){
+		if (!db.query(q)){
 			// wrong table name or what?
 			return false;
 		}
@@ -212,8 +204,6 @@ public class JobToken implements Comparable<JobToken> {
 		return exists;
 	}
 	
-	
-	
 	/**
 	 * Delete a jobToken in the DB
 	 * 
@@ -221,20 +211,17 @@ public class JobToken implements Comparable<JobToken> {
 	 * @return success of the deletion
 	 */
 	public boolean destroy(final DBFunctions db){
-
-		
-		String q = "DELETE FROM jobToken where  jobId = "+ jobId +" and userName = '"+ username 
-				+"' and jobToken = '"+ token +"';";
-	
+		String q = "DELETE FROM jobToken where  jobId = "+ jobId +" and userName = '"+ Format.escSQL(username)+ 
+				   "' and jobToken = '"+ Format.escSQL(token) +"';";
 		
 		if (db.query(q)){
 			if (monitor != null)
 				monitor.incrementCounter("jobToken_db_delete");
+			
 			exists = false;
 			return true;
 		}
+		
 		return false;
 	}
-	
-	
 }
