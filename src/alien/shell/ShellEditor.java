@@ -1,19 +1,11 @@
 package alien.shell;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.Console;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
+import utils.SystemProcess;
 import alien.test.utils.Functions;
 
 /**
@@ -22,143 +14,75 @@ import alien.test.utils.Functions;
  */
 public class ShellEditor {
 
-	/**
-	 * location of the vi binary
-	 */
-	private final static String cVI = Functions.which("vi");
+	private static Map<String, String> availableEditors = null;
 	
-	/**
-	 * location of the vim binary
-	 */
-	private final static String cVIM = Functions.which("vim");
+	private static String editor = null;
 	
-	/**
-	 * location of the emacs binary
-	 */
-	private final static String cEmacs = Functions.which("emacs");
+	private static Map<String, String> getAvailableEditors(){
+		if (availableEditors!=null)
+			return availableEditors;
+		
+		final Map<String, String> temp = new HashMap<String, String>();
+		
+		// in the order of preference, which is the first found will be used by default
+		for (final String ed: Arrays.asList("vim", "vi", "emacs", "mcedit", "joe", "pico")){
+			String path = Functions.which(ed);
+			
+			if (path!=null){
+				temp.put(ed, path);
+				
+				if (editor==null)
+					editor = path;
+			}
+		}
+		
+		availableEditors = Collections.unmodifiableMap(temp);
+		
+		return availableEditors;
+	}
 	
 	/**
 	 * location of the a user set editor binary
 	 */
-	private static String userSetEditor = "";
+	private static String userSetEditor = null;
 	
 	/**
-	 * location of current editor binary
+	 * Set custom editor
+	 * 
+	 * @param editorPath
+	 * @return previously set editor
 	 */
-	private static String editor = cVIM;
-	
-	
-	protected static void editFile(String localFile){
-
-		ArrayList<String> command  = new ArrayList<String>(2);
-		command.add(editor);
-		command.add(localFile);
-		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+	public static String setUserEditor(final String editorPath){
+		final String old = userSetEditor;
 		
-		System.out.println("Will start: " + command);
-
-		try{
+		userSetEditor = editorPath;
 		
-		//pBuilder.returnOutputOnExit(true);
-		
-		// pBuilder.directory();
-
-		//pBuilder.timeout(10, TimeUnit.MINUTES);
-
-		//pBuilder.redirectErrorStream(true);
-
-
-			final ExitStatus exitStatus;
-
-
-			exitStatus = pBuilder.start().waitFor();
-
-
-		} catch (final InterruptedException ie) {
-			System.err
-					.println("Interrupted while waiting for the following command to finish : "
-							+ command.toString());
-		} catch (IOException e) {
-			//ignore
-		}
+		return old;
 	}
 	
-	
-	
-	protected static void editOnConsole(String localFile){
+	/**
+	 * @param localFile
+	 * @return <code>true</code> if the file was successfully edited (command was called, but we are not sure if the file was actually changed or not)
+	 */
+	protected static boolean editFile(final String localFile){
+		getAvailableEditors();
 		
-		
-		String command = "vim " + localFile;
-        Process child;
-		try {
-			child = Runtime.getRuntime().exec(command);
-			
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return;
-		}
-    
-		
-		
-        // Read from an input stream
-        InputStream in = child.getInputStream();
-        OutputStream out = child.getOutputStream();
-        InputStream err = child.getErrorStream();
-     
-		while (out != null) {
-
-			BufferedReader processReader = new BufferedReader(
-					new InputStreamReader(in));
-			BufferedWriter processWriter = new BufferedWriter(
-					new OutputStreamWriter(out));
-
-			Console console = System.console();
-			PrintWriter c_out = console.writer();
-			Reader c_in = console.reader();
-			
-			BufferedReader cReader = new BufferedReader(
-					c_in);
-
-			String line;
-			try {
-				while ((line = processReader.readLine()) != null) {
-					c_out.println(line);
-				}
-				while((line = cReader.readLine()) != null){
-					processWriter.write(line);
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-
+		if (editor==null){
+			// no editor available
+			return false;
 		}
 		
+		if (System.console()==null){
+			// cannot edit without an interactive console
+			return false;
+		}
 		
-//		if(console != null)
-//		{
-//			
-//			String name = console.readLine("[Please Provide Your Name]: ");
-//			char[] passdata = console.readPassword("[Please Input Your Password]: ");
-//			Scanner scanner = new Scanner(console.reader());
-//			int value = 0;
-//			while(value != 99)
-//			{
-//				console.printf("Please input a value between 0 and 100.");
-//				value = scanner.nextInt();				
-//			}
-//			
-//
-//		}
-//		else
-//		{
-//			throw new RuntimeException("Can't run w/out a console!");
-//		}
+		final String command = editor+" "+localFile;
+		
+		final SystemProcess sp = new SystemProcess(command);
+			
+		final int exitStatus = sp.execute();
+		
+		return exitStatus == 0;
 	}
-	
-	
-	
-	
-
 }
