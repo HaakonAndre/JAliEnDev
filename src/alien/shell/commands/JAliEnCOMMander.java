@@ -398,14 +398,12 @@ public class JAliEnCOMMander extends Thread {
 					int logno = 0;
 					if (args.get(args.size() - 1).length() > 1) {
 						try {
-							logno = Integer.parseInt(args.get(args.size() - 1)
-									.substring(1));
+							logno = Integer.parseInt(args.get(args.size() - 1).substring(1));
 						} catch (NumberFormatException n) {
 							// ignore
 						}
 					}
-					JAliEnCommandscrlog.addScreenLogLine(logno,
-							"we will screen to" + logno);
+					JAliEnCommandscrlog.addScreenLogLine(Integer.valueOf(logno),"we will screen to" + logno);
 					args.remove(args.size() - 1);
 				}
 
