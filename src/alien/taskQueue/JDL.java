@@ -152,7 +152,7 @@ public class JDL implements Serializable {
 		}
 	}
 
-	private String clean(final String input) {
+	private static String clean(final String input) {
 		String output = input;
 
 		while (output.startsWith("#")) {
