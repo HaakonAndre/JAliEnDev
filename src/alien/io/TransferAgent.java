@@ -60,7 +60,7 @@ public class TransferAgent extends Thread {
 				finally{
 					logger.log(Level.INFO, "Transfer finished: "+t);
 					
-					broker.notifyTransferComplete(t);
+					TransferBroker.notifyTransferComplete(t);
 				}
 			}
 			else{

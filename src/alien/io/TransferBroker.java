@@ -250,7 +250,7 @@ public class TransferBroker {
 		}		
 	}
 	
-	private void markTransfer(final int transferId, final int exitCode, final String reason){
+	private static void markTransfer(final int transferId, final int exitCode, final String reason){
 		final DBFunctions db = ConfigUtils.getDB("transfers");
 		
 		if (db==null)
@@ -269,7 +269,7 @@ public class TransferBroker {
 	 * 
 	 * @param t 
 	 */
-	public void notifyTransferComplete(final Transfer t){
+	public static void notifyTransferComplete(final Transfer t){
 		// TODO : verify the storage reply envelope here
 		
 		markTransfer(t.getTransferId(), t.getExitCode(), t.getFailureReason());
