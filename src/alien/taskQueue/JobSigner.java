@@ -270,36 +270,52 @@ public class JobSigner {
 	private static String parseJDLToSignString(JDL jdl) {
 
 		if (jdl.getExecutable().length() > 0) {
-			String sjdl = "Executeable={\"" + jdl.getExecutable()
-					+ "\"};\n";
+			StringBuilder sjdl = new StringBuilder("Executable={\"").append(jdl.getExecutable()).append("\"};\n");
 
-			sjdl += "Arguments={";
-			if (jdl.getArguments().size() > 0)
-				for (String arg : jdl.getArguments())
-					sjdl += "\"" + arg + "\",";
-			
-			if (sjdl.lastIndexOf(',') == sjdl.length() - 1)
-				sjdl = sjdl.substring(0, sjdl.length() - 1);
-			sjdl += "};\n";
-			
+			sjdl.append("Arguments={");
+			if (jdl.getArguments().size() > 0){
+				boolean first = true;
+				
+				for (String arg : jdl.getArguments()){
+					if (!first)
+						sjdl.append(',');
+					else
+						first = false;
+					
+					sjdl.append("\"").append(arg).append("\"");
+				}
+			}
+
+			sjdl.append("};\n");
+
 			if (!jdl.getUser().isEmpty())
-				sjdl += "User={\""+jdl.getUser()+ "\"};\n";
-			
-			sjdl += "Output={";
-			if (jdl.getOutputFiles().size() > 0)
-				for (String arg : jdl.getOutputFiles())
-					sjdl += "\"" + arg + "\",";
-			if (sjdl.lastIndexOf(',') == sjdl.length() - 1)
-				sjdl = sjdl.substring(0, sjdl.length() - 1);
-			sjdl += "};\n";
+				sjdl.append("User={\"").append(jdl.getUser()).append("\"};\n");
 
-			sjdl += "hashOrd=Executeable-Arguments-Output;\n";
+			sjdl.append("Output={");
+			if (jdl.getOutputFiles().size() > 0){
+				boolean first = true;
+				
+				for (String arg : jdl.getOutputFiles()){
+					if (!first)
+						sjdl.append(',');
+					else
+						first = false;
+				
+					sjdl.append("\"").append(arg).append("\"");
+				}
+			}
+			
+			sjdl.append("};\n");
+
+			sjdl.append("hashOrd=Executeable-Arguments-Output;\n");
 
 			System.out.println("parsed JDL:" + sjdl);
-			return sjdl;
-		} 
-		System.out.println("error parsing JDL!");
+			
+			return sjdl.toString();
+		}
 		
+		System.out.println("error parsing JDL!");
+
 		return "";
 
 	}
