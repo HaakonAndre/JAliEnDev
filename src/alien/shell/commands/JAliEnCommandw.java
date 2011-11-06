@@ -6,6 +6,7 @@ import java.util.Map;
 
 import joptsimple.OptionException;
 import alien.api.taskQueue.GetUptime.UserStats;
+import alien.api.taskQueue.TaskQueueApiUtils;
 
 /**
  * @author ron
@@ -19,7 +20,7 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 	
 	@Override
 	public void run() {
-		final Map<String, UserStats> stats = commander.q_api.getUptime();
+		final Map<String, UserStats> stats = TaskQueueApiUtils.getUptime();
 		
 		if (stats==null)
 			return;
