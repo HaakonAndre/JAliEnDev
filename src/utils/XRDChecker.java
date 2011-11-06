@@ -107,7 +107,9 @@ public class XRDChecker {
 		try{
 			f = File.createTempFile("xrdstatus-", "-download.tmp");
 		
-			f.delete();
+			if (!f.delete()){
+				return new XRDStatus(false, "Could not delete the temporary created file, xrdcp would fail, bailing out");
+			}
 			
 			final long lStart = System.currentTimeMillis();
 			
