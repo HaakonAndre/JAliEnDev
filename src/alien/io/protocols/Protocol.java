@@ -26,9 +26,7 @@ public abstract class Protocol {
 	 * @return <code>true</code> if the file was deleted, <code>false</code> if the file doesn't exist
 	 * @throws IOException in case of access problems
 	 */
-	public boolean delete(final PFN pfn) throws IOException {
-		throw new UnsupportedOperationException();
-	}
+	public abstract boolean delete(final PFN pfn) throws IOException;
 	
 	/**
 	 * Download the file locally
@@ -39,9 +37,7 @@ public abstract class Protocol {
 	 * @return local file, either the same that was passed or a temporary file name
 	 * @throws IOException in case of problems
 	 */
-	public File get(final PFN pfn, final File localFile) throws IOException{
-		throw new UnsupportedOperationException();
-	}
+	public abstract File get(final PFN pfn, final File localFile) throws IOException;
 	
 	/**
 	 * Upload the local file
@@ -51,9 +47,7 @@ public abstract class Protocol {
 	 * @return storage reply envelope
 	 * @throws IOException in case of problems
 	 */
-	public String put(final PFN pfn, final File localFile) throws IOException{
-		throw new UnsupportedOperationException();
-	}
+	public abstract String put(final PFN pfn, final File localFile) throws IOException;
 	
 	/**
 	 * Direct transfer between the two involved storage elements
@@ -63,9 +57,7 @@ public abstract class Protocol {
 	 * @return storage reply envelope
 	 * @throws IOException
 	 */
-	public String transfer(final PFN source, final PFN target) throws IOException{
-		throw new UnsupportedOperationException();
-	}
+	public abstract String transfer(final PFN source, final PFN target) throws IOException;
 	
 	/**
 	 * Check the consistency of the downloaded file

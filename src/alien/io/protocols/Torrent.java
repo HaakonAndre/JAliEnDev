@@ -60,4 +60,28 @@ public class Torrent extends Protocol {
 	public String toString() {
 		return "torrent";
 	}
+
+	/* (non-Javadoc)
+	 * @see alien.io.protocols.Protocol#delete(alien.catalogue.PFN)
+	 */
+	@Override
+	public boolean delete(PFN pfn) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+	
+	/* (non-Javadoc)
+	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, java.io.File)
+	 */
+	@Override
+	public String put(PFN pfn, File localFile) throws IOException {
+		throw new UnsupportedOperationException();
+	}
+	
+	/* (non-Javadoc)
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.PFN)
+	 */
+	@Override
+	public String transfer(PFN source, PFN target) throws IOException {
+		throw new UnsupportedOperationException();
+	}
 }
