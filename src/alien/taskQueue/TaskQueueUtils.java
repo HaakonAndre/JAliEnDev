@@ -1035,7 +1035,7 @@ public class TaskQueueUtils {
 	
 	private static boolean setJobStatus(final Job j, final JobStatus newStatus, final String arg, final String site, final String spyurl, final String node) {
 
-		String time = System.currentTimeMillis() / 1000 + "";
+		String time = String.valueOf(System.currentTimeMillis() / 1000);
 
 		HashMap<String, String> jdltags = new HashMap<String, String>();
 		jdltags.put("procinfotime", time);
@@ -1126,7 +1126,7 @@ public class TaskQueueUtils {
 	}
 	
 	
-	private boolean updateJDLAndProcInfo(final Job j, final Map<String,String> jdltags, final Map<String,String> procInfo){
+	private static boolean updateJDLAndProcInfo(final Job j, final Map<String,String> jdltags, final Map<String,String> procInfo){
 		
 //		  my $procSet = {};
 //		  foreach my $key (keys %$set) {
