@@ -31,15 +31,13 @@ public class TaskQueueFakeUtils {
 	public static synchronized Job getJob() {
 		final Integer currentJobID = Integer.valueOf(jobcounter.intValue());
 		
-		// Job j = fakeJob();
-		if (queue.containsKey(currentJobID) && queue.get(currentJobID) != null) {
-			if (getJobStatus(jobcounter.intValue()).equals("WAITING")) {
-				Job j = queue.get(currentJobID);
-				System.out.println("submitting job: " + j.jdl);
-				setJobStatus(j.queueId, "ASSIGNED");
-				return j;
-			}
+		final Job j = queue.get(currentJobID);
+		if (j!=null && j.status() == JobStatus.WAITING) {
+			System.out.println("submitting job: " + j.jdl);
+			setJobStatus(j.queueId, JobStatus.ASSIGNED);
+			return j;
 		}
+		
 		return null;
 	}
 
@@ -127,17 +125,16 @@ public class TaskQueueFakeUtils {
 	 * @param jobID
 	 * @param status
 	 */
-	public static void setJobStatus(int jobID, String status) {
+	public static void setJobStatus(int jobID, JobStatus status) {
 		//queue.get(jobID).status = status;
-		System.out.println("Setting job [" + jobID + "] to status <" + status
-				+ ">");
+		System.out.println("Setting job [" + jobID + "] to status <" + status + ">");
 	}
 
 	/**
 	 * @param jobID
 	 * @return the status
 	 */
-	public static String getJobStatus(int jobID) {
+	public static JobStatus getJobStatus(final int jobID) {
 		//if (jobID != 0 && queue.containsKey(jobID))
 		//	if (queue.get(jobID) != null)
 				//ignore
