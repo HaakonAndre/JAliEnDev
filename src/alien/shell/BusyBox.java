@@ -182,9 +182,10 @@ public class BusyBox {
 		}
 	}
 
-	private String genPromptPrefix(){
+	private static String genPromptPrefix(){
 		if(JSh.doWeColor())
 			return promptColorPrefix;
+		
 		return promptPrefix;
 	}
 	
@@ -358,14 +359,17 @@ public class BusyBox {
 	}
 
 	
-	private void pending(BufferedReader br){
+	private static void pending(final BufferedReader br){
 		String sLine;
 		try {
 			while ( (sLine = br.readLine()) != null ){
 				if(!sLine.endsWith(JShPrintWriter.pendSignal))
 					break;
+				
 				System.out.print("\rI/O ["+ pends[pender] + "]");
+				
 				pender++;
+				
 				if(pender>=pends.length)
 					pender = 0;
 			}
@@ -459,7 +463,7 @@ public class BusyBox {
 	/**
 	 * do a call to the underlying system shell
 	 */
-	private void syscall(String command) {
+	private static void syscall(String command) {
 
 		String line;
 		InputStream stderr = null;
@@ -472,8 +476,7 @@ public class BusyBox {
 			stderr = p.getErrorStream();
 			stdout = p.getInputStream();
 
-			BufferedReader brCleanUp = new BufferedReader(
-					new InputStreamReader(stdout));
+			BufferedReader brCleanUp = new BufferedReader(new InputStreamReader(stdout));
 			while ((line = brCleanUp.readLine()) != null)
 				System.out.println(line);
 
@@ -500,38 +503,37 @@ public class BusyBox {
 	
 
 	
-	private void checkColorSwitch(final String line){
+	private static void checkColorSwitch(final String line){
 		if("blackwhite".equals(line))
 			JSh.blackwhite();
+		
 		else if("color".equals(line))
 			JSh.color();
 	}
 
-	
 	private static boolean socketThere(Socket s){
 		return (!s.isClosed() && s.isBound() &&
 		s.isConnected() && !s.isInputShutdown()
 		&& !s.isOutputShutdown());
 	}
 	
-	private void printInitConnError(){
+	private static void printInitConnError(){
 		JSh.printErr("Could not connect to JBox.");
 	}
 	
-	private void printErrShutdown(){
+	private static void printErrShutdown(){
 		JSh.printErr("Shutting down...");
 	}
 	
-	private void printErrRestartJBox(){
+	private static void printErrRestartJBox(){
 		JSh.printErr("JBox seems to be dead, please restart it.");
 	}
 	
-	private void printConnError(){
+	private static void printConnError(){
 		JSh.printErr("Connection to JBox interrupted.");
 	}
 
-	
-	private void printJCentralConnError(){
+	private static void printJCentralConnError(){
 		JSh.printErr("Connection error to JCentral.");
 	}
 
