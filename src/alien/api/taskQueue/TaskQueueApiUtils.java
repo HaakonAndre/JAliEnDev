@@ -188,7 +188,7 @@ import alien.user.JAKeyStore;
 	 * @param jobnumber
 	 * @param status
 	 */
-	public static void setJobStatus(final int jobnumber, final String status) {
+	public static void setJobStatus(final int jobnumber, final JobStatus status) {
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status), true);
 

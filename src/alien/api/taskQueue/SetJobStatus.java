@@ -1,6 +1,7 @@
 package alien.api.taskQueue;
 
 import alien.api.Request;
+import alien.taskQueue.JobStatus;
 import alien.taskQueue.TaskQueueFakeUtils;
 
 /**
@@ -10,23 +11,18 @@ import alien.taskQueue.TaskQueueFakeUtils;
  * @since Jun 05, 2011
  */
 public class SetJobStatus extends Request {
-
-	
-	
-
-
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -6330031807464568209L;
-	private int jobnumber = 0;
-	private String status = null;
+	private final int jobnumber;
+	private final JobStatus status;
 	
 	/**
 	 * @param jobnumber 
 	 * @param status 
 	 */
-	public SetJobStatus(int jobnumber, String status){
+	public SetJobStatus(int jobnumber, JobStatus status){
 		this.jobnumber = jobnumber;
 		this.status = status;
 	}

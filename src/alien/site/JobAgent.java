@@ -29,6 +29,7 @@ import alien.io.protocols.Protocol;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobSigner;
+import alien.taskQueue.JobStatus;
 import alien.taskQueue.JobSubmissionException;
 import alien.user.AliEnPrincipal;
 
@@ -87,7 +88,7 @@ public class JobAgent extends Thread {
 			jdl = new JDL(thejob.getJDL());
 
 			if (verifiedJob()) {
-				q_api.setJobStatus(thejob.queueId, "STARTED");
+				q_api.setJobStatus(thejob.queueId, JobStatus.STARTED);
 				if (createTempDir())
 					if (getInputFiles()) {
 						if (execute())
@@ -95,10 +96,10 @@ public class JobAgent extends Thread {
 								System.out.println("Job sucessfully executed.");
 					} else {
 						System.out.println("Could not get input files.");
-						q_api.setJobStatus(thejob.queueId, "ERROR_IB");
+						q_api.setJobStatus(thejob.queueId, JobStatus.ERROR_IB);
 					}
 			} else {
-				q_api.setJobStatus(thejob.queueId, "ERROR_VER");
+				q_api.setJobStatus(thejob.queueId, JobStatus.ERROR_VER);
 			}
 		} catch (IOException e) {
 			System.err.println("Unable to get JDL from Job.");
@@ -196,7 +197,7 @@ public class JobAgent extends Thread {
 		try {
 			final ExitStatus exitStatus;
 
-			q_api.setJobStatus(job.queueId, "RUNNING");
+			q_api.setJobStatus(job.queueId, JobStatus.RUNNING);
 
 			exitStatus = pBuilder.start().waitFor();
 
@@ -235,7 +236,7 @@ public class JobAgent extends Thread {
 
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
-		q_api.setJobStatus(job.queueId, "SAVING");
+		q_api.setJobStatus(job.queueId, JobStatus.SAVING);
 
 		String outputDir = jdl.getOutputDir();
 
@@ -355,11 +356,11 @@ public class JobAgent extends Thread {
 			}
 		}
 		if (uploadedNotAllCopies)
-			q_api.setJobStatus(job.queueId, "DONE_WARN");
+			q_api.setJobStatus(job.queueId, JobStatus.DONE_WARN);
 		else if (uploadedAllOutFiles)
-			q_api.setJobStatus(job.queueId, "DONE");
+			q_api.setJobStatus(job.queueId, JobStatus.DONE);
 		else
-			q_api.setJobStatus(job.queueId, "ERROR_SV");
+			q_api.setJobStatus(job.queueId, JobStatus.ERROR_SV);
 
 		return uploadedAllOutFiles;
 	}
