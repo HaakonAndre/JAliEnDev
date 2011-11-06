@@ -105,7 +105,7 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 					
 			}
 			
-			if(guid!=null | lfn!=null)
+			if(guid!=null || lfn!=null)
 			{
 
 				if (!bX)
@@ -114,11 +114,9 @@ public class JAliEnCommandget extends JAliEnBaseCommand {
 				if (outputFile == null || !outputFile.exists()) {
 
 					if (guid != null)
-						pfns = commander.c_api.getPFNsToRead(
-								commander.site, guid, ses, exses);
-					else if (lfn != null)
-						pfns = commander.c_api.getPFNsToRead(
-								commander.site, lfn, ses, exses);
+						pfns = commander.c_api.getPFNsToRead(commander.site, guid, ses, exses);
+					else
+						pfns = commander.c_api.getPFNsToRead(commander.site, lfn, ses, exses);
 
 					try {
 						for (PFN pfn : pfns) {
