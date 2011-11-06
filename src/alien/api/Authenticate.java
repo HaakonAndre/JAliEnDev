@@ -32,9 +32,8 @@ public class Authenticate extends Request {
 
 	@Override
 	public void run() {
-		AuthenticationChecker authN = new AuthenticationChecker();
 		try {
-			response = authN.response(challenge);
+			response = AuthenticationChecker.response(challenge);
 			pubCert = AuthenticationChecker.readPubCert();
 
 		} catch (InvalidKeyException e) {
