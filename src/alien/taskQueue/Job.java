@@ -1,5 +1,6 @@
 package alien.taskQueue;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.regex.Matcher;
@@ -442,8 +443,21 @@ public class Job  implements Comparable<Job>,Serializable {
 		//		grep the JDL for the validation flag, perl did the following:
 		//	    $data->{jdl} =~ /validate\s*=\s*1/i and $validate = 1;
 
+		try{
+			final JDL j = new JDL(jdl);
+			
+			return Integer.parseInt(j.gets("validate")) == 1;
+		}
+		catch (IOException ioe){
+			// ignore
+		}
+		catch (NumberFormatException nfe){
+			// ignore
+		}
+		catch (NullPointerException npe){
+			// ignore
+		}
+		
 		return false;
 	}
-	
-	
 }
