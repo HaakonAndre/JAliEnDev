@@ -20,11 +20,6 @@ public class Torrent extends Protocol {
 	Torrent(){
 		// package protected
 	}
-	
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7442913364052285097L;
 
 	/* (non-Javadoc)
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)

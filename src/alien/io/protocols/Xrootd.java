@@ -52,11 +52,6 @@ public class Xrootd extends Protocol {
 	}
 
 	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -7442913364052285097L;
-
-	/**
 	 * @param level xrdcp debug level
 	 */
 	public void setDebugLevel(final int level) {
