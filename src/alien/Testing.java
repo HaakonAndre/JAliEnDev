@@ -135,7 +135,7 @@ public class Testing {
 		
 		System.err.println(t);
 		
-		TransferBroker.getInstance().notifyTransferComplete(t);
+		TransferBroker.notifyTransferComplete(t);
 	}
 	
 	/**
