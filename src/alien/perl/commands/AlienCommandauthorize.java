@@ -156,7 +156,7 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * @param debugLevel 
 	 * @return the list of envelopes
 	 */
-	public List<String> registerEnvelope(final AliEnPrincipal user, final String p_user,
+	public static List<String> registerEnvelope(final AliEnPrincipal user, final String p_user,
 			final String p_dir, final String access, final ArrayList<String> envelopes,
 			final int jobid, final int debugLevel) {
 
@@ -229,7 +229,7 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * @param debugLevel 
 	 * @return the list of envelopes
 	 */
-	public List<String> authorizeEnvelope(final AliEnPrincipal user, final String p_user,
+	public static List<String> authorizeEnvelope(final AliEnPrincipal user, final String p_user,
 			final String p_dir, final String access, final Map<String, String> optionHash,
 			final int jobid, final int debugLevel) {
 

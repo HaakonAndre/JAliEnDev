@@ -33,7 +33,7 @@ public abstract class AlienCommand {
 	/**
 	 * the username received from SOAP Request
 	 */
-	protected String sUsername ;
+	protected String sUsername = null;
 
 	/**
 	 * current directory received from SOAP request
@@ -285,7 +285,7 @@ public abstract class AlienCommand {
 	/**
 	 * @return the log message, if any, otherwise <code>null</code>
 	 */
-	protected String getLogMessages(){
+	protected static String getLogMessages(){
 		final Object o = Context.getTheadContext("logger");
 		
 		if (o!=null){
