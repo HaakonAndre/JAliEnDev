@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -28,6 +27,9 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import lazyj.ExtProperties;
+import lazyj.Utils;
+import lazyj.commands.CommandOutput;
+import lazyj.commands.SystemCommand;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
@@ -172,89 +174,87 @@ public class JAKeyStore {
 			tmf.init(trustStore);
 			trusts = tmf.getTrustManagers();
 
-		} catch (Exception e) {
-			//ignore
+		}
+		catch (IOException e) {
+			// TODO : print some message here 
+		}
+		catch (KeyStoreException e) {
+			// TODO : print some message here
+		}
+		catch (CertificateException e) {
+			// TODO : print some message here
+		}
+		catch (NoSuchAlgorithmException e) {
+			// ignore
 		}
 	}
 
 	
 	
 	private static boolean checkKeyPermissions(final String user_key, final String user_cert) {
-		try {
-			File key = new File(user_key);
-			if (key.exists() && key.canRead()) {
-				Process child = Runtime.getRuntime().exec("ls -la " + user_key);
-				child.waitFor();
-				String perms = (new BufferedReader(new InputStreamReader(
-						child.getInputStream()))).readLine();
-				if (perms != null)
-					if (!perms.startsWith("-r--------"))
-						changeMod("key", key, 400);
-				child = Runtime.getRuntime().exec("ls -la " + user_key);
-				child.waitFor();
-				perms = (new BufferedReader(new InputStreamReader(
-						child.getInputStream()))).readLine();
-				if (perms != null)
-					if (!perms.startsWith("-r--------"))
-						return false;
-			}else
-				return false;
+		final File key = new File(user_key);
+		
+		if (key.exists() && key.canRead()) {
+			CommandOutput co = SystemCommand.bash("ls -la " + user_key, false);
 
-			File cert = new File(user_cert);
-			if (cert.exists() && cert.canRead()) {
-				Process child = Runtime.getRuntime()
-						.exec("ls -la " + user_cert);
-				child.waitFor();
-				String perms = (new BufferedReader(new InputStreamReader(
-						child.getInputStream()))).readLine();
-				if (perms != null)
-					if (!perms.startsWith("-r--r-----"))
-						changeMod("certificate", cert, 440);
-				child = Runtime.getRuntime()
-						.exec("ls -la " + user_cert);
-				child.waitFor();
-				perms = (new BufferedReader(new InputStreamReader(
-						child.getInputStream()))).readLine();
-				if (perms != null)
-					if (!perms.startsWith("-r--r-----"))
-						return false;
-				return true;
+			if (!co.stdout.startsWith("-r--------")) {
+				changeMod("key", key, 400);
+
+				co = SystemCommand.bash("ls -la " + user_key, false);
+
+				if (!co.stdout.startsWith("-r--------"))
+					return false;
 			}
-			
-			return false;
-		} catch (Exception e) {
-			// ignore
-			return false;
 		}
+		else
+			return false;
+
+		final File cert = new File(user_cert);
+		
+		if (cert.exists() && cert.canRead()) {
+			CommandOutput co = SystemCommand.bash("ls -la " + user_cert, false);
+
+			if (!co.stdout.startsWith("-r--r-----")) {
+				changeMod("certificate", cert, 440);
+
+				co = SystemCommand.bash("ls -la " + user_cert, false);
+
+				return co.stdout.startsWith("-r--r-----");
+			}
+
+			return true;
+		}
+
+		return false;
 	}
-	
 	
 	private static boolean changeMod(final String name, final File file, final int chmod) {
 		try {
 			String ack="";
 
-			Console cons = System.console();
-			if(cons==null)
+			final Console cons = System.console();
+			
+			if (cons==null)
 				return false;
+			
 			System.out.println("Your Grid " + name + " file has wrong permissions.");
 			System.out.println("The file [ " + file.getCanonicalPath() + " ] should have permissions [ " + chmod + " ].");
 			
 			if ((ack = cons.readLine("%s", "Would you correct this now [Yes/no]?")) != null)
-				if ("y".equals(ack.toLowerCase())
-						|| "yes".equals(ack.toLowerCase())|| "".equals(ack)) {
-					Process child = Runtime.getRuntime().exec(
-							"chmod " + chmod + " " + file.getCanonicalPath());
+				if (Utils.stringToBool(ack, true)) {
+					final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
+
+					if (co.exitCode!=0){
+						System.err.println("Could not change permissions: "+co.stderr);
+					}
 					
-					child.waitFor();
-					String err = (new BufferedReader(new InputStreamReader(
-						child.getErrorStream()))).readLine();
-					if(err!=null && !"".equals(err))
-						System.err.println("ERROR: " + err);
-					else return true;
+					return co.exitCode == 0;
 				}
-		} catch (Exception e) {
+		} 
+		catch (IOException e) {
 			//ignore
 		}
+		
 		return false;
 	}
 	
@@ -511,15 +511,34 @@ public class JAKeyStore {
 		if (logger.isLoggable(Level.INFO)) {
 			logger.log(Level.INFO,"Loading private key ... " + keyFileLocation);
 		}
-		BufferedReader priv = new BufferedReader(
-				new FileReader(keyFileLocation));
+		
+		BufferedReader priv = null;
+		
+		PEMReader reader = null;
+		
+		try{
+			priv = new BufferedReader(new FileReader(keyFileLocation));
 
-		if (pFinder == null)
-			return ((KeyPair) new PEMReader(priv).readObject()).getPrivate();
-
-		return ((KeyPair) new PEMReader(priv, pFinder).readObject())
-				.getPrivate();
-
+			if (pFinder == null)
+				reader = new PEMReader(priv);
+			else
+				reader = new PEMReader(priv, pFinder);
+					
+			return ((KeyPair) reader.readObject()).getPrivate();
+		}
+		finally{
+			if (reader!=null){
+				try{
+					reader.close();
+				}
+				catch (IOException ioe){
+					// ignore
+				}
+			}
+			
+			if (priv!=null)
+				priv.close();
+		}
 	}
 
 	/**
@@ -534,14 +553,28 @@ public class JAKeyStore {
 			logger.log(Level.INFO,"Loading public ... " + certFileLocation);
 		}
 
-		BufferedReader pub = new BufferedReader(new FileReader(certFileLocation));
+		BufferedReader pub = null;
+		
+		PEMReader reader = null;
+		
 		try {
-			return new Certificate[] { (Certificate) new PEMReader(pub)
-					.readObject() };
-
-		} catch (IOException e) {
+			pub = new BufferedReader(new FileReader(certFileLocation));
+			
+			reader = new PEMReader(pub);
+			
+			return new Certificate[] { (Certificate) reader.readObject() };
+		}
+		catch (IOException e) {
 			e.printStackTrace();
 		}
+		finally{
+			if (reader!=null)
+				reader.close();
+			
+			if (pub!=null)
+				pub.close();
+		}
+		
 		return null;
 	}
 	
