@@ -39,7 +39,7 @@ public class LDAPHelper {
 	 * 
 	 * @return number of cached queries
 	 */
-	public int getCacheSize(){
+	public static int getCacheSize(){
 		return cache.size();
 	}
 	
