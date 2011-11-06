@@ -223,8 +223,9 @@ public class EncryptedAuthzToken {
 	 * @param bytes
 	 * @return hex string
 	 */
-	public String toHex(byte[] bytes) {
-		char[] out = new char[bytes.length * 2]; // 2 hex characters per byte
+	public static String toHex(byte[] bytes) {
+		final char[] out = new char[bytes.length * 2]; // 2 hex characters per byte
+		
 		for (int i = 0; i < bytes.length; i++) {
 			out[2 * i] = DIGITS[bytes[i] < 0 ? 8 + (bytes[i] + 128) / 16
 					: bytes[i] / 16]; // append sign bit for negative bytes
@@ -475,7 +476,7 @@ public class EncryptedAuthzToken {
 	 *            the number of bytes to be dumped
 	 */
 	@SuppressWarnings("unused")
-	private String arrayToHex(String name, byte[] array, int offset, int len) {
+	private static String arrayToHex(String name, byte[] array, int offset, int len) {
 		if (array == null) {
 			return "";
 		}
