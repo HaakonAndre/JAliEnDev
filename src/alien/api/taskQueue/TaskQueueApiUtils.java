@@ -36,7 +36,7 @@ import alien.user.JAKeyStore;
 	/**
 	 * @return the uptime / w statistics
 	 */
-	public Map<String, GetUptime.UserStats> getUptime(){
+	public static Map<String, GetUptime.UserStats> getUptime(){
 		try{
 			final GetUptime uptime = (GetUptime) Dispatcher.execute(new GetUptime(), false);
 			
@@ -188,8 +188,7 @@ import alien.user.JAKeyStore;
 	 * @param jobnumber
 	 * @param status
 	 */
-	public void setJobStatus(int jobnumber, String status) {
-
+	public static void setJobStatus(final int jobnumber, final String status) {
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status), true);
 
@@ -206,8 +205,7 @@ import alien.user.JAKeyStore;
 	 * @return queueId
 	 * @throws JobSubmissionException
 	 */
-	public int submitJob(String jdl)
-			throws JobSubmissionException {
+	public int submitJob(final String jdl) throws JobSubmissionException {
 
 		try {
 			JDL ojdl = new JDL(jdl);
