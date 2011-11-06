@@ -139,7 +139,7 @@ public class TokenAuthzHandler {
 		return true;
 	}
 
-	private GridFile findFile(String pathToOpen, Envelope envelope) {
+	private static GridFile findFile(String pathToOpen, Envelope envelope) {
 		Iterator<GridFile> files = envelope.getFiles();
 		GridFile file = null;
 
@@ -158,11 +158,9 @@ public class TokenAuthzHandler {
 		return file;
 	}
 
-	private Envelope decodeEnvelope(String authzTokenString, KeyPair keypair)
-			throws GeneralSecurityException, CorruptedEnvelopeException {
-		EncryptedAuthzToken token = new EncryptedAuthzToken(
-				(RSAPrivateKey) keypair.getPrivate(),
-				(RSAPublicKey) keypair.getPublic(), true);
+	private static Envelope decodeEnvelope(String authzTokenString, KeyPair keypair) throws GeneralSecurityException, CorruptedEnvelopeException {
+		EncryptedAuthzToken token = new EncryptedAuthzToken((RSAPrivateKey) keypair.getPrivate(), (RSAPublicKey) keypair.getPublic(), true);
+
 		token.decrypt(authzTokenString);
 		return token.getEnvelope();
 	}
@@ -170,7 +168,7 @@ public class TokenAuthzHandler {
 	/**
 	 * @return true if pfn is provided
 	 */
-	public boolean providesPFN() {
+	public static boolean providesPFN() {
 		return true;
 	}
 

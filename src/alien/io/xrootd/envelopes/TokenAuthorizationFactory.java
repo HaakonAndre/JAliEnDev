@@ -105,10 +105,7 @@ public class TokenAuthorizationFactory
         }
     }
 
-    private KeyPair loadKeyPair(String privKeyFileName, String pubKeyFileName,
-                                KeyFactory keyFactory)
-        throws IOException
-    {
+    private static KeyPair loadKeyPair(String privKeyFileName, String pubKeyFileName, KeyFactory keyFactory) throws IOException {
         File privKeyFile = new File(privKeyFileName);
         File pubKeyFile = new File(pubKeyFileName);
 
