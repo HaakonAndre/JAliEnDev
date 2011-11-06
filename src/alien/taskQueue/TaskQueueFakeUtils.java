@@ -28,12 +28,13 @@ public class TaskQueueFakeUtils {
 	/**
 	 * @return a job
 	 */
-	public static Job getJob() {
-
+	public static synchronized Job getJob() {
+		final Integer currentJobID = Integer.valueOf(jobcounter.intValue());
+		
 		// Job j = fakeJob();
-		if (queue.containsKey(Integer.valueOf(jobcounter.intValue())) && queue.get(Integer.valueOf(jobcounter.intValue())) != null) {
+		if (queue.containsKey(currentJobID) && queue.get(currentJobID) != null) {
 			if (getJobStatus(jobcounter.intValue()).equals("WAITING")) {
-				Job j = queue.get(jobcounter);
+				Job j = queue.get(currentJobID);
 				System.out.println("submitting job: " + j.jdl);
 				setJobStatus(j.queueId, "ASSIGNED");
 				return j;
