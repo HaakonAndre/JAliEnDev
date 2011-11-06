@@ -22,6 +22,7 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 		busy = box;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public int complete(final String buf, final int cursor, @SuppressWarnings("rawtypes") final List candidates) {
 		if (buf!=null && buf.contains("file://") && cursor >= buf.indexOf("file://"))
@@ -30,7 +31,7 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 		return gridComplete(buf, cursor, candidates);
 	}
 
-	private int gridComplete(final String buf, final int cursor, @SuppressWarnings("rawtypes") final List candidates) {
+	private int gridComplete(final String buf, final int cursor, final List<String> candidates) {
 		
 		String buffer = (buf == null) ? "" : buf;
 
@@ -69,9 +70,7 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private int gridMatchFiles(String buffer, String translated,
-			List<String> entries, @SuppressWarnings("rawtypes") List candidates) {
+	private static int gridMatchFiles(String buffer, String translated, List<String> entries, List<String> candidates) {
 
 		if (entries == null) {
 			return -1;
