@@ -157,6 +157,10 @@ public enum JobStatus{
 	 */
 	ERROR_SPLT(912),
 	/**
+	 * Error verifying JDL signature
+	 */
+	ERROR_VER(913),
+	/**
 	 * Job didn't report for too long (1000)
 	 */
 	EXPIRED(1000),

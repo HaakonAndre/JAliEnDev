@@ -183,6 +183,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				case ERROR_VT : e = "EVT"; break;
 				case ERROR_SPLT:e = "ESP"; break;
 				case ERROR_W  : e = " EW"; break;
+				case ERROR_VER: e = "EVE"; break;
 				case FAILED   : e = " FF"; break;
 				case ZOMBIE   : e = "  Z"; break;
 				case EXPIRED  : e = " XP"; break;
@@ -228,6 +229,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			case ERROR_VT : e = "EVT"; break;
 			case ERROR_SPLT:e = "ESP"; break;
 			case ERROR_W  : e = " EW"; break;
+			case ERROR_VER: e = "EVE"; break;
 			case FAILED   : e = " FF"; break;
 			case ZOMBIE   : e = "  Z"; break;
 			case EXPIRED  : e = " XP"; break;
