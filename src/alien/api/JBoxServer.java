@@ -120,7 +120,7 @@ public class JBoxServer extends Thread {
 	 * @return true if the file was written, false if not
 	 * @author Alina Grigoras
 	 */
-	private boolean writeTokenFile(String sHost, int iPort, String sPassword, String sUser, String sHomeUser, int iDebug){
+	private static boolean writeTokenFile(String sHost, int iPort, String sPassword, String sUser, String sHomeUser, int iDebug){
 		String sUserId = System.getProperty("userid");
 
 		if(sUserId == null || sUserId.length() == 0){
@@ -192,7 +192,7 @@ public class JBoxServer extends Thread {
 	 * @param sUser
 	 * @return
 	 */
-	private boolean writeEnvFile(String sHost, int iPort, String sUser){
+	private static boolean writeEnvFile(String sHost, int iPort, String sUser){
 		String sUserId = System.getProperty("userid");
 
 		if(sUserId == null || sUserId.length() == 0){
