@@ -183,8 +183,7 @@ public class JSh {
 	private static void killJBox() {
 		if (JSh.JBoxRunning()) {
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-					new String[] { kill, pid + "" });
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(new String[] { kill, pid + "" });
 
 			pBuilder.returnOutputOnExit(true);
 			pBuilder.timeout(2, TimeUnit.SECONDS);
@@ -195,13 +194,14 @@ public class JSh {
 				if (exitStatus.getExtProcExitStatus() == 0)
 					System.out.println("[" + pid + "] JBox killed.");
 				else
-					System.err.println("Could not kill the JBox, PID:"
-							+ pid);
+					System.err.println("Could not kill the JBox, PID:" + pid);
 
-			} catch (Exception e) {
+			}
+			catch (Throwable e) {
 				System.err.println("Could not kill the JBox, PID:" + pid);
 			}
-		} else
+		}
+		else
 			System.out.println("We didn't find any JBox running.");
 	}
 
@@ -261,7 +261,8 @@ public class JSh {
 							// ignore
 						}
 				}
-				if (buffer.contains("alien.JBox"))
+				
+				if (buffer!=null && buffer.contains("alien.JBox"))
 					return true;
 			}
 		}
