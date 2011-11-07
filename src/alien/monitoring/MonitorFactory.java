@@ -2,6 +2,8 @@ package alien.monitoring;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -402,5 +404,23 @@ public final class MonitorFactory {
 		selfProcessID = -1;
 		
 		return selfProcessID;
+	}
+	
+	private static String thisHostname = null;
+	
+	/**
+	 * @return this machine's FQDN
+	 */
+	public static String getSelfHostname(){
+		if (thisHostname==null){
+			try{
+				thisHostname = InetAddress.getLocalHost().getCanonicalHostName();
+			}
+			catch (UnknownHostException uhe){
+				thisHostname = "localhost";
+			}
+		}
+		
+		return thisHostname;
 	}
 }
