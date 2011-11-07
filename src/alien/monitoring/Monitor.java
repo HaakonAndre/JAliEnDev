@@ -1,6 +1,5 @@
 package alien.monitoring;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -80,19 +79,10 @@ public class Monitor implements Runnable {
 			cluster += "_"+clusterSuffix;
 		
 		clusterName = MonitorFactory.getConfigString(component, "cluster_name", cluster);
-		
-		String hostName = "unknown";
-		
-		try{
-			hostName = java.net.InetAddress.getLocalHost().getCanonicalHostName();
-		}
-		catch (UnknownHostException uhe){
-			logger.log(Level.SEVERE, "Cannot get localhost name!", uhe);
-		}
-		
+						
 		final String pattern = MonitorFactory.getConfigString(component, "node_name", "${hostname}");
 		
-		nodeName = Format.replace(pattern, "${hostname}", hostName);
+		nodeName = Format.replace(pattern, "${hostname}", MonitorFactory.getSelfHostname());
 	}
 
 	/**
