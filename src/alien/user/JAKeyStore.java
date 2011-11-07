@@ -189,45 +189,63 @@ public class JAKeyStore {
 		}
 	}
 
-	
-	
-	private static boolean checkKeyPermissions(final String user_key, final String user_cert) {
-		final File key = new File(user_key);
-		
-		if (key.exists() && key.canRead()) {
-			CommandOutput co = SystemCommand.bash("ls -la " + user_key, false);
+	private static boolean checkKeyPermissions(final String user_key,
+			final String user_cert) {
+		File key = new File(user_key);
 
-			if (!co.stdout.startsWith("-r--------")) {
-				changeMod("key", key, 400);
+		try {
+			if (!user_key.equals(key.getCanonicalPath()))
+				key = new File(key.getCanonicalPath());
 
-				co = SystemCommand.bash("ls -la " + user_key, false);
+			if (key.exists() && key.canRead()) {
+				CommandOutput co = SystemCommand.bash(
+						"ls -la " + key.getCanonicalPath(), false);
 
-				if (!co.stdout.startsWith("-r--------"))
-					return false;
-			}
+				if (!co.stdout.startsWith("-r--------")) {
+					System.out.println("key|" + co.stdout + "|");
+					changeMod("key", key, 400);
+
+					co = SystemCommand.bash("ls -la " + user_key, false);
+
+					if (!co.stdout.startsWith("-r--------"))
+						return false;
+				}
+			} else
+				return false;
+		} catch (IOException e) {
+			System.err.println("Error reading key file [" + user_key + "].");
 		}
-		else
-			return false;
 
-		final File cert = new File(user_cert);
-		
-		if (cert.exists() && cert.canRead()) {
-			CommandOutput co = SystemCommand.bash("ls -la " + user_cert, false);
+		File cert = new File(user_cert);
 
-			if (!co.stdout.startsWith("-r--r-----")) {
-				changeMod("certificate", cert, 440);
+		try {
+			if (!user_cert.equals(cert.getCanonicalPath()))
+				cert = new File(cert.getCanonicalPath());
 
-				co = SystemCommand.bash("ls -la " + user_cert, false);
+			if (cert.exists() && cert.canRead()) {
+				CommandOutput co = SystemCommand.bash(
+						"ls -la " + cert.getCanonicalPath(), false);
 
-				return co.stdout.startsWith("-r--r-----");
+				if (!co.stdout.startsWith("-r--r-----")) {
+					System.out.println("cert|" + co.stdout + "|");
+					changeMod("certificate", cert, 440);
+
+					co = SystemCommand.bash("ls -la " + user_cert, false);
+
+					return co.stdout.startsWith("-r--r-----");
+				}
+
+				return true;
 			}
 
-			return true;
+			return false;
+		} catch (IOException e) {
+			System.err.println("Error reading cert file [" + user_cert + "].");
 		}
 
 		return false;
 	}
-	
+
 	private static boolean changeMod(final String name, final File file, final int chmod) {
 		try {
 			String ack="";
