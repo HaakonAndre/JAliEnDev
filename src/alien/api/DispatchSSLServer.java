@@ -8,6 +8,7 @@ import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateException;
+import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,6 +23,7 @@ import javax.security.cert.X509Certificate;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.config.ConfigUtils;
+import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 
@@ -118,7 +120,16 @@ public class DispatchSSLServer extends Thread {
 
 						long lStart = System.currentTimeMillis();
 
-						r.setPartnerIdentity(UserFactory.getByCertificate(partnerCerts));
+						final AliEnPrincipal remoteIdentity = UserFactory.getByCertificate(partnerCerts);
+						
+						if (remoteIdentity==null){
+							logger.log(Level.WARNING, "Could not get the identity of this certificate chain: "+Arrays.toString(partnerCerts));
+							return;
+						}
+						
+						remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
+						
+						r.setPartnerIdentity(remoteIdentity);
 						
 						r.setPartnerCertificate(partnerCerts);
 
@@ -160,10 +171,12 @@ public class DispatchSSLServer extends Thread {
 					}
 				}
 			}
-		} catch (Throwable e) {
+		}
+		catch (Throwable e) {
 			logger.log(Level.WARNING, "Lasted : " + lLasted
 					+ ", serialization : " + lSerialization, e);
-
+		}
+		finally{
 			if (ois != null) {
 				try {
 					ois.close();
@@ -216,39 +229,34 @@ public class DispatchSSLServer extends Thread {
 		SSLServerSocket server = null;
 
 		try {
-
 			Security.addProvider(new BouncyCastleProvider());
 
-			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509",
-					"SunJSSE");
+			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
 
 			kmf.init(JAKeyStore.hostCert, JAKeyStore.pass);
-			
+
 			String logCertInfo = "Running JCentral with host cert: ";
-					
-			try{
-				((java.security.cert.X509Certificate) JAKeyStore.hostCert
-						.getCertificateChain("Host.cert")[0]).checkValidity();
+
+			try {
+				((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0])
+					.checkValidity();
 			}
-			catch(CertificateException e){
+			catch (CertificateException e) {
 				logCertInfo = "Our host certificate expired or is invalid!";
 			}
-			logCertInfo += ((java.security.cert.X509Certificate) JAKeyStore.hostCert
-													.getCertificateChain("Host.cert")[0])
-													.getSubjectDN();
-							
+			logCertInfo += ((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0])
+				.getSubjectDN();
+
 			System.out.println(logCertInfo);
-					
-			logger.log(Level.INFO,logCertInfo);
+
+			logger.log(Level.INFO, logCertInfo);
 
 			SSLContext sc = SSLContext.getInstance("TLS");
 
-			TrustManagerFactory tmf = TrustManagerFactory
-					.getInstance("SunX509");
+			TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 			tmf.init(JAKeyStore.hostCert);
 
-			sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(),
-					new SecureRandom());
+			sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 
 			SSLServerSocketFactory ssf = sc.getServerSocketFactory();
 
@@ -258,44 +266,38 @@ public class DispatchSSLServer extends Thread {
 			server.setNeedClientAuth(true);
 
 			server.setUseClientMode(false);
-			
+
 			System.out.println("JCentral listening on " + server.getLocalPort());
-						
-			logger.log(Level.INFO, "JCentral listening on  "+server.getLocalPort());
+
+			logger.log(Level.INFO, "JCentral listening on  " + server.getLocalPort());
 
 			while (true) {
 				try {
-
 					final SSLSocket c = (SSLSocket) server.accept();
 
 					if (server.getNeedClientAuth() == true) {
-						
-						logger.log(Level.INFO,"Printing client information:");
-						X509Certificate[] peerCerts = c.getSession()
-								.getPeerCertificateChain();
+
+						logger.log(Level.INFO, "Printing client information:");
+						X509Certificate[] peerCerts = c.getSession().getPeerCertificateChain();
 
 						if (peerCerts != null) {
 							for (int i = 0; i < peerCerts.length; i++) {
-							
-								logger.log(Level.INFO,printClientInfo(peerCerts[i]));
-
+								logger.log(Level.INFO, printClientInfo(peerCerts[i]));
 							}
-						} else
-							logger.log(Level.INFO,"Failed to get peer certificates");
+						}
+						else
+							logger.log(Level.INFO, "Failed to get peer certificates");
 					}
 
 					DispatchSSLServer serv = new DispatchSSLServer(c);
 					if (server.getNeedClientAuth() == true)
-						serv.partnerCerts = c.getSession()
-					.getPeerCertificateChain();
-					
-					
-					
+						serv.partnerCerts = c.getSession().getPeerCertificateChain();
+
 					serv.start();
 
-				} catch (IOException ioe) {
-					logger.log(Level.WARNING, "Exception treating a client",
-							ioe);
+				}
+				catch (IOException ioe) {
+					logger.log(Level.WARNING, "Exception treating a client", ioe);
 				}
 			}
 
