@@ -1,6 +1,7 @@
 package alien.user;
 
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.security.Principal;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -42,6 +43,8 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * When were the roles generated
 	 */
 	private long lRolesChecked = 0;
+	
+	private transient InetAddress remoteEndpoint = null;
 	
 	/**
 	 * building a Principal for ALICE user
@@ -214,5 +217,22 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 */
 	public static boolean roleIsAdmin(final String role){
 		return admins.contains(role);
+	}
+	
+	/**
+	 * @return the endpoint where this guy came from
+	 */
+	public InetAddress getRemoteEndpoint(){
+		return remoteEndpoint;
+	}
+	
+	/**
+	 * Upon accepting a request, set this address to where the connection came from
+	 * 
+	 * @param remoteEndpoint
+	 */
+	public void setRemoteEndpoint(final InetAddress remoteEndpoint){
+		if (this.remoteEndpoint==null)
+			this.remoteEndpoint = remoteEndpoint; 
 	}
 }
