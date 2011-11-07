@@ -230,7 +230,7 @@ public class TaskQueueUtils {
 		while (db.moveNext()){
 			final int j = db.geti(1);
 			
-			if (j!=oldJobID){
+			if (j!=oldJobID || m==null){
 				m = new HashMap<JobStatus, Integer>();
 
 				final Integer jobId = Integer.valueOf(j);
@@ -240,7 +240,6 @@ public class TaskQueueUtils {
 				oldJobID = j;
 			}
 			
-			// ignore the NPE warning, this cannot be null
 			m.put(JobStatus.getStatus(db.gets(2)), Integer.valueOf(db.geti(3)));
 		}
 		
@@ -856,7 +855,7 @@ public class TaskQueueUtils {
 	 * Submit the JDL indicated by this file
 	 * 
 	 * @param file the catalogue name of the JDL to be submitted
-	 * @param account account from where the submit command was received, in the form "username@hostname"
+	 * @param account account from where the submit command was received
 	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the job ID
 	 * @throws IOException in case of problems like downloading the respective JDL or not enough arguments provided to it 
@@ -867,7 +866,11 @@ public class TaskQueueUtils {
 		if (jdlContents==null || jdlContents.length()==0)
 			throw new IOException("Could not download "+file.getCanonicalName());
 		
-		return submit(applyJDLArguments(jdlContents, arguments), account);
+		final JDL jdl = applyJDLArguments(jdlContents, arguments);
+		
+		jdl.set("JDLPath", file.getCanonicalName());
+		
+		return submit(jdl, account);
 	}
 	
 	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal owner) throws IOException {
@@ -899,8 +902,8 @@ public class TaskQueueUtils {
 		// set the requirements anew
 		jdl.delete("Requirements");
 		
-		jdl.addJDLRequirement("other.Type == \"machine\"");
-		jdl.addJDLRequirement(jdl.gets("OrigRequirements"));
+		jdl.addRequirement("other.Type == \"machine\"");
+		jdl.addRequirement(jdl.gets("OrigRequirements"));
 		
 		final List<String> packages = jdl.getList("Packages");
 		
@@ -908,37 +911,70 @@ public class TaskQueueUtils {
 			for (final String pack: packages){
 				// TODO : check if the package is really defined and throw an exception if not
 				
-				jdl.addJDLRequirement("member(other.Packages,\""+pack+"\")");
+				jdl.addRequirement("member(other.Packages,\""+pack+"\")");
 			}
 		}
 		
-		jdl.addJDLRequirement("other.TTL > "+ttl);
-		jdl.addJDLRequirement("other.Price <= 1");
+		jdl.addRequirement("other.TTL > "+ttl);
+		jdl.addRequirement("other.Price <= 1");
 		
-		// InputFile -> (InputDownload and InputBox
+		// InputFile -> (InputDownload and InputBox)
 		
 		final List<String> inputFiles = jdl.getList("InputFile");
 		
 		for (final String file: inputFiles){
-			if (file.indexOf('/')<0)
-				continue;
+			if (file.indexOf('/')<0){
+				throw new IOException("InputFile contains an illegal entry: "+file);
+			}
 			
 			String lfn = file;
 			
 			if (lfn.startsWith("LF:")){
 				lfn = lfn.substring(3);
 			}
+			else{
+				throw new IOException("InputFile doesn't start with 'LF:' : "+lfn);
+			}
+			
+			final LFN l = LFNUtils.getLFN(lfn);
+			
+			if (l==null || !l.isFile()){
+				throw new IOException("InputFile "+lfn+" doesn't exist in the catalogue");
+			}
 			
 			jdl.append("InputBox", lfn);
-			
-			String last = lfn.substring(lfn.lastIndexOf('/')+1);
-			
-			jdl.append("InputDownload", last+"->"+lfn);
+			jdl.append("InputDownload", l.getFileName()+"->"+lfn);
 		}
 		
-		// sanity check
+		final List<String> inputData = jdl.getList("InputData");
 		
-		for (final String tag: Arrays.asList("InputBox", "Executable", "ValidationCommand", "InputDataCollection")){
+		for (final String file: inputData){
+			if (file.indexOf('/')<0){
+				throw new IOException("InputData contains an illegal entry: "+file);
+			}
+			
+			String lfn = file;
+			
+			if (lfn.startsWith("LF:")){
+				lfn = lfn.substring(3);
+			}
+			else{
+				throw new IOException("InputData doesn't start with 'LF:' : "+lfn);
+			}
+			
+			if (lfn.indexOf(',')>=0)
+				lfn = lfn.substring(0, lfn.indexOf(','));	// "...,nodownload" for example
+			
+			final LFN l = LFNUtils.getLFN(lfn);
+			
+			if (l==null || !l.isFile()){
+				throw new IOException("InputData "+lfn+" doesn't exist in the catalogue");
+			}			
+		}
+		
+		// sanity check of other tags
+		
+		for (final String tag: Arrays.asList("Executable", "ValidationCommand", "InputDataCollection")){
 			final List<String> files = jdl.getList(tag);
 			
 			if (files==null)
