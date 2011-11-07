@@ -1,12 +1,12 @@
 package alien.api.taskQueue;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import alien.api.Dispatcher;
+import alien.api.ServerException;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
@@ -41,9 +41,9 @@ public class TaskQueueApiUtils {
 
 			return uptime.getStats();
 		}
-		catch (IOException ioe) {
-			System.out.println("Could not get an uptime stats: " + ioe.getMessage());
-			ioe.printStackTrace();
+		catch (ServerException e) {
+			System.out.println("Could not get an uptime stats: " + e.getMessage());
+			e.getCause().printStackTrace();
 		}
 
 		return null;
@@ -68,9 +68,9 @@ public class TaskQueueApiUtils {
 
 			return ps.returnPS();
 		}
-		catch (IOException e) {
+		catch (ServerException e) {
 			System.out.println("Could not get a PS listing: " + e.getMessage());
-			e.printStackTrace();
+			e.getCause().printStackTrace();
 		}
 		return null;
 	}
@@ -92,16 +92,15 @@ public class TaskQueueApiUtils {
 			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {
-			GetMasterjob mj = (GetMasterjob) Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit,
-					bExpunge), true);
+			GetMasterjob mj = (GetMasterjob) Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit,bExpunge), true);
 
 			// return mj.masterJobStatus();
 			return mj.subJobStatus();
 
 		}
-		catch (IOException e) {
+		catch (ServerException e) {
 			System.out.println("Could get a PS listing: ");
-			e.printStackTrace();
+			e.getCause().printStackTrace();
 		}
 		return null;
 
@@ -118,9 +117,9 @@ public class TaskQueueApiUtils {
 
 			return trace.getTraceLog();
 		}
-		catch (IOException e) {
+		catch (ServerException e) {
 			System.out.println("Could get not a TraceLog: ");
-			e.printStackTrace();
+			e.getCause().printStackTrace();
 		}
 		return null;
 
@@ -137,9 +136,9 @@ public class TaskQueueApiUtils {
 
 			return jdl.getJDL();
 		}
-		catch (IOException e) {
-			System.out.println("Could get not a JDL: ");
-			e.printStackTrace();
+		catch (ServerException e) {
+			System.out.println("Could get not a JDL: "+e.getMessage());
+			e.getCause().printStackTrace();
 		}
 		return null;
 
@@ -156,9 +155,9 @@ public class TaskQueueApiUtils {
 
 			return job.getJob();
 		}
-		catch (IOException e) {
-			System.out.println("Could get not the Job: ");
-			e.printStackTrace();
+		catch (ServerException e) {
+			System.out.println("Could get not the Job: "+e.getMessage());
+			e.getCause().printStackTrace();
 		}
 		return null;
 
@@ -175,9 +174,9 @@ public class TaskQueueApiUtils {
 
 			return job.getJobs();
 		}
-		catch (IOException e) {
-			System.out.println("Could get not the Jobs: ");
-			e.printStackTrace();
+		catch (ServerException e) {
+			System.out.println("Could get not the Jobs: "+e.getMessage());
+			e.getCause().printStackTrace();
 		}
 		return null;
 
@@ -194,9 +193,9 @@ public class TaskQueueApiUtils {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status), true);
 
 		}
-		catch (IOException e) {
-			System.out.println("Could get not a Job's status: ");
-			e.printStackTrace();
+		catch (ServerException e) {
+			System.out.println("Could get not a Job's status: "+e.getMessage());
+			e.getCause().printStackTrace();
 		}
 	}
 

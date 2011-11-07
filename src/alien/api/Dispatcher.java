@@ -1,7 +1,5 @@
 package alien.api;
 
-import java.io.IOException;
-
 import lazyj.cache.ExpirationCache;
 import alien.config.ConfigUtils;
 
@@ -16,9 +14,9 @@ public class Dispatcher {
 	/**
 	 * @param r request to execute
 	 * @return the processed request
-	 * @throws IOException exception thrown by the processing
+	 * @throws ServerException exception thrown by the processing
 	 */
-	public static Request execute(final Request r) throws IOException{
+	public static Request execute(final Request r) throws ServerException{
 		return execute(r,false);
 	}
 	
@@ -26,9 +24,9 @@ public class Dispatcher {
 	 * @param r request to execute
 	 * @param forceRemote request to force remote execution
 	 * @return the processed request
-	 * @throws IOException exception thrown by the processing
+	 * @throws ServerException exception thrown by the processing
 	 */
-	public static Request execute(final Request r, boolean forceRemote) throws IOException{
+	public static Request execute(final Request r, boolean forceRemote) throws ServerException{
 		if (ConfigUtils.isCentralService() && !forceRemote){
 			//System.out.println("Running centrally: " + r.toString());
 			r.run();
@@ -58,7 +56,7 @@ public class Dispatcher {
 	}
 	
 	
-	private static Request dispatchRequest(final Request r) {
+	private static Request dispatchRequest(final Request r) throws ServerException {
 		return DispatchSSLClient.dispatchRequest(r);
 	}
 

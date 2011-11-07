@@ -235,9 +235,26 @@ public abstract class Request implements Serializable, Runnable {
 	 */
 	public final void setPartnerAddress(final InetAddress ip) {
 		if (this.partner_address != null)
-			throw new IllegalAccessError(
-					"You are not allowed to overwrite this field!");
+			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 
 		this.partner_address = ip;
+	}
+	
+	private ServerException exception = null;
+	
+	/**
+	 * In case of an execution problem set the exception flag to the underlying cause
+	 * 
+	 * @param exception
+	 */
+	public final void setException(final ServerException exception){
+		this.exception = exception;
+	}
+	
+	/**
+	 * @return the server side exception, if any
+	 */
+	public final ServerException getException(){
+		return exception;
 	}
 }

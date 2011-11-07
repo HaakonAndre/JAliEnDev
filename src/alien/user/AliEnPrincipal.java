@@ -232,7 +232,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @param remoteEndpoint
 	 */
 	public void setRemoteEndpoint(final InetAddress remoteEndpoint){
-		if (this.remoteEndpoint==null)
-			this.remoteEndpoint = remoteEndpoint; 
+		if (this.remoteEndpoint==null){
+			this.remoteEndpoint = remoteEndpoint;
+		}
+		else
+			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 	}
 }

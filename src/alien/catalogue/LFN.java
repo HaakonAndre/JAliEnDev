@@ -489,6 +489,13 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	}
 	
 	/**
+	 * @return <code>true</code> if this LFN points to a file
+	 */
+	public boolean isFile(){
+		return (type=='f' || type=='-');
+	}
+	
+	/**
 	 * @return <code>true</code> if this is a native collection
 	 */
 	public boolean isCollection(){

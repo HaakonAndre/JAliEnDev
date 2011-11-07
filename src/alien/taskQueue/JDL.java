@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -211,7 +213,55 @@ public class JDL implements Serializable {
 
 		return getString(o);
 	}
-
+	
+	/**
+	 * @param key
+	 * @return the integer value, or <code>null</code> if the key is not defined or is not a number
+	 */
+	public Integer getInteger(final String key){
+		final Object o = get(key);
+		
+		if (o==null)
+			return null;
+		
+		if (o instanceof Number){
+			return Integer.valueOf(((Number) o).intValue());
+		}
+		
+		try{
+			return Integer.valueOf(Integer.valueOf(getString(o)).intValue());
+		}
+		catch (NumberFormatException nfe){
+			// ignore
+		}
+		
+		return null;	// not an integer
+	}
+	
+	/**
+	 * @param key
+	 * @return the float value, or <code>null</code> if the key is not defined or is not a number
+	 */
+	public Float getFloat(final String key){
+		final Object o = get(key);
+		
+		if (o==null)
+			return null;
+		
+		if (o instanceof Number){
+			return Float.valueOf(((Number) o).intValue());
+		}
+		
+		try{
+			return Float.valueOf(getString(o));
+		}
+		catch (NumberFormatException nfe){
+			// ignore
+		}
+		
+		return null;	// not an integer		
+	}
+	
 	private static String getString(final Object o) {
 		if (o == null)
 			return null;
@@ -584,7 +634,27 @@ public class JDL implements Serializable {
 
 		return ret;
 	}
-
+	
+	/**
+	 * @param key
+	 * @return the list for this key
+	 */
+	@SuppressWarnings("unchecked")
+	public List<String> getList(final String key){
+		final Object o = get(key);
+		
+		if (o==null)
+			return null;
+		
+		if (o instanceof List)
+			return Collections.unmodifiableList((List<String>)o);
+		
+		if (o instanceof CharSequence)
+			return Arrays.asList(o.toString());
+		
+		return null;		
+	}
+	
 	/**
 	 * Get the output directory
 	 * 
@@ -819,5 +889,38 @@ public class JDL implements Serializable {
 		}
 		
 		values.add(value.toString());
+	}
+	
+
+	/**
+	 * @param requirement extra constraint to add to the job
+	 * @return <code>true</code> if this extra requirement was added
+	 */
+	public final boolean addJDLRequirement(final String requirement){
+		if (requirement==null || requirement.length()==0)
+			return false;
+		
+		String old = gets("Requirements");
+		
+		final StringBuilder newValue = new StringBuilder();
+		
+		if (old!=null){
+			if (old.contains(requirement))
+				return false;
+			
+			newValue.append(old);
+		}
+		
+		if (newValue.length()>0)
+			newValue.append(" && ");
+		
+		if (requirement.matches("^\\(.+\\)$"))
+			newValue.append(requirement);
+		else
+			newValue.append("( ").append(requirement).append(" )");
+		
+		set("Requirements", newValue);
+		
+		return true;
 	}
 }

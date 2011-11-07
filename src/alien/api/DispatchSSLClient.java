@@ -256,11 +256,10 @@ public class DispatchSSLClient extends Thread {
 	
 	/**
 	 * @param r
-	 * @return 
-	 *             in case of connectivity problems
+	 * @return  the reply, or <code>null</code> in case of connectivity problems
+	 * @throws ServerException 
 	 */
-	public static synchronized Request dispatchRequest(final Request r){
-	
+	public static synchronized Request dispatchRequest(final Request r) throws ServerException {
 			initializeSocketInfo();
 			try{
 				return dispatchARequest(r);
@@ -281,40 +280,46 @@ public class DispatchSSLClient extends Thread {
 	/**
 	 * @param r
 	 * @return the processed request, if successful
-	 * @throws IOException
-	 *             in case of connectivity problems
+	 * @throws IOException in case of connectivity problems
+	 * @throws ServerException if the server didn't like the request content
 	 */
-	public static synchronized Request dispatchARequest(final Request r)
-			throws IOException {
-	
+	public static synchronized Request dispatchARequest(final Request r) throws IOException, ServerException {
+
 		final DispatchSSLClient c = getInstance(addr, port);
 
 		if (c == null)
 			throw new IOException("Connection is null");
 
-			long lStart = System.currentTimeMillis();
+		long lStart = System.currentTimeMillis();
 
-			c.oos.writeObject(r);
-			
-			if (++c.objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER){
-				c.oos.reset();
-				c.objectsSentCounter = 0;
-			}
-			
-			c.oos.flush();
-			c.os.flush();
+		c.oos.writeObject(r);
 
-			lSerialization += System.currentTimeMillis() - lStart;
+		if (++c.objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
+			c.oos.reset();
+			c.objectsSentCounter = 0;
+		}
 
-			Object o;
-			try {
-				o = c.ois.readObject();
-			} catch (ClassNotFoundException e) {
-				throw new IOException(e.getMessage());
-			}
+		c.oos.flush();
+		c.os.flush();
 
-			return (Request) o;
+		lSerialization += System.currentTimeMillis() - lStart;
+
+		Object o;
+		try {
+			o = c.ois.readObject();
+		}
+		catch (ClassNotFoundException e) {
+			throw new IOException(e.getMessage());
+		}
+
+		final Request reply = (Request) o;
 		
+		final ServerException ex = r.getException();
+		
+		if (ex!=null)
+			throw ex;
+		
+		return reply;
 	}
 
 	private static void printSocketInfo(SSLSocket s) {

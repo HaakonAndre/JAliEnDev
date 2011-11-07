@@ -37,6 +37,7 @@ import alien.io.protocols.XRDStatus;
 import alien.io.xrootd.XrootdCleanup;
 import alien.io.xrootd.XrootdFile;
 import alien.io.xrootd.XrootdListing;
+import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.UserFactory;
@@ -145,6 +146,11 @@ public class Testing {
 		//removeFZK();
 			
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
+		
+		if (true){
+			System.err.println(MonitorFactory.getSelfHostname());
+			return;
+		}
 		
 		if (true){
 			//performTransfer(28107486);

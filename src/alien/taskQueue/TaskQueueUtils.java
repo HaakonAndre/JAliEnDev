@@ -1,7 +1,9 @@
 package alien.taskQueue;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -19,6 +21,7 @@ import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.monitoring.Monitor;
@@ -817,6 +820,37 @@ public class TaskQueueUtils {
 		return false;
 	}
 	
+	private static final Pattern p = Pattern.compile("\\$(\\d+)");
+	
+	/**
+	 * @param jdlContents JDL specification
+	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
+	 * @return the parsed JDL, with all $N parameters replaced with the respective argument
+	 * @throws IllegalArgumentException in case a required argument was not provided
+	 * @throws IOException if there is any problem parsing the JDL content
+	 */
+	public static JDL applyJDLArguments(final String jdlContents, final String... arguments) throws IllegalArgumentException, IOException {
+		String jdlToSubmit = jdlContents;
+		
+		Matcher m = p.matcher(jdlToSubmit);
+		
+		while (m.find()){
+			final String s = m.group(1);
+			
+			final int i = Integer.parseInt(s);
+			
+			if (arguments==null || arguments.length<i)
+				throw new IllegalArgumentException("The JDL indicates argument $"+i+" but you haven't provided it");
+			
+			jdlToSubmit = jdlToSubmit.replaceAll("\\$"+i+"(?!\\d)", arguments[i-1]);
+			
+			m = p.matcher(jdlToSubmit);
+		}
+		
+		final JDL jdl = new JDL(jdlToSubmit);
+		
+		return jdl;
+	}
 	
 	/**
 	 * Submit the JDL indicated by this file
@@ -827,67 +861,139 @@ public class TaskQueueUtils {
 	 * @return the job ID
 	 * @throws IOException in case of problems like downloading the respective JDL or not enough arguments provided to it 
 	 */
-	public static int submit(final LFN file, final AliEnPrincipal account, final String[] arguments) throws IOException {
+	public static int submit(final LFN file, final AliEnPrincipal account, final String... arguments) throws IOException {
 		final String jdlContents = IOUtils.getContents(file);
 		
 		if (jdlContents==null || jdlContents.length()==0)
 			throw new IOException("Could not download "+file.getCanonicalName());
 		
-		return submit(jdlContents, account, arguments);
+		return submit(applyJDLArguments(jdlContents, arguments), account);
 	}
 	
-	private static final Pattern p = Pattern.compile("\\$(\\d+)");
+	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal owner) throws IOException {
+		Float price = jdl.getFloat("Price");
+		
+		if (price==null)
+			price = Float.valueOf(1);
+		
+		jdl.set("Price", price);
+		
+		Integer ttl = jdl.getInteger("TTL");
+		
+		if (ttl==null || ttl.intValue()<=0)
+			ttl = Integer.valueOf(21600);
+		
+		jdl.set("TTL", ttl);
+		
+		jdl.set("Type", "Job");
+		
+		if (jdl.get("OrigRequirements")==null){
+			jdl.set("OrigRequirements", jdl.get("Requirements"));
+		}
+		
+		if (jdl.get("MemorySize")==null)
+			jdl.set("MemorySize", "8GB");
+		
+		jdl.set("User", owner.getName());	
+
+		// set the requirements anew
+		jdl.delete("Requirements");
+		
+		jdl.addJDLRequirement("other.Type == \"machine\"");
+		jdl.addJDLRequirement(jdl.gets("OrigRequirements"));
+		
+		final List<String> packages = jdl.getList("Packages");
+		
+		if (packages!=null){
+			for (final String pack: packages){
+				// TODO : check if the package is really defined and throw an exception if not
+				
+				jdl.addJDLRequirement("member(other.Packages,\""+pack+"\")");
+			}
+		}
+		
+		jdl.addJDLRequirement("other.TTL > "+ttl);
+		jdl.addJDLRequirement("other.Price <= 1");
+		
+		// InputFile -> (InputDownload and InputBox
+		
+		final List<String> inputFiles = jdl.getList("InputFile");
+		
+		for (final String file: inputFiles){
+			if (file.indexOf('/')<0)
+				continue;
+			
+			String lfn = file;
+			
+			if (lfn.startsWith("LF:")){
+				lfn = lfn.substring(3);
+			}
+			
+			jdl.append("InputBox", lfn);
+			
+			String last = lfn.substring(lfn.lastIndexOf('/')+1);
+			
+			jdl.append("InputDownload", last+"->"+lfn);
+		}
+		
+		// sanity check
+		
+		for (final String tag: Arrays.asList("InputBox", "Executable", "ValidationCommand", "InputDataCollection")){
+			final List<String> files = jdl.getList(tag);
+			
+			if (files==null)
+				continue;
+			
+			for (final String file: files){
+				String fileName = file;
+				
+				if (fileName.indexOf(',')>=0)
+					fileName = fileName.substring(0, fileName.indexOf(','));
+				
+				LFN l = LFNUtils.getLFN(fileName);
+				
+				if (l==null || !l.isFile() || !l.isCollection()){
+					throw new IOException(tag+" tag required "+fileName+" which is not valid");
+				}
+			}
+		}
+	}
 	
 	/**
 	 * Submit this JDL body
 	 * 
-	 * @param jdl job description, in plain text
-	 * @param account account from where the submit command was received, in the form "username@hostname"
-	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
+	 * @param j job description, in plain text
+	 * @param account account from where the submit command was received
 	 * @return the job ID
 	 * @throws IOException in case of problems such as the number of provided arguments is not enough
+	 * @see #applyJDLArguments(String, String...)
 	 */
-	public static int submit(final String jdl, final AliEnPrincipal account, final String... arguments) throws IOException{
-		String jdlToSubmit = jdl;
-		
-		Matcher m = p.matcher(jdlToSubmit);
-		
-		while (m.find()){
-			final String s = m.group(1);
-			
-			final int i = Integer.parseInt(s);
-			
-			if (arguments==null || arguments.length<i)
-				throw new IOException("JDL indicates argument $"+i+" but you haven't provided it");
-			
-			jdlToSubmit = jdlToSubmit.replaceAll("\\$"+i+"(?!\\d)", arguments[i-1]);
-			
-			m = p.matcher(jdlToSubmit);
-		}
-		
+	public static int submit(final JDL j, final AliEnPrincipal account) throws IOException{
 		final DBFunctions db = getQueueDB();
 		
 		final Map<String, Object> values = new HashMap<String, Object>();
 		
-		final JDL j = new JDL(jdlToSubmit);
+		prepareJDLForSubmission(j, account);
 		
-		String executable = j.getExecutable();
-		String sPrice = j.gets("Price");
+		final String executable = j.getExecutable();
 		
-		Float price;
-		
-		try{
-			price = Float.valueOf(sPrice);
-		}
-		catch (Throwable t){
-			price = Float.valueOf(1);
-		}
-		
+		final Float price = j.getFloat("Price");
+				
 		values.put("name", executable);
-		values.put("status", "INSERTING");
+		values.put("status", JobStatus.INSERTING.toSQL());
 		values.put("received", Long.valueOf(System.currentTimeMillis()/1000));
-		values.put("submitHost", account.getName()+"@localhost");
-		values.put("jdl", jdlToSubmit);
+		
+		final String clientAddress;
+		
+		final InetAddress addr = account.getRemoteEndpoint();
+			
+		if (addr!=null)
+			clientAddress = addr.getCanonicalHostName();
+		else
+			clientAddress = MonitorFactory.getSelfHostname();
+		
+		values.put("submitHost", account.getName()+"@"+clientAddress);
+		values.put("jdl", j.toString());
 		values.put("price", price);
 		
 		final String insert = DBFunctions.composeInsert("QUEUE", values);
