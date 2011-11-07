@@ -18,6 +18,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lazyj.StringFactory;
 import lazyj.Utils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -36,7 +37,6 @@ public class JDL implements Serializable {
 	 */
 	private static final long serialVersionUID = -4803377858842338873L;
 	private final Map<String, Object> jdlContent = new LinkedHashMap<String, Object>();
-	private String plainJDL = null;
 	
 	/**
 	 * Empty constructor. The values can be populated with {@link #set(String, Object)}  and {@link #append(String, String)}
@@ -95,16 +95,13 @@ public class JDL implements Serializable {
 		if (content == null || content.length() == 0) {
 			throw new IOException("Content is " + (content == null ? "null" : "empty"));
 		}
-		
-		plainJDL = content;
 
 		int iPrevPos = 0;
 
 		int idxEqual = -1;
 
 		while ((idxEqual = content.indexOf('=', iPrevPos + 1)) > 0) {
-			final String sKey = clean(content.substring(iPrevPos, idxEqual)
-					.trim());
+			final String sKey = clean(content.substring(iPrevPos, idxEqual).trim());
 
 			int idxEnd = idxEqual + 1;
 
@@ -161,7 +158,7 @@ public class JDL implements Serializable {
 			int idx = output.indexOf('\n');
 
 			if (idx < 0)
-				return "";
+				return StringFactory.get("");
 
 			output = output.substring(idx + 1);
 		}
@@ -172,18 +169,9 @@ public class JDL implements Serializable {
 		while (output.endsWith("\n"))
 			output = output.substring(0, output.length() - 1);
 
-		return output;
+		return StringFactory.get(output);
 	}
 	
-	
-	/**
-	 * @return the original JDL String
-	 */
-	public String getPlainJDL(){
-		return plainJDL;
-	}
-	
-
 	/**
 	 * Get the value of a key
 	 * 
@@ -278,7 +266,7 @@ public class JDL implements Serializable {
 	
 	private static final Object parseValue(final String value) {
 		if (value.startsWith("\"") && value.endsWith("\"")) {
-			return value.substring(1, value.length() - 1);
+			return StringFactory.get(value.substring(1, value.length() - 1));
 		}
 
 		if (value.startsWith("{") && value.endsWith("}")) {
@@ -571,7 +559,7 @@ public class JDL implements Serializable {
 					return ret;
 			}
 
-			ret.add(value.substring(idx + 1, idx2));
+			ret.add(StringFactory.get(value.substring(idx + 1, idx2)));
 
 			idx = value.indexOf('"', idx2 + 1);
 		} while (idx > 0);
@@ -828,7 +816,15 @@ public class JDL implements Serializable {
 		Object newValue = value;
 		
 		if (newValue instanceof Collection){
-			newValue = new LinkedList<Object>((Collection<?>)newValue);
+			final List<String> localCopy = new LinkedList<String>();
+			
+			for (final Object o: (Collection<?>)newValue){
+				localCopy.add(StringFactory.get(o.toString()));
+			}
+		}
+		else
+		if (newValue instanceof String){
+			newValue = StringFactory.get((String) newValue);
 		}
 		
 		if (old!=null){
@@ -888,7 +884,7 @@ public class JDL implements Serializable {
 				jdlContent.put(key, values);
 		}
 		
-		values.add(value.toString());
+		values.add(StringFactory.get(value));
 	}
 	
 
@@ -896,30 +892,40 @@ public class JDL implements Serializable {
 	 * @param requirement extra constraint to add to the job
 	 * @return <code>true</code> if this extra requirement was added
 	 */
-	public final boolean addJDLRequirement(final String requirement){
+	public final boolean addRequirement(final String requirement){
 		if (requirement==null || requirement.length()==0)
 			return false;
 		
-		String old = gets("Requirements");
+		Object old = get("Requirements");
 		
-		final StringBuilder newValue = new StringBuilder();
+		final StringBuilder newValue;
 		
 		if (old!=null){
-			if (old.contains(requirement))
+			if (old instanceof StringBuilder)
+				newValue = (StringBuilder) old;
+			else{
+				newValue = new StringBuilder();
+				newValue.append(getString(old));
+				
+				set("Requirements", newValue);
+			}
+
+			if (newValue.indexOf(requirement)>=0)
 				return false;
-			
-			newValue.append(old);
+
+			if (newValue.length()>0)
+				newValue.append(" && ");
 		}
-		
-		if (newValue.length()>0)
-			newValue.append(" && ");
-		
+		else{
+			newValue = new StringBuilder();
+			
+			set("Requirements", newValue);
+		}
+	
 		if (requirement.matches("^\\(.+\\)$"))
 			newValue.append(requirement);
 		else
 			newValue.append("( ").append(requirement).append(" )");
-		
-		set("Requirements", newValue);
 		
 		return true;
 	}
