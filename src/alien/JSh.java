@@ -26,15 +26,6 @@ import alien.shell.commands.JAliEnBaseCommand;
 @SuppressWarnings("restriction")
 public class JSh {
 	
-	
-//	private class SigHandler implements SignalHandler{
-//		public void handle(Signal sig) {
-//            System.out.println("got SIGINT!");
-//            if(boombox!=null)
-//            	boombox.callJAliEnGetString("SIGINT");
-//        }
-//	}
-	
 	static {
 		ConfigUtils.getVersion();
 	}

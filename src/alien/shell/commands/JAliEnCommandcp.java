@@ -137,7 +137,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	       else
 	    	   back =  proto.put(pfn,file);
 			} catch (IOException e) {
-				e.getStackTrace();
+				e.printStackTrace();
 			}
 	    }
 		/**
@@ -213,7 +213,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					break;
 				} catch (Exception e) {
-					e.getStackTrace();
+					e.printStackTrace();
 				}
 			}
 		}

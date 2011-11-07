@@ -16,6 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
+import utils.ExternalCalls;
+
 import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
@@ -31,6 +33,9 @@ import alien.config.ConfigUtils;
 public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
+	
+	private final static String xrdcp = "xrdcpapmon";
+	
 
 	private static String DIFirstConnectMaxCnt = "2";
 
@@ -265,8 +270,13 @@ public class Xrootd extends Protocol {
 
 		try {
 			final List<String> command = new LinkedList<String>();
-			command.add("xrdcpapmon");
+			command.add(xrdcp);
 
+			if(!ExternalCalls.programExistsInPath(xrdcp)){
+				logger.log(Level.SEVERE,"Could not fine [" + xrdcp + "] in path.");	
+				throw new IOException("Could not fine [" + xrdcp + "] in path.");	
+			}
+			
 			command.addAll(getCommonArguments());
 
 			String transactionURL = pfn.pfn;
@@ -284,6 +294,7 @@ public class Xrootd extends Protocol {
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 			}
+			
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -366,8 +377,13 @@ public class Xrootd extends Protocol {
 
 		try {
 			final List<String> command = new LinkedList<String>();
-			command.add("xrdcpapmon");
+			command.add(xrdcp);
 
+			if(!ExternalCalls.programExistsInPath(xrdcp)){
+				logger.log(Level.SEVERE,"Could not fine [" + xrdcp + "] in path.");	
+				throw new IOException("Could not fine [" + xrdcp + "] in path.");	
+			}
+			
 			command.addAll(getCommonArguments());
 
 			command.add("-np");
