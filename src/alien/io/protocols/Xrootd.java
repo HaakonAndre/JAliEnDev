@@ -34,8 +34,9 @@ public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
 	
-	private final static String xrdcp = "xrdcpapmon";
+	private final static String xrdcpCommand = "xrdcpapmon";
 	
+	private final static String xrdcpPath = ExternalCalls.programExistsInPath(xrdcpCommand);
 
 	private static String DIFirstConnectMaxCnt = "2";
 
@@ -270,12 +271,13 @@ public class Xrootd extends Protocol {
 
 		try {
 			final List<String> command = new LinkedList<String>();
-			command.add(xrdcp);
-
-			if(!ExternalCalls.programExistsInPath(xrdcp)){
-				logger.log(Level.SEVERE,"Could not fine [" + xrdcp + "] in path.");	
-				throw new IOException("Could not fine [" + xrdcp + "] in path.");	
+			
+			if(xrdcpPath==null){
+				logger.log(Level.SEVERE,"Could not find [" + xrdcpCommand + "] in path.");	
+				throw new IOException("Could not find [" + xrdcpCommand + "] in path.");	
 			}
+			
+			command.add(xrdcpPath);
 			
 			command.addAll(getCommonArguments());
 
@@ -377,12 +379,13 @@ public class Xrootd extends Protocol {
 
 		try {
 			final List<String> command = new LinkedList<String>();
-			command.add(xrdcp);
-
-			if(!ExternalCalls.programExistsInPath(xrdcp)){
-				logger.log(Level.SEVERE,"Could not fine [" + xrdcp + "] in path.");	
-				throw new IOException("Could not fine [" + xrdcp + "] in path.");	
+			
+			if(xrdcpPath==null){
+				logger.log(Level.SEVERE,"Could not fine [" + xrdcpCommand + "] in path.");	
+				throw new IOException("Could not fine [" + xrdcpCommand + "] in path.");	
 			}
+
+			command.add(xrdcpPath);
 			
 			command.addAll(getCommonArguments());
 

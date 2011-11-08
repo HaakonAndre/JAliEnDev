@@ -1,7 +1,6 @@
 package utils;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.StringTokenizer;
 
 /**
@@ -12,28 +11,23 @@ public class ExternalCalls {
 	
 	/**
 	 * @param program
-	 * @return if program is in env[PATH]
+	 * @return the full path to the program in env[PATH], or <code>null</code> if it could not be located anywhere
 	 */
-	public static boolean programExistsInPath(final String program){
-	
-		final StringTokenizer st = new StringTokenizer(
-			System.getenv("PATH"), ":");
+	public static String programExistsInPath(final String program){
+		final StringTokenizer st = new StringTokenizer(System.getenv("PATH"), ":");
 		
 		while (st.hasMoreTokens()){
-
 			final File dir = new File(st.nextToken());
 			
-			if(dir.isDirectory())
-				for(String f: dir.list())
-					if(program.equals(f))
-						return true;
+			if (dir.isDirectory() && dir.canRead()){
+				final File test = new File(dir, program);
 				
-			else
-				if(program.equals(dir.getName()))
-					return true;
+				if (test.exists() && test.isFile() && test.canExecute())
+					return test.getAbsolutePath();
+			}
 		}
 	
-		return false;
+		return null;
 	}
 
 }
