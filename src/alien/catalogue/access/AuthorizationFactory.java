@@ -35,23 +35,16 @@ public final class AuthorizationFactory {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils
-			.getLogger(AuthorizationFactory.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(AuthorizationFactory.class.getCanonicalName());
 
 	private static AliEnPrincipal defaultAccount = null;
 	
-
 	static {
+		final String file = ConfigUtils.getConfig().gets("user.cert.pub.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
 
-		String file = ConfigUtils.getConfig().gets(
-				"user.cert.pub.location",
-				System.getProperty("user.home")
-						+ System.getProperty("file.separator")
-						+ ".globus"
-						+ System.getProperty("file.separator")
-						+ "usercert.pem");
+		logger.log(Level.FINE, "Trying to use "+file);
 		
-		File f = new File(file);
+		final File f = new File(file);
 
 		AliEnPrincipal user = null;
 
@@ -67,30 +60,34 @@ public final class AuthorizationFactory {
 					final X509Certificate cert = (X509Certificate) cf.generateCertificate(is);
 					user = UserFactory.getByCertificate(new X509Certificate[] { cert });
 
-				} else {
+				}
+				else {
 					Security.addProvider(new BouncyCastleProvider());
 
 					PEMReader pr = null;
-					
-					try{
+
+					try {
 						pr = new PEMReader(new BufferedReader(new FileReader(file)));
-						
+
 						final X509Certificate cert = (X509Certificate) pr.readObject();
 
 						user = UserFactory.getByCertificate(new X509Certificate[] { cert });
 					}
-					finally{
-						if (pr!=null)
+					finally {
+						if (pr != null)
 							pr.close();
 					}
 				}
-			} catch (Throwable t) {
+			}
+			catch (Throwable t) {
 				logger.log(Level.WARNING, "Could not read from " + file, t);
-			} finally {
+			}
+			finally {
 				if (is != null)
 					try {
 						is.close();
-					} catch (IOException e) {
+					}
+					catch (IOException e) {
 						// ignore
 					}
 			}
