@@ -861,6 +861,10 @@ public class TaskQueueUtils {
 	 * @throws IOException in case of problems like downloading the respective JDL or not enough arguments provided to it 
 	 */
 	public static int submit(final LFN file, final AliEnPrincipal account, final String... arguments) throws IOException {
+		if (file==null || !file.exists || !file.isFile()){
+			throw new IllegalArgumentException("The LFN is not a valid file");
+		}
+		
 		final String jdlContents = IOUtils.getContents(file);
 		
 		if (jdlContents==null || jdlContents.length()==0)
@@ -903,7 +907,6 @@ public class TaskQueueUtils {
 		jdl.delete("Requirements");
 		
 		jdl.addRequirement("other.Type == \"machine\"");
-		jdl.addRequirement(jdl.gets("OrigRequirements"));
 		
 		final List<String> packages = jdl.getList("Packages");
 		
@@ -915,6 +918,8 @@ public class TaskQueueUtils {
 			}
 		}
 		
+		jdl.addRequirement(jdl.gets("OrigRequirements"));
+		
 		jdl.addRequirement("other.TTL > "+ttl);
 		jdl.addRequirement("other.Price <= 1");
 		
@@ -922,54 +927,58 @@ public class TaskQueueUtils {
 		
 		final List<String> inputFiles = jdl.getList("InputFile");
 		
-		for (final String file: inputFiles){
-			if (file.indexOf('/')<0){
-				throw new IOException("InputFile contains an illegal entry: "+file);
+		if (inputFiles!=null){
+			for (final String file: inputFiles){
+				if (file.indexOf('/')<0){
+					throw new IOException("InputFile contains an illegal entry: "+file);
+				}
+				
+				String lfn = file;
+				
+				if (lfn.startsWith("LF:")){
+					lfn = lfn.substring(3);
+				}
+				else{
+					throw new IOException("InputFile doesn't start with 'LF:' : "+lfn);
+				}
+				
+				final LFN l = LFNUtils.getLFN(lfn);
+				
+				if (l==null || !l.isFile()){
+					throw new IOException("InputFile "+lfn+" doesn't exist in the catalogue");
+				}
+				
+				jdl.append("InputBox", lfn);
+				jdl.append("InputDownload", l.getFileName()+"->"+lfn);
 			}
-			
-			String lfn = file;
-			
-			if (lfn.startsWith("LF:")){
-				lfn = lfn.substring(3);
-			}
-			else{
-				throw new IOException("InputFile doesn't start with 'LF:' : "+lfn);
-			}
-			
-			final LFN l = LFNUtils.getLFN(lfn);
-			
-			if (l==null || !l.isFile()){
-				throw new IOException("InputFile "+lfn+" doesn't exist in the catalogue");
-			}
-			
-			jdl.append("InputBox", lfn);
-			jdl.append("InputDownload", l.getFileName()+"->"+lfn);
 		}
 		
 		final List<String> inputData = jdl.getList("InputData");
 		
-		for (final String file: inputData){
-			if (file.indexOf('/')<0){
-				throw new IOException("InputData contains an illegal entry: "+file);
+		if (inputData!=null){
+			for (final String file: inputData){
+				if (file.indexOf('/')<0){
+					throw new IOException("InputData contains an illegal entry: "+file);
+				}
+				
+				String lfn = file;
+				
+				if (lfn.startsWith("LF:")){
+					lfn = lfn.substring(3);
+				}
+				else{
+					throw new IOException("InputData doesn't start with 'LF:' : "+lfn);
+				}
+				
+				if (lfn.indexOf(',')>=0)
+					lfn = lfn.substring(0, lfn.indexOf(','));	// "...,nodownload" for example
+				
+				final LFN l = LFNUtils.getLFN(lfn);
+				
+				if (l==null || !l.isFile()){
+					throw new IOException("InputData "+lfn+" doesn't exist in the catalogue");
+				}			
 			}
-			
-			String lfn = file;
-			
-			if (lfn.startsWith("LF:")){
-				lfn = lfn.substring(3);
-			}
-			else{
-				throw new IOException("InputData doesn't start with 'LF:' : "+lfn);
-			}
-			
-			if (lfn.indexOf(',')>=0)
-				lfn = lfn.substring(0, lfn.indexOf(','));	// "...,nodownload" for example
-			
-			final LFN l = LFNUtils.getLFN(lfn);
-			
-			if (l==null || !l.isFile()){
-				throw new IOException("InputData "+lfn+" doesn't exist in the catalogue");
-			}			
 		}
 		
 		// sanity check of other tags
@@ -986,10 +995,10 @@ public class TaskQueueUtils {
 				if (fileName.indexOf(',')>=0)
 					fileName = fileName.substring(0, fileName.indexOf(','));
 				
-				LFN l = LFNUtils.getLFN(fileName);
+				final LFN l = LFNUtils.getLFN(fileName);
 				
-				if (l==null || !l.isFile() || !l.isCollection()){
-					throw new IOException(tag+" tag required "+fileName+" which is not valid");
+				if (l==null || (!l.isFile() && !l.isCollection())){
+					throw new IOException(tag+" tag required "+fileName+" which is not valid: "+l);
 				}
 			}
 		}
@@ -1014,11 +1023,7 @@ public class TaskQueueUtils {
 		final String executable = j.getExecutable();
 		
 		final Float price = j.getFloat("Price");
-				
-		values.put("name", executable);
-		values.put("status", JobStatus.INSERTING.toSQL());
-		values.put("received", Long.valueOf(System.currentTimeMillis()/1000));
-		
+
 		final String clientAddress;
 		
 		final InetAddress addr = account.getRemoteEndpoint();
@@ -1028,9 +1033,19 @@ public class TaskQueueUtils {
 		else
 			clientAddress = MonitorFactory.getSelfHostname();
 		
+		//final JobStatus targetStatus = j.get("split")!=null ? JobStatus.SPLITTING : JobStatus.INSERTING;
+		
+		final JobStatus targetStatus = JobStatus.INSERTING; 
+		
+		values.put("priority", Integer.valueOf(0));
 		values.put("submitHost", account.getName()+"@"+clientAddress);
-		values.put("jdl", j.toString());
+		values.put("status", targetStatus.toSQL());
+		values.put("name", executable);
+		values.put("chargeStatus", Integer.valueOf(0));
+		values.put("jdl", "\n    [\n"+j.toString()+"\n    ]");
 		values.put("price", price);
+		values.put("received", Long.valueOf(System.currentTimeMillis()/1000));
+		values.put("split", Integer.valueOf(0));
 		
 		final String insert = DBFunctions.composeInsert("QUEUE", values);
 		
@@ -1043,6 +1058,10 @@ public class TaskQueueUtils {
 		
 		if (pid==null)
 			return -1;
+		
+		db.query("INSERT INTO QUEUEPROC (queueId) VALUES ("+pid+");");
+		
+		setAction(targetStatus);
 		
 		return pid.intValue();
 	}
