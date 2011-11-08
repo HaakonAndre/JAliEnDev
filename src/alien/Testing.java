@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
@@ -40,6 +41,9 @@ import alien.io.xrootd.XrootdListing;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.taskQueue.JDL;
+import alien.taskQueue.TaskQueueUtils;
+import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 
 /**
@@ -139,6 +143,37 @@ public class Testing {
 		TransferBroker.notifyTransferComplete(t);
 	}
 	
+	private static void jdldiff(String s1, String s2) throws IOException{
+		JDL jdl1 = new JDL(s1.replace("\\n", "\n"));
+		JDL jdl2 = new JDL(s2.replace("\\n", "\n"));
+		
+		for (String key: jdl1.keySet()){
+			Object o1 = jdl1.get(key);
+			Object o2 = jdl2.get(key);
+			
+			if (o2==null){
+				System.err.println("Key "+key+" not present in jdl2");
+				continue;
+			}
+			
+			if (!o1.equals(o2)){
+				System.err.println("Values for key "+key+" don't match:");
+				System.err.println(o1.getClass().getName()+" : '"+o1+"'");
+				System.err.println(o2.getClass().getName()+" : '"+o2+"'");
+				
+				System.err.println();
+			}
+		}
+		
+		for (String key: jdl2.keySet()){
+			Object o1 = jdl1.get(key);
+
+			if (o1==null){
+				System.err.println("Key "+key+" not present in jdl1");
+			}
+		}
+	}
+	
 	/**
 	 * @param args
 	 */
@@ -148,7 +183,18 @@ public class Testing {
 		//XrootdCleanup.main(new String[]{"ALICE::CyberSar_Cagliari::SE", "-t", "100"});
 		
 		if (true){
-			System.err.println(MonitorFactory.getSelfHostname());
+			AliEnPrincipal owner = UserFactory.getByUsername("grigoras");
+			owner.setRemoteEndpoint(InetAddress.getLocalHost());
+			
+			int pid = TaskQueueUtils.submit(LFNUtils.getLFN("/alice/cern.ch/user/g/grigoras/JDL"),owner);
+			
+			System.err.println("PID : "+pid);
+			
+//			jdldiff(
+//				"      InputDownload = \n           {\n              \"CheckESD.C->/alice/cern.ch/user/a/aliprod/LHC11f5/CheckESD.C\"\n           }; \n        Executable = \"/bin/date\"; \n        Price = 1; \n        Type = \"Job\"; \n        split = \"production:1-2\"; \n        Jobtag = \n           {\n              \"comment:BubuTest005\"\n           }; \n        OrigRequirements = member(other.GridPartitions,\"PDC08_2\"); \n        InputBox = \n           {\n              \"/alice/cern.ch/user/a/aliprod/LHC11f5/CheckESD.C\"\n           }; \n        Workdirectorysize = \n           {\n              \"10MB\"\n           }; \n        TTL = 21600; \n        Packages = \n           {\n              \"VO_ALICE@APISCONFIG::V1.1x\"\n           }; \n        OutputDir = \"/alice/cern.ch/user/g/grigoras/1/#alien_counter_03i#\"; \n        InputFile = \n           {\n              \"LF:/alice/cern.ch/user/a/aliprod/LHC11f5/CheckESD.C\"\n           }; \n        MemorySize = \"8GB\"; \n        User = \"grigoras\"; \n        Requirements = ( other.Type == \"machine\" ) && ( member(other.Packages,\"VO_ALICE@APISCONFIG::V1.1x\") ) && member(other.GridPartitions,\"PDC08_2\") && ( other.TTL > 21600 ) && ( other.Price <= 1 ); \n        JDLVariables = \n           {\n              \"Packages\",\n              \"OutputDir\"\n           }\n    ", 
+//				" Executable = \"/bin/date\";\n\nsplit = \"production:1-2\";\n\nJobtag = {\n        \"comment:BubuTest006\"\n};\n\nInputFile = {\n        \"LF:/alice/cern.ch/user/a/aliprod/LHC11f5/CheckESD.C\"\n};\n\nWorkdirectorysize = {\n        \"10MB\"\n};\n\nOutputDir = \"/alice/cern.ch/user/g/grigoras/1/#alien_counter_03i#\";\n\nPackages = {\n        \"VO_ALICE@APISCONFIG::V1.1x\"\n};\n\nJDLVariables = {\n        \"Packages\",\n        \"OutputDir\"\n};\n\nJDLPath = \"/alice/cern.ch/user/g/grigoras/JDL\";\n\nPrice = 1.0;\n\nTTL = 21600;\n\nType = \"Job\";\n\nOrigRequirements = member(other.GridPartitions,\"PDC08_2\");\n\nMemorySize = \"8GB\";\n\nUser = \"grigoras\";\n\nRequirements = ( other.Type == \"machine\" ) && ( member(other.GridPartitions,\"PDC08_2\") ) && ( member(other.Packages,\"VO_ALICE@APISCONFIG::V1.1x\") ) && ( other.TTL > 21600 ) && ( other.Price <= 1 );\n\nInputBox = {\n        \"/alice/cern.ch/user/a/aliprod/LHC11f5/CheckESD.C\"\n};\n\nInputDownload = {\n        \"CheckESD.C->/alice/cern.ch/user/a/aliprod/LHC11f5/CheckESD.C\"\n};\n\n"
+//			);
+			
 			return;
 		}
 		
