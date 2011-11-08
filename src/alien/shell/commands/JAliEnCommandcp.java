@@ -51,16 +51,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (bT) {
 			localFile = copyGridToLocal(source, null);
 			
-		} else if (!source.startsWith("file://") && target.startsWith("file://")) {
-			localFile = new File(target.replace("file://", ""));
+		} else if (!localFileSpec(source) && localFileSpec(target)) {
+			localFile = new File(getLocalFileSpec(target));
 			if (!localFile.exists())
 				copyGridToLocal(source, localFile);
 			else
 				out.printErrln("A local file already exists with this name.");
 			
-		} else if (source.startsWith("file://")
-				&& !target.startsWith("file://")) {
-			File sourceFile = new File(source.replace("file://", ""));
+		} else if  (localFileSpec(source) && !localFileSpec(target)) {
+			File sourceFile = new File(getLocalFileSpec(source));
 			if (!targetLFNExists(target))
 				if (sourceFile.exists())
 					copyLocalToGrid(sourceFile, target);
@@ -396,6 +395,25 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	public boolean canRunWithoutArguments() {
 		return false;
 	}
+	
+	
+	private boolean localFileSpec(final String file){
+		if(file.startsWith("file://"))
+			return true;
+		return false;
+	}
+	
+
+	
+	private String getLocalFileSpec(final String file){
+		if(file.startsWith("file://"))
+			return target.replace("file://", "");
+		if(file.startsWith("file:"))
+			return target.replace("file:", "");
+		return file;
+	}
+	
+	
 
 	/**
 	 * Constructor needed for the command factory in commander
