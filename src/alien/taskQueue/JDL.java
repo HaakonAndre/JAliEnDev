@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -170,6 +171,13 @@ public class JDL implements Serializable {
 			output = output.substring(0, output.length() - 1);
 
 		return StringFactory.get(output);
+	}
+	
+	/**
+	 * @return the set of keys present in the JDL
+	 */
+	public Set<String> keySet(){
+		return Collections.unmodifiableSet(jdlContent.keySet());
 	}
 	
 	/**
@@ -726,6 +734,8 @@ public class JDL implements Serializable {
 		return -1;
 	}
 	
+	private static final String tab = "        ";
+	
 	@Override
 	public String toString(){
 		final StringBuilder sb = new StringBuilder();
@@ -734,7 +744,7 @@ public class JDL implements Serializable {
 			if (sb.length()>0)
 				sb.append('\n');
 			
-			sb.append(entry.getKey()).append(" = ");
+			sb.append(tab).append(entry.getKey()).append(" = ");
 			
 			append(sb, entry.getValue());
 			
@@ -762,13 +772,13 @@ public class JDL implements Serializable {
 				else
 					first = false;
 				
-				sb.append("\n  \"").append(o2).append("\"");
+				sb.append("\n").append(tab).append(tab).append("\"").append(o2).append("\"");
 			}
 			
-			sb.append("\n}");
+			sb.append(tab).append("\n}");
 		}
 		else
-			sb.append(o);
+			sb.append(o.toString());
 	}
 	
 	/**
