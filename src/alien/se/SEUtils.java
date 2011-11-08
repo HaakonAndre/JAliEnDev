@@ -414,51 +414,18 @@ public final class SEUtils {
 
 		if ((SEs==null || SEs.isEmpty()) && (exSEs==null || exSEs.isEmpty()))
 			return spfns;
-
-		System.out.println("sortBySiteSpecifySEs: ses: " + SEs);
 		
-		if (SEs==null || SEs.isEmpty())
-			System.out.println("sortBySiteSpecifySEs: ses empty");
-
-		System.out.println("sortBySiteSpecifySEs: exses: " + exSEs);
-		if (exSEs==null || exSEs.isEmpty())
-			System.out.println("sortBySiteSpecifySEs: exses empty");
-
-		if (exSEs!=null){
-			for (SE ex : exSEs) {
-				System.out.println("exSEs contains: " + ex.seName);
-			}
-		}
-		
-		if (SEs!=null){
-			for (SE se : SEs) {
-				System.out.println("SEs contains: " + se.seName);
-			}
-		}
-
+		List<PFN> tail = new ArrayList<PFN>(spfns.size());
 		List<PFN> ret = new ArrayList<PFN>(spfns.size());
-
+		
 		for (PFN pfn : spfns) {
-			if (exSEs != null) {
-				for (SE ex : exSEs) {
-					if (pfn.seNumber == ex.seNumber) {
-						System.out.println("Hit remove for SE: " + ex.seName);
-						spfns.remove(pfn);
-					}
-				}
-			}
-
-			if (SEs != null) {
-				for (SE se : SEs) {
-					if (pfn.seNumber == se.seNumber) {
+			if (SEs != null && SEs.contains(SEUtils.getSE(pfn.seNumber)))
 						ret.add(pfn);
-						spfns.remove(pfn);
-						System.out.println("Hit priority for SE: " + se.seName);
-					}
-				}
-			}
+			else if (exSEs == null || !exSEs.contains(SEUtils.getSE(pfn.seNumber)))
+				tail.add(pfn);				
 		}
-		ret.addAll(spfns);
+
+		ret.addAll(tail);
 		return ret;
 	}
 

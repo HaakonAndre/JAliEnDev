@@ -142,19 +142,19 @@ public class PFNforReadOrDel extends Request {
 							
 							logger.log(Level.FINE, "We have an evenlope candidate: "+ apfn.getPFN());
 							readpfn = apfn;
-							break;
+							//break;
 
 						}
 					} else {
 						readpfn = pfn;
 					}
-					break;
+					//break;
 
 				}
 
-				pfns.clear();
-				if(readpfn!=null)
-					pfns.add(readpfn);
+//				pfns.clear();
+//				if(readpfn!=null)
+//					pfns.add(readpfn);
 
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "WE HAVE AN Exception", e);

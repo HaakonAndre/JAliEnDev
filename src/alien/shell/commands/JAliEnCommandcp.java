@@ -82,6 +82,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				else
 					out.printErrln("Could not get the source.");
 		}
+		if (out.isRootPrinter())
+			out.setReturnArgs(deserializeForRoot());
 	}
 	
 	/**
@@ -131,15 +133,19 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		
 		@Override
 		public void run() {
-			try{
-	       if(pull)
-	    	  output = proto.get(pfn, file);
-	       else
-	    	   back =  proto.put(pfn,file);
+			try {
+				if (pull)
+					output = proto.get(pfn, file);
+				else
+					back = proto.put(pfn, file);
 			} catch (IOException e) {
-				e.printStackTrace();
+				if(pull)
+					output=null;
+				else
+					back=null;
 			}
-	    }
+		}
+
 		/**
 		 * @return return string from call
 		 */
@@ -177,50 +183,69 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * @return local target file
 	 */
 	public File copyGridToLocal(final String sourceLFN, final File targetFile) {
-		
+
 		File targetLocalFile = targetFile;
 
 		List<PFN> pfns = null;
 
 		if (bG) {
 			GUID guid = commander.c_api.getGUID(sourceLFN);
-			pfns = commander.c_api.getPFNsToRead(
-					commander.site, guid, ses, exses);
+			if(guid==null){
+				out.printErrln("Could not get the file's GUID: " + sourceLFN);
+				return null;
+			}
+			pfns = commander.c_api.getPFNsToRead(commander.site, guid, ses,
+					exses);
 		} else {
 			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), sourceLFN));
-			pfns = commander.c_api.getPFNsToRead(
-					commander.site, lfn, ses, exses);
-
-		}
-
-		for (PFN pfn : pfns) {
-			List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-			for (final Protocol protocol : protocols) {
-				ProtocolAction pA = new ProtocolAction(protocol,pfn, targetFile);
-				try {
-					pA.start();
-					while(pA.isAlive()){
-						Thread.sleep(500);
-						out.pending();
-					}
-					
-					targetLocalFile = pA.getFile();
-					
-					if(!isSilent())
-						out.printOutln("Downloaded file to " + targetLocalFile.getCanonicalPath());
-
-					break;
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
+			if(lfn==null){
+				out.printErrln("Could not get the file's LFN: " + sourceLFN);
+				return null;
 			}
+			pfns = commander.c_api.getPFNsToRead(commander.site, lfn, ses,
+					exses);
+
 		}
-		
-		if (targetLocalFile!= null && targetLocalFile.exists() && targetLocalFile.length() > 0)
-			return targetLocalFile;
-		
+		if (pfns != null) {
+			for (PFN pfn : pfns) {
+				List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+				for (final Protocol protocol : protocols) {
+					ProtocolAction pA = new ProtocolAction(protocol, pfn,
+							targetFile);
+					try {
+						System.out.println("Trying to get file over: "
+								+ commander.c_api.getSE(pfn.seNumber).seName);
+						pA.start();
+						while (pA.isAlive()) {
+							Thread.sleep(500);
+							out.pending();
+						}
+
+						if (pA.getFile() != null && pA.getFile().exists()
+								&& pA.getFile().length() > 0) {
+							targetLocalFile = pA.getFile();
+
+							if (!isSilent())
+								out.printOutln("Downloaded file to "
+									+ pA.getFile().getCanonicalPath());
+							System.out.println("Successful.");
+							break;
+						}
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+
+				}
+				if (targetLocalFile != null && targetLocalFile.exists())
+					break;
+			}
+
+			if (targetLocalFile != null && targetLocalFile.exists()
+					&& targetLocalFile.length() > 0)
+				return targetLocalFile;
+		}
 		out.printErrln("Could not get the file.");
 		return null;
 	}
@@ -412,6 +437,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					else
 						ses.add(se);
 				}
+				System.out.println("ses: " + ses);
+				System.out.println("exses: " + exses);
+				
 			}
 			bG = options.has("g");
 			bT = options.has("t");
@@ -419,6 +447,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			source = options.nonOptionArguments().get(0);
 			if (!(options.nonOptionArguments().size() == 1 && options.has("t")))
 				target = options.nonOptionArguments().get(1);
+			
+			System.out.println("source: " + source);
+			System.out.println("target: " + target);
+			
+			
 		} catch (OptionException e) {
 			printHelp();
 			throw e;
