@@ -15,6 +15,7 @@ import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
 import alien.config.ConfigUtils;
+import alien.user.AliEnPrincipal;
 
 /**
  * @author costing
@@ -578,12 +579,36 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final String q = "UPDATE L"+indexTableEntry.tableName+"L SET "+
 			"size="+size+","+
+			"owner="+e(owner)+","+
+			"gowner="+e(gowner)+","+
 			"ctime="+e(format(ctime))+
 			" WHERE entryId="+entryId;
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
-		return db.query(q);		
+		return db.query(q) && db.getUpdateCount()==1;		
+	}
+	
+	/**
+	 * Change the ownership of this LFN.
+	 * 
+	 * @param newOwner
+	 * @return the previous owner, if the ownership was updated, or <code>null</code> if nothing was touched 
+	 */
+	public String chown(final AliEnPrincipal newOwner){
+		if (!exists)
+			throw new IllegalAccessError("You asked to chown an LFN that doesn't exist in the database");
+		
+		if (!this.owner.equals(newOwner.getName())){
+			final String oldOwner = this.owner;
+			
+			this.owner = this.gowner = StringFactory.get(newOwner.getName());			
+			
+			if (update())
+				return oldOwner;
+		}
+		
+		return null;
 	}
 	
 	/**
