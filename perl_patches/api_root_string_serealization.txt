@@ -1,15 +1,71 @@
 
 the command list from Andreas:
-ls, cd, pwd, register,find,access,commit
-
-rm,
-mkdir,rmdir,
 
 listFilesFromCollection - do we really have this one???
 
 type,getdataset,
 
-ps2,submit,packman
+
+
+
+-----------------------------------------------
+
+top?
+
+
+clear
+removeTag
+removeTagValue
+removeTrigger
+resubmit
+masterjob
+mirror
+addTag
+addTagValue
+addTrigger
+mv
+debug
+packages
+partitions
+df
+updateTagValue
+showAllTagValue
+showTags
+ps
+showTagValue
+whereis
+purge
+showTrigger
+who
+edit    less|more|vim|emacs|...
+spy
+queue
+stage
+submit
+erase
+kill
+registerOutput
+
+
+prepare
+isonline
+
+-----------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
