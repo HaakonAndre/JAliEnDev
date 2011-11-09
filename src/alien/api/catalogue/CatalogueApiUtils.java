@@ -49,8 +49,7 @@ public class CatalogueApiUtils {
 	 */
 	public List<LFN> getLFNs(String slfn) {
 		try {
-			LFNListingfromString rlfn = (LFNListingfromString) Dispatcher.execute(new LFNListingfromString(commander.getUser(), commander.getRole(), slfn), true);
-			return rlfn.getLFNs();
+			return Dispatcher.execute(new LFNListingfromString(commander.getUser(), commander.getRole(), slfn), true).getLFNs();
 		}
 		catch (ServerException e) {
 			System.out.println("Could not get LFN: " + slfn);
@@ -71,15 +70,14 @@ public class CatalogueApiUtils {
 	public LFN getLFN(String slfn, boolean evenIfDoesNotExist) {
 
 		try {
-			LFNfromString rlfn = (LFNfromString) Dispatcher.execute(new LFNfromString(commander.getUser(), commander.getRole(), slfn, evenIfDoesNotExist), true);
-
-			return rlfn.getLFN();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new LFNfromString(commander.getUser(), commander.getRole(), slfn, evenIfDoesNotExist), true).getLFN();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get LFN: " + slfn);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
-
 	}
 	
 
@@ -90,15 +88,14 @@ public class CatalogueApiUtils {
 	 *         <code>null</code>
 	 */
 	public boolean removeLFN(String path) {
-
 		try {
-			RemoveLFNfromString rse = (RemoveLFNfromString) Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), commander.getRole(), path), true);
-
-			return rse.wasRemoved();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), commander.getRole(), path), true).wasRemoved();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not remove the LFN: " + path);
 			e.getCause().printStackTrace();
 		}
+		
 		return false;
 	}
 	
@@ -123,18 +120,15 @@ public class CatalogueApiUtils {
 	 * @return the GUID object
 	 */
 	public GUID getGUID(String sguid, boolean evenIfDoesNotExist) {
-
 		try {
-			GUIDfromString rguid = (GUIDfromString) Dispatcher.execute(new GUIDfromString(commander.getUser(), commander.getRole(), sguid, evenIfDoesNotExist), true);
-
-			return rguid.getGUID();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new GUIDfromString(commander.getUser(), commander.getRole(), sguid, evenIfDoesNotExist), true).getGUID();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get GUID: " + sguid);
 			e.getCause().printStackTrace();
 		}
 		
 		return null;
-
 	}
 
 	/**
@@ -145,17 +139,15 @@ public class CatalogueApiUtils {
 	 * @return the PFNs
 	 */
 	public Set<PFN> getPFNs(String sguid) {
-
 		try {
-			PFNfromString rpfns = (PFNfromString) Dispatcher.execute(new PFNfromString(commander.getUser(), commander.getRole(), sguid), true);
-
-			return rpfns.getPFNs();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new PFNfromString(commander.getUser(), commander.getRole(), sguid), true).getPFNs();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get GUID: " + sguid);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
-
 	}
 
 	/**
@@ -174,12 +166,13 @@ public class CatalogueApiUtils {
 	 */
 	public List<PFN> getPFNsToRead(String site, LFN lfn, List<String> ses, List<String> exses) {
 		try {
-			PFNforReadOrDel readFile = (PFNforReadOrDel) Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getRole(), site, AccessType.READ, lfn, ses, exses), true);
-			return readFile.getPFNs();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getRole(), site, AccessType.READ, lfn, ses, exses), true).getPFNs();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get PFN for: " + lfn);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -197,11 +190,9 @@ public class CatalogueApiUtils {
 	 * @return PFNs, filled with read envelopes and credentials if necessary and
 	 *         authorized
 	 */
-	public List<PFN> getPFNsToRead(String site,
-			GUID guid, List<String> ses, List<String> exses) {
+	public List<PFN> getPFNsToRead(String site, GUID guid, List<String> ses, List<String> exses) {
 		try {
-			PFNforReadOrDel readFile = (PFNforReadOrDel) Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getRole(), site, AccessType.READ, guid, ses, exses), true);
-			return readFile.getPFNs();
+			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getRole(), site, AccessType.READ, guid, ses, exses), true).getPFNs();
 		} catch (ServerException e) {
 			System.out.println("Could not get PFN for: " + guid);
 			e.getCause().printStackTrace();
@@ -228,17 +219,15 @@ public class CatalogueApiUtils {
 	 * @return PFNs, filled with write envelopes and credentials if necessary
 	 *         and authorized
 	 */
-	public List<PFN> getPFNsToWrite(String site,
-			LFN lfn, GUID guid, List<String> ses, List<String> exses, String qosType,
-			int qosCount) {
-
+	public List<PFN> getPFNsToWrite(String site, LFN lfn, GUID guid, List<String> ses, List<String> exses, String qosType, int qosCount) {
 		try {
-			PFNforWrite writeFile = (PFNforWrite) Dispatcher.execute(new PFNforWrite(commander.getUser(), commander.getRole(), site, lfn, guid, ses, exses, qosType, qosCount), true);
-			return writeFile.getPFNs();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new PFNforWrite(commander.getUser(), commander.getRole(), site, lfn, guid, ses, exses, qosType, qosCount), true).getPFNs();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get PFN for: " + lfn);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -263,9 +252,7 @@ public class CatalogueApiUtils {
 	public List<PFN> getPFNsToWrite(String site, GUID guid, List<String> ses, List<String> exses, String qosType,
 		int qosCount) {
 		try {
-			PFNforWrite writeFile = (PFNforWrite) Dispatcher.execute(new PFNforWrite(commander.getUser(), commander.getRole(), site, guid, ses, exses, qosType, qosCount),true);
-			
-			return writeFile.getPFNs();
+			return Dispatcher.execute(new PFNforWrite(commander.getUser(), commander.getRole(), site, guid, ses, exses, qosType, qosCount),true).getPFNs();
 		}
 		catch (ServerException e) {
 			System.out.println("Could not get PFN for: " + guid);
@@ -280,15 +267,15 @@ public class CatalogueApiUtils {
 	 * @param envelopes
 	 * @return PFNs that were successfully registered
 	 */
-	public List<PFN> registerEnvelopes(
-			List<String> envelopes) {
+	public List<PFN> registerEnvelopes(final List<String> envelopes) {
 		try {
-			RegisterEnvelopes register = (RegisterEnvelopes) Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelopes), true);
-			return register.getPFNs();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelopes), true).getPFNs();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get PFNs for: "+ envelopes.toString());
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -306,16 +293,15 @@ public class CatalogueApiUtils {
 	 * @param guid 
 	 * @return PFNs that were successfully registered
 	 */
-	public List<PFN> registerEncryptedEnvelope(
-			String encryptedEnvelope, int size, String md5, String lfn, String perm,
-			String expire, String pfn, String se, String guid) {
+	public List<PFN> registerEncryptedEnvelope(String encryptedEnvelope, int size, String md5, String lfn, String perm, String expire, String pfn, String se, String guid) {
 		try {
-			RegisterEnvelopes register = (RegisterEnvelopes) Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), encryptedEnvelope, size, md5, lfn, perm, expire, pfn, se, guid), true);
-			return register.getPFNs();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), encryptedEnvelope, size, md5, lfn, perm, expire, pfn, se, guid), true).getPFNs();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get PFNs for: " + encryptedEnvelope);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -338,17 +324,15 @@ public class CatalogueApiUtils {
 	 * @return LFN of the created directory, if successful, else
 	 *         <code>null</code>
 	 */
-	public LFN createCatalogueDirectory(String path,
-			boolean createNonExistentParents) {
-
+	public LFN createCatalogueDirectory(String path, boolean createNonExistentParents) {
 		try {
-			CreateCatDirfromString rse = (CreateCatDirfromString) Dispatcher.execute(new CreateCatDirfromString(commander.getUser(), commander.getRole(), path,createNonExistentParents), true);
-
-			return rse.getDir();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new CreateCatDirfromString(commander.getUser(), commander.getRole(), path,createNonExistentParents), true).getDir();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not create the CatDir: " + path);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -358,16 +342,14 @@ public class CatalogueApiUtils {
 	 * @return state of directory's deletion
 	 *         <code>null</code>
 	 */
-	public boolean removeCatalogueDirectory(String path) {
-
+	public boolean removeCatalogueDirectory(final String path) {
 		try {
-			RemoveCatDirfromString rse = (RemoveCatDirfromString) Dispatcher.execute(new RemoveCatDirfromString(commander.getUser(), commander.getRole(), path), true);
-
-			return rse.wasRemoved();
+			return Dispatcher.execute(new RemoveCatDirfromString(commander.getUser(), commander.getRole(), path), true).wasRemoved();
 		} catch (ServerException e) {
 			System.out.println("Could not remove the CatDir: " + path);
 			e.getCause().printStackTrace();
 		}
+		
 		return false;
 	}
 	
@@ -382,13 +364,13 @@ public class CatalogueApiUtils {
 	 */
 	public List<LFN> find(String path, String pattern, int flags) {
 		try {
-			FindfromString f = (FindfromString) Dispatcher.execute(new FindfromString(commander.getUser(), commander.getRole(), path, pattern, flags), true);
-
-			return f.getLFNs();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new FindfromString(commander.getUser(), commander.getRole(), path, pattern, flags), true).getLFNs();
+		}
+		catch (ServerException e) {
 			System.out.println("Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -400,15 +382,14 @@ public class CatalogueApiUtils {
 	 * @return SE object
 	 */
 	public SE getSE(String se) {
-
 		try {
-			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(commander.getUser(), commander.getRole(), se), true);
-
-			return rse.getSE();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new SEfromString(commander.getUser(), commander.getRole(), se), true).getSE();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get SE: " + se);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 
@@ -420,15 +401,14 @@ public class CatalogueApiUtils {
 	 * @return SE object
 	 */
 	public SE getSE(int seno) {
-
 		try {
-			SEfromString rse = (SEfromString) Dispatcher.execute(new SEfromString(commander.getUser(), commander.getRole(), seno), true);
-
-			return rse.getSE();
-		} catch (ServerException e) {
+			return Dispatcher.execute(new SEfromString(commander.getUser(), commander.getRole(), seno), true).getSE();
+		}
+		catch (ServerException e) {
 			System.out.println("Could not get SE: " + seno);
 			e.getCause().printStackTrace();
 		}
+		
 		return null;
 	}
 

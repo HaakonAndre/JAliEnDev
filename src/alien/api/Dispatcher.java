@@ -26,7 +26,7 @@ public class Dispatcher {
 	 * @return the processed request
 	 * @throws ServerException exception thrown by the processing
 	 */
-	public static Request execute(final Request r, boolean forceRemote) throws ServerException{
+	public static <T extends Request> T execute(final T r, boolean forceRemote) throws ServerException{
 		if (ConfigUtils.isCentralService() && !forceRemote){
 			//System.out.println("Running centrally: " + r.toString());
 			r.run();
@@ -38,7 +38,8 @@ public class Dispatcher {
 			
 			final String key = r.getClass().getCanonicalName()+"#"+c.getKey();
 			
-			Request ret = cache.get(key);
+			@SuppressWarnings("unchecked")
+			T ret = (T) cache.get(key);
 			
 			if (ret!=null)
 				return ret;
@@ -56,7 +57,7 @@ public class Dispatcher {
 	}
 	
 	
-	private static Request dispatchRequest(final Request r) throws ServerException {
+	private static <T extends Request> T dispatchRequest(final T r) throws ServerException {
 		return DispatchSSLClient.dispatchRequest(r);
 	}
 

@@ -259,7 +259,7 @@ public class DispatchSSLClient extends Thread {
 	 * @return  the reply, or <code>null</code> in case of connectivity problems
 	 * @throws ServerException 
 	 */
-	public static synchronized Request dispatchRequest(final Request r) throws ServerException {
+	public static synchronized <T extends Request> T dispatchRequest(final T r) throws ServerException {
 			initializeSocketInfo();
 			try{
 				return dispatchARequest(r);
@@ -283,7 +283,7 @@ public class DispatchSSLClient extends Thread {
 	 * @throws IOException in case of connectivity problems
 	 * @throws ServerException if the server didn't like the request content
 	 */
-	public static synchronized Request dispatchARequest(final Request r) throws IOException, ServerException {
+	public static synchronized <T extends Request> T dispatchARequest(final T r) throws IOException, ServerException {
 
 		final DispatchSSLClient c = getInstance(addr, port);
 
@@ -312,7 +312,8 @@ public class DispatchSSLClient extends Thread {
 			throw new IOException(e.getMessage());
 		}
 
-		final Request reply = (Request) o;
+		@SuppressWarnings("unchecked")
+		final T reply = (T) o;
 		
 		final ServerException ex = r.getException();
 		

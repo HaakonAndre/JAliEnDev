@@ -1014,6 +1014,8 @@ public class TaskQueueUtils {
 	 * @see #applyJDLArguments(String, String...)
 	 */
 	public static int submit(final JDL j, final AliEnPrincipal account) throws IOException{
+		// TODO : check this account's quota before submitting
+		
 		final DBFunctions db = getQueueDB();
 		
 		final Map<String, Object> values = new HashMap<String, Object>();

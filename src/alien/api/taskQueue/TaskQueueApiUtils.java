@@ -1,5 +1,9 @@
 package alien.api.taskQueue;
 
+import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SignatureException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +41,7 @@ public class TaskQueueApiUtils {
 	 */
 	public static Map<String, GetUptime.UserStats> getUptime() {
 		try {
-			final GetUptime uptime = (GetUptime) Dispatcher.execute(new GetUptime(), false);
+			final GetUptime uptime = Dispatcher.execute(new GetUptime(), false);
 
 			return uptime.getStats();
 		}
@@ -64,7 +68,7 @@ public class TaskQueueApiUtils {
 			final Collection<Integer> jobid, final String orderByKey, final int limit) {
 
 		try {
-			GetPS ps = (GetPS) Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit), true);
+			GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit), true);
 
 			return ps.returnPS();
 		}
@@ -92,7 +96,7 @@ public class TaskQueueApiUtils {
 			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {
-			GetMasterjob mj = (GetMasterjob) Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit,bExpunge), true);
+			GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit,bExpunge), true);
 
 			// return mj.masterJobStatus();
 			return mj.subJobStatus();
@@ -113,7 +117,7 @@ public class TaskQueueApiUtils {
 	public String getTraceLog(final int queueId) {
 
 		try {
-			GetTraceLog trace = (GetTraceLog) Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId), true);
+			GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId), true);
 
 			return trace.getTraceLog();
 		}
@@ -132,7 +136,7 @@ public class TaskQueueApiUtils {
 	public String getJDL(final int queueId) {
 
 		try {
-			GetJDL jdl = (GetJDL) Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId), true);
+			GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId), true);
 
 			return jdl.getJDL();
 		}
@@ -151,7 +155,7 @@ public class TaskQueueApiUtils {
 	public Job getJob(final int queueId) {
 
 		try {
-			GetJob job = (GetJob) Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId), true);
+			GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId), true);
 
 			return job.getJob();
 		}
@@ -170,7 +174,7 @@ public class TaskQueueApiUtils {
 	public List<Job> getJobs(final List<Integer> queueIds) {
 
 		try {
-			GetJobs job = (GetJobs) Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds), true);
+			GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds), true);
 
 			return job.getJobs();
 		}
@@ -209,26 +213,38 @@ public class TaskQueueApiUtils {
 	public int submitJob(final String jdl) throws JobSubmissionException {
 
 		try {
-			JDL ojdl = new JDL(jdl);
-			SubmitJob j;
-			j = new SubmitJob(commander.getUser(), commander.getRole(), JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl, jdl)); // TODO
-																																															// :
-																																															// why
-																																															// was
-																																															// ojdl
-																																															// passed
-																																															// here
-																																															// ?
-
-			Dispatcher.execute(j, true);
-			return j.getJobID();
-
+			final JDL ojdl = new JDL(jdl);
+			
+			final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
+			
+			final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), signedJDL);
+			
+			final SubmitJob response = Dispatcher.execute(j, true);
+			
+			return response.getJobID();
 		}
-		catch (Exception e) {
-			System.out.println("Could not submit a JDL: ");
-			e.printStackTrace();
+		catch (ServerException e) {
+			System.out.println("Could not submit a JDL: "+e.getMessage());
+			e.getCause().printStackTrace();
 		}
-		return 0;
+		catch (IOException e) {
+			System.out.println("Could not submit a JDL: "+e.getMessage());
+			e.getCause().printStackTrace();
+		}
+		catch (InvalidKeyException e) {
+			System.out.println("Could not submit a JDL: "+e.getMessage());
+			e.getCause().printStackTrace();
+		}
+		catch (NoSuchAlgorithmException e) {
+			System.out.println("Could not submit a JDL: "+e.getMessage());
+			e.getCause().printStackTrace();
+		}
+		catch (SignatureException e) {
+			System.out.println("Could not submit a JDL: "+e.getMessage());
+			e.getCause().printStackTrace();
+		}
+		
+		return -1;
 	}
 
 	/**

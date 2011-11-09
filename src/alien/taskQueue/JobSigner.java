@@ -67,14 +67,13 @@ public class JobSigner {
 	 * @param pass
 	 * @param alienUsername
 	 * @param ojdl
-	 * @param origjdl
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
 	 * @throws SignatureException
 	 * @return the signature of the jdl
 	 */
-	public static String signJob(KeyStore ks, String keyAlias, char[] pass,
-			String alienUsername, JDL ojdl, String origjdl)
+	public static JDL signJob(KeyStore ks, String keyAlias, char[] pass,
+			String alienUsername, JDL ojdl)
 			throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
@@ -83,12 +82,14 @@ public class JobSigner {
 			System.out.println("Calling JDL parser...");
 			String lala = parseJDLToSignString(ojdl);
 		}
+		else
+			return null;
 
 		final long issued = System.currentTimeMillis() / 1000L;
 		String jdl = issuedDelimOn + issued + issuedDelimOff;
 		jdl += expiresDelimOn + (issued + 60 * 60 * 24 * 14) + expiresDelimOff;
 
-		jdl += JDLDelimOn + origjdl + JDLDelimOff;
+		jdl += JDLDelimOn + ojdl.toString() + JDLDelimOff;
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 
@@ -107,7 +108,10 @@ public class JobSigner {
 
 		jdl += signatureDelimOn + Base64.encode(signer.sign())
 				+ signatureDelimOff + sJDLDelimOff;
-		return jdl;
+		
+		// TODO : add signature to the JDL
+		
+		return ojdl;
 	}
 
 	/**
