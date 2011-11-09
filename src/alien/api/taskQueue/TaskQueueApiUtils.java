@@ -1,9 +1,6 @@
 package alien.api.taskQueue;
 
 import java.io.IOException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -14,10 +11,8 @@ import alien.api.ServerException;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
-import alien.taskQueue.JobSigner;
 import alien.taskQueue.JobStatus;
 import alien.taskQueue.JobSubmissionException;
-import alien.user.JAKeyStore;
 
 /**
  * Get the JDL object
@@ -215,9 +210,9 @@ public class TaskQueueApiUtils {
 		try {
 			final JDL ojdl = new JDL(jdl);
 			
-			final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
+			//final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
 			
-			final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), signedJDL);
+			final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), ojdl);
 			
 			final SubmitJob response = Dispatcher.execute(j, true);
 			
@@ -228,18 +223,6 @@ public class TaskQueueApiUtils {
 			e.getCause().printStackTrace();
 		}
 		catch (IOException e) {
-			System.out.println("Could not submit a JDL: "+e.getMessage());
-			e.getCause().printStackTrace();
-		}
-		catch (InvalidKeyException e) {
-			System.out.println("Could not submit a JDL: "+e.getMessage());
-			e.getCause().printStackTrace();
-		}
-		catch (NoSuchAlgorithmException e) {
-			System.out.println("Could not submit a JDL: "+e.getMessage());
-			e.getCause().printStackTrace();
-		}
-		catch (SignatureException e) {
 			System.out.println("Could not submit a JDL: "+e.getMessage());
 			e.getCause().printStackTrace();
 		}
