@@ -14,20 +14,23 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		File fout = catFile();
-		if (fout.isFile() && fout.canRead()) {
+
+		if (fout!=null && fout.exists() && fout.isFile() && fout.canRead()) {
 			final String content  =  Utils.readFile(fout.getAbsolutePath());
-			if (content!=null)
+			if (content!=null){
 				out.printOutln(content);
+			}
 			else
-				out.printErrln("Could not read the contents of "+fout.getAbsolutePath());
+				if (!isSilent())
+					out.printErrln("Could not read the contents of "+fout.getAbsolutePath());
 		} 
 		else
-
-			out.printErrln("Not able to get the file.");
+			if (!isSilent())
+				out.printErrln("Not able to get the file " + alArguments.get(0));
 	}
 
 	/**
-	 * @return
+	 * @return file handle for downloaded file
 	 */
 	public File catFile() {
 
@@ -44,7 +47,19 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			return null;
 		}
 		cp.silent();
-		cp.run();
+		
+		try {
+			
+			cp.start();
+			while (cp.isAlive()) {
+				Thread.sleep(500);
+				if (!isSilent())
+					out.pending();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 		return cp.getOutputFile();
 	}
 

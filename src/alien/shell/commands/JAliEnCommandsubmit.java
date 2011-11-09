@@ -19,29 +19,35 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 	public void run() {
 		
 		int queueId = 0;
-		out.printOutln("Submitting " + alArguments.get(0));
+		if (!isSilent())
+			out.printOutln("Submitting " + alArguments.get(0));
 		
 		File fout = catFile();
-		verbose();
 		
-		if (fout.isFile() && fout.canRead()) {
+		if (fout!=null && fout.exists() && fout.isFile() && fout.canRead()) {
 			final String content  =  Utils.readFile(fout.getAbsolutePath());
 			if (content!=null)
 				try {
 					queueId = commander.q_api.submitJob(content);
-					if(queueId>0)
-						out.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
-					else
-						out.printErrln("Error submitting " + alArguments.get(0));
+					if(queueId>0){
+						if (!isSilent())
+							out.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
+					}else{
+						if (!isSilent())
+							out.printErrln("Error submitting " + alArguments.get(0));
+					}
 				} catch (JobSubmissionException e) {
 					e.printStackTrace();
-					out.printErrln("Error submitting " + alArguments.get(0));
+					if (!isSilent())
+						out.printErrln("Error submitting " + alArguments.get(0));
 				}
 			else
-				out.printErrln("Could not read the contents of "+fout.getAbsolutePath());
+				if (!isSilent())
+					out.printErrln("Could not read the contents of "+fout.getAbsolutePath());
 		} 
 		else
-			out.printErrln("Not able to get the file." + alArguments.get(0));
+			if (!isSilent())
+				out.printErrln("Not able to get the file " + alArguments.get(0));
 	}
 
 	/**

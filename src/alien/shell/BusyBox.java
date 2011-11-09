@@ -33,6 +33,7 @@ public class BusyBox {
 	private static final String noSignal = String.valueOf((char) 33);
 
 	private static int pender = 0;
+	private static boolean pending = false;
 	private static final String[] pends = {".   "," .  ","  . ","   ."};
 	
 	private static final String promptPrefix =  JAliEnIAm.whatsMyName()+ JAliEnIAm.myJShPrompt() + " ";
@@ -327,15 +328,33 @@ public class BusyBox {
 						}
 						
 						signal = true;
-						if (sLine.startsWith(JShPrintWriter.outputterminator))
-							updateEnvironment(sLine);
-						else if (sLine.endsWith(JShPrintWriter.pendSignal))
-							pending(br);
-						else if (sLine.endsWith(JShPrintWriter.lineTerm))
-							break;
-						else if (sLine.startsWith(JShPrintWriter.errTag))
+						
+						if (JShPrintWriter.pendSignal.equals(sLine)){
+							pending=true;
+							//System.out.write(("\rI/O ["+ pends[pender] + "]").getBytes());
+							System.out.print("\rI/O ["+ pends[pender] + "]");
+							//out.flush();
+							pender++;
+							if(pender>=pends.length)
+								pender = 0;
+							continue;
+						}
+						
+						if(pending){
+							pending=false;
+							pender = 0;
+							//System.out.write("\r".getBytes());
+							System.out.print("\r");
+						}
+						
+						if (sLine.startsWith(JShPrintWriter.errTag)){
 							JSh.printErr("Error: " + sLine.substring(1));
-						else {
+						}
+						else if (sLine.startsWith(JShPrintWriter.outputterminator))
+							updateEnvironment(sLine);
+						else if (sLine.endsWith(JShPrintWriter.lineTerm)){
+							break;
+						}else {
 							out.println(sLine);
 							out.flush();
 						}
@@ -358,30 +377,6 @@ public class BusyBox {
 		return false;
 	}
 
-	
-	private static void pending(final BufferedReader br){
-		String sLine;
-		try {
-			while ( (sLine = br.readLine()) != null ){
-				if(!sLine.endsWith(JShPrintWriter.pendSignal))
-					break;
-				
-				System.out.print("\rI/O ["+ pends[pender] + "]");
-				
-				pender++;
-				
-				if(pender>=pends.length)
-					pender = 0;
-			}
-		} catch (IOException e) {
-			// ignore
-		}
-		finally{
-			pender = 0;
-			System.out.print("\r");
-		}
-	}
-	
 
 	
 	private void updateEnvironment(String env){

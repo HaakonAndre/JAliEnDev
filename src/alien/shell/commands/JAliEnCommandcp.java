@@ -56,32 +56,34 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (!localFile.exists())
 				copyGridToLocal(source, localFile);
 			else
-				out.printErrln("A local file already exists with this name.");
+				if(!isSilent())
+					out.printErrln("A local file already exists with this name.");
 			
-		} else if  (localFileSpec(source) && !localFileSpec(target)) {
+		} else if (localFileSpec(source) && !localFileSpec(target)) {
 			File sourceFile = new File(getLocalFileSpec(source));
 			if (!targetLFNExists(target))
 				if (sourceFile.exists())
 					copyLocalToGrid(sourceFile, target);
 				else
-					out.printErrln("A local file with this name does not exists.");
+					if(!isSilent())
+						out.printErrln("A local file with this name does not exists.");
 			
 		} else if (!targetLFNExists(target)){
-				final boolean preSilent = isSilent();
-				silent();
-				
+			
 				localFile = copyGridToLocal(source, null);
 				if (localFile != null && localFile.exists()
 						&& localFile.length() > 0)
 					if (copyLocalToGrid(localFile, target))
-						if(!preSilent)
+						if(!isSilent())
 							out.printOutln("Copy successful.");
 					else
-						out.printErrln("Could not copy to the target.");
+						if(!isSilent())
+							out.printErrln("Could not copy to the target.");
 				else
-					out.printErrln("Could not get the source.");
+					if(!isSilent())
+						out.printErrln("Could not get the source.");
 		}
-		if (out.isRootPrinter())
+		if(out.isRootPrinter())
 			out.setReturnArgs(deserializeForRoot());
 	}
 	
@@ -165,7 +167,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				commander.user.getName(), commander.getCurrentDir()
 						.getCanonicalName(), targetLFN));
 		if (tLFN != null){
-			out.printErrln("The target LFN already exists.");
+			if(!isSilent())
+				out.printErrln("The target LFN already exists.");
 			return true;
 		}
 		return false;
@@ -190,7 +193,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (bG) {
 			GUID guid = commander.c_api.getGUID(sourceLFN);
 			if(guid==null){
-				out.printErrln("Could not get the file's GUID: " + sourceLFN);
+				if(!isSilent())
+					out.printErrln("Could not get the file's GUID: " + sourceLFN);
 				return null;
 			}
 			pfns = commander.c_api.getPFNsToRead(commander.site, guid, ses,
@@ -200,7 +204,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), sourceLFN));
 			if(lfn==null){
-				out.printErrln("Could not get the file's LFN: " + sourceLFN);
+				if(!isSilent())
+					out.printErrln("Could not get the file's LFN: " + sourceLFN);
 				return null;
 			}
 			pfns = commander.c_api.getPFNsToRead(commander.site, lfn, ses,
@@ -219,7 +224,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						pA.start();
 						while (pA.isAlive()) {
 							Thread.sleep(500);
-							out.pending();
+							if (!isSilent())
+								out.pending();
 						}
 
 						if (pA.getFile() != null && pA.getFile().exists()
@@ -245,7 +251,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					&& targetLocalFile.length() > 0)
 				return targetLocalFile;
 		}
-		out.printErrln("Could not get the file.");
+		if(!isSilent())
+			out.printErrln("Could not get the file.");
 		return null;
 	}
 
@@ -261,14 +268,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	public boolean copyLocalToGrid(final File sourceFile, final String targetLFN) {
 
 		if (!sourceFile.exists() || !sourceFile.isFile() || !sourceFile.canRead()) {
-			out.printErrln("Could not get the local file: "
+			if(!isSilent())
+				out.printErrln("Could not get the local file: "
 					+ sourceFile.getAbsolutePath());
 			return false;
 		}
 
 		long size = sourceFile.length();
 		if (size <= 0) {
-			out.printErrln("Local file has size zero: "
+			if(!isSilent())
+				out.printErrln("Local file has size zero: "
 					+ sourceFile.getAbsolutePath());
 			return false;
 		}
@@ -281,7 +290,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		}
 		
 		if (md5 == null) {
-			System.err.println("Could not calculate md5 checksum of the local file: "+ sourceFile.getAbsolutePath());
+			if(!isSilent())
+				out.printErrln("Could not calculate md5 checksum of the local file: "+ sourceFile.getAbsolutePath());
 			return false;
 		}
 
@@ -295,7 +305,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			pfns = commander.c_api.getPFNsToWrite(commander.site, guid, ses, exses, null, 0);
 			guid.size = size;
 			guid.md5 = md5;
-			out.printErrln("Not working yet...");
+			if(!isSilent())
+				out.printErrln("Not working yet...");
 			return false;
 		}
 		
@@ -325,10 +336,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				ProtocolAction pA = new ProtocolAction(protocol, sourceFile, pfn);
 				try {
 					pA.start();
-					while(pA.isAlive()){
+					while (pA.isAlive()) {
 						Thread.sleep(500);
-						out.pending();
+						if (!isSilent())
+							out.pending();
 					}
+
 					
 					String targetLFNResult = pA.getReturn();
 					
@@ -362,10 +375,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				out.printOutln("File successfully uploaded.");
 			return true;
 		} else if ((envelopes.size() + registerPFNs.size()) > 0)
-			out.printErrln("Only " + (envelopes.size() + registerPFNs.size())
+			if(!isSilent())
+				out.printErrln("Only " + (envelopes.size() + registerPFNs.size())
 					+ " PFNs could be uploaded");
 		else
-			out.printOutln("Upload failed, sorry!");
+			if(!isSilent())
+				out.printOutln("Upload failed, sorry!");
 		return false;
 
 	}
@@ -398,7 +413,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	
 	
 	private boolean localFileSpec(final String file){
-		if(file.startsWith("file://"))
+		if(file.startsWith("file:"))
 			return true;
 		return false;
 	}
@@ -407,9 +422,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	
 	private String getLocalFileSpec(final String file){
 		if(file.startsWith("file://"))
-			return target.replace("file://", "");
+			return file.replace("file://", "");
 		if(file.startsWith("file:"))
-			return target.replace("file:", "");
+			return file.replace("file:", "");
 		return file;
 	}
 	
