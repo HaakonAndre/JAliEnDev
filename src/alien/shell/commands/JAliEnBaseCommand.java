@@ -151,6 +151,13 @@ public abstract class JAliEnBaseCommand extends Thread{
 	}
 	
 	/**
+	 * set command's silence trigger
+	 */
+	public final void verbose() {
+		silent = false;
+	}
+	
+	/**
 	 * serialize return values for gapi/root 
 	 * @return serialized return
 	 */
