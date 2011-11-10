@@ -224,9 +224,6 @@ public class JBoxServer extends Thread {
 				fw.write("export alien_API_USER="+sUser+"\n");
 				logger.fine("export alien_API_USER="+sUser);
 				
-				fw.write("export LD_LIBRARY_PATH="+sAlienRoot+"/lib:"+sAlienRoot+"/api/lib:$LD_LIBRARY_PATH");
-				logger.fine("export LD_LIBRARY_PATH="+sAlienRoot+"/lib:"+sAlienRoot+"/api/lib:$LD_LIBRARY_PATH");
-				
 				fw.flush();
 				fw.close();
 
