@@ -186,7 +186,7 @@ public class Testing {
 			AliEnPrincipal owner = UserFactory.getByUsername("grigoras");
 			owner.setRemoteEndpoint(InetAddress.getLocalHost());
 			
-			int pid = TaskQueueUtils.submit(LFNUtils.getLFN("/alice/cern.ch/user/g/grigoras/JDL"),owner);
+			int pid = TaskQueueUtils.submit(LFNUtils.getLFN("/alice/cern.ch/user/g/grigoras/JDL"),owner,null);
 			
 			System.err.println("PID : "+pid);
 			
