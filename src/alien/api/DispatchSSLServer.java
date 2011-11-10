@@ -142,6 +142,8 @@ public class DispatchSSLServer extends Thread {
 								r.run();
 							}
 							catch (Exception e){
+								logger.log(Level.WARNING, "Returning an exception to the client",e);
+								
 								r.setException(new ServerException(e.getMessage(), e));
 							}
 						}
