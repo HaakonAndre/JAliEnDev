@@ -152,6 +152,8 @@ public class DispatchSSLServer extends Thread {
 
 						long lSer = System.currentTimeMillis();
 
+						System.err.println("When returning the object, ex is "+r.getException());
+						
 						oos.writeObject(r);
 
 						if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER){
