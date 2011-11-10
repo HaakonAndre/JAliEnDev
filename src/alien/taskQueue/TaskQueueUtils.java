@@ -982,7 +982,7 @@ public class TaskQueueUtils {
 		
 		// sanity check of other tags
 		
-		for (final String tag: Arrays.asList("Executable", "ValidationCommand", "InputDataCollection")){
+		for (final String tag: Arrays.asList("ValidationCommand", "InputDataCollection")){
 			final List<String> files = jdl.getList(tag);
 			
 			if (files==null)
@@ -1000,6 +1000,10 @@ public class TaskQueueUtils {
 					throw new IOException(tag+" tag required "+fileName+" which is not valid: "+l);
 				}
 			}
+		}
+		
+		if (jdl.getExecutable()==null){
+			throw new IOException("Your JDL doesn't indicate an accessible Executable");
 		}
 	}
 	
