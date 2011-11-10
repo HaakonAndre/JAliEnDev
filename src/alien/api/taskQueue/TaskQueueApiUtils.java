@@ -1,6 +1,5 @@
 package alien.api.taskQueue;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -12,7 +11,6 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-import alien.taskQueue.JobSubmissionException;
 
 /**
  * Get the JDL object
