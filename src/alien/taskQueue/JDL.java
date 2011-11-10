@@ -469,7 +469,7 @@ public class JDL implements Serializable {
 	public String getExecutable() {
 		return gets("Executable");
 	}
-
+	
 	/**
 	 * Get the output directory
 	 * 
