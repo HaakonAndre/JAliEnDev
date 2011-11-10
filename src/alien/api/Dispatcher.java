@@ -16,8 +16,8 @@ public class Dispatcher {
 	 * @return the processed request
 	 * @throws ServerException exception thrown by the processing
 	 */
-	public static Request execute(final Request r) throws ServerException{
-		return execute(r,false);
+	public static <T extends Request> T execute(final T r) throws ServerException{
+		return execute(r, false);
 	}
 	
 	/**
