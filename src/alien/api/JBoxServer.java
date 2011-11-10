@@ -200,12 +200,12 @@ public class JBoxServer extends Thread {
 			return false;
 		}
 
-		String sAlienRoot = System.getenv("ALIEN_ROOT");
-		
-		if(sAlienRoot == null || sAlienRoot.length() ==0 ){
-			logger.severe("No ALIEN_ROOT found. Please set ALIEN_ROOT environment variable");
-			System.out.println("You don't have $ALIEN_ROOT set. You will not be able to copy files.");
-		}
+//		String sAlienRoot = System.getenv("ALIEN_ROOT");
+//		
+//		if(sAlienRoot == null || sAlienRoot.length() ==0 ){
+//			logger.severe("No ALIEN_ROOT found. Please set ALIEN_ROOT environment variable");
+//			System.out.println("You don't have $ALIEN_ROOT set. You will not be able to copy files.");
+//		}
 		
 		try {
 			int iUserId = Integer.parseInt(sUserId);
