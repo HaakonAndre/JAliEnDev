@@ -166,10 +166,7 @@ public class SE implements Serializable, Comparable<SE> {
 	 * @return if this SE server the requested QoS type
 	 */
 	public boolean isQosType(String qosRequest){
-		for(String q: qos)
-			if(q.equals(qosRequest))
-				return true;
-		return false;
+		return qos.contains(qosRequest);
 	}
 
 	private static final NumberFormat twoDigits = new DecimalFormat("00");
