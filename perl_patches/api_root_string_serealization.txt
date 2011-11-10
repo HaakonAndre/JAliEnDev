@@ -11,9 +11,12 @@ type,getdataset,
 -----------------------------------------------
 
 top?
+prepare
+isonline
 
 
-clear
+
+
 removeTag
 removeTagValue
 removeTrigger
@@ -46,9 +49,14 @@ erase
 kill
 registerOutput
 
+fquota
+jquota 
 
-prepare
-isonline
+
+ctrl-L
+clear
+
+
 
 -----------------------------------------------
 
