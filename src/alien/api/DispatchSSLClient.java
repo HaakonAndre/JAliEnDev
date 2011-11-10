@@ -315,7 +315,7 @@ public class DispatchSSLClient extends Thread {
 		@SuppressWarnings("unchecked")
 		final T reply = (T) o;
 		
-		final ServerException ex = r.getException();
+		final ServerException ex = reply.getException();
 		
 		if (ex!=null)
 			throw ex;
