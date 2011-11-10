@@ -333,28 +333,34 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					out.printErrln("Couldn't get any access ticket.");
 			return false;
 		}
-		
+
 		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
 		ArrayList<String> registerPFNs = new ArrayList<String>(pfns.size());
-		for (PFN pfn : pfns) {
-			List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-			for (final Protocol protocol : protocols) {
-				ProtocolAction pA = new ProtocolAction(protocol, sourceFile, pfn);
-				try {
-					pA.start();
-					while (pA.isAlive()) {
-						Thread.sleep(500);
+		
+//		while (pfnss != null && pfns.size() > 0) {
+
+			for (PFN pfn : pfns) {
+				List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+				for (final Protocol protocol : protocols) {
+					ProtocolAction pA = new ProtocolAction(protocol,
+							sourceFile, pfn);
+					String targetLFNResult = null;
+					try {
+						pA.start();
 						if (!isSilent())
-							out.pending();
+							out.printOutln("Uploading file "
+									+ sourceFile.getCanonicalPath() + " to "
+									+ pfn.getPFN());
+						while (pA.isAlive()) {
+							Thread.sleep(500);
+							if (!isSilent())
+								out.pending();
+						}
+						targetLFNResult = pA.getReturn();
+					} catch (Exception e) {
+						// e.printStackTrace();
 					}
 
-					
-					String targetLFNResult = pA.getReturn();
-					
-					if (!isSilent())
-						out.printOutln("Uploading file "
-								+ sourceFile.getCanonicalPath() + " to "
-								+ pfn.getPFN());
 					if (targetLFNResult != null) {
 						if (pfn.ticket != null
 								&& pfn.ticket.envelope != null
@@ -362,20 +368,22 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							if (pfn.ticket.envelope.getEncryptedEnvelope() == null)
 								envelopes.add(targetLFNResult);
 							else
-								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+								envelopes.add(pfn.ticket.envelope
+										.getSignedEnvelope());
+					} else {
+						ses.remove(commander.c_api.getSE(pfn.seNumber).getName());
+						exses.add(commander.c_api.getSE(pfn.seNumber).getName());
 					}
-					
-					out.printOutln("success on: " + commander.c_api.getSE(pfn.seNumber));
-					
-					break;
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
 			}
-		}
-		
-		out.printOutln(envelopes.size() + " files successfully uploaded.");
-		
+			
+//			if(pfns.size() == envelopes.size())
+//				break;
+//						
+//			pfns = commander.c_api.getPFNsToWrite(
+//					commander.site, lfn, guid, ses, exses, null, 0);
+//		}
+				
 		if (envelopes.size() != 0)
 			commander.c_api.registerEnvelopes(envelopes);
 		if (registerPFNs.size() != 0)
