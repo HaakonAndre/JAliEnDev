@@ -94,7 +94,7 @@ public class PFNforWrite extends Request {
 	public void run() {
 		System.err.println("Request details : ----------------------\n"+guid+"\n ---------------------- \n "+lfn+" \n ---------------------- \n"+getEffectiveRequester());
 		
-		if ((ses == null) && (qosType == null)) {
+		if (((ses == null) || ses.size()==0) && (qosType == null)) {
 			final Set<String> defaultQos = LDAPHelper.checkLdapInformation("(objectClass=AliEnVOConfig)", "ou=Config,", "sedefaultQosandCount");
 
 			if (defaultQos.isEmpty())
@@ -105,7 +105,7 @@ public class PFNforWrite extends Request {
 			qosType = defQos.substring(0, defQos.indexOf('='));
 			qosCount = Integer.parseInt(defQos.substring(defQos.indexOf('=') + 1));
 		}
-
+		
 		List<SE> SEs = SEUtils.getSEs(ses);
 
 		final List<SE> exSEs = SEUtils.getSEs(exses);
@@ -182,6 +182,9 @@ public class PFNforWrite extends Request {
 		}
 
 		logger.log(Level.FINE, "Returning: "+this.toString());
+		
+		logger.log(Level.WARNING, "Returning: "+pfns);
+
 
 		//
 		// for (PFN pfn : pfns) {

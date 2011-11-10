@@ -328,6 +328,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		pfns = commander.c_api.getPFNsToWrite(
 				commander.site, lfn, guid, ses, exses, null, 0);
+		if(pfns==null || pfns.size()==0){
+			if(!isSilent())
+					out.printErrln("Couldn't get any access ticket.");
+			return false;
+		}
+		
 		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
 		ArrayList<String> registerPFNs = new ArrayList<String>(pfns.size());
 		for (PFN pfn : pfns) {
