@@ -829,6 +829,7 @@ public class TaskQueueUtils {
 	/**
 	 * @param jdlContents JDL specification
 	 * @param account 
+	 * @param role 
 	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the parsed JDL, with all $N parameters replaced with the respective argument
 	 * @throws IOException if there is any problem parsing the JDL content
@@ -1064,7 +1065,7 @@ public class TaskQueueUtils {
 	 * @param account account from where the submit command was received
 	 * @return the job ID
 	 * @throws IOException in case of problems such as the number of provided arguments is not enough
-	 * @see #applyJDLArguments(String, String...)
+	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
 	 */
 	public static int submit(final JDL j, final AliEnPrincipal account) throws IOException{
 		// TODO : check this account's quota before submitting
