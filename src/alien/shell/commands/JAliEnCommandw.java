@@ -14,9 +14,10 @@ import alien.api.taskQueue.TaskQueueApiUtils;
  */
 public class JAliEnCommandw extends JAliEnBaseCommand {
 
-	private static final String format = "%-20s | %12s | %12s\n";
+	private static final String format  = "%3d. %-20s | %12s | %12s\n";
+	private static final String formatH = "     %-20s | %12s | %12s\n";
 	
-	private static final String separator = "---------------------+--------------+-------------\n";
+	private static final String separator = "--------------------------+--------------+--------------\n";
 	
 	@Override
 	public void run() {
@@ -31,22 +32,26 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 		
 		final Formatter formatter = new Formatter(sb);
 		
-		formatter.format(format, "Account name", "Active jobs", "Waiting jobs");
+		formatter.format(formatH, "Account name", "Active jobs", "Waiting jobs");
 		
 		sb.append(separator);
+		
+		int i = 0;
 		
 		for (final Map.Entry<String, UserStats> entry: stats.entrySet()){
 			final String username = entry.getKey();
 			final UserStats us = entry.getValue();
 			
-			formatter.format(format, username, String.valueOf(us.runningJobs), String.valueOf(us.waitingJobs));
+			i++;
+			
+			formatter.format(format, Integer.valueOf(i), username, String.valueOf(us.runningJobs), String.valueOf(us.waitingJobs));
 			
 			totals.add(us);
 		}
 		
 		sb.append(separator);
 		
-		formatter.format(format, "TOTAL", String.valueOf(totals.runningJobs), String.valueOf(totals.waitingJobs));
+		formatter.format(formatH, "TOTAL", String.valueOf(totals.runningJobs), String.valueOf(totals.waitingJobs));
 		
 		out.printOut(sb.toString());
 	}
