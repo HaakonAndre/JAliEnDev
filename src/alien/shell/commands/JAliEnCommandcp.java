@@ -364,12 +364,17 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							else
 								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 					}
+					
+					out.printOutln("success on: " + commander.c_api.getSE(pfn.seNumber));
+					
 					break;
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		}
+		
+		out.printOutln(envelopes.size() + " files successfully uploaded.");
 		
 		if (envelopes.size() != 0)
 			commander.c_api.registerEnvelopes(envelopes);

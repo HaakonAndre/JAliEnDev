@@ -167,6 +167,9 @@ public class PFNforWrite extends Request {
 
 				if (!se.canWrite(getEffectiveRequester()))
 					continue;
+				
+				if(!se.isQosType(qosType))
+					continue;
 
 				try {
 					pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), lfn, guid, null, 0, se));

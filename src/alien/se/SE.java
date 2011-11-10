@@ -160,6 +160,17 @@ public class SE implements Serializable, Comparable<SE> {
 	public String getName() {
 		return seName;
 	}
+	
+	/**
+	 * @param qosRequest
+	 * @return if this SE server the requested QoS type
+	 */
+	public boolean isQosType(String qosRequest){
+		for(String q: qos)
+			if(q.equals(qosRequest))
+				return true;
+		return false;
+	}
 
 	private static final NumberFormat twoDigits = new DecimalFormat("00");
 	private static final NumberFormat fiveDigits = new DecimalFormat("00000");
