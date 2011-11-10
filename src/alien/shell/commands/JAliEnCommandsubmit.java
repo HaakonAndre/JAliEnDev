@@ -3,14 +3,11 @@ package alien.shell.commands;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 
 import lazyj.Utils;
 import alien.api.ServerException;
-import alien.api.taskQueue.SubmitJob;
 import alien.shell.ShellColor;
 import alien.taskQueue.JDL;
-import alien.taskQueue.JobSubmissionException;
 import alien.taskQueue.TaskQueueUtils;
 
 /**
@@ -36,7 +33,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 					String[] args = alArguments.size()>1 ? alArguments.subList(1,alArguments.size()-1).toArray(new String[0]) : null;
 					
 					try{
-						jdl = TaskQueueUtils.applyJDLArguments(content, args);
+						jdl = TaskQueueUtils.applyJDLArguments(content, commander.user, commander.role, args);
 					}
 					catch (IOException ioe){
 						if (!isSilent())
