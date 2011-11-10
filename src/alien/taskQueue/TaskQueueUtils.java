@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +21,9 @@ import java.util.regex.Pattern;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
+import alien.api.Dispatcher;
+import alien.api.ServerException;
+import alien.api.catalogue.LFNfromString;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.config.ConfigUtils;
@@ -29,6 +33,7 @@ import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
+import alien.user.UsersHelper;
 
 /**
  * @author ron
@@ -823,11 +828,12 @@ public class TaskQueueUtils {
 	
 	/**
 	 * @param jdlContents JDL specification
+	 * @param account 
 	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the parsed JDL, with all $N parameters replaced with the respective argument
 	 * @throws IOException if there is any problem parsing the JDL content
 	 */
-	public static JDL applyJDLArguments(final String jdlContents, final String... arguments) throws IOException {
+	public static JDL applyJDLArguments(final String jdlContents, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
 		String jdlToSubmit = jdlContents;
 		
 		Matcher m = p.matcher(jdlToSubmit);
@@ -847,6 +853,49 @@ public class TaskQueueUtils {
 		
 		final JDL jdl = new JDL(jdlToSubmit);
 		
+		final String executable = jdl.getExecutable();
+		
+		if (executable==null)
+			throw new IOException("The JDL has to indicate an Executable");
+		
+		boolean found = false;
+		
+		try{
+			LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, executable, false));
+			
+			if ((answer.getLFN()==null || !answer.getLFN().isFile()) && !executable.startsWith("/")){
+				// try to find the path in standard directories
+				
+				final List<String> options = new LinkedList<String>();
+				options.add("/bin/");
+				options.add("/alice/bin/");
+				
+				if (!account.getName().equals(role))
+					options.add(UsersHelper.getHomeDir(role)+"bin/");
+				
+				options.add(UsersHelper.getHomeDir(account.getName())+"bin/");
+							
+				for (final String path: options){
+					answer = Dispatcher.execute(new LFNfromString(account, role, path+executable, false));
+					
+					if (answer.getLFN()!=null && answer.getLFN().isFile()){
+						jdl.set("Executable", answer.getLFN().getCanonicalName());
+						
+						found = true;
+						break;
+					}
+				}
+			}
+			else
+				found = true;
+		}
+		catch (ServerException se){
+			throw new IOException(se.getMessage(), se);
+		}
+		
+		if (!found)
+			throw new IOException("The Executable name you indicated ("+executable+") cannot be located in any standard PATH");
+		
 		return jdl;
 	}
 	
@@ -855,11 +904,12 @@ public class TaskQueueUtils {
 	 * 
 	 * @param file the catalogue name of the JDL to be submitted
 	 * @param account account from where the submit command was received
+	 * @param role 
 	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the job ID
 	 * @throws IOException in case of problems like downloading the respective JDL or not enough arguments provided to it 
 	 */
-	public static int submit(final LFN file, final AliEnPrincipal account, final String... arguments) throws IOException {
+	public static int submit(final LFN file, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
 		if (file==null || !file.exists || !file.isFile()){
 			throw new IllegalArgumentException("The LFN is not a valid file");
 		}
@@ -869,7 +919,7 @@ public class TaskQueueUtils {
 		if (jdlContents==null || jdlContents.length()==0)
 			throw new IOException("Could not download "+file.getCanonicalName());
 		
-		final JDL jdl = applyJDLArguments(jdlContents, arguments);
+		final JDL jdl = applyJDLArguments(jdlContents, account, role, arguments);
 		
 		jdl.set("JDLPath", file.getCanonicalName());
 		
