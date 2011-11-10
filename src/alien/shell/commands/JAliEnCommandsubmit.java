@@ -1,13 +1,17 @@
 package alien.shell.commands;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import lazyj.Utils;
+import alien.api.ServerException;
 import alien.api.taskQueue.SubmitJob;
 import alien.shell.ShellColor;
+import alien.taskQueue.JDL;
 import alien.taskQueue.JobSubmissionException;
+import alien.taskQueue.TaskQueueUtils;
 
 /**
  * @author ron
@@ -27,8 +31,21 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 		if (fout!=null && fout.exists() && fout.isFile() && fout.canRead()) {
 			final String content  =  Utils.readFile(fout.getAbsolutePath());
 			if (content!=null)
-				try {
-					queueId = commander.q_api.submitJob(content);
+				try {				
+					final JDL jdl;
+					String[] args = alArguments.size()>1 ? alArguments.subList(1,alArguments.size()-1).toArray(new String[0]) : null;
+					
+					try{
+						jdl = TaskQueueUtils.applyJDLArguments(content, args);
+					}
+					catch (IOException ioe){
+						if (!isSilent())
+							out.printErrln("Error submitting " + alArguments.get(0) + 
+									", JDL error: " + ioe.getMessage());
+						return ;
+					}
+					
+					queueId = commander.q_api.submitJob(jdl);
 					if(queueId>0){
 						if (!isSilent())
 							out.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
@@ -36,10 +53,10 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 						if (!isSilent())
 							out.printErrln("Error submitting " + alArguments.get(0));
 					}
-				} catch (JobSubmissionException e) {
-					e.printStackTrace();
+				} catch (ServerException e) {
 					if (!isSilent())
-						out.printErrln("Error submitting " + alArguments.get(0));
+						out.printErrln("Error submitting " + alArguments.get(0) + ", "
+								+ e.getMessage());
 				}
 			else
 				if (!isSilent())

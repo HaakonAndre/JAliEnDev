@@ -481,9 +481,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (!(options.nonOptionArguments().size() == 1 && options.has("t")))
 				target = options.nonOptionArguments().get(1);
 			
-			System.out.println("source: " + source);
-			System.out.println("target: " + target);
-			
 			
 		} catch (OptionException e) {
 			printHelp();

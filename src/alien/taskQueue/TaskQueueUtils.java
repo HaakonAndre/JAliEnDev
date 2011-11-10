@@ -825,10 +825,9 @@ public class TaskQueueUtils {
 	 * @param jdlContents JDL specification
 	 * @param arguments arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the parsed JDL, with all $N parameters replaced with the respective argument
-	 * @throws IllegalArgumentException in case a required argument was not provided
 	 * @throws IOException if there is any problem parsing the JDL content
 	 */
-	public static JDL applyJDLArguments(final String jdlContents, final String... arguments) throws IllegalArgumentException, IOException {
+	public static JDL applyJDLArguments(final String jdlContents, final String... arguments) throws IOException {
 		String jdlToSubmit = jdlContents;
 		
 		Matcher m = p.matcher(jdlToSubmit);
@@ -839,7 +838,7 @@ public class TaskQueueUtils {
 			final int i = Integer.parseInt(s);
 			
 			if (arguments==null || arguments.length<i)
-				throw new IllegalArgumentException("The JDL indicates argument $"+i+" but you haven't provided it");
+				throw new IOException("The JDL indicates argument $"+i+" but you haven't provided it");
 			
 			jdlToSubmit = jdlToSubmit.replaceAll("\\$"+i+"(?!\\d)", arguments[i-1]);
 			

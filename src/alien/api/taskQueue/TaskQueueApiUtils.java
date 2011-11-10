@@ -203,31 +203,18 @@ public class TaskQueueApiUtils {
 	 * 
 	 * @param jdl
 	 * @return queueId
-	 * @throws JobSubmissionException
+	 * @throws ServerException 
 	 */
-	public int submitJob(final String jdl) throws JobSubmissionException {
+	public int submitJob(final JDL jdl) throws ServerException {
 
-		try {
-			final JDL ojdl = new JDL(jdl);
-			
 			//final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
 			
-			final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), ojdl);
+			final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), jdl);
 			
 			final SubmitJob response = Dispatcher.execute(j, true);
 			
 			return response.getJobID();
-		}
-		catch (ServerException e) {
-			System.out.println("Could not submit a JDL: "+e.getMessage());
-			e.getCause().printStackTrace();
-		}
-		catch (IOException e) {
-			System.out.println("Could not submit a JDL: "+e.getMessage());
-			e.getCause().printStackTrace();
-		}
-		
-		return -1;
+
 	}
 
 	/**

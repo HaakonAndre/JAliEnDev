@@ -344,7 +344,7 @@ public class BusyBox {
 							pending=false;
 							pender = 0;
 							//System.out.write("\r".getBytes());
-							System.out.print("\r");
+							System.out.print("\r                                        \r");
 						}
 						
 						if (sLine.startsWith(JShPrintWriter.errTag)){
