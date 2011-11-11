@@ -41,6 +41,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 									", JDL error: " + ioe.getMessage());
 						return ;
 					}
+					jdl.set("JDLPath", alArguments.get(0));
 					
 					queueId = commander.q_api.submitJob(jdl);
 					if(queueId>0){
