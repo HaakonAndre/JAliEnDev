@@ -98,14 +98,13 @@ public class JobToken implements Comparable<JobToken> {
 
 		update(db);
 	}
-	
 
 	private void init(final DBFunctions db){
 		this.jobId = db.geti("jobId");
 		
 		this.username = StringFactory.get(db.gets("userName"));
 		
-		this.token = StringFactory.get(db.gets("jobToken"));
+		this.token = db.gets("jobToken");
 		
 		this.exists = true;
 	}
@@ -170,8 +169,6 @@ public class JobToken implements Comparable<JobToken> {
 		return true;
 	}
 	
-	
-	
 	@Override
 	public String toString() {
 		return "jobId\t\t: "+jobId+"\n"+
@@ -181,6 +178,11 @@ public class JobToken implements Comparable<JobToken> {
 	
 	@Override
 	public int compareTo(final JobToken o) {
+		int diff = jobId-o.jobId;
+		
+		if (diff!=0)
+			return diff;
+		
 		return token.compareTo(o.token);
 	}
 	
@@ -194,7 +196,7 @@ public class JobToken implements Comparable<JobToken> {
 	
 	@Override
 	public int hashCode() {
-		return token.hashCode();
+		return jobId;
 	}
 	
 	/**
@@ -210,7 +212,7 @@ public class JobToken implements Comparable<JobToken> {
 	 * @param db
 	 * @return success of the deletion
 	 */
-	public boolean destroy(final DBFunctions db){
+	boolean destroy(final DBFunctions db){
 		String q = "DELETE FROM jobToken where  jobId = "+ jobId +" and userName = '"+ Format.escSQL(username)+ 
 				   "' and jobToken = '"+ Format.escSQL(token) +"';";
 		
