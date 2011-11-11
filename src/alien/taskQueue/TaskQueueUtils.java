@@ -854,6 +854,9 @@ public class TaskQueueUtils {
 		
 		final JDL jdl = new JDL(jdlToSubmit);
 		
+		if (arguments!=null && arguments.length>0)
+			jdl.set("JDLArguments", Arrays.toString(arguments));
+		
 		final String executable = jdl.getExecutable();
 		
 		if (executable==null)
@@ -871,7 +874,7 @@ public class TaskQueueUtils {
 				options.add("/bin/");
 				options.add("/alice/bin/");
 				
-				if (!account.getName().equals(role))
+				if (role!=null && !account.getName().equals(role))
 					options.add(UsersHelper.getHomeDir(role)+"bin/");
 				
 				options.add(UsersHelper.getHomeDir(account.getName())+"bin/");
@@ -924,10 +927,10 @@ public class TaskQueueUtils {
 		
 		jdl.set("JDLPath", file.getCanonicalName());
 		
-		return submit(jdl, account);
+		return submit(jdl, account, role);
 	}
 	
-	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal owner) throws IOException {
+	private static void prepareJDLForSubmission(final JDL jdl, final String owner) throws IOException {
 		Float price = jdl.getFloat("Price");
 		
 		if (price==null)
@@ -951,7 +954,7 @@ public class TaskQueueUtils {
 		if (jdl.get("MemorySize")==null)
 			jdl.set("MemorySize", "8GB");
 		
-		jdl.set("User", owner.getName());	
+		jdl.set("User", owner);
 
 		// set the requirements anew
 		jdl.delete("Requirements");
@@ -1067,14 +1070,16 @@ public class TaskQueueUtils {
 	 * @throws IOException in case of problems such as the number of provided arguments is not enough
 	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
 	 */
-	public static int submit(final JDL j, final AliEnPrincipal account) throws IOException{
+	public static int submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException{
 		// TODO : check this account's quota before submitting
 		
 		final DBFunctions db = getQueueDB();
 		
 		final Map<String, Object> values = new HashMap<String, Object>();
 		
-		prepareJDLForSubmission(j, account);
+		final String owner = role!=null && (account.hasRole(role) || account.canBecome(role)) ? role : account.getName();   
+		
+		prepareJDLForSubmission(j, owner);
 		
 		final String executable = j.getExecutable();
 		
@@ -1094,7 +1099,7 @@ public class TaskQueueUtils {
 		final JobStatus targetStatus = JobStatus.INSERTING; 
 		
 		values.put("priority", Integer.valueOf(0));
-		values.put("submitHost", account.getName()+"@"+clientAddress);
+		values.put("submitHost", owner+"@"+clientAddress);
 		values.put("status", targetStatus.toSQL());
 		values.put("name", executable);
 		values.put("chargeStatus", Integer.valueOf(0));
@@ -1116,6 +1121,8 @@ public class TaskQueueUtils {
 			return -1;
 		
 		db.query("INSERT INTO QUEUEPROC (queueId) VALUES ("+pid+");");
+		
+		insertJobToken(pid.intValue(), owner, true);
 		
 		setAction(targetStatus);
 		
@@ -1386,15 +1393,13 @@ public class TaskQueueUtils {
 	}
 	
 
-	private static JobToken insertJobToken(final int jobId, final String username, 
-			final boolean forceUpdate) {
+	private static JobToken insertJobToken(final int jobId, final String username, final boolean forceUpdate) {
 		final DBFunctions db = getAdminDB();
 		
 		JobToken jb = getJobToken(jobId);
 		
 		if(jb!=null)
 			System.out.println("TOKEN EXISTED");
-
 		
 		if(jb!=null && !forceUpdate)
 			return null;
@@ -1404,15 +1409,14 @@ public class TaskQueueUtils {
 		
 		jb.spawnToken(db);
 	
-		
-		System.out.println("forceUpdate token: " + jb.toString());
+//		System.out.println("forceUpdate token: " + jb.toString());
 		
 		if(jb.exists())
 			return jb;
 		
-		System.out.println("jb does not exist");
-		return null;
+//		System.out.println("jb does not exist");
 		
+		return null;
 	}
 	
 	private static JobToken getJobToken(final int jobId){
@@ -1456,6 +1460,7 @@ public class TaskQueueUtils {
 		}
 		
 		final JobToken jb =  new JobToken(db);
+		
 		if (jb.exists())
 			return jb.destroy(db);
 		
