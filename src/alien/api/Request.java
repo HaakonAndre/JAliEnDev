@@ -195,6 +195,14 @@ public abstract class Request implements Serializable, Runnable {
 	}
 
 	/**
+	 * get the requester role
+	 * @return selected role
+	 */
+	protected final String getRoleRequest(){
+		return requester_rrid;
+	}
+	
+	/**
 	 *  Authorize a role change 
 	 * @return permission for role change
 	 */
