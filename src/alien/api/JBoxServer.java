@@ -416,8 +416,7 @@ public class JBoxServer extends Thread {
 				
 				break;
 			} catch (Exception ioe) {
-				System.err.println(ioe);
-				ioe.printStackTrace();
+				// we don't need the already in use info on the port, maybe there's another user on the machine...
 				logger.log(Level.FINE, "Could not listen on port " + port, ioe);
 			}
 		}	
