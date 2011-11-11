@@ -39,7 +39,7 @@ public class SubmitJob extends Request {
 	@Override
 	public void run(){
 		try{
-			jobID = TaskQueueUtils.submit(jdl, getEffectiveRequester());
+			jobID = TaskQueueUtils.submit(jdl, getEffectiveRequester(), getRoleRequest());
 		}
 		catch (IOException ioe){
 //			System.out.println("ex: " + ioe.getMessage());
