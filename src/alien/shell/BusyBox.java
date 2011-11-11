@@ -1,6 +1,7 @@
 package alien.shell;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,7 +9,10 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.Arrays;
 import java.util.StringTokenizer;
+
+import utils.SystemProcess;
 
 import jline.ArgumentCompletor;
 import jline.Completor;
@@ -416,27 +420,11 @@ public class BusyBox {
 					command.append(args[c]).append(' ');
 				
 				syscall(command.toString());
-			} else if (args[0].equals("edit")) {
-				
-				
-				System.out.println("Sorry, we're still working on [edit] ...");
-//				String localFile  = callJAliEnGetString("cp -t "+ args[1]);
-//				localFile = localFile.replace("\n", "").replace("Downloaded file to ", "").trim();
-//				System.out.println("received: " + localFile);
-//				ShellEditor.editOnConsole(localFile);
-				
-				
-				
-				
-				//syscall(Functions.which("vim")+" "+localFile);
-//				try {
-//					Runtime.getRuntime().exec(Functions.which("vim")+" "+localFile);
-//					Console console = new 
-//					 new console.SystemShell();
-//				} catch (IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
+			} else if (isEditCommand(args[0])){
+				if(args.length==2)
+					editCatalogueFile(args[0],args[1]);
+				else
+					out.println("help for the editor is....");
 			} else if (args[0].equals("help")) {
 				usage();
 			} else {
@@ -511,6 +499,42 @@ public class BusyBox {
 		s.isConnected() && !s.isInputShutdown()
 		&& !s.isOutputShutdown());
 	}
+	
+	
+	
+	
+	private static boolean isEditCommand(final String command) {
+
+		return Arrays.asList(FileEditor.editors).contains(command);
+	}
+
+	private void editCatalogueFile(final String editcmd, final String LFNName) {
+
+		String localFile = callJBoxGetString("cp -t " + LFNName);
+		localFile = localFile.replace("\n", "")
+				.replace("Downloaded file to ", "").trim();
+
+		long lastMod = (new File(localFile)).lastModified();
+
+		FileEditor editor = null;
+		
+		try{
+			editor = new FileEditor(editcmd);
+		}
+		catch (IOException e){
+			JSh.printErr("The editor [" + editcmd + "] was not found on your system.");
+			return;
+		}
+		
+		editor.edit(localFile);
+
+		if ((new File(localFile)).lastModified() != lastMod)
+			callJBox("cp file:" + localFile + " " + LFNName + "new");
+
+	}
+	
+	
+	
 	
 	private static void printInitConnError(){
 		JSh.printErr("Could not connect to JBox.");
