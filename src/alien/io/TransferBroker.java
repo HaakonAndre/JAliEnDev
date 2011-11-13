@@ -140,7 +140,7 @@ public class TransferBroker {
 			}
 
 			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId="+transferId+";");
-			executeQuery(dbc, "update PROTOCOLS set current_transfers=current_transfers+1 WHERE sename='"+Format.escSQL(targetSE)+"'");
+			executeQuery(dbc, "update PROTOCOLS set current_transfers=coalesce(current_transfers,0)+1 WHERE sename='"+Format.escSQL(targetSE)+"'");
 		}
 		catch (Exception e){
 			logger.log(Level.WARNING, "Exception fetching data from the query", e);
@@ -250,18 +250,25 @@ public class TransferBroker {
 		}		
 	}
 	
-	private static void markTransfer(final int transferId, final int exitCode, final String reason){
+	private static boolean markTransfer(final int transferId, final int exitCode, final String reason){
 		final DBFunctions db = ConfigUtils.getDB("transfers");
 		
 		if (db==null)
-			return;
+			return false;
 
 		String formattedReason = reason;
 		
 		if (formattedReason!=null && formattedReason.length()>250)
 			formattedReason = formattedReason.substring(0, 250);
 		
-		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"' WHERE transferId="+transferId);
+		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"' WHERE transferId="+transferId+" AND status='TRANSFERRING'");
+		
+		if (db.getUpdateCount()<1)
+			return false;
+		
+		db.query("update PROTOCOLS set current_transfers=max(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId="+transferId+");");
+		
+		return true;
 	}
 	
 	/**
