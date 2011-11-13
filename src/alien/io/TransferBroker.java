@@ -117,7 +117,7 @@ public class TransferBroker {
 		final DBConnection dbc = db.getConnection();
 		
 		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS write;");
-		executeQuery(dbc, "select transferId,lfn,destination from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and current_transfers<max_transfers order by transferId asc limit 1;");
+		executeQuery(dbc, "select transferId,lfn,destination from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and coalesce(current_transfers,0)<max_transfers order by transferId asc limit 1;");
 	
 		int transferId = -1;
 		String sLFN = null;
