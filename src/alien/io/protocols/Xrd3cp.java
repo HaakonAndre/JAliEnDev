@@ -86,7 +86,11 @@ public class Xrd3cp extends Xrootd {
 			
 	        pBuilder.returnOutputOnExit(true);
 	        
-	        pBuilder.timeout(24, TimeUnit.HOURS);
+	        long seconds = source.getGuid().size / 200000;	// average target speed: 200KB/s
+	        
+	        seconds += 5*60;	// 5 minutes extra time, handshakes and such
+	        
+	        pBuilder.timeout(seconds, TimeUnit.SECONDS);
 	        
 	        pBuilder.redirectErrorStream(true);
 	        
