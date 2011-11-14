@@ -419,7 +419,6 @@ public class JAKeyStore {
 
 	private static JPasswordFinder getPassword() {
 
-		String password = "";
 //		Console cons;
 //		char[] passwd;
 		
@@ -436,22 +435,15 @@ public class JAKeyStore {
 //						+ " password: ")) != null)
 //			password = String.valueOf(passwd);
 
-		
-		
-		
 	    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	    
 	    try {
-			password = in.readLine();
+			return new JPasswordFinder(in.readLine().toCharArray());
 		} catch (IOException e) {
-			logger.log(Level.INFO,"Could not read passwd.");
-			//System.out.println("Could not read passwd.");
-			//e.printStackTrace();
+			logger.log(Level.INFO,"Could not read passwd from System.in .");
 		}
-	    
-	    System.err.println("received pass.");
-	    logger.log(Level.INFO,"received pass.");
-		return new JPasswordFinder(password.toCharArray());
+	    return new JPasswordFinder("".toCharArray());
+		
 	}
 
 	@SuppressWarnings("unused")

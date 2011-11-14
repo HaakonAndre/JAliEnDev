@@ -15,6 +15,7 @@ import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
+import alien.api.JBoxServer;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.shell.BusyBox;
@@ -62,64 +63,71 @@ public class JSh {
 	public static boolean doWeColor(){
 		return color;
 	}
-	
+
 	/**
 	 * @param args
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		
-		
-		
 
-		 Signal.handle(new Signal("INT"), new SignalHandler () {
-			    @Override
-				public void handle(Signal sig) {
-			      if(boombox!=null)
-		            	boombox.callJBoxGetString("SIGINT");
-			    }
-			  });
-		 Runtime.getRuntime().addShutdownHook(new Thread() {
-		      @Override
+		Signal.handle(new Signal("INT"), new SignalHandler() {
+			@Override
+			public void handle(Signal sig) {
+				if (boombox != null)
+					boombox.callJBoxGetString("SIGINT");
+			}
+		});
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
 			public void run() {
-		    	  if(boombox!=null)
-		    		  if(boombox.prompting()){
-		    			if(appendOnExit)
-		    			  		System.out.println("exit");  
-		    	  			JSh.printGoodBye();
-		    		  }
-		      }
-		    });
-		    
+				if (boombox != null)
+					if (boombox.prompting()) {
+						if (appendOnExit)
+							System.out.println("exit");
+						JSh.printGoodBye();
+					}
+			}
+		});
 
-		if(args.length>0 &&(("-h".equals(args[0])) || ("-help".equals(args[0])) ||
-				("--h".equals(args[0])) || ("--help".equals(args[0]))
-				|| ("help".equals(args[0]))))
+		if (args.length > 0
+				&& (("-h".equals(args[0])) || ("-help".equals(args[0]))
+						|| ("--h".equals(args[0]))
+						|| ("--help".equals(args[0])) || ("help"
+							.equals(args[0]))))
 			printHelp();
-		else if (args.length>0 && ("-k".equals(args[0])))
+		else if (args.length > 0 && ("-k".equals(args[0])))
 			JSh.killJBox();
 		else {
 
-			if(!JSh.JBoxRunning())
-				runJBox();
-			
-			if (JSh.JBoxRunning()){
-				if(args.length>0 && "-e".equals(args[0])){
+			if (!JSh.JBoxRunning())
+				if (runJBox())
+					try {
+						int a = 500;
+						while (a < 5000) {
+							Thread.sleep(a);
+							if (JSh.JBoxRunning())
+								break;
+							a = a * 2;
+						}
+					} catch (InterruptedException e) {
+						// ignore
+					}
+				
+			if (JSh.JBoxRunning()) {
+				if (args.length > 0 && "-e".equals(args[0])) {
 					color = false;
 					boombox = new BusyBox(addr, port, password);
-					if(boombox!=null){
-						final StringTokenizer st = new StringTokenizer(joinSecondArgs(args),",");
+					if (boombox != null) {
+						final StringTokenizer st = new StringTokenizer(
+								joinSecondArgs(args), ",");
 						while (st.hasMoreTokens())
 							boombox.callJBox(st.nextToken().trim());
-					}
-					else
+					} else
 						printErrConnJBox();
-					
-				}
-				else
+
+				} else
 					boombox = new BusyBox(addr, port, password, user, true);
-			}
-			else
+			} else
 				printErrNoJBox();
 		}
 	}
@@ -143,19 +151,10 @@ public class JSh {
     public static void appendOnExit(){
     	appendOnExit = true;
     }
-	
-    /**
-     * 
-     * @return add 'exit' on exit or not 
-     */
-    public static boolean getAppendOnExit(){
-    	return appendOnExit;
-    }
-    
-    
-	private static void runJBox() {
-		
 
+    
+	private static boolean runJBox() {
+		
 		Process p;
 
 		try {
@@ -166,26 +165,21 @@ public class JSh {
 			"alien.JBox" });
 		
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			System.err.println("Could not execute the child process");
-			return;
+			System.err.println("Error starting jBox.");
+			return false;
 		}
 
-//		BufferedReader br = new BufferedReader(new InputStreamReader(
-//				p.getInputStream()));
+		BufferedReader out = new BufferedReader(new InputStreamReader(
+				p.getInputStream()));
 
-		BufferedReader br = new BufferedReader(new InputStreamReader(
+		BufferedReader err = new BufferedReader(new InputStreamReader(
 				p.getErrorStream()));
 
 		PrintWriter pw = new PrintWriter(p.getOutputStream());
 		Console cons;
 		
-		//char[] passwd;
-
-		
 		try{
 			if ((cons = System.console()) != null){
-			//&& (passwd = ) != null)
 				pw.println(new String(cons.readPassword("[%s]", "Grid certificate password: ")));
 				pw.flush();
 			} else 
@@ -197,19 +191,22 @@ public class JSh {
 			p.destroy();
 		}
 
-		
 		String sLine;
 
 		try {
-			if ((sLine = br.readLine()) != null) {
-
-				System.out.println(sLine);
-
+			if ((sLine = err.readLine()) != null) {
+				if(sLine.equals(JBoxServer.passACK)){
+					System.out.println();
+					return true;
+				} 
+				System.err.println(sLine);
+				return false;
+				
 			}
-			//System.out.println("...over.");
 
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			System.err.println("Error starting jBox.");
+			return false;
 		} finally {
 			try {
 				p.getOutputStream().close();
@@ -227,15 +224,7 @@ public class JSh {
 				// ignore
 			}
 		}
-
-		//System.err.println("Child detached");
-
-		try {
-			Thread.sleep(3000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		return false;
 	}
     
 	

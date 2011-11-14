@@ -457,8 +457,10 @@ public class JBoxServer extends Thread {
 				System.err.println("Grid Certificate could not be loaded.");
 				System.err.println("Exiting...");
 			}
-			else 
+			else {
+				System.err.println(passACK);
 				JBoxServer.startJBoxServer(iDebug);
+			}
 		} catch (org.bouncycastle.openssl.EncryptionException e) {
 			logger.log(Level.SEVERE, "Wrong password!");
 			System.err.println("Wrong password!");
