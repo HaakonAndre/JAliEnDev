@@ -321,8 +321,8 @@ public class JBoxServer extends Thread {
 							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
 							commander.killRunningCommand();
 						}else if("shutdown".equals(line)){
-							logger.log(Level.INFO, "Received [shutdown] from JSh.");
-								Runtime.getRuntime().exit(1);
+							shutdown();
+							
 						}else {
 
 							try {
@@ -379,9 +379,28 @@ public class JBoxServer extends Thread {
 		
 	}
 	
+	private transient boolean alive = true;
+	
+	private void shutdown(){
+	
+		logger.log(Level.FINE, "Received [shutdown] from JSh.");
+
+		alive = false;
+		
+		try {
+			ssocket.close();
+		} catch (IOException e) {
+			// ignore, we're dead anyway
+		}
+		logger.log(Level.INFO, "JBox: We die gracefully...Bye!");
+		System.exit(0);
+	
+	}
+	
+	
 	@Override
 	public void run() {
-		while (true) {
+		while (alive) {
 			try {
 				final Socket s = ssocket.accept();
 				
@@ -389,8 +408,9 @@ public class JBoxServer extends Thread {
 				
 				connection.start();
 			}
-			catch (IOException e) {
-				logger.log(Level.WARNING, "Cannot accept socket", e);
+			catch (Exception e) {
+				if(alive)
+					logger.log(Level.WARNING, "Cannot use socket: ", e.getMessage());
 			}
 		}
 	}

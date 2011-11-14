@@ -164,11 +164,7 @@ public class JSh {
 					"-DAliEnConfig=" + System.getProperty("AliEnConfig"),
 					 "-client",
 			"alien.JBox" });
-			System.out.println("StARTED: |" + "java" + 
-					" -Duserid=" + System.getProperty("userid") + 
-					" -DAliEnConfig=" + System.getProperty("AliEnConfig") + 
-					 " -client" + " alien.JBox"  );
-			
+		
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			System.err.println("Could not execute the child process");

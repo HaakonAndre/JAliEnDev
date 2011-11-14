@@ -380,8 +380,6 @@ public class BusyBox {
 			printConnError();
 		return false;
 	}
-
-
 	
 	private void updateEnvironment(String env){
 
@@ -504,11 +502,24 @@ public class BusyBox {
 	
 	
 	private void shutdown(){
-		this.callJBoxGetString("SIGINT");
-	
-		if(JSh.getAppendOnExit())
-			System.out.println("exit");  
-			JSh.printGoodBye();
+		try {
+			System.out.print("Shutting down jBox...");
+			if (socketThere(s)) {
+				os.write(("shutdown" + JShPrintWriter.lineTerm).getBytes());
+				os.flush();
+				
+				//TODO: How to tell that jBox was killed successfully
+//				if(socketThere(s)) 
+					System.out.println("DONE.");
+//				else{
+//					System.out.println("ERROR.");
+//					System.out.println("JBox might still be running.");
+//				}
+			}
+		} catch (Exception e) {
+				//e.printStackTrace();
+		}
+		JSh.printGoodBye();
 		System.exit(0);
 	}
 	

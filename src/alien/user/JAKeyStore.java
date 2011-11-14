@@ -449,8 +449,8 @@ public class JAKeyStore {
 			//e.printStackTrace();
 		}
 	    
-	    System.err.println("pass is: " + password);
-	    logger.log(Level.INFO,"pass is: " + password);
+	    System.err.println("received pass.");
+	    logger.log(Level.INFO,"received pass.");
 		return new JPasswordFinder(password.toCharArray());
 	}
 
