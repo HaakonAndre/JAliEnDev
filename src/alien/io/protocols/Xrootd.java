@@ -40,7 +40,7 @@ public class Xrootd extends Protocol {
 
 	private static String DIFirstConnectMaxCnt = "2";
 
-	private int timeout = 300;
+	private int timeout = 60;
 
 	// last value must be 0 for a clean exit
 	private static final int statRetryTimes[] = { 6, 12, 18, 24, 30, 0 };
@@ -300,7 +300,11 @@ public class Xrootd extends Protocol {
 
 			pBuilder.returnOutputOnExit(true);
 
-			pBuilder.timeout(24, TimeUnit.HOURS);
+			long maxTime = pfn.getGuid().size / 20000;	// 20KB/s should be available to anybody
+			
+			maxTime += timeout;
+			
+			pBuilder.timeout(maxTime, TimeUnit.SECONDS);
 
 			pBuilder.redirectErrorStream(true);
 
@@ -411,8 +415,12 @@ public class Xrootd extends Protocol {
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			pBuilder.returnOutputOnExit(true);
+			
+			long maxTime = pfn.getGuid().size / 20000;	// 20KB/s should be available to anybody
+			
+			maxTime += timeout;
 
-			pBuilder.timeout(24, TimeUnit.HOURS);
+			pBuilder.timeout(maxTime, TimeUnit.SECONDS);
 
 			pBuilder.redirectErrorStream(true);
 
