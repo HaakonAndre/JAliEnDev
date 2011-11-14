@@ -11,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Scanner;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -44,7 +45,10 @@ public class JBoxServer extends Thread {
 	public static final String passACK = "OKPASSACK";
 	
 	/**
-	 * 
+	 * 	static{
+		new 
+	}
+
 	 */
 	public static final String passNOACK = "NOPASSACK";
 	
@@ -63,7 +67,44 @@ public class JBoxServer extends Thread {
 	 * Debug level received from the user
 	 * */
 	final int iDebugLevel;
+	
+	/**
+	 * Number of currently established client connections to this instance
+	 */
+	final static AtomicInteger connectedClients = new AtomicInteger(0);
 
+	/**
+	 * Timestamp of the last operation (connect / disconnect / command)
+	 */
+	static long lastOperation = System.currentTimeMillis();
+	
+	/**
+	 * On any activity update the {@link #lastOperation} field
+	 */
+	static void notifyActivity(){
+		lastOperation = System.currentTimeMillis();
+	}
+	
+	static{
+		new Thread(){
+			@Override
+			public void run() {
+				while (true){
+					if (connectedClients.get()==0 && (System.currentTimeMillis() - lastOperation) > 1000*60*60*24 && server!=null){
+						server.shutdown();
+					}
+					
+					try{
+						Thread.sleep(1000*60);
+					}
+					catch (InterruptedException ie){
+						// ignore
+					}
+				}
+			}
+		}.start();
+	}
+	
 	private static synchronized void preempt(){
 		if(preemptJCentralConnection){
 			PreemptJCentralConnection preempt = new PreemptJCentralConnection();
@@ -223,7 +264,7 @@ public class JBoxServer extends Thread {
 
 				fw.write("export alien_API_USER="+sUser+"\n");
 				logger.fine("export alien_API_USER="+sUser);
-				
+
 				fw.flush();
 				fw.close();
 
@@ -281,6 +322,7 @@ public class JBoxServer extends Thread {
 		 */
 		public UIConnection(final Socket s, final JBoxServer jbox) throws IOException {
 			this.s = s;
+
 			this.jbox = jbox;
 			is = s.getInputStream();
 			os = s.getOutputStream();
@@ -290,6 +332,10 @@ public class JBoxServer extends Thread {
 
 		@Override
 		public void run() {
+				connectedClients.incrementAndGet();
+			
+				notifyActivity();
+				
 				try {
 
 					final String lineTerm = String.valueOf((char) 0);
@@ -317,6 +363,9 @@ public class JBoxServer extends Thread {
 
 					while (scanner.hasNext()) {
 						String line = scanner.next();
+						
+						notifyActivity();
+						
 						if ("SIGINT".equals(line)){
 							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
 							commander.killRunningCommand();
@@ -359,6 +408,10 @@ public class JBoxServer extends Thread {
 				} catch (Throwable e) {
 					logger.log(Level.INFO, "Error running the commander.", e);
 				} finally {
+					connectedClients.decrementAndGet();
+					
+					notifyActivity();						
+					
 					try {
 						s.shutdownOutput();
 					} catch (Exception e) {
@@ -381,7 +434,10 @@ public class JBoxServer extends Thread {
 	
 	private transient boolean alive = true;
 	
-	private void shutdown(){
+	/**
+	 * Kill the JBox instance
+	 */
+	void shutdown(){
 	
 		logger.log(Level.FINE, "Received [shutdown] from JSh.");
 
@@ -415,7 +471,10 @@ public class JBoxServer extends Thread {
 		}
 	}
 
-	private static JBoxServer server = null;
+	/**
+	 * Singleton
+	 */
+	static JBoxServer server = null;
 
 	/**
 	 * Start once the UIServer
