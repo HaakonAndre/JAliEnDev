@@ -16,6 +16,8 @@ import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
+import alien.io.protocols.SourceException;
+import alien.io.protocols.TargetException;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 
@@ -208,7 +210,8 @@ public class Transfer implements Serializable, Runnable {
 			
 			doWork(source);
 			
-			if (exitCode == OK)
+			// if the target is broken, don't try again
+			if (exitCode == OK || exitCode == FAILED_TARGET)
 				break;
 		}
 	}
@@ -317,11 +320,26 @@ public class Transfer implements Serializable, Runnable {
 			catch (final UnsupportedOperationException uoe){
 				// ignore, move to the next one
 			}
-			catch (final IOException e){
+			catch (final SourceException se){
+				exitCode = FAILED_SOURCE;
+				failureReason = se.getMessage();
+				
+				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with source exception: "+failureReason);
+				
+				// don't try other methods on this source, it is known to be broken
+				break;
+			}
+			catch (final TargetException se){
 				exitCode = FAILED_TARGET;
+				failureReason = se.getMessage();
+				
+				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with target exception: "+failureReason);
+			}
+			catch (final IOException e){
+				exitCode = FAILED_SOURCE;
 				failureReason = e.getMessage();
 				
-				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with "+failureReason);
+				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with generic exception: "+failureReason);
 			}
 		}
 		

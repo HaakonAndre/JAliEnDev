@@ -252,8 +252,7 @@ public class Xrootd extends Protocol {
 
 		if (localFile != null) {
 			if (localFile.exists())
-				throw new IOException("Local file " + localFile.getCanonicalPath()
-					+ " exists already. Xrdcp would fail.");
+				throw new SourceException("Local file " + localFile.getCanonicalPath() + " exists already. Xrdcp would fail.");
 			target = localFile;
 		}
 
@@ -265,8 +264,7 @@ public class Xrootd extends Protocol {
 		}
 
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ) {
-			throw new IOException("The envelope for PFN " + pfn.toString()
-				+ " could not be found or is not a READ one.");
+			throw new SourceException("The envelope for PFN " + pfn.toString() + " could not be found or is not a READ one.");
 		}
 
 		try {
@@ -274,7 +272,7 @@ public class Xrootd extends Protocol {
 			
 			if(xrdcpPath==null){
 				logger.log(Level.SEVERE,"Could not find [" + xrdcpCommand + "] in path.");	
-				throw new IOException("Could not find [" + xrdcpCommand + "] in path.");	
+				throw new SourceException("Could not find [" + xrdcpCommand + "] in path.");	
 			}
 			
 			command.add(xrdcpPath);
@@ -314,11 +312,10 @@ public class Xrootd extends Protocol {
 				if (p != null)
 					exitStatus = p.waitFor();
 				else
-					throw new IOException("Cannot start the process");
+					throw new SourceException("Cannot start the process");
 			}
 			catch (final InterruptedException ie) {
-				throw new IOException("Interrupted while waiting for the following command to finish : "
-					+ command.toString());
+				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -335,13 +332,13 @@ public class Xrootd extends Protocol {
 						+ command.toString();
 				}
 
-				throw new IOException(sMessage);
+				throw new SourceException(sMessage);
 			}
 
 			if (!checkDownloadedFile(target, pfn))
-				throw new IOException("Local file doesn't match catalogue details");
+				throw new SourceException("Local file doesn't match catalogue details");
 		}
-		catch (final IOException ioe) {
+		catch (final SourceException ioe) {
 			if (!target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 
@@ -353,7 +350,7 @@ public class Xrootd extends Protocol {
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			throw new IOException("Get aborted because " + t);
+			throw new SourceException("Get aborted because " + t);
 		}
 
 		return target;
@@ -367,14 +364,14 @@ public class Xrootd extends Protocol {
 	@Override
 	public String put(final PFN pfn, final File localFile) throws IOException {
 		if (localFile == null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
-			throw new IOException("Local file " + localFile + " cannot be read");
+			throw new TargetException("Local file " + localFile + " cannot be read");
 
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE) {
-			throw new IOException("No access to this PFN");
+			throw new TargetException("No access to this PFN");
 		}
 
 		if (localFile.length() != pfn.getGuid().size) {
-			throw new IOException("Difference in sizes: local=" + localFile.length() + " / pfn=" + pfn.getGuid().size);
+			throw new TargetException("Difference in sizes: local=" + localFile.length() + " / pfn=" + pfn.getGuid().size);
 		}
 
 		try {
@@ -382,7 +379,7 @@ public class Xrootd extends Protocol {
 			
 			if(xrdcpPath==null){
 				logger.log(Level.SEVERE,"Could not fine [" + xrdcpCommand + "] in path.");	
-				throw new IOException("Could not fine [" + xrdcpCommand + "] in path.");	
+				throw new TargetException("Could not fine [" + xrdcpCommand + "] in path.");	
 			}
 
 			command.add(xrdcpPath);
@@ -425,7 +422,7 @@ public class Xrootd extends Protocol {
 				exitStatus = pBuilder.start().waitFor();
 			}
 			catch (final InterruptedException ie) {
-				throw new IOException("Interrupted while waiting for the following command to finish : "
+				throw new TargetException("Interrupted while waiting for the following command to finish : "
 					+ command.toString());
 			}
 
@@ -442,7 +439,7 @@ public class Xrootd extends Protocol {
 						+ command.toString();
 				}
 
-				throw new IOException(sMessage);
+				throw new TargetException(sMessage);
 			}
 
 			if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
@@ -450,13 +447,16 @@ public class Xrootd extends Protocol {
 
 			return xrdstat(pfn, true);
 		}
-		catch (final IOException ioe) {
+		catch (final TargetException ioe) {
 			throw ioe;
+		}
+		catch (final IOException ioe){
+			throw new TargetException(ioe.getMessage());
 		}
 		catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			throw new IOException("Get aborted because " + t);
+			throw new TargetException("Put aborted because " + t);
 		}
 	}
 
@@ -510,8 +510,7 @@ public class Xrootd extends Protocol {
 	 * @throws IOException if the remote file properties are not what is
 	 *             expected
 	 */
-	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay,
-		final boolean forceRecalcMd5) throws IOException {
+	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
 
 		for (int statRetryCounter = 0; statRetryCounter < statRetryTimes.length; statRetryCounter++) {
 			try {
