@@ -63,7 +63,7 @@ public class JSh {
 	public static boolean doWeColor(){
 		return color;
 	}
-
+	
 	/**
 	 * @param args
 	 * @throws Exception
@@ -89,47 +89,50 @@ public class JSh {
 			}
 		});
 
-		if (args.length > 0
-				&& (("-h".equals(args[0])) || ("-help".equals(args[0]))
-						|| ("--h".equals(args[0]))
-						|| ("--help".equals(args[0])) || ("help"
-							.equals(args[0]))))
+		if (args.length > 0 && (("-h".equals(args[0])) || ("-help".equals(args[0])) || ("--h".equals(args[0])) || ("--help".equals(args[0])) || ("help".equals(args[0]))))
 			printHelp();
-		else if (args.length > 0 && ("-k".equals(args[0])))
-			JSh.killJBox();
-		else {
+		else
+			if (args.length > 0 && ("-k".equals(args[0])))
+				JSh.killJBox();
+			else {
 
-			if (!JSh.JBoxRunning())
-				if (runJBox())
-					try {
-						int a = 500;
-						while (a < 5000) {
-							Thread.sleep(a);
-							if (JSh.JBoxRunning())
-								break;
-							a = a * 2;
+				if (!JSh.JBoxRunning())
+					if (runJBox())
+						try {
+							int a = 10;
+							while (a < 5000) {
+								Thread.sleep(a);
+								if (JSh.JBoxRunning())
+									break;
+								a = a * 2;
+							}
 						}
-					} catch (InterruptedException e) {
-						// ignore
-					}
-				
-			if (JSh.JBoxRunning()) {
-				if (args.length > 0 && "-e".equals(args[0])) {
-					color = false;
-					boombox = new BusyBox(addr, port, password);
-					if (boombox != null) {
-						final StringTokenizer st = new StringTokenizer(
-								joinSecondArgs(args), ",");
-						while (st.hasMoreTokens())
-							boombox.callJBox(st.nextToken().trim());
-					} else
-						printErrConnJBox();
+						catch (InterruptedException e) {
+							// ignore
+						}
 
-				} else
-					boombox = new BusyBox(addr, port, password, user, true);
-			} else
-				printErrNoJBox();
-		}
+				if (JSh.JBoxRunning()) {
+					if (args.length > 0 && "-e".equals(args[0])) {
+						color = false;
+						boombox = new BusyBox(addr, port, password);
+
+						if (boombox != null) {
+							final StringTokenizer st = new StringTokenizer(joinSecondArgs(args), ",");
+
+							while (st.hasMoreTokens())
+								boombox.callJBox(st.nextToken().trim());
+						}
+						else
+							printErrConnJBox();
+
+					}
+					else {
+						boombox = new BusyBox(addr, port, password, user, true);
+					}
+				}
+				else
+					printErrNoJBox();
+			}
 	}
 
 	/**

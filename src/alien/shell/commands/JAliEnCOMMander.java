@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -16,8 +16,6 @@ import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
-import alien.shell.BusyBox;
-import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
 
@@ -38,8 +36,6 @@ public class JAliEnCOMMander extends Thread {
 	static transient final Logger logger = ConfigUtils
 	.getLogger(JBoxServer.class.getCanonicalName());
 
-	private final JBoxServer jbox;
-	
 	/**
 	 *
 	 */
@@ -59,10 +55,10 @@ public class JAliEnCOMMander extends Thread {
 		, "lfn2guid", "guid2lfn", "w", "uptime"};
 	
 	static{
-		List<String> comms = Arrays.asList("shutdown", "ls", "get",
-				"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
-				"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
-				, "lfn2guid", "guid2lfn", "w", "uptime");
+//		List<String> comms = Arrays.asList("shutdown", "ls", "get",
+//				"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
+//				"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
+//				, "lfn2guid", "guid2lfn", "w", "uptime");
 		
 		//comms.addAll(Arrays.asList(FileEditor.editors));
 		
@@ -110,11 +106,8 @@ public class JAliEnCOMMander extends Thread {
 	private boolean degraded = false;
 
 	/**
-	 * @param jbox
 	 */
-	public JAliEnCOMMander(final JBoxServer jbox) {
-		this.jbox = jbox;
-
+	public JAliEnCOMMander() {
 		c_api = new CatalogueApiUtils(this);
 
 		q_api = new TaskQueueApiUtils(this);
@@ -125,6 +118,8 @@ public class JAliEnCOMMander extends Thread {
 		myHome = UsersHelper.getHomeDir(user.getName());
 		localFileCash = new HashMap<String, File>();
 		initializeJCentralConnection();
+		
+		setName("Commander");
 
 	}
 
@@ -272,42 +267,85 @@ public class JAliEnCOMMander extends Thread {
 	
 	private JAliEnBaseCommand jcommand = null;
 
+	/**
+	 * Current status : 0 = idle, 1 = busy executing a command
+	 */
+	public AtomicInteger status = new AtomicInteger(0);
 
-	@Override
-	public void run() {
-		while (true) {
+	private void waitForCommand(){
+		while (os==null){
+//			logger.log(Level.INFO, "Waiting for command");
 			
-			if(out==null)
-				if ("setshell".equals(arg[0]))
-				 setShellPrintWriter(os, arg[1]);
-			  else
-				  out = new RootPrintWriter(os);
-
-			if(degraded){
-				 if(triedConnects<maxTryConnect){			
-					 if(!initializeJCentralConnection())
-						flush();
-					 if(triedConnects<maxTryConnect){		
-						try {
-								Thread.sleep(triedConnects*maxTryConnect*500);							
-						} catch (InterruptedException e) {
-							//	e.printStackTrace();
-						}
-					 }
-				 }else{
-					 System.out.println("Giving up...");
-					 break;
-				 }
-			} else {
-				execute();
+			synchronized (this){
 				try {
-					synchronized (this) {
-						wait();
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+					wait(1000);
+				}
+				catch (InterruptedException e) {
+					// ignore
 				}
 			}
+		}
+	}
+	
+	@Override
+	public void run() {
+		logger.log(Level.INFO, "Starting excution");
+
+		try {
+			while (true) {
+				waitForCommand();
+
+				if (out == null) {
+					if ("setshell".equals(arg[0]))
+						setShellPrintWriter(os, arg[1]);
+					else
+						out = new RootPrintWriter(os);
+				}
+
+				if (degraded) {
+					if (triedConnects < maxTryConnect) {
+						if (!initializeJCentralConnection())
+							flush();
+						if (triedConnects < maxTryConnect) {
+							try {
+								Thread.sleep(triedConnects * maxTryConnect * 500);
+							}
+							catch (InterruptedException e) {
+								// e.printStackTrace();
+							}
+						}
+					}
+					else {
+						System.out.println("Giving up...");
+						break;
+					}
+				}
+				else {
+					waitForCommand();
+
+					try {
+						status.set(1);
+
+						setName("Commander: Executing: " + Arrays.toString(arg));
+
+						execute();
+					}
+					finally {
+						os = null;
+						
+						setName("Commander: Idle");
+
+						status.set(0);
+
+						synchronized (status) {
+							status.notifyAll();
+						}
+					}
+				}
+			}
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Got exception", e);
 		}
 	}
 	
@@ -422,18 +460,10 @@ public class JAliEnCOMMander extends Thread {
 					args.remove(args.size() - 1);
 				}
 
-				if (!help
-						&& (args.size() != 0 || jcommand
-								.canRunWithoutArguments())) {
-					jcommand.start();
-					try {
-						synchronized (jcommand) {
-							jcommand.wait();
-						}
-					} catch (InterruptedException e) {
-						// ignore
-					}
-				} else {
+				if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
+					jcommand.run();
+				}
+				else {
 					jcommand.printHelp();
 				}
 			} catch (Exception e) {

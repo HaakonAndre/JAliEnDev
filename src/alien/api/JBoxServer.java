@@ -291,7 +291,7 @@ public class JBoxServer extends Thread {
 	static final class PreemptJCentralConnection extends Thread {
 		@Override
 		public void run() {
-			new JAliEnCOMMander(null).getId();
+			new JAliEnCOMMander().getId();
 		}
 	}
 	
@@ -304,8 +304,6 @@ public class JBoxServer extends Thread {
 	private class UIConnection extends Thread {
 		
 		private final Socket s;
-		
-		private final JBoxServer jbox;
 
 		private final InputStream is;
 
@@ -323,11 +321,27 @@ public class JBoxServer extends Thread {
 		public UIConnection(final Socket s, final JBoxServer jbox) throws IOException {
 			this.s = s;
 
-			this.jbox = jbox;
 			is = s.getInputStream();
 			os = s.getOutputStream();
 
 			setName("UIConnection: " + s.getInetAddress());
+		}
+		
+		private void waitCommandFinish(){
+			// wait for the previous command to finish
+			
+			while (commander.status.get()==1){
+//				logger.log(Level.INFO, "Waiting for the commander to finish the previous command");
+				
+				try{
+					synchronized (commander.status){
+						commander.status.wait(1000);
+					}
+				}
+				catch (InterruptedException ie){
+					// ignore
+				}
+			}
 		}
 
 		@Override
@@ -359,48 +373,42 @@ public class JBoxServer extends Thread {
 						os.flush();
 						return;
 					}
-					commander = new JAliEnCOMMander(jbox);
+					
+					commander = new JAliEnCOMMander();
+					commander.start();
 
 					while (scanner.hasNext()) {
 						String line = scanner.next();
+						
+						logger.log(Level.INFO, "Got line: "+line);
 						
 						notifyActivity();
 						
 						if ("SIGINT".equals(line)){
 							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
-							commander.killRunningCommand();
+						
+							try{
+								commander.interrupt();
+								commander.stop();
+							}
+							catch (Throwable t){
+								// ignore
+							}
+							finally{
+								commander = new JAliEnCOMMander();	// kill the active command and start a new one
+								commander.start();
+							}
+							
 						}else if("shutdown".equals(line)){
 							shutdown();
 							
 						}else {
-
-							try {
-								while (commander.isAlive()
-										&& !commander.getState().equals(
-												State.WAITING)) {
-									Thread.sleep(1);
-								}
-							} catch (InterruptedException e) {
-								e.printStackTrace();
-							}
-							commander.setLine(os, line.split(SpaceSep));
-
+							waitCommandFinish();
 							
-							try{
-								if (!commander.isAlive()) 
-								commander.start();
-							}
-							catch(IllegalThreadStateException e){
-								//ignore
-							}
-							//if (!commander.isAlive()) {
-							//	commander.start();
-							//} else 
-								if (commander.getState().equals(
-									State.WAITING)) {
-								synchronized (commander) {
-									commander.notify();
-								}
+							synchronized (commander){
+								commander.setLine(os, line.split(SpaceSep));
+								
+								commander.notifyAll();
 							}
 						}
 						os.flush();
@@ -408,6 +416,8 @@ public class JBoxServer extends Thread {
 				} catch (Throwable e) {
 					logger.log(Level.INFO, "Error running the commander.", e);
 				} finally {
+					waitCommandFinish();
+					
 					connectedClients.decrementAndGet();
 					
 					notifyActivity();						

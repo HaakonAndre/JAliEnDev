@@ -12,8 +12,6 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
-import utils.SystemProcess;
-
 import jline.ArgumentCompletor;
 import jline.Completor;
 import jline.ConsoleReader;
@@ -183,7 +181,18 @@ public class BusyBox {
 		}
 		
 		if(startPrompt){
-			prompt();
+			new Thread(){
+				@Override
+				public void run() {
+					try {
+						prompt();
+					}
+					catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}.start();
 		}
 	}
 
@@ -241,6 +250,8 @@ public class BusyBox {
 	 */
 	public String callJBoxGetString(final String line){		
 		String sline = line;
+		
+		System.err.println("Sending command line: "+sline);
 		
 		checkColorSwitch(sline);
 		
