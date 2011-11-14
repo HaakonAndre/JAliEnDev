@@ -2,10 +2,12 @@ package alien;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
@@ -66,6 +68,9 @@ public class JSh {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
+		
+		
+		
 
 		 Signal.handle(new Signal("INT"), new SignalHandler () {
 			    @Override
@@ -95,6 +100,8 @@ public class JSh {
 			JSh.killJBox();
 		else {
 
+			if(!JSh.JBoxRunning())
+				runJBox();
 			
 			if (JSh.JBoxRunning()){
 				if(args.length>0 && "-e".equals(args[0])){
@@ -137,6 +144,104 @@ public class JSh {
     	appendOnExit = true;
     }
 	
+    /**
+     * 
+     * @return add 'exit' on exit or not 
+     */
+    public static boolean getAppendOnExit(){
+    	return appendOnExit;
+    }
+    
+    
+	private static void runJBox() {
+		
+
+		Process p;
+
+		try {
+			p = Runtime.getRuntime().exec(new String[] { "java",
+					"-Duserid=" + System.getProperty("userid"),
+					"-DAliEnConfig=" + System.getProperty("AliEnConfig"),
+					 "-client",
+			"alien.JBox" });
+			System.out.println("StARTED: |" + "java" + 
+					" -Duserid=" + System.getProperty("userid") + 
+					" -DAliEnConfig=" + System.getProperty("AliEnConfig") + 
+					 " -client" + " alien.JBox"  );
+			
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			System.err.println("Could not execute the child process");
+			return;
+		}
+
+//		BufferedReader br = new BufferedReader(new InputStreamReader(
+//				p.getInputStream()));
+
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+				p.getErrorStream()));
+
+		PrintWriter pw = new PrintWriter(p.getOutputStream());
+		Console cons;
+		
+		//char[] passwd;
+
+		
+		try{
+			if ((cons = System.console()) != null){
+			//&& (passwd = ) != null)
+				pw.println(new String(cons.readPassword("[%s]", "Grid certificate password: ")));
+				pw.flush();
+			} else 
+				System.err.println("Error getting console.");
+			
+		}
+		catch(Exception e){
+			System.err.println("Error asking for password.");
+			p.destroy();
+		}
+
+		
+		String sLine;
+
+		try {
+			if ((sLine = br.readLine()) != null) {
+
+				System.out.println(sLine);
+
+			}
+			//System.out.println("...over.");
+
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		} finally {
+			try {
+				p.getOutputStream().close();
+			} catch (IOException e) {
+				// ignore
+			}
+			try {
+				p.getInputStream().close();
+			} catch (IOException e) {
+				// ignore
+			}
+			try {
+				p.getErrorStream().close();
+			} catch (IOException e) {
+				// ignore
+			}
+		}
+
+		//System.err.println("Child detached");
+
+		try {
+			Thread.sleep(3000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+    
 	
 	
 	private static final String kill = "/bin/kill";
@@ -422,7 +527,7 @@ public class JSh {
 	/**
 	 * be polite 
 	 */
-	static void printGoodBye(){
+	public static void printGoodBye(){
 		JSh.printOut("GoodBye.");
 	}
 	

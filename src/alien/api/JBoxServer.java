@@ -402,6 +402,9 @@ public class JBoxServer extends Thread {
 	 * @param iDebugLevel 
 	 */
 	public static synchronized void startJBoxServer(int iDebugLevel) {
+
+		logger.log(Level.INFO, "JBox starting ...");
+
 		if (server != null)
 			return;
 
@@ -411,13 +414,13 @@ public class JBoxServer extends Thread {
 				server = new JBoxServer(port, iDebugLevel);
 				server.start();
 
-				logger.log(Level.INFO, "UIServer listening on port " + port);
+				logger.log(Level.INFO, "JBox listening on port " + port);
 				System.out.println("JBox is listening...");
 				
 				break;
 			} catch (Exception ioe) {
 				// we don't need the already in use info on the port, maybe there's another user on the machine...
-				logger.log(Level.FINE, "Could not listen on port " + port, ioe);
+				logger.log(Level.FINE, "JBox: Could not listen on port " + port, ioe);
 			}
 		}	
 	}
@@ -428,6 +431,7 @@ public class JBoxServer extends Thread {
 	 * @param iDebug 
 	 */
 	public static void startJBoxService(int iDebug) {
+		logger.log(Level.INFO, "Starting JBox");
 		try {
 			if(!JAKeyStore.loadClientKeyStorage()){
 				System.err.println("Grid Certificate could not be loaded.");

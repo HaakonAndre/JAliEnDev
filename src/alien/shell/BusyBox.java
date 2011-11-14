@@ -425,7 +425,9 @@ public class BusyBox {
 					editCatalogueFile(args[0],args[1]);
 				else
 					out.println("help for the editor is....");
-			} else if (args[0].equals("help")) {
+			} else if(args[0].equals("shutdown"))
+					shutdown();
+			else if (args[0].equals("help")) {
 				usage();
 			} else {
 				callJBox(callLine);
@@ -501,6 +503,14 @@ public class BusyBox {
 	}
 	
 	
+	private void shutdown(){
+		this.callJBoxGetString("SIGINT");
+	
+		if(JSh.getAppendOnExit())
+			System.out.println("exit");  
+			JSh.printGoodBye();
+		System.exit(0);
+	}
 	
 	
 	private static boolean isEditCommand(final String command) {

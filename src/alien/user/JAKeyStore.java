@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -326,7 +327,7 @@ public class JAKeyStore {
 		if(noUserPass)
 			jpf =  new JPasswordFinder(new char[]{});
 		else
-			jpf =  getPassword("Grid certificate");
+			jpf =  getPassword();
 		
 		addKeyPairToKeyStore(
 				clientCert,
@@ -416,25 +417,40 @@ public class JAKeyStore {
 
 	}
 
-	private static JPasswordFinder getPassword(String consoleMessage) {
+	private static JPasswordFinder getPassword() {
 
 		String password = "";
-		Console cons;
-		char[] passwd;
+//		Console cons;
+//		char[] passwd;
 		
-		if ((cons = System.console()) == null)
-			System.err
-					.println("Could not get console to request key password.");
-		if (logger.isLoggable(Level.SEVERE)) {
-			logger.log(Level.SEVERE, "Could not get console to request key password.");
+		
+//		if ((cons = System.console()) == null)
+//			System.err
+//					.println("Could not get console to request key password.");
+//		if (logger.isLoggable(Level.SEVERE)) {
+//			logger.log(Level.SEVERE, "Could not get console to request key password.");
+//		}
+//
+//		if ((cons = System.console()) != null
+//				&& (passwd = cons.readPassword("[%s]", consoleMessage
+//						+ " password: ")) != null)
+//			password = String.valueOf(passwd);
+
+		
+		
+		
+	    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+	    
+	    try {
+			password = in.readLine();
+		} catch (IOException e) {
+			logger.log(Level.INFO,"Could not read passwd.");
+			//System.out.println("Could not read passwd.");
+			//e.printStackTrace();
 		}
-
-		if ((cons = System.console()) != null
-				&& (passwd = cons.readPassword("[%s]", consoleMessage
-						+ " password: ")) != null)
-			password = String.valueOf(passwd);
-
-		// System.out.println("pass is: " + pass);
+	    
+	    System.err.println("pass is: " + password);
+	    logger.log(Level.INFO,"pass is: " + password);
 		return new JPasswordFinder(password.toCharArray());
 	}
 
