@@ -17,6 +17,7 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import alien.io.protocols.TempFileManager;
 import alien.io.protocols.XRDStatus;
 import alien.io.protocols.Xrootd;
 
@@ -134,6 +135,8 @@ public class XRDChecker {
 		}
 		finally{
 			if (f!=null){
+				TempFileManager.release(f);
+				
 				if (!f.delete())
 					System.err.println("Could not delete: "+f);
 			}

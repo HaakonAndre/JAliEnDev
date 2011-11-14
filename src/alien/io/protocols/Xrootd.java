@@ -646,9 +646,7 @@ public class Xrootd extends Protocol {
 			return put(target, temp);
 		}
 		finally {
-			if (!temp.delete()) {
-				logger.log(Level.WARNING, "Could not delete temporary file : " + temp);
-			}
+			TempFileManager.release(temp);
 		}
 	}
 

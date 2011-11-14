@@ -18,6 +18,7 @@ import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
 import alien.io.protocols.SourceException;
 import alien.io.protocols.TargetException;
+import alien.io.protocols.TempFileManager;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 
@@ -298,8 +299,7 @@ public class Transfer implements Serializable, Runnable {
 					failureReason = ioe.getMessage();
 				}
 				finally{
-					if (!temp.delete())
-						logger.log(Level.WARNING, "Could not delete temporary file "+temp);
+					TempFileManager.release(temp);
 				}
 			}
 			

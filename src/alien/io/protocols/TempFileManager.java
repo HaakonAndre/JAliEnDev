@@ -5,6 +5,8 @@ package alien.io.protocols;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -46,12 +48,14 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	private static final TempFileManager tempInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 1000), ConfigUtils.getConfig().getl("alien.io.protocols.TempFileManager.temp.size", 10*1024*1024*1024), true);
 	private static final TempFileManager persistentInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 1000), 0, false);
 	
+	private static List<File> lockedLocalFiles = new LinkedList<File>();
+	
 	/* (non-Javadoc)
 	 * @see lazyj.LRUMap#removeEldestEntry(java.util.Map.Entry)
 	 */
 	@Override
 	protected boolean removeEldestEntry(final java.util.Map.Entry<GUID, File> eldest) {
-		boolean remove = super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit);
+		boolean remove = !lockedLocalFiles.contains(eldest.getValue()) && (super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit));
 	
 		if (remove){
 			currentSize -= eldest.getKey().size;
@@ -83,13 +87,16 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	public static File getAny(final GUID key){
 		File f = tempInstance.get(key);
 		
-		if (f!=null)
+		if (f!=null && f.exists() && f.isFile() && f.canRead()){
+			lock(f);
+			
 			return f;
+		}
 		
 		f = persistentInstance.get(key);
 		
 		try {
-			if (f!=null && f.length()==key.size && IOUtils.getMD5(f).equals(key.md5))
+			if (f!=null && f.exists() && f.isFile() && f.canRead() && f.length()==key.size && IOUtils.getMD5(f).equals(key.md5))
 				return f;
 		}
 		catch (IOException e) {
@@ -105,6 +112,22 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 */
 	public static void putTemp(final GUID key, final File localFile){
 		tempInstance.put(key, localFile);
+		
+		lock(localFile);
+	}
+	
+	/**
+	 * @param f
+	 */
+	public static void lock(final File f){
+		lockedLocalFiles.add(f);
+	}
+	
+	/**
+	 * @param f
+	 */
+	public static void release(final File f){
+		lockedLocalFiles.remove(f);
 	}
 	
 	/**

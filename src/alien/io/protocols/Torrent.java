@@ -5,15 +5,22 @@ package alien.io.protocols;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 
 /**
  * @author costing
  * @since Dec 8, 2010
  */
 public class Torrent extends Protocol {
-
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Torrent.class.getCanonicalName());
+	
 	/**
 	 * package protected
 	 */
@@ -36,7 +43,16 @@ public class Torrent extends Protocol {
 		}
 		
 		if (target==null){
-			target = File.createTempFile("http", null);
+			// we are free to use any cached value
+			target = TempFileManager.getAny(pfn.getGuid());
+			
+			if (target!=null){
+				logger.log(Level.FINE, "Reusing cached file: "+target.getCanonicalPath());
+				
+				return target;
+			}
+			
+			target = File.createTempFile("torrent", null);
 		}
 		
 		String url = pfn.pfn;
@@ -45,12 +61,14 @@ public class Torrent extends Protocol {
 		url = "http"+url.substring(url.indexOf("://"));
 		
 		lazyj.Utils.download(url, target.getCanonicalPath());
+
+		throw new SourceException("Torrent GET method not implemented yet");
 		
 		// TODO implement downloading the actual content!
 		
 		// TODO how to check the size and md5sum and so on for a torrent ?
-
-		return target;
+		
+//		return target;
 	}	
 	
 	/* (non-Javadoc)

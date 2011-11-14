@@ -43,6 +43,15 @@ public class Http extends Protocol {
 		}
 		
 		if (target==null){
+			// we are free to use any cached value
+			target = TempFileManager.getAny(pfn.getGuid());
+			
+			if (target!=null){
+				logger.log(Level.FINE, "Reusing cached file: "+target.getCanonicalPath());
+				
+				return target;
+			}
+			
 			target = File.createTempFile("http", null);
 		}
 		
@@ -51,6 +60,13 @@ public class Http extends Protocol {
 			
 			if (!checkDownloadedFile(target, pfn))
 				throw new IOException("Local file doesn't match catalogue details");
+			
+			if (localFile==null){
+				TempFileManager.putTemp(pfn.getGuid(), target);
+			}
+			else{
+				TempFileManager.putPersistent(pfn.getGuid(), target);
+			}
 		}
 		catch (IOException ioe){
 			if (!target.delete())

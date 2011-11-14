@@ -22,6 +22,7 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.io.protocols.Protocol;
+import alien.io.protocols.TempFileManager;
 import alien.se.SEUtils;
 
 /**
@@ -172,8 +173,7 @@ public class IOUtils {
 				// ignore, shouldn't be ...
 			}
 			finally{
-				if (f.exists() && !f.delete())
-					logger.log(Level.WARNING, "Could not delete temporary download file "+f.getAbsolutePath());
+				TempFileManager.release(f);
 			}
 		}
 		
