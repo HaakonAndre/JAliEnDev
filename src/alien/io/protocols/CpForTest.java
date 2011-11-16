@@ -300,5 +300,8 @@ public class CpForTest  extends Protocol {
 			return "cp";
 		}
 
-
+	@Override
+	int getPreference() {
+		return 5;
+	}
 }

@@ -160,4 +160,9 @@ public class Xrd3cp extends Xrootd {
 	public String toString() {
 		return "xrd3cp";
 	}
+	
+	@Override
+	int getPreference() {
+		return 1;
+	}
 }

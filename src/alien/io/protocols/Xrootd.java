@@ -686,4 +686,9 @@ public class Xrootd extends Protocol {
 		return "xrootd";
 	}
 
+	@Override
+	int getPreference() {
+		return 2;
+	}
+	
 }

@@ -6,6 +6,7 @@ package alien.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -253,7 +254,11 @@ public class Transfer implements Serializable, Runnable {
 		targetSite = targetSite.substring(targetSite.indexOf("::")+2, targetSite.lastIndexOf("::"));
 		
 		// sort protocols by preference
-		for (final Protocol p: protocols){
+		final List<Protocol> sortedProtocols = new LinkedList<Protocol>(protocols);
+		
+		Collections.sort(sortedProtocols);
+		
+		for (final Protocol p: sortedProtocols){
 			// sort pfns function of the distance between source, target and ourselves
 			
 			final List<PFN> sortedSources = SEUtils.sortBySite(sources, p==Factory.xrd3cp ? targetSite : ConfigUtils.getSite(), false);

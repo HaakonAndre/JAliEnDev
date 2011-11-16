@@ -109,4 +109,9 @@ public class Http extends Protocol {
 	public String transfer(PFN source, PFN target) throws IOException {
 		throw new UnsupportedOperationException();
 	}
+	
+	@Override
+	int getPreference() {
+		return 4;
+	}
 }

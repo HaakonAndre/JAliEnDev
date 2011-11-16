@@ -12,7 +12,7 @@ import alien.catalogue.PFN;
  * @author costing
  * @since Dec 8, 2010
  */
-public abstract class Protocol {
+public abstract class Protocol implements Comparable<Protocol>{
 	
 	/**
 	 * Package protected 
@@ -75,5 +75,15 @@ public abstract class Protocol {
 		
 		return true;
 	}
+	
+	@Override
+	public int compareTo(final Protocol o) {
+		return this.getPreference() - o.getPreference();
+	}
+	
+	/**
+	 * @return protocol preference, to sort by
+	 */
+	abstract int getPreference();
 	
 }

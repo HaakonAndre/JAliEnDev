@@ -102,4 +102,9 @@ public class Torrent extends Protocol {
 	public String transfer(PFN source, PFN target) throws IOException {
 		throw new UnsupportedOperationException();
 	}
+	
+	@Override
+	int getPreference() {
+		return 3;
+	}
 }
