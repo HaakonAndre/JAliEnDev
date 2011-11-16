@@ -340,6 +340,11 @@ public class TransferBroker {
 						v.add(se.seName);
 					}
 				}
+				
+				if (t.lastTriedProtocol!=null){
+					p.add("Protocol");
+					v.add(t.lastTriedProtocol.toString());
+				}
 			}
 
 			p.add("destination");
