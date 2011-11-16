@@ -323,14 +323,14 @@ public class TransferBroker {
 			v.add(Integer.valueOf(getAliEnTransferStatus(t.getExitCode())));
 
 			p.add("size");
-			v.add(Long.valueOf(t.sources.iterator().next().getGuid().size));
+			v.add(Double.valueOf(t.sources.iterator().next().getGuid().size));
 
 			p.add("started");
-			v.add(Long.valueOf(t.started / 1000));
+			v.add(Double.valueOf(t.started / 1000));
 
 			if (t.getExitCode() >= Transfer.OK) {
 				p.add("finished");
-				v.add(Long.valueOf(System.currentTimeMillis() / 1000));
+				v.add(Double.valueOf(System.currentTimeMillis() / 1000));
 
 				if (t.lastTriedSE > 0) {
 					SE se = SEUtils.getSE(t.lastTriedSE);
