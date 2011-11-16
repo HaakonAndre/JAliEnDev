@@ -188,7 +188,12 @@ public class IOUtils {
 		if (lfn==null)
 			return null;
 		
-		return getContents(GUIDUtils.getGUID(lfn.guid));
+		final GUID g = GUIDUtils.getGUID(lfn);
+		
+		if (g==null)
+			return null;
+		
+		return getContents(g);
 	}
 	
 	/**

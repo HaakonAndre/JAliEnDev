@@ -97,7 +97,7 @@ public class PFNforReadOrDel extends Request {
 	public void run() {
 
 		if (guid == null)
-			guid = GUIDUtils.getGUID(lfn.guid);
+			guid = GUIDUtils.getGUID(lfn);
 
 		LFN setArchiveAnchor = null;
 

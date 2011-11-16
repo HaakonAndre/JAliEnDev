@@ -254,14 +254,16 @@ public class Transfer implements Serializable, Runnable {
 		
 		targetSite = targetSite.substring(targetSite.indexOf("::")+2, targetSite.lastIndexOf("::"));
 		
-		logger.log(Level.FINE, transferId+" : Target site: "+targetSite);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, transferId+" : Target site: "+targetSite);
 		
 		// sort protocols by preference
 		final List<Protocol> sortedProtocols = new LinkedList<Protocol>(protocols);
 		
 		Collections.sort(sortedProtocols);
 		
-		logger.log(Level.FINE, transferId+" : Sorted protocols : "+sortedProtocols);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, transferId+" : Sorted protocols : "+sortedProtocols);
 		
 		for (final Protocol p: sortedProtocols){
 			// sort pfns function of the distance between source, target and ourselves
@@ -272,12 +274,14 @@ public class Transfer implements Serializable, Runnable {
 			
 			for (final PFN source: sortedSources){
 				if (!getProtocols(source).contains(p)){
-					logger.log(Level.FINER, transferId+" : Will not apply protocol "+p+" on "+source.getPFN());
+					if (logger.isLoggable(Level.FINER))
+						logger.log(Level.FINER, transferId+" : Will not apply protocol "+p+" on "+source.getPFN());
 					
 					continue;
 				}
 				
-				logger.log(Level.FINER, transferId+" : Trying protocol "+p+" on "+source.getPFN());
+				if (logger.isLoggable(Level.FINER))
+					logger.log(Level.FINER, transferId+" : Trying protocol "+p+" on "+source.getPFN());
 				
 				doWork(p, source);
 			
@@ -286,7 +290,8 @@ public class Transfer implements Serializable, Runnable {
 					break;
 				
 				if (exitCode == FAILED_SOURCE){
-					logger.log(Level.FINER, transferId+" : Removing source "+source.getPFN()+" because it is broken");
+					if (logger.isLoggable(Level.FINE))
+						logger.log(Level.FINE, transferId+" : Removing source "+source.getPFN()+" because it is broken");
 					
 					brokenSources.add(source);
 				}

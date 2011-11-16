@@ -292,7 +292,7 @@ public class XrootDEnvelope implements Serializable {
 		GUID refGUID = guid;
 
 		if (archiveAnchorLFN != null) {
-			refGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
+			refGUID = GUIDUtils.getGUID(archiveAnchorLFN);
 			refLFN = archiveAnchorLFN;
 		} else if (lfns != null && lfns.size() > 0)
 			refLFN = lfns.iterator().next();
@@ -403,7 +403,7 @@ public class XrootDEnvelope implements Serializable {
 			e.put("md5", guid.md5);
 
 		} else {
-			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN.guid);
+			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN);
 			e.put("zguid", guid.getName());
 			e.put("guid", archiveAnchorGUID.getName());
 			e.put("size", String.valueOf(archiveAnchorGUID.size));

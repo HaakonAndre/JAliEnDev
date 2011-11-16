@@ -168,7 +168,7 @@ public class TransferBroker {
 			return null;
 		}
 		
-		final GUID guid = GUIDUtils.getGUID(lfn.guid);
+		final GUID guid = GUIDUtils.getGUID(lfn);
 
 		if (guid==null){
 			logger.log(Level.WARNING, "GUID '"+lfn.guid+"' doesn't exist in the catalogue for transfer ID "+transferId+", lfn '"+sLFN+"'");

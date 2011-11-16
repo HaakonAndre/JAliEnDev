@@ -95,6 +95,30 @@ public final class GUIDUtils {
 
 		return index.tableName;
 	}
+	
+	/**
+	 * @param l
+	 * @return the GUID, or <code>null</code> if it cannot be located
+	 */
+	public static GUID getGUID(final LFN l){
+		return getGUID(l, false);
+	}
+
+	/**
+	 * @param l
+	 * @param evenIfDoesntExist
+	 * @return the GUID, or <code>null</code> if it cannot be located
+	 */
+	public static GUID getGUID(final LFN l, final boolean evenIfDoesntExist){
+		final GUID g = getGUID(l.guid, evenIfDoesntExist);
+		
+		if (g==null)
+			return null;
+		
+		g.addKnownLFN(l);
+		
+		return g;
+	}
 
 	/**
 	 * Get the GUID catalogue entry when the uuid is known

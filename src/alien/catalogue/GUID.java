@@ -373,7 +373,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public void cleanPFNCache(){
 		pfnCache = null;
 	}
-
+	
 	/**
 	 * Get the PFNs for this GUID
 	 * 
@@ -524,6 +524,17 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 */
 	public void cleanLFNCache(){
 		lfnCache = null;
+	}
+	
+	/**
+	 * @param lfn
+	 * @return <code>true</code> if the LFN was added
+	 */
+	boolean addKnownLFN(final LFN lfn){
+		if (lfnCache==null)
+			lfnCache = new LinkedHashSet<LFN>();
+			
+		return lfnCache.add(lfn);
 	}
 	
 	/**

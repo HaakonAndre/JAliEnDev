@@ -475,7 +475,7 @@ public class LFNUtils {
 		
 		final Set<String> currentLFNs = collection.listCollection();
 
-		final GUID guid = GUIDUtils.getGUID(collection.guid);
+		final GUID guid = GUIDUtils.getGUID(collection);
 		
 		boolean updated = false;
 		
@@ -591,7 +591,7 @@ public class LFNUtils {
 			return false;
 		}
 		
-		final GUID guid = GUIDUtils.getGUID(collection.guid);
+		final GUID guid = GUIDUtils.getGUID(collection);
 		
 		Set<Integer> commonSEs = guid.size==0 && guid.seStringList.size()==0 ? null : new HashSet<Integer>(guid.seStringList);
 			

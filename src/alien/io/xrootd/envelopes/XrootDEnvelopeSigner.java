@@ -273,7 +273,12 @@ public class XrootDEnvelopeSigner {
 	public static void encryptEnvelope(final XrootDEnvelope envelope) throws GeneralSecurityException {
 		final EncryptedAuthzToken authz = new EncryptedAuthzToken(JAuthZPrivKey, SEPubKey, false);
 		
-		envelope.setEncryptedEnvelope(authz.encrypt(envelope.getUnEncryptedEnvelope()));
+		final String plainEnvelope = envelope.getUnEncryptedEnvelope();
+		
+		if (logger.isLoggable(Level.FINEST))
+			logger.log(Level.FINEST, "Encrypting this envelope:\n"+plainEnvelope);
+		
+		envelope.setEncryptedEnvelope(authz.encrypt(plainEnvelope));
 	}
 		
 	/**

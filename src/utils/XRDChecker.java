@@ -84,7 +84,7 @@ public class XRDChecker {
 		if (lfn==null)
 			return null;
 		
-		final GUID guid = GUIDUtils.getGUID(lfn.guid);
+		final GUID guid = GUIDUtils.getGUID(lfn);
 		
 		if (guid==null)
 			return null;

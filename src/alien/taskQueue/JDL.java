@@ -708,11 +708,11 @@ public class JDL implements Serializable {
 	 * @return events/job, or -1 if not supported
 	 */
 	public static int getSimFactor(final LFN f) {
-		GUID guid = GUIDUtils.getGUID(f.guid);
+		final GUID guid = GUIDUtils.getGUID(f);
 
 		if (guid == null)
 			return -1;
-
+		
 		final String sContent = IOUtils.getContents(guid);
 
 		try {

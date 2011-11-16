@@ -110,6 +110,8 @@ public class BookingTable {
 		
 		final PFN pfn = requestedPFN != null ? requestedPFN : new PFN(requestedGUID, se);
 		
+		pfn.setGUID(requestedGUID);
+		
 		// delete previous failed attempts since we are overwriting this pfn
 		db.query("DELETE FROM LFN_BOOKED WHERE guid=string2binary('"+requestedGUID.guid.toString()+"') AND se='"+Format.escSQL(se.getName())+"' AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND expiretime<0;");
 		

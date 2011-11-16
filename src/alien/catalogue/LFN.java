@@ -349,8 +349,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (!exists || guid==null)
 			return null;
 		
-		final GUID id = GUIDUtils.getGUID(guid);
-		
+		final GUID id = GUIDUtils.getGUID(this);
+			
 		if (id==null)
 			return null;
 		
@@ -366,16 +366,18 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (!exists || guid==null)
 			return null;
 		
-		final GUID id = GUIDUtils.getGUID(guid);
+		final GUID id = GUIDUtils.getGUID(this);
 		
 		if (id==null)
 			return null;
-		
+					
 		final Set<GUID> realGUIDs = id.getRealGUIDs(); 
 		
 		final Set<PFN> ret = new LinkedHashSet<PFN>();
 		
 		for (final GUID realId: realGUIDs){
+			realId.addKnownLFN(this);
+			
 			final Set<PFN> pfns = realId.getPFNs();
 		
 			if (pfns==null)
