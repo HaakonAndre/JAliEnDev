@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -147,6 +148,12 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 						guid, ses, exxses);
 			else
 				out.printErrln("Not able to get request LFN/GUID [error in processing].");
+			
+			//debug root functionality
+			if(pfns!=null && !pfns.isEmpty())
+				Collections.reverse(pfns);
+			
+			
 		} else
 			out.printErrln("Unknown access type [error in processing].");
 
