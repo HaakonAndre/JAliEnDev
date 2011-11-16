@@ -2,7 +2,6 @@ package alien.io.xrootd.envelopes;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -14,16 +13,10 @@ import java.security.SignatureException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.StringTokenizer;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMReader;
@@ -311,69 +304,15 @@ public class XrootDEnvelopeSigner {
 	 * @throws IOException
 	 */
 	public static void main(String[] args) throws GeneralSecurityException, IOException {
-	
-		int ok = 0;
-		int fail = 0;
+		final StringBuilder sb = new StringBuilder();
 		
-		while (true){
-			String ticket = "<authz>\n"+
-			"  <file>\n"+
-			"    <access>delete</access>\n"+
-			"    <turl>root://pcaliense01.cern.ch:1094//00/23886/CDE428D4-572B-11E0-88BE-001F29EB8B98</turl>\n"+
-			"    <lfn>/NOLFN</lfn>\n"+
-			"    <size>12345</size>\n"+
-			"    <guid>CDE428D4-572B-11E0-88BE-001F29EB8B98</guid>\n"+
-			"    <md5>130254d9540d6903fa6f0ab41a132361</md5>\n"+
-			"    <pfn>/00/23886/CDE428D4-572B-11E0-88BE-001F29EB8B98</pfn>\n"+
-			"    <se>ALICE::CERN::SETEST</se>\n"+
-			"  </file>\n"+
-			"</authz>";
-			
-			EncryptedAuthzToken enAuthz = new EncryptedAuthzToken(JAuthZPrivKey, SEPubKey,false);
-
-			String enticket = enAuthz.encrypt(ticket);
-			
-			FileWriter fw = new FileWriter("/tmp/ticket");
-			
-			fw.write(enticket);
-			fw.close();
-			
-			List<String> command = new ArrayList<String>();
-			
-			command.add("/home/costing/temp/x/test.sh");
-			command.add("/tmp/ticket");
-			
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-
-			pBuilder.returnOutputOnExit(true);
-
-			pBuilder.timeout(1, TimeUnit.MINUTES);
-
-			pBuilder.redirectErrorStream(true);
-
-			final ExitStatus exitStatus;
-
-			try {
-				exitStatus = pBuilder.start().waitFor();
-			} catch (final InterruptedException ie) {
-				throw new IOException(
-						"Interrupted while waiting for the following command to finish : "
-								+ command.toString());
-			}
-			
-			String out = exitStatus.getStdOut();
-			
-			if (out.indexOf("<authz>")>=0){
-				ok++;
-			}
-			else{
-				fail++;
-				System.err.println(out);
-				
-				break;
-			}
-			System.err.println("OK : "+ok+", fail : "+fail);
+		String sLine;
+		
+		while ( (sLine=System.console().readLine())!=null ){
+			sb.append(sLine).append("\n");
 		}
+		
+		System.out.println(decrypt(sb.toString()));
 	}
 	
 }
