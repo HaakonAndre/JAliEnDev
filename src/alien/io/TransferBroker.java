@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +29,7 @@ import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
+import apmon.ApMon;
 
 /**
  * @author costing
@@ -233,6 +235,8 @@ public class TransferBroker {
 		
 		final Transfer t = new Transfer(transferId, pfns, target);
 		
+		reportMonitoring(t);
+		
 		return t;
 	}
 	
@@ -255,6 +259,25 @@ public class TransferBroker {
 		}		
 	}
 	
+	private static final int getAliEnTransferStatus(final int exitCode){
+		switch (exitCode){
+			case Transfer.OK:
+				return 7;
+			case Transfer.FAILED_SOURCE:
+				return -1;
+			case Transfer.FAILED_TARGET:
+				return -1;
+			case Transfer.FAILED_UNKNOWN:
+				return -1;
+			case Transfer.FAILED_SYSTEM:
+				return -2;
+			case Transfer.DELAYED:
+				return -3;
+			default:
+				return 5;	// transferring
+		}		
+	}
+	
 	private static boolean markTransfer(final int transferId, final int exitCode, final String reason){
 		final DBFunctions db = ConfigUtils.getDB("transfers");
 		
@@ -266,7 +289,7 @@ public class TransferBroker {
 		if (formattedReason!=null && formattedReason.length()>250)
 			formattedReason = formattedReason.substring(0, 250);
 		
-		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"' WHERE transferId="+transferId+" AND status='TRANSFERRING'");
+		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"', finished="+(System.currentTimeMillis()/1000)+" WHERE transferId="+transferId+" AND status='TRANSFERRING'");
 		
 		if (db.getUpdateCount()<1)
 			return false;
@@ -274,6 +297,59 @@ public class TransferBroker {
 		db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId="+transferId+");");
 		
 		return true;
+	}
+	
+	private static final void reportMonitoring(final Transfer t){
+		final ApMon apmon;
+		
+		try {
+			final Vector<String> targets = new Vector<String>();
+			targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
+			
+			apmon = new ApMon(targets);
+		}
+		catch (Exception e) {
+			logger.log(Level.WARNING, "Could not initialize apmon", e);
+			return;
+		}
+		
+		final String cluster = "TransferQueue_Transfers_"+ConfigUtils.getConfig().gets("Organization", "ALICE");
+		
+		final Vector<String> p = new Vector<String>();
+		final Vector<Object> v = new Vector<Object>();
+		
+		p.add("statusID");
+		v.add(Integer.valueOf(getAliEnTransferStatus(t.getExitCode())));
+		
+		p.add("size");
+		v.add(Long.valueOf(t.sources.iterator().next().getGuid().size));
+		
+		p.add("started");
+		v.add(Long.valueOf(t.started/1000));
+		
+		if (t.getExitCode()>=Transfer.OK){
+			p.add("finished");
+			v.add(Long.valueOf(System.currentTimeMillis()/1000));
+			
+			if (t.lastTriedSE>0){
+				SE se = SEUtils.getSE(t.lastTriedSE);
+				
+				if (se!=null){
+					p.add("SE");
+					v.add(se.seName);
+				}
+			}
+		}
+		
+		p.add("destination");
+		v.add(SEUtils.getSE(t.target.seNumber).seName);
+		
+		try {
+			apmon.sendParameters(cluster, String.valueOf(t.getTransferId()), p.size(), p, v);
+		}
+		catch (Exception e){
+			logger.log(Level.WARNING, "Could not send apmon message", e);
+		}
 	}
 	
 	/**
@@ -285,6 +361,8 @@ public class TransferBroker {
 		// TODO : verify the storage reply envelope here
 		
 		markTransfer(t.getTransferId(), t.getExitCode(), t.getFailureReason());
+	
+		reportMonitoring(t);
 		
 		if (t.getExitCode() == Transfer.OK){
 			// Update the file catalog with the new replica

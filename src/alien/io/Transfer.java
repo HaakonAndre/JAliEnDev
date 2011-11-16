@@ -97,6 +97,21 @@ public class Transfer implements Serializable, Runnable {
 	private GUID referenceGUID = null;
 	
 	/**
+	 * Last tried source
+	 */
+	int lastTriedSE = -1;
+	
+	/**
+	 * Last tried protocol
+	 */
+	Protocol lastTriedProtocol = null;
+	
+	/**
+	 * when the transfer was issued
+	 */
+	final long started = System.currentTimeMillis();
+	
+	/**
 	 * @param transferId transfer ID
 	 * @param sources source PFNs (one or more, sorted by preference)
 	 * @param target target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
@@ -198,8 +213,6 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	@Override
 	public void run() {
-		final long started = System.currentTimeMillis();
-		
 		doWork();
 		
 		final long ended = System.currentTimeMillis();
@@ -235,6 +248,8 @@ public class Transfer implements Serializable, Runnable {
 			
 			for (final PFN source: sortedSources){
 				doWork(source);
+				
+				lastTriedSE = source.seNumber;
 				
 				if (exitCode == OK || exitCode == FAILED_TARGET)
 					break;
@@ -277,6 +292,8 @@ public class Transfer implements Serializable, Runnable {
 			
 			final Set<PFN> brokenSources = new HashSet<PFN>();
 			
+			lastTriedProtocol = p;
+			
 			for (final PFN source: sortedSources){
 				if (!getProtocols(source).contains(p)){
 					if (logger.isLoggable(Level.FINER))
@@ -287,6 +304,8 @@ public class Transfer implements Serializable, Runnable {
 				
 				if (logger.isLoggable(Level.FINER))
 					logger.log(Level.FINER, transferId+" : Trying protocol "+p+" on "+source.getPFN());
+				
+				lastTriedSE = source.seNumber;
 				
 				doWork(p, source);
 			
@@ -328,6 +347,8 @@ public class Transfer implements Serializable, Runnable {
 				// file should be written locally
 				
 				for (final Protocol p: protocolsSource){
+					lastTriedProtocol = p;
+					
 					try{
 						targetPFN = p.get(source, null).getCanonicalPath();
 						
@@ -358,6 +379,8 @@ public class Transfer implements Serializable, Runnable {
 			File temp = null;  
 			
 			for (final Protocol p: protocolsSource){
+				lastTriedProtocol = p;
+				
 				try{
 					temp = p.get(source, null);
 					break;
@@ -375,6 +398,8 @@ public class Transfer implements Serializable, Runnable {
 				return;
 			
 			for (final Protocol p: protocolsTarget){
+				lastTriedProtocol = p;
+				
 				try{
 					storageReplyEnvelope = p.put(target, temp);
 					exitCode = OK;
