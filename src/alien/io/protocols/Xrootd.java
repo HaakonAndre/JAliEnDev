@@ -43,7 +43,7 @@ public class Xrootd extends Protocol {
 	private int timeout = 60;
 
 	// last value must be 0 for a clean exit
-	private static final int statRetryTimes[] = { 6, 12, 18, 24, 30, 0 };
+	private static final int statRetryTimes[] = { 1, 2, 4, 8, 16, 0 };
 
 	/**
 	 * Logger
@@ -575,7 +575,7 @@ public class Xrootd extends Protocol {
 
 				pBuilder.returnOutputOnExit(true);
 
-				pBuilder.timeout(1, TimeUnit.MINUTES);
+				pBuilder.timeout(15, TimeUnit.SECONDS);
 
 				pBuilder.redirectErrorStream(true);
 

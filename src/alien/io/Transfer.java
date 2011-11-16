@@ -263,6 +263,8 @@ public class Transfer implements Serializable, Runnable {
 			
 			final List<PFN> sortedSources = SEUtils.sortBySite(sources, p==Factory.xrd3cp ? targetSite : ConfigUtils.getSite(), false);
 			
+			final Set<PFN> brokenSources = new HashSet<PFN>();
+			
 			for (final PFN source: sortedSources){
 				if (!getProtocols(source).contains(p))
 					continue;
@@ -272,10 +274,15 @@ public class Transfer implements Serializable, Runnable {
 				// if the target is broken, don't try again the same protocol
 				if (exitCode == OK || exitCode == FAILED_TARGET)
 					break;
+				
+				if (exitCode == FAILED_SOURCE)
+					brokenSources.add(source);
 			}
 			
 			if (exitCode == OK)
 				break;
+			
+			sortedSources.removeAll(brokenSources);
 		}
 		
 		if (exitCode<0)

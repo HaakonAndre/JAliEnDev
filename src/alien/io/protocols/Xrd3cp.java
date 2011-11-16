@@ -132,7 +132,7 @@ public class Xrd3cp extends Xrootd {
 					}
 				}
 				
-				if (sMessage.indexOf("No servers are available to write the file.")>=0 || sMessage.indexOf("Unable to create")>=0)
+				if (sMessage.indexOf("No servers are available to write the file.")>=0 || sMessage.indexOf("Unable to create")>=0 || sMessage.indexOf("dest-size=0 (source or destination has 0 size!)")>=0)
 					throw new TargetException(sMessage);
 				
 				if (sMessage.indexOf("No servers have the file")>=0 || sMessage.indexOf("No such file or directory")>=0)
