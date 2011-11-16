@@ -299,75 +299,83 @@ public class TransferBroker {
 		return true;
 	}
 	
-	private static final void reportMonitoring(final Transfer t){
-		final ApMon apmon;
-		
+	private static final void reportMonitoring(final Transfer t) {
 		try {
-			final Vector<String> targets = new Vector<String>();
-			targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
-			
-			apmon = new ApMon(targets);
-		}
-		catch (Exception e) {
-			logger.log(Level.WARNING, "Could not initialize apmon", e);
-			return;
-		}
-		
-		final String cluster = "TransferQueue_Transfers_"+ConfigUtils.getConfig().gets("Organization", "ALICE");
-		
-		final Vector<String> p = new Vector<String>();
-		final Vector<Object> v = new Vector<Object>();
-		
-		p.add("statusID");
-		v.add(Integer.valueOf(getAliEnTransferStatus(t.getExitCode())));
-		
-		p.add("size");
-		v.add(Long.valueOf(t.sources.iterator().next().getGuid().size));
-		
-		p.add("started");
-		v.add(Long.valueOf(t.started/1000));
-		
-		if (t.getExitCode()>=Transfer.OK){
-			p.add("finished");
-			v.add(Long.valueOf(System.currentTimeMillis()/1000));
-			
-			if (t.lastTriedSE>0){
-				SE se = SEUtils.getSE(t.lastTriedSE);
-				
-				if (se!=null){
-					p.add("SE");
-					v.add(se.seName);
+			final ApMon apmon;
+
+			try {
+				final Vector<String> targets = new Vector<String>();
+				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
+
+				apmon = new ApMon(targets);
+			}
+			catch (Exception e) {
+				logger.log(Level.WARNING, "Could not initialize apmon", e);
+				return;
+			}
+
+			final String cluster = "TransferQueue_Transfers_" + ConfigUtils.getConfig().gets("Organization", "ALICE");
+
+			final Vector<String> p = new Vector<String>();
+			final Vector<Object> v = new Vector<Object>();
+
+			p.add("statusID");
+			v.add(Integer.valueOf(getAliEnTransferStatus(t.getExitCode())));
+
+			p.add("size");
+			v.add(Long.valueOf(t.sources.iterator().next().getGuid().size));
+
+			p.add("started");
+			v.add(Long.valueOf(t.started / 1000));
+
+			if (t.getExitCode() >= Transfer.OK) {
+				p.add("finished");
+				v.add(Long.valueOf(System.currentTimeMillis() / 1000));
+
+				if (t.lastTriedSE > 0) {
+					SE se = SEUtils.getSE(t.lastTriedSE);
+
+					if (se != null) {
+						p.add("SE");
+						v.add(se.seName);
+					}
 				}
 			}
+
+			p.add("destination");
+			v.add(SEUtils.getSE(t.target.seNumber).seName);
+
+			p.add("user");
+			v.add(t.target.getGuid().owner);
+
+			try {
+				apmon.sendParameters(cluster, String.valueOf(t.getTransferId()), p.size(), p, v);
+			}
+			catch (Exception e) {
+				logger.log(Level.WARNING, "Could not send apmon message", e);
+			}
 		}
-		
-		p.add("destination");
-		v.add(SEUtils.getSE(t.target.seNumber).seName);
-		
-		try {
-			apmon.sendParameters(cluster, String.valueOf(t.getTransferId()), p.size(), p, v);
-		}
-		catch (Exception e){
-			logger.log(Level.WARNING, "Could not send apmon message", e);
+		catch (Throwable ex) {
+			logger.log(Level.WARNING, "Exception reporting the monitoring", ex);
 		}
 	}
-	
+
 	/**
 	 * When a transfer has completed, call this method to update the database status
 	 * 
-	 * @param t 
+	 * @param t
 	 */
-	public static void notifyTransferComplete(final Transfer t){
+	public static void notifyTransferComplete(final Transfer t) {
 		// TODO : verify the storage reply envelope here
-		
+
 		markTransfer(t.getTransferId(), t.getExitCode(), t.getFailureReason());
-	
+
 		reportMonitoring(t);
-		
-		if (t.getExitCode() == Transfer.OK){
+
+		if (t.getExitCode() == Transfer.OK) {
 			// Update the file catalog with the new replica
 			final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
-			
+
 			BookingTable.commit(admin, t.target);
 		}
 	}
