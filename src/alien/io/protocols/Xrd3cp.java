@@ -106,7 +106,7 @@ public class Xrd3cp extends Xrootd {
 	        if (exitStatus.getExtProcExitStatus() != 0){
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 				
-				logger.log(Level.WARNING, "TRANSFER failed with "+exitStatus.getStdOut()+"\nFull command was : "+command.toString());
+				logger.log(Level.WARNING, "TRANSFER failed with "+exitStatus.getStdOut());
 				
 				if (sMessage!=null){
 					sMessage = "xrd3cp exited with "+exitStatus.getExtProcExitStatus()+": "+sMessage;
