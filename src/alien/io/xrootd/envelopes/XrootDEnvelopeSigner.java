@@ -282,8 +282,7 @@ public class XrootDEnvelopeSigner {
 		
 		envelope.setEncryptedEnvelope(authz.encrypt(envelope.getUnEncryptedEnvelope()));
 	}
-	
-	
+		
 	/**
 	 * @param envelope
 	 * @return a loaded XrootDEnvelope with the verified values
@@ -295,6 +294,16 @@ public class XrootDEnvelopeSigner {
 		return new XrootDEnvelope(authz.decrypt(envelope));
 	}
 	
+	/**
+	 * @param envelope
+	 * @return the decrypted envelope, for debugging
+	 * @throws GeneralSecurityException 
+	 */
+	public static String decrypt(final String envelope) throws GeneralSecurityException{
+		final EncryptedAuthzToken authz = new EncryptedAuthzToken(SEPrivKey, JAuthZPubKey, true);
+		
+		return authz.decrypt(envelope);
+	}
 
 	/**
 	 * @param args
