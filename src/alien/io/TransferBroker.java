@@ -244,6 +244,8 @@ public class TransferBroker {
 				return "FAILED";
 			case Transfer.FAILED_TARGET:
 				return "FAILED";
+			case Transfer.FAILED_UNKNOWN:
+				return "FAILED";
 			case Transfer.FAILED_SYSTEM:
 				return "KILLED";
 			case Transfer.DELAYED:

@@ -64,6 +64,11 @@ public class Transfer implements Serializable, Runnable {
 	public static final int FAILED_TARGET = 3;
 	
 	/**
+	 * It is not clear from the message if the source or the target was a problem
+	 */
+	public static final int FAILED_UNKNOWN = 4;
+	
+	/**
 	 * Transfer should be retried later (currently staging from tape for example)
 	 */
 	public static final int DELAYED = 10;
@@ -421,7 +426,7 @@ public class Transfer implements Serializable, Runnable {
 				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with target exception: "+failureReason);
 			}
 			catch (final IOException e){
-				exitCode = FAILED_SOURCE;
+				exitCode = FAILED_SYSTEM;
 				failureReason = e.getMessage();
 				
 				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with generic exception: "+failureReason);
