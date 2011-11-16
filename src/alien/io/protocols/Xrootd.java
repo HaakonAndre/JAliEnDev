@@ -337,7 +337,7 @@ public class Xrootd extends Protocol {
 				logger.log(Level.WARNING, "GET failed with " + exitStatus.getStdOut() + "\nCommand: " + command.toString());
 
 				if (sMessage != null) {
-					sMessage = "xrdcpapmon exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+					sMessage = xrdcpCommand+" exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
 				else {
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
@@ -455,7 +455,7 @@ public class Xrootd extends Protocol {
 				logger.log(Level.WARNING, "PUT failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null) {
-					sMessage = "xrdcpapmon exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+					sMessage = xrdcpCommand+" exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
 				else {
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
@@ -500,6 +500,9 @@ public class Xrootd extends Protocol {
 			ret.add("-DIRequestTimeout");
 			ret.add(String.valueOf(timeout));
 		}
+		
+		ret.add("-DIReadCacheSize");
+		ret.add("0");
 
 		return ret;
 	}
