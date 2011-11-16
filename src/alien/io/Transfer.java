@@ -6,6 +6,7 @@ package alien.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -77,7 +78,7 @@ public class Transfer implements Serializable, Runnable {
 	/**
 	 * Source pfns, package protected
 	 */
-	final List<PFN> sources;
+	final Collection<PFN> sources;
 	
 	/**
 	 * Target pfn, package protected
@@ -95,7 +96,7 @@ public class Transfer implements Serializable, Runnable {
 	 * @param sources source PFNs (one or more, sorted by preference)
 	 * @param target target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
 	 */
-	public Transfer(final int transferId, final List<PFN> sources, final PFN target){
+	public Transfer(final int transferId, final Collection<PFN> sources, final PFN target){
 		this.sources = sources;
 		
 		if (this.sources==null || this.sources.size()==0)
@@ -253,10 +254,14 @@ public class Transfer implements Serializable, Runnable {
 		
 		targetSite = targetSite.substring(targetSite.indexOf("::")+2, targetSite.lastIndexOf("::"));
 		
+		logger.log(Level.FINE, transferId+" : Target site: "+targetSite);
+		
 		// sort protocols by preference
 		final List<Protocol> sortedProtocols = new LinkedList<Protocol>(protocols);
 		
 		Collections.sort(sortedProtocols);
+		
+		logger.log(Level.FINE, transferId+" : Sorted protocols : "+sortedProtocols);
 		
 		for (final Protocol p: sortedProtocols){
 			// sort pfns function of the distance between source, target and ourselves
@@ -266,8 +271,13 @@ public class Transfer implements Serializable, Runnable {
 			final Set<PFN> brokenSources = new HashSet<PFN>();
 			
 			for (final PFN source: sortedSources){
-				if (!getProtocols(source).contains(p))
+				if (!getProtocols(source).contains(p)){
+					logger.log(Level.FINER, transferId+" : Will not apply protocol "+p+" on "+source.getPFN());
+					
 					continue;
+				}
+				
+				logger.log(Level.FINER, transferId+" : Trying protocol "+p+" on "+source.getPFN());
 				
 				doWork(p, source);
 			
@@ -275,8 +285,11 @@ public class Transfer implements Serializable, Runnable {
 				if (exitCode == OK || exitCode == FAILED_TARGET)
 					break;
 				
-				if (exitCode == FAILED_SOURCE)
+				if (exitCode == FAILED_SOURCE){
+					logger.log(Level.FINER, transferId+" : Removing source "+source.getPFN()+" because it is broken");
+					
 					brokenSources.add(source);
+				}
 			}
 			
 			if (exitCode == OK)

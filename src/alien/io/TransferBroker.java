@@ -7,15 +7,14 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
-import lazyj.Format;
 import lazyj.DBFunctions.DBConnection;
+import lazyj.Format;
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -161,6 +160,8 @@ public class TransferBroker {
 			return null;
 		}
 		
+		logger.log(Level.FINE, transferId+" : LFN is "+lfn);
+		
 		if (lfn.guid==null){
 			logger.log(Level.WARNING, "GUID '"+lfn.guid+"' is null for transfer ID "+transferId+", lfn '"+sLFN+"'");
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID is null for this LFN");
@@ -168,13 +169,18 @@ public class TransferBroker {
 		}
 		
 		final GUID guid = GUIDUtils.getGUID(lfn.guid);
-		
+
 		if (guid==null){
 			logger.log(Level.WARNING, "GUID '"+lfn.guid+"' doesn't exist in the catalogue for transfer ID "+transferId+", lfn '"+sLFN+"'");
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID was not found in the database");
 			return null;
 		}
+
+		guid.lfnCache = new HashSet<LFN>();
+		guid.lfnCache.add(lfn);
 		
+		logger.log(Level.FINE, transferId+" : GUID is "+guid);
+				
 		final SE se = SEUtils.getSE(targetSE);
 		
 		if (se==null){
@@ -182,6 +188,8 @@ public class TransferBroker {
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target SE doesn't exist");
 			return null;
 		}
+		
+		logger.log(Level.FINE, transferId+" : Target SE is "+se);
 		
 		final Set<PFN> pfns = lfn.whereisReal();
 		
@@ -198,15 +206,8 @@ public class TransferBroker {
 				return null;
 			}
 		}
-		
-		final StringTokenizer st = new StringTokenizer(targetSE, ":");
-		
-		st.nextToken();
-		final String site = st.nextToken();
-		
-		final List<PFN> sortedPFNs = SEUtils.sortBySite(pfns, site, false);
-		
-		for (final PFN source: sortedPFNs){
+				
+		for (final PFN source: pfns){
 			final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
 		
 			if (reason!=null){
@@ -228,7 +229,9 @@ public class TransferBroker {
 			return null;
 		}
 		
-		final Transfer t = new Transfer(transferId, sortedPFNs, target);
+		logger.log(Level.FINE, transferId+" : booked PFN is "+target);
+		
+		final Transfer t = new Transfer(transferId, pfns, target);
 		
 		return t;
 	}
