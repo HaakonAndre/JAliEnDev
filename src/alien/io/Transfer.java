@@ -6,8 +6,10 @@ package alien.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,6 +23,8 @@ import alien.io.protocols.TargetException;
 import alien.io.protocols.TempFileManager;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.se.SE;
+import alien.se.SEUtils;
 
 /**
  * @author costing
@@ -205,24 +209,78 @@ public class Transfer implements Serializable, Runnable {
 	}
 	
 	private void doWork(){
+		// try the best protocols first
+		Set<Protocol> protocols = new HashSet<Protocol>();
+		
 		for (final PFN source: sources){
 			if (referenceGUID==null)
 				referenceGUID = source.getGuid();
 			
-			doWork(source);
+			final List<Protocol> common = getProtocols(source, target);
 			
-			// if the target is broken, don't try again
-			if (exitCode == OK || exitCode == FAILED_TARGET)
+			if (common!=null && common.size()>0)
+				protocols.addAll(common);
+		}
+		
+		if (protocols.size()==0){
+			// no common protocols
+			final List<PFN> sortedSources = SEUtils.sortBySite(sources, ConfigUtils.getSite(), false);
+			
+			for (final PFN source: sortedSources){
+				doWork(source);
+				
+				if (exitCode == OK || exitCode == FAILED_TARGET)
+					break;
+			}
+			
+			return;
+		}
+
+		if (target==null)
+			return;
+		
+		SE s = SEUtils.getSE(target.seNumber);
+		
+		if (s==null){
+			exitCode = FAILED_TARGET;
+			failureReason = "Target is null";
+			
+			return;
+		}
+		
+		String targetSite = s.getName();
+		
+		targetSite = targetSite.substring(targetSite.indexOf("::")+2, targetSite.lastIndexOf("::"));
+		
+		// sort protocols by preference
+		for (final Protocol p: protocols){
+			// sort pfns function of the distance between source, target and ourselves
+			
+			final List<PFN> sortedSources = SEUtils.sortBySite(sources, p==Factory.xrd3cp ? targetSite : ConfigUtils.getSite(), false);
+			
+			for (final PFN source: sortedSources){
+				if (!getProtocols(source).contains(p))
+					continue;
+				
+				doWork(p, source);
+			
+				// if the target is broken, don't try again the same protocol
+				if (exitCode == OK || exitCode == FAILED_TARGET)
+					break;
+			}
+			
+			if (exitCode == OK)
 				break;
 		}
+		
+		if (exitCode<0)
+			exitCode = FAILED_SYSTEM;
+		
+		if (failureReason==null)
+			failureReason = "None of the protocols managed to perform the transfer";
 	}
 	
 	private void doWork(final PFN source){
-		final List<Protocol> protocols = getProtocols(source, target);
-		
-		if (protocols.size()==0){
-			// no common protocols, will first fetch locally then upload to the target, if possible
-			
 			final List<Protocol> protocolsSource = getProtocols(source);
 			
 			if (protocolsSource.size()==0){
@@ -304,9 +362,9 @@ public class Transfer implements Serializable, Runnable {
 			}
 			
 			return;
-		}
-		
-		for (final Protocol p: protocols){
+	}
+	
+	private void doWork(final Protocol p, final PFN source){
 			try{
 				storageReplyEnvelope = p.transfer(source, target);
 				
@@ -325,9 +383,6 @@ public class Transfer implements Serializable, Runnable {
 				failureReason = se.getMessage();
 				
 				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with source exception: "+failureReason);
-				
-				// don't try other methods on this source, it is known to be broken
-				break;
 			}
 			catch (final TargetException se){
 				exitCode = FAILED_TARGET;
@@ -341,12 +396,6 @@ public class Transfer implements Serializable, Runnable {
 				
 				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with generic exception: "+failureReason);
 			}
-		}
-		
-		exitCode = FAILED_SYSTEM;
-		
-		if (failureReason==null)
-			failureReason = "None of the protocols managed to perform the transfer";
 	}
 	
 	/**

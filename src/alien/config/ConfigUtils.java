@@ -290,4 +290,12 @@ public class ConfigUtils {
 	public static final String getVersion() {
 		return jAliEnVersion;
 	}
+	
+	/**
+	 * @return the site name closest to where this JVM runs
+	 */
+	public static String getSite(){
+		// TODO implement this properly
+		return "CERN";
+	}
 }
