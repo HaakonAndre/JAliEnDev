@@ -270,21 +270,10 @@ public class XrootDEnvelope implements Serializable {
 
 		final SE se = SEUtils.getSE(pfn.seNumber);
 
-		String sStoragePrefix = se.generateProtocol();
-
-		if (sPFN.startsWith(sStoragePrefix)) {
-			sPFN = sPFN.substring(sStoragePrefix.length());
-		} else {
-			final String[] pfnsplit = pfn.getPFN().split("//");
-
-			if (pfnsplit.length < 3) {
-				System.err.println("Split is not ok : " + pfnsplit.length
-						+ " for " + pfn.getPFN());
-				// return null;
-			}
-
-			sPFN = "/" + pfnsplit[2];
-		}
+		int idx = sPFN.indexOf("//");
+		
+		if (idx>=0)
+			sPFN = sPFN.substring(sPFN.indexOf("//", idx+2)+1);
 
 		final GUID guid = pfn.getGuid();
 
@@ -454,8 +443,9 @@ public class XrootDEnvelope implements Serializable {
 		// $se =~ /dcache/i
 		// $se =~ /alice::((RAL)|(CNAF))::castor/i
 		// $se =~ /alice::RAL::castor2_test/i
-		if ((se.seName.toLowerCase()).contains("dcache"))
+		if (se.seName.toLowerCase().contains("dcache"))
 			return se.seioDaemons + "/" + lfn;
+		
 		return null;
 	}
 
