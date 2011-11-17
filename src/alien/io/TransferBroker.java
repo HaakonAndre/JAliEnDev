@@ -137,7 +137,7 @@ public class TransferBroker {
 				targetSE = resultSet.getString(3);
 			}
 			else{
-				logger.log(Level.INFO, "There is no waiting transfer in the queue");
+				logger.log(Level.FINE, "There is no waiting transfer in the queue");
 				return null;
 			}
 			
