@@ -123,7 +123,7 @@ public class TransferBroker {
 		
 		final DBConnection dbc = db.getConnection();
 		
-		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write;");
+		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers read;");
 		executeQuery(dbc, "select transferId,lfn,destination from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers order by transferId asc limit 1;");
 	
 		int transferId = -1;
