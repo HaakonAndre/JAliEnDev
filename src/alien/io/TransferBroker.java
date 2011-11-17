@@ -312,7 +312,7 @@ public class TransferBroker {
 	 * @param t
 	 * @param ta
 	 */
-	public static void touch(final Transfer t, final TransferAgent ta) {
+	public static synchronized void touch(final Transfer t, final TransferAgent ta) {
 		try {
 			final DBFunctions db = ConfigUtils.getDB("transfers");
 
@@ -348,6 +348,12 @@ public class TransferBroker {
 
 			if (db.getUpdateCount() == 0)
 				db.query(DBFunctions.composeInsert("active_transfers", values));
+			
+			db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='' WHERE transferId="+t.getTransferId()+" AND status!='TRANSFERRING';");	// just in case it was presumed expired
+			
+			if (db.getUpdateCount()>0){
+				logger.log(Level.INFO, "Re-stated "+t.getTransferId()+" to TRANSFERRING");
+			}
 		}
 		catch (Throwable ex) {
 			logger.log(Level.SEVERE, "Exception updating status", ex);
