@@ -331,7 +331,7 @@ public class TransferBroker {
 			values.put("se_name", SEUtils.getSE(t.target.seNumber).seName);
 			values.put("transfer_id", Integer.valueOf(t.getTransferId()));
 			values.put("transfer_agent_id", Integer.valueOf(ta.getTransferAgentID()));
-			values.put("pid", MonitorFactory.getSelfHostname());
+			values.put("pid", Integer.valueOf(MonitorFactory.getSelfProcessID()));
 			values.put("host", MonitorFactory.getSelfHostname());
 			
 			if (t.lastTriedSE>0)
