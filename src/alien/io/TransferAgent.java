@@ -3,13 +3,11 @@
  */
 package alien.io;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.ExtProperties;
-
 import alien.config.ConfigUtils;
 
 /**
@@ -47,6 +45,12 @@ public class TransferAgent extends Thread {
 	
 	private volatile Transfer work = null;
 	
+	private boolean shouldStop = false;
+	
+	private void signalStop(){
+		shouldStop = true;
+	}
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Thread#run()
 	 */
@@ -54,7 +58,9 @@ public class TransferAgent extends Thread {
 	public void run() {
 		final TransferBroker broker = TransferBroker.getInstance();
 		
-		while (true){
+		boolean firstTimeNoWork = true;
+		
+		while (!shouldStop){
 			work = broker.getWork();
 			
 			if (work!=null){
@@ -77,10 +83,15 @@ public class TransferAgent extends Thread {
 					
 					TransferBroker.touch(null, this);
 				}
+				
+				firstTimeNoWork = true;
 			}
 			else{
 				try{
-					logger.log(Level.INFO, "Agent "+transferAgentID+" : no work for me");
+					if (firstTimeNoWork){
+						logger.log(Level.INFO, "Agent "+transferAgentID+" : no work for me");
+						firstTimeNoWork = false;
+					}
 					
 					Thread.sleep(1000*30);	// try in 30 seconds again to see if there is anything for it to do
 				}
@@ -102,11 +113,11 @@ public class TransferAgent extends Thread {
 	public static void main(String args[]){
 		final ExtProperties config = alien.config.ConfigUtils.getConfig();
 		
-		final int workers = config.geti("alien.io.TransferAgent.workers", 5);
+		int workers = config.geti("alien.io.TransferAgent.workers", 5);
 		
 		logger.log(Level.INFO, "Starting "+workers+" workers");
 		
-		final List<TransferAgent> agents = new ArrayList<TransferAgent>(workers);
+		final LinkedList<TransferAgent> agents = new LinkedList<TransferAgent>();
 		
 		for (int i=0; i<workers; i++){
 			final TransferAgent ta = new TransferAgent(i);
@@ -119,6 +130,24 @@ public class TransferAgent extends Thread {
 		while (true){
 			try{
 				Thread.sleep(1000*30);
+				
+				workers = config.geti("alien.io.TransferAgent.workers", workers);
+				
+				if (workers > agents.size()){
+					for (int i=agents.size(); i<workers; i++){
+						final TransferAgent ta = new TransferAgent(i);
+						
+						ta.start();
+						
+						agents.add(ta);
+					}
+				}
+				else
+				while (agents.size() > workers){
+					TransferAgent ta = agents.removeLast();
+					
+					ta.signalStop();
+				}
 			}
 			catch (Exception e){
 				// ignore
