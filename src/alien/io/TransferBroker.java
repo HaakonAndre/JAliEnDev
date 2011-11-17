@@ -299,7 +299,7 @@ public class TransferBroker {
 			
 			db.query("DELETE FROM active_transfers WHERE last_active<"+((lastCleanedUp/1000) - 90));
 			
-			db.query("UPDATE TRANSFERS_DIRECT SET status='EXPIRED', finished="+(lastCleanedUp/1000)+", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
+			db.query("UPDATE TRANSFERS_DIRECT SET status='FAILED', finished="+(lastCleanedUp/1000)+", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
 		}
 		catch (Throwable t){
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
