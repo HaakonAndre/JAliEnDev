@@ -264,7 +264,10 @@ public class JBoxServer extends Thread {
 
 				fw.write("export alien_API_USER="+sUser+"\n");
 				logger.fine("export alien_API_USER="+sUser);
-
+				
+				fw.write("export JROOT=1\n");
+				logger.fine("export JROOT=1");
+				
 				fw.flush();
 				fw.close();
 
