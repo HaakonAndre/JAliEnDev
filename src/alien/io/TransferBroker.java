@@ -328,11 +328,21 @@ public class TransferBroker {
 			final Map<String, Object> values = new HashMap<String, Object>();
 
 			values.put("last_active", Long.valueOf(System.currentTimeMillis() / 1000));
-			values.put("se_name", SEUtils.getSE(t.target.seNumber));
+			values.put("se_name", SEUtils.getSE(t.target.seNumber).seName);
 			values.put("transfer_id", Integer.valueOf(t.getTransferId()));
 			values.put("transfer_agent_id", Integer.valueOf(ta.getTransferAgentID()));
 			values.put("pid", MonitorFactory.getSelfHostname());
 			values.put("host", MonitorFactory.getSelfHostname());
+			
+			if (t.lastTriedSE>0)
+				values.put("active_source", SEUtils.getSE(t.lastTriedSE).seName);
+			else
+				values.put("active_source", "");
+			
+			if (t.lastTriedProtocol!=null)
+				values.put("active_protocol", t.lastTriedProtocol.toString());
+			else
+				values.put("active_protocol", "");
 
 			db.query(DBFunctions.composeUpdate("active_transfers", values, Arrays.asList("transfer_agent_id", "pid", "host")));
 
