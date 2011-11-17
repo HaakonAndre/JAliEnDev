@@ -365,7 +365,7 @@ public class TransferBroker {
 		if (formattedReason!=null && formattedReason.length()>250)
 			formattedReason = formattedReason.substring(0, 250);
 		
-		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"', finished="+(System.currentTimeMillis()/1000)+" WHERE transferId="+transferId+" AND status='TRANSFERRING'");
+		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"', finished="+(System.currentTimeMillis()/1000)+" WHERE transferId="+transferId);
 		
 		if (db.getUpdateCount()<1)
 			return false;
