@@ -7,7 +7,10 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 import java.util.logging.Level;
@@ -25,6 +28,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
+import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
@@ -115,10 +119,12 @@ public class TransferBroker {
 			return null;
 		}
 		
+		cleanup();
+		
 		final DBConnection dbc = db.getConnection();
 		
-		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS write;");
-		executeQuery(dbc, "select transferId,lfn,destination from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and coalesce(current_transfers,0)<max_transfers order by transferId asc limit 1;");
+		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write;");
+		executeQuery(dbc, "select transferId,lfn,destination from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers order by transferId asc limit 1;");
 	
 		int transferId = -1;
 		String sLFN = null;
@@ -141,7 +147,6 @@ public class TransferBroker {
 			}
 
 			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId="+transferId+";");
-			executeQuery(dbc, "update PROTOCOLS set current_transfers=coalesce(current_transfers,0)+1 WHERE sename='"+Format.escSQL(targetSE)+"'");
 		}
 		catch (Exception e){
 			logger.log(Level.WARNING, "Exception fetching data from the query", e);
@@ -276,6 +281,67 @@ public class TransferBroker {
 			default:
 				return 5;	// transferring
 		}		
+	}
+	
+	private static long lastCleanedUp = 0; 
+	
+	private static synchronized void cleanup(){
+		if (System.currentTimeMillis() - lastCleanedUp<1000*30)
+			return;
+		
+		lastCleanedUp = System.currentTimeMillis();
+		
+		try{
+			final DBFunctions db = ConfigUtils.getDB("transfers");
+			
+			if (db==null)
+				return;
+			
+			db.query("DELETE FROM active_transfers WHERE last_active<"+((lastCleanedUp/1000) - 90));
+			
+			db.query("UPDATE TRANSFERS_DIRECT SET status='EXPIRED', finished="+(lastCleanedUp/1000)+", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
+		}
+		catch (Throwable t){
+			logger.log(Level.SEVERE, "Exception cleaning up", t);
+		}
+	}
+	
+	/**
+	 * Mark a transfer as active
+	 * 
+	 * @param t
+	 * @param ta
+	 */
+	public static void touch(final Transfer t, final TransferAgent ta) {
+		try {
+			final DBFunctions db = ConfigUtils.getDB("transfers");
+
+			if (db == null)
+				return;
+
+			if (t == null) {
+				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=" + ta.getTransferAgentID() + " AND pid=" + MonitorFactory.getSelfProcessID() + " AND host='"
+						+ Format.escSQL(MonitorFactory.getSelfHostname()) + "'");
+				return;
+			}
+
+			final Map<String, Object> values = new HashMap<String, Object>();
+
+			values.put("last_active", Long.valueOf(System.currentTimeMillis() / 1000));
+			values.put("se_name", SEUtils.getSE(t.target.seNumber));
+			values.put("transfer_id", Integer.valueOf(t.getTransferId()));
+			values.put("transfer_agent_id", Integer.valueOf(ta.getTransferAgentID()));
+			values.put("pid", MonitorFactory.getSelfHostname());
+			values.put("host", MonitorFactory.getSelfHostname());
+
+			db.query(DBFunctions.composeUpdate("active_transfers", values, Arrays.asList("transfer_agent_id", "pid", "host")));
+
+			if (db.getUpdateCount() == 0)
+				db.query(DBFunctions.composeInsert("active_transfers", values));
+		}
+		catch (Throwable ex) {
+			logger.log(Level.SEVERE, "Exception updating status", ex);
+		}
 	}
 	
 	private static boolean markTransfer(final int transferId, final int exitCode, final String reason){

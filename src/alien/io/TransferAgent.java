@@ -38,6 +38,15 @@ public class TransferAgent extends Thread {
 		setDaemon(false);
 	}
 	
+	/**
+	 * @return this guy's ID
+	 */
+	int getTransferAgentID(){
+		return transferAgentID;
+	}
+	
+	private volatile Transfer work = null;
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Thread#run()
 	 */
@@ -46,21 +55,27 @@ public class TransferAgent extends Thread {
 		final TransferBroker broker = TransferBroker.getInstance();
 		
 		while (true){
-			final Transfer t = broker.getWork();
+			work = broker.getWork();
 			
-			if (t!=null){
-				logger.log(Level.INFO, "Performing transfer "+t.getTransferId());
+			if (work!=null){
+				TransferBroker.touch(null, this);
+				
+				logger.log(Level.INFO, "Performing transfer "+work.getTransferId());
 				
 				try{
-					t.run();
+					work.run();
 				}
 				catch (final Exception e){
 					logger.log(Level.WARNING, "Transfer threw exception", e);
 				}
 				finally{
-					logger.log(Level.INFO, "Transfer finished: "+t);
+					logger.log(Level.INFO, "Transfer finished: "+work);
 					
-					TransferBroker.notifyTransferComplete(t);
+					TransferBroker.notifyTransferComplete(work);
+					
+					work = null;
+					
+					TransferBroker.touch(null, this);
 				}
 			}
 			else{
@@ -99,6 +114,18 @@ public class TransferAgent extends Thread {
 			ta.start();
 			
 			agents.add(ta);
+		}
+		
+		while (true){
+			try{
+				Thread.sleep(1000*30);
+			}
+			catch (Exception e){
+				// ignore
+			}
+			
+			for (TransferAgent ta: agents)
+				TransferBroker.touch(ta.work, ta);
 		}
 	}
 	
