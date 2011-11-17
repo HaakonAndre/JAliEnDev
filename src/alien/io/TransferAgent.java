@@ -132,19 +132,20 @@ public class TransferAgent extends Thread {
 				Thread.sleep(1000*30);
 				
 				workers = config.geti("alien.io.TransferAgent.workers", workers);
+
+				if (workers<0 || workers > 100)	// typo ?!
+					workers = 5;
 				
-				if (workers > agents.size()){
-					for (int i=agents.size(); i<workers; i++){
-						final TransferAgent ta = new TransferAgent(i);
+				while (workers > agents.size()){
+					final TransferAgent ta = new TransferAgent(agents.size());
 						
-						ta.start();
+					ta.start();
 						
-						agents.add(ta);
-					}
+					agents.add(ta);
 				}
-				else
+
 				while (agents.size() > workers){
-					TransferAgent ta = agents.removeLast();
+					final TransferAgent ta = agents.removeLast();
 					
 					ta.signalStop();
 				}
