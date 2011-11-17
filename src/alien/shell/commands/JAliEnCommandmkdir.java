@@ -5,6 +5,7 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.catalogue.FileSystemUtils;
+import alien.catalogue.PFN;
 
 /**
  * @author ron
@@ -18,6 +19,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	private boolean bP = false;
 	private ArrayList<String> alPaths = null;
 	
+	private boolean success = true;
+	
 	@Override
 	public void run() {
 		
@@ -26,16 +29,41 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			if(bP){
 				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
-						commander.getCurrentDir().getCanonicalName(),path),true)==null)
+						commander.getCurrentDir().getCanonicalName(),path),true)==null){
 					out.printErrln("Could not create directory (or non-existing parents): " + path);
+					success = false;
+				}
 			}
 			else {
 				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
-						commander.getCurrentDir().getCanonicalName(),path))==null)
+						commander.getCurrentDir().getCanonicalName(),path))==null){
 					out.printErrln("Could not create directory: " + path);
+					success = false;
+				}
 			}
 		}
+		if(out.isRootPrinter())
+			out.setReturnArgs(deserializeForRoot());
+	}
+	
+
+	/**
+	 * serialize return values for gapi/root
+	 * 
+	 * @return serialized return
+	 */
+	@Override
+	public String deserializeForRoot() {
+
+		String ret = RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
+				 + RootPrintWriter.fieldseparator;
+		if(success)
+			ret += "1";
+		else
+			ret += "0";
+		
+		return ret;
 	}
 
 	/**
