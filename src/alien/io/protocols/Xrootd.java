@@ -35,9 +35,26 @@ public class Xrootd extends Protocol {
 	private int xrdcpdebuglevel = 0;
 
 	private final static String xrdcpCommand = "xrdcpapmon";
+	
+	private final static String xrootd_default_path;
 
-	private final static String xrdcpPath = ExternalCalls.programExistsInPath(xrdcpCommand);
+	private final static String xrdcpPath;
+	
+	static {
+		if (ConfigUtils.getConfig() != null) {
+			xrootd_default_path = ConfigUtils.getConfig().gets(
+					"xrootd.location");
 
+			if (xrootd_default_path != null)
+				xrdcpPath = xrootd_default_path + "/bin/" + xrdcpCommand;
+			else
+				xrdcpPath = ExternalCalls.programExistsInPath(xrdcpCommand);
+		}else{
+			xrootd_default_path = null;
+			xrdcpPath = null;
+		}
+	}
+	
 	private static String DIFirstConnectMaxCnt = "2";
 
 	private int timeout = 60;
@@ -45,6 +62,7 @@ public class Xrootd extends Protocol {
 	// last value must be 0 for a clean exit
 	private static final int statRetryTimes[] = { 1, 2, 4, 8, 16, 0 };
 
+	
 	/**
 	 * Logger
 	 */
@@ -57,6 +75,22 @@ public class Xrootd extends Protocol {
 		// package protected
 	}
 
+	private void checkLibraryPath(final ExternalProcessBuilder p) {
+		
+		if (xrootd_default_path != null) {
+
+			String ldpath = "";
+			if (p.environment().containsKey("LD_LIBRARY_PATH"))
+				ldpath = p.environment().get("LD_LIBRARY_PATH");
+
+			p.environment().put(
+					"LD_LIBRARY_PATH",
+					ldpath + ":" + xrootd_default_path
+							+ "/lib");
+		}
+
+	}
+	
 	/**
 	 * @param level
 	 *            xrdcp debug level
@@ -197,6 +231,8 @@ public class Xrootd extends Protocol {
 			// System.err.println(command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			
+			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -306,6 +342,8 @@ public class Xrootd extends Protocol {
 			}
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			
+			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -429,6 +467,8 @@ public class Xrootd extends Protocol {
 			}
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			
+			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -575,6 +615,8 @@ public class Xrootd extends Protocol {
 				}
 
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+				checkLibraryPath(pBuilder);
 
 				pBuilder.returnOutputOnExit(true);
 
