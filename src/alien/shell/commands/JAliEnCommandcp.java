@@ -3,6 +3,8 @@ package alien.shell.commands;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -17,6 +19,7 @@ import alien.catalogue.PFN;
 import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
+import alien.se.SE;
 
 /**
  * @author ron
@@ -24,15 +27,15 @@ import alien.io.protocols.Protocol;
  */
 public class JAliEnCommandcp extends JAliEnBaseCommand {
 
-	private boolean bG = false;
-
 	private boolean bT = false;
 	
-	/**
-	 * marker for -l argument
-	 */
+	private int referenceCount = 0;
+
 	private List<String> ses = new ArrayList<String>();
 	private List<String> exses = new ArrayList<String>();
+	
+	private HashMap<String,Integer> qos = new HashMap<String,Integer>();
+
 	
 	/**
 	 * marker for -a argument
@@ -48,11 +51,14 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
+
 		if (bT) {
 			localFile = copyGridToLocal(source, null);
 			
 		} else if (!localFileSpec(source) && localFileSpec(target)) {
+		
 			localFile = new File(getLocalFileSpec(target));
+			
 			if (!localFile.exists())
 				copyGridToLocal(source, localFile);
 			else
@@ -60,6 +66,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					out.printErrln("A local file already exists with this name.");
 			
 		} else if (localFileSpec(source) && !localFileSpec(target)) {
+			
 			File sourceFile = new File(getLocalFileSpec(source));
 			if (!targetLFNExists(target))
 				if (sourceFile.exists())
@@ -83,6 +90,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					if(!isSilent())
 						out.printErrln("Could not get the source.");
 		}
+		
 		if(out.isRootPrinter())
 			out.setReturnArgs(deserializeForRoot());
 	}
@@ -180,46 +188,36 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * 
 	 * @param sourceLFN
 	 *            Grid filename
-	 * @param targetFile
+	 * @param targetLocalFile
 	 *            local file
 	 * @return local target file
 	 */
-	public File copyGridToLocal(final String sourceLFN, final File targetFile) {
+	public File copyGridToLocal(final String sourceLFN, File targetLocalFile) {
 
-		File targetLocalFile = targetFile;
-
-		List<PFN> pfns = null;
-
-		if (bG) {
-			GUID guid = commander.c_api.getGUID(sourceLFN);
-			if(guid==null){
-				if(!isSilent())
-					out.printErrln("Could not get the file's GUID: " + sourceLFN);
-				return null;
-			}
-			pfns = commander.c_api.getPFNsToRead(commander.site, guid, ses,
-					exses);
-		} else {
-			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
-					commander.user.getName(), commander.getCurrentDir()
-							.getCanonicalName(), sourceLFN));
-			if(lfn==null){
-				if(!isSilent())
-					out.printErrln("Could not get the file's LFN: " + sourceLFN);
-				return null;
-			}
-			pfns = commander.c_api.getPFNsToRead(commander.site, lfn, ses,
-					exses);
-
+		LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
+				commander.user.getName(), commander.getCurrentDir()
+						.getCanonicalName(), sourceLFN));
+		if (lfn == null) {
+			if (!isSilent())
+				out.printErrln("Could not get the file's LFN: " + sourceLFN);
+			return null;
 		}
+
+		List<PFN> pfns = commander.c_api.getPFNsToRead(lfn,
+				ses, exses);
+
 		if (pfns != null) {
+
+			if (referenceCount == 0)
+				referenceCount = pfns.size();
+
 			for (PFN pfn : pfns) {
 				List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 				for (final Protocol protocol : protocols) {
 					ProtocolAction pA = new ProtocolAction(protocol, pfn,
-							targetFile);
+							targetLocalFile);
 					try {
-						System.out.println("Trying to get file over: "
+						out.printErrln("GRON: Trying to get file over: "
 								+ commander.c_api.getSE(pfn.seNumber).seName);
 						pA.start();
 						while (pA.isAlive()) {
@@ -234,7 +232,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 							if (!isSilent())
 								out.printOutln("Downloaded file to "
-									+ pA.getFile().getCanonicalPath());
+										+ pA.getFile().getCanonicalPath());
 							System.out.println("Successful.");
 							break;
 						}
@@ -250,8 +248,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (targetLocalFile != null && targetLocalFile.exists()
 					&& targetLocalFile.length() > 0)
 				return targetLocalFile;
+
+			//out.printErrln("pfns not null, but error.");
+			//return null;
 		}
-		if(!isSilent())
+
+		if (!isSilent())
 			out.printErrln("Could not get the file.");
 		return null;
 	}
@@ -267,31 +269,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 */
 	public boolean copyLocalToGrid(final File sourceFile, final String targetLFN) {
 
-		if (!sourceFile.exists() || !sourceFile.isFile() || !sourceFile.canRead()) {
-			if(!isSilent())
+		if (!sourceFile.exists() || !sourceFile.isFile()
+				|| !sourceFile.canRead()) {
+			if (!isSilent())
 				out.printErrln("Could not get the local file: "
-					+ sourceFile.getAbsolutePath());
-			return false;
-		}
-
-		long size = sourceFile.length();
-		if (size <= 0) {
-			if(!isSilent())
-				out.printErrln("Local file has size zero: "
-					+ sourceFile.getAbsolutePath());
-			return false;
-		}
-		String md5 = null;
-		
-		try {
-			md5 = IOUtils.getMD5(sourceFile);
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
-		
-		if (md5 == null) {
-			if(!isSilent())
-				out.printErrln("Could not calculate md5 checksum of the local file: "+ sourceFile.getAbsolutePath());
+						+ sourceFile.getAbsolutePath());
 			return false;
 		}
 
@@ -300,45 +282,43 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		LFN lfn = null;
 		GUID guid = null;
 
-		if (bG) {
-			guid = commander.c_api.getGUID(targetLFN, true);
-			pfns = commander.c_api.getPFNsToWrite(commander.site, guid, ses, exses, null, 0);
-			guid.size = size;
-			guid.md5 = md5;
-			if(!isSilent())
-				out.printErrln("Not working yet...");
-			return false;
-		}
-		
 		lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 				commander.user.getName(), commander.getCurrentDir()
 						.getCanonicalName(), targetLFN), true);
-		
-		// lfn.guid=... for user's specification
-		lfn.size = size;
-		lfn.md5 = md5;
-		
+
 		try {
 			guid = GUIDUtils.createGuid(sourceFile, commander.user);
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 
-		pfns = commander.c_api.getPFNsToWrite(
-				commander.site, lfn, guid, ses, exses, null, 0);
-		if(pfns==null || pfns.size()==0){
-			if(!isSilent())
-					out.printErrln("Couldn't get any access ticket.");
+		} catch (IOException e) {
+			out.printErrln("Couldn't create the GUID.");
 			return false;
 		}
 
+		lfn.guid = guid.guid;
+		lfn.size = guid.size;
+		lfn.md5 = guid.md5;
+		guid.lfnCache = new LinkedHashSet<LFN>(1);
+		guid.lfnCache.add(lfn);
+
+		pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses,
+				exses, qos);
+
+		if (pfns == null || pfns.size() == 0) {
+			if (!isSilent())
+				out.printErrln("Couldn't get any access ticket.");
+			return false;
+		}
+
+		if (referenceCount == 0)
+			referenceCount = pfns.size();
+
 		ArrayList<String> envelopes = new ArrayList<String>(pfns.size());
 		ArrayList<String> registerPFNs = new ArrayList<String>(pfns.size());
-		
-//		while (pfnss != null && pfns.size() > 0) {
 
+		boolean failOver = false;
+
+		do {
+			failOver = false;
 			for (PFN pfn : pfns) {
 				List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 				for (final Protocol protocol : protocols) {
@@ -371,36 +351,65 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 								envelopes.add(pfn.ticket.envelope
 										.getSignedEnvelope());
 					} else {
-						ses.remove(commander.c_api.getSE(pfn.seNumber).getName());
-						exses.add(commander.c_api.getSE(pfn.seNumber).getName());
+						failOver = true;
+						out.printErrln("Error uploading file to SE: " + commander.c_api.getSE(pfn.seNumber).getName());
+						failOver(commander.c_api.getSE(pfn.seNumber),true);
 					}
 				}
 			}
-			
-//			if(pfns.size() == envelopes.size())
-//				break;
-//						
-//			pfns = commander.c_api.getPFNsToWrite(
-//					commander.site, lfn, guid, ses, exses, null, 0);
-//		}
-				
+
+			if (failOver) {
+				pfns = commander.c_api.getPFNsToWrite(lfn,
+						guid, ses, exses, qos);
+				qos = new HashMap<String, Integer>();
+			}
+
+		} while (failOver && pfns != null && pfns.size() > 0);
+
 		if (envelopes.size() != 0)
 			commander.c_api.registerEnvelopes(envelopes);
 		if (registerPFNs.size() != 0)
 			commander.c_api.registerEnvelopes(envelopes);
 
-		if (pfns.size() == (envelopes.size() + registerPFNs.size())) {
-			if(!isSilent())
+		if (referenceCount == (envelopes.size() + registerPFNs.size())) {
+			if (!isSilent())
 				out.printOutln("File successfully uploaded.");
 			return true;
 		} else if ((envelopes.size() + registerPFNs.size()) > 0)
-			if(!isSilent())
-				out.printErrln("Only " + (envelopes.size() + registerPFNs.size())
-					+ " PFNs could be uploaded");
-		else
-			if(!isSilent())
+			if (!isSilent())
+				out.printErrln("Only "
+						+ (envelopes.size() + registerPFNs.size())
+						+ " PFNs could be uploaded");
+			else if (!isSilent())
 				out.printOutln("Upload failed, sorry!");
 		return false;
+
+	}
+
+	private void failOver(final SE se, final boolean write) {
+
+		if (write) {
+			String qosType = "disk";
+			if (se.qos.iterator().hasNext())
+				qosType = se.qos.iterator().next();
+
+			if (!qos.containsKey(qosType) && qos.get(qosType) == null)
+				qos.put(qosType, new Integer(1));
+			else
+				qos.put(qosType, qos.get(qosType) + 1);
+		}
+		ses.remove(se.getName());
+		if(!exses.contains(se.getName()))
+			exses.add(se.getName());
+		
+		for(String s: ses)
+			out.printOutln("putting pos: " + s);
+				
+		for(String s: exses)
+				out.printOutln("putting neg: " + s);
+
+		for(String k : qos.keySet())
+			out.printOutln("putting qos: [" + k+"] query [" + qos.get(k)+"]");
 
 	}
 
@@ -414,7 +423,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		out.printOutln(helpUsage("cp","[-options] < file:///localfile /gridfile >  |  < /gridfile file:///localfile >  |  < -t /gridfile >"));
 		out.printOutln(helpStartOptions());
 		out.printOutln(helpOption("-g","get by GUID"));
-		out.printOutln(helpOption("-S","[se[,se2[,!se3[,se4]]]]"));
+		out.printOutln(helpOption("-S","[se[,se2[,!se3[,qos:count]]]]"));
 		out.printOutln(helpOption("-t","create a local temp file"));
 		out.printOutln(helpOption("-silent","execute command silently"));
 		out.printOutln();
@@ -480,26 +489,51 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (options.has("S") && options.hasArgument("S")) {
-				final StringTokenizer st = new StringTokenizer(
-						((String) options.valueOf("S")), ",");
-				while (st.hasMoreTokens()) {
-					String se = st.nextToken();
-					if (se.indexOf('!') == 0)
-						exses.add(se.substring(1));
-					else
-						ses.add(se);
+
+				if (((String) options.valueOf("S")) != null) {
+					final StringTokenizer st = new StringTokenizer(
+							(String) options.valueOf("S"), ",");
+					while (st.hasMoreElements()) {
+						String spec = st.nextToken();
+						if (spec.contains("::")) {
+							if (spec.indexOf("::") != spec.lastIndexOf("::")) { // any
+																				// SE
+																				// spec
+
+								if (spec.startsWith("!")) // an exSE spec
+									exses.add(spec.toUpperCase());
+								else {// an SE spec
+									ses.add(spec.toUpperCase());
+									referenceCount++;
+								}
+							}
+						} else if (spec.contains(":")) {// a qosTag:count spec
+							try {
+
+								int c = Integer.valueOf(spec.substring(spec
+										.indexOf(':') + 1));
+								if (c > 0) {
+									qos.put(spec
+											.substring(0, spec.indexOf(':')),
+											new Integer(c));
+									referenceCount = referenceCount + c;
+								} else
+									throw new JAliEnCommandException();
+
+							} catch (Exception e) {
+								throw new JAliEnCommandException();
+							}
+						} else if (!spec.equals(""))
+							throw new JAliEnCommandException();
+					}
 				}
-				System.out.println("ses: " + ses);
-				System.out.println("exses: " + exses);
-				
 			}
-			bG = options.has("g");
+
 			bT = options.has("t");
 
 			source = options.nonOptionArguments().get(0);
 			if (!(options.nonOptionArguments().size() == 1 && options.has("t")))
 				target = options.nonOptionArguments().get(1);
-			
 			
 		} catch (OptionException e) {
 			printHelp();

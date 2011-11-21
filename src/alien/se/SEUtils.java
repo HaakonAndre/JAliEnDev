@@ -348,6 +348,67 @@ public final class SEUtils {
 	}
 
 	/**
+	 * Get if possible all SEs for a certain site with specs
+	 * 
+	 * @param site
+	 * @param ses 
+	 * @param exses 
+	 * @param qos 
+	 * @return the list of SEs
+	 */
+	public static List<SE> getBestSEsOnSpecs(final String site, final List<String> ses,
+			final List<String> exses, final HashMap<String,Integer> qos) {
+
+		for(String s: ses)
+			System.out.println("got pos: " + s);
+
+		for(String s: exses)
+			System.out.println("got neg: " + s);
+
+		for(String s: qos.keySet())
+			System.out.println("got qos: " + s + ":" + qos.get(s));
+		
+		List<SE> SEs = SEUtils.getSEs(ses);
+		
+		List<SE> exSEs = SEUtils.getSEs(exses);
+	
+		
+		for(SE se: exSEs)
+			if(SEs.contains(se))
+				SEs.remove(se);
+
+		exSEs.addAll(SEs);		
+				
+		for (String qosType : qos.keySet()) {
+
+			if (qos.get(qosType) > 0) {
+
+				// TODO: get a number #qos.get(qosType) of qosType SEs
+				List<SE> discoveredSEs = SEUtils.getClosestSEs(site, exSEs);
+
+				final Iterator<SE> it = discoveredSEs.iterator();
+
+				int counter = 0;
+				while (counter < qos.get(qosType) && it.hasNext()) {
+					SE se = it.next();
+					if (!se.isQosType(qosType) || exSEs.contains(se))
+						continue;
+
+					SEs.add(se);
+					counter++;
+				}
+
+			}
+
+		}
+		
+		for(SE s: SEs)
+			System.out.println("Returning SE: " + s.getName());
+
+		return SEs;
+	}
+
+	/**
 	 * Sort a collection of PFNs by their relative distance to a given site
 	 * (where the job is running for example)
 	 * 

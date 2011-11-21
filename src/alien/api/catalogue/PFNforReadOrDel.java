@@ -4,6 +4,8 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -39,13 +41,16 @@ public class PFNforReadOrDel extends Request {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(PFNforReadOrDel.class.getCanonicalName());
 	
-	private AccessType access = null;
+	private final AccessType access;
 
-	private String site = null;
-	private LFN lfn = null;
+	private final String site;
+	private final LFN lfn;
+	
+	// don't remove this guid, if the guid is not send with the pfn to the client, the thing goes nuts!
 	private GUID guid = null;
-	private List<String> ses = null;
-	private List<String> exses = null;
+
+	private final List<String> ses;
+	private final List<String> exses;
 
 	private List<PFN> pfns = null;
 
@@ -71,43 +76,20 @@ public class PFNforReadOrDel extends Request {
 		this.exses = exses;
 	}
 
-	/**
-	 * Get PFNs to read
-	 * 
-	 * @param user
-	 * @param role 
-	 * @param site
-	 * @param access
-	 * @param guid
-	 * @param ses
-	 * @param exses
-	 */
-	public PFNforReadOrDel(final AliEnPrincipal user, final String role, String site, AccessType access,
-			GUID guid, List<String> ses, List<String> exses) {
-		setRequestUser(user);
-		setRoleRequest(role);
-		this.site = site;
-		this.guid = guid;
-		this.access = access;
-		this.ses = ses;
-		this.exses = exses;
-	}
-
 	@Override
 	public void run() {
 
-		if (guid == null)
-			guid = GUIDUtils.getGUID(lfn);
+		 guid = GUIDUtils.getGUID(lfn.guid);
 
 		LFN setArchiveAnchor = null;
-
-		PFN readpfn = null;
 
 		if (guid.getPFNs() != null) {
 
 			pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true,
 					SEUtils.getSEs(ses), SEUtils.getSEs(exses));
-
+			
+			Collections.reverse(pfns);
+			
 			try {
 				for (PFN pfn : pfns) {
 
@@ -141,20 +123,10 @@ public class PFNforReadOrDel extends Request {
 							}
 							
 							logger.log(Level.FINE, "We have an evenlope candidate: "+ apfn.getPFN());
-							readpfn = apfn;
-							//break;
 
 						}
-					} else {
-						readpfn = pfn;
-					}
-					//break;
-
+					} 
 				}
-
-//				pfns.clear();
-//				if(readpfn!=null)
-//					pfns.add(readpfn);
 
 			} catch (Exception e) {
 				logger.log(Level.SEVERE, "WE HAVE AN Exception", e);
@@ -164,7 +136,8 @@ public class PFNforReadOrDel extends Request {
 					if (pfn.ticket.envelope == null) {
 						logger.log(Level.WARNING, "Sorry ... Envelope is null!");
 					} else {
-						pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
+						if(setArchiveAnchor!=null)
+							pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
 						try {
 							// we need to both encrypt and sign, the later is
 							// not
@@ -187,9 +160,16 @@ public class PFNforReadOrDel extends Request {
 		else
 			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
 		
+		
+		
 		if(pfns==null)
 			pfns = new ArrayList<PFN>(0);
+		
+		if(pfns.size()<1)
+			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
+	
 	}
+	
 
 	/**
 	 * @return PFNs to read from
@@ -200,13 +180,7 @@ public class PFNforReadOrDel extends Request {
 
 	@Override
 	public String toString() {
-		if (lfn != null)
-			return "Asked for read/delete: " + this.lfn + " ("
-					+ "), reply is: " + this.pfns;
-		else if (guid != null)
-			return "Asked for read/delete: " + this.guid + " ("
-					+ "), reply is: " + this.pfns;
-		else
-			return "Asked for write: unspecified target!";
+			return "Asked for read/delete: " + this.lfn + "\n"
+					+ "reply is: " + this.pfns;
 	}
 }

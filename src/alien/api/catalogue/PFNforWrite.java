@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -37,8 +38,8 @@ public class PFNforWrite extends Request {
 	private GUID guid = null;
 	private List<String> ses = null;
 	private List<String> exses = null;
-	private String qosType = null;
-	private int qosCount = 0;
+	
+	private HashMap<String,Integer> qos = null;
 
 	private List<PFN> pfns = null;
 
@@ -52,10 +53,10 @@ public class PFNforWrite extends Request {
 	 * @param guid
 	 * @param ses
 	 * @param exses
-	 * @param qosType
-	 * @param qosCount
+	 * @param qos
 	 */
-	public PFNforWrite(final AliEnPrincipal user, final String role, final String site, final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final String qosType, final int qosCount) {
+	public PFNforWrite(final AliEnPrincipal user, final String role, final String site, final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final HashMap<String,Integer> qos
+) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.site = site;
@@ -63,168 +64,103 @@ public class PFNforWrite extends Request {
 		this.guid = guid;
 		this.ses = ses;
 		this.exses = exses;
-		this.qosType = qosType;
-		this.qosCount = qosCount;
-	}
+		this.qos = qos;
+		
 
-	/**
-	 * Get PFNs to write
-	 * 
-	 * @param user
-	 * @param role
-	 * @param site
-	 * @param guid
-	 * @param ses
-	 * @param exses
-	 * @param qosType
-	 * @param qosCount
-	 */
-	public PFNforWrite(final AliEnPrincipal user, final String role, final String site, final GUID guid, final List<String> ses, final List<String> exses, final String qosType, final int qosCount) {
-		setRequestUser(user);
-		setRoleRequest(role);
-		this.site = site;
-		this.guid = guid;
-		this.ses = ses;
-		this.exses = exses;
-		this.qosType = qosType;
-		this.qosCount = qosCount;
+		for(String s: this.ses)
+			System.out.println("got pos: " + s);
+
+		for(String s: this.exses)
+			System.out.println("got neg: " + s);
+
+		for(String s: this.qos.keySet())
+			System.out.println("got qos: " + s + ":" + this.qos.get(s));
+		
+		
 	}
+	
 
 	@Override
 	public void run() {
-		System.err.println("Request details : ----------------------\n"+guid+"\n ---------------------- \n "+lfn+" \n ---------------------- \n"+getEffectiveRequester());
 		
-		if (((ses == null) || ses.size()==0) && (qosType == null)) {
-			final Set<String> defaultQos = LDAPHelper.checkLdapInformation("(objectClass=AliEnVOConfig)", "ou=Config,", "sedefaultQosandCount");
+		
+		System.out.println("REQUEST IS:" + this);
+
+		for(String s: this.ses)
+			System.out.println("got pos: " + s);
+
+		for(String s: this.exses)
+			System.out.println("got neg: " + s);
+
+		for(String s: this.qos.keySet())
+			System.out.println("got qos: " + s + ":" + this.qos.get(s));
+		
+		
+		
+		logger.log(Level.FINE,"Request details : ----------------------\n" + guid
+				+ "\n ---------------------- \n " + lfn
+				+ " \n ---------------------- \n" + getEffectiveRequester());
+
+		if (((this.ses == null) || this.ses.size() == 0)
+				&& (this.qos == null || (this.qos.keySet().size() < 1))) {
+			final Set<String> defaultQos = LDAPHelper.checkLdapInformation(
+					"(objectClass=AliEnVOConfig)", "ou=Config,",
+					"sedefaultQosandCount");
 
 			if (defaultQos.isEmpty())
-				logger.log(Level.WARNING, "No specification of storages and no default LDAP entry found.");
+				logger.log(Level.WARNING,
+						"No specification of storages and no default LDAP entry found.");
 
 			String defQos = defaultQos.iterator().next();
 
-			qosType = defQos.substring(0, defQos.indexOf('='));
-			qosCount = Integer.parseInt(defQos.substring(defQos.indexOf('=') + 1));
-		}
-		
-		List<SE> SEs = SEUtils.getSEs(ses);
+			if (this.qos == null)
+				this.qos = new HashMap<String, Integer>(1);
 
-		final List<SE> exSEs = SEUtils.getSEs(exses);
+			Integer count = new Integer(1);
 
-		int count = qosCount;
-		if (ses != null)
-			count += ses.size();
-
-		pfns = new ArrayList<PFN>(count);
-
-		// LFN setArchiveAnchor = null;
-
-		if (lfn != null) {
-			if (guid == null) {
-				logger.log(Level.WARNING, "Cannot get PFNforWrite with guid=null, for lfn: " + lfn);
-				return;
+			try {
+				count = new Integer(Integer.parseInt(defQos.substring(defQos
+						.indexOf('=') + 1)));
+			} catch (NumberFormatException e) {
+				// ignore
 			}
 
-			if (lfn.guid == null)
-				lfn.guid = guid.guid;
-			
-			guid.lfnCache = new LinkedHashSet<LFN>(1);
-			guid.lfnCache.add(lfn);
-			guid.size = lfn.size;
-			guid.md5 = lfn.md5;
-		}
-		else
-			if (guid != null) {
-				if (guid.lfnCache.size() > 0)
-					lfn = guid.lfnCache.iterator().next();
-			}
-
-		// static list of specified SEs
-		if (ses != null) {
-			for (final SE se : SEs) {
-				if (!se.canWrite(getEffectiveRequester())) {
-					logger.log(Level.INFO, getEffectiveRequester()+" is not allowed to write to the explicitly requested SE "+se.seName);
-					continue;
-				}
-				try {
-					pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), lfn, guid, null, 0, se));
-				}
-				catch (Exception e) {
-					logger.log(Level.WARNING, "Error for the request on " + se.getName() + ", message", e.fillInStackTrace());
-				}
-			}
-		}
-
-		if (qosCount > 0) {
-			if (exSEs != null)
-				SEs.addAll(exSEs);
-			
-			SEs = SEUtils.getClosestSEs(site, SEs);
-			final Iterator<SE> it = SEs.iterator();
-
-			int counter = 0;
-			while (counter < qosCount && it.hasNext()) {
-				SE se = it.next();
-
-				if (!se.canWrite(getEffectiveRequester()))
-					continue;
-				
-				if(!se.isQosType(qosType))
-					continue;
-
-				try {
-					pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), lfn, guid, null, 0, se));
-				}
-				catch (Exception e) {
-					logger.log(Level.WARNING, "Error requesting an envelope for " + se.getName(), e);
-					e.printStackTrace();
-					continue;
-				}
-				counter++;
-			}
+			this.qos.put(defQos.substring(0, defQos.indexOf('=')), count);
 
 		}
 
-		logger.log(Level.FINE, "Returning: "+this.toString());
-		
-		logger.log(Level.WARNING, "Returning: "+pfns);
+		List<SE> SEs = SEUtils.getBestSEsOnSpecs(this.site, this.ses, this.exses, this.qos);
 
+		if (SEs == null || SEs.size() < 1) {
+			this.pfns = new ArrayList<PFN>(0);
+			logger.log(Level.WARNING,"Couldn't discover any SEs for this request.");
+			return;
+		}
 
-		//
-		// for (PFN pfn : pfns) {
-		// if (pfn.ticket.envelope == null) {
-		// System.err.println("Sorry ... Envelope is null!");
-		// } else {
-		// pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
-		// try {
-		// // we need to both encrypt and sign, the later is not
-		// // automatic
-		// XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-		// } catch (SignatureException e) {
-		// System.err
-		// .println("Sorry ... Could not sign the envelope!");
-		// } catch (InvalidKeyException e) {
-		// System.err
-		// .println("Sorry ... Could not sign the envelope!");
-		// } catch (NoSuchAlgorithmException e) {
-		// System.err
-		// .println("Sorry ... Could not sign the envelope!");
-		// }
-		// String addEnv = pfn.ticket.envelope.getSignedEnvelope();
-		//
-		// // drop the following once LDAP schema is updated and version
-		// // number properly on
-		// if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber)
-		// .getName().toLowerCase())) {
-		// if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
-		// addEnv += "\\&oldEnvelope="
-		// + pfn.ticket.envelope.getEncryptedEnvelope();
-		// System.out.println("Creating ticket (encrypted): "
-		// + pfn.ticket.envelope.getUnEncryptedEnvelope());
-		// }
-		// }
-		//
-		// }
-		// }
+		this.pfns = new ArrayList<PFN>(SEs.size());
+
+		for (final SE se : SEs) {
+			if (!se.canWrite(getEffectiveRequester())) {
+				logger.log(
+						Level.INFO,
+						getEffectiveRequester()
+								+ " is not allowed to write to the explicitly requested SE "
+								+ se.seName);
+				continue;
+			}
+			try {
+				this.pfns.add(BookingTable.bookForWriting(getEffectiveRequester(),
+						this.lfn, this.guid, null, 0, se));
+			} catch (Exception e) {
+				logger.log(Level.WARNING,
+						"Error for the request on " + se.getName()
+								+ ", message", e.fillInStackTrace());
+			}
+		}
+
+		logger.log(Level.FINE, "Returning: " + this.toString());
+
+		logger.log(Level.WARNING, "Returning: " + this.pfns);
 
 	}
 
@@ -232,17 +168,12 @@ public class PFNforWrite extends Request {
 	 * @return PFNs to write on
 	 */
 	public List<PFN> getPFNs() {
-		return pfns;
+		return this.pfns;
 	}
 
 	@Override
 	public String toString() {
-		if (lfn != null)
-			return "Asked for write: " + this.lfn + " (" + this.site + "," + this.qosType + "," + this.qosCount + "," + this.ses + "," + this.exses + "), reply is: " + this.pfns;
-		
-		if (guid != null)
-			return "Asked for write: " + this.guid + " (" + this.site + "," + this.qosType + "," + this.qosCount + "," + this.ses + "," + this.exses + "), reply is: " + this.pfns;
-		
-		return "Asked for write: unspecified target!";
+			return "Asked for write: " + this.lfn + " (" + this.site + "," + this.qos + "," + this.ses + "," + this.exses + "), reply is: " + this.pfns;
+
 	}
 }
