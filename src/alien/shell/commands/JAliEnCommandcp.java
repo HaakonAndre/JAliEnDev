@@ -214,8 +214,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					ProtocolAction pA = new ProtocolAction(protocol, pfn,
 							targetLocalFile);
 					try {
-						out.printOutln("GRON: Trying to get file over: "
-								+ commander.c_api.getSE(pfn.seNumber).seName);
 						pA.start();
 						while (pA.isAlive()) {
 							Thread.sleep(500);

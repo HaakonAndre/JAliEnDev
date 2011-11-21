@@ -1,6 +1,8 @@
 package alien.shell.commands;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import joptsimple.OptionException;
 import alien.catalogue.FileSystemUtils;
@@ -18,22 +20,24 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 
 		for (String path : alArguments) {
 
-			LFN dir = commander.c_api.getLFN(FileSystemUtils
+			LFN file = commander.c_api.getLFN(FileSystemUtils
 					.getAbsolutePath(commander.user
 							.getName(), commander
 							.getCurrentDir()
 							.getCanonicalName(), path));
 
-			if (dir!=null && dir.exists) {
-				if (!dir.isDirectory()) {
-					if (AuthorizationChecker.canWrite(dir, commander.user)) {
+			if (file!=null && file.exists) {
+				if (!file.isDirectory()) {
+					if (AuthorizationChecker.canWrite(file, commander.user)) {
+						
+						delFile(file.getCanonicalName());
 
-						if (!commander.c_api
-								.removeLFN(dir.getCanonicalName())) {
-							out.printErrln("Could not remove LFN: "
-									+ path);
-							out.printErrln("Sorry, this command is not implemented yet.");
-						}
+//						if (!commander.c_api
+//								.removeLFN(dir.getCanonicalName())) {
+//							out.printErrln("Could not remove LFN: "
+//									+ path);
+//							out.printErrln("Sorry, this command is not implemented yet.");
+//						}
 
 					} else {
 						if (!isSilent())
@@ -50,6 +54,42 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 					out.printErrln("No such file or directory: [" + path + "]");
 			}
 		}
+	}
+	
+	
+	/**
+	 * @param file 
+	 * @return mv file to garbage_bin
+	 */
+	public boolean delFile(final String file) {
+		
+		final String garbageBin = "~/garbage_bin/";
+				
+		ArrayList<String> args = new ArrayList<String>(2);
+		args.addAll(alArguments);
+		args.add(garbageBin + file.substring(file.lastIndexOf('/')+1) + "_" + (System.currentTimeMillis() / 1000L));
+		
+		JAliEnCommandmv mv;
+		try {
+			mv = (JAliEnCommandmv) JAliEnCOMMander.getCommand("mv",
+					new Object[] { commander, out, args });
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		mv.silent();
+		
+		try {
+			
+			mv.start();
+			while (mv.isAlive()) {
+				Thread.sleep(1);
+				}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
 	}
 
 	/**

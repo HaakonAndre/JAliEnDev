@@ -545,9 +545,6 @@ public class BusyBox {
 		final StringTokenizer st = new StringTokenizer(
 				ret, "\n");
 		
-		JSh.printOut("received" + ret);
-
-		
 		String localFile = null;
 		while (st.hasMoreTokens()) {
 			String a = st.nextToken();
@@ -557,11 +554,10 @@ public class BusyBox {
 			}
 		}
 		
-		JSh.printOut("GRON editing  [" + localFile + "].");
-
-		
-		if(localFile==null)
+		if(localFile==null){
+			JSh.printErr("Error getting the file.");
 			return;
+		}
 		
 		
 		long lastMod = (new File(localFile)).lastModified();
@@ -595,11 +591,10 @@ public class BusyBox {
 				
 			
 			callJBox("rm -silent " + parent + fileName + "~");
-			JSh.printOut("||rm -silent " + parent + fileName + "~");
+
 			callJBox("mv " + LFNName + " " + parent + fileName + "~");
-			JSh.printOut("||mv " + LFNName + " " + parent + fileName + "~");
-			callJBox("cp file:" + localFile + " " + LFNName+"_");
-			JSh.printOut("||cp file:" + localFile + " " + LFNName + "_");
+
+			callJBox("cp file:" + localFile + " " + LFNName);
 		}
 	}
 	
