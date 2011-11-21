@@ -251,8 +251,6 @@ public class BusyBox {
 	public String callJBoxGetString(final String line){		
 		String sline = line;
 		
-		System.err.println("Sending command line: "+sline);
-		
 		checkColorSwitch(sline);
 		
 		do {
