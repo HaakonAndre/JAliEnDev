@@ -88,8 +88,6 @@ public class PFNforReadOrDel extends Request {
 			pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true,
 					SEUtils.getSEs(ses), SEUtils.getSEs(exses));
 			
-			Collections.reverse(pfns);
-			
 			try {
 				for (PFN pfn : pfns) {
 
