@@ -63,7 +63,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 			if (!isSilent())
 				out.printOutln(AlienTime.getStamp()
-						+ "The file "
+						+ " the file "
 						+ lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1,
 								lfnOrGuid.length()) + " is in\n");
 			for (PFN pfn : pfns) {
