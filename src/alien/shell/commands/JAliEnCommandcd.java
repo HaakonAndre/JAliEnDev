@@ -53,18 +53,6 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		return true;
 	}
 
-	/**
-	 * serialize return values for gapi/root
-	 * @param state 
-	 * 
-	 * @return serialized return
-	 */
-	public String deserializeForRoot(int state) {
-		
-		return RootPrintWriter.columnseparator 
-				+ RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator + state;
-	}
-	
 	
 	/**
 	 * Constructor needed for the command factory in commander

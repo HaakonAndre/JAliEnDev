@@ -540,10 +540,30 @@ public class BusyBox {
 
 	private void editCatalogueFile(final String editcmd, final String LFNName) {
 
-		String localFile = callJBoxGetString("cp -t " + LFNName);
-		localFile = localFile.replace("\n", "")
-				.replace("Downloaded file to ", "").trim();
+		String ret = callJBoxGetString("cp -t " + LFNName.trim());
+		
+		final StringTokenizer st = new StringTokenizer(
+				ret, "\n");
+		
+		JSh.printOut("received" + ret);
 
+		
+		String localFile = null;
+		while (st.hasMoreTokens()) {
+			String a = st.nextToken();
+			if(a.contains("Downloaded file to ")){
+					localFile = a.replace("Downloaded file to ", "").trim();
+					break;
+			}
+		}
+		
+		JSh.printOut("GRON editing  [" + localFile + "].");
+
+		
+		if(localFile==null)
+			return;
+		
+		
 		long lastMod = (new File(localFile)).lastModified();
 
 		FileEditor editor = null;
@@ -558,9 +578,29 @@ public class BusyBox {
 		
 		editor.edit(localFile);
 
-		if ((new File(localFile)).lastModified() != lastMod)
-			callJBox("cp file:" + localFile + " " + LFNName + "new");
-
+		if ((new File(localFile)).lastModified() != lastMod){
+			String parent;
+			String fileName;
+			if(LFNName.contains("/")){
+					parent = LFNName.substring(0,LFNName.lastIndexOf('/')) + "/";
+					fileName = LFNName.substring(LFNName.lastIndexOf('/')+1);
+			}else{
+				parent = "";
+				fileName = LFNName;
+			}
+				
+			// we cannot allow "/..file", only hidde out with "/.file"
+			if(!fileName.startsWith("."))
+				fileName  = "." + fileName;
+				
+			
+			callJBox("rm -silent " + parent + fileName + "~");
+			JSh.printOut("||rm -silent " + parent + fileName + "~");
+			callJBox("mv " + LFNName + " " + parent + fileName + "~");
+			JSh.printOut("||mv " + LFNName + " " + parent + fileName + "~");
+			callJBox("cp file:" + localFile + " " + LFNName+"_");
+			JSh.printOut("||cp file:" + localFile + " " + LFNName + "_");
+		}
 	}
 	
 	

@@ -157,6 +157,19 @@ public abstract class JAliEnBaseCommand extends Thread{
 		silent = false;
 	}
 	
+
+	/**
+	 * serialize return values for gapi/root
+	 * @param state 
+	 * 
+	 * @return serialized return
+	 */
+	public String deserializeForRoot(int state) {
+		
+		return deserializeForRoot() + state;
+	}
+	
+	
 	/**
 	 * serialize return values for gapi/root 
 	 * @return serialized return

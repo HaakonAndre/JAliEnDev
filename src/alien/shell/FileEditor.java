@@ -17,6 +17,8 @@ public class FileEditor {
 	
 	public static final String[] editors = {"edit","vim","emacs","more","less","nano"};
 	
+	
+	
 	private static final String vim = which("vim");
 	
 	private static final String emacs = which("emacs");

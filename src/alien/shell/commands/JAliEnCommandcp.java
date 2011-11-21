@@ -36,10 +36,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	
 	private HashMap<String,Integer> qos = new HashMap<String,Integer>();
 
-	
-	/**
-	 * marker for -a argument
-	 */
+
 	private String source = null;
 	private String target = null;
 	
@@ -52,10 +49,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 
-		if (bT) {
+		if (bT) 
 			localFile = copyGridToLocal(source, null);
 			
-		} else if (!localFileSpec(source) && localFileSpec(target)) {
+		else if (!localFileSpec(source) && localFileSpec(target)) {
 		
 			localFile = new File(getLocalFileSpec(target));
 			
@@ -193,7 +190,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * @return local target file
 	 */
 	public File copyGridToLocal(final String sourceLFN, File targetLocalFile) {
-
+		
 		LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 				commander.user.getName(), commander.getCurrentDir()
 						.getCanonicalName(), sourceLFN));
@@ -217,7 +214,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					ProtocolAction pA = new ProtocolAction(protocol, pfn,
 							targetLocalFile);
 					try {
-						out.printErrln("GRON: Trying to get file over: "
+						out.printOutln("GRON: Trying to get file over: "
 								+ commander.c_api.getSE(pfn.seNumber).seName);
 						pA.start();
 						while (pA.isAlive()) {
@@ -252,7 +249,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			//out.printErrln("pfns not null, but error.");
 			//return null;
 		}
-
+		
 		if (!isSilent())
 			out.printErrln("Could not get the file.");
 		return null;
@@ -530,6 +527,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			bT = options.has("t");
+			
+			if (options.has("t") && options.hasArgument("t"))
+				out.printOutln("t has val: " + (String) options.valueOf("t"));
+			
 
 			source = options.nonOptionArguments().get(0);
 			if (!(options.nonOptionArguments().size() == 1 && options.has("t")))

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -590,6 +591,45 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		return db.query(q) && db.getUpdateCount()==1;		
 	}
+	
+	
+	/**
+	 * @return <code>true</code> if this LFN entry was deleted in the database
+	 */
+	boolean destroy(){
+		if (!exists)
+			return false;
+		
+		final String q = "DELETE FROM L"+indexTableEntry.tableName+"L WHERE entryId="+entryId ;
+		
+		final DBFunctions db = indexTableEntry.getDB();
+		
+		if (db.query(q)){
+			exists = false;
+			entryId = 0;
+			return true;
+		}
+		
+		return false;
+		
+	}
+	
+	
+	/**
+	 * Delete this LFN in the Catalogue
+	 * 
+	 * @return  <code>true</code> if this LFN entry was deleted in the database 
+	 */
+	public boolean delete(){
+		if (!exists)
+			throw new IllegalAccessError("You asked to delete an LFN that doesn't exist in the database");
+
+		return destroy();
+		
+	}
+	
+	
+	
 	
 	/**
 	 * Change the ownership of this LFN.

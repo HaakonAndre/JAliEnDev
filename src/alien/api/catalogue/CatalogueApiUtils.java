@@ -112,6 +112,28 @@ public class CatalogueApiUtils {
 		return false;
 	}
 	
+	
+
+	/**
+	 * Move a LFN in the Catalogue
+	 * @param path
+	 * @param newpath
+	 * @return state of the LFN's deletion
+	 *         <code>null</code>
+	 */
+	public LFN moveLFN(final String path, final String newpath) {
+		try {
+			return Dispatcher.execute(new MoveLFNfromString(commander.getUser(), commander.getRole(), path, newpath), true).newLFN();
+		}
+		catch (ServerException e) {
+			logger.log(Level.WARNING,"Could not move the LFN-->newLFN: " + path+"-->" + newpath);
+			e.getCause().printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	
 
 	/**
 	 * Get GUID from String
@@ -166,8 +188,6 @@ public class CatalogueApiUtils {
 	/**
 	 * Get PFNs for reading by LFN
 	 * 
-	 * @param site
-	 *            site the user is matched to
 	 * @param lfn
 	 *            LFN of the entry as String
 	 * @param ses
@@ -194,8 +214,6 @@ public class CatalogueApiUtils {
 	/**
 	 * Get PFNs for writing by LFN
 	 * 
-	 * @param site
-	 *            site the user is matched to
 	 * @param lfn
 	 *            LFN of the entry as String
 	 * @param guid 

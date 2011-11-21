@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,6 +17,7 @@ import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
+import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
 
@@ -49,20 +51,23 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
 	 */
-	private static final String[] commandList = {"shutdown", "ls", "get",
-		"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
-		"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
-		, "lfn2guid", "guid2lfn", "w", "uptime"};
+	private static final String[] commandList;
+//	= {"shutdown", "ls", "get",
+//		"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "mv", "time", "mkdir", "rmdir", "find",
+//		"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
+//		, "lfn2guid", "guid2lfn", "w", "uptime"};
 	
 	static{
-//		List<String> comms = Arrays.asList("shutdown", "ls", "get",
-//				"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "time", "mkdir", "rmdir", "find",
-//				"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
-//				, "lfn2guid", "guid2lfn", "w", "uptime");
 		
-		//comms.addAll(Arrays.asList(FileEditor.editors));
+		List<String> comms = new ArrayList<String>();
+		comms.addAll(Arrays.asList( "shutdown", "ls", "get",
+				"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "mv", "time", "mkdir", "rmdir", "find",
+				"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
+				, "lfn2guid", "guid2lfn", "w", "uptime"));
 		
-		//commandList = comms.toArray(new String[comms.size()]);
+		comms.addAll(Arrays.asList( FileEditor.editors));
+		
+		commandList = comms.toArray(new String[comms.size()]);
 	}
 			
 			
@@ -72,7 +77,7 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm",
+			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm", "mv",
 			"masterjob","user", "role"  , "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
 	/**
 	 * Commands to let UI talk internally with us here
