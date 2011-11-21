@@ -140,8 +140,7 @@ public class JobAgent extends Thread {
 					System.out.println("Getting input file: " + slfn);
 					LFN lfn = c_api.getLFN(slfn);
 					System.out.println("Getting input file lfn: " + lfn);
-					List<PFN> pfns = c_api.getPFNsToRead(
-							site, lfn, null, null);
+					List<PFN> pfns = c_api.getPFNsToRead(lfn, null, null);
 					System.out.println("Getting input file pfns: " + pfns);
 
 					for (PFN pfn : pfns) {
@@ -295,8 +294,7 @@ public class JobAgent extends Thread {
 						lfn.size = size;
 						lfn.md5 = md5;
 
-						pfns = c_api.getPFNsToWrite(site,
-								lfn, null, null, null, null, 0);
+						pfns = c_api.getPFNsToWrite(lfn, null, null, null, null);
 
 						if (pfns != null) {
 							ArrayList<String> envelopes = new ArrayList<String>(
