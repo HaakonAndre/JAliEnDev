@@ -77,9 +77,9 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 		if (out.isRootPrinter())
 			if(pfns!=null && pfns.size()>0)
-				out.setReturnArgs(deserializeForRoot());
+				out.setReturnArgs(deserializeForRoot(1));
 			else 
-				out.setReturnArgs(super.deserializeForRoot());
+				out.setReturnArgs(deserializeForRoot(0));
 	}
 
 	/**
@@ -100,19 +100,6 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 		return false;
 	}
 
-	/**
-	 * serialize return values for gapi/root
-	 * 
-	 * @return serialized return
-	 */
-	@Override
-	public String deserializeForRoot() {
-		
-		return RootPrintWriter.columnseparator 
-				//+ RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1" 
-				+ RootPrintWriter.fielddescriptor + "lfn" + RootPrintWriter.fieldseparator + "0";
-		
-	}
 
 	/**
 	 * Constructor needed for the command factory in commander
