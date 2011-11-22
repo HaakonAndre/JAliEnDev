@@ -10,47 +10,50 @@ type,getdataset,
 
 -----------------------------------------------
 
-top?
-prepare
-isonline
+
+rm
+rmdir
+purge/erase
+
+submit
+kill
+queue
+masterjob
+resubmit
+
+stage
+mirror
 
 
+fquota
+jquota 
 
 
 removeTag
 removeTagValue
 removeTrigger
-resubmit
-masterjob
-mirror
 addTag
 addTagValue
 addTrigger
-mv
+showTags
+updateTagValue
+showAllTagValue
+showTagValue
+showTrigger
+
 debug
 packages
 partitions
 df
-updateTagValue
-showAllTagValue
-showTags
-ps
-showTagValue
-whereis
-purge
-showTrigger
 who
-edit    less|more|vim|emacs|...
 spy
-queue
-stage
-submit
-erase
-kill
-registerOutput
 
-fquota
-jquota 
+
+top?
+prepare
+isonline
+
+
 
 
 ctrl-L
