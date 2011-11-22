@@ -110,7 +110,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 				+ RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "0";
 		
 		return RootPrintWriter.columnseparator 
-				+ RootPrintWriter.fielddescriptor + "lfn" + RootPrintWriter.fieldseparator + "1";
+				+ RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1";
 		
 	}
 
