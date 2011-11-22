@@ -88,20 +88,21 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				
 		
 
-		if (accessRequest == AccessType.WRITE) {
+		if (accessRequest == AccessType.WRITE) 
 				pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 		
-		} else if (accessRequest == AccessType.READ) {
+		else if (accessRequest == AccessType.READ) 
 				pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
-		} else
+		else
 			out.printErrln("Unknown access type [error in processing].");
 
 		if(pfns==null || pfns.size()<1)
 			out.printErrln("Not able to get request LFN/GUID [error in processing].");
-
 		
 		if (out.isRootPrinter())
 			out.setReturnArgs(deserializeForRoot());
+		else 
+			out.printOut(deserializeForRoot());
 	}
 
 	/**
@@ -137,20 +138,18 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			String desc = RootPrintWriter.fielddescriptor;
 			String sep = RootPrintWriter.fieldseparator;
 
-			
 			//<stderrindicator>\n<columnseparator><fieldseparator><outputindicator>\n<columnseparator><fielddescriptor>eof<fieldseparator>1<outputterminator>\n<columnseparator><fielddescriptor>pwd<fieldseparator>/alice/cern.ch/user/s/sschrein/edittest/<streamend>
 			
 			for (PFN pfn : pfns) {
 				ret += col;
 
 				String envelope = pfn.ticket.envelope.getSignedEnvelope();
-				
 				if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber)
 						.getName().toLowerCase()))
 					if (commander.c_api.getSE(pfn.seNumber).needsEncryptedEnvelope)
 						envelope += "&envelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
-
+				
 				final StringTokenizer st = new StringTokenizer(envelope, "&");
 				while (st.hasMoreTokens()) {
 					String t = st.nextToken();
@@ -171,18 +170,21 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 						ret += desc + "pfn" + sep + ttpfn.toString();
 					}
-					// if(("lfn").equals(key))
-					// ret += desc + key + sep +
-					// "/alice/cern.ch/user/s/sschrein/whoamI_copyX.jdl";
-					// else if(("guid").equals(key))
-					// ret += desc + key + sep + val.toUpperCase();
-					// else
-					ret += desc + key + sep + val;
+					else 
+						ret += desc + key + sep + val;
 
 				}
-				ret += desc + "nSEs" + sep
-						+ pfns.size();
+				
+				if (accessRequest.equals(AccessType.WRITE))
+					ret += desc + "nSEs" + sep + "1";
+				else 
+					ret += desc + "nSEs" + sep + pfns.size();
+				
 				ret += desc + "user" + sep + commander.user.getName();
+				
+				if (accessRequest.equals(AccessType.WRITE))
+					break; //if write, break after first walk through
+				
 			}
 			return ret;
 		}
