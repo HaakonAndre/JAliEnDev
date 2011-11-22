@@ -181,7 +181,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 				}
 				ret += desc + "nSEs" + sep
-						+ pfns.get(0).getGuid().getPFNs().size();
+						+ pfns.size();
 				ret += desc + "user" + sep + commander.user.getName();
 			}
 			return ret;
