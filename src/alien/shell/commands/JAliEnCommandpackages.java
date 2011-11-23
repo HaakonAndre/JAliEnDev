@@ -14,11 +14,8 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	
 	@Override
 	public void run() {
-
 		
-		String platform = "Linux-x86_64";
-		
-		List<Package> packs = commander.c_api.getPackages(platform);
+		List<Package> packs = commander.c_api.getPackages(getPackagePlatformName());
 				
 		
 		if (packs != null){
@@ -38,6 +35,20 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 
 	}
 
+	private String getPackagePlatformName(){
+
+		String ret =  System.getProperty("os.name");
+		
+		if(System.getProperty("os.arch").contains("amd64"))
+			ret += "-x86_64";
+		else if(ret.toLowerCase().contains("mac") && System.getProperty("os.arch").contains("ppc"))
+			ret  = "Darwin-PowerMacintosh";
+	
+		return ret;
+	}
+	
+	
+	
 	/**
 	 * printout the help info, none for this command
 	 */

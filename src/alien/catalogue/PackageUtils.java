@@ -43,23 +43,21 @@ public class PackageUtils {
 		final List<Package> ret = new ArrayList<Package>();
 		
 		if (monitor!=null){
-			monitor.incrementCounter("LFN_db_lookup");
+			monitor.incrementCounter("Package_db_lookup");
 		}
 		
 		String q = "SELECT DISTINCT * FROM PACKAGES WHERE platform='"+Format.escSQL(platform)+"'";
 		
-		
 		if (!db.query(q))
 			return null;
 		
-		while (!db.moveNext()){
+		while (db.moveNext()){
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "Empty result set for "+q);
 			
 			ret.add(new Package(db));
-			return null;
 		}
-		
+			
 		return ret;
 	}
 }
