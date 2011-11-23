@@ -835,6 +835,9 @@ public class TaskQueueUtils {
 	 * @throws IOException if there is any problem parsing the JDL content
 	 */
 	public static JDL applyJDLArguments(final String jdlContents, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
+		if (jdlContents==null)
+			return null;
+		
 		String jdlToSubmit = jdlContents;
 		
 		Matcher m = p.matcher(jdlToSubmit);
