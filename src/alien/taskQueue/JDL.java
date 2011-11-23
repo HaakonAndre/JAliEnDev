@@ -755,8 +755,8 @@ public class JDL implements Serializable {
 	}
 	
 	private static final void append(final StringBuilder sb, final Object o){
-		if (o instanceof String){
-			sb.append('"').append((String) o).append('"');
+		if (o instanceof StringBuilder || o instanceof StringBuffer){
+			sb.append(o);
 		}
 		else
 		if (o instanceof Collection){
@@ -777,8 +777,9 @@ public class JDL implements Serializable {
 			
 			sb.append(tab).append("\n}");
 		}
-		else
-			sb.append(o.toString());
+		else{
+			sb.append('"').append(o.toString()).append('"');
+		}
 	}
 	
 	/**
