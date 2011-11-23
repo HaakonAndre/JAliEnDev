@@ -409,7 +409,7 @@ public class JAKeyStore {
 						"host.cert.pub.location",
 						System.getProperty("user.home")
 								+ System.getProperty("file.separator")
-								+ "globus"
+								+ ".globus"
 								+ System.getProperty("file.separator")
 								+ "hostcert.pem"), new JPasswordFinder(new char[]{}));
 
