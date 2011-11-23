@@ -410,13 +410,6 @@ public class JAKeyStore {
 		
 		hostCert = KeyStore.getInstance("JKS");
 		hostCert.load(null, pass);
-		
-		if(hostCert==null)
-			System.out.println("JKS is null");
-		System.out.println("hostkey: " + hostkey);
-		System.out.println("hostcert: " + hostcert);
-		
-		
 			
 		addKeyPairToKeyStore(
 				hostCert,
@@ -560,9 +553,6 @@ public class JAKeyStore {
 				reader = new PEMReader(priv);
 			else
 				reader = new PEMReader(priv, pFinder);
-			
-			if (pFinder == null)
-				System.out.println("pFinder null");
 			
 			return ((KeyPair) reader.readObject()).getPrivate();
 		}
