@@ -36,22 +36,37 @@ public class Xrootd extends Protocol {
 
 	private final static String xrdcpCommand = "xrdcpapmon";
 	
-	private final static String xrootd_default_path;
+	private static String xrootd_default_path = null;
 
-	private final static String xrdcpPath;
+	private static String xrdcpPath = null;
 	
 	static {
 		if (ConfigUtils.getConfig() != null) {
-			xrootd_default_path = ConfigUtils.getConfig().gets(
-					"xrootd.location");
+			xrootd_default_path = ConfigUtils.getConfig().gets("xrootd.location", null);
 
-			if (xrootd_default_path != null)
+			if (xrootd_default_path != null){
 				xrdcpPath = xrootd_default_path + "/bin/" + xrdcpCommand;
-			else
-				xrdcpPath = ExternalCalls.programExistsInPath(xrdcpCommand);
-		}else{
-			xrootd_default_path = null;
-			xrdcpPath = null;
+				
+				File test = new File(xrdcpPath);
+				
+				if (!test.exists() || !test.isFile() || !test.canExecute())
+					xrdcpPath = null;
+			}
+		}
+		
+		if (xrdcpPath == null){
+			xrdcpPath = ExternalCalls.programExistsInPath(xrdcpCommand);
+			
+			if (xrdcpPath!=null){
+				int idx = xrdcpPath.lastIndexOf('/');
+				
+				if (idx>0){
+					idx = xrdcpPath.lastIndexOf('/', idx);
+					
+					if (idx>=0)
+						xrootd_default_path = xrdcpPath.substring(0, idx);
+				}
+			}
 		}
 	}
 	
@@ -75,20 +90,14 @@ public class Xrootd extends Protocol {
 		// package protected
 	}
 
-	private void checkLibraryPath(final ExternalProcessBuilder p) {
-		
+	private static void checkLibraryPath(final ExternalProcessBuilder p) {
 		if (xrootd_default_path != null) {
-
 			String ldpath = "";
 			if (p.environment().containsKey("LD_LIBRARY_PATH"))
 				ldpath = p.environment().get("LD_LIBRARY_PATH");
 
-			p.environment().put(
-					"LD_LIBRARY_PATH",
-					ldpath + ":" + xrootd_default_path
-							+ "/lib");
+			p.environment().put("LD_LIBRARY_PATH", ldpath + ":" + xrootd_default_path + "/lib");
 		}
-
 	}
 	
 	/**
@@ -388,13 +397,13 @@ public class Xrootd extends Protocol {
 				throw new SourceException("Local file doesn't match catalogue details");
 		}
 		catch (final SourceException ioe) {
-			if (!target.delete())
+			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 
 			throw ioe;
 		}
 		catch (final Throwable t) {
-			if (!target.delete())
+			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
 
 			logger.log(Level.WARNING, "Caught exception", t);
