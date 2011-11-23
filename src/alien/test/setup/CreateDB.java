@@ -102,7 +102,10 @@ public class CreateDB {
 		//System.out.println("MYSQL install DB STDERR: " + db.getStdErr());
 	}
 	
-	private static void startDatabase() throws Exception{
+	/**
+	 * @throws Exception
+	 */
+	public static void startDatabase() throws Exception{
 		final TestCommand db = new TestCommand(new String[] { TestBrain.cMysqldSafe, "--defaults-file="+my_cnf});
 		db.daemonize();
 		//db.verbose();

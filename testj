@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+if [ "$1" == "start" ]; then
+
+	cd $JALIEN_HOME
+	./test.sh alien.test.StartTestVO
+
+elif [ "$1" == "stop" ]; then
+
+	cd $JALIEN_HOME
+	./test.sh alien.test.ShutdownTestVO 
+
+elif [ "$1" == "test" ]; then
+
+	cd $JALIEN_HOME
+	./test.sh alien.test.Tester
+
+
+elif [ "$1" == "jbox" ]; then
+
+	cd $JALIEN_HOME
+	./test.sh alien.JBox
+	
+elif [ "$1" == "jsh" ]; then
+
+	cd $JALIEN_HOME
+	./test.sh alien.JSh
+	
+elif [ "$1" == "central" ]; then
+
+	cd $JALIEN_HOME
+	./test.sh alien.JCentral
+
+
+fi
