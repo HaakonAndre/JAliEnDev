@@ -37,7 +37,7 @@ public final class CreateCertificates {
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "req", "-new", "-batch", "-key", TestConfig.ca_key
 				,"-x509", "-days", "365", "-out", TestConfig.ca_cert
 				,"-subj", TestConfig.certSubjectCA}));
-		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "640", TestConfig.ca_cert}));
+		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "440", TestConfig.ca_cert}));
 
 		Functions.execShell(commands,verbose);
 		commands.clear();
@@ -56,7 +56,7 @@ public final class CreateCertificates {
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "x509", "-req", "-in"
 				,userreq
 				,"-CA", TestConfig.ca_cert, "-CAkey", TestConfig.ca_key, "-CAcreateserial", "-out", TestConfig.user_cert}));
-		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "640", TestConfig.user_cert}));
+		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "440", TestConfig.user_cert}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "400", TestConfig.user_key}));
 		
 		Functions.execShell(commands,verbose);
@@ -75,7 +75,7 @@ public final class CreateCertificates {
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "x509", "-req", "-in"
 				,hostreq
 				,"-CA", TestConfig.ca_cert, "-CAkey", TestConfig.ca_key, "-CAcreateserial", "-out", TestConfig.host_cert}));
-		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "640", TestConfig.host_cert}));
+		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "440", TestConfig.host_cert}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "400", TestConfig.host_key}));
 		
 		Functions.execShell(commands,verbose);

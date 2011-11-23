@@ -378,7 +378,7 @@ public class JAKeyStore {
 								+ System.getProperty("file.separator")
 								+ ".globus"
 								+ System.getProperty("file.separator")
-								+ "hostcert.pem"), null);
+								+ "hostcert.pem"), new JPasswordFinder(new char[]{}));
 
 		
 		loadTrusts();
@@ -411,7 +411,7 @@ public class JAKeyStore {
 								+ System.getProperty("file.separator")
 								+ "globus"
 								+ System.getProperty("file.separator")
-								+ "hostcert.pem"), null);
+								+ "hostcert.pem"), new JPasswordFinder(new char[]{}));
 
 		loadTrusts();
 
