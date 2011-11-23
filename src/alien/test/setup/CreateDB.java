@@ -54,7 +54,7 @@ public class CreateDB {
 		initializeDatabase();
 		startDatabase();
 
-		Thread.sleep(3000); 
+		Thread.sleep(6000); 
 		connect();
 		
 		fillDatabase(mysql_passwd);
