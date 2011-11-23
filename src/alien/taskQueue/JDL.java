@@ -775,7 +775,7 @@ public class JDL implements Serializable {
 				sb.append("\n").append(tab).append(tab).append("\"").append(o2).append("\"");
 			}
 			
-			sb.append(tab).append("\n}");
+			sb.append(tab).append("\n").append(tab).append("}");
 		}
 		else{
 			sb.append('"').append(o.toString()).append('"');
