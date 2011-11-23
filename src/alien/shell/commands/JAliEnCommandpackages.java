@@ -12,10 +12,13 @@ import alien.user.UsersHelper;
  */
 public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	
+	
+	private List<Package> packs = null;
+	
 	@Override
 	public void run() {
 		
-		List<Package> packs = commander.c_api.getPackages(getPackagePlatformName());
+		packs = commander.c_api.getPackages(getPackagePlatformName());
 				
 		
 		if (packs != null){
@@ -46,7 +49,27 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	
 		return ret;
 	}
-	
+
+	/**
+	 * serialize return values for gapi/root
+	 * 
+	 * @return serialized return
+	 */
+	@Override
+	public String deserializeForRoot() {
+		
+		if (packs != null) {
+			
+			String ret =  RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
+					 + RootPrintWriter.fieldseparator + "1\n";
+			for(Package p : packs)
+				ret += RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
+					 + RootPrintWriter.fieldseparator + p.getFullName() + "\n";
+					
+			return ret;
+		}
+		return super.deserializeForRoot(0);
+	}
 	
 	
 	/**
