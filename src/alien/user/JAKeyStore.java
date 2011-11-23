@@ -391,27 +391,38 @@ public class JAKeyStore {
 
 		ExtProperties config = ConfigUtils.getConfig();
 		//pass = getRandomString();
+		
+		String hostkey = config.gets(
+				"host.cert.priv.location",
+				System.getProperty("user.home")
+						+ System.getProperty("file.separator")
+						+ ".globus"
+						+ System.getProperty("file.separator")
+						+ "hostkey.pem");
 
+		String hostcert = config.gets(
+				"host.cert.pub.location",
+				System.getProperty("user.home")
+						+ System.getProperty("file.separator")
+						+ ".globus"
+						+ System.getProperty("file.separator")
+						+ "hostcert.pem");
+		
 		hostCert = KeyStore.getInstance("JKS");
 		hostCert.load(null, pass);
 		
+		if(hostCert==null)
+			System.out.println("JKS is null");
+		System.out.println("hostkey: " + hostkey);
+		System.out.println("hostcert: " + hostcert);
+		
+		
+			
 		addKeyPairToKeyStore(
 				hostCert,
 				"Host.cert",
-				config.gets(
-						"host.cert.priv.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".globus"
-								+ System.getProperty("file.separator")
-								+ "hostkey.pem"),
-				config.gets(
-						"host.cert.pub.location",
-						System.getProperty("user.home")
-								+ System.getProperty("file.separator")
-								+ ".globus"
-								+ System.getProperty("file.separator")
-								+ "hostcert.pem"), new JPasswordFinder(new char[]{}));
+				hostkey,
+				hostcert, null);
 
 		loadTrusts();
 
@@ -549,7 +560,10 @@ public class JAKeyStore {
 				reader = new PEMReader(priv);
 			else
 				reader = new PEMReader(priv, pFinder);
-					
+			
+			if (pFinder == null)
+				System.out.println("pFinder null");
+			
 			return ((KeyPair) reader.readObject()).getPrivate();
 		}
 		finally{
