@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.test.utils.Functions;
 import alien.test.utils.TestException;
@@ -358,6 +359,8 @@ public class TestConfig {
 		if (!(new File(se_home)).mkdir())
 			throw new TestException("Could not create SE directory: " + se_home);
 		
+		
+		ConfigUtils.initialize(tvo_config);
 	}
 
 	/**

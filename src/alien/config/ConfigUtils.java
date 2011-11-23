@@ -32,110 +32,20 @@ public class ConfigUtils {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
 
-	private static final Map<String, ExtProperties> dbConfigFiles;
+	private static Map<String, ExtProperties> dbConfigFiles;
 
-	private static final Map<String, ExtProperties> otherConfigFiles;
+	private static Map<String, ExtProperties> otherConfigFiles;
 
-	private static final String CONFIG_FOLDER;
+	private static  String CONFIG_FOLDER;
 
 	private static LoggingConfigurator logging = null;
 
-	private static final ExtProperties appConfig;
+	private static ExtProperties appConfig;
 
 	private static boolean hasDirectDBConnection = false;
 
 	static {
-		String sConfigFolder = null;
-
-		final HashMap<String, ExtProperties> dbconfig = new HashMap<String, ExtProperties>();
-
-		final HashMap<String, ExtProperties> otherconfig = new HashMap<String, ExtProperties>();
-
-		ExtProperties applicationConfig = null;
-
-		try {
-			sConfigFolder = System.getProperty("AliEnConfig", "config");
-
-			final File f = new File(sConfigFolder);
-			
-//			System.err.println("Config folder: "+f.getCanonicalPath());
-
-			if (f.exists() && f.isDirectory() && f.canRead()) {
-				if (System.getProperty("lazyj.config.folder") == null)
-					System.setProperty("lazyj.config.folder", sConfigFolder);
-				
-				final File[] list = f.listFiles();
-
-				if (list != null) {
-					for (final File sub : list) {
-						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
-							String sName = sub.getName();
-							sName = sName.substring(0, sName.lastIndexOf('.'));
-							
-//							System.err.println("Found configuration file: "+sName);
-
-							final ExtProperties prop = new ExtProperties(sConfigFolder, sName);
-							prop.makeReadOnly();
-							prop.setAutoReload(1000 * 60);
-
-							if (sName.equals("logging")) {
-								logging = new LoggingConfigurator(prop);
-								
-								if (System.getProperty("lia.Monitor.ConfigURL") == null) {
-									// give the ML components the same logging configuration file if not explicitly set
-									try {
-										System.setProperty("lia.Monitor.ConfigURL", "file:" + sub.getCanonicalPath());
-									}
-									catch (IOException ioe) {
-										// ignore
-									}
-
-									// force a call to this guy so everything
-									// instantiates correctly
-									AppConfig.lastReloaded();
-								}
-							}
-							else if (sName.equals("config")) {
-								applicationConfig = prop;
-							}
-							else if (prop.gets("driver").length() > 0) {
-								dbconfig.put(sName, prop);
-
-								if (prop.gets("password").length() > 0)
-									hasDirectDBConnection = true;
-							}
-							else
-								otherconfig.put(sName, prop);
-						}
-					}
-				}
-			}
-
-			// if (logging == null){
-			// final ExtProperties prop = new ExtProperties();
-			//
-			// prop.set("handlers", "java.util.logging.ConsoleHandler");
-			// prop.set("java.util.logging.ConsoleHandler.level", "FINEST");
-			// prop.set(".level", "INFO");
-			// prop.set("java.util.logging.ConsoleHandler.formatter",
-			// "java.util.logging.SimpleFormatter");
-			//
-			// logging = new LoggingConfigurator(prop);
-			// }
-		}
-		catch (Throwable t) {
-			System.err.println("ConfigUtils: static: caught: " + t + " (" + t.getMessage() + ")");
-			t.printStackTrace();
-		}
-
-		CONFIG_FOLDER = sConfigFolder;
-
-		dbConfigFiles = Collections.unmodifiableMap(dbconfig);
-
-		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
-
-		appConfig = applicationConfig != null ? applicationConfig : new ExtProperties();
-		appConfig.makeReadOnly();
+		initialize(System.getProperty("AliEnConfig", "config"));
 	}
 
 	/**
@@ -281,9 +191,107 @@ public class ConfigUtils {
 		
 		return l;
 	}
+	
+	
+	/**
+	 * @param ConfigFolderOverwrite
+	 */
+	public static void initialize(final String ConfigFolderOverwrite){
+	
+		final HashMap<String, ExtProperties> dbconfig = new HashMap<String, ExtProperties>();
+
+		final HashMap<String, ExtProperties> otherconfig = new HashMap<String, ExtProperties>();
+
+		ExtProperties applicationConfig = null;
+
+		try {
+			
+			final File f = new File(ConfigFolderOverwrite);
+			
+//			System.err.println("Config folder: "+f.getCanonicalPath());
+
+			if (f.exists() && f.isDirectory() && f.canRead()) {
+				if (System.getProperty("lazyj.config.folder") == null)
+					System.setProperty("lazyj.config.folder", ConfigFolderOverwrite);
+				
+				final File[] list = f.listFiles();
+
+				if (list != null) {
+					for (final File sub : list) {
+						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
+							String sName = sub.getName();
+							sName = sName.substring(0, sName.lastIndexOf('.'));
+							
+//							System.err.println("Found configuration file: "+sName);
+
+							final ExtProperties prop = new ExtProperties(ConfigFolderOverwrite, sName);
+							prop.makeReadOnly();
+							prop.setAutoReload(1000 * 60);
+
+							if (sName.equals("logging")) {
+								logging = new LoggingConfigurator(prop);
+								
+								if (System.getProperty("lia.Monitor.ConfigURL") == null) {
+									// give the ML components the same logging configuration file if not explicitly set
+									try {
+										System.setProperty("lia.Monitor.ConfigURL", "file:" + sub.getCanonicalPath());
+									}
+									catch (IOException ioe) {
+										// ignore
+									}
+
+									// force a call to this guy so everything
+									// instantiates correctly
+									AppConfig.lastReloaded();
+								}
+							}
+							else if (sName.equals("config")) {
+								applicationConfig = prop;
+							}
+							else if (prop.gets("driver").length() > 0) {
+								dbconfig.put(sName, prop);
+
+								if (prop.gets("password").length() > 0)
+									hasDirectDBConnection = true;
+							}
+							else
+								otherconfig.put(sName, prop);
+						}
+					}
+				}
+			}
+
+			// if (logging == null){
+			// final ExtProperties prop = new ExtProperties();
+			//
+			// prop.set("handlers", "java.util.logging.ConsoleHandler");
+			// prop.set("java.util.logging.ConsoleHandler.level", "FINEST");
+			// prop.set(".level", "INFO");
+			// prop.set("java.util.logging.ConsoleHandler.formatter",
+			// "java.util.logging.SimpleFormatter");
+			//
+			// logging = new LoggingConfigurator(prop);
+			// }
+		}
+		catch (Throwable t) {
+			System.err.println("ConfigUtils: static: caught: " + t + " (" + t.getMessage() + ")");
+			t.printStackTrace();
+		}
+
+		CONFIG_FOLDER = ConfigFolderOverwrite;
+
+		dbConfigFiles = Collections.unmodifiableMap(dbconfig);
+
+		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
+
+		appConfig = applicationConfig != null ? applicationConfig : new ExtProperties();
+		appConfig.makeReadOnly();
+	}
 
 	private static final String jAliEnVersion = "0.0.1";
 
+	
+	
 	/**
 	 * @return JAlien version
 	 */
