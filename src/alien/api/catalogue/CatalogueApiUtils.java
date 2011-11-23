@@ -14,6 +14,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
+import alien.catalogue.Package;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 
@@ -384,6 +385,25 @@ public class CatalogueApiUtils {
 		}
 		catch (ServerException e) {
 			logger.log(Level.WARNING,"Could not get SE: " + seno);
+			e.getCause().printStackTrace();
+		}
+		
+		return null;
+	}
+	
+	
+
+	/**
+	 * Get Packages for a certain platform 
+	 * @param platform 
+	 * @return the Packages
+	 */
+	public List<Package> getPackages(final String platform) {
+		try {
+			return Dispatcher.execute(new PackagesfromString(commander.getUser(), commander.getRole(), platform), true).getPackages();
+		}
+		catch (ServerException e) {
+			logger.log(Level.WARNING,"Could not get Packages for: " + platform);
 			e.getCause().printStackTrace();
 		}
 		

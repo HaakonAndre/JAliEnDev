@@ -62,7 +62,7 @@ public class JAliEnCOMMander extends Thread {
 		List<String> comms = new ArrayList<String>();
 		comms.addAll(Arrays.asList( "shutdown", "ls", "get",
 				"cat", "whoami", "roleami", "whereis", "cp", "cd", "rm", "mv", "time", "mkdir", "rmdir", "find",
-				"scrlog", "submit", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
+				"scrlog", "submit","packages", "ps","blackwhite","color", "masterjob", "user" , "role" , "kill"
 				, "lfn2guid", "guid2lfn", "w", "uptime"));
 		
 		comms.addAll(Arrays.asList( FileEditor.editors));
@@ -77,7 +77,7 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"scrlog", "submit", "motd", "access", "commit", "pwd", "ps" , "rmdir", "rm", "mv",
+			"scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps" , "rmdir", "rm", "mv",
 			"masterjob","user", "role"  , "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
 	/**
 	 * Commands to let UI talk internally with us here
