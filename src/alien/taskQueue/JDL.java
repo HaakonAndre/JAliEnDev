@@ -801,7 +801,7 @@ public class JDL implements Serializable {
 	}
 	
 	private static final void append(final StringBuilder sb, final Object o){
-		if (o instanceof StringBuilder || o instanceof StringBuffer){
+		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number){
 			sb.append(o);
 		}
 		else
