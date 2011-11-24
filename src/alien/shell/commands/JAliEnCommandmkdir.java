@@ -44,7 +44,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 						commander.getCurrentDir().getCanonicalName(),path))==null){
 					if(!isSilent())
 						out.printErrln("Could not create directory: " + path);
-					logger.log(Level.WARNING,"Could not create directory: " + path);B
+					logger.log(Level.WARNING,"Could not create directory: " + path);
 					success = false;
 				}
 			}
