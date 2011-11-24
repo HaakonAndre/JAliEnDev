@@ -1061,7 +1061,7 @@ public class TaskQueueUtils {
 				final LFN l = LFNUtils.getLFN(fileName);
 				
 				if (l==null || (!l.isFile() && !l.isCollection())){
-					throw new IOException(tag+" tag required "+fileName+" which is not valid: "+l);
+					throw new IOException(tag+" tag required "+fileName+" which is not valid: "+(l==null ? "not in the catalogue" : "not a file or collection"));
 				}
 			}
 		}
