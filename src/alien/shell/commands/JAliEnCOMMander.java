@@ -76,13 +76,13 @@ public class JAliEnCOMMander extends Thread {
 	 * The commands that have a JAliEnCommand* implementation
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls",
-			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
+			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find", "listFilesFromCollection",
 			"scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps" , "rmdir", "rm", "mv",
 			"masterjob","user", "role"  , "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami",
+	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection",
 			"cdir", "commandlist", "gfilecomplete", "cdirtiled" ,"blackwhite","color",
 			"setshell", "type" };
 
