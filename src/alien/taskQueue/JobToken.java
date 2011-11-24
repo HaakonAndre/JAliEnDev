@@ -147,7 +147,7 @@ public class JobToken implements Comparable<JobToken> {
 		}
 			
 		if (!exists){
-			System.out.println("inserting...");
+//			System.out.println("inserting...");
 			final boolean insertOK = insert(db);
 			return insertOK;
 		}
