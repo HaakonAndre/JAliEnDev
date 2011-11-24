@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -591,6 +592,32 @@ public class JDL implements Serializable {
 
 		return sType.trim();
 	}
+	
+	/**
+	 * Set the job comment
+	 * 
+	 * @param comment
+	 */
+	public void setComment(final String comment){
+		final List<String> oldTag = getList("Jobtag");
+		final List<String> newTag = new ArrayList<String>();
+				
+		if (oldTag!=null){
+			for (final String s: oldTag){
+				if (!s.startsWith("comment:"))
+					newTag.add(s);
+			}
+			
+			clear("Jobtag");
+		}
+		
+		for (final String s: newTag){
+			append("Jobtag", s);
+		}
+
+		if (comment!=null)
+			append("Jobtag", "comment:"+comment);
+	}
 
 	/**
 	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT
@@ -649,6 +676,25 @@ public class JDL implements Serializable {
 			return Arrays.asList(o.toString());
 		
 		return null;		
+	}
+	
+	/**
+	 * Clear a list
+	 * 
+	 * @param key
+	 */
+	public void clear(final String key){
+		final Object o = get(key);
+		
+		if (o==null)
+			return;
+		
+		if (o instanceof List){
+			((List<?>)o).clear();
+			return;
+		}
+		
+		set(key, new LinkedList<String>());
 	}
 	
 	/**
