@@ -1052,6 +1052,9 @@ public class TaskQueueUtils {
 			for (final String file: files){
 				String fileName = file;
 				
+				if (fileName.startsWith("LF:"))
+					fileName = fileName.substring(3);
+				
 				if (fileName.indexOf(',')>=0)
 					fileName = fileName.substring(0, fileName.indexOf(','));
 				
