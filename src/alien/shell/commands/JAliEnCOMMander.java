@@ -78,13 +78,13 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
 			"scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps" , "rmdir", "rm", "mv",
-			"masterjob","user", "role"  , "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
+			"masterjob","user", "role"  , "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
 	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami",
 			"cdir", "commandlist", "gfilecomplete", "cdirtiled" ,"blackwhite","color",
-			"setshell"};
+			"setshell", "type" };
 
 	private UIPrintWriter out = null;
 

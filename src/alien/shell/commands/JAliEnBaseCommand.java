@@ -1,12 +1,27 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.logging.Logger;
+
+import alien.api.DispatchSSLClient;
+import alien.config.ConfigUtils;
 
 /**
  * @author ron
  * @since June 4, 2011
  */
 public abstract class JAliEnBaseCommand extends Thread{
+	
+	
+
+	
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class
+			.getCanonicalName());
+	
+	
 	/**
 	 * The JAliEnCOMMander
 	 */

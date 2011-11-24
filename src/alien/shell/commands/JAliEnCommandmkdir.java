@@ -1,6 +1,8 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
+
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -32,6 +34,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 						commander.getCurrentDir().getCanonicalName(),path),true)==null){
 					if(!isSilent())
 						out.printErrln("Could not create directory (or non-existing parents): " + path);
+					logger.log(Level.WARNING,"Could not create directory (or non-existing parents): " + path);
 					success = false;
 				}
 			}
@@ -41,6 +44,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 						commander.getCurrentDir().getCanonicalName(),path))==null){
 					if(!isSilent())
 						out.printErrln("Could not create directory: " + path);
+					logger.log(Level.WARNING,"Could not create directory: " + path);B
 					success = false;
 				}
 			}
