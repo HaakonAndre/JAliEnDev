@@ -16,10 +16,12 @@ rmdir
 purge/erase
 
 submit
-kill
+kill (incl. "KillById")
 queue
 masterjob
-resubmit
+resubmit (incl. "ResubmitById")
+
+
 
 stage
 mirror
@@ -60,6 +62,18 @@ ctrl-L
 clear
 
 
+ROOT API:
+-----
+query
+locatesites
+Register
+KillById
+ResubmitById
+GetHomeDirectory
+GetJDLGenerator
+OpenCollection
+OpenCollectionQuery
+-----
 
 -----------------------------------------------
 
