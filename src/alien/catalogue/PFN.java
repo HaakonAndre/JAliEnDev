@@ -81,6 +81,8 @@ public class PFN implements Serializable, Comparable<PFN>{
 	 */
 	public AccessTicket ticket = null;
 	
+	private final int hashCode;
+	
 	/**
 	 * @param db
 	 * @param host
@@ -91,6 +93,8 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.tableNumber = tableNumber;
 		
 		init(db);
+		
+		hashCode = pfn.hashCode();
 	}
 	
 	private void init(final DBFunctions db){
@@ -129,6 +133,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.seNumber = se.seNumber;
 		this.host = guid.host;
 		this.tableNumber = guid.tableName;
+		this.hashCode = this.pfn.hashCode();
 	}
 	
 	/**
@@ -144,6 +149,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.seNumber = se.seNumber;
 		this.host = guid.host;
 		this.tableNumber = guid.tableName;
+		this.hashCode = this.pfn.hashCode();
 	}
 	
 	/**
@@ -159,7 +165,8 @@ public class PFN implements Serializable, Comparable<PFN>{
 	public String toString() {
 		return "PFN: guidId\t: "+guidId+"\n"+
 		       "pfn\t\t: "+pfn+"\n"+
-		       "seNumber\t: "+seNumber+"\n";
+		       "seNumber\t: "+seNumber+"\n"+
+		       "GUID cache value: "+guid;
 	}
 	
 	/**
@@ -290,7 +297,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 	
 	@Override
 	public int hashCode() {
-		return pfn.hashCode();
+		return this.hashCode;
 	}
 	
 	private boolean isArchiveLinkedGUID(){
