@@ -1125,7 +1125,7 @@ public class TaskQueueUtils {
 		
 		db.query("INSERT INTO QUEUEPROC (queueId) VALUES ("+pid+");");
 		
-		insertJobToken(pid.intValue(), owner, true);
+//		insertJobToken(pid.intValue(), owner, true);
 		
 		setAction(targetStatus);
 		
