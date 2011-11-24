@@ -30,7 +30,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path),true)==null){
-					out.printErrln("Could not create directory (or non-existing parents): " + path);
+					if(!isSilent())
+						out.printErrln("Could not create directory (or non-existing parents): " + path);
 					success = false;
 				}
 			}
@@ -38,7 +39,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path))==null){
-					out.printErrln("Could not create directory: " + path);
+					if(!isSilent())
+						out.printErrln("Could not create directory: " + path);
 					success = false;
 				}
 			}
@@ -107,6 +109,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			final OptionParser parser = new OptionParser();
 
 			parser.accepts("p");
+			parser.accepts("s");
 
 			final OptionSet options = parser.parse(alArguments
 					.toArray(new String[] {}));
@@ -114,6 +117,8 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			alPaths = new ArrayList<String>(options.nonOptionArguments().size());
 			alPaths.addAll(options.nonOptionArguments());
 
+			if(options.has("s"))
+				silent();
 			bP = options.has("p");
 		} catch (OptionException e) {
 			printHelp();
