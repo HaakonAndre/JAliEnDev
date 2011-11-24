@@ -3,34 +3,42 @@
 
 if [ "$1" == "start" ]; then
 
-	cd $JALIEN_HOME
 	./test.sh alien.test.StartTestVO
 
 elif [ "$1" == "stop" ]; then
 
-	cd $JALIEN_HOME
 	./test.sh alien.test.ShutdownTestVO 
 
 elif [ "$1" == "test" ]; then
 
-	cd $JALIEN_HOME
 	./test.sh alien.test.Tester
 
+elif [ "$1" == "box" ]; then
 
-elif [ "$1" == "jbox" ]; then
-
-	cd $JALIEN_HOME
 	./test.sh alien.JBox
 	
-elif [ "$1" == "jsh" ]; then
+elif [ "$1" == "sh" ]; then
 
-	cd $JALIEN_HOME
 	./test.sh alien.JSh
 	
 elif [ "$1" == "central" ]; then
 
-	cd $JALIEN_HOME
 	./test.sh alien.JCentral
+
+else
+
+	echo
+	echo "	The J test system, to create a test or development VO, start parameters:"
+	echo
+	echo "	[help]     :	this message";
+	echo "	[test]     :	run the test system, after it, LDAP and the DB will still run.";
+	echo "	[stop]     :	stop LDAP+DB";
+	echo "	[start]    :	start LDAP+DB and JCentral";
+	echo "	[central]  :	start JCentral";
+	echo "	[box]      :	start JBox";
+	echo "	[sh]       :	start JSh";
+	echo
+	echo
 
 
 fi
