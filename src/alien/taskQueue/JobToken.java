@@ -98,6 +98,17 @@ public class JobToken implements Comparable<JobToken> {
 
 		update(db);
 	}
+	
+	/**
+	 * The special value for when the job is in INSERTING and then a real value will be assigned by AliEn
+	 * 
+	 * @param db
+	 */
+	public void emptyToken(final DBFunctions db){
+		this.token = "-1";
+		
+		update(db);
+	}
 
 	private void init(final DBFunctions db){
 		this.jobId = db.geti("jobId");
