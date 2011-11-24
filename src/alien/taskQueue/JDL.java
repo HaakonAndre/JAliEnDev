@@ -246,7 +246,7 @@ public class JDL implements Serializable {
 			return null;
 		
 		if (o instanceof Number){
-			return Float.valueOf(((Number) o).intValue());
+			return Float.valueOf(((Number) o).floatValue());
 		}
 		
 		try{
