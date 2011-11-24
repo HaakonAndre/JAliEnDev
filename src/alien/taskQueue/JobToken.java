@@ -111,23 +111,16 @@ public class JobToken implements Comparable<JobToken> {
 	
 	private boolean insert(final DBFunctions db){
 		String q = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES ("+ jobId+",'"+ Format.escSQL(username) +"','"+ Format.escSQL(token) +"');";
-	
-//		System.out.println("SQL: " + q);
-		
-		final boolean lastGeneratedKey = db.setLastGeneratedKey(true);
-		
+			
 		if (db.query(q)){
 			if (monitor != null)
 				monitor.incrementCounter("jobToken_db_insert");
 			
 			exists = true;
 					
-			jobId = db.getLastGeneratedKey().intValue();
 			return true;
 		}
-		
-		db.setLastGeneratedKey(lastGeneratedKey);
-		
+			
 		return false;
 	}
 
