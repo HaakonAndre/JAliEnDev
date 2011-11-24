@@ -4,8 +4,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -47,7 +45,7 @@ public class PFNforReadOrDel extends Request {
 	private final LFN lfn;
 	
 	// don't remove this guid, if the guid is not send with the pfn to the client, the thing goes nuts!
-	private GUID guid = null;
+//	private GUID guid = null;
 
 	private final List<String> ses;
 	private final List<String> exses;
@@ -79,7 +77,7 @@ public class PFNforReadOrDel extends Request {
 	@Override
 	public void run() {
 
-		 guid = GUIDUtils.getGUID(lfn.guid);
+		GUID guid = GUIDUtils.getGUID(lfn.guid);
 
 		LFN setArchiveAnchor = null;
 
@@ -158,14 +156,11 @@ public class PFNforReadOrDel extends Request {
 		else
 			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
 		
-		
-		
 		if(pfns==null)
 			pfns = new ArrayList<PFN>(0);
 		
 		if(pfns.size()<1)
 			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
-	
 	}
 	
 
