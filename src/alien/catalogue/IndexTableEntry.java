@@ -56,6 +56,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 */
 	public final String lfn;
 	
+	private final int hashCode;
+	
 	/**
 	 * Initialize from one entry in INDEXTABLE
 	 * 
@@ -66,6 +68,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		hostIndex = db.geti("hostIndex");
 		tableName = db.geti("tableName");
 		lfn = StringFactory.get(db.gets("lfn"));
+		
+		hashCode = hostIndex * 13 + tableName * 29 + indexId * 43;
 	}
 	
 	@Override
@@ -75,7 +79,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		       "tableName\t\t: "+tableName+"\n"+
 		       "lfn\t\t\t: "+lfn+"\n";
 	}
-	
+
 	/**
 	 * @return the database connection to this host/database
 	 */
@@ -243,6 +247,6 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	
 	@Override
 	public int hashCode() {
-		return hostIndex * 13 + tableName * 29 + indexId * 43;
+		return hashCode;
 	}
 }
