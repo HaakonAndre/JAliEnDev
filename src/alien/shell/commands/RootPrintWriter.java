@@ -72,11 +72,12 @@ public class RootPrintWriter extends UIPrintWriter {
 	@Override
 	protected void printOut(final String line) {
 		stdout.add(line);
-		System.out.println(line);		
+		System.out.println("RootPrinterWrite:printOut = " + line);		
 	}
 	
 	@Override
 	protected void printErr(String line) {
+		System.out.println("RootPrinterWrite:printErr = " + line);
 		stderr.add(line);
 	}
 
@@ -126,6 +127,9 @@ public class RootPrintWriter extends UIPrintWriter {
 					+ fieldseparator + clientenv + streamend).getBytes());
 			os.flush();
 
+			stdout.clear();
+			stderr.clear();
+			
 		} catch (IOException e) {
 			e.printStackTrace();
 			logger.log(Level.FINE, "Could not write to OutputStream", e);
@@ -166,14 +170,18 @@ public class RootPrintWriter extends UIPrintWriter {
 
 	private String printDebug() {
 
-		final StringBuilder debug = new StringBuilder(stdoutindicator);
+		final StringBuilder debug = new StringBuilder("\nRootPrintWriter:printDebug - Starting Root response:\n");
+		debug.append("\nSTDOUT START\n");
+		debug.append(stdoutindicator);
 		
 		if (stdout.size() > 0) {
 			for (String out : stdout)
 				debug.append(columnseparator).append(fieldseparator).append(out);
 		} else
 			debug.append(columnseparator).append(fieldseparator);
-
+		
+		debug.append("\nSTDOUT END\n");
+		debug.append("\nSTDERR START\n");
 		debug.append(stderrindicator);
 		
 		if (stderr.size() > 0) {
@@ -181,11 +189,16 @@ public class RootPrintWriter extends UIPrintWriter {
 				debug.append(columnseparator).append(fieldseparator).append(err);
 		} else
 			debug.append(columnseparator).append(fieldseparator);
-
-		debug.append(outputindicator).append(args).append(outputterminator).append(columnseparator).
-				append(fielddescriptor).append("pwd").append(fieldseparator).append(clientenv).
+		debug.append("\nSTDERR END\n");
+		
+		debug.append("\nOUTPUT START\n");
+		debug.append(outputindicator).append(args).append(outputterminator);
+		debug.append("\nOUTPUT END\n");
+		
+		debug.append(columnseparator).append(fielddescriptor).append("pwd").append(fieldseparator).append(clientenv).
 				append(streamend);
 
+		debug.append("\nRootPrintWrite:printDebug - End Root response");
 		return testMakeTagsVisible(debug.toString());
 
 	}
