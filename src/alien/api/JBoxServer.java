@@ -9,7 +9,10 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
+import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -409,7 +412,13 @@ public class JBoxServer extends Thread {
 							waitCommandFinish();
 							
 							synchronized (commander){
-								commander.setLine(os, line.split(SpaceSep));
+
+								StringTokenizer t = new StringTokenizer(line,SpaceSep);
+								List<String> args = new ArrayList<String>();
+								while (t.hasMoreTokens())
+										args.add(t.nextToken());
+								
+								commander.setLine(os, args.toArray(new String[] {}));
 								
 								commander.notifyAll();
 							}
