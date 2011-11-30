@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.DispatchSSLClient;
@@ -200,7 +201,8 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @return left-padded string
 	 */
 	public static final String padLeft(final String s, final int n) {
-	    return String.format("%1$#" + n + "s", s);  
+		logger.log(Level.FINEST, "Padding left \""+s+"\" with format "+"%1$" + n + "s");
+	    return String.format("%1$" + n + "s", s);  
 	}
 	
 	/**
@@ -209,6 +211,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @return right-padded string
 	 */
 	public static final String padRight(final String s, final int n) {
+		logger.log(Level.FINEST, "Padding right \""+s+"\" with format "+"%1$-" + n + "s");
 	     return String.format("%1$-" + n + "s", s);  
 	}
 	
