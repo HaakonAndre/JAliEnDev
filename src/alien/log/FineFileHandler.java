@@ -6,8 +6,19 @@ import java.util.logging.Filter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+/**
+ * @author Alina Grigoras
+ * sending the FINE log to a specific file
+ */
 public class FineFileHandler extends FileHandler {
 
+	
+	/**
+	 * Creates a simple FileHandler
+	 * On this handler we change the level and filter the output to the chosen level
+	 * @throws IOException
+	 * @throws SecurityException
+	 */
 	public FineFileHandler() throws IOException, SecurityException {
 		super();
 		// TODO Auto-generated constructor stub
@@ -29,7 +40,7 @@ public class FineFileHandler extends FileHandler {
 				// TODO Auto-generated method stub
 				if(record.getLevel() != Level.FINE)
 					return false;
-				else return true;
+				return true;
 			}
 		});
 	}

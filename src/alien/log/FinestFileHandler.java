@@ -8,16 +8,18 @@ import java.util.logging.LogRecord;
 
 /**
  * @author Alina Grigoras
- * Sedding INFO to a specific file
- *
+ * sending the FINEST log to a specific file
  */
-public class InfoFileHandler extends FileHandler {
+public class FinestFileHandler extends FileHandler {
 
-	/**creating a simple FileHandler on which we apply a level and a filter
+	
+	/**
+	 * Creates a simple FileHandler
+	 * On this handler we change the level and filter the output to the chosen level
 	 * @throws IOException
 	 * @throws SecurityException
 	 */
-	public InfoFileHandler() throws IOException, SecurityException {
+	public FinestFileHandler() throws IOException, SecurityException {
 		super();
 		// TODO Auto-generated constructor stub
 	}
@@ -25,9 +27,9 @@ public class InfoFileHandler extends FileHandler {
 	@Override
 	public synchronized void setLevel(Level newLevel) throws SecurityException {
 		// TODO Auto-generated method stub
-		super.setLevel(Level.INFO);
+		super.setLevel(Level.FINEST);
 	}
-	
+
 	@Override
 	public void setFilter(Filter newFilter) throws SecurityException {
 		// TODO Auto-generated method stub
@@ -36,7 +38,7 @@ public class InfoFileHandler extends FileHandler {
 			@Override
 			public boolean isLoggable(LogRecord record) {
 				// TODO Auto-generated method stub
-				if(record.getLevel() != Level.INFO)
+				if(record.getLevel() != Level.FINEST)
 					return false;
 				return true;
 			}
