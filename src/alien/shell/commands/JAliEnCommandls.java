@@ -70,10 +70,15 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
 
-			directory = commander.c_api.getLFNs(sPath);
-
-			if (directory != null) {
-				for (LFN localLFN : directory) {
+			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
+ 			
+			if (subdirectory != null) {
+				if (directory==null)
+					directory = new ArrayList<LFN>(subdirectory);
+				else
+					directory.addAll(subdirectory);
+				
+				for (LFN localLFN : subdirectory) {
 					
 					if (!bA && localLFN.getFileName().startsWith("."))
 						continue;
