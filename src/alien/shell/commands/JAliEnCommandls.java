@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -68,7 +69,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			if (!sPath.startsWith("/"))
 				sPath = commander.getCurrentDir().getCanonicalName() + sPath;
 
-			Log.log(Log.INFO, "Spath = \"" + sPath + "\"");
+			Log.log(Log.INFO, "LS: listing for directory = \"" + sPath + "\"");
 
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
  			
@@ -79,6 +80,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					directory.addAll(subdirectory);
 				
 				for (LFN localLFN : subdirectory) {
+					
+					logger.log(Level.FINE, localLFN.toString());
 					
 					if (!bA && localLFN.getFileName().startsWith("."))
 						continue;
@@ -111,15 +114,22 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 							if (bF && (localLFN.type == 'd'))
 								ret += "/";
-						}
+						}	
 					}
+					
+					logger.info("LS line : "+ret);
+					
 					if (!isSilent())
 						out.printOutln(ret);
 				}
-			}else
+			}
+			else{
+				logger.log(Level.SEVERE, "No such file or directory: [" + sPath + "]");
 				out.printOutln("No such file or directory: [" + sPath + "]");
+			}
 
 		}
+		
 		if (out.isRootPrinter())
 			out.setReturnArgs(deserializeForRoot());
 	}
@@ -186,7 +196,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					ret.append(desc).append("group").append(sep).append(lfn.gowner);
 					ret.append(desc).append("permissions").append(sep).append(lfn.perm);
 					ret.append(desc).append("date").append(sep).append(lfn.ctime);
-					ret.append(desc).append("name").append(sep).append(lfn.lfn);
+					ret.append(desc).append("name").append(sep).append(lfn.getFileName());
 					
 					if(bF && (lfn.type == 'd'))
 						ret.append('/');
@@ -205,7 +215,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			}else {
 				for (final LFN lfn : directory) {
 					ret.append(col);
-					ret.append(desc).append("name").append(sep).append(lfn.lfn);
+					ret.append(desc).append("name").append(sep).append(lfn.getFileName());
 					if(bF && (lfn.type == 'd'))
 						ret.append('/');
 					
