@@ -857,8 +857,18 @@ public class TaskQueueUtils {
 		
 		final JDL jdl = new JDL(jdlToSubmit);
 		
-		if (arguments!=null && arguments.length>0)
-			jdl.set("JDLArguments", Arrays.toString(arguments));
+		if (arguments!=null && arguments.length>0){
+			final StringBuilder sb = new StringBuilder();
+			
+			for (final String s: arguments){
+				if (sb.length()>0)
+					sb.append(' ');
+				
+				sb.append(s);
+			}
+			
+			jdl.set("JDLArguments", sb.toString());
+		}
 		
 		final String executable = jdl.getExecutable();
 		
