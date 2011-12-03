@@ -86,21 +86,52 @@ public class JDL implements Serializable {
 	public JDL(final int jobID) throws IOException{
 		this(Job.sanitizeJDL(TaskQueueUtils.getJDL(jobID)));
 	}
+	
+	/**
+	 * @param jdl
+	 * @return jdl content stripped of comments
+	 */
+	public static final String removeComments(final String jdl){
+		if (jdl==null || jdl.length()==0 || jdl.indexOf('#')<0)
+			return jdl;
+		
+		final BufferedReader br = new BufferedReader(new StringReader(jdl));
+		
+		String line;
+		
+		final StringBuilder sb = new StringBuilder(jdl.length());
+		
+		try {
+			while ( (line=br.readLine())!=null ){
+				if (line.length()==0 || line.trim().startsWith("#"))
+					continue;
+				
+				sb.append(line).append('\n');
+			}
+		}
+		catch (IOException e) {
+			// cannot be
+		}
+		
+		return sb.toString();
+	}
 
 	/**
 	 * the full contents
 	 * 
-	 * @param content
+	 * @param origContent
 	 * @throws IOException
 	 */
-	public JDL(final String content) throws IOException {
-		if (content == null || content.length() == 0) {
-			throw new IOException("Content is " + (content == null ? "null" : "empty"));
+	public JDL(final String origContent) throws IOException {
+		if (origContent == null || origContent.length() == 0) {
+			throw new IOException("Content is " + (origContent == null ? "null" : "empty"));
 		}
 
 		int iPrevPos = 0;
 
 		int idxEqual = -1;
+		
+		final String content = removeComments(origContent);
 
 		while ((idxEqual = content.indexOf('=', iPrevPos + 1)) > 0) {
 			final String sKey = clean(content.substring(iPrevPos, idxEqual).trim());
