@@ -3,10 +3,7 @@ package alien;
 import java.io.File;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Arrays;
 import java.util.HashSet;
-
-import lazyj.Utils;
 
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
@@ -14,7 +11,6 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
-import alien.catalogue.access.XrootDEnvelope;
 import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;

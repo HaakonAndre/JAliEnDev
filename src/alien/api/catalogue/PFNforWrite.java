@@ -2,8 +2,6 @@ package alien.api.catalogue;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -86,8 +84,9 @@ public class PFNforWrite extends Request {
 		
 		System.out.println("REQUEST IS:" + this);
 
-		for(String s: this.ses)
-			System.out.println("got pos: " + s);
+		if (this.ses!=null)
+			for(String s: this.ses)
+				System.out.println("got pos: " + s);
 
 		for(String s: this.exses)
 			System.out.println("got neg: " + s);
@@ -116,17 +115,15 @@ public class PFNforWrite extends Request {
 			if (this.qos == null)
 				this.qos = new HashMap<String, Integer>(1);
 
-			Integer count = new Integer(1);
+			int count = 1;
 
 			try {
-				count = new Integer(Integer.parseInt(defQos.substring(defQos
-						.indexOf('=') + 1)));
+				count = Integer.parseInt(defQos.substring(defQos.indexOf('=') + 1));
 			} catch (NumberFormatException e) {
 				// ignore
 			}
 
-			this.qos.put(defQos.substring(0, defQos.indexOf('=')), count);
-
+			this.qos.put(defQos.substring(0, defQos.indexOf('=')), Integer.valueOf(count));
 		}
 
 		List<SE> SEs = SEUtils.getBestSEsOnSpecs(this.site, this.ses, this.exses, this.qos);

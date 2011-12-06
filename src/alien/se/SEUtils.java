@@ -365,8 +365,8 @@ public final class SEUtils {
 		for(String s: exses)
 			System.out.println("got neg: " + s);
 
-		for(String s: qos.keySet())
-			System.out.println("got qos: " + s + ":" + qos.get(s));
+		for(Map.Entry<String, Integer> entry: qos.entrySet())
+			System.out.println("got qos: " + entry.getKey() + ":" + entry.getValue());
 		
 		List<SE> SEs = SEUtils.getSEs(ses);
 		
@@ -379,27 +379,26 @@ public final class SEUtils {
 
 		exSEs.addAll(SEs);		
 				
-		for (String qosType : qos.keySet()) {
-
-			if (qos.get(qosType) > 0) {
+		for (final Map.Entry<String, Integer> qosDef : qos.entrySet()) {
+			if (qosDef.getValue().intValue() > 0) {
 
 				// TODO: get a number #qos.get(qosType) of qosType SEs
-				List<SE> discoveredSEs = SEUtils.getClosestSEs(site, exSEs);
+				final List<SE> discoveredSEs = SEUtils.getClosestSEs(site, exSEs);
 
 				final Iterator<SE> it = discoveredSEs.iterator();
 
 				int counter = 0;
-				while (counter < qos.get(qosType) && it.hasNext()) {
-					SE se = it.next();
-					if (!se.isQosType(qosType) || exSEs.contains(se))
+				
+				while (counter < qosDef.getValue().intValue() && it.hasNext()) {
+					final SE se = it.next();
+					
+					if (!se.isQosType(qosDef.getKey()) || exSEs.contains(se))
 						continue;
 
 					SEs.add(se);
 					counter++;
 				}
-
 			}
-
 		}
 		
 		for(SE s: SEs)
@@ -494,7 +493,12 @@ public final class SEUtils {
 	 * @author costing
 	 * @since Nov 14, 2010
 	 */
-	public static final class SEComparator implements Comparator<SE> {
+	public static final class SEComparator implements Comparator<SE>, Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -5231000693345849547L;
+		
 		private final Map<Integer, Integer> ranks;
 
 		/**
