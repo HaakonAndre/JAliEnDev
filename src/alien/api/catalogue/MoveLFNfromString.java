@@ -28,6 +28,7 @@ public class MoveLFNfromString extends Request {
 	 * @param user 
 	 * @param role 
 	 * @param path
+	 * @param newpath 
 	 */
 	public MoveLFNfromString(final AliEnPrincipal user, final String role, final String path, final String newpath) {
 		setRequestUser(user);
