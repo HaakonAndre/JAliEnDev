@@ -1,8 +1,6 @@
 package alien.shell.commands;
 
-import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import joptsimple.OptionException;
 import alien.catalogue.FileSystemUtils;

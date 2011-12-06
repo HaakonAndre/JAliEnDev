@@ -82,32 +82,28 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 */
 	@Override
 	public String deserializeForRoot() {
+		if (lfns == null || lfns.size()==0)
+			return "";
 		
-		String ret = "";
-		
-		if (lfns == null)
-			return ret;
+		final StringBuilder ret = new StringBuilder();
 
-		for(LFN c: lfns){
-			 ret += RootPrintWriter.columnseparator
-						+ RootPrintWriter.fielddescriptor + "origLFN" +  RootPrintWriter.fieldseparator;
-			 ret += c.lfn;
+		for(final LFN c: lfns){
+			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("origLFN").append(RootPrintWriter.fieldseparator);
 			 
-			 ret += RootPrintWriter.columnseparator
-						+ RootPrintWriter.fielddescriptor + "localName" +  RootPrintWriter.fieldseparator;
+			 ret.append(c.lfn);
+			 
+			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("localName").append(RootPrintWriter.fieldseparator);
 			 //skipped
 			 
-			 ret += RootPrintWriter.columnseparator
-						+ RootPrintWriter.fielddescriptor + "data" +  RootPrintWriter.fieldseparator;
+			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("data").append(RootPrintWriter.fieldseparator);
 			 //skipped
 			 
-			 ret += RootPrintWriter.columnseparator
-						+ RootPrintWriter.fielddescriptor + "guid" +  RootPrintWriter.fieldseparator;
-			 ret += c.guid;
+			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("guid").append(RootPrintWriter.fieldseparator);
+			 ret.append(c.guid);
 				
 		}
 
-		return ret;
+		return ret.toString();
 	}
 
 	/**

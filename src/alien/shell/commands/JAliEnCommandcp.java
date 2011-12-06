@@ -16,7 +16,6 @@ import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
-import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.se.SE;
@@ -388,11 +387,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (se.qos.iterator().hasNext())
 				qosType = se.qos.iterator().next();
 
-			if (!qos.containsKey(qosType) && qos.get(qosType) == null)
-				qos.put(qosType, new Integer(1));
-			else
-				qos.put(qosType, qos.get(qosType) + 1);
+			final Integer oldValue = qos.get(qosType); 
+			
+			qos.put(qosType, Integer.valueOf(1 + (oldValue!=null ? oldValue.intValue() : 0)));
 		}
+		
 		ses.remove(se.getName());
 		if(!exses.contains(se.getName()))
 			exses.add(se.getName());
@@ -435,23 +434,19 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	}
 	
 	
-	private boolean localFileSpec(final String file){
-		if(file.startsWith("file:"))
-			return true;
-		return false;
+	private static boolean localFileSpec(final String file){
+		return file.startsWith("file:");
 	}
 	
-
-	
-	private String getLocalFileSpec(final String file){
-		if(file.startsWith("file://"))
-			return file.replace("file://", "");
-		if(file.startsWith("file:"))
-			return file.replace("file:", "");
+	private static String getLocalFileSpec(final String file){
+		if (file.startsWith("file://"))
+			return file.substring(7);
+		
+		if (file.startsWith("file:"))
+			return file.substring(5);
+		
 		return file;
 	}
-	
-	
 
 	/**
 	 * Constructor needed for the command factory in commander
@@ -505,12 +500,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						} else if (spec.contains(":")) {// a qosTag:count spec
 							try {
 
-								int c = Integer.valueOf(spec.substring(spec
-										.indexOf(':') + 1));
+								int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
 								if (c > 0) {
-									qos.put(spec
-											.substring(0, spec.indexOf(':')),
-											new Integer(c));
+									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
 									referenceCount = referenceCount + c;
 								} else
 									throw new JAliEnCommandException();

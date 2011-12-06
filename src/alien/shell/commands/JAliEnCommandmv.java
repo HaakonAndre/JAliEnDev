@@ -1,14 +1,12 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.StringTokenizer;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
-import alien.user.UsersHelper;
 
 /**
  * @author ron

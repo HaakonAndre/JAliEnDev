@@ -7,7 +7,6 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.catalogue.FileSystemUtils;
-import alien.catalogue.PFN;
 
 /**
  * @author ron

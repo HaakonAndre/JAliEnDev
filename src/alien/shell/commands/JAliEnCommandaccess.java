@@ -241,12 +241,9 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 								} else if (spec.contains(":")) {// a qosTag:count spec
 									try {
 
-										int c = Integer.valueOf(spec.substring(spec
-												.indexOf(':') + 1));
+										int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
 										if (c > 0) {
-											qos.put(spec
-													.substring(0, spec.indexOf(':')),
-													new Integer(c));
+											qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
 											referenceCount = referenceCount + c;
 										} else
 											throw new JAliEnCommandException();

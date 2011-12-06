@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import alien.catalogue.Package;
-import alien.user.UsersHelper;
 
 /**
  * @author ron
@@ -38,12 +37,13 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 
 	}
 
-	private String getPackagePlatformName(){
+	private static String getPackagePlatformName(){
 
 		String ret =  System.getProperty("os.name");
 		
 		if(System.getProperty("os.arch").contains("amd64"))
 			ret += "-x86_64";
+		
 		else if(ret.toLowerCase().contains("mac") && System.getProperty("os.arch").contains("ppc"))
 			ret  = "Darwin-PowerMacintosh";
 	
@@ -56,18 +56,19 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	 * @return serialized return
 	 */
 	@Override
-	public String deserializeForRoot() {
-		
+	public String deserializeForRoot() {		
 		if (packs != null) {
+			final StringBuilder sb = new StringBuilder();
 			
-			String ret =  RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
-					 + RootPrintWriter.fieldseparator + "1\n";
-			for(Package p : packs)
-				ret += RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
-					 + RootPrintWriter.fieldseparator + p.getFullName() + "\n";
+			sb.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("__result__").append(RootPrintWriter.fieldseparator).append("1\n");
+			
+			for(final Package p : packs)
+				sb.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("__result__")
+					 .append(RootPrintWriter.fieldseparator).append(p.getFullName()).append('\n');
 					
-			return ret;
+			return sb.toString();
 		}
+		
 		return super.deserializeForRoot(0);
 	}
 	
