@@ -408,11 +408,11 @@ public class TransferBroker {
 			v.add(Double.valueOf(t.sources.iterator().next().getGuid().size));
 
 			p.add("started");
-			v.add(Double.valueOf(t.started / 1000));
+			v.add(Double.valueOf(t.started / 1000d));
 
 			if (t.getExitCode() >= Transfer.OK) {
 				p.add("finished");
-				v.add(Double.valueOf(System.currentTimeMillis() / 1000));
+				v.add(Double.valueOf(System.currentTimeMillis() / 1000d));
 
 				if (t.lastTriedSE > 0) {
 					SE se = SEUtils.getSE(t.lastTriedSE);

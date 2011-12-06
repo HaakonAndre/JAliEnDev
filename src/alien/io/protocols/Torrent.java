@@ -17,6 +17,10 @@ import alien.config.ConfigUtils;
  */
 public class Torrent extends Protocol {
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 4568694269197082489L;
+	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Torrent.class.getCanonicalName());

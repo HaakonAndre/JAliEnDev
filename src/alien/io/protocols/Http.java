@@ -17,6 +17,10 @@ import alien.config.ConfigUtils;
  */
 public class Http extends Protocol {
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -9087355732313314671L;
+	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Http.class.getCanonicalName());

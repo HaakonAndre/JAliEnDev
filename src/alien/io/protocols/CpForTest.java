@@ -23,6 +23,10 @@ public class CpForTest  extends Protocol {
 	
 
 		/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7899348307554604135L;
+		/**
 		 * Logger
 		 */
 		static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());

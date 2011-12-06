@@ -5,6 +5,7 @@ package alien.io.protocols;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 
 import alien.catalogue.PFN;
 
@@ -12,8 +13,13 @@ import alien.catalogue.PFN;
  * @author costing
  * @since Dec 8, 2010
  */
-public abstract class Protocol implements Comparable<Protocol>{
+public abstract class Protocol implements Serializable, Comparable<Protocol>{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6159560194424790552L;
+
 	/**
 	 * Package protected 
 	 */

@@ -21,6 +21,11 @@ import alien.catalogue.access.AccessType;
 public class Xrd3cp extends Xrootd {
 
 	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 9084272684664087714L;
+
+	/**
 	 * package protected
 	 */
 	Xrd3cp(){

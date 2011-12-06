@@ -31,6 +31,10 @@ import alien.config.ConfigUtils;
  * @since Dec 8, 2010
  */
 public class Xrootd extends Protocol {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7860814883144320429L;
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
 
