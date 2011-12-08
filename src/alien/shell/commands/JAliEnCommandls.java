@@ -39,7 +39,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * marker for -c argument
 	 */
 	private boolean bC = false;
-	
+
 	/**
 	 * marker for -b argument
 	 */
@@ -64,7 +64,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			alPaths.add(commander.getCurrentDir().getCanonicalName());
 
 		for (String sPath : alPaths) {
-			
+
 			// listing current directory
 			if (!sPath.startsWith("/"))
 				sPath = commander.getCurrentDir().getCanonicalName() + sPath;
@@ -72,17 +72,17 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			Log.log(Log.INFO, "LS: listing for directory = \"" + sPath + "\"");
 
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
- 			
+
 			if (subdirectory != null) {
 				if (directory==null)
 					directory = new ArrayList<LFN>(subdirectory);
 				else
 					directory.addAll(subdirectory);
-				
+
 				for (LFN localLFN : subdirectory) {
-					
+
 					logger.log(Level.FINE, localLFN.toString());
-					
+
 					if (!bA && localLFN.getFileName().startsWith("."))
 						continue;
 
@@ -91,24 +91,24 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 						if (localLFN.type == 'd')
 							continue;
 						ret += localLFN.guid.toString().toUpperCase() + padSpace(3)
-								+ localLFN.getName();
+						+ localLFN.getName();
 					} else {
 						if(bC)
 							ret += localLFN.getCanonicalName();
 						else{
 							if (bL)
 								ret += FileSystemUtils
-									.getFormatedTypeAndPerm(localLFN)
-									+ padSpace(3)
-									+ padLeft(localLFN.owner, 8)
-									+ padSpace(1)
-									+ padLeft(localLFN.gowner, 8)
-									+ padSpace(1)
-									+ padLeft(String.valueOf(localLFN.size), 12)
-									+ padSpace(1)
-									+ format(localLFN.ctime)
-									+ padSpace(4) + localLFN.getFileName();
-					
+								.getFormatedTypeAndPerm(localLFN)
+								+ padSpace(3)
+								+ padLeft(localLFN.owner, 8)
+								+ padSpace(1)
+								+ padLeft(localLFN.gowner, 8)
+								+ padSpace(1)
+								+ padLeft(String.valueOf(localLFN.size), 12)
+								+ padSpace(1)
+								+ format(localLFN.ctime)
+								+ padSpace(4) + localLFN.getFileName();
+
 							else
 								ret += localLFN.getFileName();
 
@@ -116,9 +116,9 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 								ret += "/";
 						}	
 					}
-					
+
 					logger.info("LS line : "+ret);
-					
+
 					if (!isSilent())
 						out.printOutln(ret);
 				}
@@ -129,13 +129,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			}
 
 		}
-		
+
 		if (out.isRootPrinter())
 			out.setReturnArgs(deserializeForRoot());
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat(
-			"MMM dd HH:mm");
+	"MMM dd HH:mm");
 
 	private static synchronized String format(final Date d) {
 		return formatter.format(d);
@@ -183,49 +183,61 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	@Override
 	public String deserializeForRoot() {
+		logger.log(Level.INFO, toString());
+
 		final StringBuilder ret = new StringBuilder();
-		
+
+		final SimpleDateFormat sdt = new SimpleDateFormat("MMM dd HH:mm");
+
 		if (directory != null) {
 			String col = RootPrintWriter.columnseparator;
 			String desc = RootPrintWriter.fielddescriptor;
 			String sep = RootPrintWriter.fieldseparator;
 
-			if (bL) {
-				for (final LFN lfn : directory) {
+			for (final LFN lfn : directory) {
+				if (!bA && lfn.getFileName().startsWith("."))
+					continue;
+
+				if(bB){
+					if(lfn.type != 'd') {
+						ret.append(col);
+						ret.append(desc).append("path").append(sep).append(lfn.getCanonicalName());
+						ret.append(desc).append("guid").append(sep).append(lfn.guid);
+					}
+				}
+				else if(bC){
+					ret.append(col);
+					ret.append(desc).append("name").append(sep).append(lfn.getCanonicalName());
+				}
+				else if(bL){
 					ret.append(col);
 					ret.append(desc).append("group").append(sep).append(lfn.gowner);
-					ret.append(desc).append("permissions").append(sep).append(lfn.perm);
-					ret.append(desc).append("date").append(sep).append(lfn.ctime);
+					ret.append(desc).append("permissions").append(sep).append(FileSystemUtils.getFormatedTypeAndPerm(lfn));
+					ret.append(desc).append("date").append(sep).append(sdt.format(lfn.ctime));
 					ret.append(desc).append("name").append(sep).append(lfn.getFileName());
-					
+
 					if(bF && (lfn.type == 'd'))
 						ret.append('/');
-					
+
 					ret.append(desc).append("user").append(sep).append(lfn.owner);
-					ret.append(desc).append("path").append(sep).append(lfn.dir);
+					ret.append(desc).append("path").append(sep).append(lfn.getParentName());
 					ret.append(desc).append("md5").append(sep).append(lfn.md5);
 					ret.append(desc).append("size").append(sep).append(lfn.size);
 				}
-			} else if(bB){
-				for (final LFN lfn : directory) {
-					ret.append(col);
-					ret.append(desc).append("path").append(sep).append(lfn.dir);
-					ret.append(desc).append("guid").append(sep).append(lfn.guid);
-				}
-			}else {
-				for (final LFN lfn : directory) {
+				else{
 					ret.append(col);
 					ret.append(desc).append("name").append(sep).append(lfn.getFileName());
+				
 					if(bF && (lfn.type == 'd'))
 						ret.append('/');
-					
-					ret.append(desc).append("path").append(sep).append(lfn.dir);
+
+					ret.append(desc).append("path").append(sep).append(lfn.getParentName());
 				}
 			}
 
 			return ret.toString();
 		}
-		
+
 		return super.deserializeForRoot();
 
 	}
@@ -272,4 +284,22 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		}
 	}
 
+
+	@Override
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+
+		sb.append("\n { JAliEnCommandls received\n");
+		sb.append("Arguments: ");
+
+		if(bL) sb.append(" -l ");
+		if(bA) sb.append(" -a ");
+		if(bF) sb.append(" -f ");
+		if(bC) sb.append(" -c ");
+		if(bB) sb.append(" -b ");
+
+		sb.append("}");
+
+		return sb.toString();
+	}
 }
