@@ -368,12 +368,15 @@ public class JAliEnCOMMander extends Thread {
 	 * execute a command line
 	 * 
 	 */
-	public void execute() {
+	public void execute() throws Exception{
 
 		boolean help = false;
 
 		boolean silent = false;
 
+		if(arg == null || arg.length == 0)
+			throw new Exception("We got empty argument!");
+		
 		String comm = arg[0];
 
 		System.out.println("Received JSh call [" + comm + "].");
