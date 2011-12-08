@@ -341,6 +341,20 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	}
 	
 	/**
+	 * @return parent directory path
+	 */
+	public String getParentName(){
+		final String fullName = getStrippedCanonicalName();
+		
+		final int idx = fullName.lastIndexOf('/');
+		
+		if (idx>0)
+			return fullName.substring(0, idx);
+		
+		return fullName;		
+	}
+	
+	/**
 	 * Get the physical locations of this file
 	 * 
 	 * @return the physical locations for this file
