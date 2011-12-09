@@ -23,6 +23,7 @@ import java.util.regex.PatternSyntaxException;
 import lazyj.ExtendedServlet;
 import lazyj.Format;
 import lazyj.LRUMap;
+import lazyj.Utils;
 import lia.Monitor.monitor.ShutdownReceiver;
 import lia.util.ShutdownManager;
 import lia.util.StringFactory;
@@ -484,4 +485,15 @@ public class TextCache extends ExtendedServlet {
 		pwOut.flush();
 	}
 
+	/**
+	 * @param baseURL URL to TextCache
+	 * @param ns namespace
+	 * @param pattern key pattern to remove
+	 * @return the outcome of the query as indicated by the server
+	 * @throws IOException
+	 */
+	public static String invalidateCacheEntry(final String baseURL, final String ns, final String pattern) throws IOException{
+		return Utils.download(baseURL+"?ns="+Format.encode(ns)+"&key="+Format.encode(pattern)+"&clear=true", null);
+	}
+	
 }
