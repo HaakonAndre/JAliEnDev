@@ -17,6 +17,8 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import lazyj.ExtendedServlet;
 import lazyj.Format;
@@ -402,6 +404,44 @@ public class TextCache extends ExtendedServlet {
 			if (old!=null){
 				notifyEntryRemoved(ns, key, old);
 			}
+			
+			return;
+		}
+		
+		if (getb("clear", false)){
+			final Pattern p;
+			
+			try{
+				p = Pattern.compile("^"+key+"$");
+			}
+			catch (final PatternSyntaxException e){
+				pwOut.println("ERR: invalid pattern syntax: "+key);
+				pwOut.flush();
+				return;
+			}
+			
+			int removed = 0;
+			
+			synchronized(cache){
+				final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
+				
+				while (it.hasNext()){
+					final Map.Entry<String, CacheValue> entry = it.next();
+					
+					if (p.matcher(entry.getKey()).matches()){
+						notifyEntryRemoved(ns, entry.getKey(), entry.getValue());
+						it.remove();
+						removed++;
+					}
+				}
+			}
+			
+			if (monitor != null){
+				monitor.incrementCounter("CLEARPATTERN_"+ns);
+			}
+			
+			pwOut.println("OK: removed "+removed+" values from ns '"+ns+"' matching '"+key+"'");
+			pwOut.flush();
 			
 			return;
 		}
