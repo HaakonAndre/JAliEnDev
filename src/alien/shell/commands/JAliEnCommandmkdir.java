@@ -10,14 +10,22 @@ import alien.catalogue.FileSystemUtils;
 
 /**
  * @author ron
- * @since June 6, 2011
+ * @since June 6, 2011 <br>
+ * usage: mkdir   [-options] directory [directory[,directory]] <br>
+ * options: <br>
+ *                   -p                     :  create parents as needed <br>
+ *                   -silent                :  execute command silently <br>
  */
 public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
 	/**
-	 * marker for -p argument
+	 * marker for -p argument : create parents as needed
 	 */
 	private boolean bP = false;
+	
+	/**
+	 * the list of directories that will be created
+	 * */
 	private ArrayList<String> alPaths = null;
 	
 	private boolean success = true;
