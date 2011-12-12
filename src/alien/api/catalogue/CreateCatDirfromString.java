@@ -1,8 +1,8 @@
 package alien.api.catalogue;
 
 import alien.api.Request;
-import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -37,7 +37,7 @@ public class CreateCatDirfromString extends Request {
 	@Override
 	public void run() {
 		// if(createNonExistentParents)
-		this.lfn = FileSystemUtils.createCatalogueDirectory(getEffectiveRequester(), path,createNonExistentParents);
+		this.lfn = LFNUtils.mkdir(getEffectiveRequester(), path, createNonExistentParents);
 		// else 
 		// 	this.lfn = FileSystemUtils.createCatalogueDirectory(user, path);
 
