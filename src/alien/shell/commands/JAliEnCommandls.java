@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.text.DateFormat;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -17,31 +18,37 @@ import alien.catalogue.LFN;
 /**
  * @author ron
  * @since June 4, 2011
+ * running ls command with possible options  <br />                                                                                                                                                                  
+ *     -l                     :  long format <br />                                                                                                                                                                    
+ *     -a                     :  show hidden .* files <br />                                                                                                                                                            
+ *     -F                     :  add trailing / to directory names <br />                                                                                                                                               
+ *     -b                     :  print in GUID format  <br />                                                                                                                                                          
+ *     -c                     :  print canonical paths  <br />                                                                                                                                                                                                                 
  */
 public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**
-	 * marker for -l argument
+	 * marker for -l argument : long format
 	 */
 	private boolean bL = false;
 
 	/**
-	 * marker for -a argument
+	 * marker for -a argument : show hidden .files
 	 */
 	private boolean bA = false;
 
 	/**
-	 * marker for -F argument
+	 * marker for -F argument : add trailing / to directory names
 	 */
 	private boolean bF = false;
 
 	/**
-	 * marker for -c argument
+	 * marker for -c argument : print canonical paths
 	 */
 	private boolean bC = false;
 
 	/**
-	 * marker for -b argument
+	 * marker for -b argument : print in GUID format
 	 */
 	private boolean bB = false;
 
