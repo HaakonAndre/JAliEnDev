@@ -3,6 +3,7 @@ package alien.io.xrootd;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -123,6 +124,11 @@ public class XrootdCleanup {
 	 */
 	private List<CleanupThread> workers = null;
 	
+	/**
+	 * Directories under parsing
+	 */
+	Set<String> activeSet = new HashSet<String>(); 
+	
 	private class CleanupThread extends Thread {
 		private boolean shouldRun = true;
 		
@@ -136,14 +142,22 @@ public class XrootdCleanup {
 				try{
 					final String dir = processingQueue.take();
 					
-					setName(se.seName+dir);
-					
 					if (dir!=null){
+						setName(se.seName+dir);
+						
+						synchronized (activeSet){
+							activeSet.add(dir);
+						}
+						
 						try{
 							storageCleanup(dir);
 						}
 						finally{
 							inProgress.decrementAndGet();
+							
+							synchronized (activeSet){
+								activeSet.remove(dir);
+							}
 						}
 					}
 				}
@@ -177,7 +191,14 @@ public class XrootdCleanup {
 		
 		inProgress.incrementAndGet();
 		
-		processingQueue.offer(dir);
+		if (!processingQueue.contains(dir)){
+			synchronized (activeSet){
+				if (activeSet.contains(dir))
+					return;
+			}
+			
+			processingQueue.offer(dir);
+		}
 	}
 	
 	/**
