@@ -8,6 +8,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -460,12 +461,14 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		final Host h = CatalogueUtils.getHost(host);
 
 		if (h==null){
+			logger.log(Level.WARNING, "No host for: "+host);
 			return false;
 		}
 		
 		final DBFunctions db = h.getDB();
 		
 		if (db==null){
+			logger.log(Level.WARNING, "Host DB is null for: "+h);
 			return false;
 		}
 		
@@ -473,18 +476,28 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			monitor.incrementCounter("PFN_db_delete");
 		}
 
-		final boolean removed = removeSE(pfn.seNumber); 
+		final boolean removedSENumber = removeSE(pfn.seNumber); 
 		
-		if (!db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber) || db.getUpdateCount()==0){
-			if (removed){
-				seStringList.add(Integer.valueOf(pfn.seNumber));
-				update();
-			}
-			
-			return false;
+		boolean removedSuccessfuly = false; 
+		
+		final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
+		
+		if (db.query(q)){
+			if (db.getUpdateCount()==0)
+				removedSuccessfuly = true;
+			else
+				logger.log(Level.WARNING, "Query didn't change anything: "+q);
+		}
+		else{
+			logger.log(Level.WARNING, "Query failed: "+q);
 		}
 		
-		return true;
+		if (!removedSuccessfuly && removedSENumber){
+			seStringList.add(Integer.valueOf(pfn.seNumber));
+			update();
+		}
+		
+		return removedSuccessfuly;
 		
 	}
 	
