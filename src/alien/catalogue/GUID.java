@@ -483,7 +483,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
 		
 		if (db.query(q)){
-			if (db.getUpdateCount()==0)
+			if (db.getUpdateCount()>0)
 				removedSuccessfuly = true;
 			else
 				logger.log(Level.WARNING, "Query didn't change anything: "+q);
