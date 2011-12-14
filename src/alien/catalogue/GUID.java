@@ -473,13 +473,14 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			monitor.incrementCounter("PFN_db_delete");
 		}
 
-		if (!removeSE(pfn.seNumber)){
-			return false;
-		}
+		final boolean removed = removeSE(pfn.seNumber); 
 		
-		if (!db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber)){
-			seStringList.add(Integer.valueOf(pfn.seNumber));
-			update();
+		if (!db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber) || db.getUpdateCount()==0){
+			if (removed){
+				seStringList.add(Integer.valueOf(pfn.seNumber));
+				update();
+			}
+			
 			return false;
 		}
 		
