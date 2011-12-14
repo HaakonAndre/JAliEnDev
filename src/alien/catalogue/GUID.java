@@ -480,7 +480,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		boolean removedSuccessfuly = false; 
 		
-		final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
+		//final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
+		final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND seNumber="+pfn.seNumber;
 		
 		if (db.query(q)){
 			if (db.getUpdateCount()>0)
