@@ -271,18 +271,21 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	
 	private static final DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	
-	private boolean insert(final DBFunctions db){
-		String q;
-		
+	private static final String formatDate(final Date d){
 		synchronized (formatter){
-			q = "INSERT INTO G"+tableName+"L (ctime, owner, ref, seStringList, seAutoStringList, aclId, expiretime, size, gowner, guid, type, md5, perm) VALUES ("+
-			(ctime==null ? "null" : "'"+formatter.format(ctime)+"'")+","+		// ctime
+			return formatter.format(d);
+		}
+	}
+	
+	private boolean insert(final DBFunctions db){
+		final String q = "INSERT INTO G"+tableName+"L (ctime, owner, ref, seStringList, seAutoStringList, aclId, expiretime, size, gowner, guid, type, md5, perm) VALUES ("+
+			(ctime==null ? "null" : "'"+formatDate(ctime)+"'")+","+		// ctime
 			"'"+Format.escSQL(owner)+"',"+										// owner
 			"0,"+																// ref
 			setToString(seStringList)+","+										// seStringList
 			setToString(seAutoStringList)+","+									// seAutoStringList
 			aclId+","+															// aclId
-			(expiretime==null ? "null" : "'"+formatter.format(expiretime)+"'")+","+		// expiretime
+			(expiretime==null ? "null" : "'"+formatDate(expiretime)+"'")+","+		// expiretime
 			size+","+															// size
 			"'"+Format.escSQL(gowner)+"',"+										// gowner
 			"string2binary('"+guid+"'),"+										// guid
@@ -290,23 +293,38 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			"'"+Format.escSQL(md5)+"',"+										// md5
 			"'"+Format.escSQL(perm)+"'"+										// perm
 			");";
-		}
 		
-		if (db.query(q)){
-			if (monitor != null)
-				monitor.incrementCounter("GUID_db_insert");
+		final boolean previouslySet = db.setLastGeneratedKey(true);
+		
+		try{
+			if (db.query(q)){
+				if (monitor != null)
+					monitor.incrementCounter("GUID_db_insert");
 			
-			exists = true;
-			
-			db.query("SELECT guidId FROM G"+tableName+"L WHERE guid=string2binary('"+guid+"');");
-			
-			if (!db.moveNext()){
-				// that would be weird, we have just inserted it. but double checking cannot hurt
-				return false;
+				final Integer generatedId = db.getLastGeneratedKey();
+				
+				if (generatedId==null){
+					logger.log(Level.WARNING, "Insert query didn't generate an ID!");
+					
+					db.query("SELECT guidId FROM G"+tableName+"L WHERE guid=string2binary('"+guid+"');");
+					
+					if (!db.moveNext()){
+						logger.log(Level.WARNING, "And in fact the entry was not found by the fallback checking");
+						return false;
+					}
+					
+					guidId = db.geti(1);
+				}
+				else
+					guidId = db.getLastGeneratedKey().intValue();
+				
+				exists = true;
+				
+				return true;
 			}
-			
-			guidId = db.geti(1);
-			return true;
+		}
+		finally{
+			db.setLastGeneratedKey(previouslySet);
 		}
 		
 		return false;
@@ -452,6 +470,42 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 	
 	/**
+	 * Completely delete this GUID from the database
+	 * 
+	 * @return <code>true</code> if the GUID was successfully removed from the database
+	 */
+	public boolean delete(){
+		if (!exists)
+			return false;
+		
+		final Host h = CatalogueUtils.getHost(host);
+
+		if (h==null){
+			logger.log(Level.WARNING, "No host for: "+host);
+			return false;
+		}
+		
+		final DBFunctions db = h.getDB();
+		
+		if (db==null){
+			logger.log(Level.WARNING, "Host DB is null for: "+h);
+			return false;
+		}
+		
+		if (monitor!=null){
+			monitor.incrementCounter("PFN_db_delete");
+			monitor.incrementCounter("GUID_db_delete");
+		}
+
+		db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId);
+		db.query("DELETE FROM G"+tableName+"L WHERE guidId="+guidId);
+		
+		exists = false;
+		
+		return true;
+	}
+	
+	/**
 	 * Remove an associated PFN. It does <b>NOT</b> check if it was the last PFN.
 	 * 
 	 * @param pfn
@@ -499,7 +553,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		return removedSuccessfuly;
-		
 	}
 	
 	/**
