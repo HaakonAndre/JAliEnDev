@@ -498,11 +498,13 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 
 		db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId);
-		db.query("DELETE FROM G"+tableName+"L WHERE guidId="+guidId);
+		boolean removed = db.query("DELETE FROM G"+tableName+"L WHERE guidId="+guidId);
+		
+		removed = removed && db.getUpdateCount()>0;
 		
 		exists = false;
 		
-		return true;
+		return removed;
 	}
 	
 	/**
