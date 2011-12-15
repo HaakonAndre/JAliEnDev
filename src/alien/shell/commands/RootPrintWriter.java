@@ -77,7 +77,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	/**
 	 * @param os OutputSteam that will contain the information in Root format
 	 */
-	RootPrintWriter(OutputStream os) {
+	public RootPrintWriter(OutputStream os) {
 		this.os = os;
 	}
 

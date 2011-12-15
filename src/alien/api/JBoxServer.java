@@ -22,6 +22,9 @@ import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JShPrintWriter;
+import alien.shell.commands.RootPrintWriter;
+import alien.shell.commands.UIPrintWriter;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
@@ -336,6 +339,9 @@ public class JBoxServer extends Thread {
 		private void waitCommandFinish(){
 			// wait for the previous command to finish
 			
+			if(commander==null)
+				return;
+			
 			while (commander.status.get()==1){
 //				logger.log(Level.INFO, "Waiting for the commander to finish the previous command");
 				
@@ -348,6 +354,16 @@ public class JBoxServer extends Thread {
 					// ignore
 				}
 			}
+		}
+		
+
+		private UIPrintWriter out = null;
+
+		private void setShellPrintWriter(OutputStream os, String shelltype) {
+			if (shelltype.equals("jaliensh"))
+				out = new JShPrintWriter(os);
+			else
+				out = new RootPrintWriter(os);
 		}
 
 		@Override
@@ -379,14 +395,25 @@ public class JBoxServer extends Thread {
 						os.flush();
 						return;
 					}
+					logger.log(Level.INFO, "JSh connected.");
 					
 					commander = new JAliEnCOMMander();
 					commander.start();
 
+					
 					while (scanner.hasNext()) {
 						String line = scanner.next();
 						
-						logger.log(Level.INFO, "Got line: "+line);
+						if(line == null || line.isEmpty()){
+							logger.log(Level.INFO, "Received emtpy line, nothing to do.");
+							//os.write(JShPrintWriter.streamend.getBytes());
+							//os.flush();
+							continue;
+						}
+						
+				
+						
+						logger.log(Level.INFO, "JBox Got line: "+line);
 						
 						notifyActivity();
 						
@@ -401,8 +428,17 @@ public class JBoxServer extends Thread {
 								// ignore
 							}
 							finally{
-								commander = new JAliEnCOMMander();	// kill the active command and start a new one
+								
+								System.out.println("SIGINT reset commander" );
+								
+								JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(),commander.getRole()
+									,commander.getCurrentDir(),commander.getSite(), out);	// kill the active command and start a new one
+								commander = comm;
+								
 								commander.start();
+		
+								commander.flush();
+									
 							}
 							
 						}else if("shutdown".equals(line)){
@@ -418,7 +454,20 @@ public class JBoxServer extends Thread {
 								while (t.hasMoreTokens())
 										args.add(t.nextToken());
 								
-								commander.setLine(os, args.toArray(new String[] {}));
+								if ("setshell".equals(args.get(0))){
+										setShellPrintWriter(os, args.get(1));
+										logger.log(Level.INFO, "Set explicit print writer.");
+									
+										os.write((JShPrintWriter.streamend+"\n").getBytes());
+										os.flush();
+										continue;
+								}
+									
+								if (out == null)
+										out = new RootPrintWriter(os);
+									
+								
+								commander.setLine(out, args.toArray(new String[] {}));
 								
 								commander.notifyAll();
 							}

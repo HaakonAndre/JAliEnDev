@@ -5,7 +5,7 @@ package alien.shell.commands;
  * @author ron
  * @since July 15, 2011
  */
-abstract class UIPrintWriter {
+public abstract class UIPrintWriter {
 
 	
 

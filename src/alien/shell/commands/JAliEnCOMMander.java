@@ -127,6 +127,32 @@ public class JAliEnCOMMander extends Thread {
 		setName("Commander");
 
 	}
+	
+	
+	/**
+	 * @param user
+	 * @param role
+	 * @param curDir
+	 * @param site
+	 * @param out 
+	 */
+	public JAliEnCOMMander(final AliEnPrincipal user, final String role, final LFN curDir, final String site, final UIPrintWriter out){
+		c_api = new CatalogueApiUtils(this);
+
+		q_api = new TaskQueueApiUtils(this);
+
+		this.user = user;
+		this.role = role;
+		this.site = site;
+		myHome = UsersHelper.getHomeDir(user.getName());
+		localFileCash = new HashMap<String, File>();
+		
+		this.out = out;
+		this.curDir = curDir;
+		degraded = false;
+		
+		setName("Commander");
+	}
 
 	private boolean initializeJCentralConnection() {
 		triedConnects++;
@@ -257,17 +283,6 @@ public class JAliEnCOMMander extends Thread {
 				.replace(myHome.substring(0, myHome.length() - 1), "~");
 	}
 
-
-	private void setShellPrintWriter(OutputStream os, String shelltype) {
-		if (shelltype.equals("jaliensh"))
-			out = new JShPrintWriter(os);
-		else
-			out = new RootPrintWriter(os);
-	}
-
-	
-	private OutputStream os = null;
-	
 	private String[] arg = null;
 	
 	private JAliEnBaseCommand jcommand = null;
@@ -278,7 +293,7 @@ public class JAliEnCOMMander extends Thread {
 	public AtomicInteger status = new AtomicInteger(0);
 
 	private void waitForCommand(){
-		while (os==null){
+		while (out==null){
 //			logger.log(Level.INFO, "Waiting for command");
 			
 			synchronized (this){
@@ -299,13 +314,6 @@ public class JAliEnCOMMander extends Thread {
 		try {
 			while (true) {
 				waitForCommand();
-
-				if (out == null) {
-					if ("setshell".equals(arg[0]))
-						setShellPrintWriter(os, arg[1]);
-					else
-						out = new RootPrintWriter(os);
-				}
 
 				if (degraded) {
 					if (triedConnects < maxTryConnect) {
@@ -336,7 +344,7 @@ public class JAliEnCOMMander extends Thread {
 						execute();
 					}
 					finally {
-						os = null;
+						out = null;
 						
 						setName("Commander: Idle");
 
@@ -355,17 +363,18 @@ public class JAliEnCOMMander extends Thread {
 	}
 	
 	/**
-	 * @param os
+	 * @param out
 	 * @param arg
 	 */
-	public void setLine(OutputStream os, String[] arg) {
-		this.os = os;
+	public void setLine(UIPrintWriter out, String[] arg) {
+		this.out = out;
 		this.arg = arg;
 	}
 	
 	
 	/**
 	 * execute a command line
+	 * @throws Exception 
 	 * 
 	 */
 	public void execute() throws Exception{
@@ -374,8 +383,11 @@ public class JAliEnCOMMander extends Thread {
 
 		boolean silent = false;
 
-		if(arg == null || arg.length == 0)
-			throw new Exception("We got empty argument!");
+		if(arg == null || arg.length == 0){
+			System.out.println("We got empty argument!");
+			//flush();
+			return;
+		}
 		
 		String comm = arg[0];
 
@@ -484,7 +496,10 @@ public class JAliEnCOMMander extends Thread {
 
 	
 	
-	private void flush(){
+	/**
+	 * flush the buffer and produce status to be send to client
+	 */
+	 public void flush(){
 		if(degraded){
 			out.degraded();
 			out.setenv(UsersHelper.getHomeDir(user.getName()),getUsername(),getRole());

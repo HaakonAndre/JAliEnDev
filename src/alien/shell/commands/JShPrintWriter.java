@@ -97,7 +97,7 @@ public class JShPrintWriter extends UIPrintWriter{
 	/**
 	 * @param os
 	 */
-	JShPrintWriter(final OutputStream os) {
+	public JShPrintWriter(final OutputStream os) {
 		this.os = os;
 	}
 
