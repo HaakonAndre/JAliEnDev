@@ -257,7 +257,7 @@ public class BusyBox {
 			try {
 
 				if (socketThere(s)) {
-					// line +="\n";
+
 					sline = sline.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
 
 					os.write(sline.getBytes());
@@ -321,7 +321,7 @@ public class BusyBox {
 			try {
 
 				if (socketThere(s)) {
-					// line +="\n";
+					
 					sline = sline.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
 
 					os.write(sline.getBytes());
