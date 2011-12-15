@@ -249,7 +249,7 @@ public class Xrootd extends Protocol {
 
 			pBuilder.returnOutputOnExit(true);
 
-			pBuilder.timeout(1, TimeUnit.HOURS);
+			pBuilder.timeout(1, TimeUnit.MINUTES);
 
 			pBuilder.redirectErrorStream(true);
 
