@@ -827,6 +827,27 @@ public class TaskQueueUtils {
 	private static final Pattern p = Pattern.compile("\\$(\\d+)");
 	
 	/**
+	 * @param jdlArguments
+	 * @return array of arguments to apply to the JDL
+	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
+	 * @see #submit(LFN, AliEnPrincipal, String, String...)
+	 */
+	public static String[] splitArguments(final String jdlArguments){
+		final StringTokenizer st = new StringTokenizer(jdlArguments);
+		
+		final List<String> split = new LinkedList<String>();
+		
+		while (st.hasMoreTokens()){
+			final String tok = st.nextToken();
+			
+			if (tok.length()>0)
+				split.add(tok);
+		}
+		
+		return split.toArray(new String[0]);
+	}
+	
+	/**
 	 * @param jdlContents JDL specification
 	 * @param account 
 	 * @param role 
@@ -1082,6 +1103,7 @@ public class TaskQueueUtils {
 	 * 
 	 * @param j job description, in plain text
 	 * @param account account from where the submit command was received
+	 * @param role 
 	 * @return the job ID
 	 * @throws IOException in case of problems such as the number of provided arguments is not enough
 	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
