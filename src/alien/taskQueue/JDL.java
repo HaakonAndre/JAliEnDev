@@ -1029,9 +1029,18 @@ public class JDL implements Serializable {
 			if (sb.length()>0)
 				sb.append("<br>");
 			
-			sb.append("<B>").append(entry.getKey()).append("</B> = ");
+			String key = entry.getKey();
 			
-			appendHTML(sb, entry.getValue());
+			for (final String k: correctTags){
+				if (k.equalsIgnoreCase(key)){
+					key = k;
+					break;
+				}
+			}
+			
+			sb.append("<B>").append(key).append("</B> = ");
+			
+			appendHTML(entry.getKey(), sb, entry.getValue());
 			
 			sb.append(";<BR>\n");
 		}
@@ -1039,7 +1048,7 @@ public class JDL implements Serializable {
 		return sb.toString();
 	}
 	
-	private static final void appendHTML(final StringBuilder sb, final Object o){
+	private static final void appendHTML(final String key, final StringBuilder sb, final Object o){
 		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number){
 			sb.append(o);
 		}
@@ -1057,7 +1066,15 @@ public class JDL implements Serializable {
 				else
 					first = false;
 				
-				sb.append("\"").append(Format.escHtml(o2.toString())).append("\"");
+				String text = o2.toString();
+				
+				if (key.toLowerCase().startsWith("output")){
+					text = formatOutput(text);
+				}
+				else
+					text = Format.escHtml(text);
+				
+				sb.append("\"").append(text).append("\"");
 			}
 			
 			sb.append("</div>}");
@@ -1066,4 +1083,30 @@ public class JDL implements Serializable {
 			sb.append('"').append(o.toString()).append('"');
 		}
 	}
+	
+	private static final String formatOutput(final String arg){
+		String text = arg;
+		
+		final StringBuilder sb = new StringBuilder();
+		
+		int idx = text.indexOf(':');
+		
+		if (idx>0){
+			sb.append("<font color=red>").append(Format.escHtml(text.substring(0, idx))).append("</font>:");
+			text = text.substring(idx+1);
+		}
+		
+		idx = text.indexOf('@');
+		
+		if (idx>0){
+			sb.append(Format.escHtml(text.substring(0, idx+1))).append("<font color=green>").append(Format.escHtml(text.substring(idx+1))).append("</font>");
+		}
+		else
+			sb.append(Format.escHtml(text));
+		
+		return sb.toString();
+	}
+	
+	private static final List<String> correctTags = Arrays.asList("ValidationCommand", "InputDownload", "Executable", "Price", "Type", "Arguments", "JobTag", "OrigRequirements", "InputBox", "WorkDirectorySize", 
+		"OutputArchive", "Output", "OutputFile", "TTL", "Packages", "OutputDir", "GUIDFile", "InputFile", "MemorySize", "User", "Requirements", "JDLVariables", "SuccessfullyBookedPFNs");
 }
