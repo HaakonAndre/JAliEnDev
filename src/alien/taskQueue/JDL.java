@@ -20,6 +20,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import lazyj.Format;
 import lazyj.StringFactory;
 import lazyj.Utils;
 import alien.catalogue.GUID;
@@ -1016,5 +1017,53 @@ public class JDL implements Serializable {
 			newValue.append("( ").append(requirement).append(" )");
 		
 		return true;
+	}
+	
+	/**
+	 * @return the HTML representation of this JDL
+	 */
+	public String toHTML(){
+		final StringBuilder sb = new StringBuilder();
+		
+		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
+			if (sb.length()>0)
+				sb.append("<br>");
+			
+			sb.append("<B>").append(entry.getKey()).append("</B> = ");
+			
+			appendHTML(sb, entry.getValue());
+			
+			sb.append(";<BR>\n");
+		}
+		
+		return sb.toString();
+	}
+	
+	private static final void appendHTML(final StringBuilder sb, final Object o){
+		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number){
+			sb.append(o);
+		}
+		else
+		if (o instanceof Collection){
+			sb.append("{<br><div style='padding-left:20px'>");
+			
+			final Collection<?> c = (Collection<?>) o;
+			
+			boolean first = true;
+			
+			for (final Object o2: c){
+				if (!first)
+					sb.append(",<br>");
+				else
+					first = false;
+				
+				sb.append("\"").append(Format.escHtml(o2.toString())).append("\"");
+			}
+			
+			sb.append("</div>}");
+		}
+		else{
+			sb.append('"').append(o.toString()).append('"');
+		}
 	}
 }
