@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 import lazyj.Format;
 import lazyj.StringFactory;
 import lazyj.Utils;
-import lia.web.utils.HtmlColorer;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -1097,9 +1096,39 @@ public class JDL implements Serializable {
 	private static final Pattern NUMBER = Pattern.compile("(?<=(\\s|^))\\d+(.(\\d+)?)?(E[+-]\\d+)?(?=(\\s|$))");
 	private static final Pattern JDLFIELD = Pattern.compile("(?<=\\Wother\\.)[A-Z][a-zA-Z]+(?=\\W)");
 	
+	/**
+	 * @param sLine
+	 * @param p
+	 * @param sPreffix
+	 * @param sSuffix
+	 * @return formatted pattern
+	 */
+	public static String highlightPattern(final String sLine, final Pattern p, final String sPreffix, final String sSuffix){
+		final StringBuilder sb = new StringBuilder(sLine.length());
+		
+		final Matcher m = p.matcher(sLine);
+		
+		int iLastIndex = 0;
+		
+		while (m.find(iLastIndex)){
+			final String sMatch = sLine.substring(m.start(), m.end());
+	
+			sb.append(sLine.substring(iLastIndex, m.start()));
+			sb.append(Format.replace(sPreffix, "${MATCH}", sMatch));			
+			sb.append(sMatch);
+			sb.append(Format.replace(sSuffix, "${MATCH}", sMatch));
+			
+			iLastIndex = m.end();
+		}
+		
+		sb.append(sLine.substring(iLastIndex));
+		
+		return sb.toString();
+	}
+	
 	private static final String formatExpression(final String text){
-		String arg = HtmlColorer.highlightPattern(text, NUMBER, "<font color=darkgreen>", "</font>");
-		arg = HtmlColorer.highlightPattern(arg, JDLFIELD, "<I>", "</I>");
+		String arg = highlightPattern(text, NUMBER, "<font color=darkgreen>", "</font>");
+		arg = highlightPattern(arg, JDLFIELD, "<I>", "</I>");
 		
 		final StringBuilder sb = new StringBuilder();
 		
