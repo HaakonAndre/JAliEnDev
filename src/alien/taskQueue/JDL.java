@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 import lazyj.Format;
 import lazyj.StringFactory;
 import lazyj.Utils;
+import lia.web.utils.HtmlColorer;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -1050,7 +1051,11 @@ public class JDL implements Serializable {
 	
 	private static final void appendHTML(final String key, final StringBuilder sb, final Object o){
 		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number){
-			sb.append(o);
+			if (o instanceof Number){
+				sb.append("<font color=darkgreen>").append(o).append("</font>");
+			}
+			else
+				sb.append(formatExpression(o.toString()));
 		}
 		else
 		if (o instanceof Collection){
@@ -1072,16 +1077,83 @@ public class JDL implements Serializable {
 					text = formatOutput(text);
 				}
 				else
-					text = Format.escHtml(text);
+				if (key.equalsIgnoreCase("packages")){
+					text = formatPackages(text);
+				}
+				else
+					text = "<font color=navy>"+Format.escHtml(text)+"</font>";
 				
-				sb.append("\"").append(text).append("\"");
+				sb.append('"').append(text).append('"');
 			}
 			
 			sb.append("</div>}");
 		}
 		else{
-			sb.append('"').append(o.toString()).append('"');
+			sb.append("\"<font color=navy>").append(o.toString()).append("</font>\"");
 		}
+	}
+	
+	private static final Pattern PACKAGES = Pattern.compile("^\\w+@\\w+::[a-zA-Z0-9._-]+$"); 
+	private static final Pattern NUMBER = Pattern.compile("(?<=(\\s|^))\\d+(.(\\d+)?)?(E[+-]\\d+)?(?=(\\s|$))");
+	private static final Pattern JDLFIELD = Pattern.compile("(?<=\\Wother\\.)[A-Z][a-zA-Z]+(?=\\W)");
+	
+	private static final String formatExpression(final String text){
+		String arg = HtmlColorer.highlightPattern(text, NUMBER, "<font color=darkgreen>", "</font>");
+		arg = HtmlColorer.highlightPattern(arg, JDLFIELD, "<I>", "</I>");
+		
+		final StringBuilder sb = new StringBuilder();
+		
+		int old = 0;
+		int idx = arg.indexOf('"');
+		
+		while (idx>0){
+			int idx2 = arg.indexOf('"', idx+1);
+			
+			if (idx2>idx){
+				sb.append(arg.substring(old, idx+1));
+				
+				String stringValue = arg.substring(idx+1, idx2);
+				
+				if (PACKAGES.matcher(stringValue).matches())
+					sb.append(formatPackages(stringValue));
+				else
+					sb.append("<font color=navy>").append(stringValue).append("</font>");
+				
+				sb.append('"');
+				
+				old = idx2+1;
+				idx = arg.indexOf('"', old);
+			}
+			else
+				break;
+		}
+		
+		sb.append(arg.substring(old));
+		
+		return sb.toString();
+	}
+	
+	private static final String formatPackages(final String arg){
+		String text = arg;
+		
+		final StringBuilder sb = new StringBuilder();
+		
+		int idx = text.indexOf('@');
+		
+		if (idx>0){
+			sb.append("<font color=#999900>").append(Format.escHtml(text.substring(0, idx))).append("</font>@");
+			text = text.substring(idx+1);
+		}
+		
+		idx = text.indexOf("::");
+		
+		if (idx>0){
+			sb.append("<font color=green>").append(Format.escHtml(text.substring(0, idx))).append("</font>::<font color=red>").append(Format.escHtml(text.substring(idx+2))).append("</font>");
+		}
+		else
+			sb.append(Format.escHtml(text));
+		
+		return sb.toString();
 	}
 	
 	private static final String formatOutput(final String arg){
