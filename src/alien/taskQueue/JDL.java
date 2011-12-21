@@ -1210,6 +1210,21 @@ public class JDL implements Serializable {
 		return sb.toString();
 	}
 	
-	private static final List<String> correctTags = Arrays.asList("ValidationCommand", "InputDownload", "Executable", "Price", "Type", "Arguments", "JobTag", "OrigRequirements", "InputBox", "WorkDirectorySize", 
-		"OutputArchive", "Output", "OutputFile", "TTL", "Packages", "OutputDir", "GUIDFile", "InputFile", "MemorySize", "User", "Requirements", "JDLVariables", "SuccessfullyBookedPFNs");
+	private static final List<String> correctTags = Arrays.asList(
+		"Arguments",
+		"Executable",
+		"GUIDFile",
+		"InputBox", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile",
+		"JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables", "JobLogOnClusterMonitor", "JobTag",
+		"LPMActivity",
+		"MasterJobID", "MemorySize", 
+		"OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile",
+		"Packages", "Price",
+		"Requirements", 
+		"SuccessfullyBookedPFNs",
+		"TTL", "Type",
+		"User",
+		"ValidationCommand", 
+		"WorkDirectorySize" 
+	);
 }
