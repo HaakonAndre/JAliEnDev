@@ -1190,17 +1190,19 @@ public class JDL implements Serializable {
 		
 		final StringBuilder sb = new StringBuilder();
 		
-		int idx = text.indexOf(':');
+		final int idx = text.indexOf(':');
 		
-		if (idx>0){
+		int idx2 = text.indexOf('@'); 
+		
+		if (idx>0 && (idx2<0 || idx<idx2)){
 			sb.append("<font color=red>").append(Format.escHtml(text.substring(0, idx))).append("</font>:");
 			text = text.substring(idx+1);
+			
+			idx2 = text.indexOf('@');
 		}
 		
-		idx = text.indexOf('@');
-		
-		if (idx>0){
-			sb.append(Format.escHtml(text.substring(0, idx+1))).append("<font color=green>").append(Format.escHtml(text.substring(idx+1))).append("</font>");
+		if (idx2>=0){
+			sb.append(Format.escHtml(text.substring(0, idx2+1))).append("<font color=green>").append(Format.escHtml(text.substring(idx2+1))).append("</font>");
 		}
 		else
 			sb.append(Format.escHtml(text));
