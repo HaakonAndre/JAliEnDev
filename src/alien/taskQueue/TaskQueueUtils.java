@@ -139,7 +139,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_getmasterjobs");
 		}
 		
-		String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=0 ";
+		String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=0 AND status!='KILLED' ";
 		
 		if (account!=null && account.length()>0){
 			q += "AND submitHost LIKE '"+Format.escSQL(account)+"@%' ";
