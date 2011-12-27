@@ -27,7 +27,10 @@ public final class CreateCertificates {
 			return false;
 		
 		String userreq = TestConfig.tvo_certs + "/userreq.pem";
+		String usertempkey = TestConfig.tvo_certs + "/userkeytemp.pem";
+		
 		String hostreq = TestConfig.tvo_certs + "/hostreq.pem";
+		String hosttempkey = TestConfig.tvo_certs + "/hostkeytemp.pem";
 
 		ArrayList<TestCommand> commands = new ArrayList<TestCommand>();
 
@@ -51,11 +54,13 @@ public final class CreateCertificates {
 		
 		// USER CERT/KEY:
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "req", "-nodes", "-newkey", "rsa:1024", "-out ", userreq
-				,"-keyout", TestConfig.user_key
+				,"-keyout", usertempkey
 				,"-subj", TestConfig.certSubjectuser}));
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "x509", "-req", "-in"
 				,userreq
 				,"-CA", TestConfig.ca_cert, "-CAkey", TestConfig.ca_key, "-CAcreateserial", "-out", TestConfig.user_cert}));
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "rsa", "-inform", "PEM", "-in", usertempkey, "-outform", "PEM",
+				"-out", TestConfig.user_key}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "440", TestConfig.user_cert}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "400", TestConfig.user_key}));
 		
@@ -70,11 +75,13 @@ public final class CreateCertificates {
 		
 		// HOST CERT/KEY:
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "req", "-nodes", "-newkey", "rsa:1024", "-out ", hostreq
-				,"-keyout", TestConfig.host_key
+				,"-keyout", hosttempkey
 				,"-subj", TestConfig.certSubjecthost}));
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "x509", "-req", "-in"
 				,hostreq
 				,"-CA", TestConfig.ca_cert, "-CAkey", TestConfig.ca_key, "-CAcreateserial", "-out", TestConfig.host_cert}));
+		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "rsa", "-inform", "PEM", "-in", hosttempkey, "-outform", "PEM",
+				"-out", TestConfig.host_key}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "440", TestConfig.host_cert}));
 		commands.add(new TestCommand(new String[] {TestBrain.cChmod, "400", TestConfig.host_key}));
 		
