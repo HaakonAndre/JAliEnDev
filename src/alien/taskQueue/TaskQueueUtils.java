@@ -224,7 +224,7 @@ public class TaskQueueUtils {
 		
 		final long lQueryStart = System.currentTimeMillis();
 
-		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") group by split,status order by 1,2;");
+		db.query("select split,status,count(1) from QUEUE where split in ("+sb.toString()+") AND status!='KILLED' group by split,status order by 1,2;");
 		
 		if (monitor!=null)
 			monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
@@ -286,7 +286,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_getsubjobs");
 		}
 		
-		final String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split="+Format.escSQL(queueId+"")+" ORDER BY queueId ASC;";
+		final String q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split="+Format.escSQL(queueId+"")+" AND status!='KILLED' ORDER BY queueId ASC;";
 		
 		final List<Job> ret = new ArrayList<Job>();
 		
@@ -392,20 +392,13 @@ public class TaskQueueUtils {
 			where += whe.substring(0, whe.length()-3) + " ) and ";
 		}
 		
-		if(where.endsWith(" and "))
-			where = where.substring(0,where.length()-5);
-
+		where += " status!='KILLED' ";
 		
-		if(where.length()>0)
-			where = " WHERE " + where;
-		
-
-		int lim = 10000;
-		if(limit>0 && limit<10000)
+		int lim = 20000;
+		if(limit>0 && limit<20000)
 			lim = limit;
-
 		
-		final String q = "SELECT queueId,status,split,execHost FROM QUEUE "+ where + " ORDER BY queueId ASC limit "+ lim+";";
+		final String q = "SELECT queueId,status,split,execHost FROM QUEUE WHERE "+ where + " ORDER BY queueId ASC limit "+ lim+";";
 					
 		if (!db.query(q))
 			return null;
@@ -560,9 +553,9 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_db_lookup");
 		}
 		
-		int lim = 2000;
+		int lim = 20000;
 		
-		if(limit>0 && limit<2000)
+		if(limit>0 && limit<20000)
 			lim = limit;
 
 		String where = "";
@@ -684,7 +677,7 @@ public class TaskQueueUtils {
 		
 		final String q = "SELECT "+ ALL_BUT_JDL +" FROM QUEUE "+ where + orderBy +" limit "+lim+";";
 		
-		System.out.println("SQL: " + q);
+//		System.out.println("SQL: " + q);
 					
 		if (!db.query(q))
 			return null;
