@@ -11,6 +11,10 @@ java sdk
 slapd
 mysql (server + client)
 
+if your slapd doesn't come up and show a config file error 
+(will happen e.g. on newer ubuntu distributions like oneiric)
+make sure your user is in the system's slapd group, e.g. 'openldap'.
+then logout/login, try again.
 
 
 run:
