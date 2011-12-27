@@ -34,6 +34,8 @@ public final class AuthorizationChecker {
 	 * @return true if the user owns this entity
 	 */
 	public static boolean isOwner(final CatalogEntity entity, final AliEnPrincipal user){
+		if(user==null || entity==null)
+			return false;
 		return user.canBecome(entity.getOwner());
 	}
 
@@ -45,7 +47,9 @@ public final class AuthorizationChecker {
 	 * @return true if the user is in the same group
 	 */
 	public static boolean isGroupOwner(final CatalogEntity entity, final AliEnPrincipal user){
-		return user.hasRole(entity.getGroup());
+		if(user==null || entity==null)
+			return false;
+			return user.hasRole(entity.getGroup());
 	}
 
 	/**
@@ -56,6 +60,10 @@ public final class AuthorizationChecker {
 	 * @return permission field
 	 */
 	public static int getPermissions(final CatalogEntity entity, final AliEnPrincipal user){
+		
+		if(user==null || entity==null)
+			return 0;
+		
 		final Set<String> accounts = user.getNames();
 
 		if (accounts!=null && accounts.contains("admin")){
@@ -85,6 +93,8 @@ public final class AuthorizationChecker {
 	 * @return true if the user can read it
 	 */
 	public static boolean canRead(final CatalogEntity entity, final AliEnPrincipal user){
+		if(user==null || entity==null)
+			return false;
 		if((getPermissions(entity, user) & 4) == 4){
 			logger.fine("The user \""+user.getName()+"\" has the right to read \""+entity.getName()+"\"");
 			return true;
@@ -103,6 +113,8 @@ public final class AuthorizationChecker {
 	 * @return true if the user can write it
 	 */
 	public static boolean canWrite(final CatalogEntity entity, final AliEnPrincipal user){
+		if(user==null || entity==null)
+			return false;
 		if((getPermissions(entity, user) & 2) == 2){
 			logger.fine("The user \""+user.getName()+"\" has the right to write \""+entity.getName()+"\"");
 			return true;
@@ -121,6 +133,8 @@ public final class AuthorizationChecker {
 	 * @return true if the user can execute it
 	 */
 	public static boolean canExecute(final CatalogEntity entity, final AliEnPrincipal user){
+		if(user==null || entity==null)
+			return false;
 		return (getPermissions(entity, user) & 1) == 1;
 	}
 
@@ -134,6 +148,8 @@ public final class AuthorizationChecker {
 	 */
 	public static boolean canModifyJob(final Job job,
 			final AliEnPrincipal user, final String role) {
+		if(job==null || user==null || role==null)
+			return false;
 		if(job.getOwner().equals(user.getName()) || 
 				job.getOwner().equals(role) ||
 				AliEnPrincipal.roleIsAdmin(role))

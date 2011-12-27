@@ -289,6 +289,10 @@ public class LFNUtils {
 	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
 	public static LFN mkdir(final AliEnPrincipal owner, final LFN lfn, final boolean createMissingParents){
+		
+		if(owner==null || lfn==null)
+			return null;
+		
 		if (lfn.exists){
 			if (lfn.isDirectory() && AuthorizationChecker.canWrite(lfn, owner))
 				return lfn;
