@@ -153,17 +153,17 @@ public class TestConfig {
 	/**
 	 * central jAuthZ private key for storage
 	 */
-	public static String jAuthZ_priv = tvo_certs + "/AuthZ_priv.pem";
+	public static String jAuth_priv = tvo_certs + "/AuthZ_priv.pem";
 
 	/**
 	 * central jAuthZ public key for storage
 	 */
-	public static String jAuthZ_pub = tvo_certs + "/AuthZ_pub.pem";
+	public static String jAuth_pub = tvo_certs + "/AuthZ_pub.pem";
 	
 	/**
 	 * central jAuthZ's subject
 	 */
-	public static final String certSubjectjAuthZ = 	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN=jAuthZ";
+	public static final String certSubjectjAuth= 	"/C=CH/O="+JAliEnIAm.whoamI()+"/CN=jAuth";
 
 	/**
 	 * SE's private key for storage
@@ -375,8 +375,8 @@ public class TestConfig {
 				+ "user.cert.pub.location = " + user_cert + "\n"
 				+ "alice_close_site = " + TestConfig.testSite + "\n"
 				+"\n"
-				+ "jAuthZ.priv.key.location = " + jAuthZ_priv + "\n"
-				+ "jAuthZ.pub.key.location = " + jAuthZ_pub + "\n"
+				+ "jAuthZ.priv.key.location = " + jAuth_priv + "\n"
+				+ "jAuthZ.pub.key.location = " + jAuth_pub + "\n"
 				+ "SE.priv.key.location = " + SE_priv + "\n"
 				+ "SE.pub.key.location = " + SE_pub + "\n"
 	

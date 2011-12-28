@@ -105,13 +105,20 @@ public final class CreateCertificates {
 	 */
 	public static void createAuthenAndSEKey(){
 		
-		Functions.callGetStdOut(new String[] {TestBrain.cOpenssl, "req", "-x509", "-nodes", "-days", "365"
-				, "-newkey", "rsa:1024", "-keyout", TestConfig.jAuthZ_priv, "-out", TestConfig.jAuthZ_pub, "-subj", TestConfig.certSubjectjAuthZ});
-		
+		String jAuthentempkey = TestConfig.tvo_certs + "/authenkeytemp.pem";
 		
 		Functions.callGetStdOut(new String[] {TestBrain.cOpenssl, "req", "-x509", "-nodes", "-days", "365"
-				, "-newkey", "rsa:1024", "-keyout", TestConfig.SE_priv, "-out", TestConfig.SE_pub, "-subj", TestConfig.certSubjectSE});
+				, "-newkey", "rsa:1024", "-keyout", jAuthentempkey, "-out", TestConfig.jAuth_pub, "-subj", TestConfig.certSubjectjAuth});
+		Functions.callGetStdOut(new String[] {TestBrain.cOpenssl, "rsa", "-inform", "PEM", "-in", jAuthentempkey, "-outform", "PEM",
+				"-out", TestConfig.jAuth_priv});
 		
+		
+		String SEtempkey = TestConfig.tvo_certs + "/SEkeytemp.pem";
+		
+		Functions.callGetStdOut(new String[] {TestBrain.cOpenssl, "req", "-x509", "-nodes", "-days", "365"
+				, "-newkey", "rsa:1024", "-keyout", SEtempkey, "-out", TestConfig.SE_pub, "-subj", TestConfig.certSubjectSE});
+		Functions.callGetStdOut(new String[] {TestBrain.cOpenssl, "rsa", "-inform", "PEM", "-in", SEtempkey, "-outform", "PEM",
+				"-out", TestConfig.SE_priv});
 	}
 	
 	
