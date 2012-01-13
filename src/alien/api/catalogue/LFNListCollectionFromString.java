@@ -52,8 +52,8 @@ public class LFNListCollectionFromString extends Request {
 			else
 				throw new IllegalArgumentException("Not a collection");
 		}
-		
-		throw new IllegalArgumentException("No such LFN" + path);
+		else
+			throw new IllegalArgumentException("No such LFN \"" + path+"\"");
 	}
 
 	/**
