@@ -31,11 +31,20 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 * execute the type
 	 */
 	@Override
-	public void run() {		
-		final String path = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sPath);
+	public void run() {
+		
+		String collectionPath;
+		
+		if(sPath.startsWith("/"))
+			collectionPath = sPath;
+		else{
+			collectionPath = commander.getCurrentDir().getCanonicalName()+sPath;	
+		}
+		
+		logger.info("Collection = "+collectionPath);
 		
 		try{
-			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), path), true);
+			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), collectionPath), true);
 			
 			lfns = ret.getLFNs();
 		}
@@ -52,7 +61,16 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			return;
 		}
 		
-		//if (out.isRootPrinter())
+		StringBuilder sb = new StringBuilder();
+		
+		for(LFN lfn: lfns){
+			sb.append(lfn.getCanonicalName());
+			sb.append("\n");
+		}
+		
+		out.printOutln(sb.toString());
+		
+		if (out.isRootPrinter())
 			out.setReturnArgs(deserializeForRoot());
 	}
 
