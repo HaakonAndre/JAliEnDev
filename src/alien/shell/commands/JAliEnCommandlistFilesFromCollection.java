@@ -27,11 +27,19 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 	private String errorMessage = null;
 	
+	/*
+	 * The command received -v verbose argument
+	 * */
+	private boolean bZ = false;
+	
 	/**
 	 * execute the type
 	 */
 	@Override
 	public void run() {
+		
+		//A9D461B2-1386-11E1-9717-7623A10ABEEF  (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)
+		// -v  A9D461B2-1386-11E1-9717-7623A10ABEEF  (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
 		
 		String collectionPath;
 		
@@ -40,8 +48,6 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		else{
 			collectionPath = commander.getCurrentDir().getCanonicalName()+sPath;	
 		}
-		
-		logger.info("Collection = "+collectionPath);
 		
 		try{
 			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), collectionPath), true);
@@ -64,7 +70,21 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		StringBuilder sb = new StringBuilder();
 		
 		for(LFN lfn: lfns){
+			sb.append(lfn.guid);
+			sb.append(" (from the file ");
 			sb.append(lfn.getCanonicalName());
+			sb.append(")");
+		
+			//( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
+			if(bZ){
+				sb.append(" (size = ");
+				sb.append(lfn.size);
+				sb.append(") ");
+				sb.append("(md5 = ");
+				sb.append(lfn.md5);
+				sb.append(")");
+			}
+			
 			sb.append("\n");
 		}
 		
@@ -95,7 +115,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 * from root it is allways called with -v -z
 	 * @return serialized return
 	 */
 	@Override
@@ -149,6 +169,8 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		if (options.has("s"))
 			silent();
 
+		bZ = options.has("z");
+		
 		if (options.nonOptionArguments().size() != 1)
 			throw new JAliEnCommandException();
 
