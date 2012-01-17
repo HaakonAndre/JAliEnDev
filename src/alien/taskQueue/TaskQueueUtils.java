@@ -1,5 +1,6 @@
 package alien.taskQueue;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import java.util.regex.Pattern;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
+import lazyj.Utils;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.LFNfromString;
@@ -521,8 +523,25 @@ public class TaskQueueUtils {
 		
 		final String q = "SELECT jdl FROM QUEUE WHERE queueId="+queueId;
 		
-		if (!db.query(q) || !db.moveNext())
+		if (!db.query(q) || !db.moveNext()){
+			final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
+			
+			if (jdlArchiveDir.length()>0){
+				File f = new File(jdlArchiveDir, queueId+".txt");
+				
+				if (f.exists() && f.canRead()){
+					return Utils.readFile(f.getAbsolutePath());
+				}
+				
+				f = new File(jdlArchiveDir, queueId+".html");
+				
+				if (f.exists() && f.canRead()){
+					return Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+				}
+			}
+			
 			return null;
+		}
 		
 		return db.gets(1);
 	}
