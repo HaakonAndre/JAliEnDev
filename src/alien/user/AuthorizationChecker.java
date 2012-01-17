@@ -119,10 +119,10 @@ public final class AuthorizationChecker {
 			logger.fine("The user \""+user.getName()+"\" has the right to write \""+entity.getName()+"\"");
 			return true;
 		}
-		else{
-			logger.fine("The user \""+user.getName()+"\" has no right to write \""+entity.getName()+"\"");
-			return false;
-		}
+		
+		logger.fine("The user \""+user.getName()+"\" has no right to write \""+entity.getName()+"\"");
+		return false;
+
 	}
 
 	/**
