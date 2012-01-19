@@ -183,7 +183,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * @param evenIfNotExist
 	 * @return parent directory
 	 */
-	LFN getParentDir(final boolean evenIfNotExist){
+	public LFN getParentDir(final boolean evenIfNotExist){
 		if (parentDir!=null)
 			return parentDir;
 		
