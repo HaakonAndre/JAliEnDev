@@ -24,6 +24,12 @@ public final class UserFactory {
 	 * @return the account, or <code>null</code> if it is not a valid username
 	 */
 	public static AliEnPrincipal getByUsername(final String username){
+		if (username==null)
+			return null;
+		
+		if (username.equals("admin"))
+			return new AliEnPrincipal(username);
+		
 		final Set<String> check = LDAPHelper.checkLdapInformation("uid="+username, "ou=People,", "uid");
 		
 		if (check!=null && check.size()>=1)
