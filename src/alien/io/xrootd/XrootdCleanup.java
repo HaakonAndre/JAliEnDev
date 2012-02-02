@@ -314,7 +314,15 @@ public class XrootdCleanup {
 				return;
 			}
 			
-			final UUID uuid = UUID.fromString(file.getName());
+			final UUID uuid;
+			
+			try{
+				uuid = UUID.fromString(file.getName());
+			}
+			catch (Exception e){
+				// not an alien file name, ignore
+				return;
+			}
 			
 			final GUID guid = GUIDUtils.getGUID(uuid);
 			
@@ -359,6 +367,7 @@ public class XrootdCleanup {
 		}
 		catch (Exception e){
 			System.err.println(e.getMessage());
+			e.printStackTrace();
 		}
 		
 		processed.incrementAndGet();
