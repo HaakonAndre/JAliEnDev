@@ -641,7 +641,14 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 			final int iLFNTableIndex = Integer.parseInt(sLFNRef.substring(idx+1));
 		
-			final DBFunctions db2 = CatalogueUtils.getHost(iHostID).getDB();
+			final Host h = CatalogueUtils.getHost(iHostID);
+			
+			if (h==null){
+				logger.log(Level.WARNING, "No host for id = "+iHostID);
+				continue;
+			}
+				
+			final DBFunctions db2 = h.getDB();
 			
 			if (monitor!=null){
 				monitor.incrementCounter("LFN_db_lookup");
