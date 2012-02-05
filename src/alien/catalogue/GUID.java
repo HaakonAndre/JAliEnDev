@@ -466,6 +466,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			return false;
 		}
 		
+		cleanPFNCache();
+		
 		return true;
 	}
 	
@@ -540,8 +542,11 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND seNumber="+pfn.seNumber;
 		
 		if (db.query(q)){
-			if (db.getUpdateCount()>0)
+			if (db.getUpdateCount()>0){
 				removedSuccessfuly = true;
+				
+				cleanPFNCache();
+			}
 			else
 				logger.log(Level.WARNING, "Query didn't change anything: "+q);
 		}
