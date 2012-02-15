@@ -335,9 +335,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		guid.lfnCache = new LinkedHashSet<LFN>(1);
 		guid.lfnCache.add(lfn);
 
-		pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses,
-				exses, qos);
-
+		pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
+		qos = new HashMap<String, Integer>();
+		
 		if (pfns == null || pfns.size() == 0) {
 			if (!isSilent())
 				out.printErrln("Couldn't get any access ticket.");
@@ -360,23 +360,30 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		do {
 			failOver = false;
-			for (PFN pfn : pfns) {
-				List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+			
+			for (final PFN pfn : pfns) {
+				final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+				
 				for (final Protocol protocol : protocols) {
-					ProtocolAction pA = new ProtocolAction(protocol,
-							sourceFile, pfn);
+					ProtocolAction pA = new ProtocolAction(protocol, sourceFile, pfn);
+					
 					String targetLFNResult = null;
+					
 					try {
 						pA.start();
+						
 						if (!isSilent())
 							out.printOutln("Uploading file " + sourceFile.getCanonicalPath() + " to " + pfn.getPFN());
+						
 						while (pA.isAlive()) {
 							Thread.sleep(50);
 							if (!isSilent())
 								out.pending();
 						}
+						
 						targetLFNResult = pA.getReturn();
-					} catch (Exception e) {
+					} 
+					catch (Exception e) {
 						// e.printStackTrace();
 					}
 
@@ -409,6 +416,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		if (envelopes.size() != 0)
 			commander.c_api.registerEnvelopes(envelopes);
+		
 		if (registerPFNs.size() != 0)
 			commander.c_api.registerEnvelopes(envelopes);
 
