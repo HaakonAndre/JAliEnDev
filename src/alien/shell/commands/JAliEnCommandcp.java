@@ -20,6 +20,7 @@ import alien.catalogue.PFN;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.se.SE;
+import alien.se.SEUtils;
 
 /**
  * @author ron
@@ -380,15 +381,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					}
 
 					if (targetLFNResult != null) {
-						if (pfn.ticket != null
-								&& pfn.ticket.envelope != null
-								&& pfn.ticket.envelope.getSignedEnvelope() != null)
+						if (pfn.ticket != null && pfn.ticket.envelope != null && pfn.ticket.envelope.getSignedEnvelope() != null){
 							if (pfn.ticket.envelope.getEncryptedEnvelope() == null)
 								envelopes.add(targetLFNResult);
 							else
-								envelopes.add(pfn.ticket.envelope
-										.getSignedEnvelope());
-					} else {
+								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+						}
+						
+						exses.add(SEUtils.getSE(pfn.seNumber).getName());
+					}
+					else {
 						failOver = true;
 						if (!isSilent())
 							out.printErrln("Error uploading file to SE: " + commander.c_api.getSE(pfn.seNumber).getName());
@@ -399,8 +401,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (failOver) {
-				pfns = commander.c_api.getPFNsToWrite(lfn,
-						guid, ses, exses, qos);
+				pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 				qos = new HashMap<String, Integer>();
 			}
 
