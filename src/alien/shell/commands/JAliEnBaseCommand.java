@@ -60,7 +60,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 		this.commander = commander;
 		this.out = out;
 		this.alArguments = alArguments;
-		this.bColour = out.colour();
+		this.bColour = out!=null ? out.colour() : false;
 	}
 	
 	/**

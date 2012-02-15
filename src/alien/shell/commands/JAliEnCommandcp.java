@@ -32,7 +32,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	private int referenceCount = 0;
 
 	private List<String> ses = new ArrayList<String>();
-	private List<String> exses = new ArrayList<String>();
+	private List<String> exses = new ArrayList<String>();				
 	
 	private HashMap<String,Integer> qos = new HashMap<String,Integer>();
 
@@ -192,9 +192,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	
 
 	private boolean targetLFNExists(String targetLFN) {
-		LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
-				commander.user.getName(), commander.getCurrentDir()
-						.getCanonicalName(), targetLFN));
+		final LFN currentDir = commander.getCurrentDir();
+		
+		final LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir!=null ? currentDir.getCanonicalName() : null, targetLFN));
+		
 		if (tLFN != null){
 			if(!isSilent())
 				out.printErrln("The target LFN already exists.");
@@ -215,10 +216,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * @return local target file
 	 */
 	public File copyGridToLocal(final String sourceLFN, File targetLocalFile) {
+		final LFN currentDir = commander.getCurrentDir();
 		
-		LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
-				commander.user.getName(), commander.getCurrentDir()
-						.getCanonicalName(), sourceLFN));
+		LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir!=null ? currentDir.getCanonicalName() : null, sourceLFN));
+		
 		if (lfn == null) {
 			if (!isSilent())
 				out.printErrln("Could not get the file's LFN: " + sourceLFN);
@@ -307,9 +308,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		LFN lfn = null;
 		GUID guid = null;
 
+		final LFN currentDir = commander.getCurrentDir();
+		
 		lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
-				commander.user.getName(), commander.getCurrentDir()
-						.getCanonicalName(), targetLFN), true);
+				commander.user.getName(), currentDir!=null ? currentDir.getCanonicalName() : null, targetLFN), true);
 
 		try {
 			guid = GUIDUtils.createGuid(sourceFile, commander.user);
