@@ -418,7 +418,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			commander.c_api.registerEnvelopes(envelopes);
 		
 		if (registerPFNs.size() != 0)
-			commander.c_api.registerEnvelopes(envelopes);
+			commander.c_api.registerEnvelopes(registerPFNs);
 
 		if (referenceCount == (envelopes.size() + registerPFNs.size())) {
 			if (!isSilent())
