@@ -156,7 +156,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @return <code>true</code> if the command was silenced
 	 */
 	public final boolean isSilent(){
-		return silent;
+		return silent || out==null;
 	}
 	
 	/**
