@@ -34,7 +34,7 @@ public class TaskQueueApiUtils {
 	 */
 	public static Map<String, GetUptime.UserStats> getUptime() {
 		try {
-			final GetUptime uptime = Dispatcher.execute(new GetUptime(), false);
+			final GetUptime uptime = Dispatcher.execute(new GetUptime());
 
 			return uptime.getStats();
 		}
@@ -61,7 +61,7 @@ public class TaskQueueApiUtils {
 			final Collection<Integer> jobid, final String orderByKey, final int limit) {
 
 		try {
-			GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit), true);
+			GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit));
 
 			return ps.returnPS();
 		}
@@ -89,7 +89,7 @@ public class TaskQueueApiUtils {
 			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {
-			GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit,bExpunge), true);
+			GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit,bExpunge));
 
 			// return mj.masterJobStatus();
 			return mj.subJobStatus();
@@ -110,7 +110,7 @@ public class TaskQueueApiUtils {
 	public String getTraceLog(final int queueId) {
 
 		try {
-			GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId), true);
+			GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId));
 
 			return trace.getTraceLog();
 		}
@@ -129,7 +129,7 @@ public class TaskQueueApiUtils {
 	public String getJDL(final int queueId) {
 
 		try {
-			GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId), true);
+			GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId));
 
 			return jdl.getJDL();
 		}
@@ -148,7 +148,7 @@ public class TaskQueueApiUtils {
 	public Job getJob(final int queueId) {
 
 		try {
-			GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId), true);
+			GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId));
 
 			return job.getJob();
 		}
@@ -167,7 +167,7 @@ public class TaskQueueApiUtils {
 	public List<Job> getJobs(final List<Integer> queueIds) {
 
 		try {
-			GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds), true);
+			GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds));
 
 			return job.getJobs();
 		}
@@ -187,7 +187,7 @@ public class TaskQueueApiUtils {
 	 */
 	public static void setJobStatus(final int jobnumber, final JobStatus status) {
 		try {
-			Dispatcher.execute(new SetJobStatus(jobnumber, status), true);
+			Dispatcher.execute(new SetJobStatus(jobnumber, status));
 
 		}
 		catch (ServerException e) {
@@ -209,7 +209,7 @@ public class TaskQueueApiUtils {
 			
 			final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), jdl);
 			
-			final SubmitJob response = Dispatcher.execute(j, true);
+			final SubmitJob response = Dispatcher.execute(j);
 			
 			return response.getJobID();
 
@@ -227,7 +227,7 @@ public class TaskQueueApiUtils {
 		try {
 			KillJob j = new KillJob(commander.getUser(), commander.getRole(), queueId);
 
-			Dispatcher.execute(j, true);
+			Dispatcher.execute(j);
 			return j.wasKilled();
 
 		}

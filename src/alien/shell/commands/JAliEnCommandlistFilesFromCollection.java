@@ -50,7 +50,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		}
 		
 		try{
-			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), collectionPath), true);
+			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), collectionPath));
 			
 			lfns = ret.getLFNs();
 		}
