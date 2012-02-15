@@ -87,7 +87,7 @@ public class PlainWriter extends UIPrintWriter{
 	/**
 	 * @param os
 	 */
-	PlainWriter(final OutputStream os) {
+	public PlainWriter(final OutputStream os) {
 		this.os = os;
 	}
 

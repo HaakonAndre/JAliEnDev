@@ -370,7 +370,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						if (!isSilent())
 							out.printOutln("Uploading file " + sourceFile.getCanonicalPath() + " to " + pfn.getPFN());
 						while (pA.isAlive()) {
-							Thread.sleep(500);
+							Thread.sleep(50);
 							if (!isSilent())
 								out.pending();
 						}

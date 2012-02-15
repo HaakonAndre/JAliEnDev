@@ -73,7 +73,7 @@ public abstract class Request implements Serializable, Runnable {
 	private AliEnPrincipal requester_ruid = requester_uid;
 
 	/**
-	 * Effective role (the role which will be considered while authorizing the exection)
+	 * Effective role (the role which will be considered while authorizing the execution)
 	 */
 	private String requester_erid = requester_uid.getName();
 	

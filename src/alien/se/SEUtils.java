@@ -359,6 +359,7 @@ public final class SEUtils {
 	public static List<SE> getBestSEsOnSpecs(final String site, final List<String> ses,
 			final List<String> exses, final HashMap<String,Integer> qos) {
 
+		
 		for(String s: ses)
 			System.out.println("got pos: " + s);
 
