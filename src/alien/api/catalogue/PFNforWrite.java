@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.awt.dnd.Autoscroll;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +54,7 @@ public class PFNforWrite extends Request {
 	 * @param exses
 	 * @param qos
 	 */
-	public PFNforWrite(final AliEnPrincipal user, final String role, final String site, final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final HashMap<String,Integer> qos
-) {
+	public PFNforWrite(final AliEnPrincipal user, final String role, final String site, final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final HashMap<String,Integer> qos) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.site = site;
@@ -64,42 +64,29 @@ public class PFNforWrite extends Request {
 		this.exses = exses;
 		this.qos = qos;
 		
-
-		for(String s: this.ses)
-			System.out.println("got pos: " + s);
-
-		for(String s: this.exses)
-			System.out.println("got neg: " + s);
-
-		for(String s: this.qos.keySet())
-			System.out.println("got qos: " + s + ":" + this.qos.get(s));
-		
-		
+		if (logger.isLoggable(Level.FINE)){
+			logger.log(Level.FINE, "got pos: "+ses);
+			logger.log(Level.FINE, "got neg: " + exses);
+			logger.log(Level.FINE, "got qos: " + qos);
+		}
 	}
-	
 
 	@Override
 	public void run() {
+		authorizeUserAndRole();
 		
+		if (logger.isLoggable(Level.FINE)){
+			logger.log(Level.FINE, "REQUEST IS:" + this);
+			
+			logger.log(Level.FINE, "got pos: "+ses);
+			logger.log(Level.FINE, "got neg: " + exses);
+			logger.log(Level.FINE, "got qos: " + qos);
 		
-		System.out.println("REQUEST IS:" + this);
-
-		if (this.ses!=null)
-			for(String s: this.ses)
-				System.out.println("got pos: " + s);
-
-		for(String s: this.exses)
-			System.out.println("got neg: " + s);
-
-		for(String s: this.qos.keySet())
-			System.out.println("got qos: " + s + ":" + this.qos.get(s));
-		
-		
-		
-		logger.log(Level.FINE,"Request details : ----------------------\n" + guid
+			logger.log(Level.FINE,"Request details : ----------------------\n" + guid
 				+ "\n ---------------------- \n " + lfn
 				+ " \n ---------------------- \n" + getEffectiveRequester());
-
+		}
+		
 		if (((this.ses == null) || this.ses.size() == 0)
 				&& (this.qos == null || (this.qos.keySet().size() < 1))) {
 			final Set<String> defaultQos = LDAPHelper.checkLdapInformation(
@@ -156,9 +143,6 @@ public class PFNforWrite extends Request {
 		}
 
 		logger.log(Level.FINE, "Returning: " + this.toString());
-
-		logger.log(Level.WARNING, "Returning: " + this.pfns);
-
 	}
 
 	/**
