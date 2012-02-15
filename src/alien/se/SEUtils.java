@@ -359,15 +359,11 @@ public final class SEUtils {
 	public static List<SE> getBestSEsOnSpecs(final String site, final List<String> ses,
 			final List<String> exses, final HashMap<String,Integer> qos) {
 
-		
-		for(String s: ses)
-			System.out.println("got pos: " + s);
-
-		for(String s: exses)
-			System.out.println("got neg: " + s);
-
-		for(Map.Entry<String, Integer> entry: qos.entrySet())
-			System.out.println("got qos: " + entry.getKey() + ":" + entry.getValue());
+		if (logger.isLoggable(Level.FINE)){
+			logger.log(Level.FINE, "got pos: " + ses);
+			logger.log(Level.FINE, "got neg: " + exses);
+			logger.log(Level.FINE, "got qos: " + qos);
+		}
 		
 		List<SE> SEs = SEUtils.getSEs(ses);
 		
@@ -402,8 +398,8 @@ public final class SEUtils {
 			}
 		}
 		
-		for(SE s: SEs)
-			System.out.println("Returning SE: " + s.getName());
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Returning SE list: " + SEs);
 
 		return SEs;
 	}
