@@ -6,15 +6,14 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import alien.api.DispatchSSLServer;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.catalogue.Package;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
-import alien.catalogue.Package;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 
@@ -29,9 +28,7 @@ public class CatalogueApiUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils
-			.getLogger(DispatchSSLServer.class.getCanonicalName());
-
+	static transient final Logger logger = ConfigUtils.getLogger(CatalogueApiUtils.class.getCanonicalName());
 	
 	private final JAliEnCOMMander commander;
 	
