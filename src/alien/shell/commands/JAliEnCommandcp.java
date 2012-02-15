@@ -395,7 +395,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 						}
 						
-						exses.add(SEUtils.getSE(pfn.seNumber).getName());
+						ignoreSE(commander.c_api.getSE(pfn.seNumber));
 					}
 					else {
 						failOver = true;
@@ -442,6 +442,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		return false;
 
 	}
+	
+	private void ignoreSE(final SE se){
+		ses.remove(se.getName());
+		
+		if(!exses.contains(se.getName()))
+			exses.add(se.getName());		
+	}
 
 	private void failOver(final SE se, final boolean write) {
 		if (write) {
@@ -454,10 +461,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			
 			qos.put(qosType, Integer.valueOf(1 + (oldValue!=null ? oldValue.intValue() : 0)));
 		}
-		
-		ses.remove(se.getName());
-		if(!exses.contains(se.getName()))
-			exses.add(se.getName());
+	
+		ignoreSE(se);
 		
 		if (!isSilent()){
 			for(String s: ses)
