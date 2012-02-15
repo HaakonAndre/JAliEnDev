@@ -540,6 +540,8 @@ public class TaskQueueUtils {
 				}
 			}
 			
+			logger.log(Level.WARNING, "Could not locate the archived jdl of "+queueId);
+			
 			return null;
 		}
 		
