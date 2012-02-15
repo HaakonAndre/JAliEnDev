@@ -20,7 +20,6 @@ import alien.catalogue.PFN;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.se.SE;
-import alien.se.SEUtils;
 
 /**
  * @author ron

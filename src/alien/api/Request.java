@@ -4,10 +4,13 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.security.cert.X509Certificate;
 
 import alien.catalogue.access.AuthorizationFactory;
+import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -15,6 +18,11 @@ import alien.user.AliEnPrincipal;
  * @since 2011-03-04
  */
 public abstract class Request implements Serializable, Runnable {
+	
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Request.class.getCanonicalName());
 
 	/**
 	 * 
@@ -213,19 +221,23 @@ public abstract class Request implements Serializable, Runnable {
 			if(requester_ruid.getName()!=null)
 				if(requester_uid.canBecome(requester_ruid.getName())){
 					requester_euid = requester_ruid;
+					
 					// now the role
-					System.out.print("Authorized user [" + requester_euid.getName()+ "]");
 					
 					if(requester_rrid!=null && requester_uid.hasRole(requester_rrid)){
-							requester_erid = requester_rrid;
-							System.out.println(", role ["+ requester_erid +"].");
-							return true;
+						requester_erid = requester_rrid;
+						
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, "Successfully switched from '"+requester_euid.getName()+"' to '"+ requester_erid +"'.");
+
+						return true;
 					}
-					System.out.println(", authorizing role failed for ["+
-						requester_erid +"]-to-[" + requester_rrid + "].");
 					
+					logger.log(Level.WARNING, "User '"+requester_euid.getName()+"' doesn't have the role '"+ requester_erid +"'.");
 				}
-		System.out.println("Authorizing user failed for ["+ requester_rrid +"].");
+		
+		logger.log(Level.WARNING, "User '"+requester_euid.getName()+"' was denied role switching action.");
+		
 		return false;
 	}
 	
