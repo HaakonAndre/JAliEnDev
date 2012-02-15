@@ -50,7 +50,7 @@ public class RegisterEnvelopes extends Request {
 	 * Register PFNs with envelopes
 	 * 
 	 * @param user
-	 * @param role 
+	 * @param role
 	 * @param signedEnvelopes
 	 */
 	public RegisterEnvelopes(final AliEnPrincipal user, final String role, List<String> signedEnvelopes) {
@@ -61,22 +61,21 @@ public class RegisterEnvelopes extends Request {
 
 	/**
 	 * Register PFNs with envelopes
-	 * @param user 
-	 * @param role 
 	 * 
-	 * @param encryptedEnvelope 
-	 * @param size 
-	 * @param lfn 
-	 * @param perm 
-	 * @param expire 
-	 * @param pfn 
-	 * @param se 
-	 * @param GUID 
-	 * @param md5 
+	 * @param user
+	 * @param role
+	 * 
+	 * @param encryptedEnvelope
+	 * @param size
+	 * @param lfn
+	 * @param perm
+	 * @param expire
+	 * @param pfn
+	 * @param se
+	 * @param GUID
+	 * @param md5
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String role, String encryptedEnvelope,
-			int size, String md5, String lfn, String perm, String expire, String pfn,
-			String se, String GUID) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final String role, String encryptedEnvelope, int size, String md5, String lfn, String perm, String expire, String pfn, String se, String GUID) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.encryptedEnvelope = encryptedEnvelope;
@@ -86,73 +85,82 @@ public class RegisterEnvelopes extends Request {
 
 	@Override
 	public void run() {
+		authorizeUserAndRole();
 
 		if (signedEnvelopes != null) {
 			pfns = new ArrayList<PFN>(signedEnvelopes.size());
 
-			for (String env : signedEnvelopes) {
-
+			for (final String env : signedEnvelopes) {
 				try {
-
 					if (XrootDEnvelopeSigner.verifyEnvelope(env, true)) {
 						XrootDEnvelope xenv = new XrootDEnvelope(env);
-						System.out.println("Self Signature VERIFIED! : "
-								+ xenv.pfn.pfn);
-						if (BookingTable.commit(getEffectiveRequester(),
-								BookingTable.getBookedPFN(xenv.pfn.pfn))) {
-							System.out.println("Successfully moved "
-									+ xenv.pfn.pfn + " to the Catalogue");
+						
+						System.out.println("Self Signature VERIFIED! : " + xenv.pfn.pfn);
+						
+						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn))) {
+							System.out.println("Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
 							pfns.add(xenv.pfn);
 						}
-
-					} else if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
-						XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
-						System.out.println("SE Signature VERIFIED! : "
-								+ xenv.pfn.pfn);
-						if (BookingTable.commit(getEffectiveRequester(),
-								BookingTable.getBookedPFN(xenv.pfn.pfn))) {
-							System.out.println("Successfully moved "
-									+ xenv.pfn.pfn + " to the Catalogue");
-							pfns.add(xenv.pfn);
+						else{
+							System.out.println("Could not commit self-signed "+xenv.pfn.pfn+" to the Catalogue");
 						}
-
-					} else {
-						System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
 					}
+					else
+						if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
+							XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
+							
+							System.out.println("SE Signature VERIFIED! : " + xenv.pfn.pfn);
+							
+							if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn))) {
+								System.out.println("Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
+							
+								pfns.add(xenv.pfn);
+							}
+							else{
+								System.out.println("Could not commit "+xenv.pfn.pfn+" to the Catalogue");
+							}
+						}
+						else {
+							System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
+						}
 
-				} catch (SignatureException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				} catch (InvalidKeyException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				} catch (NoSuchAlgorithmException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
-				} catch (IOException e) {
+				}
+				catch (SignatureException e) {
+					System.err.println("Sorry ... Could not sign the envelope!");
+				}
+				catch (InvalidKeyException e) {
+					System.err.println("Sorry ... Could not sign the envelope!");
+				}
+				catch (NoSuchAlgorithmException e) {
+					System.err.println("Sorry ... Could not sign the envelope!");
+				}
+				catch (IOException e) {
 					System.err.println("Sorry ... Error getting the PFN!");
 				}
 			}
-		} else if (encryptedEnvelope != null) {
-			pfns = new ArrayList<PFN>(1);
-			XrootDEnvelope xenv = null;
-			try {
-				xenv = XrootDEnvelopeSigner
-						.decryptEnvelope(encryptedEnvelope);
-			} catch (Exception e) {
-				System.err.println("Sorry ... Error decrypting envelope: " + e);
-			}
-			
+		}
+		else
+			if (encryptedEnvelope != null) {
+				pfns = new ArrayList<PFN>(1);
+				XrootDEnvelope xenv = null;
+				try {
+					xenv = XrootDEnvelopeSigner.decryptEnvelope(encryptedEnvelope);
+				}
+				catch (Exception e) {
+					System.err.println("Sorry ... Error decrypting envelope: " + e);
+				}
+
 				if (xenv != null) {
 					PFN bookedpfn = null;
-					
-					try{
+
+					try {
 						bookedpfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
-					} catch (Exception e) {
+					}
+					catch (Exception e) {
 						System.err.println("Sorry ... Error getting the PFN: " + e);
 					}
-					
+
 					if (bookedpfn != null) {
 
 						if (size != 0)
@@ -160,27 +168,26 @@ public class RegisterEnvelopes extends Request {
 						if (md5 != null && md5 != "" && md5 != "0")
 							bookedpfn.getGuid().md5 = md5;
 
-						try{
-						if (BookingTable.commit(getEffectiveRequester(), bookedpfn)) {
-							
-								System.out.println("Successfully moved "
-									+ xenv.pfn.pfn + " to the Catalogue");
-						
-								
-							pfns.add(bookedpfn);
-						}else {
-							System.err.println("Unable to register "
-									+ xenv.pfn.pfn + " in the Catalogue");
+						try {
+							if (BookingTable.commit(getEffectiveRequester(), bookedpfn)) {
+
+								System.out.println("Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
+
+								pfns.add(bookedpfn);
+							}
+							else {
+								System.err.println("Unable to register " + xenv.pfn.pfn + " in the Catalogue");
+							}
 						}
-						} catch (Exception e) {
+						catch (Exception e) {
 							e.printStackTrace();
 							System.err.println("Sorry ... Error registering the PFN: " + e);
 						}
 					}
 
 				}
-			
-		}
+
+			}
 	}
 
 	/**
@@ -192,7 +199,6 @@ public class RegisterEnvelopes extends Request {
 
 	@Override
 	public String toString() {
-		return "Asked to register: " + signedEnvelopes.toString() + " ("
-				+ "), reply is: " + this.pfns;
+		return "Asked to register: " + signedEnvelopes.toString() + " (" + "), reply is: " + this.pfns;
 	}
 }
