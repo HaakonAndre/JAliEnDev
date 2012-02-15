@@ -417,18 +417,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (envelopes.size() != 0){
 			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes);
 			
-			if (registeredPFNs == null || registeredPFNs.size()!=envelopes.size()){
-				if (!isSilent())
-					out.printErrln("From the "+envelopes.size()+" replica with tickets only "+(registeredPFNs!=null ? String.valueOf(registeredPFNs.size()) : "null")+" were registered");
+			if (!isSilent() && (registeredPFNs == null || registeredPFNs.size()!=envelopes.size())){
+				out.printErrln("From the "+envelopes.size()+" replica with tickets only "+(registeredPFNs!=null ? String.valueOf(registeredPFNs.size()) : "null")+" were registered");
 			}
 		}
 		
 		if (registerPFNs.size() != 0){
 			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs);
 
-			if (registeredPFNs == null || registeredPFNs.size()!=registerPFNs.size()){
-				if (!isSilent())
-					out.printErrln("From the "+registerPFNs.size()+" pfns only "+(registeredPFNs!=null ? String.valueOf(registeredPFNs.size()) : "null")+" were registered");
+			if (!isSilent() && (registeredPFNs == null || registeredPFNs.size()!=registerPFNs.size())){
+				out.printErrln("From the "+registerPFNs.size()+" pfns only "+(registeredPFNs!=null ? String.valueOf(registeredPFNs.size()) : "null")+" were registered");
 			}
 		}
 
