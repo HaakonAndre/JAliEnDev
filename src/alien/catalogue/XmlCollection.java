@@ -171,7 +171,7 @@ public class XmlCollection extends ArrayList<LFN>{
 	}
 	
 	private static String getXMLPortion(final LFN l){
-		return "      <file name=\""+Format.escHtml(l.getFileName())+"\""+
+		return "      <file name=\""+Format.escHtml(l.getFileName())+"\" "+
 	       "aclId=\""+(l.aclId>0 ? String.valueOf(l.aclId) : "") +"\" "+
 		   "broken=\""+(l.broken ? 1 : 0)+"\" "+
 	       "ctime=\""+formatTimestamp(l.ctime)+"\" "+
