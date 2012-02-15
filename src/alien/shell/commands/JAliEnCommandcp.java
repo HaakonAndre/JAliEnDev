@@ -414,17 +414,31 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		} while (failOver && pfns != null && pfns.size() > 0);
 
-		if (envelopes.size() != 0)
-			commander.c_api.registerEnvelopes(envelopes);
+		if (envelopes.size() != 0){
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes);
+			
+			if (registeredPFNs == null || registeredPFNs.size()!=envelopes.size()){
+				if (!isSilent())
+					out.printErrln("From the "+envelopes.size()+" replica with tickets only "+(registeredPFNs!=null ? String.valueOf(registeredPFNs.size()) : "null")+" were registered");
+			}
+		}
 		
-		if (registerPFNs.size() != 0)
-			commander.c_api.registerEnvelopes(registerPFNs);
+		if (registerPFNs.size() != 0){
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs);
+
+			if (registeredPFNs == null || registeredPFNs.size()!=registerPFNs.size()){
+				if (!isSilent())
+					out.printErrln("From the "+registerPFNs.size()+" pfns only "+(registeredPFNs!=null ? String.valueOf(registeredPFNs.size()) : "null")+" were registered");
+			}
+		}
 
 		if (referenceCount == (envelopes.size() + registerPFNs.size())) {
 			if (!isSilent())
 				out.printOutln("File successfully uploaded.");
+			
 			return true;
-		} else 
+		} 
+		else 
 			if ((envelopes.size() + registerPFNs.size()) > 0){
 				if (!isSilent())
 					out.printErrln("Only " + (envelopes.size() + registerPFNs.size()) + " PFNs could be uploaded");
