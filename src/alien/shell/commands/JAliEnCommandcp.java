@@ -451,9 +451,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (targetLFNResult != null) {
-				if (!isSilent()){
-					out.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath() + " to " + pfn.getPFN()+"\n"+targetLFNResult);
-				}
+//				if (!isSilent()){
+//					out.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath() + " to " + pfn.getPFN()+"\n"+targetLFNResult);
+//				}
 				
 				if (pfn.ticket != null && pfn.ticket.envelope != null
 					&& pfn.ticket.envelope.getSignedEnvelope() != null) {
