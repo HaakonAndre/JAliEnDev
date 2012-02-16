@@ -1,6 +1,5 @@
 package alien.api.catalogue;
 
-import java.awt.dnd.Autoscroll;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -117,7 +116,7 @@ public class PFNforWrite extends Request {
 
 		if (SEs == null || SEs.size() < 1) {
 			this.pfns = new ArrayList<PFN>(0);
-			logger.log(Level.WARNING,"Couldn't discover any SEs for this request.");
+			logger.log(Level.WARNING,"Couldn't discover any SEs for this request (site:"+this.site+", ses:"+this.ses+", exses:"+this.exses+", qos:"+this.qos+")");
 			return;
 		}
 
