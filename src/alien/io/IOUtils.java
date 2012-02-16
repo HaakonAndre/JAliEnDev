@@ -285,7 +285,7 @@ public class IOUtils {
     	cpArgs.add("file:"+localFile.getAbsolutePath());
     	cpArgs.add(absolutePath);
     	cpArgs.add("-S");
-    	cpArgs.add("ALICE::Clermont::SE,ALICE::GRIF_IPNO::SE,ALICE::KFKI::SE,disk:"+replicaCount);
+    	cpArgs.add("disk:"+replicaCount);
 
     	final UIPrintWriter out = progressReport!=null ? new PlainWriter(progressReport) : null;
     	
