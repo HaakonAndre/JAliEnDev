@@ -122,68 +122,67 @@ public class LFNUtils {
 	 * @return status of the removal
 	 */
 	public static LFN mvLFN(final AliEnPrincipal user, final LFN lfn, final String newpath) {
-		
-		if (lfn==null || !lfn.exists){
+		if (lfn == null || !lfn.exists) {
 			logger.log(Level.WARNING, "The file the move doesn't exist.");
 			return null;
 		}
-		if(!AuthorizationChecker.canWrite(lfn.getParentDir(), user)){
+		
+		if (!AuthorizationChecker.canWrite(lfn.getParentDir(), user)) {
 			logger.log(Level.WARNING, "Not authorized to move the file [" + lfn.getCanonicalName() + "]");
 			logger.log(Level.WARNING, "YOU ARE [" + user + "]");
 			logger.log(Level.WARNING, "parent is [" + lfn.getParentDir() + "]");
 			return null;
 		}
-				
-		LFN tLFN = getLFN(newpath,true);
-		
-		if(tLFN.exists || !tLFN.getParentDir().exists || !AuthorizationChecker.canWrite(tLFN.getParentDir(), user) ){
+
+		LFN tLFN = getLFN(newpath, true);
+
+		if (tLFN.exists || !tLFN.getParentDir().exists || !AuthorizationChecker.canWrite(tLFN.getParentDir(), user)) {
 			logger.log(Level.WARNING, "Not possible to move to [" + tLFN.getCanonicalName() + "]");
 			return null;
 		}
-		
+
 		tLFN.aclId = lfn.aclId;
-					tLFN.broken = lfn.broken;
-					tLFN.ctime = lfn.ctime;
-					tLFN.dir = lfn.dir;
-					tLFN.expiretime = lfn.expiretime;					
-					tLFN.gowner = lfn.gowner;
-					tLFN.guid = lfn.guid;
-					tLFN.guidtime = lfn.guidtime;
-					tLFN.jobid = lfn.jobid;
-					tLFN.md5 = lfn.md5;
-					tLFN.owner = lfn.owner;
-					tLFN.perm = lfn.perm;
-					tLFN.replicated = lfn.replicated;
-					tLFN.size = lfn.size;
-					tLFN.type = lfn.type;
-					
-					logger.log(Level.WARNING, "GRON will delete entry [" + lfn.getCanonicalName() + "]");
+		tLFN.broken = lfn.broken;
+		tLFN.ctime = lfn.ctime;
+		tLFN.dir = lfn.dir;
+		tLFN.expiretime = lfn.expiretime;
+		tLFN.gowner = lfn.gowner;
+		tLFN.guid = lfn.guid;
+		tLFN.guidtime = lfn.guidtime;
+		tLFN.jobid = lfn.jobid;
+		tLFN.md5 = lfn.md5;
+		tLFN.owner = lfn.owner;
+		tLFN.perm = lfn.perm;
+		tLFN.replicated = lfn.replicated;
+		tLFN.size = lfn.size;
+		tLFN.type = lfn.type;
 
+		logger.log(Level.FINE, "Will delete entry [" + lfn.getCanonicalName() + "]");
 
-					if(!lfn.delete())
-						return null;
-				
-					logger.log(Level.WARNING, "GRON deleted entry [" + lfn.getCanonicalName() + "]");
-					
-					
-					
-					GUID guid = GUIDUtils.getGUID(lfn);
-					if(guid.lfnCache==null)
-						guid.lfnCache = new LinkedHashSet<LFN>(1);
-					else
-						if(!guid.lfnCache.remove(lfn))
-							return null;
-					
-					if(!guid.lfnCache.add(tLFN))
-						return null;
-					
-					logger.log(Level.WARNING, "ok, now i'll insert [" + tLFN.getCanonicalName() + "]");
+		if (!lfn.delete())
+			return null;
 
-					
-					if(!LFNUtils.insertLFN(tLFN))
-							return null;
-					
-					return tLFN;
+		logger.log(Level.FINE, "Deleted entry [" + lfn.getCanonicalName() + "]");
+
+		final GUID guid = GUIDUtils.getGUID(lfn);
+		
+		if (guid==null)
+			return null;
+		
+		if (guid.lfnCache == null)
+			guid.lfnCache = new LinkedHashSet<LFN>(1);
+		else 
+			guid.lfnCache.remove(lfn);
+
+		if (!guid.lfnCache.add(tLFN))
+			return null;
+
+		logger.log(Level.FINE, "ok, now i'll insert [" + tLFN.getCanonicalName() + "]");
+
+		if (!LFNUtils.insertLFN(tLFN))
+			return null;
+
+		return tLFN;
 	}
 	
 	
