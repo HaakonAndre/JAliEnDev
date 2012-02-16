@@ -285,7 +285,7 @@ public class IOUtils {
     	cpArgs.add("file:"+localFile.getAbsolutePath());
     	cpArgs.add(absolutePath);
     	cpArgs.add("-S");
-    	cpArgs.add("disk:"+replicaCount);
+    	cpArgs.add("ALICE::Clermont::SE,ALICE::GRIF_IPNO::SE,ALICE::KFKI::SE,disk:"+replicaCount);
 
     	final UIPrintWriter out = progressReport!=null ? new PlainWriter(progressReport) : null;
     	
@@ -293,6 +293,6 @@ public class IOUtils {
     	
     	final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
     	
-    	cp.run();    	
+    	cp.copyLocalToGrid(localFile, absolutePath);
 	}
 }
