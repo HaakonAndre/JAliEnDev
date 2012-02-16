@@ -287,11 +287,11 @@ public class IOUtils {
     	cpArgs.add("-S");
     	cpArgs.add("disk:"+replicaCount);
 
-    	UIPrintWriter out = progressReport!=null ? new PlainWriter(progressReport) : null;
+    	final UIPrintWriter out = progressReport!=null ? new PlainWriter(progressReport) : null;
     	
     	final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, owner.getName(), null,  ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim(), out);
     	
-    	JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
+    	final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
     	
     	cp.run();    	
 	}
