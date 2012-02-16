@@ -3,9 +3,11 @@ package alien.io;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -13,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.Utils;
+import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -24,6 +27,12 @@ import alien.config.ConfigUtils;
 import alien.io.protocols.Protocol;
 import alien.io.protocols.TempFileManager;
 import alien.se.SEUtils;
+import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JAliEnCommandcp;
+import alien.shell.commands.PlainWriter;
+import alien.shell.commands.UIPrintWriter;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 
 /**
  * Helper functions for IO
@@ -203,5 +212,87 @@ public class IOUtils {
 	public static String getContents(final String lfn){
 		return getContents(LFNUtils.getLFN(lfn));
 	}
+
+	/**
+	 * @param lfn relative paths are allowed
+	 * @param owner
+	 * @return <code>true</code> if the indicated LFN doesn't exist (any more) in the catalogue and can be created again
+	 */
+	public static boolean backupFile(final String lfn, final AliEnPrincipal owner){
+    	final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, lfn);
+    	
+    	final LFN l = LFNUtils.getLFN(absolutePath, true);
+    
+    	if (!l.exists){
+    		return true;
+    	}
+    	
+    	final LFN backupLFN = LFNUtils.getLFN(absolutePath+"~", true);
+    	
+    	if (backupLFN.exists && AuthorizationChecker.canWrite(backupLFN, owner)){
+    		if (!backupLFN.delete())
+    			return false;
+    	}
+    	
+    	return LFNUtils.mvLFN(owner, l, absolutePath+"~")!=null;
+	}
 	
+	/**
+	 * Upload a local file to the Grid
+	 * 
+	 * @param localFile
+	 * @param toLFN
+	 * @param owner
+	 * @throws IOException
+	 */
+	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner) throws IOException{
+		upload(localFile, toLFN, owner, 2, null);
+	}
+	
+	/**
+	 * Upload a local file to the Grid
+	 * 
+	 * @param localFile
+	 * @param toLFN
+	 * @param owner
+	 * @param replicaCount
+	 * @throws IOException
+	 */
+	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount) throws IOException{
+		upload(localFile, toLFN, owner, replicaCount, null);
+	}
+	
+	/**
+	 * Upload a local file to the Grid
+	 * 
+	 * @param localFile
+	 * @param toLFN
+	 * @param owner
+	 * @param replicaCount
+	 * @param progressReport
+	 * @throws IOException
+	 */
+	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport) throws IOException{
+    	final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, toLFN);
+    	
+    	final LFN l = LFNUtils.getLFN(absolutePath, true);
+    	
+    	if (l.exists){
+    		throw new IOException("LFN already exists: "+toLFN);
+    	}
+    	
+    	final ArrayList<String> cpArgs = new ArrayList<String>();
+    	cpArgs.add("file:"+localFile.getAbsolutePath());
+    	cpArgs.add(absolutePath);
+    	cpArgs.add("-S");
+    	cpArgs.add("disk:"+replicaCount);
+
+    	UIPrintWriter out = progressReport!=null ? new PlainWriter(progressReport) : null;
+    	
+    	final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, owner.getName(), null,  ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim(), out);
+    	
+    	JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
+    	
+    	cp.run();    	
+	}
 }
