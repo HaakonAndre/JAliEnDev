@@ -301,8 +301,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		guid.lfnCache = new LinkedHashSet<LFN>(1);
 		guid.lfnCache.add(lfn);
 
-		pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
-		exses.addAll(ses);
+		pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);		
 		qos.clear();
 
 		if (pfns == null || pfns.size() == 0) {
@@ -315,6 +314,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			return false;
+		}
+		
+		for (final PFN p: pfns){
+			final SE se = commander.c_api.getSE(p.seNumber);
+			
+			if (se!=null)
+				exses.add(se.getName());
 		}
 
 		if (referenceCount == 0)
@@ -481,7 +487,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					replacementQoS.put(qosType, Integer.valueOf(1));
 
-					final List<PFN> newPFNtoTry = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
+					final List<PFN> newPFNtoTry = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, replacementQoS);
 
 					if (newPFNtoTry != null && newPFNtoTry.size() > 0) {
 						pfn = newPFNtoTry.get(0);
