@@ -216,9 +216,13 @@ public abstract class Request implements Serializable, Runnable {
 	 */
 	protected final boolean authorizeUserAndRole() {
 
+//		System.err.println("uid: "+requester_uid);
+//		System.err.println("ruid: "+requester_ruid);
+//		System.err.println("rrid: "+requester_rrid);
+		
 		// first the user
-		if(requester_uid !=null && requester_ruid!=null)
-			if(requester_ruid.getName()!=null)
+		if(requester_uid !=null && requester_ruid!=null){
+			if(requester_ruid.getName()!=null){
 				if(requester_uid.canBecome(requester_ruid.getName())){
 					requester_euid = requester_ruid;
 					
@@ -233,8 +237,10 @@ public abstract class Request implements Serializable, Runnable {
 						return true;
 					}
 					
-					logger.log(Level.WARNING, "User '"+requester_euid.getName()+"' doesn't have the role '"+ requester_erid +"'.");
+					logger.log(Level.WARNING, "User '"+requester_euid.getName()+"' doesn't have the role '"+ requester_rrid +"'.");
 				}
+			}
+		}
 		
 		logger.log(Level.WARNING, "User '"+requester_euid.getName()+"' was denied role switching action.");
 		
