@@ -159,10 +159,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 		if (role == null || role.length() == 0)
 			return false;
 
-		if (userRole.equals(role))
+		if (userRole.equals(role) || getNames().contains(role) || getRoles().contains(role))
 			return true;
 
-		return getRoles().contains(role);
+		return false;
 	}
 
 
