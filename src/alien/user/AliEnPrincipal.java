@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.security.Principal;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -132,9 +131,11 @@ public class AliEnPrincipal implements Principal, Serializable {
 		if (roles != null && (System.currentTimeMillis() - lRolesChecked) < 1000 * 60 * 5)
 			return roles;
 
-		final Set<String> ret = new HashSet<String>();
+		final Set<String> ret = new LinkedHashSet<String>();
 
-		for (String sUsername : getNames()) {
+		for (final String sUsername : getNames()) {
+			ret.add(sUsername);
+			
 			final Set<String> sRoles = LDAPHelper.checkLdapInformation("users=" + sUsername, "ou=Roles,", "uid");
 
 			if (sRoles != null){
@@ -159,7 +160,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 		if (role == null || role.length() == 0)
 			return false;
 
-		if (userRole.equals(role) || getNames().contains(role) || getRoles().contains(role))
+		if (userRole.equals(role) || getRoles().contains(role))
 			return true;
 
 		return false;
