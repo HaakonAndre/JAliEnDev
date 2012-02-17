@@ -67,8 +67,7 @@ public abstract class Request implements Serializable, Runnable {
 	/**
 	 * The default identity of the VM
 	 */
-	private final AliEnPrincipal requester_uid = AuthorizationFactory
-			.getDefaultUser();
+	private final AliEnPrincipal requester_uid = AuthorizationFactory.getDefaultUser();
 
 	/**
 	 * Effective identity (the user on behalf of whom the request came)
@@ -224,16 +223,18 @@ public abstract class Request implements Serializable, Runnable {
 		if(requester_uid !=null && requester_ruid!=null){
 			if(requester_ruid.getName()!=null){
 				if(requester_uid.canBecome(requester_ruid.getName())){
+					if (logger.isLoggable(Level.FINE))
+						logger.log(Level.FINE, "Successfully switched user from '"+requester_euid+"' to '"+ requester_ruid +"'.");
+					
 					requester_euid = requester_ruid;
-					
+
 					// now the role
-					
-					if(requester_rrid!=null && requester_uid.hasRole(requester_rrid)){
+					if(requester_rrid!=null && requester_euid.hasRole(requester_rrid)){
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, "Successfully switched role from '"+requester_erid+"' to '"+ requester_rrid +"'.");
+
 						requester_erid = requester_rrid;
 						
-						if (logger.isLoggable(Level.FINE))
-							logger.log(Level.FINE, "Successfully switched from '"+requester_euid.getName()+"' to '"+ requester_erid +"'.");
-
 						return true;
 					}
 					
@@ -242,7 +243,7 @@ public abstract class Request implements Serializable, Runnable {
 			}
 		}
 		
-		logger.log(Level.WARNING, "User '"+requester_euid.getName()+"' was denied role switching action.");
+		logger.log(Level.WARNING, "User '"+requester_uid+"' was denied role switching action.");
 		
 		return false;
 	}
