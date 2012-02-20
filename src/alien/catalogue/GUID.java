@@ -500,8 +500,12 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			monitor.incrementCounter("PFN_db_delete");
 			monitor.incrementCounter("GUID_db_delete");
 		}
+		
+		final String delQuery = "DELETE FROM G"+tableName+"L WHERE guidId="+guidId;
+		
+		System.err.println(delQuery);
 
-		boolean removed = db.query("DELETE FROM G"+tableName+"L WHERE guidId="+guidId);
+		boolean removed = db.query(delQuery);
 		
 		if (removed){
 			if (db.getUpdateCount()<=0){
