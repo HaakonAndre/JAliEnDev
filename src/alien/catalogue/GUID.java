@@ -249,6 +249,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		if (!exists){
 			final boolean insertOK = insert(db);
 			
+			if (insertOK){
+				pfnCache = new LinkedHashSet<PFN>();
+			}
+			
 			return insertOK;
 		}
 		
@@ -466,8 +470,11 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			return false;
 		}
 		
-		if (pfnCache!=null)
+		if (pfnCache!=null){
+			pfn.setGUID(this);
+			
 			pfnCache.add(pfn);
+		}
 		
 		return true;
 	}
