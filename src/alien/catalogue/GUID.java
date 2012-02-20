@@ -466,7 +466,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			return false;
 		}
 		
-		cleanPFNCache();
+		if (pfnCache!=null)
+			pfnCache.add(pfn);
 		
 		return true;
 	}
@@ -500,7 +501,13 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			monitor.incrementCounter("GUID_db_delete");
 		}
 
-		final boolean removed = db.query("DELETE FROM G"+tableName+"L WHERE guidId="+guidId) && db.getUpdateCount()>0;
+		boolean removed = db.query("DELETE FROM G"+tableName+"L WHERE guidId="+guidId);
+		
+		if (removed){
+			if (db.getUpdateCount()<=0){
+				removed = false;
+			}
+		}
 				
 		exists = !removed;
 		
@@ -543,7 +550,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			if (db.getUpdateCount()>0){
 				removedSuccessfuly = true;
 				
-				cleanPFNCache();
+				if (pfnCache!=null){
+					pfnCache.remove(pfn);
+				}
 			}
 			else
 				logger.log(Level.WARNING, "Query didn't change anything: "+q);
@@ -574,7 +583,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		if (pfns==null || pfns.size()==0)
 			return null;
-		
+
 		for (final PFN pfn: pfns){
 			if (pfn.seNumber == se.seNumber){
 				if (removePFN(pfn))
@@ -583,7 +592,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				break;
 			}
 		}
-		
+				
 		return null;
 	}
 	
