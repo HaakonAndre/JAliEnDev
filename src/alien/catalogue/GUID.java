@@ -512,8 +512,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		boolean removed = db.query(delQuery);
 		
-		System.err.println(delQuery+" : "+removed+" : "+db.getUpdateCount());
-		
 		if (removed){
 			if (db.getUpdateCount()<=0){
 				removed = false;
