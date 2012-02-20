@@ -332,7 +332,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	
 	@Override
 	public String toString() {
-		return "guidID\t\t: "+guidId+"\n"+
+		return "guidID\t\t: "+guidId+" (exists: "+exists+")\n"+
 		       "ctime\t\t: "+(ctime!=null ? ctime.toString() : "null")+"\n"+
 		       "owner\t\t: "+owner+":"+gowner+"\n"+
 		       "SE lists\t: "+seStringList+" , "+seAutoStringList+"\n"+
@@ -477,12 +477,17 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @return <code>true</code> if the GUID was successfully removed from the database
 	 */
 	public boolean delete(){
-		if (!exists)
+		if (!exists){
+			System.err.println("  Doesn't exist");
+			
 			return false;
+		}
 		
 		final Host h = CatalogueUtils.getHost(host);
 
 		if (h==null){
+			System.err.println("  No host");
+			
 			logger.log(Level.WARNING, "No host for: "+host);
 			return false;
 		}
@@ -490,6 +495,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		final DBFunctions db = h.getDB();
 		
 		if (db==null){
+			System.err.println("  Host DB null");
+			
 			logger.log(Level.WARNING, "Host DB is null for: "+h);
 			return false;
 		}
@@ -502,7 +509,15 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId);
 		boolean removed = db.query("DELETE FROM G"+tableName+"L WHERE guidId="+guidId);
 		
+		if (!removed){
+			System.err.println("  Query failed");
+		}
+		
 		removed = removed && db.getUpdateCount()>0;
+		
+		if (!removed){
+			System.err.println("  Update count: "+db.getUpdateCount());
+		}
 		
 		exists = false;
 		
