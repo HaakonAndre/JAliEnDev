@@ -185,7 +185,7 @@ public class OrphanPFNsCleanup {
 	/**
 	 * Lock for a fixed number of DB queries in parallel 
 	 */
-	static final Semaphore concurrentQueryies = new Semaphore(8);
+	static final Semaphore concurrentQueryies = new Semaphore(16);
 	
 	private static class CleanupTask implements Runnable{
 		final String sGUID;
