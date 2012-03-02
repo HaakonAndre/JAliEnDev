@@ -125,7 +125,7 @@ public class OrphanPFNsCleanup {
 					executor.submit(new CleanupTask(db.gets(1), seNumber));
 				}
 				
-				while (executor.getQueue().size()>100){
+				while (executor.getQueue().size()>0){
 					try{
 						Thread.sleep(1000);
 					}
