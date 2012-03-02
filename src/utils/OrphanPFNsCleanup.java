@@ -105,6 +105,8 @@ public class OrphanPFNsCleanup {
 				concurrentQueryies.acquireUninterruptibly();
 				
 				try{
+					db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
+					
 					db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se="+seNumber+" ORDER BY fail_count ASC LIMIT 10000;");
 				}
 				finally{
@@ -115,7 +117,7 @@ public class OrphanPFNsCleanup {
 					executor.submit(new CleanupTask(db.gets(1), seNumber));
 				}
 				
-				while (executor.getQueue().size()>0){
+				while (executor.getQueue().size()>100){
 					try{
 						Thread.sleep(1000);
 					}
