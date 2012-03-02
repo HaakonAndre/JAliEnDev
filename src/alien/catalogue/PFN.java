@@ -133,7 +133,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.seNumber = se.seNumber;
 		this.host = guid.host;
 		this.tableNumber = guid.tableName;
-		this.hashCode = this.pfn.hashCode();
+		this.hashCode = this.pfn!=null ? this.pfn.hashCode() : guid.hashCode();
 	}
 	
 	/**
