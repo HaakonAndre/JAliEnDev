@@ -231,6 +231,8 @@ public class OrphanPFNsCleanup {
 			}
 			catch (Throwable t){
 				System.err.println("Cannot generate the entry for "+seNumber+" ("+se.getName()+") and "+sGUID);
+				t.printStackTrace();
+				
 				kept.incrementAndGet();
 				return;
 			}
