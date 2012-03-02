@@ -59,6 +59,13 @@ public class OrphanPFNsCleanup {
 				while (db.moveNext()){
 					final Integer se = Integer.valueOf(db.geti(1));
 					
+					SE theSE = SEUtils.getSE(se);
+					
+					if (theSE==null){
+						System.err.println("No such SE: "+se);
+						continue;
+					}
+					
 					if (!SE_THREADS.containsKey(se)){
 						final SEThread t = new SEThread(se.intValue());
 						
