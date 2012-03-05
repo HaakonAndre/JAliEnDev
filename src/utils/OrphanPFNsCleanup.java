@@ -2,9 +2,9 @@ package utils;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -37,9 +37,12 @@ public class OrphanPFNsCleanup {
 	/**
 	 * Thread pool per SE
 	 */
-	static final Map<Integer, ThreadPoolExecutor> EXECUTORS = new HashMap<Integer, ThreadPoolExecutor>(); 
+	static final Map<Integer, ThreadPoolExecutor> EXECUTORS = new ConcurrentHashMap<Integer, ThreadPoolExecutor>(); 
 
-	private static Map<Integer, SEThread> SE_THREADS = new HashMap<Integer, SEThread>();
+	/**
+	 * One thread per SE
+	 */
+	static Map<Integer, SEThread> SE_THREADS = new ConcurrentHashMap<Integer, SEThread>();
 	
 	/**
 	 * @param args
@@ -101,13 +104,7 @@ public class OrphanPFNsCleanup {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 			
 			ThreadPoolExecutor executor = EXECUTORS.get(Integer.valueOf(seNumber));
-			
-			if (executor==null){
-				executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(8);
-				
-				EXECUTORS.put(Integer.valueOf(seNumber), executor);				
-			}
-			
+						
 			while (true){
 				concurrentQueryies.acquireUninterruptibly();
 				
@@ -124,14 +121,22 @@ public class OrphanPFNsCleanup {
 				if (!db.moveNext()){
 					// there are no tasks for this SE now, check again sometime later
 					
-					try{
-						Thread.sleep(1000*60*30);
-					}
-					catch (InterruptedException ie){
-						// ignore
-					}
+					executor.shutdown();
+				
+					EXECUTORS.remove(Integer.valueOf(seNumber));
 					
-					continue;
+					SE_THREADS.remove(Integer.valueOf(seNumber));
+
+					return;
+				}
+				
+				if (executor==null){
+					// lazy init of the thread pool
+					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(8);
+					
+					executor.allowCoreThreadTimeOut(true);
+					
+					EXECUTORS.put(Integer.valueOf(seNumber), executor);				
 				}
 				
 				do {
