@@ -122,9 +122,11 @@ public class OrphanPFNsCleanup {
 				if (!db.moveNext()){
 					// there are no tasks for this SE now, check again sometime later
 					
-					executor.shutdown();
+					if (executor!=null){
+						executor.shutdown();
 				
-					EXECUTORS.remove(Integer.valueOf(seNumber));
+						EXECUTORS.remove(Integer.valueOf(seNumber));
+					}
 					
 					SE_THREADS.remove(Integer.valueOf(seNumber));
 
