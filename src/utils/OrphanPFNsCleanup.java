@@ -121,11 +121,25 @@ public class OrphanPFNsCleanup {
 					concurrentQueryies.release();
 				}
 				
-				while (db.moveNext()){
-					executor.submit(new CleanupTask(db.gets(1), seNumber));
+				if (!db.moveNext()){
+					// there are no tasks for this SE now, check again sometime later
+					
+					try{
+						Thread.sleep(1000*60*30);
+					}
+					catch (InterruptedException ie){
+						// ignore
+					}
+					
+					continue;
 				}
 				
-				while (executor.getQueue().size()>0){
+				do {
+					executor.submit(new CleanupTask(db.gets(1), seNumber));
+				}
+				while (db.moveNext());
+				
+				while (executor.getQueue().size()>0 || executor.getActiveCount()>0){
 					try{
 						Thread.sleep(1000);
 					}
@@ -272,14 +286,13 @@ public class OrphanPFNsCleanup {
 					}
 				}
 				else{
-					if (guid.exists()){
-						//System.err.println("Successfuly deleted one file of "+Format.size(guid.size)+" from "+se.getName());
-					
-						successOne(guid.size);
-						
-						concurrentQueryies.acquireUninterruptibly();
-						
-						try{
+					concurrentQueryies.acquireUninterruptibly();
+				
+					try{
+						if (guid.exists()){
+							//System.err.println("Successfuly deleted one file of "+Format.size(guid.size)+" from "+se.getName());
+							successOne(guid.size);
+							
 							if (guid.removePFN(se)!=null){
 								if (guid.getPFNs().size()==0){
 									if (guid.delete()){
@@ -297,18 +310,12 @@ public class OrphanPFNsCleanup {
 								System.err.println("  Failed to remove the PFN for this GUID");
 							}
 						}
-						finally{
-							concurrentQueryies.release();
-						}
-					}
-					else{
-						successOne(0);
-						System.err.println("Successfuly deleted from "+se.getName()+" but GUID doesn't exist in the catalogue ...");
-					}			
-					
-					concurrentQueryies.acquireUninterruptibly();
-					
-					try{
+						else{
+							successOne(0);
+							
+							System.err.println("Successfuly deleted from "+se.getName()+" but GUID doesn't exist in the catalogue ...");
+						}			
+											
 						db2.query("DELETE FROM orphan_pfns WHERE guid=string2binary('"+sGUID+"') AND se="+seNumber);
 					}
 					finally{
@@ -319,14 +326,14 @@ public class OrphanPFNsCleanup {
 			catch (final IOException e) {
 				//e.printStackTrace();
 				
+				failOne();
+				
 				System.err.println("Exception deleting from "+se.getName());
 				
 				concurrentQueryies.acquireUninterruptibly();
 				
 				try{
-					db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary('"+sGUID+"') AND se="+seNumber);
-				
-					failOne();
+					db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary('"+sGUID+"') AND se="+seNumber);				
 				}
 				finally{
 					concurrentQueryies.release();
