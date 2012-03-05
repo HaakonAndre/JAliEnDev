@@ -115,7 +115,7 @@ public class XrootdCleanup {
 	 */
 	LinkedBlockingQueue<String> processingQueue = null;
 	
-	private static final int XROOTD_THREADS_DEFAULT = 32;
+	private static final int XROOTD_THREADS_DEFAULT = 16;
 	
 	private int XROOTD_THREADS = XROOTD_THREADS_DEFAULT;
 	
