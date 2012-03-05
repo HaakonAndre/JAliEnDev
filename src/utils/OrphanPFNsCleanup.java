@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -133,6 +134,8 @@ public class OrphanPFNsCleanup {
 				if (executor==null){
 					// lazy init of the thread pool
 					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(8);
+					
+					executor.setKeepAliveTime(1, TimeUnit.MINUTES);	// 1 minute activity timeout
 					
 					executor.allowCoreThreadTimeOut(true);
 					
