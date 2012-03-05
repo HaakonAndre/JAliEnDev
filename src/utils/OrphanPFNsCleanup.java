@@ -115,7 +115,7 @@ public class OrphanPFNsCleanup {
 					// TODO : what to do with these PFNs ? Iterate over them and release them from the catalogue nevertheless ?
 //					db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 					
-					db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se="+seNumber+" ORDER BY fail_count ASC LIMIT 10000;");
+					db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se="+seNumber+" AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;");
 				}
 				finally{
 					concurrentQueryies.release();
