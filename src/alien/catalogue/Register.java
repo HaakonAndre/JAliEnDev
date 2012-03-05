@@ -35,7 +35,7 @@ public class Register {
 			throw new IOException("No such SE "+seName);
 		}
 		
-		final UUID uuid = guid!=null ? UUID.fromString(guid) : GUIDUtils.generateTimeUUID();
+		final UUID uuid = guid!=null && guid.length()>0 ? UUID.fromString(guid) : GUIDUtils.generateTimeUUID();
 			
 		final LFN name = LFNUtils.getLFN(lfn, true);
 		
