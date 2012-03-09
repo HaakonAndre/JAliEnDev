@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lia.Monitor.monitor.AppConfig;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
@@ -49,6 +50,8 @@ public class OrphanPFNsCleanup {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		AppConfig.getProperty("lia.Monitor.group");	// initialize it
+		
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 
 		final Xrootd x = Factory.xrootd;
@@ -58,7 +61,7 @@ public class OrphanPFNsCleanup {
 		
 		while (true){
 			if (System.currentTimeMillis() - lastCheck > 1000*60*60*6){
-				db.query("SELECT distinct se FROM orphan_pfns;");
+				db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
 		
 				while (db.moveNext()){
 					final Integer se = Integer.valueOf(db.geti(1));
