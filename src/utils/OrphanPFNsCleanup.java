@@ -63,7 +63,7 @@ public class OrphanPFNsCleanup {
 				while (db.moveNext()){
 					final Integer se = Integer.valueOf(db.geti(1));
 					
-					SE theSE = SEUtils.getSE(se);
+					final SE theSE = SEUtils.getSE(se);
 					
 					if (theSE==null){
 						System.err.println("No such SE: "+se);
@@ -89,7 +89,16 @@ public class OrphanPFNsCleanup {
 				// ignore
 			}
 			
-			System.err.println("Removed: "+removed+" ("+Format.size(reclaimedSpace.longValue())+"), failed to remove: "+failed);
+			final long count = reclaimedCount.getAndSet(0);
+			final long size = reclaimedSize.getAndSet(0);
+			
+			if (count>0)
+				db.query("UPDATE orphan_pfns_status SET status_value=status_value+1 WHERE status_key='reclaimedc';");
+			
+			if (size>0)
+				db.query("UPDATE orphan_pfns_status SET status_value=status_value+"+size+" WHERE status_key='reclaimedb';");
+			
+			System.err.println("Removed: "+removed+" ("+Format.size(reclaimedSpace.longValue())+"), failed to remove: "+failed+" (delta: "+count+" files, "+Format.size(size)+")");
 		}
 	}
 	
@@ -188,21 +197,21 @@ public class OrphanPFNsCleanup {
 		failed.incrementAndGet();		
 	}
 	
+	private static final AtomicLong reclaimedCount = new AtomicLong();
+	private static final AtomicLong reclaimedSize = new AtomicLong(0);
+	
 	/**
 	 * Successful deletion of one file
 	 * 
 	 * @param size
 	 */
 	static final void successOne(final long size){
-		removed.incrementAndGet();
-		
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
-		
-		db.query("UPDATE orphan_pfns_status SET status_value=status_value+1 WHERE status_key='reclaimedc';");
-		
+		removed.incrementAndGet();	
+		reclaimedCount.incrementAndGet();
+				
 		if (size>0){
-			db.query("UPDATE orphan_pfns_status SET status_value=status_value+"+size+" WHERE status_key='reclaimedb';");
 			reclaimedSpace.addAndGet(size);
+			reclaimedSize.addAndGet(size);
 		}
 	}
 	
