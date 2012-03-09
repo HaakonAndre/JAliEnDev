@@ -270,7 +270,8 @@ public class Xrootd extends Protocol {
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
-				System.err.println("xrdrm error\n" + exitStatus.getStdOut());
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, exitStatus.getStdOut());
 
 				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
 			}
