@@ -308,7 +308,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (!isSilent())
 				out.printErrln("Couldn't get any access ticket.");
 			else {
-				IOException ex = new IOException("Couldn't get any access tickets " + sourceFile);
+				IOException ex = new IOException("Couldn't get any access tickets for uploading " + sourceFile+" to "+lfn.getCanonicalName());
 
 				throw new IOError(ex);
 			}
