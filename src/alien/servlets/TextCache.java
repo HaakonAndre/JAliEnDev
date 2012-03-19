@@ -386,6 +386,21 @@ public class TextCache extends ExtendedServlet {
 		if (value!=null){
 			// a SET operation
 			
+			CacheValue old;			
+			
+			if (getb("ifnull", false)==true){
+				synchronized (cache){
+					old = cache.get(key);
+				}
+				
+				if (old!=null && old.expires >= System.currentTimeMillis()){
+					if (monitor != null)
+						monitor.incrementCounter("SET_WAITING_"+ns);
+
+					return;
+				}
+			}
+			
 			if (monitor != null)
 				monitor.incrementCounter("SET_"+ns);
 			
@@ -395,8 +410,6 @@ public class TextCache extends ExtendedServlet {
 				if (monitor != null)
 					monitor.incrementCounter("SET_EOF_"+ns);
 			}
-			
-			CacheValue old;
 			
 			synchronized(cache){
 				old = cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", 60*60)*1000));
