@@ -330,7 +330,10 @@ public class TextCache extends ExtendedServlet {
 							avg = (double) total / cache.size();
 						}
 						
-						pwOut.println(entry.getKey()+" : "+cache.size()+" (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+") : "+hits+" hits");
+						if (min<0)
+							pwOut.println(entry.getKey()+" : empty");
+						else
+							pwOut.println(entry.getKey()+" : "+cache.size()+" (min: "+min+", avg: "+Format.point(avg)+", max: "+max+", total: "+Format.size(total)+") : "+hits+" hits");
 					}				
 				}
 				else{
