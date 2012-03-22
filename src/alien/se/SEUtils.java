@@ -182,109 +182,120 @@ public final class SEUtils {
 		return ret;
 	}
 
-	private static Map<String, Map<Integer, Integer>> seRanks = null;
+	private static Map<String, Map<Integer, Double>> seDistance = null;
 
-	private static long seRanksUpdated = 0;
+	private static long seDistanceUpdated = 0;
 
-	private static final ReentrantReadWriteLock seRanksRWLock = new ReentrantReadWriteLock();
-	private static final ReadLock seRanksReadLock = seRanksRWLock.readLock();
-	private static final WriteLock seRanksWriteLock = seRanksRWLock.writeLock();
+	private static final ReentrantReadWriteLock seDistanceRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
+	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
 
-	private static void updateSERanksCache() {
-		seRanksReadLock.lock();
+	private static void updateSEDistanceCache() {
+		seDistanceReadLock.lock();
 
 		try {
-			if (System.currentTimeMillis() - seRanksUpdated > CatalogueUtils.CACHE_TIMEOUT
-					|| seRanks == null) {
-				seRanksReadLock.unlock();
+			if (System.currentTimeMillis() - seDistanceUpdated > CatalogueUtils.CACHE_TIMEOUT || seDistance == null) {
+				seDistanceReadLock.unlock();
 
-				seRanksWriteLock.lock();
+				seDistanceWriteLock.lock();
 
 				try {
-					if (System.currentTimeMillis() - seRanksUpdated > CatalogueUtils.CACHE_TIMEOUT
-							|| seRanks == null) {
+					if (System.currentTimeMillis() - seDistanceUpdated > CatalogueUtils.CACHE_TIMEOUT || seDistance == null) {
 						if (logger.isLoggable(Level.FINER)) {
 							logger.log(Level.FINER, "Updating SE Ranks cache");
 						}
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-						if (db.query("SELECT sitename, seNumber, rank FROM SERanks ORDER BY sitename, rank;")) {
-							final Map<String, Map<Integer, Integer>> newRanks = new HashMap<String, Map<Integer, Integer>>();
+						if (db.query("SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;")) {
+							final Map<String, Map<Integer, Double>> newDistance = new HashMap<String, Map<Integer, Double>>();
 
 							String sOldSite = null;
-							Map<Integer, Integer> oldMap = null;
+							Map<Integer, Double> oldMap = null;
 
 							while (db.moveNext()) {
-								final String sitename = db.gets(1).trim()
-										.toUpperCase();
+								final String sitename = db.gets(1).trim().toUpperCase();
 								final int seNumber = db.geti(2);
-								final int rank = db.geti(3);
+								final double distance = db.getd(3);
 
-								if (!sitename.equals(sOldSite)
-										|| oldMap == null) {
-									oldMap = newRanks.get(sitename);
+								if (!sitename.equals(sOldSite) || oldMap == null) {
+									oldMap = newDistance.get(sitename);
 
 									if (oldMap == null) {
-										oldMap = new LinkedHashMap<Integer, Integer>();
-										newRanks.put(sitename, oldMap);
+										oldMap = new LinkedHashMap<Integer, Double>();
+										newDistance.put(sitename, oldMap);
 									}
 
 									sOldSite = sitename;
 								}
 
-								oldMap.put(Integer.valueOf(seNumber),
-										Integer.valueOf(rank));
+								oldMap.put(Integer.valueOf(seNumber), Double.valueOf(distance));
 							}
 
-							seRanks = newRanks;
-							seRanksUpdated = System.currentTimeMillis();
+							seDistance = newDistance;
+							seDistanceUpdated = System.currentTimeMillis();
 						} else {
-							seRanksUpdated = System.currentTimeMillis()
-									- CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
+							seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
 				} finally {
-					seRanksWriteLock.unlock();
+					seDistanceWriteLock.unlock();
 				}
 
-				seRanksReadLock.lock();
+				seDistanceReadLock.lock();
 			}
 		} finally {
-			seRanksReadLock.unlock();
+			seDistanceReadLock.unlock();
 		}
 	}
 
-	private static final class PFNComparatorBySite implements Serializable,
-			Comparator<PFN> {
+	private static final class PFNComparatorBySite implements Serializable, Comparator<PFN> {
 		/**
 		 * 
 		 */
 		private static final long serialVersionUID = 3852623282834261566L;
 
-		private final Map<Integer, Integer> ranks;
+		private final Map<Integer, Double> distance;
+		
+		private final boolean write;
 
-		public PFNComparatorBySite(final Map<Integer, Integer> ranks) {
-			this.ranks = ranks;
+		public PFNComparatorBySite(final Map<Integer, Double> distance, final boolean write) {
+			this.distance = distance;
+			this.write = write;
 		}
 
 		@Override
 		public int compare(final PFN o1, final PFN o2) {
-			final Integer rank1 = ranks.get(Integer.valueOf(o1.seNumber));
-			final Integer rank2 = ranks.get(Integer.valueOf(o2.seNumber));
+			final Double distance1 = distance.get(Integer.valueOf(o1.seNumber));
+			final Double distance2 = distance.get(Integer.valueOf(o2.seNumber));
 
-			if (rank1 == null && rank2 == null) {
+			if (distance1 == null && distance2 == null) {
 				// can't decide which is better, there is no ranking info for
 				// either
 				return 0;
 			}
 
-			if (rank1 != null && rank2 != null) {
+			if (distance1 != null && distance2 != null) {
 				// both ranks known, the smallest rank goes higher
-				return rank1.intValue() - rank2.intValue();
+				double diff = distance1.doubleValue() - distance2.doubleValue();
+
+				final SE se1 = getSE(o1.seNumber);
+				final SE se2 = getSE(o2.seNumber);
+				
+				if (se1!=null && se2!=null){
+					diff += write ? (se1.demoteWrite - se2.demoteWrite) : (se1.demoteRead - se2.demoteRead);
+				}
+				
+				if (diff<0)
+					return -1;
+				
+				if (diff>0)
+					return 1;
+				
+				return 0;
 			}
 
-			if (rank1 != null) {
+			if (distance1 != null) {
 				// rank is known only for the first one, then this is better
 				return -1;
 			}
@@ -299,10 +310,11 @@ public final class SEUtils {
 	 * the site, exclude exSEs
 	 * 
 	 * @param site
+	 * @param write <code>true</code> for write operations, <code>false</code> for read
 	 * @return sorted list of SEs based on MonALISA distance metric
 	 */
-	public static List<SE> getClosestSEs(final String site) {
-		return getClosestSEs(site, null);
+	public static List<SE> getClosestSEs(final String site, final boolean write) {
+		return getClosestSEs(site, null, write);
 	}
 
 	/**
@@ -311,37 +323,35 @@ public final class SEUtils {
 	 * 
 	 * @param site
 	 * @param exSEs
+	 * @param write <code>true</code> for write operations, <code>false</code> for read
 	 * @return sorted list of SEs based on MonALISA distance metric
 	 */
-	public static List<SE> getClosestSEs(final String site, final List<SE> exSEs) {
+	public static List<SE> getClosestSEs(final String site, final List<SE> exSEs, final boolean write) {
 		if (site == null || site.length() == 0)
 			return null;
 
-		updateSERanksCache();
+		updateSEDistanceCache();
 
-		if (seRanks == null)
+		if (seDistance == null)
 			return null;
 
 		final String sitename = site.trim().toUpperCase();
 
-		final Map<Integer, Integer> ranks = seRanks.get(sitename);
+		final Map<Integer, Double> distance = seDistance.get(sitename);
 
-		if (ranks == null)
+		if (distance == null)
 			return null;
 
-		final List<SE> ret = new ArrayList<SE>(ranks.size());
+		final List<SE> ret = new ArrayList<SE>(distance.size());
 
-		for (final Map.Entry<Integer, Integer> me : ranks.entrySet()) {
+		for (final Map.Entry<Integer, Double> me : distance.entrySet()) {
 			final SE se = getSE(me.getKey());
 
 			if (se != null && (exSEs == null || !exSEs.contains(se)))
 				ret.add(se);
 		}
-
-		// We don't need to sort the return list because of the way the cache is
-		// built
-		// (it sorts by sitename and rank) and because the cache is
-		// LinkedHashMap
+		
+		Collections.sort(ret, new SEComparator(distance, write));
 
 		return ret;
 	}
@@ -353,10 +363,10 @@ public final class SEUtils {
 	 * @param ses 
 	 * @param exses 
 	 * @param qos 
+	 * @param write <code>true</code> for write operations, <code>false</code> for read
 	 * @return the list of SEs
 	 */
-	public static List<SE> getBestSEsOnSpecs(final String site, final List<String> ses,
-			final List<String> exses, final HashMap<String,Integer> qos) {
+	public static List<SE> getBestSEsOnSpecs(final String site, final List<String> ses, final List<String> exses, final HashMap<String,Integer> qos, final boolean write) {
 
 		if (logger.isLoggable(Level.FINE)){
 			logger.log(Level.FINE, "got pos: " + ses);
@@ -379,7 +389,7 @@ public final class SEUtils {
 			if (qosDef.getValue().intValue() > 0) {
 
 				// TODO: get a number #qos.get(qosType) of qosType SEs
-				final List<SE> discoveredSEs = SEUtils.getClosestSEs(site, exSEs);
+				final List<SE> discoveredSEs = SEUtils.getClosestSEs(site, exSEs, write);
 
 				final Iterator<SE> it = discoveredSEs.iterator();
 
@@ -410,10 +420,10 @@ public final class SEUtils {
 	 * @param pfns
 	 * @param sSite
 	 * @param removeBrokenSEs
+	 * @param write <code>true</code> for write operations, <code>false</code> for read
 	 * @return the sorted list of locations
 	 */
-	public static List<PFN> sortBySite(final Collection<PFN> pfns,
-			final String sSite, final boolean removeBrokenSEs) {
+	public static List<PFN> sortBySite(final Collection<PFN> pfns, final String sSite, final boolean removeBrokenSEs, final boolean write) {
 		if (pfns == null)
 			return null;
 
@@ -422,13 +432,12 @@ public final class SEUtils {
 		if (ret.size() <= 1 || sSite == null || sSite.length() == 0)
 			return ret;
 
-		updateSERanksCache();
+		updateSEDistanceCache();
 
-		if (seRanks == null)
+		if (seDistance == null)
 			return null;
 
-		final Map<Integer, Integer> ranks = seRanks.get(sSite.trim()
-				.toUpperCase());
+		final Map<Integer, Double> ranks = seDistance.get(sSite.trim().toUpperCase());
 
 		if (ranks == null)
 			return ret;
@@ -444,7 +453,7 @@ public final class SEUtils {
 			}
 		}
 
-		final Comparator<PFN> c = new PFNComparatorBySite(ranks);
+		final Comparator<PFN> c = new PFNComparatorBySite(ranks, write);
 
 		Collections.sort(ret, c);
 
@@ -460,13 +469,11 @@ public final class SEUtils {
 	 * @param removeBrokenSEs
 	 * @param SEs
 	 * @param exSEs
+	 * @param write <code>true</code> for write operations, <code>false</code> for read
 	 * @return the sorted list of locations
 	 */
-	public static List<PFN> sortBySiteSpecifySEs(final Collection<PFN> pfns,
-			final String sSite, final boolean removeBrokenSEs,
-			final List<SE> SEs, final List<SE> exSEs) {
-
-		List<PFN> spfns = sortBySite(pfns, sSite, removeBrokenSEs);
+	public static List<PFN> sortBySiteSpecifySEs(final Collection<PFN> pfns, final String sSite, final boolean removeBrokenSEs, final List<SE> SEs, final List<SE> exSEs, final boolean write) {
+		List<PFN> spfns = sortBySite(pfns, sSite, removeBrokenSEs, write);
 
 		if ((SEs==null || SEs.isEmpty()) && (exSEs==null || exSEs.isEmpty()))
 			return spfns;
@@ -476,8 +483,9 @@ public final class SEUtils {
 		
 		for (PFN pfn : spfns) {
 			if (SEs != null && SEs.contains(SEUtils.getSE(pfn.seNumber)))
-						ret.add(pfn);
-			else if (exSEs == null || !exSEs.contains(SEUtils.getSE(pfn.seNumber)))
+				ret.add(pfn);
+			else 
+			if (exSEs == null || !exSEs.contains(SEUtils.getSE(pfn.seNumber)))
 				tail.add(pfn);				
 		}
 
@@ -495,32 +503,47 @@ public final class SEUtils {
 		 */
 		private static final long serialVersionUID = -5231000693345849547L;
 		
-		private final Map<Integer, Integer> ranks;
+		private final Map<Integer, Double> distance;
 
+		private final boolean write;
+		
 		/**
-		 * @param ranks
+		 * @param distance
+		 * @param write <code>true</code> for write operations, <code>false</code> for read
 		 */
-		public SEComparator(final Map<Integer, Integer> ranks) {
-			this.ranks = ranks;
+		public SEComparator(final Map<Integer, Double> distance, final boolean write) {
+			this.distance = distance;
+			this.write = write;
 		}
 
 		@Override
 		public int compare(final SE o1, final SE o2) {
-			final Integer r1 = ranks.get(Integer.valueOf(o1.seNumber));
-			final Integer r2 = ranks.get(Integer.valueOf(o2.seNumber));
+			final Double d1 = distance.get(Integer.valueOf(o1.seNumber));
+			final Double d2 = distance.get(Integer.valueOf(o2.seNumber));
 
 			// broken first SE, move the second one to the front if it's ok
-			if (r1 == null) {
-				return r2 == null ? 0 : 1;
+			if (d1 == null) {
+				return d2 == null ? 0 : 1;
 			}
 
 			// broken second SE, move the first one to the front
-			if (r2 == null)
+			if (d2 == null)
 				return -1;
 
 			// lower rank to the front
 
-			return r1.compareTo(r2);
+			final double rank1 = d1.doubleValue() + (write ? o1.demoteWrite : o1.demoteRead);
+			final double rank2 = d2.doubleValue() + (write ? o2.demoteWrite : o2.demoteRead);
+			
+			double diff = rank1 - rank2;
+			
+			if (diff<0)
+				return -1;
+			
+			if (diff>0)
+				return 1;
+			
+			return 0;
 		}
 	}
 
@@ -528,10 +551,10 @@ public final class SEUtils {
 	 * @param ses
 	 * @param sSite
 	 * @param removeBrokenSEs
+	 * @param write <code>true</code> for write operations, <code>false</code> for read
 	 * @return the sorted list of SEs
 	 */
-	public static List<SE> sortSEsBySite(final Collection<SE> ses,
-			final String sSite, final boolean removeBrokenSEs) {
+	public static List<SE> sortSEsBySite(final Collection<SE> ses, final String sSite, final boolean removeBrokenSEs, final boolean write) {
 		if (ses == null)
 			return null;
 
@@ -541,13 +564,12 @@ public final class SEUtils {
 				&& (!removeBrokenSEs))
 			return ret;
 
-		updateSERanksCache();
+		updateSEDistanceCache();
 
-		if (seRanks == null)
+		if (seDistance == null)
 			return null;
 
-		final Map<Integer, Integer> ranks = sSite != null ? seRanks.get(sSite
-				.trim().toUpperCase()) : null;
+		final Map<Integer, Double> ranks = sSite != null ? seDistance.get(sSite.trim().toUpperCase()) : null;
 
 		if (ranks == null) {
 			// missing information about this site, leave the storages as they
@@ -566,7 +588,7 @@ public final class SEUtils {
 			}
 		}
 
-		final Comparator<SE> c = new SEComparator(ranks);
+		final Comparator<SE> c = new SEComparator(ranks, write);
 
 		Collections.sort(ret, c);
 

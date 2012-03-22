@@ -131,7 +131,7 @@ public class IOUtils {
 		
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		
-		final List<PFN> sortedRealPFNs = SEUtils.sortBySite(realPFNsSet, site, false);
+		final List<PFN> sortedRealPFNs = SEUtils.sortBySite(realPFNsSet, site, false, false);
 			
 		for (final PFN realPfn: sortedRealPFNs){
 			if (realPfn.ticket==null){

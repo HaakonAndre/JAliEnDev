@@ -244,7 +244,7 @@ public class Transfer implements Serializable, Runnable {
 		
 		if (protocols.size()==0){
 			// no common protocols
-			final List<PFN> sortedSources = SEUtils.sortBySite(sources, ConfigUtils.getSite(), false);
+			final List<PFN> sortedSources = SEUtils.sortBySite(sources, ConfigUtils.getSite(), false, false);
 			
 			for (final PFN source: sortedSources){
 				doWork(source);
@@ -288,7 +288,7 @@ public class Transfer implements Serializable, Runnable {
 		for (final Protocol p: sortedProtocols){
 			// sort pfns function of the distance between source, target and ourselves
 			
-			final List<PFN> sortedSources = SEUtils.sortBySite(sources, p==Factory.xrd3cp ? targetSite : ConfigUtils.getSite(), false);
+			final List<PFN> sortedSources = SEUtils.sortBySite(sources, p==Factory.xrd3cp ? targetSite : ConfigUtils.getSite(), false, false);
 			
 			final Set<PFN> brokenSources = new HashSet<PFN>();
 			

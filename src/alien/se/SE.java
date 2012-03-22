@@ -104,6 +104,16 @@ public class SE implements Serializable, Comparable<SE> {
 	public boolean needsEncryptedEnvelope;
 
 	/**
+	 * Demote write factor
+	 */
+	public double demoteWrite;
+	
+	/**
+	 * Demote read factor
+	 */
+	public double demoteRead;
+	
+	/**
 	 * @param db
 	 */
 	SE(final DBFunctions db) {
@@ -138,6 +148,10 @@ public class SE implements Serializable, Comparable<SE> {
 		seExclusiveRead = parseArray(db.gets("seExclusiveRead"));
 
 		seExclusiveWrite = parseArray(db.gets("seExclusiveWrite"));
+		
+		demoteWrite = db.getd("sedemotewrite");
+		
+		demoteRead = db.getd("sedemoteread");
 	}
 
 	@Override

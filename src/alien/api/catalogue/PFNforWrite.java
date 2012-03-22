@@ -112,7 +112,7 @@ public class PFNforWrite extends Request {
 			this.qos.put(defQos.substring(0, defQos.indexOf('=')), Integer.valueOf(count));
 		}
 
-		List<SE> SEs = SEUtils.getBestSEsOnSpecs(this.site, this.ses, this.exses, this.qos);
+		List<SE> SEs = SEUtils.getBestSEsOnSpecs(this.site, this.ses, this.exses, this.qos, true);
 
 		if (SEs == null || SEs.size() < 1) {
 			this.pfns = new ArrayList<PFN>(0);

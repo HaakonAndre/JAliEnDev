@@ -363,7 +363,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 				if (p_qosCount > 0) {
 					ses.addAll(exxSes);
-					List<SE> SEs = SEUtils.getClosestSEs(p_site, ses);
+					List<SE> SEs = SEUtils.getClosestSEs(p_site, ses, true);
 					final Iterator<SE> it = SEs.iterator();
 
 					int counter = 0;
@@ -393,8 +393,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 				PFN readpfn = null;
 
-				pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), p_site,
-						true, ses, exxSes);
+				pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), p_site, true, ses, exxSes, false);
 
 				for (PFN pfn : pfns) {
 					System.err.println(pfn);
@@ -412,10 +411,7 @@ public class AlienCommandauthorize extends AlienCommand {
 						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo,
 								false);
 						setArchiveAnchor = lfn;
-						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(
-								GUIDUtils.getGUID(
-										pfn.retrieveArchiveLinkedGUID())
-										.getPFNs(), p_site, true, ses, exxSes);
+						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID()).getPFNs(), p_site, true, ses, exxSes, false);
 						if (!AuthorizationChecker.canRead(archiveguid, effectiveUser)) {
 							System.err
 									.println("Access refused because: Not allowed to read sub-archive");

@@ -83,8 +83,7 @@ public class PFNforReadOrDel extends Request {
 
 		if (guid.getPFNs() != null) {
 
-			pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true,
-					SEUtils.getSEs(ses), SEUtils.getSEs(exses));
+			pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses), false);
 			
 			try {
 				for (PFN pfn : pfns) {
@@ -100,11 +99,7 @@ public class PFNforReadOrDel extends Request {
 						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo,
 								false);
 						setArchiveAnchor = lfn;
-						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(
-								GUIDUtils.getGUID(
-										pfn.retrieveArchiveLinkedGUID())
-										.getPFNs(), site, true, SEUtils
-										.getSEs(ses), SEUtils.getSEs(exses));
+						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID()).getPFNs(), site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses), false);
 						if (!AuthorizationChecker.canRead(archiveguid, getEffectiveRequester())) {
 							logger.log(Level.WARNING, "Access refused because: Not allowed to read sub-archive");
 							continue;
