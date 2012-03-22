@@ -62,7 +62,7 @@ public final class SEUtils {
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-						if (db.query("SELECT * FROM SE;")) {
+						if (db.query("SELECT * FROM SE WHERE seioDaemons IS NOT NULL;")) {
 							final Map<Integer, SE> ses = new HashMap<Integer, SE>();
 
 							while (db.moveNext()) {

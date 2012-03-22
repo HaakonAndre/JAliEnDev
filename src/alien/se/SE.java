@@ -167,6 +167,7 @@ public class SE implements Serializable, Comparable<SE> {
 				+ "\n" + "seVersion\t: " + seVersion + "\n" + "qos\t: " + qos
 				+ "\n" + "seioDaemons\t: " + seioDaemons + "\n"
 				+ "seStoragePath\t: " + seStoragePath + "\n"
+				+ "seSize:\t: "+size+"\n"
 				+ "seUsedSpace\t: " + seUsedSpace + "\n" + "seNumFiles\t: "
 				+ seNumFiles + "\n" + "seMinSize\t: " + seMinSize + "\n"
 				+ "seType\t: " + seType + "\n" + "exclusiveUsers\t: "
@@ -339,5 +340,20 @@ public class SE implements Serializable, Comparable<SE> {
 		}
 		
 		return ret;
+	}
+	
+	/**
+	 * Debug method
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		DBFunctions db = ConfigUtils.getDB("alice_users");
+		
+		db.query("SELECT * FROM SE WHERE sename='ALICE::IHEP::File';");
+		
+		SE se = new SE(db);
+		
+		System.err.println(se);
 	}
 }
