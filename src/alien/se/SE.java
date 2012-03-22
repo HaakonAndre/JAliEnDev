@@ -14,6 +14,7 @@ import lazyj.StringFactory;
 import alien.catalogue.GUID;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
+import alien.user.LDAPHelper;
 
 /**
  * @author costing
@@ -287,5 +288,44 @@ public class SE implements Serializable, Comparable<SE> {
 
 		return allowed;
 	}
-
+	
+	/**
+	 * @return Storage Element declared size, in KB
+	 */
+	public long getSize(){
+		final int idx = seName.indexOf("::");
+		
+		if (idx<0)
+			return 0;
+		
+		final int idx2 = seName.lastIndexOf("::");
+		
+		if (idx2<=idx)
+			return 0;
+		
+		final String site = seName.substring(idx+2, idx2);
+		final String name = seName.substring(idx2+2);
+		
+		Set<String> ldapinfo = LDAPHelper.checkLdapInformation("name="+name, "ou=SE,ou=Services,ou="+site+",ou=Sites,", "savedir");
+		
+		if (ldapinfo==null ||ldapinfo.size()==0)
+			return 0;
+		
+		long size = 0;
+		
+		for (final String s: ldapinfo){
+			final StringTokenizer st = new StringTokenizer(s, ",");
+			
+			while (st.hasMoreTokens()){
+				try{
+					size += Long.parseLong(st.nextToken());
+				}
+				catch (NumberFormatException nfe){
+					// ignore
+				}
+			}
+		}
+		
+		return size;
+	}
 }
