@@ -30,8 +30,7 @@ public class SE implements Serializable, Comparable<SE> {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(SE.class
-			.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(SE.class.getCanonicalName());
 
 	/**
 	 * SE name
@@ -290,7 +289,7 @@ public class SE implements Serializable, Comparable<SE> {
 	}
 	
 	/**
-	 * @return Storage Element declared size, in KB
+	 * @return Storage Element declared size, in KB, or <code>-1</code> if the SE is not defined
 	 */
 	public long getSize(){
 		final int idx = seName.indexOf("::");
@@ -308,8 +307,14 @@ public class SE implements Serializable, Comparable<SE> {
 		
 		Set<String> ldapinfo = LDAPHelper.checkLdapInformation("name="+name, "ou=SE,ou=Services,ou="+site+",ou=Sites,", "savedir");
 		
-		if (ldapinfo==null ||ldapinfo.size()==0)
+		if (ldapinfo==null || ldapinfo.size()==0){
+			ldapinfo = LDAPHelper.checkLdapInformation("name="+name, "ou=SE,ou=Services,ou="+site+",ou=Sites,", "name");
+			
+			if (ldapinfo==null || ldapinfo.size()==0)
+				return -1;
+			
 			return 0;
+		}
 		
 		long size = 0;
 		
