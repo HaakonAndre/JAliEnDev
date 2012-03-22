@@ -13,7 +13,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -145,40 +144,26 @@ public final class SEUtils {
 	/**
 	 * Get all SE objects that have the given names
 	 * 
-	 * @param seNames
-	 * @return SE objects
-	 */
-	public static Map<String, SE> getSEs(final Set<String> seNames) {
-		if (seNames == null)
-			return null;
-
-		final Map<String, SE> ret = new HashMap<String, SE>(seNames.size());
-
-		for (final String name : seNames) {
-			final SE se = getSE(name);
-
-			if (se != null)
-				ret.put(name, se);
-		}
-
-		return ret;
-	}
-
-	/**
-	 * Get all SE objects that have the given names
-	 * 
-	 * @param ses
+	 * @param ses names to get the objects for, can be <code>null</code> in which case all known SEs are returned 
 	 * @return SE objects
 	 */
 	public static List<SE> getSEs(final List<String> ses) {
-		if (ses == null)
+		updateSECache();
+
+		if (seCache == null)
 			return null;
+		
+		if (ses == null)
+			return new ArrayList<SE>(seCache.values());
+		
 		final List<SE> ret = new ArrayList<SE>();
-		for (String se : ses) {
-			SE maybeSE = SEUtils.getSE(se);
+		for (final String se : ses) {
+			final SE maybeSE = SEUtils.getSE(se);
+			
 			if (maybeSE != null)
 				ret.add(maybeSE);
 		}
+		
 		return ret;
 	}
 
