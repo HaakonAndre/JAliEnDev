@@ -114,6 +114,11 @@ public class SE implements Serializable, Comparable<SE> {
 	public double demoteRead;
 	
 	/**
+	 * Size, as declared in LDAP
+	 */
+	public long size;
+	
+	/**
 	 * @param db
 	 */
 	SE(final DBFunctions db) {
@@ -152,6 +157,8 @@ public class SE implements Serializable, Comparable<SE> {
 		demoteWrite = db.getd("sedemotewrite");
 		
 		demoteRead = db.getd("sedemoteread");
+		
+		size = getSize();
 	}
 
 	@Override
@@ -291,7 +298,7 @@ public class SE implements Serializable, Comparable<SE> {
 	/**
 	 * @return Storage Element declared size, in KB, or <code>-1</code> if the SE is not defined
 	 */
-	public long getSize(){
+	private final long getSize(){
 		final int idx = seName.indexOf("::");
 		
 		if (idx<0)
@@ -316,14 +323,14 @@ public class SE implements Serializable, Comparable<SE> {
 			return 0;
 		}
 		
-		long size = 0;
+		long ret = 0;
 		
 		for (final String s: ldapinfo){
 			final StringTokenizer st = new StringTokenizer(s, ",");
 			
 			while (st.hasMoreTokens()){
 				try{
-					size += Long.parseLong(st.nextToken());
+					ret += Long.parseLong(st.nextToken());
 				}
 				catch (NumberFormatException nfe){
 					// ignore
@@ -331,6 +338,6 @@ public class SE implements Serializable, Comparable<SE> {
 			}
 		}
 		
-		return size;
+		return ret;
 	}
 }

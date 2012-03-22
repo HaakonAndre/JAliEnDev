@@ -68,7 +68,8 @@ public final class SEUtils {
 							while (db.moveNext()) {
 								final SE se = new SE(db);
 
-								ses.put(Integer.valueOf(se.seNumber), se);
+								if (se.size>=0)
+									ses.put(Integer.valueOf(se.seNumber), se);
 							}
 
 							seCache = ses;
