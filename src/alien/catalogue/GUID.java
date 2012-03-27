@@ -504,7 +504,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		if (monitor!=null){
-			monitor.incrementCounter("PFN_db_delete");
 			monitor.incrementCounter("GUID_db_delete");
 		}
 		
@@ -517,6 +516,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				removed = false;
 			}
 		}
+		
+		db.query("DELETE FROM G"+tableName+"L_REF WHERE guidId="+guidId);
 				
 		exists = !removed;
 		
