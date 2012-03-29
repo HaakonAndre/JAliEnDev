@@ -2,6 +2,7 @@ package alien.io;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -13,6 +14,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipInputStream;
 
 import lazyj.Utils;
 import alien.catalogue.FileSystemUtils;
@@ -99,6 +103,7 @@ public class IOUtils {
 	 * 
 	 * @param guid
 	 * @return the temporary file name. You should handle the deletion of this temporary file!
+	 * @see TempFileManager#release(File)
 	 */
 	public static File get(final GUID guid){
 		return get(guid, null);
@@ -112,6 +117,27 @@ public class IOUtils {
 	 * @return the downloaded file, or <code>null</code> if the file could not be retrieved
 	 */
 	public static File get(final GUID guid, final File localFile){
+		final File cachedContent = TempFileManager.getAny(guid);
+		
+		if (cachedContent!=null){
+			if (localFile==null)
+				return cachedContent;
+
+			try{
+				if (!Utils.copyFile(cachedContent.getAbsolutePath(), localFile.getAbsolutePath())){
+					if (logger.isLoggable(Level.WARNING))
+						logger.log(Level.WARNING, "Cannot copy "+cachedContent.getAbsolutePath()+" to "+localFile.getAbsolutePath());
+					
+					return null;
+				}
+			}
+			finally{
+				TempFileManager.release(cachedContent);
+			}
+				
+			return localFile;
+		}
+		
 		final Set<PFN> pfns = guid.getPFNs();
 		
 		if (pfns==null || pfns.size()==0)
@@ -119,19 +145,26 @@ public class IOUtils {
 		
 		final Set<PFN> realPFNsSet = new HashSet<PFN>();
 		
+		boolean zipArchive = false;
+		
 		for (final PFN pfn: pfns){
+			if (pfn.pfn.startsWith("guid:/") && pfn.pfn.indexOf("?ZIP=")>=0)
+				zipArchive = true;
+			
 			final Set<PFN> realPfnsTemp = pfn.getRealPFNs();
 			
 			if (realPfnsTemp==null || realPfnsTemp.size()==0)
 				continue;
 			
-			for (PFN realPFN: realPfnsTemp)
+			for (final PFN realPFN: realPfnsTemp)
 				realPFNsSet.add(realPFN);
 		}
 		
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		
 		final List<PFN> sortedRealPFNs = SEUtils.sortBySite(realPFNsSet, site, false, false);
+		
+		File f = null;
 			
 		for (final PFN realPfn: sortedRealPFNs){
 			if (realPfn.ticket==null){
@@ -146,9 +179,10 @@ public class IOUtils {
 			
 			for (final Protocol protocol: protocols){
 				try{
-					final File f = protocol.get(realPfn, localFile);
+					f = protocol.get(realPfn, zipArchive ? null : localFile);
 				
-					return f;
+					if (f!=null)
+						break;
 				}
 				catch (IOException e){
 					// ignore
@@ -156,7 +190,76 @@ public class IOUtils {
 			}
 		}
 		
-		return null;		
+		if (f==null || !zipArchive)
+			return f;
+		
+		try{
+			for (final PFN p: pfns){
+				if (p.pfn.startsWith("guid:/") && p.pfn.indexOf("?ZIP=")>=0){
+					// this was actually an archive
+					
+					final String archiveFileName = p.pfn.substring(p.pfn.lastIndexOf('=')+1);
+					
+					try{
+						final ZipInputStream zi = new ZipInputStream(new FileInputStream(f));
+					
+						ZipEntry zipentry = zi.getNextEntry();
+						
+						File target = null;
+						
+			            while (zipentry != null){
+			            	if (zipentry.getName().equals(archiveFileName)){
+			            		if (localFile!=null){
+			            			target = localFile;
+			            		}
+			            		else{
+			            			target = File.createTempFile(guid.guid+"#"+archiveFileName+".", null, getTemporaryDirectory());
+			            		}
+			            		
+			            		final FileOutputStream fos = new FileOutputStream(target);
+			            		
+			            		final byte[] buf = new byte[8192];
+			            		
+			            		int n;
+			            		
+			            		while ((n = zi.read(buf, 0, buf.length)) > -1)
+			                        fos.write(buf, 0, n);
+			            		
+			            		fos.close();
+			            		zi.closeEntry();
+			            		break;
+			            	}
+			            	
+			            	zipentry = zi.getNextEntry();
+			            }
+			            
+			            zi.close();
+			            
+			            if (target!=null){
+			            	if (localFile==null)
+			            		TempFileManager.putTemp(guid, target);
+			            	else
+			            		TempFileManager.putPersistent(guid, localFile);
+			            }
+			            
+			            return target;
+					}
+					catch (ZipException e){
+						logger.log(Level.WARNING, "ZipException parsing the content of "+f.getAbsolutePath(), e);
+					}
+					catch (IOException e){
+						logger.log(Level.WARNING, "IOException extracting "+archiveFileName+" from "+f.getAbsolutePath()+" to parse as ZIP", e);
+					}
+					
+					return null;
+				}
+			}
+		}
+		finally{
+			TempFileManager.release(f);
+		}
+		
+		return null;
 	}
 	
 	/**
@@ -178,7 +281,7 @@ public class IOUtils {
 			try{
 				return Utils.readFile(f.getCanonicalPath());
 			}
-			catch (IOException ioe){
+			catch (final IOException ioe){
 				// ignore, shouldn't be ...
 			}
 			finally{
@@ -294,5 +397,22 @@ public class IOUtils {
     	final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
     	
     	cp.copyLocalToGrid(localFile, absolutePath);
+	}
+	
+	/**
+	 * @return the temporary directory where downloaded files are put by default
+	 */
+	public static final File getTemporaryDirectory(){
+		final String sDir = ConfigUtils.getConfig().gets("alien.io.IOUtils.tempDownloadDir");
+		
+		if (sDir==null || sDir.length()==0)
+			return null;
+		
+		final File f = new File(sDir);
+		
+		if (f.exists() && f.isDirectory() && f.canWrite())
+			return f;
+		
+		return null;
 	}
 }
