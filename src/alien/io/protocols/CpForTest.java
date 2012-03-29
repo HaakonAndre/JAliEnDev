@@ -14,6 +14,7 @@ import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 
 /**
  * @author ron
@@ -125,7 +126,7 @@ public class CpForTest  extends Protocol {
 				target = localFile;
 			}
 			else{
-				target = File.createTempFile("cp-get", null);
+				target = File.createTempFile("cp-get", null, IOUtils.getTemporaryDirectory());
 
 				if (!target.delete())
 					logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);

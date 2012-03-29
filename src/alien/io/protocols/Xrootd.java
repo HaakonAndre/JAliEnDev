@@ -25,6 +25,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 
 /**
  * @author costing
@@ -211,7 +212,7 @@ public class Xrootd extends Protocol {
 				}
 
 				if (envelope != null) {
-					fAuthz = File.createTempFile("xrdrm-", ".authz");
+					fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
 
 					final FileWriter fw = new FileWriter(fAuthz);
 
@@ -317,14 +318,16 @@ public class Xrootd extends Protocol {
 				return target;
 			}
 			
-			target = File.createTempFile("xrootd-get", null);
+			target = File.createTempFile("xrootd-get", null, IOUtils.getTemporaryDirectory());
 
-			if (!target.delete())
+			if (!target.delete()){
 				logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
+				return null;
+			}
 		}
 
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ) {
-			throw new SourceException("The envelope for PFN " + pfn.toString() + " could not be found or is not a READ one.");
+			throw new SourceException("The envelope for PFN " + pfn.toString() + (pfn.ticket==null ? " could not be found" : " is not a READ one"));
 		}
 
 		try {

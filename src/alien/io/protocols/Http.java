@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 
 /**
  * @author costing
@@ -56,7 +57,7 @@ public class Http extends Protocol {
 				return target;
 			}
 			
-			target = File.createTempFile("http", null);
+			target = File.createTempFile("http", null, IOUtils.getTemporaryDirectory());
 		}
 		
 		try{
