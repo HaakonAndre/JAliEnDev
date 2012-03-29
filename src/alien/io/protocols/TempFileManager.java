@@ -46,7 +46,7 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	}
 
 	private static final TempFileManager tempInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 50), ConfigUtils.getConfig().getl("alien.io.protocols.TempFileManager.temp.size", 10*1024*1024*1024), true);
-	private static final TempFileManager persistentInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 100), 0, false);
+	private static final TempFileManager persistentInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.persistent.entries", 100), 0, false);
 	
 	private static List<File> lockedLocalFiles = new LinkedList<File>();
 	
@@ -117,13 +117,18 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	}
 	
 	/**
+	 * Re-pin a temporary file on disk until its processing is over.
+	 * 
 	 * @param f
+	 * @see #release(File)
 	 */
-	public static void lock(final File f){
+	private static void lock(final File f){
 		lockedLocalFiles.add(f);
 	}
 	
 	/**
+	 * For temporary downloaded files, call this when you are done working with the local file to allow the garbage collector to reclaim the space when needed.
+	 * 
 	 * @param f
 	 */
 	public static void release(final File f){
