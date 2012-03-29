@@ -106,7 +106,7 @@ public class XRDChecker {
 		final GUID guid = pfn.getGuid();
 		
 		try{
-			f = File.createTempFile("xrdstatus-", "-download.tmp");
+			f = File.createTempFile("xrdstatus-", "-download.tmp", IOUtils.getTemporaryDirectory());
 		
 			if (!f.delete()){
 				return new XRDStatus(false, "Could not delete the temporary created file, xrdcp would fail, bailing out");
