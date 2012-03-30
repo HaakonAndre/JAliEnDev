@@ -3,6 +3,7 @@ package alien.quotas;
 import java.io.Serializable;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import lazyj.StringFactory;
 
 /**
@@ -82,11 +83,11 @@ tmpIncreasedNbFiles   | int(11)
 	@Override
 	public String toString() {
 		return "FQuota: user: "+user+"\n"+
-		       "totalSize\t: "+totalSize+"\n"+
-		       "maxNbFiles\t: "+maxNbFiles+"\n"+
+		       "totalSize\t: "+Format.size(totalSize)+"\n"+
+		       "maxTotalSize\t: "+Format.size(maxTotalSize)+"\n"+
+		       "tmpIncreasedTotalSize\t: "+Format.size(tmpIncreasedTotalSize)+"\n"+
 		       "nbFiles\t: "+nbFiles+"\n"+
-		       "tmpIncreasedTotalSize\t: "+tmpIncreasedTotalSize+"\n"+
-		       "maxTotalSize\t: "+maxTotalSize+"\n"+
+		       "maxNbFiles\t: "+maxNbFiles+"\n"+
 		       "tmpIncreasedNbFiles\t: "+tmpIncreasedNbFiles;
 	}	
 	
@@ -102,5 +103,17 @@ tmpIncreasedNbFiles   | int(11)
 	@Override
 	public int hashCode() {
 		return user.hashCode();
+	}
+	
+	/**
+	 * @param noFiles
+	 * @param size
+	 * @return <code>true</code> if the user is allowed to upload this number of files with the given total size
+	 */
+	public boolean canUpload(final int noFiles, final long size){
+		if (totalSize + size <= (maxTotalSize+tmpIncreasedTotalSize) && nbFiles+noFiles<=(maxNbFiles+tmpIncreasedNbFiles) )
+			return true;
+		
+		return false;
 	}
 }

@@ -209,16 +209,8 @@ tmpIncreasedNbFiles     | int(11)
 		       "maxTotalCpuCost\t: "+maxTotalCpuCost+"\n"+
 		       "totalRunningTimeLast24h\t: "+totalRunningTimeLast24h+"\n"+
 		       "unfinishedJobsLast24h\t: "+unfinishedJobsLast24h+"\n"+
-		       "totalSize\t: "+totalSize+"\n"+
-		       "maxNbFiles\t: "+maxNbFiles+"\n"+
-		       "nbFiles\t: "+nbFiles+"\n"+
-		       "tmpIncreasedTotalSize\t: "+tmpIncreasedTotalSize+"\n"+
 		       "totalCpuCostLast24h\t: "+totalCpuCostLast24h+"\n"+
-		       "maxTotalSize\t: "+maxTotalSize+"\n"+
-		       "maxTotalRunningTime\t: "+maxTotalRunningTime+"\n"+
-		       "tmpIncreasedNbFiles\t: "+tmpIncreasedNbFiles;
-		       
-		       
+		       "maxTotalRunningTime\t: "+maxTotalRunningTime;
 	}
 
 	@Override
@@ -239,4 +231,13 @@ tmpIncreasedNbFiles     | int(11)
 		return user.hashCode();
 	}
 	
+	/**
+	 * @return <code>true</code> if the user is below the quota and is allowed to submit more jobs
+	 */
+	public boolean canSubmit(){
+		if (totalCpuCostLast24h<maxTotalCpuCost && totalRunningTimeLast24h<maxTotalRunningTime && (running+waiting)<maxUnfinishedJobs)
+			return true;
+		
+		return false;
+	}
 }
