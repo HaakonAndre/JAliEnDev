@@ -9,6 +9,7 @@ import java.util.logging.Logger;
 import alien.config.ConfigUtils;
 
 import lazyj.DBFunctions;
+import lia.util.StringFactory;
 
 /**
  * @author costing
@@ -153,7 +154,7 @@ tmpIncreasedNbFiles     | int(11)
 	 * @param db
 	 */
 	public Quota(final DBFunctions db){
-		user = db.gets("user");
+		user = StringFactory.get(db.gets("user").toLowerCase());
 	
 		priority = db.getf("priority");
 		

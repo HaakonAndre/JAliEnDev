@@ -3,8 +3,10 @@
  */
 package alien.quotas;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
@@ -28,24 +30,24 @@ public final class QuotaUtilities {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(QuotaUtilities.class.getCanonicalName());
 
-	private static Map<String, Quota> quotas = null;
-	private static long quotasLastUpdated = 0;
+	private static Map<String, Quota> jobQuotas = null;
+	private static long jobQuotasLastUpdated = 0;
 	
-	private static final ReentrantReadWriteLock quotasRWLock = new ReentrantReadWriteLock();
-	private static final ReadLock quotaReadLock = quotasRWLock.readLock();
-	private static final WriteLock quotaWriteLock = quotasRWLock.writeLock();
+	private static final ReentrantReadWriteLock jobQuotasRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock jobQuotaReadLock = jobQuotasRWLock.readLock();
+	private static final WriteLock jobQuotaWriteLock = jobQuotasRWLock.writeLock();
 	
-	private static void updateFileQuotasCache(){
-		quotaReadLock.lock();
+	private static void updateJobQuotasCache(){
+		jobQuotaReadLock.lock();
 		
 		try{
-			if (System.currentTimeMillis() - quotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || quotas==null){
-				quotaReadLock.unlock();
+			if (System.currentTimeMillis() - jobQuotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || jobQuotas==null){
+				jobQuotaReadLock.unlock();
 				
-				quotaWriteLock.lock();
+				jobQuotaWriteLock.lock();
 				
 				try{
-					if (System.currentTimeMillis() - quotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || quotas==null){
+					if (System.currentTimeMillis() - jobQuotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || jobQuotas==null){
 						if (logger.isLoggable(Level.FINER)){
 							logger.log(Level.FINER, "Updating Quotas cache");
 						}
@@ -56,47 +58,155 @@ public final class QuotaUtilities {
 							final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
 							
 							while (db.moveNext()){
-								final Quota fq = new Quota(db);
+								final Quota q = new Quota(db);
 					
-								if (fq.user!=null)
-									newQuotas.put(fq.user.toLowerCase(), fq);
+								if (q.user!=null)
+									newQuotas.put(q.user, q);
 							}
 						
-							quotas = Collections.unmodifiableMap(newQuotas);
-							quotasLastUpdated = System.currentTimeMillis();
+							jobQuotas = Collections.unmodifiableMap(newQuotas);
+							jobQuotasLastUpdated = System.currentTimeMillis();
 						}
 						else{
-							quotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+							jobQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
 						}
 					}
 				}
 				finally{
-					quotaWriteLock.unlock();
+					jobQuotaWriteLock.unlock();
 				}
 				
-				quotaReadLock.lock();
+				jobQuotaReadLock.lock();
 			}
 		}
 		finally{
-			quotaReadLock.unlock();
+			jobQuotaReadLock.unlock();
 		}
 	}
 	
+	private static Map<String, FQuota> fileQuotas = null;
+	private static long fileQuotasLastUpdated = 0;
+	
+	private static final ReentrantReadWriteLock fileQuotasRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock fileQuotaReadLock = fileQuotasRWLock.readLock();
+	private static final WriteLock fileQuotaWriteLock = fileQuotasRWLock.writeLock();
+	
+	private static void updateFileQuotasCache(){
+		fileQuotaReadLock.lock();
+		
+		try{
+			if (System.currentTimeMillis() - fileQuotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || fileQuotas==null){
+				fileQuotaReadLock.unlock();
+				
+				fileQuotaWriteLock.lock();
+				
+				try{
+					if (System.currentTimeMillis() - fileQuotasLastUpdated > CatalogueUtils.CACHE_TIMEOUT || fileQuotas==null){
+						if (logger.isLoggable(Level.FINER)){
+							logger.log(Level.FINER, "Updating File Quota cache");
+						}
+						
+						final DBFunctions db = ConfigUtils.getDB("alice_users");
+					
+						if (db.query("SELECT * FROM FQUOTAS;")){
+							final Map<String, FQuota> newQuotas = new HashMap<String, FQuota>();
+							
+							while (db.moveNext()){
+								final FQuota fq = new FQuota(db);
+					
+								if (fq.user!=null)
+									newQuotas.put(fq.user, fq);
+							}
+						
+							fileQuotas = Collections.unmodifiableMap(newQuotas);
+							fileQuotasLastUpdated = System.currentTimeMillis();
+						}
+						else{
+							fileQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+						}
+					}
+				}
+				finally{
+					fileQuotaWriteLock.unlock();
+				}
+				
+				fileQuotaReadLock.lock();
+			}
+		}
+		finally{
+			fileQuotaReadLock.unlock();
+		}
+	}
+	
+	/**
+	 * Get the job quota for a particular account
+	 * 
+	 * @param account
+	 * @return job quota
+	 */
+	public static Quota getJobQuota(final String account){
+		if (account==null || account.length()==0)
+			return null;
+		
+		updateJobQuotasCache();
+		
+		if (jobQuotas==null)
+			return null;
+		
+		return jobQuotas.get(account.toLowerCase());
+	}
+
 	/**
 	 * Get the file quota for a particular account
 	 * 
 	 * @param account
 	 * @return file quota
 	 */
-	public static Quota getFQuota(final String account){
+	public static FQuota getFileQuota(final String account){
 		if (account==null || account.length()==0)
 			return null;
 		
 		updateFileQuotasCache();
 		
-		if (quotas==null)
+		if (fileQuotas==null)
 			return null;
 		
-		return quotas.get(account.toLowerCase());
+		return fileQuotas.get(account.toLowerCase());
+	}
+
+	/**
+	 * Get the list of quotas for all accounts
+	 * 
+	 * @return file quota for all accounts, sorted by username 
+	 */
+	public static final List<Quota> getJobQuotas(){
+		updateJobQuotasCache();
+		
+		if (jobQuotas==null)
+			return null;		
+		
+		final ArrayList<Quota> ret = new ArrayList<Quota>(jobQuotas.values());
+		
+		Collections.sort(ret);
+		
+		return ret;
+	}
+
+	/**
+	 * Get the list of quotas for all accounts
+	 * 
+	 * @return file quota for all accounts, sorted by username 
+	 */
+	public static final List<FQuota> getFileQuotas(){
+		updateFileQuotasCache();
+		
+		if (fileQuotas==null)
+			return null;		
+		
+		final ArrayList<FQuota> ret = new ArrayList<FQuota>(fileQuotas.values());
+		
+		Collections.sort(ret);
+		
+		return ret;
 	}
 }
