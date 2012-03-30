@@ -13,6 +13,8 @@ import lazyj.StringFactory;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
+import alien.quotas.FileQuota;
+import alien.quotas.QuotaUtilities;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
@@ -103,6 +105,11 @@ public class BookingTable {
 						throw new IOException("This GUID already has a replica in the requested SE");
 			}
 		}
+		
+		final FileQuota quota = QuotaUtilities.getFileQuota(requestedGUID.owner);
+		
+		if (quota!=null && !quota.canUpload(1, requestedGUID.size))
+			throw new IOException("User "+user.getName()+" has exceeded the file quota and is not allowed to write any more files");
 		
 		if (requestedPFN!=null){
 			// TODO should we check whether or not this PFN exists? It's a heavy op ... 
