@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import alien.quotas.FQuota;
+import alien.quotas.FileQuota;
 import alien.quotas.QuotaUtilities;
 import alien.user.AliEnPrincipal;
 
@@ -127,7 +127,7 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 
 		if (!bHelp) {
 
-			FQuota quota = QuotaUtilities.getFileQuota(user);
+			FileQuota quota = QuotaUtilities.getFileQuota(user);
 
 			if (quota == null)
 				System.out.println("Couldn't get the quota");

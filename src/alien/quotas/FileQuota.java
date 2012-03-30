@@ -9,7 +9,7 @@ import lazyj.StringFactory;
  * @author costing
  * @since 2012-03-30
  */
-public final class FQuota implements Serializable, Comparable<FQuota> {
+public final class FileQuota implements Serializable, Comparable<FileQuota> {
 
 	/*
 user                  | varchar(64)
@@ -64,7 +64,7 @@ tmpIncreasedNbFiles   | int(11)
 	/**
 	 * @param db
 	 */
-	FQuota(final DBFunctions db){
+	FileQuota(final DBFunctions db){
 		this.user = StringFactory.get(db.gets("user").toLowerCase());
 		this.totalSize = db.getl("totalSize");
 		this.maxNbFiles = db.geti("maxNbFiles");
@@ -75,7 +75,7 @@ tmpIncreasedNbFiles   | int(11)
 	}
 
 	@Override
-	public int compareTo(final FQuota o) {
+	public int compareTo(final FileQuota o) {
 		return this.user.compareTo(o.user);
 	}
 	
@@ -93,10 +93,10 @@ tmpIncreasedNbFiles   | int(11)
 	
 	@Override
 	public boolean equals(final Object obj) {
-		if ( ! (obj instanceof FQuota))
+		if ( ! (obj instanceof FileQuota))
 			return false;
 		
-		return compareTo((FQuota) obj) == 0;
+		return compareTo((FileQuota) obj) == 0;
 	}
 	
 	@Override

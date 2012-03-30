@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import alien.quotas.FQuota;
+import alien.quotas.FileQuota;
 import alien.quotas.QuotaUtilities;
 import alien.user.AliEnPrincipal;
 
@@ -156,7 +156,7 @@ public class AlienCommandfquotalist extends AlienCommand {
 				else if (bU == 'G')
 					unit = 1024 * 1024 * 1024;
 
-				final FQuota quota = QuotaUtilities.getFileQuota(user);
+				final FileQuota quota = QuotaUtilities.getFileQuota(user);
 
 				System.out.println("quota is: " + quota.toString());
 				System.out.println("quota totalSize is: " + quota.totalSize);

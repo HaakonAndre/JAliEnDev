@@ -84,7 +84,7 @@ public final class QuotaUtilities {
 		}
 	}
 	
-	private static Map<String, FQuota> fileQuotas = null;
+	private static Map<String, FileQuota> fileQuotas = null;
 	private static long fileQuotasLastUpdated = 0;
 	
 	private static final ReentrantReadWriteLock fileQuotasRWLock = new ReentrantReadWriteLock();
@@ -109,10 +109,10 @@ public final class QuotaUtilities {
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 					
 						if (db.query("SELECT * FROM FQUOTAS;")){
-							final Map<String, FQuota> newQuotas = new HashMap<String, FQuota>();
+							final Map<String, FileQuota> newQuotas = new HashMap<String, FileQuota>();
 							
 							while (db.moveNext()){
-								final FQuota fq = new FQuota(db);
+								final FileQuota fq = new FileQuota(db);
 					
 								if (fq.user!=null)
 									newQuotas.put(fq.user, fq);
@@ -162,7 +162,7 @@ public final class QuotaUtilities {
 	 * @param account
 	 * @return file quota
 	 */
-	public static FQuota getFileQuota(final String account){
+	public static FileQuota getFileQuota(final String account){
 		if (account==null || account.length()==0)
 			return null;
 		
@@ -197,13 +197,13 @@ public final class QuotaUtilities {
 	 * 
 	 * @return file quota for all accounts, sorted by username 
 	 */
-	public static final List<FQuota> getFileQuotas(){
+	public static final List<FileQuota> getFileQuotas(){
 		updateFileQuotasCache();
 		
 		if (fileQuotas==null)
 			return null;		
 		
-		final ArrayList<FQuota> ret = new ArrayList<FQuota>(fileQuotas.values());
+		final ArrayList<FileQuota> ret = new ArrayList<FileQuota>(fileQuotas.values());
 		
 		Collections.sort(ret);
 		
