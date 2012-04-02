@@ -55,7 +55,7 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 */
 	@Override
 	protected boolean removeEldestEntry(final java.util.Map.Entry<GUID, File> eldest) {
-		final boolean remove = !lockedLocalFiles.contains(eldest.getValue()) && (super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit));
+		final boolean remove = (!delete || !lockedLocalFiles.contains(eldest.getValue())) && (super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit));
 	
 		if (logger.isLoggable(Level.FINEST)){
 			logger.log(Level.FINEST, "Decision on ('"+eldest.getValue().getAbsolutePath()+"'): "+remove+", count: "+size()+" / "+getLimit()+", size: "+currentSize+" / "+totalSizeLimit+", locked: "+(lockedLocalFiles.contains(eldest.getValue())));
