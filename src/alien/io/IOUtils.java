@@ -134,7 +134,9 @@ public class IOUtils {
 			finally{
 				TempFileManager.release(cachedContent);
 			}
-				
+			
+			TempFileManager.putPersistent(guid, localFile);
+			
 			return localFile;
 		}
 		
