@@ -55,8 +55,12 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 */
 	@Override
 	protected boolean removeEldestEntry(final java.util.Map.Entry<GUID, File> eldest) {
-		boolean remove = !lockedLocalFiles.contains(eldest.getValue()) && (super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit));
+		final boolean remove = !lockedLocalFiles.contains(eldest.getValue()) && (super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit));
 	
+		if (logger.isLoggable(Level.FINEST)){
+			logger.log(Level.FINEST, "Decision on ('"+eldest.getValue().getAbsolutePath()+"'): "+remove+", count: "+size()+" / "+getLimit()+", size: "+currentSize+" / "+totalSizeLimit+", locked: "+(lockedLocalFiles.contains(eldest.getValue())));
+		}
+		
 		if (remove){
 			currentSize -= eldest.getKey().size;
 			
@@ -96,7 +100,7 @@ public class TempFileManager extends LRUMap<GUID, File>{
 		f = persistentInstance.get(key);
 		
 		try {
-			if (f!=null && f.exists() && f.isFile() && f.canRead() && f.length()==key.size && IOUtils.getMD5(f).equals(key.md5))
+			if (f!=null && f.exists() && f.isFile() && f.canRead() && f.length()==key.size && IOUtils.getMD5(f).equalsIgnoreCase(key.md5))
 				return f;
 		}
 		catch (IOException e) {
