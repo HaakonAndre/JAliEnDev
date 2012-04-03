@@ -335,7 +335,7 @@ public class IOUtils {
     	final LFN backupLFN = LFNUtils.getLFN(absolutePath+"~", true);
     	
     	if (backupLFN.exists && AuthorizationChecker.canWrite(backupLFN.getParentDir(), owner)){
-    		if (!backupLFN.delete())
+    		if (!backupLFN.delete(true, false))
     			return false;
     	}
     	
