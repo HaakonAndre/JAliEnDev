@@ -123,7 +123,7 @@ public class LFNUtils {
 	 */
 	public static LFN mvLFN(final AliEnPrincipal user, final LFN lfn, final String newpath) {
 		if (lfn == null || !lfn.exists) {
-			logger.log(Level.WARNING, "The file the move doesn't exist.");
+			logger.log(Level.WARNING, "The file to move doesn't exist.");
 			return null;
 		}
 		
@@ -159,7 +159,7 @@ public class LFNUtils {
 
 		logger.log(Level.FINE, "Will delete entry [" + lfn.getCanonicalName() + "]");
 
-		if (!lfn.delete())
+		if (!lfn.delete(false, false))
 			return null;
 
 		logger.log(Level.FINE, "Deleted entry [" + lfn.getCanonicalName() + "]");
