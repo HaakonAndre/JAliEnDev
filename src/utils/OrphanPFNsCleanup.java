@@ -315,9 +315,9 @@ public class OrphanPFNsCleanup {
 							//System.err.println("Successfuly deleted one file of "+Format.size(guid.size)+" from "+se.getName());
 							successOne(guid.size);
 							
-							if (guid.removePFN(se)!=null){
+							if (guid.removePFN(se, false)!=null){	// we have just physically deleted this entry, do _not_ queue this pfn again
 								if (guid.getPFNs().size()==0){
-									if (guid.delete()){
+									if (guid.delete(false)){	// already purged all entries
 										//System.err.println("  Deleted the GUID since this was the last replica");
 									}
 									else{
