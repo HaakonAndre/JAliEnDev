@@ -18,6 +18,7 @@ import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
+import alien.se.SEUtils;
 
 /**
  * @author costing
@@ -481,10 +482,11 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	
 	/**
 	 * Completely delete this GUID from the database
+	 * @param purge if <code>true</code> then the physical files are queued for deletion
 	 * 
 	 * @return <code>true</code> if the GUID was successfully removed from the database
 	 */
-	public boolean delete(){
+	public boolean delete(final boolean purge){
 		if (!exists){
 			return false;
 		}
@@ -507,6 +509,16 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			monitor.incrementCounter("GUID_db_delete");
 		}
 		
+		if (purge && (pfnCache==null || pfnCache.size()>0)){
+			final String purgeQuery = "INSERT INTO orphan_pfns (guid,se) SELECT guid,seNumber FROM G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId="+guidId+" AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';"; 
+			
+			if (db.query(purgeQuery) && logger.isLoggable(Level.FINE)){
+				final int purged = db.getUpdateCount();
+				
+				logger.log(Level.FINE, "Purged "+purged+" entries from G"+tableName+"L for "+guid);
+			}
+		}
+		
 		final String delQuery = "DELETE FROM G"+tableName+"L WHERE guidId="+guidId;
 		
 		boolean removed = db.query(delQuery);
@@ -518,6 +530,12 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		db.query("DELETE FROM G"+tableName+"L_REF WHERE guidId="+guidId);
+		
+		if (pfnCache==null || pfnCache.size()>0){
+			db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId);
+			
+			pfnCache = null;
+		}
 				
 		exists = !removed;
 		
@@ -528,9 +546,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * Remove an associated PFN. It does <b>NOT</b> check if it was the last PFN.
 	 * 
 	 * @param pfn
+	 * @param purge if <code>true</code> then physically remove this PFN from the respective storage
 	 * @return <code>true</code> if the PFN could be removed
 	 */
-	public boolean removePFN(final PFN pfn){
+	public boolean removePFN(final PFN pfn, final boolean purge){
 		final Host h = CatalogueUtils.getHost(host);
 
 		if (h==null){
@@ -563,6 +582,17 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				if (pfnCache!=null){
 					pfnCache.remove(pfn);
 				}
+				
+				if (purge && pfn.pfn.startsWith("root://")){
+					final GUID g = pfn.getGuid();
+					
+					if (g!=null && g.guid!=null){
+						final SE se = SEUtils.getSE(pfn.seNumber);
+						
+						if (se!=null && !(se.getName().equalsIgnoreCase("no_se")))
+							db.query("INSERT INTO orphan_pfns (guid,se) VALUES (string2binary('"+g.guid+"'), "+pfn.seNumber+");");
+					}
+				}
 			}
 			else
 				logger.log(Level.WARNING, "Query didn't change anything: "+q);
@@ -583,9 +613,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * Remove the associated PFN from this particular SE 
 	 * 
 	 * @param se
+	 * @param purge if <code>true</code> then physically remove this PFN from the respective storage
 	 * @return The PFN that was deleted, <code>null</code> if no change happened
 	 */
-	public String removePFN(final SE se){
+	public String removePFN(final SE se, final boolean purge){
 		if (se==null || !seStringList.contains(Integer.valueOf(se.seNumber)))
 			return null;
 		
@@ -596,7 +627,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		for (final PFN pfn: pfns){
 			if (pfn.seNumber == se.seNumber){
-				if (removePFN(pfn))
+				if (removePFN(pfn, purge))
 					return pfn.pfn;
 				
 				break;
