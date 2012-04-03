@@ -171,8 +171,12 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		
 		String sSearch = sPath;
 		
-		if (sSearch.startsWith("/"))
-			sSearch = sSearch.substring(lfn.length());
+		if (sSearch.startsWith("/")){
+			if (lfn.length() <= sSearch.length())
+				sSearch = sSearch.substring(lfn.length());
+			else
+				sSearch = "";
+		}
 		
 		if (!sPattern.startsWith("%"))
 			sSearch += "%";
