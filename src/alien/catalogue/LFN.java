@@ -605,44 +605,52 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		return db.query(q) && db.getUpdateCount()==1;		
 	}
 	
-	
 	/**
-	 * @return <code>true</code> if this LFN entry was deleted in the database
+	 * Delete this LFN in the Catalogue
+	 * @param purge physically delete the PFNs
+	 * @param recursive for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
+	 * 
+	 * @return  <code>true</code> if this LFN entry was deleted in the database 
 	 */
-	boolean destroy(){
+	public boolean delete(final boolean purge, final boolean recursive){
 		if (!exists)
-			return false;
+			throw new IllegalAccessError("You asked to delete an LFN that doesn't exist in the database");
+
+		if (isDirectory()){
+			final List<LFN> subentries = list();
+			
+			if (subentries!=null && subentries.size()>0){
+				if (!recursive)
+					return false;	// asked to delete a non-empty directory without indicating the recursive flag
+				
+				for (final LFN subentry: subentries){
+					subentry.delete(purge, recursive);
+				}
+			}
+		}
 		
 		final String q = "DELETE FROM L"+indexTableEntry.tableName+"L WHERE entryId="+entryId ;
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
+		boolean ok = false;
+		
 		if (db.query(q)){
 			exists = false;
 			entryId = 0;
-			return true;
+			ok = true;
 		}
 		
-		return false;
+		if (ok && purge && guid!=null){
+			final GUID g = GUIDUtils.getGUID(guid);
+			
+			if (g!=null){
+				g.delete(true);
+			}
+		}
 		
+		return ok;
 	}
-	
-	
-	/**
-	 * Delete this LFN in the Catalogue
-	 * 
-	 * @return  <code>true</code> if this LFN entry was deleted in the database 
-	 */
-	public boolean delete(){
-		if (!exists)
-			throw new IllegalAccessError("You asked to delete an LFN that doesn't exist in the database");
-
-		return destroy();
-		
-	}
-	
-	
-	
 	
 	/**
 	 * Change the ownership of this LFN.
