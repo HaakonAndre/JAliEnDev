@@ -169,7 +169,7 @@ public final class MonitorFactory {
 		}
 
 		try {
-			if (getConfigBoolean(component, "monLMSensors", true))
+			if (getConfigBoolean(component, "monLMSensors", false))
 				systemMonitor.addModule(new monLMSensors());
 		}
 		catch (Exception e) {
