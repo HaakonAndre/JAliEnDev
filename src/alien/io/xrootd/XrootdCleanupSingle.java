@@ -175,8 +175,6 @@ public class XrootdCleanupSingle {
 	private static final Pattern UUID_PATTERN = Pattern.compile(".*([0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}).*");
 	
 	private boolean removeFile(final XrootdFile file){
-		System.err.println("WOULD RM "+file);
-		
 		final Matcher m = UUID_PATTERN.matcher(file.getName());
 
 		final UUID uuid;
@@ -185,6 +183,8 @@ public class XrootdCleanupSingle {
 			uuid = UUID.fromString(m.group(1));
 		else
 			return false;
+
+		System.err.println("RM "+uuid+" FROM "+se.seName);
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 		
