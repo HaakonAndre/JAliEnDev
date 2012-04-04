@@ -510,12 +510,21 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		if (purge && (pfnCache==null || pfnCache.size()>0)){
-			final String purgeQuery = "INSERT INTO orphan_pfns (guid,se) SELECT guid,seNumber FROM G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId="+guidId+" AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';"; 
+			final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (guid,se) SELECT guid,seNumber FROM G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId="+guidId+" AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';"; 
 			
-			if (db.query(purgeQuery) && logger.isLoggable(Level.FINE)){
+			if (db.query(purgeQuery)){
 				final int purged = db.getUpdateCount();
 				
-				logger.log(Level.FINE, "Purged "+purged+" entries from G"+tableName+"L for "+guid);
+				if (monitor!=null){
+					monitor.incrementCounter("GUID_purged_pfns", purged);
+				}
+				
+				if (logger.isLoggable(Level.FINE)){
+					logger.log(Level.FINE, "Purged "+purged+" entries from G"+tableName+"L for "+guid);
+				}
+			}
+			else{
+				System.err.println("Failed: "+purgeQuery);
 			}
 		}
 		
