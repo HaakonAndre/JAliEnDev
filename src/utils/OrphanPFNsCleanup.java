@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -106,7 +107,7 @@ public class OrphanPFNsCleanup {
 	}
 	
 	private static final class SEThread extends Thread {
-		private final int seNumber;
+		final int seNumber;
 		
 		public SEThread(final int seNumber) {
 			this.seNumber = seNumber;
@@ -114,6 +115,8 @@ public class OrphanPFNsCleanup {
 		
 		@Override
 		public void run() {
+			setName("SEThread ("+seNumber+")");
+			
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 			
 			ThreadPoolExecutor executor = EXECUTORS.get(Integer.valueOf(seNumber));
@@ -147,7 +150,15 @@ public class OrphanPFNsCleanup {
 				
 				if (executor==null){
 					// lazy init of the thread pool
-					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(8);
+					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10, new ThreadFactory(){
+						@Override
+						public Thread newThread(Runnable r) {
+							final Thread t = new Thread(r);
+							t.setName("Cleanup of "+seNumber);
+							
+							return t;
+						}
+					});
 					
 					executor.setKeepAliveTime(1, TimeUnit.MINUTES);	// 1 minute activity timeout
 					
