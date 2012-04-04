@@ -1,0 +1,213 @@
+package alien.io.xrootd;
+
+import java.io.IOException;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import lazyj.Format;
+
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.PFN;
+import alien.se.SE;
+import alien.se.SEUtils;
+
+/**
+ * Single threaded listing of Xrootd server content and injecting in the deletion queue the files that should not be there
+ * 
+ * @author costing
+ *
+ */
+public class XrootdCleanupSingle {
+	/**
+	 * Storage element we are working on
+	 */
+	final SE se;
+	
+	private final String server;
+
+	private final AtomicLong sizeRemoved = new AtomicLong();
+	private final AtomicLong sizeKept = new AtomicLong();
+	private final AtomicLong sizeFailed = new AtomicLong();
+	private final AtomicLong filesRemoved = new AtomicLong();
+	private final AtomicLong filesKept = new AtomicLong();
+	private final AtomicLong filesFailed = new AtomicLong();
+	private final AtomicLong dirsSeen = new AtomicLong();
+	
+	/**
+	 * How many items are currently in progress
+	 */
+	final AtomicInteger inProgress = new AtomicInteger(0);
+	
+	/**
+	 * how many files were processed so far
+	 */
+	final AtomicInteger processed = new AtomicInteger(0);
+	
+	/**
+	 * Check all GUID files in this storage by listing recursively its contents.
+	 * 
+	 * @param sSE
+	 */
+	public XrootdCleanupSingle(final String sSE){
+		se = SEUtils.getSE(sSE);
+		
+		if (se==null){
+			server = null;
+			
+			System.err.println("No such SE "+sSE);
+			
+			return;
+		}		
+		
+		String sBase = se.seioDaemons;
+		
+		if (sBase.startsWith("root://"))
+			sBase = sBase.substring(7);
+		
+		server = sBase;
+	}
+
+	/**
+	 * @param path
+	 */
+	void storageCleanup(final String path){
+		System.err.println("storageCleanup: "+path);
+		
+		dirsSeen.incrementAndGet();
+		
+		try{
+			final boolean setSE = se.getName().toLowerCase().contains("dcache");  
+			
+			final XrootdListing listing = new XrootdListing(server, path, setSE ? se : null) ;
+						
+			for (final XrootdFile file: listing.getFiles()){
+				fileCheck(file);
+			}
+			
+			for (final XrootdFile dir: listing.getDirs()){
+				if (dir.path.matches("^/\\d{2}(/\\d{5})?$")){
+					storageCleanup(dir.path);
+				}
+			}
+		}
+		catch (IOException ioe){
+			System.err.println(ioe.getMessage());
+			ioe.printStackTrace();
+		}
+	}
+	
+	private void fileCheck(final XrootdFile file) {
+		try{
+			if (System.currentTimeMillis() - file.date.getTime() < 1000*60*60*24){
+				// ignore very recent files
+				return;
+			}
+			
+			final UUID uuid;
+			
+			try{
+				uuid = UUID.fromString(file.getName());
+			}
+			catch (Exception e){
+				// not an alien file name, ignore
+				return;
+			}
+			
+			final GUID guid = GUIDUtils.getGUID(uuid);
+			
+			boolean remove = false;
+			
+			if (guid==null){
+				remove = true;
+			}
+			else{
+				final Set<PFN> pfns = guid.getPFNs();
+				
+				if (pfns==null || pfns.size()==0)
+					remove = true;
+				else{
+					boolean found = false;
+					
+					for (final PFN pfn: pfns){
+						if (pfn.seNumber == se.seNumber){
+							found = true;
+							break;
+						}
+					}
+					
+					remove = !found;
+				}
+			}
+			
+			if (remove){
+				if (removeFile(file)){
+					sizeRemoved.addAndGet(file.size);
+					filesRemoved.incrementAndGet();
+				}
+				else{
+					sizeFailed.addAndGet(file.size);
+					filesFailed.incrementAndGet();
+				}
+			}
+			else{
+				sizeKept.addAndGet(file.size);
+				filesKept.incrementAndGet();
+			}
+		}
+		catch (Exception e){
+			System.err.println(e.getMessage());
+			e.printStackTrace();
+		}
+		
+		processed.incrementAndGet();
+	}
+	
+	private static boolean removeFile(final XrootdFile file){
+		System.err.println("WOULD RM "+file);
+		
+		return true;
+	}
+	
+	@Override
+	public String toString() {
+		return "Removed "+filesRemoved+" files ("+Format.size(sizeRemoved.longValue())+"), "+
+			"failed to remove "+filesFailed+" ("+Format.size(sizeFailed.longValue())+"), "+
+			"kept "+filesKept+" ("+Format.size(sizeKept.longValue())+"), "+
+			dirsSeen+" directories";
+	}
+	
+	/**
+	 * @param args the only argument taken by this class is the name of the storage to be cleaned
+	 * @throws IOException 
+	 */
+	public static void main(String[] args) throws IOException {
+		final OptionParser parser = new OptionParser();
+		
+		parser.accepts("?", "Print this help");
+		
+		final OptionSet options = parser.parse(args);
+		
+		if (options.nonOptionArguments().size()==0 || options.has("?")){
+			parser.printHelpOn(System.out);
+			return;
+		}
+			
+		final long lStart = System.currentTimeMillis();
+		
+		for (final String se: options.nonOptionArguments()){
+			new Thread(){
+				@Override
+				public void run() {
+					final XrootdCleanupSingle cleanup = new XrootdCleanupSingle(se);
+					cleanup.storageCleanup("/");
+					System.err.println(cleanup+", took "+Format.toInterval(System.currentTimeMillis() - lStart));					
+				}
+			}.start();
+		}
+	}
+}
