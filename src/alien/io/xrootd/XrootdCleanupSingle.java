@@ -5,14 +5,18 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import lazyj.DBFunctions;
 import lazyj.Format;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
 
@@ -167,8 +171,24 @@ public class XrootdCleanupSingle {
 		processed.incrementAndGet();
 	}
 	
-	private static boolean removeFile(final XrootdFile file){
+	// B6B6EF58-4000-11E0-9CE5-001F29EB8B98
+	private static final Pattern UUID_PATTERN = Pattern.compile(".*([0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}).*");
+	
+	private boolean removeFile(final XrootdFile file){
 		System.err.println("WOULD RM "+file);
+		
+		final Matcher m = UUID_PATTERN.matcher(file.getName());
+
+		final UUID uuid;
+
+		if (m.matches())
+			uuid = UUID.fromString(m.group(1));
+		else
+			return false;
+		
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		
+		db.query("INSERT IGNORE INTO orphan_pfns (guid,se) VALUES (string2binary('"+uuid+"'), "+se.seNumber+");");
 		
 		return true;
 	}
