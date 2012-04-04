@@ -149,6 +149,17 @@ public class Monitor implements Runnable {
 	 * @return the new absolute value of the counter
 	 */
 	public long incrementCounter(final String counterKey) {
+		return incrementCounter(counterKey, 1);
+	}
+	
+	/**
+	 * Increment an access counter
+	 * 
+	 * @param counterKey
+	 * @param count 
+	 * @return the new absolute value of the counter
+	 */
+	public long incrementCounter(final String counterKey, final long count) {
 		final MonitoringObject mo = monitoringObjects.get(counterKey);
 
 		final Counter c;
@@ -165,7 +176,7 @@ public class Monitor implements Runnable {
 		else
 			return -1;
 		
-		return c.increment();
+		return c.increment(count);
 	}
 	
 	/**

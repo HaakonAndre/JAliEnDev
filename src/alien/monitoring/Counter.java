@@ -25,11 +25,12 @@ public final class Counter implements MonitoringObject {
 
 	/**
 	 * Increment the counter
+	 * @param incrementCount 
 	 * 
 	 * @return the incremented value
 	 */
-	public long increment() {
-		long value = counter.incrementAndGet();
+	public long increment(final long incrementCount) {
+		long value = counter.addAndGet(incrementCount);
 
 		if (value == Long.MAX_VALUE) {
 			// reset counters when overflowing
