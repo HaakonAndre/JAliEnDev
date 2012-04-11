@@ -25,6 +25,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
+import alien.io.protocols.TempFileManager;
 import alien.se.SE;
 
 /**
@@ -395,6 +396,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (!isSilent())
 				out.printOutln("File successfully uploaded.");
 
+			TempFileManager.putPersistent(guid, sourceFile);
+			
 			return true;
 		}
 		else if ((envelopes.size() + registerPFNs.size()) > 0) {
