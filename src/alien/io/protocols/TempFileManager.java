@@ -5,6 +5,7 @@ package alien.io.protocols;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -45,7 +46,7 @@ public class TempFileManager extends LRUMap<GUID, File>{
 		this.delete = delete;
 	}
 
-	private static final TempFileManager tempInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 50), ConfigUtils.getConfig().getl("alien.io.protocols.TempFileManager.temp.size", 10*1024*1024*1024), true);
+	private static final TempFileManager tempInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 50), ConfigUtils.getConfig().getl("alien.io.protocols.TempFileManager.temp.size", 10*1024*1024*1024L), true);
 	private static final TempFileManager persistentInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.persistent.entries", 100), 0, false);
 	
 	private static List<File> lockedLocalFiles = new LinkedList<File>();
@@ -55,17 +56,24 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 */
 	@Override
 	protected boolean removeEldestEntry(final java.util.Map.Entry<GUID, File> eldest) {
-		final boolean remove = (!delete || !lockedLocalFiles.contains(eldest.getValue())) && (super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit));
+		final boolean wasLocked = isLocked(eldest.getValue());
+		
+		final boolean remove = !eldest.getValue().exists() || (!wasLocked && (super.removeEldestEntry(eldest) || (totalSizeLimit>0 && currentSize > totalSizeLimit)));
 	
 		if (logger.isLoggable(Level.FINEST)){
-			logger.log(Level.FINEST, "Decision on ('"+eldest.getValue().getAbsolutePath()+"'): "+remove+", count: "+size()+" / "+getLimit()+", size: "+currentSize+" / "+totalSizeLimit+", locked: "+(lockedLocalFiles.contains(eldest.getValue())));
+			logger.log(Level.FINEST, "Decision on ('"+eldest.getValue().getAbsolutePath()+"'): "+remove+", count: "+size()+" / "+getLimit()+", size: "+currentSize+" / "+totalSizeLimit+", locked: "+wasLocked);
 		}
 		
 		if (remove){
 			currentSize -= eldest.getKey().size;
 			
-			if (delete && !eldest.getValue().delete())
-				logger.log(Level.WARNING, "Could not delete temporary file "+eldest.getValue());
+			if (delete){
+				if (!eldest.getValue().delete()){
+					logger.log(Level.WARNING, "Could not delete temporary file "+eldest.getValue());
+				}
+					
+				release(eldest.getValue());
+			}
 		}
 		
 		return remove;
@@ -89,7 +97,11 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 * @return the cached file
 	 */
 	public static File getAny(final GUID key){
-		File f = tempInstance.get(key);
+		File f;
+		
+		synchronized (tempInstance){
+			f = tempInstance.get(key);
+		}
 		
 		if (f!=null && f.exists() && f.isFile() && f.canRead()){
 			lock(f);
@@ -97,7 +109,9 @@ public class TempFileManager extends LRUMap<GUID, File>{
 			return f;
 		}
 		
-		f = persistentInstance.get(key);
+		synchronized (persistentInstance) {
+			f = persistentInstance.get(key);
+		}
 		
 		try {
 			if (f!=null && f.exists() && f.isFile() && f.canRead() && f.length()==key.size && IOUtils.getMD5(f).equalsIgnoreCase(key.md5))
@@ -115,7 +129,9 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 * @param localFile
 	 */
 	public static void putTemp(final GUID key, final File localFile){
-		tempInstance.put(key, localFile);
+		synchronized (tempInstance){
+			tempInstance.put(key, localFile);
+		}
 		
 		lock(localFile);
 	}
@@ -127,7 +143,9 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 * @see #release(File)
 	 */
 	private static void lock(final File f){
-		lockedLocalFiles.add(f);
+		synchronized (lockedLocalFiles){			
+			lockedLocalFiles.add(f);
+		}
 	}
 	
 	/**
@@ -136,7 +154,28 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 * @param f
 	 */
 	public static void release(final File f){
-		lockedLocalFiles.remove(f);
+		synchronized (lockedLocalFiles){
+			lockedLocalFiles.remove(f);
+		}
+	}
+	
+	/**
+	 * @param f
+	 * @return <code>true</code> if the file is locked
+	 */
+	public static boolean isLocked(final File f){
+		synchronized (lockedLocalFiles) {
+			return lockedLocalFiles.contains(f);
+		}
+	}
+	
+	/**
+	 * @return currently locked files, for debugging purposes
+	 */
+	public static List<File> getLockedFiles(){
+		synchronized (lockedLocalFiles){
+			return new ArrayList<File>(lockedLocalFiles);
+		}
 	}
 	
 	/**
@@ -144,6 +183,8 @@ public class TempFileManager extends LRUMap<GUID, File>{
 	 * @param localFile
 	 */
 	public static void putPersistent(final GUID key, final File localFile){
-		persistentInstance.put(key, localFile);
+		synchronized (persistentInstance){
+			persistentInstance.put(key, localFile);
+		}
 	}
 }
