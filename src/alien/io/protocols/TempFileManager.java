@@ -146,6 +146,15 @@ public class TempFileManager extends LRUMap<GUID, File>{
 		synchronized (lockedLocalFiles){			
 			lockedLocalFiles.add(f);
 		}
+		
+		if (logger.isLoggable(Level.FINEST)){
+			try{
+				throw new IOException();
+			}
+			catch (IOException ioe){
+				logger.log(Level.FINEST, "File locked by ", ioe);
+			}
+		}
 	}
 	
 	/**
