@@ -181,13 +181,15 @@ public class IOUtils {
 			
 			for (final Protocol protocol: protocols){
 				try{
+					System.err.println("Trying protocol "+protocol+" for getting "+realPfn+" to "+(zipArchive ? null : localFile));
+					
 					f = protocol.get(realPfn, zipArchive ? null : localFile);
 				
 					if (f!=null)
 						break;
 				}
 				catch (IOException e){
-					// ignore
+					System.err.println(e.getMessage());
 				}
 			}
 		}
