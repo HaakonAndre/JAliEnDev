@@ -152,7 +152,7 @@ public class TempFileManager extends LRUMap<GUID, File>{
 				throw new IOException();
 			}
 			catch (IOException ioe){
-				logger.log(Level.FINEST, "File locked by ", ioe);
+				logger.log(Level.FINEST, f.getAbsolutePath()+" locked by", ioe);
 			}
 		}
 	}
