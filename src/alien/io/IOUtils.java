@@ -185,6 +185,8 @@ public class IOUtils {
 					
 					f = protocol.get(realPfn, zipArchive ? null : localFile);
 				
+					System.err.println("Got back : "+f);
+					
 					if (f!=null)
 						break;
 				}
