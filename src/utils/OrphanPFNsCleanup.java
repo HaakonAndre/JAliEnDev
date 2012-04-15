@@ -12,6 +12,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -36,7 +38,11 @@ import alien.se.SEUtils;
  *
  */
 public class OrphanPFNsCleanup {
-
+	/**
+	 * logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(OrphanPFNsCleanup.class.getCanonicalName());
+	
 	/**
 	 * Thread pool per SE
 	 */
@@ -361,7 +367,10 @@ public class OrphanPFNsCleanup {
 				
 				failOne();
 				
-				System.err.println("Exception deleting from "+se.getName());
+				System.err.println("Exception deleting from "+se.getName()+" : "+e.getMessage());
+				
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Exception deleting from "+se.getName(), e);
 				
 				concurrentQueryies.acquireUninterruptibly();
 				
