@@ -868,6 +868,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @return <code>true</code> if a replica should exist on this SE
 	 */
 	public boolean hasReplica(final int seNumber){
+		if (!exists())
+			return false;
+		
 		final Set<PFN> pfns = getPFNs();
 		
 		if (pfns==null || pfns.size()==0)
