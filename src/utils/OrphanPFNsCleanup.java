@@ -108,7 +108,7 @@ public class OrphanPFNsCleanup {
 			if (size>0)
 				db.query("UPDATE orphan_pfns_status SET status_value=status_value+"+size+" WHERE status_key='reclaimedb';");
 			
-			System.err.println("Removed: "+removed+" ("+Format.size(reclaimedSpace.longValue())+"), failed to remove: "+failed+" (delta: "+count+" files, "+Format.size(size)+")");
+			System.err.println("Removed: "+removed+" ("+Format.size(reclaimedSpace.longValue())+"), failed to remove: "+failed+" (delta: "+count+" files, "+Format.size(size)+"), sem. status: "+concurrentQueryies.availablePermits());
 		}
 	}
 	
