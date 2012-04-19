@@ -67,7 +67,7 @@ public class OrphanPFNsCleanup {
 		long lastCheck = 0;
 		
 		while (true){
-			if (System.currentTimeMillis() - lastCheck > 1000*60*60*6){
+			if (System.currentTimeMillis() - lastCheck > 1000*60*30){
 				db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
 		
 				while (db.moveNext()){
@@ -156,9 +156,9 @@ public class OrphanPFNsCleanup {
 				
 				if (executor==null){
 					// lazy init of the thread pool
-					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(10, new ThreadFactory(){
+					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(16, new ThreadFactory(){
 						@Override
-						public Thread newThread(Runnable r) {
+						public Thread newThread(final Runnable r) {
 							final Thread t = new Thread(r);
 							t.setName("Cleanup of "+seNumber);
 							
@@ -180,7 +180,7 @@ public class OrphanPFNsCleanup {
 				
 				while (executor.getQueue().size()>0 || executor.getActiveCount()>0){
 					try{
-						Thread.sleep(1000);
+						Thread.sleep(5000);
 					}
 					catch (InterruptedException ie){
 						// ignore
@@ -238,7 +238,7 @@ public class OrphanPFNsCleanup {
 	/**
 	 * Lock for a fixed number of DB queries in parallel 
 	 */
-	static final Semaphore concurrentQueryies = new Semaphore(16);
+	static final Semaphore concurrentQueryies = new Semaphore(32);
 	
 	private static class CleanupTask implements Runnable{
 		final String sGUID;
