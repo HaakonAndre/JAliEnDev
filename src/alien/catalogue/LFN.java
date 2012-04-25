@@ -3,6 +3,7 @@ package alien.catalogue;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -736,5 +737,23 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		}
 		
 		return ret;
-	}	
+	}
+	
+	/**
+	 * Sort by file size (asc) then by file name (asc)
+	 */
+	public static final Comparator<LFN> SIZE_COMPARATOR = new Comparator<LFN>(){
+		@Override
+		public int compare(final LFN o1, final LFN o2) {
+			final long diff = o1.size - o2.size;
+			
+			if (diff<0)
+				return -1;
+			if (diff>0)
+				return 1;
+			
+			return o1.compareTo(o2);
+		}
+		
+	};
 }
