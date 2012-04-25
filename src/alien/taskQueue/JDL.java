@@ -1072,7 +1072,7 @@ public class JDL implements Serializable {
 				
 				String text = o2.toString();
 				
-				if (key.toLowerCase().startsWith("output") && key.toLowerCase().equals("outputdir")){
+				if (key.toLowerCase().startsWith("output") && !key.toLowerCase().equals("outputdir")){
 					text = formatOutput(text);
 				}
 				else
