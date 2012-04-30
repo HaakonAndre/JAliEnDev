@@ -198,7 +198,7 @@ public class XrootdCleanupSingle {
 		return "Removed "+filesRemoved+" files ("+Format.size(sizeRemoved.longValue())+"), "+
 			"failed to remove "+filesFailed+" ("+Format.size(sizeFailed.longValue())+"), "+
 			"kept "+filesKept+" ("+Format.size(sizeKept.longValue())+"), "+
-			dirsSeen+" directories";
+			dirsSeen+" directories from "+se.seName;
 	}
 	
 	/**
