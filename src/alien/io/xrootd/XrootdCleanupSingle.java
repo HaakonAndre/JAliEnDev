@@ -223,6 +223,8 @@ public class XrootdCleanupSingle {
 			new Thread(){
 				@Override
 				public void run() {
+					setName(se);
+					
 					final XrootdCleanupSingle cleanup = new XrootdCleanupSingle(se);
 					cleanup.storageCleanup("/");
 					System.err.println(cleanup+", took "+Format.toInterval(System.currentTimeMillis() - lStart));					
