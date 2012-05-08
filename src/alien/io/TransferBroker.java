@@ -32,7 +32,6 @@ import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
-import alien.user.UserFactory;
 import apmon.ApMon;
 
 /**
@@ -461,9 +460,9 @@ public class TransferBroker {
 
 		if (t.getExitCode() == Transfer.OK) {
 			// Update the file catalog with the new replica
-			final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
+			final AliEnPrincipal owner = AuthorizationFactory.getDefaultUser();
 
-			if (!BookingTable.commit(admin, t.target)){
+			if (!BookingTable.commit(owner, t.target)){
 				logger.log(Level.WARNING, "Could not commit booked transfer: "+t.target);
 				
 				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: "+t.target);
