@@ -864,6 +864,14 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 	
 	/**
+	 * @param se
+	 * @return <code>true</code> if a replica should exist on this SE
+	 */
+	public boolean hasReplica(final SE se){
+		return hasReplica(se.seNumber);
+	}
+	
+	/**
 	 * @param seNumber
 	 * @return <code>true</code> if a replica should exist on this SE
 	 */

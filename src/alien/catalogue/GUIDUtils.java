@@ -119,6 +119,16 @@ public final class GUIDUtils {
 		
 		return g;
 	}
+	
+	/**
+	 * Get the GUID catalogue entry when the uuid is known
+	 * 
+	 * @param uuid
+	 * @return the GUID, or <code>null</code> if it cannot be located
+	 */
+	public static GUID getGUID(final String uuid){
+		return getGUID(UUID.fromString(uuid));
+	}
 
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
