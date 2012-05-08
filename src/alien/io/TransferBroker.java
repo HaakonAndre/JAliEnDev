@@ -463,7 +463,11 @@ public class TransferBroker {
 			// Update the file catalog with the new replica
 			final AliEnPrincipal admin = UserFactory.getByUsername("monalisa");
 
-			BookingTable.commit(admin, t.target);
+			if (!BookingTable.commit(admin, t.target)){
+				logger.log(Level.WARNING, "Could not commit booked transfer: "+t.target);
+				
+				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: "+t.target);
+			}
 		}
 	}
 }
