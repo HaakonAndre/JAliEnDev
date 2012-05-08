@@ -55,7 +55,7 @@ public class Xrd3cp extends Xrootd {
 			final List<String> command = new LinkedList<String>();
 			command.add("xrd3cp");
 			command.add("-m");
-			command.add("-O");
+			//command.add("-O");
 			command.add("-S");
 			
 			final boolean sourceEnvelope = source.ticket!=null && source.ticket.envelope!=null;
