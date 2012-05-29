@@ -1,6 +1,6 @@
 package alien.catalogue;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,11 +72,11 @@ public class PackageUtils {
 	/**
 	 * @return list of defined packages
 	 */
-	public static Collection<Package> getPackages(){
+	public static List<Package> getPackages(){
 		cacheCheck();
 		
 		if (packages!=null)
-			return packages.values();
+			return new ArrayList<Package>(packages.values());
 		
 		return null;
 	}

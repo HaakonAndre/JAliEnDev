@@ -39,7 +39,7 @@ public class PackagesfromString extends Request {
 	
 	@Override
 	public void run() {
-		this.packages = PackageUtils.getPackagesForPlatform(platform);
+		this.packages = PackageUtils.getPackages();
 	}
 	
 	/**
