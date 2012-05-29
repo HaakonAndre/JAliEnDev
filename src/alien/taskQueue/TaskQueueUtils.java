@@ -28,6 +28,7 @@ import alien.api.ServerException;
 import alien.api.catalogue.LFNfromString;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.catalogue.PackageUtils;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.monitoring.Monitor;
@@ -1124,6 +1125,12 @@ public class TaskQueueUtils {
 	 */
 	public static int submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException{
 		// TODO : check this account's quota before submitting
+		
+		final String packageMessage = PackageUtils.checkPackageRequirements(j);
+		
+		if (packageMessage!=null){
+			throw new IOException(packageMessage);
+		}
 		
 		final DBFunctions db = getQueueDB();
 		

@@ -1,6 +1,9 @@
 package alien.catalogue;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -13,7 +16,6 @@ import alien.config.ConfigUtils;
  * @since Nov 23, 2011
  */
 public class Package implements Comparable<Package>, Serializable {
-
 	/**
 	 * 
 	 */
@@ -24,18 +26,11 @@ public class Package implements Comparable<Package>, Serializable {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Package.class.getCanonicalName());
 	
-
-	
 	/**
 	 * Whether or not this entry really exists in the catalogue
 	 */
 	public boolean exists = false;
-	
-	/**
-	 * fullPackageName
-	 */
-	public String fullPackageName;
-	
+		
 	/**
 	 * packageVersion
 	 */
@@ -52,65 +47,39 @@ public class Package implements Comparable<Package>, Serializable {
 	public String user;	
 	
 	/**
-	 * platform
+	 * Platform - to - LFN mapping
 	 */
-	public String platform;
-	
-	/**
-	 * lfn
-	 */
-	public String lfn;
-	
-	/**
-	 * size
-	 */
-	public long size;
-	
-	
+	private final Map<String, String> platforms = new HashMap<String, String>();
+		
 	/**
 	 * @param db
 	 */
 	public Package(final DBFunctions db){
 		init(db);
 		
+		hashCodeValue = getFullName().hashCode();
 	}
+	
+	private final int hashCodeValue;
 	
 	@Override
 	public int hashCode() {
-		// TODO
-		return 0;
+		return hashCodeValue;
 	}
 	
 	private void init(final DBFunctions db){
-		
 		exists = true;
 		
-		fullPackageName = StringFactory.get(db.gets("fullPackageName"));
-
 		packageVersion = StringFactory.get(db.gets("packageVersion"));
 
 		packageName = StringFactory.get(db.gets("packageName"));
 
 		user = StringFactory.get(db.gets("username"));
-
-		platform = StringFactory.get(db.gets("platform"));
-		
-		lfn = StringFactory.get(db.gets("lfn"));
-		
-		size = db.getl("size");
-		
 	}
 	
 	@Override
 	public String toString() {
-		return "Package fullPackageName\t: "+fullPackageName+"\n"+
-				"Package packageVersion\t: "+packageVersion+"\n"+
-				"Package packageName\t: "+packageName+"\n"+
-				"Package username\t: "+user+"\n"+
-				"Package platform\t: "+platform+"\n"+
-				"Package lfn\t: "+lfn+"\n"+
-				"Package size\t: "+size+"\n"
-		       ;
+		return getFullName()+": "+platforms; 
 	}
 	
 	
@@ -118,7 +87,7 @@ public class Package implements Comparable<Package>, Serializable {
 	 * @return the full package name
 	 */
 	public String getFullName(){
-		return fullPackageName;
+		return user+"@"+packageName+"::"+packageVersion;
 	}
 
 	/**
@@ -143,24 +112,28 @@ public class Package implements Comparable<Package>, Serializable {
 	}
 
 	/**
-	 * @return the platform of the package
+	 * @param platform 
+	 * @return the LFN name of the package for the given platform
 	 */
-	public String getPlatform(){
-		return platform;
+	public String getLFN(final String platform){
+		return platforms.get(platform);
 	}
 
 	/**
-	 * @return the LFN name of the package
+	 * @return the available platforms
 	 */
-	public String getLFNName(){
-		return lfn;
+	public Set<String> getPlatforms(){
+		return platforms.keySet();
 	}
-
+	
 	/**
-	 * @return the size of the package
+	 * Set the known package locations
+	 * 
+	 * @param platform
+	 * @param lfn
 	 */
-	public long getSize(){
-		return size;
+	void setLFN(final String platform, final String lfn){
+		platforms.put(platform, lfn);
 	}
 	
 	@Override
@@ -177,11 +150,7 @@ public class Package implements Comparable<Package>, Serializable {
 	}
 	
 	@Override
-	public int compareTo(Package arg0) {
-		// TODO Auto-generated method stub
-		return 0;
+	public int compareTo(final Package arg0) {
+		return getFullName().compareTo(arg0.getFullName());
 	}
-	
-	
-	
 }

@@ -1,15 +1,17 @@
 package alien.catalogue;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.logging.Level;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
-import lazyj.Format;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.taskQueue.JDL;
 
 
 /**
@@ -17,8 +19,6 @@ import alien.monitoring.MonitorFactory;
  * @since Nov 23, 2011
  */
 public class PackageUtils {
-	
-
 	/**
 	 * Logger
 	 */
@@ -29,35 +29,93 @@ public class PackageUtils {
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(IndexTableEntry.class.getCanonicalName());
 	
+	private static long lastCacheCheck = 0;
+	
+	private static Map<String, Package> packages = null;
+	
+	private static synchronized void cacheCheck(){
+		if ((System.currentTimeMillis() - lastCacheCheck) > 1000*60){
+			final Map<String, Package> newPackages = new LinkedHashMap<String, Package>();
+			
+			final DBFunctions db = ConfigUtils.getDB("alice_users");
+
+			if (monitor!=null){
+				monitor.incrementCounter("Package_db_lookup");
+			}
+			
+			final String q = "SELECT DISTINCT packageVersion, packageName, username, platform, lfn FROM PACKAGES ORDER BY 3,2,1,4,5;";
+			
+			if (!db.query(q))
+				return;
+			
+			Package prev = null;
+			
+			while (db.moveNext()){
+				final Package next = new Package(db);
+				
+				if (prev!=null && next.equals(prev)){
+					prev.setLFN(db.gets("platform"), db.gets("lfn"));
+				}
+				else{
+					next.setLFN(db.gets("platform"), db.gets("lfn"));
+					prev = next;
+					
+					newPackages.put(next.getFullName(), next);
+				}
+			}
+			
+			lastCacheCheck = System.currentTimeMillis();
+			packages = newPackages;
+		}
+	}
 	
 	/**
-	 * @param platform
-	 * @return list of packages for platform
+	 * @return list of defined packages
 	 */
-	public static List<Package> getPackagesForPlatform(final String platform){
-
+	public static Collection<Package> getPackages(){
+		cacheCheck();
 		
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		if (packages!=null)
+			return packages.values();
 		
-
-		final List<Package> ret = new ArrayList<Package>();
+		return null;
+	}
+	
+	/**
+	 * @return the set of known package names
+	 */
+	public static Set<String> getPackageNames(){
+		cacheCheck();
 		
-		if (monitor!=null){
-			monitor.incrementCounter("Package_db_lookup");
-		}
+		if (packages!=null)
+			return packages.keySet();
 		
-		String q = "SELECT DISTINCT * FROM PACKAGES WHERE platform='"+Format.escSQL(platform)+"'";
+		return null;
+	}
+	
+	/**
+	 * @param j JDL to check
+	 * @return <code>null</code> if the requirements are met and the JDL can be submitted, or a String object with the message detailing what condition was not met.
+	 */
+	public static String checkPackageRequirements(final JDL j){
+		if (j==null)
+			return "JDL is null";
 		
-		if (!db.query(q))
+		cacheCheck();
+		
+		if (packages==null)
+			return "Package list could not be fetched from the database";
+		
+		final List<String> packageVersions = j.getList("Packages");
+		
+		if (packageVersions==null || packageVersions.size()==0)
 			return null;
 		
-		while (db.moveNext()){
-			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Empty result set for "+q);
-			
-			ret.add(new Package(db));
+		for (final String requiredPackage: packageVersions){
+			if (!packages.containsKey(requiredPackage))
+				return "Package not defined: "+requiredPackage;
 		}
-			
-		return ret;
+		
+		return null;
 	}
 }
