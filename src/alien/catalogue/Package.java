@@ -127,6 +127,14 @@ public class Package implements Comparable<Package>, Serializable {
 	}
 	
 	/**
+	 * @param platform
+	 * @return <code>true</code> if this package is available for the given platform
+	 */
+	public boolean isAvailable(final String platform){
+		return platforms.containsKey(platform);
+	}
+	
+	/**
 	 * Set the known package locations
 	 * 
 	 * @param platform

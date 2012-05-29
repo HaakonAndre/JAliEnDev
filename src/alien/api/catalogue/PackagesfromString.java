@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import alien.api.Request;
@@ -39,7 +40,17 @@ public class PackagesfromString extends Request {
 	
 	@Override
 	public void run() {
-		this.packages = PackageUtils.getPackages();
+		final List<Package> all = PackageUtils.getPackages();
+		
+		if (platform==null || platform.equals("all"))
+			this.packages = all;
+		
+		this.packages = new ArrayList<Package>(all.size());
+		
+		for (final Package p: all){
+			if (p.isAvailable(platform))
+				this.packages.add(p);
+		}
 	}
 	
 	/**
