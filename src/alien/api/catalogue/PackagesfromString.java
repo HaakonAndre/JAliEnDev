@@ -48,7 +48,7 @@ public class PackagesfromString extends Request {
 		this.packages = new ArrayList<Package>(all.size());
 		
 		for (final Package p: all){
-			if (p.isAvailable(platform))
+			if (p.isAvailable(platform) || p.isAvailable("source"))
 				this.packages.add(p);
 		}
 	}
