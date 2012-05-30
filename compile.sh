@@ -2,6 +2,8 @@
 
 cd `dirname $0`
 
+mkdir build_eclipse &>/dev/null
+
 CLASSPATH=.:../
 
 for jar in `pwd`/lib/*.jar; do
