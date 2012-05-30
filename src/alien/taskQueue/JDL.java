@@ -1080,6 +1080,10 @@ public class JDL implements Serializable {
 					text = formatPackages(text);
 				}
 				else
+				if (key.equalsIgnoreCase("jobtag")){
+					text = formatJobTag(text);
+				}
+				else
 					text = "<font color=navy>"+Format.escHtml(text)+"</font>";
 				
 				sb.append('"').append(text).append('"');
@@ -1090,6 +1094,15 @@ public class JDL implements Serializable {
 		else{
 			sb.append("\"<font color=navy>").append(o.toString()).append("</font>\"");
 		}
+	}
+	
+	private static final String formatJobTag(final String text){
+		final int idx = text.indexOf("comment:");
+		
+		if (idx>=0)
+			return "<font color=navy>"+Format.escHtml(text.substring(0, idx+8))+"</font><font color=red><i>"+Format.escHtml(text.substring(8))+"</i></font>";
+		
+		return text;
 	}
 	
 	private static final Pattern PACKAGES = Pattern.compile("^\\w+@\\w+::[a-zA-Z0-9._-]+$"); 
