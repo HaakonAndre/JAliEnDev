@@ -11,4 +11,7 @@ done
 
 export CLASSPATH
 
-java -Duserid=$(id -u) "$@"
+java \
+	-Duserid=$(id -u) \
+	-Dcom.sun.jndi.ldap.connect.pool=false \
+	"$@"
