@@ -1,7 +1,13 @@
 package alien.user;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -43,11 +49,30 @@ public class LDAPHelper {
 		return cache.size();
 	}
 	
-	private static String ldapServer = ConfigUtils.getConfig().gets("ldap_server");
+	private static String ldapServers = ConfigUtils.getConfig().gets("ldap_server");
 	
 	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root");
 	
 	private static final ExpirationCache<String, TreeSet<String>> cache = new ExpirationCache<String, TreeSet<String>>(1000);
+	
+	private static ArrayList<String> ldapServerList = new ArrayList<String>();
+	
+	private static final Map<String, String> defaultEnv = new HashMap<String, String>();
+	
+	static{
+		final StringTokenizer tok = new StringTokenizer(ldapServers, " \t\r\n,;");
+		
+		while (tok.hasMoreTokens())
+			ldapServerList.add(tok.nextToken());
+		
+		defaultEnv.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+		defaultEnv.put("com.sun.jndi.ldap.connect.pool", "true");
+		defaultEnv.put("com.sun.jndi.ldap.read.timeout", "30000");
+		defaultEnv.put("com.sun.jndi.ldap.connect.timeout", "10000");
+		defaultEnv.put("com.sun.jndi.ldap.connect.pool.maxsize", "50");
+		defaultEnv.put("com.sun.jndi.ldap.connect.pool.prefsize", "5");
+		defaultEnv.put("com.sun.jndi.ldap.connect.pool.timeout", "120000");
+	}
 	
 	/**
 	 * @param sParam - search query
@@ -81,54 +106,72 @@ public class LDAPHelper {
 		if (monitor!=null)
 			monitor.incrementCacheMisses("querycache");
 		
-		tsResult = new TreeSet<String>();
-
-		try {
-			final String dirRoot = sRootExt+ldapRoot;
-
-			final Hashtable<String, String> env = new Hashtable<String, String>();
-			env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-			env.put(Context.PROVIDER_URL, "ldap://"+ldapServer+"/" + dirRoot);
-
-			final DirContext context = new InitialDirContext(env);
-
-			final SearchControls ctrl = new SearchControls();
-			ctrl.setSearchScope(recursive ? SearchControls.SUBTREE_SCOPE : SearchControls.ONELEVEL_SCOPE);
-
-			final NamingEnumeration<SearchResult> enumeration = context.search("", sParam, ctrl);
-
-			while (enumeration.hasMore()) {
-				final SearchResult result = enumeration.next();
-
-				final Attributes attribs = result.getAttributes();
-
-				if (attribs==null)
-				    continue;
-
-				final BasicAttribute ba = (BasicAttribute) attribs.get(sKey);
-
-				if (ba==null)
-				    continue;
-
-				final NamingEnumeration<?> values = ba.getAll();
-				
-				if (values==null)
-				    continue;
-				
-				while (values.hasMoreElements()){
-					final String s = values.nextElement().toString();
-					tsResult.add(s);
-				}
-
-			}
-			
-			cache.put(sCacheKey, tsResult, 1000*60*15);
+		List<String> hosts = ldapServerList;
+		
+		if (hosts.size()>1){
+			hosts = new ArrayList<String>(hosts);
+			Collections.shuffle(hosts);
 		}
-		catch (NamingException ne) {    
-			if (logger.isLoggable(Level.FINE))
-			    logger.log(Level.WARNING, "Exception executing the LDAP query ('"+sParam+"', '"+sRootExt+"', '"+sKey+"')", ne);
-			else
-			    logger.log(Level.WARNING, "Exception executing the LDAP query ('"+sParam+"', '"+sRootExt+"', '"+sKey+"'): "+ne+" ("+ne.getMessage()+")");
+		
+		for (final String ldapServer: hosts){
+			tsResult = new TreeSet<String>();
+			
+			try {
+				final String dirRoot = sRootExt+ldapRoot;
+	
+				final Hashtable<String, String> env = new Hashtable<String, String>();
+				env.putAll(defaultEnv);
+				env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+				env.put(Context.PROVIDER_URL, "ldap://"+ldapServer+"/" + dirRoot);
+				env.put("com.sun.jndi.ldap.connect.pool", "true");
+				env.put("com.sun.jndi.ldap.read.timeout", "30000");
+				env.put("com.sun.jndi.ldap.connect.timeout", "10000");
+				env.put("com.sun.jndi.ldap.connect.pool.maxsize", "50");
+				env.put("com.sun.jndi.ldap.connect.pool.prefsize", "5");
+				env.put("com.sun.jndi.ldap.connect.pool.timeout", "120000");
+	
+				final DirContext context = new InitialDirContext(env);
+	
+				final SearchControls ctrl = new SearchControls();
+				ctrl.setSearchScope(recursive ? SearchControls.SUBTREE_SCOPE : SearchControls.ONELEVEL_SCOPE);
+	
+				final NamingEnumeration<SearchResult> enumeration = context.search("", sParam, ctrl);
+	
+				while (enumeration.hasMore()) {
+					final SearchResult result = enumeration.next();
+	
+					final Attributes attribs = result.getAttributes();
+	
+					if (attribs==null)
+					    continue;
+	
+					final BasicAttribute ba = (BasicAttribute) attribs.get(sKey);
+	
+					if (ba==null)
+					    continue;
+	
+					final NamingEnumeration<?> values = ba.getAll();
+					
+					if (values==null)
+					    continue;
+					
+					while (values.hasMoreElements()){
+						final String s = values.nextElement().toString();
+						tsResult.add(s);
+					}
+	
+				}
+				
+				cache.put(sCacheKey, tsResult, 1000*60*15);
+				
+				break;
+			}
+			catch (final NamingException ne) {    
+				if (logger.isLoggable(Level.FINE))
+				    logger.log(Level.WARNING, "Exception executing the LDAP query ('"+sParam+"', '"+sRootExt+"', '"+sKey+"')", ne);
+				else
+				    logger.log(Level.WARNING, "Exception executing the LDAP query ('"+sParam+"', '"+sRootExt+"', '"+sKey+"'): "+ne+" ("+ne.getMessage()+")");
+			}
 		}
 		
 		if (logger.isLoggable(Level.FINEST))
