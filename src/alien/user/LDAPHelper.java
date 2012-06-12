@@ -121,14 +121,7 @@ public class LDAPHelper {
 	
 				final Hashtable<String, String> env = new Hashtable<String, String>();
 				env.putAll(defaultEnv);
-				env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 				env.put(Context.PROVIDER_URL, "ldap://"+ldapServer+"/" + dirRoot);
-				env.put("com.sun.jndi.ldap.connect.pool", "true");
-				env.put("com.sun.jndi.ldap.read.timeout", "30000");
-				env.put("com.sun.jndi.ldap.connect.timeout", "10000");
-				env.put("com.sun.jndi.ldap.connect.pool.maxsize", "50");
-				env.put("com.sun.jndi.ldap.connect.pool.prefsize", "5");
-				env.put("com.sun.jndi.ldap.connect.pool.timeout", "120000");
 	
 				final DirContext context = new InitialDirContext(env);
 	
