@@ -66,7 +66,6 @@ public class LDAPHelper {
 			ldapServerList.add(tok.nextToken());
 		
 		defaultEnv.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-		defaultEnv.put("com.sun.jndi.ldap.connect.pool", "true");
 		defaultEnv.put("com.sun.jndi.ldap.read.timeout", "30000");
 		defaultEnv.put("com.sun.jndi.ldap.connect.timeout", "10000");
 		defaultEnv.put("com.sun.jndi.ldap.connect.pool.maxsize", "50");
