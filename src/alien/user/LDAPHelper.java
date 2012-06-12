@@ -49,9 +49,9 @@ public class LDAPHelper {
 		return cache.size();
 	}
 	
-	private static String ldapServers = ConfigUtils.getConfig().gets("ldap_server");
+	private static String ldapServers = ConfigUtils.getConfig().gets("ldap_server", "alice-ldap.cern.ch:8389");
 	
-	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root");
+	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root", "o=alice,dc=cern,dc=ch");
 	
 	private static final ExpirationCache<String, TreeSet<String>> cache = new ExpirationCache<String, TreeSet<String>>(1000);
 	
