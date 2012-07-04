@@ -566,7 +566,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		e(gowner)+","+
 		(type>0 ? e(""+type) : "null")+","+
 		e(perm)+","+
-		"string2binary('"+guid+"'),"+
+		(guid!=null?"string2binary('"+guid+"'),":"null,")+
 		e(md5)+","+
 		e(guidtime)+","+
 		(broken ? 1 : 0)+","+
