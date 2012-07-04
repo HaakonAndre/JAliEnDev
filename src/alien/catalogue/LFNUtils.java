@@ -157,31 +157,35 @@ public class LFNUtils {
 		tLFN.size = lfn.size;
 		tLFN.type = lfn.type;
 
-		logger.log(Level.FINE, "Will delete entry [" + lfn.getCanonicalName() + "]");
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Will delete entry [" + lfn.getCanonicalName() + "]");
 
-		if (!lfn.delete(false, false))
+		if (!LFNUtils.insertLFN(tLFN)){
+			logger.log(Level.WARNING, "Could not insert: "+tLFN);
 			return null;
+		}
 
-		logger.log(Level.FINE, "Deleted entry [" + lfn.getCanonicalName() + "]");
-
-		final GUID guid = GUIDUtils.getGUID(lfn);
+		if (lfn.isDirectory()){
+			final List<LFN> subentries = lfn.list();
+			
+			if (subentries!=null){
+				for (final LFN subentry: subentries){
+					if (mvLFN(user, subentry, tLFN.getCanonicalName()+"/"+subentry.getFileName())==null){
+						logger.log(Level.WARNING, "Could not move "+subentry.getCanonicalName()+" to "+tLFN.getCanonicalName()+"/"+subentry.getFileName()+", bailing out");
+						return null;
+					}
+				}
+			}
+		}
 		
-		if (guid==null)
+		if (!lfn.delete(false, false)){
+			logger.log(Level.WARNING, "Could not delete: "+lfn);
 			return null;
+		}
+
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Deleted entry [" + lfn.getCanonicalName() + "]");
 		
-		if (guid.lfnCache == null)
-			guid.lfnCache = new LinkedHashSet<LFN>(1);
-		else 
-			guid.lfnCache.remove(lfn);
-
-		if (!guid.lfnCache.add(tLFN))
-			return null;
-
-		logger.log(Level.FINE, "ok, now i'll insert [" + tLFN.getCanonicalName() + "]");
-
-		if (!LFNUtils.insertLFN(tLFN))
-			return null;
-
 		return tLFN;
 	}
 	
