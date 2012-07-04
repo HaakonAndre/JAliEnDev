@@ -157,9 +157,6 @@ public class LFNUtils {
 		tLFN.size = lfn.size;
 		tLFN.type = lfn.type;
 
-		if (logger.isLoggable(Level.FINE))
-			logger.log(Level.FINE, "Will delete entry [" + lfn.getCanonicalName() + "]");
-
 		if (!LFNUtils.insertLFN(tLFN)){
 			logger.log(Level.WARNING, "Could not insert: "+tLFN);
 			return null;
