@@ -340,7 +340,41 @@ public class LFNUtils {
 		return false;
 	}
 	
-	
+	/**
+	 * Touch an LFN: if the entry exists, update its timestamp, otherwise try to create an empty file
+	 * 
+	 * @param user who wants to do the operation
+	 * @param lfn LFN to be touched (from {@link LFNUtils#getLFN(String, boolean)}, called with the second argument <code>false</code> if the entry doesn't exist yet
+	 * @return <code>true</code> if the LFN was touched
+	 */
+	public static boolean touchLFN(final AliEnPrincipal user, final LFN lfn){
+		if (!lfn.exists){
+			LFN parentDir = lfn.getParentDir();
+			
+			if (parentDir==null || !AuthorizationChecker.canWrite(parentDir, user))
+				return false;
+			
+			lfn.type = 'f';
+			lfn.size = 0;
+			lfn.md5 = null;
+			lfn.guid = null;
+			lfn.guidtime = null;
+			lfn.owner = user.getName();
+			lfn.gowner = user.getRoles().iterator().next();
+			lfn.perm = "755";
+		}
+		else{
+			if (!AuthorizationChecker.canWrite(lfn, user))
+				return false;
+		}
+		
+		lfn.ctime = new Date();
+		
+		if (!lfn.exists)
+			return insertLFN(lfn);
+		
+		return lfn.update();
+	}
 	
 	
 	/**
