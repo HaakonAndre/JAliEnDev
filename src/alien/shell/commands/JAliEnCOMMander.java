@@ -78,7 +78,7 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] jAliEnCommandList = new String[] { "ls",
 			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find", "listFilesFromCollection",
 			"scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps" , "rmdir", "rm", "mv",
-			"masterjob","user", "role"  , "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
+			"masterjob","user", "touch" ,"role"  , "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime"};
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
