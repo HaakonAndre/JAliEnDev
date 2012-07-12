@@ -1,8 +1,11 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.logging.Level;
 
 import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.user.AuthorizationChecker;
@@ -13,6 +16,8 @@ import alien.user.AuthorizationChecker;
  */
 public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
+	private boolean bP = false;
+	private ArrayList<String> alPaths = null;
 	@Override
 	public void run() {
 
@@ -22,19 +27,43 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 					.getAbsolutePath(commander.user
 							.getName(), commander
 							.getCurrentDir()
-							.getCanonicalName(), path));
+							.getCanonicalName(), path), false);
+			
 
 			if (dir!=null && dir.exists) {
 				if (dir.isDirectory()) {
+					
 					if (AuthorizationChecker.canWrite(dir, commander.user)) {
-
-						if (!commander.c_api
-								.removeCatalogueDirectory(dir.getCanonicalName())) {
-							out.printErrln("Could not remove directory: "
-									+ path);
-							out.printErrln("Sorry, this command is not implemented yet.");
+						
+						if(bP){
+							out.printOutln("Inside Parent Directory");
+							if(!commander.c_api.removeCatalogueDirectory(FileSystemUtils.getAbsolutePath(
+									commander.user.getName(),
+									commander.getCurrentDir().getCanonicalName(),path))){
+								if(!isSilent())
+									out.printErrln("Could not remove directory (or non-existing parents): " + path);
+								
+								logger.log(Level.WARNING,"Could not remove directory (or non-existing parents): " + path);
+								
+							}
 						}
-
+						else {
+							if(!commander.c_api.removeCatalogueDirectory(FileSystemUtils.getAbsolutePath(
+									commander.user.getName(),
+									commander.getCurrentDir().getCanonicalName(),path))){
+								if(!isSilent())
+									out.printErrln("Could not remove directory: " + path);
+								logger.log(Level.WARNING,"Could not remove directory: " + path);
+								
+							}
+						}
+						
+						
+						/*if (!commander.c_api
+								.removeCatalogueDirectory(dir.getCanonicalName())) 
+										out.printErrln("Could not remove directory: "	+ path);
+						 */
+						
 					} else {
 						if (!isSilent())
 							out.printErrln("Permission denied on directory: ["
@@ -45,12 +74,13 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 					if (!isSilent())
 						out.printErrln("Not a directory: [" + path + "]");
 				}
-			} else {
+		}else {
 				if (!isSilent())
 					out.printErrln("No such file or directory: [" + path + "]");
 			}
 		}
 	}
+
 
 	/**
 	 * printout the help info
@@ -59,9 +89,13 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	public void printHelp() {
 
 		out.printOutln();
-		out.printOutln(helpUsage("rmdir",
-				" <directory> [<directory>[,<directory>]]"));
+		out.printOutln(helpUsage("rmdir"," [<option>] <directory>"));
 		out.printOutln(helpStartOptions());
+		out.printOutln(helpOption("--ignore-fail-on-non-empty","  ignore each failure that is solely because a directory is non-empty"));
+		out.printOutln(helpOption("-p ", "--parents   Remove DIRECTORY and its ancestors.  E.g., ‘rmdir -p a/b/c’ is similar to ‘rmdir a/b/c a/b a’."));
+		out.printOutln(helpOption("-v ", "--verbose  output a diagnostic for every directory processed"));
+		out.printOutln(helpOption(" "  , "--help      display this help and exit"));
+		out.printOutln(helpOption(" "  , "--version  output version information and exit"));
 		out.printOutln(helpOption("-silent","execute command silently"));
 		out.printOutln();
 	}
@@ -89,6 +123,28 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	public JAliEnCommandrmdir(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
+		try {
+
+			final OptionParser parser = new OptionParser();
+
+			parser.accepts("p");
+			parser.accepts("v");
+			parser.accepts("s");
+			
+
+			final OptionSet options = parser.parse(alArguments
+					.toArray(new String[] {}));
+			alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+			alPaths.addAll(options.nonOptionArguments());
+
+			if(options.has("s"))
+				silent();
+			bP = options.has("p");
+			
+		} catch (OptionException e) {
+			printHelp();
+			throw e;
+		}
 
 	}
 }
