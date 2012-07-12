@@ -342,7 +342,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		if(bL) sb.append(" -l ");
 		if(bA) sb.append(" -a ");
-		if(bC) sb.append(" -c");
+		if(bC) sb.append(" -c ");
 		if(bS) sb.append(" -s ");
 		if(bX) sb.append(" -x ");
 		if(bD) sb.append(" -d ");
