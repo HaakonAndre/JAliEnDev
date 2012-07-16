@@ -8,6 +8,8 @@ import alien.user.UsersHelper;
 /**
  * @author ron
  * @since June 4, 2011
+ * @author sraje (Shikhar Raje, IIIT Hyderabad)
+ * @since Modified 27th July, 2012
  */
 public class JAliEnCommandcd extends JAliEnBaseCommand {
 	
@@ -17,19 +19,22 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		LFN newDir = null;
 
 		if (alArguments!= null && alArguments.size() > 0)
-			newDir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
-					commander.user.getName(),
-					commander.getCurrentDir().getCanonicalName(),
-					alArguments.get(0)));
+			newDir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), alArguments.get(0)));
 		else
-			newDir = commander.c_api.getLFN(UsersHelper
-					.getHomeDir(commander.user.getName()));
+			newDir = commander.c_api.getLFN(UsersHelper.getHomeDir(commander.user.getName()));
 
-		if (newDir != null){
-			commander.curDir = newDir;
-			out.setReturnArgs(deserializeForRoot(1));
+		if (newDir != null)
+		{
+			if(newDir.isDirectory()) //Test added by sraje (Shikhar Raje, IIIT Hyderabad)
+			{
+				commander.curDir = newDir;
+				out.setReturnArgs(deserializeForRoot(1));
+			}
+			else
+				out.printErrln("cd: "+alArguments.get(0)+": Not a directory");
 		}
-		else{
+		else
+		{
 			out.printErrln("No such directory.");
 			out.setReturnArgs(deserializeForRoot(0));
 		}
