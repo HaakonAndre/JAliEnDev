@@ -9,7 +9,7 @@ import alien.user.AuthenticationChecker;
 
 
 /**
- * Authenticate a client with challenge/response on his private key possesion
+ * Authenticate a client with challenge/response on his private key possession
  * @author ron
  * @since Jun 17, 2011
  */
