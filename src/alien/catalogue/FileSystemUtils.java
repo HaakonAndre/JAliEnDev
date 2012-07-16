@@ -125,7 +125,7 @@ public final class FileSystemUtils {
 				List<String> valid_filenames = null;
 				try
 				{
-					valid_filenames = Dispatcher.execute(new FindfromString(user, role, basename, token.substring(0, (star > question ? star:question)), 8)).getFileNames();//Alternative: We can call getLFNs from here, and then run the for loop to get the canonicals here. Advantage: Less serverside strain.
+					valid_filenames = Dispatcher.execute(new FindfromString(user, role, basename, token.substring(0, (star > question ? star:question)), 8)).getFileNames();
 				}
 				catch (ServerException se)
 				{
