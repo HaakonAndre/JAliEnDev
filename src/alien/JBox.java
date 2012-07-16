@@ -20,8 +20,7 @@ public class JBox {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils
-	.getLogger(JBoxServer.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
 	
 	
