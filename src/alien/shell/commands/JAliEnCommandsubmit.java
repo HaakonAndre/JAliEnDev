@@ -23,7 +23,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 		if (!isSilent())
 			out.printOutln("Submitting " + alArguments.get(0));
 		
-		File fout = catFile();
+		File fout = catFile(alArguments.get(0));
 		
 		if (fout!=null && fout.exists() && fout.isFile() && fout.canRead()) {
 			final String content  =  Utils.readFile(fout.getAbsolutePath());

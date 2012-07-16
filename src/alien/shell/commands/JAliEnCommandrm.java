@@ -1,7 +1,6 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 
 import joptsimple.OptionException;
@@ -9,11 +8,7 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
-import alien.api.catalogue.LFNListingfromString;
 import alien.api.catalogue.RemoveLFNfromString;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.LFN;
-import alien.user.AuthorizationChecker;
 
 /**
  * @author ron
@@ -49,26 +44,21 @@ public class JAliEnCommandrm extends JAliEnBaseCommand
 			//My added code... From the Dispatcher, direct, instead of from the wrapper for in the COMMander class, like above...
 			
 			RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), commander.getRole(), path);
-			LFN file = rlfn.lfn;
-			
-			if (file != null && file.exists)
-			{
-				try
-				{
-					RemoveLFNfromString a =  Dispatcher.execute(rlfn);//Remember, all checking is being done server side now.
-				}
-				catch (ServerException e)
-				{
-					logger.log(Level.WARNING,"Could not get LFN: " + path);
-					e.getCause().printStackTrace();
+
+			try{
+				RemoveLFNfromString a =  Dispatcher.execute(rlfn);//Remember, all checking is being done server side now.
+				
+				if (!a.wasRemoved() && bV){
+					out.printErrln("Failed to remove [" + path + "]");
 				}
 			}
-			
-			else
-			{
+			catch (ServerException e){
+				logger.log(Level.WARNING,"Could not get LFN: " + path);
+				e.getCause().printStackTrace();
+				
 				if(bV)
-					out.printErrln("No such file or directory [" + path + "]");
-			}
+					out.printErrln("Error removing [" + path + "]");
+			}		
 		}
 	}
 
@@ -112,7 +102,6 @@ public class JAliEnCommandrm extends JAliEnBaseCommand
 		super(commander, out, alArguments);
 		try
 		{
-			//TODO
 			final OptionParser parser = new OptionParser();
 			parser.accepts("i");
 			parser.accepts("f");

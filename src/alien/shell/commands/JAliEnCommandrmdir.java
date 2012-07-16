@@ -37,9 +37,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 						
 						if(bP){
 							out.printOutln("Inside Parent Directory");
-							if(!commander.c_api.removeCatalogueDirectory(FileSystemUtils.getAbsolutePath(
-									commander.user.getName(),
-									commander.getCurrentDir().getCanonicalName(),path))){
+							if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())){
 								if(!isSilent())
 									out.printErrln("Could not remove directory (or non-existing parents): " + path);
 								
@@ -48,9 +46,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 							}
 						}
 						else {
-							if(!commander.c_api.removeCatalogueDirectory(FileSystemUtils.getAbsolutePath(
-									commander.user.getName(),
-									commander.getCurrentDir().getCanonicalName(),path))){
+							if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())){
 								if(!isSilent())
 									out.printErrln("Could not remove directory: " + path);
 								logger.log(Level.WARNING,"Could not remove directory: " + path);

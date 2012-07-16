@@ -1,20 +1,17 @@
 package alien.shell.commands;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
-import java.io.*;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.logging.Level;
-
-import alien.catalogue.LFN;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import lazyj.Format;
 import lazyj.Utils;
 
@@ -30,14 +27,13 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	private boolean bB = false;
 	private boolean bT = false;
 	private boolean bO = false;
-	private String fileName = null;
+	private String outputFileName = null;
 	private ArrayList<String> alPaths = null;
 	
 	@Override
 	public void run() {
-		for (final String fileName : alPaths) {
-
-			File fout = catFile(fileName);
+		for (final String eachFileName : alPaths) {
+			File fout = catFile(eachFileName);
 			int count = 0;
 			if (fout != null && fout.exists() && fout.isFile()
 					&& fout.canRead()) {
@@ -52,7 +48,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 							if(bO){
 								
 								
-								FileWriter fstream = new FileWriter(fileName);
+								FileWriter fstream = new FileWriter(eachFileName);
 								  BufferedWriter o = new BufferedWriter(fstream);
 								  o.write(content);
 								  fstream.close();
@@ -97,6 +93,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	}
 
 	/**
+	 * @param fileName catalogue file name to cat
 	 * @return file handle for downloaded file
 	 */
 	public File catFile(final String fileName) {
@@ -178,8 +175,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcat(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandcat(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		
 			try {
@@ -196,7 +192,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 				final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 				if (options.has("o") && options.hasArgument("o")) {
 					bO = true;
-					fileName = (String) options.valueOf("o");
+					outputFileName = (String) options.valueOf("o");
 					
 				}
 				
