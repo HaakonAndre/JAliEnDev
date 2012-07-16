@@ -351,8 +351,10 @@ public class LFNUtils {
 		if (!lfn.exists){
 			LFN parentDir = lfn.getParentDir();
 			
-			if (parentDir==null || !AuthorizationChecker.canWrite(parentDir, user))
+			if (parentDir==null || !AuthorizationChecker.canWrite(parentDir, user)){
+				logger.log(Level.SEVERE, "Cannot write to the Current Directory OR Parent Directory is null BUT file exists. Terminating");
 				return false;
+			}
 			
 			lfn.type = 'f';
 			lfn.size = 0;
