@@ -178,15 +178,22 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 				sSearch = "";
 		}
 		
-		if (!sPattern.startsWith("%"))
-			sSearch += "%";
+		String q = "SELECT * FROM L"+tableName+"L WHERE ";
 		
-		sSearch += sPattern;
-		
-		if (!sPattern.endsWith("%"))
-			sSearch += "%";
-		
-		String q = "SELECT * FROM L"+tableName+"L WHERE lfn LIKE '"+Format.escSQL(sSearch)+"' AND replicated=0";		
+		if ( (flags & LFNUtils.FIND_REGEXP)==0 ) {
+			if (!sPattern.startsWith("%"))
+				sSearch += "%";
+			
+			sSearch += sPattern;
+			
+			if (!sPattern.endsWith("%"))
+				sSearch += "%";
+			
+			q += "lfn LIKE '"+Format.escSQL(sSearch)+"' AND replicated=0";
+		}
+		else{
+			q += "lfn RLIKE '"+Format.escSQL(sSearch)+"' AND replicated=0";
+		}
 
 		if ( (flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
 			q += " AND type!='d'";
