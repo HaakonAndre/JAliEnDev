@@ -364,8 +364,10 @@ public class LFNUtils {
 			lfn.perm = "755";
 		}
 		else{
-			if (!AuthorizationChecker.canWrite(lfn, user))
+			if (!AuthorizationChecker.canWrite(lfn, user)){
+				logger.log(Level.SEVERE, "Cannot write to the Current Directory BUT file does not exist. Terminating");
 				return false;
+			}
 		}
 		
 		lfn.ctime = new Date();
@@ -431,6 +433,11 @@ public class LFNUtils {
 	public static final int FIND_BIGGEST_VERSION = 4;
 	
 	/**
+	 * Use Perl-style regexp in the pattern instead of SQL-style (which is the default for find). This is to be used for wildcard expansion.
+	 */
+	public static final int FIND_REGEXP = 8;
+	
+	/**
 	 * @param path
 	 * @param pattern
 	 * @param flags a combination of FIND_* flags
@@ -441,7 +448,12 @@ public class LFNUtils {
 		
 		final List<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
-		final String processedPattern = Format.replace(pattern, "*", "%");
+		final String processedPattern;
+
+		if ((flags & FIND_REGEXP)==0)
+			processedPattern = Format.replace(pattern, "*", "%");
+		else
+			processedPattern = Format.replace(Format.replace(pattern, "*", "[^/]*"), "?", ".");
 		
 		for (final IndexTableEntry ite: matchingTables){
 			final List<LFN> findResults = ite.find(path, processedPattern, flags);
