@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import alien.api.Request;
@@ -54,5 +55,23 @@ public class FindfromString extends Request {
 	public String toString() {
 		return "Asked for : path (" + this.path +"), pattern ("+this.pattern
 				+ "), flags ("+this.flags+") reply is:\n" + this.lfns;
+	}
+	
+	/**
+	 * Made by sraje (Shikhar Raje, IIIT Hyderabad)
+//	 * 
+	 * @return the list of file names (one level down only) that matched the find
+	 */
+	public List<String> getFileNames()
+	{
+		if (lfns==null)
+			return null;
+		
+		final List<String> ret = new ArrayList<String>(lfns.size());
+		
+		for (final LFN l: lfns)
+			ret.add(l.getFileName());
+		
+		return ret;
 	}
 }
