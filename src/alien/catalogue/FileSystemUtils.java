@@ -2,9 +2,15 @@ package alien.catalogue;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.Dispatcher;
+import alien.api.ServerException;
+import alien.api.catalogue.FindfromString;
+import alien.api.catalogue.LFNfromString;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -15,7 +21,10 @@ import alien.user.UsersHelper;
 /**
  * @author ron
  * @since Mai 28, 2011
+ * @author sraje (Shikhar Raje, IIIT Hyderabad)
+ * @since Modified July 5, 2012
  */
+@SuppressWarnings("unused")
 public final class FileSystemUtils {
 
 	/**
@@ -98,6 +107,55 @@ public final class FileSystemUtils {
 		
 		return null;
 	}
+	
+	@SuppressWarnings("null")
+	public List<String> expandPathWildCards(final String sourcename, AliEnPrincipal user, String role)
+	{
+		List<String> result = null;
+		String basename = "";
+		String token = null;
+		StringTokenizer st = new StringTokenizer(sourcename, "/");
+		while(st.hasMoreTokens())
+		{
+			token = st.nextToken();
+			int star = token.indexOf('*');
+			int question = token.indexOf('?');
+			if(star > 0 || question > 0)
+			{
+				List<String> valid_filenames = null;
+				try
+				{
+					valid_filenames = Dispatcher.execute(new FindfromString(user, role, basename, token.substring(0, (star > question ? star:question)), 8)).getFileNames();//Alternative: We can call getLFNs from here, and then run the for loop to get the canonicals here. Advantage: Less serverside strain.
+				}
+				catch (ServerException se)
+				{
+					return null;
+				}
+				for(String valid_filename : valid_filenames)
+					result.addAll(expandPathWildCards(basename + "/" + valid_filename + sourcename.substring((basename + "/" + token).length() + sourcename.indexOf(basename + "/" + token)), user, role));
+			}
+			else
+				basename += token;
+		}
+		return result;
+	}
+	
+//	public List<LFN> expandPathWildcards(final LFN source, String sourcename, AliEnPrincipal user, String role, String criteria)
+//	{
+//		List<LFN> result = null;
+//		String[] components = sourcename.split("*");
+//		String basename = components[0];
+//		for(int i = 1; i < components.length; i++)
+//		{
+//			String component = components[i];
+//			LFN temp = (new LFNfromString(user, role, component, false)).getLFN();
+//			if(temp.isDirectory())
+//			{
+//				result.addAll(expandPathWildcards(temp, component, user, role, criteria));
+//			}
+//		}
+//		return null;
+//	}
 	
 	
 	/**
