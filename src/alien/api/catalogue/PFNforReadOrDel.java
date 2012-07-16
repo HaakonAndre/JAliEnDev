@@ -63,8 +63,8 @@ public class PFNforReadOrDel extends Request {
 	 * @param ses
 	 * @param exses
 	 */
-	public PFNforReadOrDel(final AliEnPrincipal user, final String role, String site, AccessType access,
-			LFN lfn, List<String> ses, List<String> exses) {
+	public PFNforReadOrDel(final AliEnPrincipal user, final String role, String site, AccessType access, LFN lfn, List<String> ses, List<String> exses)
+	{
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.site = site;
