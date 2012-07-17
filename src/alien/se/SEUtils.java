@@ -47,15 +47,13 @@ public final class SEUtils {
 		seCacheReadLock.lock();
 
 		try {
-			if (System.currentTimeMillis() - seCacheUpdated > CatalogueUtils.CACHE_TIMEOUT
-					|| seCache == null) {
+			if (System.currentTimeMillis() - seCacheUpdated > CatalogueUtils.CACHE_TIMEOUT || seCache == null) {
 				seCacheReadLock.unlock();
 
 				seCacheWriteLock.lock();
 
 				try {
-					if (System.currentTimeMillis() - seCacheUpdated > CatalogueUtils.CACHE_TIMEOUT
-							|| seCache == null) {
+					if (System.currentTimeMillis() - seCacheUpdated > CatalogueUtils.CACHE_TIMEOUT || seCache == null) {
 						if (logger.isLoggable(Level.FINER)) {
 							logger.log(Level.FINER, "Updating SE cache");
 						}
@@ -72,14 +70,24 @@ public final class SEUtils {
 									ses.put(Integer.valueOf(se.seNumber), se);
 							}
 
-							seCache = ses;
-							seCacheUpdated = System.currentTimeMillis();
-						} else {
-							seCacheUpdated = System.currentTimeMillis()
-									- CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
+							if (ses.size()>0){
+								seCache = ses;
+								seCacheUpdated = System.currentTimeMillis();
+							}
+							else{
+								if (seCache==null)
+									seCache = ses;
+								
+								// try again soon
+								seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
+							}
+						}
+						else {
+							seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
-				} finally {
+				}
+				finally {
 					seCacheWriteLock.unlock();
 				}
 
@@ -218,9 +226,19 @@ public final class SEUtils {
 								oldMap.put(Integer.valueOf(seNumber), Double.valueOf(distance));
 							}
 
-							seDistance = newDistance;
-							seDistanceUpdated = System.currentTimeMillis();
-						} else {
+							if (newDistance.size()>0){
+								seDistance = newDistance;
+								seDistanceUpdated = System.currentTimeMillis();
+							}
+							else{
+								if (seDistance==null)
+									seDistance = newDistance;
+								
+								//try again soon
+								seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
+							}
+						}
+						else {
 							seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
@@ -314,19 +332,19 @@ public final class SEUtils {
 	 */
 	public static List<SE> getClosestSEs(final String site, final List<SE> exSEs, final boolean write) {
 		if (site == null || site.length() == 0)
-			return null;
+			return getDefaultSEList(write);
 
 		updateSEDistanceCache();
 
-		if (seDistance == null)
-			return null;
+		if (seDistance == null || seDistance.size()==0)
+			return getDefaultSEList(write);
 
 		final String sitename = site.trim().toUpperCase();
 
 		final Map<Integer, Double> distance = seDistance.get(sitename);
 
-		if (distance == null)
-			return null;
+		if (distance == null || distance.size()==0)
+			return getDefaultSEList(write);
 
 		final List<SE> ret = new ArrayList<SE>(distance.size());
 
@@ -340,6 +358,25 @@ public final class SEUtils {
 		Collections.sort(ret, new SEComparator(distance, write));
 
 		return ret;
+	}
+	
+	private static List<SE> getDefaultSEList(final boolean write){
+		final List<SE> allSEs = getSEs(null);
+		
+		if (allSEs==null || allSEs.size()==0)
+			return allSEs;
+		
+		final Map<Integer, Double> distance = new HashMap<Integer, Double>();
+		
+		final Double zero = Double.valueOf(0);
+		
+		for (final SE se: allSEs){
+			distance.put(Integer.valueOf(se.seNumber), zero);
+		}
+		
+		Collections.sort(allSEs, new SEComparator(distance, write));
+		
+		return allSEs;
 	}
 
 	/**
@@ -360,14 +397,11 @@ public final class SEUtils {
 			logger.log(Level.FINE, "got qos: " + qos);
 		}
 		
-		List<SE> SEs = SEUtils.getSEs(ses);
+		final List<SE> SEs = SEUtils.getSEs(ses);
 		
-		List<SE> exSEs = SEUtils.getSEs(exses);
-	
+		final List<SE> exSEs = SEUtils.getSEs(exses);
 		
-		for(SE se: exSEs)
-			if(SEs.contains(se))
-				SEs.remove(se);
+		SEs.removeAll(exSEs);
 
 		exSEs.addAll(SEs);		
 				
