@@ -3,6 +3,7 @@
  */
 package alien.io;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -136,6 +137,14 @@ public class TransferAgent extends Thread {
 				if (workers<0 || workers > 100)	// typo ?!
 					workers = 5;
 				
+				final Iterator<TransferAgent> it = agents.iterator();
+				
+				while (it.hasNext()){
+					final TransferAgent agent = it.next();
+					if (!agent.isAlive())
+						it.remove();
+				}
+				
 				while (workers > agents.size()){
 					final TransferAgent ta = new TransferAgent(agents.size());
 						
@@ -154,7 +163,7 @@ public class TransferAgent extends Thread {
 				// ignore
 			}
 			
-			for (TransferAgent ta: agents)
+			for (final TransferAgent ta: agents)
 				TransferBroker.touch(ta.work, ta);
 		}
 	}
