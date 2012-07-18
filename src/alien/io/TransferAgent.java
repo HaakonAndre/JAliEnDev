@@ -141,8 +141,11 @@ public class TransferAgent extends Thread {
 				
 				while (it.hasNext()){
 					final TransferAgent agent = it.next();
-					if (!agent.isAlive())
+					if (!agent.isAlive()){
+						logger.log(Level.SEVERE, "One worker is no longer alive, removing the respective agent from the list: "+agent.getName());
+						
 						it.remove();
+					}
 				}
 				
 				while (workers > agents.size()){
