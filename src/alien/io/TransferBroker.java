@@ -326,15 +326,28 @@ public class TransferBroker {
 
 			final Map<String, Object> values = new HashMap<String, Object>();
 
+			final SE targetSE = SEUtils.getSE(t.target.seNumber);
+			
 			values.put("last_active", Long.valueOf(System.currentTimeMillis() / 1000));
-			values.put("se_name", SEUtils.getSE(t.target.seNumber).seName);
+			
+			if (targetSE!=null)
+				values.put("se_name", targetSE.seName);
+			else
+				values.put("se_name", "unknown");
+			
 			values.put("transfer_id", Integer.valueOf(t.getTransferId()));
 			values.put("transfer_agent_id", Integer.valueOf(ta.getTransferAgentID()));
 			values.put("pid", Integer.valueOf(MonitorFactory.getSelfProcessID()));
 			values.put("host", MonitorFactory.getSelfHostname());
 			
-			if (t.lastTriedSE>0)
-				values.put("active_source", SEUtils.getSE(t.lastTriedSE).seName);
+			if (t.lastTriedSE>0){
+				final SE se = SEUtils.getSE(t.lastTriedSE);
+				
+				if (se!=null)
+					values.put("active_source", se.seName);
+				else
+					values.put("active_source", "unknown");
+			}
 			else
 				values.put("active_source", "");
 			
@@ -428,8 +441,11 @@ public class TransferBroker {
 				}
 			}
 
-			p.add("destination");
-			v.add(SEUtils.getSE(t.target.seNumber).seName);
+			final SE targetSE = SEUtils.getSE(t.target.seNumber); 
+			if (targetSE!=null){
+				p.add("destination");
+				v.add(targetSE.seName);
+			}
 
 			p.add("user");
 			v.add(t.target.getGuid().owner);
