@@ -32,6 +32,7 @@ import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 import apmon.ApMon;
 
 /**
@@ -226,7 +227,12 @@ public class TransferBroker {
 		final PFN target;
 		
 		try{
-			target = BookingTable.bookForWriting(lfn, guid, null, 0, se);
+			AliEnPrincipal account = AuthorizationFactory.getDefaultUser();
+			
+			if (account.canBecome("admin"))
+				account = UserFactory.getByUsername("admin");
+			
+			target = BookingTable.bookForWriting(account, lfn, guid, null, 0, se);
 		}
 		catch (IOException ioe){
 			final String reason = ioe.getMessage();
