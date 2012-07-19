@@ -109,7 +109,7 @@ public class BookingTable {
 		final FileQuota quota = QuotaUtilities.getFileQuota(requestedGUID.owner);
 		
 		if (quota!=null && !quota.canUpload(1, requestedGUID.size))
-			throw new IOException("User "+user.getName()+" has exceeded the file quota and is not allowed to write any more files");
+			throw new IOException("User "+requestedGUID.owner+" has exceeded the file quota and is not allowed to write any more files");
 		
 		if (requestedPFN!=null){
 			// TODO should we check whether or not this PFN exists? It's a heavy op ... 
