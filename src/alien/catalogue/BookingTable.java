@@ -105,15 +105,18 @@ public class BookingTable {
 						throw new IOException("This GUID already has a replica in the requested SE");
 			}
 		}
+		else{
+			// check the file quota only for new files, extra replicas don't count towards the quota limit
+			
+			final FileQuota quota = QuotaUtilities.getFileQuota(requestedGUID.owner);
 		
-		final FileQuota quota = QuotaUtilities.getFileQuota(requestedGUID.owner);
-		
-		if (quota!=null && !quota.canUpload(1, requestedGUID.size))
-			throw new IOException("User "+requestedGUID.owner+" has exceeded the file quota and is not allowed to write any more files");
+			if (quota!=null && !quota.canUpload(1, requestedGUID.size))
+				throw new IOException("User "+requestedGUID.owner+" has exceeded the file quota and is not allowed to write any more files");
+		}
 		
 		if (requestedPFN!=null){
 			// TODO should we check whether or not this PFN exists? It's a heavy op ... 
-		}
+		}	
 		
 		final PFN pfn = requestedPFN != null ? requestedPFN : new PFN(requestedGUID, se);
 		
