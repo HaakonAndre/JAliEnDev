@@ -482,7 +482,10 @@ public class TransferBroker {
 
 		if (t.getExitCode() == Transfer.OK) {
 			// Update the file catalog with the new replica
-			final AliEnPrincipal owner = AuthorizationFactory.getDefaultUser();
+			AliEnPrincipal owner = AuthorizationFactory.getDefaultUser();
+			
+			if (owner.canBecome("admin"))
+				owner = UserFactory.getByUsername("admin");
 
 			if (!BookingTable.commit(owner, t.target)){
 				logger.log(Level.WARNING, "Could not commit booked transfer: "+t.target);
