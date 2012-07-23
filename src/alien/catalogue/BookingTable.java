@@ -143,6 +143,9 @@ public class BookingTable {
 				throw new IOException("You are not allowed to do this");
 		}
 		else{
+			// make sure a previously queued deletion request for this file is wiped before giving out a new token
+			db.query("DELETE FROM orphan_pfns WHERE guid=string2binary('"+requestedGUID.guid.toString()+"') AND se="+se.seNumber);
+			
 			final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
 			
 			if (reason!=null)
