@@ -107,36 +107,59 @@ public final class FileSystemUtils {
 		
 		return null;
 	}
-	
-	@SuppressWarnings("null")
-	public List<String> expandPathWildCards(final String sourcename, AliEnPrincipal user, String role)
-	{
-		List<String> result = null;
-		String basename = "";
-		String token = null;
-		StringTokenizer st = new StringTokenizer(sourcename, "/");
-		while(st.hasMoreTokens())
-		{
-			token = st.nextToken();
-			int star = token.indexOf('*');
-			int question = token.indexOf('?');
-			if(star > 0 || question > 0)
-			{
-				List<String> valid_filenames = null;
-				try
-				{
-					valid_filenames = Dispatcher.execute(new FindfromString(user, role, basename, token.substring(0, (star > question ? star:question)), 8)).getFileNames();
-				}
-				catch (ServerException se)
-				{
-					return null;
-				}
-				for(String valid_filename : valid_filenames)
-					result.addAll(expandPathWildCards(basename + "/" + valid_filename + sourcename.substring((basename + "/" + token).length() + sourcename.indexOf(basename + "/" + token)), user, role));
-			}
-			else
-				basename += token;
+
+	/**
+	 * @param sourcename
+	 * @param user
+	 * @param role
+	 * @return the matching lfns from the catalogue
+	 */
+	public static List<String> expandPathWildCards(final String sourcename, final AliEnPrincipal user, final String role){
+		final List<String> result = new ArrayList<String>();
+		
+		final int idxStar = sourcename.indexOf('*');
+		final int idxQM   = sourcename.indexOf('?');
+		
+		if (idxStar<0 && idxQM<0){
+			result.add(sourcename);
+			return result;
 		}
+		
+		final int minIdx = idxStar>=0 ? (idxQM>=0 ? Math.min(idxStar, idxQM) : idxStar) : idxQM;
+		
+		final int lastIdx = sourcename.lastIndexOf('/', minIdx);
+		
+		final String path;
+		final String pattern;
+		
+		if (lastIdx<0){
+			path = "/";
+			pattern = sourcename;
+		}
+		else{
+			path = sourcename.substring(0, lastIdx+1);
+			pattern = sourcename.substring(lastIdx+1);
+		}
+		
+		System.err.println("Path: "+path+"\nPattern: "+pattern);
+		
+		try{
+			final FindfromString ret = Dispatcher.execute(new FindfromString(user, role, path, pattern+"$", LFNUtils.FIND_REGEXP | LFNUtils.FIND_INCLUDE_DIRS));
+			
+			if (ret!=null){
+				final List<LFN> lfns = ret.getLFNs();
+			
+				if (lfns!=null){
+					for (final LFN l: lfns){
+						result.add(l.getCanonicalName());
+					}
+				}
+			}
+		}
+		catch (ServerException se){
+			return null;
+		}
+		
 		return result;
 	}
 	
