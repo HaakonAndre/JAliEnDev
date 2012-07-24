@@ -1,7 +1,6 @@
 package alien.shell.commands;
 
 import java.io.File;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
