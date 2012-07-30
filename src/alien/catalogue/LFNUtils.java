@@ -1,11 +1,13 @@
 package alien.catalogue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import lazyj.DBFunctions;
@@ -676,6 +678,34 @@ public class LFNUtils {
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * @param collection
+	 * @param lfns
+	 * @return <code>true</code> if anything was changed
+	 */
+	public static boolean addToCollection(final LFN collection, final Collection<String> lfns){
+		final TreeSet<LFN> toAdd = new TreeSet<LFN>();
+		
+		for (final String fileName: lfns){
+			final LFN l = getLFN(fileName);
+			
+			if (l!=null){
+				toAdd.add(getLFN(fileName));
+			}
+			else{
+				logger.log(Level.WARNING, "Could not get the LFN for '"+fileName+"'");
+				return false;
+			}
+		}
+		
+		if (toAdd.size()==0){
+			logger.log(Level.FINER, "Quick exit");
+			return false;
+		}
+		
+		return addToCollection(collection, toAdd);
 	}
 	
 	/**
