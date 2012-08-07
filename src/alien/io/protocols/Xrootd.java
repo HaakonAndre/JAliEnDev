@@ -81,7 +81,7 @@ public class Xrootd extends Protocol {
 
 	// last value must be 0 for a clean exit
 	//private static final int statRetryTimes[] = { 1, 2, 4, 8, 16, 0 };
-	private static final int statRetryTimes[] = { 5, 0 };
+	private static final int statRetryTimes[] = { 5, 10, 15, 20, 0 };
 
 	
 	/**
