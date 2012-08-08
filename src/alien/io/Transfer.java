@@ -6,6 +6,7 @@ package alien.io;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -88,7 +89,7 @@ public class Transfer implements Serializable, Runnable {
 	/**
 	 * Target pfn, package protected
 	 */
-	final PFN target;
+	final Collection<PFN> targets;
 	
 	private String targetPFN;
 	
@@ -109,20 +110,23 @@ public class Transfer implements Serializable, Runnable {
 	/**
 	 * when the transfer was issued
 	 */
-	final long started = System.currentTimeMillis();
+	final long startedWork = System.currentTimeMillis();
+	
+	private Collection<PFN> successfulTransfers = new ArrayList<PFN>();
+	private Collection<PFN> failedTransfers = new ArrayList<PFN>();
 	
 	/**
 	 * @param transferId transfer ID
 	 * @param sources source PFNs (one or more, sorted by preference)
-	 * @param target target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
+	 * @param targets target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
 	 */
-	public Transfer(final int transferId, final Collection<PFN> sources, final PFN target){
+	public Transfer(final int transferId, final Collection<PFN> sources, final Collection<PFN> targets){
 		this.sources = sources;
 		
 		if (this.sources==null || this.sources.size()==0)
 			throw new IllegalArgumentException("No sources for this transfer");
 		
-		this.target = target;
+		this.targets = targets;
 		
 		this.transferId = transferId;
 	}
@@ -213,22 +217,31 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	@Override
 	public void run() {
-		doWork();
-		
-		final long ended = System.currentTimeMillis();
-		
-		if (monitor!=null){
-			monitor.addMeasurement("transfer_time", ended-started);
+		for (final PFN target: targets){
+			final long started = System.currentTimeMillis();
 			
-			monitor.incrementCounter("transfer_status_"+exitCode);
+			doWork(target);
 			
-			if (exitCode==0 && referenceGUID!=null){
-				monitor.addMeasurement("transfer_MB", referenceGUID.size / (1024*1024d));
+			if (exitCode == OK)
+				successfulTransfers.add(target);
+			else
+				failedTransfers.add(target);
+		
+			final long ended = System.currentTimeMillis();
+		
+			if (monitor!=null){
+				monitor.addMeasurement("transfer_time", ended-started);
+			
+				monitor.incrementCounter("transfer_status_"+exitCode);
+			
+				if (exitCode==0 && referenceGUID!=null){
+					monitor.addMeasurement("transfer_MB", referenceGUID.size / (1024*1024d));
+				}
 			}
 		}
 	}
 	
-	private void doWork(){
+	private void doWork(final PFN target){
 		// try the best protocols first
 		Set<Protocol> protocols = new HashSet<Protocol>();
 		
@@ -247,7 +260,7 @@ public class Transfer implements Serializable, Runnable {
 			final List<PFN> sortedSources = SEUtils.sortBySite(sources, ConfigUtils.getSite(), false, false);
 			
 			for (final PFN source: sortedSources){
-				doWork(source);
+				doWork(source, target);
 				
 				lastTriedSE = source.seNumber;
 				
@@ -307,7 +320,7 @@ public class Transfer implements Serializable, Runnable {
 				
 				lastTriedSE = source.seNumber;
 				
-				doWork(p, source);
+				doWork(p, source, target);
 			
 				// if the target is broken, don't try again the same protocol
 				if (exitCode == OK || exitCode == FAILED_TARGET)
@@ -334,128 +347,128 @@ public class Transfer implements Serializable, Runnable {
 			failureReason = "None of the protocols managed to perform the transfer";
 	}
 	
-	private void doWork(final PFN source){
-			final List<Protocol> protocolsSource = getProtocols(source);
-			
-			if (protocolsSource.size()==0){
-				exitCode = FAILED_SOURCE;
-				failureReason = "No known protocols for source PFN "+source;
-				return;
-			}
-			
-			if (target==null){
-				// file should be written locally
-				
-				for (final Protocol p: protocolsSource){
-					lastTriedProtocol = p;
-					
-					try{
-						targetPFN = p.get(source, null).getCanonicalPath();
-						
-						exitCode = OK;
-						failureReason = null;
-						return;
-					}
-					catch (final UnsupportedOperationException uoe){
-						// ignore
-					}
-					catch (final IOException ioe){
-						exitCode = FAILED_SOURCE;
-						failureReason = ioe.getMessage();
-					}
-				}
-				
-				return;
-			}
-			
-			final List<Protocol> protocolsTarget = getProtocols(target);
-			
-			if (protocolsTarget.size()==0){
-				exitCode = FAILED_TARGET;
-				failureReason = "No known protocols for target PFN "+target;
-				return;
-			}
-			
-			File temp = null;  
-			
-			for (final Protocol p: protocolsSource){
+	private void doWork(final PFN source, final PFN target) {
+		final List<Protocol> protocolsSource = getProtocols(source);
+
+		if (protocolsSource.size() == 0) {
+			exitCode = FAILED_SOURCE;
+			failureReason = "No known protocols for source PFN " + source;
+			return;
+		}
+
+		if (target == null) {
+			// file should be written locally
+
+			for (final Protocol p : protocolsSource) {
 				lastTriedProtocol = p;
-				
-				try{
-					temp = p.get(source, null);
-					break;
+
+				try {
+					targetPFN = p.get(source, null).getCanonicalPath();
+
+					exitCode = OK;
+					failureReason = null;
+					return;
 				}
-				catch (final UnsupportedOperationException uoe){
+				catch (final UnsupportedOperationException uoe) {
 					// ignore
 				}
-				catch (final IOException ioe){
+				catch (final IOException ioe) {
 					exitCode = FAILED_SOURCE;
 					failureReason = ioe.getMessage();
 				}
 			}
-			
-			if (temp==null)
-				return;
-			
-			for (final Protocol p: protocolsTarget){
-				lastTriedProtocol = p;
-				
-				try{
-					storageReplyEnvelope = p.put(target, temp);
-					exitCode = OK;
-					failureReason = null;
-					
-					targetPFN = target.pfn;
-										
-					return;
-				}
-				catch (UnsupportedOperationException uoe){
-					// ignore
-				}
-				catch (IOException ioe){
-					exitCode = FAILED_TARGET;
-					failureReason = ioe.getMessage();
-				}
-				finally{
-					TempFileManager.release(temp);
-				}
-			}
-			
+
 			return;
+		}
+
+		final List<Protocol> protocolsTarget = getProtocols(target);
+
+		if (protocolsTarget.size() == 0) {
+			exitCode = FAILED_TARGET;
+			failureReason = "No known protocols for target PFN " + target;
+			return;
+		}
+
+		File temp = null;
+
+		for (final Protocol p : protocolsSource) {
+			lastTriedProtocol = p;
+
+			try {
+				temp = p.get(source, null);
+				break;
+			}
+			catch (final UnsupportedOperationException uoe) {
+				// ignore
+			}
+			catch (final IOException ioe) {
+				exitCode = FAILED_SOURCE;
+				failureReason = ioe.getMessage();
+			}
+		}
+
+		if (temp == null)
+			return;
+
+		for (final Protocol p : protocolsTarget) {
+			lastTriedProtocol = p;
+
+			try {
+				storageReplyEnvelope = p.put(target, temp);
+				exitCode = OK;
+				failureReason = null;
+
+				targetPFN = target.pfn;
+
+				return;
+			}
+			catch (UnsupportedOperationException uoe) {
+				// ignore
+			}
+			catch (IOException ioe) {
+				exitCode = FAILED_TARGET;
+				failureReason = ioe.getMessage();
+			}
+			finally {
+				TempFileManager.release(temp);
+			}
+		}
+
+		return;
 	}
 	
-	private void doWork(final Protocol p, final PFN source){
-			try{
-				storageReplyEnvelope = p.transfer(source, target);
-				
-				exitCode = OK;
-				failureReason = "OK: "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+")";
-				
-				targetPFN = target.pfn;
-				
-				return;
-			}
-			catch (final UnsupportedOperationException uoe){
-				// ignore, move to the next one
-			}
-			catch (final SourceException se){
-				exitCode = FAILED_SOURCE;
-				failureReason = se.getMessage();
-				
-				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with source exception: "+failureReason);
-			}
-			catch (final TargetException se){
-				exitCode = FAILED_TARGET;
-				failureReason = se.getMessage();
-				
-				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with target exception: "+failureReason);
-			}
-			catch (final IOException e){
-				exitCode = FAILED_SYSTEM;
-				failureReason = e.getMessage();
-				
-				logger.log(Level.WARNING, "Transfer "+transferId+", "+p.getClass().getSimpleName()+" ("+source.getPFN()+" -> "+target.getPFN()+") failed with generic exception: "+failureReason);
-			}
+	private void doWork(final Protocol p, final PFN source, final PFN target) {
+		try {
+			storageReplyEnvelope = p.transfer(source, target);
+
+			exitCode = OK;
+			failureReason = "OK: " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ")";
+
+			targetPFN = target.pfn;
+
+			return;
+		}
+		catch (final UnsupportedOperationException uoe) {
+			// ignore, move to the next one
+		}
+		catch (final SourceException se) {
+			exitCode = FAILED_SOURCE;
+			failureReason = se.getMessage();
+
+			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with source exception: " + failureReason);
+		}
+		catch (final TargetException se) {
+			exitCode = FAILED_TARGET;
+			failureReason = se.getMessage();
+
+			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with target exception: " + failureReason);
+		}
+		catch (final IOException e) {
+			exitCode = FAILED_SYSTEM;
+			failureReason = e.getMessage();
+
+			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with generic exception: " + failureReason);
+		}
 	}
 	
 	/**
@@ -501,5 +514,19 @@ public class Transfer implements Serializable, Runnable {
 	@Override
 	public String toString() {
 		return "ID: "+transferId+", exitCode: "+exitCode+", reason: "+failureReason;
+	}
+	
+	/**
+	 * @return from the list of targets, which were successfully executed
+	 */
+	public Collection<PFN> getSuccessfulTransfers(){
+		return successfulTransfers;
+	}
+	
+	/**
+	 * @return from the list of targets, which failed
+	 */
+	public Collection<PFN> getFailedTransfers(){
+		return failedTransfers;
 	}
 }
