@@ -679,7 +679,7 @@ public class Xrootd extends Protocol {
 
 				if (exitStatus.getExtProcExitStatus() != 0) {
 					if (sleep == 0 || !retryWithDelay) {
-						throw new IOException("Exit code was " + exitStatus.getExtProcExitStatus() + ", output was " + exitStatus.getStdOut() + ", " + "for command : " + command.toString());
+						throw new IOException("Exit code was " + exitStatus.getExtProcExitStatus() + ", retry #"+(statRetryCounter+1)+", output was " + cleanupXrdOutput(exitStatus.getStdOut()) + ", " + "for command : " + command.toString());
 					}
 
 					Thread.sleep(sleep * 1000);
@@ -695,7 +695,7 @@ public class Xrootd extends Protocol {
 					return cleanupXrdOutput(exitStatus.getStdOut());
 
 				if (sleep == 0 || !retryWithDelay) {
-					throw new IOException(command.toString() + ": could not confirm the upload: " + exitStatus.getStdOut());
+					throw new IOException(command.toString() + ": could not confirm the upload after "+(statRetryCounter+1)+" retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
 				}
 
 				Thread.sleep(sleep * 1000);
