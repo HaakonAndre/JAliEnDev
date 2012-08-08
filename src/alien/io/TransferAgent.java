@@ -57,49 +57,56 @@ public class TransferAgent extends Thread {
 	 */
 	@Override
 	public void run() {
-		final TransferBroker broker = TransferBroker.getInstance();
-		
-		boolean firstTimeNoWork = true;
-		
-		while (!shouldStop){
-			work = broker.getWork();
-			
-			if (work!=null){
-				TransferBroker.touch(work, this);
-				
-				logger.log(Level.INFO, "Performing transfer "+work.getTransferId());
-				
-				try{
-					work.run();
-				}
-				catch (final Exception e){
-					logger.log(Level.WARNING, "Transfer threw exception", e);
-				}
-				finally{
-					logger.log(Level.INFO, "Transfer finished: "+work);
-					
-					TransferBroker.notifyTransferComplete(work);
-					
-					work = null;
-					
-					TransferBroker.touch(null, this);
-				}
-				
-				firstTimeNoWork = true;
-			}
-			else{
-				try{
-					if (firstTimeNoWork){
-						logger.log(Level.INFO, "Agent "+transferAgentID+" : no work for me");
-						firstTimeNoWork = false;
+		try {
+			final TransferBroker broker = TransferBroker.getInstance();
+
+			boolean firstTimeNoWork = true;
+
+			while (!shouldStop) {
+				work = broker.getWork();
+
+				if (work != null) {
+					TransferBroker.touch(work, this);
+
+					logger.log(Level.INFO, "Performing transfer " + work.getTransferId());
+
+					try {
+						work.run();
 					}
-					
-					Thread.sleep(1000*30);	// try in 30 seconds again to see if there is anything for it to do
+					catch (final Exception e) {
+						logger.log(Level.WARNING, "Transfer threw exception", e);
+					}
+					finally {
+						logger.log(Level.INFO, "Transfer finished: " + work);
+
+						TransferBroker.notifyTransferComplete(work);
+
+						work = null;
+
+						TransferBroker.touch(null, this);
+					}
+
+					firstTimeNoWork = true;
 				}
-				catch (InterruptedException ie){
-					// ignore
+				else {
+					try {
+						if (firstTimeNoWork) {
+							logger.log(Level.INFO, "Agent " + transferAgentID + " : no work for me");
+							firstTimeNoWork = false;
+						}
+
+						Thread.sleep(1000 * 30); // try in 30 seconds again to
+													// see if there is anything
+													// for it to do
+					}
+					catch (InterruptedException ie) {
+						// ignore
+					}
 				}
 			}
+		}
+		catch (final Exception e) {
+			logger.log(Level.SEVERE, "Exiting after an exception", e);
 		}
 	}
 	
