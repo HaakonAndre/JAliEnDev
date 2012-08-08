@@ -577,6 +577,30 @@ public class Xrootd extends Protocol {
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope) throws IOException {
 		return xrdstat(pfn, returnEnvelope, true, false);
 	}
+	
+	/**
+	 * @param output
+	 * @return the command output less some of the irrelevant messages
+	 */
+	static String cleanupXrdOutput(final String output){
+		final StringBuilder sb = new StringBuilder(output.length());
+		
+		final BufferedReader br = new BufferedReader(new StringReader(output));
+		
+		String line;
+		
+		try{
+			while ( (line=br.readLine())!=null ){
+				if (!line.startsWith("Overriding '"))
+					sb.append(line).append('\n');
+			}
+		}
+		catch (final IOException ioe){
+			// ignore, cannot happen
+		}
+			
+		return sb.toString();
+	}
 
 	/**
 	 * Check if the PFN has the correct properties, such as described in the access envelope
@@ -663,12 +687,12 @@ public class Xrootd extends Protocol {
 				}
 
 				if (returnEnvelope)
-					return exitStatus.getStdOut();
+					return cleanupXrdOutput(exitStatus.getStdOut());
 
 				final long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 
 				if (pfn.getGuid().size == filesize)
-					return exitStatus.getStdOut();
+					return cleanupXrdOutput(exitStatus.getStdOut());
 
 				if (sleep == 0 || !retryWithDelay) {
 					throw new IOException(command.toString() + ": could not confirm the upload: " + exitStatus.getStdOut());
