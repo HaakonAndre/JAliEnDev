@@ -8,6 +8,7 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
+import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
@@ -206,6 +207,40 @@ public final class TransferUtils {
 		if (!db.query("INSERT INTO TRANSFERS_DIRECT (lfn,destination,size,status,sent,received,options,user,type,agentid,started,finished,attempts) VALUES ('"+
 				Format.escSQL(lfnToCopy.getCanonicalName())+"', '"+Format.escSQL(se.seName)+"', " +
 				""+lfnToCopy.size+", 'WAITING', "+(System.currentTimeMillis()/1000)+", "+(System.currentTimeMillis()/1000)+",'ur','"+Format.escSQL(lfnToCopy.owner)+"','mirror',0,null,null,0);"))
+			return -4;
+		
+		final Integer i = db.getLastGeneratedKey();
+		
+		if (i==null)
+			return -5;
+		
+		return i.intValue();
+	}
+	
+	/**
+	 * @param guid
+	 * @param se
+	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot locate real pfns
+	 * 			-4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 */
+	public static int mirror(final GUID guid, final SE se){
+		if (guid==null || !guid.exists() || se==null)
+			return -1;
+		
+		final DBFunctions db = getDB();
+		
+		final String sGUID = guid.guid.toString();
+		
+		db.query("SELECT transferId FROM TRANSFERS_DIRECT where lfn='"+Format.escSQL(sGUID)+"' AND destination='"+Format.escSQL(se.seName)+"' AND status in ('WAITING', 'TRANSFERRING');");
+		
+		if (db.moveNext())
+			return db.geti(1);
+		
+		db.setLastGeneratedKey(true);
+		
+		if (!db.query("INSERT INTO TRANSFERS_DIRECT (lfn,destination,size,status,sent,received,options,user,type,agentid,started,finished,attempts) VALUES ('"+
+				Format.escSQL(sGUID)+"', '"+Format.escSQL(se.seName)+"', " +
+				""+guid.size+", 'WAITING', "+(System.currentTimeMillis()/1000)+", "+(System.currentTimeMillis()/1000)+",'ur','"+Format.escSQL(guid.owner)+"','mirror',0,null,null,0);"))
 			return -4;
 		
 		final Integer i = db.getLastGeneratedKey();
