@@ -4,14 +4,19 @@
 package alien.io;
 
 import java.io.IOException;
+import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -159,46 +164,73 @@ public class TransferBroker {
 			dbc.free();
 		}
 		
-		final LFN lfn = LFNUtils.getLFN(sLFN);
+		final GUID guid;
+		final LFN lfn;
 		
-		if (!lfn.exists){
-			logger.log(Level.WARNING, "LFN '"+sLFN+"' doesn't exist in the catalogue for transfer ID "+transferId);
-			markTransfer(transferId, Transfer.FAILED_SYSTEM, "LFN doesn't exist in the catalogue");
-			return null;
+		if (GUIDUtils.isValidGUID(sLFN)){
+			guid = GUIDUtils.getGUID(sLFN);
+			
+			if (guid==null){
+				logger.log(Level.WARNING, "GUID '"+sLFN+"' doesn't exist in the catalogue for transfer ID "+transferId);
+				markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID was not found in the database");
+				return null;
+			}
+			
+			// because of this only admin will be allowed to mirror GUIDs without indicating the LFN (eg for storage replication)
+			lfn = LFNUtils.getLFN("/"+sLFN, true);
 		}
+		else{
+			lfn = LFNUtils.getLFN(sLFN);
 		
-		logger.log(Level.FINE, transferId+" : LFN is "+lfn);
+			if (!lfn.exists){
+				logger.log(Level.WARNING, "LFN '"+sLFN+"' doesn't exist in the catalogue for transfer ID "+transferId);
+				markTransfer(transferId, Transfer.FAILED_SYSTEM, "LFN doesn't exist in the catalogue");
+				return null;
+			}
 		
-		if (lfn.guid==null){
-			logger.log(Level.WARNING, "GUID '"+lfn.guid+"' is null for transfer ID "+transferId+", lfn '"+sLFN+"'");
-			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID is null for this LFN");
-			return null;
-		}
+			logger.log(Level.FINE, transferId+" : LFN is "+lfn);
+			
+			if (lfn.guid==null){
+				logger.log(Level.WARNING, "GUID '"+lfn.guid+"' is null for transfer ID "+transferId+", lfn '"+sLFN+"'");
+				markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID is null for this LFN");
+				return null;
+			}
 		
-		final GUID guid = GUIDUtils.getGUID(lfn);
+			guid = GUIDUtils.getGUID(lfn);
 
-		if (guid==null){
-			logger.log(Level.WARNING, "GUID '"+lfn.guid+"' doesn't exist in the catalogue for transfer ID "+transferId+", lfn '"+sLFN+"'");
-			markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID was not found in the database");
-			return null;
-		}
+			if (guid==null){
+				logger.log(Level.WARNING, "GUID '"+lfn.guid+"' doesn't exist in the catalogue for transfer ID "+transferId+", lfn '"+sLFN+"'");
+				markTransfer(transferId, Transfer.FAILED_SYSTEM, "GUID was not found in the database");
+				return null;
+			}
 
-		guid.lfnCache = new HashSet<LFN>();
-		guid.lfnCache.add(lfn);
+			guid.lfnCache = new HashSet<LFN>();
+			guid.lfnCache.add(lfn);
+		}
 		
 		logger.log(Level.FINE, transferId+" : GUID is "+guid);
-				
-		final SE se = SEUtils.getSE(targetSE);
+			
+		final Set<PFN> pfns;
 		
-		if (se==null){
-			logger.log(Level.WARNING, "Target SE '"+targetSE+"' doesn't exist for transfer ID "+transferId);
-			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target SE doesn't exist");
-			return null;
+		if (lfn!=null){
+			pfns = lfn.whereisReal();
 		}
-		
-		logger.log(Level.FINE, transferId+" : Target SE is "+se);
-		
-		final Set<PFN> pfns = lfn.whereisReal();
+		else{
+			final Set<GUID> realGUIDs = guid.getRealGUIDs(); 
+			
+			pfns = new LinkedHashSet<PFN>();
+			
+			if (realGUIDs!=null){
+				for (final GUID realId: realGUIDs){
+					final Set<PFN> replicas = realId.getPFNs();
+				
+					if (replicas==null)
+						continue;
+	
+					pfns.addAll(replicas);
+				}
+			}
+		}
 		
 		if (pfns==null || pfns.size()==0){
 			logger.log(Level.WARNING, "No existing replicas to mirror for transfer ID "+transferId);
@@ -206,44 +238,108 @@ public class TransferBroker {
 			return null;
 		}
 		
-		for (final PFN pfn: pfns){
-			if (pfn.seNumber == se.seNumber){
-				logger.log(Level.WARNING, "There already exists a replica of '"+sLFN+"' on '"+targetSE+"' for transfer ID "+transferId);
-				markTransfer(transferId, Transfer.FAILED_SYSTEM, "There is already a replica on this storage");
-				return null;
-			}
-		}
-				
-		for (final PFN source: pfns){
-			final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
+		final StringTokenizer seTargetSEs = new StringTokenizer(targetSE, ",; \t\r\n");
 		
-			if (reason!=null){
-				logger.log(Level.WARNING, "Could not obtain source authorization for transfer ID "+transferId+" : "+reason);
-				markTransfer(transferId, Transfer.FAILED_SYSTEM, "Source authorization failed: "+reason);
-				return null;
-			}
-		}
-				
-		final PFN target;
+		final Collection<PFN> targets = new ArrayList<PFN>();
 		
-		try{
-			AliEnPrincipal account = AuthorizationFactory.getDefaultUser();
+		final int targetSEsCount = seTargetSEs.countTokens();
+		
+		int replicaExists = 0;
+		int seDoesntExist = 0;
+		int sourceAuthFailed = 0;
+		int targetAuthFailed = 0;
+		
+		String lastReason = null;
+		
+		while (seTargetSEs.hasMoreTokens()){
+			final SE se = SEUtils.getSE(seTargetSEs.nextToken());
 			
-			if (account.canBecome("admin"))
-				account = UserFactory.getByUsername("admin");
+			if (se==null){
+				logger.log(Level.WARNING, "Target SE '"+targetSE+"' doesn't exist for transfer ID "+transferId);
+				seDoesntExist++;
+				continue;
+			}
 			
-			target = BookingTable.bookForWriting(account, lfn, guid, null, 0, se);
+			logger.log(Level.FINE, transferId+" : Target SE is "+se);
+						
+			for (final PFN pfn: pfns){
+				if (pfn.seNumber == se.seNumber){
+					logger.log(Level.WARNING, "There already exists a replica of '"+sLFN+"' on '"+targetSE+"' for transfer ID "+transferId);
+					replicaExists++;
+					continue;
+				}
+			}
+					
+			for (final PFN source: pfns){
+				final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
+			
+				if (reason!=null){
+					logger.log(Level.WARNING, "Could not obtain source authorization for transfer ID "+transferId+" : "+reason);
+					sourceAuthFailed++;
+					lastReason = reason;
+					continue;
+				}
+			}
+					
+			final PFN target;
+			
+			try{
+				AliEnPrincipal account = AuthorizationFactory.getDefaultUser();
+				
+				if (account.canBecome("admin"))
+					account = UserFactory.getByUsername("admin");
+				
+				target = BookingTable.bookForWriting(account, lfn, guid, null, 0, se);
+			}
+			catch (final IOException ioe){
+				final String reason = ioe.getMessage();
+				logger.log(Level.WARNING, "Could not obtain target authorization for transfer ID "+transferId+" : "+reason);
+				targetAuthFailed++;
+				lastReason = reason;
+				continue;
+			}
+			
+			logger.log(Level.FINE, transferId+" : booked PFN is "+target);
+			
+			targets.add(target);
 		}
-		catch (IOException ioe){
-			final String reason = ioe.getMessage();
-			logger.log(Level.WARNING, "Could not obtain target authorization for transfer ID "+transferId+" : "+reason);
-			markTransfer(transferId, Transfer.FAILED_SYSTEM, "Target authorization failed: "+reason);
+		
+		if (targets.size()==0){
+			String message = "";
+			
+			if (targetSEsCount==0)
+				message = "No target SE indicated";
+			else{
+				if (replicaExists>0)
+					message = "There is already a replica on "+(replicaExists>1 ? "these storages" : "this storage")+(replicaExists<targetSEsCount ? " ("+replicaExists+")" : "");
+				
+				if (seDoesntExist>0){
+					if (message.length()>0)
+						message+=", ";
+					
+					message += "Target SE is not defined"+(seDoesntExist<targetSEsCount ? " ("+seDoesntExist+")" : "");
+				}
+				
+				if (sourceAuthFailed>0){
+					if (message.length()>0)
+						message+=", ";
+					
+					message += "Source authorization failed: "+lastReason+(sourceAuthFailed<targetSEsCount ? " ("+sourceAuthFailed+")" : "");
+				}
+				
+				if (targetAuthFailed>0){
+					if (message.length()>0)
+						message+=", ";
+					
+					message += "Target authorization failed: "+lastReason+(targetAuthFailed<targetSEsCount ? " ("+targetAuthFailed+")" : "");
+				}
+			}
+			
+			markTransfer(transferId, Transfer.FAILED_SYSTEM, message);
 			return null;
 		}
 		
-		logger.log(Level.FINE, transferId+" : booked PFN is "+target);
-		
-		final Transfer t = new Transfer(transferId, pfns, target);
+		final Transfer t = new Transfer(transferId, pfns, targets);
 		
 		reportMonitoring(t);
 		
@@ -288,7 +384,9 @@ public class TransferBroker {
 		}		
 	}
 	
-	private static long lastCleanedUp = 0; 
+	private static long lastCleanedUp = 0;
+	
+	private static long lastArchived = 0;
 	
 	private static synchronized void cleanup(){
 		if (System.currentTimeMillis() - lastCleanedUp<1000*30)
@@ -309,6 +407,39 @@ public class TransferBroker {
 		catch (Throwable t){
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
 		}
+		
+		if (System.currentTimeMillis() - lastArchived<1000*60*60*6)
+			return;
+		
+		lastArchived = System.currentTimeMillis();
+		
+		try{
+			final DBFunctions db = ConfigUtils.getDB("transfers");
+			
+			if (db==null)
+				return;
+			
+			Date d = new Date(System.currentTimeMillis());
+			
+			@SuppressWarnings("deprecation")
+			String archiveTableName = "TRANSFERSARCHIVE2012"+(d.getYear()+1900);
+			
+			final long limit = System.currentTimeMillis() - 1000*60*60*24;
+			
+			if (db.query("SELECT 1 FROM "+archiveTableName+" LIMIT 1;", true)){
+				db.query("INSERT INTO "+archiveTableName+" SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+			}
+			else{
+				db.query("CREATE TABLE "+archiveTableName+" AS SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+			}
+			
+			db.query("DELETE FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+		}
+		catch (Throwable t){
+			logger.log(Level.SEVERE, "Exception archiving", t);
+		}
+		
+		lastArchived = System.currentTimeMillis();
 	}
 	
 	/**
@@ -332,15 +463,26 @@ public class TransferBroker {
 
 			final Map<String, Object> values = new HashMap<String, Object>();
 
-			final SE targetSE = SEUtils.getSE(t.target.seNumber);
+			String seList = "";
 			
-			values.put("last_active", Long.valueOf(System.currentTimeMillis() / 1000));
+			for (final PFN pfn: t.targets){
+				final SE targetSE = SEUtils.getSE(pfn.seNumber);
+				
+				if (targetSE!=null){
+					if (seList.length()>0)
+						seList += ",";
+					
+					seList += targetSE.seName;
+				}
+			}
 			
-			if (targetSE!=null)
-				values.put("se_name", targetSE.seName);
+			
+			if (seList.length()>0)
+				values.put("se_name", seList);
 			else
 				values.put("se_name", "unknown");
 			
+			values.put("last_active", Long.valueOf(System.currentTimeMillis() / 1000));
 			values.put("transfer_id", Integer.valueOf(t.getTransferId()));
 			values.put("transfer_agent_id", Integer.valueOf(ta.getTransferAgentID()));
 			values.put("pid", Integer.valueOf(MonitorFactory.getSelfProcessID()));
@@ -426,7 +568,7 @@ public class TransferBroker {
 			v.add(Double.valueOf(t.sources.iterator().next().getGuid().size));
 
 			p.add("started");
-			v.add(Double.valueOf(t.started / 1000d));
+			v.add(Double.valueOf(t.startedWork / 1000d));
 
 			if (t.getExitCode() >= Transfer.OK) {
 				p.add("finished");
@@ -446,15 +588,32 @@ public class TransferBroker {
 					v.add(t.lastTriedProtocol.toString());
 				}
 			}
+			
+			String owner = null;
+			String seList = "";
 
-			final SE targetSE = SEUtils.getSE(t.target.seNumber); 
-			if (targetSE!=null){
+			for (PFN target: t.targets){
+				final SE targetSE = SEUtils.getSE(target.seNumber); 
+				if (targetSE!=null){
+					if (seList.length()>0)
+						seList+=",";
+					
+					seList+=targetSE.seName;
+				}
+				
+				if (owner==null)
+					owner = target.getGuid().owner;
+			}
+			
+			if (seList.length()>0){
 				p.add("destination");
-				v.add(targetSE.seName);
+				v.add(seList);
 			}
 
-			p.add("user");
-			v.add(t.target.getGuid().owner);
+			if (owner!=null){
+				p.add("user");
+				v.add(owner);
+			}
 
 			try {
 				apmon.sendParameters(cluster, String.valueOf(t.getTransferId()), p.size(), p, v);
@@ -480,17 +639,17 @@ public class TransferBroker {
 
 		reportMonitoring(t);
 
-		if (t.getExitCode() == Transfer.OK) {
-			// Update the file catalog with the new replica
-			AliEnPrincipal owner = AuthorizationFactory.getDefaultUser();
+		// Update the file catalog with the new replica
+		AliEnPrincipal owner = AuthorizationFactory.getDefaultUser();
 			
-			if (owner.canBecome("admin"))
-				owner = UserFactory.getByUsername("admin");
+		if (owner.canBecome("admin"))
+			owner = UserFactory.getByUsername("admin");
 
-			if (!BookingTable.commit(owner, t.target)){
-				logger.log(Level.WARNING, "Could not commit booked transfer: "+t.target);
-				
-				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: "+t.target);
+		for (final PFN target: t.getSuccessfulTransfers()){
+			if (!BookingTable.commit(owner, target)){
+				logger.log(Level.WARNING, "Could not commit booked transfer: "+target);
+					
+				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: "+target);
 			}
 		}
 	}
