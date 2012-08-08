@@ -386,7 +386,7 @@ public class TransferBroker {
 	
 	private static long lastCleanedUp = 0;
 	
-	private static long lastArchived = 0;
+	private static long lastArchived = System.currentTimeMillis();
 	
 	private static synchronized void cleanup(){
 		if (System.currentTimeMillis() - lastCleanedUp<1000*30)
