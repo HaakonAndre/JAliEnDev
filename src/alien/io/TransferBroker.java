@@ -460,8 +460,7 @@ public class TransferBroker {
 				return;
 
 			if (t == null) {
-				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=" + ta.getTransferAgentID() + " AND pid=" + MonitorFactory.getSelfProcessID() + " AND host='"
-						+ Format.escSQL(MonitorFactory.getSelfHostname()) + "'");
+				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=" + ta.getTransferAgentID() + " AND pid=" + MonitorFactory.getSelfProcessID() + " AND host='" + Format.escSQL(MonitorFactory.getSelfHostname()) + "'");
 				return;
 			}
 
@@ -513,7 +512,7 @@ public class TransferBroker {
 			if (db.getUpdateCount() == 0)
 				db.query(DBFunctions.composeInsert("active_transfers", values));
 			
-			db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='' WHERE transferId="+t.getTransferId()+" AND status!='TRANSFERRING';");	// just in case it was presumed expired
+			db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='', finished=null WHERE transferId="+t.getTransferId()+" AND status!='TRANSFERRING';");	// just in case it was presumed expired
 			
 			if (db.getUpdateCount()>0){
 				logger.log(Level.INFO, "Re-stated "+t.getTransferId()+" to TRANSFERRING");
