@@ -116,7 +116,7 @@ public class BookingTable {
 		
 		if (requestedPFN!=null){
 			// TODO should we check whether or not this PFN exists? It's a heavy op ... 
-		}	
+		}
 		
 		final PFN pfn = requestedPFN != null ? requestedPFN : new PFN(requestedGUID, se);
 		
@@ -154,7 +154,12 @@ public class BookingTable {
 			// create the entry in the booking table
 			final StringBuilder q = new StringBuilder("INSERT INTO LFN_BOOKED (lfn,owner,md5sum,expiretime,size,pfn,se,gowner,user,guid,jobid) VALUES ("); 
 			
-			q.append(e(lfn.getCanonicalName())).append(',');	// LFN
+			String lfnName = lfn.getCanonicalName();
+			
+			if (lfnName.equalsIgnoreCase("/"+requestedGUID.guid.toString()))
+				lfnName = "";
+			
+			q.append(e(lfnName)).append(',');	// LFN
 			q.append(e(user.getName())).append(',');			// owner
 			q.append(e(requestedGUID.md5)).append(',');			// md5sum
 			q.append("unix_timestamp(now())+86400,");			// expiretime, 24 hours from now
@@ -256,7 +261,12 @@ public class BookingTable {
 		db.query("SELECT lfn,jobid FROM LFN_BOOKED WHERE "+w);
 
 		while (db.moveNext()){
-			final LFN lfn = LFNUtils.getLFN(db.gets(1), true);
+			final String sLFN = db.gets(1);
+			
+			if (sLFN.length()==0)
+				continue;
+			
+			final LFN lfn = LFNUtils.getLFN(sLFN, true);
 			
 			if (!lfn.exists){
 				lfn.size = guid.size;
@@ -276,7 +286,7 @@ public class BookingTable {
 				
 				lfn.jobid = db.geti(2, -1);
 				
-				boolean inserted = LFNUtils.insertLFN(lfn);
+				final boolean inserted = LFNUtils.insertLFN(lfn);
 				
 				if (!inserted){
 					logger.log(Level.WARNING, "Could not insert this LFN in the catalog : "+lfn);
