@@ -110,6 +110,8 @@ public class TransferAgent extends Thread {
 		}
 	}
 	
+	private static int transferAgentIDSequence = 0;
+	
 	/**
 	 * Run the TransferAgent<br>
 	 * <br>
@@ -128,7 +130,7 @@ public class TransferAgent extends Thread {
 		final LinkedList<TransferAgent> agents = new LinkedList<TransferAgent>();
 		
 		for (int i=0; i<workers; i++){
-			final TransferAgent ta = new TransferAgent(i);
+			final TransferAgent ta = new TransferAgent(transferAgentIDSequence++);
 			
 			ta.start();
 			
@@ -156,7 +158,7 @@ public class TransferAgent extends Thread {
 				}
 				
 				while (workers > agents.size()){
-					final TransferAgent ta = new TransferAgent(agents.size());
+					final TransferAgent ta = new TransferAgent(transferAgentIDSequence++);
 						
 					ta.start();
 						
