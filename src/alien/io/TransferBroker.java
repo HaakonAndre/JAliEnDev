@@ -167,6 +167,8 @@ public class TransferBroker {
 		final GUID guid;
 		final LFN lfn;
 		
+		boolean runningOnGUID = false;
+		
 		if (GUIDUtils.isValidGUID(sLFN)){
 			guid = GUIDUtils.getGUID(sLFN);
 			
@@ -178,6 +180,8 @@ public class TransferBroker {
 			
 			// because of this only admin will be allowed to mirror GUIDs without indicating the LFN (eg for storage replication)
 			lfn = LFNUtils.getLFN("/"+sLFN, true);
+			
+			runningOnGUID = true;
 		}
 		else{
 			lfn = LFNUtils.getLFN(sLFN);
@@ -212,7 +216,7 @@ public class TransferBroker {
 			
 		final Set<PFN> pfns;
 		
-		if (lfn!=null){
+		if (!runningOnGUID){
 			pfns = lfn.whereisReal();
 		}
 		else{
