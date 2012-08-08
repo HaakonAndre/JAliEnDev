@@ -1,6 +1,7 @@
 package alien.io;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -226,6 +227,26 @@ public final class TransferUtils {
 	public static int mirror(final GUID guid, final SE se){
 		if (guid==null || !guid.exists() || se==null)
 			return -1;
+		
+		final Set<GUID> realGUIDs = guid.getRealGUIDs(); 
+		
+		final Set<PFN> pfns = new LinkedHashSet<PFN>();
+		
+		if (realGUIDs!=null){
+			for (final GUID realId: realGUIDs){
+				final Set<PFN> replicas = realId.getPFNs();
+			
+				if (replicas==null)
+					continue;
+
+				pfns.addAll(replicas);
+			}
+		}
+		
+		for (final PFN p: pfns){
+			if (p.seNumber == se.seNumber)
+				return 0;
+		}
 		
 		final DBFunctions db = getDB();
 		
