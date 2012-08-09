@@ -164,7 +164,7 @@ public class TransferBroker {
 			dbc.free();
 		}
 		
-		final GUID guid;
+		GUID guid;
 		final LFN lfn;
 		
 		boolean runningOnGUID = false;
@@ -218,6 +218,20 @@ public class TransferBroker {
 		
 		if (!runningOnGUID){
 			pfns = lfn.whereisReal();
+			
+			if (pfns!=null){
+				for (final PFN p: pfns){
+					final GUID pfnGUID = p.getGuid();
+					
+					if (!pfnGUID.equals(guid)){
+						logger.log(Level.INFO, "Switching to mirroring "+pfnGUID.guid+" instead of "+guid.guid+" because this is the real file for "+lfn.getCanonicalName());
+						
+						guid = pfnGUID;	// switch to mirroring the archive instead of the pointer to it
+						
+						break;
+					}
+				}
+			}
 		}
 		else{
 			final Set<GUID> realGUIDs = guid.getRealGUIDs(); 
@@ -232,6 +246,12 @@ public class TransferBroker {
 						continue;
 	
 					pfns.addAll(replicas);
+					
+					if (!guid.equals(realId)){
+						logger.log(Level.INFO, "Switching to mirroring "+realId.guid+" instead of "+guid.guid+" because this is the real file");
+						
+						guid = realId;	// switch to mirroring the archive instead of the pointer to it
+					}
 				}
 			}
 		}
