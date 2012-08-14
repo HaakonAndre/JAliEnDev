@@ -246,7 +246,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		gowner = StringFactory.get(db.gets("gowner"));
 		
-		String ftype = db.gets("type");
+		final String ftype = db.gets("type");
 		
 		if (ftype.length()>0)
 			type = ftype.charAt(0);
@@ -255,7 +255,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		perm = StringFactory.get(db.gets("perm"));
 		
-		byte[] guidBytes = db.getBytes("guid");
+		final byte[] guidBytes = db.getBytes("guid");
 		
 		if (guidBytes!=null)
 			guid = GUID.getUUID(guidBytes);
