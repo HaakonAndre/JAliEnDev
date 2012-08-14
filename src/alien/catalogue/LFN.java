@@ -246,7 +246,12 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		gowner = StringFactory.get(db.gets("gowner"));
 		
-		type = db.gets("type").charAt(0);
+		String ftype = db.gets("type");
+		
+		if (ftype.length()>0)
+			type = ftype.charAt(0);
+		else
+			type = lfn.endsWith("/") ? 'd' : 'f';
 		
 		perm = StringFactory.get(db.gets("perm"));
 		
