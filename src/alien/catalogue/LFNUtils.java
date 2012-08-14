@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -442,13 +443,18 @@ public class LFNUtils {
 	public static final int FIND_REGEXP = 8;
 	
 	/**
+	 * Return the find results as LinkedList&lt;LFN&gt; instead of the default ArrayList&lt;LFN&gt;() 
+	 */
+	public static final int FIND_LINKED_LIST = 16;
+	
+	/**
 	 * @param path
 	 * @param pattern
 	 * @param flags a combination of FIND_* flags
 	 * @return the list of LFNs that match
 	 */
 	public static List<LFN> find(final String path, final String pattern, final int flags){
-		final List<LFN> ret = new ArrayList<LFN>();
+		final List<LFN> ret = (flags & FIND_LINKED_LIST) != 0 ? new LinkedList<LFN>() : new ArrayList<LFN>();
 		
 		final List<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
