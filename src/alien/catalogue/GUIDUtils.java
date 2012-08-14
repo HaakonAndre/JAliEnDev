@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -183,7 +184,14 @@ public final class GUIDUtils {
 			return null;
 		}
 		
-		return new GUID(db, host, tableName);
+		try{
+			return new GUID(db, host, tableName);
+		}
+		catch (final Exception e){
+			logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
+			
+			return null;
+		}
 	}
 	
 	/**
