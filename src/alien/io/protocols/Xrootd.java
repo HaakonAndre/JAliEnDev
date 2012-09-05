@@ -26,6 +26,8 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import alien.se.SE;
+import alien.se.SEUtils;
 
 /**
  * @author costing
@@ -80,8 +82,8 @@ public class Xrootd extends Protocol {
 	private int timeout = 60;
 
 	// last value must be 0 for a clean exit
-	//private static final int statRetryTimes[] = { 1, 2, 4, 8, 16, 0 };
-	private static final int statRetryTimes[] = { 5, 10, 15, 20, 20, 20, 30, 30, 30, 30, 0 };
+	private static final int statRetryTimesXrootd[] = { 1, 5, 10, 0 };
+	private static final int statRetryTimesDCache[] = { 5, 10, 15, 20, 20, 20, 30, 30, 30, 30, 0 };
 
 	
 	/**
@@ -615,16 +617,18 @@ public class Xrootd extends Protocol {
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
 
+		final SE se = SEUtils.getSE(pfn.seNumber);
+		
+		final int[] statRetryTimes = se.seName.toLowerCase().contains("dcache") ? statRetryTimesDCache : statRetryTimesXrootd;
+		
 		for (int statRetryCounter = 0; statRetryCounter < statRetryTimes.length; statRetryCounter++) {
 			try {
 				final List<String> command = new LinkedList<String>();
 
 				if (returnEnvelope) {
-					// e.g. xrd pcaliense01:1095 query 32
-					// /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+					// e.g. xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
 					// TODO:
-					// clean the following up, it's working but not very good
-					// looking
+					// clean the following up, it's working but not very good looking
 					command.add("xrd");
 					String qProt = pfn.getPFN().substring(7);
 					String host = qProt.substring(0, qProt.indexOf(':'));
@@ -646,14 +650,13 @@ public class Xrootd extends Protocol {
 
 					if (forceRecalcMd5)
 						qpfn += "\\&recomputemd5=1";
+					
 					command.add(qpfn);
-
 				}
 				else {
 					command.add("xrdstat");
 					command.addAll(getCommonArguments());
 					command.add(pfn.getPFN());
-
 				}
 
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
