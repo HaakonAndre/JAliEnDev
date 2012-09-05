@@ -405,7 +405,7 @@ public class Xrootd extends Protocol {
 			}
 
 			if (!checkDownloadedFile(target, pfn))
-				throw new SourceException("Local file doesn't match catalogue details");
+				throw new SourceException("Local file doesn't match catalogue details ("+(target.exists() ? ""+target.length() : "n/a")+" vs "+pfn.getGuid().size);
 		}
 		catch (final SourceException ioe) {
 			if (target.exists() && !target.delete())
