@@ -907,7 +907,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			final String pfn = replica.pfn;
 			
 			if (pfn.startsWith("guid://") || (pfn.startsWith("root://") && pfn.indexOf("?ZIP=")>=0)){
-				int idx = pfn.indexOf("://");
+				int idx = pfn.lastIndexOf('/')+1;
 				
 				String sUuid;
 				
