@@ -42,6 +42,9 @@ public class XRDChecker {
 		
 		final Set<GUID> realGUIDs = guid.getRealGUIDs();
 		
+		if (realGUIDs==null || realGUIDs.size()==0)
+			return null;
+		
 		final Map<PFN, XRDStatus> ret = new HashMap<PFN, XRDStatus>();
 		
 		final Xrootd xrootd = new Xrootd();

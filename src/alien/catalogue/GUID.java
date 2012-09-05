@@ -903,6 +903,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		final Set<PFN> pfns = getPFNs();
 		
+		boolean anyNonArchive = false;
+		
 		for (final PFN replica: pfns){
 			final String pfn = replica.pfn;
 			
@@ -926,9 +928,11 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				if (archiveGuid!=null)
 					ret.add(archiveGuid);
 			}
+			else
+				anyNonArchive = true;
 		}
 		
-		if (ret.size()==0)
+		if (ret.size()==0 && anyNonArchive)
 			ret.add(this);
 		
 		return ret;

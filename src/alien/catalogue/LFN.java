@@ -393,6 +393,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 					
 		final Set<GUID> realGUIDs = id.getRealGUIDs(); 
 		
+		if (realGUIDs==null || realGUIDs.size()==0)
+			return null;
+		
 		final Set<PFN> ret = new LinkedHashSet<PFN>();
 		
 		for (final GUID realId: realGUIDs){

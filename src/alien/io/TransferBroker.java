@@ -180,6 +180,12 @@ public class TransferBroker {
 			
 			// because of this only admin will be allowed to mirror GUIDs without indicating the LFN (eg for storage replication)
 			lfn = LFNUtils.getLFN("/"+sLFN, true);
+			lfn.guid = guid.guid;
+			lfn.size = guid.size;
+			lfn.md5 = guid.md5;
+			
+			guid.lfnCache = new HashSet<LFN>();
+			guid.lfnCache.add(lfn);
 			
 			runningOnGUID = true;
 		}
@@ -238,7 +244,7 @@ public class TransferBroker {
 			
 			pfns = new LinkedHashSet<PFN>();
 			
-			if (realGUIDs!=null){
+			if (realGUIDs!=null && realGUIDs.size()>0){
 				for (final GUID realId: realGUIDs){
 					final Set<PFN> replicas = realId.getPFNs();
 				
@@ -253,6 +259,9 @@ public class TransferBroker {
 						guid = realId;	// switch to mirroring the archive instead of the pointer to it
 					}
 				}
+			}
+			else{
+				logger.log(Level.WARNING, "No real PFNs for GUID "+guid.guid+", cannot perform the transfer");
 			}
 		}
 		

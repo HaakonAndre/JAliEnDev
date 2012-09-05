@@ -232,7 +232,7 @@ public final class TransferUtils {
 		
 		final Set<PFN> pfns = new LinkedHashSet<PFN>();
 		
-		if (realGUIDs!=null){
+		if (realGUIDs!=null && realGUIDs.size()>0){
 			for (final GUID realId: realGUIDs){
 				final Set<PFN> replicas = realId.getPFNs();
 			
@@ -242,6 +242,9 @@ public final class TransferUtils {
 				pfns.addAll(replicas);
 			}
 		}
+
+		if (pfns.size()==0)
+			return -3;
 		
 		for (final PFN p: pfns){
 			if (p.seNumber == se.seNumber)
