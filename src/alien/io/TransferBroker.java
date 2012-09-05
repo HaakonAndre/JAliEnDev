@@ -260,9 +260,6 @@ public class TransferBroker {
 					}
 				}
 			}
-			else{
-				logger.log(Level.WARNING, "No real PFNs for GUID "+guid.guid+", cannot perform the transfer");
-			}
 		}
 		
 		if (pfns==null || pfns.size()==0){
