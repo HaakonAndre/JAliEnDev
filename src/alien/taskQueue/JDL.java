@@ -504,9 +504,10 @@ public class JDL implements Serializable {
 	}
 	
 	/**
-	 * Get the output directory
+	 * Get the output directory, the unparsed value of the "OutputDir" tag.
 	 * 
 	 * @return output directory
+	 * @see #getOutputDir()
 	 */
 	public String getOutputDirectory() {
 		return gets("OutputDir");
@@ -730,7 +731,7 @@ public class JDL implements Serializable {
 	}
 	
 	/**
-	 * Get the output directory
+	 * Get the base output directory, removing any #alien*# keywords from it 
 	 * 
 	 * @return output directory
 	 */
