@@ -465,7 +465,7 @@ public class TransferBroker {
 			Date d = new Date(System.currentTimeMillis());
 			
 			@SuppressWarnings("deprecation")
-			String archiveTableName = "TRANSFERSARCHIVE2012"+(d.getYear()+1900);
+			final String archiveTableName = "TRANSFERSARCHIVE"+(d.getYear()+1900);
 			
 			final long limit = System.currentTimeMillis() - 1000*60*60*24;
 			
