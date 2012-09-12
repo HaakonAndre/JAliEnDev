@@ -112,14 +112,21 @@ public class TransferBroker {
 		}
 	}
 	
+	private long lastTimeNoWork = 0;
+	
 	/**
 	 * @return the next transfer to be performed, or <code>null</code> if there is nothing to do
 	 */
 	public synchronized Transfer getWork(){
+		if (System.currentTimeMillis() - lastTimeNoWork < 1000*30)
+			return null;
+		
 		final DBFunctions db = ConfigUtils.getDB("transfers");
 		
 		if (db==null){
 			logger.log(Level.WARNING, "Could not connect to the transfers database");
+			
+			lastTimeNoWork = System.currentTimeMillis();
 			
 			return null;
 		}
@@ -143,11 +150,17 @@ public class TransferBroker {
 			}
 			else{
 				logger.log(Level.FINE, "There is no waiting transfer in the queue");
+				
+				lastTimeNoWork = System.currentTimeMillis();
+				
 				return null;
 			}
 			
 			if (transferId<0 || sLFN==null || sLFN.length()==0 || targetSE==null || targetSE.length()==0){
 				logger.log(Level.INFO, "Transfer details are wrong");
+				
+				lastTimeNoWork = System.currentTimeMillis();
+				
 				return null;
 			}
 
