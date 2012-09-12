@@ -469,14 +469,17 @@ public class TransferBroker {
 			
 			final long limit = System.currentTimeMillis() - 1000*60*60*24;
 			
+			final boolean ok;
+			
 			if (db.query("SELECT 1 FROM "+archiveTableName+" LIMIT 1;", true)){
-				db.query("INSERT INTO "+archiveTableName+" SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+				ok = db.query("INSERT INTO "+archiveTableName+" SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
 			}
 			else{
-				db.query("CREATE TABLE "+archiveTableName+" AS SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+				ok = db.query("CREATE TABLE "+archiveTableName+" AS SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
 			}
 			
-			db.query("DELETE FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+			if (ok)
+				db.query("DELETE FROM TRANSFERS_DIRECT WHERE finished<"+limit);
 		}
 		catch (Throwable t){
 			logger.log(Level.SEVERE, "Exception archiving", t);
