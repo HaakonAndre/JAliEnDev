@@ -225,6 +225,18 @@ public final class TransferUtils {
 	 * 			-4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
 	 */
 	public static int mirror(final GUID guid, final SE se){
+		return mirror(guid, se, true);
+	}
+	
+	/**
+	 * @param guid
+	 * @param se
+	 * @param checkPreviousTransfers if <code>true</code> then the transfer queue is checked for active transfers identical to the requested one. You should always pass <code>true</code> unless you are sure 
+	 * 			no such transfer could previously exist (either because it was just checked or whatever) 
+	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot locate real pfns
+	 * 			-4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 */
+	public static int mirror(final GUID guid, final SE se, final boolean checkPreviousTransfers){
 		if (guid==null || !guid.exists() || se==null)
 			return -1;
 		
@@ -255,10 +267,12 @@ public final class TransferUtils {
 		
 		final String sGUID = guid.guid.toString();
 		
-		db.query("SELECT transferId FROM TRANSFERS_DIRECT where lfn='"+Format.escSQL(sGUID)+"' AND destination='"+Format.escSQL(se.seName)+"' AND status in ('WAITING', 'TRANSFERRING');");
+		if (checkPreviousTransfers){
+			db.query("SELECT transferId FROM TRANSFERS_DIRECT where lfn='"+Format.escSQL(sGUID)+"' AND destination='"+Format.escSQL(se.seName)+"' AND status in ('WAITING', 'TRANSFERRING');");
 		
-		if (db.moveNext())
-			return db.geti(1);
+			if (db.moveNext())
+				return db.geti(1);
+		}
 		
 		db.setLastGeneratedKey(true);
 		
