@@ -42,7 +42,7 @@ public class JDL implements Serializable {
 	private final Map<String, Object> jdlContent = new LinkedHashMap<String, Object>();
 	
 	/**
-	 * Empty constructor. The values can be populated with {@link #set(String, Object)}  and {@link #append(String, String)}
+	 * Empty constructor. The values can be populated with {@link #set(String, Object)}  and {@link #append(String, String...)}
 	 */
 	public JDL(){
 		// empty
@@ -933,15 +933,15 @@ public class JDL implements Serializable {
 	}
 	
 	/**
-	 * Append a String value to an array. If there is a previously set single value then it is transformed in an array and the previously set value is kept as the first entry
+	 * Append some String values to an array. If there is a previously set single value then it is transformed in an array and the previously set value is kept as the first entry
 	 * of it. 
 	 * 
 	 * @param key
 	 * @param value
 	 */
 	@SuppressWarnings("unchecked")
-	public void append(final String key, final String value){
-		if (key==null || value==null)
+	public void append(final String key, final String... value){
+		if (key==null || value==null || value.length==0)
 			return;
 		
 		final Object old = get(key);
@@ -974,7 +974,8 @@ public class JDL implements Serializable {
 				jdlContent.put(key, values);
 		}
 		
-		values.add(StringFactory.get(value));
+		for (final String s: value)
+			values.add(StringFactory.get(s));
 	}
 	
 
