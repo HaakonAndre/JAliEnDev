@@ -446,6 +446,8 @@ public class TransferBroker {
 			db.query("DELETE FROM active_transfers WHERE last_active<"+((lastCleanedUp/1000) - 300));
 			
 			db.query("UPDATE TRANSFERS_DIRECT SET status='KILLED', finished="+(lastCleanedUp/1000)+", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
+			
+			db.query("UPDATE TRANSFERS_DIRECT SET status='WAITING' WHERE status='INSERTING';");
 		}
 		catch (Throwable t){
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
@@ -472,16 +474,19 @@ public class TransferBroker {
 			final boolean ok;
 			
 			if (db.query("SELECT 1 FROM "+archiveTableName+" LIMIT 1;", true)){
-				ok = db.query("INSERT INTO "+archiveTableName+" SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+				ok = db.query("INSERT IGNORE INTO "+archiveTableName+" SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
 			}
 			else{
 				ok = db.query("CREATE TABLE "+archiveTableName+" AS SELECT * FROM TRANSFERS_DIRECT WHERE finished<"+limit);
+				
+				if (ok)
+					db.query("CREATE UNIQUE INDEX "+archiveTableName+"_pkey ON "+archiveTableName+"(transferId);");
 			}
 			
 			if (ok)
 				db.query("DELETE FROM TRANSFERS_DIRECT WHERE finished<"+limit);
 		}
-		catch (Throwable t){
+		catch (final Throwable t){
 			logger.log(Level.SEVERE, "Exception archiving", t);
 		}
 		
