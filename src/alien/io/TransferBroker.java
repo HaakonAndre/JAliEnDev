@@ -4,12 +4,12 @@
 package alien.io;
 
 import java.io.IOException;
-import java.sql.Date;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -166,7 +166,7 @@ public class TransferBroker {
 
 			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId="+transferId+";");
 		}
-		catch (Exception e){
+		catch (final Exception e){
 			logger.log(Level.WARNING, "Exception fetching data from the query", e);
 			// ignore
 		}
@@ -449,7 +449,7 @@ public class TransferBroker {
 			
 			db.query("UPDATE TRANSFERS_DIRECT SET status='WAITING' WHERE status='INSERTING';");
 		}
-		catch (Throwable t){
+		catch (final Throwable t){
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
 		}
 		
@@ -464,10 +464,7 @@ public class TransferBroker {
 			if (db==null)
 				return;
 			
-			Date d = new Date(System.currentTimeMillis());
-			
-			@SuppressWarnings("deprecation")
-			final String archiveTableName = "TRANSFERSARCHIVE"+(d.getYear()+1900);
+			final String archiveTableName = "TRANSFERSARCHIVE"+Calendar.getInstance().get(Calendar.YEAR);
 			
 			final long limit = System.currentTimeMillis() - 1000*60*60*24;
 			
@@ -642,7 +639,7 @@ public class TransferBroker {
 			String owner = null;
 			String seList = "";
 
-			for (PFN target: t.targets){
+			for (final PFN target: t.targets){
 				final SE targetSE = SEUtils.getSE(target.seNumber); 
 				if (targetSE!=null){
 					if (seList.length()>0)
