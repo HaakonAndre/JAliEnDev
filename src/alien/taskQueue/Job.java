@@ -121,6 +121,11 @@ public class Job  implements Comparable<Job>,Serializable {
 	public String merging;
 	
 	/**
+	 * User name
+	 */
+	public String user;
+	
+	/**
 	 * submitHost
 	 */
 	public String submitHost;
@@ -234,7 +239,6 @@ public class Job  implements Comparable<Job>,Serializable {
 	private void init(final DBFunctions db, final boolean loadJDL){
 		queueId = db.geti("queueId");
 		priority = db.geti("priority");
-		execHost = StringFactory.get(db.gets("execHost"));
 		sent = db.getl("sent");
 		split = db.geti("split");
 		name = StringFactory.get(db.gets("name"));
@@ -242,16 +246,12 @@ public class Job  implements Comparable<Job>,Serializable {
 		commandArg = StringFactory.get(db.gets("commandArg", null));
 		finished = db.getl("finished");
 		masterjob = db.getb("masterjob", false);
-		status = StringFactory.get(db.gets("status"));
 		splitting = db.geti("splitting");
-		node = StringFactory.get(db.gets("node", null));
 		error = db.geti("error");
 		current = StringFactory.get(db.gets("current", null));
 		received = db.getl("received");
 		validate = db.getb("validate",false);
-		command = StringFactory.get(db.gets("command", null));
 		merging = StringFactory.get(db.gets("merging", null));
-		submitHost = StringFactory.get(db.gets("submitHost"));
 		jdl = loadJDL ? db.gets("jdl") : null;
 		path = StringFactory.get(db.gets("path", null));
 		site = StringFactory.get(db.gets("site", null));
@@ -262,11 +262,37 @@ public class Job  implements Comparable<Job>,Serializable {
 		price = db.getf("price");
 		si2k = db.getf("si2k");
 		jobagentId = db.geti("jobagentId");
-		agentid = db.geti("agentid");
-		notify = StringFactory.get(db.gets("notify", null));		
+		agentid = db.geti("agentid");		
 		chargeStatus = StringFactory.get(db.gets("chargeStatus", null));
 		optimized = db.getb("optimized",false);
 		mtime = db.getDate("mtime", null);	
+		
+		if (TaskQueueUtils.dbStructure2_20){
+			status = TaskQueueUtils.codeToStatus.get(Integer.valueOf(db.geti("statusId")));
+			submitHost = TaskQueueUtils.getHost(db.geti("submitHostId"));
+			execHost = TaskQueueUtils.getHost(db.geti("execHostId"));
+			node = TaskQueueUtils.getHost(db.geti("nodeid"));
+			notify = TaskQueueUtils.getNotify(db.geti("notifyId"));
+			command = TaskQueueUtils.getCommand(db.geti("commandId"));
+		}
+		else{
+			status = StringFactory.get(db.gets("status"));
+			submitHost = db.gets("submitHost");
+			execHost = StringFactory.get(db.gets("execHost"));
+			node = StringFactory.get(db.gets("node", null));
+			notify = StringFactory.get(db.gets("notify", null));
+			command = StringFactory.get(db.gets("command", null));
+			
+			final int idx = submitHost.indexOf('@');
+			
+			if (idx>0){
+				user = StringFactory.get(submitHost.substring(0, idx));
+				submitHost = StringFactory.get(submitHost.substring(idx+1));
+			}
+			else{
+				submitHost = StringFactory.get(submitHost);
+			}
+		}
 	}
 
 	@Override
@@ -309,6 +335,7 @@ public class Job  implements Comparable<Job>,Serializable {
 		" validate\t\t: "+validate+"\n" +
 		" command\t\t: "+command+"\n" +
 		" merging\t\t: "+merging+"\n" +
+		" user\t\t: "+user+"\n"+
 		" submitHost\t\t: "+submitHost+"\n" +
 		" jdl\t\t: "+jdl+"\n" +
 		" path\t\t: "+path+"\n" +
@@ -331,15 +358,7 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * @return the owner of the job (AliEn account name)
 	 */
 	public String getOwner(){
-		if (submitHost==null)
-			return null;
-		
-		int idx = submitHost.indexOf('@');
-		
-		if (idx<0)
-			return null;
-		
-		return lia.util.StringFactory.get(submitHost.substring(0, idx).toLowerCase());
+		return user;
 	}
 
 	private static final Pattern pJDLContent = Pattern.compile("^\\s*\\[\\s*(.*)\\s*\\]\\s*$", Pattern.DOTALL | Pattern.MULTILINE); 

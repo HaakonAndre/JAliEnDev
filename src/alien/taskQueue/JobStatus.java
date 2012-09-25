@@ -21,6 +21,10 @@ public enum JobStatus{
 	 */
 	INSERTING(10),
 	/**
+	 * Updating (11)
+	 */
+	UPDATING(11),
+	/**
 	 * Splitting (15)
 	 */
 	SPLITTING(15),
@@ -61,11 +65,11 @@ public enum JobStatus{
 	 */
 	STARTED(40),
 	/**
-	 * Idle, doing what ? (50) 
+	 * Idle, doing what ? (45) 
 	 */
 	IDLE(45),
 	/**
-	 * (50)
+	 * (46)
 	 */
 	INTERACTIV(46),
 	/**
@@ -85,81 +89,85 @@ public enum JobStatus{
 	 */
 	SAVED_WARN(71),
 	/**
-	 * Zombie (999)
+	 * Zombie (600)
 	 */
 	ZOMBIE(600),
 	/**
-	 * Force merge (950)
+	 * Force merge (700)
 	 */
 	FORCEMERGE(700),
 	/**
-	 * Currently merging  (970)
+	 * Currently merging  (701)
 	 */
 	MERGING(701),
 	/**
-	 * Fantastic, job successfully completed (980)
+	 * Fantastic, job successfully completed (800)
 	 */
 	DONE(800),
 	/**
-	 * Job is successfully done, but saving saw some errors (981)
+	 * Job is successfully done, but saving saw some errors (801)
 	 */
 	DONE_WARN(801),
 	/**
-	 * ERROR_A (990)
+	 * ERROR_A (900)
 	 */
 	ERROR_A(900),
 	/**
-	 * Error inserting (990)
+	 * Error inserting (901)
 	 */
 	ERROR_I(901),
 	/**
-	 * Error executing (over TTL, memory limits etc) (990)
+	 * Error executing (over TTL, memory limits etc) (902)
 	 */
 	ERROR_E(902),
 	/**
-	 * Error downloading the input files (990)
+	 * Error downloading the input files (903)
 	 */
 	ERROR_IB(903),
 	/**
-	 * Error merging (990)
+	 * Error merging (904)
 	 */
 	ERROR_M(904),
 	/**
-	 * Error registering (990)
+	 * Error registering (905)
 	 */
 	ERROR_RE(905),
 	/**
-	 * ERROR_S (990)
+	 * ERROR_S (906)
 	 */
 	ERROR_S(906),
 	/**
-	 * Error saving output files (990)
+	 * Error saving output files (907)
 	 */
 	ERROR_SV(907),
 	/**
-	 * Validation error (990)
+	 * Validation error (908)
 	 */
 	ERROR_V(908),
 	/**
-	 * Cannot run the indicated validation code (990)
+	 * Cannot run the indicated validation code (909)
 	 */
 	ERROR_VN(909),
 	/**
-	 * ERROR_VT (990)
+	 * ERROR_VT (910)
 	 */
 	ERROR_VT(910),
 	/**
-	 * Waiting time expired (LPMActivity JDL tag) (990)
+	 * ERROR_EW (911)
 	 */
-	ERROR_W(911),
+	ERROR_EW(911),
 	/**
-	 * Error splitting (990)
+	 * Waiting time expired (LPMActivity JDL tag) (912)
 	 */
-	ERROR_SPLT(912),
+	ERROR_W(912),
 	/**
-	 * Error verifying JDL signature
+	 * Error splitting (913)
 	 */
-	ERROR_VER(913),
+	ERROR_SPLT(913),
+	/**
+	 * Error verifying JDL signature (914)
+	 */
+	ERROR_VER(914),
 	/**
 	 * Job didn't report for too long (1000)
 	 */
