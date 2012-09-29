@@ -561,6 +561,14 @@ public class TaskQueueUtils {
 	 * @return <code>true</code> if the job status was changed
 	 */
 	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint){
+		if (job<=0){
+			throw new IllegalArgumentException("Job ID "+job+" is illegal");
+		}
+		
+		if (newStatus==null){
+			throw new IllegalArgumentException("The new status code cannot be null");
+		}
+		
 		final DBFunctions db = getQueueDB();
 		
 		if (db==null){
@@ -588,12 +596,23 @@ public class TaskQueueUtils {
 			return false;
 		}
 		
-		final String oldStatusString = dbStructure2_20 ? codeToStatus.get(Integer.valueOf(db.geti(1))) : db.gets(2);
+		final String oldStatusString = dbStructure2_20 ? codeToStatus.get(Integer.valueOf(db.geti(1))) : db.gets(1);
+		
+		if (oldStatusString==null || oldStatusString.length()==0){
+			logger.log(Level.WARNING, "Cannot get the status string from "+db.gets(1));
+			return false;
+		}
 		
 		final JobStatus oldStatus = JobStatus.getStatus(oldStatusString);
 		
+		if (oldStatus==null){
+			logger.log(Level.WARNING, "Unknown JobStatus for "+oldStatusString);
+			return false;
+		}
+		
 		if (oldStatusConstraint!=null && oldStatus!=oldStatusConstraint){
-			logger.log(Level.FINE, "Refusing to do the update of "+job+" to state "+newStatus.name()+" because old status is not "+oldStatusConstraint.name()+" but "+oldStatus.name());
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Refusing to do the update of "+job+" to state "+newStatus.name()+" because old status is not "+oldStatusConstraint.name()+" but "+oldStatus.name());
 			
 			return false;
 		}
