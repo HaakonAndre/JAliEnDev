@@ -322,39 +322,39 @@ public class Job  implements Comparable<Job>,Serializable {
 		return "Job queueId\t\t: "+queueId+"\n" +
 		" priority\t\t: "+priority+"\n" +
 		" execHost\t\t: "+execHost+"\n" +
-		" sent\t\t: "+sent+"\n"+
-		" split\t\t: "+split+"\n" +
-		" name\t\t: "+name+"\n" +
-		" spyurl\t\t: "+spyurl+"\n" +
+		" sent\t\t\t: "+sent+"\n"+
+		" split\t\t\t: "+split+"\n" +
+		" name\t\t\t: "+name+"\n" +
+		" spyurl\t\t\t: "+spyurl+"\n" +
 		" commandArg\t\t: "+commandArg+"\n" +
 		" finished\t\t: "+finished+"\n" +
 		" masterjob\t\t: "+masterjob+"\n" +
-		" status\t\t: "+status+"\n" +
+		" status\t\t\t: "+status+"\n" +
 		" splitting\t\t: "+splitting+"\n" +
-		" node\t\t: "+node+"\n" +
-		" error\t\t: "+error+"\n" +
+		" node\t\t\t: "+node+"\n" +
+		" error\t\t\t: "+error+"\n" +
 		" current\t\t: "+current+"\n" +
 		" received\t\t: "+received+"\n" +
 		" validate\t\t: "+validate+"\n" +
 		" command\t\t: "+command+"\n" +
 		" merging\t\t: "+merging+"\n" +
-		" user\t\t: "+user+"\n"+
+		" user\t\t\t: "+user+"\n"+
 		" submitHost\t\t: "+submitHost+"\n" +
-		" jdl\t\t: "+jdl+"\n" +
-		" path\t\t: "+path+"\n" +
-		" site\t\t: "+site+"\n" +
+		" path\t\t\t: "+path+"\n" +
+		" site\t\t\t: "+site+"\n" +
 		" started\t\t: "+started+"\n" +
 		" expires\t\t: "+expires+"\n" +
 		" finalPrice\t\t: "+finalPrice+"\n" +
-		" effectivePriority\t\t: "+effectivePriority+"\n" +
-		" price\t\t: "+price+"\n" +
-		" si2k\t\t: "+si2k+"\n" +
+		" effectivePriority\t: "+effectivePriority+"\n" +
+		" price\t\t\t: "+price+"\n" +
+		" si2k\t\t\t: "+si2k+"\n" +
 		" jobagentId\t\t: "+jobagentId+"\n" +
 		" agentid\t\t: "+agentid+"\n" +
-		" notify\t\t: "+notify+"\n" +
+		" notify\t\t\t: "+notify+"\n" +
 		" chargeStatus\t\t: "+chargeStatus+"\n" +
 		" optimized\t\t: "+optimized+"\n" +
-		" mtime\t\t: "+mtime+ "\n";
+		" mtime\t\t\t: "+mtime+ "\n"+
+		" jdl\t\t\t: "+jdl;
 	}
 	
 	/**
