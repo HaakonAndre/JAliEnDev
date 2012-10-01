@@ -1366,7 +1366,7 @@ public class TaskQueueUtils {
 			valuesJDL.put("queueId", pid);
 			valuesJDL.put("origJdl", "\n    [\n"+j.toString()+"\n    ]");
 			
-			final String insertJDL = DBFunctions.composeInsert("QUEUE", values);
+			final String insertJDL = DBFunctions.composeInsert("QUEUEJDL", values);
 			
 			db.query(insertJDL);
 		}
