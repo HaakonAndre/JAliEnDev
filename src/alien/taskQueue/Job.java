@@ -112,7 +112,9 @@ public class Job  implements Comparable<Job>,Serializable {
 	
 	/**
 	 * command
+	 * @deprecated
 	 */
+	@Deprecated
 	public String command;
 	
 	/**
@@ -241,7 +243,6 @@ public class Job  implements Comparable<Job>,Serializable {
 		priority = db.geti("priority");
 		sent = db.getl("sent");
 		split = db.geti("split");
-		name = StringFactory.get(db.gets("name"));
 		spyurl = StringFactory.get(db.gets("spyurl"));
 		commandArg = StringFactory.get(db.gets("commandArg", null));
 		finished = db.getl("finished");
@@ -273,7 +274,7 @@ public class Job  implements Comparable<Job>,Serializable {
 			execHost = TaskQueueUtils.getHost(db.geti("execHostId"));
 			node = TaskQueueUtils.getHost(db.geti("nodeid"));
 			notify = TaskQueueUtils.getNotify(db.geti("notifyId"));
-			command = TaskQueueUtils.getCommand(db.geti("commandId"));
+			name = command = TaskQueueUtils.getCommand(db.geti("commandId"));
 		}
 		else{
 			status = StringFactory.get(db.gets("status"));
@@ -281,7 +282,7 @@ public class Job  implements Comparable<Job>,Serializable {
 			execHost = StringFactory.get(db.gets("execHost"));
 			node = StringFactory.get(db.gets("node", null));
 			notify = StringFactory.get(db.gets("notify", null));
-			command = StringFactory.get(db.gets("command", null));
+			name = command = StringFactory.get(db.gets("command", null));
 			
 			final int idx = submitHost.indexOf('@');
 			
