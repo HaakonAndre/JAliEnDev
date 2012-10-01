@@ -1389,6 +1389,37 @@ public class TaskQueueUtils {
 			if (!db.moveNext()){
 				db.setLastGeneratedKey(true);
 				
+				Set<String> ids = LDAPHelper.checkLdapInformation("uid="+key, "ou=People,", "CCID");
+				
+				int id = 0;
+				
+				if (ids!=null && ids.size()>0){
+					for (final String s: ids){
+						try{
+							id = Integer.parseInt(s);
+							break;
+						}
+						catch (final Throwable t){
+							// ignore
+						}
+					}
+				}
+				
+				if (id>0){
+					if (db.query("INSERT INTO QUEUE_USER (userId, user) VALUES ("+id+", '"+Format.escSQL(key)+"');"))
+						return Integer.valueOf(id);
+					
+					// did it fail because the user was inserted by somebody else?
+					db.query("SELECT userId FROM QUEUE_USER where user='"+Format.escSQL(key)+"'");
+					
+					if (db.moveNext())
+						return Integer.valueOf(db.geti(1));
+					
+					// if it gets here it means there is a duplicate CCID in LDAP
+					
+					logger.log(Level.WARNING, "Duplicate CCID "+id+" in LDAP, failed to correctly insert user "+key+" because of it. Will generate a new userid for this guy, but the consistency with LDAP is lost now!");
+				}
+				
 				if (db.query("INSERT INTO QUEUE_USER (user) VALUES ('"+Format.escSQL(key)+"');"))
 					return db.getLastGeneratedKey();
 				
