@@ -282,7 +282,8 @@ public class Job  implements Comparable<Job>,Serializable {
 			execHost = StringFactory.get(db.gets("execHost"));
 			node = StringFactory.get(db.gets("node", null));
 			notify = StringFactory.get(db.gets("notify", null));
-			name = command = StringFactory.get(db.gets("command", null));
+			name = StringFactory.get(db.gets("name", null)); 
+			command = StringFactory.get(db.gets("command", null));
 			
 			final int idx = submitHost.indexOf('@');
 			
