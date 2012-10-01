@@ -1328,6 +1328,7 @@ public class TaskQueueUtils {
 			values.put("statusId", statusToCode.get(targetStatus.name()));
 			values.put("userId", getUserId(owner));
 			values.put("submitHostId", getHostId(clientAddress));
+			values.put("commandId", getCommandId(executable));
 			
 			if (notify!=null && notify.length()>0)
 				values.put("notifyId", getNotifyId(notify));
@@ -1337,9 +1338,9 @@ public class TaskQueueUtils {
 			values.put("jdl", "\n    [\n"+j.toString()+"\n    ]");
 			values.put("submitHost", owner+"@"+clientAddress);
 			values.put("notify", notify);
+			values.put("name", executable);
 		}
 		
-		values.put("name", executable);
 		values.put("chargeStatus", Integer.valueOf(0));		
 		values.put("price", price);
 		values.put("received", Long.valueOf(System.currentTimeMillis()/1000));
@@ -1442,6 +1443,42 @@ public class TaskQueueUtils {
 			return null;
 		
 		return userIdCache.get(owner);
+	}
+	
+	private static final GenericLastValuesCache<String, Integer> commandIdCache = new GenericLastValuesCache<String, Integer>() {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		protected Integer resolve(final String key) {
+			final DBFunctions db = getQueueDB();
+			
+			db.query("SELECT commandId FROM QUEUE_COMMAND where command='"+Format.escSQL(key)+"'");
+			
+			if (!db.moveNext()){
+				db.setLastGeneratedKey(true);
+				
+				if (db.query("INSERT INTO QUEUE_COMMAND (command) VALUES ('"+Format.escSQL(key)+"');"))
+					return db.getLastGeneratedKey();
+				
+				// somebody probably has inserted the same entry concurrently
+				db.query("SELECT commandId FROM QUEUE_COMMAND where command='"+Format.escSQL(key)+"'");
+				
+				if (db.moveNext())
+					return Integer.valueOf(db.geti(1));
+			}
+			else{
+				return Integer.valueOf(db.geti(1));
+			}
+			
+			return null;
+		}
+	};
+	
+	private static synchronized Integer getCommandId(final String command) {
+		if (command==null || command.length()==0)
+			return null;
+		
+		return commandIdCache.get(command);
 	}
 	
 	private static final GenericLastValuesCache<String, Integer> hostIdCache = new GenericLastValuesCache<String, Integer>() {
