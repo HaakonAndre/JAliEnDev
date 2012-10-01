@@ -275,6 +275,7 @@ public class Job  implements Comparable<Job>,Serializable {
 			node = TaskQueueUtils.getHost(db.geti("nodeid"));
 			notify = TaskQueueUtils.getNotify(db.geti("notifyId"));
 			name = command = TaskQueueUtils.getCommand(db.geti("commandId"));
+			user = TaskQueueUtils.getUser(db.geti("userId"));
 		}
 		else{
 			status = StringFactory.get(db.gets("status"));
