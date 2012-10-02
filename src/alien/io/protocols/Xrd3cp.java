@@ -55,7 +55,12 @@ public class Xrd3cp extends Xrootd {
 			final List<String> command = new LinkedList<String>();
 			command.add("xrd3cp");
 			command.add("-m");
-			command.add("-O");
+			
+			// CERN::EOS, CERN::OCDB, NDGF::DCACHE, NDGF::DCACHE_TAPE, NSC::DCACHE, SARA::DCACHE, SARA::DCACHE_TAPE, SNIC::DCACHE
+			// All these SEs need to pass the opaque parameters, native xrootd SEs fail to perform the 3rd party transfer if this is given
+			if (target.seNumber==332 || target.seNumber==335 || target.seNumber==209 || target.seNumber==221 || target.seNumber==208 || target.seNumber==222 || target.seNumber==224 || target.seNumber==331)
+				command.add("-O");
+			
 			command.add("-S");
 			
 			final boolean sourceEnvelope = source.ticket!=null && source.ticket.envelope!=null;
