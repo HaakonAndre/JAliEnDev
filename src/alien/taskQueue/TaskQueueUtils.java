@@ -618,7 +618,7 @@ public class TaskQueueUtils {
 		}
 		
 		if (dbStructure2_20)
-			q = "UPDATE QUEUE SET statusId="+statusToCode.get(newStatus.name())+"' WHERE queueId="+job;
+			q = "UPDATE QUEUE SET statusId="+statusToCode.get(newStatus.name())+" WHERE queueId="+job;
 		else
 			q = "UPDATE QUEUE SET status='"+newStatus.toSQL()+"' WHERE queueId="+job;
 		
