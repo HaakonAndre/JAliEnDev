@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
+import alien.taskQueue.TaskQueueUtils;
 
 import lazyj.DBFunctions;
 
@@ -54,14 +55,19 @@ public final class QuotaUtilities {
 						
 						final DBFunctions db = ConfigUtils.getDB("processes");
 					
-						if (db.query("SELECT * FROM PRIORITY;")){
+						String q = "SELECT * FROM PRIORITY";
+						
+						if (TaskQueueUtils.dbStructure2_20)
+							q += " inner join QUEUE_USER using(userId)";
+						
+						if (db.query(q)){
 							final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
 							
 							while (db.moveNext()){
-								final Quota q = new Quota(db);
+								final Quota quota = new Quota(db);
 					
-								if (q.user!=null)
-									newQuotas.put(q.user, q);
+								if (quota.user!=null)
+									newQuotas.put(quota.user, quota);
 							}
 						
 							jobQuotas = Collections.unmodifiableMap(newQuotas);
