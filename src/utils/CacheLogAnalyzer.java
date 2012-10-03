@@ -257,23 +257,28 @@ public class CacheLogAnalyzer {
 		
 		String sLine;
 		
-		while ( (sLine=br.readLine())!=null ){
-			final StringTokenizer st = new StringTokenizer(sLine);
-			
-			// timestamp
-			st.nextToken();
-			final int hits = Integer.parseInt(st.nextToken());
-			final String namespace = st.nextToken();
-			final String key = st.nextToken();
-			
-			if (namespace.equals("access"))
-				processAccess(hits, key);
-			else
-			if (namespace.equals("envelope"))
-				processEnvelope(hits, key);
-			else
-			if (namespace.equals("find"))
-				processFind(hits, key);
+		try{
+			while ( (sLine=br.readLine())!=null ){
+				final StringTokenizer st = new StringTokenizer(sLine);
+				
+				// timestamp
+				st.nextToken();
+				final int hits = Integer.parseInt(st.nextToken());
+				final String namespace = st.nextToken();
+				final String key = st.nextToken();
+				
+				if (namespace.equals("access"))
+					processAccess(hits, key);
+				else
+				if (namespace.equals("envelope"))
+					processEnvelope(hits, key);
+				else
+				if (namespace.equals("find"))
+					processFind(hits, key);
+			}
+		}
+		finally{
+			br.close();
 		}
 
 		for (final Map.Entry<String, Map<String, Map<String, AtomicInteger>>> me: stats.entrySet()){
