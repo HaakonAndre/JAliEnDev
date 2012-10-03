@@ -153,12 +153,12 @@ public class TokenAuthorizationFactory
         while ((bytesRead += in.read(result, bytesRead, (int) file.length()-bytesRead)) < file.length()){
         	// nothing
         }
+        
+        in.close();
 
         if (bytesRead != file.length()) {
             throw new IOException("Keyfile "+file.getName()+" corrupt.");
         }
-
-        in.close();
 
         return result;
     }
