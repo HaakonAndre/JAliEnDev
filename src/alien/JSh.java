@@ -13,8 +13,6 @@ import java.util.concurrent.TimeUnit;
 
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
 import alien.api.JBoxServer;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
@@ -70,13 +68,19 @@ public class JSh {
 	 */
 	public static void main(String[] args) throws Exception {
 
-		Signal.handle(new Signal("INT"), new SignalHandler() {
+		try{
+			sun.misc.Signal.handle(new sun.misc.Signal("INT"), new sun.misc.SignalHandler() {
 			@Override
-			public void handle(Signal sig) {
+			public void handle(final sun.misc.Signal sig) {
 				if (boombox != null)
 					boombox.callJBoxGetString("SIGINT");
 			}
-		});
+			});
+		}
+		catch (final Throwable t){
+			// ignore if not on a SUN VM
+		}
+		
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {

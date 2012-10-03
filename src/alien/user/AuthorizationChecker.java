@@ -7,7 +7,6 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import alien.catalogue.CatalogEntity;
-import alien.catalogue.GUID;
 import alien.config.ConfigUtils;
 import alien.taskQueue.Job;
 
