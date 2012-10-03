@@ -85,16 +85,31 @@ public class AuthenticationChecker {
 	/**
 	 * @param pubCert
 	 */
-	public static void loadPubCert(String pubCert) {
+	public static void loadPubCert(final String pubCert) {
 
+		PEMReader pemReader = null;
+		
 		try {
-			StringReader pub = new StringReader(pubCert);
-			cert = ((X509Certificate) new PEMReader(pub).readObject());
+			final StringReader pub = new StringReader(pubCert);
+			
+			pemReader = new PEMReader(pub);
+			
+			cert = ((X509Certificate) pemReader.readObject());
 
 			pubKey = (RSAPublicKey) cert.getPublicKey();
 		}
-		catch (IOException e) {
+		catch (final IOException e) {
 			e.printStackTrace();
+		}
+		finally{
+			if (pemReader!=null){
+				try{
+					pemReader.close();
+				}
+				catch (final IOException ioe){
+					// ignore
+				}
+			}
 		}
 	}
 

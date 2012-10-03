@@ -116,51 +116,40 @@ public class JAKeyStore {
 
 				cf = CertificateFactory.getInstance("X.509");
 
-				for (File trust : trustsDir.listFiles()) {
+				for (final File trust : trustsDir.listFiles()) {
 
 					if (trust.getName().endsWith("der")) {
-
+						FileInputStream fis = null;
+						
 						try {
-
-							X509Certificate c = (X509Certificate) cf
-									.generateCertificate(new FileInputStream(
-											trust));
+							fis = new FileInputStream(trust);
+							
+							X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
 							if (logger.isLoggable(Level.INFO)) {
-								logger.log(Level.INFO,"Trusting now: "
-										+ c.getSubjectDN());
+								logger.log(Level.INFO,"Trusting now: " + c.getSubjectDN());
 							}
 
-							trustStore.setEntry(
-									trust.getName().substring(0,
-											trust.getName().indexOf(".der")),
-
-									new KeyStore.TrustedCertificateEntry(c),
-									null);
+							trustStore.setEntry(trust.getName().substring(0,trust.getName().indexOf(".der")), new KeyStore.TrustedCertificateEntry(c), null);
+							
 							if (hostCert != null)
-								hostCert.setEntry(
-										trust.getName()
-												.substring(
-														0,
-														trust.getName()
-																.indexOf(".der")),
-
-										new KeyStore.TrustedCertificateEntry(c),
-										null);
+								hostCert.setEntry(trust.getName().substring(0, trust.getName().indexOf(".der")), new KeyStore.TrustedCertificateEntry(c), null);
+							
 							if (clientCert != null)
-								clientCert
-										.setEntry(
-												trust.getName()
-														.substring(
-																0,
-																trust.getName()
-																		.indexOf(
-																				".der")),
+								clientCert.setEntry(trust.getName().substring(0, trust.getName().indexOf(".der")), new KeyStore.TrustedCertificateEntry(c), null);
 
-												new KeyStore.TrustedCertificateEntry(
-														c), null);
-
-						} catch (Exception e) {
+						}
+						catch (final Exception e) {
 							e.printStackTrace();
+						}
+						finally{
+							if (fis!=null){
+								try{
+									fis.close();
+								}
+								catch (final IOException ioe){
+									// ignore
+								}
+							}
 						}
 					}
 				}
@@ -439,13 +428,18 @@ public class JAKeyStore {
 //						+ " password: ")) != null)
 //			password = String.valueOf(passwd);
 
-	    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+	    final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
 	    
 	    try {
-			return new JPasswordFinder(in.readLine().toCharArray());
-		} catch (IOException e) {
+	    	final String line = in.readLine();
+	    	
+	    	if (line!=null && line.length()>0)
+	    		return new JPasswordFinder(line.toCharArray());
+		}
+	    catch (final IOException e) {
 			logger.log(Level.INFO,"Could not read passwd from System.in .");
 		}
+	    
 	    return new JPasswordFinder("".toCharArray());
 		
 	}
