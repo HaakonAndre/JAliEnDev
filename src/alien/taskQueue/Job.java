@@ -434,10 +434,17 @@ public class Job  implements Comparable<Job>,Serializable {
 	}
 	
 	/**
+	 * @return <code>true</code> if the job has failed but should not be resubmitted since it will fail just the same
+	 */
+	public boolean isFinalError(){
+		return status.startsWith("FAIL");
+	}
+	
+	/**
 	 * @return <code>true</code> if the job is in a final state (either successful or failed)
 	 */
 	public boolean isFinalState(){
-		return isDone() || isError();
+		return isDone() || isError() || isFinalError();
 	}
 	
 	/**
