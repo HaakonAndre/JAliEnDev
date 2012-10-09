@@ -370,8 +370,15 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * @return original JDL as in the QUEUE table
 	 */
 	public String getOriginalJDL(){
+		return getOriginalJDL(true);
+	}
+
+	/**
+	 * @return original JDL as in the QUEUE table
+	 */
+	public String getOriginalJDL(final boolean initialJDL){
 		if (jdl==null){
-			jdl = TaskQueueUtils.getJDL(queueId);
+			jdl = TaskQueueUtils.getJDL(queueId, initialJDL);
 			
 			if (jdl==null)
 				return "";
@@ -379,7 +386,7 @@ public class Job  implements Comparable<Job>,Serializable {
 		
 		return jdl;
 	}
-	
+
 	/**
 	 * @param jdlContent
 	 * @return the JDL content without the enclosing [] if any
