@@ -1105,7 +1105,7 @@ public class TaskQueueUtils {
 			else
 				found = true;
 		}
-		catch (ServerException se){
+		catch (final ServerException se){
 			throw new IOException(se.getMessage(), se);
 		}
 		
