@@ -1356,7 +1356,7 @@ public class TaskQueueUtils {
 		final Integer pid = db.getLastGeneratedKey();
 		
 		if (pid==null)
-			return -1;
+			throw new IOException("Last generated key is unknown");
 		
 		db.query("INSERT INTO QUEUEPROC (queueId) VALUES ("+pid+");");
 		
