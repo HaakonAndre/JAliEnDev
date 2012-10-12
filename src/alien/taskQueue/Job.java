@@ -138,6 +138,11 @@ public class Job  implements Comparable<Job>,Serializable {
 	public String jdl;
 	
 	/**
+	 * The processed jdl
+	 */
+	public String processedJDL;
+	
+	/**
 	 * the submitter's certificate (public)
 	 * 
 	 * TODO : X509Certificate objects are not serializable, be careful with this field ...
@@ -376,15 +381,26 @@ public class Job  implements Comparable<Job>,Serializable {
 	/**
 	 * @return original JDL as in the QUEUE table
 	 */
-	public String getOriginalJDL(final boolean initialJDL){
-		if (jdl==null){
-			jdl = TaskQueueUtils.getJDL(queueId, initialJDL);
-			
-			if (jdl==null)
-				return "";
+	public String getOriginalJDL(final boolean initialJDL) {
+		if (initialJDL) {
+			if (jdl == null) {
+				jdl = TaskQueueUtils.getJDL(queueId, true);
+
+				if (jdl == null)
+					return "";
+			}
+
+			return jdl;
 		}
-		
-		return jdl;
+
+		if (processedJDL == null) {
+			processedJDL = TaskQueueUtils.getJDL(queueId, false);
+
+			if (processedJDL == null || processedJDL.length() == 0)
+				processedJDL = getOriginalJDL(true);
+		}
+
+		return processedJDL;
 	}
 
 	/**
@@ -484,13 +500,13 @@ public class Job  implements Comparable<Job>,Serializable {
 			
 			return Integer.parseInt(j.gets("validate")) == 1;
 		}
-		catch (IOException ioe){
+		catch (final IOException ioe){
 			// ignore
 		}
-		catch (NumberFormatException nfe){
+		catch (final NumberFormatException nfe){
 			// ignore
 		}
-		catch (NullPointerException npe){
+		catch (final NullPointerException npe){
 			// ignore
 		}
 		
