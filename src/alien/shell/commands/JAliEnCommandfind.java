@@ -3,22 +3,17 @@ package alien.shell.commands;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import lazyj.Format;
-import lazyj.Log;
-import lazyj.Utils;
-
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -70,7 +65,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	
 	private List<LFN> lfns = null;
 	private List<LFN> directory = null;
-    String str="find ";
+    
 	/**
 	 * returns the LFNs that were the result of the find
 	 * 
@@ -113,59 +108,63 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			.getCanonicalName(), alArguments.get(0)), alArguments.get(1),flags);
 
 		if (lfns != null && !isSilent()) {			
-			if (bX){
-				// display the xml collection 
-				
-				XmlCollection c = new XmlCollection();
+			if (bX) {
+				// display the xml collection
+
+				final XmlCollection c = new XmlCollection();
 				c.addAll(lfns);
 				c.setName(xmlCollectionName);
 				c.setOwner(commander.user.getName());
-				
-				for( int i=0; i<alArguments.size(); i++)
-				{	
-				 str+=alArguments.get(i)+" ";
+
+				final StringBuilder str = new StringBuilder("find ");
+
+				for (int i = 0; i < alArguments.size(); i++) {
+					str.append(alArguments.get(i)).append(' ');
 				}
-				c.setCommand(str);
-				if(bC)
-                    {
+				
+				c.setCommand(str.toString());
+				
+				if (bC) {
 					try {
 						File f = File.createTempFile("collection", ".xml");
 
 						if (f != null) {
 
-							out.printOutln("Temp file is : "+f.getAbsolutePath());
-							
+							out.printOutln("Temp file is : " + f.getAbsolutePath());
+
 							final String content = c.toString();
 							FileWriter fstream = new FileWriter(f);
 							BufferedWriter o = new BufferedWriter(fstream);
 							o.write(content);
 							o.close();
 							fstream.close();
-							
+
 							ArrayList<String> args = new ArrayList<String>(alArguments.size() + 1);
-							args.add("file://"+f.getAbsolutePath());
+							args.add("file://" + f.getAbsolutePath());
 							args.add(fileName);
 
-							JAliEnCommandcp cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand("cp",new Object[] { commander, out, args });
+							JAliEnCommandcp cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand("cp", new Object[] { commander, out, args });
 							cp.silent();
-							
+
 							cp.start();
 							while (cp.isAlive()) {
 								Thread.sleep(500);
 								if (!isSilent())
-									 out.pending();
+									out.pending();
 							}
 
 							out.printOutln(fileName);
-						} else
+						}
+						else
 							out.printErrln("Could not create a temporary file");
 
-					} catch (Exception e) {
-						out.printErrln("Could not upload the XML collection because "+e.getMessage());
+					}
+					catch (Exception e) {
+						out.printErrln("Could not upload the XML collection because " + e.getMessage());
 					}
 				}
 				else
-				out.printOutln(c.toString());
+					out.printOutln(c.toString());
 			}
 			else
 			for (final LFN lfn : lfns) {
@@ -236,8 +235,6 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		final StringBuilder ret = new StringBuilder();
 
-		final SimpleDateFormat sdt = new SimpleDateFormat("MMM dd HH:mm");
-
 		if (directory != null) {
 			String col = RootPrintWriter.columnseparator;
 			String desc = RootPrintWriter.fielddescriptor;
@@ -282,11 +279,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
+	 * @throws OptionException 
 	 */
 	//public JAliEnCommandfind(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
 		//super(commander, out, alArguments);
-	public JAliEnCommandfind(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandfind(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 
@@ -294,7 +291,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 			parser.accepts("l");
 			parser.accepts("s");
-			parser.accepts("x").withRequiredArg();;
+			parser.accepts("x").withRequiredArg();
 			parser.accepts("a");
 			parser.accepts("h");
 			parser.accepts("d");
