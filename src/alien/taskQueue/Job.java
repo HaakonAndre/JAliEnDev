@@ -379,6 +379,8 @@ public class Job  implements Comparable<Job>,Serializable {
 	}
 
 	/**
+	 * @param initialJDL if <code>true</code> then the original JDL (what the user has submitted) is returned. This should be the normal case, since the alternative is to return the JDL as processed by the 
+	 * 	central services, which is not user-friendly.
 	 * @return original JDL as in the QUEUE table
 	 */
 	public String getOriginalJDL(final boolean initialJDL) {

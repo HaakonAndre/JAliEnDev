@@ -103,7 +103,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand
 				}
 			}
 			
-			else if(tLFN == null)
+			else
 			{
 				if(target.contains("/") && !target.endsWith("/"))
 				{

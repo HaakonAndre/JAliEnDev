@@ -9,7 +9,6 @@ import joptsimple.OptionSet;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.LFNListCollectionFromString;
-import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 
 /**

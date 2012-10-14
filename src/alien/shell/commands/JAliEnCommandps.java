@@ -187,6 +187,9 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				case FAILED   : e = " FF"; break;
 				case ZOMBIE   : e = "  Z"; break;
 				case EXPIRED  : e = " XP"; break;
+				case ERROR_EW : e = " EW"; break;
+				case UPDATING : e = " UP"; break;
+				default       : break;
 			}
 			
 			return ShellColor.jobStateRedError() + padLeft(e,3) + ShellColor.reset();
@@ -233,6 +236,9 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			case FAILED   : e = " FF"; break;
 			case ZOMBIE   : e = "  Z"; break;
 			case EXPIRED  : e = " XP"; break;
+			case ERROR_EW : e = " EW"; break;
+			case UPDATING : e = " UP"; break; 
+			default       : break;
 		}
 		
 		return padLeft(e,3);

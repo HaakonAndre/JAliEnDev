@@ -53,6 +53,8 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 		
 		formatter.format(formatH, "TOTAL", String.valueOf(totals.runningJobs), String.valueOf(totals.waitingJobs));
 		
+		formatter.close();
+		
 		out.printOut(sb.toString());
 	}
 

@@ -15,7 +15,10 @@ import utils.SystemProcess;
 public class FileEditor {
 
 	
-	public static final String[] editors = {"edit","vim","emacs","more","less","nano"};
+	/**
+	 * Available editors
+	 */
+	public static final String[] editors = {"edit","mcedit", "vim","joe","emacs","more","less","nano"};
 	
 	
 	
