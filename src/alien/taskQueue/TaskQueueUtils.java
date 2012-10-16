@@ -142,14 +142,14 @@ public class TaskQueueUtils {
 		
 		if (dbStructure2_20){
 			if (loadJDL)
-				q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId="+queueId;
+				q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
 			else
-				q = "SELECT * FROM QUEUE WHERE queueId="+queueId;
+				q = "SELECT * FROM QUEUE WHERE queueId=?";
 		}
 		else
-			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE queueId="+queueId;
+			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE queueId=?";
 	
-		if (!db.query(q))
+		if (!db.query(q, false, Integer.valueOf(queueId)))
 			return null;
 		
 		monitor.addMeasurement("TQ_jobdetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
@@ -364,16 +364,16 @@ public class TaskQueueUtils {
 			else
 				q = "SELECT * FROM QUEUE";
 				
-			q += " WHERE split="+queueId+" AND statusId!="+statusToCode.get("KILLED")+" ORDER BY queueId ASC";
+			q += " WHERE split=? AND statusId!="+statusToCode.get("KILLED")+" ORDER BY queueId ASC";
 		}
 		else
-			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split="+queueId+" AND status!='KILLED' ORDER BY queueId ASC;";
+			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
 		
 		final List<Job> ret = new ArrayList<Job>();
 		
 		final long lQueryStart = System.currentTimeMillis();
 
-		db.query(q);
+		db.query(q, false, Integer.valueOf(queueId));
 		
 		if (monitor!=null)
 			monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
@@ -580,11 +580,11 @@ public class TaskQueueUtils {
 		String q;
 		
 		if (dbStructure2_20)
-			q = "SELECT statusId FROM QUEUE where queueId="+job;
+			q = "SELECT statusId FROM QUEUE where queueId=?;";
 		else
-			q = "SELECT status FROM QUEUE where queueId="+job;
+			q = "SELECT status FROM QUEUE where queueId=?;";
 		
-		if (!db.query(q)){
+		if (!db.query(q, false, Integer.valueOf(job))){
 			logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
 			
 			return false;
@@ -617,12 +617,18 @@ public class TaskQueueUtils {
 			return false;
 		}
 		
-		if (dbStructure2_20)
-			q = "UPDATE QUEUE SET statusId="+statusToCode.get(newStatus.name())+" WHERE queueId="+job;
-		else
-			q = "UPDATE QUEUE SET status='"+newStatus.toSQL()+"' WHERE queueId="+job;
+		Object newstatus;
 		
-		if (!db.query(q))
+		if (dbStructure2_20){
+			newstatus = statusToCode.get(newStatus.name());
+			q = "UPDATE QUEUE SET statusId=? WHERE queueId=?;";
+		}
+		else{
+			newstatus = newStatus.toSQL();
+			q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
+		}
+		
+		if (!db.query(q, false, newstatus, Integer.valueOf(job)))
 			return false;
 		
 		final boolean updated = db.getUpdateCount()!=0;
@@ -659,11 +665,12 @@ public class TaskQueueUtils {
 		final String q;
 		
 		if (dbStructure2_20)
-			q = "SELECT origJdl"+(originalJDL ? "" : ",resultsJdl")+" FROM QUEUEJDL WHERE queueId="+queueId;
+			q = "SELECT origJdl"+(originalJDL ? "" : ",resultsJdl")+" FROM QUEUEJDL WHERE queueId=?;";
 		else
-			q = "SELECT jdl FROM QUEUE WHERE queueId="+queueId;
+			q = "SELECT jdl FROM QUEUE WHERE queueId=?;";
 		
-		if (!db.query(q) || !db.moveNext()){
+		
+		if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()){
 			final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
 			
 			if (jdlArchiveDir.length()>0){
@@ -1358,7 +1365,7 @@ public class TaskQueueUtils {
 		if (pid==null)
 			throw new IOException("Last generated key is unknown");
 		
-		db.query("INSERT INTO QUEUEPROC (queueId) VALUES ("+pid+");");
+		db.query("INSERT INTO QUEUEPROC (queueId) VALUES (?);", false, pid);
 		
 		if (dbStructure2_20){
 			final Map<String, Object> valuesJDL = new HashMap<String, Object>();
@@ -1385,7 +1392,7 @@ public class TaskQueueUtils {
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT userId FROM QUEUE_USER where user='"+Format.escSQL(key)+"'");
+			db.query("SELECT userId FROM QUEUE_USER where user=?;", false, key);
 			
 			if (!db.moveNext()){
 				db.setLastGeneratedKey(true);
@@ -1407,11 +1414,11 @@ public class TaskQueueUtils {
 				}
 				
 				if (id>0){
-					if (db.query("INSERT INTO QUEUE_USER (userId, user) VALUES ("+id+", '"+Format.escSQL(key)+"');"))
+					if (db.query("INSERT INTO QUEUE_USER (userId, user) VALUES ("+id+", '"+Format.escSQL(key)+"');", true))
 						return Integer.valueOf(id);
 					
 					// did it fail because the user was inserted by somebody else?
-					db.query("SELECT userId FROM QUEUE_USER where user='"+Format.escSQL(key)+"'");
+					db.query("SELECT userId FROM QUEUE_USER where user=?;", false, key);
 					
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
@@ -1421,11 +1428,11 @@ public class TaskQueueUtils {
 					logger.log(Level.WARNING, "Duplicate CCID "+id+" in LDAP, failed to correctly insert user "+key+" because of it. Will generate a new userid for this guy, but the consistency with LDAP is lost now!");
 				}
 				
-				if (db.query("INSERT INTO QUEUE_USER (user) VALUES ('"+Format.escSQL(key)+"');"))
+				if (db.query("INSERT INTO QUEUE_USER (user) VALUES (?);", true, key))
 					return db.getLastGeneratedKey();
 				
 				// somebody probably has inserted the same entry concurrently
-				db.query("SELECT userId FROM QUEUE_USER where user='"+Format.escSQL(key)+"'");
+				db.query("SELECT userId FROM QUEUE_USER where user=?", false, key);
 				
 				if (db.moveNext())
 					return Integer.valueOf(db.geti(1));
@@ -1452,16 +1459,16 @@ public class TaskQueueUtils {
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT commandId FROM QUEUE_COMMAND where command='"+Format.escSQL(key)+"'");
+			db.query("SELECT commandId FROM QUEUE_COMMAND where command=?;", false, key);
 			
 			if (!db.moveNext()){
 				db.setLastGeneratedKey(true);
 				
-				if (db.query("INSERT INTO QUEUE_COMMAND (command) VALUES ('"+Format.escSQL(key)+"');"))
+				if (db.query("INSERT INTO QUEUE_COMMAND (command) VALUES (?);", true, key))
 					return db.getLastGeneratedKey();
 				
 				// somebody probably has inserted the same entry concurrently
-				db.query("SELECT commandId FROM QUEUE_COMMAND where command='"+Format.escSQL(key)+"'");
+				db.query("SELECT commandId FROM QUEUE_COMMAND where command=?;", false, key);
 				
 				if (db.moveNext())
 					return Integer.valueOf(db.geti(1));
@@ -1488,16 +1495,16 @@ public class TaskQueueUtils {
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT hostId FROM QUEUE_HOST where host='"+Format.escSQL(key)+"'");
+			db.query("SELECT hostId FROM QUEUE_HOST where host=?;", false, key);
 			
 			if (!db.moveNext()){
 				db.setLastGeneratedKey(true);
 				
-				if (db.query("INSERT INTO QUEUE_HOST (host) VALUES ('"+Format.escSQL(key)+"');"))
+				if (db.query("INSERT INTO QUEUE_HOST (host) VALUES (?);", true, key))
 					return db.getLastGeneratedKey();
 				
 				// somebody probably has inserted the same entry concurrently
-				db.query("SELECT hostId FROM QUEUE_HOST where host='"+Format.escSQL(key)+"'");
+				db.query("SELECT hostId FROM QUEUE_HOST where host=?", false, key);
 				
 				if (db.moveNext())
 					return Integer.valueOf(db.geti(1));
@@ -1524,16 +1531,16 @@ public class TaskQueueUtils {
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify='"+Format.escSQL(key)+"'");
+			db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify=?;", false, key);
 			
 			if (!db.moveNext()){
 				db.setLastGeneratedKey(true);
 				
-				if (db.query("INSERT INTO QUEUE_NOTIFY (notify) VALUES ('"+Format.escSQL(key)+"');", true))
+				if (db.query("INSERT INTO QUEUE_NOTIFY (notify) VALUES (?);", true, key))
 					return db.getLastGeneratedKey();
 				
 				// somebody probably has inserted the same entry concurrently
-				db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify='"+Format.escSQL(key)+"'");
+				db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify=?;", false, key);
 				
 				if (db.moveNext())
 					return Integer.valueOf(db.geti(1));
@@ -1560,7 +1567,7 @@ public class TaskQueueUtils {
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT user FROM QUEUE_USER where userId="+key);
+			db.query("SELECT user FROM QUEUE_USER where userId=?;", false, key);
 			
 			if (db.moveNext()){
 				return StringFactory.get(db.gets(1));
@@ -1588,7 +1595,7 @@ public class TaskQueueUtils {
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT host FROM QUEUE_HOST where hostId="+key);
+			db.query("SELECT host FROM QUEUE_HOST where hostId=?;", false, key);
 			
 			if (db.moveNext()){
 				return StringFactory.get(db.gets(1));
@@ -1616,7 +1623,7 @@ public class TaskQueueUtils {
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT notify FROM QUEUE_NOTIFY where notifyId="+key);
+			db.query("SELECT notify FROM QUEUE_NOTIFY where notifyId=?;", false, key);
 			
 			if (db.moveNext()){
 				return StringFactory.get(db.gets(1));
@@ -1644,7 +1651,7 @@ public class TaskQueueUtils {
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
 			
-			db.query("SELECT command FROM QUEUE_COMMAND where commandId="+key);
+			db.query("SELECT command FROM QUEUE_COMMAND where commandId=?", false, key);
 			
 			if (db.moveNext()){
 				return StringFactory.get(db.gets(1));
@@ -1965,9 +1972,9 @@ public class TaskQueueUtils {
 		
 		final long lQueryStart = System.currentTimeMillis();
 
-		final String q = "SELECT * FROM jobToken WHERE jobId="+jobId;
+		final String q = "SELECT * FROM jobToken WHERE jobId=?;";
 	
-		if (!db.query(q))
+		if (!db.query(q, false, Integer.valueOf(jobId)))
 			return null;
 		
 		monitor.addMeasurement("ADM_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
@@ -1986,9 +1993,9 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("ADM_db_lookup");
 		}
 	
-		final String q = "SELECT * FROM jobToken WHERE jobId="+queueId;
+		final String q = "SELECT * FROM jobToken WHERE jobId=?;";
 	
-		if (!db.query(q))
+		if (!db.query(q, false, Integer.valueOf(queueId)))
 			return false;
 				
 		if (!db.moveNext()){
@@ -2081,15 +2088,13 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_ACTIONS_update");
 		}
 		
-		final String q = "UPDATE ACTIONS SET todo=1 WHERE action='" + status.toSQL() + "' AND todo=0;";
+		final String q = "UPDATE ACTIONS SET todo=1 WHERE action=? AND todo=0;";
 	
-		if (!db.query(q))
+		if (!db.query(q, false, status.toSQL()))
 			return false;
 			
 		return true;
 	}
-	
-	
 
 	/**
 	 * @param args

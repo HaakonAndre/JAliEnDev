@@ -36,7 +36,7 @@ public class RemoveSERequirements {
 				try{
 					final int queueId = Integer.parseInt(arg);
 					
-					if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and queueId="+queueId+" AND jdl rlike '.*other.CloseSE.*';")){
+					if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and queueId=? AND jdl rlike '.*other.CloseSE.*';", false, Integer.valueOf(queueId))){
 						System.err.println("Could not query the QUEUE, check your config/password.properies and config/processes.properties");
 						return;
 					}
@@ -91,7 +91,7 @@ public class RemoveSERequirements {
 		
 		final DBFunctions db = TaskQueueUtils.getQueueDB();
 		
-		final boolean ok = db.query("UPDATE QUEUE SET jdl='"+Format.escSQL(newJDL)+"' WHERE queueId="+queueId+" AND status='WAITING'");
+		final boolean ok = db.query("UPDATE QUEUE SET jdl=? WHERE queueId=? AND status='WAITING'", false, newJDL, Integer.valueOf(queueId));
 		//final boolean ok = false;
 		
 		if (ok && db.getUpdateCount()==1)

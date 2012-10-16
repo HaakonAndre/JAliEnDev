@@ -134,7 +134,7 @@ public class OrphanPFNsCleanup {
 					// TODO : what to do with these PFNs ? Iterate over them and release them from the catalogue nevertheless ?
 //					db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 					
-					db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se="+seNumber+" AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;");
+					db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;", false, Integer.valueOf(seNumber));
 				}
 				finally{
 					concurrentQueryies.release();
@@ -316,7 +316,7 @@ public class OrphanPFNsCleanup {
 			
 					concurrentQueryies.acquireUninterruptibly();
 					try{
-						db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary('"+sGUID+"') AND se="+seNumber);
+						db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
 					
 						failOne();
 					}
@@ -355,7 +355,7 @@ public class OrphanPFNsCleanup {
 							System.err.println("Successfuly deleted from "+se.getName()+" but GUID doesn't exist in the catalogue ...");
 						}			
 											
-						db2.query("DELETE FROM orphan_pfns WHERE guid=string2binary('"+sGUID+"') AND se="+seNumber);
+						db2.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
 					}
 					finally{
 						concurrentQueryies.release();
@@ -375,7 +375,7 @@ public class OrphanPFNsCleanup {
 				concurrentQueryies.acquireUninterruptibly();
 				
 				try{
-					db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary('"+sGUID+"') AND se="+seNumber);				
+					db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));				
 				}
 				finally{
 					concurrentQueryies.release();

@@ -311,7 +311,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				if (generatedId==null){
 					logger.log(Level.WARNING, "Insert query didn't generate an ID!");
 					
-					db.query("SELECT guidId FROM G"+tableName+"L WHERE guid=string2binary('"+guid+"');");
+					db.query("SELECT guidId FROM G"+tableName+"L WHERE guid=string2binary(?);", false, guid);
 					
 					if (!db.moveNext()){
 						logger.log(Level.WARNING, "And in fact the entry was not found by the fallback checking");
@@ -421,9 +421,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			monitor.incrementCounter("PFN_db_lookup");
 		}
 		
-		final String q = "SELECT distinct guidId, pfn, seNumber FROM G"+tableName+"L_PFN WHERE guidId="+guidId; 
+		final String q = "SELECT distinct guidId, pfn, seNumber FROM G"+tableName+"L_PFN WHERE guidId=?;"; 
 
-		db.query(q);
+		db.query(q, false, Long.valueOf(guidId));
 		
 		pfnCache = new LinkedHashSet<PFN>();
 		
@@ -465,7 +465,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			return false;
 		}
 		
-		if (!db.query("INSERT INTO G"+tableName+"L_PFN (guidId, pfn, seNumber) VALUES ("+guidId+", '"+Format.escSQL(pfn.getPFN())+"', "+pfn.seNumber+")")){
+		if (!db.query("INSERT INTO G"+tableName+"L_PFN (guidId, pfn, seNumber) VALUES (?, ?, ?)", false, Integer.valueOf(guidId), pfn.getPFN(), Integer.valueOf(pfn.seNumber))){
 			seStringList.remove(Integer.valueOf(pfn.seNumber));
 			update();
 			return false;
@@ -510,9 +510,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		if (purge && (pfnCache==null || pfnCache.size()>0)){
-			final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (guid,se) SELECT guid,seNumber FROM G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId="+guidId+" AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';"; 
+			final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (guid,se) SELECT guid,seNumber FROM G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId=? AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';"; 
 			
-			if (db.query(purgeQuery)){
+			if (db.query(purgeQuery, false, Integer.valueOf(guidId))){
 				final int purged = db.getUpdateCount();
 				
 				if (monitor!=null){
@@ -528,9 +528,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			}
 		}
 		
-		final String delQuery = "DELETE FROM G"+tableName+"L WHERE guidId="+guidId;
+		final String delQuery = "DELETE FROM G"+tableName+"L WHERE guidId=?;";
 		
-		boolean removed = db.query(delQuery);
+		boolean removed = db.query(delQuery, false, Integer.valueOf(guidId));
 		
 		if (removed){
 			if (db.getUpdateCount()<=0){
@@ -538,10 +538,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			}
 		}
 		
-		db.query("DELETE FROM G"+tableName+"L_REF WHERE guidId="+guidId);
+		db.query("DELETE FROM G"+tableName+"L_REF WHERE guidId=?;", false, Integer.valueOf(guidId));
 		
 		if (pfnCache==null || pfnCache.size()>0){
-			db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId);
+			db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId=?;", false, Integer.valueOf(guidId));
 			
 			pfnCache = null;
 		}
@@ -582,9 +582,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		boolean removedSuccessfuly = false; 
 		
 		//final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
-		final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND seNumber="+pfn.seNumber;
+		final String q = "DELETE FROM G"+tableName+"L_PFN WHERE guidId=? AND seNumber=?;";
 		
-		if (db.query(q)){
+		if (db.query(q, false, Integer.valueOf(guidId), Integer.valueOf(pfn.seNumber))){
 			if (db.getUpdateCount()>0){
 				removedSuccessfuly = true;
 				
@@ -599,7 +599,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 						final SE se = SEUtils.getSE(pfn.seNumber);
 						
 						if (se!=null && !(se.getName().equalsIgnoreCase("no_se")))
-							db.query("INSERT INTO orphan_pfns (guid,se) VALUES (string2binary('"+g.guid+"'), "+pfn.seNumber+");");
+							db.query("INSERT INTO orphan_pfns (guid,se) VALUES (string2binary(?), ?);", false, g.guid.toString(), Integer.valueOf(pfn.seNumber));
 					}
 				}
 			}
@@ -687,7 +687,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			monitor.incrementCounter("LFNREF_db_lookup");
 		}
 		
-		db.query("SELECT distinct lfnRef FROM G"+tablename+"L_REF WHERE guidId="+guidId);
+		db.query("SELECT distinct lfnRef FROM G"+tablename+"L_REF WHERE guidId=?;", false, Integer.valueOf(guidId));
 		
 		if (!db.moveNext())
 			return null;
@@ -716,7 +716,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				monitor.incrementCounter("LFN_db_lookup");
 			}
 		
-			db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary('"+guid+"');");
+			db2.query("SELECT * FROM L"+iLFNTableIndex+"L WHERE guid=string2binary(?);", false, guid.toString());
 		
 			while (db2.moveNext()){
 				lfnCache.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));

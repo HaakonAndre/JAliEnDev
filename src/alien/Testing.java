@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.HashSet;
 
+import lia.util.Utils;
+
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -35,7 +37,19 @@ public class Testing {
 	 * @throws GeneralSecurityException 
 	 */
 	public static void main(String[] args) throws IOException, GeneralSecurityException {
+		long l = Utils.nanoNow();
+		
+		try{
+			Thread.sleep(1000);
+		}
+		catch (Exception e){
+			// ignore
+		}
+		
+		System.err.println("Diff: "+(Utils.nanoNow() - l));
+		
 		if (true){
+			
 			String s="-----BEGIN SEALED CIPHER-----\n" + 
 					"oAgJ3jOO0lFT-vooC7Zqq8p-mFS8UMVYs3elz1ByUJEgl-VU7693dXhInhRGu7NEQqtv9GDUBmv+\n" + 
 					"VXYpggh2wa-n+RfEhdxPCsBubU9qRO-R+pwX0NTJt51rxPWBoJIVKoEp9v9NcKV8NepToPZJv5Up\n" + 

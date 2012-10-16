@@ -504,7 +504,7 @@ public class TransferBroker {
 				return;
 
 			if (t == null) {
-				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=" + ta.getTransferAgentID() + " AND pid=" + MonitorFactory.getSelfProcessID() + " AND host='" + Format.escSQL(MonitorFactory.getSelfHostname()) + "'");
+				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
 				return;
 			}
 
@@ -578,12 +578,12 @@ public class TransferBroker {
 		if (formattedReason!=null && formattedReason.length()>250)
 			formattedReason = formattedReason.substring(0, 250);
 		
-		db.query("update TRANSFERS_DIRECT set status='"+getTransferStatus(exitCode)+"', reason='"+Format.escSQL(formattedReason)+"', finished="+(System.currentTimeMillis()/1000)+" WHERE transferId="+transferId);
+		db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=? WHERE transferId=?;", false, getTransferStatus(exitCode), formattedReason, Long.valueOf(System.currentTimeMillis()/1000), Integer.valueOf(transferId));
 		
 		if (db.getUpdateCount()<1)
 			return false;
 		
-		db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId="+transferId+");");
+		db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId=?);", false, Integer.valueOf(transferId));
 		
 		return true;
 	}

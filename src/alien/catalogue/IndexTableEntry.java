@@ -129,13 +129,18 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			monitor.incrementCounter("LFN_db_lookup");
 		}
 		
-		String q = "SELECT * FROM L"+tableName+"L WHERE lfn='"+Format.escSQL(sSearch)+"'";
+		String q = "SELECT * FROM L"+tableName+"L WHERE lfn=?";
 		
-		if (!sSearch.endsWith("/"))
-			q += " OR lfn='"+Format.escSQL(sSearch)+"/'";
-		
-		if (!db.query(q))
-			return null;
+		if (!sSearch.endsWith("/")){
+			q += " OR lfn=?";
+			
+			if (!db.query(q, false, sSearch, sSearch+"/"))
+				return null;
+		}
+		else{
+			if (!db.query(q, false, sSearch))
+				return null;
+		}
 		
 		if (!db.moveNext()){
 			if (logger.isLoggable(Level.FINE))
@@ -222,7 +227,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	public LFN getLFN(final long entryId){
 		final DBFunctions db = getDB();		
 		
-		if (!db.query("SELECT * FROM L"+tableName+"L WHERE entryId="+entryId+";"))
+		if (!db.query("SELECT * FROM L"+tableName+"L WHERE entryId=?;", false, Long.valueOf(entryId)))
 			return null;
 		
 		if (!db.moveNext())

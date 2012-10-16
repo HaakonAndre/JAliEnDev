@@ -270,7 +270,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 					monitor.incrementCounter("GUID_db_lookup");
 				}
 				
-				db.query("SELECT * FROM G"+tableNumber+"L WHERE guidId="+guidId);
+				db.query("SELECT * FROM G"+tableNumber+"L WHERE guidId=?;", false, Integer.valueOf(guidId));
 				
 				if (db.moveNext()){
 					guid = new GUID(db, host, tableNumber);

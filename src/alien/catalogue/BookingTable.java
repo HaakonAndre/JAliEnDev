@@ -123,10 +123,10 @@ public class BookingTable {
 		pfn.setGUID(requestedGUID);
 		
 		// delete previous failed attempts since we are overwriting this pfn
-		db.query("DELETE FROM LFN_BOOKED WHERE guid=string2binary('"+requestedGUID.guid.toString()+"') AND se='"+Format.escSQL(se.getName())+"' AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND expiretime<0;");
+		db.query("DELETE FROM LFN_BOOKED WHERE guid=string2binary(?) AND se=? AND pfn=? AND expiretime<0;", false, requestedGUID.guid.toString(), se.getName(), pfn.getPFN());
 		
 		// now check the booking table for previous attempts
-		db.query("SELECT owner FROM LFN_BOOKED WHERE guid=string2binary('"+requestedGUID.guid.toString()+"') AND se='"+Format.escSQL(se.getName())+"' AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND expiretime>0;");
+		db.query("SELECT owner FROM LFN_BOOKED WHERE guid=string2binary(?) AND se=? AND pfn=? AND expiretime>0;", false, requestedGUID.guid.toString(), se.getName(), pfn.getPFN());
 		
 		if (db.moveNext()){
 			// there is a previous attempt on this GUID to this SE, who is the owner?
@@ -137,14 +137,14 @@ public class BookingTable {
 					throw new IOException("Access denied: "+reason);
 				
 				// that's fine, it's the same user, we can recycle the entry
-				db.query("UPDATE LFN_BOOKED SET expiretime=unix_timestamp(now())+86400 WHERE guid=string2binary('"+requestedGUID.guid.toString()+"') AND se='"+Format.escSQL(se.getName())+"' AND pfn='"+Format.escSQL(pfn.getPFN())+"'");
+				db.query("UPDATE LFN_BOOKED SET expiretime=unix_timestamp(now())+86400 WHERE guid=string2binary(?) AND se=? AND pfn=?;", false, requestedGUID.guid.toString(), se.getName(), pfn.getPFN());
 			}
 			else
 				throw new IOException("You are not allowed to do this");
 		}
 		else{
 			// make sure a previously queued deletion request for this file is wiped before giving out a new token
-			db.query("DELETE FROM orphan_pfns WHERE guid=string2binary('"+requestedGUID.guid.toString()+"') AND se="+se.seNumber);
+			db.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, requestedGUID.guid.toString(), Integer.valueOf(se.seNumber));
 			
 			final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
 			
@@ -324,7 +324,7 @@ public class BookingTable {
 	public static PFN getBookedPFN(final String pfn) throws IOException{
 		final DBFunctions db = getDB();
 		
-		if (!db.query("SELECT *, binary2string(guid) as guid_as_string FROM LFN_BOOKED WHERE pfn="+e(pfn)+";"))
+		if (!db.query("SELECT *, binary2string(guid) as guid_as_string FROM LFN_BOOKED WHERE pfn=?;", false, pfn))
 			throw new IOException("Could not get the booked details for this pfn, query execution failed");
 		
 		final int count = db.count();

@@ -55,7 +55,7 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_get_by_id");
 		}
 		
-		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId="+id);
+		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(id));
 		
 		if (!db.moveNext())
 			return null;
@@ -78,7 +78,7 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_get_by_destination");
 		}
 		
-		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination='"+Format.escSQL(targetSE)+"' ORDER BY transferId");
+		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
 		
 		final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
 		
@@ -108,11 +108,14 @@ public final class TransferUtils {
 		String q = "SELECT * FROM TRANSFERS_DIRECT ";
 		
 		if (username!=null && username.length()>0)
-			q += "WHERE user='"+Format.escSQL(username)+"' ";
+			q += "WHERE user=? ";
 			
 		q += "ORDER BY transferId"; 
 		
-		db.query(q);
+		if (username!=null && username.length()>0)
+			db.query(q, false, username);
+		else
+			db.query(q);
 		
 		final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
 		
@@ -198,7 +201,7 @@ public final class TransferUtils {
 		else
 			lfnToCopy = l;
 				
-		db.query("SELECT transferId FROM TRANSFERS_DIRECT WHERE lfn='"+Format.escSQL(lfnToCopy.getCanonicalName())+"' AND destination='"+Format.escSQL(se.seName)+"' AND status IN ('WAITING', 'TRANSFERRING');");
+		db.query(PREVIOUS_TRANSFER_ID_QUERY, false, lfnToCopy.getCanonicalName(), se.seName);
 		
 		if (db.moveNext())
 			return db.geti(1);
@@ -227,6 +230,8 @@ public final class TransferUtils {
 	public static int mirror(final GUID guid, final SE se){
 		return mirror(guid, se, true);
 	}
+	
+	private static final String PREVIOUS_TRANSFER_ID_QUERY = "SELECT transferId FROM TRANSFERS_DIRECT where lfn=? AND destination=? AND status in ('WAITING', 'TRANSFERRING');";
 	
 	/**
 	 * @param guid
@@ -268,7 +273,7 @@ public final class TransferUtils {
 		final String sGUID = guid.guid.toString();
 		
 		if (checkPreviousTransfers){
-			db.query("SELECT transferId FROM TRANSFERS_DIRECT where lfn='"+Format.escSQL(sGUID)+"' AND destination='"+Format.escSQL(se.seName)+"' AND status in ('WAITING', 'TRANSFERRING');");
+			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, sGUID, se.seName);
 		
 			if (db.moveNext())
 				return db.geti(1);

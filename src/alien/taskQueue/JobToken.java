@@ -4,7 +4,6 @@ import java.util.Random;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
-import lazyj.Format;
 import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -120,10 +119,10 @@ public class JobToken implements Comparable<JobToken> {
 		this.exists = true;
 	}
 	
+	private static final String INSERT_QUERY = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES (?, ?, ?);";
+	
 	private boolean insert(final DBFunctions db){
-		String q = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES ("+ jobId+",'"+ Format.escSQL(username) +"','"+ Format.escSQL(token) +"');";
-			
-		if (db.query(q)){
+		if (db.query(INSERT_QUERY, false, Integer.valueOf(jobId), username, token)){
 			if (monitor != null)
 				monitor.incrementCounter("jobToken_db_insert");
 			
@@ -135,6 +134,8 @@ public class JobToken implements Comparable<JobToken> {
 		return false;
 	}
 
+	private static final String UPDATE_QUERY = "UPDATE jobToken SET jobToken=? WHERE jobId=?;";
+	
 	/**
 	 *  update the entry in the database, inserting it if necessary
 	 * 
@@ -152,12 +153,12 @@ public class JobToken implements Comparable<JobToken> {
 			return insertOK;
 		}
 
-		String q = "UPDATE jobToken SET jobToken='"+Format.escSQL(token)+"' WHERE jobId="+jobId;
+		
 		
 //		System.out.println("SQL "+q);
 
 		// only the token list can change
-		if (!db.query(q)){
+		if (!db.query(UPDATE_QUERY, false, token, Integer.valueOf(jobId))){
 			// wrong table name or what?
 			return false;
 		}
@@ -210,6 +211,8 @@ public class JobToken implements Comparable<JobToken> {
 		return exists;
 	}
 	
+	private static final String DESTROY_QUERY = "DELETE FROM jobToken where  jobId=? and userName=? and jobToken=?;";
+	
 	/**
 	 * Delete a jobToken in the DB
 	 * 
@@ -217,10 +220,7 @@ public class JobToken implements Comparable<JobToken> {
 	 * @return success of the deletion
 	 */
 	boolean destroy(final DBFunctions db){
-		String q = "DELETE FROM jobToken where  jobId = "+ jobId +" and userName = '"+ Format.escSQL(username)+ 
-				   "' and jobToken = '"+ Format.escSQL(token) +"';";
-		
-		if (db.query(q)){
+		if (db.query(DESTROY_QUERY, false, Integer.valueOf(jobId), username, token)){
 			if (monitor != null)
 				monitor.incrementCounter("jobToken_db_delete");
 			

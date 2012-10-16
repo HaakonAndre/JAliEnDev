@@ -638,13 +638,13 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			}
 		}
 		
-		final String q = "DELETE FROM L"+indexTableEntry.tableName+"L WHERE entryId="+entryId ;
+		final String q = "DELETE FROM L"+indexTableEntry.tableName+"L WHERE entryId=?;";
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
 		boolean ok = false;
 		
-		if (db.query(q)){
+		if (db.query(q, false, Long.valueOf(entryId))){
 			exists = false;
 			entryId = 0;
 			ok = true;
@@ -710,9 +710,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
-		final String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir="+entryId+" AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
+		final String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir=? AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 		
-		db.query(q);
+		db.query(q, false, Long.valueOf(entryId));
 		
 		while (db.moveNext()){
 			ret.add(new LFN(db, indexTableEntry));
@@ -730,7 +730,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 		
-		if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary('"+guid.toString()+"') ORDER BY 1;"))
+		if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary(?) ORDER BY 1;", false, guid.toString()))
 			return null;
 
 		final int count = db.count();

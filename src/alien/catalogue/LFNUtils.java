@@ -579,9 +579,9 @@ public class LFNUtils {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 
-		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary('"+lfn.guid.toString()+"'));"; 
+		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary(?));"; 
 		
-		if (!db.query(q))
+		if (!db.query(q, false, lfn.guid.toString()))
 			return null;
 		
 		return lfn;
@@ -599,7 +599,7 @@ public class LFNUtils {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 		
-		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary('"+collection.guid.toString()+"');");
+		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
 		
 		if (!db.moveNext())
 			return false;
@@ -618,7 +618,7 @@ public class LFNUtils {
 			if (!currentLFNs.contains(l.getCanonicalName()))
 				continue;
 			
-			if (!db.query("DELETE FROM COLLECTIONS_ELEM where collectionId="+collectionId+" AND origLFN='"+Format.escSQL(l.getCanonicalName())+"' AND guid=string2binary('"+l.guid.toString()+"');"))
+			if (!db.query("DELETE FROM COLLECTIONS_ELEM where collectionId=? AND origLFN=? AND guid=string2binary(?);", false, Integer.valueOf(collectionId), l.getCanonicalName(), l.guid.toString()))
 				continue;
 			
 			if (db.getUpdateCount()!=1)
@@ -729,7 +729,7 @@ public class LFNUtils {
 		
 		final Set<String> currentLFNs = collection.listCollection();
 		
-		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary('"+collection.guid.toString()+"');");
+		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
 		
 		if (!db.moveNext()){
 			logger.log(Level.WARNING, "Didn't find any collectionId for guid " + collection.guid.toString());
