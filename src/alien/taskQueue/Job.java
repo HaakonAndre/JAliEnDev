@@ -253,7 +253,7 @@ public class Job  implements Comparable<Job>,Serializable {
 		finished = db.getl("finished");
 		masterjob = db.getb("masterjob", false);
 		splitting = db.geti("splitting");
-		error = db.geti("error");
+		error = db.geti("error", -1);
 		current = StringFactory.get(db.gets("current", null));
 		received = db.getl("received");
 		validate = db.getb("validate",false);
