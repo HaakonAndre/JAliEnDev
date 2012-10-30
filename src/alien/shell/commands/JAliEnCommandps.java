@@ -166,7 +166,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				case IDLE         : return padLeft("IDL",3);
 				case INTERACTIV   : return padLeft("INT",3);
 				case MERGING      : return padLeft("  M",3);
-				case QUEUED       : return padLeft("  Q",3);
 				case SAVED_WARN   : return padLeft(" SW",3);
 				case STAGING      : return padLeft(" ST",3);
 				case TO_STAGE     : return padLeft("TST",3);
@@ -189,6 +188,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				case EXPIRED  : e = " XP"; break;
 				case ERROR_EW : e = " EW"; break;
 				case UPDATING : e = " UP"; break;
+				case FAULTY   : e = "  F"; break;
+				case INCORRECT: e = "INC"; break;
 				default       : break;
 			}
 			
@@ -215,7 +216,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			case IDLE         : return padLeft("IDL",3);
 			case INTERACTIV   : return padLeft("INT",3);
 			case MERGING      : return padLeft("  M",3);
-			case QUEUED       : return padLeft("  Q",3);
 			case SAVED_WARN   : return padLeft(" SW",3);
 			case STAGING      : return padLeft(" ST",3);
 			case TO_STAGE     : return padLeft("TST",3);
@@ -238,6 +238,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			case EXPIRED  : e = " XP"; break;
 			case ERROR_EW : e = " EW"; break;
 			case UPDATING : e = " UP"; break; 
+			case FAULTY   : e = "  F"; break;
+			case INCORRECT: e = "INC"; break;
 			default       : break;
 		}
 		
