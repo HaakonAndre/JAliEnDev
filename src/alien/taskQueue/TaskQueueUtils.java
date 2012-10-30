@@ -60,34 +60,12 @@ public class TaskQueueUtils {
 	 */
 	public static final boolean dbStructure2_20;
 	
-	/**
-	 * Status code to Status string mapping
-	 */
-	static final Map<Integer, String> codeToStatus = new HashMap<Integer, String>();
-	
-	/**
-	 * Status string to Status code mapping
-	 */
-	static final Map<String, Integer> statusToCode = new HashMap<String, Integer>();
-	
 	static {
 		final DBFunctions db = getQueueDB();
 		
 		db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 		
 		dbStructure2_20 = db.geti(1) == 1;
-		
-		if (dbStructure2_20){
-			db.query("SELECT statusId, status FROM QUEUE_STATUS;");
-			
-			while (db.moveNext()){
-				final Integer id = Integer.valueOf(db.geti(1));
-				final String status = db.gets(2);
-				
-				codeToStatus.put(id, status);
-				statusToCode.put(status, id);
-			}
-		}
 	}
 	
 //	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
@@ -194,7 +172,7 @@ public class TaskQueueUtils {
 			else
 				q = "SELECT * FROM QUEUE ";
 
-			q += "WHERE split=0 AND statusId!="+statusToCode.get("KILLED")+" ";
+			q += "WHERE split=0 AND statusId!="+JobStatus.KILLED.getAliEnLevel()+" ";
 		}
 		else
 			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=0 AND status!='KILLED' ";
@@ -288,7 +266,7 @@ public class TaskQueueUtils {
 		final String q;
 		
 		if (dbStructure2_20)
-			q = "select split,statusId,count(1) from QUEUE where split in ("+sb.toString()+") AND statusId!="+statusToCode.get("KILLED")+" group by split,statusId order by 1,2;";
+			q = "select split,statusId,count(1) from QUEUE where split in ("+sb.toString()+") AND statusId!="+JobStatus.KILLED.getAliEnLevel()+" group by split,statusId order by 1,2;";
 		else
 			q = "select split,status,count(1) from QUEUE where split in ("+sb.toString()+") AND status!='KILLED' group by split,status order by 1,2;";
 		
@@ -313,9 +291,14 @@ public class TaskQueueUtils {
 				oldJobID = j;
 			}
 			
-			final String status = dbStructure2_20 ? codeToStatus.get(Integer.valueOf(db.geti(2))) : db.gets(2);
+			JobStatus status;
 			
-			m.put(JobStatus.getStatus(status), Integer.valueOf(db.geti(3)));
+			if (dbStructure2_20)
+				status = JobStatus.getStatusByAlien(Integer.valueOf(db.geti(2)));
+			else
+				status = JobStatus.getStatus(db.gets(2));
+			
+			m.put(status, Integer.valueOf(db.geti(3)));
 		}
 		
 		// now, what is left, something that doesn't have subjobs ?
@@ -364,7 +347,7 @@ public class TaskQueueUtils {
 			else
 				q = "SELECT * FROM QUEUE";
 				
-			q += " WHERE split=? AND statusId!="+statusToCode.get("KILLED")+" ORDER BY queueId ASC";
+			q += " WHERE split=? AND statusId!="+JobStatus.KILLED.getAliEnLevel()+" ORDER BY queueId ASC";
 		}
 		else
 			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
@@ -434,7 +417,7 @@ public class TaskQueueUtils {
 					first = false;
 				
 				if (dbStructure2_20)
-					whe.append(statusToCode.get(s.name()));
+					whe.append(s.getAliEnLevel());
 				else
 					whe.append('\'').append(s.toSQL()).append('\'');
 			}
@@ -480,7 +463,7 @@ public class TaskQueueUtils {
 		}
 		
 		if (dbStructure2_20)
-			where += " statusId!="+statusToCode.get("KILLED");
+			where += " statusId!="+JobStatus.KILLED.getAliEnLevel();
 		else
 			where += " status!='KILLED' ";
 		
@@ -596,20 +579,18 @@ public class TaskQueueUtils {
 			return false;
 		}
 		
-		final String oldStatusString = dbStructure2_20 ? codeToStatus.get(Integer.valueOf(db.geti(1))) : db.gets(1);
+		JobStatus oldStatus;
 		
-		if (oldStatusString==null || oldStatusString.length()==0){
+		if (dbStructure2_20)
+			oldStatus = JobStatus.getStatusByAlien(Integer.valueOf(db.geti(1)));
+		else
+			oldStatus = JobStatus.getStatus(db.gets(1));
+		
+		if (oldStatus==null){
 			logger.log(Level.WARNING, "Cannot get the status string from "+db.gets(1));
 			return false;
 		}
-		
-		final JobStatus oldStatus = JobStatus.getStatus(oldStatusString);
-		
-		if (oldStatus==null){
-			logger.log(Level.WARNING, "Unknown JobStatus for "+oldStatusString);
-			return false;
-		}
-		
+				
 		if (oldStatusConstraint!=null && oldStatus!=oldStatusConstraint){
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "Refusing to do the update of "+job+" to state "+newStatus.name()+" because old status is not "+oldStatusConstraint.name()+" but "+oldStatus.name());
@@ -620,7 +601,7 @@ public class TaskQueueUtils {
 		Object newstatus;
 		
 		if (dbStructure2_20){
-			newstatus = statusToCode.get(newStatus.name());
+			newstatus = Integer.valueOf(newStatus.getAliEnLevel());
 			q = "UPDATE QUEUE SET statusId=? WHERE queueId=?;";
 		}
 		else{
@@ -752,7 +733,7 @@ public class TaskQueueUtils {
 					first = false;
 
 				if (dbStructure2_20)
-					whe.append(statusToCode.get(s.name()));
+					whe.append(s.getAliEnLevel());
 				else
 					whe.append('\'').append(s.toSQL()).append('\'');
 			}
@@ -1332,7 +1313,7 @@ public class TaskQueueUtils {
 		final String notify = j.gets("email");
 		
 		if (dbStructure2_20){
-			values.put("statusId", statusToCode.get(targetStatus.name()));
+			values.put("statusId", Integer.valueOf(targetStatus.getAliEnLevel()));
 			values.put("userId", getUserId(owner));
 			values.put("submitHostId", getHostId(clientAddress));
 			values.put("commandId", getCommandId(executable));
@@ -2146,7 +2127,7 @@ public class TaskQueueUtils {
 					sb.append(',');
 		
 				if (dbStructure2_20)
-					sb.append(statusToCode.get(s.name()));
+					sb.append(s.getAliEnLevel());
 				else
 					sb.append('\'').append(s.toSQL()).append('\'');
 			}

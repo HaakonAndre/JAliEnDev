@@ -78,7 +78,7 @@ public class Job  implements Comparable<Job>,Serializable {
 	/**
 	 * Job status
 	 */
-	private String status;
+	private JobStatus status;
 	
 	/**
 	 * splitting
@@ -274,7 +274,7 @@ public class Job  implements Comparable<Job>,Serializable {
 		mtime = db.getDate("mtime", null);	
 		
 		if (TaskQueueUtils.dbStructure2_20){
-			status = TaskQueueUtils.codeToStatus.get(Integer.valueOf(db.geti("statusId")));
+			status = JobStatus.getStatusByAlien(Integer.valueOf(db.geti("statusId")));
 			submitHost = TaskQueueUtils.getHost(db.geti("submitHostId"));
 			execHost = TaskQueueUtils.getHost(db.geti("execHostId"));
 			node = TaskQueueUtils.getHost(db.geti("nodeid"));
@@ -283,7 +283,7 @@ public class Job  implements Comparable<Job>,Serializable {
 			user = TaskQueueUtils.getUser(db.geti("userId"));
 		}
 		else{
-			status = StringFactory.get(db.gets("status"));
+			status = JobStatus.getStatus(db.gets("status"));
 			submitHost = db.gets("submitHost");
 			execHost = StringFactory.get(db.gets("execHost"));
 			node = StringFactory.get(db.gets("node", null));
@@ -434,42 +434,42 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * @return the status, as object
 	 */
 	public JobStatus status(){
-		return JobStatus.getStatus(status);
+		return status;
 	}
 	
 	/**
 	 * @return status name
 	 */
 	public String getStatusName(){
-		return status;
+		return status.name();
 	}
 	
 	/**
 	 * @return <code>true</code> if the job has finished successfully
 	 */
 	public boolean isDone(){
-		return status.startsWith("DONE");
+		return JobStatus.doneStates().contains(status);
 	}
 	
 	/**
 	 * @return <code>true</code> if the job is in a final error state
 	 */
 	public boolean isError(){
-		return status.startsWith("ERR") || status.startsWith("EXP") || status.startsWith("KILL");
+		return JobStatus.errorneousStates().contains(status);
 	}
 	
 	/**
 	 * @return <code>true</code> if the job has failed but should not be resubmitted since it will fail just the same
 	 */
 	public boolean isFinalError(){
-		return status.startsWith("FAIL");
+		return status == JobStatus.FAILED;
 	}
 	
 	/**
 	 * @return <code>true</code> if the job is in a final state (either successful or failed)
 	 */
 	public boolean isFinalState(){
-		return isDone() || isError() || isFinalError();
+		return isDone() || isError();
 	}
 	
 	/**
