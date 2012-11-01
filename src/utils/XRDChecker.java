@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.catalogue.GUID;
@@ -68,10 +69,11 @@ public class XRDChecker {
 					
 					ret.put(pfn, new XRDStatus(true, output));
 				}
-				catch (IOException ioe){
+				catch (final IOException ioe){
 					ret.put(pfn, new XRDStatus(false, ioe.getMessage()));
 					
-					ioe.printStackTrace();
+					if (logger.isLoggable(Level.FINE))
+						logger.log(Level.FINE, "Replica is not ok: "+pfn.pfn, ioe);
 				}
 			}
 		}
