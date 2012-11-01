@@ -172,7 +172,7 @@ public final class GUIDUtils {
 		if (monitor != null)
 			monitor.incrementCounter("GUID_db_lookup");
 	
-		if (!db.query("select G"+tableName+"L.* from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) where pfn like ?;", false, "guid:///"+guid.toString()+"?ZIP=")){
+		if (!db.query("select G"+tableName+"L.* from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) where pfn like ?;", false, "guid:///"+guid.toString()+"?ZIP=%")){
 			throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
 		}
 
