@@ -38,18 +38,11 @@ public class LFNUtils {
 		if (indextable==null)
 			return null;
 		
-		final String guid = g.guid.toString();
-		
 		for (final IndexTableEntry ite: indextable){
-			final DBFunctions db = ite.getDB();
+			final LFN l = ite.getLFN(g.guid);
 			
-			if (db==null)
-				continue;
-			
-			db.query("SELECT * from L140161L WHERE guid=binary2string(?);", false, guid);
-			
-			if (db.moveNext())
-				return new LFN(db, ite);
+			if (l!=null)
+				return l;
 		}
 		
 		return null;

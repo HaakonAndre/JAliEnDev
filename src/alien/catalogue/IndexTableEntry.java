@@ -3,6 +3,7 @@ package alien.catalogue;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,6 +108,38 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	}
 	
 	/**
+	 * Get the LFN having the indicated GUID
+	 * 
+	 * @param guid
+	 * @return the LFN, if it exists in this table, or <code>null</code> if not
+	 */
+	public LFN getLFN(final UUID guid){
+		final DBFunctions db = getDB();
+		
+		if (db==null)
+			return null;
+		
+		if (monitor!=null){
+			monitor.incrementCounter("LFN_db_lookup");
+		}
+		
+		final String q = "SELECT * from L"+tableName+"L WHERE guid=binary2string(?);"; 
+		
+		if (!db.query(q, false, guid.toString())){
+			return null;
+		}
+		
+		if (!db.moveNext()){
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Empty result set for "+q+" and "+guid);
+			
+			return null;
+		}
+		
+		return new LFN(db, this);
+	}
+	
+	/**
 	 * Get the LFN from this table
 	 * 
 	 * @param sPath
@@ -144,7 +177,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		
 		if (!db.moveNext()){
 			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Empty result set for "+q);
+				logger.log(Level.FINE, "Empty result set for "+q+" and "+sSearch);
 			
 			if (evenIfDoesntExist){
 				return new LFN(sSearch, this);
