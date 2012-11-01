@@ -600,8 +600,8 @@ public class Xrootd extends Protocol {
 		catch (final IOException ioe){
 			// ignore, cannot happen
 		}
-			
-		return sb.toString();
+		
+		return sb.toString().replaceAll("[\\n\\r\\s]+$", "");
 	}
 
 	/**
