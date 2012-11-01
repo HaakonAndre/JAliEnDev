@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -130,7 +131,7 @@ public final class GUIDUtils {
 	public static GUID getGUID(final String uuid){
 		return getGUID(UUID.fromString(uuid));
 	}
-
+	
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
 	 * 
@@ -141,6 +142,61 @@ public final class GUIDUtils {
 		return getGUID(guid, false);
 	}
 
+	/**
+	 * Get the referring GUIDs (members of the archive, if any)
+	 * 
+	 * @param guid
+	 * @return the set of GUIDs pointing to this archive, or <code>null</code> if there is no such file
+	 */
+	public static Set<GUID> getReferringGUID(final UUID guid){
+		final int host = getGUIDHost(guid);
+		
+		if (host < 0)
+			return null;
+
+		final Host h = CatalogueUtils.getHost(host);
+		
+		if (h == null)
+			return null;
+
+		final DBFunctions db = h.getDB();
+
+		if (db == null)
+			return null;
+		
+		final int tableName = GUIDUtils.getTableNameForGUID(guid);
+		
+		if (tableName < 0)
+			return null;
+
+		if (monitor != null)
+			monitor.incrementCounter("GUID_db_lookup");
+	
+		if (!db.query("select G"+tableName+"L.* from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) where pfn like ?;", false, "guid:///"+guid.toString()+"?ZIP=")){
+			throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
+		}
+
+		if (!db.moveNext()) {
+			return null;
+		}
+		
+		final Set<GUID> ret = new TreeSet<GUID>();
+
+		do{
+			try{
+				ret.add(new GUID(db, host, tableName));
+			}
+			catch (final Exception e){
+				logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
+				
+				return null;				
+			}
+		}
+		while (db.moveNext());
+		
+		return ret;		
+	}
+	
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
 	 * 

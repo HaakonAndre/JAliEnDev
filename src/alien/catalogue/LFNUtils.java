@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
@@ -30,6 +31,29 @@ public class LFNUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(LFNUtils.class.getCanonicalName());
+	
+	public static LFN getLFN(final GUID g){
+		final Set<IndexTableEntry> indextable = CatalogueUtils.getAllIndexTables();
+		
+		if (indextable==null)
+			return null;
+		
+		final String guid = g.guid.toString();
+		
+		for (final IndexTableEntry ite: indextable){
+			final DBFunctions db = ite.getDB();
+			
+			if (db==null)
+				continue;
+			
+			db.query("SELECT * from L140161L WHERE guid=binary2string(?);", false, guid);
+			
+			if (db.moveNext())
+				return new LFN(db, ite);
+		}
+		
+		return null;
+	}
 	
 	/**
 	 * Get the LFN entry for this catalog filename

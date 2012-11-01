@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -244,6 +245,18 @@ public final class CatalogueUtils {
 				return ite;
 			
 		return null;
+	}
+	
+	/**
+	 * @return all known L%L tables
+	 */
+	public static Set<IndexTableEntry> getAllIndexTables(){
+		updateIndexTableCache();
+		
+		if (indextable == null)
+			return null;
+
+		return new TreeSet<IndexTableEntry>(indextable);
 	}
 	
 	/**
