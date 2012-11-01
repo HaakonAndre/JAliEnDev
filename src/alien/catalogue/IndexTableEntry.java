@@ -123,7 +123,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			monitor.incrementCounter("LFN_db_lookup");
 		}
 		
-		final String q = "SELECT * from L"+tableName+"L WHERE guid=binary2string(?);"; 
+		final String q = "SELECT * from L"+tableName+"L WHERE guid=string2binary(?);"; 
 		
 		if (!db.query(q, false, guid.toString())){
 			return null;
