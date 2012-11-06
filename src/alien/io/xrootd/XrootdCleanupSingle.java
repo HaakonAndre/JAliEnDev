@@ -188,7 +188,7 @@ public class XrootdCleanupSingle {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 		
-		db.query("INSERT IGNORE INTO orphan_pfns (guid,se) VALUES (string2binary(?), ?);", false, uuid.toString(), Integer.valueOf(se.seNumber));
+		db.query("INSERT IGNORE INTO orphan_pfns (guid,se,size) VALUES (string2binary(?), ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
 		
 		return true;
 	}
