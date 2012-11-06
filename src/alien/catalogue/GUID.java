@@ -510,7 +510,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 		
 		if (purge && (pfnCache==null || pfnCache.size()>0)){
-			final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (guid,se) SELECT guid,seNumber FROM G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId=? AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';"; 
+			final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (guid,se,md5sum,size) SELECT guid,seNumber,md5,size FROM G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId=? AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';"; 
 			
 			if (db.query(purgeQuery, false, Integer.valueOf(guidId))){
 				final int purged = db.getUpdateCount();
@@ -599,7 +599,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 						final SE se = SEUtils.getSE(pfn.seNumber);
 						
 						if (se!=null && !(se.getName().equalsIgnoreCase("no_se")))
-							db.query("INSERT INTO orphan_pfns (guid,se) VALUES (string2binary(?), ?);", false, g.guid.toString(), Integer.valueOf(pfn.seNumber));
+							db.query("INSERT INTO orphan_pfns (guid,se,md5sum,size) VALUES (string2binary(?), ?, ?, ?);", false, g.guid.toString(), Integer.valueOf(pfn.seNumber), g.md5, Long.valueOf(g.size));
 					}
 				}
 			}
