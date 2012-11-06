@@ -134,7 +134,7 @@ public class OrphanPFNsCleanup {
 					// TODO : what to do with these PFNs ? Iterate over them and release them from the catalogue nevertheless ?
 //					db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 					
-					db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;", false, Integer.valueOf(seNumber));
+					db.query("SELECT binary2string(guid),size,md5sum FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;", false, Integer.valueOf(seNumber));
 				}
 				finally{
 					concurrentQueryies.release();
@@ -174,7 +174,7 @@ public class OrphanPFNsCleanup {
 				}
 				
 				do {
-					executor.submit(new CleanupTask(db.gets(1), seNumber));
+					executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3)));
 				}
 				while (db.moveNext());
 				
@@ -243,10 +243,14 @@ public class OrphanPFNsCleanup {
 	private static class CleanupTask implements Runnable{
 		final String sGUID;
 		final int seNumber;
+		final long size;
+		final String md5;
 		
-		public CleanupTask(final String sGUID, final int se) {
+		public CleanupTask(final String sGUID, final int se, final long size, final String md5) {
 			this.sGUID = sGUID;
-			this.seNumber = se; 
+			this.seNumber = se;
+			this.size = size;
+			this.md5 = md5;
 		}
 		
 		@Override
@@ -273,8 +277,8 @@ public class OrphanPFNsCleanup {
 			}
 			
 			if (!guid.exists()){
-				guid.size = 123456;
-				guid.md5 = "130254d9540d6903fa6f0ab41a132361";
+				guid.size = size>0 ? size : 123456;
+				guid.md5 = md5!=null ? md5 : "130254d9540d6903fa6f0ab41a132361";
 			}
 			
 			final PFN pfn;
@@ -282,7 +286,7 @@ public class OrphanPFNsCleanup {
 			try{
 				pfn = new PFN(guid, se);
 			}
-			catch (Throwable t){
+			catch (final Throwable t){
 				System.err.println("Cannot generate the entry for "+seNumber+" ("+se.getName()+") and "+sGUID);
 				t.printStackTrace();
 				
@@ -290,11 +294,11 @@ public class OrphanPFNsCleanup {
 				return;
 			}
 			
-			final XrootDEnvelope env =  new XrootDEnvelope(AccessType.DELETE, pfn);
+			final XrootDEnvelope env = new XrootDEnvelope(AccessType.DELETE, pfn);
 			
 			try {
 				if (se.needsEncryptedEnvelope){
-						XrootDEnvelopeSigner.encryptEnvelope(env);
+					XrootDEnvelopeSigner.encryptEnvelope(env);
 				}
 				else{
 					// new xrootd implementations accept signed-only envelopes
@@ -329,7 +333,7 @@ public class OrphanPFNsCleanup {
 				
 					try{
 						if (guid.exists()){
-							//System.err.println("Successfuly deleted one file of "+Format.size(guid.size)+" from "+se.getName());
+							//System.err.println("Successfully deleted one file of "+Format.size(guid.size)+" from "+se.getName());
 							successOne(guid.size);
 							
 							if (guid.removePFN(se, false)!=null){	// we have just physically deleted this entry, do _not_ queue this pfn again
@@ -346,13 +350,13 @@ public class OrphanPFNsCleanup {
 								}
 							}
 							else{
-								System.err.println("  Failed to remove the PFN for this GUID");
+								System.err.println("Failed to remove the replica on "+se.getName()+" from "+guid.guid);
 							}
 						}
 						else{
-							successOne(0);
+							successOne(size);
 							
-							System.err.println("Successfuly deleted from "+se.getName()+" but GUID doesn't exist in the catalogue ...");
+							System.err.println("Successfuly deleted from "+se.getName()+" but GUID "+guid.guid+" doesn't exist in the catalogue ...");
 						}			
 											
 						db2.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
