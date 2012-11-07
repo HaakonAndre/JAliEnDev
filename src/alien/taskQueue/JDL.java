@@ -825,8 +825,10 @@ public class JDL implements Serializable {
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
+		
+		final Map<String, Object> sorted = sortContent();
 
-		for (final Map.Entry<String, Object> entry : jdlContent.entrySet()) {
+		for (final Map.Entry<String, Object> entry : sorted.entrySet()) {
 			if (sb.length() > 0)
 				sb.append('\n');
 
@@ -1035,18 +1037,13 @@ public class JDL implements Serializable {
 	public String toHTML() {
 		final StringBuilder sb = new StringBuilder();
 
-		for (final Map.Entry<String, Object> entry : jdlContent.entrySet()) {
+		final Map<String, Object> sorted = sortContent();
+		
+		for (final Map.Entry<String, Object> entry : sorted.entrySet()) {
 			if (sb.length() > 0)
 				sb.append("<br>");
 
-			String key = entry.getKey();
-
-			for (final String k : correctTags) {
-				if (k.equalsIgnoreCase(key)) {
-					key = k;
-					break;
-				}
-			}
+			final String key = entry.getKey();
 
 			sb.append("<B>").append(key).append("</B> = ");
 
@@ -1236,4 +1233,38 @@ public class JDL implements Serializable {
 	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
 			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
 			"User", "ValidationCommand", "WorkDirectorySize");
+	
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "executable", "packages", "arguments", "splitarguments", "split", "inputdatacollection", "inputfile", "inputdata", "validationcommand", "outputdir", "output", "requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "jdlvariables");
+	
+	private static final Map<String, String> correctedTags = new HashMap<String, String>(correctTags.size());
+	
+	static{
+		for (final String tag: correctTags)
+			correctedTags.put(tag.toLowerCase(), tag);
+	}
+	
+	private static final String getCorrectedTag(final String tag){
+		final String s = correctedTags.get(tag.toLowerCase());
+		
+		return s!=null ? s : tag;
+	}
+	
+	private Map<String, Object> sortContent(){
+		final LinkedHashMap<String, Object> ret = new LinkedHashMap<String, Object>(jdlContent);
+		
+		for (final String key: preferredOrder){
+			final Object value = get(key);
+			
+			if (value!=null){
+				ret.put(getCorrectedTag(key), value);
+			}
+		}
+		
+		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
+			if (!preferredOrder.contains(entry.getKey().toLowerCase()))
+				ret.put(getCorrectedTag(entry.getKey()), entry.getValue());
+		}
+		
+		return ret;
+	}
 }
