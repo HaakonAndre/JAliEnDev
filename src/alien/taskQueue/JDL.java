@@ -827,7 +827,7 @@ public class JDL implements Serializable {
 		final StringBuilder sb = new StringBuilder();
 		
 		final Map<String, Object> sorted = sortContent();
-
+		
 		for (final Map.Entry<String, Object> entry : sorted.entrySet()) {
 			if (sb.length() > 0)
 				sb.append('\n');
@@ -1234,7 +1234,7 @@ public class JDL implements Serializable {
 			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
 			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments");
 	
-	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "executable", "packages", "arguments", "splitarguments", "split", "inputdatacollection", "inputfile", "inputdata", "validationcommand", "outputdir", "output", "requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "jdlvariables");
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "executable", "packages", "arguments", "split", "splitarguments", "inputdatacollection", "inputfile", "inputdata", "validationcommand", "outputdir", "output", "requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "jdlvariables");
 	
 	private static final Map<String, String> correctedTags = new HashMap<String, String>(correctTags.size());
 	
@@ -1252,8 +1252,8 @@ public class JDL implements Serializable {
 		return s!=null ? s : defaultValue;
 	}
 	
-	private Map<String, Object> sortContent(){
-		final LinkedHashMap<String, Object> ret = new LinkedHashMap<String, Object>(jdlContent);
+	private Map<String, Object> sortContent(){		
+		final LinkedHashMap<String, Object> ret = new LinkedHashMap<String, Object>(jdlContent.size());
 		
 		for (final String key: preferredOrder){
 			final Object value = get(key);
@@ -1266,8 +1266,9 @@ public class JDL implements Serializable {
 		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
 			final String lowerCaseKey = entry.getKey().toLowerCase();
 		
-			if (!preferredOrder.contains(lowerCaseKey))
+			if (!preferredOrder.contains(lowerCaseKey)){
 				ret.put(getCorrectedTag(lowerCaseKey, entry.getKey()), entry.getValue());
+			}
 		}
 		
 		return ret;
