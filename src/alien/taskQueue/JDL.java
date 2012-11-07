@@ -1227,7 +1227,7 @@ public class JDL implements Serializable {
 		return sb.toString();
 	}
 
-	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputDataCollection", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
+	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputData", "InputDataCollection", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
 			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
 			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments");
 	
