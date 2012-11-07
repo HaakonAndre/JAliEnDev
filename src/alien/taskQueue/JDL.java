@@ -1040,16 +1040,13 @@ public class JDL implements Serializable {
 		final Map<String, Object> sorted = sortContent();
 		
 		for (final Map.Entry<String, Object> entry : sorted.entrySet()) {
-			if (sb.length() > 0)
-				sb.append("<br>");
-
 			final String key = entry.getKey();
 
-			sb.append("<B>").append(key).append("</B> = ");
+			sb.append("<DIV style='margin-bottom:6px'><B>").append(key).append("</B> = ");
 
 			appendHTML(entry.getKey(), sb, entry.getValue());
 
-			sb.append(";<BR>\n");
+			sb.append(";<BR></DIV>\n");
 		}
 
 		return sb.toString();
