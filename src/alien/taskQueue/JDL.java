@@ -1230,9 +1230,9 @@ public class JDL implements Serializable {
 		return sb.toString();
 	}
 
-	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
+	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputDataCollection", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
 			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
-			"User", "ValidationCommand", "WorkDirectorySize");
+			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments");
 	
 	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "executable", "packages", "arguments", "splitarguments", "split", "inputdatacollection", "inputfile", "inputdata", "validationcommand", "outputdir", "output", "requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "jdlvariables");
 	
@@ -1243,10 +1243,13 @@ public class JDL implements Serializable {
 			correctedTags.put(tag.toLowerCase(), tag);
 	}
 	
-	private static final String getCorrectedTag(final String tag){
-		final String s = correctedTags.get(tag.toLowerCase());
+	/**
+	 * @param tag tag name, in lowercase!
+	 */
+	private static final String getCorrectedTag(final String tag, final String defaultValue){
+		final String s = correctedTags.get(tag);
 		
-		return s!=null ? s : tag;
+		return s!=null ? s : defaultValue;
 	}
 	
 	private Map<String, Object> sortContent(){
@@ -1256,13 +1259,15 @@ public class JDL implements Serializable {
 			final Object value = get(key);
 			
 			if (value!=null){
-				ret.put(getCorrectedTag(key), value);
+				ret.put(getCorrectedTag(key, key), value);
 			}
 		}
 		
 		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
-			if (!preferredOrder.contains(entry.getKey().toLowerCase()))
-				ret.put(getCorrectedTag(entry.getKey()), entry.getValue());
+			final String lowerCaseKey = entry.getKey().toLowerCase();
+		
+			if (!preferredOrder.contains(lowerCaseKey))
+				ret.put(getCorrectedTag(lowerCaseKey, entry.getKey()), entry.getValue());
 		}
 		
 		return ret;
