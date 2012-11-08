@@ -1227,11 +1227,16 @@ public class JDL implements Serializable {
 		return sb.toString();
 	}
 
-	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputData", "InputDataCollection", "InputDataList", "InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
-			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
-			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments");
+	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputData", "InputDataCollection", "InputDataList", 
+			"InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
+			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", 
+			"Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
+			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments", "MasterJobID");
 	
-	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "executable", "packages", "arguments", "split", "splitarguments", "inputdatacollection", "inputfile", "inputdata", "validationcommand", "outputdir", "output", "requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "jdlvariables");
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "executable", "arguments", "split", "splitarguments", "inputdatacollection", 
+			"inputfile", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile", "requirements", 
+			"origrequirements", "ttl", "price",  "memorysize", "workdirectorysize", "jdlvariables", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", 
+			"maxfailfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype");
 	
 	private static final Map<String, String> correctedTags = new HashMap<String, String>(correctTags.size());
 	
@@ -1249,7 +1254,7 @@ public class JDL implements Serializable {
 		return s!=null ? s : defaultValue;
 	}
 	
-	private Map<String, Object> sortContent(){		
+	private Map<String, Object> sortContent(){
 		final LinkedHashMap<String, Object> ret = new LinkedHashMap<String, Object>(jdlContent.size());
 		
 		for (final String key: preferredOrder){
