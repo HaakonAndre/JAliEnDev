@@ -1194,7 +1194,7 @@ public class JDL implements Serializable {
 		idx = text.indexOf("::");
 
 		if (idx > 0) {
-			sb.append("<font color=green>").append(Format.escHtml(text.substring(0, idx))).append("</font>::<font color=red>").append(Format.escHtml(text.substring(idx + 2))).append("</font>");
+			sb.append("<font color=green>").append(Format.escHtml(text.substring(0, idx))).append("</font>::<font color=orange>").append(Format.escHtml(text.substring(idx + 2))).append("</font>");
 		}
 		else
 			sb.append(Format.escHtml(text));
