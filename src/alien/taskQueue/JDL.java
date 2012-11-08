@@ -1231,12 +1231,13 @@ public class JDL implements Serializable {
 			"InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
 			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", 
 			"Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
-			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments", "MasterJobID");
+			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments", "MasterJobID",
+			"LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies", "RunOnAODs", "LegoDataSetType");
 	
 	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "executable", "arguments", "split", "splitarguments", "inputdatacollection", 
 			"inputfile", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile", "requirements", 
 			"origrequirements", "ttl", "price",  "memorysize", "workdirectorysize", "jdlvariables", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", 
-			"maxfailfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype");
+			"maxfailfraction", "maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype");
 	
 	private static final Map<String, String> correctedTags = new HashMap<String, String>(correctTags.size());
 	
