@@ -184,6 +184,17 @@ public final class SEUtils {
 	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
 	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
 
+	private static final String SEDISTANCE_QUERY;
+	
+	static{
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+
+		if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
+			SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
+		else
+			SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+	}
+	
 	private static void updateSEDistanceCache() {
 		seDistanceReadLock.lock();
 
@@ -201,7 +212,7 @@ public final class SEUtils {
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-						if (db.query("SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;")) {
+						if (db.query(SEDISTANCE_QUERY)) {
 							final Map<String, Map<Integer, Double>> newDistance = new HashMap<String, Map<Integer, Double>>();
 
 							String sOldSite = null;
