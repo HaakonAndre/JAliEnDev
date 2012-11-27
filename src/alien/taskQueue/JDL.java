@@ -1234,9 +1234,9 @@ public class JDL implements Serializable {
 			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments", "MasterJobID",
 			"LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies", "RunOnAODs", "LegoDataSetType");
 	
-	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "executable", "arguments", "split", "splitarguments", "inputdatacollection", 
-			"inputfile", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile", "requirements", 
-			"origrequirements", "ttl", "price",  "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", 
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "executable", "arguments", "inputfile", "split", "splitarguments", 
+			"inputdatacollection", "splitmaxinputfilenumber", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile", 
+			"requirements", "origrequirements", "ttl", "price",  "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", 
 			"maxfailfraction", "maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables");
 	
 	private static final Map<String, String> correctedTags = new HashMap<String, String>(correctTags.size());
