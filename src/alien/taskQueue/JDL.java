@@ -17,6 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +29,7 @@ import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 
 /**
@@ -35,6 +38,11 @@ import alien.io.IOUtils;
  */
 public class JDL implements Serializable {
 
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(JDL.class.getCanonicalName());
+	
 	/**
 	 * 
 	 */
@@ -190,7 +198,9 @@ public class JDL implements Serializable {
 			}
 			
 			if (!bClean){
-				throw new IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
+				//throw new IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn, full text is\n"+content);
 			}
 
 			final String sValue = content.substring(idxEqual + 1, idxEnd).trim();
