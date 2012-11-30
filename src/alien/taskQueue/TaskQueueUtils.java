@@ -1024,9 +1024,7 @@ public class TaskQueueUtils {
 		if (jdlContents==null)
 			return null;
 		
-		final JDL initialJDL = new JDL(jdlContents);
-		
-		String jdlToSubmit = initialJDL.toString();
+		String jdlToSubmit = JDL.removeComments(jdlContents);
 		
 		Matcher m = p.matcher(jdlToSubmit);
 		
