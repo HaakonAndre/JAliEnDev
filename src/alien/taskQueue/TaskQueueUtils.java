@@ -1024,7 +1024,9 @@ public class TaskQueueUtils {
 		if (jdlContents==null)
 			return null;
 		
-		String jdlToSubmit = jdlContents;
+		final JDL initialJDL = new JDL(jdlContents);
+		
+		String jdlToSubmit = initialJDL.toString();
 		
 		Matcher m = p.matcher(jdlToSubmit);
 		
