@@ -152,6 +152,7 @@ public class JDL implements Serializable {
 
 			boolean bEsc = false;
 			boolean bQuote = false;
+			boolean bClean = false;
 
 			outer: while (idxEnd < content.length()) {
 				final char c = content.charAt(idxEnd);
@@ -169,8 +170,10 @@ public class JDL implements Serializable {
 
 						break;
 					case ';':
-						if (!bEsc && !bQuote)
+						if (!bEsc && !bQuote){
+							bClean = true;
 							break outer;
+						}
 
 						bEsc = false;
 
@@ -181,10 +184,18 @@ public class JDL implements Serializable {
 
 				idxEnd++;
 			}
+						
+			if (bEsc || bQuote){
+				throw new IOException("JDL syntax error: unfinished "+(bQuote ? "quotes" : "escape")+" in the value of tag "+sKey);
+			}
+			
+			if (!bClean){
+				throw new IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
+			}
 
 			final String sValue = content.substring(idxEqual + 1, idxEnd).trim();
 
-			final Object value = parseValue(sValue);
+			final Object value = parseValue(sValue, sKey);
 
 			// System.err.println(sKey +" = "+value);
 
@@ -315,12 +326,18 @@ public class JDL implements Serializable {
 		return o.toString();
 	}
 
-	private static final Object parseValue(final String value) {
-		if (value.startsWith("\"") && value.endsWith("\"")) {
+	private static final Object parseValue(final String value, final String tag) throws IOException{
+		if (value.startsWith("\"")){
+			if (!value.endsWith("\""))
+				throw new IOException("JDL syntax error: quotes do not close at the end of string for tag "+tag);
+		
 			return StringFactory.get(value.substring(1, value.length() - 1));
 		}
 
-		if (value.startsWith("{") && value.endsWith("}")) {
+		if (value.startsWith("{")){
+			if (!value.endsWith("}"))
+				throw new IOException("JDL syntax error: unclosed brackets in the value of tag "+tag);
+			
 			return toList(value.substring(1, value.length() - 1));
 		}
 
