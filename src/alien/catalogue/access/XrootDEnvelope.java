@@ -5,14 +5,18 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import lazyj.Format;
+import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
 
@@ -22,6 +26,11 @@ import alien.se.SEUtils;
  */
 public class XrootDEnvelope implements Serializable {
 
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
+	
 	/**
 	 * 
 	 */
@@ -334,6 +343,14 @@ public class XrootDEnvelope implements Serializable {
 	public void setTransactionURL() {
 		final SE se = SEUtils.getSE(pfn.seNumber);
 
+		if (se==null){
+			if (logger.isLoggable(Level.WARNING))
+				logger.log(Level.WARNING, "Null SE for "+pfn);
+			
+			turl = pfn.pfn;
+			return;
+		}
+		
 		if (se.seName.indexOf("DCACHE") > 0) {
 			final GUID guid = pfn.getGuid();
 
