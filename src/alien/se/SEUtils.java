@@ -19,8 +19,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.catalina.SessionEvent;
+
 import lazyj.DBFunctions;
+import lazyj.Format;
 import alien.catalogue.CatalogueUtils;
+import alien.catalogue.GUIDIndex;
+import alien.catalogue.GUIDIndex.SEUsageStats;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 
@@ -626,4 +631,50 @@ public final class SEUtils {
 		return ret;
 	}
 
+	/**
+	 * Update the number of files and the total size for each known SE, according to the G*L and G*L_PFN tables
+	 */
+	public static void updateSEUsageCache(){
+		final Map<Integer, SEUsageStats> m = getSEUsage();
+		
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		
+		for (final Map.Entry<Integer, SEUsageStats> entry: m.entrySet()){
+			db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
+			
+			final SE se = getSE(entry.getKey().intValue());
+			
+			if (se!=null){
+				se.seUsedSpace = entry.getValue().usedSpace;
+				se.seNumFiles = entry.getValue().fileCount;
+			}
+		}
+	}
+	
+	private static Map<Integer, SEUsageStats> getSEUsage(){
+		final Map<Integer, SEUsageStats> m = new HashMap<Integer, SEUsageStats>(); 
+		
+		for (final GUIDIndex index: CatalogueUtils.getAllGUIDIndexes()){
+			System.err.println("Getting usage from "+index);
+			
+			final Map<Integer, SEUsageStats> t = index.getSEUsageStats();
+			
+			for (final Map.Entry<Integer, SEUsageStats> entry: t.entrySet()){
+				final SEUsageStats s = m.get(entry.getKey());
+				
+				if (s==null){
+					m.put(entry.getKey(), entry.getValue());
+				}
+				else{
+					s.merge(entry.getValue());
+				}
+			}
+		}
+		
+		return m;
+	}
+	
+	public static void main(final String[] args) {
+	    updateSEUsageCache();
+	}
 }

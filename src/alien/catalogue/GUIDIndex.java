@@ -1,6 +1,8 @@
 package alien.catalogue;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -56,7 +58,7 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 		hostIndex = db.geti("hostIndex");
 		tableName = db.geti("tableName");
 		
-		String s = StringFactory.get(db.gets("guidTime"));
+		final String s = StringFactory.get(db.gets("guidTime"));
 		
 		if (s.length()>=8)
 			guidTime = Long.parseLong(s.substring(0,8), 16);
@@ -102,4 +104,44 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 		       "guidTime\t: "+Long.toHexString(guidTime);
 	}
 	
+	public static class SEUsageStats {
+		public long usedSpace = 0;
+		public long fileCount = 0;
+		
+		public SEUsageStats(final long usedSpace, final long fileCount){
+			this.usedSpace = usedSpace;
+			this.fileCount = fileCount;
+		}
+		
+		public void merge(final SEUsageStats other){
+			this.usedSpace += other.usedSpace;
+			this.fileCount += other.fileCount;
+		}
+	}
+	
+	public Map<Integer, SEUsageStats> getSEUsageStats(){
+		final Map<Integer, SEUsageStats> ret = new HashMap<Integer, SEUsageStats>();
+		
+		final Host h = CatalogueUtils.getHost(this.hostIndex);
+		
+		if (h==null)
+			return ret;
+		
+		final DBFunctions db = h.getDB();
+		
+		if (db==null)
+			return ret;
+		
+		db.query("select seNumber, sum(size),count(1) from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING(guidId) GROUP BY seNumber;");
+		
+		while (db.moveNext()){
+			final Integer key = Integer.valueOf(db.geti(1));
+			
+			final SEUsageStats se = new SEUsageStats(db.getl(2), db.getl(3));
+			
+			ret.put(key, se);
+		}
+		
+		return ret;
+	}
 }
