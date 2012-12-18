@@ -2,12 +2,16 @@ package alien.catalogue;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -481,6 +485,124 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 	
 	/**
+	 * @author costing
+	 *
+	 */
+	private static final class GUIDCleanup {
+		public final Integer tableName;
+		public final Host host;
+		public final LinkedBlockingQueue<Integer> guidIDs;
+		
+		/**
+		 * @param host
+		 * @param tableName
+		 */
+		public GUIDCleanup(final Host host, final Integer tableName){
+			this.tableName = tableName;
+			this.host = host;
+
+			guidIDs = new LinkedBlockingQueue<Integer>(1000);
+		}
+		
+		/**
+		 * Commit the deletes to the database 
+		 * 
+		 * @param tableSuffix
+		 */
+		public boolean flush(final String tableSuffix){
+			if (guidIDs.size()==0)
+				return false;
+			
+			final List<Integer> toExecute = new ArrayList<Integer>(guidIDs.size());
+			
+			guidIDs.drainTo(toExecute);
+			
+			final StringBuilder sb = new StringBuilder(guidIDs.size() * 10);
+		
+			for (final Integer id: toExecute){
+				if (sb.length()>0)
+					sb.append(",");
+				
+				sb.append(id.toString());
+			}
+			
+			final DBFunctions db = host.getDB();
+			
+			db.query("DELETE FROM G"+tableName+"L"+tableSuffix+" WHERE guidId IN ("+sb.toString()+")");
+			
+			return true;
+		}
+	}
+	
+	private static final HashMap<Integer, GUIDCleanup> refDeleteQueue = new HashMap<Integer, GUIDCleanup>();
+	private static final HashMap<Integer, GUIDCleanup> pfnDeleteQueue = new HashMap<Integer, GUIDCleanup>();
+	
+	private static void offer(final HashMap<Integer, GUIDCleanup> queue, final Host h, final Integer tableName, final Integer guidId){
+		GUIDCleanup g;
+		
+		synchronized(queue){
+			g = queue.get(tableName);
+			
+			if (g==null){
+				g = new GUIDCleanup(h, tableName);
+				queue.put(tableName, g);
+			}
+		}			
+		
+		g.guidIDs.offer(guidId);
+		
+		synchronized (queue){
+			queue.notifyAll();
+		}
+	}
+	
+	private static final class CleanupThread extends Thread {
+		private final HashMap<Integer, GUIDCleanup> queue;
+		private final String tableSuffix;
+		
+		public CleanupThread(final HashMap<Integer, GUIDCleanup> queue, final String tableSuffix){
+			this.queue = queue;
+			this.tableSuffix = tableSuffix;
+		}
+		
+		@Override
+		public void run() {
+			while (true){
+				try{
+					boolean any = false;
+					
+					for (final GUIDCleanup g: queue.values()){
+						if (g.flush(tableSuffix))
+							any = true;
+					}
+					
+					if (!any){
+						synchronized(queue){
+							try{
+								queue.wait(1000);
+							}
+							catch (final InterruptedException ie){
+								// ignore
+							}
+						}
+					}
+				}
+				catch (final Throwable t){
+					logger.log(Level.WARNING, "Caught an exception while executing the cleanup for "+tableSuffix, t);
+				}
+			}
+		}
+	}
+	
+	private static final CleanupThread refCleanupThread = new CleanupThread(refDeleteQueue, "_REF");
+	private static final CleanupThread pfnCleanupThread = new CleanupThread(pfnDeleteQueue, "_PFN");
+	
+	static{
+		refCleanupThread.start();
+		pfnCleanupThread.start();
+	}
+	
+	/**
 	 * Completely delete this GUID from the database
 	 * @param purge if <code>true</code> then the physical files are queued for deletion
 	 * 
@@ -524,7 +646,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				}
 			}
 			else{
-				System.err.println("Failed: "+purgeQuery);
+				logger.log(Level.WARNING, "Failed query: "+purgeQuery);
 			}
 		}
 		
@@ -538,10 +660,13 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			}
 		}
 		
-		db.query("DELETE FROM G"+tableName+"L_REF WHERE guidId=?;", false, Integer.valueOf(guidId));
+		final Integer iId = Integer.valueOf(guidId);
+		final Integer tableId = Integer.valueOf(tableName);
+		
+		offer(refDeleteQueue, h, tableId, iId);
 		
 		if (pfnCache==null || pfnCache.size()>0){
-			db.query("DELETE FROM G"+tableName+"L_PFN WHERE guidId=?;", false, Integer.valueOf(guidId));
+			offer(pfnDeleteQueue, h, tableId, iId);
 			
 			pfnCache = null;
 		}
