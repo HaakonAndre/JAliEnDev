@@ -534,8 +534,15 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 	}
 	
-	private static final HashMap<Integer, GUIDCleanup> refDeleteQueue = new HashMap<Integer, GUIDCleanup>();
-	private static final HashMap<Integer, GUIDCleanup> pfnDeleteQueue = new HashMap<Integer, GUIDCleanup>();
+	/**
+	 * G*L_REF deletion queue
+	 */
+	static final HashMap<Integer, GUIDCleanup> refDeleteQueue = new HashMap<Integer, GUIDCleanup>();
+	
+	/**
+	 * G*L_PFN deletion queue
+	 */
+	static final HashMap<Integer, GUIDCleanup> pfnDeleteQueue = new HashMap<Integer, GUIDCleanup>();
 	
 	private static void offer(final HashMap<Integer, GUIDCleanup> queue, final Host h, final Integer tableName, final Integer guidId){
 		GUIDCleanup g;
@@ -552,6 +559,16 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		g.guidIDs.offer(guidId);
 		
 		synchronized (queue){
+			if (refCleanupThread==null){
+				 refCleanupThread = new CleanupThread(refDeleteQueue, "_REF");
+				 refCleanupThread.start();
+			}
+			
+			if (pfnCleanupThread==null){
+				 pfnCleanupThread = new CleanupThread(pfnDeleteQueue, "_PFN");
+				 pfnCleanupThread.start();
+			}
+
 			queue.notifyAll();
 		}
 	}
@@ -567,16 +584,39 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		@Override
 		public void run() {
+			int idleIterations = 0;
+			
+			final ArrayList<GUIDCleanup> entries = new ArrayList<GUID.GUIDCleanup>();
+			
 			while (true){
 				try{
 					boolean any = false;
 					
-					for (final GUIDCleanup g: queue.values()){
+					entries.clear();
+					
+					synchronized (queue){
+						entries.addAll(queue.values());
+					}
+					
+					for (final GUIDCleanup g: entries){
 						if (g.flush(tableSuffix))
 							any = true;
 					}
-					
+											
 					if (!any){
+						if (++idleIterations > 30){
+							synchronized (queue){
+								if (queue == refDeleteQueue){
+									refCleanupThread = null;
+								}
+								else{
+									pfnCleanupThread = null;
+								}
+								
+								return;
+							}
+						}
+						
 						synchronized(queue){
 							try{
 								queue.wait(1000);
@@ -594,13 +634,16 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 	}
 	
-	private static final CleanupThread refCleanupThread = new CleanupThread(refDeleteQueue, "_REF");
-	private static final CleanupThread pfnCleanupThread = new CleanupThread(pfnDeleteQueue, "_PFN");
+	/**
+	 * G*L_REF cleanup thread
+	 */
+	static CleanupThread refCleanupThread;
 	
-	static{
-		refCleanupThread.start();
-		pfnCleanupThread.start();
-	}
+	/**
+	 * G*L_PFN cleanup thread
+	 */
+	static CleanupThread pfnCleanupThread;
+	
 	
 	/**
 	 * Completely delete this GUID from the database
