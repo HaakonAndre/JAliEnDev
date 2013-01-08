@@ -184,7 +184,7 @@ public class TaskQueueUtils {
 				q += "AND submitHost LIKE '"+Format.escSQL(account)+"@%'";
 		}
 		
-		q += " ORDER BY queueId ASC;";
+		q += " AND received>UNIX_TIMESTAMP(now())-60*60*24*14 ORDER BY queueId ASC;";
 		
 		final List<Job> ret = new ArrayList<Job>();
 		
