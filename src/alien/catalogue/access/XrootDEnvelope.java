@@ -420,17 +420,19 @@ public class XrootDEnvelope implements Serializable {
 			e.put("md5", guid.md5);
 
 		} else {
-			GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN);
+			final GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN);
 			e.put("zguid", guid.getName());
 			e.put("guid", archiveAnchorGUID.getName());
 			e.put("size", String.valueOf(archiveAnchorGUID.size));
 			e.put("md5", archiveAnchorGUID.md5);
-
 		}
-		if ("alice::cern::setest".equals(se.getName().toLowerCase()))
-			e.put("se", "alice::cern::testse");
-		else
-			e.put("se", se.getName());
+		
+		if (se!=null){
+			if ("alice::cern::setest".equalsIgnoreCase(se.getName()))
+				e.put("se", "alice::cern::testse");
+			else
+				e.put("se", se.getName());
+		}
 
 		e.put("xurl", addXURLForSpecialSEs(e.get("lfn")));
 
