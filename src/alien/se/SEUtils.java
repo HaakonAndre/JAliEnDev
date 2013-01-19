@@ -19,10 +19,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.catalina.SessionEvent;
-
 import lazyj.DBFunctions;
-import lazyj.Format;
 import alien.catalogue.CatalogueUtils;
 import alien.catalogue.GUIDIndex;
 import alien.catalogue.GUIDIndex.SEUsageStats;
@@ -47,7 +44,7 @@ public final class SEUtils {
 	private static final ReentrantReadWriteLock seCacheRWLock = new ReentrantReadWriteLock();
 	private static final ReadLock seCacheReadLock = seCacheRWLock.readLock();
 	private static final WriteLock seCacheWriteLock = seCacheRWLock.writeLock();
-
+	
 	private static final void updateSECache() {
 		seCacheReadLock.lock();
 
@@ -198,6 +195,9 @@ public final class SEUtils {
 			SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
 		else
 			SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+		
+		updateSECache();
+		updateSEDistanceCache();
 	}
 	
 	private static void updateSEDistanceCache() {
@@ -674,6 +674,11 @@ public final class SEUtils {
 		return m;
 	}
 	
+	/**
+	 * Debug method
+	 * 
+	 * @param args
+	 */
 	public static void main(final String[] args) {
 	    updateSEUsageCache();
 	}
