@@ -410,6 +410,9 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * @return the JDL content without the enclosing [] if any
 	 */
 	public static String sanitizeJDL(final String jdlContent){
+		if (jdlContent==null)
+			return null;
+		
 		String ret = jdlContent;
 		
 		final Matcher m = pJDLContent.matcher(ret);
