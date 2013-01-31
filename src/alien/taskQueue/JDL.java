@@ -1259,12 +1259,18 @@ public class JDL implements Serializable {
 			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", 
 			"Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
 			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID",
-			"LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies", "RunOnAODs", "LegoDataSetType");
+			"LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies", "RunOnAODs", "LegoDataSetType", "LPMJobTypeID",
+			"LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType", "LPMProductionTag", "LPMAnchorYear", "LPMInteractionType"
+			);
 	
-	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "executable", "arguments", "inputfile", "split", "splitarguments", 
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "jdlarguments", 
+			"executable", "arguments", "inputfile", "split", "splitarguments", 
 			"inputdatacollection", "splitmaxinputfilenumber", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile", 
 			"requirements", "origrequirements", "ttl", "price",  "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", 
-			"maxfailfraction", "maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables");
+			"maxfailfraction", "maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables",
+			"lpmjobtypeid", "lpmproductiontag", "lpmproductiontype", "lpminteractiontype", "lpmrunnumber", "lpmanchorproduction", "lpmanchorrun", "lpmanchoryear",
+			"lpmmetadata"
+			);
 	
 	private static final Map<String, String> correctedTags = new HashMap<String, String>(correctTags.size());
 	
