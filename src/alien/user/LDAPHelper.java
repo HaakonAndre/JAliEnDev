@@ -173,6 +173,17 @@ public class LDAPHelper {
 	}
 	
 	/**
+	 * @param account
+	 * @return the set of emails associated to the given account
+	 */
+	public static Set<String> getEmails(final String account){
+		if (account==null || account.length()==0)
+			return null;
+		
+		return LDAPHelper.checkLdapInformation("uid="+account, "ou=People,", "email");
+	}
+	
+	/**
 	 * Debug method
 	 * 
 	 * @param args
