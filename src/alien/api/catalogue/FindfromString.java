@@ -1,6 +1,7 @@
 package alien.api.catalogue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import alien.api.Request;
@@ -22,7 +23,7 @@ public class FindfromString extends Request {
 	private final String path;
 	private final String pattern ;
 	private final int flags;
-	private List<LFN>  lfns;
+	private Collection<LFN>  lfns;
 
 	/**
 	 * @param user 
@@ -47,7 +48,7 @@ public class FindfromString extends Request {
 	/**
 	 * @return the found LFNs
 	 */
-	public List<LFN> getLFNs() {
+	public Collection<LFN> getLFNs() {
 		return this.lfns;
 	}
 

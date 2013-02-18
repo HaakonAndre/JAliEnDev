@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -338,7 +339,7 @@ public class CatalogueApiUtils {
 	 * @param flags
 	 * @return result LFNs
 	 */
-	public List<LFN> find(final String path, final String pattern, final int flags) {
+	public Collection<LFN> find(final String path, final String pattern, final int flags) {
 		try {
 			return Dispatcher.execute(new FindfromString(commander.getUser(), commander.getRole(), path, pattern, flags)).getLFNs();
 		}

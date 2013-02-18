@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
@@ -63,7 +64,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	
 	private ArrayList<String> alPaths = null;
 	
-	private List<LFN> lfns = null;
+	private Collection<LFN> lfns = null;
 	private List<LFN> directory = null;
     
 	/**
@@ -72,7 +73,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 * @return the output file
 	 */
 	
-	public List<LFN> getLFNs() {
+	public Collection<LFN> getLFNs() {
 		return lfns;
 	}
 

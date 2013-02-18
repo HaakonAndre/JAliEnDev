@@ -1,11 +1,9 @@
 package alien.catalogue;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -32,7 +30,16 @@ public class LFNUtils {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(LFNUtils.class.getCanonicalName());
 	
+	/**
+	 * Get an LFN which corresponds to the given GUID
+	 * 
+	 * @param g
+	 * @return one of the matching LFNs, if there is any such entry
+	 */
 	public static LFN getLFN(final GUID g){
+		if (g==null)
+			return null;
+		
 		final Set<IndexTableEntry> indextable = CatalogueUtils.getAllIndexTables();
 		
 		if (indextable==null)
@@ -460,18 +467,13 @@ public class LFNUtils {
 	public static final int FIND_REGEXP = 8;
 	
 	/**
-	 * Return the find results as LinkedList&lt;LFN&gt; instead of the default ArrayList&lt;LFN&gt;() 
-	 */
-	public static final int FIND_LINKED_LIST = 16;
-	
-	/**
 	 * @param path
 	 * @param pattern
 	 * @param flags a combination of FIND_* flags
 	 * @return the list of LFNs that match
 	 */
-	public static List<LFN> find(final String path, final String pattern, final int flags){
-		final List<LFN> ret = (flags & FIND_LINKED_LIST) != 0 ? new LinkedList<LFN>() : new ArrayList<LFN>();
+	public static Collection<LFN> find(final String path, final String pattern, final int flags){
+		final Set<LFN> ret = (flags & FIND_NO_SORT)!=0 ? new LinkedHashSet<LFN>() : new TreeSet<LFN>();
 		
 		final List<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 

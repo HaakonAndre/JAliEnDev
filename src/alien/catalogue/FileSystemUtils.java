@@ -1,6 +1,7 @@
 package alien.catalogue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -147,7 +148,7 @@ public final class FileSystemUtils {
 			final FindfromString ret = Dispatcher.execute(new FindfromString(user, role, path, pattern+"$", LFNUtils.FIND_REGEXP | LFNUtils.FIND_INCLUDE_DIRS));
 			
 			if (ret!=null){
-				final List<LFN> lfns = ret.getLFNs();
+				final Collection<LFN> lfns = ret.getLFNs();
 			
 				if (lfns!=null){
 					for (final LFN l: lfns){
