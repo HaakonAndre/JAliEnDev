@@ -21,16 +21,16 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * commit request lfn
 	 */
 	private String lfn = "";
-	
+
 	/**
 	 * commit request size
 	 */
 	private int size = 0;
 
-		/**
-		 * commit request permissions
-		 */
-		private String perm = "";
+	/**
+	 * commit request permissions
+	 */
+	private String perm = "";
 
 	/**
 	 * commit request expiration
@@ -41,42 +41,39 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * commit request PFN
 	 */
 	private String pfn = "";
-	
+
 	/**
 	 * commit request SE
 	 */
 	private String se = "";
-	
+
 	/**
 	 * commit request GUID
 	 */
 	private String guid = "";
 
-	
 	/**
 	 * commit request MD5
 	 */
 	private String md5 = "";
 
-	
 	/**
 	 * execute the commit
 	 */
 	@Override
 	public void run() {
-		
-		List<PFN> pfns = null;
-		if(rawenvelope.contains("signature=")){
-			pfns = commander.c_api.registerEnvelopes(new ArrayList<String>(Arrays.asList(rawenvelope)));
-			
+
+		final List<PFN> pfns;
+
+		if (rawenvelope.contains("signature=")) {
+			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope));
 		}
-		else{
-			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope,size,md5,lfn,perm,expire,pfn,se,guid);
+		else {
+			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5, lfn, perm, expire, pfn, se, guid);
 		}
-			
 
 		if (out.isRootPrinter())
-				out.setReturnArgs(deserializeForRoot((pfns!=null && pfns.size()>0)));
+			out.setReturnArgs(deserializeForRoot(pfns != null && pfns.size() > 0));
 	}
 
 	/**
@@ -99,19 +96,18 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root
-	 * @param status 
+	 * 
+	 * @param status
 	 * 
 	 * @return serialized return
 	 */
 	public String deserializeForRoot(final boolean status) {
-		
-		if(status)
-			return RootPrintWriter.columnseparator 
-				+ RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "0";
-		
-		return RootPrintWriter.columnseparator 
-				+ RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1";
-		
+
+		if (status)
+			return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "0";
+
+		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1";
+
 	}
 
 	/**
@@ -123,18 +119,18 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcommit(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+	public JAliEnCommandcommit(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
-		  
-		java.util.ListIterator<String> arg = alArguments.listIterator();
+
+		final java.util.ListIterator<String> arg = alArguments.listIterator();
 
 		if (arg.hasNext()) {
 			rawenvelope = arg.next();
-			if (arg.hasNext()){
+			if (arg.hasNext()) {
 				try {
 					size = Integer.parseInt(arg.next());
-				} catch (NumberFormatException e) {
+				}
+				catch (final NumberFormatException e) {
 					// ignore
 				}
 			}
@@ -153,8 +149,8 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 			if (arg.hasNext())
 				md5 = arg.next();
 
-
-		} else
+		}
+		else
 			out.printErrln("No envelope to register passed.");
 
 	}
