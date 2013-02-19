@@ -77,7 +77,6 @@ public class LFNUtils {
 		if (fileName == null || fileName.length() == 0)
 			return null;
 		
-		
 		String processedFileName = fileName;
 		
 		while (processedFileName.indexOf("//")>=0)
@@ -475,7 +474,7 @@ public class LFNUtils {
 	public static Collection<LFN> find(final String path, final String pattern, final int flags){
 		final Set<LFN> ret = (flags & FIND_NO_SORT)!=0 ? new LinkedHashSet<LFN>() : new TreeSet<LFN>();
 		
-		final List<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
+		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
 		final String processedPattern;
 

@@ -3,13 +3,12 @@
  */
 package alien.catalogue;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -256,7 +255,7 @@ public final class CatalogueUtils {
 		if (indextable == null)
 			return null;
 
-		return new TreeSet<IndexTableEntry>(indextable);
+		return Collections.unmodifiableSet(indextable);
 	}
 	
 	/**
@@ -294,19 +293,18 @@ public final class CatalogueUtils {
 	 * @param pattern
 	 * @return all tables that belong to this tree
 	 */
-	public static List<IndexTableEntry> getAllMatchingTables(final String pattern){
-		final List<IndexTableEntry> ret = new ArrayList<IndexTableEntry>();
-		
+	public static Set<IndexTableEntry> getAllMatchingTables(final String pattern){
 		final IndexTableEntry best = getClosestMatch(pattern);
 		
 		if (best==null)
-			return ret;
+			return Collections.emptySet();
+		
+		final Set<IndexTableEntry> ret = new LinkedHashSet<IndexTableEntry>();
 		
 		ret.add(best);
 				
 		for (final IndexTableEntry ite: indextable){
 			if (ite.lfn.startsWith(pattern)){
-				System.err.println(ite);
 				ret.add(ite);
 			}
 		}
