@@ -220,7 +220,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	
 	@Override
 	public int hashCode() {
-		return (int)dir*13 + lfn.hashCode()*17;
+		return this.indexTableEntry.hashCode()*7 + (int)dir*13 + lfn.hashCode()*17;
 	}
 	
 	private void init(final DBFunctions db){
