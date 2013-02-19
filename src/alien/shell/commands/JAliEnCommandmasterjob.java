@@ -1,7 +1,6 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -52,53 +51,49 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	private final int jobId;
 
-	private List<Integer> id = new ArrayList<Integer>();
+	private final List<Integer> id = new ArrayList<Integer>();
 
 	private Set<JobStatus> status = new HashSet<JobStatus>();
 
-	private List<String> sites = new ArrayList<String>();
+	private final List<String> sites = new ArrayList<String>();
 
 	@Override
 	public void run() {
 
-		Job j = commander.q_api.getJob(jobId);
+		final Job j = commander.q_api.getJob(jobId);
 
 		List<Job> subjobstates = null;
 
 		// for (Job j : masterjobstatus.keySet()) {
 		if (j != null)
-			subjobstates = commander.q_api.getMasterJobStatus(j.queueId,
-					status, id, sites, bPrintId, bPrintSite, bMerge, bKill,
-					bResubmit, bExpunge);
+			subjobstates = commander.q_api.getMasterJobStatus(j.queueId, status, id, sites, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
 		else
 			return;
 
 		out.printOutln("Checking the masterjob " + j.queueId);
 		out.printOutln("The job " + j.queueId + " is in status: " + j.status());
 
-		HashMap<String, List<Job>> stateCount = new HashMap<String, List<Job>>();
+		final HashMap<String, List<Job>> stateCount = new HashMap<String, List<Job>>();
 
 		ArrayList<String> sitesIn = new ArrayList<String>();
 		ArrayList<JobStatus> statesIn = new ArrayList<JobStatus>();
 
-		ArrayList<JobStatus> allStates = new ArrayList<JobStatus>();
-		ArrayList<String> allSites = new ArrayList<String>();
+		final ArrayList<JobStatus> allStates = new ArrayList<JobStatus>();
+		final ArrayList<String> allSites = new ArrayList<String>();
 
 		if (subjobstates != null) {
 
 			out.printOutln("It has the following subjobs:");
 
-			for (Job sj : subjobstates) {
+			for (final Job sj : subjobstates) {
 				// count the states the subjobs have
 
 				String key = sj.status().toString();
 
 				if (bPrintSite) {
-
 					String site = "";
 					if (sj.execHost != null && sj.execHost.contains("@"))
-						site = sj.execHost
-								.substring(sj.execHost.indexOf('@') + 1);
+						site = sj.execHost.substring(sj.execHost.indexOf('@') + 1);
 
 					if (site.length() > 0)
 						key += "/" + site;
@@ -108,32 +103,35 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 							allSites.add(site);
 
 				}
-				if (stateCount.containsKey(key))
-					stateCount.get(key).add(sj);
-				else {
 
-					stateCount.put(key, new ArrayList<Job>(Arrays.asList(sj)));
+				List<Job> jobs = stateCount.get(key);
+
+				if (jobs == null) {
+					jobs = new ArrayList<Job>();
+					stateCount.put(key, jobs);
 				}
+
+				jobs.add(sj);
 
 				if (statesIn.size() <= 0 && !allStates.contains(sj.status()))
 					allStates.add(sj.status());
 			}
 			if (statesIn.size() <= 0)
 				statesIn = allStates;
-			
+
 			if (sitesIn.size() <= 0)
 				sitesIn = allSites;
 
 			//
 			if (sitesIn.size() > 0) {
-				for (String site : sitesIn)
+				for (final String site : sitesIn)
 					printSubJobs(stateCount, statesIn, site);
-			} else
+			}
+			else
 				printSubJobs(stateCount, statesIn, null);
 
 			out.printOutln();
-			out.printOutln("In total, there are " + subjobstates.size()
-					+ " subjobs");
+			out.printOutln("In total, there are " + subjobstates.size() + " subjobs");
 
 		}
 
@@ -141,7 +139,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	private void printSubJobs(final HashMap<String, List<Job>> stateCount, final List<JobStatus> showStatus, final String site) {
 		String key = "";
-		
+
 		if (site != null && site.length() > 0)
 			key = "/" + site;
 
@@ -150,30 +148,30 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 			if (subjobs != null && subjobs.size() > 0) {
 				final StringBuilder ret = new StringBuilder();
-				
+
 				ret.append(padSpace(16)).append("Subjobs in ").append(state);
 				if (bPrintSite)
 					ret.append(" (").append(site).append(")");
-				
+
 				ret.append(": ").append(subjobs.size());
-				
+
 				if (bPrintId) {
 					ret.append(" (ids: ");
-					
+
 					boolean first = true;
-					
-					for (final Job sj : subjobs){
+
+					for (final Job sj : subjobs) {
 						if (!first)
 							ret.append(',');
 						else
 							first = false;
-						
+
 						ret.append(sj.queueId);
 					}
-					
+
 					ret.append(')');
 				}
-				
+
 				out.printOutln(ret.toString());
 			}
 		}
@@ -186,25 +184,17 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	public void printHelp() {
 
 		out.printOutln();
-		out.printOutln(helpUsage("masterjob",
-				"<jobId> [-options] [merge|kill|resubmit|expunge]"));
+		out.printOutln(helpUsage("masterjob", "<jobId> [-options] [merge|kill|resubmit|expunge]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-status <status>",
-				"display only the subjobs with that status"));
-		out.printOutln(helpOption("-id <id>",
-				"display only the subjobs with that id"));
-		out.printOutln(helpOption("-site <id>",
-				"display only the subjobs on that site"));
-		out.printOutln(helpOption("-printid",
-				"print also the id of all the subjobs"));
-		out.printOutln(helpOption("-printsite",
-				"split the number of jobs according to the execution site"));
+		out.printOutln(helpOption("-status <status>", "display only the subjobs with that status"));
+		out.printOutln(helpOption("-id <id>", "display only the subjobs with that id"));
+		out.printOutln(helpOption("-site <id>", "display only the subjobs on that site"));
+		out.printOutln(helpOption("-printid", "print also the id of all the subjobs"));
+		out.printOutln(helpOption("-printsite", "split the number of jobs according to the execution site"));
 		out.printOutln();
-		out.printOutln(helpOption("merge",
-				"collect the output of all the subjobs that have already finished"));
+		out.printOutln(helpOption("merge", "collect the output of all the subjobs that have already finished"));
 		out.printOutln(helpOption("kill", "kill all the subjobs"));
-		out.printOutln(helpOption("resubmit",
-				"resubmit all the subjobs selected"));
+		out.printOutln(helpOption("resubmit", "resubmit all the subjobs selected"));
 		out.printOutln(helpOption("expunge", "delete completely the subjobs"));
 		out.printOutln();
 		out.printOutln(helpParameter("You can combine kill and resubmit with '-status <status>' and '-id <id>'."));
@@ -233,8 +223,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandmasterjob(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandmasterjob(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		try {
@@ -243,7 +232,8 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				{
 					try {
 						jobId = Integer.parseInt(alArguments.get(0));
-					} catch (NumberFormatException e) {
+					}
+					catch (final NumberFormatException e) {
 						throw new JAliEnCommandException();
 					}
 				}
@@ -257,37 +247,35 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				parser.accepts("printid");
 				parser.accepts("printsite");
 
-				final OptionSet options = parser.parse(alArguments
-						.toArray(new String[] {}));
+				final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 				if (options.has("status") && options.hasArgument("status")) {
 					final StringTokenizer st = new StringTokenizer((String) options.valueOf("status"), ",");
 					while (st.hasMoreTokens()) {
 						final String state = st.nextToken();
-						
-						if ("ERROR_ALL".equals(state)){
+
+						if ("ERROR_ALL".equals(state)) {
 							status = JobStatus.errorneousStates();
 							break;
 						}
-						
+
 						status.add(JobStatus.getStatus(state));
 					}
 				}
 
 				if (options.has("id") && options.hasArgument("id")) {
-					final StringTokenizer st = new StringTokenizer(
-							(String) options.valueOf("id"), ",");
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("id"), ",");
 					while (st.hasMoreTokens())
 						try {
 							id.add(Integer.valueOf(st.nextToken()));
-						} catch (NumberFormatException e) {
+						}
+						catch (final NumberFormatException e) {
 							// ignore
 						}
 				}
 
 				if (options.has("site") && options.hasArgument("site")) {
-					final StringTokenizer st = new StringTokenizer(
-							(String) options.valueOf("site"), ",");
+					final StringTokenizer st = new StringTokenizer((String) options.valueOf("site"), ",");
 					while (st.hasMoreTokens())
 						sites.add(st.nextToken());
 				}
@@ -295,21 +283,26 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				bPrintId = options.has("printid");
 				bPrintSite = options.has("printsite");
 
-				String flag = alArguments.get(alArguments.size() - 1);
+				final String flag = alArguments.get(alArguments.size() - 1);
 
 				if (flag != null)
 					if (flag.equals("merge"))
 						bMerge = true;
-					else if (flag.equals("kill"))
-						bKill = true;
-					else if (flag.equals("resubmit"))
-						bResubmit = true;
-					else if (flag.equals("expunge"))
-						bExpunge = true;
+					else
+						if (flag.equals("kill"))
+							bKill = true;
+						else
+							if (flag.equals("resubmit"))
+								bResubmit = true;
+							else
+								if (flag.equals("expunge"))
+									bExpunge = true;
 
-			} else
+			}
+			else
 				throw new JAliEnCommandException();
-		} catch (OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}
