@@ -102,12 +102,10 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * @return serialized return
 	 */
 	public String deserializeForRoot(final boolean status) {
-
 		if (status)
 			return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "0";
 
 		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1";
-
 	}
 
 	/**
