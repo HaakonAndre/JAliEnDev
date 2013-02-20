@@ -83,7 +83,7 @@ public class BookingTable {
 		}
 		
 		if (!AuthorizationChecker.canWrite(check, user)){
-			throw new IOException("User "+user.getName()+" is not allowed to write LFN "+lfn.getCanonicalName());
+			throw new IOException("User "+user.getName()+" is not allowed to write LFN "+lfn.getCanonicalName()+": not enough rights on "+check.getCanonicalName());
 		}
 		
 		final DBFunctions db = getDB();
