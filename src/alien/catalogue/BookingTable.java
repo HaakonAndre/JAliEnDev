@@ -78,12 +78,20 @@ public class BookingTable {
 		
 		LFN check = lfn;
 		
-		while (check!=null && !check.exists ){
+		if (check!=null && !check.exists ) {
 			check = check.getParentDir();
 		}
 		
 		if (!AuthorizationChecker.canWrite(check, user)){
-			throw new IOException("User "+user.getName()+" is not allowed to write LFN "+lfn.getCanonicalName()+": not enough rights on "+check.getCanonicalName());
+			String message = "User "+user.getName()+" is not allowed to write LFN "+lfn.getCanonicalName();
+			
+			if (check == null){
+				message += ": no such folder "+lfn.getParentName();
+			}		
+			else if (!check.equals(lfn))
+				message += ": not enough rights on "+check.getCanonicalName();
+			
+			throw new IOException(message);
 		}
 		
 		final DBFunctions db = getDB();
