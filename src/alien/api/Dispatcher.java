@@ -12,54 +12,57 @@ public class Dispatcher {
 	private static final ExpirationCache<String, Request> cache = new ExpirationCache<String, Request>(10240);
 
 	/**
-	 * @param r request to execute
+	 * @param r
+	 *            request to execute
 	 * @return the processed request
-	 * @throws ServerException exception thrown by the processing
+	 * @throws ServerException
+	 *             exception thrown by the processing
 	 */
-	public static <T extends Request> T execute(final T r) throws ServerException{
+	public static <T extends Request> T execute(final T r) throws ServerException {
 		return execute(r, false);
 	}
-	
+
 	/**
-	 * @param r request to execute
-	 * @param forceRemote request to force remote execution
+	 * @param r
+	 *            request to execute
+	 * @param forceRemote
+	 *            request to force remote execution
 	 * @return the processed request
-	 * @throws ServerException exception thrown by the processing
+	 * @throws ServerException
+	 *             exception thrown by the processing
 	 */
-	public static <T extends Request> T execute(final T r, boolean forceRemote) throws ServerException{
-		if (ConfigUtils.isCentralService() && !forceRemote){
-			//System.out.println("Running centrally: " + r.toString());
+	public static <T extends Request> T execute(final T r, final boolean forceRemote) throws ServerException {
+		if (ConfigUtils.isCentralService() && !forceRemote) {
+			// System.out.println("Running centrally: " + r.toString());
 			r.run();
 			return r;
 		}
 
-		if (r instanceof Cacheable){
+		if (r instanceof Cacheable) {
 			final Cacheable c = (Cacheable) r;
-			
-			final String key = r.getClass().getCanonicalName()+"#"+c.getKey();
-			
+
+			final String key = r.getClass().getCanonicalName() + "#" + c.getKey();
+
 			@SuppressWarnings("unchecked")
 			T ret = (T) cache.get(key);
-			
-			if (ret!=null)
+
+			if (ret != null)
 				return ret;
-			
+
 			ret = dispatchRequest(r);
-			
-			if (ret!=null){
+
+			if (ret != null) {
 				cache.put(key, ret, c.getTimeout());
 			}
-			
+
 			return ret;
 		}
-		
+
 		return dispatchRequest(r);
 	}
-	
-	
+
 	private static <T extends Request> T dispatchRequest(final T r) throws ServerException {
 		return DispatchSSLClient.dispatchRequest(r);
 	}
 
-	
 }
