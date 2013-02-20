@@ -24,20 +24,18 @@ import alien.shell.commands.JAliEnCOMMander;
  * @since Jun 03, 2011
  */
 public class CatalogueApiUtils {
-	
 
 	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(CatalogueApiUtils.class.getCanonicalName());
-	
+
 	private final JAliEnCOMMander commander;
-	
-	
+
 	/**
 	 * @param commander
 	 */
-	public CatalogueApiUtils(final JAliEnCOMMander commander){
+	public CatalogueApiUtils(final JAliEnCOMMander commander) {
 		this.commander = commander;
 	}
 
@@ -63,11 +61,11 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new LFNListingfromString(commander.getUser(), commander.getRole(), slfn)).getLFNs();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get LFN: " + slfn);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -84,55 +82,50 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new LFNfromString(commander.getUser(), commander.getRole(), slfn, evenIfDoesNotExist)).getLFN();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get LFN: " + slfn);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
-	
 
 	/**
 	 * Remove a LFN in the Catalogue
+	 * 
 	 * @param path
-	 * @return state of the LFN's deletion
-	 *         <code>null</code>
+	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path) {
 		try {
 			return Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), commander.getRole(), path)).wasRemoved();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not remove the LFN: " + path);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not remove the LFN: " + path);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return false;
 	}
-	
-	
 
 	/**
 	 * Move a LFN in the Catalogue
+	 * 
 	 * @param path
 	 * @param newpath
-	 * @return state of the LFN's deletion
-	 *         <code>null</code>
+	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public LFN moveLFN(final String path, final String newpath) {
 		try {
 			return Dispatcher.execute(new MoveLFNfromString(commander.getUser(), commander.getRole(), path, newpath)).newLFN();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not move the LFN-->newLFN: " + path+"-->" + newpath);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not move the LFN-->newLFN: " + path + "-->" + newpath);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
-	
-	
 
 	/**
 	 * Get GUID from String
@@ -157,11 +150,11 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new GUIDfromString(commander.getUser(), commander.getRole(), sguid, evenIfDoesNotExist)).getGUID();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get GUID: " + sguid);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get GUID: " + sguid);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -176,11 +169,11 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new PFNfromString(commander.getUser(), commander.getRole(), sguid)).getPFNs();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get GUID: " + sguid);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get GUID: " + sguid);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -193,50 +186,46 @@ public class CatalogueApiUtils {
 	 *            SEs to prioritize to read from
 	 * @param exses
 	 *            SEs to deprioritize to read from
-	 * @return PFNs, filled with read envelopes and credentials if necessary and
-	 *         authorized
+	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized
 	 */
 	public List<PFN> getPFNsToRead(final LFN lfn, final List<String> ses, final List<String> exses) {
 		try {
-			
+
 			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getRole(), commander.getSite(), AccessType.READ, lfn, ses, exses)).getPFNs();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get PFN for: " + lfn);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get PFN for: " + lfn);
 			e.getCause().printStackTrace();
-			
+
 		}
 		return null;
 	}
-
 
 	/**
 	 * Get PFNs for writing by LFN
 	 * 
 	 * @param lfn
 	 *            LFN of the entry as String
-	 * @param guid 
+	 * @param guid
 	 * @param ses
-	 *            SEs to priorize to read from
+	 *            SEs to prioritize to read from
 	 * @param exses
-	 *            SEs to depriorize to read from
+	 *            SEs to de-prioritize
 	 * @param qos
 	 *            QoS types and counts to ask for
-	 * @return PFNs, filled with write envelopes and credentials if necessary
-	 *         and authorized
+	 * @return PFNs, filled with write envelopes and credentials if necessary and authorized
 	 */
-	public List<PFN> getPFNsToWrite(final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final HashMap<String,Integer> qos) {
+	public List<PFN> getPFNsToWrite(final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos) {
 		try {
 			return Dispatcher.execute(new PFNforWrite(commander.getUser(), commander.getRole(), commander.getSite(), lfn, guid, ses, exses, qos)).getPFNs();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get PFN for: " + lfn);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get PFN for: " + lfn);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
-
 
 	/**
 	 * Register PFNs with envelopes
@@ -248,11 +237,11 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelopes)).getPFNs();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get PFNs for: "+ envelopes.toString());
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get PFNs for: " + envelopes.toString());
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -260,25 +249,26 @@ public class CatalogueApiUtils {
 	 * Register PFNs with enveloeps
 	 * 
 	 * @param encryptedEnvelope
-	 * @param size 
-	 * @param md5 
-	 * @param lfn 
-	 * @param perm 
-	 * @param expire 
-	 * @param pfn 
-	 * @param se 
-	 * @param guid 
+	 * @param size
+	 * @param md5
+	 * @param lfn
+	 * @param perm
+	 * @param expire
+	 * @param pfn
+	 * @param se
+	 * @param guid
 	 * @return PFNs that were successfully registered
 	 */
-	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5, final String lfn, final String perm, final String expire, final String pfn, String se, final String guid) {
+	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5, final String lfn, final String perm, final String expire, final String pfn,
+			final String se, final String guid) {
 		try {
 			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), encryptedEnvelope, size, md5, lfn, perm, expire, pfn, se, guid)).getPFNs();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get PFNs for: " + encryptedEnvelope);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get PFNs for: " + encryptedEnvelope);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -286,8 +276,7 @@ public class CatalogueApiUtils {
 	 * Create a directory in the Catalogue
 	 * 
 	 * @param path
-	 * @return LFN of the created directory, if successful, else
-	 *         <code>null</code>
+	 * @return LFN of the created directory, if successful, else <code>null</code>
 	 */
 	public LFN createCatalogueDirectory(final String path) {
 		return createCatalogueDirectory(path, false);
@@ -298,39 +287,38 @@ public class CatalogueApiUtils {
 	 * 
 	 * @param path
 	 * @param createNonExistentParents
-	 * @return LFN of the created directory, if successful, else
-	 *         <code>null</code>
+	 * @return LFN of the created directory, if successful, else <code>null</code>
 	 */
 	public LFN createCatalogueDirectory(final String path, final boolean createNonExistentParents) {
 		try {
-			return Dispatcher.execute(new CreateCatDirfromString(commander.getUser(), commander.getRole(), path,createNonExistentParents)).getDir();
+			return Dispatcher.execute(new CreateCatDirfromString(commander.getUser(), commander.getRole(), path, createNonExistentParents)).getDir();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not create the CatDir: " + path);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not create the CatDir: " + path);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
 	/**
 	 * Remove a directory in the Catalogue
+	 * 
 	 * @param path
-	 * @return state of directory's deletion
-	 *         <code>null</code>
+	 * @return state of directory's deletion <code>null</code>
 	 */
 	public boolean removeCatalogueDirectory(final String path) {
 		try {
 			return Dispatcher.execute(new RemoveCatDirfromString(commander.getUser(), commander.getRole(), path)).wasRemoved();
-		} catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not remove the CatDir: " + path);
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not remove the CatDir: " + path);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return false;
 	}
-	
-	
+
 	/**
 	 * find bases on pattern
 	 * 
@@ -343,11 +331,11 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new FindfromString(commander.getUser(), commander.getRole(), path, pattern, flags)).getLFNs();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -362,11 +350,11 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new SEfromString(commander.getUser(), commander.getRole(), se)).getSE();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get SE: " + se);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get SE: " + se);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
@@ -381,30 +369,29 @@ public class CatalogueApiUtils {
 		try {
 			return Dispatcher.execute(new SEfromString(commander.getUser(), commander.getRole(), seno)).getSE();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get SE: " + seno);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get SE: " + seno);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
-	
-	
 
 	/**
-	 * Get Packages for a certain platform 
-	 * @param platform 
+	 * Get Packages for a certain platform
+	 * 
+	 * @param platform
 	 * @return the Packages
 	 */
 	public List<Package> getPackages(final String platform) {
 		try {
 			return Dispatcher.execute(new PackagesfromString(commander.getUser(), commander.getRole(), platform)).getPackages();
 		}
-		catch (ServerException e) {
-			logger.log(Level.WARNING,"Could not get Packages for: " + platform);
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get Packages for: " + platform);
 			e.getCause().printStackTrace();
 		}
-		
+
 		return null;
 	}
 
