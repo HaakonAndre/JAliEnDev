@@ -1,6 +1,5 @@
 package alien.api.catalogue;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -131,7 +130,8 @@ public class PFNforWrite extends Request {
 			
 			errorMessage = "Couldn't discover any SEs for this request (site:" + this.site + ", ses:" + this.ses + ", exses:" + this.exses + ", qos:" + this.qos + ")";
 			
-			logger.log(Level.WARNING, errorMessage);
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, errorMessage);
 			
 			return;
 		}
@@ -142,7 +142,8 @@ public class PFNforWrite extends Request {
 			if (!se.canWrite(getEffectiveRequester())) {
 				errorMessage = getEffectiveRequester() + " is not allowed to write to the explicitly requested SE " + se.seName;
 				
-				logger.log(Level.INFO, errorMessage);
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, errorMessage);
 				
 				continue;
 			}
@@ -153,7 +154,9 @@ public class PFNforWrite extends Request {
 			}
 			catch (final Exception e) {
 				errorMessage = e.getMessage();
-				logger.log(Level.WARNING, "Error for the request on " + se.getName() + ", message", e.fillInStackTrace());
+				
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Error for the request on " + se.getName() + ", message", e.fillInStackTrace());
 			}
 		}
 
