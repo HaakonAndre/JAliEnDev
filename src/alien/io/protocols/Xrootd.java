@@ -512,7 +512,7 @@ public class Xrootd extends Protocol {
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
-				logger.log(Level.WARNING, "PUT failed with " + exitStatus.getStdOut());
+				logger.log(Level.WARNING, "PUT of "+pfn.pfn+" failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null) {
 					sMessage = xrdcpCommand+" exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
