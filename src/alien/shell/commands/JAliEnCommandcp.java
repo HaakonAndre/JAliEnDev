@@ -323,7 +323,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				final String err = pfw.getErrorMessage();
 
 				if (isSilent()) {
-					throw new IOError(new IOException("No write access tickets were returned for " + lfn.getCanonicalName() + (err != null ? ": " + err : "")));
+					throw new IOError(new IOException(err != null ? err : "No write access tickets were returned for " + lfn.getCanonicalName()));
 				}
 
 				out.printErr(err != null ? err : "Could not get any write access tickets for " + lfn.getCanonicalName());
