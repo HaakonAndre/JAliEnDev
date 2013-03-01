@@ -29,6 +29,7 @@ import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 
@@ -446,6 +447,32 @@ public class JDL implements Serializable {
 		return -1;
 	}
 
+	/**
+	 * @return the InputFile tag, as LFNs. If the InputFile is an XML collection, return the entire content of that collection.
+	 */
+	public List<LFN> getInputLFNs(){
+		final List<String> dataFiles = getInputFiles();
+		
+		final List<LFN> ret = new LinkedList<LFN>();
+		
+		for (final String file: dataFiles){
+			if (file.endsWith(".xml")){
+				try{
+					final XmlCollection x = new XmlCollection(LFNUtils.getLFN(file));
+				
+					return x;
+				}
+				catch (final IOException ioe){
+					// ignore
+				}
+			}
+			
+			ret.add(LFNUtils.getLFN(file));
+		}
+		
+		return ret;
+	}
+	
 	/**
 	 * Get the list of input files
 	 * 
