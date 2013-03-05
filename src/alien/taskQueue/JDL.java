@@ -451,7 +451,7 @@ public class JDL implements Serializable {
 	 * @return the InputFile tag, as LFNs. If the InputFile is an XML collection, return the entire content of that collection.
 	 */
 	public List<LFN> getInputLFNs(){
-		final List<String> dataFiles = getInputFiles();
+		final List<String> dataFiles = getInputData();
 		
 		final List<LFN> ret = new LinkedList<LFN>();
 		
