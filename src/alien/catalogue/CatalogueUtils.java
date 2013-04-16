@@ -69,7 +69,7 @@ public final class CatalogueUtils {
 	 * @return the Host or <code>null</code> if there is no such host
 	 */
 	public static Host getHost(final int idx){
-		return hostsCache.get(Integer.valueOf(idx));
+		return hostsCache.get(Integer.valueOf(idx<=0 ? 1 : idx));
 	}
 	
 	private static List<GUIDIndex> guidIndexCache = null;
