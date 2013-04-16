@@ -134,7 +134,7 @@ public class OrphanPFNsCleanup {
 					// TODO : what to do with these PFNs ? Iterate over them and release them from the catalogue nevertheless ?
 //					db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 					
-					db.query("SELECT binary2string(guid),size,md5sum FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;", false, Integer.valueOf(seNumber));
+					db.query("SELECT binary2string(guid),size,md5sum,pfn FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;", false, Integer.valueOf(seNumber));
 				}
 				finally{
 					concurrentQueryies.release();
@@ -174,7 +174,7 @@ public class OrphanPFNsCleanup {
 				}
 				
 				do {
-					executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3)));
+					executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4)));
 				}
 				while (db.moveNext());
 				
@@ -245,12 +245,14 @@ public class OrphanPFNsCleanup {
 		final int seNumber;
 		final long size;
 		final String md5;
+		final String knownPFN;
 		
-		public CleanupTask(final String sGUID, final int se, final long size, final String md5) {
+		public CleanupTask(final String sGUID, final int se, final long size, final String md5, final String knownPFN) {
 			this.sGUID = sGUID;
 			this.seNumber = se;
 			this.size = size;
 			this.md5 = md5;
+			this.knownPFN = knownPFN;
 		}
 		
 		@Override
@@ -284,7 +286,7 @@ public class OrphanPFNsCleanup {
 			final PFN pfn;
 			
 			try{
-				pfn = new PFN(guid, se);
+				pfn = knownPFN == null || knownPFN.length()==0 ? new PFN(guid, se) : new PFN(knownPFN, guid, se);
 			}
 			catch (final Throwable t){
 				System.err.println("Cannot generate the entry for "+seNumber+" ("+se.getName()+") and "+sGUID);
