@@ -56,7 +56,7 @@ public class OrphanPFNsCleanup {
 	/**
 	 * Whether or not the stats have changed and they should be printed on screen
 	 */
-	static boolean dirtyStats = true; 
+	volatile static boolean dirtyStats = true; 
 	
 	/**
 	 * @param args
