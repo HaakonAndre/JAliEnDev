@@ -54,6 +54,11 @@ public class OrphanPFNsCleanup {
 	static Map<Integer, SEThread> SE_THREADS = new ConcurrentHashMap<Integer, SEThread>();
 	
 	/**
+	 * Whether or not the stats have changed and they should be printed on screen
+	 */
+	static boolean dirtyStats = true; 
+	
+	/**
 	 * @param args
 	 */
 	public static void main(String[] args) {
@@ -108,7 +113,10 @@ public class OrphanPFNsCleanup {
 			if (size>0)
 				db.query("UPDATE orphan_pfns_status SET status_value=status_value+"+size+" WHERE status_key='reclaimedb';");
 			
-			System.err.println("Removed: "+removed+" ("+Format.size(reclaimedSpace.longValue())+"), failed to remove: "+failed+" (delta: "+count+" files, "+Format.size(size)+"), sem. status: "+concurrentQueryies.availablePermits());
+			if (dirtyStats){
+				System.err.println("Removed: "+removed+" ("+Format.size(reclaimedSpace.longValue())+"), failed to remove: "+failed+" (delta: "+count+" files, "+Format.size(size)+"), sem. status: "+concurrentQueryies.availablePermits());
+				dirtyStats = false;
+			}
 		}
 	}
 	
@@ -214,7 +222,9 @@ public class OrphanPFNsCleanup {
 	 * Fail one file
 	 */
 	static final void failOne(){
-		failed.incrementAndGet();		
+		failed.incrementAndGet();
+		
+		dirtyStats = true;
 	}
 	
 	private static final AtomicLong reclaimedCount = new AtomicLong();
@@ -233,6 +243,8 @@ public class OrphanPFNsCleanup {
 			reclaimedSpace.addAndGet(size);
 			reclaimedSize.addAndGet(size);
 		}
+		
+		dirtyStats = true;
 	}
 	
 	/**
