@@ -86,6 +86,9 @@ public class OrphanPFNsCleanup {
 					}
 					
 					if (!SE_THREADS.containsKey(se)){
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, "Starting SE thread for "+se+" ("+theSE.seName+")");
+						
 						final SEThread t = new SEThread(se.intValue());
 						
 						t.start();
@@ -150,6 +153,9 @@ public class OrphanPFNsCleanup {
 				
 				if (!db.moveNext()){
 					// there are no tasks for this SE now, check again sometime later
+					
+					if (logger.isLoggable(Level.FINE))
+						logger.log(Level.FINE, "No more PFNs to clean up for "+seNumber+", freeing the respective thread and executor for now");
 					
 					if (executor!=null){
 						executor.shutdown();
