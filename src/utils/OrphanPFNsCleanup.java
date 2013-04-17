@@ -164,7 +164,7 @@ public class OrphanPFNsCleanup {
 				
 				if (executor==null){
 					// lazy init of the thread pool
-					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(16, new ThreadFactory(){
+					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE", 16), new ThreadFactory(){
 						@Override
 						public Thread newThread(final Runnable r) {
 							final Thread t = new Thread(r);
@@ -250,7 +250,7 @@ public class OrphanPFNsCleanup {
 	/**
 	 * Lock for a fixed number of DB queries in parallel 
 	 */
-	static final Semaphore concurrentQueryies = new Semaphore(32);
+	static final Semaphore concurrentQueryies = new Semaphore(ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.concurrentQueries", 32));
 	
 	private static class CleanupTask implements Runnable{
 		final String sGUID;
