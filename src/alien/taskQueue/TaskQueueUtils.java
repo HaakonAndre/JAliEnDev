@@ -63,9 +63,16 @@ public class TaskQueueUtils {
 	static {
 		final DBFunctions db = getQueueDB();
 		
-		db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
+		if (db!=null){
+			db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 		
-		dbStructure2_20 = db.geti(1) == 1;
+			dbStructure2_20 = db.geti(1) == 1;
+		}
+		else{
+			logger.log(Level.WARNING, "There is no direct database connection to the task queue.");
+			
+			dbStructure2_20 = false;
+		}
 	}
 	
 //	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
