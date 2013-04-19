@@ -116,6 +116,9 @@ public class TaskQueueUtils {
 	public static Job getJob(final int queueId, final boolean loadJDL){
 		final DBFunctions db = getQueueDB();
 		
+		if (db==null)
+			return null;
+
 		if (monitor!=null){
 			monitor.incrementCounter("TQ_db_lookup");
 			monitor.incrementCounter("TQ_jobdetails");
@@ -166,6 +169,9 @@ public class TaskQueueUtils {
 	public static List<Job> getMasterjobs(final String account, final boolean loadJDL){
 		final DBFunctions db = getQueueDB();
 		
+		if (db==null)
+			return null;
+
 		if (monitor!=null){
 			monitor.incrementCounter("TQ_db_lookup");
 			monitor.incrementCounter("TQ_getmasterjobs");
@@ -249,6 +255,9 @@ public class TaskQueueUtils {
 			return ret;
 		
 		final DBFunctions db = getQueueDB();
+
+		if (db==null)
+			return ret;
 
 		final StringBuilder sb = new StringBuilder(jobs.size() * 10);
 		
@@ -1291,6 +1300,9 @@ public class TaskQueueUtils {
 		}
 		
 		final DBFunctions db = getQueueDB();
+
+		if (db==null)
+			throw new IOException("This service has no direct database connection");
 		
 		final Map<String, Object> values = new HashMap<String, Object>();
 		
@@ -1379,6 +1391,9 @@ public class TaskQueueUtils {
 		@Override
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT userId FROM QUEUE_USER where user=?;", false, key);
 			
@@ -1446,6 +1461,9 @@ public class TaskQueueUtils {
 		@Override
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT commandId FROM QUEUE_COMMAND where command=?;", false, key);
 			
@@ -1482,6 +1500,9 @@ public class TaskQueueUtils {
 		@Override
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT hostId FROM QUEUE_HOST where host=?;", false, key);
 			
@@ -1518,6 +1539,9 @@ public class TaskQueueUtils {
 		@Override
 		protected Integer resolve(final String key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify=?;", false, key);
 			
@@ -1554,6 +1578,9 @@ public class TaskQueueUtils {
 		@Override
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT user FROM QUEUE_USER where userId=?;", false, key);
 			
@@ -1582,6 +1609,9 @@ public class TaskQueueUtils {
 		@Override
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT host FROM QUEUE_HOST where hostId=?;", false, key);
 			
@@ -1610,6 +1640,9 @@ public class TaskQueueUtils {
 		@Override
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT notify FROM QUEUE_NOTIFY where notifyId=?;", false, key);
 			
@@ -1638,6 +1671,9 @@ public class TaskQueueUtils {
 		@Override
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
+
+			if (db==null)
+				return null;
 			
 			db.query("SELECT command FROM QUEUE_COMMAND where commandId=?", false, key);
 			
@@ -1903,6 +1939,9 @@ public class TaskQueueUtils {
 	private static boolean insertMessage(final String target, final String service, 
 			final String message, final String messageArgs, final int expires){
 		final DBFunctions db = getQueueDB();
+
+		if (db==null)
+			return false;
 		
 		String q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('"
 					+ Format.escSQL(target)+"','"
@@ -2008,6 +2047,9 @@ public class TaskQueueUtils {
 	 */
 	public static boolean putJobLog(final int queueId, final String action, final String message, final HashMap<String,String> joblogtags){
 		final DBFunctions db = getQueueDB();
+
+		if (db==null)
+			return false;
 		
 		if (monitor!=null){
 			monitor.incrementCounter("TQ_db_lookup");
@@ -2052,6 +2094,9 @@ public class TaskQueueUtils {
 		//	    $self->do("update ACTIONS set todo=1 where action='MERGING'");
 		//	  }
 		final DBFunctions db = getQueueDB();
+
+		if (db==null)
+			return false;
 		
 		if (monitor!=null){
 			monitor.incrementCounter("TQ_db_lookup");
@@ -2070,6 +2115,9 @@ public class TaskQueueUtils {
 	private static boolean setAction(final JobStatus status){
 		//$self->update("ACTIONS", {todo => 1}, "action='$status'");
 		final DBFunctions db = getQueueDB();
+
+		if (db==null)
+			return false;
 		
 		if (monitor!=null){
 			monitor.incrementCounter("TQ_db_update");
@@ -2118,9 +2166,12 @@ public class TaskQueueUtils {
 	 * @return the aggregated number of jobs per user
 	 */
 	public static Map<String, Integer> getJobCounters(final Set<JobStatus> states){
-		final Map<String, Integer> ret = new TreeMap<String, Integer>();
-		
 		final DBFunctions db = getQueueDB();
+
+		if (db==null)
+			return null;
+
+		final Map<String, Integer> ret = new TreeMap<String, Integer>();
 		
 		final StringBuilder sb = new StringBuilder();
 		
