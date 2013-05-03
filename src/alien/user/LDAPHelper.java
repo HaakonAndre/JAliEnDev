@@ -124,36 +124,41 @@ public class LDAPHelper {
 	
 				final DirContext context = new InitialDirContext(env);
 	
-				final SearchControls ctrl = new SearchControls();
-				ctrl.setSearchScope(recursive ? SearchControls.SUBTREE_SCOPE : SearchControls.ONELEVEL_SCOPE);
-	
-				final NamingEnumeration<SearchResult> enumeration = context.search("", sParam, ctrl);
-	
-				while (enumeration.hasMore()) {
-					final SearchResult result = enumeration.next();
-	
-					final Attributes attribs = result.getAttributes();
-	
-					if (attribs==null)
-					    continue;
-	
-					final BasicAttribute ba = (BasicAttribute) attribs.get(sKey);
-	
-					if (ba==null)
-					    continue;
-	
-					final NamingEnumeration<?> values = ba.getAll();
-					
-					if (values==null)
-					    continue;
-					
-					while (values.hasMoreElements()){
-						final String s = values.nextElement().toString();
-						tsResult.add(s);
+				try{
+					final SearchControls ctrl = new SearchControls();
+					ctrl.setSearchScope(recursive ? SearchControls.SUBTREE_SCOPE : SearchControls.ONELEVEL_SCOPE);
+		
+					final NamingEnumeration<SearchResult> enumeration = context.search("", sParam, ctrl);
+		
+					while (enumeration.hasMore()) {
+						final SearchResult result = enumeration.next();
+		
+						final Attributes attribs = result.getAttributes();
+		
+						if (attribs==null)
+						    continue;
+		
+						final BasicAttribute ba = (BasicAttribute) attribs.get(sKey);
+		
+						if (ba==null)
+						    continue;
+		
+						final NamingEnumeration<?> values = ba.getAll();
+						
+						if (values==null)
+						    continue;
+						
+						while (values.hasMoreElements()){
+							final String s = values.nextElement().toString();
+							tsResult.add(s);
+						}
+		
 					}
-	
 				}
-				
+				finally{
+					context.close();
+				}
+					
 				cache.put(sCacheKey, tsResult, 1000*60*15);
 				
 				break;
