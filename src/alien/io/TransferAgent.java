@@ -20,39 +20,42 @@ public class TransferAgent extends Thread {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(TransferAgent.class.getCanonicalName());
-	
+
 	private final int transferAgentID;
-	
+
 	/**
 	 * 
 	 */
 	/**
-	 * @param transferAgentID unique identifier
+	 * @param transferAgentID
+	 *            unique identifier
 	 */
 	public TransferAgent(final int transferAgentID) {
-		super("TransferAgent "+transferAgentID);
-		
+		super("TransferAgent " + transferAgentID);
+
 		this.transferAgentID = transferAgentID;
-		
+
 		setDaemon(false);
 	}
-	
+
 	/**
 	 * @return this guy's ID
 	 */
-	int getTransferAgentID(){
+	int getTransferAgentID() {
 		return transferAgentID;
 	}
-	
+
 	private volatile Transfer work = null;
-	
+
 	private boolean shouldStop = false;
-	
-	private void signalStop(){
+
+	private void signalStop() {
 		shouldStop = true;
 	}
-	
-	/* (non-Javadoc)
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Thread#run()
 	 */
 	@Override
@@ -99,7 +102,7 @@ public class TransferAgent extends Thread {
 													// see if there is anything
 													// for it to do
 					}
-					catch (InterruptedException ie) {
+					catch (final InterruptedException ie) {
 						// ignore
 					}
 				}
@@ -109,9 +112,9 @@ public class TransferAgent extends Thread {
 			logger.log(Level.SEVERE, "Exiting after an exception", e);
 		}
 	}
-	
+
 	private static int transferAgentIDSequence = 0;
-	
+
 	/**
 	 * Run the TransferAgent<br>
 	 * <br>
@@ -120,64 +123,67 @@ public class TransferAgent extends Thread {
 	 * 
 	 * @param args
 	 */
-	public static void main(String args[]){
+	public static void main(final String args[]) {
 		final ExtProperties config = alien.config.ConfigUtils.getConfig();
-		
+
 		int workers = config.geti("alien.io.TransferAgent.workers", 5);
-		
-		logger.log(Level.INFO, "Starting "+workers+" workers");
-		
+
+		if (workers < 0 || workers > 100) // typo ?!
+			workers = 5;
+
+		logger.log(Level.INFO, "Starting " + workers + " workers");
+
 		final LinkedList<TransferAgent> agents = new LinkedList<TransferAgent>();
-		
-		for (int i=0; i<workers; i++){
+
+		for (int i = 0; i < workers; i++) {
 			final TransferAgent ta = new TransferAgent(transferAgentIDSequence++);
-			
+
 			ta.start();
-			
+
 			agents.add(ta);
 		}
-		
-		while (true){
-			try{
-				Thread.sleep(1000*30);
-				
+
+		while (true) {
+			try {
+				Thread.sleep(1000 * 30);
+
 				workers = config.geti("alien.io.TransferAgent.workers", workers);
 
-				if (workers<0 || workers > 100)	// typo ?!
+				if (workers < 0 || workers > 100) // typo ?!
 					workers = 5;
-				
+
 				final Iterator<TransferAgent> it = agents.iterator();
-				
-				while (it.hasNext()){
+
+				while (it.hasNext()) {
 					final TransferAgent agent = it.next();
-					if (!agent.isAlive()){
-						logger.log(Level.SEVERE, "One worker is no longer alive, removing the respective agent from the list: "+agent.getName());
-						
+					if (!agent.isAlive()) {
+						logger.log(Level.SEVERE, "One worker is no longer alive, removing the respective agent from the list: " + agent.getName());
+
 						it.remove();
 					}
 				}
-				
-				while (workers > agents.size()){
+
+				while (workers > agents.size()) {
 					final TransferAgent ta = new TransferAgent(transferAgentIDSequence++);
-						
+
 					ta.start();
-						
+
 					agents.add(ta);
 				}
 
-				while (agents.size() > workers){
+				while (agents.size() > workers) {
 					final TransferAgent ta = agents.removeLast();
-					
+
 					ta.signalStop();
 				}
 			}
-			catch (Exception e){
+			catch (final Exception e) {
 				// ignore
 			}
-			
-			for (final TransferAgent ta: agents)
+
+			for (final TransferAgent ta : agents)
 				TransferBroker.touch(ta.work, ta);
 		}
 	}
-	
+
 }
