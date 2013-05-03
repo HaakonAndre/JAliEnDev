@@ -270,8 +270,22 @@ public final class TransferUtils {
 		return mirror(guid, se, true, onCompletionRemoveReplica);
 	}
 
+	/**
+	 * @param guid
+	 * @param se
+	 * @param checkPreviousTransfers
+	 *            if <code>true</code> then the transfer queue is checked for active transfers identical to the requested one. You should always pass <code>true</code> unless you are sure no such
+	 *            transfer could previously exist (either because it was just checked or whatever)
+	 * @param onCompletionRemoveReplica a move mirror operation, on successful transfer remove the mirror from this SE
+	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
+	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 */
+	public static int mirror(final GUID guid, final SE se, final boolean checkPreviousTransfers) {
+		return mirror(guid, se, checkPreviousTransfers, null);
+	}
+	
 	private static final String PREVIOUS_TRANSFER_ID_QUERY = "SELECT transferId FROM TRANSFERS_DIRECT where lfn=? AND destination=? AND status in ('WAITING', 'TRANSFERRING');";
-
+	
 	/**
 	 * @param guid
 	 * @param se
