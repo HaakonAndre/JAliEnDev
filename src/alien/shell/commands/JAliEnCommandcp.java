@@ -5,15 +5,18 @@ import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -26,6 +29,7 @@ import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.io.protocols.TempFileManager;
@@ -37,7 +41,16 @@ import alien.se.SE;
  */
 public class JAliEnCommandcp extends JAliEnBaseCommand {
 
+	/**
+	 * If <code>true</code> then force a download operation
+	 */
 	private boolean bT = false;
+
+	/**
+	 * If <code>true</code> then wait for all uploads to finish before returning. Otherwise return after the first successful one, waiting for the remaining copies to be uploaded in background and
+	 * committed asynchronously to the catalogue.
+	 */
+	private boolean bW = ConfigUtils.getConfig().getb("alien.shell.commands.cp.wait_for_all_uploads.default", false);
 
 	private int referenceCount = 0;
 
@@ -264,6 +277,49 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	private static final ExecutorService UPLOAD_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 2L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 
 	/**
+	 * Upload one file in a separate thread
+	 * 
+	 * @author costing
+	 */
+	private final class UploadWork implements Runnable {
+		private final LFN lfn;
+		private final GUID guid;
+		private final File sourceFile;
+		private final PFN pfn;
+		private final Object lock;
+
+		private String envelope;
+
+		/**
+		 * @param lfn
+		 * @param guid
+		 * @param sourceFile
+		 * @param pfn
+		 * @param lock
+		 */
+		public UploadWork(final LFN lfn, final GUID guid, final File sourceFile, final PFN pfn, final Object lock) {
+			this.lfn = lfn;
+			this.guid = guid;
+			this.sourceFile = sourceFile;
+			this.pfn = pfn;
+			this.lock = lock;
+		}
+
+		@Override
+		public void run() {
+			envelope = uploadPFN(lfn, guid, sourceFile, pfn);
+
+			synchronized (lock) {
+				lock.notifyAll();
+			}
+		}
+
+		public String getEnvelope() {
+			return envelope;
+		}
+	}
+
+	/**
 	 * Copy a local file to the Grid
 	 * 
 	 * @param sourceFile
@@ -356,90 +412,195 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		final Vector<String> envelopes = new Vector<String>(pfns.size());
 		final Vector<String> registerPFNs = new Vector<String>(pfns.size());
 
-		final ArrayList<Future<?>> futures = new ArrayList<Future<?>>(pfns.size());
+		final ArrayList<Future<UploadWork>> futures = new ArrayList<Future<UploadWork>>(pfns.size());
+
+		final Object lock = new Object();
 
 		for (final PFN pfn : pfns) {
-			final Future<?> f = UPLOAD_THREAD_POOL.submit(new Runnable() {
-				@Override
-				public void run() {
-					uploadPFN(lfn, guid, sourceFile, envelopes, pfn);
-				}
-			});
+			final UploadWork work = new UploadWork(lfn, guid, sourceFile, pfn, lock);
+
+			final Future<UploadWork> f = UPLOAD_THREAD_POOL.submit(work, work);
 
 			futures.add(f);
 		}
 
 		long lastReport = System.currentTimeMillis();
 
-		boolean allDone;
-
 		do {
-			allDone = true;
+			final Iterator<Future<UploadWork>> it = futures.iterator();
 
-			for (final Future<?> f : futures) {
-				if (!f.isDone()) {
-					allDone = false;
-					break;
+			while (it.hasNext()) {
+				final Future<UploadWork> f = it.next();
+
+				if (f.isDone()) {
+					try {
+						final UploadWork uw = f.get();
+
+						final String envelope = uw.getEnvelope();
+
+						if (envelope != null) {
+							envelopes.add(envelope);
+
+							if (!bW) {
+								break;
+							}
+						}
+					}
+					catch (final InterruptedException e) {
+						logger.log(Level.WARNING, "Interrupted operation", e);
+					}
+					catch (final ExecutionException e) {
+						logger.log(Level.WARNING, "Execution exception", e);
+					}
+					finally {
+						it.remove();
+					}
 				}
 			}
 
-			if (!allDone) {
+			if (!bW && pfns.size() > 1 && envelopes.size() > 0) {
+				if (commit(envelopes, registerPFNs, guid, sourceFile, 1 + registerPFNs.size(), true)) {
+					break;
+				}
+
+				envelopes.clear();
+				registerPFNs.clear();
+			}
+
+			if (futures.size() > 0) {
 				if (System.currentTimeMillis() - lastReport > 500 && !isSilent()) {
 					out.pending();
 
 					lastReport = System.currentTimeMillis();
 				}
 
-				try {
-					Thread.sleep(50);
-				}
-				catch (final InterruptedException ie) {
-					// ignore
+				synchronized (lock) {
+					try {
+						lock.wait(100);
+					}
+					catch (final InterruptedException e) {
+						return false;
+					}
 				}
 			}
-		} while (!allDone);
+		} while (futures.size() > 0);
 
+		if (futures.size() > 0) {
+			// there was a successfully registered upload so far, we can return true
+
+			new BackgroundUpload(guid, futures).start();
+
+			return true;
+		}
+
+		return commit(envelopes, registerPFNs, guid, sourceFile, referenceCount, true);
+	}
+
+	private final class BackgroundUpload extends Thread {
+		private final GUID guid;
+		private final List<Future<UploadWork>> futures;
+
+		public BackgroundUpload(final GUID guid, final List<Future<UploadWork>> futures) {
+			super("alien.shell.commands.JAliEnCommandcp.BackgroundUpload (" + guid.guidId + ")");
+
+			this.guid = guid;
+			this.futures = futures;
+		}
+
+		@Override
+		public void run() {
+			final Vector<String> envelopes = new Vector<String>(futures.size());
+
+			while (futures.size() > 0) {
+				final Iterator<Future<UploadWork>> it = futures.iterator();
+
+				while (it.hasNext()) {
+					final Future<UploadWork> f = it.next();
+
+					if (f.isDone()) {
+						logger.log(Level.FINER, "Got back one more copy of " + guid.guid);
+
+						try {
+							final UploadWork uw = f.get();
+
+							final String envelope = uw.getEnvelope();
+
+							if (envelope != null) {
+								envelopes.add(envelope);
+							}
+						}
+						catch (final InterruptedException e) {
+							// Interrupted upload
+							logger.log(Level.FINE, "Interrupted upload of " + guid.guid, e);
+						}
+						catch (final ExecutionException e) {
+							// Error executing
+							logger.log(Level.FINE, "Error getting the upload result of " + guid.guid, e);
+						}
+						finally {
+							it.remove();
+						}
+					}
+				}
+			}
+
+			if (envelopes.size() > 0)
+				commit(envelopes, null, guid, null, futures.size(), false);
+		}
+	}
+
+	boolean commit(final Vector<String> envelopes, final Vector<String> registerPFNs, final GUID guid, final File sourceFile, final int desiredCount, final boolean report) {
 		if (envelopes.size() != 0) {
 			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes);
 
-			if (!isSilent() && (registeredPFNs == null || registeredPFNs.size() != envelopes.size())) {
+			if (report && !isSilent() && (registeredPFNs == null || registeredPFNs.size() != envelopes.size())) {
 				out.printErrln("From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
 			}
 		}
 
-		if (registerPFNs.size() != 0) {
+		int registeredPFNsCount = 0;
+
+		if (registerPFNs != null && registerPFNs.size() > 0) {
 			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs);
 
-			if (!isSilent() && (registeredPFNs == null || registeredPFNs.size() != registerPFNs.size())) {
-				out.printErrln("From the " + registerPFNs.size() + " pfns only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
+			registeredPFNsCount = registeredPFNs != null ? registeredPFNs.size() : 0;
+
+			if (report && !isSilent() && registeredPFNsCount != registerPFNs.size()) {
+				out.printErrln("From the " + registerPFNs.size() + " pfns only " + registeredPFNsCount + " were registered");
 			}
 		}
 
-		if (referenceCount == envelopes.size() + registerPFNs.size()) {
-			if (!isSilent())
-				out.printOutln("File successfully uploaded.");
-
+		if (sourceFile != null && envelopes.size() + registeredPFNsCount > 0) {
 			TempFileManager.putPersistent(guid, sourceFile);
+		}
+
+		if (desiredCount == envelopes.size() + registeredPFNsCount) {
+			if (report && !isSilent())
+				out.printOutln("File successfully uploaded to " + desiredCount + " SEs");
 
 			return true;
 		}
 		else
-			if (envelopes.size() + registerPFNs.size() > 0) {
-				if (!isSilent())
-					out.printErrln("Only " + (envelopes.size() + registerPFNs.size()) + " PFNs could be uploaded");
+			if (envelopes.size() + registeredPFNsCount > 0) {
+				if (report && !isSilent())
+					out.printErrln("Only " + (envelopes.size() + registeredPFNsCount) + " out of " + desiredCount + " requested replicas could be uploaded");
+
+				return true;
 			}
 			else {
-				if (!isSilent())
-					out.printOutln("Upload failed, sorry!");
-				else {
-					final IOException ex = new IOException("Upload failed");
+				if (report) {
+					if (!isSilent())
+						out.printOutln("Upload failed, sorry!");
+					else {
+						final IOException ex = new IOException("Upload failed");
 
-					throw new IOError(ex);
+						throw new IOError(ex);
+					}
 				}
 
 			}
-		return false;
 
+		return false;
 	}
 
 	/**
@@ -449,17 +610,19 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * @param envelopes
 	 * @param initialPFN
 	 */
-	void uploadPFN(final LFN lfn, final GUID guid, final File sourceFile, final Vector<String> envelopes, final PFN initialPFN) {
+	String uploadPFN(final LFN lfn, final GUID guid, final File sourceFile, final PFN initialPFN) {
 		boolean failOver;
 
 		PFN pfn = initialPFN;
+
+		String returnEnvelope = null;
 
 		do {
 			failOver = false;
 
 			final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 
-			String targetLFNResult = null;
+			String targetPFNResult = null;
 
 			for (final Protocol protocol : protocols) {
 				try {
@@ -467,7 +630,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						out.printOutln("Uploading file " + sourceFile.getCanonicalPath() + " to " + pfn.getPFN());
 
 					try {
-						targetLFNResult = protocol.put(pfn, sourceFile);
+						targetPFNResult = protocol.put(pfn, sourceFile);
 					}
 					catch (final IOException ioe) {
 						// ignore, will try next protocol or fetch another
@@ -478,20 +641,20 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					// e.printStackTrace();
 				}
 
-				if (targetLFNResult != null)
+				if (targetPFNResult != null)
 					break;
 			}
 
-			if (targetLFNResult != null) {
+			if (targetPFNResult != null) {
 				// if (!isSilent()){
 				// out.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath() + " to " + pfn.getPFN()+"\n"+targetLFNResult);
 				// }
 
 				if (pfn.ticket != null && pfn.ticket.envelope != null && pfn.ticket.envelope.getSignedEnvelope() != null) {
 					if (pfn.ticket.envelope.getEncryptedEnvelope() == null)
-						envelopes.add(targetLFNResult);
+						returnEnvelope = targetPFNResult;
 					else
-						envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+						returnEnvelope = pfn.ticket.envelope.getSignedEnvelope();
 				}
 			}
 			else {
@@ -526,6 +689,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 			}
 		} while (failOver && pfn != null);
+
+		return returnEnvelope;
 	}
 
 	/**
@@ -586,6 +751,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("S").withRequiredArg();
 			parser.accepts("g");
 			parser.accepts("t");
+			parser.accepts("w");
+			parser.accepts("W");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -593,6 +760,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				printHelp();
 				return;
 			}
+
+			if (options.has("w"))
+				bW = true;
+
+			if (options.has("W"))
+				bW = false;
 
 			if (options.has("S") && options.hasArgument("S")) {
 
