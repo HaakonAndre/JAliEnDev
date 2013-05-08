@@ -52,6 +52,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 */
 	private boolean bW = ConfigUtils.getConfig().getb("alien.shell.commands.cp.wait_for_all_uploads.default", false);
 
+	/**
+	 * If <code>true</code> then the source file is to be deleted after a successful upload (for temporary files)
+	 */
+	private boolean bD = false;
+	
 	private int referenceCount = 0;
 
 	private final List<String> ses = new ArrayList<String>();
@@ -459,7 +464,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (!bW && pfns.size() > 1 && envelopes.size() > 0) {
-				if (commit(envelopes, registerPFNs, guid, sourceFile, 1 + registerPFNs.size(), true)) {
+				if (commit(envelopes, registerPFNs, guid, bD ? null : sourceFile, 1 + registerPFNs.size(), true)) {
 					break;
 				}
 
@@ -488,23 +493,28 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (futures.size() > 0) {
 			// there was a successfully registered upload so far, we can return true
 
-			new BackgroundUpload(guid, futures).start();
+			new BackgroundUpload(guid, futures, bD ? sourceFile : null).start();
 
 			return true;
 		}
-
-		return commit(envelopes, registerPFNs, guid, sourceFile, referenceCount, true);
+		
+		if (bD)
+			sourceFile.delete();
+		
+		return commit(envelopes, registerPFNs, guid, bD ? null : sourceFile, referenceCount, true);
 	}
 
 	private final class BackgroundUpload extends Thread {
 		private final GUID guid;
 		private final List<Future<UploadWork>> futures;
+		private final File fileToDeleteOnComplete;
 
-		public BackgroundUpload(final GUID guid, final List<Future<UploadWork>> futures) {
+		public BackgroundUpload(final GUID guid, final List<Future<UploadWork>> futures, final File fileToDeleteOnComplete) {
 			super("alien.shell.commands.JAliEnCommandcp.BackgroundUpload (" + guid.guidId + ")");
 
 			this.guid = guid;
 			this.futures = futures;
+			this.fileToDeleteOnComplete = fileToDeleteOnComplete;
 		}
 
 		@Override
@@ -546,6 +556,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (envelopes.size() > 0)
 				commit(envelopes, null, guid, null, futures.size(), false);
+			
+			if (fileToDeleteOnComplete!=null)
+				fileToDeleteOnComplete.delete();
 		}
 	}
 
@@ -753,6 +766,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("t");
 			parser.accepts("w");
 			parser.accepts("W");
+			parser.accepts("d");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -766,6 +780,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (options.has("W"))
 				bW = false;
+			
+			if (options.has("d"))
+				bD = true;
 
 			if (options.has("S") && options.hasArgument("S")) {
 
