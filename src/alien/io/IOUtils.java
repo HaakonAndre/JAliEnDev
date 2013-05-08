@@ -498,7 +498,7 @@ public class IOUtils {
 	 * @throws IOException
 	 */
 	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner) throws IOException {
-		upload(localFile, toLFN, owner, 2, null);
+		upload(localFile, toLFN, owner, 2, null, false);
 	}
 
 	/**
@@ -511,9 +511,9 @@ public class IOUtils {
 	 * @throws IOException
 	 */
 	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount) throws IOException {
-		upload(localFile, toLFN, owner, replicaCount, null);
+		upload(localFile, toLFN, owner, replicaCount, null, false);
 	}
-
+	
 	/**
 	 * Upload a local file to the Grid
 	 * 
@@ -525,6 +525,21 @@ public class IOUtils {
 	 * @throws IOException
 	 */
 	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport) throws IOException {
+		upload(localFile, toLFN, owner, replicaCount, progressReport, false);
+	}
+
+	/**
+	 * Upload a local file to the Grid
+	 * 
+	 * @param localFile
+	 * @param toLFN
+	 * @param owner
+	 * @param replicaCount
+	 * @param progressReport
+	 * @param deleteSourceAfterUpload if <code>true</code> then the local file (the source) is to be deleted after the operation completes 
+	 * @throws IOException
+	 */
+	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport, final boolean deleteSourceAfterUpload) throws IOException {
 		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, toLFN);
 
 		final LFN l = LFNUtils.getLFN(absolutePath, true);
@@ -536,6 +551,10 @@ public class IOUtils {
 		final ArrayList<String> cpArgs = new ArrayList<String>();
 		cpArgs.add("file:" + localFile.getAbsolutePath());
 		cpArgs.add(absolutePath);
+		
+		if (deleteSourceAfterUpload)
+			cpArgs.add("-d");
+		
 		cpArgs.add("-S");
 		cpArgs.add("disk:" + replicaCount);
 
