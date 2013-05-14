@@ -674,13 +674,27 @@ public class TaskQueueUtils {
 				File f = new File(jdlArchiveDir, queueId+".txt");
 				
 				if (f.exists() && f.canRead()){
-					return Utils.readFile(f.getAbsolutePath());
+					String content = Utils.readFile(f.getAbsolutePath());
+					
+					int idx = content.indexOf("// --------");
+					
+					if (idx>=0)
+						content = content.substring(0, idx);
+					
+					return content;
 				}
 				
 				f = new File(jdlArchiveDir, queueId+".html");
 				
 				if (f.exists() && f.canRead()){
-					return Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+					String content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+					
+					int idx = content.indexOf("// --------");
+					
+					if (idx>=0)
+						content = content.substring(0, idx);
+					
+					return content;
 				}
 			}
 			
