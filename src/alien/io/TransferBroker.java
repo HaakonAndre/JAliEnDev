@@ -476,10 +476,10 @@ public class TransferBroker {
 			final boolean ok;
 
 			if (db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
-				ok = db.query("INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit);
+				ok = db.query("INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit+" AND finished>0");
 			}
 			else {
-				ok = db.query("CREATE TABLE " + archiveTableName + " AS SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit);
+				ok = db.query("CREATE TABLE " + archiveTableName + " AS SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit+" AND finished>0");
 
 				if (ok)
 					db.query("CREATE UNIQUE INDEX " + archiveTableName + "_pkey ON " + archiveTableName + "(transferId);");
