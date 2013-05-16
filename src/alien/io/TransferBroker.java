@@ -486,7 +486,7 @@ public class TransferBroker {
 			}
 
 			if (ok)
-				db.query("DELETE FROM TRANSFERS_DIRECT WHERE finished<" + limit);
+				db.query("DELETE FROM TRANSFERS_DIRECT WHERE finished<" + limit+" AND finished>0");
 		}
 		catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception archiving", t);
