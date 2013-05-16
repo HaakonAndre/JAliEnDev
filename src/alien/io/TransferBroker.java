@@ -94,7 +94,7 @@ public class TransferBroker {
 		}
 	}
 
-	private final void executeQuery(final DBConnection dbc, final String query) {
+	private final boolean executeQuery(final DBConnection dbc, final String query) {
 		executeClose();
 
 		try {
@@ -106,9 +106,13 @@ public class TransferBroker {
 			else {
 				executeClose();
 			}
+
+			return true;
 		}
 		catch (final SQLException e) {
 			logger.log(Level.WARNING, "Exception executing the query", e);
+
+			return false;
 		}
 	}
 
@@ -435,7 +439,8 @@ public class TransferBroker {
 
 	private static long lastArchived = System.currentTimeMillis();
 
-	private static synchronized void cleanup() {
+	private void cleanup() {
+		// no need to synchronize this method
 		if (System.currentTimeMillis() - lastCleanedUp < 1000 * 30)
 			return;
 
@@ -447,12 +452,24 @@ public class TransferBroker {
 			if (db == null)
 				return;
 
-			db.query("DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 300));
+			final DBConnection dbc = db.getConnection();
+			executeQuery(dbc, "lock tables active_transfers write, TRANSFERS_DIRECT write;");
 
-			db.query("UPDATE TRANSFERS_DIRECT SET status='KILLED', finished=" + lastCleanedUp / 1000
-					+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
+			try {
+				executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 300));
 
-			db.query("UPDATE TRANSFERS_DIRECT SET status='WAITING' WHERE status='INSERTING';");
+				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', finished=" + lastCleanedUp / 1000
+						+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
+
+				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING' WHERE status='INSERTING';");
+			}
+			finally {
+				executeQuery(dbc, "unlock tables;");
+
+				executeClose();
+
+				dbc.free();
+			}
 		}
 		catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
@@ -473,26 +490,37 @@ public class TransferBroker {
 
 			final long limit = System.currentTimeMillis() - 1000 * 60 * 60 * 24;
 
-			final boolean ok;
-
-			if (db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
-				ok = db.query("INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit+" AND finished>0");
-			}
-			else {
-				ok = db.query("CREATE TABLE " + archiveTableName + " AS SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit+" AND finished>0");
-
-				if (ok)
-					db.query("CREATE UNIQUE INDEX " + archiveTableName + "_pkey ON " + archiveTableName + "(transferId);");
+			if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
+				if (!db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
+					logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
+					return;
+				}
 			}
 
-			if (ok)
-				db.query("DELETE FROM TRANSFERS_DIRECT WHERE finished<" + limit+" AND finished>0");
+			final DBConnection dbc = db.getConnection();
+
+			try {
+				if (!executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, " + archiveTableName + " write;")) {
+					logger.log(Level.SEVERE, "Cannot lock main and archive tables for archival operation");
+					return;
+				}
+
+				if (executeQuery(dbc, "INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit + " AND finished>0"))
+					executeQuery(dbc, "DELETE FROM TRANSFERS_DIRECT WHERE finished<" + limit + " AND finished>0");
+			}
+			finally {
+				executeQuery(dbc, "unlock tables;");
+				executeClose();
+
+				dbc.free();
+			}
 		}
 		catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception archiving", t);
 		}
-
-		lastArchived = System.currentTimeMillis();
+		finally {
+			lastArchived = System.currentTimeMillis();
+		}
 	}
 
 	/**
