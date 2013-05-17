@@ -349,7 +349,7 @@ public class IOUtils {
 			parallelDownloads.add(future);
 		}
 
-		while (f == null) {
+		while (f == null && parallelDownloads.size()>0) {
 			final Iterator<Future<DownloadWork>> it = parallelDownloads.iterator();
 
 			while (it.hasNext()) {
