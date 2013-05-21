@@ -243,8 +243,6 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	private static final Thread cleanup = new Thread("alien.io.protocols.TempFileManager.cleanup") {
 		@Override
 		public void run() {
-			setDaemon(true);
-			
 			while (true) {
 				int collected = 0;
 
