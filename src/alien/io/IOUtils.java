@@ -335,6 +335,8 @@ public class IOUtils {
 		final Object lock = new Object();
 
 		File f = null;
+		
+		final List<DownloadWork> tasks = new ArrayList<DownloadWork>(realPFNsSet.size()); 
 
 		for (final PFN realPfn : realPFNsSet) {
 			if (realPfn.ticket == null) {
@@ -344,6 +346,8 @@ public class IOUtils {
 
 			final DownloadWork dw = new DownloadWork(realPfn, lock);
 
+			tasks.add(dw);
+			
 			final Future<DownloadWork> future = PARALLEL_DW_THREAD_POOL.submit(dw, dw);
 
 			parallelDownloads.add(future);
@@ -399,6 +403,20 @@ public class IOUtils {
 			future.cancel(true);
 		}
 
+		for (final DownloadWork dw: tasks){
+			final File tempFile = dw.getLocalFile();
+			
+			if (tempFile!=null){
+				if (f==null)
+					f = tempFile;
+				else
+					if (tempFile!=f){
+						TempFileManager.release(tempFile);
+						tempFile.delete();
+					}
+			}
+		}
+		
 		if (localFile != null && f != null) {
 			if (lazyj.Utils.copyFile(f.getAbsolutePath(), localFile.getAbsolutePath())) {
 				TempFileManager.release(f);
