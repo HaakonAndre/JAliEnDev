@@ -401,8 +401,7 @@ public class IOUtils {
 
 		if (localFile != null && f != null) {
 			if (lazyj.Utils.copyFile(f.getAbsolutePath(), localFile.getAbsolutePath())) {
-				if  (!f.delete())
-					logger.log(Level.WARNING, "Could not delete the temporary file "+f.getAbsolutePath());
+				TempFileManager.release(f);
 				
 				TempFileManager.putPersistent(guid, localFile);
 
