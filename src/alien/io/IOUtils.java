@@ -407,9 +407,6 @@ public class IOUtils {
 
 				return localFile;
 			}
-
-			if (!localFile.delete())
-				logger.log(Level.WARNING, "Copying temporary file "+f.getAbsolutePath()+" to the indicated target "+localFile.getAbsolutePath()+" failed. You are left with the temporary file now.");
 		}
 
 		return f;
