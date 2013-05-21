@@ -399,12 +399,18 @@ public class IOUtils {
 			future.cancel(true);
 		}
 
-		if (localFile != null) {
+		if (localFile != null && f != null) {
 			if (lazyj.Utils.copyFile(f.getAbsolutePath(), localFile.getAbsolutePath())) {
+				if  (!f.delete())
+					logger.log(Level.WARNING, "Could not delete the temporary file "+f.getAbsolutePath());
+				
 				TempFileManager.putPersistent(guid, localFile);
 
 				return localFile;
 			}
+
+			if (!localFile.delete())
+				logger.log(Level.WARNING, "Copying temporary file "+f.getAbsolutePath()+" to the indicated target "+localFile.getAbsolutePath()+" failed. You are left with the temporary file now.");
 		}
 
 		return f;
