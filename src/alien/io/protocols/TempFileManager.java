@@ -68,8 +68,13 @@ public class TempFileManager extends LRUMap<GUID, File>{
 			currentSize -= eldest.getKey().size;
 			
 			if (delete){
-				if (!eldest.getValue().delete()){
-					logger.log(Level.WARNING, "Could not delete temporary file "+eldest.getValue());
+				if (eldest.getValue().exists()){
+					if (!eldest.getValue().delete()){
+						logger.log(Level.WARNING, "Could not delete temporary file "+eldest.getValue());
+					}
+				}
+				else{
+					logger.log(Level.FINE, "Somebody has already deleted "+eldest.getValue()+" while its lock status was: "+wasLocked);
 				}
 					
 				release(eldest.getValue());
