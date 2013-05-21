@@ -376,9 +376,11 @@ public class Xrootd extends Protocol {
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
+			
+			ExternalProcess p = null;
 
 			try {
-				final ExternalProcess p = pBuilder.start();
+				p = pBuilder.start();
 
 				if (p != null)
 					exitStatus = p.waitFor();
@@ -386,6 +388,9 @@ public class Xrootd extends Protocol {
 					throw new SourceException("Cannot start the process");
 			}
 			catch (final InterruptedException ie) {
+				if (p != null)
+					p.destroy();
+					
 				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 
@@ -410,12 +415,16 @@ public class Xrootd extends Protocol {
 		catch (final SourceException ioe) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
+			else
+				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target);	// make sure it doesn't pop up later after an interrupt
 
 			throw ioe;
 		}
 		catch (final Throwable t) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
+			else
+				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target);	// make sure it doesn't pop up later after an interrupt
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
