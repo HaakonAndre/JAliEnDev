@@ -175,11 +175,25 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	 * collector to reclaim the space when needed.
 	 * 
 	 * @param f
+	 * @return <code>true</code> if this file was indeed released
 	 */
-	public static void release(final File f) {
+	public static boolean release(final File f) {
+		boolean removed;
+		
 		synchronized (lockedLocalFiles) {
-			lockedLocalFiles.remove(f);
+			removed = lockedLocalFiles.remove(f);
 		}
+		
+		if ((!removed && logger.isLoggable(Level.FINE)) || logger.isLoggable(Level.FINEST)){
+			try{
+				throw new IOException();
+			}
+			catch (final IOException ioe){
+				logger.log(Level.FINE, "Asked to release a file "+(removed ? "that was indeed locked: " : "that was not previously locked: ")+f.getAbsolutePath(), ioe);
+			}
+		}
+		
+		return removed;
 	}
 
 	/**
