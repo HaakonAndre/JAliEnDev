@@ -302,22 +302,28 @@ public class IOUtils {
 			if (protocols == null || protocols.size() == 0)
 				return;
 
-			for (final Protocol protocol : protocols) {
-				try {
-					f = protocol.get(realPfn, null);
-
-					if (f != null)
-						break;
+			try{
+				for (final Protocol protocol : protocols) {
+					try {
+						f = protocol.get(realPfn, null);
+	
+						if (f != null)
+							break;
+					}
+					catch (final IOException e) {
+						logger.log(Level.FINE, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
+					}
 				}
-				catch (final IOException e) {
-					logger.log(Level.FINE, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
-				}
+	
+				if (f != null)
+					synchronized (lock) {
+						lock.notifyAll();
+					}
 			}
-
-			if (f != null)
-				synchronized (lock) {
-					lock.notifyAll();
-				}
+			catch (final Throwable t){
+				if (f != null)
+					TempFileManager.release(f);
+			}
 		}
 
 		public File getLocalFile() {
