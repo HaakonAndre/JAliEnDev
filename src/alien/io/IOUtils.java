@@ -288,7 +288,7 @@ public class IOUtils {
 	private static final class DownloadWork implements Runnable {
 		private final PFN realPfn;
 		private final Object lock;
-		private File f;
+		private volatile File f;
 
 		public DownloadWork(final PFN realPfn, final Object lock) {
 			this.realPfn = realPfn;
@@ -402,15 +402,27 @@ public class IOUtils {
 		for (final Future<DownloadWork> future : parallelDownloads) {
 			future.cancel(true);
 		}
+		
+		Thread.yield();
 
 		for (final DownloadWork dw: tasks){
 			final File tempFile = dw.getLocalFile();
 			
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Got one file to test:"+tempFile);
+			
 			if (tempFile!=null){
-				if (f==null)
+				if (f==null){
+					if (logger.isLoggable(Level.FINEST))
+						logger.log(Level.FINEST, "Keeping this as the main instance:"+tempFile);
+
 					f = tempFile;
+				}
 				else
 					if (tempFile!=f){
+						if (logger.isLoggable(Level.FINEST))
+							logger.log(Level.FINEST, "Releasing this copy:"+tempFile);
+						
 						TempFileManager.release(tempFile);
 						tempFile.delete();
 					}
