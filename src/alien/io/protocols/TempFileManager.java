@@ -143,14 +143,20 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	 */
 	public static void putTemp(final GUID key, final File localFile) {
 		synchronized (tempInstance) {
-			if (!tempInstance.containsKey(key)){
-				tempInstance.put(key, localFile);
+			final File old = tempInstance.get(key);
 			
-				lock(localFile);
+			if (old!=null && old.exists() && old.length()==key.size){
+				logger.log(Level.FINE, "Refusing to overwrite "+key.guid+" -> "+tempInstance.get(key)+" with "+localFile+" and removing the later instance");
+				localFile.delete();
+				return;
 			}
-			else{
-				logger.log(Level.FINE, "Refusing to overwrite "+key.guid+" -> "+tempInstance.get(key)+" with "+localFile);
-			}
+			
+			if (old!=null)
+				release(old);
+			
+			tempInstance.put(key, localFile);
+			
+			lock(localFile);
 		}
 	}
 
