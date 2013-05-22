@@ -427,13 +427,7 @@ public class IOUtils {
 					f = tempFile;
 				}
 				else
-					if (tempFile!=f){
-						if (logger.isLoggable(Level.FINEST))
-							logger.log(Level.FINEST, "Releasing this copy:"+tempFile);
-						
-						TempFileManager.release(tempFile);
-						tempFile.delete();
-					}
+					TempFileManager.release(tempFile);
 			}
 		}
 		
