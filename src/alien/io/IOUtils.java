@@ -363,6 +363,8 @@ public class IOUtils {
 					try {
 						final DownloadWork dw = future.get();
 
+						tasks.remove(dw);
+						
 						f = dw.getLocalFile();
 
 						if (logger.isLoggable(Level.FINER)) {
