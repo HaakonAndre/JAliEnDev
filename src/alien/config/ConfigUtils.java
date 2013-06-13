@@ -262,7 +262,7 @@ public class ConfigUtils {
 	 * @param component
 	 * @return the logger
 	 */
-	public static Logger getLogger(final String component) {
+	public static synchronized Logger getLogger(final String component) {
 		final Logger l = Logger.getLogger(component);
 
 		if (logging != null) {
