@@ -2208,14 +2208,11 @@ public class TaskQueueUtils {
 		String q;
 		
 		if (dbStructure2_20)
-			q = "select user,count(1) from QUEUE INNER JOIN QUEUE_USER using(userId)";
+			q = "SELECT user,count(1) FROM QUEUE INNER JOIN QUEUE_USER using(userId) WHERE statusId IN ("+sb+")";
 		else
-			q = "select substring_index(submithost,'@',1),count(1) from QUEUE ";
-		
-		if (sb.length()>0)
-			q += "where status in ("+sb+") ";
+			q = "SELECT substring_index(submithost,'@',1),count(1) FROM QUEUE WHERE status IN ("+sb+")";
 				
-		q += "group by 1 order by 1;";
+		q += "GROUP BY 1 ORDER BY 1;";
 			
 		db.query(q);
 		
