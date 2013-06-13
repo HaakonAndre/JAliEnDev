@@ -103,7 +103,7 @@ public class JAliEnCOMMander extends Thread {
 		q_api = new TaskQueueApiUtils(this);
 
 		user = AuthorizationFactory.getDefaultUser();
-		role = AliEnPrincipal.userRole();
+		role = user.getDefaultRole();
 		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
 		myHome = UsersHelper.getHomeDir(user.getName());
 		localFileCash = new HashMap<String, File>();
