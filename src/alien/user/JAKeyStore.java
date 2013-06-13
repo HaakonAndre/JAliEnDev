@@ -548,7 +548,18 @@ public class JAKeyStore {
 			else
 				reader = new PEMReader(priv, pFinder);
 			
-			return ((KeyPair) reader.readObject()).getPrivate();
+			Object obj;
+			while ( (obj=reader.readObject())!=null ){
+				System.err.println(obj.getClass().getCanonicalName());
+				
+				if (obj instanceof PrivateKey)
+					return (PrivateKey) obj;
+				else
+				if (obj instanceof KeyPair)
+					return ((KeyPair) obj).getPrivate();
+			}
+			
+			return null;
 		}
 		finally{
 			if (reader!=null){
