@@ -81,6 +81,8 @@ public class ConfigUtils {
 							if (sName.equals("logging")) {
 								logging = new LoggingConfigurator(prop);
 								
+								logging.update(null, null);
+								
 								if (System.getProperty("lia.Monitor.ConfigURL") == null) {
 									// give the ML components the same logging configuration file if not explicitly set
 									try {
@@ -262,7 +264,7 @@ public class ConfigUtils {
 	 * @param component
 	 * @return the logger
 	 */
-	public static synchronized Logger getLogger(final String component) {
+	public static Logger getLogger(final String component) {
 		final Logger l = Logger.getLogger(component);
 
 		if (logging != null) {
@@ -271,7 +273,7 @@ public class ConfigUtils {
 			if (s == null) {
 				seenLoggers.put(component, component, 60 * 1000);
 
-				logging.update(null, null);
+				//logging.update(null, null);
 			}
 		}
 

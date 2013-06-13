@@ -21,6 +21,7 @@ import java.util.logging.Logger;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
+import alien.se.SEUtils;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.RootPrintWriter;
@@ -39,8 +40,7 @@ public class JBoxServer extends Thread {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils
-	.getLogger(JBoxServer.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
 	// this triggers to ask for the user home LFN before doing anything else
 	private static boolean preemptJCentralConnection=true;
@@ -126,8 +126,6 @@ public class JBoxServer extends Thread {
 	 * @throws IOException
 	 */
 	private JBoxServer(final int listeningPort, int iDebug) throws Exception {
-		preempt();
-		
 		this.port = listeningPort;
 		this.iDebugLevel = iDebug;
 
@@ -300,7 +298,7 @@ public class JBoxServer extends Thread {
 	static final class PreemptJCentralConnection extends Thread {
 		@Override
 		public void run() {
-			new JAliEnCOMMander().getId();
+			SEUtils.getSE(0);
 		}
 	}
 	
@@ -558,9 +556,10 @@ public class JBoxServer extends Thread {
 		if (server != null)
 			return;
 
+		preempt();
+		
 		for (int port = 10100; port < 10200; port++) {
 			try {
-		
 				server = new JBoxServer(port, iDebugLevel);
 				server.start();
 
