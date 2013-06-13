@@ -20,6 +20,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import alien.api.Dispatcher;
+import alien.api.ServerException;
+import alien.api.catalogue.SEfromString;
 import alien.catalogue.CatalogueUtils;
 import alien.catalogue.GUIDIndex;
 import alien.catalogue.GUIDIndex.SEUsageStats;
@@ -46,6 +49,9 @@ public final class SEUtils {
 	private static final WriteLock seCacheWriteLock = seCacheRWLock.writeLock();
 	
 	private static final void updateSECache() {
+		if (!ConfigUtils.isCentralService())
+			return;
+		
 		seCacheReadLock.lock();
 
 		try {
@@ -117,6 +123,15 @@ public final class SEUtils {
 	 * @return the SE, if it exists, or <code>null</code> if it doesn't
 	 */
 	public static SE getSE(final Integer seNumber) {
+		if (!ConfigUtils.isCentralService()){
+			try{
+				return Dispatcher.execute(new SEfromString(null, null, seNumber.intValue())).getSE();
+			}
+			catch (final ServerException se){
+				return null;
+			}
+		}
+		
 		updateSECache();
 
 		if (seCache == null)
@@ -189,15 +204,20 @@ public final class SEUtils {
 	private static final String SEDISTANCE_QUERY;
 	
 	static{
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
-
-		if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
-			SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
-		else
-			SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
-		
-		updateSECache();
-		updateSEDistanceCache();
+		if (ConfigUtils.isCentralService()){
+			final DBFunctions db = ConfigUtils.getDB("alice_users");
+	
+			if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
+				SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
+			else
+				SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+			
+			updateSECache();
+			updateSEDistanceCache();
+		}
+		else{
+			SEDISTANCE_QUERY = null;
+		}
 	}
 	
 	private static void updateSEDistanceCache() {
