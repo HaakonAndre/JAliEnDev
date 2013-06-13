@@ -770,6 +770,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
+			if (options.nonOptionArguments().size()==0)
+				return;
+			
 			if (options.nonOptionArguments().size() != 2 && !(options.nonOptionArguments().size() == 1 && options.has("t"))) {
 				printHelp();
 				return;
