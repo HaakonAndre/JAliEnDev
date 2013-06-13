@@ -156,8 +156,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		this.exists = false;
 		
-		this.host = GUIDUtils.getGUIDHost(guid);
-		this.tableName = GUIDUtils.getTableNameForGUID(guid);
+		this.host = ConfigUtils.isCentralService() ? GUIDUtils.getGUIDHost(guid) : -1;
+		this.tableName = ConfigUtils.isCentralService() ? GUIDUtils.getTableNameForGUID(guid) : -1;
 		
 		this.perm = "644";
 		
