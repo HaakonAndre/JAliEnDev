@@ -1,20 +1,34 @@
 #!/bin/bash
 
-if [ "$1" == "login" ]; then
+if [ "$1" == "setup" ]; then
+    cd `dirname $0`
 
+    mkdir -p ${HOME}/.j/config
 
-        cd $JALIEN_HOME
-        ./run.sh -DAliEnConfig=${HOME}/.j/config alien.JBox $@
+    cp config/logging.properties config/config.properties ${HOME}/.j/config/
 
-else 
+    mkdir -p ${HOME}/.j/trusts
 
+    wget "https://ca.cern.ch/ca/CRL/CERN%20Root%20CA.crt" -O ${HOME}/.j/trusts/CERN_Root_CA.der
+    wget "https://ca.cern.ch/ca/CRL/CERN%20Trusted%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_Trusted_CA.der
 
-	cd $JALIEN_HOME
-	./run.sh -DAliEnConfig=${HOME}/.j/config alien.JSh $@
-
-
+    exit 0
 fi
 
+if [ -z "$JALIEN_HOME" ]; then
+    JALIEN_HOME=`pwd`
+fi
 
+CONFIG_DIR=${JALIEN_CONFIG_DIR:-${HOME}/.j/config}
 
+if [ ! -d "$CONFIG_DIR" ]; then
+    CONFIG_DIR="$JALIEN_HOME"/config
+fi
 
+if [ "$1" == "login" ]; then
+    cd $JALIEN_HOME
+    ./run.sh -DAliEnConfig=${CONFIG_DIR} alien.JBox $@
+else
+    cd $JALIEN_HOME
+    ./run.sh -DAliEnConfig=${CONFIG_DIR} alien.JSh $@
+fi
