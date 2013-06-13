@@ -550,8 +550,6 @@ public class JAKeyStore {
 			
 			Object obj;
 			while ( (obj=reader.readObject())!=null ){
-				System.err.println(obj.getClass().getCanonicalName());
-				
 				if (obj instanceof PrivateKey)
 					return (PrivateKey) obj;
 				else
