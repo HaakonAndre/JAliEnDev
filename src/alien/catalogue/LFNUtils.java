@@ -501,10 +501,15 @@ public class LFNUtils {
 	public static String getTagTableName(final String path, final String tag){
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 		
-		db.query("SELECT tableName FROM TAG0 WHERE tagName='"+Format.escSQL(tag)+"' AND '"+Format.escSQL(path)+"' LIKE concat(path,'%') ORDER BY length(path) DESC LIMIT 1;");
-		
-		if (db.moveNext())
-			return db.gets(1);
+		try{
+			db.query("SELECT tableName FROM TAG0 WHERE tagName='"+Format.escSQL(tag)+"' AND '"+Format.escSQL(path)+"' LIKE concat(path,'%') ORDER BY length(path) DESC LIMIT 1;");
+			
+			if (db.moveNext())
+				return db.gets(1);
+		}
+		finally{
+			db.close();
+		}
 		
 		return null;	
 	}
@@ -530,15 +535,20 @@ public class LFNUtils {
 		if ((flags & FIND_BIGGEST_VERSION) != 0)
 			q += " LIMIT 1";
 		
-		if (!db.query(q))
-			return null;
-		
-		final Set<String> ret = new LinkedHashSet<String>();
-		
-		while (db.moveNext())
-			ret.add(StringFactory.get(db.gets(1)));
-		
-		return ret;
+		try{
+			if (!db.query(q))
+				return null;
+			
+			final Set<String> ret = new LinkedHashSet<String>();
+			
+			while (db.moveNext())
+				ret.add(StringFactory.get(db.gets(1)));
+			
+			return ret;
+		}
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -599,8 +609,13 @@ public class LFNUtils {
 
 		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary(?));"; 
 		
-		if (!db.query(q, false, lfn.guid.toString()))
-			return null;
+		try{
+			if (!db.query(q, false, lfn.guid.toString()))
+				return null;
+		}
+		finally{
+			db.close();
+		}
 		
 		return lfn;
 	}
@@ -617,91 +632,96 @@ public class LFNUtils {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 		
-		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
-		
-		if (!db.moveNext())
+		try{
+			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
+			
+			if (!db.moveNext())
+				return false;
+			
+			final int collectionId = db.geti(1);
+			
+			final Set<String> currentLFNs = collection.listCollection();
+	
+			final GUID guid = GUIDUtils.getGUID(collection);
+			
+			boolean updated = false;
+			
+			boolean shouldUpdateSEs = false;
+			
+			for (final LFN l: lfns){
+				if (!currentLFNs.contains(l.getCanonicalName()))
+					continue;
+				
+				if (!db.query("DELETE FROM COLLECTIONS_ELEM where collectionId=? AND origLFN=? AND guid=string2binary(?);", false, Integer.valueOf(collectionId), l.getCanonicalName(), l.guid.toString()))
+					continue;
+				
+				if (db.getUpdateCount()!=1)
+					continue;
+				
+				guid.size -= l.size;
+				updated = true;
+				
+				if (!shouldUpdateSEs){
+					final Set<PFN> whereis = l.whereisReal();
+					
+					if (whereis!=null){
+						for (final PFN p: whereis){
+							if (!guid.seStringList.contains(Integer.valueOf(p.seNumber))){
+								shouldUpdateSEs = true;
+								break;
+							}
+						}
+					}
+				}
+			}
+			
+			if (updated){
+				collection.size = guid.size;
+				
+				collection.ctime = guid.ctime = new Date();
+				
+				if (shouldUpdateSEs){
+					Set<Integer> ses = null;
+					
+					final Set<String> remainingLFNs = collection.listCollection();
+					
+					for (final String s: remainingLFNs){
+						if (ses==null || ses.size()>0){
+							final LFN l = LFNUtils.getLFN(s);
+							
+							if (l==null)
+								continue;
+							
+							final Set<PFN> whereis = l.whereisReal();
+							
+							final Set<Integer> lses = new HashSet<Integer>();
+							
+							for (final PFN pfn: whereis){
+								lses.add(Integer.valueOf(pfn.seNumber));
+							}
+							
+							if (ses!=null)
+								ses.retainAll(lses);
+							else
+								ses = lses;
+						}
+					}
+					
+					if (ses!=null)
+						guid.seStringList = ses;
+				}
+				
+				guid.update();
+				collection.update();
+				
+				return true;
+			}
+			
 			return false;
-		
-		final int collectionId = db.geti(1);
-		
-		final Set<String> currentLFNs = collection.listCollection();
-
-		final GUID guid = GUIDUtils.getGUID(collection);
-		
-		boolean updated = false;
-		
-		boolean shouldUpdateSEs = false;
-		
-		for (final LFN l: lfns){
-			if (!currentLFNs.contains(l.getCanonicalName()))
-				continue;
-			
-			if (!db.query("DELETE FROM COLLECTIONS_ELEM where collectionId=? AND origLFN=? AND guid=string2binary(?);", false, Integer.valueOf(collectionId), l.getCanonicalName(), l.guid.toString()))
-				continue;
-			
-			if (db.getUpdateCount()!=1)
-				continue;
-			
-			guid.size -= l.size;
-			updated = true;
-			
-			if (!shouldUpdateSEs){
-				final Set<PFN> whereis = l.whereisReal();
-				
-				if (whereis!=null){
-					for (final PFN p: whereis){
-						if (!guid.seStringList.contains(Integer.valueOf(p.seNumber))){
-							shouldUpdateSEs = true;
-							break;
-						}
-					}
-				}
-			}
 		}
-		
-		if (updated){
-			collection.size = guid.size;
-			
-			collection.ctime = guid.ctime = new Date();
-			
-			if (shouldUpdateSEs){
-				Set<Integer> ses = null;
-				
-				final Set<String> remainingLFNs = collection.listCollection();
-				
-				for (final String s: remainingLFNs){
-					if (ses==null || ses.size()>0){
-						final LFN l = LFNUtils.getLFN(s);
-						
-						if (l==null)
-							continue;
-						
-						final Set<PFN> whereis = l.whereisReal();
-						
-						final Set<Integer> lses = new HashSet<Integer>();
-						
-						for (final PFN pfn: whereis){
-							lses.add(Integer.valueOf(pfn.seNumber));
-						}
-						
-						if (ses!=null)
-							ses.retainAll(lses);
-						else
-							ses = lses;
-					}
-				}
-				
-				if (ses!=null)
-					guid.seStringList = ses;
-			}
-			
-			guid.update();
-			collection.update();
-			
-			return true;
+		finally{
+			db.close();
 		}
-		
-		return false;
 	}
 	
 	/**
@@ -747,71 +767,76 @@ public class LFNUtils {
 		
 		final Set<String> currentLFNs = collection.listCollection();
 		
-		db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
-		
-		if (!db.moveNext()){
-			logger.log(Level.WARNING, "Didn't find any collectionId for guid " + collection.guid.toString());
-			return false;
-		}
-		
-		final int collectionId = db.geti(1);
-		
-		final Set<LFN> toAdd = new LinkedHashSet<LFN>();
-		
-		for (final LFN lfn: lfns){
-			if (currentLFNs.contains(lfn.getCanonicalName()))
-				continue;
+		try{
+			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
 			
-			toAdd.add(lfn);
-		}
-		
-		if (toAdd.size()==0){
-			logger.log(Level.INFO, "Nothing to add to "+collection.getCanonicalName()+", all "+lfns.size()+" entries are listed already");
-			return false;
-		}
-		
-		final GUID guid = GUIDUtils.getGUID(collection);
-		
-		Set<Integer> commonSEs = guid.size==0 && guid.seStringList.size()==0 ? null : new HashSet<Integer>(guid.seStringList);
+			if (!db.moveNext()){
+				logger.log(Level.WARNING, "Didn't find any collectionId for guid " + collection.guid.toString());
+				return false;
+			}
 			
-		boolean updated = false;
-		
-		for (final LFN lfn: toAdd){
-			if (commonSEs==null || commonSEs.size()>0){
-				final Set<PFN> pfns = lfn.whereisReal();
+			final int collectionId = db.geti(1);
+			
+			final Set<LFN> toAdd = new LinkedHashSet<LFN>();
+			
+			for (final LFN lfn: lfns){
+				if (currentLFNs.contains(lfn.getCanonicalName()))
+					continue;
 				
-				final Set<Integer> ses = new HashSet<Integer>();
-		
-				for (final PFN pfn: pfns){
-					ses.add(Integer.valueOf(pfn.seNumber));
+				toAdd.add(lfn);
+			}
+			
+			if (toAdd.size()==0){
+				logger.log(Level.INFO, "Nothing to add to "+collection.getCanonicalName()+", all "+lfns.size()+" entries are listed already");
+				return false;
+			}
+			
+			final GUID guid = GUIDUtils.getGUID(collection);
+			
+			Set<Integer> commonSEs = guid.size==0 && guid.seStringList.size()==0 ? null : new HashSet<Integer>(guid.seStringList);
+				
+			boolean updated = false;
+			
+			for (final LFN lfn: toAdd){
+				if (commonSEs==null || commonSEs.size()>0){
+					final Set<PFN> pfns = lfn.whereisReal();
+					
+					final Set<Integer> ses = new HashSet<Integer>();
+			
+					for (final PFN pfn: pfns){
+						ses.add(Integer.valueOf(pfn.seNumber));
+					}
+					
+					if (commonSEs!=null)
+						commonSEs.retainAll(ses);
+					else
+						commonSEs = ses;
 				}
 				
-				if (commonSEs!=null)
-					commonSEs.retainAll(ses);
-				else
-					commonSEs = ses;
+				if (db.query("INSERT INTO COLLECTIONS_ELEM (collectionId,origLFN,guid) VALUES ("+collectionId+", '"+Format.escSQL(lfn.getCanonicalName())+"', string2binary('"+lfn.guid.toString()+"'));")){
+					guid.size += lfn.size;
+					updated = true;
+				}
 			}
 			
-			if (db.query("INSERT INTO COLLECTIONS_ELEM (collectionId,origLFN,guid) VALUES ("+collectionId+", '"+Format.escSQL(lfn.getCanonicalName())+"', string2binary('"+lfn.guid.toString()+"'));")){
-				guid.size += lfn.size;
-				updated = true;
+			if (!updated){
+				logger.log(Level.FINER, "No change to the collection");
+				return false;	// nothing changed
 			}
+			
+			if (commonSEs!=null)
+				guid.seStringList = commonSEs;
+			
+			collection.size = guid.size;
+			
+			collection.ctime = guid.ctime = new Date();
+			
+			guid.update();
+			collection.update();
 		}
-		
-		if (!updated){
-			logger.log(Level.FINER, "No change to the collection");
-			return false;	// nothing changed
+		finally{
+			db.close();
 		}
-		
-		if (commonSEs!=null)
-			guid.seStringList = commonSEs;
-		
-		collection.size = guid.size;
-		
-		collection.ctime = guid.ctime = new Date();
-		
-		guid.update();
-		collection.update();
 		
 		return true;
 	}

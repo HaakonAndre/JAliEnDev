@@ -45,29 +45,34 @@ public class OCDBPatching {
 	public static void main(String[] args) throws IOException {
 		DBFunctions db = ConfigUtils.getDB("alice_data");
 		
-		db.query("SELECT * FROM TaliprodVCDB WHERE first_run>0 and last_run=999999999 ORDER by dir_number ASC , version ASC;");
-
-		//DBFunctions db2 = ConfigUtils.getDB("alice_data");
-		
-		OCDB prev = null;
-		
 		int iCount = 0;
 		
 		PrintWriter pw = new PrintWriter(new FileWriter("ocdb.sql"));
 		
-		while (db.moveNext()){
-			OCDB ocdb = new OCDB(db);
+		try{
+			db.query("SELECT * FROM TaliprodVCDB WHERE first_run>0 and last_run=999999999 ORDER by dir_number ASC , version ASC;");
+	
+			//DBFunctions db2 = ConfigUtils.getDB("alice_data");
 			
-			if (prev!=null && prev.dir_number == ocdb.dir_number && ocdb.version > prev.version){
-				String q = "UPDATE TaliprodVCDB set last_run="+(ocdb.first_run > prev.first_run ? ocdb.first_run-1 : prev.first_run) + " WHERE file='"+Format.escSQL(prev.file)+"';"; 
+			OCDB prev = null;
+			
+			while (db.moveNext()){
+				OCDB ocdb = new OCDB(db);
 				
-				// db2.query(q);
-				pw.println(q);
+				if (prev!=null && prev.dir_number == ocdb.dir_number && ocdb.version > prev.version){
+					String q = "UPDATE TaliprodVCDB set last_run="+(ocdb.first_run > prev.first_run ? ocdb.first_run-1 : prev.first_run) + " WHERE file='"+Format.escSQL(prev.file)+"';"; 
+					
+					// db2.query(q);
+					pw.println(q);
+					
+					iCount ++;
+				}
 				
-				iCount ++;
+				prev = ocdb;
 			}
-			
-			prev = ocdb;
+		}
+		finally{
+			db.close();
 		}
 		
 		System.err.println("Changed : "+iCount);

@@ -60,21 +60,26 @@ public final class QuotaUtilities {
 						if (TaskQueueUtils.dbStructure2_20)
 							q += " inner join QUEUE_USER using(userId)";
 						
-						if (db.query(q)){
-							final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
-							
-							while (db.moveNext()){
-								final Quota quota = new Quota(db);
-					
-								if (quota.user!=null)
-									newQuotas.put(quota.user, quota);
-							}
+						try{
+							if (db.query(q)){
+								final Map<String, Quota> newQuotas = new HashMap<String, Quota>();
+								
+								while (db.moveNext()){
+									final Quota quota = new Quota(db);
 						
-							jobQuotas = Collections.unmodifiableMap(newQuotas);
-							jobQuotasLastUpdated = System.currentTimeMillis();
+									if (quota.user!=null)
+										newQuotas.put(quota.user, quota);
+								}
+							
+								jobQuotas = Collections.unmodifiableMap(newQuotas);
+								jobQuotasLastUpdated = System.currentTimeMillis();
+							}
+							else{
+								jobQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+							}
 						}
-						else{
-							jobQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+						finally{
+							db.close();
 						}
 					}
 				}
@@ -114,21 +119,26 @@ public final class QuotaUtilities {
 						
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 					
-						if (db.query("SELECT * FROM FQUOTAS;")){
-							final Map<String, FileQuota> newQuotas = new HashMap<String, FileQuota>();
-							
-							while (db.moveNext()){
-								final FileQuota fq = new FileQuota(db);
-					
-								if (fq.user!=null)
-									newQuotas.put(fq.user, fq);
-							}
+						try{
+							if (db.query("SELECT * FROM FQUOTAS;")){
+								final Map<String, FileQuota> newQuotas = new HashMap<String, FileQuota>();
+								
+								while (db.moveNext()){
+									final FileQuota fq = new FileQuota(db);
 						
-							fileQuotas = Collections.unmodifiableMap(newQuotas);
-							fileQuotasLastUpdated = System.currentTimeMillis();
+									if (fq.user!=null)
+										newQuotas.put(fq.user, fq);
+								}
+							
+								fileQuotas = Collections.unmodifiableMap(newQuotas);
+								fileQuotasLastUpdated = System.currentTimeMillis();
+							}
+							else{
+								fileQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+							}
 						}
-						else{
-							fileQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000*10;
+						finally{
+							db.close();
 						}
 					}
 				}

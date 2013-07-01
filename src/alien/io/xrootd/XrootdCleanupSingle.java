@@ -190,6 +190,8 @@ public class XrootdCleanupSingle {
 		
 		db.query("INSERT IGNORE INTO orphan_pfns (guid,se,size) VALUES (string2binary(?), ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
 		
+		db.close();
+		
 		return true;
 	}
 	

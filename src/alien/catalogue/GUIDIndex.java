@@ -132,14 +132,19 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 		if (db==null)
 			return ret;
 		
-		db.query("select seNumber, sum(size),count(1) from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING(guidId) GROUP BY seNumber;");
-		
-		while (db.moveNext()){
-			final Integer key = Integer.valueOf(db.geti(1));
+		try{
+			db.query("select seNumber, sum(size),count(1) from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING(guidId) GROUP BY seNumber;");
 			
-			final SEUsageStats se = new SEUsageStats(db.getl(2), db.getl(3));
-			
-			ret.put(key, se);
+			while (db.moveNext()){
+				final Integer key = Integer.valueOf(db.geti(1));
+				
+				final SEUsageStats se = new SEUsageStats(db.getl(2), db.getl(3));
+				
+				ret.put(key, se);
+			}
+		}
+		finally{
+			db.close();
 		}
 		
 		return ret;

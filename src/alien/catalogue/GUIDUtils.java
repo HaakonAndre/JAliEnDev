@@ -164,37 +164,42 @@ public final class GUIDUtils {
 		if (db == null)
 			return null;
 		
-		final int tableName = GUIDUtils.getTableNameForGUID(guid);
-		
-		if (tableName < 0)
-			return null;
-
-		if (monitor != null)
-			monitor.incrementCounter("GUID_db_lookup");
+		try{
+			final int tableName = GUIDUtils.getTableNameForGUID(guid);
+			
+			if (tableName < 0)
+				return null;
 	
-		if (!db.query("select G"+tableName+"L.* from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) where pfn like ?;", false, "guid:///"+guid.toString()+"?ZIP=%")){
-			throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
-		}
-
-		if (!db.moveNext()) {
-			return null;
-		}
+			if (monitor != null)
+				monitor.incrementCounter("GUID_db_lookup");
 		
-		final Set<GUID> ret = new TreeSet<GUID>();
-
-		do{
-			try{
-				ret.add(new GUID(db, host, tableName));
+			if (!db.query("select G"+tableName+"L.* from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) where pfn like ?;", false, "guid:///"+guid.toString()+"?ZIP=%")){
+				throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
 			}
-			catch (final Exception e){
-				logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
-				
-				return null;				
+	
+			if (!db.moveNext()) {
+				return null;
 			}
+			
+			final Set<GUID> ret = new TreeSet<GUID>();
+	
+			do{
+				try{
+					ret.add(new GUID(db, host, tableName));
+				}
+				catch (final Exception e){
+					logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
+					
+					return null;				
+				}
+			}
+			while (db.moveNext());
+			
+			return ret;
 		}
-		while (db.moveNext());
-		
-		return ret;		
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -220,33 +225,38 @@ public final class GUIDUtils {
 		if (db == null)
 			return null;
 		
-		final int tableName = GUIDUtils.getTableNameForGUID(guid);
-		
-		if (tableName < 0)
-			return null;
-
-		if (monitor != null)
-			monitor.incrementCounter("GUID_db_lookup");
-	
-		if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString())){
-			throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
-		}
-
-		if (!db.moveNext()) {
-			if (evenIfDoesntExist) {
-				return new GUID(guid);
-			}
-
-			return null;
-		}
-		
 		try{
-			return new GUID(db, host, tableName);
-		}
-		catch (final Exception e){
-			logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
+			final int tableName = GUIDUtils.getTableNameForGUID(guid);
 			
-			return null;
+			if (tableName < 0)
+				return null;
+	
+			if (monitor != null)
+				monitor.incrementCounter("GUID_db_lookup");
+		
+			if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString())){
+				throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
+			}
+	
+			if (!db.moveNext()) {
+				if (evenIfDoesntExist) {
+					return new GUID(guid);
+				}
+	
+				return null;
+			}
+			
+			try{
+				return new GUID(db, host, tableName);
+			}
+			catch (final Exception e){
+				logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
+				
+				return null;
+			}
+		}
+		finally{
+			db.close();
 		}
 	}
 	

@@ -51,13 +51,18 @@ public final class CatalogueUtils {
 		protected Host resolve(final Integer key) {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 			
-			if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
-				return null;
-			
-			if (db.moveNext()){
-				return new Host(db);
+			try{
+				if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
+					return null;
+				
+				if (db.moveNext()){
+					return new Host(db);
+				}
 			}
-			
+			finally{
+				db.close();
+			}
+				
 			return null;
 		}
 	};
@@ -103,9 +108,14 @@ public final class CatalogueUtils {
 	
 						if (db!=null && db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")){
 							final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
-		
-							while (db.moveNext())
-								ret.add(new GUIDIndex(db));
+
+							try{
+								while (db.moveNext())
+									ret.add(new GUIDIndex(db));
+							}
+							finally{
+								db.close();
+							}
 		
 							guidIndexCache = ret;
 		
@@ -195,12 +205,17 @@ public final class CatalogueUtils {
 							final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
 							final Set<String> newTableentries = new HashSet<String>(); 
 							
-							while (db.moveNext()) {
-								final IndexTableEntry entry = new IndexTableEntry(db);
-		
-								newIndextable.add(entry);
-								
-								newTableentries.add(db.gets("lfn"));
+							try{
+								while (db.moveNext()) {
+									final IndexTableEntry entry = new IndexTableEntry(db);
+			
+									newIndextable.add(entry);
+									
+									newTableentries.add(db.gets("lfn"));
+								}
+							}
+							finally{
+								db.close();
 							}
 							
 							indextable = newIndextable;

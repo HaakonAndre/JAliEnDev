@@ -67,10 +67,12 @@ public class TaskQueueUtils {
 			db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 		
 			dbStructure2_20 = db.geti(1) == 1;
+			
+			db.close();
 		}
 		else{
 			logger.log(Level.WARNING, "There is no direct database connection to the task queue.");
-			
+				
 			dbStructure2_20 = false;
 		}
 	}
@@ -137,16 +139,21 @@ public class TaskQueueUtils {
 		else
 			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE queueId=?";
 	
-		if (!db.query(q, false, Integer.valueOf(queueId)))
-			return null;
-		
-		monitor.addMeasurement("TQ_jobdetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
-		
-		if (!db.moveNext()){
-			return null;
+		try{
+			if (!db.query(q, false, Integer.valueOf(queueId)))
+				return null;
+			
+			monitor.addMeasurement("TQ_jobdetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+			
+			if (!db.moveNext()){
+				return null;
+			}
+			
+			return new Job(db, loadJDL);
 		}
-		
-		return new Job(db, loadJDL);
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -203,15 +210,20 @@ public class TaskQueueUtils {
 		
 		final long lQueryStart = System.currentTimeMillis();
 		
-		db.query(q);
-		
-		if (monitor!=null)
-			monitor.addMeasurement("TQ_getmasterjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
-
-		while (db.moveNext()){
-			ret.add(new Job(db, loadJDL));
+		try{
+			db.query(q);
+			
+			if (monitor!=null)
+				monitor.addMeasurement("TQ_getmasterjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+	
+			while (db.moveNext()){
+				ret.add(new Job(db, loadJDL));
+			}
 		}
-		
+		finally{
+			db.close();
+		}
+			
 		return ret;
 	}
 	
@@ -286,45 +298,50 @@ public class TaskQueueUtils {
 		else
 			q = "select split,status,count(1) from QUEUE where split in ("+sb.toString()+") AND status!='KILLED' group by split,status order by 1,2;";
 		
-		db.query(q);
-		
-		if (monitor!=null)
-			monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+		try{
+			db.query(q);
 			
-		Map<JobStatus, Integer> m = null;
-		int oldJobID = -1;
-			
-		while (db.moveNext()){
-			final int j = db.geti(1);
-			
-			if (j!=oldJobID || m==null){
-				m = new HashMap<JobStatus, Integer>();
-
-				final Integer jobId = Integer.valueOf(j);
-				ret.put(reverse.get(jobId), m);
-				reverse.remove(jobId);
+			if (monitor!=null)
+				monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart)/1000d);
 				
-				oldJobID = j;
+			Map<JobStatus, Integer> m = null;
+			int oldJobID = -1;
+				
+			while (db.moveNext()){
+				final int j = db.geti(1);
+				
+				if (j!=oldJobID || m==null){
+					m = new HashMap<JobStatus, Integer>();
+	
+					final Integer jobId = Integer.valueOf(j);
+					ret.put(reverse.get(jobId), m);
+					reverse.remove(jobId);
+					
+					oldJobID = j;
+				}
+				
+				JobStatus status;
+				
+				if (dbStructure2_20)
+					status = JobStatus.getStatusByAlien(Integer.valueOf(db.geti(2)));
+				else
+					status = JobStatus.getStatus(db.gets(2));
+				
+				m.put(status, Integer.valueOf(db.geti(3)));
 			}
 			
-			JobStatus status;
-			
-			if (dbStructure2_20)
-				status = JobStatus.getStatusByAlien(Integer.valueOf(db.geti(2)));
-			else
-				status = JobStatus.getStatus(db.gets(2));
-			
-			m.put(status, Integer.valueOf(db.geti(3)));
+			// now, what is left, something that doesn't have subjobs ?
+			for (final Job j: reverse.values()){
+				m = new HashMap<JobStatus, Integer>(1);
+				m.put(j.status(), Integer.valueOf(1));
+				ret.put(j, m);
+			}
+					
+			return ret;
 		}
-		
-		// now, what is left, something that doesn't have subjobs ?
-		for (final Job j: reverse.values()){
-			m = new HashMap<JobStatus, Integer>(1);
-			m.put(j.status(), Integer.valueOf(1));
-			ret.put(j, m);
+		finally{
+			db.close();
 		}
-				
-		return ret;
 	}
 
 	/**
@@ -372,13 +389,18 @@ public class TaskQueueUtils {
 		
 		final long lQueryStart = System.currentTimeMillis();
 
-		db.query(q, false, Integer.valueOf(queueId));
-		
-		if (monitor!=null)
-			monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
-		
-		while (db.moveNext()){
-			ret.add(new Job(db, loadJDL));
+		try{
+			db.query(q, false, Integer.valueOf(queueId));
+			
+			if (monitor!=null)
+				monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+			
+			while (db.moveNext()){
+				ret.add(new Job(db, loadJDL));
+			}
+		}
+		finally{
+			db.close();
 		}
 		
 		return ret;		
@@ -493,19 +515,24 @@ public class TaskQueueUtils {
 			q = "SELECT queueId,statusId,split,execHostId FROM QUEUE WHERE "+ where + " ORDER BY queueId ASC limit "+ lim+";";
 		else
 			q = "SELECT queueId,status,split,execHost FROM QUEUE WHERE "+ where + " ORDER BY queueId ASC limit "+ lim+";";
-					
-		if (!db.query(q))
-			return null;
-		
-		final List<Job> ret = new ArrayList<Job>();
+				
+		try{
+			if (!db.query(q))
+				return null;
+			
+			final List<Job> ret = new ArrayList<Job>();
+	
+			db.query(q);
+	
+			while (db.moveNext()){
+				ret.add(new Job(db, false));
+			}
 
-		db.query(q);
-
-		while (db.moveNext()){
-			ret.add(new Job(db, false));
+			return ret;
 		}
-
-		return ret;
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -583,56 +610,61 @@ public class TaskQueueUtils {
 		else
 			q = "SELECT status FROM QUEUE where queueId=?;";
 		
-		if (!db.query(q, false, Integer.valueOf(job))){
-			logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
-			
-			return false;
-		}
-		
-		if (!db.moveNext()){
-			logger.log(Level.FINE, "Could not find queueId "+job+" in the queue");
-			
-			return false;
-		}
-		
-		JobStatus oldStatus;
-		
-		if (dbStructure2_20)
-			oldStatus = JobStatus.getStatusByAlien(Integer.valueOf(db.geti(1)));
-		else
-			oldStatus = JobStatus.getStatus(db.gets(1));
-		
-		if (oldStatus==null){
-			logger.log(Level.WARNING, "Cannot get the status string from "+db.gets(1));
-			return false;
-		}
+		try{
+			if (!db.query(q, false, Integer.valueOf(job))){
+				logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
 				
-		if (oldStatusConstraint!=null && oldStatus!=oldStatusConstraint){
-			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Refusing to do the update of "+job+" to state "+newStatus.name()+" because old status is not "+oldStatusConstraint.name()+" but "+oldStatus.name());
+				return false;
+			}
 			
-			return false;
+			if (!db.moveNext()){
+				logger.log(Level.FINE, "Could not find queueId "+job+" in the queue");
+				
+				return false;
+			}
+			
+			JobStatus oldStatus;
+			
+			if (dbStructure2_20)
+				oldStatus = JobStatus.getStatusByAlien(Integer.valueOf(db.geti(1)));
+			else
+				oldStatus = JobStatus.getStatus(db.gets(1));
+			
+			if (oldStatus==null){
+				logger.log(Level.WARNING, "Cannot get the status string from "+db.gets(1));
+				return false;
+			}
+					
+			if (oldStatusConstraint!=null && oldStatus!=oldStatusConstraint){
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Refusing to do the update of "+job+" to state "+newStatus.name()+" because old status is not "+oldStatusConstraint.name()+" but "+oldStatus.name());
+				
+				return false;
+			}
+			
+			Object newstatus;
+			
+			if (dbStructure2_20){
+				newstatus = Integer.valueOf(newStatus.getAliEnLevel());
+				q = "UPDATE QUEUE SET statusId=? WHERE queueId=?;";
+			}
+			else{
+				newstatus = newStatus.toSQL();
+				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
+			}
+			
+			if (!db.query(q, false, newstatus, Integer.valueOf(job)))
+				return false;
+			
+			final boolean updated = db.getUpdateCount()!=0;
+	
+			putJobLog(job, "state", "Job state transition from "+oldStatus.name()+" to "+newStatus.name(), null);
+			
+			return updated;
 		}
-		
-		Object newstatus;
-		
-		if (dbStructure2_20){
-			newstatus = Integer.valueOf(newStatus.getAliEnLevel());
-			q = "UPDATE QUEUE SET statusId=? WHERE queueId=?;";
+		finally{
+			db.close();
 		}
-		else{
-			newstatus = newStatus.toSQL();
-			q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
-		}
-		
-		if (!db.query(q, false, newstatus, Integer.valueOf(job)))
-			return false;
-		
-		final boolean updated = db.getUpdateCount()!=0;
-
-		putJobLog(job, "state", "Job state transition from "+oldStatus.name()+" to "+newStatus.name(), null);
-		
-		return updated;
 	}
 	
 	/**
@@ -666,51 +698,55 @@ public class TaskQueueUtils {
 		else
 			q = "SELECT jdl FROM QUEUE WHERE queueId=?;";
 		
-		
-		if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()){
-			final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
-			
-			if (jdlArchiveDir.length()>0){
-				File f = new File(jdlArchiveDir, queueId+".txt");
+		try{
+			if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()){
+				final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
 				
-				if (f.exists() && f.canRead()){
-					String content = Utils.readFile(f.getAbsolutePath());
+				if (jdlArchiveDir.length()>0){
+					File f = new File(jdlArchiveDir, queueId+".txt");
 					
-					int idx = content.indexOf("// --------");
+					if (f.exists() && f.canRead()){
+						String content = Utils.readFile(f.getAbsolutePath());
+						
+						int idx = content.indexOf("// --------");
+						
+						if (idx>=0)
+							content = content.substring(0, idx);
+						
+						return content;
+					}
 					
-					if (idx>=0)
-						content = content.substring(0, idx);
+					f = new File(jdlArchiveDir, queueId+".html");
 					
-					return content;
+					if (f.exists() && f.canRead()){
+						String content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+						
+						int idx = content.indexOf("// --------");
+						
+						if (idx>=0)
+							content = content.substring(0, idx);
+						
+						return content;
+					}
 				}
 				
-				f = new File(jdlArchiveDir, queueId+".html");
+				logger.log(Level.WARNING, "Could not locate the archived jdl of "+queueId);
 				
-				if (f.exists() && f.canRead()){
-					String content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
-					
-					int idx = content.indexOf("// --------");
-					
-					if (idx>=0)
-						content = content.substring(0, idx);
-					
-					return content;
-				}
+				return null;
 			}
 			
-			logger.log(Level.WARNING, "Could not locate the archived jdl of "+queueId);
+			if (dbStructure2_20 && !originalJDL){
+				final String jdl = db.gets(2);
+				
+				if (jdl.length()>0)
+					return jdl;
+			}
 			
-			return null;
+			return db.gets(1);
 		}
-		
-		if (dbStructure2_20 && !originalJDL){
-			final String jdl = db.gets(2);
-			
-			if (jdl.length()>0)
-				return jdl;
+		finally{
+			db.close();
 		}
-		
-		return db.gets(1);
 	}
 	
 	
@@ -881,12 +917,17 @@ public class TaskQueueUtils {
 		
 //		System.out.println("SQL: " + q);
 					
-		if (!db.query(q))
-			return null;
-		
-		while (db.moveNext()){
-			final Job j = new Job(db, false);
-			ret.add(j);
+		try{
+			if (!db.query(q))
+				return null;
+			
+			while (db.moveNext()){
+				final Job j = new Job(db, false);
+				ret.add(j);
+			}
+		}
+		finally{
+			db.close();
 		}
 		
 		return ret;
@@ -910,37 +951,42 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_matching_histogram");
 		}
 		
-		db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site");
-		
-		while (db.moveNext()){
-			final String site = db.gets(1);
+		try{
+			db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site");
 			
-			int key = 0;
-			
-			final StringTokenizer st = new StringTokenizer(site, ",; ");
-			
-			while (st.hasMoreTokens()){
-				if (st.nextToken().length()>0)
-					key++;
+			while (db.moveNext()){
+				final String site = db.gets(1);
+				
+				int key = 0;
+				
+				final StringTokenizer st = new StringTokenizer(site, ",; ");
+				
+				while (st.hasMoreTokens()){
+					if (st.nextToken().length()>0)
+						key++;
+				}
+				
+				final int value = db.geti(2);
+				
+				final Integer iKey = Integer.valueOf(key);
+				
+				final AtomicInteger ai = work.get(iKey);
+				
+				if (ai==null)
+					work.put(iKey, new AtomicInteger(value));
+				else
+					ai.addAndGet(value);
 			}
 			
-			final int value = db.geti(2);
+			for (final Map.Entry<Integer, AtomicInteger> entry: work.entrySet()){
+				ret.put(entry.getKey(), Integer.valueOf(entry.getValue().intValue()));
+			}
 			
-			final Integer iKey = Integer.valueOf(key);
-			
-			final AtomicInteger ai = work.get(iKey);
-			
-			if (ai==null)
-				work.put(iKey, new AtomicInteger(value));
-			else
-				ai.addAndGet(value);
+			return ret;
 		}
-		
-		for (final Map.Entry<Integer, AtomicInteger> entry: work.entrySet()){
-			ret.put(entry.getKey(), Integer.valueOf(entry.getValue().intValue()));
+		finally{
+			db.close();
 		}
-		
-		return ret;
 	}
 	
 	/**
@@ -961,30 +1007,35 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_matching_jobs_summary");
 		}
 		
-		db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site order by site;");
-		
 		int addToAll = 0;
 		
-		while (db.moveNext()){
-			final String sites = db.gets(1);
-			final int count = db.geti(2);
+		try{
+			db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site order by site;");
 			
-			if (sites.length()==0)
-				addToAll = count;
-			else{
-				final StringTokenizer st = new StringTokenizer(sites,",; ");
+			while (db.moveNext()){
+				final String sites = db.gets(1);
+				final int count = db.geti(2);
 				
-				while (st.hasMoreTokens()){
-					final String site = st.nextToken().trim();
+				if (sites.length()==0)
+					addToAll = count;
+				else{
+					final StringTokenizer st = new StringTokenizer(sites,",; ");
 					
-					final AtomicInteger ai = work.get(site);
-					
-					if (ai==null)
-						work.put(site, new AtomicInteger(count));
-					else
-						ai.addAndGet(count);
+					while (st.hasMoreTokens()){
+						final String site = st.nextToken().trim();
+						
+						final AtomicInteger ai = work.get(site);
+						
+						if (ai==null)
+							work.put(site, new AtomicInteger(count));
+						else
+							ai.addAndGet(count);
+					}
 				}
 			}
+		}
+		finally{
+			db.close();
 		}
 		
 		for (final Map.Entry<String, AtomicInteger> entry: work.entrySet()){
@@ -1369,34 +1420,39 @@ public class TaskQueueUtils {
 		
 		final String insert = DBFunctions.composeInsert("QUEUE", values);
 		
-		db.setLastGeneratedKey(true);
-		
-		if (!db.query(insert))
-			throw new IOException("Could not insert the job in the queue");
-		
-		final Integer pid = db.getLastGeneratedKey();
-		
-		if (pid==null)
-			throw new IOException("Last generated key is unknown");
-		
-		db.query("INSERT INTO QUEUEPROC (queueId) VALUES (?);", false, pid);
-		
-		if (dbStructure2_20){
-			final Map<String, Object> valuesJDL = new HashMap<String, Object>();
+		try{
+			db.setLastGeneratedKey(true);
 			
-			valuesJDL.put("queueId", pid);
-			valuesJDL.put("origJdl", "\n    [\n"+j.toString()+"\n    ]");
+			if (!db.query(insert))
+				throw new IOException("Could not insert the job in the queue");
 			
-			final String insertJDL = DBFunctions.composeInsert("QUEUEJDL", valuesJDL);
+			final Integer pid = db.getLastGeneratedKey();
 			
-			db.query(insertJDL);
+			if (pid==null)
+				throw new IOException("Last generated key is unknown");
+			
+			db.query("INSERT INTO QUEUEPROC (queueId) VALUES (?);", false, pid);
+			
+			if (dbStructure2_20){
+				final Map<String, Object> valuesJDL = new HashMap<String, Object>();
+				
+				valuesJDL.put("queueId", pid);
+				valuesJDL.put("origJdl", "\n    [\n"+j.toString()+"\n    ]");
+				
+				final String insertJDL = DBFunctions.composeInsert("QUEUEJDL", valuesJDL);
+				
+				db.query(insertJDL);
+			}
+			
+			insertJobToken(pid.intValue(), owner, true);
+			
+			setAction(targetStatus);
+			
+			return pid.intValue();
 		}
-		
-		insertJobToken(pid.intValue(), owner, true);
-		
-		setAction(targetStatus);
-		
-		return pid.intValue();
+		finally{
+			db.close();
+		}
 	}
 	
 	private static final GenericLastValuesCache<String, Integer> userIdCache = new GenericLastValuesCache<String, Integer>() {
@@ -1479,22 +1535,28 @@ public class TaskQueueUtils {
 			if (db==null)
 				return null;
 			
-			db.query("SELECT commandId FROM QUEUE_COMMAND where command=?;", false, key);
-			
-			if (!db.moveNext()){
-				db.setLastGeneratedKey(true);
-				
-				if (db.query("INSERT INTO QUEUE_COMMAND (command) VALUES (?);", true, key))
-					return db.getLastGeneratedKey();
-				
-				// somebody probably has inserted the same entry concurrently
+			try{
 				db.query("SELECT commandId FROM QUEUE_COMMAND where command=?;", false, key);
 				
-				if (db.moveNext())
+				if (!db.moveNext()){
+					db.setLastGeneratedKey(true);
+					
+					if (db.query("INSERT INTO QUEUE_COMMAND (command) VALUES (?);", true, key))
+						return db.getLastGeneratedKey();
+					
+					// somebody probably has inserted the same entry concurrently
+					db.query("SELECT commandId FROM QUEUE_COMMAND where command=?;", false, key);
+					
+					if (db.moveNext())
+						return Integer.valueOf(db.geti(1));
+				}
+				else{
 					return Integer.valueOf(db.geti(1));
+				}
+				
 			}
-			else{
-				return Integer.valueOf(db.geti(1));
+			finally{
+				db.close();
 			}
 			
 			return null;
@@ -1518,22 +1580,27 @@ public class TaskQueueUtils {
 			if (db==null)
 				return null;
 			
-			db.query("SELECT hostId FROM QUEUE_HOST where host=?;", false, key);
-			
-			if (!db.moveNext()){
-				db.setLastGeneratedKey(true);
+			try{
+				db.query("SELECT hostId FROM QUEUE_HOST where host=?;", false, key);
 				
-				if (db.query("INSERT INTO QUEUE_HOST (host) VALUES (?);", true, key))
-					return db.getLastGeneratedKey();
-				
-				// somebody probably has inserted the same entry concurrently
-				db.query("SELECT hostId FROM QUEUE_HOST where host=?", false, key);
-				
-				if (db.moveNext())
+				if (!db.moveNext()){
+					db.setLastGeneratedKey(true);
+					
+					if (db.query("INSERT INTO QUEUE_HOST (host) VALUES (?);", true, key))
+						return db.getLastGeneratedKey();
+					
+					// somebody probably has inserted the same entry concurrently
+					db.query("SELECT hostId FROM QUEUE_HOST where host=?", false, key);
+					
+					if (db.moveNext())
+						return Integer.valueOf(db.geti(1));
+				}
+				else{
 					return Integer.valueOf(db.geti(1));
+				}
 			}
-			else{
-				return Integer.valueOf(db.geti(1));
+			finally{
+				db.close();
 			}
 			
 			return null;
@@ -1557,22 +1624,27 @@ public class TaskQueueUtils {
 			if (db==null)
 				return null;
 			
-			db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify=?;", false, key);
-			
-			if (!db.moveNext()){
-				db.setLastGeneratedKey(true);
-				
-				if (db.query("INSERT INTO QUEUE_NOTIFY (notify) VALUES (?);", true, key))
-					return db.getLastGeneratedKey();
-				
-				// somebody probably has inserted the same entry concurrently
+			try{
 				db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify=?;", false, key);
 				
-				if (db.moveNext())
+				if (!db.moveNext()){
+					db.setLastGeneratedKey(true);
+					
+					if (db.query("INSERT INTO QUEUE_NOTIFY (notify) VALUES (?);", true, key))
+						return db.getLastGeneratedKey();
+					
+					// somebody probably has inserted the same entry concurrently
+					db.query("SELECT notifyId FROM QUEUE_NOTIFY where notify=?;", false, key);
+					
+					if (db.moveNext())
+						return Integer.valueOf(db.geti(1));
+				}
+				else{
 					return Integer.valueOf(db.geti(1));
+				}
 			}
-			else{
-				return Integer.valueOf(db.geti(1));
+			finally{
+				db.close();
 			}
 			
 			return null;
@@ -1627,10 +1699,15 @@ public class TaskQueueUtils {
 			if (db==null)
 				return null;
 			
-			db.query("SELECT host FROM QUEUE_HOST where hostId=?;", false, key);
-			
-			if (db.moveNext()){
-				return StringFactory.get(db.gets(1));
+			try{
+				db.query("SELECT host FROM QUEUE_HOST where hostId=?;", false, key);
+				
+				if (db.moveNext()){
+					return StringFactory.get(db.gets(1));
+				}
+			}
+			finally{
+				db.close();
 			}
 			
 			return null;
@@ -1658,10 +1735,15 @@ public class TaskQueueUtils {
 			if (db==null)
 				return null;
 			
-			db.query("SELECT notify FROM QUEUE_NOTIFY where notifyId=?;", false, key);
-			
-			if (db.moveNext()){
-				return StringFactory.get(db.gets(1));
+			try{
+				db.query("SELECT notify FROM QUEUE_NOTIFY where notifyId=?;", false, key);
+				
+				if (db.moveNext()){
+					return StringFactory.get(db.gets(1));
+				}
+			}
+			finally{
+				db.close();
 			}
 			
 			return null;
@@ -1689,10 +1771,15 @@ public class TaskQueueUtils {
 			if (db==null)
 				return null;
 			
-			db.query("SELECT command FROM QUEUE_COMMAND where commandId=?", false, key);
-			
-			if (db.moveNext()){
-				return StringFactory.get(db.gets(1));
+			try{
+				db.query("SELECT command FROM QUEUE_COMMAND where commandId=?", false, key);
+				
+				if (db.moveNext()){
+					return StringFactory.get(db.gets(1));
+				}
+			}
+			finally{
+				db.close();
 			}
 			
 			return null;
@@ -2015,16 +2102,21 @@ public class TaskQueueUtils {
 
 		final String q = "SELECT * FROM jobToken WHERE jobId=?;";
 	
-		if (!db.query(q, false, Integer.valueOf(jobId)))
-			return null;
-		
-		monitor.addMeasurement("ADM_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
-		
-		if (!db.moveNext()){
-			return null;
+		try{
+			if (!db.query(q, false, Integer.valueOf(jobId)))
+				return null;
+			
+			monitor.addMeasurement("ADM_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart)/1000d);
+			
+			if (!db.moveNext()){
+				return null;
+			}
+			
+			return new JobToken(db);
 		}
-		
-		return new JobToken(db);
+		finally{
+			db.close();
+		}
 	}
 	
 	private static boolean deleteJobToken(final int queueId){
@@ -2036,17 +2128,22 @@ public class TaskQueueUtils {
 	
 		final String q = "SELECT * FROM jobToken WHERE jobId=?;";
 	
-		if (!db.query(q, false, Integer.valueOf(queueId)))
-			return false;
-				
-		if (!db.moveNext()){
-			return false;
+		try{
+			if (!db.query(q, false, Integer.valueOf(queueId)))
+				return false;
+					
+			if (!db.moveNext()){
+				return false;
+			}
+			
+			final JobToken jb =  new JobToken(db);
+			
+			if (jb.exists())
+				return jb.destroy(db);
 		}
-		
-		final JobToken jb =  new JobToken(db);
-		
-		if (jb.exists())
-			return jb.destroy(db);
+		finally{
+			db.close();
+		}
 		
 		return false;
 
@@ -2140,8 +2237,13 @@ public class TaskQueueUtils {
 		
 		final String q = "UPDATE ACTIONS SET todo=1 WHERE action=? AND todo=0;";
 	
-		if (!db.query(q, false, status.toSQL()))
-			return false;
+		try{
+			if (!db.query(q, false, status.toSQL()))
+				return false;
+		}
+		finally{
+			db.close();
+		}
 			
 		return true;
 	}
@@ -2214,10 +2316,15 @@ public class TaskQueueUtils {
 				
 		q += "GROUP BY 1 ORDER BY 1;";
 			
-		db.query(q);
-		
-		while (db.moveNext()){
-			ret.put(StringFactory.get(db.gets(1)), Integer.valueOf(db.geti(2)));
+		try{
+			db.query(q);
+			
+			while (db.moveNext()){
+				ret.put(StringFactory.get(db.gets(1)), Integer.valueOf(db.geti(2)));
+			}
+		}
+		finally{
+			db.close();
 		}
 		
 		return ret;

@@ -30,6 +30,8 @@ public class RemoveSERequirements {
 			while (db.moveNext()){
 				cleanupRequirements(db.geti(1), db.gets(2));
 			}
+			
+			db.close();
 		}
 		else{
 			for (final String arg: args){
@@ -52,6 +54,9 @@ public class RemoveSERequirements {
 					
 					if (db.moveNext())
 						cleanupRequirements(db.geti(1), db.gets(2));					
+				}
+				finally{
+					db.close();
 				}
 			}
 		}
@@ -91,13 +96,18 @@ public class RemoveSERequirements {
 		
 		final DBFunctions db = TaskQueueUtils.getQueueDB();
 		
-		final boolean ok = db.query("UPDATE QUEUE SET jdl=? WHERE queueId=? AND status='WAITING'", false, newJDL, Integer.valueOf(queueId));
-		//final boolean ok = false;
-		
-		if (ok && db.getUpdateCount()==1)
-			System.err.println(queueId+" : queue updated successfully");
-		else
-			System.err.println(queueId+" : failed to update the waiting job : queue ok="+ok+", update count="+db.getUpdateCount());
+		try{
+			final boolean ok = db.query("UPDATE QUEUE SET jdl=? WHERE queueId=? AND status='WAITING'", false, newJDL, Integer.valueOf(queueId));
+			//final boolean ok = false;
+			
+			if (ok && db.getUpdateCount()==1)
+				System.err.println(queueId+" : queue updated successfully");
+			else
+				System.err.println(queueId+" : failed to update the waiting job : queue ok="+ok+", update count="+db.getUpdateCount());
+		}
+		finally{
+			db.close();
+		}
 	}
 	
 }

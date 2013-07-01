@@ -125,18 +125,23 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		
 		final String q = "SELECT * from L"+tableName+"L WHERE guid=string2binary(?);"; 
 		
-		if (!db.query(q, false, guid.toString())){
-			return null;
-		}
-		
-		if (!db.moveNext()){
-			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Empty result set for "+q+" and "+guid);
+		try{
+			if (!db.query(q, false, guid.toString())){
+				return null;
+			}
 			
-			return null;
+			if (!db.moveNext()){
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Empty result set for "+q+" and "+guid);
+				
+				return null;
+			}
+			
+			return new LFN(db, this);
 		}
-		
-		return new LFN(db, this);
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -164,29 +169,34 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		
 		String q = "SELECT * FROM L"+tableName+"L WHERE lfn=?";
 		
-		if (!sSearch.endsWith("/")){
-			q += " OR lfn=?";
-			
-			if (!db.query(q, false, sSearch, sSearch+"/"))
-				return null;
-		}
-		else{
-			if (!db.query(q, false, sSearch))
-				return null;
-		}
-		
-		if (!db.moveNext()){
-			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Empty result set for "+q+" and "+sSearch);
-			
-			if (evenIfDoesntExist){
-				return new LFN(sSearch, this);
+		try{
+			if (!sSearch.endsWith("/")){
+				q += " OR lfn=?";
+				
+				if (!db.query(q, false, sSearch, sSearch+"/"))
+					return null;
+			}
+			else{
+				if (!db.query(q, false, sSearch))
+					return null;
 			}
 			
-			return null;
+			if (!db.moveNext()){
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Empty result set for "+q+" and "+sSearch);
+				
+				if (evenIfDoesntExist){
+					return new LFN(sSearch, this);
+				}
+				
+				return null;
+			}
+			
+			return new LFN(db, this);
 		}
-		
-		return new LFN(db, this);
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -239,13 +249,18 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		if ( (flags & LFNUtils.FIND_NO_SORT) == 0)
 			q += " ORDER BY lfn";
 		
-		if (!db.query(q))
-			return null;
-		
-		while (db.moveNext()){
-			final LFN l = new LFN(db, this);
+		try{
+			if (!db.query(q))
+				return null;
 			
-			ret.add(l);
+			while (db.moveNext()){
+				final LFN l = new LFN(db, this);
+				
+				ret.add(l);
+			}
+		}
+		finally{
+			db.close();
 		}
 		
 		return ret;
@@ -260,13 +275,18 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	public LFN getLFN(final long entryId){
 		final DBFunctions db = getDB();		
 		
-		if (!db.query("SELECT * FROM L"+tableName+"L WHERE entryId=?;", false, Long.valueOf(entryId)))
-			return null;
-		
-		if (!db.moveNext())
-			return null;
-		
-		return new LFN(db, this);
+		try{
+			if (!db.query("SELECT * FROM L"+tableName+"L WHERE entryId=?;", false, Long.valueOf(entryId)))
+				return null;
+			
+			if (!db.moveNext())
+				return null;
+			
+			return new LFN(db, this);
+		}
+		finally{
+			db.close();
+		}
 	}
 
 	@Override

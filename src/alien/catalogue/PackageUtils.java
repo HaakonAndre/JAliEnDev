@@ -45,23 +45,28 @@ public class PackageUtils {
 			
 			final String q = "SELECT DISTINCT packageVersion, packageName, username, platform, lfn FROM PACKAGES ORDER BY 3,2,1,4,5;";
 			
-			if (!db.query(q))
-				return;
-			
-			Package prev = null;
-			
-			while (db.moveNext()){
-				final Package next = new Package(db);
+			try{
+				if (!db.query(q))
+					return;
 				
-				if (prev!=null && next.equals(prev)){
-					prev.setLFN(db.gets("platform"), db.gets("lfn"));
-				}
-				else{
-					next.setLFN(db.gets("platform"), db.gets("lfn"));
-					prev = next;
+				Package prev = null;
+				
+				while (db.moveNext()){
+					final Package next = new Package(db);
 					
-					newPackages.put(next.getFullName(), next);
+					if (prev!=null && next.equals(prev)){
+						prev.setLFN(db.gets("platform"), db.gets("lfn"));
+					}
+					else{
+						next.setLFN(db.gets("platform"), db.gets("lfn"));
+						prev = next;
+						
+						newPackages.put(next.getFullName(), next);
+					}
 				}
+			}
+			finally{
+				db.close();
 			}
 			
 			lastCacheCheck = System.currentTimeMillis();

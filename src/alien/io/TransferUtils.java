@@ -57,12 +57,17 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_get_by_id");
 		}
 
-		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(id));
-
-		if (!db.moveNext())
-			return null;
-
-		return new TransferDetails(db);
+		try{
+			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(id));
+	
+			if (!db.moveNext())
+				return null;
+	
+			return new TransferDetails(db);
+		}
+		finally{
+			db.close();
+		}
 	}
 
 	/**
@@ -79,16 +84,21 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_db_lookup");
 			monitor.incrementCounter("TRANSFERS_get_by_destination");
 		}
+		
+		try{
+			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
+	
+			final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
+	
+			while (db.moveNext()) {
+				ret.add(new TransferDetails(db));
+			}
 
-		db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
-
-		final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
-
-		while (db.moveNext()) {
-			ret.add(new TransferDetails(db));
+			return ret;
 		}
-
-		return ret;
+		finally{
+			db.close();
+		}
 	}
 
 	/**
@@ -113,18 +123,23 @@ public final class TransferUtils {
 
 		q += "ORDER BY transferId";
 
-		if (username != null && username.length() > 0)
-			db.query(q, false, username);
-		else
-			db.query(q);
-
-		final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
-
-		while (db.moveNext()) {
-			ret.add(new TransferDetails(db));
+		try{
+			if (username != null && username.length() > 0)
+				db.query(q, false, username);
+			else
+				db.query(q);
+	
+			final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
+	
+			while (db.moveNext()) {
+				ret.add(new TransferDetails(db));
+			}
+	
+			return ret;
 		}
-
-		return ret;
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -213,40 +228,45 @@ public final class TransferUtils {
 		else
 			lfnToCopy = l;
 
-		db.query(PREVIOUS_TRANSFER_ID_QUERY, false, lfnToCopy.getCanonicalName(), se.seName);
-
-		if (db.moveNext())
-			return db.geti(1);
-
-		db.setLastGeneratedKey(true);
-		
-		final Map<String, Object> values = new LinkedHashMap<String, Object>();
-
-		values.put("lfn", lfnToCopy.getCanonicalName());
-		values.put("destination", se.seName);
-		values.put("size", Long.valueOf(lfnToCopy.size));
-		values.put("status", "WAITING");
-		values.put("sent", Long.valueOf(System.currentTimeMillis() / 1000));
-		values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
-		values.put("options", "ur");
-		values.put("user", lfnToCopy.owner);
-		values.put("type", "mirror");
-		values.put("agentid", Integer.valueOf(0));
-		values.put("attempts", Integer.valueOf(0));
-		
-		if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
-			values.put("remove_replica", onCompletionRemoveReplica);
+		try{
+			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, lfnToCopy.getCanonicalName(), se.seName);
+	
+			if (db.moveNext())
+				return db.geti(1);
+	
+			db.setLastGeneratedKey(true);
+			
+			final Map<String, Object> values = new LinkedHashMap<String, Object>();
+	
+			values.put("lfn", lfnToCopy.getCanonicalName());
+			values.put("destination", se.seName);
+			values.put("size", Long.valueOf(lfnToCopy.size));
+			values.put("status", "WAITING");
+			values.put("sent", Long.valueOf(System.currentTimeMillis() / 1000));
+			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
+			values.put("options", "ur");
+			values.put("user", lfnToCopy.owner);
+			values.put("type", "mirror");
+			values.put("agentid", Integer.valueOf(0));
+			values.put("attempts", Integer.valueOf(0));
+			
+			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
+				values.put("remove_replica", onCompletionRemoveReplica);
+			}
+			
+			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
+				return -4;
+	
+			final Integer i = db.getLastGeneratedKey();
+	
+			if (i == null)
+				return -5;
+	
+			return i.intValue();
 		}
-		
-		if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
-			return -4;
-
-		final Integer i = db.getLastGeneratedKey();
-
-		if (i == null)
-			return -5;
-
-		return i.intValue();
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -337,41 +357,46 @@ public final class TransferUtils {
 
 		final String sGUID = guid.guid.toString();
 
-		if (checkPreviousTransfers) {
-			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, sGUID, se.seName);
-
-			if (db.moveNext())
-				return db.geti(1);
+		try{
+			if (checkPreviousTransfers) {
+				db.query(PREVIOUS_TRANSFER_ID_QUERY, false, sGUID, se.seName);
+	
+				if (db.moveNext())
+					return db.geti(1);
+			}
+	
+			db.setLastGeneratedKey(true);
+	
+			final Map<String, Object> values = new LinkedHashMap<String, Object>();
+	
+			values.put("lfn", sGUID);
+			values.put("destination", se.seName);
+			values.put("size", Long.valueOf(guid.size));
+			values.put("status", "WAITING");
+			values.put("sent", Long.valueOf(System.currentTimeMillis() / 1000));
+			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
+			values.put("options", "ur");
+			values.put("user", guid.owner);
+			values.put("type", "mirror");
+			values.put("agentid", Integer.valueOf(0));
+			values.put("attempts", Integer.valueOf(0));
+	
+			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
+				values.put("remove_replica", onCompletionRemoveReplica);
+			}
+	
+			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
+				return -4;
+	
+			final Integer i = db.getLastGeneratedKey();
+	
+			if (i == null)
+				return -5;
+	
+			return i.intValue();
 		}
-
-		db.setLastGeneratedKey(true);
-
-		final Map<String, Object> values = new LinkedHashMap<String, Object>();
-
-		values.put("lfn", sGUID);
-		values.put("destination", se.seName);
-		values.put("size", Long.valueOf(guid.size));
-		values.put("status", "WAITING");
-		values.put("sent", Long.valueOf(System.currentTimeMillis() / 1000));
-		values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
-		values.put("options", "ur");
-		values.put("user", guid.owner);
-		values.put("type", "mirror");
-		values.put("agentid", Integer.valueOf(0));
-		values.put("attempts", Integer.valueOf(0));
-
-		if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
-			values.put("remove_replica", onCompletionRemoveReplica);
+		finally{
+			db.close();
 		}
-
-		if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
-			return -4;
-
-		final Integer i = db.getLastGeneratedKey();
-
-		if (i == null)
-			return -5;
-
-		return i.intValue();
 	}
 }

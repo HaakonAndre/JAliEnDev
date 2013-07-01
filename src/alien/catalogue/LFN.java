@@ -583,16 +583,21 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
-		db.setLastGeneratedKey(true);
-		
-		final boolean result = db.query(q);
-		
-		if (result){
-			exists = true;
-			entryId = db.getLastGeneratedKey().intValue();
+		try{
+			db.setLastGeneratedKey(true);
+			
+			final boolean result = db.query(q);
+			
+			if (result){
+				exists = true;
+				entryId = db.getLastGeneratedKey().intValue();
+			}
+			
+			return result;
 		}
-		
-		return result;
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -611,7 +616,12 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = indexTableEntry.getDB();
 		
-		return db.query(q) && db.getUpdateCount()==1;		
+		try{
+			return db.query(q) && db.getUpdateCount()==1;
+		}
+		finally{
+			db.close();
+		}
 	}
 	
 	/**
@@ -644,18 +654,23 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		boolean ok = false;
 		
-		if (db.query(q, false, Long.valueOf(entryId))){
-			exists = false;
-			entryId = 0;
-			ok = true;
-		}
-		
-		if (ok && purge && guid!=null){
-			final GUID g = GUIDUtils.getGUID(guid);
-			
-			if (g!=null){
-				g.delete(true);
+		try{
+			if (db.query(q, false, Long.valueOf(entryId))){
+				exists = false;
+				entryId = 0;
+				ok = true;
 			}
+			
+			if (ok && purge && guid!=null){
+				final GUID g = GUIDUtils.getGUID(guid);
+				
+				if (g!=null){
+					g.delete(true);
+				}
+			}
+		}
+		finally{
+			db.close();
 		}
 		
 		return ok;
@@ -699,12 +714,17 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			
 			final String q = "SELECT * FROM L"+other.tableName+"L WHERE dir=(SELECT entryId FROM L"+other.tableName+"L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 						
-			db.query(q);
-
-			while (db.moveNext()){
-				ret.add(new LFN(db, other));
+			try{
+				db.query(q);
+	
+				while (db.moveNext()){
+					ret.add(new LFN(db, other));
+				}
 			}
-			
+			finally{
+				db.close();
+			}
+				
 			return ret;
 		}
 		
@@ -712,10 +732,15 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final String q = "SELECT * FROM L"+indexTableEntry.tableName+"L WHERE dir=? AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 		
-		db.query(q, false, Long.valueOf(entryId));
-		
-		while (db.moveNext()){
-			ret.add(new LFN(db, indexTableEntry));
+		try{
+			db.query(q, false, Long.valueOf(entryId));
+			
+			while (db.moveNext()){
+				ret.add(new LFN(db, indexTableEntry));
+			}
+		}
+		finally{
+			db.close();
 		}
 				
 		return ret;
@@ -730,21 +755,26 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 		
-		if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary(?) ORDER BY 1;", false, guid.toString()))
-			return null;
-
-		final int count = db.count();
-				
-		final TreeSet<String> ret = new TreeSet<String>();
-
-		if (count<=0)
-			return new TreeSet<String>();
-
-		while (db.moveNext()){
-			ret.add(StringFactory.get(db.gets(1)));
+		try{
+			if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary(?) ORDER BY 1;", false, guid.toString()))
+				return null;
+	
+			final int count = db.count();
+					
+			final TreeSet<String> ret = new TreeSet<String>();
+	
+			if (count<=0)
+				return new TreeSet<String>();
+	
+			while (db.moveNext()){
+				ret.add(StringFactory.get(db.gets(1)));
+			}
+			
+			return ret;
 		}
-		
-		return ret;
+		finally{
+			db.close();
+		}
 	}
 	
 	/**

@@ -122,13 +122,18 @@ public class JobToken implements Comparable<JobToken> {
 	private static final String INSERT_QUERY = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES (?, ?, ?);";
 	
 	private boolean insert(final DBFunctions db){
-		if (db.query(INSERT_QUERY, false, Integer.valueOf(jobId), username, token)){
-			if (monitor != null)
-				monitor.incrementCounter("jobToken_db_insert");
-			
-			exists = true;
-					
-			return true;
+		try{
+			if (db.query(INSERT_QUERY, false, Integer.valueOf(jobId), username, token)){
+				if (monitor != null)
+					monitor.incrementCounter("jobToken_db_insert");
+				
+				exists = true;
+						
+				return true;
+			}
+		}
+		finally{
+			db.close();
 		}
 			
 		return false;
@@ -157,15 +162,20 @@ public class JobToken implements Comparable<JobToken> {
 		
 //		System.out.println("SQL "+q);
 
-		// only the token list can change
-		if (!db.query(UPDATE_QUERY, false, token, Integer.valueOf(jobId))){
-			// wrong table name or what?
-			return false;
+		try{
+			// only the token list can change
+			if (!db.query(UPDATE_QUERY, false, token, Integer.valueOf(jobId))){
+				// wrong table name or what?
+				return false;
+			}
+			
+			if (db.getUpdateCount()==0){
+				// the entry did not exist in fact, what's going on?
+				return false;
+			}
 		}
-		
-		if (db.getUpdateCount()==0){
-			// the entry did not exist in fact, what's going on?
-			return false;
+		finally{
+			db.close();
 		}
 
 		if (monitor != null)
@@ -220,12 +230,17 @@ public class JobToken implements Comparable<JobToken> {
 	 * @return success of the deletion
 	 */
 	boolean destroy(final DBFunctions db){
-		if (db.query(DESTROY_QUERY, false, Integer.valueOf(jobId), username, token)){
-			if (monitor != null)
-				monitor.incrementCounter("jobToken_db_delete");
-			
-			exists = false;
-			return true;
+		try{
+			if (db.query(DESTROY_QUERY, false, Integer.valueOf(jobId), username, token)){
+				if (monitor != null)
+					monitor.incrementCounter("jobToken_db_delete");
+				
+				exists = false;
+				return true;
+			}
+		}
+		finally{
+			db.close();
 		}
 		
 		return false;

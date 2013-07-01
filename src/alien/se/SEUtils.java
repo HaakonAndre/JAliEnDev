@@ -68,30 +68,35 @@ public final class SEUtils {
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-						if (db.query("SELECT * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
-							final Map<Integer, SE> ses = new HashMap<Integer, SE>();
-
-							while (db.moveNext()) {
-								final SE se = new SE(db);
-
-								if (se.size>=0)
-									ses.put(Integer.valueOf(se.seNumber), se);
-							}
-
-							if (ses.size()>0){
-								seCache = ses;
-								seCacheUpdated = System.currentTimeMillis();
-							}
-							else{
-								if (seCache==null)
+						try{
+							if (db.query("SELECT * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
+								final Map<Integer, SE> ses = new HashMap<Integer, SE>();
+	
+								while (db.moveNext()) {
+									final SE se = new SE(db);
+	
+									if (se.size>=0)
+										ses.put(Integer.valueOf(se.seNumber), se);
+								}
+	
+								if (ses.size()>0){
 									seCache = ses;
-								
-								// try again soon
-								seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
+									seCacheUpdated = System.currentTimeMillis();
+								}
+								else{
+									if (seCache==null)
+										seCache = ses;
+									
+									// try again soon
+									seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
+								}
+							}
+							else {
+								seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 							}
 						}
-						else {
-							seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
+						finally{
+							db.close();
 						}
 					}
 				}
@@ -207,10 +212,15 @@ public final class SEUtils {
 		if (ConfigUtils.isCentralService()){
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 	
-			if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
-				SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
-			else
-				SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+			try{
+				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
+					SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
+				else
+					SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+			}
+			finally{
+				db.close();
+			}
 			
 			updateSECache();
 			updateSEDistanceCache();
@@ -237,45 +247,50 @@ public final class SEUtils {
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-						if (db.query(SEDISTANCE_QUERY)) {
-							final Map<String, Map<Integer, Double>> newDistance = new HashMap<String, Map<Integer, Double>>();
-
-							String sOldSite = null;
-							Map<Integer, Double> oldMap = null;
-
-							while (db.moveNext()) {
-								final String sitename = db.gets(1).trim().toUpperCase();
-								final int seNumber = db.geti(2);
-								final double distance = db.getd(3);
-
-								if (!sitename.equals(sOldSite) || oldMap == null) {
-									oldMap = newDistance.get(sitename);
-
-									if (oldMap == null) {
-										oldMap = new LinkedHashMap<Integer, Double>();
-										newDistance.put(sitename, oldMap);
+						try{
+							if (db.query(SEDISTANCE_QUERY)) {
+								final Map<String, Map<Integer, Double>> newDistance = new HashMap<String, Map<Integer, Double>>();
+	
+								String sOldSite = null;
+								Map<Integer, Double> oldMap = null;
+	
+								while (db.moveNext()) {
+									final String sitename = db.gets(1).trim().toUpperCase();
+									final int seNumber = db.geti(2);
+									final double distance = db.getd(3);
+	
+									if (!sitename.equals(sOldSite) || oldMap == null) {
+										oldMap = newDistance.get(sitename);
+	
+										if (oldMap == null) {
+											oldMap = new LinkedHashMap<Integer, Double>();
+											newDistance.put(sitename, oldMap);
+										}
+	
+										sOldSite = sitename;
 									}
-
-									sOldSite = sitename;
+	
+									oldMap.put(Integer.valueOf(seNumber), Double.valueOf(distance));
 								}
-
-								oldMap.put(Integer.valueOf(seNumber), Double.valueOf(distance));
-							}
-
-							if (newDistance.size()>0){
-								seDistance = newDistance;
-								seDistanceUpdated = System.currentTimeMillis();
-							}
-							else{
-								if (seDistance==null)
+	
+								if (newDistance.size()>0){
 									seDistance = newDistance;
-								
-								//try again soon
-								seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
+									seDistanceUpdated = System.currentTimeMillis();
+								}
+								else{
+									if (seDistance==null)
+										seDistance = newDistance;
+									
+									//try again soon
+									seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
+								}
+							}
+							else {
+								seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 							}
 						}
-						else {
-							seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
+						finally{
+							db.close();
 						}
 					}
 				} finally {
@@ -659,15 +674,20 @@ public final class SEUtils {
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 		
-		for (final Map.Entry<Integer, SEUsageStats> entry: m.entrySet()){
-			db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
-			
-			final SE se = getSE(entry.getKey().intValue());
-			
-			if (se!=null){
-				se.seUsedSpace = entry.getValue().usedSpace;
-				se.seNumFiles = entry.getValue().fileCount;
+		try{
+			for (final Map.Entry<Integer, SEUsageStats> entry: m.entrySet()){
+				db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
+				
+				final SE se = getSE(entry.getKey().intValue());
+				
+				if (se!=null){
+					se.seUsedSpace = entry.getValue().usedSpace;
+					se.seNumFiles = entry.getValue().fileCount;
+				}
 			}
+		}
+		finally{
+			db.close();
 		}
 	}
 	

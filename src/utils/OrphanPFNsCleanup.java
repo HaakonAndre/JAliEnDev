@@ -73,28 +73,33 @@ public class OrphanPFNsCleanup {
 		
 		while (true){
 			if (System.currentTimeMillis() - lastCheck > 1000*60*30){
-				db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
-		
-				while (db.moveNext()){
-					final Integer se = Integer.valueOf(db.geti(1));
-					
-					final SE theSE = SEUtils.getSE(se);
-					
-					if (theSE==null){
-						System.err.println("No such SE: "+se);
-						continue;
+				try{
+					db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
+			
+					while (db.moveNext()){
+						final Integer se = Integer.valueOf(db.geti(1));
+						
+						final SE theSE = SEUtils.getSE(se);
+						
+						if (theSE==null){
+							System.err.println("No such SE: "+se);
+							continue;
+						}
+						
+						if (!SE_THREADS.containsKey(se)){
+							if (logger.isLoggable(Level.FINE))
+								logger.log(Level.FINE, "Starting SE thread for "+se+" ("+theSE.seName+")");
+							
+							final SEThread t = new SEThread(se.intValue());
+							
+							t.start();
+							
+							SE_THREADS.put(se, t);
+						}
 					}
-					
-					if (!SE_THREADS.containsKey(se)){
-						if (logger.isLoggable(Level.FINE))
-							logger.log(Level.FINE, "Starting SE thread for "+se+" ("+theSE.seName+")");
-						
-						final SEThread t = new SEThread(se.intValue());
-						
-						t.start();
-						
-						SE_THREADS.put(se, t);
-					}
+				}
+				finally{
+					db.close();
 				}
 				
 				lastCheck = System.currentTimeMillis();
@@ -142,55 +147,60 @@ public class OrphanPFNsCleanup {
 				concurrentQueryies.acquireUninterruptibly();
 				
 				try{
-					// TODO : what to do with these PFNs ? Iterate over them and release them from the catalogue nevertheless ?
-//					db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
-					
-					db.query("SELECT binary2string(guid),size,md5sum,pfn FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;", false, Integer.valueOf(seNumber));
-				}
-				finally{
-					concurrentQueryies.release();
-				}
-				
-				if (!db.moveNext()){
-					// there are no tasks for this SE now, check again sometime later
-					
-					if (logger.isLoggable(Level.FINE))
-						logger.log(Level.FINE, "No more PFNs to clean up for "+seNumber+", freeing the respective thread and executor for now");
-					
-					if (executor!=null){
-						executor.shutdown();
-				
-						EXECUTORS.remove(Integer.valueOf(seNumber));
+					try{
+						// TODO : what to do with these PFNs ? Iterate over them and release them from the catalogue nevertheless ?
+	//					db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
+						
+						db.query("SELECT binary2string(guid),size,md5sum,pfn FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC LIMIT 10000;", false, Integer.valueOf(seNumber));
+					}
+					finally{
+						concurrentQueryies.release();
 					}
 					
-					SE_THREADS.remove(Integer.valueOf(seNumber));
-
-					return;
-				}
-				
-				if (executor==null){
-					// lazy init of the thread pool
-					executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE", 16), new ThreadFactory(){
-						@Override
-						public Thread newThread(final Runnable r) {
-							final Thread t = new Thread(r);
-							t.setName("Cleanup of "+seNumber);
-							
-							return t;
+					if (!db.moveNext()){
+						// there are no tasks for this SE now, check again sometime later
+						
+						if (logger.isLoggable(Level.FINE))
+							logger.log(Level.FINE, "No more PFNs to clean up for "+seNumber+", freeing the respective thread and executor for now");
+						
+						if (executor!=null){
+							executor.shutdown();
+					
+							EXECUTORS.remove(Integer.valueOf(seNumber));
 						}
-					});
+						
+						SE_THREADS.remove(Integer.valueOf(seNumber));
+	
+						return;
+					}
 					
-					executor.setKeepAliveTime(1, TimeUnit.MINUTES);	// 1 minute activity timeout
+					if (executor==null){
+						// lazy init of the thread pool
+						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE", 16), new ThreadFactory(){
+							@Override
+							public Thread newThread(final Runnable r) {
+								final Thread t = new Thread(r);
+								t.setName("Cleanup of "+seNumber);
+								
+								return t;
+							}
+						});
+						
+						executor.setKeepAliveTime(1, TimeUnit.MINUTES);	// 1 minute activity timeout
+						
+						executor.allowCoreThreadTimeOut(true);
+						
+						EXECUTORS.put(Integer.valueOf(seNumber), executor);				
+					}
 					
-					executor.allowCoreThreadTimeOut(true);
-					
-					EXECUTORS.put(Integer.valueOf(seNumber), executor);				
+					do {
+						executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4)));
+					}
+					while (db.moveNext());
 				}
-				
-				do {
-					executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4)));
+				finally{
+					db.close();
 				}
-				while (db.moveNext());
 				
 				while (executor.getQueue().size()>0 || executor.getActiveCount()>0){
 					try{
@@ -404,6 +414,9 @@ public class OrphanPFNsCleanup {
 				finally{
 					concurrentQueryies.release();
 				}
+			}
+			finally{
+				db2.close();
 			}
 		}
 	}

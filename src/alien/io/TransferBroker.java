@@ -490,13 +490,18 @@ public class TransferBroker {
 
 			final long limit = System.currentTimeMillis() - 1000 * 60 * 60 * 24;
 
-			if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
-				if (!db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
-					logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
-					return;
+			try{
+				if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
+					if (!db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
+						logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
+						return;
+					}
 				}
 			}
-
+			finally{
+				db.close();
+			}
+	
 			final DBConnection dbc = db.getConnection();
 
 			try {
@@ -530,12 +535,12 @@ public class TransferBroker {
 	 * @param ta
 	 */
 	public static synchronized void touch(final Transfer t, final TransferAgent ta) {
+		final DBFunctions db = ConfigUtils.getDB("transfers");
+
+		if (db == null)
+			return;
+		
 		try {
-			final DBFunctions db = ConfigUtils.getDB("transfers");
-
-			if (db == null)
-				return;
-
 			if (t == null) {
 				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()),
 						Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
@@ -599,6 +604,9 @@ public class TransferBroker {
 		catch (final Throwable ex) {
 			logger.log(Level.SEVERE, "Exception updating status", ex);
 		}
+		finally{
+			db.close();
+		}
 	}
 
 	private static boolean markTransfer(final int transferId, final int exitCode, final String reason) {
@@ -607,19 +615,24 @@ public class TransferBroker {
 		if (db == null)
 			return false;
 
-		String formattedReason = reason;
-
-		if (formattedReason != null && formattedReason.length() > 250)
-			formattedReason = formattedReason.substring(0, 250);
-
-		db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=? WHERE transferId=?;", false, getTransferStatus(exitCode), formattedReason,
-				Long.valueOf(System.currentTimeMillis() / 1000), Integer.valueOf(transferId));
-
-		if (db.getUpdateCount() < 1)
-			return false;
-
-		db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId=?);", false,
-				Integer.valueOf(transferId));
+		try{
+			String formattedReason = reason;
+	
+			if (formattedReason != null && formattedReason.length() > 250)
+				formattedReason = formattedReason.substring(0, 250);
+	
+			db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=? WHERE transferId=?;", false, getTransferStatus(exitCode), formattedReason,
+					Long.valueOf(System.currentTimeMillis() / 1000), Integer.valueOf(transferId));
+	
+			if (db.getUpdateCount() < 1)
+				return false;
+	
+			db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId=?);", false,
+					Integer.valueOf(transferId));
+		}
+		finally{
+			db.close();
+		}
 
 		return true;
 	}

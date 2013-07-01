@@ -354,6 +354,8 @@ public class SE implements Serializable, Comparable<SE> {
 		
 		SE se = new SE(db);
 		
+		db.close();
+		
 		System.err.println(se);
 	}
 }

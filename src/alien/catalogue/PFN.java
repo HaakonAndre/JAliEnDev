@@ -269,12 +269,17 @@ public class PFN implements Serializable, Comparable<PFN>{
 				if (monitor!=null){
 					monitor.incrementCounter("GUID_db_lookup");
 				}
-				
-				db.query("SELECT * FROM G"+tableNumber+"L WHERE guidId=?;", false, Integer.valueOf(guidId));
-				
-				if (db.moveNext()){
-					guid = new GUID(db, host, tableNumber);
-					uuid = guid.guid;
+			
+				try{
+					db.query("SELECT * FROM G"+tableNumber+"L WHERE guidId=?;", false, Integer.valueOf(guidId));
+					
+					if (db.moveNext()){
+						guid = new GUID(db, host, tableNumber);
+						uuid = guid.guid;
+					}
+				}
+				finally{
+					db.close();
 				}
 			}
 		}
