@@ -155,6 +155,15 @@ public final class SEUtils {
 		if (seName == null || seName.length() == 0)
 			return null;
 
+		if (!ConfigUtils.isCentralService()){
+			try{
+				return Dispatcher.execute(new SEfromString(null, null, seName)).getSE();
+			}
+			catch (final ServerException se){
+				return null;
+			}
+		}
+		
 		updateSECache();
 
 		if (seCache == null)
@@ -664,6 +673,54 @@ public final class SEUtils {
 		Collections.sort(ret, c);
 
 		return ret;
+	}
+	
+	/**
+	 * Get the distance between a site and a target SE
+	 * 
+	 * @param sSite reference site
+	 * @param toSE target se, can be either a {@link SE} object, a name (as String) or a SE number (Integer), anything else will throw an exception
+	 * @param write <code>true</code> for writing, <code>false</code> for reading
+	 * @return the distance (0 = local, 1 = far away, with negative values being strongly preferred and >1 values highly demoted)
+	 */
+	public static Double getDistance(final String sSite, final Object toSE, final boolean write){
+		if (toSE == null)
+			return null;
+		
+		final SE se;
+		
+		if (toSE instanceof SE)
+			se = (SE) toSE;
+		else
+		if (toSE instanceof String)
+			se = getSE((String) toSE);
+		else
+		if (toSE instanceof Integer)
+			se = getSE((Integer) toSE);
+		else
+			throw new IllegalArgumentException("Invalid object type for the toSE parameter: "+toSE.getClass().getCanonicalName());
+		
+		if (se==null)
+			return null;
+		
+		updateSEDistanceCache();
+		
+		if (seDistance == null)
+			return null;
+		
+		final Map<Integer, Double> ranks = seDistance.get(sSite.trim().toUpperCase());
+		
+		if (ranks == null)
+			return null;
+		
+		final Double distance = ranks.get(Integer.valueOf(se.seNumber));
+		
+		if (distance == null)
+			return null;
+		
+		final double d = distance.doubleValue() + (write ? se.demoteWrite : se.demoteRead);
+		
+		return Double.valueOf(d);
 	}
 
 	/**
