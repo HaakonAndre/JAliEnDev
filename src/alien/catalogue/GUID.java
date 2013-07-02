@@ -598,6 +598,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		public CleanupThread(final HashMap<Integer, GUIDCleanup> queue, final String tableSuffix){
 			this.queue = queue;
 			this.tableSuffix = tableSuffix;
+			
+			setName("alien.catalogue.GUID.CleanupThread"+tableSuffix);
 		}
 		
 		@Override

@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -116,7 +117,15 @@ public class IOUtils {
 		return get(guid, null);
 	}
 
-	private static final ThreadPoolExecutor PARALLEL_DW_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE, 2L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+	private static final ThreadPoolExecutor PARALLEL_DW_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE, ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+		@Override
+		public Thread newThread(final Runnable r) {
+			final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
+			t.setDaemon(true);
+			
+			return t;
+		}
+	});
 
 	/**
 	 * Download the file in a specified location. The GUID should be filled with authorization tokens before calling this method.
