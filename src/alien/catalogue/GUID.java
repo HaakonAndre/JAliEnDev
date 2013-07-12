@@ -433,6 +433,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		
 		final String q = "SELECT distinct guidId, pfn, seNumber FROM G"+tableName+"L_PFN WHERE guidId=?;"; 
 
+		boolean tainted = false;
+
 		try{
 			db.query(q, false, Long.valueOf(guidId));
 			
@@ -443,12 +445,22 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				
 				pfn.setGUID(this);
 				
+				final Integer se = Integer.valueOf(pfn.seNumber);
+				
+				if (!seStringList.contains(Integer.valueOf(pfn.seNumber))){
+					seStringList.add(se);
+					tainted = true;
+				}
+				
 				pfnCache.add(pfn);
 			}
 		}
 		finally{
 			db.close();
 		}
+
+		if (tainted)
+			update();
 		
 		return pfnCache;
 	}
