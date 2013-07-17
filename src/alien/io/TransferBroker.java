@@ -142,7 +142,7 @@ public class TransferBroker {
 		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers read;");
 		executeQuery(
 				dbc,
-				"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers order by transferId asc limit 1;");
+				"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
 
 		int transferId = -1;
 		String sLFN = null;
@@ -456,12 +456,12 @@ public class TransferBroker {
 			executeQuery(dbc, "lock tables active_transfers write, TRANSFERS_DIRECT write;");
 
 			try {
-				executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 300));
+				executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 600));
 
-				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', finished=" + lastCleanedUp / 1000
+				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', attempts=attempts-1, finished=" + lastCleanedUp / 1000
 						+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
-
-				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING' WHERE status='INSERTING';");
+			
+				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=null WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
 			}
 			finally {
 				executeQuery(dbc, "unlock tables;");
@@ -488,7 +488,8 @@ public class TransferBroker {
 
 			final String archiveTableName = "TRANSFERSARCHIVE" + Calendar.getInstance().get(Calendar.YEAR);
 
-			final long limit = System.currentTimeMillis() - 1000 * 60 * 60 * 24;
+			final long limit = System.currentTimeMillis() - 1000 * 60 * 60 * 24 * 7;
+			final long limitReceived = System.currentTimeMillis() - 1000 * 60 * 60 * 24 * 30 * 2;
 
 			try{
 				if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
@@ -510,8 +511,8 @@ public class TransferBroker {
 					return;
 				}
 
-				if (executeQuery(dbc, "INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE finished<" + limit + " AND finished>0"))
-					executeQuery(dbc, "DELETE FROM TRANSFERS_DIRECT WHERE finished<" + limit + " AND finished>0");
+				if (executeQuery(dbc, "INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<"+limitReceived+");"))
+					executeQuery(dbc, "DELETE FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<"+limitReceived+");");
 			}
 			finally {
 				executeQuery(dbc, "unlock tables;");
@@ -621,7 +622,7 @@ public class TransferBroker {
 			if (formattedReason != null && formattedReason.length() > 250)
 				formattedReason = formattedReason.substring(0, 250);
 	
-			db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=? WHERE transferId=?;", false, getTransferStatus(exitCode), formattedReason,
+			db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=?, attempts=attempts-1 WHERE transferId=?;", false, getTransferStatus(exitCode), formattedReason,
 					Long.valueOf(System.currentTimeMillis() / 1000), Integer.valueOf(transferId));
 	
 			if (db.getUpdateCount() < 1)
