@@ -78,7 +78,7 @@ public class BookingTable {
 		
 		LFN check = lfn;
 		
-		if (check!=null && !check.exists ) {
+		if (!check.exists ) {
 			check = check.getParentDir();
 		}
 		
