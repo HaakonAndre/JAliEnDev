@@ -160,6 +160,18 @@ public final class TransferUtils {
 	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
 	 */
 	public static int mirror(final LFN l, final SE se,  final String onCompletionRemoveReplica) {
+		return mirror(l, se, onCompletionRemoveReplica, 3);
+	}
+	
+	/**
+	 * @param l
+	 * @param se
+	 * @param onCompletionRemoveReplica a move mirror operation, on successful transfer remove the mirror from this SE
+	 * @param maxAttempts maximum number of attempts to copy this file
+	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
+	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 */
+	public static int mirror(final LFN l, final SE se,  final String onCompletionRemoveReplica, final int maxAttempts) {
 		if (l == null || !l.exists || !l.isFile() || se == null)
 			return -1;
 
@@ -248,7 +260,7 @@ public final class TransferUtils {
 			values.put("user", lfnToCopy.owner);
 			values.put("type", "mirror");
 			values.put("agentid", Integer.valueOf(0));
-			values.put("attempts", Integer.valueOf(0));
+			values.put("attempts", Integer.valueOf(maxAttempts-1));
 			
 			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
 				values.put("remove_replica", onCompletionRemoveReplica);
