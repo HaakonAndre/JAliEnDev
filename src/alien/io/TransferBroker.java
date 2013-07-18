@@ -313,25 +313,39 @@ public class TransferBroker {
 
 			logger.log(Level.FINE, transferId + " : Target SE is " + se);
 
+			boolean replicaFound = false;
+			
 			for (final PFN pfn : pfns) {
 				if (pfn.seNumber == se.seNumber) {
 					logger.log(Level.WARNING, "There already exists a replica of '" + sLFN + "' on '" + targetSE + "' for transfer ID " + transferId);
 					replicaExists++;
+					replicaFound = true;
 					continue;
 				}
 			}
-
+			
+			if (replicaFound)
+				continue;
+			
+			int localSourceAuthFailed = 0;
+			
 			for (final PFN source : pfns) {
-				final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
-
-				if (reason != null) {
-					logger.log(Level.WARNING, "Could not obtain source authorization for transfer ID " + transferId + " : " + reason);
-					sourceAuthFailed++;
-					lastReason = reason;
-					continue;
+				if (source.ticket==null){
+					final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
+	
+					if (reason != null) {
+						logger.log(Level.WARNING, "Could not obtain source authorization for transfer ID " + transferId + " : " + reason);
+						sourceAuthFailed++;
+						localSourceAuthFailed++;
+						lastReason = reason;
+						continue;
+					}
 				}
 			}
-
+			
+			if (localSourceAuthFailed == pfns.size())
+				continue;
+			
 			final PFN target;
 
 			try {
@@ -357,12 +371,18 @@ public class TransferBroker {
 
 		if (targets.size() == 0) {
 			String message = "";
+			
+			int exitCode = Transfer.FAILED_SYSTEM;
 
 			if (targetSEsCount == 0)
 				message = "No target SE indicated";
 			else {
-				if (replicaExists > 0)
+				if (replicaExists > 0){
 					message = "There is already a replica on " + (replicaExists > 1 ? "these storages" : "this storage") + (replicaExists < targetSEsCount ? " (" + replicaExists + ")" : "");
+					
+					if (replicaExists == targetSEsCount)
+						exitCode = Transfer.OK;
+				}
 
 				if (seDoesntExist > 0) {
 					if (message.length() > 0)
@@ -386,7 +406,7 @@ public class TransferBroker {
 				}
 			}
 
-			markTransfer(transferId, Transfer.FAILED_SYSTEM, message);
+			markTransfer(transferId, exitCode, message);
 			return null;
 		}
 
