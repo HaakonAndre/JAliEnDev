@@ -622,7 +622,16 @@ public class TransferBroker {
 			if (formattedReason != null && formattedReason.length() > 250)
 				formattedReason = formattedReason.substring(0, 250);
 	
-			db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=?, attempts=attempts-1 WHERE transferId=?;", false, getTransferStatus(exitCode), formattedReason,
+			int finalExitCode = exitCode;
+			
+			if (exitCode > Transfer.OK && exitCode < Transfer.DELAYED){
+				db.query("SELECT attempts FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(transferId));
+				
+				if (db.moveNext() && db.geti(1)>0)
+					finalExitCode = Transfer.DELAYED;
+			}
+			
+			db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=?, attempts=attempts-1 WHERE transferId=?;", false, getTransferStatus(finalExitCode), formattedReason,
 					Long.valueOf(System.currentTimeMillis() / 1000), Integer.valueOf(transferId));
 	
 			if (db.getUpdateCount() < 1)
