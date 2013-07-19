@@ -481,7 +481,7 @@ public class TransferBroker {
 				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', attempts=attempts-1, finished=" + lastCleanedUp / 1000
 						+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
 			
-				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=null WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
+				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
 			}
 			finally {
 				executeQuery(dbc, "unlock tables;");
