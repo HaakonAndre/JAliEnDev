@@ -140,6 +140,7 @@ public class TransferBroker {
 
 		final DBConnection dbc = db.getConnection();
 
+		executeQuery(dbc, "SET autocommit = 0;");
 		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
 		executeQuery(
 				dbc,
@@ -184,6 +185,7 @@ public class TransferBroker {
 			// ignore
 		}
 		finally {
+			executeQuery(dbc, "commit;");
 			executeQuery(dbc, "unlock tables;");
 			executeClose();
 
@@ -480,6 +482,7 @@ public class TransferBroker {
 				return;
 
 			final DBConnection dbc = db.getConnection();
+			executeQuery(dbc, "SET autocommit = 0;");
 			executeQuery(dbc, "lock tables active_transfers write, TRANSFERS_DIRECT write;");
 
 			try {
@@ -491,6 +494,7 @@ public class TransferBroker {
 				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
 			}
 			finally {
+				executeQuery(dbc, "commit;");
 				executeQuery(dbc, "unlock tables;");
 
 				executeClose();
