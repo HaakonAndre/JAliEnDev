@@ -10,6 +10,7 @@ import java.util.logging.Logger;
 
 import lazyj.ExtProperties;
 import alien.config.ConfigUtils;
+import alien.monitoring.MonitorFactory;
 
 /**
  * @author costing
@@ -23,6 +24,10 @@ public class TransferAgent extends Thread {
 
 	private final int transferAgentID;
 
+	private final int pid = MonitorFactory.getSelfProcessID();
+	
+	private final String hostname = MonitorFactory.getSelfHostname();
+	
 	/**
 	 * 
 	 */
@@ -43,6 +48,14 @@ public class TransferAgent extends Thread {
 	 */
 	int getTransferAgentID() {
 		return transferAgentID;
+	}
+	
+	int getPID(){
+		return pid;
+	}
+	
+	String getHostName(){
+		return hostname;
 	}
 
 	private volatile Transfer work = null;
@@ -66,7 +79,7 @@ public class TransferAgent extends Thread {
 			boolean firstTimeNoWork = true;
 
 			while (!shouldStop) {
-				work = broker.getWork();
+				work = broker.getWork(this);
 
 				if (work != null) {
 					TransferBroker.touch(work, this);

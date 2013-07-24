@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.DBFunctions.DBConnection;
+import lazyj.Format;
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -121,7 +122,7 @@ public class TransferBroker {
 	/**
 	 * @return the next transfer to be performed, or <code>null</code> if there is nothing to do
 	 */
-	public synchronized Transfer getWork() {
+	public synchronized Transfer getWork(final TransferAgent agent) {
 		if (System.currentTimeMillis() - lastTimeNoWork < 1000 * 30)
 			return null;
 
@@ -148,6 +149,8 @@ public class TransferBroker {
 		String sLFN = null;
 		String targetSE = null;
 		String onDeleteRemoveReplica = null;
+		
+		touch(null, agent);
 
 		try {
 			if (resultSet != null && resultSet.next()) {
@@ -173,6 +176,8 @@ public class TransferBroker {
 			}
 
 			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + ";");
+			executeQuery(dbc, "insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES ("+System.currentTimeMillis()/1000+", "+
+					"'"+Format.escSQL(targetSE)+"', "+transferId+", "+agent.getTransferAgentID()+", "+agent.getPID()+", '"+Format.escSQL(agent.getHostName())+"');");
 		}
 		catch (final Exception e) {
 			logger.log(Level.WARNING, "Exception fetching data from the query", e);
@@ -184,7 +189,7 @@ public class TransferBroker {
 
 			dbc.free();
 		}
-
+		
 		GUID guid;
 		final LFN lfn;
 
@@ -286,6 +291,7 @@ public class TransferBroker {
 		if (pfns == null || pfns.size() == 0) {
 			logger.log(Level.WARNING, "No existing replicas to mirror for transfer ID " + transferId);
 			markTransfer(transferId, Transfer.FAILED_SYSTEM, "No replicas to mirror");
+			touch(null, agent);
 			return null;
 		}
 
@@ -407,6 +413,7 @@ public class TransferBroker {
 			}
 
 			markTransfer(transferId, exitCode, message);
+			touch(null, agent);
 			return null;
 		}
 
@@ -509,7 +516,7 @@ public class TransferBroker {
 			final String archiveTableName = "TRANSFERSARCHIVE" + Calendar.getInstance().get(Calendar.YEAR);
 
 			final long limit = System.currentTimeMillis()/1000 - 60L * 60 * 24 * 7;
-			final long limitReceived = System.currentTimeMillis()/1000 - 60 * 60 * 24 * 30 * 2;
+			final long limitReceived = System.currentTimeMillis()/1000 - 60L * 60 * 24 * 30 * 2;
 
 			try{
 				if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
@@ -564,7 +571,7 @@ public class TransferBroker {
 		try {
 			if (t == null) {
 				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()),
-						Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
+						Integer.valueOf(ta.getPID()), ta.getHostName());
 				return;
 			}
 
