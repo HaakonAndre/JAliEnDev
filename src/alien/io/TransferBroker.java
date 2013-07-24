@@ -138,20 +138,18 @@ public class TransferBroker {
 
 		cleanup();
 
+		touch(null, agent);
+		
 		final DBConnection dbc = db.getConnection();
 
 		executeQuery(dbc, "SET autocommit = 0;");
 		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
-		executeQuery(
-				dbc,
-				"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
+		executeQuery(dbc, "select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
 
 		int transferId = -1;
 		String sLFN = null;
 		String targetSE = null;
 		String onDeleteRemoveReplica = null;
-		
-		touch(null, agent);
 
 		try {
 			if (resultSet != null && resultSet.next()) {
@@ -484,7 +482,7 @@ public class TransferBroker {
 
 			final DBConnection dbc = db.getConnection();
 			executeQuery(dbc, "SET autocommit = 0;");
-			executeQuery(dbc, "lock tables active_transfers write, TRANSFERS_DIRECT write;");
+			executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
 
 			try {
 				executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 600));
