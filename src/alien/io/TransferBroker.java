@@ -187,6 +187,7 @@ public class TransferBroker {
 		finally {
 			executeQuery(dbc, "commit;");
 			executeQuery(dbc, "unlock tables;");
+			executeQuery(dbc, "SET autocommit = 1;");
 			executeClose();
 
 			dbc.free();
@@ -496,6 +497,7 @@ public class TransferBroker {
 			finally {
 				executeQuery(dbc, "commit;");
 				executeQuery(dbc, "unlock tables;");
+				executeQuery(dbc, "SET autocommit = 1;");
 
 				executeClose();
 
