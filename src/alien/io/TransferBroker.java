@@ -508,8 +508,8 @@ public class TransferBroker {
 
 			final String archiveTableName = "TRANSFERSARCHIVE" + Calendar.getInstance().get(Calendar.YEAR);
 
-			final long limit = System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 7;
-			final long limitReceived = System.currentTimeMillis() - 1000L * 60 * 60 * 24 * 30 * 2;
+			final long limit = System.currentTimeMillis()/1000 - 60L * 60 * 24 * 7;
+			final long limitReceived = System.currentTimeMillis()/1000 - 60 * 60 * 24 * 30 * 2;
 
 			try{
 				if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
