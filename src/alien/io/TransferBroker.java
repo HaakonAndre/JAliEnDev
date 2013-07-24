@@ -140,7 +140,7 @@ public class TransferBroker {
 
 		final DBConnection dbc = db.getConnection();
 
-		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers read;");
+		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
 		executeQuery(
 				dbc,
 				"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
