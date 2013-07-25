@@ -193,6 +193,9 @@ public class TransferAgent extends Thread {
 			catch (final Exception e) {
 				// ignore
 			}
+			
+			for (final TransferAgent ta : agents)
+				TransferBroker.touch(ta.work, ta);
 		}
 	}
 
