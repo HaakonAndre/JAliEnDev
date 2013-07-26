@@ -660,6 +660,10 @@ public class TaskQueueUtils {
 	
 			putJobLog(job, "state", "Job state transition from "+oldStatus.name()+" to "+newStatus.name(), null);
 			
+			if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
+				deleteJobToken(job);
+			}
+			
 			return updated;
 		}
 		finally{
@@ -1979,7 +1983,7 @@ public class TaskQueueUtils {
 
 							}
 							else
-								if (newStatus.isErrorState() || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED || newStatus == JobStatus.KILLED || newStatus == JobStatus.EXPIRED) {
+								if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
 
 									jdltags.put("spyurl", "");
 									jdltags.put("finished", time);
