@@ -1697,6 +1697,11 @@ public class TaskQueueUtils {
 		private static final long serialVersionUID = 1L;
 
 		@Override
+		protected int getMaximumSize(){
+			return 20000;
+		}
+		
+		@Override
 		protected String resolve(final Integer key) {
 			final DBFunctions db = getQueueDB();
 
