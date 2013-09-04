@@ -1727,7 +1727,7 @@ public class TaskQueueUtils {
 	 * @param hostId
 	 * @return host name for the respective hostId
 	 */
-	public static String getHost(final int hostId){
+	public static synchronized String getHost(final int hostId){
 		if (hostId<=0)
 			return null;
 		
