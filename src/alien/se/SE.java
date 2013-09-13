@@ -35,33 +35,33 @@ public class SE implements Serializable, Comparable<SE> {
 	/**
 	 * SE name
 	 */
-	public String seName;
+	public final String seName;
 
 	/**
 	 * SE number
 	 */
-	public int seNumber;
+	public final int seNumber;
 
 	/**
 	 * SE version number, if < 219, then triggers encrypted xrootd envelope
 	 * creation over boolean needsEncryptedEnvelope
 	 */
-	public int seVersion;
+	public final int seVersion;
 
 	/**
 	 * QoS associated to this storage elements
 	 */
-	public Set<String> qos;
+	public final Set<String> qos;
 
 	/**
 	 * IO daemons
 	 */
-	public String seioDaemons;
+	public final String seioDaemons;
 
 	/**
 	 * SE storage path
 	 */
-	public String seStoragePath;
+	public final String seStoragePath;
 
 	/**
 	 * SE used space
@@ -76,47 +76,69 @@ public class SE implements Serializable, Comparable<SE> {
 	/**
 	 * Minimum size
 	 */
-	public long seMinSize;
+	public final long seMinSize;
 
 	/**
 	 * SE type
 	 */
-	public String seType;
+	public final String seType;
 
 	/**
 	 * Access restricted to this users
 	 */
-	public Set<String> exclusiveUsers;
+	public final Set<String> exclusiveUsers;
 
 	/**
 	 * Exclusive write
 	 */
-	public Set<String> seExclusiveWrite;
+	public final Set<String> seExclusiveWrite;
 
 	/**
 	 * Exclusive read
 	 */
-	public Set<String> seExclusiveRead;
+	public final Set<String> seExclusiveRead;
 
 	/**
 	 * triggered by the seVersion if < 200
 	 */
-	public boolean needsEncryptedEnvelope;
+	public final boolean needsEncryptedEnvelope;
 
 	/**
 	 * Demote write factor
 	 */
-	public double demoteWrite;
+	public final double demoteWrite;
 	
 	/**
 	 * Demote read factor
 	 */
-	public double demoteRead;
+	public final double demoteRead;
 	
 	/**
 	 * Size, as declared in LDAP
 	 */
 	public long size;
+	
+	public SE(final String seName, final int seNumber, final String qos, final String seStoragePath, final String seioDaemons){
+		this.seName = seName;
+		this.seNumber = seNumber;
+		this.qos = parseArray(qos);
+		
+		this.seVersion = 0;
+		this.needsEncryptedEnvelope = true;
+	
+		this.seStoragePath = seStoragePath;
+		this.seioDaemons = seioDaemons;
+		
+		this.seNumFiles = 0;
+		this.seMinSize = 0;
+		this.demoteRead = 0;
+		this.demoteWrite = 0;
+		this.seUsedSpace = 0;
+		this.exclusiveUsers = Collections.EMPTY_SET;
+		this.seExclusiveRead = Collections.EMPTY_SET;
+		this.seExclusiveWrite = Collections.EMPTY_SET;
+		this.seType = "n/a";
+	}
 	
 	/**
 	 * @param db
@@ -129,12 +151,10 @@ public class SE implements Serializable, Comparable<SE> {
 		qos = parseArray(db.gets("seQoS"));
 
 		seVersion = db.geti("seVersion");
-
-		needsEncryptedEnvelope = (seVersion < 200);
+		
 		// TODO: remove this, when the version in the DB is working and not
 		// anymore overwritten to null
-		if ("alice::cern::setest".equals(seName.toLowerCase()))
-			needsEncryptedEnvelope = false;
+		needsEncryptedEnvelope = (seVersion < 200) && (!"alice::cern::setest".equalsIgnoreCase(seName));
 
 		seioDaemons = StringFactory.get(db.gets("seioDaemons"));
 
