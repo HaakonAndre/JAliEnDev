@@ -182,7 +182,6 @@ public final class AuthorizationFactory {
 
 		return fillAccess(defaultAccount, pfn, access);
 	}
-
 	/**
 	 * Request access to this GUID
 	 * 
@@ -193,6 +192,20 @@ public final class AuthorizationFactory {
 	 *         the access was rejected
 	 */
 	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access) {
+		return fillAccess(user, pfn, access, false);
+	}
+	
+	/**
+	 * Request access to this GUID
+	 * 
+	 * @param user
+	 * @param pfn
+	 * @param access
+	 * @param skipSanityChecks set to <code>true</code> for manual operations that would otherwise fail since the details are not consistent in the catalogue database
+	 * @return <code>null</code> if access was granted, otherwise the reason why
+	 *         the access was rejected
+	 */
+	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access, final boolean skipSanityChecks) {
 		if (logger.isLoggable(Level.FINE))
 			logger.log(Level.FINE, pfn + ", user: " + user + ", access: "
 					+ access);
@@ -226,7 +239,7 @@ public final class AuthorizationFactory {
 				}
 			}
 
-			if (pfns == null || !pfns.contains(pfn))
+			if (!skipSanityChecks && (pfns == null || !pfns.contains(pfn)))
 				return "PFN is not registered";
 		} else
 			return "Unknown access type : " + access;
