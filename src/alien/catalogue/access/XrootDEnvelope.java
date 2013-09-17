@@ -457,12 +457,12 @@ public class XrootDEnvelope implements Serializable {
 
 	private String addXURLForSpecialSEs(String lfn) {
 
-		SE se = SEUtils.getSE(pfn.seNumber);
+		final SE se = SEUtils.getSE(pfn.seNumber);
 
 		// $se =~ /dcache/i
 		// $se =~ /alice::((RAL)|(CNAF))::castor/i
 		// $se =~ /alice::RAL::castor2_test/i
-		if (se.seName.toLowerCase().contains("dcache"))
+		if (se!=null && se.seName.toLowerCase().contains("dcache"))
 			return se.seioDaemons + "/" + lfn;
 		
 		return null;
