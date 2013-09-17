@@ -191,7 +191,7 @@ public final class TransferUtils {
 			return -3;
 
 		for (final PFN p : pfns) {
-			if (p.seNumber == se.seNumber)
+			if (se.equals(p.getSE()))
 				return 0;
 		}
 
@@ -361,7 +361,7 @@ public final class TransferUtils {
 			return -3;
 
 		for (final PFN p : pfns) {
-			if (p.seNumber == se.seNumber)
+			if (se.equals(p.getSE()))
 				return 0;
 		}
 

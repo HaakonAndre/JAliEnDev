@@ -467,10 +467,12 @@ public class AlienCommandauthorize extends AlienCommand {
 				}
 				String addEnv = pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\&");
 
+				final SE se = pfn.getSE();
+				
 				// drop the following once LDAP schema is updated and version
 				// number properly on
-				if (!"alice::cern::setest".equals(SEUtils.getSE(pfn.seNumber).getName().toLowerCase())) {
-					if (SEUtils.getSE(pfn.seNumber).needsEncryptedEnvelope) {
+				if (!"alice::cern::setest".equalsIgnoreCase(se.getName())) {
+					if (se.needsEncryptedEnvelope) {
 						addEnv += "\\&oldEnvelope="
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
 						System.out.println("Creating ticket (encrypted): "

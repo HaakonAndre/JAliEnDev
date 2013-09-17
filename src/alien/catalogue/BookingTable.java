@@ -110,7 +110,7 @@ public class BookingTable {
 				
 				if (pfns!=null){
 					for (final PFN pfn: pfns)
-						if (pfn.seNumber == se.seNumber)
+						if (se.equals(pfn.getSE()))
 							throw new IOException("This GUID already has a replica in the requested SE");
 				}
 			}
@@ -140,7 +140,7 @@ public class BookingTable {
 			if (db.moveNext()){
 				// there is a previous attempt on this GUID to this SE, who is the owner?
 				if (user.canBecome(db.gets(1))){
-					final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE, se);
+					final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
 					
 					if (reason!=null)
 						throw new IOException("Access denied: "+reason);
@@ -155,7 +155,7 @@ public class BookingTable {
 				// make sure a previously queued deletion request for this file is wiped before giving out a new token
 				db.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, requestedGUID.guid.toString(), Integer.valueOf(se.seNumber));
 				
-				final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE, se);
+				final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
 				
 				if (reason!=null)
 					throw new IOException("Access denied: "+reason);
@@ -242,7 +242,7 @@ public class BookingTable {
 	
 			String w = "pfn"+eq(pfn.getPFN());
 			
-			final SE se = SEUtils.getSE(pfn.seNumber);
+			final SE se = pfn.getSE();
 			
 			if (se==null){
 				logger.log(Level.WARNING, "Not marking since there is no valid SE in this PFN: "+pfn);

@@ -212,7 +212,7 @@ public class AlienCommandwhereis extends AlienCommand {
 						+ "The file "+slfn.substring(slfn.lastIndexOf("/")+1,slfn.length())+" is in\n");
 				for (PFN pfn : pfns) {
 
-					String se = SEUtils.getSE(pfn.seNumber).seName;
+					String se = pfn.getSE().seName;
 					alrcValues.add(se);
 					if (!bL)
 						alrcValues.add(pfn.pfn);

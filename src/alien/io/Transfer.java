@@ -284,7 +284,7 @@ public class Transfer implements Serializable, Runnable {
 		if (target == null)
 			return;
 
-		final SE s = SEUtils.getSE(target.seNumber);
+		final SE s = target.getSE();
 
 		if (s == null) {
 			exitCode = FAILED_TARGET;

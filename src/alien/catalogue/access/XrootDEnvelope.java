@@ -87,22 +87,11 @@ public class XrootDEnvelope implements Serializable {
 	 * @param pfn
 	 */
 	public XrootDEnvelope(final AccessType type, final PFN pfn) {
-		this(type, pfn, null);
-	}
-	
-	/**
-	 * @param type
-	 * @param pfn
-	 * @param se
-	 */
-	public XrootDEnvelope(final AccessType type, final PFN pfn, final SE se) {
 		this.type = type;
 		this.pfn = pfn;
 		
-		final SE referenceSE = se!=null ? se : SEUtils.getSE(pfn.seNumber);
-		
-		setUnsignedEnvelope(referenceSE);
-		setUnEncryptedEnvelope(referenceSE);
+		setUnsignedEnvelope();
+		setUnEncryptedEnvelope();	
 	}
 
 	/**
@@ -283,7 +272,7 @@ public class XrootDEnvelope implements Serializable {
 	/**
 	 * set envelope
 	 */
-	private void setUnEncryptedEnvelope(final SE se) {
+	private void setUnEncryptedEnvelope() {
 
 		final String access = type.toString().replace("write", "write-once");
 
@@ -322,6 +311,8 @@ public class XrootDEnvelope implements Serializable {
 		else
 			ret += "    <lfn>/NOLFN</lfn>\n";
 
+		final SE se = pfn.getSE();
+		
 		ret += "    <size>" + refGUID.size + "</size>" + "\n" + "    <guid>"
 				+ Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n"
 				+ "    <md5>" + Format.escHtml(refGUID.md5) + "</md5>\n"
@@ -351,7 +342,7 @@ public class XrootDEnvelope implements Serializable {
 		 *
 		 */
 	public void setTransactionURL() {
-		final SE se = SEUtils.getSE(pfn.seNumber);
+		final SE se = pfn.getSE();
 
 		if (se==null){
 			if (logger.isLoggable(Level.WARNING))
@@ -399,7 +390,7 @@ public class XrootDEnvelope implements Serializable {
 	/**
 	 * set url envelope
 	 */
-	public void setUnsignedEnvelope(final SE se) {
+	public void setUnsignedEnvelope() {
 
 		setTransactionURL();
 
@@ -435,6 +426,8 @@ public class XrootDEnvelope implements Serializable {
 			e.put("md5", archiveAnchorGUID.md5);
 		}
 		
+		final SE se = pfn.getSE();
+		
 		if (se!=null){
 			if ("alice::cern::setest".equalsIgnoreCase(se.getName()))
 				e.put("se", "alice::cern::testse");
@@ -465,7 +458,7 @@ public class XrootDEnvelope implements Serializable {
 
 	private String addXURLForSpecialSEs(String lfn) {
 
-		final SE se = SEUtils.getSE(pfn.seNumber);
+		final SE se = pfn.getSE();
 
 		// $se =~ /dcache/i
 		// $se =~ /alice::((RAL)|(CNAF))::castor/i

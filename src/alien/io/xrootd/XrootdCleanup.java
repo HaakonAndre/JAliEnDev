@@ -340,7 +340,7 @@ public class XrootdCleanup {
 					boolean found = false;
 					
 					for (final PFN pfn: pfns){
-						if (pfn.seNumber == se.seNumber){
+						if (se.equals(pfn.getSE())){
 							found = true;
 							break;
 						}

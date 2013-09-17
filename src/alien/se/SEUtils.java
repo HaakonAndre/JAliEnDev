@@ -343,8 +343,8 @@ public final class SEUtils {
 				// both ranks known, the smallest rank goes higher
 				double diff = distance1.doubleValue() - distance2.doubleValue();
 
-				final SE se1 = getSE(o1.seNumber);
-				final SE se2 = getSE(o2.seNumber);
+				final SE se1 = o1.getSE();
+				final SE se2 = o2.getSE();
 				
 				if (se1!=null && se2!=null){
 					diff += write ? (se1.demoteWrite - se2.demoteWrite) : (se1.demoteRead - se2.demoteRead);
@@ -553,19 +553,19 @@ public final class SEUtils {
 	 * @return the sorted list of locations
 	 */
 	public static List<PFN> sortBySiteSpecifySEs(final Collection<PFN> pfns, final String sSite, final boolean removeBrokenSEs, final List<SE> SEs, final List<SE> exSEs, final boolean write) {
-		List<PFN> spfns = sortBySite(pfns, sSite, removeBrokenSEs, write);
+		final List<PFN> spfns = sortBySite(pfns, sSite, removeBrokenSEs, write);
 
 		if ((SEs==null || SEs.isEmpty()) && (exSEs==null || exSEs.isEmpty()))
 			return spfns;
 		
-		List<PFN> tail = new ArrayList<PFN>(spfns.size());
-		List<PFN> ret = new ArrayList<PFN>(spfns.size());
+		final List<PFN> tail = new ArrayList<PFN>(spfns.size());
+		final List<PFN> ret = new ArrayList<PFN>(spfns.size());
 		
 		for (PFN pfn : spfns) {
-			if (SEs != null && SEs.contains(SEUtils.getSE(pfn.seNumber)))
+			if (SEs != null && SEs.contains(pfn.getSE()))
 				ret.add(pfn);
 			else 
-			if (exSEs == null || !exSEs.contains(SEUtils.getSE(pfn.seNumber)))
+			if (exSEs == null || !exSEs.contains(pfn.getSE()))
 				tail.add(pfn);				
 		}
 

@@ -83,6 +83,8 @@ public class PFN implements Serializable, Comparable<PFN>{
 	
 	private final int hashCode;
 	
+	private transient SE overrideSE = null;
+	
 	/**
 	 * @param db
 	 * @param host
@@ -131,6 +133,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.guidId = guid.guidId;
 		this.pfn = se.generatePFN(guid);
 		this.seNumber = se.seNumber;
+		this.overrideSE = se;
 		this.host = guid.host;
 		this.tableNumber = guid.tableName;
 		this.hashCode = this.pfn!=null ? this.pfn.hashCode() : guid.hashCode();
@@ -147,6 +150,7 @@ public class PFN implements Serializable, Comparable<PFN>{
 		this.guidId = guid.guidId;
 		this.pfn = pfn;
 		this.seNumber = se.seNumber;
+		this.overrideSE = se;
 		this.host = guid.host;
 		this.tableNumber = guid.tableName;
 		this.hashCode = this.pfn.hashCode();
@@ -318,4 +322,16 @@ public class PFN implements Serializable, Comparable<PFN>{
 		return null;
 	}
 	
+	public void setOverrideSE(final SE se){
+		this.overrideSE = se;
+	}
+	
+	public SE getSE(){
+		if (this.overrideSE!=null)
+			return this.overrideSE;
+		
+		overrideSE = SEUtils.getSE(seNumber);
+		
+		return overrideSE;
+	}
 }

@@ -629,7 +629,7 @@ public class Xrootd extends Protocol {
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
 
-		final SE se = SEUtils.getSE(pfn.seNumber);
+		final SE se = pfn.getSE();
 		
 		final int[] statRetryTimes = se.seName.toLowerCase().contains("dcache") ? statRetryTimesDCache : statRetryTimesXrootd;
 		

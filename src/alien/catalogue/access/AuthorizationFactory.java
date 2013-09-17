@@ -22,7 +22,6 @@ import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
-import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.UserFactory;
@@ -181,20 +180,7 @@ public final class AuthorizationFactory {
 		if (defaultAccount == null)
 			return "There is no default account set";
 
-		return fillAccess(defaultAccount, pfn, access, null);
-	}
-	
-	/**
-	 * Request access to this GUID
-	 * 
-	 * @param user
-	 * @param pfn
-	 * @param access
-	 * @return <code>null</code> if access was granted, otherwise the reason why
-	 *         the access was rejected
-	 */
-	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access){
-		return fillAccess(user, pfn, access, null); 
+		return fillAccess(defaultAccount, pfn, access);
 	}
 
 	/**
@@ -203,11 +189,10 @@ public final class AuthorizationFactory {
 	 * @param user
 	 * @param pfn
 	 * @param access
-	 * @param se
 	 * @return <code>null</code> if access was granted, otherwise the reason why
 	 *         the access was rejected
 	 */
-	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access, final SE se) {
+	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access) {
 		if (logger.isLoggable(Level.FINE))
 			logger.log(Level.FINE, pfn + ", user: " + user + ", access: "
 					+ access);
@@ -246,9 +231,9 @@ public final class AuthorizationFactory {
 		} else
 			return "Unknown access type : " + access;
 
-		final SE referenceSE = se!=null ? se : SEUtils.getSE(pfn.seNumber);
+		final SE referenceSE = pfn.getSE();
 		
-		final XrootDEnvelope env = new XrootDEnvelope(access, pfn, referenceSE);
+		final XrootDEnvelope env = new XrootDEnvelope(access, pfn);
 		
 		try {
 			XrootDEnvelopeSigner.signEnvelope(env);

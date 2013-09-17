@@ -295,6 +295,9 @@ public class SE implements Serializable, Comparable<SE> {
 
 	@Override
 	public boolean equals(final Object obj) {
+		if (obj==null)
+			return false;
+		
 		if (!(obj instanceof SE))
 			return false;
 

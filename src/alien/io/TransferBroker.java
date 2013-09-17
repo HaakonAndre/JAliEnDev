@@ -323,7 +323,7 @@ public class TransferBroker {
 			boolean replicaFound = false;
 			
 			for (final PFN pfn : pfns) {
-				if (pfn.seNumber == se.seNumber) {
+				if (se.equals(pfn.getSE())) {
 					logger.log(Level.WARNING, "There already exists a replica of '" + sLFN + "' on '" + targetSE + "' for transfer ID " + transferId);
 					replicaExists++;
 					replicaFound = true;
@@ -584,7 +584,7 @@ public class TransferBroker {
 			String seList = "";
 
 			for (final PFN pfn : t.targets) {
-				final SE targetSE = SEUtils.getSE(pfn.seNumber);
+				final SE targetSE = pfn.getSE();
 
 				if (targetSE != null) {
 					if (seList.length() > 0)
@@ -730,7 +730,7 @@ public class TransferBroker {
 			String seList = "";
 
 			for (final PFN target : t.targets) {
-				final SE targetSE = SEUtils.getSE(target.seNumber);
+				final SE targetSE = target.getSE();
 				if (targetSE != null) {
 					if (seList.length() > 0)
 						seList += ",";
