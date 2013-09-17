@@ -87,10 +87,22 @@ public class XrootDEnvelope implements Serializable {
 	 * @param pfn
 	 */
 	public XrootDEnvelope(final AccessType type, final PFN pfn) {
+		this(type, pfn, null);
+	}
+	
+	/**
+	 * @param type
+	 * @param pfn
+	 * @param se
+	 */
+	public XrootDEnvelope(final AccessType type, final PFN pfn, final SE se) {
 		this.type = type;
 		this.pfn = pfn;
-		setUnsignedEnvelope();
-		setUnEncryptedEnvelope();
+		
+		final SE referenceSE = se!=null ? se : SEUtils.getSE(pfn.seNumber);
+		
+		setUnsignedEnvelope(referenceSE);
+		setUnEncryptedEnvelope(referenceSE);
 	}
 
 	/**
@@ -271,13 +283,11 @@ public class XrootDEnvelope implements Serializable {
 	/**
 	 * set envelope
 	 */
-	public void setUnEncryptedEnvelope() {
+	private void setUnEncryptedEnvelope(final SE se) {
 
 		final String access = type.toString().replace("write", "write-once");
 
 		String sPFN = pfn.getPFN();
-
-		final SE se = SEUtils.getSE(pfn.seNumber);
 
 		int idx = sPFN.indexOf("//");
 		
@@ -316,7 +326,7 @@ public class XrootDEnvelope implements Serializable {
 				+ Format.escHtml(refGUID.getName().toUpperCase()) + "</guid>\n"
 				+ "    <md5>" + Format.escHtml(refGUID.md5) + "</md5>\n"
 				+ "    <pfn>" + Format.escHtml(sPFN) + "</pfn>\n" + "    <se>"
-				+ Format.escHtml(se.getName()) + "</se>\n"
+				+ Format.escHtml(se!=null ? se.getName() : "VO::UNKNOWN::SE") + "</se>\n"
 				+ "  </file>\n</authz>\n";
 
 		unEncryptedEnvelope = ret;
@@ -389,16 +399,14 @@ public class XrootDEnvelope implements Serializable {
 	/**
 	 * set url envelope
 	 */
-	public void setUnsignedEnvelope() {
+	public void setUnsignedEnvelope(final SE se) {
 
 		setTransactionURL();
 
 		final GUID guid = pfn.getGuid();
 
 		final Set<LFN> lfns = guid.getLFNs();
-
-		final SE se = SEUtils.getSE(pfn.seNumber);
-
+		
 		HashMap<String, String> e = new HashMap<String, String>(8);
 
 		e.put("turl", pfn.getPFN());

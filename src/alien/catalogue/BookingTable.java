@@ -140,7 +140,7 @@ public class BookingTable {
 			if (db.moveNext()){
 				// there is a previous attempt on this GUID to this SE, who is the owner?
 				if (user.canBecome(db.gets(1))){
-					final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
+					final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE, se);
 					
 					if (reason!=null)
 						throw new IOException("Access denied: "+reason);
@@ -155,7 +155,7 @@ public class BookingTable {
 				// make sure a previously queued deletion request for this file is wiped before giving out a new token
 				db.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, requestedGUID.guid.toString(), Integer.valueOf(se.seNumber));
 				
-				final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
+				final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE, se);
 				
 				if (reason!=null)
 					throw new IOException("Access denied: "+reason);

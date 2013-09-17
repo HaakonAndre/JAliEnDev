@@ -170,7 +170,7 @@ public final class AuthorizationFactory {
 	}
 
 	/**
-	 * Request access to this GUID, with the priviledges of the default account
+	 * Request access to this GUID, with the privileges of the default account
 	 * 
 	 * @param pfn
 	 * @param access
@@ -181,9 +181,9 @@ public final class AuthorizationFactory {
 		if (defaultAccount == null)
 			return "There is no default account set";
 
-		return fillAccess(defaultAccount, pfn, access);
+		return fillAccess(defaultAccount, pfn, access, null);
 	}
-
+	
 	/**
 	 * Request access to this GUID
 	 * 
@@ -193,9 +193,21 @@ public final class AuthorizationFactory {
 	 * @return <code>null</code> if access was granted, otherwise the reason why
 	 *         the access was rejected
 	 */
-	public static String fillAccess(final AliEnPrincipal user, final PFN pfn,
-			final AccessType access) {
+	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access){
+		return fillAccess(user, pfn, access, null); 
+	}
 
+	/**
+	 * Request access to this GUID
+	 * 
+	 * @param user
+	 * @param pfn
+	 * @param access
+	 * @param se
+	 * @return <code>null</code> if access was granted, otherwise the reason why
+	 *         the access was rejected
+	 */
+	public static String fillAccess(final AliEnPrincipal user, final PFN pfn, final AccessType access, final SE se) {
 		if (logger.isLoggable(Level.FINE))
 			logger.log(Level.FINE, pfn + ", user: " + user + ", access: "
 					+ access);
@@ -211,9 +223,10 @@ public final class AuthorizationFactory {
 			// PFN must not be part of the ones already registered to the GUID
 
 			if (!AuthorizationChecker.canWrite(guid, user))
-				return "User ("+user+") is not allowed to write this entry: "+guid;
-			
-			if (pfns!=null && pfns.contains(pfn))
+				return "User (" + user
+						+ ") is not allowed to write this entry: " + guid;
+
+			if (pfns != null && pfns.contains(pfn))
 				return "PFN already associated to the GUID";
 		} else if (access == AccessType.DELETE || access == AccessType.READ) {
 			// PFN must be a part of the ones registered to the GUID
@@ -228,27 +241,26 @@ public final class AuthorizationFactory {
 				}
 			}
 
-			if (pfns==null || !pfns.contains(pfn))
+			if (pfns == null || !pfns.contains(pfn))
 				return "PFN is not registered";
 		} else
 			return "Unknown access type : " + access;
 
-		XrootDEnvelope env = null;
-			env = new XrootDEnvelope(access, pfn);
-
-			try {			
-				XrootDEnvelopeSigner.signEnvelope(env);
-				if (pfn.getPFN().startsWith("root://")) {
-					final SE se = SEUtils.getSE(pfn.seNumber);
-					if (se != null && se.needsEncryptedEnvelope) {
-						// System.out.println("SE needs encrypted envelope");
-						XrootDEnvelopeSigner.encryptEnvelope(env);
-					}
+		final SE referenceSE = se!=null ? se : SEUtils.getSE(pfn.seNumber);
+		
+		final XrootDEnvelope env = new XrootDEnvelope(access, pfn, referenceSE);
+		
+		try {
+			XrootDEnvelopeSigner.signEnvelope(env);
+			if (pfn.getPFN().startsWith("root://")) {
+				if (referenceSE != null && referenceSE.needsEncryptedEnvelope) {
+					// System.out.println("SE needs encrypted envelope");
+					XrootDEnvelopeSigner.encryptEnvelope(env);
 				}
-			} catch (GeneralSecurityException gse) {
-				logger.log(Level.SEVERE, "Cannot sign and encrypt envelope",
-						gse);
 			}
+		} catch (GeneralSecurityException gse) {
+			logger.log(Level.SEVERE, "Cannot sign and encrypt envelope", gse);
+		}
 
 		pfn.ticket = new AccessTicket(access, env);
 

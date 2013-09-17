@@ -397,10 +397,8 @@ public class AlienCommandauthorize extends AlienCommand {
 
 				for (PFN pfn : pfns) {
 					System.err.println(pfn);
-					System.out.println("Asking read for " + effectiveUser.getName()
-							+ " to " + pfn.getPFN());
-					String reason = AuthorizationFactory.fillAccess(effectiveUser, pfn,
-							AccessType.READ);
+					System.out.println("Asking read for " + effectiveUser.getName() + " to " + pfn.getPFN());
+					String reason = AuthorizationFactory.fillAccess(effectiveUser, pfn, AccessType.READ);
 
 					if (reason != null) {
 						System.err.println("Access refused because: " + reason);
@@ -419,9 +417,7 @@ public class AlienCommandauthorize extends AlienCommand {
 						}
 
 						for (PFN apfn : apfns) {
-
-							reason = AuthorizationFactory.fillAccess(effectiveUser,
-									apfn, AccessType.READ);
+							reason = AuthorizationFactory.fillAccess(effectiveUser, apfn, AccessType.READ);
 
 							if (reason != null) {
 								System.err.println("Access refused because: "
