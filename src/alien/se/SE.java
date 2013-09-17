@@ -270,6 +270,24 @@ public class SE implements Serializable, Comparable<SE> {
 		return Collections.unmodifiableSet(ret);
 	}
 
+	/**
+	 * Convert one of the sets to the database representation of it, a comma-separated list of elements
+	 * 
+	 * @param set
+	 * @return
+	 */
+	public static String toArrayString(final Set<String> set){
+		if (set==null)
+			return null;
+		
+		final StringBuilder sb = new StringBuilder(",");
+		
+		for (final String s: set)
+			sb.append(s).append(',');
+		
+		return sb.toString();
+	}
+	
 	@Override
 	public int compareTo(final SE o) {
 		return seName.compareToIgnoreCase(o.seName);
