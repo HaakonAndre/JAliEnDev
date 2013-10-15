@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
-import lia.util.StringFactory;
 import alien.config.ConfigUtils;
 
 /**
@@ -58,7 +57,7 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex>{
 		hostIndex = db.geti("hostIndex");
 		tableName = db.geti("tableName");
 		
-		final String s = StringFactory.get(db.gets("guidTime"));
+		final String s = db.gets("guidTime");
 		
 		if (s.length()>=8)
 			guidTime = Long.parseLong(s.substring(0,8), 16);
