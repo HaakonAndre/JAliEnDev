@@ -280,17 +280,9 @@ public final class GUIDUtils {
 	
 	private static long lastTimestamp = System.nanoTime() / 100 + 122192928000000000L;
 	
-	/**
-	 * @return a new time-based (version 1) UUID
-	 */
+	private static long lastTimestamp2 = System.nanoTime() / 100 + 122192928000000000L;
+	
 	public static synchronized UUID generateTimeUUID(){
-		final byte[] contents = new byte[16];
-		
-		final byte[] mac = getMac();
-		
-		for (int i=0; i<6; i++)
-			contents[10+i] = mac[i];
-		
 		final long time = System.currentTimeMillis() * 10000 + 122192928000000000L;
 		
 		if (time <= lastTimestamp){
@@ -301,6 +293,36 @@ public final class GUIDUtils {
 		}
 		
 		lastTimestamp = time;
+
+		return generateTimeUUIDWork(time);
+	}
+	
+	public static synchronized UUID generateTimeUUID(final long referenceTime){
+		final long time = referenceTime * 10000 + 122192928000000000L;
+		
+		if (time <= lastTimestamp2 || time <= lastTimestamp){
+			clockSequence ++;
+			
+			if (clockSequence>=65535)
+				clockSequence = 0;
+		}
+		
+		lastTimestamp2 = time;
+
+		return generateTimeUUIDWork(time);
+	}
+	
+	/**
+	 * @return a new time-based (version 1) UUID
+	 */
+	private static UUID generateTimeUUIDWork(final long time){
+		final byte[] contents = new byte[16];
+		
+		final byte[] mac = getMac();
+		
+		for (int i=0; i<6; i++)
+			contents[10+i] = mac[i];
+		
 		
 		final int timeHi = (int) (time >>> 32);
 		final int timeLo = (int) time;
