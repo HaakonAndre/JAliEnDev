@@ -116,7 +116,7 @@ public class OrphanPFNsCleanup {
 			final long size = reclaimedSize.getAndSet(0);
 			
 			if (count>0)
-				db.query("UPDATE orphan_pfns_status SET status_value=status_value+1 WHERE status_key='reclaimedc';");
+				db.query("UPDATE orphan_pfns_status SET status_value=status_value+"+count+" WHERE status_key='reclaimedc';");
 			
 			if (size>0)
 				db.query("UPDATE orphan_pfns_status SET status_value=status_value+"+size+" WHERE status_key='reclaimedb';");
