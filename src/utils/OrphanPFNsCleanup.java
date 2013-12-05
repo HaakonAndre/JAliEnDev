@@ -176,7 +176,10 @@ public class OrphanPFNsCleanup {
 					
 					if (executor==null){
 						// lazy init of the thread pool
-						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE", 16), new ThreadFactory(){
+						int threadsPerSE = ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE", 16);
+						threadsPerSE = ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE."+seNumber, threadsPerSE);
+						
+						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsPerSE, new ThreadFactory(){
 							@Override
 							public Thread newThread(final Runnable r) {
 								final Thread t = new Thread(r);
