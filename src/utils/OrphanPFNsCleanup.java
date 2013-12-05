@@ -61,7 +61,7 @@ public class OrphanPFNsCleanup {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		AppConfig.getProperty("lia.Monitor.group");	// initialize it
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
@@ -87,8 +87,8 @@ public class OrphanPFNsCleanup {
 						}
 						
 						if (!SE_THREADS.containsKey(se)){
-							if (logger.isLoggable(Level.FINE))
-								logger.log(Level.FINE, "Starting SE thread for "+se+" ("+theSE.seName+")");
+							if (logger.isLoggable(Level.INFO))
+								logger.log(Level.INFO, "Starting SE thread for "+se+" ("+theSE.seName+")");
 							
 							final SEThread t = new SEThread(se.intValue());
 							
