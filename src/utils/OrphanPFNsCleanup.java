@@ -327,7 +327,16 @@ public class OrphanPFNsCleanup {
 				return;
 			}
 			
-			final XrootDEnvelope env = new XrootDEnvelope(AccessType.DELETE, pfn);
+			concurrentQueryies.acquireUninterruptibly();
+			
+			final XrootDEnvelope env;
+			
+			try{
+				env = new XrootDEnvelope(AccessType.DELETE, pfn);
+			}
+			finally{
+				concurrentQueryies.release();
+			}
 			
 			try {
 				if (se.needsEncryptedEnvelope){
