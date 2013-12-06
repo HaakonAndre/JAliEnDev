@@ -3,7 +3,9 @@ package alien.io.xrootd;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -391,6 +393,7 @@ public class XrootdCleanup {
 		parser.accepts("n", "Do not take any action (dry run)");
 		parser.accepts("?", "Print this help");
 		parser.accepts("t").withRequiredArg().describedAs("Parallel threads, default "+XROOTD_THREADS_DEFAULT).ofType(Integer.class);
+		parser.accepts("a", "Run on all known SEs");
 		
 		final OptionSet options = parser.parse(args);
 		
@@ -410,9 +413,22 @@ public class XrootdCleanup {
 		if (options.has("t") && options.hasArgument("t"))
 			threads = ((Integer) options.valueOf("t")).intValue();
 		
-		System.err.println("Parallel threads : "+threads);
+		System.err.println("Parallel threads per SE : "+threads);
 		
-		for (String se: options.nonOptionArguments()){
+		Collection<String> ses;
+		
+		if (options.has("a")){
+			ses = new LinkedList<String>();
+			
+			for (final SE se: SEUtils.getSEs(null)){
+				ses.add(se.getName());
+			}
+		}
+		else{
+			ses = options.nonOptionArguments();
+		}
+		
+		for (final String se: ses){
 			final XrootdCleanup cleanup = new XrootdCleanup(se, dryRun, threads);
 			System.err.println(cleanup+", took "+Format.toInterval(System.currentTimeMillis() - lStart));
 		}

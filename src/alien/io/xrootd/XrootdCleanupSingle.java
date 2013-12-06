@@ -1,6 +1,8 @@
 package alien.io.xrootd;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,7 +14,6 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import lazyj.DBFunctions;
 import lazyj.Format;
-
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
@@ -211,6 +212,7 @@ public class XrootdCleanupSingle {
 		final OptionParser parser = new OptionParser();
 		
 		parser.accepts("?", "Print this help");
+		parser.accepts("a", "Run on all known SEs");
 		
 		final OptionSet options = parser.parse(args);
 		
@@ -218,10 +220,23 @@ public class XrootdCleanupSingle {
 			parser.printHelpOn(System.out);
 			return;
 		}
+		
+		Collection<String> ses;
+		
+		if (options.has("a")){
+			ses = new LinkedList<String>();
 			
+			for (final SE se: SEUtils.getSEs(null)){
+				ses.add(se.getName());
+			}
+		}
+		else{
+			ses = options.nonOptionArguments();
+		}
+		
 		final long lStart = System.currentTimeMillis();
 		
-		for (final String se: options.nonOptionArguments()){
+		for (final String se: ses){
 			new Thread(){
 				@Override
 				public void run() {
