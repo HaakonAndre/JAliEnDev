@@ -216,7 +216,7 @@ public class XrootdCleanupSingle {
 		
 		final OptionSet options = parser.parse(args);
 		
-		if (options.nonOptionArguments().size()==0 || options.has("?")){
+		if ((options.nonOptionArguments().size()==0 && !options.has("a")) || options.has("?")){
 			parser.printHelpOn(System.out);
 			return;
 		}
