@@ -185,7 +185,7 @@ public class XrootdCleanupSingle {
 		else
 			return false;
 
-		System.err.println("RM "+uuid+" FROM "+se.seName);
+		System.err.println("RM "+uuid+" FROM "+se.seName+", "+file.size+" ("+Format.size(file.size)+"), "+file.date);
 		
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 		
