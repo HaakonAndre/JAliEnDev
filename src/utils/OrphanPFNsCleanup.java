@@ -72,7 +72,7 @@ public class OrphanPFNsCleanup {
 		long lastCheck = 0;
 		
 		while (true){
-			if (System.currentTimeMillis() - lastCheck > 1000*60*30){
+			if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60*2) *1000*60){
 				try{
 					db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
 			
@@ -108,7 +108,7 @@ public class OrphanPFNsCleanup {
 			try{
 				Thread.sleep(1000*5);
 			}
-			catch (InterruptedException ie){
+			catch (final InterruptedException ie){
 				// ignore
 			}
 			
