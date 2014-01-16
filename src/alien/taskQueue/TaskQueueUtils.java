@@ -1448,7 +1448,8 @@ public class TaskQueueUtils {
 				db.query(insertJDL);
 			}
 			
-			insertJobToken(pid.intValue(), owner, true);
+			// the JobBroker will insert a token when it dispatches the job to somebody, don't insert anything at this stage
+			//insertJobToken(pid.intValue(), owner, true);
 			
 			setAction(targetStatus);
 			
