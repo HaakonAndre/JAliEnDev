@@ -78,23 +78,28 @@ public class JobToken implements Comparable<JobToken> {
 		
 		this.exists = false;
 	}
+	
+	private static final Random ran = new Random(System.nanoTime());
+	
+	/**
+	 * @return a new, hopefully unique, job token
+	 */
+	public static synchronized String generateToken(){
+		final char[] tok = new char[32];
 
+		for (int i = 0; i < 32; i++)
+			tok[i] = tokenStreet[ran.nextInt(tokenStreet.length)];
+
+		return new String(tok);
+	}
+	
 	/**
 	 * Create a 32 chars long token (job token)
 	 * @param db 
 	 */
 	public void spawnToken(final DBFunctions db) {
-		final char[] tok = new char[32];
-
-		final Random ran = new Random(System.nanoTime());
-
-		for (int i = 0; i < 32; i++)
-			tok[i] = tokenStreet[ran.nextInt(tokenStreet.length)];
-
-		this.token = new String(tok);
-
-//		System.out.println("token generated: " + token);
-
+		this.token = generateToken();
+		
 		update(db);
 	}
 	
@@ -119,7 +124,7 @@ public class JobToken implements Comparable<JobToken> {
 		this.exists = true;
 	}
 	
-	private static final String INSERT_QUERY = "INSERT INTO jobToken ( jobId, userName, jobToken)  VALUES (?, ?, ?);";
+	private static final String INSERT_QUERY = "INSERT INTO JOBTOKEN ( jobId, userName, jobToken)  VALUES (?, ?, ?);";
 	
 	private boolean insert(final DBFunctions db){
 		try{
@@ -139,7 +144,7 @@ public class JobToken implements Comparable<JobToken> {
 		return false;
 	}
 
-	private static final String UPDATE_QUERY = "UPDATE jobToken SET jobToken=? WHERE jobId=?;";
+	private static final String UPDATE_QUERY = "UPDATE JOBTOKEN SET jobToken=? WHERE jobId=?;";
 	
 	/**
 	 *  update the entry in the database, inserting it if necessary
@@ -221,7 +226,7 @@ public class JobToken implements Comparable<JobToken> {
 		return exists;
 	}
 	
-	private static final String DESTROY_QUERY = "DELETE FROM jobToken where  jobId=? and userName=? and jobToken=?;";
+	private static final String DESTROY_QUERY = "DELETE FROM JOBTOKEN where jobId=? and userName=? and jobToken=?;";
 	
 	/**
 	 * Delete a jobToken in the DB

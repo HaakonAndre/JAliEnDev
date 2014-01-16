@@ -2074,7 +2074,7 @@ public class TaskQueueUtils {
 	
 
 	private static JobToken insertJobToken(final int jobId, final String username, final boolean forceUpdate) {
-		final DBFunctions db = getAdminDB();
+		final DBFunctions db = getQueueDB();
 		
 		JobToken jb = getJobToken(jobId);
 		
@@ -2109,7 +2109,7 @@ public class TaskQueueUtils {
 		
 		final long lQueryStart = System.currentTimeMillis();
 
-		final String q = "SELECT * FROM jobToken WHERE jobId=?;";
+		final String q = "SELECT * FROM JOBTOKEN WHERE jobId=?;";
 	
 		try{
 			if (!db.query(q, false, Integer.valueOf(jobId)))
@@ -2135,7 +2135,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("ADM_db_lookup");
 		}
 	
-		final String q = "SELECT * FROM jobToken WHERE jobId=?;";
+		final String q = "SELECT * FROM JOBTOKEN WHERE jobId=?;";
 	
 		try{
 			if (!db.query(q, false, Integer.valueOf(queueId)))
