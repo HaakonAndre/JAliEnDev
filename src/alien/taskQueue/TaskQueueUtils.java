@@ -116,6 +116,18 @@ public class TaskQueueUtils {
 	 * @return the job, or <code>null</code> if it cannot be located 
 	 */
 	public static Job getJob(final int queueId, final boolean loadJDL){
+		return getJob(queueId, loadJDL, 0);
+	}
+	
+	/**
+	 * Get the Job from the QUEUE
+	 * 
+	 * @param queueId 
+	 * @param loadJDL
+	 * @param archiveYear queue archive year to query instead of the main queue 
+	 * @return the job, or <code>null</code> if it cannot be located 
+	 */
+	public static Job getJob(final int queueId, final boolean loadJDL, final int archiveYear){
 		final DBFunctions db = getQueueDB();
 		
 		if (db==null)
@@ -131,14 +143,26 @@ public class TaskQueueUtils {
 		final String q;
 		
 		if (dbStructure2_20){
-			if (loadJDL)
-				q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
-			else
-				q = "SELECT * FROM QUEUE WHERE queueId=?";
+			if (archiveYear<2000){
+				if (loadJDL)
+					q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
+				else
+					q = "SELECT * FROM QUEUE WHERE queueId=?";
+			}
+			else{
+				if (loadJDL)
+					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE"+archiveYear+" WHERE queueId=?";
+				else
+					q = "SELECT * FROM QUEUEARCHIVE"+archiveYear+" WHERE queueId=?";
+			}
 		}
-		else
-			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE queueId=?";
-	
+		else{
+			if (archiveYear<2000)
+				q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE queueId=?";
+			else
+				q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUEARCHIVE"+archiveYear+" WHERE queueId=?";
+		}
+			
 		try{
 			if (!db.query(q, false, Integer.valueOf(queueId)))
 				return null;
@@ -170,10 +194,22 @@ public class TaskQueueUtils {
 	 * Get the list of active masterjobs
 	 * 
 	 * @param account the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
-	 * @param loadJDL 
+	 * @param loadJDL
 	 * @return the list of active masterjobs for this account
 	 */
 	public static List<Job> getMasterjobs(final String account, final boolean loadJDL){
+		return getMasterjobs(account, loadJDL, 0);
+	}
+	
+	/**
+	 * Get the list of active masterjobs
+	 * 
+	 * @param account the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
+	 * @param loadJDL
+	 * @param archiveYear queue archive year to query instead of the main queue 
+	 * @return the list of active masterjobs for this account
+	 */
+	public static List<Job> getMasterjobs(final String account, final boolean loadJDL, final int archiveYear){	
 		final DBFunctions db = getQueueDB();
 		
 		if (db==null)
@@ -187,15 +223,27 @@ public class TaskQueueUtils {
 		String q;
 		
 		if (dbStructure2_20){
-			if (loadJDL)
-				q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) ";
-			else
-				q = "SELECT * FROM QUEUE ";
+			if (archiveYear<2000){
+				if (loadJDL)
+					q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) ";
+				else
+					q = "SELECT * FROM QUEUE ";
+			}
+			else{
+				if (loadJDL)
+					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE"+archiveYear+" ";
+				else
+					q = "SELECT * FROM QUEUEARCHIVE"+archiveYear+" ";
+			}
 
 			q += "WHERE split=0 AND statusId!="+JobStatus.KILLED.getAliEnLevel()+" ";
 		}
-		else
-			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=0 AND status!='KILLED' ";
+		else{
+			if (archiveYear<2000)
+				q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=0 AND status!='KILLED' ";
+			else
+				q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUEARCHIVE"+archiveYear+" WHERE split=0 AND status!='KILLED' ";
+		}
 		
 		if (account!=null && account.length()>0){
 			if (dbStructure2_20)
@@ -362,6 +410,18 @@ public class TaskQueueUtils {
 	 * @return the subjobs, if any
 	 */
 	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL){
+		return getSubjobs(queueId, loadJDL, 0);
+	}
+
+	/**
+	 * Get the subjobs of this masterjob
+	 * 
+	 * @param queueId
+	 * @param loadJDL 
+	 * @param archiveYear archive year to query instead of the main queue table
+	 * @return the subjobs, if any
+	 */
+	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL, final int archiveYear){
 		final DBFunctions db = getQueueDB();
 		
 		if (db==null)
@@ -375,15 +435,27 @@ public class TaskQueueUtils {
 		String q;
 		
 		if (dbStructure2_20){
-			if (loadJDL)
-				q = "SELECT QUEUE.*,origJdl AS jdl FROM QUEUE INNER JOIN QUEUEJDL using(queueId)";
-			else
-				q = "SELECT * FROM QUEUE";
+			if (archiveYear<2000){
+				if (loadJDL)
+					q = "SELECT QUEUE.*,origJdl AS jdl FROM QUEUE INNER JOIN QUEUEJDL using(queueId)";
+				else
+					q = "SELECT * FROM QUEUE";
+			}
+			else{
+				if (loadJDL)
+					q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE"+archiveYear;
+				else
+					q = "SELECT * FROM QUEUEARCHIVE"+archiveYear;
+			}
 				
 			q += " WHERE split=? AND statusId!="+JobStatus.KILLED.getAliEnLevel()+" ORDER BY queueId ASC";
 		}
-		else
-			q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+		else{
+			if (archiveYear<2000)
+				q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+			else
+				q = "SELECT "+(loadJDL ? "*" : ALL_BUT_JDL)+" FROM QUEUEARCHIVE"+archiveYear+" WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+		}
 		
 		final List<Job> ret = new ArrayList<Job>();
 		
