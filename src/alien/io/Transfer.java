@@ -65,12 +65,14 @@ public class Transfer implements Serializable, Runnable {
 	public static final int FAILED_TARGET = 3;
 
 	/**
-	 * It is not clear from the message if the source or the target was a problem
+	 * It is not clear from the message if the source or the target was a
+	 * problem
 	 */
 	public static final int FAILED_UNKNOWN = 4;
 
 	/**
-	 * Transfer should be retried later (currently staging from tape for example)
+	 * Transfer should be retried later (currently staging from tape for
+	 * example)
 	 */
 	public static final int DELAYED = 10;
 
@@ -112,8 +114,8 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	final long startedWork = System.currentTimeMillis();
 
-	private final Collection<PFN> successfulTransfers = new ArrayList<PFN>();
-	private final Collection<PFN> failedTransfers = new ArrayList<PFN>();
+	private final Collection<PFN> successfulTransfers = new ArrayList<>();
+	private final Collection<PFN> failedTransfers = new ArrayList<>();
 
 	public final String onCompleteRemoveReplica;
 
@@ -123,7 +125,8 @@ public class Transfer implements Serializable, Runnable {
 	 * @param sources
 	 *            source PFNs (one or more, sorted by preference)
 	 * @param targets
-	 *            target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
+	 *            target PFN, can be <code>null</code> if the file is to be
+	 *            copied to the local disk in a temporary file
 	 */
 	public Transfer(final int transferId, final Collection<PFN> sources, final Collection<PFN> targets, final String onCompleteRemoveReplica) {
 		this.sources = sources;
@@ -159,7 +162,7 @@ public class Transfer implements Serializable, Runnable {
 	}
 
 	private static List<Protocol> getProtocols(final PFN pfn, final boolean onlyAccess) {
-		final List<Protocol> ret = new LinkedList<Protocol>();
+		final List<Protocol> ret = new LinkedList<>();
 
 		if (pfn == null)
 			return ret;
@@ -181,19 +184,12 @@ public class Transfer implements Serializable, Runnable {
 				ret.add(Factory.xrd3cp);
 
 			ret.add(Factory.xrootd);
-		}
-		else
-			if (s.equals("http")) {
-				ret.add(Factory.http);
-			}
-			else
-				if (s.equals("torrent")) {
-					ret.add(Factory.torrent);
-				}
-				else
-					if (s.equals("file")) {
-						ret.add(Factory.cp);
-					}
+		} else if (s.equals("http"))
+			ret.add(Factory.http);
+		else if (s.equals("torrent"))
+			ret.add(Factory.torrent);
+		else if (s.equals("file"))
+			ret.add(Factory.cp);
 
 		return ret;
 	}
@@ -203,7 +199,8 @@ public class Transfer implements Serializable, Runnable {
 	 * 
 	 * @param source
 	 * @param target
-	 *            target PFN (can be <code>null</code>, meaning a local temporary file)
+	 *            target PFN (can be <code>null</code>, meaning a local
+	 *            temporary file)
 	 * @return protocols that match both
 	 */
 	public static List<Protocol> getProtocols(final PFN source, final PFN target) {
@@ -244,16 +241,15 @@ public class Transfer implements Serializable, Runnable {
 
 				monitor.incrementCounter("transfer_status_" + exitCode);
 
-				if (exitCode == 0 && referenceGUID != null) {
+				if (exitCode == 0 && referenceGUID != null)
 					monitor.addMeasurement("transfer_MB", referenceGUID.size / (1024 * 1024d));
-				}
 			}
 		}
 	}
 
 	private void doWork(final PFN target) {
 		// try the best protocols first
-		final Set<Protocol> protocols = new HashSet<Protocol>();
+		final Set<Protocol> protocols = new HashSet<>();
 
 		for (final PFN source : sources) {
 			if (referenceGUID == null)
@@ -301,7 +297,7 @@ public class Transfer implements Serializable, Runnable {
 			logger.log(Level.FINE, transferId + " : Target site: " + targetSite);
 
 		// sort protocols by preference
-		final List<Protocol> sortedProtocols = new LinkedList<Protocol>(protocols);
+		final List<Protocol> sortedProtocols = new LinkedList<>(protocols);
 
 		Collections.sort(sortedProtocols);
 
@@ -309,11 +305,12 @@ public class Transfer implements Serializable, Runnable {
 			logger.log(Level.FINE, transferId + " : Sorted protocols : " + sortedProtocols);
 
 		for (final Protocol p : sortedProtocols) {
-			// sort pfns function of the distance between source, target and ourselves
+			// sort pfns function of the distance between source, target and
+			// ourselves
 
 			final List<PFN> sortedSources = SEUtils.sortBySite(sources, p == Factory.xrd3cp ? targetSite : ConfigUtils.getSite(), false, false);
 
-			final Set<PFN> brokenSources = new HashSet<PFN>();
+			final Set<PFN> brokenSources = new HashSet<>();
 
 			lastTriedProtocol = p;
 
@@ -378,11 +375,9 @@ public class Transfer implements Serializable, Runnable {
 					exitCode = OK;
 					failureReason = null;
 					return;
-				}
-				catch (final UnsupportedOperationException uoe) {
+				} catch (final UnsupportedOperationException uoe) {
 					// ignore
-				}
-				catch (final IOException ioe) {
+				} catch (final IOException ioe) {
 					exitCode = FAILED_SOURCE;
 					failureReason = ioe.getMessage();
 				}
@@ -407,11 +402,9 @@ public class Transfer implements Serializable, Runnable {
 			try {
 				temp = p.get(source, null);
 				break;
-			}
-			catch (final UnsupportedOperationException uoe) {
+			} catch (final UnsupportedOperationException uoe) {
 				// ignore
-			}
-			catch (final IOException ioe) {
+			} catch (final IOException ioe) {
 				exitCode = FAILED_SOURCE;
 				failureReason = ioe.getMessage();
 			}
@@ -431,15 +424,12 @@ public class Transfer implements Serializable, Runnable {
 				targetPFN = target.pfn;
 
 				return;
-			}
-			catch (final UnsupportedOperationException uoe) {
+			} catch (final UnsupportedOperationException uoe) {
 				// ignore
-			}
-			catch (final IOException ioe) {
+			} catch (final IOException ioe) {
 				exitCode = FAILED_TARGET;
 				failureReason = ioe.getMessage();
-			}
-			finally {
+			} finally {
 				TempFileManager.release(temp);
 			}
 		}
@@ -457,25 +447,21 @@ public class Transfer implements Serializable, Runnable {
 			targetPFN = target.pfn;
 
 			return;
-		}
-		catch (final UnsupportedOperationException uoe) {
+		} catch (final UnsupportedOperationException uoe) {
 			// ignore, move to the next one
-		}
-		catch (final SourceException se) {
+		} catch (final SourceException se) {
 			exitCode = FAILED_SOURCE;
 			failureReason = se.getMessage();
 
 			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with source exception: "
 					+ failureReason);
-		}
-		catch (final TargetException se) {
+		} catch (final TargetException se) {
 			exitCode = FAILED_TARGET;
 			failureReason = se.getMessage();
 
 			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with target exception: "
 					+ failureReason);
-		}
-		catch (final IOException e) {
+		} catch (final IOException e) {
 			exitCode = FAILED_SYSTEM;
 			failureReason = e.getMessage();
 
@@ -485,7 +471,9 @@ public class Transfer implements Serializable, Runnable {
 	}
 
 	/**
-	 * @return the exit code, if &lt;0 then the operation is ongoing still, if 0 then the transfer was successful, otherwise it failed and the message is in {@link #getFailureReason()}
+	 * @return the exit code, if &lt;0 then the operation is ongoing still, if 0
+	 *         then the transfer was successful, otherwise it failed and the
+	 *         message is in {@link #getFailureReason()}
 	 */
 	public int getExitCode() {
 		return exitCode;
@@ -499,7 +487,8 @@ public class Transfer implements Serializable, Runnable {
 	}
 
 	/**
-	 * For a successful operation, get the PFN of the target, either the local (no protocol) or remote (with protocol) file
+	 * For a successful operation, get the PFN of the target, either the local
+	 * (no protocol) or remote (with protocol) file
 	 * 
 	 * @return target PFN
 	 */

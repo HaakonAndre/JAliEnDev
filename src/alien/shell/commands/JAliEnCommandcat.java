@@ -97,7 +97,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 * @return file handle for downloaded file
 	 */
 	public File catFile(final String fileName) {
-		ArrayList<String> args = new ArrayList<String>(2);
+		ArrayList<String> args = new ArrayList<>(2);
 		args.add("-t");
 		args.add(fileName);
 
@@ -196,7 +196,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 					
 				}
 				
-				alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+				alPaths = new ArrayList<>(options.nonOptionArguments().size());
 				alPaths.addAll(options.nonOptionArguments());
 
 				

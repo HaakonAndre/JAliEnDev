@@ -31,14 +31,12 @@ public final class GUIDUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils
-			.getLogger(GUIDUtils.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(GUIDUtils.class.getCanonicalName());
 
 	/**
 	 * Monitoring component
 	 */
-	static transient final Monitor monitor = MonitorFactory
-			.getMonitor(GUIDUtils.class.getCanonicalName());
+	static transient final Monitor monitor = MonitorFactory.getMonitor(GUIDUtils.class.getCanonicalName());
 
 	/**
 	 * Get the host where this entry should be located
@@ -52,9 +50,8 @@ public final class GUIDUtils {
 
 		final GUIDIndex index = CatalogueUtils.getGUIDIndex(guidTime);
 
-		if (index == null){
+		if (index == null)
 			return -1;
-		}
 
 		return index.hostIndex;
 	}
@@ -76,7 +73,7 @@ public final class GUIDUtils {
 
 		if (h == null)
 			return null;
-		
+
 		return h.getDB();
 	}
 
@@ -97,12 +94,12 @@ public final class GUIDUtils {
 
 		return index.tableName;
 	}
-	
+
 	/**
 	 * @param l
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
-	public static GUID getGUID(final LFN l){
+	public static GUID getGUID(final LFN l) {
 		return getGUID(l, false);
 	}
 
@@ -111,27 +108,27 @@ public final class GUIDUtils {
 	 * @param evenIfDoesntExist
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
-	public static GUID getGUID(final LFN l, final boolean evenIfDoesntExist){
+	public static GUID getGUID(final LFN l, final boolean evenIfDoesntExist) {
 		final GUID g = getGUID(l.guid, evenIfDoesntExist);
-		
-		if (g==null)
+
+		if (g == null)
 			return null;
-		
+
 		g.addKnownLFN(l);
-		
+
 		return g;
 	}
-	
+
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
 	 * 
 	 * @param uuid
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
-	public static GUID getGUID(final String uuid){
+	public static GUID getGUID(final String uuid) {
 		return getGUID(UUID.fromString(uuid));
 	}
-	
+
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
 	 * 
@@ -146,16 +143,17 @@ public final class GUIDUtils {
 	 * Get the referring GUIDs (members of the archive, if any)
 	 * 
 	 * @param guid
-	 * @return the set of GUIDs pointing to this archive, or <code>null</code> if there is no such file
+	 * @return the set of GUIDs pointing to this archive, or <code>null</code>
+	 *         if there is no such file
 	 */
-	public static Set<GUID> getReferringGUID(final UUID guid){
+	public static Set<GUID> getReferringGUID(final UUID guid) {
 		final int host = getGUIDHost(guid);
-		
+
 		if (host < 0)
 			return null;
 
 		final Host h = CatalogueUtils.getHost(host);
-		
+
 		if (h == null)
 			return null;
 
@@ -163,60 +161,57 @@ public final class GUIDUtils {
 
 		if (db == null)
 			return null;
-		
-		try{
+
+		try {
 			final int tableName = GUIDUtils.getTableNameForGUID(guid);
-			
+
 			if (tableName < 0)
 				return null;
-	
+
 			if (monitor != null)
 				monitor.incrementCounter("GUID_db_lookup");
-		
-			if (!db.query("select G"+tableName+"L.* from G"+tableName+"L INNER JOIN G"+tableName+"L_PFN USING (guidId) where pfn like ?;", false, "guid:///"+guid.toString()+"?ZIP=%")){
-				throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
-			}
-	
-			if (!db.moveNext()) {
+
+			if (!db.query("select G" + tableName + "L.* from G" + tableName + "L INNER JOIN G" + tableName + "L_PFN USING (guidId) where pfn like ?;", false, "guid:///" + guid.toString() + "?ZIP=%"))
+				throw new IllegalStateException("Failed querying the G" + tableName + "L table for guid " + guid);
+
+			if (!db.moveNext())
 				return null;
-			}
-			
-			final Set<GUID> ret = new TreeSet<GUID>();
-	
-			do{
-				try{
+
+			final Set<GUID> ret = new TreeSet<>();
+
+			do
+				try {
 					ret.add(new GUID(db, host, tableName));
+				} catch (final Exception e) {
+					logger.log(Level.WARNING, "Exception instantiating guid " + guid + " from " + tableName, e);
+
+					return null;
 				}
-				catch (final Exception e){
-					logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
-					
-					return null;				
-				}
-			}
 			while (db.moveNext());
-			
+
 			return ret;
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}
-	
+
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
 	 * 
 	 * @param guid
-	 * @param evenIfDoesntExist if <code>true</code>, if the entry doesn't exist then a new GUID is returned
+	 * @param evenIfDoesntExist
+	 *            if <code>true</code>, if the entry doesn't exist then a new
+	 *            GUID is returned
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
 	public static GUID getGUID(final UUID guid, final boolean evenIfDoesntExist) {
 		final int host = getGUIDHost(guid);
-		
+
 		if (host < 0)
 			return null;
 
 		final Host h = CatalogueUtils.getHost(host);
-		
+
 		if (h == null)
 			return null;
 
@@ -224,42 +219,38 @@ public final class GUIDUtils {
 
 		if (db == null)
 			return null;
-		
-		try{
+
+		try {
 			final int tableName = GUIDUtils.getTableNameForGUID(guid);
-			
+
 			if (tableName < 0)
 				return null;
-	
+
 			if (monitor != null)
 				monitor.incrementCounter("GUID_db_lookup");
-		
-			if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString())){
-				throw new IllegalStateException("Failed querying the G"+tableName+"L table for guid "+guid);
-			}
-	
+
+			if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString()))
+				throw new IllegalStateException("Failed querying the G" + tableName + "L table for guid " + guid);
+
 			if (!db.moveNext()) {
-				if (evenIfDoesntExist) {
+				if (evenIfDoesntExist)
 					return new GUID(guid);
-				}
-	
+
 				return null;
 			}
-			
-			try{
+
+			try {
 				return new GUID(db, host, tableName);
-			}
-			catch (final Exception e){
-				logger.log(Level.WARNING, "Exception instantiating guid "+guid+" from "+tableName, e);
-				
+			} catch (final Exception e) {
+				logger.log(Level.WARNING, "Exception instantiating guid " + guid + " from " + tableName, e);
+
 				return null;
 			}
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}
-	
+
 	/**
 	 * 
 	 * check if the string contains a valid GUID
@@ -271,67 +262,66 @@ public final class GUIDUtils {
 		try {
 			UUID.fromString(guid);
 			return true;
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			return false;
 		}
 	}
-	
+
 	private static int clockSequence = MonitorFactory.getSelfProcessID();
-	
+
 	private static long lastTimestamp = System.nanoTime() / 100 + 122192928000000000L;
-	
+
 	private static long lastTimestamp2 = System.nanoTime() / 100 + 122192928000000000L;
-	
-	public static synchronized UUID generateTimeUUID(){
+
+	public static synchronized UUID generateTimeUUID() {
 		final long time = System.currentTimeMillis() * 10000 + 122192928000000000L;
-		
-		if (time <= lastTimestamp){
-			clockSequence ++;
-			
-			if (clockSequence>=65535)
+
+		if (time <= lastTimestamp) {
+			clockSequence++;
+
+			if (clockSequence >= 65535)
 				clockSequence = 0;
 		}
-		
+
 		lastTimestamp = time;
 
 		return generateTimeUUIDWork(time);
 	}
-	
-	public static synchronized UUID generateTimeUUID(final long referenceTime){
+
+	public static synchronized UUID generateTimeUUID(final long referenceTime) {
 		final long time = referenceTime * 10000 + 122192928000000000L;
-		
-		if (time <= lastTimestamp2 || time <= lastTimestamp){
-			clockSequence ++;
-			
-			if (clockSequence>=65535)
+
+		if (time <= lastTimestamp2 || time <= lastTimestamp) {
+			clockSequence++;
+
+			if (clockSequence >= 65535)
 				clockSequence = 0;
 		}
-		
+
 		lastTimestamp2 = time;
 
 		return generateTimeUUIDWork(time);
 	}
-	
+
 	/**
 	 * @return a new time-based (version 1) UUID
 	 */
-	private static UUID generateTimeUUIDWork(final long time){
+	private static UUID generateTimeUUIDWork(final long time) {
 		final byte[] contents = new byte[16];
-		
+
 		final byte[] mac = getMac();
-		
-		for (int i=0; i<6; i++)
-			contents[10+i] = mac[i];
-		
-		
+
+		for (int i = 0; i < 6; i++)
+			contents[10 + i] = mac[i];
+
 		final int timeHi = (int) (time >>> 32);
 		final int timeLo = (int) time;
-		
+
 		contents[0] = (byte) (timeLo >>> 24);
 		contents[1] = (byte) (timeLo >>> 16);
 		contents[2] = (byte) (timeLo >>> 8);
 		contents[3] = (byte) (timeLo);
-		
+
 		contents[4] = (byte) (timeHi >>> 8);
 		contents[5] = (byte) timeHi;
 		contents[6] = (byte) (timeHi >>> 24);
@@ -339,153 +329,151 @@ public final class GUIDUtils {
 
 		contents[8] = (byte) (clockSequence >> 8);
 		contents[9] = (byte) clockSequence;
-		
+
 		contents[6] &= (byte) 0x0F;
 		contents[6] |= (byte) 0x10;
-		
+
 		contents[8] &= (byte) 0x3F;
 		contents[8] |= (byte) 0x80;
-		
-		final UUID ret = GUID.getUUID(contents); 
+
+		final UUID ret = GUID.getUUID(contents);
 
 		return ret;
 	}
-	
+
 	private static byte[] MACAddress = null;
-	
+
 	private static final String SYS_ENTRY = "/sys/class/net";
-	
-	private static synchronized byte[] getMac(){
-		if (MACAddress == null){
+
+	private static synchronized byte[] getMac() {
+		if (MACAddress == null) {
 			// figure it out
 			MACAddress = new byte[6];
 
 			String sMac = null;
-			
+
 			final File f = new File(SYS_ENTRY);
-			
-			if (f.exists()){
+
+			if (f.exists()) {
 				final String[] devices = f.list();
-				
-				if (devices!=null){
-					for (final String dev: devices){
-						final String addr = lazyj.Utils.readFile(SYS_ENTRY+"/"+dev+"/address");
-						
-						if (addr!=null && !addr.equals("00:00:00:00:00:00")){
+
+				if (devices != null)
+					for (final String dev : devices) {
+						final String addr = lazyj.Utils.readFile(SYS_ENTRY + "/" + dev + "/address");
+
+						if (addr != null && !addr.equals("00:00:00:00:00:00")) {
 							sMac = addr;
 							break;
 						}
 					}
-				}
 			}
-			
-			if (sMac==null){
-				try{
+
+			if (sMac == null)
+				try {
 					final BufferedReader br = new BufferedReader(new StringReader(ExternalProcesses.getCmdOutput(Arrays.asList("/sbin/ifconfig", "-a"), false, 30, TimeUnit.SECONDS)));
-					
+
 					String s;
-					
-					while ( (s=br.readLine()) != null ){
+
+					while ((s = br.readLine()) != null) {
 						final StringTokenizer st = new StringTokenizer(s);
-						
-						while (st.hasMoreTokens()){
+
+						while (st.hasMoreTokens()) {
 							final String tok = st.nextToken();
-							
+
 							if (tok.equals("HWaddr") && st.hasMoreTokens())
 								sMac = st.nextToken();
 						}
 					}
-					
+
 					br.close();
-				}
-				catch (Throwable t){
+				} catch (final Throwable t) {
 					// ignore
 				}
-			}
-			
-			if (sMac!=null){
+
+			if (sMac != null) {
 				final StringTokenizer st = new StringTokenizer(sMac, ":");
-				
-				for (int i=0; i<6; i++){
+
+				for (int i = 0; i < 6; i++)
 					MACAddress[i] = (byte) Integer.parseInt(st.nextToken(), 16);
-				}
 			}
 		}
-		
+
 		return MACAddress;
 	}
-	
+
 	/**
 	 * @return a new (empty) GUID
 	 */
-	public static GUID createGuid(){
+	public static GUID createGuid() {
 		UUID id;
-//		do{
-//			id = generateTimeUUID();
-//		} while (getGUID(id) != null);
-		
+		// do{
+		// id = generateTimeUUID();
+		// } while (getGUID(id) != null);
+
 		id = generateTimeUUID();
-		
+
 		return new GUID(id);
 	}
-	
+
 	/**
-	 * @param f base file to fill the properties from: ctime, md5, sizeSystem.
-	 * @param user who owns this new entry
+	 * @param f
+	 *            base file to fill the properties from: ctime, md5, sizeSystem.
+	 * @param user
+	 *            who owns this new entry
 	 * @return the newly created GUID
 	 * @throws IOException
 	 */
-	public static GUID createGuid(final File f, final AliEnPrincipal user) throws IOException{
+	public static GUID createGuid(final File f, final AliEnPrincipal user) throws IOException {
 		final String md5 = IOUtils.getMD5(f);
-		
+
 		final GUID guid = createGuid();
-		
+
 		guid.ctime = new Date(f.lastModified());
 		guid.md5 = md5;
 		guid.size = f.length();
-		
+
 		guid.owner = user.getName();
-		
+
 		final Set<String> roles = user.getRoles();
-		
-		if (roles!=null && roles.size()>0)
+
+		if (roles != null && roles.size() > 0)
 			guid.gowner = roles.iterator().next();
 		else
 			guid.gowner = guid.owner;
-		
-		guid.type = 0;	// as in the catalogue
+
+		guid.type = 0; // as in the catalogue
 		guid.perm = "755";
 		guid.aclId = -1;
-		
+
 		return guid;
 	}
-	
+
 	/**
 	 * @param uuid
 	 * @return epoch time of this uuid
 	 */
-	public static final long epochTime(final UUID uuid){
+	public static final long epochTime(final UUID uuid) {
 		return (uuid.timestamp() - 0x01b21dd213814000L) / 10000;
 	}
-	
+
 	/**
 	 * @param uuid
 	 * @return AliEn guidtime-compatible value
 	 */
-	public static final long indexTime(final UUID uuid){
+	public static final long indexTime(final UUID uuid) {
 		final long msg = uuid.getMostSignificantBits() & 0x00000000FFFFFFFFL;
-		
+
 		long ret = (msg >>> 16);
-		ret += (msg & 0x0FFFFL)<<16;
-		
+		ret += (msg & 0x0FFFFL) << 16;
+
 		return ret;
 	}
-	
+
 	/**
 	 * @param uuid
 	 * @return index time as string
 	 */
-	public static final String getIndexTime(final UUID uuid){
+	public static final String getIndexTime(final UUID uuid) {
 		return Long.toHexString(indexTime(uuid)).toUpperCase();
 	}
 }

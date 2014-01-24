@@ -27,46 +27,41 @@ import alien.shell.commands.JShPrintWriter;
 public class BusyBox {
 
 	private final static int tryreconnect = 1;
-	
-	
+
 	private int remainreconnect = tryreconnect;
 
-	
 	private static final String noSignal = String.valueOf((char) 33);
 
 	private static int pender = 0;
 	private static boolean pending = false;
-	private static final String[] pends = {".   "," .  ","  . ","   ."};
-	
-	private static final String promptPrefix =  JAliEnIAm.whatsMyName()+ JAliEnIAm.myJShPrompt() + " ";
+	private static final String[] pends = { ".   ", " .  ", "  . ", "   ." };
 
-	private static final String promptColorPrefix =  ShellColor.boldBlack() + JAliEnIAm.whatsMyName() + ShellColor.reset() + JAliEnIAm.myJShPrompt() + " ";
+	private static final String promptPrefix = JAliEnIAm.whatsMyName() + JAliEnIAm.myJShPrompt() + " ";
 
-	
+	private static final String promptColorPrefix = ShellColor.boldBlack() + JAliEnIAm.whatsMyName() + ShellColor.reset() + JAliEnIAm.myJShPrompt() + " ";
+
 	private static final String promptSuffix = " > ";
-	
+
 	private static int commNo = 1;
 
 	private ConsoleReader reader;
-	private PrintWriter out;
+	private final PrintWriter out;
 
 	private boolean prompting = false;
 
 	private String username;
 	private String role;
-	
-	private String currentDir;
-	
 
-	
+	private String currentDir;
+
 	/**
 	 * 
 	 * @return the current directory
 	 */
-	public String getCurrentDir(){
+	public String getCurrentDir() {
 		return currentDir;
 	}
-	
+
 	/**
 	 * print welcome
 	 */
@@ -83,74 +78,50 @@ public class BusyBox {
 	private InputStream is;
 
 	private OutputStream os;
-	
 
-	
-	
-	private boolean connect(String addr, int port, String password) {
+	private boolean connect(final String addr, final int port, final String password) {
 
-
-
-		if (addr!=null && port != 0 && password!=null) {
-
+		if (addr != null && port != 0 && password != null)
 			try {
 				s = new Socket(addr, port);
 
 				is = s.getInputStream();
 				os = s.getOutputStream();
-				
-				os.write((password+JShPrintWriter.lineTerm).getBytes());
+
+				os.write((password + JShPrintWriter.lineTerm).getBytes());
 				os.flush();
-				
+
 				return (!noSignal.equals(callJBoxGetString("setshell jaliensh")));
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				return false;
 			}
-		}
 		return false;
 	}
 
-	
-	private boolean reconnect(){
-		if(remainreconnect<1){
+	private boolean reconnect() {
+		if (remainreconnect < 1) {
 			printErrShutdown();
-			callJBox("shutdown",false);
+			callJBox("shutdown", false);
 			Runtime.getRuntime().exit(1);
 		}
 		remainreconnect--;
-		
-		String whoami = this.username;
-		String roleami = this.role;
-		String currentDirTemp = this.currentDir;
-		
-		if(JSh.reconnect())
-			if(connect(JSh.getAddr(), JSh.getPort(), JSh.getPassword()))
-				if(callJBox("user " + whoami))
-					if(callJBox("role " + roleami))
-						if(callJBox("cd " + currentDirTemp)){
+
+		final String whoami = this.username;
+		final String roleami = this.role;
+		final String currentDirTemp = this.currentDir;
+
+		if (JSh.reconnect())
+			if (connect(JSh.getAddr(), JSh.getPort(), JSh.getPassword()))
+				if (callJBox("user " + whoami))
+					if (callJBox("role " + roleami))
+						if (callJBox("cd " + currentDirTemp)) {
 							remainreconnect = tryreconnect;
 							return true;
 						}
-							
-	
+
 		printErrRestartJBox();
 		return false;
-	
-	}
-	
 
-	
-	/**
-	 * the JAliEn busy box
-	 * @param addr 
-	 * @param port 
-	 * @param password 
-	 * 
-	 * @throws IOException
-	 */
-	public BusyBox(String addr,int port, String password) throws IOException {
-		this(addr,port,password,null,false);
-		
 	}
 
 	/**
@@ -159,50 +130,62 @@ public class BusyBox {
 	 * @param addr
 	 * @param port
 	 * @param password
-	 * @param username 
+	 * 
+	 * @throws IOException
+	 */
+	public BusyBox(final String addr, final int port, final String password) throws IOException {
+		this(addr, port, password, null, false);
+
+	}
+
+	/**
+	 * the JAliEn busy box
+	 * 
+	 * @param addr
+	 * @param port
+	 * @param password
+	 * @param username
 	 * @param startPrompt
 	 * 
 	 * @throws IOException
 	 */
-	public BusyBox(String addr,int port, final String password, final String username, final boolean startPrompt) throws IOException {
-		
+	public BusyBox(final String addr, final int port, final String password, final String username, final boolean startPrompt) throws IOException {
+
 		out = new PrintWriter(System.out);
-		
-		if(startPrompt){
+
+		if (startPrompt) {
 			this.username = username;
 			welcome();
 			out.flush();
 			prompting = true;
 		}
-		
+
 		if (!connect(addr, port, password)) {
 			printInitConnError();
 			throw new IOException();
 		}
-		
-		if(startPrompt){
-			new Thread(){
+
+		if (startPrompt)
+			new Thread() {
 				@Override
 				public void run() {
 					try {
 						prompt();
-					}
-					catch (IOException e) {
+					} catch (final IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
 			}.start();
-		}
 	}
 
-	private static String genPromptPrefix(){
-		if(JSh.doWeColor())
+	private static String genPromptPrefix() {
+		if (JSh.doWeColor())
 			return promptColorPrefix;
-		
+
 		return promptPrefix;
 	}
-	
+
 	/**
 	 * loop the prompt for the user
 	 * 
@@ -214,18 +197,14 @@ public class BusyBox {
 
 		reader = new ConsoleReader();
 		reader.setBellEnabled(false);
-		reader.setDebug(new PrintWriter(
-				new FileWriter("writer.debug", true)));
-		Completor[] comp = new Completor[]{
-				
-	            new SimpleCompletor(callJBoxGetString("commandlist").split(" ")),
-	            new GridLocalFileCompletor(this)
-	        };
-	    reader.addCompletor (new ArgumentCompletor(comp));
+		reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
+		final Completor[] comp = new Completor[] {
+
+		new SimpleCompletor(callJBoxGetString("commandlist").split(" ")), new GridLocalFileCompletor(this) };
+		reader.addCompletor(new ArgumentCompletor(comp));
 
 		String prefixCNo = "0";
-		while ((line = reader.readLine(genPromptPrefix() + "[" + prefixCNo + commNo
-				+ "] " + currentDir + promptSuffix)) != null) {
+		while ((line = reader.readLine(genPromptPrefix() + "[" + prefixCNo + commNo + "] " + currentDir + promptSuffix)) != null) {
 
 			if (commNo == 9)
 				prefixCNo = "";
@@ -248,12 +227,12 @@ public class BusyBox {
 	 * @param line
 	 * @return response from JBox
 	 */
-	public String callJBoxGetString(final String line){		
+	public String callJBoxGetString(final String line) {
 		String sline = line;
-		
+
 		checkColorSwitch(sline);
-		
-		do {
+
+		do
 			try {
 
 				if (socketThere(s)) {
@@ -263,16 +242,15 @@ public class BusyBox {
 					os.write(sline.getBytes());
 					os.flush();
 
-					BufferedReader br = new BufferedReader(
-							new InputStreamReader(is));
+					final BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
-					StringBuilder ret = new StringBuilder();
+					final StringBuilder ret = new StringBuilder();
 					String sLine = null;
 					boolean signal = false;
 
 					while ((sLine = br.readLine()) != null) {
-						
-						if (sLine.startsWith(JShPrintWriter.degradedSignal)){
+
+						if (sLine.startsWith(JShPrintWriter.degradedSignal)) {
 							printJCentralConnError();
 							break;
 						}
@@ -281,10 +259,10 @@ public class BusyBox {
 							updateEnvironment(sLine);
 						else if (sLine.endsWith(JShPrintWriter.streamend))
 							break;
-						else{
-							if (ret.length()>0)
+						else {
+							if (ret.length() > 0)
 								ret.append('\n');
-							
+
 							ret.append(sLine);
 						}
 					}
@@ -293,16 +271,14 @@ public class BusyBox {
 						return ret.toString();
 				}
 
-			} catch (Exception e) {
-				//e.printStackTrace();
+			} catch (final Exception e) {
+				// e.printStackTrace();
 			}
-		} while (reconnect());
+		while (reconnect());
 
 		printConnError();
 		return noSignal;
 	}
-	
-	
 
 	/**
 	 * @param line
@@ -314,148 +290,142 @@ public class BusyBox {
 
 	private boolean callJBox(final String line, final boolean tryReconnect) {
 		String sline = line;
-		
+
 		checkColorSwitch(sline);
-		
-		do {
+
+		do
 			try {
 
 				if (socketThere(s)) {
-					
+
 					sline = sline.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
 
 					os.write(sline.getBytes());
 					os.flush();
 
-					BufferedReader br = new BufferedReader(
-							new InputStreamReader(is));
+					final BufferedReader br = new BufferedReader(new InputStreamReader(is));
 
 					String sLine;
 					boolean signal = false;
-					
+
 					while ((sLine = br.readLine()) != null) {
-						
-						if (sLine.startsWith(JShPrintWriter.degradedSignal)){
+
+						if (sLine.startsWith(JShPrintWriter.degradedSignal)) {
 							printJCentralConnError();
 							break;
 						}
-						
+
 						signal = true;
-						
-						if (JShPrintWriter.pendSignal.equals(sLine)){
-							pending=true;
-							//System.out.write(("\rI/O ["+ pends[pender] + "]").getBytes());
-							System.out.print("\rI/O ["+ pends[pender] + "]");
-							//out.flush();
+
+						if (JShPrintWriter.pendSignal.equals(sLine)) {
+							pending = true;
+							// System.out.write(("\rI/O ["+ pends[pender] +
+							// "]").getBytes());
+							System.out.print("\rI/O [" + pends[pender] + "]");
+							// out.flush();
 							pender++;
-							if(pender>=pends.length)
+							if (pender >= pends.length)
 								pender = 0;
 							continue;
 						}
-						
-						if(pending){
-							pending=false;
+
+						if (pending) {
+							pending = false;
 							pender = 0;
-							//System.out.write("\r".getBytes());
+							// System.out.write("\r".getBytes());
 							System.out.print("\r                                        \r");
 						}
-						
-						if (sLine.startsWith(JShPrintWriter.errTag)){
+
+						if (sLine.startsWith(JShPrintWriter.errTag))
 							JSh.printErr("Error: " + sLine.substring(1));
-						}
 						else if (sLine.startsWith(JShPrintWriter.outputterminator))
 							updateEnvironment(sLine);
-						else if (sLine.endsWith(JShPrintWriter.lineTerm)){
+						else if (sLine.endsWith(JShPrintWriter.lineTerm))
 							break;
-						}else {
+						else {
 							out.println(sLine);
 							out.flush();
 						}
 
 					}
 
-					
 					if (signal)
 						return true;
 				}
 
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				// ignore
-				//e.printStackTrace();
+				// e.printStackTrace();
 			}
-		} while (tryReconnect && reconnect());
+		while (tryReconnect && reconnect());
 
-		if(tryReconnect)
+		if (tryReconnect)
 			printConnError();
 		return false;
 	}
-	
-	private void updateEnvironment(String env){
 
-			final StringTokenizer st = new StringTokenizer(env.substring(1),JShPrintWriter.fieldseparator);
-			
-			if(st.hasMoreTokens())
-					currentDir = st.nextToken();
-			if(st.hasMoreTokens())
-					username = st.nextToken();
-			if(st.hasMoreTokens())
-				role = st.nextToken();
+	private void updateEnvironment(final String env) {
+
+		final StringTokenizer st = new StringTokenizer(env.substring(1), JShPrintWriter.fieldseparator);
+
+		if (st.hasMoreTokens())
+			currentDir = st.nextToken();
+		if (st.hasMoreTokens())
+			username = st.nextToken();
+		if (st.hasMoreTokens())
+			role = st.nextToken();
 	}
 
-	
 	/**
 	 * execute a command
-	 * @param callLine 
+	 * 
+	 * @param callLine
 	 *            arguments of the command, first one is the command
 	 */
-	public void executeCommand(String callLine) {
+	public void executeCommand(final String callLine) {
 
-		//String args[] = callLine.split(SpaceSep);
-		String args[] = callLine.split(" ");
-		
-		if (!"".equals(args[0])) {
+		// String args[] = callLine.split(SpaceSep);
+		final String args[] = callLine.split(" ");
+
+		if (!"".equals(args[0]))
 			if (args[0].equals(".")) {
 				final StringBuilder command = new StringBuilder();
-				
+
 				for (int c = 1; c < args.length; c++)
 					command.append(args[c]).append(' ');
-				
+
 				syscall(command.toString());
 			} else if (args[0].equals("gbbox")) {
-				StringBuilder command = new StringBuilder("alien -s -e ");
+				final StringBuilder command = new StringBuilder("alien -s -e ");
 				for (int c = 1; c < args.length; c++)
 					command.append(args[c]).append(' ');
-				
+
 				syscall(command.toString());
-			} else if (isEditCommand(args[0])){
-				if(args.length==2)
-					editCatalogueFile(args[0],args[1]);
+			} else if (isEditCommand(args[0])) {
+				if (args.length == 2)
+					editCatalogueFile(args[0], args[1]);
 				else
 					out.println("help for the editor is....");
-			} else if(args[0].equals("shutdown"))
-					shutdown();
-			else if (args[0].equals("help")) {
+			} else if (args[0].equals("shutdown"))
+				shutdown();
+			else if (args[0].equals("help"))
 				usage();
-			} else {
+			else
 				callJBox(callLine);
-			}
-		}
 	}
 
 	/**
 	 * print some help message
 	 */
 	public void usage() {
-		out.println("JAliEn Grid Client, started in 2010, Version: "
-				+ JAliEnIAm.whatsVersion());
+		out.println("JAliEn Grid Client, started in 2010, Version: " + JAliEnIAm.whatsVersion());
 		out.println("Press <tab><tab> to see the available commands.");
 	}
-
 
 	/**
 	 * do a call to the underlying system shell
 	 */
-	private static void syscall(String command) {
+	private static void syscall(final String command) {
 
 		String line;
 		InputStream stderr = null;
@@ -479,60 +449,54 @@ public class BusyBox {
 				System.out.println(line);
 
 			brCleanUp.close();
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			System.out.println(e);
 		}
 	}
-	
-	
+
 	/**
 	 * true once running the prompt
+	 * 
 	 * @return are we running a prompt
 	 */
-	public boolean prompting(){
+	public boolean prompting() {
 		return prompting;
 	}
-	
 
-	
-	private static void checkColorSwitch(final String line){
-		if("blackwhite".equals(line))
+	private static void checkColorSwitch(final String line) {
+		if ("blackwhite".equals(line))
 			JSh.blackwhite();
-		
-		else if("color".equals(line))
+
+		else if ("color".equals(line))
 			JSh.color();
 	}
 
-	private static boolean socketThere(Socket s){
-		return (!s.isClosed() && s.isBound() &&
-		s.isConnected() && !s.isInputShutdown()
-		&& !s.isOutputShutdown());
+	private static boolean socketThere(final Socket s) {
+		return (!s.isClosed() && s.isBound() && s.isConnected() && !s.isInputShutdown() && !s.isOutputShutdown());
 	}
-	
-	
-	private void shutdown(){
+
+	private void shutdown() {
 		try {
 			System.out.print("Shutting down jBox...");
 			if (socketThere(s)) {
 				os.write(("shutdown" + JShPrintWriter.lineTerm).getBytes());
 				os.flush();
-				
-				//TODO: How to tell that jBox was killed successfully
-//				if(socketThere(s)) 
-					System.out.println("DONE.");
-//				else{
-//					System.out.println("ERROR.");
-//					System.out.println("JBox might still be running.");
-//				}
+
+				// TODO: How to tell that jBox was killed successfully
+				// if(socketThere(s))
+				System.out.println("DONE.");
+				// else{
+				// System.out.println("ERROR.");
+				// System.out.println("JBox might still be running.");
+				// }
 			}
-		} catch (Exception e) {
-				//e.printStackTrace();
+		} catch (final Exception e) {
+			// e.printStackTrace();
 		}
 		JSh.printGoodBye();
 		System.exit(0);
 	}
-	
-	
+
 	private static boolean isEditCommand(final String command) {
 
 		return Arrays.asList(FileEditor.editors).contains(command);
@@ -540,56 +504,52 @@ public class BusyBox {
 
 	private void editCatalogueFile(final String editcmd, final String LFNName) {
 
-		String ret = callJBoxGetString("cp -t " + LFNName.trim());
-		
-		final StringTokenizer st = new StringTokenizer(
-				ret, "\n");
-		
+		final String ret = callJBoxGetString("cp -t " + LFNName.trim());
+
+		final StringTokenizer st = new StringTokenizer(ret, "\n");
+
 		String localFile = null;
 		while (st.hasMoreTokens()) {
-			String a = st.nextToken();
-			if(a.contains("Downloaded file to ")){
-					localFile = a.replace("Downloaded file to ", "").trim();
-					break;
+			final String a = st.nextToken();
+			if (a.contains("Downloaded file to ")) {
+				localFile = a.replace("Downloaded file to ", "").trim();
+				break;
 			}
 		}
-		
-		if(localFile==null){
+
+		if (localFile == null) {
 			JSh.printErr("Error getting the file.");
 			return;
 		}
-		
-		
-		long lastMod = (new File(localFile)).lastModified();
+
+		final long lastMod = (new File(localFile)).lastModified();
 
 		FileEditor editor = null;
-		
-		try{
+
+		try {
 			editor = new FileEditor(editcmd);
-		}
-		catch (IOException e){
+		} catch (final IOException e) {
 			JSh.printErr("The editor [" + editcmd + "] was not found on your system.");
 			return;
 		}
-		
+
 		editor.edit(localFile);
 
-		if ((new File(localFile)).lastModified() != lastMod){
+		if ((new File(localFile)).lastModified() != lastMod) {
 			String parent;
 			String fileName;
-			if(LFNName.contains("/")){
-					parent = LFNName.substring(0,LFNName.lastIndexOf('/')) + "/";
-					fileName = LFNName.substring(LFNName.lastIndexOf('/')+1);
-			}else{
+			if (LFNName.contains("/")) {
+				parent = LFNName.substring(0, LFNName.lastIndexOf('/')) + "/";
+				fileName = LFNName.substring(LFNName.lastIndexOf('/') + 1);
+			} else {
 				parent = "";
 				fileName = LFNName;
 			}
-				
+
 			// we cannot allow "/..file", only hidde out with "/.file"
-			if(!fileName.startsWith("."))
-				fileName  = "." + fileName;
-				
-			
+			if (!fileName.startsWith("."))
+				fileName = "." + fileName;
+
 			callJBox("rm -silent " + parent + fileName + "~");
 
 			callJBox("mv " + LFNName + " " + parent + fileName + "~");
@@ -597,29 +557,25 @@ public class BusyBox {
 			callJBox("cp file:" + localFile + " " + LFNName);
 		}
 	}
-	
-	
-	
-	
-	private static void printInitConnError(){
+
+	private static void printInitConnError() {
 		JSh.printErr("Could not connect to JBox.");
 	}
-	
-	private static void printErrShutdown(){
+
+	private static void printErrShutdown() {
 		JSh.printErr("Shutting down...");
 	}
-	
-	private static void printErrRestartJBox(){
+
+	private static void printErrRestartJBox() {
 		JSh.printErr("JBox seems to be dead, please restart it.");
 	}
-	
-	private static void printConnError(){
+
+	private static void printConnError() {
 		JSh.printErr("Connection to JBox interrupted.");
 	}
 
-	private static void printJCentralConnError(){
+	private static void printJCentralConnError() {
 		JSh.printErr("Connection error to JCentral.");
 	}
-
 
 }

@@ -57,10 +57,10 @@ public class AlienCommandError extends AlienCommand {
 
 	@Override
 	public Object executeCommand() throws Exception {
-		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
+		HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
 
-		ArrayList<String> alrcValues = new ArrayList<String>();
-		ArrayList<String> alrcMessages = new ArrayList<String>();
+		ArrayList<String> alrcValues = new ArrayList<>();
+		ArrayList<String> alrcMessages = new ArrayList<>();
 
 		alrcMessages.add(errorMessage+"\n");
 

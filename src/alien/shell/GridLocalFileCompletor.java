@@ -18,34 +18,33 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 	/**
 	 * @param box
 	 */
-	public GridLocalFileCompletor(BusyBox box) {
+	public GridLocalFileCompletor(final BusyBox box) {
 		busy = box;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
 	public int complete(final String buf, final int cursor, @SuppressWarnings("rawtypes") final List candidates) {
-		if (buf!=null && buf.contains("file://") && cursor >= buf.indexOf("file://"))
+		if (buf != null && buf.contains("file://") && cursor >= buf.indexOf("file://"))
 			return super.complete(buf.replace("file://", ""), cursor - 7, candidates) + 7;
-		
+
 		return gridComplete(buf, cursor, candidates);
 	}
 
 	private int gridComplete(final String buf, final int cursor, final List<String> candidates) {
-		
-		String buffer = (buf == null) ? "" : buf;
+
+		final String buffer = (buf == null) ? "" : buf;
 
 		String translated = buffer;
 
 		// special character: ~ maps to the user's home directory
-		if (translated.startsWith("~" + File.separator)) {
+		if (translated.startsWith("~" + File.separator))
 			translated = busy.getCurrentDir() + translated.substring(2);
-		} else if (translated.startsWith("~")) {
+		else if (translated.startsWith("~"))
 			translated = busy.getCurrentDir();
-		} else if (!(translated.startsWith(File.separator))) {
+		else if (!(translated.startsWith(File.separator)))
 			translated = busy.getCurrentDir() // + File.separator
 					+ translated;
-		}
 
 		final String dir;
 
@@ -53,11 +52,11 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 			dir = translated;
 		else
 			dir = translated.substring(0, translated.lastIndexOf('/'));
-	
+
 		final String listing = busy.callJBoxGetString("ls -ca " + dir);
 
 		final StringTokenizer tk = new StringTokenizer(listing);
-		List<String> entries = new ArrayList<String>();
+		final List<String> entries = new ArrayList<>();
 		while (tk.hasMoreElements())
 			entries.add((String) tk.nextElement());
 
@@ -70,36 +69,29 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 		}
 	}
 
-	private static int gridMatchFiles(String buffer, String translated, List<String> entries, List<String> candidates) {
+	private static int gridMatchFiles(final String buffer, final String translated, final List<String> entries, final List<String> candidates) {
 
-		if (entries == null) {
+		if (entries == null)
 			return -1;
-		}
 
 		int matches = 0;
 
 		// first pass: just count the matches
-		for (String lfn : entries)
+		for (final String lfn : entries)
 			if (lfn.startsWith(translated))
 				matches++;
 
-		for (String lfn : entries){
-			
+		for (String lfn : entries)
 			if (lfn.startsWith(translated)) {
 				String name = null;
-				if(lfn.endsWith("/")){
-					lfn = lfn.substring(0,lfn.length()-1);
-					name = lfn.substring(lfn.lastIndexOf('/') + 1)
-							+ ((matches == 1) ? "/"
-									: "");
-				}	
-				else
-					name = lfn.substring(lfn.lastIndexOf('/') + 1) + ((matches == 1) ? " "
-							: "");
-			
+				if (lfn.endsWith("/")) {
+					lfn = lfn.substring(0, lfn.length() - 1);
+					name = lfn.substring(lfn.lastIndexOf('/') + 1) + ((matches == 1) ? "/" : "");
+				} else
+					name = lfn.substring(lfn.lastIndexOf('/') + 1) + ((matches == 1) ? " " : "");
+
 				candidates.add(name);
 			}
-		}
 
 		final int index = buffer.lastIndexOf("/");
 

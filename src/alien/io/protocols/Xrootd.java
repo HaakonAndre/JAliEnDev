@@ -16,18 +16,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 
-import utils.ExternalCalls;
-
 import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
+import utils.ExternalCalls;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
-import alien.se.SEUtils;
 
 /**
  * @author costing
@@ -42,41 +40,41 @@ public class Xrootd extends Protocol {
 	private int xrdcpdebuglevel = 0;
 
 	private final static String xrdcpCommand = "xrdcpapmon";
-	
+
 	private static String xrootd_default_path = null;
 
 	private static String xrdcpPath = null;
-	
+
 	static {
 		if (ConfigUtils.getConfig() != null) {
 			xrootd_default_path = ConfigUtils.getConfig().gets("xrootd.location", null);
 
-			if (xrootd_default_path != null){
+			if (xrootd_default_path != null) {
 				xrdcpPath = xrootd_default_path + "/bin/" + xrdcpCommand;
-				
-				File test = new File(xrdcpPath);
-				
+
+				final File test = new File(xrdcpPath);
+
 				if (!test.exists() || !test.isFile() || !test.canExecute())
 					xrdcpPath = null;
 			}
 		}
-		
-		if (xrdcpPath == null){
+
+		if (xrdcpPath == null) {
 			xrdcpPath = ExternalCalls.programExistsInPath(xrdcpCommand);
-			
-			if (xrdcpPath!=null){
+
+			if (xrdcpPath != null) {
 				int idx = xrdcpPath.lastIndexOf('/');
-				
-				if (idx>0){
+
+				if (idx > 0) {
 					idx = xrdcpPath.lastIndexOf('/', idx);
-					
-					if (idx>=0)
+
+					if (idx >= 0)
 						xrootd_default_path = xrdcpPath.substring(0, idx);
 				}
 			}
 		}
 	}
-	
+
 	private static String DIFirstConnectMaxCnt = "2";
 
 	private int timeout = 60;
@@ -85,7 +83,6 @@ public class Xrootd extends Protocol {
 	private static final int statRetryTimesXrootd[] = { 1, 5, 10, 0 };
 	private static final int statRetryTimesDCache[] = { 5, 10, 15, 20, 20, 20, 30, 30, 30, 30, 0 };
 
-	
 	/**
 	 * Logger
 	 */
@@ -107,7 +104,7 @@ public class Xrootd extends Protocol {
 			p.environment().put("LD_LIBRARY_PATH", ldpath + ":" + xrootd_default_path + "/lib");
 		}
 	}
-	
+
 	/**
 	 * @param level
 	 *            xrdcp debug level
@@ -143,11 +140,10 @@ public class Xrootd extends Protocol {
 			if (idx > 0) {
 				idx += 2;
 
-				int idx2 = message.indexOf("')", idx);
+				final int idx2 = message.indexOf("')", idx);
 
-				if (idx2 > idx) {
+				if (idx2 > idx)
 					return message.substring(idx, idx2);
-				}
 			}
 		}
 
@@ -168,7 +164,8 @@ public class Xrootd extends Protocol {
 	private boolean usexrdrm = true;
 
 	/**
-	 * Whether to use "xrdrm" (<code>true</code>) or "xrd rm" ( <code>false</code>)
+	 * Whether to use "xrdrm" (<code>true</code>) or "xrd rm" (
+	 * <code>false</code>)
 	 * 
 	 * @param newValue
 	 * @return the previous setting
@@ -183,12 +180,11 @@ public class Xrootd extends Protocol {
 
 	@Override
 	public boolean delete(final PFN pfn) throws IOException {
-		if (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE) {
+		if (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE)
 			throw new IOException("You didn't get the rights to delete this PFN");
-		}
 
 		try {
-			final List<String> command = new LinkedList<String>();
+			final List<String> command = new LinkedList<>();
 
 			// command.addAll(getCommonArguments());
 
@@ -209,9 +205,8 @@ public class Xrootd extends Protocol {
 
 				String transactionURL = pfn.pfn;
 
-				if (pfn.ticket.envelope != null) {
+				if (pfn.ticket.envelope != null)
 					transactionURL = pfn.ticket.envelope.getTransactionURL();
-				}
 
 				if (envelope != null) {
 					fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
@@ -228,8 +223,7 @@ public class Xrootd extends Protocol {
 				}
 
 				command.add(transactionURL);
-			}
-			else {
+			} else {
 				final Matcher m = XrootDEnvelope.PFN_EXTRACT.matcher(pfn.pfn);
 
 				if (!m.matches()) {
@@ -248,7 +242,7 @@ public class Xrootd extends Protocol {
 			// System.err.println(command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-			
+
 			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
@@ -261,15 +255,12 @@ public class Xrootd extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
-			}
-			catch (final InterruptedException ie) {
+			} catch (final InterruptedException ie) {
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
-			}
-			finally {
-				if (fAuthz != null) {
+			} finally {
+				if (fAuthz != null)
 					if (!fAuthz.delete())
 						logger.log(Level.WARNING, "Could not delete temporary auth token file: " + fAuthz.getAbsolutePath());
-				}
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -282,11 +273,9 @@ public class Xrootd extends Protocol {
 			// System.err.println(exitStatus.getStdOut());
 
 			return true;
-		}
-		catch (final IOException ioe) {
+		} catch (final IOException ioe) {
 			throw ioe;
-		}
-		catch (final Throwable t) {
+		} catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new IOException("delete aborted because " + t);
@@ -297,8 +286,8 @@ public class Xrootd extends Protocol {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess,
-	 * java.lang.String)
+	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
 	public File get(final PFN pfn, final File localFile) throws IOException {
@@ -313,27 +302,26 @@ public class Xrootd extends Protocol {
 		if (target == null) {
 			// we are free to use any cached value
 			target = TempFileManager.getAny(pfn.getGuid());
-			
-			if (target!=null){
-				logger.log(Level.FINE, "Reusing cached file: "+target.getCanonicalPath());
-				
+
+			if (target != null) {
+				logger.log(Level.FINE, "Reusing cached file: " + target.getCanonicalPath());
+
 				return target;
 			}
-			
+
 			target = File.createTempFile("xrootd-get", null, IOUtils.getTemporaryDirectory());
 
-			if (!target.delete()){
+			if (!target.delete()) {
 				logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
 				return null;
 			}
 		}
 
-		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ) {
-			throw new SourceException("The envelope for PFN " + pfn.toString() + (pfn.ticket==null ? " could not be found" : " is not a READ one"));
-		}
+		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ)
+			throw new SourceException("The envelope for PFN " + pfn.toString() + (pfn.ticket == null ? " could not be found" : " is not a READ one"));
 
 		try {
-			final List<String> command = new LinkedList<String>();
+			final List<String> command = new LinkedList<>();
 
 			if (xrdcpPath == null) {
 				logger.log(Level.SEVERE, "Could not find [" + xrdcpCommand + "] in path.");
@@ -346,28 +334,26 @@ public class Xrootd extends Protocol {
 
 			String transactionURL = pfn.pfn;
 
-			if (pfn.ticket.envelope != null) {
+			if (pfn.ticket.envelope != null)
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
-			}
 
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
 
-			if (pfn.ticket.envelope != null) {
+			if (pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
-				else
-					if (pfn.ticket.envelope.getSignedEnvelope() != null)
-						command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
-			}
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-			
+
 			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 
-			long maxTime = pfn.getGuid().size / 20000; // 20KB/s should be available to anybody
+			long maxTime = pfn.getGuid().size / 20000; // 20KB/s should be
+														// available to anybody
 
 			maxTime += timeout;
 
@@ -376,7 +362,7 @@ public class Xrootd extends Protocol {
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
-			
+
 			ExternalProcess p = null;
 
 			try {
@@ -386,10 +372,9 @@ public class Xrootd extends Protocol {
 					exitStatus = p.waitFor();
 				else
 					throw new SourceException("Cannot start the process");
-			}
-			catch (final InterruptedException ie) {
+			} catch (final InterruptedException ie) {
 				p.destroy();
-					
+
 				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 
@@ -398,34 +383,48 @@ public class Xrootd extends Protocol {
 
 				logger.log(Level.WARNING, "GET failed with " + exitStatus.getStdOut());
 
-				if (sMessage != null) {
-					sMessage = xrdcpCommand+" exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
-				}
-				else {
+				if (sMessage != null)
+					sMessage = xrdcpCommand + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				else
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
-				}
 
 				throw new SourceException(sMessage);
 			}
 
 			if (!checkDownloadedFile(target, pfn))
-				throw new SourceException("Local file doesn't match catalogue details ("+(target.exists() ? ""+target.length() : "n/a")+" vs "+pfn.getGuid().size+")");
-		}
-		catch (final SourceException ioe) {
+				throw new SourceException("Local file doesn't match catalogue details (" + (target.exists() ? "" + target.length() : "n/a") + " vs " + pfn.getGuid().size + ")");
+		} catch (final SourceException ioe) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
-			else{
-				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target);	// make sure it doesn't pop up later after an interrupt
+			else {
+				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target); // make
+																							// sure
+																							// it
+																							// doesn't
+																							// pop
+																							// up
+																							// later
+																							// after
+																							// an
+																							// interrupt
 				TempFileManager.release(target);
 			}
 
 			throw ioe;
-		}
-		catch (final Throwable t) {
+		} catch (final Throwable t) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
-			else{
-				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target);	// make sure it doesn't pop up later after an interrupt
+			else {
+				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target); // make
+																							// sure
+																							// it
+																							// doesn't
+																							// pop
+																							// up
+																							// later
+																							// after
+																							// an
+																							// interrupt
 				TempFileManager.release(target);
 			}
 
@@ -434,37 +433,33 @@ public class Xrootd extends Protocol {
 			throw new SourceException("Get aborted because " + t);
 		}
 
-		if (localFile==null){
+		if (localFile == null)
 			TempFileManager.putTemp(pfn.getGuid(), target);
-		}
-		else{
+		else
 			TempFileManager.putPersistent(pfn.getGuid(), target);
-		}
-		
+
 		return target;
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess,
-	 * java.lang.String)
+	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
 	 */
 	@Override
 	public String put(final PFN pfn, final File localFile) throws IOException {
 		if (localFile == null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
 			throw new TargetException("Local file " + localFile + " cannot be read");
 
-		if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE) {
+		if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE)
 			throw new TargetException("No access to this PFN");
-		}
 
-		if (localFile.length() != pfn.getGuid().size) {
+		if (localFile.length() != pfn.getGuid().size)
 			throw new TargetException("Difference in sizes: local=" + localFile.length() + " / pfn=" + pfn.getGuid().size);
-		}
 
 		try {
-			final List<String> command = new LinkedList<String>();
+			final List<String> command = new LinkedList<>();
 
 			if (xrdcpPath == null) {
 				logger.log(Level.SEVERE, "Could not fine [" + xrdcpCommand + "] in path.");
@@ -482,29 +477,25 @@ public class Xrootd extends Protocol {
 
 			String transactionURL = pfn.pfn;
 
-			if (pfn.ticket.envelope != null) {
+			if (pfn.ticket.envelope != null)
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
-			}
 
 			command.add(transactionURL);
 
-			if (pfn.ticket.envelope != null) {
+			if (pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OD&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
-				else
-					if (pfn.ticket.envelope.getSignedEnvelope() != null) {
-						command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
-
-					}
-			}
+				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-			
+
 			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 
-			long maxTime = pfn.getGuid().size / 20000; // 20KB/s should be available to anybody
+			long maxTime = pfn.getGuid().size / 20000; // 20KB/s should be
+														// available to anybody
 
 			maxTime += timeout;
 
@@ -516,22 +507,19 @@ public class Xrootd extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
-			}
-			catch (final InterruptedException ie) {
+			} catch (final InterruptedException ie) {
 				throw new TargetException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
-				logger.log(Level.WARNING, "PUT of "+pfn.pfn+" failed with " + exitStatus.getStdOut());
+				logger.log(Level.WARNING, "PUT of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
-				if (sMessage != null) {
-					sMessage = xrdcpCommand+" exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
-				}
-				else {
+				if (sMessage != null)
+					sMessage = xrdcpCommand + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				else
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
-				}
 
 				throw new TargetException(sMessage);
 			}
@@ -540,14 +528,11 @@ public class Xrootd extends Protocol {
 				return xrdstat(pfn, false);
 
 			return xrdstat(pfn, true);
-		}
-		catch (final TargetException ioe) {
+		} catch (final TargetException ioe) {
 			throw ioe;
-		}
-		catch (final IOException ioe) {
+		} catch (final IOException ioe) {
 			throw new TargetException(ioe.getMessage());
-		}
-		catch (final Throwable t) {
+		} catch (final Throwable t) {
 			logger.log(Level.WARNING, "Caught exception", t);
 
 			throw new TargetException("Put aborted because " + t);
@@ -555,7 +540,7 @@ public class Xrootd extends Protocol {
 	}
 
 	private final List<String> getCommonArguments() {
-		final List<String> ret = new ArrayList<String>();
+		final List<String> ret = new ArrayList<>();
 
 		ret.add("-DIFirstConnectMaxCnt");
 		ret.add(DIFirstConnectMaxCnt);
@@ -572,7 +557,7 @@ public class Xrootd extends Protocol {
 			ret.add("-DIRequestTimeout");
 			ret.add(String.valueOf(timeout));
 		}
-		
+
 		ret.add("-DIReadCacheSize");
 		ret.add("0");
 
@@ -580,78 +565,81 @@ public class Xrootd extends Protocol {
 	}
 
 	/**
-	 * Check if the PFN has the correct properties, such as described in the access envelope
+	 * Check if the PFN has the correct properties, such as described in the
+	 * access envelope
 	 * 
 	 * @param pfn
 	 * @param returnEnvelope
-	 * @return the signed envelope from the storage, if it knows how to generate one
+	 * @return the signed envelope from the storage, if it knows how to generate
+	 *         one
 	 * @throws IOException
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope) throws IOException {
 		return xrdstat(pfn, returnEnvelope, true, false);
 	}
-	
+
 	/**
 	 * @param output
 	 * @return the command output less some of the irrelevant messages
 	 */
-	static String cleanupXrdOutput(final String output){
+	static String cleanupXrdOutput(final String output) {
 		final StringBuilder sb = new StringBuilder(output.length());
-		
+
 		final BufferedReader br = new BufferedReader(new StringReader(output));
-		
+
 		String line;
-		
-		try{
-			while ( (line=br.readLine())!=null ){
+
+		try {
+			while ((line = br.readLine()) != null)
 				if (!line.startsWith("Overriding '"))
 					sb.append(line).append('\n');
-			}
-		}
-		catch (final IOException ioe){
+		} catch (final IOException ioe) {
 			// ignore, cannot happen
 		}
-		
+
 		return sb.toString().replaceAll("[\\n\\r\\s]+$", "");
 	}
 
 	/**
-	 * Check if the PFN has the correct properties, such as described in the access envelope
+	 * Check if the PFN has the correct properties, such as described in the
+	 * access envelope
 	 * 
 	 * @param pfn
 	 * @param returnEnvelope
 	 * @param retryWithDelay
 	 * @param forceRecalcMd5
-	 * @return the signed envelope from the storage, if it knows how to generate one
+	 * @return the signed envelope from the storage, if it knows how to generate
+	 *         one
 	 * @throws IOException
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
 
 		final SE se = pfn.getSE();
-		
+
 		final int[] statRetryTimes = se.seName.toLowerCase().contains("dcache") ? statRetryTimesDCache : statRetryTimesXrootd;
-		
-		for (int statRetryCounter = 0; statRetryCounter < statRetryTimes.length; statRetryCounter++) {
+
+		for (int statRetryCounter = 0; statRetryCounter < statRetryTimes.length; statRetryCounter++)
 			try {
-				final List<String> command = new LinkedList<String>();
+				final List<String> command = new LinkedList<>();
 
 				if (returnEnvelope) {
-					// e.g. xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+					// e.g. xrd pcaliense01:1095 query 32
+					// /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
 					// TODO:
-					// clean the following up, it's working but not very good looking
+					// clean the following up, it's working but not very good
+					// looking
 					command.add("xrd");
-					String qProt = pfn.getPFN().substring(7);
-					String host = qProt.substring(0, qProt.indexOf(':'));
+					final String qProt = pfn.getPFN().substring(7);
+					final String host = qProt.substring(0, qProt.indexOf(':'));
 					String port = qProt.substring(qProt.indexOf(':') + 1, qProt.indexOf('/'));
 
 					try {
 						int pno = Integer.parseInt(port);
 						pno++;
 						port = "" + pno;
-					}
-					catch (NumberFormatException n) {
+					} catch (final NumberFormatException n) {
 						// port was not a number, keeping the default port
 					}
 
@@ -662,10 +650,9 @@ public class Xrootd extends Protocol {
 
 					if (forceRecalcMd5)
 						qpfn += "\\&recomputemd5=1";
-					
+
 					command.add(qpfn);
-				}
-				else {
+				} else {
 					command.add("xrdstat");
 					command.addAll(getCommonArguments());
 					command.add(pfn.getPFN());
@@ -685,17 +672,16 @@ public class Xrootd extends Protocol {
 
 				try {
 					exitStatus = pBuilder.start().waitFor();
-				}
-				catch (final InterruptedException ie) {
+				} catch (final InterruptedException ie) {
 					throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 				}
 
 				final int sleep = statRetryTimes[statRetryCounter];
 
 				if (exitStatus.getExtProcExitStatus() != 0) {
-					if (sleep == 0 || !retryWithDelay) {
-						throw new IOException("Exit code was " + exitStatus.getExtProcExitStatus() + ", retry #"+(statRetryCounter+1)+", output was " + cleanupXrdOutput(exitStatus.getStdOut()) + ", " + "for command : " + command.toString());
-					}
+					if (sleep == 0 || !retryWithDelay)
+						throw new IOException("Exit code was " + exitStatus.getExtProcExitStatus() + ", retry #" + (statRetryCounter + 1) + ", output was " + cleanupXrdOutput(exitStatus.getStdOut())
+								+ ", " + "for command : " + command.toString());
 
 					Thread.sleep(sleep * 1000);
 					continue;
@@ -709,18 +695,15 @@ public class Xrootd extends Protocol {
 				if (pfn.getGuid().size == filesize)
 					return cleanupXrdOutput(exitStatus.getStdOut());
 
-				if (sleep == 0 || !retryWithDelay) {
-					throw new IOException(command.toString() + ": could not confirm the upload after "+(statRetryCounter+1)+" retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
-				}
+				if (sleep == 0 || !retryWithDelay)
+					throw new IOException(command.toString() + ": could not confirm the upload after " + (statRetryCounter + 1) + " retries: " + cleanupXrdOutput(exitStatus.getStdOut()));
 
 				Thread.sleep(sleep * 1000);
 				continue;
 
-			}
-			catch (final IOException ioe) {
+			} catch (final IOException ioe) {
 				throw ioe;
-			}
-			catch (final Throwable t) {
+			} catch (final Throwable t) {
 				logger.log(Level.WARNING, "Caught exception", t);
 
 				final IOException ioe = new IOException("xrdstat internal failure " + t);
@@ -729,7 +712,6 @@ public class Xrootd extends Protocol {
 
 				throw ioe;
 			}
-		}
 
 		return null;
 	}
@@ -737,8 +719,9 @@ public class Xrootd extends Protocol {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess,
-	 * alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
 	public String transfer(final PFN source, final PFN target) throws IOException {
@@ -746,33 +729,30 @@ public class Xrootd extends Protocol {
 
 		try {
 			return put(target, temp);
-		}
-		finally {
+		} finally {
 			TempFileManager.release(temp);
 		}
 	}
 
-	private static long checkOldOutputOnSize(String stdout) {
+	private static long checkOldOutputOnSize(final String stdout) {
 
 		long size = 0;
 		String line = null;
-		BufferedReader reader = new BufferedReader(new StringReader(stdout));
+		final BufferedReader reader = new BufferedReader(new StringReader(stdout));
 
 		try {
-			while ((line = reader.readLine()) != null) {
+			while ((line = reader.readLine()) != null)
 				if (line.startsWith("xstat:")) {
-					int idx = line.indexOf("size=");
+					final int idx = line.indexOf("size=");
 
 					if (idx > 0) {
-						int idx2 = line.indexOf(" ", idx);
+						final int idx2 = line.indexOf(" ", idx);
 
 						size = Long.parseLong(line.substring(idx + 5, idx2));
 					}
 				}
-			}
 
-		}
-		catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 		}
 		return size;
@@ -792,5 +772,5 @@ public class Xrootd extends Protocol {
 	int getPreference() {
 		return 2;
 	}
-	
+
 }

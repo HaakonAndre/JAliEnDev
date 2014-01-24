@@ -24,7 +24,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	/**
 	 * the HashMap for the log screens
 	 */
-	private static HashMap<Integer, List<String>> scrlogs = new HashMap<Integer, List<String>>(10);
+	private static HashMap<Integer, List<String>> scrlogs = new HashMap<>(10);
 
 	private Integer logno = Integer.valueOf(-1);
 

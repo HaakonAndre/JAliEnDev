@@ -25,7 +25,7 @@ import lia.Monitor.monitor.AppConfig;
  * @since Nov 3, 2010
  */
 public class ConfigUtils {
-	private static ExpirationCache<String, String> seenLoggers = new ExpirationCache<String, String>();
+	private static ExpirationCache<String, String> seenLoggers = new ExpirationCache<>();
 
 	/**
 	 * Logger
@@ -47,9 +47,9 @@ public class ConfigUtils {
 	static {
 		String sConfigFolder = null;
 
-		final HashMap<String, ExtProperties> dbconfig = new HashMap<String, ExtProperties>();
+		final HashMap<String, ExtProperties> dbconfig = new HashMap<>();
 
-		final HashMap<String, ExtProperties> otherconfig = new HashMap<String, ExtProperties>();
+		final HashMap<String, ExtProperties> otherconfig = new HashMap<>();
 
 		ExtProperties applicationConfig = null;
 
@@ -57,22 +57,22 @@ public class ConfigUtils {
 			sConfigFolder = System.getProperty("AliEnConfig", "config");
 
 			final File f = new File(sConfigFolder);
-			
-//			System.err.println("Config folder: "+f.getCanonicalPath());
+
+			// System.err.println("Config folder: "+f.getCanonicalPath());
 
 			if (f.exists() && f.isDirectory() && f.canRead()) {
 				if (System.getProperty("lazyj.config.folder") == null)
 					System.setProperty("lazyj.config.folder", sConfigFolder);
-				
+
 				final File[] list = f.listFiles();
 
-				if (list != null) {
-					for (final File sub : list) {
+				if (list != null)
+					for (final File sub : list)
 						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
 							String sName = sub.getName();
 							sName = sName.substring(0, sName.lastIndexOf('.'));
-							
-//							System.err.println("Found configuration file: "+sName);
+
+							// System.err.println("Found configuration file: "+sName);
 
 							final ExtProperties prop = new ExtProperties(sConfigFolder, sName);
 							prop.makeReadOnly();
@@ -80,15 +80,15 @@ public class ConfigUtils {
 
 							if (sName.equals("logging")) {
 								logging = new LoggingConfigurator(prop);
-								
+
 								logging.update(null, null);
-								
+
 								if (System.getProperty("lia.Monitor.ConfigURL") == null) {
-									// give the ML components the same logging configuration file if not explicitly set
+									// give the ML components the same logging
+									// configuration file if not explicitly set
 									try {
 										System.setProperty("lia.Monitor.ConfigURL", "file:" + sub.getCanonicalPath());
-									}
-									catch (IOException ioe) {
+									} catch (final IOException ioe) {
 										// ignore
 									}
 
@@ -96,21 +96,16 @@ public class ConfigUtils {
 									// instantiates correctly
 									AppConfig.lastReloaded();
 								}
-							}
-							else if (sName.equals("config")) {
+							} else if (sName.equals("config"))
 								applicationConfig = prop;
-							}
 							else if (prop.gets("driver").length() > 0) {
 								dbconfig.put(sName, prop);
 
 								if (prop.gets("password").length() > 0)
 									hasDirectDBConnection = true;
-							}
-							else
+							} else
 								otherconfig.put(sName, prop);
 						}
-					}
-				}
 			}
 
 			// if (logging == null){
@@ -124,8 +119,7 @@ public class ConfigUtils {
 			//
 			// logging = new LoggingConfigurator(prop);
 			// }
-		}
-		catch (Throwable t) {
+		} catch (final Throwable t) {
 			System.err.println("ConfigUtils: static: caught: " + t + " (" + t.getMessage() + ")");
 			t.printStackTrace();
 		}
@@ -143,10 +137,10 @@ public class ConfigUtils {
 	/**
 	 * @return the base directory where the configuration files are
 	 */
-	public static final String getConfigFolder(){
+	public static final String getConfigFolder() {
 		return CONFIG_FOLDER;
 	}
-	
+
 	/**
 	 * @return <code>true</code> if direct database access is available
 	 */
@@ -170,7 +164,8 @@ public class ConfigUtils {
 	 * key can be found it is returned to the caller, otherwise a
 	 * <code>null</code> value is returned.
 	 * 
-	 * @param key database class, something like &quot;catalogue_admin&quot;
+	 * @param key
+	 *            database class, something like &quot;catalogue_admin&quot;
 	 * @return the database connection, or <code>null</code> if it is not
 	 *         available.
 	 */
@@ -231,16 +226,14 @@ public class ConfigUtils {
 
 			try {
 				prop.getProperties().store(baos, "AliEn Loggging Properties");
-			}
-			catch (Throwable t) {
+			} catch (final Throwable t) {
 				System.err.println("Cannot store default props");
 				t.printStackTrace();
 			}
 
 			try {
 				baos.flush();
-			}
-			catch (Exception ex) {
+			} catch (final Exception ex) {
 				// ignore
 			}
 
@@ -250,8 +243,7 @@ public class ConfigUtils {
 
 			try {
 				LogManager.getLogManager().readConfiguration(bais);
-			}
-			catch (Throwable t) {
+			} catch (final Throwable t) {
 				System.err.println("Cannot load default props into LogManager");
 				t.printStackTrace();
 			}
@@ -270,17 +262,13 @@ public class ConfigUtils {
 		if (logging != null) {
 			final String s = seenLoggers.get(component);
 
-			if (s == null) {
+			if (s == null)
 				seenLoggers.put(component, component, 60 * 1000);
-
-				//logging.update(null, null);
-			}
 		}
 
-		if (l.getFilter()==null){
+		if (l.getFilter() == null)
 			l.setFilter(LoggingFilter.getInstance());
-		}
-		
+
 		return l;
 	}
 
@@ -292,11 +280,11 @@ public class ConfigUtils {
 	public static final String getVersion() {
 		return jAliEnVersion;
 	}
-	
+
 	/**
 	 * @return the site name closest to where this JVM runs
 	 */
-	public static String getSite(){
+	public static String getSite() {
 		// TODO implement this properly
 		return "CERN";
 	}

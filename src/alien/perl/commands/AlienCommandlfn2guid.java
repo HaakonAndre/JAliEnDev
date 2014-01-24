@@ -17,7 +17,7 @@ public class AlienCommandlfn2guid extends AlienCommand {
 	/**
 	 * ls command arguments : -help/l/a
 	 */
-	private static ArrayList<String> lsArguments = new ArrayList<String>();
+	private static ArrayList<String> lsArguments = new ArrayList<>();
 
 	static {
 		lsArguments.add("help");
@@ -90,10 +90,10 @@ public class AlienCommandlfn2guid extends AlienCommand {
 	 */
 	@Override
 	public HashMap<String, ArrayList<String>> executeCommand() {
-		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
+		HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
 
-		ArrayList<String> alrcValues = new ArrayList<String>();
-		ArrayList<String> alrcMessages = new ArrayList<String>();
+		ArrayList<String> alrcValues = new ArrayList<>();
+		ArrayList<String> alrcMessages = new ArrayList<>();
 
 		// we got arguments for ls
 		if (this.alArguments != null && this.alArguments.size() > 0) {

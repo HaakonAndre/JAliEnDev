@@ -53,7 +53,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 			"alien.io.protocols.TempFileManager.temp.size", 10 * 1024 * 1024 * 1024L), true);
 	private static final TempFileManager persistentInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.persistent.entries", 100), 0, false);
 
-	private static List<File> lockedLocalFiles = new LinkedList<File>();
+	private static List<File> lockedLocalFiles = new LinkedList<>();
 
 	/*
 	 * (non-Javadoc)
@@ -66,23 +66,19 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 		final boolean remove = !eldest.getValue().exists() || (!wasLocked && (super.removeEldestEntry(eldest) || (this.totalSizeLimit > 0 && this.currentSize > this.totalSizeLimit)));
 
-		if (logger.isLoggable(Level.FINEST)) {
+		if (logger.isLoggable(Level.FINEST))
 			logger.log(Level.FINEST, "Decision on ('" + eldest.getValue().getAbsolutePath() + "'): " + remove + ", count: " + size() + " / " + getLimit() + ", size: " + this.currentSize + " / "
 					+ this.totalSizeLimit + ", locked: " + wasLocked);
-		}
 
 		if (remove) {
 			this.currentSize -= eldest.getKey().size;
 
 			if (this.delete) {
 				if (eldest.getValue().exists()) {
-					if (!eldest.getValue().delete()) {
+					if (!eldest.getValue().delete())
 						logger.log(Level.WARNING, "Could not delete temporary file " + eldest.getValue());
-					}
-				}
-				else {
+				} else
 					logger.log(Level.FINE, "Somebody has already deleted " + eldest.getValue() + " while its lock status was: " + wasLocked);
-				}
 
 				release(eldest.getValue());
 			}
@@ -130,8 +126,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		try {
 			if (f != null && f.exists() && f.isFile() && f.canRead() && f.length() == key.size && IOUtils.getMD5(f).equalsIgnoreCase(key.md5))
 				return f;
-		}
-		catch (final IOException e) {
+		} catch (final IOException e) {
 			return null;
 		}
 
@@ -145,19 +140,17 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	public static void putTemp(final GUID key, final File localFile) {
 		synchronized (tempInstance) {
 			final File old = tempInstance.get(key);
-			
-			if (old!=null){
-				if (old.exists() && old.length()==key.size){
-					logger.log(Level.FINE, "Refusing to overwrite "+key.guid+" -> "+tempInstance.get(key)+" with "+localFile);
+
+			if (old != null) {
+				if (old.exists() && old.length() == key.size) {
+					logger.log(Level.FINE, "Refusing to overwrite " + key.guid + " -> " + tempInstance.get(key) + " with " + localFile);
 					tempInstance.put(GUIDUtils.createGuid(), localFile);
-				}
-				else{
+				} else {
 					release(old);
 					tempInstance.put(key, localFile);
 					lock(localFile);
 				}
-			}
-			else{
+			} else {
 				tempInstance.put(key, localFile);
 				lock(localFile);
 			}
@@ -175,39 +168,36 @@ public class TempFileManager extends LRUMap<GUID, File> {
 			lockedLocalFiles.add(f);
 		}
 
-		if (logger.isLoggable(Level.FINEST)) {
+		if (logger.isLoggable(Level.FINEST))
 			try {
 				throw new IOException();
-			}
-			catch (final IOException ioe) {
+			} catch (final IOException ioe) {
 				logger.log(Level.FINEST, f.getAbsolutePath() + " locked by", ioe);
 			}
-		}
 	}
 
 	/**
-	 * For temporary downloaded files, call this when you are done working with the local file to allow the garbage
-	 * collector to reclaim the space when needed.
+	 * For temporary downloaded files, call this when you are done working with
+	 * the local file to allow the garbage collector to reclaim the space when
+	 * needed.
 	 * 
 	 * @param f
 	 * @return <code>true</code> if this file was indeed released
 	 */
 	public static boolean release(final File f) {
 		boolean removed;
-		
+
 		synchronized (lockedLocalFiles) {
 			removed = lockedLocalFiles.remove(f);
 		}
-		
-		if ((!removed && logger.isLoggable(Level.FINE)) || logger.isLoggable(Level.FINEST)){
-			try{
+
+		if ((!removed && logger.isLoggable(Level.FINE)) || logger.isLoggable(Level.FINEST))
+			try {
 				throw new IOException();
+			} catch (final IOException ioe) {
+				logger.log(Level.FINE, "Asked to release a file " + (removed ? "that was indeed locked: " : "that was not previously locked: ") + f.getAbsolutePath(), ioe);
 			}
-			catch (final IOException ioe){
-				logger.log(Level.FINE, "Asked to release a file "+(removed ? "that was indeed locked: " : "that was not previously locked: ")+f.getAbsolutePath(), ioe);
-			}
-		}
-		
+
 		return removed;
 	}
 
@@ -226,7 +216,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	 */
 	public static List<File> getLockedFiles() {
 		synchronized (lockedLocalFiles) {
-			return new ArrayList<File>(lockedLocalFiles);
+			return new ArrayList<>(lockedLocalFiles);
 		}
 	}
 
@@ -246,19 +236,19 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		synchronized (instance) {
 			final Iterator<Map.Entry<GUID, File>> it = instance.entrySet().iterator();
 
-			while (it.hasNext()) {
+			while (it.hasNext())
 				if (instance.removeEldestEntry(it.next())) {
 					ret++;
 					it.remove();
 				}
-			}
 		}
 
 		return ret;
 	}
 
 	/**
-	 * Periodically call this method to go through all cached entries and check their validity
+	 * Periodically call this method to go through all cached entries and check
+	 * their validity
 	 * 
 	 * @return number of collected entries
 	 */
@@ -277,8 +267,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 				try {
 					collected = gc();
-				}
-				catch (final Throwable t) {
+				} catch (final Throwable t) {
 					logger.log(Level.WARNING, "Exception collecting gc", t);
 				}
 
@@ -294,8 +283,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 				try {
 					sleep(sleepTime);
-				}
-				catch (final InterruptedException e) {
+				} catch (final InterruptedException e) {
 					return;
 				}
 			}

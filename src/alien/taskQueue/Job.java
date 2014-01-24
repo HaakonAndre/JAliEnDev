@@ -5,20 +5,19 @@ import java.io.Serializable;
 import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.security.cert.X509Certificate;
 
 import lazyj.DBFunctions;
 import lia.util.StringFactory;
-
 
 /**
  * @author ron
  * @since Mar 1, 2011
  */
 
-public class Job  implements Comparable<Job>,Serializable {
-	
-		
+public class Job implements Comparable<Job>, Serializable {
+
 	/**
 	 * 
 	 */
@@ -28,63 +27,62 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * Job Queue ID
 	 */
 	public int queueId;
-	
+
 	/**
-	 * Job Priority 
+	 * Job Priority
 	 */
 	public int priority;
-	
+
 	/**
-	 * Job exec host 
+	 * Job exec host
 	 */
 	public String execHost;
-	
-	
+
 	/**
 	 * sent
 	 */
 	public long sent;
-	
+
 	/**
 	 * split
 	 */
 	public int split;
-	
+
 	/**
 	 * name - executable
 	 */
 	public String name;
-	
+
 	/**
 	 * URL
 	 */
 	public String spyurl;
-	
+
 	/**
 	 * executable parameters
 	 */
 	public String commandArg;
-	
+
 	/**
 	 * finished
 	 */
 	public long finished;
-	
+
 	/**
 	 * masterjob
 	 */
 	public boolean masterjob;
-	
+
 	/**
 	 * Job status
 	 */
 	private JobStatus status;
-	
+
 	/**
 	 * splitting
 	 */
 	public int splitting;
-	
+
 	/**
 	 * node
 	 */
@@ -94,7 +92,7 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * error
 	 */
 	public int error;
-	
+
 	/**
 	 * current
 	 */
@@ -104,51 +102,53 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * received
 	 */
 	public long received;
-	
+
 	/**
 	 * validate
 	 */
 	public boolean validate;
-	
+
 	/**
 	 * command
+	 * 
 	 * @deprecated
 	 */
 	@Deprecated
 	public String command;
-	
+
 	/**
 	 * merging
 	 */
 	public String merging;
-	
+
 	/**
 	 * User name
 	 */
 	public String user;
-	
+
 	/**
 	 * submitHost
 	 */
 	public String submitHost;
-	
+
 	/**
 	 * jdl
 	 */
 	public String jdl;
-	
+
 	/**
 	 * The processed jdl
 	 */
 	public String processedJDL;
-	
+
 	/**
 	 * the submitter's certificate (public)
 	 * 
-	 * TODO : X509Certificate objects are not serializable, be careful with this field ...
+	 * TODO : X509Certificate objects are not serializable, be careful with this
+	 * field ...
 	 */
 	public transient X509Certificate userCertificate;
-	
+
 	/**
 	 * path
 	 */
@@ -158,32 +158,32 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * site
 	 */
 	public String site;
-	
+
 	/**
 	 * started
 	 */
 	public long started;
-	
+
 	/**
 	 * expires
 	 */
 	public int expires;
-	
+
 	/**
 	 * finalPrice
 	 */
 	public float finalPrice;
-	
+
 	/**
 	 * effectivePriority
 	 */
 	public float effectivePriority;
-	
+
 	/**
 	 * price
 	 */
 	public float price;
-	
+
 	/**
 	 * si2k
 	 */
@@ -198,52 +198,52 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * agentid
 	 */
 	public int agentid;
-	
+
 	/**
 	 * notify
 	 */
 	public String notify;
-	
+
 	/**
 	 * chargeStatus
 	 */
 	public String chargeStatus;
-	
+
 	/**
 	 * optimized
 	 */
 	public boolean optimized;
-	
+
 	/**
 	 * mtime
 	 */
 	public Date mtime;
-		
+
 	/**
 	 * Load one row from a G*L table
 	 * 
 	 * @param db
 	 */
-	Job(final DBFunctions db){
+	Job(final DBFunctions db) {
 		init(db, false);
 	}
-	
+
 	/**
 	 * Fake a job, needs to be removed one day!
 	 */
-	public Job(){
+	public Job() {
 		// nothing
 	}
-	
+
 	/**
 	 * @param db
 	 * @param loadJDL
 	 */
-	Job(final DBFunctions db, final boolean loadJDL){
+	Job(final DBFunctions db, final boolean loadJDL) {
 		init(db, loadJDL);
 	}
-	
-	private void init(final DBFunctions db, final boolean loadJDL){
+
+	private void init(final DBFunctions db, final boolean loadJDL) {
 		queueId = db.geti("queueId");
 		priority = db.geti("priority");
 		sent = db.getl("sent");
@@ -256,7 +256,7 @@ public class Job  implements Comparable<Job>,Serializable {
 		error = db.geti("error", -1);
 		current = StringFactory.get(db.gets("current", null));
 		received = db.getl("received");
-		validate = db.getb("validate",false);
+		validate = db.getb("validate", false);
 		merging = StringFactory.get(db.gets("merging", null));
 		jdl = loadJDL ? db.gets("jdl") : null;
 		path = StringFactory.get(db.gets("path", null));
@@ -268,12 +268,12 @@ public class Job  implements Comparable<Job>,Serializable {
 		price = db.getf("price");
 		si2k = db.getf("si2k");
 		jobagentId = db.geti("jobagentId");
-		agentid = db.geti("agentid");		
+		agentid = db.geti("agentid");
 		chargeStatus = StringFactory.get(db.gets("chargeStatus", null));
-		optimized = db.getb("optimized",false);
-		mtime = db.getDate("mtime", null);	
-		
-		if (TaskQueueUtils.dbStructure2_20){
+		optimized = db.getb("optimized", false);
+		mtime = db.getDate("mtime", null);
+
+		if (TaskQueueUtils.dbStructure2_20) {
 			status = JobStatus.getStatusByAlien(Integer.valueOf(db.geti("statusId")));
 			submitHost = TaskQueueUtils.getHost(db.geti("submitHostId"));
 			execHost = TaskQueueUtils.getHost(db.geti("execHostId"));
@@ -281,25 +281,22 @@ public class Job  implements Comparable<Job>,Serializable {
 			notify = TaskQueueUtils.getNotify(db.geti("notifyId"));
 			name = command = TaskQueueUtils.getCommand(db.geti("commandId"));
 			user = TaskQueueUtils.getUser(db.geti("userId"));
-		}
-		else{
+		} else {
 			status = JobStatus.getStatus(db.gets("status"));
 			submitHost = db.gets("submitHost");
 			execHost = StringFactory.get(db.gets("execHost"));
 			node = StringFactory.get(db.gets("node", null));
 			notify = StringFactory.get(db.gets("notify", null));
-			name = StringFactory.get(db.gets("name", null)); 
+			name = StringFactory.get(db.gets("name", null));
 			command = StringFactory.get(db.gets("command", null));
-			
+
 			final int idx = submitHost.indexOf('@');
-			
-			if (idx>0){
+
+			if (idx > 0) {
 				user = StringFactory.get(submitHost.substring(0, idx));
-				submitHost = StringFactory.get(submitHost.substring(idx+1));
-			}
-			else{
+				submitHost = StringFactory.get(submitHost.substring(idx + 1));
+			} else
 				submitHost = StringFactory.get(submitHost);
-			}
 		}
 	}
 
@@ -307,80 +304,54 @@ public class Job  implements Comparable<Job>,Serializable {
 	public int compareTo(final Job o) {
 		return queueId - o.queueId;
 	}
-	
+
 	@Override
 	public boolean equals(final Object obj) {
-		if (! (obj instanceof Job))
+		if (!(obj instanceof Job))
 			return false;
-		
+
 		return compareTo((Job) obj) == 0;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return queueId;
 	}
 
-	
-	@Override		
+	@Override
 	public String toString() {
-		return "Job queueId\t\t: "+queueId+"\n" +
-		" priority\t\t: "+priority+"\n" +
-		" execHost\t\t: "+execHost+"\n" +
-		" sent\t\t\t: "+sent+"\n"+
-		" split\t\t\t: "+split+"\n" +
-		" name\t\t\t: "+name+"\n" +
-		" spyurl\t\t\t: "+spyurl+"\n" +
-		" commandArg\t\t: "+commandArg+"\n" +
-		" finished\t\t: "+finished+"\n" +
-		" masterjob\t\t: "+masterjob+"\n" +
-		" status\t\t\t: "+status+"\n" +
-		" splitting\t\t: "+splitting+"\n" +
-		" node\t\t\t: "+node+"\n" +
-		" error\t\t\t: "+error+"\n" +
-		" current\t\t: "+current+"\n" +
-		" received\t\t: "+received+"\n" +
-		" validate\t\t: "+validate+"\n" +
-		" command\t\t: "+command+"\n" +
-		" merging\t\t: "+merging+"\n" +
-		" user\t\t\t: "+user+"\n"+
-		" submitHost\t\t: "+submitHost+"\n" +
-		" path\t\t\t: "+path+"\n" +
-		" site\t\t\t: "+site+"\n" +
-		" started\t\t: "+started+"\n" +
-		" expires\t\t: "+expires+"\n" +
-		" finalPrice\t\t: "+finalPrice+"\n" +
-		" effectivePriority\t: "+effectivePriority+"\n" +
-		" price\t\t\t: "+price+"\n" +
-		" si2k\t\t\t: "+si2k+"\n" +
-		" jobagentId\t\t: "+jobagentId+"\n" +
-		" agentid\t\t: "+agentid+"\n" +
-		" notify\t\t\t: "+notify+"\n" +
-		" chargeStatus\t\t: "+chargeStatus+"\n" +
-		" optimized\t\t: "+optimized+"\n" +
-		" mtime\t\t\t: "+mtime+ "\n"+
-		" jdl\t\t\t: "+jdl;
+		return "Job queueId\t\t: " + queueId + "\n" + " priority\t\t: " + priority + "\n" + " execHost\t\t: " + execHost + "\n" + " sent\t\t\t: " + sent + "\n" + " split\t\t\t: " + split + "\n"
+				+ " name\t\t\t: " + name + "\n" + " spyurl\t\t\t: " + spyurl + "\n" + " commandArg\t\t: " + commandArg + "\n" + " finished\t\t: " + finished + "\n" + " masterjob\t\t: " + masterjob
+				+ "\n" + " status\t\t\t: " + status + "\n" + " splitting\t\t: " + splitting + "\n" + " node\t\t\t: " + node + "\n" + " error\t\t\t: " + error + "\n" + " current\t\t: " + current
+				+ "\n" + " received\t\t: " + received + "\n" + " validate\t\t: " + validate + "\n" + " command\t\t: " + command + "\n" + " merging\t\t: " + merging + "\n" + " user\t\t\t: " + user
+				+ "\n" + " submitHost\t\t: " + submitHost + "\n" + " path\t\t\t: " + path + "\n" + " site\t\t\t: " + site + "\n" + " started\t\t: " + started + "\n" + " expires\t\t: " + expires
+				+ "\n" + " finalPrice\t\t: " + finalPrice + "\n" + " effectivePriority\t: " + effectivePriority + "\n" + " price\t\t\t: " + price + "\n" + " si2k\t\t\t: " + si2k + "\n"
+				+ " jobagentId\t\t: " + jobagentId + "\n" + " agentid\t\t: " + agentid + "\n" + " notify\t\t\t: " + notify + "\n" + " chargeStatus\t\t: " + chargeStatus + "\n" + " optimized\t\t: "
+				+ optimized + "\n" + " mtime\t\t\t: " + mtime + "\n" + " jdl\t\t\t: " + jdl;
 	}
-	
+
 	/**
 	 * @return the owner of the job (AliEn account name)
 	 */
-	public String getOwner(){
+	public String getOwner() {
 		return user;
 	}
 
-	private static final Pattern pJDLContent = Pattern.compile("^\\s*\\[\\s*(.*)\\s*\\]\\s*$", Pattern.DOTALL | Pattern.MULTILINE); 
-	
+	private static final Pattern pJDLContent = Pattern.compile("^\\s*\\[\\s*(.*)\\s*\\]\\s*$", Pattern.DOTALL | Pattern.MULTILINE);
+
 	/**
 	 * @return original JDL as in the QUEUE table
 	 */
-	public String getOriginalJDL(){
+	public String getOriginalJDL() {
 		return getOriginalJDL(true);
 	}
 
 	/**
-	 * @param initialJDL if <code>true</code> then the original JDL (what the user has submitted) is returned. This should be the normal case, since the alternative is to return the JDL as processed by the 
-	 * 	central services, which is not user-friendly.
+	 * @param initialJDL
+	 *            if <code>true</code> then the original JDL (what the user has
+	 *            submitted) is returned. This should be the normal case, since
+	 *            the alternative is to return the JDL as processed by the
+	 *            central services, which is not user-friendly.
 	 * @return original JDL as in the QUEUE table
 	 */
 	public String getOriginalJDL(final boolean initialJDL) {
@@ -409,112 +380,108 @@ public class Job  implements Comparable<Job>,Serializable {
 	 * @param jdlContent
 	 * @return the JDL content without the enclosing [] if any
 	 */
-	public static String sanitizeJDL(final String jdlContent){
-		if (jdlContent==null)
+	public static String sanitizeJDL(final String jdlContent) {
+		if (jdlContent == null)
 			return null;
-		
+
 		String ret = jdlContent;
-		
+
 		final Matcher m = pJDLContent.matcher(ret);
-		
+
 		if (m.matches())
 			ret = m.group(1);
-		
+
 		ret = ret.replaceAll("(^|\\n)\\s{1,8}", "$1");
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * @return the JDL contents, without the enclosing []
 	 */
-	public String getJDL(){
+	public String getJDL() {
 		return sanitizeJDL(getOriginalJDL());
 	}
-	
-	
+
 	/**
 	 * @return the status, as object
 	 */
-	public JobStatus status(){
+	public JobStatus status() {
 		return status;
 	}
-	
+
 	/**
 	 * @return status name
 	 */
-	public String getStatusName(){
+	public String getStatusName() {
 		return status.name();
 	}
-	
+
 	/**
 	 * @return <code>true</code> if the job has finished successfully
 	 */
-	public boolean isDone(){
+	public boolean isDone() {
 		return JobStatus.doneStates().contains(status);
 	}
-	
+
 	/**
 	 * @return <code>true</code> if the job is in a final error state
 	 */
-	public boolean isError(){
+	public boolean isError() {
 		return JobStatus.errorneousStates().contains(status);
 	}
-	
+
 	/**
-	 * @return <code>true</code> if the job has failed but should not be resubmitted since it will fail just the same
+	 * @return <code>true</code> if the job has failed but should not be
+	 *         resubmitted since it will fail just the same
 	 */
-	public boolean isFinalError(){
+	public boolean isFinalError() {
 		return status == JobStatus.FAILED;
 	}
-	
+
 	/**
-	 * @return <code>true</code> if the job is in a final state (either successful or failed)
+	 * @return <code>true</code> if the job is in a final state (either
+	 *         successful or failed)
 	 */
-	public boolean isFinalState(){
+	public boolean isFinalState() {
 		return isDone() || isError();
 	}
-	
+
 	/**
 	 * @return <code>true</code> if the job is still active
 	 */
-	public boolean isActive(){
+	public boolean isActive() {
 		return !isFinalState();
 	}
-	
-	
+
 	/**
 	 * @return <code>true</code> if the job is a master job
 	 */
-	public boolean isMaster(){
+	public boolean isMaster() {
 		return masterjob;
 	}
-	
-	
+
 	/**
 	 * @return <code>true</code> if the job has a validation flag
 	 */
-	public boolean usesValidation(){
+	public boolean usesValidation() {
 		//
-		//		TODO:
-		//		grep the JDL for the validation flag, perl did the following:
-		//	    $data->{jdl} =~ /validate\s*=\s*1/i and $validate = 1;
+		// TODO:
+		// grep the JDL for the validation flag, perl did the following:
+		// $data->{jdl} =~ /validate\s*=\s*1/i and $validate = 1;
 
-		try{
+		try {
 			final JDL j = new JDL(jdl);
-			
+
 			return Integer.parseInt(j.gets("validate")) == 1;
-		}
-		catch (final IOException ioe){
+		} catch (final IOException ioe) {
+			// ignore
+		} catch (final NumberFormatException nfe) {
+			// ignore
+		} catch (final NullPointerException npe) {
 			// ignore
 		}
-		catch (final NumberFormatException nfe){
-			// ignore
-		}
-		catch (final NullPointerException npe){
-			// ignore
-		}
-		
+
 		return false;
 	}
 }

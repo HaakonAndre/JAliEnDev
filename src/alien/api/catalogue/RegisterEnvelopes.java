@@ -29,7 +29,7 @@ public class RegisterEnvelopes extends Request {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(RegisterEnvelopes.class.getCanonicalName());
-	
+
 	/**
 	 * 
 	 */
@@ -42,17 +42,17 @@ public class RegisterEnvelopes extends Request {
 	private String md5 = null;
 
 	@SuppressWarnings("unused")
-	private String lfn = null;
+	private final String lfn = null;
 	@SuppressWarnings("unused")
-	private String perm = null;
+	private final String perm = null;
 	@SuppressWarnings("unused")
-	private String expire = null;
+	private final String expire = null;
 	@SuppressWarnings("unused")
-	private String pfn = null;
+	private final String pfn = null;
 	@SuppressWarnings("unused")
-	private String se = null;
+	private final String se = null;
 	@SuppressWarnings("unused")
-	private String GUID = null;
+	private final String GUID = null;
 
 	/**
 	 * Register PFNs with envelopes
@@ -61,7 +61,7 @@ public class RegisterEnvelopes extends Request {
 	 * @param role
 	 * @param signedEnvelopes
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String role, List<String> signedEnvelopes) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final String role, final List<String> signedEnvelopes) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.signedEnvelopes = signedEnvelopes;
@@ -83,7 +83,8 @@ public class RegisterEnvelopes extends Request {
 	 * @param GUID
 	 * @param md5
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String role, String encryptedEnvelope, int size, String md5, String lfn, String perm, String expire, String pfn, String se, String GUID) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final String role, final String encryptedEnvelope, final int size, final String md5, final String lfn, final String perm, final String expire,
+			final String pfn, final String se, final String GUID) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.encryptedEnvelope = encryptedEnvelope;
@@ -96,115 +97,91 @@ public class RegisterEnvelopes extends Request {
 		authorizeUserAndRole();
 
 		if (signedEnvelopes != null) {
-			pfns = new ArrayList<PFN>(signedEnvelopes.size());
+			pfns = new ArrayList<>(signedEnvelopes.size());
 
-			for (final String env : signedEnvelopes) {
+			for (final String env : signedEnvelopes)
 				try {
 					if (XrootDEnvelopeSigner.verifyEnvelope(env, true)) {
-						XrootDEnvelope xenv = new XrootDEnvelope(env);
-						
+						final XrootDEnvelope xenv = new XrootDEnvelope(env);
+
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Self Signature VERIFIED! : " + xenv.pfn.pfn);
-						
+
 						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn))) {
 							if (logger.isLoggable(Level.FINE))
 								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
 							pfns.add(xenv.pfn);
-						}
-						else{
-							logger.log(Level.WARNING, "Could not commit self-signed "+xenv.pfn.pfn+" to the Catalogue");
-						}
-					}
-					else
-						if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
-							XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
-							
-							if (logger.isLoggable(Level.FINER))
-								logger.log(Level.FINER, "SE Signature VERIFIED! : " + xenv.pfn.pfn);
-							
-							if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn))) {
-								if (logger.isLoggable(Level.FINE))
-									logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
-							
-								pfns.add(xenv.pfn);
-							}
-							else{
-								logger.log(Level.WARNING, "Could not commit "+xenv.pfn.pfn+" to the Catalogue");
-							}
-						}
-						else {
-							logger.log(Level.WARNING, "COULD NOT VERIFY ANY SIGNATURE!");
-						}
+						} else
+							logger.log(Level.WARNING, "Could not commit self-signed " + xenv.pfn.pfn + " to the Catalogue");
+					} else if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
+						final XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
 
-				}
-				catch (SignatureException e) {
+						if (logger.isLoggable(Level.FINER))
+							logger.log(Level.FINER, "SE Signature VERIFIED! : " + xenv.pfn.pfn);
+
+						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn))) {
+							if (logger.isLoggable(Level.FINE))
+								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
+
+							pfns.add(xenv.pfn);
+						} else
+							logger.log(Level.WARNING, "Could not commit " + xenv.pfn.pfn + " to the Catalogue");
+					} else
+						logger.log(Level.WARNING, "COULD NOT VERIFY ANY SIGNATURE!");
+
+				} catch (final SignatureException e) {
 					logger.log(Level.WARNING, "Wrong signature", e);
-				}
-				catch (InvalidKeyException e) {
+				} catch (final InvalidKeyException e) {
 					logger.log(Level.WARNING, "Invalid key", e);
-				}
-				catch (NoSuchAlgorithmException e) {
+				} catch (final NoSuchAlgorithmException e) {
 					logger.log(Level.WARNING, "No such algorithm", e);
-				}
-				catch (IOException e) {
+				} catch (final IOException e) {
 					logger.log(Level.WARNING, "IO Exception", e);
 				}
+		} else if (encryptedEnvelope != null) {
+			pfns = new ArrayList<>(1);
+			XrootDEnvelope xenv = null;
+			try {
+				xenv = XrootDEnvelopeSigner.decryptEnvelope(encryptedEnvelope);
+			} catch (final Exception e) {
+				logger.log(Level.WARNING, "Error decrypting envelope", e);
+				return;
 			}
-		}
-		else
-			if (encryptedEnvelope != null) {
-				pfns = new ArrayList<PFN>(1);
-				XrootDEnvelope xenv = null;
+
+			if (xenv != null) {
+				PFN bookedpfn = null;
+
 				try {
-					xenv = XrootDEnvelopeSigner.decryptEnvelope(encryptedEnvelope);
-				}
-				catch (Exception e) {
-					logger.log(Level.WARNING, "Error decrypting envelope", e);
+					bookedpfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
+				} catch (final Exception e) {
+					logger.log(Level.WARNING, "Error getting the PFN: ", e);
 					return;
 				}
 
-				if (xenv != null) {
-					PFN bookedpfn = null;
+				if (bookedpfn != null) {
+					if (size != 0)
+						bookedpfn.getGuid().size = size;
+
+					if (md5 != null && md5.length() > 0 && !md5.equals("0"))
+						bookedpfn.getGuid().md5 = md5;
 
 					try {
-						bookedpfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
-					}
-					catch (Exception e) {
-						logger.log(Level.WARNING, "Error getting the PFN: ", e);
-						return;
-					}
+						if (BookingTable.commit(getEffectiveRequester(), bookedpfn)) {
+							if (logger.isLoggable(Level.FINE))
+								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
-					if (bookedpfn != null) {
-						if (size != 0)
-							bookedpfn.getGuid().size = size;
-						
-						if (md5 != null && md5 != "" && md5 != "0")
-							bookedpfn.getGuid().md5 = md5;
-
-						try {
-							if (BookingTable.commit(getEffectiveRequester(), bookedpfn)) {
-								if (logger.isLoggable(Level.FINE))
-									logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
-
-								pfns.add(bookedpfn);
-							}
-							else {
-								logger.log(Level.WARNING, "Unable to register " + xenv.pfn.pfn + " in the Catalogue");
-							}
-						}
-						catch (Exception e) {
-							logger.log(Level.WARNING, "Error registering pfn", e);
-						}
+							pfns.add(bookedpfn);
+						} else
+							logger.log(Level.WARNING, "Unable to register " + xenv.pfn.pfn + " in the Catalogue");
+					} catch (final Exception e) {
+						logger.log(Level.WARNING, "Error registering pfn", e);
 					}
-					else{
-						logger.log(Level.WARNING, "Could not find this booked pfn: "+xenv.pfn.pfn);
-					}
-				}
-				else{
-					logger.log(Level.WARNING, "Null decrypted envelope");
-				}
-			}
+				} else
+					logger.log(Level.WARNING, "Could not find this booked pfn: " + xenv.pfn.pfn);
+			} else
+				logger.log(Level.WARNING, "Null decrypted envelope");
+		}
 	}
 
 	/**

@@ -82,7 +82,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			if (subdirectory != null) {
 				if (directory==null)
-					directory = new ArrayList<LFN>(subdirectory);
+					directory = new ArrayList<>(subdirectory);
 				else
 					directory.addAll(subdirectory);
 
@@ -276,7 +276,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			final OptionSet options = parser.parse(alArguments
 					.toArray(new String[] {}));
 
-			alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(options.nonOptionArguments());
 
 			bL = options.has("l");

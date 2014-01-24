@@ -140,7 +140,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 							o.close();
 							fstream.close();
 
-							ArrayList<String> args = new ArrayList<String>(alArguments.size() + 1);
+							ArrayList<String> args = new ArrayList<>(alArguments.size() + 1);
 							args.add("file://" + f.getAbsolutePath());
 							args.add(fileName);
 
@@ -314,7 +314,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 				fileName = (String) options.valueOf("c");
 				
 			}
-			alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(options.nonOptionArguments());
 
 			bL = options.has("l");

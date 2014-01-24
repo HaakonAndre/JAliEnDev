@@ -4,7 +4,7 @@ package alien.taskQueue;
  * @author ron
  * @since Jun 21, 2011
  */
-public class JobSubmissionException extends Exception{
+public class JobSubmissionException extends Exception {
 
 	/**
 	 * 
@@ -14,7 +14,7 @@ public class JobSubmissionException extends Exception{
 	/**
 	 * @param s
 	 */
-	public JobSubmissionException(String s){
+	public JobSubmissionException(final String s) {
 		super(s);
 	}
 }

@@ -20,290 +20,263 @@ import alien.io.IOUtils;
  * @author ron
  * @since Oct 11, 2011
  */
-public class CpForTest  extends Protocol {
-	
+public class CpForTest extends Protocol {
 
-		/**
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 7899348307554604135L;
-		/**
-		 * Logger
-		 */
-		static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
 
-		/**
-		 * package protected
-		 */
-		public CpForTest() {
-			// package protected
-		}
+	/**
+	 * package protected
+	 */
+	public CpForTest() {
+		// package protected
+	}
 
-		private static String getLocalPath(PFN pfn){
-			
-			return pfn.pfn.substring(pfn.pfn.lastIndexOf("//"));
-		}
+	private static String getLocalPath(final PFN pfn) {
 
-		
-		@Override
-		public boolean delete(final PFN pfn) throws IOException {
-			if (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE) {
-				throw new IOException("You didn't get the rights to delete this PFN");
-			}
+		return pfn.pfn.substring(pfn.pfn.lastIndexOf("//"));
+	}
 
-			
-			try {
-				final List<String> command = new LinkedList<String>();
+	@Override
+	public boolean delete(final PFN pfn) throws IOException {
+		if (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE)
+			throw new IOException("You didn't get the rights to delete this PFN");
 
-				// command.addAll(getCommonArguments());
+		try {
+			final List<String> command = new LinkedList<>();
 
-//				String envelope = null;
-//
-//				if (pfn.ticket.envelope != null) {
-//					envelope = pfn.ticket.envelope.getEncryptedEnvelope();
-//
-//					if (envelope == null)
-//						envelope = pfn.ticket.envelope.getSignedEnvelope();
-//				}
+			// command.addAll(getCommonArguments());
 
-				command.add("wouldremove");
-				command.add(getLocalPath(pfn));
-			
-				// System.err.println(command);
+			// String envelope = null;
+			//
+			// if (pfn.ticket.envelope != null) {
+			// envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+			//
+			// if (envelope == null)
+			// envelope = pfn.ticket.envelope.getSignedEnvelope();
+			// }
 
-				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			command.add("wouldremove");
+			command.add(getLocalPath(pfn));
 
-				pBuilder.returnOutputOnExit(true);
+			// System.err.println(command);
 
-				pBuilder.timeout(1, TimeUnit.HOURS);
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
-				pBuilder.redirectErrorStream(true);
+			pBuilder.returnOutputOnExit(true);
 
-				final ExitStatus exitStatus;
+			pBuilder.timeout(1, TimeUnit.HOURS);
 
-				try {
-					exitStatus = pBuilder.start().waitFor();
-				}
-				catch (final InterruptedException ie) {
-					throw new IOException("Interrupted while waiting for the following command to finish : "
-						+ command.toString());
-				}
+			pBuilder.redirectErrorStream(true);
 
-				if (exitStatus.getExtProcExitStatus() != 0) {
-					System.err.println("cp remove error\n" + exitStatus.getStdOut());
-
-					throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
-				}
-
-				// System.err.println(exitStatus.getStdOut());
-
-				return true;
-			}
-			catch (final IOException ioe) {
-				throw ioe;
-			}
-			catch (final Throwable t) {
-				logger.log(Level.WARNING, "Caught exception", t);
-
-				throw new IOException("delete aborted because " + t);
-			}
-
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN,
-		 * alien.catalogue.access.CatalogueReadAccess, java.lang.String)
-		 */
-		@Override
-		public File get(final PFN pfn, final File localFile) throws IOException {
-			File target;
-
-			if (localFile != null) {
-				if (localFile.exists())
-					throw new IOException("Local file " + localFile.getCanonicalPath() + " exists already. Cp would fail.");
-				
-				target = localFile;
-			}
-			else{
-				target = File.createTempFile("cp-get", null, IOUtils.getTemporaryDirectory());
-
-				if (!target.delete())
-					logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
-			}
-
-			if (pfn.ticket == null || pfn.ticket.type != AccessType.READ) {
-				throw new IOException("The envelope for PFN " + pfn.pfn + " could not be found or is not a READ one.");
-			}
+			final ExitStatus exitStatus;
 
 			try {
-				final List<String> command = new LinkedList<String>();
-				command.add("cp");
-				command.add(getLocalPath(pfn));
-				command.add(target.getCanonicalPath());
-
-				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-
-				pBuilder.returnOutputOnExit(true);
-
-				pBuilder.timeout(24, TimeUnit.HOURS);
-
-				pBuilder.redirectErrorStream(true);
-
-				final ExitStatus exitStatus;
-
-				try {
-					final ExternalProcess p = pBuilder.start();
-
-					if (p != null)
-						exitStatus = p.waitFor();
-					else
-						throw new IOException("Cannot start the process");
-				}
-				catch (final InterruptedException ie) {
-					throw new IOException("Interrupted while waiting for the following command to finish : "
-						+ command.toString());
-				}
-
-				if (exitStatus.getExtProcExitStatus() != 0) {
-					String sMessage = exitStatus.getStdOut();
-
-					logger.log(Level.WARNING,
-						"GET failed with " + exitStatus.getStdOut() + "\nCommand: " + command.toString());
-
-					if (sMessage != null) {
-						sMessage = "cp exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
-					}
-					else {
-						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : "
-							+ command.toString();
-					}
-
-					throw new IOException(sMessage);
-				}
-
-				if (!checkDownloadedFile(target, pfn))
-					throw new IOException("Local file doesn't match catalogue details");
+				exitStatus = pBuilder.start().waitFor();
+			} catch (final InterruptedException ie) {
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
-			catch (final IOException ioe) {
-				if (!target.delete())
-					logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 
-				throw ioe;
+			if (exitStatus.getExtProcExitStatus() != 0) {
+				System.err.println("cp remove error\n" + exitStatus.getStdOut());
+
+				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
 			}
-			catch (final Throwable t) {
-				if (!target.delete())
-					logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
 
-				logger.log(Level.WARNING, "Caught exception", t);
+			// System.err.println(exitStatus.getStdOut());
 
-				throw new IOException("Get aborted because " + t);
-			}
-			return target;
+			return true;
+		} catch (final IOException ioe) {
+			throw ioe;
+		} catch (final Throwable t) {
+			logger.log(Level.WARNING, "Caught exception", t);
+
+			throw new IOException("delete aborted because " + t);
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN,
-		 * alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
-		 */
-		@Override
-		public String put(final PFN pfn, final File localFile) throws IOException {
+	}
 
-			if (localFile == null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
-				throw new IOException("Local file " + localFile + " cannot be read");
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueReadAccess, java.lang.String)
+	 */
+	@Override
+	public File get(final PFN pfn, final File localFile) throws IOException {
+		File target;
 
-			if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE) {
-				throw new IOException("No access to this PFN");
-			}
+		if (localFile != null) {
+			if (localFile.exists())
+				throw new IOException("Local file " + localFile.getCanonicalPath() + " exists already. Cp would fail.");
 
-			if (localFile.length() != pfn.getGuid().size) {
-				throw new IOException("Difference in sizes: local=" + localFile.length() + " / pfn=" + pfn.getGuid().size);
-			}
+			target = localFile;
+		} else {
+			target = File.createTempFile("cp-get", null, IOUtils.getTemporaryDirectory());
+
+			if (!target.delete())
+				logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
+		}
+
+		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ)
+			throw new IOException("The envelope for PFN " + pfn.pfn + " could not be found or is not a READ one.");
+
+		try {
+			final List<String> command = new LinkedList<>();
+			command.add("cp");
+			command.add(getLocalPath(pfn));
+			command.add(target.getCanonicalPath());
+
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+			pBuilder.returnOutputOnExit(true);
+
+			pBuilder.timeout(24, TimeUnit.HOURS);
+
+			pBuilder.redirectErrorStream(true);
+
+			final ExitStatus exitStatus;
 
 			try {
-				
-				
-				Runtime.getRuntime().exec("mkdir -p " + getLocalPath(pfn).substring(0,getLocalPath(pfn).lastIndexOf('/')));
-				
-				
-				final List<String> command = new LinkedList<String>();
-				command.add("cp");
-				command.add(localFile.getCanonicalPath());
-				command.add(getLocalPath(pfn));
+				final ExternalProcess p = pBuilder.start();
 
-				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-
-				pBuilder.returnOutputOnExit(true);
-
-				pBuilder.timeout(24, TimeUnit.HOURS);
-
-				pBuilder.redirectErrorStream(true);
-
-				final ExitStatus exitStatus;
-
-				try {
-					exitStatus = pBuilder.start().waitFor();
-				}
-				catch (final InterruptedException ie) {
-					throw new IOException("Interrupted while waiting for the following command to finish : "
-						+ command.toString());
-				}
-
-				if (exitStatus.getExtProcExitStatus() != 0) {
-					String sMessage = exitStatus.getStdOut();
-
-					logger.log(Level.WARNING, "PUT failed with " + exitStatus.getStdOut());
-
-					if (sMessage != null) {
-						sMessage = "cp exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
-					}
-					else {
-						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : "
-							+ command.toString();
-					}
-
-					throw new IOException(sMessage);
-				}
-				return pfn.ticket.envelope.getSignedEnvelope();
+				if (p != null)
+					exitStatus = p.waitFor();
+				else
+					throw new IOException("Cannot start the process");
+			} catch (final InterruptedException ie) {
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
-			catch (final IOException ioe) {
-				throw ioe;
-			}
-			catch (final Throwable t) {
-				logger.log(Level.WARNING, "Caught exception", t);
 
-				throw new IOException("Get aborted because " + t);
+			if (exitStatus.getExtProcExitStatus() != 0) {
+				String sMessage = exitStatus.getStdOut();
+
+				logger.log(Level.WARNING, "GET failed with " + exitStatus.getStdOut() + "\nCommand: " + command.toString());
+
+				if (sMessage != null)
+					sMessage = "cp exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				else
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+
+				throw new IOException(sMessage);
 			}
+
+			if (!checkDownloadedFile(target, pfn))
+				throw new IOException("Local file doesn't match catalogue details");
+		} catch (final IOException ioe) {
+			if (!target.delete())
+				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
+
+			throw ioe;
+		} catch (final Throwable t) {
+			if (!target.delete())
+				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
+
+			logger.log(Level.WARNING, "Caught exception", t);
+
+			throw new IOException("Get aborted because " + t);
 		}
+		return target;
+	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
+	 */
+	@Override
+	public String put(final PFN pfn, final File localFile) throws IOException {
 
-		/*
-		 * (non-Javadoc)
-		 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
-		 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
-		 * alien.catalogue.access.CatalogueWriteAccess)
-		 */
-		@Override
-		public String transfer(final PFN source, final PFN target) throws IOException {
-			final File temp = get(source, null);
+		if (localFile == null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
+			throw new IOException("Local file " + localFile + " cannot be read");
+
+		if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE)
+			throw new IOException("No access to this PFN");
+
+		if (localFile.length() != pfn.getGuid().size)
+			throw new IOException("Difference in sizes: local=" + localFile.length() + " / pfn=" + pfn.getGuid().size);
+
+		try {
+
+			Runtime.getRuntime().exec("mkdir -p " + getLocalPath(pfn).substring(0, getLocalPath(pfn).lastIndexOf('/')));
+
+			final List<String> command = new LinkedList<>();
+			command.add("cp");
+			command.add(localFile.getCanonicalPath());
+			command.add(getLocalPath(pfn));
+
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+			pBuilder.returnOutputOnExit(true);
+
+			pBuilder.timeout(24, TimeUnit.HOURS);
+
+			pBuilder.redirectErrorStream(true);
+
+			final ExitStatus exitStatus;
 
 			try {
-				return put(target, temp);
+				exitStatus = pBuilder.start().waitFor();
+			} catch (final InterruptedException ie) {
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
-			finally {
-				TempFileManager.release(temp);
-			}
-		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			return "cp";
+			if (exitStatus.getExtProcExitStatus() != 0) {
+				String sMessage = exitStatus.getStdOut();
+
+				logger.log(Level.WARNING, "PUT failed with " + exitStatus.getStdOut());
+
+				if (sMessage != null)
+					sMessage = "cp exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				else
+					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+
+				throw new IOException(sMessage);
+			}
+			return pfn.ticket.envelope.getSignedEnvelope();
+		} catch (final IOException ioe) {
+			throw ioe;
+		} catch (final Throwable t) {
+			logger.log(Level.WARNING, "Caught exception", t);
+
+			throw new IOException("Get aborted because " + t);
 		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
+	 * alien.catalogue.access.CatalogueWriteAccess)
+	 */
+	@Override
+	public String transfer(final PFN source, final PFN target) throws IOException {
+		final File temp = get(source, null);
+
+		try {
+			return put(target, temp);
+		} finally {
+			TempFileManager.release(temp);
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "cp";
+	}
 
 	@Override
 	int getPreference() {

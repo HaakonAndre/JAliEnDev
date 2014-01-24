@@ -57,15 +57,14 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_get_by_id");
 		}
 
-		try{
+		try {
 			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(id));
-	
+
 			if (!db.moveNext())
 				return null;
-	
+
 			return new TransferDetails(db);
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}
@@ -84,19 +83,17 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_db_lookup");
 			monitor.incrementCounter("TRANSFERS_get_by_destination");
 		}
-		
-		try{
+
+		try {
 			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
-	
-			final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
-	
-			while (db.moveNext()) {
+
+			final List<TransferDetails> ret = new ArrayList<>(db.count());
+
+			while (db.moveNext())
 				ret.add(new TransferDetails(db));
-			}
 
 			return ret;
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}
@@ -123,30 +120,32 @@ public final class TransferUtils {
 
 		q += "ORDER BY transferId";
 
-		try{
+		try {
 			if (username != null && username.length() > 0)
 				db.query(q, false, username);
 			else
 				db.query(q);
-	
-			final List<TransferDetails> ret = new ArrayList<TransferDetails>(db.count());
-	
-			while (db.moveNext()) {
+
+			final List<TransferDetails> ret = new ArrayList<>(db.count());
+
+			while (db.moveNext())
 				ret.add(new TransferDetails(db));
-			}
-	
+
 			return ret;
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}
-	
+
 	/**
 	 * @param l
 	 * @param se
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return the transfer ID, <code>0</code> in case the file is already on
+	 *         the target SE, or a negative number in case of problems (-1=wrong
+	 *         parameters, -2=database connection missing, -3=cannot locate real
+	 *         pfns -4=the insert query failed, -5=insert query didn't generate
+	 *         a transfer ID. -6=cannot locate the archive LFN to mirror (for a
+	 *         file inside a zip archive))
 	 */
 	public static int mirror(final LFN l, final SE se) {
 		return mirror(l, se, null);
@@ -155,23 +154,36 @@ public final class TransferUtils {
 	/**
 	 * @param l
 	 * @param se
-	 * @param onCompletionRemoveReplica a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @param onCompletionRemoveReplica
+	 *            a move mirror operation, on successful transfer remove the
+	 *            mirror from this SE
+	 * @return the transfer ID, <code>0</code> in case the file is already on
+	 *         the target SE, or a negative number in case of problems (-1=wrong
+	 *         parameters, -2=database connection missing, -3=cannot locate real
+	 *         pfns -4=the insert query failed, -5=insert query didn't generate
+	 *         a transfer ID. -6=cannot locate the archive LFN to mirror (for a
+	 *         file inside a zip archive))
 	 */
-	public static int mirror(final LFN l, final SE se,  final String onCompletionRemoveReplica) {
+	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica) {
 		return mirror(l, se, onCompletionRemoveReplica, 3);
 	}
-	
+
 	/**
 	 * @param l
 	 * @param se
-	 * @param onCompletionRemoveReplica a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @param maxAttempts maximum number of attempts to copy this file
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @param onCompletionRemoveReplica
+	 *            a move mirror operation, on successful transfer remove the
+	 *            mirror from this SE
+	 * @param maxAttempts
+	 *            maximum number of attempts to copy this file
+	 * @return the transfer ID, <code>0</code> in case the file is already on
+	 *         the target SE, or a negative number in case of problems (-1=wrong
+	 *         parameters, -2=database connection missing, -3=cannot locate real
+	 *         pfns -4=the insert query failed, -5=insert query didn't generate
+	 *         a transfer ID. -6=cannot locate the archive LFN to mirror (for a
+	 *         file inside a zip archive))
 	 */
-	public static int mirror(final LFN l, final SE se,  final String onCompletionRemoveReplica, final int maxAttempts) {
+	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica, final int maxAttempts) {
 		if (l == null || !l.exists || !l.isFile() || se == null)
 			return -1;
 
@@ -190,14 +202,12 @@ public final class TransferUtils {
 		if (pfns == null)
 			return -3;
 
-		for (final PFN p : pfns) {
+		for (final PFN p : pfns)
 			if (se.equals(p.getSE()))
 				return 0;
-		}
 
-		if (monitor != null) {
+		if (monitor != null)
 			monitor.incrementCounter("TRANSFERS_db_insert");
-		}
 
 		LFN lfnToCopy;
 
@@ -206,16 +216,13 @@ public final class TransferUtils {
 
 			UUID guid = null;
 
-			for (final PFN p : l.whereis()) {
-				if (p.pfn.startsWith("guid:/")) {
+			for (final PFN p : l.whereis())
+				if (p.pfn.startsWith("guid:/"))
 					try {
 						guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-					}
-					catch (final Exception e) {
+					} catch (final Exception e) {
 						return -6;
 					}
-				}
-			}
 
 			if (guid == null)
 				return -6;
@@ -223,33 +230,30 @@ public final class TransferUtils {
 			lfnToCopy = null;
 
 			try {
-				for (final LFN otherFile : l.getParentDir().list()) {
+				for (final LFN otherFile : l.getParentDir().list())
 					if (otherFile.isFile() && otherFile.guid.equals(guid)) {
 						lfnToCopy = otherFile;
 						break;
 					}
-				}
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 				return -6;
 			}
 
 			if (lfnToCopy == null)
 				return -6;
-		}
-		else
+		} else
 			lfnToCopy = l;
 
-		try{
+		try {
 			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, lfnToCopy.getCanonicalName(), se.seName);
-	
+
 			if (db.moveNext())
 				return db.geti(1);
-	
+
 			db.setLastGeneratedKey(true);
-			
-			final Map<String, Object> values = new LinkedHashMap<String, Object>();
-	
+
+			final Map<String, Object> values = new LinkedHashMap<>();
+
 			values.put("lfn", lfnToCopy.getCanonicalName());
 			values.put("destination", se.seName);
 			values.put("size", Long.valueOf(lfnToCopy.size));
@@ -260,32 +264,34 @@ public final class TransferUtils {
 			values.put("user", lfnToCopy.owner);
 			values.put("type", "mirror");
 			values.put("agentid", Integer.valueOf(0));
-			values.put("attempts", Integer.valueOf(maxAttempts-1));
-			
-			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
+			values.put("attempts", Integer.valueOf(maxAttempts - 1));
+
+			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0)
 				values.put("remove_replica", onCompletionRemoveReplica);
-			}
-			
+
 			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
 				return -4;
-	
+
 			final Integer i = db.getLastGeneratedKey();
-	
+
 			if (i == null)
 				return -5;
-	
+
 			return i.intValue();
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}
-	
+
 	/**
 	 * @param guid
 	 * @param se
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return the transfer ID, <code>0</code> in case the file is already on
+	 *         the target SE, or a negative number in case of problems (-1=wrong
+	 *         parameters, -2=database connection missing, -3=cannot locate real
+	 *         pfns -4=the insert query failed, -5=insert query didn't generate
+	 *         a transfer ID. -6=cannot locate the archive LFN to mirror (for a
+	 *         file inside a zip archive))
 	 */
 	public static int mirror(final GUID guid, final SE se) {
 		return mirror(guid, se, true, null);
@@ -294,9 +300,15 @@ public final class TransferUtils {
 	/**
 	 * @param guid
 	 * @param se
-	 * @param onCompletionRemoveReplica a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @param onCompletionRemoveReplica
+	 *            a move mirror operation, on successful transfer remove the
+	 *            mirror from this SE
+	 * @return the transfer ID, <code>0</code> in case the file is already on
+	 *         the target SE, or a negative number in case of problems (-1=wrong
+	 *         parameters, -2=database connection missing, -3=cannot locate real
+	 *         pfns -4=the insert query failed, -5=insert query didn't generate
+	 *         a transfer ID. -6=cannot locate the archive LFN to mirror (for a
+	 *         file inside a zip archive))
 	 */
 	public static int mirror(final GUID guid, final SE se, final String onCompletionRemoveReplica) {
 		return mirror(guid, se, true, onCompletionRemoveReplica);
@@ -306,27 +318,45 @@ public final class TransferUtils {
 	 * @param guid
 	 * @param se
 	 * @param checkPreviousTransfers
-	 *            if <code>true</code> then the transfer queue is checked for active transfers identical to the requested one. You should always pass <code>true</code> unless you are sure no such
-	 *            transfer could previously exist (either because it was just checked or whatever)
-	 * @param onCompletionRemoveReplica a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 *            if <code>true</code> then the transfer queue is checked for
+	 *            active transfers identical to the requested one. You should
+	 *            always pass <code>true</code> unless you are sure no such
+	 *            transfer could previously exist (either because it was just
+	 *            checked or whatever)
+	 * @param onCompletionRemoveReplica
+	 *            a move mirror operation, on successful transfer remove the
+	 *            mirror from this SE
+	 * @return the transfer ID, <code>0</code> in case the file is already on
+	 *         the target SE, or a negative number in case of problems (-1=wrong
+	 *         parameters, -2=database connection missing, -3=cannot locate real
+	 *         pfns -4=the insert query failed, -5=insert query didn't generate
+	 *         a transfer ID. -6=cannot locate the archive LFN to mirror (for a
+	 *         file inside a zip archive))
 	 */
 	public static int mirror(final GUID guid, final SE se, final boolean checkPreviousTransfers) {
 		return mirror(guid, se, checkPreviousTransfers, null);
 	}
-	
+
 	private static final String PREVIOUS_TRANSFER_ID_QUERY = "SELECT transferId FROM TRANSFERS_DIRECT where lfn=? AND destination=? AND status in ('WAITING', 'TRANSFERRING');";
-	
+
 	/**
 	 * @param guid
 	 * @param se
 	 * @param checkPreviousTransfers
-	 *            if <code>true</code> then the transfer queue is checked for active transfers identical to the requested one. You should always pass <code>true</code> unless you are sure no such
-	 *            transfer could previously exist (either because it was just checked or whatever)
-	 * @param onCompletionRemoveReplica a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 *            if <code>true</code> then the transfer queue is checked for
+	 *            active transfers identical to the requested one. You should
+	 *            always pass <code>true</code> unless you are sure no such
+	 *            transfer could previously exist (either because it was just
+	 *            checked or whatever)
+	 * @param onCompletionRemoveReplica
+	 *            a move mirror operation, on successful transfer remove the
+	 *            mirror from this SE
+	 * @return the transfer ID, <code>0</code> in case the file is already on
+	 *         the target SE, or a negative number in case of problems (-1=wrong
+	 *         parameters, -2=database connection missing, -3=cannot locate real
+	 *         pfns -4=the insert query failed, -5=insert query didn't generate
+	 *         a transfer ID. -6=cannot locate the archive LFN to mirror (for a
+	 *         file inside a zip archive))
 	 */
 	public static int mirror(final GUID guid, final SE se, final boolean checkPreviousTransfers, final String onCompletionRemoveReplica) {
 		if (guid == null || !guid.exists() || se == null)
@@ -344,9 +374,9 @@ public final class TransferUtils {
 
 		final Set<GUID> realGUIDs = guid.getRealGUIDs();
 
-		final Set<PFN> pfns = new LinkedHashSet<PFN>();
+		final Set<PFN> pfns = new LinkedHashSet<>();
 
-		if (realGUIDs != null && realGUIDs.size() > 0) {
+		if (realGUIDs != null && realGUIDs.size() > 0)
 			for (final GUID realId : realGUIDs) {
 				final Set<PFN> replicas = realId.getPFNs();
 
@@ -355,32 +385,30 @@ public final class TransferUtils {
 
 				pfns.addAll(replicas);
 			}
-		}
 
 		if (pfns.size() == 0)
 			return -3;
 
-		for (final PFN p : pfns) {
+		for (final PFN p : pfns)
 			if (se.equals(p.getSE()))
 				return 0;
-		}
 
 		final DBFunctions db = getDB();
 
 		final String sGUID = guid.guid.toString();
 
-		try{
+		try {
 			if (checkPreviousTransfers) {
 				db.query(PREVIOUS_TRANSFER_ID_QUERY, false, sGUID, se.seName);
-	
+
 				if (db.moveNext())
 					return db.geti(1);
 			}
-	
+
 			db.setLastGeneratedKey(true);
-	
-			final Map<String, Object> values = new LinkedHashMap<String, Object>();
-	
+
+			final Map<String, Object> values = new LinkedHashMap<>();
+
 			values.put("lfn", sGUID);
 			values.put("destination", se.seName);
 			values.put("size", Long.valueOf(guid.size));
@@ -392,22 +420,20 @@ public final class TransferUtils {
 			values.put("type", "mirror");
 			values.put("agentid", Integer.valueOf(0));
 			values.put("attempts", Integer.valueOf(0));
-	
-			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
+
+			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0)
 				values.put("remove_replica", onCompletionRemoveReplica);
-			}
-	
+
 			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
 				return -4;
-	
+
 			final Integer i = db.getLastGeneratedKey();
-	
+
 			if (i == null)
 				return -5;
-	
+
 			return i.intValue();
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}

@@ -190,6 +190,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * serialize return values for gapi/root 
 	 * @return serialized return
 	 */
+	@SuppressWarnings("static-method")
 	public String deserializeForRoot(){
 		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
 				 + RootPrintWriter.fieldseparator;

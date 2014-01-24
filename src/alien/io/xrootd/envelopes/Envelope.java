@@ -4,18 +4,18 @@ import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.StringReader;
 import java.net.InetAddress;
-import java.net.URISyntaxException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.GeneralSecurityException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.NoSuchElementException;
 import java.util.Stack;
 import java.util.StringTokenizer;
@@ -31,7 +31,8 @@ import java.util.UUID;
  * 
  * @author Martin Radicke (original)
  * 
- * rewritten and added with encryption functionality by ron as of Nov 9, 2010
+ *         rewritten and added with encryption functionality by ron as of Nov 9,
+ *         2010
  * 
  */
 public class Envelope {
@@ -44,18 +45,18 @@ public class Envelope {
 		/**
 		 * Read envelope
 		 */
-		READ("read"), 
-		
+		READ("read"),
+
 		/**
 		 * Write once envelope
 		 */
-		WRITE_ONCE("write-once"), 
-		
+		WRITE_ONCE("write-once"),
+
 		/**
 		 * Write envelope
 		 */
-		WRITE("write"), 
-		
+		WRITE("write"),
+
 		/**
 		 * Delete envelope
 		 */
@@ -63,7 +64,7 @@ public class Envelope {
 
 		private final String _xmlText;
 
-		FilePerm(String xmlText) {
+		FilePerm(final String xmlText) {
 			_xmlText = xmlText;
 		}
 
@@ -88,13 +89,13 @@ public class Envelope {
 	 */
 	public static class GridFile {
 
-		private String lfn;
-		private int access;
+		private final String lfn;
+		private final int access;
 		// private String guid;
 		// private URL pturl;
 		// private String pguid;
 
-		private String turlString;
+		private final String turlString;
 		private URI turl;
 		private String turlProtocol;
 		private InetAddress turlHost;
@@ -105,39 +106,31 @@ public class Envelope {
 		 * @param access
 		 * @throws CorruptedEnvelopeException
 		 */
-		public GridFile(String lfn, String turl, String access)
-				throws CorruptedEnvelopeException {
+		public GridFile(final String lfn, final String turl, final String access) throws CorruptedEnvelopeException {
 			this.lfn = lfn;
 			this.turlString = turl;
 
-			if (!filePermissions.containsKey(access)) {
-				throw new CorruptedEnvelopeException(
-						"file permisson flag for lfn "
-								+ lfn
-								+ " must be one out of 'read', 'write-once', 'write' or 'delete'");
-			}
+			if (!filePermissions.containsKey(access))
+				throw new CorruptedEnvelopeException("file permisson flag for lfn " + lfn + " must be one out of 'read', 'write-once', 'write' or 'delete'");
 
 			this.access = filePermissions.get(access).ordinal();
 
 			try {
 				this.turl = parseTurl();
 				this.turlHost = InetAddress.getByName(this.turl.getHost());
-			} catch (URISyntaxException e) {
-				throw new CorruptedEnvelopeException("Malformed TURL: "
-						+ e.getMessage());
-			} catch (UnknownHostException e) {
+			} catch (final URISyntaxException e) {
+				throw new CorruptedEnvelopeException("Malformed TURL: " + e.getMessage());
+			} catch (final UnknownHostException e) {
 				throw new CorruptedEnvelopeException(e.getMessage());
 			}
 		}
 
 		private URI parseTurl() throws URISyntaxException {
 
-			String rootURLString = getTurl();
+			final String rootURLString = getTurl();
 
-			if (!rootURLString.toLowerCase().startsWith("root://")) {
-				throw new URISyntaxException(rootURLString,
-						"TURL does not start with root://");
-			}
+			if (!rootURLString.toLowerCase().startsWith("root://"))
+				throw new URISyntaxException(rootURLString, "TURL does not start with root://");
 			this.turlProtocol = "root";
 
 			// dirty little trick because java.net.URL does not understand root
@@ -244,23 +237,22 @@ public class Envelope {
 	private boolean valid = false;
 
 	/** the file information embedded in the envelope body */
-	List<GridFile> files = new LinkedList<GridFile>();
+	List<GridFile> files = new LinkedList<>();
 
 	private final static String ENVELOPE_START = "-----BEGIN ENVELOPE-----";
 	private final static String ENVELOPE_STOP = "-----END ENVELOPE-----";
 	private final static String BODY_START = "-----BEGIN ENVELOPE BODY-----";
 	private final static String BODY_STOP = "-----END ENVELOPE BODY-----";
 
-	private void initializeEnvelope(String envelopein, int expireAfter,
-			String certificateString) {
+	private void initializeEnvelope(final String envelopein, final int expireAfter, final String certificateString) {
 
-//		cipheralgorithm = "Blowfish";
+		// cipheralgorithm = "Blowfish";
 		creator = "AuthenX";
-//		creator = "CatService@ALIEN";
-		created = System.currentTimeMillis()/1000L;
-		Date creation = new Date(created*1000);
-		DateFormat indfm = new SimpleDateFormat("EEE MMM  d HH:mm:ss yyyy");
-		creationDate = 		indfm.format(creation);
+		// creator = "CatService@ALIEN";
+		created = System.currentTimeMillis() / 1000L;
+		final Date creation = new Date(created * 1000);
+		final DateFormat indfm = new SimpleDateFormat("EEE MMM  d HH:mm:ss yyyy");
+		creationDate = indfm.format(creation);
 		this.expires = created + (expireAfter * 3600000L);
 		expireDate = new Date(this.expires);
 
@@ -272,7 +264,7 @@ public class Envelope {
 	 * @param envelopein
 	 * @return ALICE envelope
 	 */
-	public String create_ALICE_SE_Envelope(String envelopein) {
+	public String create_ALICE_SE_Envelope(final String envelopein) {
 
 		initializeEnvelope(envelopein, 24, "none");
 
@@ -282,17 +274,17 @@ public class Envelope {
 		// lEnvelope += "MD5:         " + fMD5SUM + "\n";
 		lEnvelope += "UNIXTIME:    " + created + "\n";
 		lEnvelope += "DATE:        " + creationDate + "\n";
-//		Mon Nov  8 03:01:00 2010
-//		lEnvelope += "EXPIRES:     " + expires + "\n";
+		// Mon Nov 8 03:01:00 2010
+		// lEnvelope += "EXPIRES:     " + expires + "\n";
 		lEnvelope += "EXPIRES:     0\n";
-//		lEnvelope += "EXPDATE:     " + expireDate + "\n";
+		// lEnvelope += "EXPDATE:     " + expireDate + "\n";
 		lEnvelope += "EXPDATE:     never\n";
 		lEnvelope += "CERTIFICATE: " + certificate + "\n";
 		lEnvelope += BODY_START + "\n";
 		lEnvelope += envelopein + "\n";
 		lEnvelope += BODY_STOP + "\n";
 		lEnvelope += ENVELOPE_STOP + "\n";
-//		System.out.println("initialized Envelope with:" + lEnvelope);
+		// System.out.println("initialized Envelope with:" + lEnvelope);
 		return lEnvelope;
 
 	}
@@ -304,18 +296,17 @@ public class Envelope {
 	 * enum entries. It is preferred to have the strings tied to the enum for
 	 * consistency.
 	 */
-	public static final Map<String, FilePerm> filePermissions = new HashMap<String, FilePerm>();
+	public static final Map<String, FilePerm> filePermissions = new HashMap<>();
 	static {
-		for (FilePerm fp : FilePerm.values()) {
+		for (final FilePerm fp : FilePerm.values())
 			filePermissions.put(fp.xmlText(), fp);
-		}
 	}
 
 	// time frame to determine whether creatin time is still valid
 	private static final long TIME_OFFSET = 60;
 
 	/** the stack used for parsing the structured content of the envelope */
-	Stack<String> stack = new Stack<String>();
+	Stack<String> stack = new Stack<>();
 
 	/**
 	 * Simple constructor
@@ -334,8 +325,7 @@ public class Envelope {
 	 * @throws GeneralSecurityException
 	 *             if envelope has already expired
 	 */
-	public Envelope(String envelope) throws CorruptedEnvelopeException,
-			GeneralSecurityException {
+	public Envelope(final String envelope) throws CorruptedEnvelopeException, GeneralSecurityException {
 		parse(envelope);
 		checkValidity();
 	}
@@ -348,10 +338,9 @@ public class Envelope {
 	 * @throws CorruptedEnvelopeException
 	 *             if parsing fails
 	 */
-	private void parse(String envelope) throws CorruptedEnvelopeException {
+	private void parse(final String envelope) throws CorruptedEnvelopeException {
 
-		LineNumberReader input = new LineNumberReader(
-				new StringReader(envelope));
+		final LineNumberReader input = new LineNumberReader(new StringReader(envelope));
 
 		try {
 			String line = null;
@@ -364,10 +353,8 @@ public class Envelope {
 				}
 
 				if (line.equals(ENVELOPE_STOP)) {
-					if (!stack.peek().equals(ENVELOPE_START)) {
-						throw new CorruptedEnvelopeException(
-								"Parse error near " + ENVELOPE_STOP);
-					}
+					if (!stack.peek().equals(ENVELOPE_START))
+						throw new CorruptedEnvelopeException("Parse error near " + ENVELOPE_STOP);
 					stack.pop();
 					continue;
 				}
@@ -378,17 +365,14 @@ public class Envelope {
 				}
 
 				if (line.equals(BODY_STOP)) {
-					if (!stack.peek().equals(BODY_START)) {
-						throw new CorruptedEnvelopeException(
-								"Parse error near " + BODY_STOP);
-					}
+					if (!stack.peek().equals(BODY_START))
+						throw new CorruptedEnvelopeException("Parse error near " + BODY_STOP);
 					stack.pop();
 					continue;
 				}
 
-				if (stack.empty() || "".equals(line)) {
+				if (stack.empty() || "".equals(line))
 					continue;
-				}
 
 				if (stack.peek().equals(ENVELOPE_START)) {
 
@@ -401,12 +385,10 @@ public class Envelope {
 				if (stack.peek().equals(BODY_START)) {
 
 					// extract xml substring
-					StringBuffer xmlBody = new StringBuffer(line);
+					final StringBuffer xmlBody = new StringBuffer(line);
 
-					while (!line.equals("</authz>")
-							&& (line = input.readLine()) != null) {
+					while (!line.equals("</authz>") && (line = input.readLine()) != null)
 						xmlBody.append(line);
-					}
 
 					parseBody(xmlBody.toString());
 
@@ -414,16 +396,14 @@ public class Envelope {
 				}
 
 			}
-		} catch (IOException e) {
-			throw new CorruptedEnvelopeException(
-					"Error reading from envelope String while parsing");
+		} catch (final IOException e) {
+			throw new CorruptedEnvelopeException("Error reading from envelope String while parsing");
 		}
 
 		try {
 			input.close();
-		} catch (IOException e) {
-			throw new CorruptedEnvelopeException(
-					"Error closing stream where envelope string was parsed from");
+		} catch (final IOException e) {
+			throw new CorruptedEnvelopeException("Error closing stream where envelope string was parsed from");
 		}
 	}
 
@@ -432,14 +412,14 @@ public class Envelope {
 	 * 
 	 * @param line
 	 */
-	private void parseHeader(String line) {
-		StringTokenizer tokenizer = new StringTokenizer(line, ": ");
+	private void parseHeader(final String line) {
+		final StringTokenizer tokenizer = new StringTokenizer(line, ": ");
 
 		String key = null;
 
 		try {
 			key = tokenizer.nextToken();
-		} catch (NoSuchElementException e) {
+		} catch (final NoSuchElementException e) {
 
 			// ignore empty line
 			return;
@@ -473,12 +453,12 @@ public class Envelope {
 	 * @throws CorruptedEnvelopeException
 	 *             if a parsing error occurs
 	 */
-	private void parseBody(String xmlBody) throws CorruptedEnvelopeException {
+	private void parseBody(final String xmlBody) throws CorruptedEnvelopeException {
 
 		// the XML tags to parse for
-		String[] tags = { "authz", "file", "lfn", "turl", "access" };
+		final String[] tags = { "authz", "file", "lfn", "turl", "access" };
 
-		StringTokenizer tokenizer = new StringTokenizer(xmlBody, "<> ");
+		final StringTokenizer tokenizer = new StringTokenizer(xmlBody, "<> ");
 
 		String tmpLfn = null;
 		String tmpTURL = null;
@@ -486,7 +466,7 @@ public class Envelope {
 
 		while (tokenizer.hasMoreTokens()) {
 
-			String token = tokenizer.nextToken();
+			final String token = tokenizer.nextToken();
 
 			// look for <authz>
 			if (token.equals(tags[0])) {
@@ -515,11 +495,8 @@ public class Envelope {
 				stack.pop();
 
 				files.add(new GridFile(tmpLfn, tmpTURL, tmpPerm));
-				if (!filePermissions.containsKey(tmpPerm)) {
-					throw new CorruptedEnvelopeException(
-							"unknown access parameter for lfn " + tmpLfn + ": "
-									+ tmpPerm);
-				}
+				if (!filePermissions.containsKey(tmpPerm))
+					throw new CorruptedEnvelopeException("unknown access parameter for lfn " + tmpLfn + ": " + tmpPerm);
 				continue;
 			}
 
@@ -528,10 +505,8 @@ public class Envelope {
 
 				tmpLfn = tokenizer.nextToken();
 
-				if (!tokenizer.nextToken().equals("/" + tags[2])) {
-					throw new CorruptedEnvelopeException("Parse error near: "
-							+ tmpLfn);
-				}
+				if (!tokenizer.nextToken().equals("/" + tags[2]))
+					throw new CorruptedEnvelopeException("Parse error near: " + tmpLfn);
 				continue;
 			}
 
@@ -540,10 +515,8 @@ public class Envelope {
 
 				tmpTURL = tokenizer.nextToken();
 
-				if (!tokenizer.nextToken().equals("/" + tags[3])) {
-					throw new CorruptedEnvelopeException("Parse error near: "
-							+ tmpTURL);
-				}
+				if (!tokenizer.nextToken().equals("/" + tags[3]))
+					throw new CorruptedEnvelopeException("Parse error near: " + tmpTURL);
 				continue;
 			}
 
@@ -552,10 +525,8 @@ public class Envelope {
 
 				tmpPerm = tokenizer.nextToken();
 
-				if (!tokenizer.nextToken().equals("/" + tags[4])) {
-					throw new CorruptedEnvelopeException("Parse error near: "
-							+ tmpPerm);
-				}
+				if (!tokenizer.nextToken().equals("/" + tags[4]))
+					throw new CorruptedEnvelopeException("Parse error near: " + tmpPerm);
 
 				continue;
 			}
@@ -571,26 +542,18 @@ public class Envelope {
 	 * @throws CorruptedEnvelopeException
 	 *             if the number of specified files is less then 1
 	 */
-	private void checkValidity() throws GeneralSecurityException,
-			CorruptedEnvelopeException {
+	private void checkValidity() throws GeneralSecurityException, CorruptedEnvelopeException {
 
-		long current = System.currentTimeMillis() / 1000;
+		final long current = System.currentTimeMillis() / 1000;
 
-		if ((created - TIME_OFFSET) > current) {
-			throw new GeneralSecurityException(
-					"Envelope creation time lies in the future: "
-							+ new Date(created * 1000));
-		}
+		if ((created - TIME_OFFSET) > current)
+			throw new GeneralSecurityException("Envelope creation time lies in the future: " + new Date(created * 1000));
 
-		if ((expires != 0) && (current) > expires) {
-			throw new GeneralSecurityException("Envelope expired "
-					+ new Date(expires * 1000));
-		}
+		if ((expires != 0) && (current) > expires)
+			throw new GeneralSecurityException("Envelope expired " + new Date(expires * 1000));
 
-		if (files.size() < 1) {
-			throw new CorruptedEnvelopeException(
-					"Envelope body must contain permission and/or location information for at least one file");
-		}
+		if (files.size() < 1)
+			throw new CorruptedEnvelopeException("Envelope body must contain permission and/or location information for at least one file");
 
 		valid = true;
 

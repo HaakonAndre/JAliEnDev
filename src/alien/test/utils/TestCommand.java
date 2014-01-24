@@ -21,7 +21,7 @@ public class TestCommand {
 	
 	private boolean daemonize = false;
 
-	private ArrayList<String> command = new ArrayList<String>();
+	private ArrayList<String> command = new ArrayList<>();
 
 	/**
 	 * 
@@ -113,8 +113,7 @@ public class TestCommand {
 		if(verbose)
 			System.out.println("EXEC: " + getCommand());
 	
-		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-				new ArrayList<String>(command));
+		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(new ArrayList<>(command));
 		
 		if(!daemonize)
 			pBuilder.returnOutputOnExit(true);

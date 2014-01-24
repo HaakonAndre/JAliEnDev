@@ -57,7 +57,7 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] commandList;
 
 	static {
-		final List<String> comms = new ArrayList<String>(Arrays.asList(jAliEnCommandList));
+		final List<String> comms = new ArrayList<>(Arrays.asList(jAliEnCommandList));
 
 		comms.add("shutdown");
 
@@ -106,7 +106,7 @@ public class JAliEnCOMMander extends Thread {
 		role = user.getDefaultRole();
 		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
 		myHome = UsersHelper.getHomeDir(user.getName());
-		localFileCash = new HashMap<String, File>();
+		localFileCash = new HashMap<>();
 		initializeJCentralConnection();
 
 		setName("Commander");
@@ -129,7 +129,7 @@ public class JAliEnCOMMander extends Thread {
 		this.role = role;
 		this.site = site;
 		myHome = UsersHelper.getHomeDir(user.getName());
-		localFileCash = new HashMap<String, File>();
+		localFileCash = new HashMap<>();
 
 		this.out = out;
 		this.curDir = curDir;
@@ -379,7 +379,7 @@ public class JAliEnCOMMander extends Thread {
 			logger.log(Level.INFO, "Received JSh call [" + comm + "].");
 		}
 
-		final ArrayList<String> args = new ArrayList<String>(Arrays.asList(arg));
+		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
 		args.remove(arg[0]);
 
 		for (int i = 1; i < arg.length; i++)

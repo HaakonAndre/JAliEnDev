@@ -25,8 +25,8 @@ public class LFNListCollectionFromString extends Request {
 	private Set<LFN> lfns = null;
 
 	/**
-	 * @param user 
-	 * @param role 
+	 * @param user
+	 * @param role
 	 * @param path
 	 */
 	public LFNListCollectionFromString(final AliEnPrincipal user, final String role, final String path) {
@@ -40,20 +40,17 @@ public class LFNListCollectionFromString extends Request {
 		final LFN entry = LFNUtils.getLFN(path, false);
 
 		if (entry != null) {
-			if (entry.isCollection()){
+			if (entry.isCollection()) {
 				final Set<String> entries = entry.listCollection();
-				
-				this.lfns = new LinkedHashSet<LFN>(entries.size());
-				
-				for (final String lfn: entries){
+
+				this.lfns = new LinkedHashSet<>(entries.size());
+
+				for (final String lfn : entries)
 					this.lfns.add(LFNUtils.getLFN(lfn));
-				}
-			}
-			else
+			} else
 				throw new IllegalArgumentException("Not a collection");
-		}
-		else
-			throw new IllegalArgumentException("No such LFN \"" + path+"\"");
+		} else
+			throw new IllegalArgumentException("No such LFN \"" + path + "\"");
 	}
 
 	/**

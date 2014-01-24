@@ -20,40 +20,40 @@ public class FileEditor {
 	/**
 	 * Available editors
 	 */
-	public static final String[] editors = {"sensible-editor", "edit", "mcedit", "vim", "joe", "emacs", "more", "less", "nano"};
-	
-	private static final Map<String, String> editorCommands = new TreeMap<String, String>();
-	
-	static{
-		for (final String editor: editors){
+	public static final String[] editors = { "sensible-editor", "edit", "mcedit", "vim", "joe", "emacs", "more", "less", "nano" };
+
+	private static final Map<String, String> editorCommands = new TreeMap<>();
+
+	static {
+		for (final String editor : editors) {
 			final String path = which(editor);
-			
-			if (path!=null)
+
+			if (path != null)
 				editorCommands.put(editor, path);
 		}
 	}
-	
-	private String editor;
-	
-	public static final List<String> getAvailableEditorCommands(){
-		final List<String> ret = new ArrayList<String>();
-		
+
+	private final String editor;
+
+	public static final List<String> getAvailableEditorCommands() {
+		final List<String> ret = new ArrayList<>();
+
 		ret.addAll(editorCommands.keySet());
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * @param editorname
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	public FileEditor(final String editorname) throws IOException{
+	public FileEditor(final String editorname) throws IOException {
 		editor = editorCommands.get(editorname);
-		
-		if(editor==null)
-			throw new IOException(editorname+": command not found");
+
+		if (editor == null)
+			throw new IOException(editorname + ": command not found");
 	}
-	
+
 	/**
 	 * @param filename
 	 */
@@ -64,14 +64,14 @@ public class FileEditor {
 
 		try {
 			edit.wait();
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			e.printStackTrace();
-		} catch (IllegalMonitorStateException e) {
+		} catch (final IllegalMonitorStateException e) {
 			// ignore
 		}
 	}
-	
-	private static String which(String command) {
+
+	private static String which(final String command) {
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(Arrays.asList("which", command));
 
 		pBuilder.returnOutputOnExit(true);
@@ -83,11 +83,11 @@ public class FileEditor {
 			if (exitStatus.getExtProcExitStatus() == 0)
 				return exitStatus.getStdOut().trim();
 
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			// ignore
 		}
-		
-		//System.err.println("Command [" + command + "] not found.");
+
+		// System.err.println("Command [" + command + "] not found.");
 		return null;
 	}
 }

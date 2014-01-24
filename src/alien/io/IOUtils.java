@@ -76,39 +76,36 @@ public class IOUtils {
 
 			int cnt;
 
-			do {
+			do
 				cnt = dis.read(buff);
-			} while (cnt == buff.length);
+			while (cnt == buff.length);
 
 			final byte[] digest = md.digest();
 
 			return String.format("%032x", new BigInteger(1, digest));
-		}
-		catch (final IOException ioe) {
+		} catch (final IOException ioe) {
 			throw ioe;
-		}
-		catch (final Exception e) {
+		} catch (final Exception e) {
 			// ignore
-		}
-		finally {
-			if (dis != null) {
+		} finally {
+			if (dis != null)
 				try {
 					dis.close();
-				}
-				catch (final IOException ioe) {
+				} catch (final IOException ioe) {
 					// ignore
 				}
-			}
 		}
 
 		return null;
 	}
 
 	/**
-	 * Download the file in a temporary location. The GUID should be filled with authorization tokens before calling this method.
+	 * Download the file in a temporary location. The GUID should be filled with
+	 * authorization tokens before calling this method.
 	 * 
 	 * @param guid
-	 * @return the temporary file name. You should handle the deletion of this temporary file!
+	 * @return the temporary file name. You should handle the deletion of this
+	 *         temporary file!
 	 * @see TempFileManager#release(File)
 	 * @see #get(GUID, File)
 	 * @see AuthorizationFactory#fillAccess(GUID, AccessType)
@@ -117,23 +114,28 @@ public class IOUtils {
 		return get(guid, null);
 	}
 
-	private static final ThreadPoolExecutor PARALLEL_DW_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE, ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+	private static final ThreadPoolExecutor PARALLEL_DW_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE, ConfigUtils.getConfig().getl(
+			"alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
 		@Override
 		public Thread newThread(final Runnable r) {
 			final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
 			t.setDaemon(true);
-			
+
 			return t;
 		}
 	});
 
 	/**
-	 * Download the file in a specified location. The GUID should be filled with authorization tokens before calling this method.
+	 * Download the file in a specified location. The GUID should be filled with
+	 * authorization tokens before calling this method.
 	 * 
 	 * @param guid
 	 * @param localFile
-	 *            path where the file should be downloaded. Can be <code>null</code> in which case a temporary location will be used, but then you should handle the temporary files.
-	 * @return the downloaded file, or <code>null</code> if the file could not be retrieved
+	 *            path where the file should be downloaded. Can be
+	 *            <code>null</code> in which case a temporary location will be
+	 *            used, but then you should handle the temporary files.
+	 * @return the downloaded file, or <code>null</code> if the file could not
+	 *         be retrieved
 	 * @see TempFileManager#release(File)
 	 * @see AuthorizationFactory#fillAccess(GUID, AccessType)
 	 */
@@ -151,8 +153,7 @@ public class IOUtils {
 
 					return null;
 				}
-			}
-			finally {
+			} finally {
 				TempFileManager.release(cachedContent);
 			}
 
@@ -166,7 +167,7 @@ public class IOUtils {
 		if (pfns == null || pfns.size() == 0)
 			return null;
 
-		final Set<PFN> realPFNsSet = new HashSet<PFN>();
+		final Set<PFN> realPFNsSet = new HashSet<>();
 
 		boolean zipArchive = false;
 
@@ -188,9 +189,8 @@ public class IOUtils {
 		File f = null;
 
 		if (realPFNsSet.size() > 1 && guid.size < ConfigUtils.getConfig().getl("alien.io.IOUtils.parallel_downloads.size_limit", 10 * 1024 * 1024)
-				&& PARALLEL_DW_THREAD_POOL.getActiveCount() < ConfigUtils.getConfig().geti("alien.io.IOUtils.parallel_downloads.threads", 100)) {
+				&& PARALLEL_DW_THREAD_POOL.getActiveCount() < ConfigUtils.getConfig().geti("alien.io.IOUtils.parallel_downloads.threads", 100))
 			f = parallelDownload(guid, realPFNsSet, zipArchive ? null : localFile);
-		}
 		else {
 			final List<PFN> sortedRealPFNs = SEUtils.sortBySite(realPFNsSet, site, false, false);
 
@@ -205,17 +205,15 @@ public class IOUtils {
 				if (protocols == null || protocols.size() == 0)
 					continue;
 
-				for (final Protocol protocol : protocols) {
+				for (final Protocol protocol : protocols)
 					try {
 						f = protocol.get(realPfn, zipArchive ? null : localFile);
 
 						if (f != null)
 							break;
-					}
-					catch (final IOException e) {
+					} catch (final IOException e) {
 						logger.log(Level.INFO, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
 					}
-				}
 
 				if (f != null)
 					break;
@@ -226,7 +224,7 @@ public class IOUtils {
 			return f;
 
 		try {
-			for (final PFN p : pfns) {
+			for (final PFN p : pfns)
 				if (p.pfn.startsWith("guid:/") && p.pfn.indexOf("?ZIP=") >= 0) {
 					// this was actually an archive
 
@@ -241,12 +239,10 @@ public class IOUtils {
 
 						while (zipentry != null) {
 							if (zipentry.getName().equals(archiveFileName)) {
-								if (localFile != null) {
+								if (localFile != null)
 									target = localFile;
-								}
-								else {
+								else
 									target = File.createTempFile(guid.guid + "#" + archiveFileName + ".", null, getTemporaryDirectory());
-								}
 
 								final FileOutputStream fos = new FileOutputStream(target);
 
@@ -267,27 +263,22 @@ public class IOUtils {
 
 						zi.close();
 
-						if (target != null) {
+						if (target != null)
 							if (localFile == null)
 								TempFileManager.putTemp(guid, target);
 							else
 								TempFileManager.putPersistent(guid, localFile);
-						}
 
 						return target;
-					}
-					catch (final ZipException e) {
+					} catch (final ZipException e) {
 						logger.log(Level.WARNING, "ZipException parsing the content of " + f.getAbsolutePath(), e);
-					}
-					catch (final IOException e) {
+					} catch (final IOException e) {
 						logger.log(Level.WARNING, "IOException extracting " + archiveFileName + " from " + f.getAbsolutePath() + " to parse as ZIP", e);
 					}
 
 					return null;
 				}
-			}
-		}
-		finally {
+		} finally {
 			TempFileManager.release(f);
 		}
 
@@ -311,25 +302,22 @@ public class IOUtils {
 			if (protocols == null || protocols.size() == 0)
 				return;
 
-			try{
-				for (final Protocol protocol : protocols) {
+			try {
+				for (final Protocol protocol : protocols)
 					try {
 						f = protocol.get(realPfn, null);
-	
+
 						if (f != null)
 							break;
-					}
-					catch (final IOException e) {
+					} catch (final IOException e) {
 						logger.log(Level.FINE, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
 					}
-				}
-	
+
 				if (f != null)
 					synchronized (lock) {
 						lock.notifyAll();
 					}
-			}
-			catch (final Throwable t){
+			} catch (final Throwable t) {
 				if (f != null)
 					TempFileManager.release(f);
 			}
@@ -345,13 +333,13 @@ public class IOUtils {
 	}
 
 	private static File parallelDownload(final GUID guid, final Set<PFN> realPFNsSet, final File localFile) {
-		final List<Future<DownloadWork>> parallelDownloads = new ArrayList<Future<DownloadWork>>(realPFNsSet.size());
+		final List<Future<DownloadWork>> parallelDownloads = new ArrayList<>(realPFNsSet.size());
 
 		final Object lock = new Object();
 
 		File f = null;
-		
-		final List<DownloadWork> tasks = new ArrayList<DownloadWork>(realPFNsSet.size()); 
+
+		final List<DownloadWork> tasks = new ArrayList<>(realPFNsSet.size());
 
 		for (final PFN realPfn : realPFNsSet) {
 			if (realPfn.ticket == null) {
@@ -362,13 +350,13 @@ public class IOUtils {
 			final DownloadWork dw = new DownloadWork(realPfn, lock);
 
 			tasks.add(dw);
-			
+
 			final Future<DownloadWork> future = PARALLEL_DW_THREAD_POOL.submit(dw, dw);
 
 			parallelDownloads.add(future);
 		}
 
-		while (f == null && parallelDownloads.size()>0) {
+		while (f == null && parallelDownloads.size() > 0) {
 			final Iterator<Future<DownloadWork>> it = parallelDownloads.iterator();
 
 			while (it.hasNext()) {
@@ -379,23 +367,19 @@ public class IOUtils {
 						final DownloadWork dw = future.get();
 
 						tasks.remove(dw);
-						
+
 						f = dw.getLocalFile();
 
-						if (logger.isLoggable(Level.FINER)) {
+						if (logger.isLoggable(Level.FINER))
 							if (f != null)
 								logger.log(Level.FINER, "The first replica to reply was: " + dw.getPFN().pfn);
 							else
 								logger.log(Level.FINER, "This replica was not accessible: " + dw.getPFN().pfn);
-						}
-					}
-					catch (final InterruptedException e) {
+					} catch (final InterruptedException e) {
 						e.printStackTrace();
-					}
-					catch (final ExecutionException e) {
+					} catch (final ExecutionException e) {
 						e.printStackTrace();
-					}
-					finally {
+					} finally {
 						it.remove();
 					}
 
@@ -404,58 +388,53 @@ public class IOUtils {
 				}
 			}
 
-			if (f == null) {
+			if (f == null)
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					}
-					catch (final InterruptedException e) {
+					} catch (final InterruptedException e) {
 						break;
 					}
 				}
-			}
 		}
 
-		for (final Future<DownloadWork> future : parallelDownloads) {
+		for (final Future<DownloadWork> future : parallelDownloads)
 			future.cancel(true);
-		}
-		
+
 		Thread.yield();
 
-		for (final DownloadWork dw: tasks){
+		for (final DownloadWork dw : tasks) {
 			final File tempFile = dw.getLocalFile();
-			
+
 			if (logger.isLoggable(Level.FINEST))
-				logger.log(Level.FINEST, "Got one file to test:"+tempFile);
-			
-			if (tempFile!=null){
-				if (f==null){
+				logger.log(Level.FINEST, "Got one file to test:" + tempFile);
+
+			if (tempFile != null)
+				if (f == null) {
 					if (logger.isLoggable(Level.FINEST))
-						logger.log(Level.FINEST, "Keeping this as the main instance:"+tempFile);
+						logger.log(Level.FINEST, "Keeping this as the main instance:" + tempFile);
 
 					f = tempFile;
-				}
-				else
+				} else
 					TempFileManager.release(tempFile);
-			}
 		}
-		
-		if (localFile != null && f != null) {
+
+		if (localFile != null && f != null)
 			if (lazyj.Utils.copyFile(f.getAbsolutePath(), localFile.getAbsolutePath())) {
 				TempFileManager.release(f);
-				
+
 				TempFileManager.putPersistent(guid, localFile);
 
 				return localFile;
 			}
-		}
 
 		return f;
 	}
 
 	/**
 	 * @param guid
-	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
+	 * @return the contents of the file, or <code>null</code> if there was a
+	 *         problem getting it
 	 */
 	public static String getContents(final GUID guid) {
 		final String reason = AuthorizationFactory.fillAccess(guid, AccessType.READ);
@@ -468,24 +447,22 @@ public class IOUtils {
 
 		final File f = get(guid);
 
-		if (f != null) {
+		if (f != null)
 			try {
 				return Utils.readFile(f.getCanonicalPath());
-			}
-			catch (final IOException ioe) {
+			} catch (final IOException ioe) {
 				// ignore, shouldn't be ...
-			}
-			finally {
+			} finally {
 				TempFileManager.release(f);
 			}
-		}
 
 		return null;
 	}
 
 	/**
 	 * @param lfn
-	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
+	 * @return the contents of the file, or <code>null</code> if there was a
+	 *         problem getting it
 	 */
 	public static String getContents(final LFN lfn) {
 		if (lfn == null)
@@ -501,7 +478,8 @@ public class IOUtils {
 
 	/**
 	 * @param lfn
-	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
+	 * @return the contents of the file, or <code>null</code> if there was a
+	 *         problem getting it
 	 */
 	public static String getContents(final String lfn) {
 		return getContents(LFNUtils.getLFN(lfn));
@@ -511,23 +489,22 @@ public class IOUtils {
 	 * @param lfn
 	 *            relative paths are allowed
 	 * @param owner
-	 * @return <code>true</code> if the indicated LFN doesn't exist (any more) in the catalogue and can be created again
+	 * @return <code>true</code> if the indicated LFN doesn't exist (any more)
+	 *         in the catalogue and can be created again
 	 */
 	public static boolean backupFile(final String lfn, final AliEnPrincipal owner) {
 		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, lfn);
 
 		final LFN l = LFNUtils.getLFN(absolutePath, true);
 
-		if (!l.exists) {
+		if (!l.exists)
 			return true;
-		}
 
 		final LFN backupLFN = LFNUtils.getLFN(absolutePath + "~", true);
 
-		if (backupLFN.exists && AuthorizationChecker.canWrite(backupLFN.getParentDir(), owner)) {
+		if (backupLFN.exists && AuthorizationChecker.canWrite(backupLFN.getParentDir(), owner))
 			if (!backupLFN.delete(true, false))
 				return false;
-		}
 
 		return LFNUtils.mvLFN(owner, l, absolutePath + "~") != null;
 	}
@@ -556,7 +533,7 @@ public class IOUtils {
 	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount) throws IOException {
 		upload(localFile, toLFN, owner, replicaCount, null, false);
 	}
-	
+
 	/**
 	 * Upload a local file to the Grid
 	 * 
@@ -579,25 +556,27 @@ public class IOUtils {
 	 * @param owner
 	 * @param replicaCount
 	 * @param progressReport
-	 * @param deleteSourceAfterUpload if <code>true</code> then the local file (the source) is to be deleted after the operation completes 
+	 * @param deleteSourceAfterUpload
+	 *            if <code>true</code> then the local file (the source) is to be
+	 *            deleted after the operation completes
 	 * @throws IOException
 	 */
-	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport, final boolean deleteSourceAfterUpload) throws IOException {
+	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport, final boolean deleteSourceAfterUpload)
+			throws IOException {
 		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, toLFN);
 
 		final LFN l = LFNUtils.getLFN(absolutePath, true);
 
-		if (l.exists) {
+		if (l.exists)
 			throw new IOException("LFN already exists: " + toLFN);
-		}
 
-		final ArrayList<String> cpArgs = new ArrayList<String>();
+		final ArrayList<String> cpArgs = new ArrayList<>();
 		cpArgs.add("file:" + localFile.getAbsolutePath());
 		cpArgs.add(absolutePath);
-		
+
 		if (deleteSourceAfterUpload)
 			cpArgs.add("-d");
-		
+
 		cpArgs.add("-S");
 		cpArgs.add("disk:" + replicaCount);
 

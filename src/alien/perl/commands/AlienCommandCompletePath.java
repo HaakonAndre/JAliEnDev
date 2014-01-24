@@ -61,10 +61,10 @@ public class AlienCommandCompletePath extends AlienCommand {
 	 */
 	@Override
 	public HashMap<String, ArrayList<String>> executeCommand() {
-		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
+		HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
 
-		ArrayList<String> alrcValues = new ArrayList<String>();
-		ArrayList<String> alrcMessages = new ArrayList<String>();
+		ArrayList<String> alrcValues = new ArrayList<>();
+		ArrayList<String> alrcMessages = new ArrayList<>();
 
 		// we got arguments for ls
 		if (this.alArguments != null && this.alArguments.size() > 0)
@@ -92,7 +92,7 @@ public class AlienCommandCompletePath extends AlienCommand {
 					if (folder.type == 'd') {
 
 						List<LFN> lLFN = folder.list();
-						ArrayList<String> suggestions = new ArrayList<String>();
+						ArrayList<String> suggestions = new ArrayList<>();
 
 						for (LFN lfn : lLFN) {
 							if (lfn.getFileName().startsWith(wildcard)) {

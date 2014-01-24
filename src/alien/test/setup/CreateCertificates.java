@@ -32,7 +32,7 @@ public final class CreateCertificates {
 		String hostreq = TestConfig.tvo_certs + "/hostreq.pem";
 		String hosttempkey = TestConfig.tvo_certs + "/hostkeytemp.pem";
 
-		ArrayList<TestCommand> commands = new ArrayList<TestCommand>();
+		ArrayList<TestCommand> commands = new ArrayList<>();
 
 		// CA CERT/KEY:
 		commands.add(new TestCommand(new String[] {TestBrain.cOpenssl, "genrsa", "-out", TestConfig.ca_key, "1024"}));

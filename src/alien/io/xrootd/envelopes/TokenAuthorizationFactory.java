@@ -20,190 +20,171 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
-
 /**
  * @author Steffen
  * @since Nov 9, 2010
  */
-public class TokenAuthorizationFactory  
-{
-    private Map<String, KeyPair> keystore;
-    private File keystoreFile;
+public class TokenAuthorizationFactory {
+	private Map<String, KeyPair> keystore;
+	private File keystoreFile;
 
-    /**
-     * Dirty hack: will be deprecated soon
-     */
-    private String _noStrongAuthz;
+	/**
+	 * Dirty hack: will be deprecated soon
+	 */
+	private String _noStrongAuthz;
 
-    /**
-     * @return handler
-     */
-    public TokenAuthzHandler getAuthzHandler()
-    {
-        return new TokenAuthzHandler(_noStrongAuthz, keystore);
-    }
+	/**
+	 * @return handler
+	 */
+	public TokenAuthzHandler getAuthzHandler() {
+		return new TokenAuthzHandler(_noStrongAuthz, keystore);
+	}
 
-    private void loadKeyStore() throws Exception,  IOException
-    {
-        LineNumberReader in =
-            new LineNumberReader(new FileReader(keystoreFile));
-        try {
-            // reset keystore
-            keystore = new Hashtable<String, KeyPair>();
+	private void loadKeyStore() throws Exception, IOException {
+		final LineNumberReader in = new LineNumberReader(new FileReader(keystoreFile));
+		try {
+			// reset keystore
+			keystore = new Hashtable<>();
 
-            // the RSA keyfactory
-            KeyFactory keyFactory = null;
+			// the RSA keyfactory
+			KeyFactory keyFactory = null;
 
-            try {
-                // initialise RSA key factory
-                keyFactory = KeyFactory.getInstance("RSA");
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("Failed to initialize RSA key factory" +
-                                           e.getMessage());
-            }
+			try {
+				// initialise RSA key factory
+				keyFactory = KeyFactory.getInstance("RSA");
+			} catch (final NoSuchAlgorithmException e) {
+				throw new RuntimeException("Failed to initialize RSA key factory" + e.getMessage());
+			}
 
-            String line = null;
-            while ((line = in.readLine()) != null) {
-                StringTokenizer tokenizer = new StringTokenizer(line, " \t");
+			String line = null;
+			while ((line = in.readLine()) != null) {
+				final StringTokenizer tokenizer = new StringTokenizer(line, " \t");
 
-                String voToken = null;
-                String privKeyToken = null;
-                String pubKeyToken = null;
+				String voToken = null;
+				String privKeyToken = null;
+				String pubKeyToken = null;
 
-                try {
+				try {
 
-                    // ignore comment lines and any lines not starting
-                    // with the keyword 'KEY'
-                    String firstToken = tokenizer.nextToken();
-                    if (firstToken.startsWith("#") || !firstToken.equals("KEY")) {
-                        continue;
-                    }
+					// ignore comment lines and any lines not starting
+					// with the keyword 'KEY'
+					final String firstToken = tokenizer.nextToken();
+					if (firstToken.startsWith("#") || !firstToken.equals("KEY"))
+						continue;
 
-                    voToken = tokenizer.nextToken();
-                    privKeyToken = tokenizer.nextToken();
-                    pubKeyToken = tokenizer.nextToken();
+					voToken = tokenizer.nextToken();
+					privKeyToken = tokenizer.nextToken();
+					pubKeyToken = tokenizer.nextToken();
 
-                } catch (NoSuchElementException e) {
-                    throw new Exception("line no " + (in.getLineNumber()) +
-                                             " : invalid format");
-                }
+				} catch (final NoSuchElementException e) {
+					throw new Exception("line no " + (in.getLineNumber()) + " : invalid format");
+				}
 
-                if (!(voToken.startsWith("VO:") &&
-                      privKeyToken.startsWith("PRIVKEY:") &&
-                      pubKeyToken.startsWith("PUBKEY:"))) {
-                    throw new Exception("line no " + (in.getLineNumber()) +
-                                             " : invalid format");
-                }
+				if (!(voToken.startsWith("VO:") && privKeyToken.startsWith("PRIVKEY:") && pubKeyToken.startsWith("PUBKEY:")))
+					throw new Exception("line no " + (in.getLineNumber()) + " : invalid format");
 
+				keystore.put(voToken.substring(voToken.indexOf(':') + 1),
+						loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1), pubKeyToken.substring(pubKeyToken.indexOf(':') + 1), keyFactory));
+			}
+		} finally {
+			in.close();
+		}
+	}
 
-                keystore.put(voToken.substring(voToken.indexOf(':') + 1),
-                             loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1),
-                                         pubKeyToken.substring(pubKeyToken.indexOf(':') + 1), keyFactory));
-            }
-        } finally {
-            in.close();
-        }
-    }
+	private static KeyPair loadKeyPair(final String privKeyFileName, final String pubKeyFileName, final KeyFactory keyFactory) throws IOException {
+		final File privKeyFile = new File(privKeyFileName);
+		final File pubKeyFile = new File(pubKeyFileName);
 
-    private static KeyPair loadKeyPair(String privKeyFileName, String pubKeyFileName, KeyFactory keyFactory) throws IOException {
-        File privKeyFile = new File(privKeyFileName);
-        File pubKeyFile = new File(pubKeyFileName);
+		final byte[] privKeyArray = readKeyfile(privKeyFile);
+		// logger.debug("read private keyfile "+privKeyFile+" ("+privKeyArray.length+" bytes)");
+		// store private key (DER-encoded) in PKCS8-representation object
+		final PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(privKeyArray);
+		// parse unencrypted private key into java private key object
+		RSAPrivateKey privKey;
+		try {
+			privKey = (RSAPrivateKey) keyFactory.generatePrivate(privKeySpec);
+		} catch (final InvalidKeySpecException e) {
+			throw new IOException("error loading private key " + privKeyFileName + ": " + e.getMessage());
+		}
 
-        byte[] privKeyArray = readKeyfile(privKeyFile);
-        // logger.debug("read private keyfile "+privKeyFile+" ("+privKeyArray.length+" bytes)");
-        // store private key (DER-encoded) in PKCS8-representation object
-        PKCS8EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(privKeyArray);
-        // parse unencrypted private key into java private key object
-        RSAPrivateKey privKey;
-        try {
-            privKey = (RSAPrivateKey) keyFactory.generatePrivate(privKeySpec);
-        } catch (InvalidKeySpecException e) {
-            throw new IOException("error loading private key "+privKeyFileName+": "+e.getMessage());
-        }
+		final byte[] pubKeyArray = readKeyfile(pubKeyFile);
+		// logger.debug("Read public keyfile "+pubKeyFile+" ("+pubKeyArray.length+" bytes)");
+		// store the public key (DER-encodedn ot PEM) into a X.509 certificate
+		// object
+		final X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pubKeyArray);
+		RSAPublicKey pubKey;
+		try {
+			pubKey = (RSAPublicKey) keyFactory.generatePublic(pubKeySpec);
+		} catch (final InvalidKeySpecException e) {
+			throw new IOException("error loading public key " + pubKeyFileName + ": " + e.getMessage());
+		}
 
-        byte[] pubKeyArray = readKeyfile(pubKeyFile);
-        // logger.debug("Read public keyfile "+pubKeyFile+" ("+pubKeyArray.length+" bytes)");
-        // store the public key (DER-encodedn ot PEM) into a X.509 certificate object
-        X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pubKeyArray);
-        RSAPublicKey pubKey;
-        try {
-            pubKey = (RSAPublicKey) keyFactory.generatePublic(pubKeySpec);
-        } catch (InvalidKeySpecException e) {
-            throw new IOException("error loading public key " +
-                                  pubKeyFileName + ": " + e.getMessage());
-        }
+		return new KeyPair(pubKey, privKey);
+	}
 
-        return new KeyPair(pubKey, privKey);
-    }
+	/**
+	 * Helper method thats reads a file.
+	 * 
+	 * @param file
+	 *            the File which is going to be read
+	 * @return an array which holds the file content
+	 * @throws IOException
+	 *             if reading the file fails
+	 */
+	private static byte[] readKeyfile(final File file) throws IOException {
+		final InputStream in = new FileInputStream(file);
 
+		final byte[] result = new byte[(int) file.length()];
+		int bytesRead = 0;
 
-    /**
-     * Helper method thats reads a file.
-     * @param file the File which is going to be read
-     * @return an array which holds the file content
-     * @throws IOException if reading the file fails
-     */
-    private static byte[] readKeyfile(File file) throws IOException
-    {
-        InputStream in = new FileInputStream(file);
+		while ((bytesRead += in.read(result, bytesRead, (int) file.length() - bytesRead)) < file.length()) {
+			// nothing
+		}
 
-        byte[] result = new byte[(int) file.length()];
-        int bytesRead = 0;
+		in.close();
 
-        while ((bytesRead += in.read(result, bytesRead, (int) file.length()-bytesRead)) < file.length()){
-        	// nothing
-        }
-        
-        in.close();
+		if (bytesRead != file.length())
+			throw new IOException("Keyfile " + file.getName() + " corrupt.");
 
-        if (bytesRead != file.length()) {
-            throw new IOException("Keyfile "+file.getName()+" corrupt.");
-        }
+		return result;
+	}
 
-        return result;
-    }
+	/**
+	 * @throws GeneralSecurityException
+	 */
+	public void init() throws GeneralSecurityException {
+		try {
+			loadKeyStore();
+		} catch (final Exception e) {
+			throw new GeneralSecurityException("unable to load keystore: " + e.getMessage());
+		}
+	}
 
-    /**
-     * @throws GeneralSecurityException
-     */
-    public void init() throws GeneralSecurityException
-    {
-        try {
-            loadKeyStore();
-        } catch (Exception e) {
-            throw new GeneralSecurityException("unable to load keystore: "+e.getMessage());
-        }
-    }
+	/**
+	 * @param file
+	 */
+	public void setKeystore(final String file) {
+		keystoreFile = new File(file);
+	}
 
-    /**
-     * @param file
-     */
-    public void setKeystore(String file)
-    {
-        keystoreFile = new File(file);
-    }
+	/**
+	 * @return keystore file
+	 */
+	public String getKeystore() {
+		return keystoreFile.toString();
+	}
 
-    /**
-     * @return keystore file
-     */
-    public String getKeystore()
-    {
-        return keystoreFile.toString();
-    }
+	/**
+	 * @param auth
+	 */
+	public void setNoStrongAuthorization(final String auth) {
+		_noStrongAuthz = auth;
+	}
 
-    /**
-     * @param auth
-     */
-    public void setNoStrongAuthorization(String auth)
-    {
-        _noStrongAuthz = auth;
-    }
-
-    /**
-     * @return ?
-     */
-    public String getNoStrongAuthorization()
-    {
-        return _noStrongAuthz;
-    }
+	/**
+	 * @return ?
+	 */
+	public String getNoStrongAuthorization() {
+		return _noStrongAuthz;
+	}
 }

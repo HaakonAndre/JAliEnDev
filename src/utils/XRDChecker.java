@@ -24,7 +24,7 @@ import alien.io.protocols.Xrootd;
 
 /**
  * @author costing
- *
+ * 
  */
 public class XRDChecker {
 
@@ -32,156 +32,150 @@ public class XRDChecker {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(XRDChecker.class.getCanonicalName());
-	
+
 	/**
 	 * @param guid
 	 * @return the status for each PFN of this LFN (the real ones)
 	 */
-	public static final Map<PFN, XRDStatus> check(final GUID guid){
-		if (guid==null)
+	public static final Map<PFN, XRDStatus> check(final GUID guid) {
+		if (guid == null)
 			return null;
-		
+
 		final Set<GUID> realGUIDs = guid.getRealGUIDs();
-		
-		if (realGUIDs==null || realGUIDs.size()==0)
+
+		if (realGUIDs == null || realGUIDs.size() == 0)
 			return null;
-		
-		final Map<PFN, XRDStatus> ret = new HashMap<PFN, XRDStatus>();
-		
+
+		final Map<PFN, XRDStatus> ret = new HashMap<>();
+
 		final Xrootd xrootd = new Xrootd();
-		
-		for (final GUID realId: realGUIDs){
+
+		for (final GUID realId : realGUIDs) {
 			final Set<PFN> pfns = realId.getPFNs();
-			
-			if (pfns==null)
+
+			if (pfns == null)
 				continue;
-			
-			for (final PFN pfn: pfns){
+
+			for (final PFN pfn : pfns) {
 				final String reason = AuthorizationFactory.fillAccess(pfn, AccessType.READ);
-				
-				if (reason!=null){
+
+				if (reason != null) {
 					ret.put(pfn, new XRDStatus(false, reason));
 					continue;
 				}
-				
-				try{
+
+				try {
 					final String output = xrootd.xrdstat(pfn, false, false, false);
-					
+
 					ret.put(pfn, new XRDStatus(true, output));
-				}
-				catch (final IOException ioe){
+				} catch (final IOException ioe) {
 					ret.put(pfn, new XRDStatus(false, ioe.getMessage()));
-					
+
 					if (logger.isLoggable(Level.FINE))
-						logger.log(Level.FINE, "Replica is not ok: "+pfn.pfn, ioe);
+						logger.log(Level.FINE, "Replica is not ok: " + pfn.pfn, ioe);
 				}
 			}
 		}
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * @param lfn
 	 * @return the status for each PFN of this LFN (the real ones)
 	 */
-	public static final Map<PFN, XRDStatus> check(final LFN lfn){
-		if (lfn==null)
+	public static final Map<PFN, XRDStatus> check(final LFN lfn) {
+		if (lfn == null)
 			return null;
-		
+
 		final GUID guid = GUIDUtils.getGUID(lfn);
-		
-		if (guid==null)
+
+		if (guid == null)
 			return null;
-		
+
 		return check(guid);
 	}
-	
+
 	/**
 	 * @param pfn
 	 * @return the check status
 	 */
-	public static final XRDStatus checkByDownloading(final PFN pfn){
+	public static final XRDStatus checkByDownloading(final PFN pfn) {
 		final Xrootd xrootd = new Xrootd();
-		
+
 		xrootd.setTimeout(60);
-		
+
 		File f = null;
-		
+
 		final GUID guid = pfn.getGuid();
-		
-		try{
+
+		try {
 			f = File.createTempFile("xrdstatus-", "-download.tmp", IOUtils.getTemporaryDirectory());
-		
-			if (!f.delete()){
+
+			if (!f.delete())
 				return new XRDStatus(false, "Could not delete the temporary created file, xrdcp would fail, bailing out");
-			}
-			
+
 			final long lStart = System.currentTimeMillis();
-			
-			System.err.println("Getting this file "+pfn.pfn);
-			
+
+			System.err.println("Getting this file " + pfn.pfn);
+
 			xrootd.get(pfn, f);
-			
-			System.err.println("Got the file in "+(System.currentTimeMillis() - lStart)/1000+" seconds");
-			
-			if (f.length() != guid.size){
-				return new XRDStatus(false, "Size is different: catalog="+guid.size+", downloaded size: "+f.length());
-			}
-			
+
+			System.err.println("Got the file in " + (System.currentTimeMillis() - lStart) / 1000 + " seconds");
+
+			if (f.length() != guid.size)
+				return new XRDStatus(false, "Size is different: catalog=" + guid.size + ", downloaded size: " + f.length());
+
 			final String fileMD5 = IOUtils.getMD5(f);
-			
-			if (!fileMD5.equalsIgnoreCase(guid.md5)){
-				return new XRDStatus(false, "MD5 is different: catalog="+guid.md5+", downloaded file="+fileMD5);
-			}
-		}
-		catch (IOException ioe){
+
+			if (!fileMD5.equalsIgnoreCase(guid.md5))
+				return new XRDStatus(false, "MD5 is different: catalog=" + guid.md5 + ", downloaded file=" + fileMD5);
+		} catch (final IOException ioe) {
 			return new XRDStatus(false, ioe.getMessage());
-		}
-		finally{
-			if (f!=null){
+		} finally {
+			if (f != null) {
 				TempFileManager.release(f);
-				
+
 				if (!f.delete())
-					System.err.println("Could not delete: "+f);
+					System.err.println("Could not delete: " + f);
 			}
 		}
-		
+
 		return new XRDStatus(true, null);
 	}
-	
+
 	/**
-	 * Check all replicas of an LFN, first just remotely querying the status then fully downloading each
-	 * replica and computing the md5sum.
+	 * Check all replicas of an LFN, first just remotely querying the status
+	 * then fully downloading each replica and computing the md5sum.
 	 * 
 	 * @param lfn
 	 * @return the status of all replicas
 	 */
-	public static final Map<PFN, XRDStatus> fullCheckLFN(final String lfn){
+	public static final Map<PFN, XRDStatus> fullCheckLFN(final String lfn) {
 		final Map<PFN, XRDStatus> check = XRDChecker.check(LFNUtils.getLFN(lfn));
 
-		if (check==null || check.size()==0)
+		if (check == null || check.size() == 0)
 			return check;
-		
+
 		final Iterator<Map.Entry<PFN, XRDStatus>> it = check.entrySet().iterator();
-		
-		while (it.hasNext()){
+
+		while (it.hasNext()) {
 			final Map.Entry<PFN, XRDStatus> entry = it.next();
-			
+
 			final PFN pfn = entry.getKey();
-			
+
 			final XRDStatus status = entry.getValue();
-			
-			if (status.commandOK){
+
+			if (status.commandOK) {
 				// really ?
 				final XRDStatus downloadStatus = checkByDownloading(pfn);
-				
+
 				if (!downloadStatus.commandOK)
 					entry.setValue(downloadStatus);
 			}
 		}
-		
+
 		return check;
 	}
-	
+
 }

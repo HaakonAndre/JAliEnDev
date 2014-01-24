@@ -99,6 +99,7 @@ public abstract class UIPrintWriter {
 	 * identify the RootPrinter from above 
 	 * @return if it is a RootPrinter
 	 */
+	@SuppressWarnings("static-method")
 	protected boolean isRootPrinter(){
 		return false;
 	}

@@ -19,7 +19,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 			return;
 		}
 
-		ArrayList<String> args = new ArrayList<String>();
+		ArrayList<String> args = new ArrayList<>();
 		args.addAll(alArguments);
 		int times = 0;
 		try {
@@ -41,7 +41,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		}
 		//comm.silent();
 
-		final ArrayList<Long> timings = new ArrayList<Long>(times);
+		final ArrayList<Long> timings = new ArrayList<>(times);
 		
 		for (int t = 0; t < times; t++) {
 			final long lStart = System.currentTimeMillis();

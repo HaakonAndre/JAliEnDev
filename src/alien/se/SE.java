@@ -107,28 +107,28 @@ public class SE implements Serializable, Comparable<SE> {
 	 * Demote write factor
 	 */
 	public final double demoteWrite;
-	
+
 	/**
 	 * Demote read factor
 	 */
 	public final double demoteRead;
-	
+
 	/**
 	 * Size, as declared in LDAP
 	 */
 	public long size;
-	
-	public SE(final String seName, final int seNumber, final String qos, final String seStoragePath, final String seioDaemons){
+
+	public SE(final String seName, final int seNumber, final String qos, final String seStoragePath, final String seioDaemons) {
 		this.seName = seName;
 		this.seNumber = seNumber;
 		this.qos = parseArray(qos);
-		
+
 		this.seVersion = 0;
 		this.needsEncryptedEnvelope = true;
-	
+
 		this.seStoragePath = seStoragePath;
 		this.seioDaemons = seioDaemons;
-		
+
 		this.seNumFiles = 0;
 		this.seMinSize = 0;
 		this.demoteRead = 0;
@@ -139,7 +139,7 @@ public class SE implements Serializable, Comparable<SE> {
 		this.seExclusiveWrite = Collections.EMPTY_SET;
 		this.seType = "n/a";
 	}
-	
+
 	/**
 	 * @param db
 	 */
@@ -151,7 +151,7 @@ public class SE implements Serializable, Comparable<SE> {
 		qos = parseArray(db.gets("seQoS"));
 
 		seVersion = db.geti("seVersion");
-		
+
 		// TODO: remove this, when the version in the DB is working and not
 		// anymore overwritten to null
 		needsEncryptedEnvelope = (seVersion < 200) && (!"alice::cern::setest".equalsIgnoreCase(seName));
@@ -173,26 +173,19 @@ public class SE implements Serializable, Comparable<SE> {
 		seExclusiveRead = parseArray(db.gets("seExclusiveRead"));
 
 		seExclusiveWrite = parseArray(db.gets("seExclusiveWrite"));
-		
+
 		demoteWrite = db.getd("sedemotewrite");
-		
+
 		demoteRead = db.getd("sedemoteread");
-		
+
 		size = getSize();
 	}
 
 	@Override
 	public String toString() {
-		return "SE: seName: " + seName + "\n" + "seNumber\t: " + seNumber
-				+ "\n" + "seVersion\t: " + seVersion + "\n" + "qos\t: " + qos
-				+ "\n" + "seioDaemons\t: " + seioDaemons + "\n"
-				+ "seStoragePath\t: " + seStoragePath + "\n"
-				+ "seSize:\t: "+size+"\n"
-				+ "seUsedSpace\t: " + seUsedSpace + "\n" + "seNumFiles\t: "
-				+ seNumFiles + "\n" + "seMinSize\t: " + seMinSize + "\n"
-				+ "seType\t: " + seType + "\n" + "exclusiveUsers\t: "
-				+ exclusiveUsers + "\n" + "seExclusiveRead\t: "
-				+ seExclusiveRead + "\n" + "seExclusiveWrite\t: "
+		return "SE: seName: " + seName + "\n" + "seNumber\t: " + seNumber + "\n" + "seVersion\t: " + seVersion + "\n" + "qos\t: " + qos + "\n" + "seioDaemons\t: " + seioDaemons + "\n"
+				+ "seStoragePath\t: " + seStoragePath + "\n" + "seSize:\t: " + size + "\n" + "seUsedSpace\t: " + seUsedSpace + "\n" + "seNumFiles\t: " + seNumFiles + "\n" + "seMinSize\t: "
+				+ seMinSize + "\n" + "seType\t: " + seType + "\n" + "exclusiveUsers\t: " + exclusiveUsers + "\n" + "seExclusiveRead\t: " + seExclusiveRead + "\n" + "seExclusiveWrite\t: "
 				+ seExclusiveWrite;
 	}
 
@@ -202,12 +195,12 @@ public class SE implements Serializable, Comparable<SE> {
 	public String getName() {
 		return seName;
 	}
-	
+
 	/**
 	 * @param qosRequest
 	 * @return if this SE server the requested QoS type
 	 */
-	public boolean isQosType(String qosRequest){
+	public boolean isQosType(final String qosRequest) {
 		return qos.contains(qosRequest);
 	}
 
@@ -228,7 +221,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 		if ((seStoragePath != null) && !seStoragePath.equals("/"))
 			ret += seStoragePath;
-		
+
 		return ret;
 	}
 
@@ -242,9 +235,7 @@ public class SE implements Serializable, Comparable<SE> {
 		if (ret == null)
 			return ret;
 
-		ret += "/" + twoDigits.format(guid.getCHash()) + "/"
-				+ fiveDigits.format(guid.getHash()) + "/"
-				+ guid.guid.toString();
+		ret += "/" + twoDigits.format(guid.getCHash()) + "/" + fiveDigits.format(guid.getHash()) + "/" + guid.guid.toString();
 		return StringFactory.get(ret);
 	}
 
@@ -256,7 +247,7 @@ public class SE implements Serializable, Comparable<SE> {
 		if (s == null)
 			return null;
 
-		final Set<String> ret = new HashSet<String>();
+		final Set<String> ret = new HashSet<>();
 
 		final StringTokenizer st = new StringTokenizer(s, ",");
 
@@ -271,23 +262,24 @@ public class SE implements Serializable, Comparable<SE> {
 	}
 
 	/**
-	 * Convert one of the sets to the database representation of it, a comma-separated list of elements
+	 * Convert one of the sets to the database representation of it, a
+	 * comma-separated list of elements
 	 * 
 	 * @param set
 	 * @return
 	 */
-	public static String toArrayString(final Set<String> set){
-		if (set==null)
+	public static String toArrayString(final Set<String> set) {
+		if (set == null)
 			return null;
-		
+
 		final StringBuilder sb = new StringBuilder(",");
-		
-		for (final String s: set)
+
+		for (final String s : set)
 			sb.append(s).append(',');
-		
+
 		return sb.toString();
 	}
-	
+
 	@Override
 	public int compareTo(final SE o) {
 		return seName.compareToIgnoreCase(o.seName);
@@ -295,9 +287,9 @@ public class SE implements Serializable, Comparable<SE> {
 
 	@Override
 	public boolean equals(final Object obj) {
-		if (obj==null)
+		if (obj == null)
 			return false;
-		
+
 		if (!(obj instanceof SE))
 			return false;
 
@@ -336,67 +328,66 @@ public class SE implements Serializable, Comparable<SE> {
 
 		return allowed;
 	}
-	
+
 	/**
-	 * @return Storage Element declared size, in KB, or <code>-1</code> if the SE is not defined
+	 * @return Storage Element declared size, in KB, or <code>-1</code> if the
+	 *         SE is not defined
 	 */
-	private final long getSize(){
+	private final long getSize() {
 		final int idx = seName.indexOf("::");
-		
-		if (idx<0)
+
+		if (idx < 0)
 			return 0;
-		
+
 		final int idx2 = seName.lastIndexOf("::");
-		
-		if (idx2<=idx)
+
+		if (idx2 <= idx)
 			return 0;
-		
-		final String site = seName.substring(idx+2, idx2);
-		final String name = seName.substring(idx2+2);
-		
-		Set<String> ldapinfo = LDAPHelper.checkLdapInformation("name="+name, "ou=SE,ou=Services,ou="+site+",ou=Sites,", "savedir");
-		
-		if (ldapinfo==null || ldapinfo.size()==0){
-			ldapinfo = LDAPHelper.checkLdapInformation("name="+name, "ou=SE,ou=Services,ou="+site+",ou=Sites,", "name");
-			
-			if (ldapinfo==null || ldapinfo.size()==0)
+
+		final String site = seName.substring(idx + 2, idx2);
+		final String name = seName.substring(idx2 + 2);
+
+		Set<String> ldapinfo = LDAPHelper.checkLdapInformation("name=" + name, "ou=SE,ou=Services,ou=" + site + ",ou=Sites,", "savedir");
+
+		if (ldapinfo == null || ldapinfo.size() == 0) {
+			ldapinfo = LDAPHelper.checkLdapInformation("name=" + name, "ou=SE,ou=Services,ou=" + site + ",ou=Sites,", "name");
+
+			if (ldapinfo == null || ldapinfo.size() == 0)
 				return -1;
-			
+
 			return 0;
 		}
-		
+
 		long ret = 0;
-		
-		for (final String s: ldapinfo){
+
+		for (final String s : ldapinfo) {
 			final StringTokenizer st = new StringTokenizer(s, ",");
-			
-			while (st.hasMoreTokens()){
-				try{
+
+			while (st.hasMoreTokens())
+				try {
 					ret += Long.parseLong(st.nextToken());
-				}
-				catch (NumberFormatException nfe){
+				} catch (final NumberFormatException nfe) {
 					// ignore
 				}
-			}
 		}
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * Debug method
 	 * 
 	 * @param args
 	 */
-	public static void main(String[] args) {
-		DBFunctions db = ConfigUtils.getDB("alice_users");
-		
+	public static void main(final String[] args) {
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+
 		db.query("SELECT * FROM SE WHERE sename='ALICE::IHEP::File';");
-		
-		SE se = new SE(db);
-		
+
+		final SE se = new SE(db);
+
 		db.close();
-		
+
 		System.err.println(se);
 	}
 }

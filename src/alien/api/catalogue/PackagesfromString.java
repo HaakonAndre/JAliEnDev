@@ -9,59 +9,56 @@ import alien.catalogue.PackageUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * Get the packages 
+ * Get the packages
  * 
  * @author ron
  * @since Nov 23, 2011
  */
 public class PackagesfromString extends Request {
 
-	
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -9135907539296101201L;
-	
-	
+
 	private final String platform;
 
 	private List<Package> packages;
-	
+
 	/**
-	 * @param user 
-	 * @param role 
-	 * @param platform 
+	 * @param user
+	 * @param role
+	 * @param platform
 	 */
-	public PackagesfromString(final AliEnPrincipal user, final String role, final String platform){
+	public PackagesfromString(final AliEnPrincipal user, final String role, final String platform) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.platform = platform;
 	}
-	
+
 	@Override
 	public void run() {
 		final List<Package> all = PackageUtils.getPackages();
-		
-		if (platform==null || platform.equals("all"))
+
+		if (platform == null || platform.equals("all"))
 			this.packages = all;
-		
-		this.packages = new ArrayList<Package>(all.size());
-		
-		for (final Package p: all){
+
+		this.packages = new ArrayList<>(all.size());
+
+		for (final Package p : all)
 			if (p.isAvailable(platform) || p.isAvailable("source"))
 				this.packages.add(p);
-		}
 	}
-	
+
 	/**
 	 * @return the requested LFN
 	 */
-	public List<Package> getPackages(){
+	public List<Package> getPackages() {
 		return this.packages;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "Asked for : "+this.platform + ", reply is: "+this.packages;
+		return "Asked for : " + this.platform + ", reply is: " + this.packages;
 	}
 }

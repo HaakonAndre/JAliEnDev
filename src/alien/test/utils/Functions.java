@@ -172,48 +172,46 @@ public class Functions {
 	 * @throws IOException
 	 */
 	public static final void unzip(File zip, File extractTo) throws IOException {
+
+		ZipFile archive = new ZipFile(zip);
+		Enumeration<? extends ZipEntry> e = archive.entries();
+		while (e.hasMoreElements()) {
+			ZipEntry entry = e.nextElement();
+			File file = new File(extractTo, entry.getName());
+			if (entry.isDirectory() && !file.exists()) {
+				if (!file.mkdirs()) {
+					System.err.println("Cannot create base directory: " + file);
+				}
+			} else {
+				if (!file.getParentFile().exists()) {
+					File f = file.getParentFile();
+
+					if (f.exists()) {
+						if (!f.isDirectory()) {
+							System.err.println("File exists but is not a directory: " + f);
+						}
+					} else if (!f.mkdirs()) {
+						System.err.println("Cannot create directory: " + f);
+					}
+				}
+
+				InputStream in = archive.getInputStream(entry);
+				BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
+
+				byte[] buffer = new byte[8192];
+				int read;
+
+				while (-1 != (read = in.read(buffer))) {
+					out.write(buffer, 0, read);
+				}
+
+				in.close();
+				out.close();
+			}
+		}
 		
-	    ZipFile archive = new ZipFile(zip);
-	    Enumeration<? extends ZipEntry> e = archive.entries();
-	    while (e.hasMoreElements()) {
-	      ZipEntry entry = e.nextElement();
-	      File file = new File(extractTo, entry.getName());
-	      if (entry.isDirectory() && !file.exists()) {
-	    	  if (!file.mkdirs()){
-	    		  System.err.println("Cannot create base directory: "+file);
-	    	  }
-	      }
-	      else {
-	        if (!file.getParentFile().exists()) {
-	        	File f = file.getParentFile();
-	        	
-	        	if (f.exists()){
-	        		if (!f.isDirectory()){
-	        			System.err.println("File exists but is not a directory: "+f);
-	        		}
-	        	}
-	        	else
-	        	if (!f.mkdirs()){
-	        		System.err.println("Cannot create directory: "+f);
-	        	}
-	        }
-
-	        InputStream in = archive.getInputStream(entry);
-	        BufferedOutputStream out = new BufferedOutputStream(
-	            new FileOutputStream(file));
-
-	        byte[] buffer = new byte[8192];
-	        int read;
-
-	        while (-1 != (read = in.read(buffer))) {
-	          out.write(buffer, 0, read);
-	        }
-
-	        in.close();
-	        out.close();
-	      }
-	    }
-	  }
+		archive.close();
+	}
 	
 	
 }

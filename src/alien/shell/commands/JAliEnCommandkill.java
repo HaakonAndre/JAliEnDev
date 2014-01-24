@@ -68,7 +68,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 		if(alArguments.size()<1)
 			throw new JAliEnCommandException();
 		
-		queueIds = new ArrayList<Integer>(alArguments.size());
+		queueIds = new ArrayList<>(alArguments.size());
 		
 		for(String id: alArguments){
 			try{

@@ -36,10 +36,10 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 	private int referenceCount = 0;
 
-	private List<String> ses = new ArrayList<String>();
-	private List<String> exses = new ArrayList<String>();
+	private List<String> ses = new ArrayList<>();
+	private List<String> exses = new ArrayList<>();
 	
-	private HashMap<String,Integer> qos = new HashMap<String,Integer>();
+	private HashMap<String,Integer> qos = new HashMap<>();
 
 	/**
 	 * name of a local File that will be written
@@ -82,7 +82,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					lfn.guid = guid.guid;
 					lfn.size = guid.size;
 					lfn.md5 = guid.md5;
-					guid.lfnCache = new LinkedHashSet<LFN>(1);
+					guid.lfnCache = new LinkedHashSet<>(1);
 					guid.lfnCache.add(lfn);
 			}
 				

@@ -9,13 +9,12 @@ import alien.user.JAKeyStore;
  * @author ron
  * @since Jun 05, 2011
  */
-public class ComputingElement extends Thread  {
+public class ComputingElement extends Thread {
 
 	/**
 	 * 
 	 */
-	
-	
+
 	/**
 	 * 
 	 */
@@ -24,28 +23,26 @@ public class ComputingElement extends Thread  {
 			JAKeyStore.loadClientKeyStorage();
 
 			JAKeyStore.loadServerKeyStorage();
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 		}
 	}
 
-
 	@Override
-	public void run(){
+	public void run() {
 
 		DispatchSSLServer.overWriteServiceAndForward("siteProxyService");
-		
+
 		try {
 			DispatchSSLServer.runService();
-		} catch (IOException e1) {
+		} catch (final IOException e1) {
 			e1.printStackTrace();
 		}
 
-		
-	//	while (true) {
+		// while (true) {
 		// here we would have to poll the queue info and submit jobAgents....
 
-	//	}
+		// }
 
 	}
 }

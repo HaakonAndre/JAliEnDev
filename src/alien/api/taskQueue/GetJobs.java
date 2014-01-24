@@ -21,36 +21,36 @@ public class GetJobs extends Request {
 	private static final long serialVersionUID = 385621115781357192L;
 
 	private List<Job> jobs;
-	
+
 	private final List<Integer> queueIds;
-	
+
 	/**
-	 * @param user 
-	 * @param role 
+	 * @param user
+	 * @param role
 	 * @param queueIds
 	 */
-	public GetJobs(final AliEnPrincipal user, final String role, List<Integer> queueIds){
+	public GetJobs(final AliEnPrincipal user, final String role, final List<Integer> queueIds) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.queueIds = queueIds;
 	}
-	
+
 	@Override
 	public void run() {
-		jobs = new ArrayList<Job>(queueIds.size());
-		for(int qId: queueIds)
+		jobs = new ArrayList<>(queueIds.size());
+		for (final int qId : queueIds)
 			jobs.add(TaskQueueUtils.getJob(qId));
 	}
-	
+
 	/**
 	 * @return the Jobs
 	 */
-	public List<Job> getJobs(){
+	public List<Job> getJobs() {
 		return this.jobs;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "Asked for Jobs :  reply is: "+this.jobs;
+		return "Asked for Jobs :  reply is: " + this.jobs;
 	}
 }

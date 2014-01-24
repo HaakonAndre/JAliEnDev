@@ -38,14 +38,15 @@ public class PFNforReadOrDel extends Request {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(PFNforReadOrDel.class.getCanonicalName());
-	
+
 	private final AccessType access;
 
 	private final String site;
 	private final LFN lfn;
-	
-	// don't remove this guid, if the guid is not send with the pfn to the client, the thing goes nuts!
-//	private GUID guid = null;
+
+	// don't remove this guid, if the guid is not send with the pfn to the
+	// client, the thing goes nuts!
+	// private GUID guid = null;
 
 	private final List<String> ses;
 	private final List<String> exses;
@@ -56,15 +57,14 @@ public class PFNforReadOrDel extends Request {
 	 * Get PFNs to read
 	 * 
 	 * @param user
-	 * @param role 
+	 * @param role
 	 * @param site
 	 * @param access
 	 * @param lfn
 	 * @param ses
 	 * @param exses
 	 */
-	public PFNforReadOrDel(final AliEnPrincipal user, final String role, String site, AccessType access, LFN lfn, List<String> ses, List<String> exses)
-	{
+	public PFNforReadOrDel(final AliEnPrincipal user, final String role, final String site, final AccessType access, final LFN lfn, final List<String> ses, final List<String> exses) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.site = site;
@@ -77,16 +77,16 @@ public class PFNforReadOrDel extends Request {
 	@Override
 	public void run() {
 
-		GUID guid = GUIDUtils.getGUID(lfn.guid);
+		final GUID guid = GUIDUtils.getGUID(lfn.guid);
 
 		LFN setArchiveAnchor = null;
 
 		if (guid.getPFNs() != null) {
 
 			pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses), false);
-			
+
 			try {
-				for (PFN pfn : pfns) {
+				for (final PFN pfn : pfns) {
 
 					String reason = AuthorizationFactory.fillAccess(getEffectiveRequester(), pfn, access);
 
@@ -94,70 +94,65 @@ public class PFNforReadOrDel extends Request {
 						logger.log(Level.WARNING, "Access refused because: " + reason);
 						continue;
 					}
-					UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
+					final UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
 					if (archiveLinkedTo != null) {
-						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo,
-								false);
+						final GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo, false);
 						setArchiveAnchor = lfn;
-						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID()).getPFNs(), site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses), false);
+						final List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID()).getPFNs(), site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses),
+								false);
 						if (!AuthorizationChecker.canRead(archiveguid, getEffectiveRequester())) {
 							logger.log(Level.WARNING, "Access refused because: Not allowed to read sub-archive");
 							continue;
 						}
 
-						for (PFN apfn : apfns) {
+						for (final PFN apfn : apfns) {
 							reason = AuthorizationFactory.fillAccess(getEffectiveRequester(), apfn, access);
 
 							if (reason != null) {
 								logger.log(Level.WARNING, "Access refused because: " + reason);
 								continue;
 							}
-							
-							logger.log(Level.FINE, "We have an evenlope candidate: "+ apfn.getPFN());
+
+							logger.log(Level.FINE, "We have an evenlope candidate: " + apfn.getPFN());
 
 						}
-					} 
+					}
 				}
 
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				logger.log(Level.SEVERE, "WE HAVE AN Exception", e);
 			}
 			if (pfns != null) {
-				for (PFN pfn : pfns) {
-					if (pfn.ticket.envelope == null) {
+				for (final PFN pfn : pfns)
+					if (pfn.ticket.envelope == null)
 						logger.log(Level.WARNING, "Sorry ... Envelope is null!");
-					} else {
-						if(setArchiveAnchor!=null)
+					else {
+						if (setArchiveAnchor != null)
 							pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
 						try {
 							// we need to both encrypt and sign, the later is
 							// not
 							// automatic
-							XrootDEnvelopeSigner
-									.signEnvelope(pfn.ticket.envelope);
-						} catch (SignatureException e) {
+							XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
+						} catch (final SignatureException e) {
 							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (SignatureException)", e);
-						} catch (InvalidKeyException e) {
+						} catch (final InvalidKeyException e) {
 							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (InvalidKeyException)", e);
-						} catch (NoSuchAlgorithmException e) {
+						} catch (final NoSuchAlgorithmException e) {
 							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (NoSuchAlgorithmException)", e);
 						}
 					}
-				}
-			}
-			else 
+			} else
 				logger.log(Level.WARNING, "Sorry ... No PFN to make an envelope for!");
-		}
-		else
+		} else
 			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
-		
-		if(pfns==null)
-			pfns = new ArrayList<PFN>(0);
-		
-		if(pfns.size()<1)
+
+		if (pfns == null)
+			pfns = new ArrayList<>(0);
+
+		if (pfns.size() < 1)
 			logger.log(Level.WARNING, "Sorry ... No PFNs for the file's GUID!");
 	}
-	
 
 	/**
 	 * @return PFNs to read from
@@ -168,7 +163,6 @@ public class PFNforReadOrDel extends Request {
 
 	@Override
 	public String toString() {
-			return "Asked for read/delete: " + this.lfn + "\n"
-					+ "reply is: " + this.pfns;
+		return "Asked for read/delete: " + this.lfn + "\n" + "reply is: " + this.pfns;
 	}
 }

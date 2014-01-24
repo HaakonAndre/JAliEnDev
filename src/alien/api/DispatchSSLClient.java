@@ -28,20 +28,19 @@ import alien.user.JAKeyStore;
  * 
  */
 public class DispatchSSLClient extends Thread {
-	
+
 	/**
 	 * Reset the object stream every this many objects sent
 	 */
 	private static final int RESET_OBJECT_STREAM_COUNTER = 1000;
-	
+
 	private int objectsSentCounter = 0;
-	
+
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class
-			.getCanonicalName());
-	
+	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class.getCanonicalName());
+
 	private static final int defaultPort = 5282;
 	private static final String defaultHost = "localhost";
 	private static String serviceName = "apiService";
@@ -56,17 +55,19 @@ public class DispatchSSLClient extends Thread {
 
 	private final OutputStream os;
 
-	
 	/**
-	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
-	 * @param servName name of the config parameter for the host:port settings
+	 * E.g. the CE proxy should act as a fowarding bridge between JA and central
+	 * services
+	 * 
+	 * @param servName
+	 *            name of the config parameter for the host:port settings
 	 */
-	public static void overWriteServiceAndForward(String servName){
-		//TODO: we could drop the serviceName overwrite, once we assume to run not on one single host everything
+	public static void overWriteServiceAndForward(final String servName) {
+		// TODO: we could drop the serviceName overwrite, once we assume to run
+		// not on one single host everything
 		serviceName = servName;
 	}
-	
-	
+
 	/**
 	 * @param connection
 	 * @throws IOException
@@ -96,8 +97,7 @@ public class DispatchSSLClient extends Thread {
 		// check
 	}
 
-	private static HashMap<Integer, DispatchSSLClient> instance = 
-		new HashMap<Integer, DispatchSSLClient>(20);
+	private static HashMap<Integer, DispatchSSLClient> instance = new HashMap<>(20);
 
 	/**
 	 * @param address
@@ -105,132 +105,110 @@ public class DispatchSSLClient extends Thread {
 	 * @return instance
 	 * @throws IOException
 	 */
-	public static DispatchSSLClient getInstance(final String address, int p) throws IOException {
+	public static DispatchSSLClient getInstance(final String address, final int p) throws IOException {
 
 		if (instance.get(Integer.valueOf(p)) == null) {
 			// connect to the other end
-			logger.log(Level.INFO,"Connecting to JCentral on " + address + ":" + p);
+			logger.log(Level.INFO, "Connecting to JCentral on " + address + ":" + p);
 			System.out.println("Connecting to JCentral on " + address + ":" + p);
-			
+
 			Security.addProvider(new BouncyCastleProvider());
 
 			try {
 
 				// get factory
-				KeyManagerFactory kmf = KeyManagerFactory.getInstance(
-						"SunX509", "SunJSSE");
+				final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
 
-				logger.log(Level.INFO,"Connecting with client cert: "
-								+ ((java.security.cert.X509Certificate) JAKeyStore.clientCert
-										.getCertificateChain("User.cert")[0])
-										.getSubjectDN());
+				logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).getSubjectDN());
 
 				// initialize factory, with clientCert(incl. priv+pub)
 				kmf.init(JAKeyStore.clientCert, JAKeyStore.pass);
 
-				SSLContext ssc = SSLContext.getInstance("TLS");
+				final SSLContext ssc = SSLContext.getInstance("TLS");
 
 				// initialize SSL with certificate and the trusted CA and pub
 				// certs
-				ssc.init(kmf.getKeyManagers(), JAKeyStore.trusts,
-						new SecureRandom());
+				ssc.init(kmf.getKeyManagers(), JAKeyStore.trusts, new SecureRandom());
 
-				SSLSocketFactory f = ssc.getSocketFactory();
+				final SSLSocketFactory f = ssc.getSocketFactory();
 
-				SSLSocket client = (SSLSocket) f.createSocket(address, p);
-				
+				@SuppressWarnings("resource")
+				// this object is kept in the map, cannot be closed here
+				final SSLSocket client = (SSLSocket) f.createSocket(address, p);
+
 				// print info
 				printSocketInfo(client);
-				
+
 				client.startHandshake();
 
-				X509Certificate[] peerCerts =
+				final X509Certificate[] peerCerts =
 
 				client.getSession().getPeerCertificateChain();
 
 				if (peerCerts != null) {
 
-					logger.log(Level.INFO,"Printing peer's information:");
+					logger.log(Level.INFO, "Printing peer's information:");
 
-					for (int i = 0; i < peerCerts.length; i++) {
-
-						logger.log(Level.INFO,
-								"Peer's Certificate Information:\n"
-										+ Level.INFO, "- Subject: "
-										+ peerCerts[i].getSubjectDN().getName()
-										+ "\n"
-										+ peerCerts[i].getIssuerDN().getName()
-										+ "\n"
-										+ Level.INFO
-										+ "- Start Time: "
-										+ peerCerts[i].getNotBefore()
-												.toString() + "\n" + Level.INFO
-										+ "- End Time: "
-										+ peerCerts[i].getNotAfter().toString()
+					for (final X509Certificate peerCert : peerCerts)
+						logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + peerCert.getSubjectDN().getName() + "\n" + peerCert.getIssuerDN().getName() + "\n"
+								+ Level.INFO + "- Start Time: " + peerCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + peerCert.getNotAfter().toString()
 
 						);
-					}
 
-					DispatchSSLClient sc = new DispatchSSLClient(client);
+					final DispatchSSLClient sc = new DispatchSSLClient(client);
 					System.out.println("Connection to JCentral established.");
 					instance.put(Integer.valueOf(p), sc);
 
 				} else
-					logger.log(Level.SEVERE,"We didn't get any peer/service cert. NOT GOOD!");
+					logger.log(Level.SEVERE, "We didn't get any peer/service cert. NOT GOOD!");
 
-			} catch (ConnectException e) {
+			} catch (final ConnectException e) {
 				logger.log(Level.SEVERE, "Could not connect to JCentral: [" + e.getMessage() + "].");
 				System.err.println("Could not connect to JCentral: [" + e.getMessage() + "].");
-			} catch (Throwable e) {
-				logger.log(Level.SEVERE,"Could not initiate SSL connection to the server.", e);
-				//e.printStackTrace();
+			} catch (final Throwable e) {
+				logger.log(Level.SEVERE, "Could not initiate SSL connection to the server.", e);
+				// e.printStackTrace();
 				System.err.println("Could not initiate SSL connection to the server.");
 			}
 
 		}
-		
+
 		return instance.get(Integer.valueOf(p));
 	}
 
-	
 	@SuppressWarnings("unused")
 	private void close() {
-		if (ois != null) {
+		if (ois != null)
 			try {
 				ois.close();
-			} catch (IOException ioe) {
+			} catch (final IOException ioe) {
 				// ignore
 			}
-		}
 
-		if (oos != null) {
+		if (oos != null)
 			try {
 				oos.close();
-			} catch (IOException ioe) {
+			} catch (final IOException ioe) {
 				// ignore
 			}
-		}
 
-		if (connection != null) {
+		if (connection != null)
 			try {
 				connection.close();
-			} catch (IOException ioe) {
+			} catch (final IOException ioe) {
 				// ignore
 			}
-		}
 
 		instance = null;
 	}
 
-	
 	/**
 	 * Total amount of time (in milliseconds) spent in writing objects to the
 	 * socket.
 	 */
 	public static long lSerialization = 0;
 
-	
-	private static synchronized void initializeSocketInfo(){
+	private static synchronized void initializeSocketInfo() {
 		addr = ConfigUtils.getConfig().gets(serviceName).trim();
 
 		if (addr.length() == 0) {
@@ -238,50 +216,50 @@ public class DispatchSSLClient extends Thread {
 			port = defaultPort;
 		} else {
 
-			String address = addr;
-			int idx = address.indexOf(':');
+			final String address = addr;
+			final int idx = address.indexOf(':');
 
-			if (idx >= 0) {
+			if (idx >= 0)
 				try {
 					port = Integer.parseInt(address.substring(idx + 1));
 					addr = address.substring(0, idx);
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					addr = defaultHost;
 					port = defaultPort;
 				}
-			}
 		}
 	}
-	
-	
+
 	/**
 	 * @param r
-	 * @return  the reply, or <code>null</code> in case of connectivity problems
-	 * @throws ServerException 
+	 * @return the reply, or <code>null</code> in case of connectivity problems
+	 * @throws ServerException
 	 */
 	public static synchronized <T extends Request> T dispatchRequest(final T r) throws ServerException {
-			initializeSocketInfo();
-			try{
+		initializeSocketInfo();
+		try {
+			return dispatchARequest(r);
+		} catch (final IOException e) {
+			// Now let's try, if we can reconnect
+			instance.put(Integer.valueOf(port), null);
+			try {
 				return dispatchARequest(r);
+			} catch (final IOException e1) {
+				// This time we give up
+				logger.log(Level.SEVERE, "Error running request, potential connection error.");
+				return null;
 			}
-			catch (IOException e){
-				// Now let's try, if we can reconnect
-				instance.put(Integer.valueOf(port), null);
-				try {
-					return dispatchARequest(r);
-				} catch (IOException e1) {
-					// This time we give up
-					logger.log(Level.SEVERE,"Error running request, potential connection error.");
-					return null;
-				}
-			}
-		
+		}
+
 	}
+
 	/**
 	 * @param r
 	 * @return the processed request, if successful
-	 * @throws IOException in case of connectivity problems
-	 * @throws ServerException if the server didn't like the request content
+	 * @throws IOException
+	 *             in case of connectivity problems
+	 * @throws ServerException
+	 *             if the server didn't like the request content
 	 */
 	public static synchronized <T extends Request> T dispatchARequest(final T r) throws IOException, ServerException {
 
@@ -290,7 +268,7 @@ public class DispatchSSLClient extends Thread {
 		if (c == null)
 			throw new IOException("Connection is null");
 
-		long lStart = System.currentTimeMillis();
+		final long lStart = System.currentTimeMillis();
 
 		c.oos.writeObject(r);
 
@@ -307,30 +285,28 @@ public class DispatchSSLClient extends Thread {
 		Object o;
 		try {
 			o = c.ois.readObject();
-		}
-		catch (ClassNotFoundException e) {
+		} catch (final ClassNotFoundException e) {
 			throw new IOException(e.getMessage());
 		}
 
 		@SuppressWarnings("unchecked")
 		final T reply = (T) o;
-		
+
 		final ServerException ex = reply.getException();
-		
-		if (ex!=null)
+
+		if (ex != null)
 			throw ex;
-		
+
 		return reply;
 	}
 
-	private static void printSocketInfo(SSLSocket s) {
-		
-		logger.log(Level.INFO,"Remote address: " + s.getInetAddress().toString() +":"+ s.getPort());
-		logger.log(Level.INFO,"   Local socket address = "
-				+ s.getLocalSocketAddress().toString());
+	private static void printSocketInfo(final SSLSocket s) {
 
-		logger.log(Level.INFO,"   Cipher suite = " + s.getSession().getCipherSuite());
-		logger.log(Level.INFO,"   Protocol = " + s.getSession().getProtocol());
+		logger.log(Level.INFO, "Remote address: " + s.getInetAddress().toString() + ":" + s.getPort());
+		logger.log(Level.INFO, "   Local socket address = " + s.getLocalSocketAddress().toString());
+
+		logger.log(Level.INFO, "   Cipher suite = " + s.getSession().getCipherSuite());
+		logger.log(Level.INFO, "   Protocol = " + s.getSession().getProtocol());
 	}
 
 }

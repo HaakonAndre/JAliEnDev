@@ -13,8 +13,7 @@ public class StartTestVO {
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {
-
+	public static void main(final String[] args) throws Exception {
 
 		if (!TestBrain.findCommands()) {
 			System.err.println("Necessary programs missing.");
@@ -22,9 +21,9 @@ public class StartTestVO {
 		}
 
 		CreateLDAP.startLDAP();
-		
+
 		CreateDB.startDatabase();
-		
+
 		SetupTestVO.startJCentral();
 	}
 }

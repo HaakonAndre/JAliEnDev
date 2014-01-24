@@ -26,13 +26,13 @@ public class TokenGenerator extends HttpServlet {
 	@Override
 	protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
 		final ServletOutputStream os = resp.getOutputStream();
-		
+
 		os.println("$VAR1 = [");
 		os.println("  {");
-		os.println("    'token' => '"+JobToken.generateToken()+"'");
+		os.println("    'token' => '" + JobToken.generateToken() + "'");
 		os.println("  }");
 		os.println("];");
-		
+
 		os.close();
 	}
 }

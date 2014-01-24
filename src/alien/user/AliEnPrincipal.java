@@ -18,16 +18,16 @@ import lazyj.StringFactory;
  */
 public class AliEnPrincipal implements Principal, Serializable {
 	private final static String userRole = "users";
-	
+
 	private final static List<String> admins = Arrays.asList("admin");
-	
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -5393260803758989309L;
 
 	private final String username;
-	
+
 	/**
 	 * Set of account names from LDAP that have the given DN
 	 */
@@ -42,9 +42,9 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * When were the roles generated
 	 */
 	private long lRolesChecked = 0;
-	
+
 	private transient InetAddress remoteEndpoint = null;
-	
+
 	/**
 	 * building a Principal for ALICE user
 	 * 
@@ -64,15 +64,15 @@ public class AliEnPrincipal implements Principal, Serializable {
 	public String getName() {
 		return username;
 	}
-	
+
 	/**
 	 * If known, all usernames associated to a DN
 	 * 
 	 * @param names
 	 */
-	void setNames(final Set<String> names){
-		sUsernames = new LinkedHashSet<String>(names);
-		
+	void setNames(final Set<String> names) {
+		sUsernames = new LinkedHashSet<>(names);
+
 		if (!sUsernames.contains(username))
 			sUsernames.add(StringFactory.get(username));
 	}
@@ -83,11 +83,11 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @return set of account names that have the DN
 	 */
 	public Set<String> getNames() {
-		if (sUsernames==null){
-			sUsernames = new LinkedHashSet<String>();
+		if (sUsernames == null) {
+			sUsernames = new LinkedHashSet<>();
 			sUsernames.add(username);
 		}
-		
+
 		return sUsernames;
 	}
 
@@ -95,30 +95,30 @@ public class AliEnPrincipal implements Principal, Serializable {
 	public String toString() {
 		return getNames().toString();
 	}
-	
-
 
 	/**
 	 * Check if two principals are the same user
-	 * @param user to compare
+	 * 
+	 * @param user
+	 *            to compare
 	 * @return outcome of equals
 	 */
 	@Override
-	public boolean equals(Object user) {
-		if (user==null)
+	public boolean equals(final Object user) {
+		if (user == null)
 			return false;
-		
-		if (this==user)
+
+		if (this == user)
 			return true;
-		
+
 		if (!(user instanceof AliEnPrincipal))
 			return false;
-		
-		return getName().equals(((AliEnPrincipal)user).getName());
+
+		return getName().equals(((AliEnPrincipal) user).getName());
 	}
-	
+
 	@Override
-	public int hashCode(){
+	public int hashCode() {
 		return getName().hashCode();
 	}
 
@@ -131,17 +131,16 @@ public class AliEnPrincipal implements Principal, Serializable {
 		if (roles != null && (System.currentTimeMillis() - lRolesChecked) < 1000 * 60 * 5)
 			return roles;
 
-		final Set<String> ret = new LinkedHashSet<String>();
+		final Set<String> ret = new LinkedHashSet<>();
 
 		for (final String sUsername : getNames()) {
 			ret.add(sUsername);
-			
+
 			final Set<String> sRoles = LDAPHelper.checkLdapInformation("users=" + sUsername, "ou=Roles,", "uid");
 
-			if (sRoles != null){
-				for (final String s: sRoles)
+			if (sRoles != null)
+				for (final String s : sRoles)
 					ret.add(StringFactory.get(s));
-			}
 		}
 
 		roles = ret;
@@ -149,7 +148,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 		return roles;
 	}
-	
+
 	/**
 	 * Get default user role, normally the same name as the account
 	 * 
@@ -157,19 +156,20 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 */
 	public String getDefaultRole() {
 		final Set<String> allroles = getRoles();
-		
+
 		final String name = getName();
-		
-		if (allroles.size()==0 || allroles.contains(getName()))
+
+		if (allroles.size() == 0 || allroles.contains(getName()))
 			return name;
-		
+
 		return allroles.iterator().next();
 	}
 
 	/**
 	 * Check if this principal has the given role
 	 * 
-	 * @param role role to check
+	 * @param role
+	 *            role to check
 	 * @return <code>true</code> if the user belongs to this group
 	 */
 	public boolean hasRole(final String role) {
@@ -182,11 +182,11 @@ public class AliEnPrincipal implements Principal, Serializable {
 		return false;
 	}
 
-
 	/**
 	 * Check if this principal can become the given user/role
 	 * 
-	 * @param role the role to verify
+	 * @param role
+	 *            the role to verify
 	 * @return <code>true</code> if the role is one of this principal's accounts
 	 *         or is any of the roles assigned to any of the accounts,
 	 *         <code>false</code> otherwise
@@ -216,42 +216,42 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 		return false;
 	}
-	
-	
+
 	/**
 	 * Return the default user role
 	 * 
-	 * @return user role 
+	 * @return user role
 	 */
-	public static String userRole(){
+	public static String userRole() {
 		return userRole;
 	}
-	
+
 	/**
 	 * Check if that role name authorizes admin privileges
+	 * 
 	 * @param role
 	 * @return is admin privileged or not
 	 */
-	public static boolean roleIsAdmin(final String role){
+	public static boolean roleIsAdmin(final String role) {
 		return admins.contains(role);
 	}
-	
+
 	/**
 	 * @return the endpoint where this guy came from
 	 */
-	public InetAddress getRemoteEndpoint(){
+	public InetAddress getRemoteEndpoint() {
 		return remoteEndpoint;
 	}
-	
+
 	/**
-	 * Upon accepting a request, set this address to where the connection came from
+	 * Upon accepting a request, set this address to where the connection came
+	 * from
 	 * 
 	 * @param remoteEndpoint
 	 */
-	public void setRemoteEndpoint(final InetAddress remoteEndpoint){
-		if (this.remoteEndpoint==null){
+	public void setRemoteEndpoint(final InetAddress remoteEndpoint) {
+		if (this.remoteEndpoint == null)
 			this.remoteEndpoint = remoteEndpoint;
-		}
 		else
 			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 	}

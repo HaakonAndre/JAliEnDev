@@ -51,11 +51,11 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	private final int jobId;
 
-	private final List<Integer> id = new ArrayList<Integer>();
+	private final List<Integer> id = new ArrayList<>();
 
-	private Set<JobStatus> status = new HashSet<JobStatus>();
+	private Set<JobStatus> status = new HashSet<>();
 
-	private final List<String> sites = new ArrayList<String>();
+	private final List<String> sites = new ArrayList<>();
 
 	@Override
 	public void run() {
@@ -73,13 +73,13 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 		out.printOutln("Checking the masterjob " + j.queueId);
 		out.printOutln("The job " + j.queueId + " is in status: " + j.status());
 
-		final HashMap<String, List<Job>> stateCount = new HashMap<String, List<Job>>();
+		final HashMap<String, List<Job>> stateCount = new HashMap<>();
 
-		ArrayList<String> sitesIn = new ArrayList<String>();
-		ArrayList<JobStatus> statesIn = new ArrayList<JobStatus>();
+		ArrayList<String> sitesIn = new ArrayList<>();
+		ArrayList<JobStatus> statesIn = new ArrayList<>();
 
-		final ArrayList<JobStatus> allStates = new ArrayList<JobStatus>();
-		final ArrayList<String> allSites = new ArrayList<String>();
+		final ArrayList<JobStatus> allStates = new ArrayList<>();
+		final ArrayList<String> allSites = new ArrayList<>();
 
 		if (subjobstates != null) {
 
@@ -107,7 +107,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				List<Job> jobs = stateCount.get(key);
 
 				if (jobs == null) {
-					jobs = new ArrayList<Job>();
+					jobs = new ArrayList<>();
 					stateCount.put(key, jobs);
 				}
 

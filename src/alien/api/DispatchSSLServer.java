@@ -32,7 +32,7 @@ import alien.user.UserFactory;
  * 
  */
 public class DispatchSSLServer extends Thread {
-	
+
 	/**
 	 * Reset the object stream every this many objects sent
 	 */
@@ -66,7 +66,7 @@ public class DispatchSSLServer extends Thread {
 	private static String serviceName = "apiService";
 
 	private static boolean forwardRequest = false;
-	
+
 	private int objectsSentCounter = 0;
 
 	/**
@@ -76,7 +76,7 @@ public class DispatchSSLServer extends Thread {
 	 * @param servName
 	 *            name of the config parameter for the host:port settings
 	 */
-	public static void overWriteServiceAndForward(String servName) {
+	public static void overWriteServiceAndForward(final String servName) {
 		// TODO: we could drop the serviceName overwrite, once we assume to run
 		// not on one single host everything
 		serviceName = servName;
@@ -113,125 +113,110 @@ public class DispatchSSLServer extends Thread {
 			while (true) {
 				final Object o = ois.readObject();
 
-				if (o != null) {
+				if (o != null)
 					if (o instanceof Request) {
 						Request r = (Request) o;
 
-						long lStart = System.currentTimeMillis();
+						final long lStart = System.currentTimeMillis();
 
 						final AliEnPrincipal remoteIdentity = UserFactory.getByCertificate(partnerCerts);
-						
-						if (remoteIdentity==null){
-							logger.log(Level.WARNING, "Could not get the identity of this certificate chain: "+Arrays.toString(partnerCerts));
+
+						if (remoteIdentity == null) {
+							logger.log(Level.WARNING, "Could not get the identity of this certificate chain: " + Arrays.toString(partnerCerts));
 							return;
 						}
-						
+
 						remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
-						
+
 						r.setPartnerIdentity(remoteIdentity);
-						
+
 						r.setPartnerCertificate(partnerCerts);
 
 						if (forwardRequest)
 							r = DispatchSSLClient.dispatchRequest(r);
-						else{
+						else {
 							r.authorizeUserAndRole();
-							
-							try{
+
+							try {
 								r.run();
-							}
-							catch (Exception e){
-								logger.log(Level.WARNING, "Returning an exception to the client",e);
-								
+							} catch (final Exception e) {
+								logger.log(Level.WARNING, "Returning an exception to the client", e);
+
 								r.setException(new ServerException(e.getMessage(), e));
 							}
 						}
-							
+
 						lLasted += (System.currentTimeMillis() - lStart);
 
-						long lSer = System.currentTimeMillis();
+						final long lSer = System.currentTimeMillis();
 
-//						System.err.println("When returning the object, ex is "+r.getException());
-						
+						// System.err.println("When returning the object, ex is "+r.getException());
+
 						oos.writeObject(r);
 
-						if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER){
+						if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
 							oos.reset();
 							objectsSentCounter = 0;
 						}
-						
+
 						oos.flush();
 						os.flush();
-						
 
 						lSerialization += System.currentTimeMillis() - lSer;
 
-						logger.log(Level.INFO,
-								"Got request from " + r.getRequesterIdentity()
-										+ " : "
-										+ r.getClass().getCanonicalName()); // +
-																			// ": "+r.toString());
+						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName()); // +
+																																			// ": "+r.toString());
 
-					} else {
-						logger.log(Level.WARNING,
-								"I don't know what to do with an object of type "
-										+ o.getClass().getCanonicalName());
-					}
-				}
+					} else
+						logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
 			}
-		}
-		catch (Throwable e) {
-			logger.log(Level.WARNING, "Lasted : " + lLasted
-					+ ", serialization : " + lSerialization, e);
-		}
-		finally{
-			if (ois != null) {
+		} catch (final Throwable e) {
+			logger.log(Level.WARNING, "Lasted : " + lLasted + ", serialization : " + lSerialization, e);
+		} finally {
+			if (ois != null)
 				try {
 					ois.close();
-				} catch (IOException ioe) {
+				} catch (final IOException ioe) {
 					// ignore
 				}
-			}
 
-			if (oos != null) {
+			if (oos != null)
 				try {
 					oos.close();
-				} catch (IOException ioe) {
+				} catch (final IOException ioe) {
 					// ignore
 				}
-			}
 
-			if (connection != null) {
+			if (connection != null)
 				try {
 					connection.close();
-				} catch (IOException ioe) {
+				} catch (final IOException ioe) {
 					// ignore
 				}
-			}
 		}
 	}
 
 	/**
 	 * @throws IOException
 	 */
+	@SuppressWarnings("resource")
 	public static void runService() throws IOException {
 
 		int port = 0;
 
-		String address = ConfigUtils.getConfig().gets(serviceName).trim();
+		final String address = ConfigUtils.getConfig().gets(serviceName).trim();
 
 		if (address.length() != 0) {
 
-			int idx = address.indexOf(':');
+			final int idx = address.indexOf(':');
 
-			if (idx >= 0) {
+			if (idx >= 0)
 				try {
 					port = Integer.parseInt(address.substring(idx + 1));
-//					address = address.substring(0, idx);
-				} catch (Exception e) {
+					// address = address.substring(0, idx);
+				} catch (final Exception e) {
 					port = defaultPort;
 				}
-			}
 		}
 
 		SSLServerSocket server = null;
@@ -239,34 +224,31 @@ public class DispatchSSLServer extends Thread {
 		try {
 			Security.addProvider(new BouncyCastleProvider());
 
-			KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
+			final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
 
 			kmf.init(JAKeyStore.hostCert, JAKeyStore.pass);
 
 			String logCertInfo = "Running JCentral with host cert: ";
 
 			try {
-				((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0])
-					.checkValidity();
-			}
-			catch (CertificateException e) {
+				((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).checkValidity();
+			} catch (final CertificateException e) {
 				logCertInfo = "Our host certificate expired or is invalid!";
 			}
-			logCertInfo += ((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0])
-				.getSubjectDN();
+			logCertInfo += ((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).getSubjectDN();
 
 			System.out.println(logCertInfo);
 
 			logger.log(Level.INFO, logCertInfo);
 
-			SSLContext sc = SSLContext.getInstance("TLS");
+			final SSLContext sc = SSLContext.getInstance("TLS");
 
-			TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+			final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 			tmf.init(JAKeyStore.hostCert);
 
 			sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 
-			SSLServerSocketFactory ssf = sc.getServerSocketFactory();
+			final SSLServerSocketFactory ssf = sc.getServerSocketFactory();
 
 			server = (SSLServerSocket) ssf.createServerSocket(port);
 
@@ -279,37 +261,35 @@ public class DispatchSSLServer extends Thread {
 
 			logger.log(Level.INFO, "JCentral listening on  " + server.getLocalPort());
 
-			while (true) {
+			while (true)
 				try {
+					@SuppressWarnings("resource")
+					// this object is passed to another thread to deal with the
+					// communication
 					final SSLSocket c = (SSLSocket) server.accept();
 
 					if (server.getNeedClientAuth() == true) {
 
 						logger.log(Level.INFO, "Printing client information:");
-						X509Certificate[] peerCerts = c.getSession().getPeerCertificateChain();
+						final X509Certificate[] peerCerts = c.getSession().getPeerCertificateChain();
 
-						if (peerCerts != null) {
-							for (int i = 0; i < peerCerts.length; i++) {
-								logger.log(Level.INFO, printClientInfo(peerCerts[i]));
-							}
-						}
+						if (peerCerts != null)
+							for (final X509Certificate peerCert : peerCerts)
+								logger.log(Level.INFO, printClientInfo(peerCert));
 						else
 							logger.log(Level.INFO, "Failed to get peer certificates");
 					}
 
-					DispatchSSLServer serv = new DispatchSSLServer(c);
+					final DispatchSSLServer serv = new DispatchSSLServer(c);
 					if (server.getNeedClientAuth() == true)
 						serv.partnerCerts = c.getSession().getPeerCertificateChain();
 
 					serv.start();
-
-				}
-				catch (IOException ioe) {
+				} catch (final IOException ioe) {
 					logger.log(Level.WARNING, "Exception treating a client", ioe);
 				}
-			}
 
-		} catch (Throwable e) {
+		} catch (final Throwable e) {
 			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket.", e);
 		}
 	}
@@ -323,27 +303,22 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Print client info on SSL partner
 	 */
-	private static String printClientInfo(X509Certificate peerCerts) {
-		return "Peer Certificate Information:\n" + "- Subject: "
-				+ peerCerts.getSubjectDN().getName() + "- Issuer: \n"
-				+ peerCerts.getIssuerDN().getName() + "- Version: \n"
-				+ peerCerts.getVersion() + "- Start Time: \n"
-				+ peerCerts.getNotBefore().toString() + "\n" + "- End Time: "
-				+ peerCerts.getNotAfter().toString() + "\n"
-				+ "- Signature Algorithm: " + peerCerts.getSigAlgName() + "\n"
-				+ "- Serial Number: " + peerCerts.getSerialNumber();
+	private static String printClientInfo(final X509Certificate peerCerts) {
+		return "Peer Certificate Information:\n" + "- Subject: " + peerCerts.getSubjectDN().getName() + "- Issuer: \n" + peerCerts.getIssuerDN().getName() + "- Version: \n" + peerCerts.getVersion()
+				+ "- Start Time: \n" + peerCerts.getNotBefore().toString() + "\n" + "- End Time: " + peerCerts.getNotAfter().toString() + "\n" + "- Signature Algorithm: " + peerCerts.getSigAlgName()
+				+ "\n" + "- Serial Number: " + peerCerts.getSerialNumber();
 	}
 
 	/**
 	 * Print some info on the SSL Socket
 	 */
-//	private static String printServerSocketInfo(SSLServerSocket s) {
-//		return "Server socket class: " + s.getClass()
-//				+ "\n   Socket address = " + s.getInetAddress().toString()
-//				+ "\n   Socket port = " + s.getLocalPort()
-//				+ "\n   Need client authentication = " + s.getNeedClientAuth()
-//				+ "\n   Want client authentication = " + s.getWantClientAuth()
-//				+ "\n   Use client mode = " + s.getUseClientMode();
-//	}
+	// private static String printServerSocketInfo(SSLServerSocket s) {
+	// return "Server socket class: " + s.getClass()
+	// + "\n   Socket address = " + s.getInetAddress().toString()
+	// + "\n   Socket port = " + s.getLocalPort()
+	// + "\n   Need client authentication = " + s.getNeedClientAuth()
+	// + "\n   Want client authentication = " + s.getWantClientAuth()
+	// + "\n   Use client mode = " + s.getUseClientMode();
+	// }
 
 }

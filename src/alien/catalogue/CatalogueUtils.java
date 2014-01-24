@@ -33,153 +33,147 @@ public final class CatalogueUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(CatalogueUtils.class.getCanonicalName());
-	
+
 	/**
 	 * Monitoring component
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueUtils.class.getCanonicalName());
-	
+
 	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<Integer, Host>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
-		protected boolean cacheNulls(){
+		protected boolean cacheNulls() {
 			return false;
 		}
-		
+
 		@Override
 		protected Host resolve(final Integer key) {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
-			
-			try{
+
+			try {
 				if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
 					return null;
-				
-				if (db.moveNext()){
+
+				if (db.moveNext())
 					return new Host(db);
-				}
-			}
-			finally{
+			} finally {
 				db.close();
 			}
-				
+
 			return null;
 		}
 	};
-	
+
 	/**
 	 * Get the host for this index
 	 * 
 	 * @param idx
 	 * @return the Host or <code>null</code> if there is no such host
 	 */
-	public static Host getHost(final int idx){
-		return hostsCache.get(Integer.valueOf(idx<=0 ? 1 : idx));
+	public static Host getHost(final int idx) {
+		return hostsCache.get(Integer.valueOf(idx <= 0 ? 1 : idx));
 	}
-	
+
 	private static List<GUIDIndex> guidIndexCache = null;
 	private static long guidIndexCacheUpdated = 0;
-	
+
 	private static final ReentrantReadWriteLock guidIndexRWLock = new ReentrantReadWriteLock();
 	private static final ReadLock guidIndexReadLock = guidIndexRWLock.readLock();
 	private static final WriteLock guidIndexWriteLock = guidIndexRWLock.writeLock();
-	
+
 	/**
 	 * For how long the caches are active
 	 */
 	public static final long CACHE_TIMEOUT = 1000 * 60 * 5;
-	
+
 	private static final void updateGuidIndexCache() {
 		guidIndexReadLock.lock();
 
-		try{
+		try {
 			if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
 				guidIndexReadLock.unlock();
-				
-				guidIndexWriteLock.lock();
-				
-				try{
-					if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
-						if (logger.isLoggable(Level.FINER)) {
-							logger.log(Level.FINER, "Updating GUIDINDEX cache");
-						}
-	
-						final DBFunctions db = ConfigUtils.getDB("alice_users");
-	
-						if (db!=null && db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")){
-							final LinkedList<GUIDIndex> ret = new LinkedList<GUIDIndex>();
 
-							try{
+				guidIndexWriteLock.lock();
+
+				try {
+					if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
+						if (logger.isLoggable(Level.FINER))
+							logger.log(Level.FINER, "Updating GUIDINDEX cache");
+
+						final DBFunctions db = ConfigUtils.getDB("alice_users");
+
+						if (db != null && db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
+							final LinkedList<GUIDIndex> ret = new LinkedList<>();
+
+							try {
 								while (db.moveNext())
 									ret.add(new GUIDIndex(db));
-							}
-							finally{
+							} finally {
 								db.close();
 							}
-		
+
 							guidIndexCache = ret;
-		
+
 							guidIndexCacheUpdated = System.currentTimeMillis();
-						}
-						else{
-							// in case of a DB connection failure, try again in 10 seconds, until then reuse the existing value (if any)
-							guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000*10;
-						}
+						} else
+							// in case of a DB connection failure, try again in
+							// 10 seconds, until then reuse the existing value
+							// (if any)
+							guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
 					}
-				}
-				finally {
+				} finally {
 					guidIndexWriteLock.unlock();
 					guidIndexReadLock.lock();
 				}
 			}
-		}
-		finally{
+		} finally {
 			guidIndexReadLock.unlock();
 		}
 	}
-	
+
 	/**
 	 * Get the GUIDINDEX entry that contains this timestamp (in milliseconds)
 	 * 
 	 * @param timestamp
 	 * @return the GUIDIndex that contains this timestamp (in milliseconds)
 	 */
-	public static GUIDIndex getGUIDIndex(final long timestamp){
+	public static GUIDIndex getGUIDIndex(final long timestamp) {
 		updateGuidIndexCache();
 
-		if (guidIndexCache==null)
+		if (guidIndexCache == null)
 			return null;
-		
+
 		GUIDIndex old = null;
-		
-		for (final GUIDIndex idx: guidIndexCache){
-			if (idx.guidTime>timestamp)
+
+		for (final GUIDIndex idx : guidIndexCache) {
+			if (idx.guidTime > timestamp)
 				return old;
-			
+
 			old = idx;
 		}
-		
+
 		return old;
 	}
-	
+
 	/**
 	 * Get all GUIDINDEX rows
 	 * 
 	 * @return all GUIDINDEX rows
 	 */
-	public static List<GUIDIndex> getAllGUIDIndexes(){
+	public static List<GUIDIndex> getAllGUIDIndexes() {
 		updateGuidIndexCache();
-		
-		if (guidIndexCache==null)
+
+		if (guidIndexCache == null)
 			return null;
-		
+
 		return Collections.unmodifiableList(guidIndexCache);
 	}
-	
+
 	private static Set<IndexTableEntry> indextable = null;
 	private static Set<String> tableentries = null;
 	private static long lastIndexTableUpdate = 0;
-	
+
 	private static final ReentrantReadWriteLock indextableRWLock = new ReentrantReadWriteLock();
 	private static final ReadLock indextableReadLock = indextableRWLock.readLock();
 	private static final WriteLock indextableWriteLock = indextableRWLock.writeLock();
@@ -187,173 +181,166 @@ public final class CatalogueUtils {
 	private static void updateIndexTableCache() {
 		indextableReadLock.lock();
 
-		try{
+		try {
 			if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
 				indextableReadLock.unlock();
-					
+
 				indextableWriteLock.lock();
-					
-				try{
+
+				try {
 					if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
-						if (logger.isLoggable(Level.FINER)) {
+						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating INDEXTABLE cache");
-						}
-	
+
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
-	
-						if (db!=null && db.query("SELECT * FROM INDEXTABLE;")){
-							final Set<IndexTableEntry> newIndextable = new HashSet<IndexTableEntry>();
-							final Set<String> newTableentries = new HashSet<String>(); 
-							
-							try{
+
+						if (db != null && db.query("SELECT * FROM INDEXTABLE;")) {
+							final Set<IndexTableEntry> newIndextable = new HashSet<>();
+							final Set<String> newTableentries = new HashSet<>();
+
+							try {
 								while (db.moveNext()) {
 									final IndexTableEntry entry = new IndexTableEntry(db);
-			
+
 									newIndextable.add(entry);
-									
+
 									newTableentries.add(db.gets("lfn"));
 								}
-							}
-							finally{
+							} finally {
 								db.close();
 							}
-							
+
 							indextable = newIndextable;
 							tableentries = newTableentries;
-							
+
 							lastIndexTableUpdate = System.currentTimeMillis();
-						}
-						else{
-							// in case of a DB connection failure, try again in 10 seconds, until then reuse the existing value (if any)
-							lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000*10;
-						}
+						} else
+							// in case of a DB connection failure, try again in
+							// 10 seconds, until then reuse the existing value
+							// (if any)
+							lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
 					}
-				}
-				finally {
+				} finally {
 					indextableWriteLock.unlock();
 				}
-				
+
 				indextableReadLock.lock();
 			}
-		}
-		finally{
+		} finally {
 			indextableReadLock.unlock();
 		}
 	}
-	
+
 	/**
-	 * Get the base folder for this table name 
-	 * @param hostId 
+	 * Get the base folder for this table name
+	 * 
+	 * @param hostId
 	 * 
 	 * @param tableName
 	 * @return entry in INDEXTABLE for this table name
 	 */
-	public static IndexTableEntry getIndexTable(final int hostId, final int tableName){
+	public static IndexTableEntry getIndexTable(final int hostId, final int tableName) {
 		updateIndexTableCache();
 
 		if (indextable == null)
 			return null;
-		
-		for (final IndexTableEntry ite: indextable)
+
+		for (final IndexTableEntry ite : indextable)
 			if (ite.hostIndex == hostId && ite.tableName == tableName)
 				return ite;
-			
+
 		return null;
 	}
-	
+
 	/**
 	 * @return all known L%L tables
 	 */
-	public static Set<IndexTableEntry> getAllIndexTables(){
+	public static Set<IndexTableEntry> getAllIndexTables() {
 		updateIndexTableCache();
-		
+
 		if (indextable == null)
 			return null;
 
 		return Collections.unmodifiableSet(indextable);
 	}
-	
+
 	/**
 	 * For a given path, get the closest match for LFNs from INDEXTABLE
 	 * 
 	 * @param pattern
 	 * @return the best match, or <code>null</code> if none could be found
 	 */
-	public static IndexTableEntry getClosestMatch(final String pattern){
+	public static IndexTableEntry getClosestMatch(final String pattern) {
 		updateIndexTableCache();
-		
-		if (indextable==null)
+
+		if (indextable == null)
 			return null;
-		
-		if (monitor!=null)
+
+		if (monitor != null)
 			monitor.incrementCounter("INDEXTABLE_lookup");
-		
+
 		int bestLen = 0;
-		
+
 		IndexTableEntry best = null;
-		
-		for (final IndexTableEntry ite: indextable){
-			if (pattern.startsWith(ite.lfn)){
-				if (ite.lfn.length() > bestLen){
+
+		for (final IndexTableEntry ite : indextable)
+			if (pattern.startsWith(ite.lfn))
+				if (ite.lfn.length() > bestLen) {
 					best = ite;
 					bestLen = ite.lfn.length();
 				}
-			}
-		}
-		
+
 		return best;
 	}
-	
+
 	/**
 	 * @param pattern
 	 * @return all tables that belong to this tree
 	 */
-	public static Set<IndexTableEntry> getAllMatchingTables(final String pattern){
+	public static Set<IndexTableEntry> getAllMatchingTables(final String pattern) {
 		final IndexTableEntry best = getClosestMatch(pattern);
-		
-		if (best==null)
+
+		if (best == null)
 			return Collections.emptySet();
-		
-		final Set<IndexTableEntry> ret = new LinkedHashSet<IndexTableEntry>();
-		
+
+		final Set<IndexTableEntry> ret = new LinkedHashSet<>();
+
 		ret.add(best);
-				
-		for (final IndexTableEntry ite: indextable){
-			if (ite.lfn.startsWith(pattern)){
+
+		for (final IndexTableEntry ite : indextable)
+			if (ite.lfn.startsWith(pattern))
 				ret.add(ite);
-			}
-		}
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * @param pattern
 	 * @return the Java pattern
 	 */
-	public static Pattern dbToJavaPattern(final String pattern){
+	public static Pattern dbToJavaPattern(final String pattern) {
 		String p = Format.replace(pattern, "*", "%");
 		p = Format.replace(p, "%%", "%");
 		p = Format.replace(p, ".", "\\.");
 		p = Format.replace(p, "_", ".");
 		p = Format.replace(p, "%", ".*");
-		
+
 		return Pattern.compile(p);
 	}
-	
+
 	/**
 	 * @param path
 	 * @return <code>true</code> if this path is held in a separate table
 	 */
-	public static boolean isSeparateTable(final String path){
-		if (path==null || path.length()==0 || !path.startsWith("/"))
+	public static boolean isSeparateTable(final String path) {
+		if (path == null || path.length() == 0 || !path.startsWith("/"))
 			return false;
-		
+
 		updateIndexTableCache();
-		
+
 		if (!path.endsWith("/"))
-			return tableentries.contains(path+"/");
-		
+			return tableentries.contains(path + "/");
+
 		return tableentries.contains(path);
 	}
 }

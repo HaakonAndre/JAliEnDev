@@ -35,17 +35,17 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 */
 	private int getTrace = 0;
 
-	private Set<JobStatus> states = new HashSet<JobStatus>();
+	private Set<JobStatus> states = new HashSet<>();
 
-	private Set<String> users = new LinkedHashSet<String>();
+	private Set<String> users = new LinkedHashSet<>();
 
-	private Set<String> sites = new LinkedHashSet<String>();
+	private Set<String> sites = new LinkedHashSet<>();
 
-	private Set<String> nodes = new LinkedHashSet<String>();
+	private Set<String> nodes = new LinkedHashSet<>();
 
-	private Set<Integer> mjobs = new LinkedHashSet<Integer>();
+	private Set<Integer> mjobs = new LinkedHashSet<>();
 
-	private Set<Integer> jobid = new LinkedHashSet<Integer>();
+	private Set<Integer> jobid = new LinkedHashSet<>();
 
 	private String orderByKey = "queueId";
 

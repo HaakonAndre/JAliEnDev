@@ -125,7 +125,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			final OptionSet options = parser.parse(alArguments
 					.toArray(new String[] {}));
 
-			alPaths = new ArrayList<String>(options.nonOptionArguments().size());
+			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(options.nonOptionArguments());
 
 			if(options.has("s"))

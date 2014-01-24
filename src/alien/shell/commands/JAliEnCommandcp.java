@@ -60,10 +60,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	
 	private int referenceCount = 0;
 
-	private final List<String> ses = new ArrayList<String>();
-	private final List<String> exses = new ArrayList<String>();
+	private final List<String> ses = new ArrayList<>();
+	private final List<String> exses = new ArrayList<>();
 
-	private final HashMap<String, Integer> qos = new HashMap<String, Integer>();
+	private final HashMap<String, Integer> qos = new HashMap<>();
 
 	private String source = null;
 	private String target = null;
@@ -380,7 +380,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		lfn.guid = guid.guid;
 		lfn.size = guid.size;
 		lfn.md5 = guid.md5;
-		guid.lfnCache = new LinkedHashSet<LFN>(1);
+		guid.lfnCache = new LinkedHashSet<>(1);
 		guid.lfnCache.add(lfn);
 
 		try {
@@ -422,10 +422,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (referenceCount == 0)
 			referenceCount = pfns.size();
 
-		final Vector<String> envelopes = new Vector<String>(pfns.size());
-		final Vector<String> registerPFNs = new Vector<String>(pfns.size());
+		final Vector<String> envelopes = new Vector<>(pfns.size());
+		final Vector<String> registerPFNs = new Vector<>(pfns.size());
 
-		final ArrayList<Future<UploadWork>> futures = new ArrayList<Future<UploadWork>>(pfns.size());
+		final ArrayList<Future<UploadWork>> futures = new ArrayList<>(pfns.size());
 
 		final Object lock = new Object();
 
@@ -527,7 +527,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		@Override
 		public void run() {
-			final Vector<String> envelopes = new Vector<String>(futures.size());
+			final Vector<String> envelopes = new Vector<>(futures.size());
 
 			while (futures.size() > 0) {
 				final Iterator<Future<UploadWork>> it = futures.iterator();
@@ -687,7 +687,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				synchronized (exses) {
 					SE se = commander.c_api.getSE(pfn.seNumber);
 
-					final HashMap<String, Integer> replacementQoS = new HashMap<String, Integer>();
+					final HashMap<String, Integer> replacementQoS = new HashMap<>();
 
 					String qosType = "disk";
 

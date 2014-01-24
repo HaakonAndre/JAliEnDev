@@ -86,15 +86,15 @@ public class AlienCommandfquotaset extends AlienAdminCommand {
 	 */
 	@Override
 	public HashMap<String, ArrayList<String>> executeCommand() {
-		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
+		HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
 
-		ArrayList<String> alrcValues = new ArrayList<String>();
-		ArrayList<String> alrcMessages = new ArrayList<String>();
+		ArrayList<String> alrcValues = new ArrayList<>();
+		ArrayList<String> alrcMessages = new ArrayList<>();
 
 		// we got arguments for fquota list
 		if (this.alArguments != null && this.alArguments.size() >= 3) {
 
-			ArrayList<String> args = new ArrayList<String>(3);
+			ArrayList<String> args = new ArrayList<>(3);
 
 			for (Object oArg : this.alArguments) {
 				String sArg = (String) oArg;

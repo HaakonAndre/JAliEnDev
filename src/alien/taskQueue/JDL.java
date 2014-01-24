@@ -43,15 +43,16 @@ public class JDL implements Serializable {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JDL.class.getCanonicalName());
-	
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -4803377858842338873L;
-	private final Map<String, Object> jdlContent = new LinkedHashMap<String, Object>();
+	private final Map<String, Object> jdlContent = new LinkedHashMap<>();
 
 	/**
-	 * Empty constructor. The values can be populated with {@link #set(String, Object)} and {@link #append(String, String...)}
+	 * Empty constructor. The values can be populated with
+	 * {@link #set(String, Object)} and {@link #append(String, String...)}
 	 */
 	public JDL() {
 		// empty
@@ -96,12 +97,14 @@ public class JDL implements Serializable {
 	public JDL(final int jobID) throws IOException {
 		this(Job.sanitizeJDL(TaskQueueUtils.getJDL(jobID)));
 	}
-	
+
 	/**
 	 * a job ID
 	 * 
 	 * @param jobID
-	 * @param originalJDL whether to load the original JDL (submitted by the user) or the processed one (if available)
+	 * @param originalJDL
+	 *            whether to load the original JDL (submitted by the user) or
+	 *            the processed one (if available)
 	 * @throws IOException
 	 */
 	public JDL(final int jobID, final boolean originalJDL) throws IOException {
@@ -129,8 +132,7 @@ public class JDL implements Serializable {
 
 				sb.append(line).append('\n');
 			}
-		}
-		catch (final IOException e) {
+		} catch (final IOException e) {
 			// cannot be
 		}
 
@@ -144,9 +146,8 @@ public class JDL implements Serializable {
 	 * @throws IOException
 	 */
 	public JDL(final String origContent) throws IOException {
-		if (origContent == null || origContent.length() == 0) {
+		if (origContent == null || origContent.length() == 0)
 			throw new IOException("Content is " + (origContent == null ? "null" : "empty"));
-		}
 
 		int iPrevPos = 0;
 
@@ -167,42 +168,41 @@ public class JDL implements Serializable {
 				final char c = content.charAt(idxEnd);
 
 				switch (c) {
-					case '\\':
-						bEsc = !bEsc;
+				case '\\':
+					bEsc = !bEsc;
 
-						break;
-					case '"':
-						if (!bEsc)
-							bQuote = !bQuote;
+					break;
+				case '"':
+					if (!bEsc)
+						bQuote = !bQuote;
 
-						bEsc = false;
+					bEsc = false;
 
-						break;
-					case ';':
-						if (!bEsc && !bQuote){
-							bClean = true;
-							break outer;
-						}
+					break;
+				case ';':
+					if (!bEsc && !bQuote) {
+						bClean = true;
+						break outer;
+					}
 
-						bEsc = false;
+					bEsc = false;
 
-						break;
-					default:
-						bEsc = false;
+					break;
+				default:
+					bEsc = false;
 				}
 
 				idxEnd++;
 			}
-						
-			if (bEsc || bQuote){
-				throw new IOException("JDL syntax error: unfinished "+(bQuote ? "quotes" : "escape")+" in the value of tag "+sKey);
-			}
-			
-			if (!bClean){
-				//throw new IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
+
+			if (bEsc || bQuote)
+				throw new IOException("JDL syntax error: unfinished " + (bQuote ? "quotes" : "escape") + " in the value of tag " + sKey);
+
+			if (!bClean)
+				// throw new
+				// IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
 				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, "JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn, full text is\n"+content);
-			}
+					logger.log(Level.FINE, "JDL syntax error: Tag " + sKey + " doesn't finish with a semicolumn, full text is\n" + content);
 
 			final String sValue = content.substring(idxEqual + 1, idxEnd).trim();
 
@@ -210,9 +210,8 @@ public class JDL implements Serializable {
 
 			// System.err.println(sKey +" = "+value);
 
-			if (value != null) {
+			if (value != null)
 				jdlContent.put(sKey, value);
-			}
 
 			iPrevPos = idxEnd + 1;
 		}
@@ -254,10 +253,9 @@ public class JDL implements Serializable {
 	 * @return the value, can be a String, a Number, a Collection ...
 	 */
 	public Object get(final String key) {
-		for (final Map.Entry<String, Object> entry : jdlContent.entrySet()) {
+		for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
 			if (entry.getKey().equalsIgnoreCase(key))
 				return entry.getValue();
-		}
 
 		return null;
 	}
@@ -267,7 +265,8 @@ public class JDL implements Serializable {
 	 * 
 	 * @param key
 	 * 
-	 * @return the single value if this was a String, the first entry of a Collection (based on the iterator)...
+	 * @return the single value if this was a String, the first entry of a
+	 *         Collection (based on the iterator)...
 	 */
 	public String gets(final String key) {
 		final Object o = get(key);
@@ -277,7 +276,8 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
-	 * @return the integer value, or <code>null</code> if the key is not defined or is not a number
+	 * @return the integer value, or <code>null</code> if the key is not defined
+	 *         or is not a number
 	 */
 	public Integer getInteger(final String key) {
 		final Object o = get(key);
@@ -285,14 +285,12 @@ public class JDL implements Serializable {
 		if (o == null)
 			return null;
 
-		if (o instanceof Number) {
+		if (o instanceof Number)
 			return Integer.valueOf(((Number) o).intValue());
-		}
 
 		try {
 			return Integer.valueOf(Integer.valueOf(getString(o)).intValue());
-		}
-		catch (final NumberFormatException nfe) {
+		} catch (final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -301,7 +299,8 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
-	 * @return the float value, or <code>null</code> if the key is not defined or is not a number
+	 * @return the float value, or <code>null</code> if the key is not defined
+	 *         or is not a number
 	 */
 	public Float getFloat(final String key) {
 		final Object o = get(key);
@@ -309,14 +308,12 @@ public class JDL implements Serializable {
 		if (o == null)
 			return null;
 
-		if (o instanceof Number) {
+		if (o instanceof Number)
 			return Float.valueOf(((Number) o).floatValue());
-		}
 
 		try {
 			return Float.valueOf(getString(o));
-		}
-		catch (final NumberFormatException nfe) {
+		} catch (final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -337,32 +334,30 @@ public class JDL implements Serializable {
 		return o.toString();
 	}
 
-	private static final Object parseValue(final String value, final String tag) throws IOException{
-		if (value.startsWith("\"")){
+	private static final Object parseValue(final String value, final String tag) throws IOException {
+		if (value.startsWith("\"")) {
 			if (!value.endsWith("\""))
-				throw new IOException("JDL syntax error: quotes do not close at the end of string for tag "+tag);
-		
+				throw new IOException("JDL syntax error: quotes do not close at the end of string for tag " + tag);
+
 			return StringFactory.get(value.substring(1, value.length() - 1));
 		}
 
-		if (value.startsWith("{")){
+		if (value.startsWith("{")) {
 			if (!value.endsWith("}"))
-				throw new IOException("JDL syntax error: unclosed brackets in the value of tag "+tag);
-			
+				throw new IOException("JDL syntax error: unclosed brackets in the value of tag " + tag);
+
 			return toList(value.substring(1, value.length() - 1));
 		}
 
 		try {
 			return Integer.valueOf(value);
-		}
-		catch (final NumberFormatException nfe) {
+		} catch (final NumberFormatException nfe) {
 			// ignore
 		}
 
 		try {
 			return Double.valueOf(value);
-		}
-		catch (final NumberFormatException nfe) {
+		} catch (final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -396,9 +391,8 @@ public class JDL implements Serializable {
 			return -1;
 		}
 
-		if (split.indexOf("sim") < 0) {
+		if (split.indexOf("sim") < 0)
 			return -1;
-		}
 
 		final StringTokenizer st = new StringTokenizer(split);
 
@@ -411,8 +405,7 @@ public class JDL implements Serializable {
 
 					try {
 						return Integer.parseInt(run);
-					}
-					catch (final NumberFormatException nfe) {
+					} catch (final NumberFormatException nfe) {
 						return -1;
 					}
 				}
@@ -425,7 +418,8 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Get the number of jobs this masterjob will split into. Only works for productions that split in a fixed number of jobs.
+	 * Get the number of jobs this masterjob will split into. Only works for
+	 * productions that split in a fixed number of jobs.
 	 * 
 	 * @return the number of subjobs
 	 */
@@ -435,44 +429,41 @@ public class JDL implements Serializable {
 		if (split == null || split.length() == 0)
 			return -1;
 
-		if (split.startsWith("production:")) {
+		if (split.startsWith("production:"))
 			try {
 				return Integer.parseInt(split.substring(split.lastIndexOf('-') + 1));
-			}
-			catch (final NumberFormatException nfe) {
+			} catch (final NumberFormatException nfe) {
 				// ignore
 			}
-		}
 
 		return -1;
 	}
 
 	/**
-	 * @return the InputFile tag, as LFNs. If the InputFile is an XML collection, return the entire content of that collection.
+	 * @return the InputFile tag, as LFNs. If the InputFile is an XML
+	 *         collection, return the entire content of that collection.
 	 */
-	public List<LFN> getInputLFNs(){
+	public List<LFN> getInputLFNs() {
 		final List<String> dataFiles = getInputData();
-		
-		final List<LFN> ret = new LinkedList<LFN>();
-		
-		for (final String file: dataFiles){
-			if (file.endsWith(".xml")){
-				try{
+
+		final List<LFN> ret = new LinkedList<>();
+
+		for (final String file : dataFiles) {
+			if (file.endsWith(".xml"))
+				try {
 					final XmlCollection x = new XmlCollection(LFNUtils.getLFN(file));
-				
+
 					return x;
-				}
-				catch (final IOException ioe){
+				} catch (final IOException ioe) {
 					// ignore
 				}
-			}
-			
+
 			ret.add(LFNUtils.getLFN(file));
 		}
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * Get the list of input files
 	 * 
@@ -505,7 +496,8 @@ public class JDL implements Serializable {
 	 * Get the list of input files
 	 * 
 	 * @param bNodownloadIncluded
-	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
+	 *            flag to include/exclude the files for which ",nodownload" is
+	 *            indicated in the JDL
 	 * @return list of input files
 	 */
 	public List<String> getInputFiles(final boolean bNodownloadIncluded) {
@@ -525,7 +517,7 @@ public class JDL implements Serializable {
 	public List<String> getOutputFiles() {
 		List<String> ret = getInputList(false, "Output");
 		if (ret == null)
-			ret = new LinkedList<String>();
+			ret = new LinkedList<>();
 		final List<String> retf = getInputList(false, "OutputFile");
 		if (retf != null)
 			ret.addAll(retf);
@@ -577,7 +569,8 @@ public class JDL implements Serializable {
 	 * Get the list of input files for a given tag
 	 * 
 	 * @param bNodownloadIncluded
-	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
+	 *            flag to include/exclude the files for which ",nodownload" is
+	 *            indicated in the JDL
 	 * @param sTag
 	 *            tag to extract the list from
 	 * @return input list
@@ -585,16 +578,10 @@ public class JDL implements Serializable {
 	public List<String> getInputList(final boolean bNodownloadIncluded, final String sTag) {
 		final Object o = get(sTag);
 
-		if (o == null) {
-			// System.err.println("No such tag: "+sTag);
-			// for (Map.Entry<?, ?> me: jdlContent.entrySet()){
-			// System.err.println("'"+me.getKey()+"' = '"+me.getValue()+"'");
-			// }
-
+		if (o == null)
 			return null;
-		}
 
-		final List<String> ret = new LinkedList<String>();
+		final List<String> ret = new LinkedList<>();
 
 		if (o instanceof CharSequence) {
 			final String s = ((CharSequence) o).toString();
@@ -609,8 +596,8 @@ public class JDL implements Serializable {
 			return ret;
 		}
 
-		if (o instanceof Collection<?>) {
-			for (final Object o2 : (Collection<?>) o) {
+		if (o instanceof Collection<?>)
+			for (final Object o2 : (Collection<?>) o)
 				if (o2 instanceof String) {
 					final String s = (String) o2;
 
@@ -621,8 +608,6 @@ public class JDL implements Serializable {
 							ret.add(temp);
 					}
 				}
-			}
-		}
 
 		return ret;
 	}
@@ -642,7 +627,7 @@ public class JDL implements Serializable {
 	}
 
 	private static List<String> toList(final String value) {
-		final List<String> ret = new LinkedList<String>();
+		final List<String> ret = new LinkedList<>();
 
 		int idx = value.indexOf('"');
 
@@ -696,27 +681,26 @@ public class JDL implements Serializable {
 	 */
 	public void setComment(final String comment) {
 		final List<String> oldTag = getList("Jobtag");
-		final List<String> newTag = new ArrayList<String>();
+		final List<String> newTag = new ArrayList<>();
 
 		if (oldTag != null) {
-			for (final String s : oldTag) {
+			for (final String s : oldTag)
 				if (!s.startsWith("comment:"))
 					newTag.add(s);
-			}
 
 			clear("Jobtag");
 		}
 
-		for (final String s : newTag) {
+		for (final String s : newTag)
 			append("Jobtag", s);
-		}
 
 		if (comment != null)
 			append("Jobtag", "comment:" + comment);
 	}
 
 	/**
-	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT -> v5-26-00b-6) }
+	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT
+	 * -> v5-26-00b-6) }
 	 * 
 	 * @return packages
 	 */
@@ -729,7 +713,7 @@ public class JDL implements Serializable {
 
 		final Iterator<String> it = ((List<String>) o).iterator();
 
-		final Map<String, String> ret = new HashMap<String, String>();
+		final Map<String, String> ret = new HashMap<>();
 
 		while (it.hasNext()) {
 			final String s = it.next();
@@ -744,8 +728,7 @@ public class JDL implements Serializable {
 				final String sVersion = s.substring(idx2 + 2);
 
 				ret.put(sPackage, sVersion);
-			}
-			catch (final Throwable t) {
+			} catch (final Throwable t) {
 				System.err.println("Exception parsing package definition: " + s);
 			}
 		}
@@ -829,10 +812,9 @@ public class JDL implements Serializable {
 		if (inputFiles == null)
 			return -1;
 
-		for (final String file : inputFiles) {
+		for (final String file : inputFiles)
 			if (file.endsWith("sim.C"))
 				return getSimFactor(LFNUtils.getLFN(file));
-		}
 
 		return -1;
 	}
@@ -866,8 +848,7 @@ public class JDL implements Serializable {
 				if (m.matches())
 					return Integer.parseInt(m.group(2));
 			}
-		}
-		catch (final IOException ioe) {
+		} catch (final IOException ioe) {
 			// ignore, cannot happen
 		}
 
@@ -879,9 +860,9 @@ public class JDL implements Serializable {
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder();
-		
+
 		final Map<String, Object> sorted = sortContent();
-		
+
 		for (final Map.Entry<String, Object> entry : sorted.entrySet()) {
 			if (sb.length() > 0)
 				sb.append('\n');
@@ -897,31 +878,27 @@ public class JDL implements Serializable {
 	}
 
 	private static final void append(final StringBuilder sb, final Object o) {
-		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number) {
+		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number)
 			sb.append(o);
-		}
-		else
-			if (o instanceof Collection) {
-				sb.append("{");
+		else if (o instanceof Collection) {
+			sb.append("{");
 
-				final Collection<?> c = (Collection<?>) o;
+			final Collection<?> c = (Collection<?>) o;
 
-				boolean first = true;
+			boolean first = true;
 
-				for (final Object o2 : c) {
-					if (!first)
-						sb.append(",");
-					else
-						first = false;
+			for (final Object o2 : c) {
+				if (!first)
+					sb.append(",");
+				else
+					first = false;
 
-					sb.append("\n").append(tab).append(tab).append("\"").append(o2).append("\"");
-				}
-
-				sb.append(tab).append("\n").append(tab).append("}");
+				sb.append("\n").append(tab).append(tab).append("\"").append(o2).append("\"");
 			}
-			else {
-				sb.append('"').append(o.toString()).append('"');
-			}
+
+			sb.append(tab).append("\n").append(tab).append("}");
+		} else
+			sb.append('"').append(o.toString()).append('"');
 	}
 
 	/**
@@ -949,8 +926,10 @@ public class JDL implements Serializable {
 	 * Set the value of a key. As value you can pass either:<br>
 	 * <ul>
 	 * <li>a String object, the value of which is to be put in quotes</li>
-	 * <li>a StringBuilder object, then the content is set in the JDL without quotes (for example the Requirements field)</li>
-	 * <li>a Collection, the values of which will be saved as an array of strings in the JDL</li>
+	 * <li>a StringBuilder object, then the content is set in the JDL without
+	 * quotes (for example the Requirements field)</li>
+	 * <li>a Collection, the values of which will be saved as an array of
+	 * strings in the JDL</li>
 	 * <li>a Number object, which will be saved without quotes</li>
 	 * <li>any other Object, for which toString() will be called</li>
 	 * </ul>
@@ -962,43 +941,37 @@ public class JDL implements Serializable {
 	 * @return the previously set value, if any
 	 */
 	public Object set(final String key, final Object value) {
-		if (value == null) {
+		if (value == null)
 			return delete(key);
-		}
 
 		final Object old = get(key);
 
 		Object newValue = value;
 
 		if (newValue instanceof Collection) {
-			final List<String> localCopy = new LinkedList<String>();
+			final List<String> localCopy = new LinkedList<>();
 
-			for (final Object o : (Collection<?>) newValue) {
+			for (final Object o : (Collection<?>) newValue)
 				localCopy.add(StringFactory.get(o.toString()));
-			}
-		}
-		else
-			if (newValue instanceof String) {
-				newValue = StringFactory.get((String) newValue);
-			}
+		} else if (newValue instanceof String)
+			newValue = StringFactory.get((String) newValue);
 
 		if (old != null) {
-			for (final Map.Entry<String, Object> entry : jdlContent.entrySet()) {
+			for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
 				if (entry.getKey().equalsIgnoreCase(key)) {
 					entry.setValue(newValue);
 					break;
 				}
-			}
-		}
-		else {
+		} else
 			jdlContent.put(key, newValue);
-		}
 
 		return old;
 	}
 
 	/**
-	 * Append some String values to an array. If there is a previously set single value then it is transformed in an array and the previously set value is kept as the first entry of it.
+	 * Append some String values to an array. If there is a previously set
+	 * single value then it is transformed in an array and the previously set
+	 * value is kept as the first entry of it.
 	 * 
 	 * @param key
 	 * @param value
@@ -1013,30 +986,26 @@ public class JDL implements Serializable {
 		final Collection<String> values;
 
 		if (old == null) {
-			values = new LinkedList<String>();
+			values = new LinkedList<>();
 			jdlContent.put(key, values);
-		}
-		else
-			if (old instanceof Collection) {
-				values = (Collection<String>) old;
-			}
-			else {
-				values = new LinkedList<String>();
-				values.add(old.toString());
+		} else if (old instanceof Collection)
+			values = (Collection<String>) old;
+		else {
+			values = new LinkedList<>();
+			values.add(old.toString());
 
-				boolean added = false;
+			boolean added = false;
 
-				for (final Map.Entry<String, Object> entry : jdlContent.entrySet()) {
-					if (entry.getKey().equalsIgnoreCase(key)) {
-						added = true;
-						entry.setValue(values);
-						break;
-					}
+			for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
+				if (entry.getKey().equalsIgnoreCase(key)) {
+					added = true;
+					entry.setValue(values);
+					break;
 				}
 
-				if (!added)
-					jdlContent.put(key, values);
-			}
+			if (!added)
+				jdlContent.put(key, values);
+		}
 
 		for (final String s : value)
 			values.add(StringFactory.get(s));
@@ -1070,8 +1039,7 @@ public class JDL implements Serializable {
 
 			if (newValue.length() > 0)
 				newValue.append(" && ");
-		}
-		else {
+		} else {
 			newValue = new StringBuilder();
 
 			set("Requirements", newValue);
@@ -1092,7 +1060,7 @@ public class JDL implements Serializable {
 		final StringBuilder sb = new StringBuilder();
 
 		final Map<String, Object> sorted = sortContent();
-		
+
 		for (final Map.Entry<String, Object> entry : sorted.entrySet()) {
 			final String key = entry.getKey();
 
@@ -1108,50 +1076,40 @@ public class JDL implements Serializable {
 
 	private static final void appendHTML(final String key, final StringBuilder sb, final Object o) {
 		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number) {
-			if (o instanceof Number) {
+			if (o instanceof Number)
 				sb.append("<font color=darkgreen>").append(o).append("</font>");
-			}
 			else
 				sb.append(formatExpression(o.toString()));
-		}
-		else
-			if (o instanceof Collection) {
-				sb.append("{<br><div style='padding-left:20px'>");
+		} else if (o instanceof Collection) {
+			sb.append("{<br><div style='padding-left:20px'>");
 
-				final Collection<?> c = (Collection<?>) o;
+			final Collection<?> c = (Collection<?>) o;
 
-				boolean first = true;
+			boolean first = true;
 
-				for (final Object o2 : c) {
-					if (!first)
-						sb.append(",<br>");
-					else
-						first = false;
+			for (final Object o2 : c) {
+				if (!first)
+					sb.append(",<br>");
+				else
+					first = false;
 
-					String text = o2.toString();
+				String text = o2.toString();
 
-					if (key.toLowerCase().startsWith("output") && !key.toLowerCase().equals("outputdir")) {
-						text = formatOutput(text);
-					}
-					else
-						if (key.equalsIgnoreCase("packages")) {
-							text = formatPackages(text);
-						}
-						else
-							if (key.equalsIgnoreCase("jobtag")) {
-								text = formatJobTag(text);
-							}
-							else
-								text = "<font color=navy>" + Format.escHtml(text) + "</font>";
+				if (key.toLowerCase().startsWith("output") && !key.toLowerCase().equals("outputdir"))
+					text = formatOutput(text);
+				else if (key.equalsIgnoreCase("packages"))
+					text = formatPackages(text);
+				else if (key.equalsIgnoreCase("jobtag"))
+					text = formatJobTag(text);
+				else
+					text = "<font color=navy>" + Format.escHtml(text) + "</font>";
 
-					sb.append('"').append(text).append('"');
-				}
-
-				sb.append("</div>}");
+				sb.append('"').append(text).append('"');
 			}
-			else {
-				sb.append("\"<font color=navy>").append(o.toString()).append("</font>\"");
-			}
+
+			sb.append("</div>}");
+		} else
+			sb.append("\"<font color=navy>").append(o.toString()).append("</font>\"");
 	}
 
 	private static final String formatJobTag(final String text) {
@@ -1223,8 +1181,7 @@ public class JDL implements Serializable {
 
 				old = idx2 + 1;
 				idx = arg.indexOf('"', old);
-			}
-			else
+			} else
 				break;
 		}
 
@@ -1247,9 +1204,8 @@ public class JDL implements Serializable {
 
 		idx = text.indexOf("::");
 
-		if (idx > 0) {
+		if (idx > 0)
 			sb.append("<font color=green>").append(Format.escHtml(text.substring(0, idx))).append("</font>::<font color=orange>").append(Format.escHtml(text.substring(idx + 2))).append("</font>");
-		}
 		else
 			sb.append(Format.escHtml(text));
 
@@ -1272,68 +1228,61 @@ public class JDL implements Serializable {
 			idx2 = text.indexOf('@');
 		}
 
-		if (idx2 >= 0) {
+		if (idx2 >= 0)
 			sb.append(Format.escHtml(text.substring(0, idx2 + 1))).append("<font color=green>").append(Format.escHtml(text.substring(idx2 + 1))).append("</font>");
-		}
 		else
 			sb.append(Format.escHtml(text));
 
 		return sb.toString();
 	}
 
-	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputData", "InputDataCollection", "InputDataList", 
-			"InputDataListFormat", "InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables",
-			"JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", 
-			"Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type",
-			"User", "ValidationCommand", "WorkDirectorySize", "Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID",
-			"LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies", "RunOnAODs", "LegoDataSetType", "LPMJobTypeID",
-			"LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType", "LPMProductionTag", "LPMAnchorYear", "LPMInteractionType"
-			);
-	
-	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "jdlarguments", 
-			"executable", "arguments", "inputfile", "split", "splitarguments", 
-			"inputdatacollection", "splitmaxinputfilenumber", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile", 
-			"requirements", "origrequirements", "ttl", "price",  "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", 
-			"maxfailfraction", "maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables",
-			"lpmjobtypeid", "lpmproductiontag", "lpmproductiontype", "lpminteractiontype", "lpmrunnumber", "lpmanchorproduction", "lpmanchorrun", "lpmanchoryear",
-			"lpmmetadata"
-			);
-	
-	private static final Map<String, String> correctedTags = new HashMap<String, String>(correctTags.size());
-	
-	static{
-		for (final String tag: correctTags)
+	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputData", "InputDataCollection", "InputDataList", "InputDataListFormat",
+			"InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables", "JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize",
+			"OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type", "User", "ValidationCommand",
+			"WorkDirectorySize", "Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID", "LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction",
+			"LegoResubmitZombies", "RunOnAODs", "LegoDataSetType", "LPMJobTypeID", "LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType",
+			"LPMProductionTag", "LPMAnchorYear", "LPMInteractionType");
+
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "jdlarguments", "executable", "arguments", "inputfile", "split", "splitarguments",
+			"inputdatacollection", "splitmaxinputfilenumber", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile",
+			"requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", "maxfailfraction",
+			"maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables", "lpmjobtypeid", "lpmproductiontag", "lpmproductiontype",
+			"lpminteractiontype", "lpmrunnumber", "lpmanchorproduction", "lpmanchorrun", "lpmanchoryear", "lpmmetadata");
+
+	private static final Map<String, String> correctedTags = new HashMap<>(correctTags.size());
+
+	static {
+		for (final String tag : correctTags)
 			correctedTags.put(tag.toLowerCase(), tag);
 	}
-	
+
 	/**
-	 * @param tag tag name, in lowercase!
+	 * @param tag
+	 *            tag name, in lowercase!
 	 */
-	private static final String getCorrectedTag(final String tag, final String defaultValue){
+	private static final String getCorrectedTag(final String tag, final String defaultValue) {
 		final String s = correctedTags.get(tag);
-		
-		return s!=null ? s : defaultValue;
+
+		return s != null ? s : defaultValue;
 	}
-	
-	private Map<String, Object> sortContent(){
-		final LinkedHashMap<String, Object> ret = new LinkedHashMap<String, Object>(jdlContent.size());
-		
-		for (final String key: preferredOrder){
+
+	private Map<String, Object> sortContent() {
+		final LinkedHashMap<String, Object> ret = new LinkedHashMap<>(jdlContent.size());
+
+		for (final String key : preferredOrder) {
 			final Object value = get(key);
-			
-			if (value!=null){
+
+			if (value != null)
 				ret.put(getCorrectedTag(key, key), value);
-			}
 		}
-		
-		for (final Map.Entry<String, Object> entry: jdlContent.entrySet()){
+
+		for (final Map.Entry<String, Object> entry : jdlContent.entrySet()) {
 			final String lowerCaseKey = entry.getKey().toLowerCase();
-		
-			if (!preferredOrder.contains(lowerCaseKey)){
+
+			if (!preferredOrder.contains(lowerCaseKey))
 				ret.put(getCorrectedTag(lowerCaseKey, entry.getKey()), entry.getValue());
-			}
 		}
-		
+
 		return ret;
 	}
 }

@@ -52,13 +52,13 @@ public class RootPrintWriter extends UIPrintWriter {
 	 * Array that will contain the standard output for Root stream
 	 * The  stdout stream is identified {@link #stderrindicator} 
 	 */
-	private ArrayList<String> stdout = new ArrayList<String>();
+	private ArrayList<String> stdout = new ArrayList<>();
 
 	/**
 	 * Array that will contanin the standard error for Root stream
 	 * The stderr stream is identified by {@link #stderrindicator} 
 	 */
-	private ArrayList<String> stderr = new ArrayList<String>();
+	private ArrayList<String> stderr = new ArrayList<>();
 
 
 	private String args = "";

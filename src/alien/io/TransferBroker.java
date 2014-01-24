@@ -60,9 +60,8 @@ public class TransferBroker {
 	 * @return singleton
 	 */
 	public static synchronized TransferBroker getInstance() {
-		if (instance == null) {
+		if (instance == null)
 			instance = new TransferBroker();
-		}
 
 		return instance;
 	}
@@ -75,8 +74,7 @@ public class TransferBroker {
 		if (resultSet != null) {
 			try {
 				resultSet.close();
-			}
-			catch (final Throwable t) {
+			} catch (final Throwable t) {
 				// ignore
 			}
 
@@ -86,8 +84,7 @@ public class TransferBroker {
 		if (stat != null) {
 			try {
 				stat.close();
-			}
-			catch (final Throwable t) {
+			} catch (final Throwable t) {
 				// ignore
 			}
 
@@ -101,16 +98,13 @@ public class TransferBroker {
 		try {
 			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
-			if (stat.execute(query, Statement.NO_GENERATED_KEYS)) {
+			if (stat.execute(query, Statement.NO_GENERATED_KEYS))
 				resultSet = stat.getResultSet();
-			}
-			else {
+			else
 				executeClose();
-			}
 
 			return true;
-		}
-		catch (final SQLException e) {
+		} catch (final SQLException e) {
 			logger.log(Level.WARNING, "Exception executing the query", e);
 
 			return false;
@@ -120,7 +114,8 @@ public class TransferBroker {
 	private long lastTimeNoWork = 0;
 
 	/**
-	 * @return the next transfer to be performed, or <code>null</code> if there is nothing to do
+	 * @return the next transfer to be performed, or <code>null</code> if there
+	 *         is nothing to do
 	 */
 	public synchronized Transfer getWork(final TransferAgent agent) {
 		if (System.currentTimeMillis() - lastTimeNoWork < 1000 * 30)
@@ -139,12 +134,14 @@ public class TransferBroker {
 		cleanup();
 
 		touch(null, agent);
-		
+
 		final DBConnection dbc = db.getConnection();
 
 		executeQuery(dbc, "SET autocommit = 0;");
 		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
-		executeQuery(dbc, "select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
+		executeQuery(
+				dbc,
+				"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
 
 		int transferId = -1;
 		String sLFN = null;
@@ -157,8 +154,7 @@ public class TransferBroker {
 				sLFN = resultSet.getString(2);
 				targetSE = resultSet.getString(3);
 				onDeleteRemoveReplica = resultSet.getString(4);
-			}
-			else {
+			} else {
 				logger.log(Level.FINE, "There is no waiting transfer in the queue");
 
 				lastTimeNoWork = System.currentTimeMillis();
@@ -175,14 +171,14 @@ public class TransferBroker {
 			}
 
 			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + ";");
-			executeQuery(dbc, "insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES ("+System.currentTimeMillis()/1000+", "+
-					"'"+Format.escSQL(targetSE)+"', "+transferId+", "+agent.getTransferAgentID()+", "+agent.getPID()+", '"+Format.escSQL(agent.getHostName())+"');");
-		}
-		catch (final Exception e) {
+			executeQuery(
+					dbc,
+					"insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
+							+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
+		} catch (final Exception e) {
 			logger.log(Level.WARNING, "Exception fetching data from the query", e);
 			// ignore
-		}
-		finally {
+		} finally {
 			executeQuery(dbc, "commit;");
 			executeQuery(dbc, "unlock tables;");
 			executeQuery(dbc, "SET autocommit = 1;");
@@ -190,7 +186,7 @@ public class TransferBroker {
 
 			dbc.free();
 		}
-		
+
 		GUID guid;
 		final LFN lfn;
 
@@ -205,18 +201,18 @@ public class TransferBroker {
 				return null;
 			}
 
-			// because of this only admin will be allowed to mirror GUIDs without indicating the LFN (eg for storage replication)
+			// because of this only admin will be allowed to mirror GUIDs
+			// without indicating the LFN (eg for storage replication)
 			lfn = LFNUtils.getLFN("/" + sLFN, true);
 			lfn.guid = guid.guid;
 			lfn.size = guid.size;
 			lfn.md5 = guid.md5;
 
-			guid.lfnCache = new HashSet<LFN>();
+			guid.lfnCache = new HashSet<>();
 			guid.lfnCache.add(lfn);
 
 			runningOnGUID = true;
-		}
-		else {
+		} else {
 			lfn = LFNUtils.getLFN(sLFN);
 
 			if (!lfn.exists) {
@@ -241,7 +237,7 @@ public class TransferBroker {
 				return null;
 			}
 
-			guid.lfnCache = new HashSet<LFN>();
+			guid.lfnCache = new HashSet<>();
 			guid.lfnCache.add(lfn);
 		}
 
@@ -252,26 +248,25 @@ public class TransferBroker {
 		if (!runningOnGUID) {
 			pfns = lfn.whereisReal();
 
-			if (pfns != null) {
+			if (pfns != null)
 				for (final PFN p : pfns) {
 					final GUID pfnGUID = p.getGuid();
 
 					if (!pfnGUID.equals(guid)) {
 						logger.log(Level.INFO, "Switching to mirroring " + pfnGUID.guid + " instead of " + guid.guid + " because this is the real file for " + lfn.getCanonicalName());
 
-						guid = pfnGUID; // switch to mirroring the archive instead of the pointer to it
+						guid = pfnGUID; // switch to mirroring the archive
+										// instead of the pointer to it
 
 						break;
 					}
 				}
-			}
-		}
-		else {
+		} else {
 			final Set<GUID> realGUIDs = guid.getRealGUIDs();
 
-			pfns = new LinkedHashSet<PFN>();
+			pfns = new LinkedHashSet<>();
 
-			if (realGUIDs != null && realGUIDs.size() > 0) {
+			if (realGUIDs != null && realGUIDs.size() > 0)
 				for (final GUID realId : realGUIDs) {
 					final Set<PFN> replicas = realId.getPFNs();
 
@@ -283,10 +278,10 @@ public class TransferBroker {
 					if (!guid.equals(realId)) {
 						logger.log(Level.INFO, "Switching to mirroring " + realId.guid + " instead of " + guid.guid + " because this is the real file");
 
-						guid = realId; // switch to mirroring the archive instead of the pointer to it
+						guid = realId; // switch to mirroring the archive
+										// instead of the pointer to it
 					}
 				}
-			}
 		}
 
 		if (pfns == null || pfns.size() == 0) {
@@ -298,7 +293,7 @@ public class TransferBroker {
 
 		final StringTokenizer seTargetSEs = new StringTokenizer(targetSE, ",; \t\r\n");
 
-		final Collection<PFN> targets = new ArrayList<PFN>();
+		final Collection<PFN> targets = new ArrayList<>();
 
 		final int targetSEsCount = seTargetSEs.countTokens();
 
@@ -321,25 +316,24 @@ public class TransferBroker {
 			logger.log(Level.FINE, transferId + " : Target SE is " + se);
 
 			boolean replicaFound = false;
-			
-			for (final PFN pfn : pfns) {
+
+			for (final PFN pfn : pfns)
 				if (se.equals(pfn.getSE())) {
 					logger.log(Level.WARNING, "There already exists a replica of '" + sLFN + "' on '" + targetSE + "' for transfer ID " + transferId);
 					replicaExists++;
 					replicaFound = true;
 					continue;
 				}
-			}
-			
+
 			if (replicaFound)
 				continue;
-			
+
 			int localSourceAuthFailed = 0;
-			
-			for (final PFN source : pfns) {
-				if (source.ticket==null){
+
+			for (final PFN source : pfns)
+				if (source.ticket == null) {
 					final String reason = AuthorizationFactory.fillAccess(source, AccessType.READ);
-	
+
 					if (reason != null) {
 						logger.log(Level.WARNING, "Could not obtain source authorization for transfer ID " + transferId + " : " + reason);
 						sourceAuthFailed++;
@@ -348,11 +342,10 @@ public class TransferBroker {
 						continue;
 					}
 				}
-			}
-			
+
 			if (localSourceAuthFailed == pfns.size())
 				continue;
-			
+
 			final PFN target;
 
 			try {
@@ -362,8 +355,7 @@ public class TransferBroker {
 					account = UserFactory.getByUsername("admin");
 
 				target = BookingTable.bookForWriting(account, lfn, guid, null, 0, se);
-			}
-			catch (final IOException ioe) {
+			} catch (final IOException ioe) {
 				final String reason = ioe.getMessage();
 				logger.log(Level.WARNING, "Could not obtain target authorization for transfer ID " + transferId + " : " + reason);
 				targetAuthFailed++;
@@ -378,15 +370,15 @@ public class TransferBroker {
 
 		if (targets.size() == 0) {
 			String message = "";
-			
+
 			int exitCode = Transfer.FAILED_SYSTEM;
 
 			if (targetSEsCount == 0)
 				message = "No target SE indicated";
 			else {
-				if (replicaExists > 0){
+				if (replicaExists > 0) {
 					message = "There is already a replica on " + (replicaExists > 1 ? "these storages" : "this storage") + (replicaExists < targetSEsCount ? " (" + replicaExists + ")" : "");
-					
+
 					if (replicaExists == targetSEsCount)
 						exitCode = Transfer.OK;
 				}
@@ -427,39 +419,39 @@ public class TransferBroker {
 
 	private static final String getTransferStatus(final int exitCode) {
 		switch (exitCode) {
-			case Transfer.OK:
-				return "DONE";
-			case Transfer.FAILED_SOURCE:
-				return "FAILED";
-			case Transfer.FAILED_TARGET:
-				return "FAILED";
-			case Transfer.FAILED_UNKNOWN:
-				return "FAILED";
-			case Transfer.FAILED_SYSTEM:
-				return "KILLED";
-			case Transfer.DELAYED:
-				return "WAITING";
-			default:
-				return "TRANSFERRING";
+		case Transfer.OK:
+			return "DONE";
+		case Transfer.FAILED_SOURCE:
+			return "FAILED";
+		case Transfer.FAILED_TARGET:
+			return "FAILED";
+		case Transfer.FAILED_UNKNOWN:
+			return "FAILED";
+		case Transfer.FAILED_SYSTEM:
+			return "KILLED";
+		case Transfer.DELAYED:
+			return "WAITING";
+		default:
+			return "TRANSFERRING";
 		}
 	}
 
 	private static final int getAliEnTransferStatus(final int exitCode) {
 		switch (exitCode) {
-			case Transfer.OK:
-				return 7;
-			case Transfer.FAILED_SOURCE:
-				return -1;
-			case Transfer.FAILED_TARGET:
-				return -1;
-			case Transfer.FAILED_UNKNOWN:
-				return -1;
-			case Transfer.FAILED_SYSTEM:
-				return -2;
-			case Transfer.DELAYED:
-				return -3;
-			default:
-				return 5; // transferring
+		case Transfer.OK:
+			return 7;
+		case Transfer.FAILED_SOURCE:
+			return -1;
+		case Transfer.FAILED_TARGET:
+			return -1;
+		case Transfer.FAILED_UNKNOWN:
+			return -1;
+		case Transfer.FAILED_SYSTEM:
+			return -2;
+		case Transfer.DELAYED:
+			return -3;
+		default:
+			return 5; // transferring
 		}
 	}
 
@@ -489,10 +481,9 @@ public class TransferBroker {
 
 				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', attempts=attempts-1, finished=" + lastCleanedUp / 1000
 						+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
-			
+
 				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
-			}
-			finally {
+			} finally {
 				executeQuery(dbc, "commit;");
 				executeQuery(dbc, "unlock tables;");
 				executeQuery(dbc, "SET autocommit = 1;");
@@ -501,8 +492,7 @@ public class TransferBroker {
 
 				dbc.free();
 			}
-		}
-		catch (final Throwable t) {
+		} catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
 		}
 
@@ -519,21 +509,19 @@ public class TransferBroker {
 
 			final String archiveTableName = "TRANSFERSARCHIVE" + Calendar.getInstance().get(Calendar.YEAR);
 
-			final long limit = System.currentTimeMillis()/1000 - 60L * 60 * 24 * 7;
-			final long limitReceived = System.currentTimeMillis()/1000 - 60L * 60 * 24 * 30 * 2;
+			final long limit = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 7;
+			final long limitReceived = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 30 * 2;
 
-			try{
-				if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true)) {
+			try {
+				if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true))
 					if (!db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
 						logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
 						return;
 					}
-				}
-			}
-			finally{
+			} finally {
 				db.close();
 			}
-	
+
 			final DBConnection dbc = db.getConnection();
 
 			try {
@@ -542,20 +530,17 @@ public class TransferBroker {
 					return;
 				}
 
-				if (executeQuery(dbc, "INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<"+limitReceived+");"))
-					executeQuery(dbc, "DELETE FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<"+limitReceived+");");
-			}
-			finally {
+				if (executeQuery(dbc, "INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<" + limitReceived + ");"))
+					executeQuery(dbc, "DELETE FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<" + limitReceived + ");");
+			} finally {
 				executeQuery(dbc, "unlock tables;");
 				executeClose();
 
 				dbc.free();
 			}
-		}
-		catch (final Throwable t) {
+		} catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception archiving", t);
-		}
-		finally {
+		} finally {
 			lastArchived = System.currentTimeMillis();
 		}
 	}
@@ -571,15 +556,15 @@ public class TransferBroker {
 
 		if (db == null)
 			return;
-		
+
 		try {
 			if (t == null) {
-				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()),
-						Integer.valueOf(ta.getPID()), ta.getHostName());
+				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(ta.getPID()),
+						ta.getHostName());
 				return;
 			}
 
-			final Map<String, Object> values = new HashMap<String, Object>();
+			final Map<String, Object> values = new HashMap<>();
 
 			String seList = "";
 
@@ -612,8 +597,7 @@ public class TransferBroker {
 					values.put("active_source", se.seName);
 				else
 					values.put("active_source", "unknown");
-			}
-			else
+			} else
 				values.put("active_source", "");
 
 			if (t.lastTriedProtocol != null)
@@ -626,17 +610,19 @@ public class TransferBroker {
 			if (db.getUpdateCount() == 0)
 				db.query(DBFunctions.composeInsert("active_transfers", values));
 
-			db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='', finished=null WHERE transferId=" + t.getTransferId() + " AND status!='TRANSFERRING';"); // just in case it was
-																																											// presumed expired
+			db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='', finished=null WHERE transferId=" + t.getTransferId() + " AND status!='TRANSFERRING';"); // just
+																																											// in
+																																											// case
+																																											// it
+																																											// was
+																																											// presumed
+																																											// expired
 
-			if (db.getUpdateCount() > 0) {
+			if (db.getUpdateCount() > 0)
 				logger.log(Level.INFO, "Re-stated " + t.getTransferId() + " to TRANSFERRING");
-			}
-		}
-		catch (final Throwable ex) {
+		} catch (final Throwable ex) {
 			logger.log(Level.SEVERE, "Exception updating status", ex);
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 	}
@@ -647,31 +633,30 @@ public class TransferBroker {
 		if (db == null)
 			return false;
 
-		try{
+		try {
 			String formattedReason = reason;
-	
+
 			if (formattedReason != null && formattedReason.length() > 250)
 				formattedReason = formattedReason.substring(0, 250);
-	
+
 			int finalExitCode = exitCode;
-			
-			if (exitCode > Transfer.OK && exitCode < Transfer.DELAYED){
+
+			if (exitCode > Transfer.OK && exitCode < Transfer.DELAYED) {
 				db.query("SELECT attempts FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(transferId));
-				
-				if (db.moveNext() && db.geti(1)>0)
+
+				if (db.moveNext() && db.geti(1) > 0)
 					finalExitCode = Transfer.DELAYED;
 			}
-			
+
 			db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=?, attempts=attempts-1 WHERE transferId=?;", false, getTransferStatus(finalExitCode), formattedReason,
 					Long.valueOf(System.currentTimeMillis() / 1000), Integer.valueOf(transferId));
-	
+
 			if (db.getUpdateCount() < 1)
 				return false;
-	
+
 			db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId=?);", false,
 					Integer.valueOf(transferId));
-		}
-		finally{
+		} finally {
 			db.close();
 		}
 
@@ -683,20 +668,19 @@ public class TransferBroker {
 			final ApMon apmon;
 
 			try {
-				final Vector<String> targets = new Vector<String>();
+				final Vector<String> targets = new Vector<>();
 				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
 
 				apmon = new ApMon(targets);
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 				logger.log(Level.WARNING, "Could not initialize apmon", e);
 				return;
 			}
 
 			final String cluster = "TransferQueue_Transfers_" + ConfigUtils.getConfig().gets("Organization", "ALICE");
 
-			final Vector<String> p = new Vector<String>();
-			final Vector<Object> v = new Vector<Object>();
+			final Vector<String> p = new Vector<>();
+			final Vector<Object> v = new Vector<>();
 
 			p.add("statusID");
 			v.add(Integer.valueOf(getAliEnTransferStatus(t.getExitCode())));
@@ -754,18 +738,17 @@ public class TransferBroker {
 
 			try {
 				apmon.sendParameters(cluster, String.valueOf(t.getTransferId()), p.size(), p, v);
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 				logger.log(Level.WARNING, "Could not send apmon message: " + p + " -> " + v, e);
 			}
-		}
-		catch (final Throwable ex) {
+		} catch (final Throwable ex) {
 			logger.log(Level.WARNING, "Exception reporting the monitoring", ex);
 		}
 	}
 
 	/**
-	 * When a transfer has completed, call this method to update the database status
+	 * When a transfer has completed, call this method to update the database
+	 * status
 	 * 
 	 * @param t
 	 */
@@ -782,14 +765,13 @@ public class TransferBroker {
 		if (owner.canBecome("admin"))
 			owner = UserFactory.getByUsername("admin");
 
-		for (final PFN target : t.getSuccessfulTransfers()) {
+		for (final PFN target : t.getSuccessfulTransfers())
 			if (!BookingTable.commit(owner, target)) {
 				logger.log(Level.WARNING, "Could not commit booked transfer: " + target);
 
 				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: " + target);
 				return;
 			}
-		}
 
 		if (t.getSuccessfulTransfers().size() > 0 && t.onCompleteRemoveReplica != null && t.onCompleteRemoveReplica.length() > 0) {
 			GUID g = null;
@@ -812,11 +794,9 @@ public class TransferBroker {
 			if (g != null) {
 				if (g.removePFN(SEUtils.getSE(t.onCompleteRemoveReplica), true) == null)
 					logger.log(Level.WARNING, "Was asked to remove the replica on " + t.onCompleteRemoveReplica + " of transfer ID " + t.getTransferId() + " but the removal didn't work");
-			}
-			else {
+			} else
 				logger.log(Level.WARNING, "Was asked to remove the replica on " + t.onCompleteRemoveReplica + " of transfer ID " + t.getTransferId()
 						+ " but I cannot do that since the GUID is unknown");
-			}
 		}
 	}
 }

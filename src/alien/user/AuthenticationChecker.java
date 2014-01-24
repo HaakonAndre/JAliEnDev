@@ -34,9 +34,11 @@ public class AuthenticationChecker {
 	private String challenge = null;
 
 	static {
-		privKey = null; // (RSAPrivateKey) JAKeyStore.ks.getKey("User.cert", JAKeyStore.pass);
+		privKey = null; // (RSAPrivateKey) JAKeyStore.ks.getKey("User.cert",
+						// JAKeyStore.pass);
 
-		//Certificate[] usercert = null; // JAKeyStore.ks.getCertificateChain("User.cert");
+		// Certificate[] usercert = null; //
+		// JAKeyStore.ks.getCertificateChain("User.cert");
 		pubKey = null; // (RSAPublicKey) usercert[0].getPublicKey();
 	}
 
@@ -44,7 +46,7 @@ public class AuthenticationChecker {
 	 * @param pFinder
 	 * @throws IOException
 	 */
-	public static void loadPrivKey(PasswordFinder pFinder) throws IOException {
+	public static void loadPrivKey(final PasswordFinder pFinder) throws IOException {
 
 		if (privKey == null) {
 			BufferedReader priv = null;
@@ -60,22 +62,18 @@ public class AuthenticationChecker {
 					reader = new PEMReader(priv, pFinder);
 
 				privKey = (RSAPrivateKey) ((KeyPair) reader.readObject()).getPrivate();
-			}
-			finally {
+			} finally {
 				try {
-					if (reader != null) {
+					if (reader != null)
 						reader.close();
-					}
-				}
-				catch (IOException ioe) {
+				} catch (final IOException ioe) {
 					// ignore
 				}
 
 				try {
 					if (priv != null)
 						priv.close();
-				}
-				catch (IOException ioe) {
+				} catch (final IOException ioe) {
 					// ignore
 				}
 			}
@@ -88,28 +86,24 @@ public class AuthenticationChecker {
 	public static void loadPubCert(final String pubCert) {
 
 		PEMReader pemReader = null;
-		
+
 		try {
 			final StringReader pub = new StringReader(pubCert);
-			
+
 			pemReader = new PEMReader(pub);
-			
+
 			cert = ((X509Certificate) pemReader.readObject());
 
 			pubKey = (RSAPublicKey) cert.getPublicKey();
-		}
-		catch (final IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
-		}
-		finally{
-			if (pemReader!=null){
-				try{
+		} finally {
+			if (pemReader != null)
+				try {
 					pemReader.close();
-				}
-				catch (final IOException ioe){
+				} catch (final IOException ioe) {
 					// ignore
 				}
-			}
 		}
 	}
 
@@ -120,7 +114,7 @@ public class AuthenticationChecker {
 	 * @throws IOException
 	 */
 	public static String readPubCert() throws IOException {
-		String location = ConfigUtils.getConfig().gets("user.cert.pub.location").trim();
+		final String location = ConfigUtils.getConfig().gets("user.cert.pub.location").trim();
 
 		return Utils.readFile(location);
 	}
@@ -145,10 +139,10 @@ public class AuthenticationChecker {
 	 * @throws InvalidKeyException
 	 */
 	public static String response(final String challengeText) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
-		Signature signature = Signature.getInstance("SHA384withRSA");
+		final Signature signature = Signature.getInstance("SHA384withRSA");
 		signature.initSign(privKey);
 		signature.update(challengeText.getBytes());
-		byte[] signatureBytes = signature.sign();
+		final byte[] signatureBytes = signature.sign();
 		return new String(Hex.encode(signatureBytes));
 	}
 
@@ -162,10 +156,10 @@ public class AuthenticationChecker {
 	 * @throws NoSuchAlgorithmException
 	 * @throws InvalidKeyException
 	 */
-	public boolean verify(String pubCertString, String signature) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
+	public boolean verify(final String pubCertString, final String signature) throws SignatureException, NoSuchAlgorithmException, InvalidKeyException {
 
 		loadPubCert(pubCertString);
-		Signature verifier = Signature.getInstance("SHA384withRSA");
+		final Signature verifier = Signature.getInstance("SHA384withRSA");
 		verifier.initVerify(pubKey);
 		verifier.update(challenge.getBytes());
 		if (verifier.verify(Hex.decode(signature))) {

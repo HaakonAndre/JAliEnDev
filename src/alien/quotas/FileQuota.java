@@ -13,13 +13,9 @@ import lazyj.StringFactory;
 public final class FileQuota implements Serializable, Comparable<FileQuota> {
 
 	/*
-user                  | varchar(64)
-totalSize             | bigint(20) 
-maxNbFiles            | int(11)    
-nbFiles               | int(11)    
-tmpIncreasedTotalSize | bigint(20) 
-maxTotalSize          | bigint(20) 
-tmpIncreasedNbFiles   | int(11)    
+	 * user | varchar(64) totalSize | bigint(20) maxNbFiles | int(11) nbFiles |
+	 * int(11) tmpIncreasedTotalSize | bigint(20) maxTotalSize | bigint(20)
+	 * tmpIncreasedNbFiles | int(11)
 	 */
 
 	/**
@@ -31,41 +27,41 @@ tmpIncreasedNbFiles   | int(11)
 	 * AliEn account name
 	 */
 	public final String user;
-	
+
 	/**
 	 * Total size of the stored files
 	 */
-	public final long	totalSize;
-	
+	public final long totalSize;
+
 	/**
 	 * Max number of files allowed
 	 */
-	public final int	maxNbFiles;
-	
+	public final int maxNbFiles;
+
 	/**
 	 * Current number of files stored by this user
 	 */
-	public final int	nbFiles;
-	
+	public final int nbFiles;
+
 	/**
 	 * Temp increase
 	 */
-	public final long	tmpIncreasedTotalSize;
-	
+	public final long tmpIncreasedTotalSize;
+
 	/**
 	 * Max allowed total size of this users' files
 	 */
-	public final long	maxTotalSize;
-	
+	public final long maxTotalSize;
+
 	/**
 	 * Temp increase
 	 */
-	public final int	tmpIncreasedNbFiles;
-	
+	public final int tmpIncreasedNbFiles;
+
 	/**
 	 * @param db
 	 */
-	FileQuota(final DBFunctions db){
+	FileQuota(final DBFunctions db) {
 		this.user = StringFactory.get(db.gets("user").toLowerCase());
 		this.totalSize = db.getl("totalSize");
 		this.maxNbFiles = db.geti("maxNbFiles");
@@ -79,41 +75,36 @@ tmpIncreasedNbFiles   | int(11)
 	public int compareTo(final FileQuota o) {
 		return this.user.compareTo(o.user);
 	}
-	
+
 	@Override
 	public String toString() {
-		return "FQuota: user: "+user+"\n"+
-		       "totalSize\t: "+Format.size(totalSize)+"\n"+
-		       "maxTotalSize\t: "+Format.size(maxTotalSize)+"\n"+
-		       "tmpIncreasedTotalSize\t: "+Format.size(tmpIncreasedTotalSize)+"\n"+
-		       "nbFiles\t: "+nbFiles+"\n"+
-		       "maxNbFiles\t: "+maxNbFiles+"\n"+
-		       "tmpIncreasedNbFiles\t: "+tmpIncreasedNbFiles;
-	}	
-	
-	
+		return "FQuota: user: " + user + "\n" + "totalSize\t: " + Format.size(totalSize) + "\n" + "maxTotalSize\t: " + Format.size(maxTotalSize) + "\n" + "tmpIncreasedTotalSize\t: "
+				+ Format.size(tmpIncreasedTotalSize) + "\n" + "nbFiles\t: " + nbFiles + "\n" + "maxNbFiles\t: " + maxNbFiles + "\n" + "tmpIncreasedNbFiles\t: " + tmpIncreasedNbFiles;
+	}
+
 	@Override
 	public boolean equals(final Object obj) {
-		if ( ! (obj instanceof FileQuota))
+		if (!(obj instanceof FileQuota))
 			return false;
-		
+
 		return compareTo((FileQuota) obj) == 0;
 	}
-	
+
 	@Override
 	public int hashCode() {
 		return user.hashCode();
 	}
-	
+
 	/**
 	 * @param noFiles
 	 * @param size
-	 * @return <code>true</code> if the user is allowed to upload this number of files with the given total size
+	 * @return <code>true</code> if the user is allowed to upload this number of
+	 *         files with the given total size
 	 */
-	public boolean canUpload(final int noFiles, final long size){
-		if (totalSize + size <= (maxTotalSize+tmpIncreasedTotalSize) && nbFiles+noFiles<=(maxNbFiles+tmpIncreasedNbFiles) )
+	public boolean canUpload(final int noFiles, final long size) {
+		if (totalSize + size <= (maxTotalSize + tmpIncreasedTotalSize) && nbFiles + noFiles <= (maxNbFiles + tmpIncreasedNbFiles))
 			return true;
-		
+
 		return false;
 	}
 }

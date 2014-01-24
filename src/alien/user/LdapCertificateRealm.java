@@ -11,7 +11,8 @@ import org.apache.catalina.realm.RealmBase;
 
 /**
  * Overrides X509Certificate Authentication to check the users in LDAP<br>
- * See here for more details: <a href="http://monalisa.cern.ch/blog/2007/04/02/enabling-ssl-in-tomcat/">
+ * See here for more details: <a
+ * href="http://monalisa.cern.ch/blog/2007/04/02/enabling-ssl-in-tomcat/">
  * http://monalisa.cern.ch/blog/2007/04/02/enabling-ssl-in-tomcat/</a><br>
  * <br>
  * <br>
@@ -49,8 +50,7 @@ import org.apache.catalina.realm.RealmBase;
  * &lt;/Engine&gt;<br>
  * &lt;/Service&gt;<br>
  * &lt;/Server&gt;<br>
- * </code>
- * <br>
+ * </code> <br>
  * Then for the resource that you want to force authentication, in web.xml:<br>
  * <code>
  *   &lt;security-constraint&gt;<br>
@@ -75,63 +75,66 @@ import org.apache.catalina.realm.RealmBase;
  * @since 02-04-2007
  * */
 public class LdapCertificateRealm extends RealmBase {
-	private static final Logger	logger	= Logger.getLogger(LdapCertificateRealm.class.getCanonicalName());
-	
+	private static final Logger logger = Logger.getLogger(LdapCertificateRealm.class.getCanonicalName());
+
 	/**
-	 * @param certChain Certificate chain
-	 * @return AlicePrincipal which contains the LDAP username that has the given certificate associated
+	 * @param certChain
+	 *            Certificate chain
+	 * @return AlicePrincipal which contains the LDAP username that has the
+	 *         given certificate associated
 	 */
 	@Override
 	public Principal authenticate(final X509Certificate[] certChain) {
-		return UserFactory.getByCertificate(certChain); 
+		return UserFactory.getByCertificate(certChain);
 	}
 
 	/**
-	 * @param principal - the principal which will be checked for the permissions
-	 * @param role - the role
+	 * @param principal
+	 *            - the principal which will be checked for the permissions
+	 * @param role
+	 *            - the role
 	 * @return true/false if the user is in role
 	 */
 	@Override
 	public boolean hasRole(final Principal principal, final String role) {
-		if (principal==null)
+		if (principal == null)
 			return false;
-		
+
 		Set<String> sUsernames = null;
-		
-		if (principal instanceof AliEnPrincipal){
-			sUsernames = ((AliEnPrincipal)principal).getNames();
-		}
-		else{
-			sUsernames = new HashSet<String>(1);
+
+		if (principal instanceof AliEnPrincipal)
+			sUsernames = ((AliEnPrincipal) principal).getNames();
+		else {
+			sUsernames = new HashSet<>(1);
 			sUsernames.add(principal.getName());
 		}
-		
+
 		if (logger.isLoggable(Level.FINE))
-			logger.fine("hasRole('"+sUsernames+"', '"+role+"')");
-		
-		if (sUsernames==null || sUsernames.size()==0)
+			logger.fine("hasRole('" + sUsernames + "', '" + role + "')");
+
+		if (sUsernames == null || sUsernames.size() == 0)
 			return false;
 
 		if ("users".equals(role))
-		    return true;
+			return true;
 
-		for (String sUsername: sUsernames){
-			final Set<String> sRoles = LDAPHelper.checkLdapInformation("users="+sUsername, "ou=Roles,", "uid");
+		for (final String sUsername : sUsernames) {
+			final Set<String> sRoles = LDAPHelper.checkLdapInformation("users=" + sUsername, "ou=Roles,", "uid");
 
 			if (logger.isLoggable(Level.FINER))
-				logger.finer("Roles for '"+sUsername+"' : "+sRoles);
-		
-			if (sRoles.contains(role)){
+				logger.finer("Roles for '" + sUsername + "' : " + sRoles);
+
+			if (sRoles.contains(role)) {
 				if (logger.isLoggable(Level.FINER))
 					logger.finer("Returning true because this username has the desired role");
-				
+
 				return true;
 			}
 		}
-		
+
 		if (logger.isLoggable(Level.FINER))
 			logger.finer("Returning false because no username had the desired role");
-		
+
 		return false;
 	}
 
@@ -140,17 +143,14 @@ public class LdapCertificateRealm extends RealmBase {
 		return "LdapCertificateRealm";
 	}
 
-
 	@Override
-	protected String getPassword(String arg0) {
+	protected String getPassword(final String arg0) {
 		return null;
 	}
 
 	@Override
-	protected Principal getPrincipal(String arg0) {
+	protected Principal getPrincipal(final String arg0) {
 		return null;
 	}
 
-	
-	
 }

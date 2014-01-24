@@ -21,16 +21,16 @@ public class FindfromString extends Request {
 	 */
 	private static final long serialVersionUID = -5938936122293608584L;
 	private final String path;
-	private final String pattern ;
+	private final String pattern;
 	private final int flags;
-	private Collection<LFN>  lfns;
+	private Collection<LFN> lfns;
 
 	/**
-	 * @param user 
-	 * @param role 
-	 * @param path 
-	 * @param pattern 
-	 * @param flags 
+	 * @param user
+	 * @param role
+	 * @param path
+	 * @param pattern
+	 * @param flags
 	 */
 	public FindfromString(final AliEnPrincipal user, final String role, final String path, final String pattern, final int flags) {
 		setRequestUser(user);
@@ -54,25 +54,24 @@ public class FindfromString extends Request {
 
 	@Override
 	public String toString() {
-		return "Asked for : path (" + this.path +"), pattern ("+this.pattern
-				+ "), flags ("+this.flags+") reply is:\n" + this.lfns;
+		return "Asked for : path (" + this.path + "), pattern (" + this.pattern + "), flags (" + this.flags + ") reply is:\n" + this.lfns;
 	}
-	
+
 	/**
-	 * Made by sraje (Shikhar Raje, IIIT Hyderabad)
-//	 * 
-	 * @return the list of file names (one level down only) that matched the find
+	 * Made by sraje (Shikhar Raje, IIIT Hyderabad) // *
+	 * 
+	 * @return the list of file names (one level down only) that matched the
+	 *         find
 	 */
-	public List<String> getFileNames()
-	{
-		if (lfns==null)
+	public List<String> getFileNames() {
+		if (lfns == null)
 			return null;
-		
-		final List<String> ret = new ArrayList<String>(lfns.size());
-		
-		for (final LFN l: lfns)
+
+		final List<String> ret = new ArrayList<>(lfns.size());
+
+		for (final LFN l : lfns)
 			ret.add(l.getFileName());
-		
+
 		return ret;
 	}
 }

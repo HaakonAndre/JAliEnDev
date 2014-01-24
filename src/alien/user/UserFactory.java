@@ -50,10 +50,11 @@ public final class UserFactory {
 	 * Get the account corresponding to this certificate chain
 	 * 
 	 * @param certChain
-	 * @return account, or <code>null</code> if no account has this certificate associated to it
+	 * @return account, or <code>null</code> if no account has this certificate
+	 *         associated to it
 	 */
 	public static AliEnPrincipal getByCertificate(final javax.security.cert.X509Certificate[] certChain) {
-		final ArrayList<X509Certificate> certs = new ArrayList<X509Certificate>(certChain.length);
+		final ArrayList<X509Certificate> certs = new ArrayList<>(certChain.length);
 		for (final javax.security.cert.X509Certificate c : certChain)
 			certs.add(convert(c));
 		if (certs.isEmpty())
@@ -68,7 +69,8 @@ public final class UserFactory {
 	 * Get the account corresponding to this certificate chain
 	 * 
 	 * @param certChain
-	 * @return account, or <code>null</code> if no account has this certificate associated to it
+	 * @return account, or <code>null</code> if no account has this certificate
+	 *         associated to it
 	 */
 	public static AliEnPrincipal getByCertificate(final X509Certificate[] certChain) {
 		for (int i = 0; i < certChain.length; i++) {
@@ -94,9 +96,9 @@ public final class UserFactory {
 
 			try {
 				Long.parseLong(sDNTransformed.substring(idx + 1));
-			}
-			catch (final NumberFormatException nfe) {
-				// try the next certificate in chain only if the last item is a number, so it might be a proxy
+			} catch (final NumberFormatException nfe) {
+				// try the next certificate in chain only if the last item is a
+				// number, so it might be a proxy
 				// certificate in fact
 				return null;
 			}
@@ -109,7 +111,8 @@ public final class UserFactory {
 	 * Get the account corresponding to this certificate DN
 	 * 
 	 * @param dn
-	 * @return account, or <code>null</code> if no account has this certificate associated to it
+	 * @return account, or <code>null</code> if no account has this certificate
+	 *         associated to it
 	 */
 	public static AliEnPrincipal getByDN(final String dn) {
 		final Set<AliEnPrincipal> allPrincipal = getAllByDN(dn);
@@ -121,10 +124,13 @@ public final class UserFactory {
 	}
 
 	/**
-	 * Transform a DN from the comma notation to slash notation, in reverse order. Example:
+	 * Transform a DN from the comma notation to slash notation, in reverse
+	 * order. Example:
 	 * 
-	 * Input: CN=Alina Gabriela Grigoras,CN=659434,CN=agrigora,OU=Users,OU=Organic Units,DC=cern,DC=ch Output:
-	 * /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=agrigora/CN=659434/CN=Alina Gabriela Grigoras
+	 * Input: CN=Alina Gabriela
+	 * Grigoras,CN=659434,CN=agrigora,OU=Users,OU=Organic Units,DC=cern,DC=ch
+	 * Output: /DC=ch/DC=cern/OU=Organic
+	 * Units/OU=Users/CN=agrigora/CN=659434/CN=Alina Gabriela Grigoras
 	 * 
 	 * @param subject
 	 * @return AliEn-style subject
@@ -157,7 +163,7 @@ public final class UserFactory {
 		final Set<String> check = LDAPHelper.checkLdapInformation("subject=" + dn, "ou=People,", "uid");
 
 		if (check != null && check.size() > 0) {
-			final Set<AliEnPrincipal> ret = new LinkedHashSet<AliEnPrincipal>();
+			final Set<AliEnPrincipal> ret = new LinkedHashSet<>();
 
 			for (final String username : check) {
 				final AliEnPrincipal p = new AliEnPrincipal(username);
@@ -183,15 +189,12 @@ public final class UserFactory {
 			final ByteArrayInputStream bis = new ByteArrayInputStream(encoded);
 			final java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X.509");
 			return (java.security.cert.X509Certificate) cf.generateCertificate(bis);
-		}
-		catch (final java.security.cert.CertificateEncodingException e) {
+		} catch (final java.security.cert.CertificateEncodingException e) {
 			// ignore
-		}
-		catch (final javax.security.cert.CertificateEncodingException e) {
+		} catch (final javax.security.cert.CertificateEncodingException e) {
 			// ignore
 
-		}
-		catch (final java.security.cert.CertificateException e) {
+		} catch (final java.security.cert.CertificateException e) {
 			// ignore
 
 		}
@@ -206,17 +209,14 @@ public final class UserFactory {
 		try {
 			final byte[] encoded = cert.getEncoded();
 			return javax.security.cert.X509Certificate.getInstance(encoded);
-		}
-		catch (final java.security.cert.CertificateEncodingException e) {
+		} catch (final java.security.cert.CertificateEncodingException e) {
+			// ignore
+		} catch (final javax.security.cert.CertificateEncodingException e) {
+			// ignore
+		} catch (final javax.security.cert.CertificateException e) {
 			// ignore
 		}
-		catch (final javax.security.cert.CertificateEncodingException e) {
-			// ignore
-		}
-		catch (final javax.security.cert.CertificateException e) {
-			// ignore
-		}
-		
+
 		return null;
 	}
 

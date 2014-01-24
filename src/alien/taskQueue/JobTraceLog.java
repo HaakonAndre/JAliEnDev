@@ -9,32 +9,32 @@ import lazyj.Utils;
  * @since Mar 3, 2011
  */
 public class JobTraceLog {
-	
+
 	final private static String jobTraceLogURLPrefix = "http://aliendb8.cern.ch/joblog/";
-	
+
 	private String trace = "";
-	
+
 	/**
-	 * @param id job ID
+	 * @param id
+	 *            job ID
 	 */
-	JobTraceLog(final int id){
+	JobTraceLog(final int id) {
 		final String queueId = String.valueOf(id);
-		retrieve(jobTraceLogURLPrefix + queueId.substring(0,4) + "/" + queueId + ".log" );
+		retrieve(jobTraceLogURLPrefix + queueId.substring(0, 4) + "/" + queueId + ".log");
 	}
-	
-	private void retrieve(final String url ){
-		try{
+
+	private void retrieve(final String url) {
+		try {
 			trace = Utils.download(url, null);
-		}
-		catch (IOException ioe){
+		} catch (final IOException ioe) {
 			// ignore
 		}
 	}
-	  
-    /**
-     * @return the trace log
-     */
-    public String getTraceLog(){
-    	return trace;
-    }
+
+	/**
+	 * @return the trace log
+	 */
+	public String getTraceLog() {
+		return trace;
+	}
 }

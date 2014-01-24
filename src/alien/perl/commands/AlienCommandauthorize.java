@@ -80,10 +80,10 @@ public class AlienCommandauthorize extends AlienCommand {
 	public HashMap<String, ArrayList<String>> executeCommand() throws Exception{
 		Log.log(Log.FINER, "Entering authorize command");
 		
-		HashMap<String, ArrayList<String>> hmReturn = new HashMap<String, ArrayList<String>>();
+		HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
 
 		ArrayList<String> alrcValues;
-		ArrayList<String> alrcMessages = new ArrayList<String>();
+		ArrayList<String> alrcMessages = new ArrayList<>();
 		
 		boolean bDebug = false;
 
@@ -113,7 +113,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			Log.log(Log.FINER, "Authorize Job id = "+iJobId);
 
 			if("registerenvs".equals(sAccess)){
-				ArrayList<String> alInfo = new ArrayList<String>(this.alArguments.size());
+				ArrayList<String> alInfo = new ArrayList<>(this.alArguments.size());
 				for(int i=1; i<= envelopeCount;i++)
 					alInfo.add((String) this.alArguments.get(i));
 			
@@ -170,7 +170,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			return null;
 		}
 
-		ArrayList<String> retenv = new ArrayList<String>(envelopes.size());
+		ArrayList<String> retenv = new ArrayList<>(envelopes.size());
 
 		for (String env : envelopes) {
 			
@@ -280,7 +280,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 		String[] splitWishedSE = sanitizePerlString(optionHash.get("wishedSE"),
 				false).split(";");
-		List<SE> ses = new ArrayList<SE>(splitWishedSE.length);
+		List<SE> ses = new ArrayList<>(splitWishedSE.length);
 		for (String sename : Arrays.asList(splitWishedSE)) {
 			SE se = SEUtils.getSE(sename);
 			if (se != null) {
@@ -291,7 +291,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 		String[] splitExcludeSE = sanitizePerlString(
 				optionHash.get("excludeSE"), false).split(";");
-		List<SE> exxSes = new ArrayList<SE>(splitExcludeSE.length);
+		List<SE> exxSes = new ArrayList<>(splitExcludeSE.length);
 		for (String sename : Arrays.asList(splitExcludeSE)) {
 			SE se = SEUtils.getSE(sename);
 			if (se != null) {
@@ -325,7 +325,7 @@ public class AlienCommandauthorize extends AlienCommand {
 					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest),
 							true);
 				lfn.guid = guid.guid;
-				guid.lfnCache = new LinkedHashSet<LFN>(1);
+				guid.lfnCache = new LinkedHashSet<>(1);
 				guid.lfnCache.add(lfn);
 				guid.size = p_size;
 				guid.md5 = p_md5;
@@ -334,7 +334,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			}
 		}
 
-		List<PFN> pfns = new ArrayList<PFN>(ses.size() + p_qosCount);
+		List<PFN> pfns = new ArrayList<>(ses.size() + p_qosCount);
 
 		LFN setArchiveAnchor = null;
 
@@ -444,7 +444,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			System.out.println("exception: " + e.toString());
 		}
 
-		List<String> envelopes = new ArrayList<String>(pfns.size());
+		List<String> envelopes = new ArrayList<>(pfns.size());
 
 		for (PFN pfn : pfns) {
 			if (pfn.ticket.envelope == null) {

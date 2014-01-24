@@ -16,8 +16,7 @@ import alien.test.utils.TestService;
  * @since Sep 09, 2011
  */
 public class SetupTestVO {
-	
-	
+
 	/**
 	 * @return <code>true</code> if successful
 	 * @throws Exception
@@ -25,53 +24,48 @@ public class SetupTestVO {
 	protected static boolean setupVO() throws Exception {
 
 		// step 0
-		//--------------------------------------------------------------
-		File oldLink = new File(TestConfig.tvo_home);
-		if (oldLink.exists()){
-			TestCommand link = new TestCommand(new String[] { "rm", oldLink.getAbsolutePath() });
-			if(!link.exec()){
-				final File target = new File(TestConfig.tvo_home+"_movedBy"+TestConfig.now);
-				
+		// --------------------------------------------------------------
+		final File oldLink = new File(TestConfig.tvo_home);
+		if (oldLink.exists()) {
+			final TestCommand link = new TestCommand(new String[] { "rm", oldLink.getAbsolutePath() });
+			if (!link.exec()) {
+				final File target = new File(TestConfig.tvo_home + "_movedBy" + TestConfig.now);
+
 				if (!oldLink.renameTo(target))
-					throw new TestException("Cannot rename/move "+oldLink+" to "+target);
+					throw new TestException("Cannot rename/move " + oldLink + " to " + target);
 			}
 			if (oldLink.exists())
-				throw new TestException ("Could not handle the old testVO entry: " + oldLink.getAbsolutePath());
+				throw new TestException("Could not handle the old testVO entry: " + oldLink.getAbsolutePath());
 		}
-		
+
 		TestConfig.initialize();
-		
+
 		System.out.println();
 		System.out.println();
 		System.out.println("Now let's start the work...");
 		System.out.println("Creating TestVO in: " + TestConfig.tvo_real_home);
 
-		if (!(new File(TestConfig.tvo_real_home)).mkdirs()) {
+		if (!(new File(TestConfig.tvo_real_home)).mkdirs())
 			throw new TestException("Could not create test VO directory.");
-		}
-		TestCommand link = new TestCommand(new String[] { "ln", "-s",
-				TestConfig.tvo_real_home,TestConfig.tvo_home });
+		final TestCommand link = new TestCommand(new String[] { "ln", "-s", TestConfig.tvo_real_home, TestConfig.tvo_home });
 		if (!link.exec())
-			throw new TestException(
-					"VO Setup ok, but final link setting failed.");
-		//--------------------------------------------------------------
+			throw new TestException("VO Setup ok, but final link setting failed.");
+		// --------------------------------------------------------------
 		//
-		
-		boolean verbose = false;
 
+		final boolean verbose = false;
 
-		
 		// step 1
 		System.out.println("----- STEP1 [INIT]: Config -----");
 		TestConfig.createConfig();
 		System.out.println("----- STEP1 [DONE]: Config -----");
-		
+
 		// step 2
 		System.out.println("----- STEP2 [INIT]: Certificates -----");
 		if (!CreateCertificates.doit(verbose))
 			throw new TestException("Creating Certificates failed.");
 		System.out.println("----- STEP2 [DONE]: Certificates -----");
-		
+
 		// step 3
 		System.out.println("----- STEP3 [INIT]: LDAP -----");
 		if (!CreateLDAP.rampUpLDAP())
@@ -89,95 +83,89 @@ public class SetupTestVO {
 		if (!rampUpVO())
 			throw new TestException("Initializing VO failed.");
 		System.out.println("----- STEP5 [DONE]: init VO -----");
-				
+
 		return true;
 	}
-	
-	
-	private static boolean rampUpVO(){
-	
+
+	private static boolean rampUpVO() {
+
 		boolean ret = true;
-		
-		if(!ManageSysEntities.addUser("admin","1","admin","/C=CH/O="+JAliEnIAm.whoamI()+"/CN=NOadmin"))
+
+		if (!ManageSysEntities.addUser("admin", "1", "admin", "/C=CH/O=" + JAliEnIAm.whoamI() + "/CN=NOadmin"))
 			ret = false;
-		if(!ManageSysEntities.addUser(TestConfig.testUser,"2","admin",TestConfig.certSubjectuser))
+		if (!ManageSysEntities.addUser(TestConfig.testUser, "2", "admin", TestConfig.certSubjectuser))
 			ret = false;
-		if(!ManageSysEntities.addSite(TestConfig.testSite, TestConfig.domain, "/tmp", "/tmp", "/tmp"))
+		if (!ManageSysEntities.addSite(TestConfig.testSite, TestConfig.domain, "/tmp", "/tmp", "/tmp"))
 			ret = false;
-		if(!ManageSysEntities.addSE("firstse","1",TestConfig.testSite, TestConfig.full_host_name+":8092", "disk"))
+		if (!ManageSysEntities.addSE("firstse", "1", TestConfig.testSite, TestConfig.full_host_name + ":8092", "disk"))
 			ret = false;
-		
+
 		return ret;
-	
+
 	}
-	
-	
+
 	/**
 	 * @return jCentral started successfully
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static boolean startJCentral() throws Exception {
- 
-			TestService jcentral = new TestService("jcentral");
 
-			jcentral.start();
+		final TestService jcentral = new TestService("jcentral");
 
-			Thread.sleep(2000);
-			
-			jcentral.interrupt();
-			
-			if(jcentral.getStatus()!=0)
-				throw new TestException("The Thread of jCentral had an exception.");
-			
-			jcentral.interrupt();
+		jcentral.start();
 
+		Thread.sleep(2000);
+
+		jcentral.interrupt();
+
+		if (jcentral.getStatus() != 0)
+			throw new TestException("The Thread of jCentral had an exception.");
+
+		jcentral.interrupt();
 
 		return true;
 	}
-	
+
 	/**
 	 * @return jBox started successfully
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static boolean startJBox() throws Exception {
 
-			TestService jbox = new TestService("jbox");
+		final TestService jbox = new TestService("jbox");
 
-			jbox.start();
+		jbox.start();
 
-			Thread.sleep(2000);
-			
-			jbox.interrupt();
-			
-			if(jbox.getStatus()!=0)
-				throw new TestException("The Thread of jBox had an exception.");
-			
-			jbox.interrupt();
+		Thread.sleep(2000);
 
+		jbox.interrupt();
+
+		if (jbox.getStatus() != 0)
+			throw new TestException("The Thread of jBox had an exception.");
+
+		jbox.interrupt();
 
 		return true;
 	}
-	
-	
+
 	/**
 	 * @return jBox started successfully
-	 * @throws Exception 
+	 * @throws Exception
 	 */
 	public static boolean startJShTests() throws Exception {
 
-			TestService jsh = new TestService("jsh");
+		final TestService jsh = new TestService("jsh");
 
-			jsh.start();
+		jsh.start();
 
-			jsh.wait();
-			
-			if(jsh.getStatus()!=0)
-				throw new TestException("The Thread of jSh had an exception.");
-			
-			jsh.interrupt();
+		jsh.wait();
 
+		if (jsh.getStatus() != 0)
+			throw new TestException("The Thread of jSh had an exception.");
+
+		jsh.interrupt();
 
 		return true;
 	}
-	
+
 }

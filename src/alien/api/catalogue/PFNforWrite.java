@@ -44,7 +44,7 @@ public class PFNforWrite extends Request {
 	private List<PFN> pfns = null;
 
 	private String errorMessage = null;
-	
+
 	/**
 	 * Get PFNs to write
 	 * 
@@ -92,32 +92,31 @@ public class PFNforWrite extends Request {
 		if ((this.ses == null || this.ses.size() == 0) && (this.qos == null || this.qos.size() < 1)) {
 			Set<String> defaultQos = LDAPHelper.checkLdapInformation("(objectClass=AliEnVOConfig)", "ou=Config,", "sedefaultQosandCount");
 
-			if (defaultQos==null || defaultQos.isEmpty()){
+			if (defaultQos == null || defaultQos.isEmpty()) {
 				logger.log(Level.WARNING, "No specification of storages and no default LDAP entry found, using the default disk=2 value");
-				
-				defaultQos = new HashSet<String>(1);
+
+				defaultQos = new HashSet<>(1);
 				defaultQos.add("disk=2");
 			}
-			
-			for (final String defQos: defaultQos){
-				int idx = defQos.indexOf('=');
-				
-				String qosType = idx>0 ? defQos.substring(0, idx) : "disk"; 
-				
+
+			for (final String defQos : defaultQos) {
+				final int idx = defQos.indexOf('=');
+
+				final String qosType = idx > 0 ? defQos.substring(0, idx) : "disk";
+
 				Integer count;
-				
-				if (idx<0)
+
+				if (idx < 0)
 					count = Integer.valueOf(1);
 				else
-				try{
-					count = Integer.valueOf(defQos.substring(idx+1).trim());
-				}
-				catch (final NumberFormatException nfe){
-					count = Integer.valueOf(1);
-				}
-				
+					try {
+						count = Integer.valueOf(defQos.substring(idx + 1).trim());
+					} catch (final NumberFormatException nfe) {
+						count = Integer.valueOf(1);
+					}
+
 				if (this.qos == null)
-					this.qos = new HashMap<String, Integer>(defaultQos.size());
+					this.qos = new HashMap<>(defaultQos.size());
 
 				this.qos.put(qosType, count);
 			}
@@ -127,34 +126,33 @@ public class PFNforWrite extends Request {
 
 		if (SEs == null || SEs.size() < 1) {
 			this.pfns = Collections.emptyList();
-			
+
 			errorMessage = "Couldn't discover any SEs for this request (site:" + this.site + ", ses:" + this.ses + ", exses:" + this.exses + ", qos:" + this.qos + ")";
-			
+
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, errorMessage);
-			
+
 			return;
 		}
 
-		this.pfns = new ArrayList<PFN>(SEs.size());
+		this.pfns = new ArrayList<>(SEs.size());
 
 		for (final SE se : SEs) {
 			if (!se.canWrite(getEffectiveRequester())) {
 				errorMessage = getEffectiveRequester() + " is not allowed to write to the explicitly requested SE " + se.seName;
-				
+
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, errorMessage);
-				
+
 				continue;
 			}
 
 			try {
 				this.pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), this.lfn, this.guid, null, 0, se));
 				errorMessage = null;
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 				errorMessage = e.getMessage();
-				
+
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "Error for the request on " + se.getName() + ", message", e.fillInStackTrace());
 			}
@@ -170,7 +168,7 @@ public class PFNforWrite extends Request {
 	public List<PFN> getPFNs() {
 		return this.pfns;
 	}
-	
+
 	/**
 	 * @return the error message, if any
 	 */

@@ -25,9 +25,9 @@ public class TransferAgent extends Thread {
 	private final int transferAgentID;
 
 	private final int pid = MonitorFactory.getSelfProcessID();
-	
+
 	private final String hostname = MonitorFactory.getSelfHostname();
-	
+
 	/**
 	 * 
 	 */
@@ -49,12 +49,12 @@ public class TransferAgent extends Thread {
 	int getTransferAgentID() {
 		return transferAgentID;
 	}
-	
-	int getPID(){
+
+	int getPID() {
 		return pid;
 	}
-	
-	String getHostName(){
+
+	String getHostName() {
 		return hostname;
 	}
 
@@ -88,11 +88,9 @@ public class TransferAgent extends Thread {
 
 					try {
 						work.run();
-					}
-					catch (final Exception e) {
+					} catch (final Exception e) {
 						logger.log(Level.WARNING, "Transfer threw exception", e);
-					}
-					finally {
+					} finally {
 						logger.log(Level.INFO, "Transfer finished: " + work);
 
 						TransferBroker.notifyTransferComplete(work);
@@ -103,8 +101,7 @@ public class TransferAgent extends Thread {
 					}
 
 					firstTimeNoWork = true;
-				}
-				else {
+				} else
 					try {
 						if (firstTimeNoWork) {
 							logger.log(Level.INFO, "Agent " + transferAgentID + " : no work for me");
@@ -114,14 +111,11 @@ public class TransferAgent extends Thread {
 						Thread.sleep(1000 * 30); // try in 30 seconds again to
 													// see if there is anything
 													// for it to do
-					}
-					catch (final InterruptedException ie) {
+					} catch (final InterruptedException ie) {
 						// ignore
 					}
-				}
 			}
-		}
-		catch (final Exception e) {
+		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Exiting after an exception", e);
 		}
 	}
@@ -146,7 +140,7 @@ public class TransferAgent extends Thread {
 
 		logger.log(Level.INFO, "Starting " + workers + " workers");
 
-		final LinkedList<TransferAgent> agents = new LinkedList<TransferAgent>();
+		final LinkedList<TransferAgent> agents = new LinkedList<>();
 
 		for (int i = 0; i < workers; i++) {
 			final TransferAgent ta = new TransferAgent(transferAgentIDSequence++);
@@ -189,11 +183,10 @@ public class TransferAgent extends Thread {
 
 					ta.signalStop();
 				}
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 				// ignore
 			}
-			
+
 			for (final TransferAgent ta : agents)
 				TransferBroker.touch(ta.work, ta);
 		}

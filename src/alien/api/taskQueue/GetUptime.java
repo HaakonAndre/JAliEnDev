@@ -37,73 +37,73 @@ public class GetUptime extends Request implements Cacheable {
 		 * Currently active jobs for this user
 		 */
 		public int runningJobs = 0;
-		
+
 		/**
 		 * Currently waiting jobs for this user
 		 */
 		public int waitingJobs = 0;
-		
+
 		/**
 		 * Sum up the values (for computing totals)
 		 * 
 		 * @param other
 		 */
-		public void add(final UserStats other){
+		public void add(final UserStats other) {
 			this.runningJobs += other.runningJobs;
 			this.waitingJobs += other.waitingJobs;
 		}
 	}
-	
+
 	private Map<String, UserStats> stats = null;
-	
+
 	/**
 	 */
-	public GetUptime(){
+	public GetUptime() {
 		// nothing
 	}
-	
-	private static EnumSet<JobStatus> activeJobsSet  = EnumSet.range(JobStatus.ASSIGNED, JobStatus.SAVING);
+
+	private static EnumSet<JobStatus> activeJobsSet = EnumSet.range(JobStatus.ASSIGNED, JobStatus.SAVING);
 	private static EnumSet<JobStatus> waitingJobsSet = EnumSet.range(JobStatus.INSERTING, JobStatus.OVER_WAITING);
-	
+
 	@Override
 	public void run() {
-		stats = new TreeMap<String, UserStats>();
-		
+		stats = new TreeMap<>();
+
 		Map<String, Integer> jobs = TaskQueueUtils.getJobCounters(activeJobsSet);
-		
-		for (final Map.Entry<String, Integer> entry: jobs.entrySet()){
+
+		for (final Map.Entry<String, Integer> entry : jobs.entrySet()) {
 			final UserStats u = new UserStats();
 			u.runningJobs = entry.getValue().intValue();
-			
+
 			stats.put(entry.getKey(), u);
 		}
-		
+
 		jobs = TaskQueueUtils.getJobCounters(waitingJobsSet);
 
-		for (final Map.Entry<String, Integer> entry: jobs.entrySet()){
+		for (final Map.Entry<String, Integer> entry : jobs.entrySet()) {
 			final String user = entry.getKey();
-			
+
 			UserStats u = stats.get(user);
-			
-			if (u==null){
+
+			if (u == null) {
 				u = new UserStats();
 				stats.put(user, u);
 			}
-			
+
 			u.waitingJobs = entry.getValue().intValue();
 		}
 	}
-	
+
 	/**
 	 * @return a JDL
 	 */
-	public Map<String, UserStats> getStats(){
+	public Map<String, UserStats> getStats() {
 		return this.stats;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "Asked for uptime, answer is: "+this.stats;
+		return "Asked for uptime, answer is: " + this.stats;
 	}
 
 	@Override
@@ -113,6 +113,6 @@ public class GetUptime extends Request implements Cacheable {
 
 	@Override
 	public long getTimeout() {
-		return 1000*60*1;
+		return 1000 * 60 * 1;
 	}
 }

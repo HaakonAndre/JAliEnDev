@@ -9,23 +9,20 @@ import alien.test.setup.CreateLDAP;
  */
 public class ShutdownTestVO {
 
-
 	/**
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {
-		
+	public static void main(final String[] args) throws Exception {
 
 		if (!TestBrain.findCommands()) {
 			System.err.println("Necessary programs missing.");
 			return;
 		}
 
-		
-	CreateLDAP.stopLDAP();
-	
-	CreateDB.stopDatabase();
-	
+		CreateLDAP.stopLDAP();
+
+		CreateDB.stopDatabase();
+
 	}
 }

@@ -10,7 +10,7 @@ import java.util.Set;
  * @author ron
  * @since Mar 1, 2011
  */
-public enum JobStatus{
+public enum JobStatus {
 
 	/**
 	 * Any state (wildcard)
@@ -51,7 +51,7 @@ public enum JobStatus{
 	/**
 	 * User ran out of quota (21)
 	 */
-	OVER_WAITING(21, 21), 
+	OVER_WAITING(21, 21),
 	/**
 	 * Assigned to a site (25)
 	 */
@@ -61,7 +61,7 @@ public enum JobStatus{
 	 */
 	STARTED(40, 7),
 	/**
-	 * Idle, doing what ? (45) 
+	 * Idle, doing what ? (45)
 	 */
 	IDLE(45, 9),
 	/**
@@ -93,7 +93,7 @@ public enum JobStatus{
 	 */
 	FORCEMERGE(700, 14),
 	/**
-	 * Currently merging  (701)
+	 * Currently merging (701)
 	 */
 	MERGING(701, 13),
 	/**
@@ -161,8 +161,7 @@ public enum JobStatus{
 	 */
 	ERROR_SPLT(913, -8),
 	/**
-	 * Error verifying JDL signature (914)
-	 * TODO: add in AliEn too
+	 * Error verifying JDL signature (914) TODO: add in AliEn too
 	 */
 	ERROR_VER(914, -20),
 	/**
@@ -170,7 +169,7 @@ public enum JobStatus{
 	 */
 	FAULTY(950, 24),
 	/**
-	 * Incorrect 
+	 * Incorrect
 	 */
 	INCORRECT(951, 25),
 	/**
@@ -187,169 +186,178 @@ public enum JobStatus{
 	KILLED(1002, -14);
 
 	private final int level;
-	
+
 	private final int alienLevel;
 
 	private JobStatus(final int level, final int alienLevel) {
 		this.level = level;
 		this.alienLevel = alienLevel;
 	}
-	
-	private static Map<String, JobStatus> stringToStatus = new HashMap<String, JobStatus>();
-	
-	private static Map<Integer, JobStatus> intToStatus = new HashMap<Integer, JobStatus>();
-	
-	private static Map<Integer, JobStatus> alienToStatus = new HashMap<Integer, JobStatus>();
-	
+
+	private static Map<String, JobStatus> stringToStatus = new HashMap<>();
+
+	private static Map<Integer, JobStatus> intToStatus = new HashMap<>();
+
+	private static Map<Integer, JobStatus> alienToStatus = new HashMap<>();
+
 	static {
-		for (final JobStatus status: JobStatus.values()){
+		for (final JobStatus status : JobStatus.values()) {
 			stringToStatus.put(status.name(), status);
-			
+
 			intToStatus.put(Integer.valueOf(status.level()), status);
-			
+
 			alienToStatus.put(Integer.valueOf(status.getAliEnLevel()), status);
 		}
-		
+
 		stringToStatus.put("%", ANY);
 	}
-	
+
 	/**
 	 * @param status
 	 * @return the status indicated by this name
 	 */
-	public static final JobStatus getStatus(final String status){
+	public static final JobStatus getStatus(final String status) {
 		return stringToStatus.get(status);
 	}
-	
+
 	/**
 	 * @param level
 	 * @return the status indicated by this level
 	 */
-	public static final JobStatus getStatus(final Integer level){
+	public static final JobStatus getStatus(final Integer level) {
 		return intToStatus.get(level);
 	}
-	
+
 	/**
 	 * @param level
 	 * @return the status object that has the indicated AliEn status ID
 	 */
-	public static final JobStatus getStatusByAlien(final Integer level){
+	public static final JobStatus getStatusByAlien(final Integer level) {
 		return alienToStatus.get(level);
 	}
-	
+
 	/**
 	 * Is this job status older/more final than the other one
-	 * @param another 
+	 * 
+	 * @param another
 	 * @return true if state is larger than
 	 */
-	public boolean biggerThan(final JobStatus another){
+	public boolean biggerThan(final JobStatus another) {
 		return level > another.level;
 	}
 
 	/**
 	 * Is this job status younger/less final than the other one
-	 * @param another 
+	 * 
+	 * @param another
 	 * @return level is smaller than
 	 */
-	public boolean smallerThan(final JobStatus another){
+	public boolean smallerThan(final JobStatus another) {
 		return this.level < another.level;
 	}
 
 	/**
 	 * Is this job status younger/less final than or equals the other one
-	 * @param another 
+	 * 
+	 * @param another
 	 * @return level is smaller or equal with
 	 */
-	public boolean smallerThanEquals(final JobStatus another){
+	public boolean smallerThanEquals(final JobStatus another) {
 		return this.level <= another.level;
 	}
-	
+
 	/**
 	 * Id this status a ERROR_
+	 * 
 	 * @return true if this is any ERROR_ state
 	 */
-	public boolean isERROR_(){
-		return level>=900 && level<1000;
+	public boolean isERROR_() {
+		return level >= 900 && level < 1000;
 	}
-	
+
 	/**
 	 * Is this status a n error state: ERROR_*|FAILED
+	 * 
 	 * @return true if any error state
 	 */
-	public boolean isErrorState(){
-		return isERROR_() || this==FAILED;
+	public boolean isErrorState() {
+		return isERROR_() || this == FAILED;
 	}
-	
-	private static final Set<JobStatus> errorneousStates = Collections.unmodifiableSet(EnumSet.range(ERROR_A, FAILED)); 
-			
+
+	private static final Set<JobStatus> errorneousStates = Collections.unmodifiableSet(EnumSet.range(ERROR_A, FAILED));
+
 	/**
 	 * All error_*, expired and failed states
+	 * 
 	 * @return true if any
 	 */
-	public static final Set<JobStatus> errorneousStates(){
+	public static final Set<JobStatus> errorneousStates() {
 		return errorneousStates;
 	}
-	
 
 	private static final Set<JobStatus> runningStates = Collections.unmodifiableSet(EnumSet.of(RUNNING, STARTED, SAVING));
-	
+
 	/**
-	 * All running states 
+	 * All running states
+	 * 
 	 * @return the set of active states
 	 */
-	public static final Set<JobStatus> runningStates(){
+	public static final Set<JobStatus> runningStates() {
 		return runningStates;
 	}
-	
 
 	private static final Set<JobStatus> queuedStates = Collections.unmodifiableSet(EnumSet.of(ASSIGNED));
-	
+
 	/**
-	 * All queued states 
+	 * All queued states
+	 * 
 	 * @return the set of queued states
 	 */
-	public static final Set<JobStatus> queuedStates(){
+	public static final Set<JobStatus> queuedStates() {
 		return queuedStates;
 	}
 
 	private static final Set<JobStatus> finalStates = Collections.unmodifiableSet(EnumSet.range(DONE, KILLED));
-	
+
 	/**
-	 * All queued states 
+	 * All queued states
+	 * 
 	 * @return the set of error states
 	 */
-	public static final Set<JobStatus> finalStates(){
+	public static final Set<JobStatus> finalStates() {
 		return finalStates;
 	}
-	
+
 	private static final Set<JobStatus> doneStates = Collections.unmodifiableSet(EnumSet.range(DONE, DONE_WARN));
-	
+
 	/**
 	 * @return done states
 	 */
-	public static final Set<JobStatus> doneStates(){
+	public static final Set<JobStatus> doneStates() {
 		return doneStates;
 	}
-	
+
 	private static final Set<JobStatus> waitingStates = Collections.unmodifiableSet(EnumSet.of(INSERTING, EXPIRED, WAITING, ASSIGNED));
-	
+
 	/**
 	 * All waiting states
+	 * 
 	 * @return waiting states
 	 */
-	public static final Set<JobStatus> waitingStates(){
+	public static final Set<JobStatus> waitingStates() {
 		return waitingStates;
 	}
-	
+
 	/**
 	 * The level/index/age of this job status
+	 * 
 	 * @return numeric level
 	 */
-	public int level(){
+	public int level() {
 		return level;
 	}
-	
-	public int getAliEnLevel(){
+
+	public int getAliEnLevel() {
 		return alienLevel;
 	}
 
@@ -357,18 +365,18 @@ public enum JobStatus{
 	public String toString() {
 		return name();
 	}
-	
+
 	/**
 	 * @return the SQL selection for this level only
 	 */
-	public String toSQL(){
-		if (level==-1)
+	public String toSQL() {
+		if (level == -1)
 			return "%";
-		
+
 		return name();
 	}
-	
-	public static void main(String[] args) {
+
+	public static void main(final String[] args) {
 		System.err.println(alienToStatus.keySet());
 	}
 }

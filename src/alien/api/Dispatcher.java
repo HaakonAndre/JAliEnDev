@@ -9,7 +9,7 @@ import alien.config.ConfigUtils;
  */
 public class Dispatcher {
 
-	private static final ExpirationCache<String, Request> cache = new ExpirationCache<String, Request>(10240);
+	private static final ExpirationCache<String, Request> cache = new ExpirationCache<>(10240);
 
 	/**
 	 * @param r
@@ -51,9 +51,8 @@ public class Dispatcher {
 
 			ret = dispatchRequest(r);
 
-			if (ret != null) {
+			if (ret != null)
 				cache.put(key, ret, c.getTimeout());
-			}
 
 			return ret;
 		}

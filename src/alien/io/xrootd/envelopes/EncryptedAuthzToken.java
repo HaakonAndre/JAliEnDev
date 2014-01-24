@@ -66,10 +66,10 @@ public class EncryptedAuthzToken {
 	// private RSAPublicKey pubKey;
 
 	// the four key pairs necessary for encryption
-	private RSAPrivateKey AuthenPrivKey;
+	private final RSAPrivateKey AuthenPrivKey;
 	private RSAPublicKey AuthenPubKey;
 	private RSAPrivateKey SEPrivKey;
-	private RSAPublicKey SEPubKey;
+	private final RSAPublicKey SEPubKey;
 
 	static {
 		// the security provider used for decryption/verification
@@ -86,8 +86,7 @@ public class EncryptedAuthzToken {
 	 * 
 	 * @throws GeneralSecurityException
 	 */
-	public EncryptedAuthzToken(RSAPrivateKey PrivKey, RSAPublicKey PubKey,
-			boolean Decrypt) throws GeneralSecurityException {
+	public EncryptedAuthzToken(final RSAPrivateKey PrivKey, final RSAPublicKey PubKey, final boolean Decrypt) throws GeneralSecurityException {
 
 		if (Decrypt) {
 			this.SEPrivKey = PrivKey;
@@ -106,9 +105,9 @@ public class EncryptedAuthzToken {
 	 * @return the encrypted envelope or NULL if signature could not be verified
 	 * @throws GeneralSecurityException
 	 */
-	public String encrypt(String message) throws GeneralSecurityException {
+	public String encrypt(final String message) throws GeneralSecurityException {
 
-		Envelope env = new Envelope();
+		final Envelope env = new Envelope();
 		envelope = (env.create_ALICE_SE_Envelope(message)).getBytes();
 
 		// System.out.println("starting encryption of:" + (new
@@ -138,41 +137,39 @@ public class EncryptedAuthzToken {
 	private void encryptSealedCipher() throws GeneralSecurityException {
 		final KeyGenerator keyGenerator = KeyGenerator.getInstance("Blowfish", "BC");
 		keyGenerator.init(128);
-		
+
 		boolean ok;
-		
-		byte[] bkey; 
-		
+
+		byte[] bkey;
+
 		// ugly hack : make sure there is no NULL characted that would confuse C
 		do {
 			freshBlowfish = (SecretKeySpec) keyGenerator.generateKey();
-			
+
 			ok = true;
-			
+
 			bkey = freshBlowfish.getEncoded();
-			
-			for (int i=bkey.length-1; i>=0; i--)
-				if (bkey[i] == 0){
+
+			for (int i = bkey.length - 1; i >= 0; i--)
+				if (bkey[i] == 0) {
 					ok = false;
 					break;
 				}
-		}
-		while (!ok);
-		
+		} while (!ok);
+
 		freshBlowfish = new SecretKeySpec(bkey, 0, 16, "Blowfish");
 
 		final byte[] key = new byte[17];
 		System.arraycopy(bkey, 0, key, 0, 16);
 		key[16] = (byte) '\0';
-		SecretKeySpec freshBlowfishDASHED = new SecretKeySpec(key, 0, 17,
-				"Blowfish");
+		final SecretKeySpec freshBlowfishDASHED = new SecretKeySpec(key, 0, 17, "Blowfish");
 
 		final Cipher cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
 
 		cipher.init(Cipher.WRAP_MODE, SEPubKey);
-		
+
 		final byte[] encryptedCipher = cipher.wrap(freshBlowfishDASHED);
-		
+
 		// encode base64
 		final String sCipherEncryptedBase64 = Base64Moded.encodeBytes(encryptedCipher);
 
@@ -189,48 +186,47 @@ public class EncryptedAuthzToken {
 
 		signature = signEnvelope();
 
-		Cipher cipher = Cipher.getInstance("Blowfish/CBC/PKCS5Padding", "BC");
+		final Cipher cipher = Cipher.getInstance("Blowfish/CBC/PKCS5Padding", "BC");
 
-		cipher.init(Cipher.ENCRYPT_MODE, freshBlowfish, new IvParameterSpec(
-				BLOWFISH_IV));
+		cipher.init(Cipher.ENCRYPT_MODE, freshBlowfish, new IvParameterSpec(BLOWFISH_IV));
 
-		byte[] encryptedEnvelope = cipher.doFinal(envelope);
+		final byte[] encryptedEnvelope = cipher.doFinal(envelope);
 
 		// Base64-decode envelope
-		byte[] encryptedEnvelopeFinal = new byte[encryptedEnvelope.length + 4
-				+ signature.length];
+		final byte[] encryptedEnvelopeFinal = new byte[encryptedEnvelope.length + 4 + signature.length];
 
 		encryptedEnvelopeFinal[0] = ((byte) (signature.length >> 24));
 		encryptedEnvelopeFinal[1] = ((byte) ((signature.length << 8) >> 24));
 		encryptedEnvelopeFinal[2] = ((byte) ((signature.length << 16) >> 24));
 		encryptedEnvelopeFinal[3] = ((byte) ((signature.length << 24) >> 24));
 
-		System.arraycopy(signature, 0, encryptedEnvelopeFinal, 4,
-				signature.length);
+		System.arraycopy(signature, 0, encryptedEnvelopeFinal, 4, signature.length);
 
-		System.arraycopy(encryptedEnvelope, 0, encryptedEnvelopeFinal,
-				4 + signature.length, encryptedEnvelope.length);
+		System.arraycopy(encryptedEnvelope, 0, encryptedEnvelopeFinal, 4 + signature.length, encryptedEnvelope.length);
 
-		String sEnvelopeEncryptedBase64 = Base64Moded.encodeBytes(encryptedEnvelopeFinal);
+		final String sEnvelopeEncryptedBase64 = Base64Moded.encodeBytes(encryptedEnvelopeFinal);
 		this.envelopeEncryptedBase64 = new StringBuilder(sEnvelopeEncryptedBase64);
 
 	}
 
-	private static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4',
-			'5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+	private static final char[] DIGITS = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
 	/**
 	 * @param bytes
 	 * @return hex string
 	 */
-	public static String toHex(byte[] bytes) {
-		final char[] out = new char[bytes.length * 2]; // 2 hex characters per byte
-		
+	public static String toHex(final byte[] bytes) {
+		final char[] out = new char[bytes.length * 2]; // 2 hex characters per
+														// byte
+
 		for (int i = 0; i < bytes.length; i++) {
-			out[2 * i] = DIGITS[bytes[i] < 0 ? 8 + (bytes[i] + 128) / 16
-					: bytes[i] / 16]; // append sign bit for negative bytes
-			out[2 * i + 1] = DIGITS[bytes[i] < 0 ? (bytes[i] + 128) % 16
-					: bytes[i] % 16];
+			out[2 * i] = DIGITS[bytes[i] < 0 ? 8 + (bytes[i] + 128) / 16 : bytes[i] / 16]; // append
+																							// sign
+																							// bit
+																							// for
+																							// negative
+																							// bytes
+			out[2 * i + 1] = DIGITS[bytes[i] < 0 ? (bytes[i] + 128) % 16 : bytes[i] % 16];
 		}
 		return new String(out); // char sequence to string
 	}
@@ -244,7 +240,7 @@ public class EncryptedAuthzToken {
 	 */
 	private byte[] signEnvelope() throws GeneralSecurityException {
 
-		Signature signer = Signature.getInstance("SHA1withRSA", "BC");
+		final Signature signer = Signature.getInstance("SHA1withRSA", "BC");
 		signer.initSign(AuthenPrivKey);
 		signer.update(envelope);
 		return signer.sign();
@@ -260,22 +256,19 @@ public class EncryptedAuthzToken {
 	 */
 	private String getToken() throws GeneralSecurityException {
 
-		return CYPHER_START + "\n" + cipherEncryptedBase64.toString() + "\n"
-				+ CYPHER_END + "\n" + ENVELOPE_START + "\n"
-				+ envelopeEncryptedBase64.toString() + "\n" + ENVELOPE_END
-				+ "\n";
+		return CYPHER_START + "\n" + cipherEncryptedBase64.toString() + "\n" + CYPHER_END + "\n" + ENVELOPE_START + "\n" + envelopeEncryptedBase64.toString() + "\n" + ENVELOPE_END + "\n";
 	}
-
 
 	/**
 	 * Does the actual decryption/decoding of the raw token. This method should
 	 * not be called for more than one times.
-	 * @param rawToken 
+	 * 
+	 * @param rawToken
 	 * 
 	 * @return the decrypted envelope or NULL if signature could not be verified
 	 * @throws GeneralSecurityException
 	 */
-	public String decrypt(String rawToken) throws GeneralSecurityException {
+	public String decrypt(final String rawToken) throws GeneralSecurityException {
 
 		// split token into cipher and envelope
 		splitToken(rawToken);
@@ -283,10 +276,10 @@ public class EncryptedAuthzToken {
 		// get RSA-sealed cipher (aka session- or symmetric key(
 		decryptSealedCipher();
 
-		//System.out.println("sealed cipher decrypted");
+		// System.out.println("sealed cipher decrypted");
 		// decrypt signature and envelope with symmetric key using Blowfish
 		decryptSealedEnvelope();
-		//System.out.println("sealed envelope decrypted");
+		// System.out.println("sealed envelope decrypted");
 		// verify envelope using the signature
 		if (!verifyEnvelope()) {
 			System.out.println("VERIFICATION FAILED!");
@@ -305,14 +298,13 @@ public class EncryptedAuthzToken {
 	private void decryptSealedCipher() throws GeneralSecurityException {
 
 		// decode base64
-		byte[] encryptedCipher = Base64Moded
-				.decode(cipherEncryptedBase64.toString());
+		final byte[] encryptedCipher = Base64Moded.decode(cipherEncryptedBase64.toString());
 
 		// RSA-decrypt the session key by using the local private key
-		Cipher cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
+		final Cipher cipher = Cipher.getInstance("RSA/NONE/PKCS1Padding", "BC");
 		cipher.init(Cipher.UNWRAP_MODE, SEPrivKey);
 
-		Key key = cipher.unwrap(encryptedCipher, "Blowfish", Cipher.SECRET_KEY);
+		final Key key = cipher.unwrap(encryptedCipher, "Blowfish", Cipher.SECRET_KEY);
 
 		symmetricKey = key.getEncoded();
 	}
@@ -326,8 +318,7 @@ public class EncryptedAuthzToken {
 	private void decryptSealedEnvelope() throws GeneralSecurityException {
 
 		// Base64-decode envelope
-		byte[] encryptedEnvelope = Base64Moded.decode(envelopeEncryptedBase64
-				.toString());
+		final byte[] encryptedEnvelope = Base64Moded.decode(envelopeEncryptedBase64.toString());
 		// logger.debug("Sealed envelope total: "+encryptedEnvelope.length);
 
 		// envelope format:
@@ -343,25 +334,20 @@ public class EncryptedAuthzToken {
 		// Alien file catalogue version
 
 		// big endian
-		int signatureLength = encryptedEnvelope[0] & 0xff << 24
-				| encryptedEnvelope[1] & 0xff << 16 | encryptedEnvelope[2]
-				& 0xff << 8 | encryptedEnvelope[3] & 0xff;
+		final int signatureLength = encryptedEnvelope[0] & 0xff << 24 | encryptedEnvelope[1] & 0xff << 16 | encryptedEnvelope[2] & 0xff << 8 | encryptedEnvelope[3] & 0xff;
 
-		int envelopeOffset = 4 + signatureLength;
+		final int envelopeOffset = 4 + signatureLength;
 
 		// store signature into a seperate buffer
 		signature = new byte[signatureLength];
 		System.arraycopy(encryptedEnvelope, 4, signature, 0, signatureLength);
 
-		SecretKeySpec symKeySpec = new SecretKeySpec(symmetricKey, 0,
-				(symmetricKey.length - 1), "Blowfish");
+		final SecretKeySpec symKeySpec = new SecretKeySpec(symmetricKey, 0, (symmetricKey.length - 1), "Blowfish");
 
 		// BC provider doing blowfish decryption
-		Cipher cipher = Cipher.getInstance("Blowfish/CBC/PKCS5Padding", "BC");
-		cipher.init(Cipher.DECRYPT_MODE, symKeySpec, new IvParameterSpec(
-				BLOWFISH_IV));
-		envelope = cipher.doFinal(encryptedEnvelope, envelopeOffset,
-				encryptedEnvelope.length - envelopeOffset);
+		final Cipher cipher = Cipher.getInstance("Blowfish/CBC/PKCS5Padding", "BC");
+		cipher.init(Cipher.DECRYPT_MODE, symKeySpec, new IvParameterSpec(BLOWFISH_IV));
+		envelope = cipher.doFinal(encryptedEnvelope, envelopeOffset, encryptedEnvelope.length - envelopeOffset);
 	}
 
 	/**
@@ -373,7 +359,7 @@ public class EncryptedAuthzToken {
 	 */
 	private boolean verifyEnvelope() throws GeneralSecurityException {
 
-		Signature signer = Signature.getInstance("SHA1withRSA", "BC");
+		final Signature signer = Signature.getInstance("SHA1withRSA", "BC");
 		signer.initVerify(AuthenPubKey);
 		signer.update(envelope);
 		return signer.verify(signature);
@@ -387,14 +373,13 @@ public class EncryptedAuthzToken {
 	 *            the token which is going to be splitted
 	 * @throws GeneralSecurityException
 	 */
-	private void splitToken(String rawToken) throws GeneralSecurityException {
+	private void splitToken(final String rawToken) throws GeneralSecurityException {
 		cipherEncryptedBase64 = new StringBuilder();
 		envelopeEncryptedBase64 = new StringBuilder();
 
-		Stack<String> stack = new Stack<String>();
+		final Stack<String> stack = new Stack<>();
 
-		LineNumberReader input = new LineNumberReader(
-				new StringReader(rawToken));
+		final LineNumberReader input = new LineNumberReader(new StringReader(rawToken));
 
 		try {
 			String line = null;
@@ -407,36 +392,29 @@ public class EncryptedAuthzToken {
 				}
 
 				if (line.equals(CYPHER_END)) {
-					if (!stack.peek().equals(CYPHER_START)) {
-						throw new GeneralSecurityException(
-								"Illegal format: Cannot parse encrypted cipher");
-					}
+					if (!stack.peek().equals(CYPHER_START))
+						throw new GeneralSecurityException("Illegal format: Cannot parse encrypted cipher");
 					stack.pop();
 					continue;
 				}
 
 				if (line.equals(ENVELOPE_START)) {
 					// check if ENVELOPE part is not nested in CYPHER part
-					if (!stack.isEmpty()) {
-						throw new GeneralSecurityException(
-								"Illegal format: Cannot parse encrypted envelope");
-					}
+					if (!stack.isEmpty())
+						throw new GeneralSecurityException("Illegal format: Cannot parse encrypted envelope");
 					stack.push(ENVELOPE_START);
 					continue;
 				}
 
 				if (line.equals(ENVELOPE_END)) {
-					if (!stack.peek().equals(ENVELOPE_START)) {
-						throw new GeneralSecurityException(
-								"Illegal format: Cannot parse encrypted envelope");
-					}
+					if (!stack.peek().equals(ENVELOPE_START))
+						throw new GeneralSecurityException("Illegal format: Cannot parse encrypted envelope");
 					stack.pop();
 					continue;
 				}
 
-				if (stack.isEmpty()) {
+				if (stack.isEmpty())
 					continue;
-				}
 
 				if (stack.peek().equals(CYPHER_START)) {
 					cipherEncryptedBase64.append(line);
@@ -449,16 +427,14 @@ public class EncryptedAuthzToken {
 				}
 			}
 
-		} catch (IOException e) {
-			throw new GeneralSecurityException(
-					"error reading from token string");
+		} catch (final IOException e) {
+			throw new GeneralSecurityException("error reading from token string");
 		}
 
 		try {
 			input.close();
-		} catch (IOException e) {
-			throw new GeneralSecurityException(
-					"error closing stream where token string was parsed from");
+		} catch (final IOException e) {
+			throw new GeneralSecurityException("error closing stream where token string was parsed from");
 		}
 
 	}
@@ -476,17 +452,15 @@ public class EncryptedAuthzToken {
 	 *            the number of bytes to be dumped
 	 */
 	@SuppressWarnings("unused")
-	private static String arrayToHex(String name, byte[] array, int offset, int len) {
-		if (array == null) {
+	private static String arrayToHex(final String name, final byte[] array, final int offset, final int len) {
+		if (array == null)
 			return "";
-		}
 
-		StringBuffer sb = new StringBuffer(name + ": ");
+		final StringBuffer sb = new StringBuffer(name + ": ");
 		for (int i = offset; i < offset + len; i++) {
-			String s = Integer.toHexString(array[i] & 0xff);
-			if (s.length() == 1) {
+			final String s = Integer.toHexString(array[i] & 0xff);
+			if (s.length() == 1)
 				sb.append("0");
-			}
 			sb.append(s.toUpperCase());
 
 		}
@@ -508,8 +482,7 @@ public class EncryptedAuthzToken {
 	 * @throws CorruptedEnvelopeException
 	 *             is thrown if a parsing error occurs
 	 */
-	public Envelope getEnvelope() throws CorruptedEnvelopeException,
-			GeneralSecurityException {
+	public Envelope getEnvelope() throws CorruptedEnvelopeException, GeneralSecurityException {
 		return new Envelope(new String(envelope));
 	}
 

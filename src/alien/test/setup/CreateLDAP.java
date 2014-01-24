@@ -204,24 +204,24 @@ public class CreateLDAP {
 			final String logdir, final String cachedir, final String tmpdir) throws NamingException {
 
 		context = getLdapContext(); 
-		ArrayList<String> objClasses = new ArrayList<String>(2);
+		ArrayList<String> objClasses = new ArrayList<>(2);
 		objClasses.add("organizationalUnit");
 		objClasses.add("AliEnSite");
-		HashMap<String, Object> config = new HashMap<String, Object>();
+		HashMap<String, Object> config = new HashMap<>();
 		config.put("domain", domain);
 		config.put("logdir", logdir);
 		config.put("cachedir", cachedir);
 		config.put("tmpdir", tmpdir);
 		addToLDAP(objClasses, config, "ou=" + sitename + ",ou=Sites," + TestConfig.ldap_root);
 
-		objClasses = new ArrayList<String>(1);
+		objClasses = new ArrayList<>(1);
 		objClasses.add("organizationalUnit");
-		config = new HashMap<String, Object>();
+		config = new HashMap<>();
 		config.put("ou", "Config");
 		addToLDAP(objClasses, config, "ou=Config,ou=" + sitename + ",ou=Sites,"
 				+ TestConfig.ldap_root);
 		
-		config = new HashMap<String, Object>();
+		config = new HashMap<>();
 		config.put("ou", "Services");
 		addToLDAP(objClasses, config, "ou=Services,ou=" + sitename + ",ou=Sites,"
 				+ TestConfig.ldap_root);
@@ -229,7 +229,7 @@ public class CreateLDAP {
 		final String[] services = { "SE", "CE", "FTD", "PackMan" };
 
 		for (String service : Arrays.asList(services)) {
-			config = new HashMap<String, Object>();
+			config = new HashMap<>();
 			config.put("ou", service);
 			addToLDAP(objClasses, config, "ou=" + service + ",ou=Services,ou="
 					+ sitename + ",ou=Sites," + TestConfig.ldap_root);
@@ -255,11 +255,11 @@ public class CreateLDAP {
 		String port = iodeamon.substring(iodeamon.indexOf(':')+1);
 
 		context = getLdapContext(); 
-		ArrayList<String> objClasses = new ArrayList<String>(2);
+		ArrayList<String> objClasses = new ArrayList<>(2);
 		objClasses.add("AliEnSE");
 		objClasses.add("AliEnMSS");
 		objClasses.add("AliEnSOAPServer");
-		HashMap<String, Object> config = new HashMap<String, Object>();
+		HashMap<String, Object> config = new HashMap<>();
 		config.put("name", seName);
 		config.put("host", host);
 		config.put("mss", "File");
@@ -283,9 +283,9 @@ public class CreateLDAP {
 	protected static void addRoleToLDAP(final String role, final String user) throws NamingException{
 		
 		context = getLdapContext(); 
-		ArrayList<String> objClasses = new ArrayList<String>(1);
+		ArrayList<String> objClasses = new ArrayList<>(1);
 		objClasses.add("AliEnRole");
-		HashMap<String, Object> config = new HashMap<String, Object>();	
+		HashMap<String, Object> config = new HashMap<>();	
 		config.put("users", user);			
 		addToLDAP(objClasses, config, "uid="+role+",ou=Roles," + TestConfig.ldap_root);
 		context.close();
@@ -303,12 +303,12 @@ public class CreateLDAP {
 			final String certSubject) throws NamingException{
 	
 		context = getLdapContext(); 
-		ArrayList<String> objClasses = new ArrayList<String>(3);
+		ArrayList<String> objClasses = new ArrayList<>(3);
 		objClasses.add("posixAccount");
 		objClasses.add("AliEnUser");
 		objClasses.add("pkiUser");
 		
-		HashMap<String, Object> config = new HashMap<String, Object>();
+		HashMap<String, Object> config = new HashMap<>();
 		config.put("cn",user);
 		config.put("uid",user);
 		config.put("uidNumber",uid);
@@ -355,9 +355,9 @@ public class CreateLDAP {
 	
 	private static void addInitConfigToLDAP(){
 
-		ArrayList<String> objClasses = new ArrayList<String>(1);
+		ArrayList<String> objClasses = new ArrayList<>(1);
 		objClasses.add("AliEnVOConfig");
-		HashMap<String, Object> config = new HashMap<String, Object>();
+		HashMap<String, Object> config = new HashMap<>();
 		config.put("authPort", "8080");
 		config.put("catalogPort", "8081");
 		config.put("queuePort", "8082");
@@ -418,7 +418,7 @@ public class CreateLDAP {
 	private static void addToLDAP(
 			final String objClass, final String attribute) {
 
-				ArrayList<String> objClasses = new ArrayList<String>(1);
+				ArrayList<String> objClasses = new ArrayList<>(1);
 				objClasses.add(objClass);
 		addToLDAP(objClasses, new HashMap<String,Object>(0),attribute);
 		
@@ -456,7 +456,7 @@ public class CreateLDAP {
 		
 		DirContext ctx = null;
 		try {
-			Hashtable<String, String> env = new Hashtable<String, String>();
+			Hashtable<String, String> env = new Hashtable<>();
 			env.put(Context.INITIAL_CONTEXT_FACTORY,
 					"com.sun.jndi.ldap.LdapCtxFactory");
 			env.put(Context.SECURITY_AUTHENTICATION, "Simple");
