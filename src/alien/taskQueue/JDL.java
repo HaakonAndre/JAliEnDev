@@ -259,6 +259,10 @@ public class JDL implements Serializable {
 
 		return null;
 	}
+	
+	public boolean getb(final String key, final boolean defaultValue){
+		return Utils.stringToBool(gets(key), defaultValue);
+	}
 
 	/**
 	 * Get the value of this key as String
