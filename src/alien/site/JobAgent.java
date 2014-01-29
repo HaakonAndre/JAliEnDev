@@ -239,7 +239,7 @@ public class JobAgent extends Thread {
 			System.err.println("Error creating the OutputDir [" + outputDir + "].");
 			uploadedAllOutFiles = false;
 		}
-		if (uploadedAllOutFiles)
+		else
 			for (final String slfn : jdl.getOutputFiles()) {
 				File localFile;
 				try {
