@@ -1008,18 +1008,28 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 
 	/**
+	 * @param guid
+	 * @return chash
+	 */
+	public static int getCHash(final String guid){
+		int csum = 0;
+		
+		for (char c: guid.toCharArray()){
+			if (c!='-'){
+				csum += hexToInt(c);
+			}
+		}
+		
+		return csum%16;
+	}
+	
+	/**
 	 * From AliEn/GUID.pm#GetCHash
 	 * 
 	 * @return hash code
 	 */
 	public int getCHash() {
-		int csum = 0;
-
-		for (final char c : guid.toString().toCharArray())
-			if (c != '-')
-				csum += hexToInt(c);
-
-		return csum % 16;
+		return getCHash(guid.toString());
 	}
 
 	/**
@@ -1027,11 +1037,20 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * 
 	 * @return hash code
 	 */
-	public int getHash() {
+	public int getHash(){
+		return getHash(guid.toString());
+	}
+	
+	/**
+	 * From AliEn/GUID.pm#GetHash
+	 * 
+	 * @return hash code
+	 */
+	public static int getHash(final String guidValue) {
 		int c0 = 0;
 		int c1 = 0;
 
-		for (final char c : guid.toString().toCharArray())
+		for (final char c : guidValue.toCharArray())
 			if (c != '-') {
 				c0 += hexToInt(c);
 				c1 += c0;

@@ -3,16 +3,23 @@
  */
 package alien.se;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -24,7 +31,10 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.SEfromString;
 import alien.catalogue.CatalogueUtils;
+import alien.catalogue.GUID;
 import alien.catalogue.GUIDIndex;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.Host;
 import alien.catalogue.GUIDIndex.SEUsageStats;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
@@ -768,4 +778,191 @@ public final class SEUtils {
 	public static void main(final String[] args) {
 		updateSEUsageCache();
 	}
+	
+	/**
+	 * @param purge if <code>true</code> then all PFNs present on these SEs will be queued for physical deletion from the storage.
+	 * 	Set it to <code>false</code> if the content was already deleted, the storage was disconnected or there is another reason why 
+	 *  you don't care if the storage is cleaned or not.
+	 * @param seNames list of SE names to remove from the catalogue
+	 * @throws IOException
+	 */
+	public static void purgeSE(final boolean purge, final String... seNames) throws IOException{
+		final StringBuilder sbSE = new StringBuilder();
+
+		final Set<SE> ses = new HashSet<>();
+		
+		for (final String seName: seNames){
+			SE se = SEUtils.getSE(seName);
+		
+			if (se==null){
+				System.err.println("Unknown SE: "+seName);
+
+				if (seName.equals("ALICE::KISTI_GSDC::SE")){
+					se = new SE(seName, 311, "disk", "/", "root://xh11.sdfarm.kr:1094");
+				}
+				else
+				if (seName.equals("ALICE::GSI::SE")){
+					se = new SE(seName, 195, "disk", "/alien", "root://grid2.gsi.de:1094");
+				}
+				else
+					return;
+			}
+								
+			ses.add(se);
+		}
+		
+		for (final SE se: ses){
+			System.err.println("Deleting all replicas from: "+se);
+			
+			if (sbSE.length()>0)
+				sbSE.append(',');
+			
+			sbSE.append(se.seNumber);
+		}
+		
+		final PrintWriter pw = new PrintWriter(new FileWriter("orphaned_guids.txt", true));
+		
+		int copies[] = new int[10];
+		
+		int cnt=0;
+		
+		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()){
+			final Host h = CatalogueUtils.getHost(idx.hostIndex);
+			
+			final DBFunctions gdb = h.getDB();
+
+			gdb.query("select binary2string(guid) from G"+idx.tableName+"L inner join G"+idx.tableName+"L_PFN using (guidId) WHERE seNumber IN ("+sbSE+");");
+			
+			while (gdb.moveNext()){
+				if ((++cnt)%10000 == 0)
+					System.err.println(cnt);
+				
+				final String sguid = gdb.gets(1); 
+				
+				final GUID g = GUIDUtils.getGUID(sguid);
+				
+				if (g==null){
+					System.err.println("Unexpected: cannot load the GUID content of "+gdb.gets(1));
+					continue;
+				}
+				
+				for (final SE se: ses){
+					if (true){
+						g.removePFN(se, purge);
+						
+						if (g.getPFNs().size()==0){
+							System.err.println("Orphaned GUID "+sguid);
+							
+							pw.println(sguid);
+						}
+					}
+					
+					copies[Math.min(g.getPFNs().size(), copies.length-1)] ++;
+				}
+			}			
+		}
+		
+		for (int i=0; i<copies.length; i++){
+			System.err.println(i+" replicas: "+copies[i]);
+		}
+		
+		pw.flush();
+		pw.close();
+	}
+	
+	/**
+	 * Redirect all files indicated to be on the source SE to point to the destination SE instead.
+	 * To be used if a temporary SE took in all the files of an older SE by other means than the
+	 * AliEn data management tools.
+	 * 
+	 * @param seSource source SE, to be freed
+	 * @param seDest destination SE, that accepted the files already
+	 * @param debug if <code>true</code> then the operation will NOT be executed, the queries will only be
+	 *   logged on screen for manually checking them. It is recommended to run it once in this more and only
+	 *   if everything looks ok to commit to executing it, by passing <code>false</code> as this parameter.
+	 */
+	public static void moveSEContent(final String seSource, final String seDest, final boolean debug){
+		final SE source = SEUtils.getSE(seSource);
+		final SE dest = SEUtils.getSE(seDest);
+		
+		if (source==null || dest==null){
+			System.err.println("Invalid SEs");
+			return;
+		}
+		
+		System.err.println("Renumbering "+source.seNumber+" to "+dest.seNumber);
+		
+		for (final GUIDIndex idx: CatalogueUtils.getAllGUIDIndexes()){
+			final DBFunctions db = CatalogueUtils.getHost(idx.hostIndex).getDB();
+			
+			if (db == null){
+				System.err.println("Cannot get DB for "+idx);
+				continue;
+			}
+			
+			final String q1 = "UPDATE G"+idx.tableName+"L_PFN SET seNumber="+dest.seNumber+" WHERE seNumber="+source.seNumber;
+			final String q2 = "UPDATE G"+idx.tableName+"L SET seStringlist=replace(sestringlist,',"+source.seNumber+",',',"+dest.seNumber+",') WHERE seStringlist LIKE '%,"+source.seNumber+",%';"; 
+			
+			if (debug){
+				System.err.println(q1);
+				System.err.println(q2);
+			}
+			else{
+				boolean ok = db.query(q1);
+				System.err.println(q1+" : "+ok+" : "+db.getUpdateCount());
+				
+				ok = db.query(q2);
+				
+				System.err.println(q2+" : "+ok+" : "+db.getUpdateCount());
+			}
+		}
+	}
+	
+	/**
+	 * Dump all PFNs present in the given SEs in individual CSV files named "<SE name>.file_list", with the following format:<br>
+	 * #PFN,size,MD5
+	 * 
+	 * @param realPFNs if <code>true</code> the catalogue PFNs will be written, if <code>false</code> the PFNs will be generated from the code again.
+	 *   It should be set to <code>false</code> if there were any reindexing done in the database and the PFN strings still point to the old SE.
+	 * @param ses SEs to dump the content from
+	 * @throws Exception
+	 */
+	public static void masterSE(final boolean realPFNs, final String... ses) throws Exception {
+		final NumberFormat twoDigits = new DecimalFormat("00");
+		final NumberFormat fiveDigits = new DecimalFormat("00000");
+		
+		for (final String seName: ses){
+			final SE se = SEUtils.getSE(seName);
+			
+			final PrintWriter pw = new PrintWriter(new FileWriter(seName+".file_list"));
+			
+			pw.println("#PFN,size,MD5");
+			
+			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()){
+				final Host h = CatalogueUtils.getHost(idx.hostIndex);
+				
+				final DBFunctions gdb = h.getDB();
+	
+				if (realPFNs){
+					gdb.query("select pfn,size,md5 from G"+idx.tableName+"L inner join G"+idx.tableName+"L_PFN using (guidId) WHERE seNumber="+se.seNumber+";");
+					
+					while (gdb.moveNext())
+						pw.println(gdb.gets(1)+","+gdb.getl(2)+","+gdb.gets(3));
+				}
+				else{
+					gdb.query("select binary2string(guid),size,md5 from G"+idx.tableName+"L INNER JOIN G"+idx.tableName+"L_PFN using(guidId) where seNumber="+se.seNumber+";");
+					
+					while (gdb.moveNext()){
+						final String guid = gdb.gets(1);
+						
+						pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid+","+gdb.getl(2)+","+gdb.gets(3));
+					}
+				}
+			}
+			
+			pw.flush();
+			pw.close();
+		}
+	}
+
 }
