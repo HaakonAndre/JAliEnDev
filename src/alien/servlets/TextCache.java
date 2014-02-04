@@ -292,7 +292,7 @@ public class TextCache extends ExtendedServlet {
 						cache.clear();
 					}
 				}
-			else if (gets("ns").length() == 0)
+			else if (gets("ns").length() == 0){
 				for (final Map.Entry<String, Map<String, CacheValue>> entry : namespaces.entrySet()) {
 					final Map<String, CacheValue> cache = entry.getValue();
 
@@ -323,6 +323,11 @@ public class TextCache extends ExtendedServlet {
 						pwOut.println(entry.getKey() + " : " + cache.size() + " (min: " + min + ", avg: " + Format.point(avg) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits
 								+ " hits");
 				}
+			
+				final Runtime r = Runtime.getRuntime();
+				
+				pwOut.println("\nJava memory stats: "+Format.size(r.totalMemory())+" total memory, "+Format.size(r.maxMemory())+" max memory, "+Format.size(r.freeMemory())+" free");
+			}
 			else {
 				final Map<String, CacheValue> cache = namespaces.get(ns);
 
