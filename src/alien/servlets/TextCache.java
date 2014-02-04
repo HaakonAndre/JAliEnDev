@@ -8,6 +8,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -327,6 +328,8 @@ public class TextCache extends ExtendedServlet {
 				final Runtime r = Runtime.getRuntime();
 				
 				pwOut.println("\nJava memory stats: "+Format.size(r.totalMemory())+" total memory, "+Format.size(r.maxMemory())+" max memory, "+Format.size(r.freeMemory())+" free");
+				pwOut.println("Java version: "+System.getProperty("java.version"));
+				pwOut.println("Uptime: "+Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
 			}
 			else {
 				final Map<String, CacheValue> cache = namespaces.get(ns);
