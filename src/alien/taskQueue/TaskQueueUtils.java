@@ -1490,6 +1490,8 @@ public class TaskQueueUtils {
 
 			setAction(targetStatus);
 
+			putJobLog(pid.intValue(), "state", "Job state transition to "+targetStatus.toString(), null);
+			
 			return pid.intValue();
 		} finally {
 			db.close();
