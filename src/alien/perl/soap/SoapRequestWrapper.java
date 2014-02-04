@@ -126,11 +126,7 @@ public class SoapRequestWrapper {
 		this.actionArguments = alRequestParam;
 
 	}
-
-	/**
-	 * @param se
-	 * @return
-	 */
+	
 	private Object parseSoapElement(final SOAPElement se) {
 
 		if (se.getAttribute("xsi:type") != null && se.getAttribute("xsi:type").equals("xsd:string")) {

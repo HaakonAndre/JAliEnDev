@@ -266,7 +266,7 @@ public class SE implements Serializable, Comparable<SE> {
 	 * comma-separated list of elements
 	 * 
 	 * @param set
-	 * @return
+	 * @return the comma separated list of the values in the given set
 	 */
 	public static String toArrayString(final Set<String> set) {
 		if (set == null)

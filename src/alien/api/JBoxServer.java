@@ -235,7 +235,7 @@ public class JBoxServer extends Thread {
 	 * @param iPort
 	 * @param sPassword
 	 * @param sUser
-	 * @return
+	 * @return <code>true</code> if everything went fine, <code>false</code> if there was an error writing the env file
 	 */
 	private static boolean writeEnvFile(final String sHost, final int iPort, final String sUser) {
 		final String sUserId = System.getProperty("userid");

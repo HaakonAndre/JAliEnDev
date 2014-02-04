@@ -152,7 +152,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	/**
 	 * Get default user role, normally the same name as the account
 	 * 
-	 * @return
+	 * @return the name of the default role of this account
 	 */
 	public String getDefaultRole() {
 		final Set<String> allroles = getRoles();

@@ -323,9 +323,6 @@ public final class TransferUtils {
 	 *            always pass <code>true</code> unless you are sure no such
 	 *            transfer could previously exist (either because it was just
 	 *            checked or whatever)
-	 * @param onCompletionRemoveReplica
-	 *            a move mirror operation, on successful transfer remove the
-	 *            mirror from this SE
 	 * @return the transfer ID, <code>0</code> in case the file is already on
 	 *         the target SE, or a negative number in case of problems (-1=wrong
 	 *         parameters, -2=database connection missing, -3=cannot locate real
