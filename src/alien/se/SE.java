@@ -134,9 +134,9 @@ public class SE implements Serializable, Comparable<SE> {
 		this.demoteRead = 0;
 		this.demoteWrite = 0;
 		this.seUsedSpace = 0;
-		this.exclusiveUsers = Collections.EMPTY_SET;
-		this.seExclusiveRead = Collections.EMPTY_SET;
-		this.seExclusiveWrite = Collections.EMPTY_SET;
+		this.exclusiveUsers = Collections.emptySet();
+		this.seExclusiveRead = Collections.emptySet();
+		this.seExclusiveWrite = Collections.emptySet();
 		this.seType = "n/a";
 	}
 
