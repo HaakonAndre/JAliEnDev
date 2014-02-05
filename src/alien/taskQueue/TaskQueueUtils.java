@@ -2113,30 +2113,19 @@ public class TaskQueueUtils {
 	}
 
 	private static boolean deleteJobToken(final int queueId) {
-		final DBFunctions db = getAdminDB();
+		final DBFunctions db = getQueueDB();
 
 		if (monitor != null)
-			monitor.incrementCounter("ADM_db_lookup");
-
-		final String q = "SELECT * FROM JOBTOKEN WHERE jobId=?;";
+			monitor.incrementCounter("QUEUE_db_lookup");
 
 		try {
-			if (!db.query(q, false, Integer.valueOf(queueId)))
+			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Integer.valueOf(queueId)))
 				return false;
 
-			if (!db.moveNext())
-				return false;
-
-			final JobToken jb = new JobToken(db);
-
-			if (jb.exists())
-				return jb.destroy(db);
+			return db.getUpdateCount()>0;
 		} finally {
 			db.close();
 		}
-
-		return false;
-
 	}
 
 	/**
