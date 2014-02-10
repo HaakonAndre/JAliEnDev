@@ -1304,8 +1304,6 @@ public class TaskQueueUtils {
 		jdl.addRequirement("other.TTL > " + ttl);
 		jdl.addRequirement("other.Price <= 1");
 
-		// InputFile -> (InputDownload and InputBox)
-
 		final List<String> inputFiles = jdl.getList("InputFile");
 
 		if (inputFiles != null)
@@ -1324,9 +1322,6 @@ public class TaskQueueUtils {
 
 				if (l == null || !l.isFile())
 					throw new IOException("InputFile " + lfn + " doesn't exist in the catalogue");
-
-				jdl.append("InputBox", lfn);
-				jdl.append("InputDownload", l.getFileName() + "->" + lfn);
 			}
 
 		final List<String> inputData = jdl.getList("InputData");
