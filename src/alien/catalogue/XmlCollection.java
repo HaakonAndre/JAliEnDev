@@ -5,8 +5,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 
 import lazyj.Format;
 import lazyj.Utils;
@@ -18,7 +18,7 @@ import alien.io.IOUtils;
  * @author costing
  * @since 2012-02-15
  */
-public class XmlCollection extends ArrayList<LFN>{
+public class XmlCollection extends LinkedHashSet<LFN>{
 
 	/**
 	 * 
