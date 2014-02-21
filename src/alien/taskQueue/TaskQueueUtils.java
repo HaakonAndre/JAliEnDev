@@ -2114,10 +2114,17 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("QUEUE_db_lookup");
 
 		try {
-			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Integer.valueOf(queueId)))
+			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Integer.valueOf(queueId))){
+				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
+				
 				return false;
+			}
 
-			return db.getUpdateCount()>0;
+			final int cnt = db.getUpdateCount();
+			
+			putJobLog(queueId, "state", "Job token deletion query affected "+cnt+" rows", null);
+			
+			return cnt>0;
 		} finally {
 			db.close();
 		}
