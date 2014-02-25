@@ -109,7 +109,7 @@ public class JAKeyStore {
 				cf = CertificateFactory.getInstance("X.509");
 
 				for (final File trust : trustsDir.listFiles())
-					if (trust.getName().endsWith("der")) {
+					if (trust.getName().endsWith("der") || trust.getName().endsWith(".0")) {
 						FileInputStream fis = null;
 
 						try {
