@@ -119,13 +119,13 @@ public class JAKeyStore {
 							if (logger.isLoggable(Level.INFO))
 								logger.log(Level.INFO, "Trusting now: " + c.getSubjectDN());
 
-							trustStore.setEntry(trust.getName().substring(0, trust.getName().indexOf(".der")), new KeyStore.TrustedCertificateEntry(c), null);
+							trustStore.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
 
 							if (hostCert != null)
-								hostCert.setEntry(trust.getName().substring(0, trust.getName().indexOf(".der")), new KeyStore.TrustedCertificateEntry(c), null);
+								hostCert.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
 
 							if (clientCert != null)
-								clientCert.setEntry(trust.getName().substring(0, trust.getName().indexOf(".der")), new KeyStore.TrustedCertificateEntry(c), null);
+								clientCert.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
 
 						} catch (final Exception e) {
 							e.printStackTrace();
