@@ -817,8 +817,12 @@ public class JDL implements Serializable {
 			return -1;
 
 		for (final String file : inputFiles)
-			if (file.endsWith("sim.C"))
-				return getSimFactor(LFNUtils.getLFN(file));
+			if (file.endsWith("sim.C")){
+				int simFactor = getSimFactor(LFNUtils.getLFN(file));
+				
+				if (simFactor>0)
+					return simFactor;
+			}
 
 		return -1;
 	}
