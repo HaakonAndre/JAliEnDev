@@ -271,6 +271,11 @@ public class RootPrintWriter extends UIPrintWriter {
 		// ignored
 	}
 
+	@Override
+	void setReturnCode(int exitCode, String errorMessage) {
+		// ignored
+	}
+
 	//
 	// my $calledfunction = shift @args;
 	// if ($calledfunction eq "AliEn::Catalogue") {

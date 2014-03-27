@@ -72,6 +72,8 @@ public class XMLPrintWriter extends UIPrintWriter {
 		
 		final PrintWriter pw = new PrintWriter(os);
 		
+		metaInfo.put("count", String.valueOf(results.size()));
+		
 		pw.print("<document");
 		dumpMap(pw, metaInfo);
 		pw.println(">");
@@ -85,6 +87,9 @@ public class XMLPrintWriter extends UIPrintWriter {
 		pw.println("</document>");
 		
 		pw.flush();
+		
+		results.clear();
+		metaInfo.clear();
 	}
 	
 	private static void dumpMap(final PrintWriter pw, final Map<String, String> result) {
@@ -123,5 +128,22 @@ public class XMLPrintWriter extends UIPrintWriter {
 		}
 		
 		currentResult.put(key, value);
+	}
+
+	/**
+	 * Set a result meta information
+	 * 
+	 * @param key
+	 * @param value
+	 * @return the previous meta information value for this key
+	 */
+	public String setMetaInfo(final String key, final String value){
+		return metaInfo.put(key, value);
+	}
+	
+	@Override
+	void setReturnCode(final int exitCode, final String errorMessage) {
+		setMetaInfo("exitcode", String.valueOf(exitCode));
+		setMetaInfo("message", errorMessage);
 	}
 }

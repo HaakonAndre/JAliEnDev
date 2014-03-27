@@ -65,11 +65,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 
-		int iDirs = alPaths.size();
+		final int iDirs = alPaths.size();
 
 		if (iDirs == 0)
 			alPaths.add(commander.getCurrentDir().getCanonicalName());
 
+		StringBuilder pathsNotFound = new StringBuilder();
+		
 		for (String sPath : alPaths) {
 
 			// listing current directory
@@ -86,7 +88,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 				else
 					directory.addAll(subdirectory);
 
-				for (LFN localLFN : subdirectory) {
+				for (final LFN localLFN : subdirectory) {
 
 					logger.log(Level.FINE, localLFN.toString());
 
@@ -101,23 +103,19 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 						
 						if (bB){
 							out.setField("guid", localLFN.guid.toString().toUpperCase());
-							out.setField("lfn", localLFN.getName());
+							out.setField("lfn", bC ? localLFN.getCanonicalName() : localLFN.getFileName());
 						}
 						else{
-							if (bC)
-								out.setField("lfn", localLFN.getCanonicalName());
+							if (bL){
+								out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
+								out.setField("owner", localLFN.owner);
+								out.setField("group", localLFN.gowner);
+								out.setField("size", String.valueOf(localLFN.size));
+								out.setField("ctime", String.valueOf(localLFN.ctime.getTime()/1000));
+								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName())+(bF && localLFN.isDirectory() ? "/" : ""));
+							}
 							else{
-								if (bL){
-									out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
-									out.setField("owner", localLFN.owner);
-									out.setField("group", localLFN.gowner);
-									out.setField("size", String.valueOf(localLFN.size));
-									out.setField("ctime", format(localLFN.ctime));
-									out.setField("lfn", localLFN.getFileName()+(bF && localLFN.isDirectory() ? "/" : ""));
-								}
-								else{
-									out.setField("lfn", localLFN.getFileName()+(bF && localLFN.isDirectory() ? "/" : ""));
-								}
+								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName())+(bF && localLFN.isDirectory() ? "/" : ""));
 							}
 						}
 					}
@@ -158,10 +156,19 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 				}
 			}
 			else{
+				if (pathsNotFound.length()>0)
+					pathsNotFound.append(", ");
+				
+				pathsNotFound.append(sPath);
+				
 				logger.log(Level.SEVERE, "No such file or directory: [" + sPath + "]");
 				out.printOutln("No such file or directory: [" + sPath + "]");
 			}
 
+		}
+		
+		if (pathsNotFound.length()>0){
+			out.setReturnCode(1, "No such file or directory: "+pathsNotFound);
 		}
 
 //		if (out.isRootPrinter())

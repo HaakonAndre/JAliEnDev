@@ -19,8 +19,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class
-			.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class.getCanonicalName());
 	
 	
 	/**

@@ -151,5 +151,10 @@ public class JShPrintWriter extends UIPrintWriter{
 	void setField(String key, String value) {
 		// ignored
 	}
+
+	@Override
+	void setReturnCode(int exitCode, String errorMessage) {
+		// ignored
+	}
 	
 }

@@ -380,6 +380,10 @@ public class JAliEnCOMMander extends Thread {
 		}
 
 		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
+		
+		if (out instanceof XMLPrintWriter)
+			((XMLPrintWriter) out).setMetaInfo("command", args.toString());
+		
 		args.remove(arg[0]);
 
 		for (int i = 1; i < arg.length; i++)
