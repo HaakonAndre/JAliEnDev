@@ -17,13 +17,12 @@ import alien.catalogue.LFN;
 
 /**
  * @author ron
- * @since June 4, 2011
- * running ls command with possible options  <br />                                                                                                                                                                  
- *     -l                     :  long format <br />                                                                                                                                                                    
- *     -a                     :  show hidden .* files <br />                                                                                                                                                            
- *     -F                     :  add trailing / to directory names <br />                                                                                                                                               
- *     -b                     :  print in GUID format  <br />                                                                                                                                                          
- *     -c                     :  print canonical paths  <br />                                                                                                                                                                                                                 
+ * @since June 4, 2011 running ls command with possible options <br />
+ *        -l : long format <br />
+ *        -a : show hidden .* files <br />
+ *        -F : add trailing / to directory names <br />
+ *        -b : print in GUID format <br />
+ *        -c : print canonical paths <br />
  */
 public class JAliEnCommandls extends JAliEnBaseCommand {
 
@@ -71,7 +70,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			alPaths.add(commander.getCurrentDir().getCanonicalName());
 
 		StringBuilder pathsNotFound = new StringBuilder();
-		
+
 		for (String sPath : alPaths) {
 
 			// listing current directory
@@ -83,7 +82,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
 
 			if (subdirectory != null) {
-				if (directory==null)
+				if (directory == null)
 					directory = new ArrayList<>(subdirectory);
 				else
 					directory.addAll(subdirectory);
@@ -94,39 +93,36 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 					if (!bA && localLFN.getFileName().startsWith("."))
 						continue;
-					
+
 					if (bB && localLFN.isDirectory())
 						continue;
 
-					if (out.isRootPrinter()){
+					if (out.isRootPrinter()) {
 						out.nextResult();
-						
-						if (bB){
+
+						if (bB) {
 							out.setField("guid", localLFN.guid.toString().toUpperCase());
 							out.setField("lfn", bC ? localLFN.getCanonicalName() : localLFN.getFileName());
-						}
-						else{
-							if (bL){
+						} else {
+							if (bL) {
 								out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
 								out.setField("owner", localLFN.owner);
 								out.setField("group", localLFN.gowner);
 								out.setField("size", String.valueOf(localLFN.size));
-								out.setField("ctime", String.valueOf(localLFN.ctime.getTime()/1000));
-								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName())+(bF && localLFN.isDirectory() ? "/" : ""));
-							}
-							else{
-								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName())+(bF && localLFN.isDirectory() ? "/" : ""));
+								out.setField("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
+								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
+							} else {
+								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
 							}
 						}
-					}
-					else{
+					} else {
 						String ret = "";
 						if (bB) {
 							ret += localLFN.guid.toString().toUpperCase() + padSpace(3) + localLFN.getName();
 						} else {
-							if(bC)
+							if (bC)
 								ret += localLFN.getCanonicalName();
-							else{
+							else {
 								if (bL)
 									ret += FileSystemUtils
 									.getFormatedTypeAndPerm(localLFN)
@@ -142,41 +138,39 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	
 								else
 									ret += localLFN.getFileName();
-	
+
 								if (bF && (localLFN.type == 'd'))
 									ret += "/";
-							}	
+							}
 						}
-	
-						logger.info("LS line : "+ret);
-	
+
+						logger.info("LS line : " + ret);
+
 						if (!isSilent())
 							out.printOutln(ret);
 					}
 				}
-			}
-			else{
-				if (pathsNotFound.length()>0)
+			} else {
+				if (pathsNotFound.length() > 0)
 					pathsNotFound.append(", ");
-				
+
 				pathsNotFound.append(sPath);
-				
+
 				logger.log(Level.SEVERE, "No such file or directory: [" + sPath + "]");
 				out.printOutln("No such file or directory: [" + sPath + "]");
 			}
 
 		}
-		
-		if (pathsNotFound.length()>0){
-			out.setReturnCode(1, "No such file or directory: "+pathsNotFound);
+
+		if (pathsNotFound.length() > 0) {
+			out.setReturnCode(1, "No such file or directory: " + pathsNotFound);
 		}
 
-//		if (out.isRootPrinter())
-//			out.setReturnArgs(deserializeForRoot());
+		// if (out.isRootPrinter())
+		// out.setReturnArgs(deserializeForRoot());
 	}
 
-	private static final DateFormat formatter = new SimpleDateFormat(
-	"MMM dd HH:mm");
+	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
 
 	private static synchronized String format(final Date d) {
 		return formatter.format(d);
@@ -197,13 +191,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		out.printOutln();
-		out.printOutln(helpUsage("ls","[-options] [<directory>]"));
+		out.printOutln(helpUsage("ls", "[-options] [<directory>]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-l","long format"));
-		out.printOutln(helpOption("-a","show hidden .* files"));
-		out.printOutln(helpOption("-F","add trailing / to directory names"));
-		out.printOutln(helpOption("-b","print in guid format"));
-		out.printOutln(helpOption("-c","print canonical paths"));
+		out.printOutln(helpOption("-l", "long format"));
+		out.printOutln(helpOption("-a", "show hidden .* files"));
+		out.printOutln(helpOption("-F", "add trailing / to directory names"));
+		out.printOutln(helpOption("-b", "print in guid format"));
+		out.printOutln(helpOption("-c", "print canonical paths"));
 		out.printOutln();
 	}
 
@@ -218,72 +212,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * serialize return values for gapi/root
-	 * 
-	 * @return serialized return
-	 */
-	@Override
-	public String deserializeForRoot() {
-		logger.log(Level.INFO, toString());
-
-		final StringBuilder ret = new StringBuilder();
-
-		final SimpleDateFormat sdt = new SimpleDateFormat("MMM dd HH:mm");
-
-		if (directory != null) {
-			String col = RootPrintWriter.columnseparator;
-			String desc = RootPrintWriter.fielddescriptor;
-			String sep = RootPrintWriter.fieldseparator;
-
-			for (final LFN lfn : directory) {
-				if (!bA && lfn.getFileName().startsWith("."))
-					continue;
-
-				if(bB){
-					if(lfn.type != 'd') {
-						ret.append(col);
-						ret.append(desc).append("path").append(sep).append(lfn.getCanonicalName());
-						ret.append(desc).append("guid").append(sep).append(lfn.guid);
-					}
-				}
-				else if(bC){
-					ret.append(col);
-					ret.append(desc).append("name").append(sep).append(lfn.getCanonicalName());
-				}
-				else if(bL){
-					ret.append(col);
-					ret.append(desc).append("group").append(sep).append(lfn.gowner);
-					ret.append(desc).append("permissions").append(sep).append(FileSystemUtils.getFormatedTypeAndPerm(lfn));
-					ret.append(desc).append("date").append(sep).append(sdt.format(lfn.ctime));
-					ret.append(desc).append("name").append(sep).append(lfn.getFileName());
-
-					if(bF && (lfn.type == 'd'))
-						ret.append('/');
-
-					ret.append(desc).append("user").append(sep).append(lfn.owner);
-					ret.append(desc).append("path").append(sep).append(lfn.getParentName());
-					ret.append(desc).append("md5").append(sep).append(lfn.md5);
-					ret.append(desc).append("size").append(sep).append(lfn.size);
-				}
-				else{
-					ret.append(col);
-					ret.append(desc).append("name").append(sep).append(lfn.getFileName());
-				
-					if(bF && (lfn.type == 'd'))
-						ret.append('/');
-
-					ret.append(desc).append("path").append(sep).append(lfn.getParentName());
-				}
-			}
-
-			return ret.toString();
-		}
-
-		return super.deserializeForRoot();
-
-	}
-
-	/**
 	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param commander
@@ -291,10 +219,9 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
-	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 
@@ -307,8 +234,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			parser.accepts("F");
 			parser.accepts("c");
 
-			final OptionSet options = parser.parse(alArguments
-					.toArray(new String[] {}));
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(options.nonOptionArguments());
@@ -325,7 +251,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		}
 	}
 
-
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
@@ -333,11 +258,16 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		sb.append("\n { JAliEnCommandls received\n");
 		sb.append("Arguments: ");
 
-		if(bL) sb.append(" -l ");
-		if(bA) sb.append(" -a ");
-		if(bF) sb.append(" -f ");
-		if(bC) sb.append(" -c ");
-		if(bB) sb.append(" -b ");
+		if (bL)
+			sb.append(" -l ");
+		if (bA)
+			sb.append(" -a ");
+		if (bF)
+			sb.append(" -f ");
+		if (bC)
+			sb.append(" -c ");
+		if (bB)
+			sb.append(" -b ");
 
 		sb.append("}");
 
