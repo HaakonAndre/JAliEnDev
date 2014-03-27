@@ -24,8 +24,8 @@ import alien.monitoring.MonitorFactory;
 import alien.se.SEUtils;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JShPrintWriter;
-import alien.shell.commands.RootPrintWriter;
 import alien.shell.commands.UIPrintWriter;
+import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
@@ -354,7 +354,7 @@ public class JBoxServer extends Thread {
 			if (shelltype.equals("jaliensh"))
 				out = new JShPrintWriter(os);
 			else
-				out = new RootPrintWriter(os);
+				out = new XMLPrintWriter(os);
 		}
 
 		@Override
@@ -416,24 +416,15 @@ public class JBoxServer extends Thread {
 						} catch (final Throwable t) {
 							// ignore
 						} finally {
-
 							System.out.println("SIGINT reset commander");
 
-							final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out); // kill
-																																												// the
-																																												// active
-																																												// command
-																																												// and
-																																												// start
-																																												// a
-																																												// new
-																																												// one
+							// kill the active command and start a new instance
+							final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out); 
 							commander = comm;
 
 							commander.start();
 
 							commander.flush();
-
 						}
 
 					} else if ("shutdown".equals(line))
@@ -458,7 +449,7 @@ public class JBoxServer extends Thread {
 							}
 
 							if (out == null)
-								out = new RootPrintWriter(os);
+								out = new XMLPrintWriter(os);
 
 							commander.setLine(out, args.toArray(new String[] {}));
 
