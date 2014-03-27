@@ -26,6 +26,8 @@ public class XMLPrintWriter extends UIPrintWriter {
 	 */
 	public XMLPrintWriter(final OutputStream os) {
 		this.os = os;
+		
+		setReturnCode(0, null);
 	}
 	
 	private final Map<String, String> metaInfo = new TreeMap<>();
@@ -90,6 +92,8 @@ public class XMLPrintWriter extends UIPrintWriter {
 		
 		results.clear();
 		metaInfo.clear();
+		
+		setReturnCode(0, null);
 	}
 	
 	private static void dumpMap(final PrintWriter pw, final Map<String, String> result) {
@@ -138,7 +142,10 @@ public class XMLPrintWriter extends UIPrintWriter {
 	 * @return the previous meta information value for this key
 	 */
 	public String setMetaInfo(final String key, final String value){
-		return metaInfo.put(key, value);
+		if (value!=null)
+			return metaInfo.put(key, value);
+		
+		return metaInfo.remove(key);
 	}
 	
 	@Override

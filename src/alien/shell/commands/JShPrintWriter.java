@@ -153,8 +153,8 @@ public class JShPrintWriter extends UIPrintWriter{
 	}
 
 	@Override
-	void setReturnCode(int exitCode, String errorMessage) {
-		// ignored
+	void setReturnCode(final int exitCode, final String errorMessage) {
+		printErr(errorMessage);
 	}
 	
 }

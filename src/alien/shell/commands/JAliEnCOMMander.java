@@ -10,6 +10,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import joptsimple.OptionException;
+import lazyj.Format;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.TaskQueueApiUtils;
@@ -413,7 +414,6 @@ public class JAliEnCOMMander extends Thread {
 						}
 
 		if (!Arrays.asList(jAliEnCommandList).contains(comm)) {
-
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
 				if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
@@ -434,7 +434,7 @@ public class JAliEnCOMMander extends Thread {
 				// } else if (!"setshell".equals(comm)) {
 			}
 			else
-				out.printErrln("Command [" + comm + "] not found!");
+				out.setReturnCode(-1, "Command [" + comm + "] not found!");
 			// }
 		}
 		else {
@@ -447,13 +447,14 @@ public class JAliEnCOMMander extends Thread {
 			catch (final Exception e) {
 
 				if (e.getCause() instanceof OptionException) {
-					out.printErrln("Wrong arguments.");
-					out.flush();
+					out.setReturnCode(-2, "Illegal command options");
 				}
 				else {
-					out.printErrln("Error executing command [" + comm + "] (Potentially class implementation not found).");
 					e.printStackTrace();
+					
+					out.setReturnCode(-3, "Error executing command ["+comm+"] : \n"+Format.stackTraceToString(e));
 				}
+				
 				out.flush();
 				return;
 			}
@@ -481,12 +482,14 @@ public class JAliEnCOMMander extends Thread {
 					jcommand.run();
 				}
 				else {
+					out.setReturnCode(-4, "Command requires an argument");
 					jcommand.printHelp();
 				}
 			}
 			catch (final Exception e) {
 				e.printStackTrace();
-				out.printErrln("Error executing the command [" + comm + "].");
+
+				out.setReturnCode(-5, "Error executing the command ["+comm+"]: \n"+Format.stackTraceToString(e));
 			}
 		}
 		flush();
