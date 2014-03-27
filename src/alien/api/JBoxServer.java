@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lia.util.Utils;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
@@ -123,6 +124,12 @@ public class JBoxServer extends Thread {
 	private JBoxServer(final int listeningPort, final int iDebug) throws Exception {
 		this.port = listeningPort;
 		this.iDebugLevel = iDebug;
+		
+		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
+
+		if (alUser == null || alUser.getName() == null){
+			throw new Exception("Could not get your username. FATAL!");
+		}
 
 		final InetAddress localhost = InetAddress.getByName("127.0.0.1");
 
@@ -130,20 +137,19 @@ public class JBoxServer extends Thread {
 
 		password = UUID.randomUUID().toString();
 
-		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
-
-		if (alUser == null || alUser.getName() == null)
-			throw new Exception("Could not get your username. FATAL!");
-
 		// here we should get home directory
 		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
 
 		// should check if the file was written and if not then exit.
-		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel))
+		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)){
+			ssocket.close();
 			throw new Exception("Could not write the token file! No application can connect to JBox");
+		}
 
-		if (!writeEnvFile("127.0.0.1", listeningPort, alUser.getName()))
+		if (!writeEnvFile("127.0.0.1", listeningPort, alUser.getName())){
+			ssocket.close();
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
+		}
 	}
 
 	/**
@@ -165,11 +171,18 @@ public class JBoxServer extends Thread {
 	 * @author Alina Grigoras
 	 */
 	private static boolean writeTokenFile(final String sHost, final int iPort, final String sPassword, final String sUser, final String sHomeUser, final int iDebug) {
-		final String sUserId = System.getProperty("userid");
+		String sUserId = System.getProperty("userid");
 
 		if (sUserId == null || sUserId.length() == 0) {
-			logger.severe("User Id empty! Could not get the token file name");
-			return false;
+			sUserId = Utils.getOutput("id -u "+System.getProperty("user.name"));
+			
+			if (sUserId != null && sUserId.length() > 0){
+				System.setProperty("userid", sUserId);
+			}
+			else{		
+				logger.severe("User Id empty! Could not get the token file name");
+				return false;
+			}
 		}
 
 		try {
@@ -235,7 +248,8 @@ public class JBoxServer extends Thread {
 	 * @param iPort
 	 * @param sPassword
 	 * @param sUser
-	 * @return <code>true</code> if everything went fine, <code>false</code> if there was an error writing the env file
+	 * @return <code>true</code> if everything went fine, <code>false</code> if
+	 *         there was an error writing the env file
 	 */
 	private static boolean writeEnvFile(final String sHost, final int iPort, final String sUser) {
 		final String sUserId = System.getProperty("userid");
@@ -419,7 +433,7 @@ public class JBoxServer extends Thread {
 							System.out.println("SIGINT reset commander");
 
 							// kill the active command and start a new instance
-							final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out); 
+							final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
 							commander = comm;
 
 							commander.start();
@@ -559,7 +573,7 @@ public class JBoxServer extends Thread {
 				server.start();
 
 				logger.log(Level.INFO, "JBox listening on port " + port);
-				System.out.println("JBox is listening...");
+				System.out.println("JBox is listening on port " + port);
 
 				break;
 			} catch (final Exception ioe) {

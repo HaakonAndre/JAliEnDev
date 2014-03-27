@@ -374,13 +374,13 @@ public class JAliEnCOMMander extends Thread {
 
 		final String comm = arg[0];
 
-		System.out.println("Received JSh call [" + comm + "].");
+		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
+		
+		System.out.println("Received JSh call "+args);
 
 		if (logger.isLoggable(Level.INFO)) {
-			logger.log(Level.INFO, "Received JSh call [" + comm + "].");
+			logger.log(Level.INFO, "Received JSh call "+args);
 		}
-
-		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
 		
 		if (out instanceof XMLPrintWriter)
 			((XMLPrintWriter) out).setMetaInfo("command", args.toString());
