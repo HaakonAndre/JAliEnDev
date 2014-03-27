@@ -92,42 +92,69 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 					if (!bA && localLFN.getFileName().startsWith("."))
 						continue;
+					
+					if (bB && localLFN.isDirectory())
+						continue;
 
-					String ret = "";
-					if (bB) {
-						if (localLFN.type == 'd')
-							continue;
-						ret += localLFN.guid.toString().toUpperCase() + padSpace(3)
-						+ localLFN.getName();
-					} else {
-						if(bC)
-							ret += localLFN.getCanonicalName();
+					if (out.isRootPrinter()){
+						out.nextResult();
+						
+						if (bB){
+							out.setField("guid", localLFN.guid.toString().toUpperCase());
+							out.setField("lfn", localLFN.getName());
+						}
 						else{
-							if (bL)
-								ret += FileSystemUtils
-								.getFormatedTypeAndPerm(localLFN)
-								+ padSpace(3)
-								+ padLeft(localLFN.owner, 8)
-								+ padSpace(1)
-								+ padLeft(localLFN.gowner, 8)
-								+ padSpace(1)
-								+ padLeft(String.valueOf(localLFN.size), 12)
-								+ padSpace(1)
-								+ format(localLFN.ctime)
-								+ padSpace(4) + localLFN.getFileName();
-
-							else
-								ret += localLFN.getFileName();
-
-							if (bF && (localLFN.type == 'd'))
-								ret += "/";
-						}	
+							if (bC)
+								out.setField("lfn", localLFN.getCanonicalName());
+							else{
+								if (bL){
+									out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
+									out.setField("owner", localLFN.owner);
+									out.setField("group", localLFN.gowner);
+									out.setField("size", String.valueOf(localLFN.size));
+									out.setField("ctime", format(localLFN.ctime));
+									out.setField("lfn", localLFN.getFileName()+(bF && localLFN.isDirectory() ? "/" : ""));
+								}
+								else{
+									out.setField("lfn", localLFN.getFileName()+(bF && localLFN.isDirectory() ? "/" : ""));
+								}
+							}
+						}
 					}
-
-					logger.info("LS line : "+ret);
-
-					if (!isSilent())
-						out.printOutln(ret);
+					else{
+						String ret = "";
+						if (bB) {
+							ret += localLFN.guid.toString().toUpperCase() + padSpace(3) + localLFN.getName();
+						} else {
+							if(bC)
+								ret += localLFN.getCanonicalName();
+							else{
+								if (bL)
+									ret += FileSystemUtils
+									.getFormatedTypeAndPerm(localLFN)
+									+ padSpace(3)
+									+ padLeft(localLFN.owner, 8)
+									+ padSpace(1)
+									+ padLeft(localLFN.gowner, 8)
+									+ padSpace(1)
+									+ padLeft(String.valueOf(localLFN.size), 12)
+									+ padSpace(1)
+									+ format(localLFN.ctime)
+									+ padSpace(4) + localLFN.getFileName();
+	
+								else
+									ret += localLFN.getFileName();
+	
+								if (bF && (localLFN.type == 'd'))
+									ret += "/";
+							}	
+						}
+	
+						logger.info("LS line : "+ret);
+	
+						if (!isSilent())
+							out.printOutln(ret);
+					}
 				}
 			}
 			else{
@@ -137,8 +164,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 		}
 
-		if (out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot());
+//		if (out.isRootPrinter())
+//			out.setReturnArgs(deserializeForRoot());
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat(

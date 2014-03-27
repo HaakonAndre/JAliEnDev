@@ -103,7 +103,6 @@ public abstract class UIPrintWriter {
 	protected boolean isRootPrinter(){
 		return false;
 	}
-
 	
 	/**
 	 * dummy for RootPrinter
@@ -112,4 +111,8 @@ public abstract class UIPrintWriter {
 	protected void setReturnArgs(String args) {
 		//void
 	}
+	
+	abstract void nextResult();
+	
+	abstract void setField(final String key, final String value);
 }

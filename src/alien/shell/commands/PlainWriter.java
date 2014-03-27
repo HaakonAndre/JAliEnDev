@@ -131,5 +131,15 @@ public class PlainWriter extends UIPrintWriter{
 	protected void degraded(){
 		//ignore
 	}
+
+	@Override
+	void nextResult() {
+		// ignored
+	}
+
+	@Override
+	void setField(String key, String value) {
+		// ignored
+	}
 	
 }

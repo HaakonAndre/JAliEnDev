@@ -55,7 +55,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	private ArrayList<String> stdout = new ArrayList<>();
 
 	/**
-	 * Array that will contanin the standard error for Root stream
+	 * Array that will contaning the standard error for Root stream
 	 * The stderr stream is identified by {@link #stderrindicator} 
 	 */
 	private ArrayList<String> stderr = new ArrayList<>();
@@ -66,8 +66,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger = ConfigUtils
-	.getLogger(RootPrintWriter.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(RootPrintWriter.class.getCanonicalName());
 
 	/**
 	 * OutputSteam that will contain the information in Root format
@@ -261,6 +260,16 @@ public class RootPrintWriter extends UIPrintWriter {
 		return line1;
 	}
 	// testcode end
+
+	@Override
+	void nextResult() {
+		// ignored
+	}
+
+	@Override
+	void setField(String key, String value) {
+		// ignored
+	}
 
 	//
 	// my $calledfunction = shift @args;
