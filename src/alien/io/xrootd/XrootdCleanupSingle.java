@@ -82,12 +82,12 @@ public class XrootdCleanupSingle {
 	 * @param path
 	 */
 	void storageCleanup(final String path) {
-		System.err.println("storageCleanup: " + path);
+		System.err.println(se.seName+" : entering " + path);
 
 		dirsSeen.incrementAndGet();
 
 		try {
-			final boolean setSE = se.getName().toLowerCase().contains("dcache") || se.getName().toLowerCase().contains("::eos");
+			final boolean setSE = se.getName().toLowerCase().contains("dcache");
 
 			final XrootdListing listing = new XrootdListing(server, path, setSE ? se : null);
 
@@ -230,7 +230,10 @@ public class XrootdCleanupSingle {
 					setName(se);
 
 					final XrootdCleanupSingle cleanup = new XrootdCleanupSingle(se);
-					cleanup.storageCleanup("/");
+					
+					for (int i=0; i<=15; i++)
+						cleanup.storageCleanup("/"+(i<10? "0" : "")+i+"/");
+					
 					System.err.println(cleanup + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
 				}
 			}.start();
