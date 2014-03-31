@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
@@ -17,6 +19,7 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
+import alien.config.ConfigUtils;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 
@@ -25,6 +28,8 @@ import alien.se.SE;
  * 
  */
 public class XrootdListing {
+	
+	static transient final Logger logger = ConfigUtils.getLogger(XrootdListing.class.getCanonicalName());
 
 	/**
 	 * Server host and port
@@ -112,7 +117,7 @@ public class XrootdListing {
 
 		final List<String> command = Arrays.asList("xrd", server, xrdcommand);
 
-		System.err.println("Executing:\n" + command);
+		logger.log(Level.INFO, "Executing:\n" + command);
 
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -132,14 +137,18 @@ public class XrootdListing {
 
 		if (exitStatus.getExtProcExitStatus() != 0) {
 			// TODO something here or not ?
-			System.err.println("Exit code was "+exitStatus.getExtProcExitStatus()+" for \n  "+command);
 		}
+		
+		logger.log(Level.INFO, "Exit code was "+exitStatus.getExtProcExitStatus());
 
 		final BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()));
 
 		String sLine;
 
-		while ((sLine = br.readLine()) != null)
+		while ((sLine = br.readLine()) != null){
+			if (path.equals("/"))
+				logger.log(Level.INFO, "Response line: "+sLine);
+			
 			if (sLine.startsWith("-") || sLine.startsWith("d"))
 				try {
 					entries.add(new XrootdFile(sLine.trim()));
@@ -149,6 +158,7 @@ public class XrootdListing {
 				}
 			else
 				System.err.println(sLine);
+		}
 	}
 
 	/**
