@@ -70,7 +70,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				out.printErrln("Not able to retrieve LFN from Catalogue [error in processing].");
 				return;
 			}
-			if (lfn.guid == null) {
+			if (lfn.guid == null) 
+			{
 				
 					try {
 						guid = GUIDUtils.createGuid(new File(localFileName),commander.user);
@@ -94,15 +95,61 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		else if (accessRequest == AccessType.READ) 
 				pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
 		else
+			
 			out.printErrln("Unknown access type [error in processing].");
 
 		if(pfns==null || pfns.size()<1)
 			out.printErrln("Not able to get request LFN/GUID [error in processing].");
 		
+		
 		if (out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot());
-		else 
-			out.printOut(deserializeForRoot());
+		{
+			out.nextResult();
+			if (pfns != null && !pfns.isEmpty())
+			{
+				for (PFN pfn : pfns) 
+				{
+					String envelope = pfn.ticket.envelope.getSignedEnvelope();
+					if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber)
+							.getName().toLowerCase()))
+						if (commander.c_api.getSE(pfn.seNumber).needsEncryptedEnvelope)
+							envelope += "&envelope="
+									+ pfn.ticket.envelope.getEncryptedEnvelope();
+					
+					final StringTokenizer st = new StringTokenizer(envelope, "&");
+					while (st.hasMoreTokens()) 
+					{
+						String t = st.nextToken();
+						String key = t.substring(0, t.indexOf('='));
+						String val = t.substring(t.indexOf('=') + 1);
+						if (("turl").equals(key)) 
+						{
+							out.setField("url", val);
+							final StringTokenizer tpfn = new StringTokenizer(val,
+									"////");
+							tpfn.nextToken();
+							tpfn.nextToken();
+							StringBuilder ttpfn = new StringBuilder();
+							
+							while (tpfn.hasMoreTokens()){
+								ttpfn.append('/').append(tpfn.nextToken());
+							}
+							out.setField("pfn", ttpfn.toString());
+						}
+						else
+							out.setField(key, val);
+					}
+					if (accessRequest.equals(AccessType.WRITE))
+						out.setField("nSEs", "1");
+					else 
+						
+						out.setField("nSEs", " "+pfns.size());
+					out.setField("user", commander.user.getName());
+					if (accessRequest.equals(AccessType.WRITE))
+						break; 
+				}
+			}
+		}
 	}
 
 	/**
@@ -128,6 +175,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * 
 	 * @return serialized return
 	 */
+	
 	@Override
 	public String deserializeForRoot() {
 
@@ -151,12 +199,14 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 								+ pfn.ticket.envelope.getEncryptedEnvelope();
 				
 				final StringTokenizer st = new StringTokenizer(envelope, "&");
-				while (st.hasMoreTokens()) {
+				while (st.hasMoreTokens()) 
+				{
 					String t = st.nextToken();
 					String key = t.substring(0, t.indexOf('='));
 					String val = t.substring(t.indexOf('=') + 1);
 
-					if (("turl").equals(key)) {
+					if (("turl").equals(key)) 
+					{
 						ret += desc + "url" + sep + val;
 						final StringTokenizer tpfn = new StringTokenizer(val,
 								"////");
@@ -191,6 +241,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		out.printErrln("We didn't get any envelopes [error in processing].");
 		return super.deserializeForRoot();
 	}
+	 
 
 	/**
 	 * Constructor needed for the command factory in commander
