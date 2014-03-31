@@ -132,32 +132,28 @@ public class XrootdListing {
 		try {
 			exitStatus = pBuilder.start().waitFor();
 		} catch (final InterruptedException ie) {
-			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());			
 		}
 
-		if (exitStatus.getExtProcExitStatus() != 0) {
-			// TODO something here or not ?
-		}
+		int exitCode = exitStatus.getExtProcExitStatus();
 		
-		logger.log(Level.INFO, "Exit code was "+exitStatus.getExtProcExitStatus());
+		if (exitCode != 0) {
+			logger.log(Level.WARNING, "Exit code was "+exitCode+" for "+command);
+		}
 
 		final BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()));
 
 		String sLine;
 
 		while ((sLine = br.readLine()) != null){
-			if (path.equals("/"))
-				logger.log(Level.INFO, "Response line: "+sLine);
-			
 			if (sLine.startsWith("-") || sLine.startsWith("d"))
 				try {
 					entries.add(new XrootdFile(sLine.trim()));
 				} catch (final IllegalArgumentException iae) {
-					System.err.println(iae.getMessage());
-					iae.printStackTrace();
+					logger.log(Level.WARNING, "Exception parsing response of "+command, iae);
 				}
 			else
-				System.err.println(sLine);
+				logger.log(Level.WARNING, "Unknown response line in the output of "+command+"\n\n"+sLine);
 		}
 	}
 
