@@ -28,6 +28,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	public void run() {
 
 		if (sPath != null)
+			
 			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), sPath));
@@ -36,7 +37,30 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 			out.printOutln("No such file or directory: [" + sPath + "]");
 
 		if (out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot());
+		{
+			out.nextResult();
+			if (lfn.isFile())
+				out.setField("type","file");
+			else 
+				if(lfn.isDirectory())
+					out.setField("type","directory");
+			else 
+				if(lfn.isCollection())
+					out.setField("type","collection");
+		}
+		else 
+		{
+			String ret = "";
+			if (lfn.isFile())
+				ret += "file";
+			else if (lfn.isDirectory())
+				ret += "directory";
+			else if (lfn.isCollection())
+				ret += "collection";
+			logger.info("Type line : " + ret);
+			if (!isSilent())
+				out.printOutln(ret);
+		}
 	}
 
 	/**
@@ -67,6 +91,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 		if (lfn == null)
 			return super.deserializeForRoot(0);
+		
 
 		String ret = RootPrintWriter.columnseparator
 				+ RootPrintWriter.fielddescriptor + "type"
@@ -84,7 +109,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 		return ret;
 
 	}
-
+	
 	/**
 	 * Constructor needed for the command factory in commander
 	 * 

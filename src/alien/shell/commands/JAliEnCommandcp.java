@@ -81,17 +81,95 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			localFile = copyGridToLocal(source, null);
 
 		else
-			if (!localFileSpec(source) && localFileSpec(target)) {
+		{
+			if(out.isRootPrinter())
+			{
+
+				if (out != null && out.isRootPrinter())
+				{
+					out.nextResult();
+					if (!localFileSpec(source) && localFileSpec(target)) 
+					{
+
+						localFile = new File(getLocalFileSpec(target));
+
+						if (!localFile.exists())
+							copyGridToLocal(source, localFile);
+						else
+							if (!isSilent()) {
+								out.setField("message","A local file already exists with this name.");
+							}
+							else {
+								final IOException ex = new IOException("A local file already exists with this name: " + target);
+
+								throw new IOError(ex);
+							}	
+					}
+					else
+					if (localFileSpec(source) && !localFileSpec(target)) {
+
+						final File sourceFile = new File(getLocalFileSpec(source));
+						if (!targetLFNExists(target))
+							if (sourceFile.exists())
+								copyLocalToGrid(sourceFile, target);
+							else
+								if (!isSilent())
+									out.setField("message", "A local file with this name does not exists.");
+								else {
+									final IOException ex = new IOException("Local file " + target + " doesn't exist");
+
+									throw new IOError(ex);
+								}
+					}
+					else
+						if (!targetLFNExists(target)) 
+						{
+
+							localFile = copyGridToLocal(source, null);
+							if (localFile != null && localFile.exists() && localFile.length() > 0)
+								if (copyLocalToGrid(localFile, target))
+									if (!isSilent())
+										out.setField("message", "Copy successful.");
+									else
+										if (!isSilent())
+											out.setField("message", "Could not copy to the target.");
+										else {
+											final IOException ex = new IOException("Could not copy to the target: " + target);
+
+											throw new IOError(ex);
+										}
+
+								else
+									if (!isSilent()) {
+										out.setField("message", "Could not get the source.");
+									}
+									else {
+										final IOException ex = new IOException("Could not get the source: " + source);
+
+										throw new IOError(ex);
+									}
+						}
+					
+				}
+			}
+			
+		else
+		{
+			
+			if (!localFileSpec(source) && localFileSpec(target)) 
+			{
 
 				localFile = new File(getLocalFileSpec(target));
 
 				if (!localFile.exists())
 					copyGridToLocal(source, localFile);
 				else
-					if (!isSilent()) {
+					if (!isSilent()) 
+					{
 						out.printErrln("A local file already exists with this name.");
 					}
-					else {
+					else 
+					{
 						final IOException ex = new IOException("A local file already exists with this name: " + target);
 
 						throw new IOError(ex);
@@ -99,7 +177,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			}
 			else
-				if (localFileSpec(source) && !localFileSpec(target)) {
+				if (localFileSpec(source) && !localFileSpec(target))
+				{
 
 					final File sourceFile = new File(getLocalFileSpec(source));
 					if (!targetLFNExists(target))
@@ -116,7 +195,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 				}
 				else
-					if (!targetLFNExists(target)) {
+					if (!targetLFNExists(target)) 
+					{
 
 						localFile = copyGridToLocal(source, null);
 						if (localFile != null && localFile.exists() && localFile.length() > 0)
@@ -143,9 +223,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 								}
 
 					}
-
-		if (out != null && out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot());
+			}
+		}
 	}
 
 	/**

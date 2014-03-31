@@ -44,21 +44,46 @@ public class JAliEnCommandrm extends JAliEnBaseCommand
 			//My added code... From the Dispatcher, direct, instead of from the wrapper for in the COMMander class, like above...
 			
 			RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), commander.getRole(), path);
-
-			try{
+			if(out.isRootPrinter())
+			{
+				try
+				{
+					RemoveLFNfromString a =  Dispatcher.execute(rlfn);//Remember, all checking is being done server side now.
+					
+					if (!a.wasRemoved() && bV)
+					{
+						out.setField("Failed to remove", "[" + path + "]");
+					}
+				}
+				catch (ServerException e)
+				{
+					e.getCause().printStackTrace();
+					
+					if(bV)
+						out.setField("Error removing", "[" + path + "]");
+				}		
+			}
+			
+			else
+			{
+			try
+			{
 				RemoveLFNfromString a =  Dispatcher.execute(rlfn);//Remember, all checking is being done server side now.
 				
-				if (!a.wasRemoved() && bV){
+				if (!a.wasRemoved() && bV)
+				{
 					out.printErrln("Failed to remove [" + path + "]");
 				}
 			}
-			catch (ServerException e){
+			catch (ServerException e)
+			{
 				logger.log(Level.WARNING,"Could not get LFN: " + path);
 				e.getCause().printStackTrace();
 				
 				if(bV)
 					out.printErrln("Error removing [" + path + "]");
 			}		
+			}
 		}
 	}
 

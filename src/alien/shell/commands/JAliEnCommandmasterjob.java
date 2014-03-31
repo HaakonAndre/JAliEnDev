@@ -69,7 +69,79 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 			subjobstates = commander.q_api.getMasterJobStatus(j.queueId, status, id, sites, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
 		else
 			return;
+		
+		
+		if(out.isRootPrinter())
+		{
+			out.nextResult();
+			out.setField("Checking the masterjob "," "+j.queueId);
+			out.setField("The job ", j.queueId + " is in status: " + j.status());
+			final HashMap<String, List<Job>> stateCount = new HashMap<>();
 
+			ArrayList<String> sitesIn = new ArrayList<>();
+			ArrayList<JobStatus> statesIn = new ArrayList<>();
+
+			final ArrayList<JobStatus> allStates = new ArrayList<>();
+			final ArrayList<String> allSites = new ArrayList<>();
+
+			if (subjobstates != null)
+			{
+				out.setField("message ","It has the following subjobs:");
+
+				for (final Job sj : subjobstates) 
+				{
+					// count the states the subjobs have
+
+					String key = sj.status().toString();
+
+					if (bPrintSite) {
+						String site = "";
+						if (sj.execHost != null && sj.execHost.contains("@"))
+							site = sj.execHost.substring(sj.execHost.indexOf('@') + 1);
+
+						if (site.length() > 0)
+							key += "/" + site;
+
+						if (sitesIn.size() <= 0)
+							if (!allSites.contains(site))
+								allSites.add(site);
+
+					}
+
+					List<Job> jobs = stateCount.get(key);
+
+					if (jobs == null) {
+						jobs = new ArrayList<>();
+						stateCount.put(key, jobs);
+					}
+
+					jobs.add(sj);
+
+					if (statesIn.size() <= 0 && !allStates.contains(sj.status()))
+						allStates.add(sj.status());
+				}
+				if (statesIn.size() <= 0)
+					statesIn = allStates;
+
+				if (sitesIn.size() <= 0)
+					sitesIn = allSites;
+
+				//
+				if (sitesIn.size() > 0) {
+					for (final String site : sitesIn)
+						printSubJobs(stateCount, statesIn, site);
+				}
+				else
+					printSubJobs(stateCount, statesIn, null);
+
+				
+				out.setField("In total, there are ", subjobstates.size() + " subjobs");
+
+			}
+		}
+		else
+	{
+		
 		out.printOutln("Checking the masterjob " + j.queueId);
 		out.printOutln("The job " + j.queueId + " is in status: " + j.status());
 
@@ -81,11 +153,13 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 		final ArrayList<JobStatus> allStates = new ArrayList<>();
 		final ArrayList<String> allSites = new ArrayList<>();
 
-		if (subjobstates != null) {
+		if (subjobstates != null) 
+		{
 
 			out.printOutln("It has the following subjobs:");
 
-			for (final Job sj : subjobstates) {
+			for (final Job sj : subjobstates) 
+			{
 				// count the states the subjobs have
 
 				String key = sj.status().toString();
@@ -134,7 +208,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 			out.printOutln("In total, there are " + subjobstates.size() + " subjobs");
 
 		}
-
+	}
 	}
 
 	private void printSubJobs(final HashMap<String, List<Job>> stateCount, final List<JobStatus> showStatus, final String site) {

@@ -108,8 +108,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir()
 			.getCanonicalName(), alArguments.get(0)), alArguments.get(1),flags);
 
-		if (lfns != null && !isSilent()) {			
-			if (bX) {
+		if (lfns != null && !isSilent()) 
+		{			
+			if (bX)
+			{
 				// display the xml collection
 
 				final XmlCollection c = new XmlCollection();
@@ -168,8 +170,31 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 					out.printOutln(c.toString());
 			}
 			else
-			for (final LFN lfn : lfns) {
-				if (bL){
+			for (final LFN lfn : lfns)
+			{
+				if(out.isRootPrinter())
+				{
+
+					if (bL)
+					{
+						out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(lfn));
+						out.setField("owner", lfn.owner);
+						out.setField("group", lfn.gowner);
+						out.setField("size", (bH ? Format.size(lfn.size) : String.valueOf(lfn.size)));
+						out.setField("ctime"," "+lfn.ctime);
+						out.setField("lfn",lfn.getCanonicalName());
+
+					}
+					else
+					{
+						out.setField("lfn",lfn.getCanonicalName());
+					}
+				}
+				else
+				{
+				
+				if (bL)
+				{
 					// print long
 					out.printOutln(FileSystemUtils
 							.getFormatedTypeAndPerm(lfn)
@@ -183,8 +208,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 							+ padSpace(1)
 							+ padSpace(4) + lfn.getCanonicalName());	
 				}
-				else{
+				else
+				{
 					out.printOutln(lfn.getCanonicalName());
+				}
 				}
 			}
 				
@@ -270,8 +297,6 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		return super.deserializeForRoot();
 
 	}
-			
-			
 
 	/**
 	 * Constructor needed for the command factory in commander

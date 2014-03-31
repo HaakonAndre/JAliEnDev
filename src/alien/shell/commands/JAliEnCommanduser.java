@@ -18,12 +18,20 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		
-		if(AuthorizationFactory.getDefaultUser().canBecome(user)){
+		if(AuthorizationFactory.getDefaultUser().canBecome(user))
+		{
 			commander.user = UserFactory.getByUsername(user);
 			commander.role = AliEnPrincipal.userRole();
 		}
 		else
-			out.printErrln("Permission denied.");
+		{
+			if(out.isRootPrinter())
+				out.setField("message","Permission denied.");
+			else
+				out.printErrln("Permission denied.");
+		}
+	
+		
 	}
 
 	/**

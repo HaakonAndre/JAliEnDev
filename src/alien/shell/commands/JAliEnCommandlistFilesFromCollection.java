@@ -35,7 +35,8 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 * execute the type
 	 */
 	@Override
-	public void run() {
+	public void run() 
+	{
 		
 		//A9D461B2-1386-11E1-9717-7623A10ABEEF  (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)
 		// -v  A9D461B2-1386-11E1-9717-7623A10ABEEF  (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
@@ -44,16 +45,19 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		
 		if(sPath.startsWith("/"))
 			collectionPath = sPath;
-		else{
+		else
+		{
 			collectionPath = commander.getCurrentDir().getCanonicalName()+sPath;	
 		}
 		
-		try{
+		try
+		{
 			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), collectionPath));
 			
 			lfns = ret.getLFNs();
 		}
-		catch (ServerException e){
+		catch (ServerException e)
+		{
 			Throwable cause = e.getCause();
 			
 			errorMessage = cause.getMessage();
@@ -66,9 +70,27 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			return;
 		}
 		
-		StringBuilder sb = new StringBuilder();
+		if (out.isRootPrinter())
+		{
+			out.nextResult();
+			for(final LFN c: lfns)	
+			{
+				out.setField("guid",c.guid.toString());
+				out.setField("lfn", c.getCanonicalName());
+				if(bZ)
+				{
+					out.setField("size"," "+c.size);
+					out.setField("md5"," "+c.md5);
+				}
+			}
+			if(!isSilent())
+				out.setReturnCode(1,"Not a collection");
+		}
+		else
+		{
+			StringBuilder sb = new StringBuilder();
 		
-		for(LFN lfn: lfns){
+			for(LFN lfn: lfns){
 			sb.append(lfn.guid);
 			sb.append(" (from the file ");
 			sb.append(lfn.getCanonicalName());
@@ -88,9 +110,9 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		}
 		
 		out.printOutln(sb.toString());
+		}
 		
-		if (out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot());
+		
 	}
 
 	/**
@@ -117,6 +139,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 * from root it is allways called with -v -z
 	 * @return serialized return
 	 */
+	
 	@Override
 	public String deserializeForRoot() {
 		if (lfns == null || lfns.size()==0)
@@ -142,7 +165,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 		return ret.toString();
 	}
-
+	
 	/**
 	 * Constructor needed for the command factory in commander
 	 * 

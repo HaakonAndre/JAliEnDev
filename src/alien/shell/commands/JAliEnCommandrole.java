@@ -21,7 +21,12 @@ public class JAliEnCommandrole extends JAliEnBaseCommand {
 			commander.role = role;
 		}
 		else
-			out.printErrln("Permission denied.");
+		{
+			if(out.isRootPrinter())
+				out.setField("Error ", "Permission denied.");
+			else
+				out.printErrln("Permission denied.");
+		}
 	}
 
 	/**

@@ -81,13 +81,15 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
 
-			if (subdirectory != null) {
+			if (subdirectory != null) 
+			{
 				if (directory == null)
 					directory = new ArrayList<>(subdirectory);
 				else
 					directory.addAll(subdirectory);
 
-				for (final LFN localLFN : subdirectory) {
+				for (final LFN localLFN : subdirectory) 
+				{
 
 					logger.log(Level.FINE, localLFN.toString());
 
@@ -97,32 +99,45 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					if (bB && localLFN.isDirectory())
 						continue;
 
-					if (out.isRootPrinter()) {
+					if (out.isRootPrinter()) 
+					{
 						out.nextResult();
 
-						if (bB) {
+						if (bB) 
+						{
 							out.setField("guid", localLFN.guid.toString().toUpperCase());
 							out.setField("lfn", bC ? localLFN.getCanonicalName() : localLFN.getFileName());
-						} else {
-							if (bL) {
+						} 
+						else 
+						{
+							if (bL)
+							{
 								out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
 								out.setField("owner", localLFN.owner);
 								out.setField("group", localLFN.gowner);
 								out.setField("size", String.valueOf(localLFN.size));
 								out.setField("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
 								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
-							} else {
+							} 
+							else 
+							{
 								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
 							}
 						}
-					} else {
+					} 
+					else 
+					{
 						String ret = "";
-						if (bB) {
+						if (bB) 
+						{
 							ret += localLFN.guid.toString().toUpperCase() + padSpace(3) + localLFN.getName();
-						} else {
+						} 
+						else 
+						{
 							if (bC)
 								ret += localLFN.getCanonicalName();
-							else {
+							else 
+							{
 								if (bL)
 									ret += FileSystemUtils
 									.getFormatedTypeAndPerm(localLFN)
@@ -150,7 +165,9 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 							out.printOutln(ret);
 					}
 				}
-			} else {
+			} 
+			else 
+			{
 				if (pathsNotFound.length() > 0)
 					pathsNotFound.append(", ");
 

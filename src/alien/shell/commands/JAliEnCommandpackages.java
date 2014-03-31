@@ -20,18 +20,32 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 		packs = commander.c_api.getPackages(getPackagePlatformName());
 				
 		
-		if (packs != null){
-			for (Package p: packs){
-				
+		if (packs != null)
+		{
+			for (Package p: packs)
+			{
 				if(out.isRootPrinter())
-					out.setReturnArgs(deserializeForRoot());
+				{
+					out.nextResult();
+					out.setField("packages",p.getFullName());
+					
+				}
+				
 				else
+				{
+					String ret = "";
+					
+					ret+="result"+padSpace(1)+p.getFullName();
+					
 					if(!isSilent())
-						out.printOutln("	" + p.getFullName());
+						out.printOutln(ret);
+				}
 			}
 		}
-		else{
+		else
+		{
 			out.printErrln("Couldn't find any packages.");
+			out.setReturnCode(1, "Couldn't find any packages.");
 			out.setReturnArgs(deserializeForRoot(0));
 		}
 
@@ -58,6 +72,7 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	@Override
 	public String deserializeForRoot() {		
 		if (packs != null) {
+			
 			final StringBuilder sb = new StringBuilder();
 			
 			sb.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("__result__").append(RootPrintWriter.fieldseparator).append("1\n");

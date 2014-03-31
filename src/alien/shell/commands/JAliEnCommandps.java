@@ -54,23 +54,104 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		
-		if (getJDL != 0) {
+		String tracelog = commander.q_api.getTraceLog(getTrace);
+		
+
+		if(out.isRootPrinter())
+		{
+			out.nextResult();
+			if (getJDL != 0) 
+			{
+				String jdl = commander.q_api.getJDL(getJDL);
+				if (jdl != null)
+				{
+					if(bColour)
+						out.setField("value ", ShellColor.jobStateRed() + jdl + ShellColor.reset());
+					else
+						out.setField("value ",jdl);
+				}
+			}
+			else if (getTrace != 0) 
+			{
+				if (tracelog != null)
+					if(bColour)
+						
+						out.setField("value ", ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
+				out.setField("message: ", "not implemented yet");
+			}
+			
+			else 
+			{
+
+				if (users.size() == 0)
+					users.add(commander.getUsername());
+
+				List<Job> ps = commander.q_api.getPS(states, users, sites, nodes,
+						mjobs, jobid, orderByKey, limit);
+
+				if (ps != null) 
+				{
+					for (Job j : ps) 
+					{
+
+						String owner = (j.getOwner() != null) ? j.getOwner() : "";
+						
+						String jId = bColour ? ShellColor.bold() + j.queueId +
+								ShellColor.reset() : String.valueOf(j.queueId);
+
+						String name = (j.name != null) ? j.name.substring(j.name
+								.lastIndexOf('/') + 1) : "";
+
+						if (bL) 
+						{
+							String site = (j.site != null) ? j.site : "";
+							String node = (j.node != null) ? j.node : "";
+							out.setField("owner ", String.valueOf(owner));
+							out.setField("id ", jId.toString());
+							out.setField("site ", String.valueOf(site));
+							out.setField("node",String.valueOf(node));
+							out.setField("status"," "+j.status());
+							out.setField("name",String.valueOf(name));
+						} 
+						else
+						{
+							out.setField("owner ", String.valueOf(owner));
+							out.setField("id ", jId.toString());
+							out.setField("priority ", printPriority(j.status(),j.priority));
+							out.setField("status "," "+j.status());
+							out.setField("name ",String.valueOf(name));
+						}
+					}
+				}
+			}
+			
+		}
+		
+		else
+		{	
+		if (getJDL != 0) 
+		{
 			String jdl = commander.q_api.getJDL(getJDL);
-			if (jdl != null){
+			if (jdl != null)
+			{
 				if(bColour)
 					out.printOutln( ShellColor.jobStateRed() + jdl + ShellColor.reset());
 				else
 					out.printOutln(jdl);
 			}
-		} else if (getTrace != 0) {
-			String tracelog = commander.q_api.getTraceLog(getTrace);
+		} 
+		else if (getTrace != 0) 
+		{
+			
 			if (tracelog != null)
 				if(bColour)
 					out.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
 				
 			out.printOutln("--- not implemented yet ---");
 			
-		} else {
+		} 
+		else 
+		{
 
 			if (users.size() == 0)
 				users.add(commander.getUsername());
@@ -78,8 +159,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			List<Job> ps = commander.q_api.getPS(states, users, sites, nodes,
 					mjobs, jobid, orderByKey, limit);
 
-			if (ps != null) {
-				for (Job j : ps) {
+			if (ps != null) 
+			{
+				for (Job j : ps) 
+				{
 
 					String owner = (j.getOwner() != null) ? j.getOwner() : "";
 					
@@ -89,7 +172,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					String name = (j.name != null) ? j.name.substring(j.name
 							.lastIndexOf('/') + 1) : "";
 
-					if (bL) {
+					if (bL) 
+					{
 						String site = (j.site != null) ? j.site : "";
 						String node = (j.node != null) ? j.node : "";
 						out.printOutln(padLeft(String.valueOf(owner), 10)
@@ -105,7 +189,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 								+ abbrvStatus(j.status())
 								+ padSpace(2)
 								+ padLeft(String.valueOf(name), 30));
-					} else
+					} 
+					else
 						out.printOutln(padLeft(String.valueOf(owner), 10)
 								+ padSpace(1)
 								+ padLeft(jId, 10)
@@ -118,7 +203,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 				}
 			}
-		}
+		}}
 	}
 
 	private String printPriority(final JobStatus status, final int priority) {

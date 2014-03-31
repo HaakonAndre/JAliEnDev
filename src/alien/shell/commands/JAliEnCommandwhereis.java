@@ -39,9 +39,13 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	public void run() {
 
 		String guid = null;
-		if (bG) {
+		
+		if (bG) 
+		{
 			guid = lfnOrGuid;
-		} else {
+		} 
+		else 
+		{
 			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), lfnOrGuid));
@@ -49,7 +53,8 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				guid = lfn.guid.toString();
 		}
 		// what message in case of error?
-		if (guid != null) {
+		if (guid != null) 
+		{
 
 			Set<PFN> pfns = commander.c_api.getPFNs(guid);
 
@@ -60,20 +65,42 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 						pfns = commander.c_api.getGUID(
 								((PFN) pfns.toArray()[0]).pfn.substring(8, 44))
 								.getPFNs();
-
+			if(out.isRootPrinter())
+			{
+				if (!isSilent())
+					out.setField("value ", AlienTime.getStamp()
+						+ " the file "
+						+ lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1,
+								lfnOrGuid.length()) + " is in");
+				for (PFN pfn : pfns) 
+				{
+					String se = commander.c_api.getSE(pfn.seNumber).seName;
+					if (!isSilent())
+						out.setField("\t\t SE => ",padRight(se, 30) + " pfn =>"
+								+ pfn.pfn + "\n");
+				}
+			}
+			
+			else{
+			
 			if (!isSilent())
 				out.printOutln(AlienTime.getStamp()
 						+ " the file "
 						+ lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1,
 								lfnOrGuid.length()) + " is in\n");
-			for (PFN pfn : pfns) {
+			for (PFN pfn : pfns) 
+			{
 
 				String se = commander.c_api.getSE(pfn.seNumber).seName;
 				if (!isSilent())
 					out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>"
 							+ pfn.pfn + "\n");
 			}
-		} else {
+			}
+		} 
+		
+		else 
+		{
 			if (!isSilent())
 				out.printOutln("No such file: [" + lfnOrGuid + "]");
 		}

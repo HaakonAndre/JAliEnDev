@@ -22,11 +22,18 @@ public class JAliEnCommanduptime extends JAliEnBaseCommand {
 		
 		final UserStats totals = new UserStats();
 		
-		for (final UserStats u: stats.values()){
+		for (final UserStats u: stats.values())
+		{
 			totals.add(u);
 		}
-		
-		out.printOutln(totals.runningJobs+" running jobs, "+totals.waitingJobs+" waiting jobs, "+stats.size()+" active users");
+		if(out.isRootPrinter())
+		{
+			out.setField(" running jobs", " "+totals.runningJobs);
+			out.setField(" waiting jobs"," "+totals.waitingJobs);
+			out.setField(" active users"," "+stats.size());
+		}
+		else
+			out.printOutln(totals.runningJobs+" running jobs, "+totals.waitingJobs+" waiting jobs, "+stats.size()+" active users");
 	}
 
 	/**

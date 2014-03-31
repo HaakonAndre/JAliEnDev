@@ -24,6 +24,21 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 
 			GUID guid = commander.c_api.getGUID(guidName);
 			
+			if (out.isRootPrinter()) 
+			{
+				out.nextResult();
+				if(guid==null)
+				out.setField("message", "Could not get the GUID [" + guidName + "].");
+				else
+				{
+					if(guid.getLFNs()!=null && guid.getLFNs().iterator().hasNext())
+						out.setField("message",padRight(guid.guid+"", 40) + guid.getLFNs().iterator().next());
+					else 
+						out.setField("message", "Could not get the GUID for [" + guid.guid + "].");
+				}
+			}
+			else
+			{
 			if(guid==null)
 				out.printErrln("Could not get the GUID [" + guidName + "].");
 			else{
@@ -33,6 +48,9 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 				else
 					out.printErrln("Could not get the GUID for [" + guid.guid + "].");
 			}
+			}
+			
+			
 	
 	}
 

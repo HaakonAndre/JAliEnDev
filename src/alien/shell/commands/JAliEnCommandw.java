@@ -55,6 +55,11 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 		
 		formatter.close();
 		
+		if(out.isRootPrinter())
+		{
+			out.setField("value", sb.toString());
+		}
+		else
 		out.printOut(sb.toString());
 	}
 

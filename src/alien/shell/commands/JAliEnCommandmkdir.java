@@ -31,33 +31,64 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	private boolean success = true;
 	
 	@Override
-	public void run() {
+	public void run() 
+	{
 		
-		for (String path: alPaths){
+		for (String path: alPaths)
+		{
 
-			if(bP){
+			if(out.isRootPrinter())
+			{
+				out.nextResult();
+				if(bP)
+				{
+					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
+							commander.user.getName(),
+							commander.getCurrentDir().getCanonicalName(),path),true)==null)
+					{
+						if(!isSilent())
+						out.setReturnCode(1,"Could not create directory (or non-existing parents): " + path);
+					}
+				}
+				else 
+				{
+					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
+							commander.user.getName(),
+							commander.getCurrentDir().getCanonicalName(),path))==null)
+					{
+						if(!isSilent())
+						out.setReturnCode(2,"Could not create directory: " + path);
+					}
+				}
+			}
+			else
+			{
+			if(bP)
+			{
 				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
-						commander.getCurrentDir().getCanonicalName(),path),true)==null){
+						commander.getCurrentDir().getCanonicalName(),path),true)==null)
+				{
 					if(!isSilent())
 						out.printErrln("Could not create directory (or non-existing parents): " + path);
 					logger.log(Level.WARNING,"Could not create directory (or non-existing parents): " + path);
 					success = false;
 				}
 			}
-			else {
+			else 
+			{
 				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
-						commander.getCurrentDir().getCanonicalName(),path))==null){
+						commander.getCurrentDir().getCanonicalName(),path))==null)
+				{
 					if(!isSilent())
 						out.printErrln("Could not create directory: " + path);
 					logger.log(Level.WARNING,"Could not create directory: " + path);
 					success = false;
 				}
 			}
-		}
-		if(out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot());
+			}
+		}		
 	}
 	
 
@@ -78,7 +109,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 		
 		return ret;
 	}
-
+	
 	/**
 	 * printout the help info
 	 */

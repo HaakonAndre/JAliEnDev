@@ -30,14 +30,38 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 							.getCanonicalName(), path), false);
 			
 
-			if (dir!=null && dir.exists) {
-				if (dir.isDirectory()) {
+			if (dir!=null && dir.exists) 
+			{
+				if (dir.isDirectory()) 
+				{
 					
-					if (AuthorizationChecker.canWrite(dir, commander.user)) {
+					if (AuthorizationChecker.canWrite(dir, commander.user)) 
+					{
 						
-						if(bP){
+						if(out.isRootPrinter())
+						{
+							if(bP)
+							out.setField("message", "Inside Parent Directory");
+							if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
+							{
+								if(!isSilent())
+									out.setField("Could not remove directory (or non-existing parents): ", path);
+							}
+							else 
+								if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
+								{
+									if(!isSilent())
+										out.setField("Could not remove directory: " , path);
+								}
+						}
+							
+						else
+						{
+						if(bP)
+						{
 							out.printOutln("Inside Parent Directory");
-							if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())){
+							if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
+							{
 								if(!isSilent())
 									out.printErrln("Could not remove directory (or non-existing parents): " + path);
 								
@@ -45,34 +69,47 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 								
 							}
 						}
-						else {
-							if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())){
+						else 
+						{
+							if(!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
+							{
 								if(!isSilent())
 									out.printErrln("Could not remove directory: " + path);
 								logger.log(Level.WARNING,"Could not remove directory: " + path);
 								
 							}
 						}
-						
-						
-						/*if (!commander.c_api
-								.removeCatalogueDirectory(dir.getCanonicalName())) 
-										out.printErrln("Could not remove directory: "	+ path);
-						 */
-						
-					} else {
+						}
+					} 
+					else 
+					{
 						if (!isSilent())
+						{
 							out.printErrln("Permission denied on directory: ["
 									+ path + "]");
+						out.setReturnCode(1,"Permission denied on directory: ["
+								+ path + "]");
+						}
 					}
 
-				} else {
+				} 
+				else 
+				{
 					if (!isSilent())
+					{
 						out.printErrln("Not a directory: [" + path + "]");
+					out.setReturnCode(2,"Not a directory: [" + path + "]");
+					}
 				}
-		}else {
+				
+			}
+			else 
+			{
 				if (!isSilent())
+				{
 					out.printErrln("No such file or directory: [" + path + "]");
+					out.setReturnCode(3,"No such file or directory: [" + path + "]");
+				}
 			}
 		}
 	}

@@ -25,10 +25,60 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 		
 		File fout = catFile(alArguments.get(0));
 		
-		if (fout!=null && fout.exists() && fout.isFile() && fout.canRead()) {
+		if (fout!=null && fout.exists() && fout.isFile() && fout.canRead()) 
+		{
 			final String content  =  Utils.readFile(fout.getAbsolutePath());
+			
+			if(out.isRootPrinter()) 
+			{
+				if (content!=null)
+				try 
+				{				
+						final JDL jdl;
+						String[] args = alArguments.size()>1 ? alArguments.subList(1,alArguments.size()-1).toArray(new String[0]) : null;
+						
+						try
+						{
+							jdl = TaskQueueUtils.applyJDLArguments(content, commander.user, commander.role, args);
+						}
+						catch (IOException ioe)
+						{
+							if (!isSilent())
+							{
+								out.setField("Error submitting ", alArguments.get(0));
+										
+								out.setField("JDL error: ", ioe.getMessage());
+							}
+							return ;
+						}
+						jdl.set("JDLPath", alArguments.get(0));
+						
+						queueId = commander.q_api.submitJob(jdl);
+						if(queueId>0)
+						{
+							if (!isSilent())
+								out.setField("Your new job ID is " , ShellColor.blue() + queueId + ShellColor.reset());
+						}
+						else
+						{
+							if (!isSilent())
+								out.setField("Error submitting " , alArguments.get(0));
+						}
+					} 
+				
+				catch (ServerException e) 
+				{
+						if (!isSilent())
+							out.setField("Error submitting ",alArguments.get(0) + ","+ e.getMessage());
+				}
+				
+				
+			}
+			else
+			{
 			if (content!=null)
-				try {				
+			try 
+			{				
 					final JDL jdl;
 					String[] args = alArguments.size()>1 ? alArguments.subList(1,alArguments.size()-1).toArray(new String[0]) : null;
 					
@@ -51,19 +101,30 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 						if (!isSilent())
 							out.printErrln("Error submitting " + alArguments.get(0));
 					}
-				} catch (ServerException e) {
+				} 
+			
+			
+			catch (ServerException e) 
+			{
 					if (!isSilent())
 						out.printErrln("Error submitting " + alArguments.get(0) + ", "
 								+ e.getMessage());
-				}
+			}
 			else
 				if (!isSilent())
 					out.printErrln("Could not read the contents of "+fout.getAbsolutePath());
-		} 
+		}
+		}
+		
 		else
 			if (!isSilent())
+			{
 				out.printErrln("Not able to get the file " + alArguments.get(0));
+				out.setReturnCode(1,"Not able to get the file " + alArguments.get(0));
+			}
 	}
+	
+	
 
 	/**
 	 * printout the help info

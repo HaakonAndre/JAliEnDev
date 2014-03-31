@@ -49,8 +49,8 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] { "ls", "get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find", "listFilesFromCollection", "scrlog", "submit", "motd",
-			"access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "role", "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime" };
+	private static final String[] jAliEnCommandList = new String[] {"ls", "ls2", "get", "cat", "whereis", "cp", "cd", "time", "mkdir","mkdir2", "find","find2", "listFilesFromCollection", "listFilesFromCollection2", "scrlog", "submit", "motd",
+			"access","access2","commit","commit2", "packages","packages2", "pwd","pwd2", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "role", "type","type2", "kill", "lfn2guid", "guid2lfn", "w", "uptime" };
 
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
@@ -382,8 +382,6 @@ public class JAliEnCOMMander extends Thread {
 			logger.log(Level.INFO, "Received JSh call "+args);
 		}
 		
-		if (out instanceof XMLPrintWriter)
-			((XMLPrintWriter) out).setMetaInfo("command", args.toString());
 		
 		args.remove(arg[0]);
 

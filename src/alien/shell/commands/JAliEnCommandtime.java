@@ -57,7 +57,11 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		
 		for (final String s:args)
 			command.append(' ').append(s);
+		if(out.isRootPrinter()) 
 		
+			out.setField("value", "\""+command+ "\" with #" + times+ " tries,\tavr/total msec:\t\t"+(total / times)+"/"+total);
+		
+		else
 		out.printOutln("\""+command+ "\" with #" + times+ " tries,\tavr/total msec:\t\t"+(total / times)+"/"+total);
 	}
 

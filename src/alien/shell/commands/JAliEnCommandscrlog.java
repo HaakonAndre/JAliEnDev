@@ -32,19 +32,46 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * execute the sclog
 	 */
 	@Override
-	public void run() {
-		if (logno.intValue() != -1) {
+	public void run() 
+	{
+		if(out.isRootPrinter())
+		{
+			if (logno.intValue() != -1) 
+			{
+				if (bC)
+					scrlogs.put(logno, new ArrayList<String>());
+				else if (scrlogs.get(logno) != null) 
+				{
+					out.setField("message", ":" + logno + " [screenlog pasting]");
+					for (String logline : scrlogs.get(logno)) 
+					{
+						out.setField("value", logline);
+					}
+				}
+				else
+					out.setField("message",":" + logno + " [screenlog is empty]");
+			}
+		}
+		else
+		{
+		if (logno.intValue() != -1) 
+		{
 			if (bC)
 				scrlogs.put(logno, new ArrayList<String>());
-			else if (scrlogs.get(logno) != null) {
+			else if (scrlogs.get(logno) != null) 
+			{
 				System.out.println(":" + logno + " [screenlog pasting]");
-				for (String logline : scrlogs.get(logno)) {
+				for (String logline : scrlogs.get(logno)) 
+				{
 					System.out.println(logline);
 				}
 			}
 			else
 				System.out.println(":" + logno + " [screenlog is empty]");
 		}
+		}
+		
+		
 	}
 
 	/**

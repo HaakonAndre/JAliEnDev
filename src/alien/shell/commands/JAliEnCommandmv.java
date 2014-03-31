@@ -97,6 +97,9 @@ public class JAliEnCommandmv extends JAliEnBaseCommand
 				}
 				else
 				{
+					if(out.isRootPrinter())
+						out.setField("error ", "If there are 2 arguments then only:\n1. File to file\n2. File to directory\n3. Directory to Directory\n is supported\nMost probably a directory to file mv is being attempted");
+					else
 					out.printErrln("If there are 2 arguments then only:\n1. File to file\n2. File to directory\n3. Directory to Directory\n is supported\nMost probably a directory to file mv is being attempted");
 					if (out.isRootPrinter())
 						out.setReturnArgs(deserializeForRoot(0));
