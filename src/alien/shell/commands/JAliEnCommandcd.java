@@ -23,6 +23,25 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		else
 			newDir = commander.c_api.getLFN(UsersHelper.getHomeDir(commander.user.getName()));
 
+		if(out.isRootPrinter())
+		{
+			if (newDir != null)
+			{
+				if(newDir.isDirectory()) //Test added by sraje (Shikhar Raje, IIIT Hyderabad)
+				{
+					commander.curDir = newDir;
+				}
+				else
+					out.setField("cd: ",alArguments.get(0)+": Not a directory");
+			}
+			else
+			{
+				out.setReturnCode(1, "No such file or directory");
+			}
+		}
+		
+		else
+		{
 		if (newDir != null)
 		{
 			if(newDir.isDirectory()) //Test added by sraje (Shikhar Raje, IIIT Hyderabad)
@@ -37,6 +56,7 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		{
 			out.printErrln("No such directory.");
 			out.setReturnArgs(deserializeForRoot(0));
+		}
 		}
 
 	}
