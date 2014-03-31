@@ -132,6 +132,7 @@ public class XrootdListing {
 
 		if (exitStatus.getExtProcExitStatus() != 0) {
 			// TODO something here or not ?
+			System.err.println("Exit code was "+exitStatus.getExtProcExitStatus()+" for \n  "+command);
 		}
 
 		final BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()));

@@ -87,7 +87,7 @@ public class XrootdCleanupSingle {
 		dirsSeen.incrementAndGet();
 
 		try {
-			final boolean setSE = se.getName().toLowerCase().contains("dcache");
+			final boolean setSE = se.getName().toLowerCase().contains("dcache") || se.getName().toLowerCase().contains("::eos");
 
 			final XrootdListing listing = new XrootdListing(server, path, setSE ? se : null);
 
