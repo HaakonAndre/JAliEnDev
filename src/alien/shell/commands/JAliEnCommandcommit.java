@@ -65,15 +65,35 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 		final List<PFN> pfns;
 
-		if (rawenvelope.contains("signature=")) {
+		if (rawenvelope.contains("signature=")) 
+		{
 			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope));
 		}
-		else {
+		else 
+		{
 			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5, lfn, perm, expire, pfn, se, guid);
 		}
 
 		if (out.isRootPrinter())
-			out.setReturnArgs(deserializeForRoot(pfns != null && pfns.size() > 0));
+		{
+			if(pfns != null && pfns.size() > 0)
+				out.setField("lfn", "1");
+			else 
+				out.setField("lfn", "0");
+		}
+		else 
+		{
+			String ret = "";
+			if(pfns != null && pfns.size() > 0)
+				ret+=lfn+padSpace(1)+"1";
+			else 
+				ret+=lfn+padSpace(1)+"0";
+			logger.info("Commit line : " + ret);
+
+			if (!isSilent())
+				out.printOutln(ret);
+		}
+		
 	}
 
 	/**
@@ -101,11 +121,22 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * 
 	 * @return serialized return
 	 */
-	public String deserializeForRoot(final boolean status) {
+	public String deserializeForRoot(final boolean status) 
+	{
+		final StringBuilder str = new StringBuilder();
+	
 		if (status)
-			return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "0";
+			str.append("<").append("lfn").append(">").append(lfn).append("0").append("<").append("lfn").append(">");
+		else 
+			str.append("<").append("lfn").append(">").append(lfn).append("1").append("<").append("lfn").append(">");
+		return str.toString();
+	}
+		/**
+			return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + 
+					lfn + RootPrintWriter.fieldseparator + "0";
 
-		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1";
+		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + 
+				lfn + RootPrintWriter.fieldseparator + "1";
 	}
 
 	/**
