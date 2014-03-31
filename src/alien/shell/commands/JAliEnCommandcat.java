@@ -44,19 +44,43 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 					String line;
 					
 					try{
-						while ( (line=br.readLine())!=null ){
-							if(bO){
-								
+						while ( (line=br.readLine())!=null )
+						{
+							if(bO)
+							{
 								
 								FileWriter fstream = new FileWriter(eachFileName);
 								  BufferedWriter o = new BufferedWriter(fstream);
 								  o.write(content);
 								  fstream.close();
 								  o.close();
-							
-							
+					
 							}
-							if (bN){
+							if(out.isRootPrinter()) 
+							{
+								if (bN)
+								{
+									out.setField("count",count+"");
+								}
+								else
+									if (bB)
+									{
+										if (line.trim().length()>0)
+										{
+											out.setField("count",count+"");
+										}
+									}
+									if (bT)
+									
+										line = Format.replace(line, "\t", "^I");
+										out.setField("value", line);
+									if (bE)
+										out.setField("value", "$");
+							}
+							else
+							{
+							if (bN)
+							{
 								out.printOut(++count+"  ");
 							}
 							else
@@ -75,7 +99,11 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 								out.printOut("$");
 							
 							out.printOutln();
+							}
+							
+							
 						}
+						
 					}
 					catch (IOException ioe){
 						// ignore, cannot happen
@@ -89,6 +117,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 							+ fout.getAbsolutePath());
 			} else if (!isSilent())
 				out.printErrln("Not able to get the file " + alArguments.get(0));
+				out.setReturnCode(1, "Not able to get the file");
 		}
 	}
 
@@ -131,8 +160,6 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 		logger.log(Level.INFO, toString());
 
 		final StringBuilder ret = new StringBuilder();
-
-		
 
 			return ret.toString();
 		
