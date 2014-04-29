@@ -188,7 +188,7 @@ public class XrootDEnvelope implements Serializable {
 			String lfn = "";
 			String guid = "";
 			String se = "";
-			int size = 0;
+			long size = 0;
 			String md5 = "";
 
 			while (st.hasMoreTokens()) {
@@ -218,7 +218,7 @@ public class XrootDEnvelope implements Serializable {
 					else if ("guid".equals(key))
 						guid = value;
 					else if ("size".equals(key))
-						size = Integer.parseInt(value);
+						size = Long.parseLong(value);
 					else if ("md5".equals(key))
 						md5 = value;
 					else if ("se".equals(key))
