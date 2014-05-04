@@ -181,7 +181,7 @@ public class TransferBroker {
 		try {
 			while (transferId < 0){
 				if (!dbCached.moveNext()){
-					dbCached.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 50;");
+					dbCached.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT where status='WAITING' and destination IN (select distinct se_name from (select se_name, count(1) as active from active_transfers group by se_name) a inner join PROTOCOLS on (se_name=sename) where active<max_transfers) and attempts>=0 order by attempts desc,transferId asc limit 50;");
 
 					if (!dbCached.moveNext()){
 						logger.log(Level.FINE, "There is no waiting transfer in the queue");
