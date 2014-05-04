@@ -115,6 +115,8 @@ public class TransferBroker {
 	private long lastTimeNoWork = 0;
 	
 	private final Random rnd = new Random(System.currentTimeMillis());
+	
+	private DBFunctions dbCached = ConfigUtils.getDB("transfers");
 
 	/**
 	 * @return the next transfer to be performed, or <code>null</code> if there
@@ -128,14 +130,16 @@ public class TransferBroker {
 		if (System.currentTimeMillis() < lastTimeNoWork)
 			return null;
 
-		final DBFunctions db = ConfigUtils.getDB("transfers");
-
-		if (db == null) {
-			logger.log(Level.WARNING, "Could not connect to the transfers database");
-
-			lastTimeNoWork = System.currentTimeMillis();
-
-			return null;
+		if (dbCached == null) {
+			dbCached = ConfigUtils.getDB("transfers");
+			
+			if (dbCached==null){	
+				logger.log(Level.WARNING, "Could not connect to the transfers database");
+	
+				lastTimeNoWork = System.currentTimeMillis();
+	
+				return null;
+			}
 		}
 
 		cleanup();
@@ -146,25 +150,29 @@ public class TransferBroker {
 		String sLFN = null;
 		String targetSE = null;
 		String onDeleteRemoveReplica = null;
+		
+		final DBFunctions db = ConfigUtils.getDB("transfers");
 
 		try {
-			while (transferId < 0) {
-				db.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 10;");
+			while (transferId < 0){
+				if (!dbCached.moveNext()){
+					dbCached.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 100;");
 
-				if (!db.moveNext()){
-					logger.log(Level.FINE, "There is no waiting transfer in the queue");
+					if (!dbCached.moveNext()){
+						logger.log(Level.FINE, "There is no waiting transfer in the queue");
 
-					lastTimeNoWork = System.currentTimeMillis() + 30 + rnd.nextInt(30);
+						lastTimeNoWork = System.currentTimeMillis() + 30 + rnd.nextInt(30);
 
-					return null;					
+						return null;					
+					}
 				}
 				
 				do {
 					try {
-						transferId = db.geti(1);
-						sLFN = db.gets(2);
-						targetSE = db.gets(3);
-						onDeleteRemoveReplica = db.gets(4);
+						transferId = dbCached.geti(1);
+						sLFN = dbCached.gets(2);
+						targetSE = dbCached.gets(3);
+						onDeleteRemoveReplica = dbCached.gets(4);
 
 						if (transferId < 0 || sLFN == null || sLFN.length() == 0 || targetSE == null || targetSE.length() == 0) {
 							logger.log(Level.INFO, "Transfer details are wrong");
@@ -192,11 +200,12 @@ public class TransferBroker {
 						// ignore
 					}
 				}
-				while (db.moveNext());
+				while (dbCached.moveNext());
 			}
 		}
 		finally{
 			db.close();
+			dbCached.close();
 		}
 
 		GUID guid;
