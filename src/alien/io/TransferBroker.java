@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
@@ -112,6 +113,8 @@ public class TransferBroker {
 	}
 
 	private long lastTimeNoWork = 0;
+	
+	private final Random rnd = new Random(System.currentTimeMillis());
 
 	/**
 	 * @return the next transfer to be performed, or <code>null</code> if there
@@ -122,7 +125,7 @@ public class TransferBroker {
 	 * @return the next transfer to execute, if any is available 
 	 */
 	public synchronized Transfer getWork(final TransferAgent agent) {
-		if (System.currentTimeMillis() - lastTimeNoWork < 1000 * 30)
+		if (System.currentTimeMillis() < lastTimeNoWork)
 			return null;
 
 		final DBFunctions db = ConfigUtils.getDB("transfers");
@@ -144,46 +147,56 @@ public class TransferBroker {
 		String targetSE = null;
 		String onDeleteRemoveReplica = null;
 
-		while (transferId < 0){
-			db.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
-			try {
-				if (db.moveNext()){
-					transferId = db.geti(1); 
-					sLFN = db.gets(2);
-					targetSE = db.gets(3);
-					onDeleteRemoveReplica = db.gets(4);
-				} else {
+		try {
+			while (transferId < 0) {
+				db.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 10;");
+
+				if (!db.moveNext()){
 					logger.log(Level.FINE, "There is no waiting transfer in the queue");
-	
-					lastTimeNoWork = System.currentTimeMillis();
-	
-					return null;
-				}
-	
-				if (transferId < 0 || sLFN == null || sLFN.length() == 0 || targetSE == null || targetSE.length() == 0) {
-					logger.log(Level.INFO, "Transfer details are wrong");
-	
-					lastTimeNoWork = System.currentTimeMillis();
-	
-					return null;
-				}
-	
-				db.query("update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
-				
-				if (db.getUpdateCount()==0){
-					logger.log(Level.INFO, "Concurrent selection of "+transferId+", retrying");
-					transferId = -1;
-					continue;
+
+					lastTimeNoWork = System.currentTimeMillis() + 30 + rnd.nextInt(30);
+
+					return null;					
 				}
 				
-				db.query("insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
-						+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
-			} catch (final Exception e) {
-				logger.log(Level.WARNING, "Exception fetching data from the query", e);
-				// ignore
-			} finally {
-				db.close();
+				do {
+					try {
+						transferId = db.geti(1);
+						sLFN = db.gets(2);
+						targetSE = db.gets(3);
+						onDeleteRemoveReplica = db.gets(4);
+
+						if (transferId < 0 || sLFN == null || sLFN.length() == 0 || targetSE == null || targetSE.length() == 0) {
+							logger.log(Level.INFO, "Transfer details are wrong");
+
+							lastTimeNoWork = System.currentTimeMillis();
+
+							return null;
+						}
+
+						db.query("update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
+
+						if (db.getUpdateCount() == 0) {
+							logger.log(Level.INFO, "Concurrent selection of " + transferId + ", retrying");
+							transferId = -1;
+							continue;
+						}
+
+						db.query("insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
+								+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
+						
+						break;
+					}
+					catch (final Exception e) {
+						logger.log(Level.WARNING, "Exception fetching data from the query", e);
+						// ignore
+					}
+				}
+				while (db.moveNext());
 			}
+		}
+		finally{
+			db.close();
 		}
 
 		GUID guid;
@@ -460,7 +473,7 @@ public class TransferBroker {
 
 	private void cleanup() {
 		// no need to synchronize this method
-		if (System.currentTimeMillis() - lastCleanedUp < 1000 * 30)
+		if (System.currentTimeMillis() - lastCleanedUp < 1000 * 60)
 			return;
 
 		lastCleanedUp = System.currentTimeMillis();
