@@ -205,7 +205,6 @@ public class TransferBroker {
 		}
 		finally{
 			db.close();
-			dbCached.close();
 		}
 
 		GUID guid;
