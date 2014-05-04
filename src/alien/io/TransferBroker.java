@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import lazyj.DBFunctions.DBConnection;
 import lazyj.Format;
+import lazyj.cache.ExpirationCache;
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -118,6 +119,30 @@ public class TransferBroker {
 	
 	private DBFunctions dbCached = ConfigUtils.getDB("transfers");
 
+	private ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>();
+	
+	private int getMaxTransfers(final String seName){
+		Integer i = maxTransfersCache.get(seName.toLowerCase());
+		
+		if (i!=null){
+			return i.intValue();
+		}
+		
+		DBFunctions db = ConfigUtils.getDB("transfers");
+		
+		db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename='"+Format.escSQL(seName)+"';");
+		
+		int ret = 0;
+		
+		if (db.moveNext()){
+			ret = db.geti(1);
+		}
+		
+		maxTransfersCache.put(seName.toLowerCase(), Integer.valueOf(ret), 1000*60*5);
+		
+		return ret;
+	}
+	
 	/**
 	 * @return the next transfer to be performed, or <code>null</code> if there
 	 *         is nothing to do
@@ -167,6 +192,8 @@ public class TransferBroker {
 					}
 				}
 				
+				final Set<String> ignoredSEs = new HashSet<>();
+				
 				do {
 					try {
 						transferId = dbCached.geti(1);
@@ -180,6 +207,17 @@ public class TransferBroker {
 							lastTimeNoWork = System.currentTimeMillis();
 
 							return null;
+						}
+						
+						if (ignoredSEs.contains(targetSE.toLowerCase()))
+							continue;
+						
+						db.query("SELECT count(1) FROM active_transfers WHERE se_name='"+Format.escSQL(targetSE)+"';");
+						
+						if (db.geti(1) >= getMaxTransfers(targetSE)){
+							ignoredSEs.add(targetSE.toLowerCase());
+							
+							continue;
 						}
 
 						db.query("update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
