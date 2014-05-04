@@ -209,6 +209,11 @@ public class Transfer implements Serializable, Runnable {
 		final List<Protocol> targetProtocols = getProtocols(target);
 
 		ret.retainAll(targetProtocols);
+		
+		SE targetSE = target.getSE();
+		
+		if (targetSE!=null && targetSE.getName().toLowerCase().indexOf("::eos")>=0)
+			ret.remove(Factory.xrd3cp);
 
 		return ret;
 	}
