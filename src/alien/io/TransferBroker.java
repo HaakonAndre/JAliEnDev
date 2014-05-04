@@ -148,10 +148,10 @@ public class TransferBroker {
 			db.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
 			try {
 				if (db.moveNext()){
-					transferId = resultSet.getInt(1);
-					sLFN = resultSet.getString(2);
-					targetSE = resultSet.getString(3);
-					onDeleteRemoveReplica = resultSet.getString(4);
+					transferId = db.geti(1); 
+					sLFN = db.gets(2);
+					targetSE = db.gets(3);
+					onDeleteRemoveReplica = db.gets(4);
 				} else {
 					logger.log(Level.FINE, "There is no waiting transfer in the queue");
 	
