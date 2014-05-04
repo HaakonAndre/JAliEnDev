@@ -117,6 +117,10 @@ public class TransferBroker {
 	 * @return the next transfer to be performed, or <code>null</code> if there
 	 *         is nothing to do
 	 */
+	/**
+	 * @param agent
+	 * @return the next transfer to execute, if any is available 
+	 */
 	public synchronized Transfer getWork(final TransferAgent agent) {
 		if (System.currentTimeMillis() - lastTimeNoWork < 1000 * 30)
 			return null;
@@ -135,56 +139,51 @@ public class TransferBroker {
 
 		touch(null, agent);
 
-		final DBConnection dbc = db.getConnection();
-
-		executeQuery(dbc, "SET autocommit = 0;");
-		executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
-		executeQuery(
-				dbc,
-				"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
-
 		int transferId = -1;
 		String sLFN = null;
 		String targetSE = null;
 		String onDeleteRemoveReplica = null;
 
-		try {
-			if (resultSet != null && resultSet.next()) {
-				transferId = resultSet.getInt(1);
-				sLFN = resultSet.getString(2);
-				targetSE = resultSet.getString(3);
-				onDeleteRemoveReplica = resultSet.getString(4);
-			} else {
-				logger.log(Level.FINE, "There is no waiting transfer in the queue");
-
-				lastTimeNoWork = System.currentTimeMillis();
-
-				return null;
+		while (transferId < 0){
+			db.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on (sename=destination) where status='WAITING' and (SELECT count(1) FROM active_transfers WHERE se_name=sename)<max_transfers and attempts>=0 order by attempts desc,transferId asc limit 1;");
+			try {
+				if (db.moveNext()){
+					transferId = resultSet.getInt(1);
+					sLFN = resultSet.getString(2);
+					targetSE = resultSet.getString(3);
+					onDeleteRemoveReplica = resultSet.getString(4);
+				} else {
+					logger.log(Level.FINE, "There is no waiting transfer in the queue");
+	
+					lastTimeNoWork = System.currentTimeMillis();
+	
+					return null;
+				}
+	
+				if (transferId < 0 || sLFN == null || sLFN.length() == 0 || targetSE == null || targetSE.length() == 0) {
+					logger.log(Level.INFO, "Transfer details are wrong");
+	
+					lastTimeNoWork = System.currentTimeMillis();
+	
+					return null;
+				}
+	
+				db.query("update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
+				
+				if (db.getUpdateCount()==0){
+					logger.log(Level.INFO, "Concurrent selection of "+transferId+", retrying");
+					transferId = -1;
+					continue;
+				}
+				
+				db.query("insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
+						+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
+			} catch (final Exception e) {
+				logger.log(Level.WARNING, "Exception fetching data from the query", e);
+				// ignore
+			} finally {
+				db.close();
 			}
-
-			if (transferId < 0 || sLFN == null || sLFN.length() == 0 || targetSE == null || targetSE.length() == 0) {
-				logger.log(Level.INFO, "Transfer details are wrong");
-
-				lastTimeNoWork = System.currentTimeMillis();
-
-				return null;
-			}
-
-			executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + ";");
-			executeQuery(
-					dbc,
-					"insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
-							+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
-		} catch (final Exception e) {
-			logger.log(Level.WARNING, "Exception fetching data from the query", e);
-			// ignore
-		} finally {
-			executeQuery(dbc, "commit;");
-			executeQuery(dbc, "unlock tables;");
-			executeQuery(dbc, "SET autocommit = 1;");
-			executeClose();
-
-			dbc.free();
 		}
 
 		GUID guid;
