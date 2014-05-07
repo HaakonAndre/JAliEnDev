@@ -13,6 +13,7 @@ import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
+import alien.se.SE;
 
 /**
  * @author costing
@@ -56,12 +57,15 @@ public class Xrd3cp extends Xrootd {
 			command.add("xrd3cp");
 			command.add("-m");
 
+			final SE targetSE = target.getSE();
+			
+			final String targetSEName = targetSE!=null ? targetSE.getName().toLowerCase() : "";
+			
 			// CERN::EOS, CERN::OCDB, NDGF::DCACHE, NDGF::DCACHE_TAPE,
 			// NSC::DCACHE, SARA::DCACHE, SARA::DCACHE_TAPE, SNIC::DCACHE
 			// All these SEs need to pass the opaque parameters, native xrootd
 			// SEs fail to perform the 3rd party transfer if this is given
-			if (target.seNumber == 332 || target.seNumber == 335 || target.seNumber == 209 || target.seNumber == 221 || target.seNumber == 208 || target.seNumber == 222 || target.seNumber == 224
-					|| target.seNumber == 331)
+			if (targetSEName.indexOf("::eos")>=0 || targetSEName.indexOf("::dcache")>=0 || targetSEName.equals("alice::cern::ocdb"))
 				command.add("-O");
 
 			command.add("-S");
