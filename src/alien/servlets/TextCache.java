@@ -25,6 +25,7 @@ import lazyj.ExtendedServlet;
 import lazyj.Format;
 import lazyj.LRUMap;
 import lazyj.Utils;
+import lazyj.cache.ExpirationCache;
 import lia.Monitor.monitor.ShutdownReceiver;
 import lia.util.ShutdownManager;
 import lia.util.StringFactory;
@@ -38,6 +39,31 @@ import alien.monitoring.MonitorFactory;
 public class TextCache extends ExtendedServlet {
 	private static final long serialVersionUID = 6024682549531639348L;
 
+	private static final ExpirationCache<String, Integer> defaultNamespaceExpiration = new ExpirationCache<>();
+	
+	private static int getDefaultExpiration(final String namespace){
+		final Integer i = defaultNamespaceExpiration.get(namespace);
+		
+		if (i!=null)
+			return i.intValue();
+		
+		int nsDefault = 60*60;
+
+		try {
+		    try {
+			nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl_" + namespace));
+		    } catch (final Throwable t1) {
+			nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl"));
+		    }
+		} catch (final Throwable t) {
+		    // ignore
+		}
+
+		defaultNamespaceExpiration.put(namespace, Integer.valueOf(nsDefault), 60*5*1000);
+		
+		return nsDefault;
+	}
+	
 	private static final class CacheValue {
 		public final String value;
 
@@ -409,7 +435,7 @@ public class TextCache extends ExtendedServlet {
 			}
 
 			synchronized (cache) {
-				old = cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", 60 * 60) * 1000));
+				old = cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", getDefaultExpiration(ns)) * 1000));
 			}
 
 			if (old != null)
