@@ -68,7 +68,7 @@ public class OrphanPFNsCleanup {
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 
 		final Xrootd x = Factory.xrootd;
-		x.setUseXrdRm(true);
+		x.setUseXrdRm(AppConfig.getb("utils.OrphanPFNsCleanup.useXrdRm", true));
 
 		long lastCheck = 0;
 
