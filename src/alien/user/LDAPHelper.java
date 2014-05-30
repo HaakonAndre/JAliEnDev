@@ -1,10 +1,13 @@
 package alien.user;
 
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -51,6 +54,8 @@ public class LDAPHelper {
 	}
 
 	private static String ldapServers = ConfigUtils.getConfig().gets("ldap_server", "alice-ldap.cern.ch:8389");
+	
+	private static int ldapPort = ConfigUtils.getConfig().geti("ldap_port", 389); 
 
 	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root", "o=alice,dc=cern,dc=ch");
 
@@ -63,8 +68,14 @@ public class LDAPHelper {
 	static {
 		final StringTokenizer tok = new StringTokenizer(ldapServers, " \t\r\n,;");
 
-		while (tok.hasMoreTokens())
-			ldapServerList.add(tok.nextToken());
+		while (tok.hasMoreTokens()){
+			final String addr = tok.nextToken();
+			
+			ldapServerList.add(addr);
+		}
+		
+		if (ldapServerList.size()>1)
+			Collections.shuffle(ldapServerList);
 
 		defaultEnv.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 		defaultEnv.put("com.sun.jndi.ldap.read.timeout", "30000");
@@ -112,10 +123,38 @@ public class LDAPHelper {
 		if (monitor != null)
 			monitor.incrementCacheMisses("querycache");
 
-		List<String> hosts = ldapServerList;
+		final LinkedList<String> hosts = new LinkedList<>();
+		
+		for (String host: ldapServerList){
+			int idx = host.indexOf(':');
+			
+			int thisLDAPPort = ldapPort;
+			
+			if (idx>=0 && idx==host.lastIndexOf(':')){
+				thisLDAPPort = Integer.parseInt(host.substring(idx+1));
+				host = host.substring(0, idx);
+			}
+			
+			try{
+				final InetAddress[] addresses = InetAddress.getAllByName(host);
+				
+				if (addresses==null || addresses.length==0)
+					hosts.add(host+":"+thisLDAPPort);
+				else{
+					for (final InetAddress ia: addresses){
+						if (ia instanceof Inet6Address)
+							hosts.add(0, "["+ia.getHostAddress()+"]:"+thisLDAPPort);
+						else
+							hosts.add(ia.getHostAddress()+":"+thisLDAPPort);
+					}
+				}
+			}
+			catch (final UnknownHostException uhe){
+				hosts.add(host+":"+thisLDAPPort);
+			}
+		}
 
 		if (hosts.size() > 1) {
-			hosts = new ArrayList<>(hosts);
 			Collections.shuffle(hosts);
 		}
 
@@ -127,7 +166,7 @@ public class LDAPHelper {
 
 				final Hashtable<String, String> env = new Hashtable<>();
 				env.putAll(defaultEnv);
-				env.put(Context.PROVIDER_URL, "ldap://" + ldapServer + "/" + dirRoot);
+				env.put(Context.PROVIDER_URL, "ldap://" + ldapServer + ":" + ldapPort + "/" + dirRoot);
 
 				final DirContext context = new InitialDirContext(env);
 
