@@ -166,7 +166,7 @@ public class LDAPHelper {
 
 				final Hashtable<String, String> env = new Hashtable<>();
 				env.putAll(defaultEnv);
-				env.put(Context.PROVIDER_URL, "ldap://" + ldapServer + ":" + ldapPort + "/" + dirRoot);
+				env.put(Context.PROVIDER_URL, "ldap://" + ldapServer + "/" + dirRoot);
 
 				final DirContext context = new InitialDirContext(env);
 
