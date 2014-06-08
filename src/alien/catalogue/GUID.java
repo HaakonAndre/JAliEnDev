@@ -261,8 +261,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 
 		try {
-			// only the SE list can change, and the size for a collection
-			if (!db.query("UPDATE G" + tableName + "L SET seStringlist=" + setToString(seStringList) + ", size=" + size + " WHERE guidId=" + guidId))
+			// only the SE list can change, and the size for a collection, and md5 when it was missing
+			if (!db.query("UPDATE G" + tableName + "L SET seStringlist=" + setToString(seStringList) + ", size=" + size + ", md5='"+Format.escSQL(md5)+"' WHERE guidId=" + guidId))
 				// wrong table name or what?
 				return false;
 

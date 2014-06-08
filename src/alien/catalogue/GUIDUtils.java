@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lia.util.process.ExternalProcesses;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.monitoring.Monitor;
@@ -273,6 +275,9 @@ public final class GUIDUtils {
 
 	private static long lastTimestamp2 = System.nanoTime() / 100 + 122192928000000000L;
 
+	/**
+	 * @return a time UUID with the reference time set to now
+	 */
 	public static synchronized UUID generateTimeUUID() {
 		final long time = System.currentTimeMillis() * 10000 + 122192928000000000L;
 
@@ -288,6 +293,10 @@ public final class GUIDUtils {
 		return generateTimeUUIDWork(time);
 	}
 
+	/**
+	 * @param referenceTime
+	 * @return a time UUID with the time field set to the reference time 
+	 */
 	public static synchronized UUID generateTimeUUID(final long referenceTime) {
 		final long time = referenceTime * 10000 + 122192928000000000L;
 
@@ -475,5 +484,72 @@ public final class GUIDUtils {
 	 */
 	public static final String getIndexTime(final UUID uuid) {
 		return Long.toHexString(indexTime(uuid)).toUpperCase();
+	}
+	
+	/**
+	 * Check if the MD5 sum is set to both the LFN and the underlying GUID. If not set the missing one (or both) from the other or by downloading the file and computing the MD5 sum.
+	 * 
+	 * @param lfn
+	 * @return <code>true</code> if the MD5 was already set or if it could be now set, <code>false</code> if there was any error setting it
+	 */
+	public static boolean checkMD5(final LFN lfn){
+		final GUID g = getGUID(lfn);
+		
+		if (g==null){
+			logger.log(Level.WARNING, "No GUID for "+lfn.getCanonicalName());
+			return false;
+		}
+		
+		if (lfn.md5==null || lfn.md5.length()<10 || g.md5==null || g.md5.length()<10){
+			if (g.md5!=null && g.md5.length()>=10){
+				lfn.md5 = g.md5;
+				logger.log(Level.INFO, "Setting md5 of "+g.guid+" from "+lfn.getCanonicalName()+" to "+lfn.md5);
+				return lfn.update();
+			}
+			
+			if (lfn.md5!=null && lfn.md5.length()>=10){
+				g.md5 = lfn.md5;
+				logger.log(Level.INFO, "Setting md5 of "+lfn.getCanonicalName()+" from "+g.guid+" to "+g.md5);
+				return g.update();
+			}
+			
+			final String reason = AuthorizationFactory.fillAccess(g, AccessType.READ);
+			
+			if (reason!=null){
+				logger.log(Level.WARNING, "Could not get authorization to read "+g.guid+" : "+reason);
+				return false;
+			}
+			
+			File temp = IOUtils.get(g);
+			
+			if (temp!=null){
+				try{
+					g.md5 = IOUtils.getMD5(temp);
+				
+					if (!g.update())
+						return false;
+					
+					lfn.md5 = g.md5;
+					
+					if (!lfn.update())
+						return false;
+						
+					return true;
+				}
+				catch (final IOException ioe){
+					logger.log(Level.WARNING, "Unable to compute the MD5 sum of "+lfn.getCanonicalName(), ioe);
+					
+					return false;
+				}
+				finally{
+					temp.delete();
+				}
+			}
+			logger.log(Level.WARNING, "Could not download "+g.guid);
+				
+			return false;
+		}
+		
+		return true;
 	}
 }
