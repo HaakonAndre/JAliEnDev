@@ -317,8 +317,10 @@ public class Xrootd extends Protocol {
 			}
 		}
 
-		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ)
-			throw new SourceException("The envelope for PFN " + pfn.toString() + (pfn.ticket == null ? " could not be found" : " is not a READ one"));
+		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ){
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "The envelope for PFN " + pfn.toString() + (pfn.ticket == null ? " could not be found" : " is not a READ one"));
+		}
 
 		try {
 			final List<String> command = new LinkedList<>();
@@ -334,13 +336,13 @@ public class Xrootd extends Protocol {
 
 			String transactionURL = pfn.pfn;
 
-			if (pfn.ticket.envelope != null)
+			if (pfn.ticket!=null && pfn.ticket.envelope != null)
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
 
-			if (pfn.ticket.envelope != null)
+			if (pfn.ticket!=null && pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
@@ -352,8 +354,8 @@ public class Xrootd extends Protocol {
 
 			pBuilder.returnOutputOnExit(true);
 
-			long maxTime = pfn.getGuid().size / 20000; // 20KB/s should be
-														// available to anybody
+			// 20KB/s should be available to anybody
+			long maxTime = pfn.getGuid().size / 20000; 
 
 			maxTime += timeout;
 
@@ -397,16 +399,8 @@ public class Xrootd extends Protocol {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 			else {
-				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target); // make
-																							// sure
-																							// it
-																							// doesn't
-																							// pop
-																							// up
-																							// later
-																							// after
-																							// an
-																							// interrupt
+				// make sure it doesn't pop up later after an interrupt
+				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target); 
 				TempFileManager.release(target);
 			}
 
@@ -415,16 +409,8 @@ public class Xrootd extends Protocol {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on throwable: " + target);
 			else {
-				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target); // make
-																							// sure
-																							// it
-																							// doesn't
-																							// pop
-																							// up
-																							// later
-																							// after
-																							// an
-																							// interrupt
+				// make sure it doesn't pop up later after an interrupt
+				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target);
 				TempFileManager.release(target);
 			}
 
