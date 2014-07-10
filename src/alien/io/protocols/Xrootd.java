@@ -448,8 +448,8 @@ public class Xrootd extends Protocol {
 			final List<String> command = new LinkedList<>();
 
 			if (xrdcpPath == null) {
-				logger.log(Level.SEVERE, "Could not fine [" + xrdcpCommand + "] in path.");
-				throw new TargetException("Could not fine [" + xrdcpCommand + "] in path.");
+				logger.log(Level.SEVERE, "Could not find [" + xrdcpCommand + "] in path.");
+				throw new TargetException("Could not find [" + xrdcpCommand + "] in path.");
 			}
 
 			command.add(xrdcpPath);
