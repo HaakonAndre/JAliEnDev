@@ -9,8 +9,9 @@ if [ "$1" == "setup" ]; then
 
     mkdir -p ${HOME}/.j/trusts
 
-    wget -q "https://ca.cern.ch/ca/CRL/CERN%20Root%20CA.crt" -O ${HOME}/.j/trusts/CERN_Root_CA.der
-    wget -q "https://ca.cern.ch/ca/CRL/CERN%20Trusted%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_Trusted_CA.der
+    wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_CA.der
+    wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" -O ${HOME}/.j/trusts/CERN_ROOT_CA2.der
+    wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Grid%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_Grid_CA.der
 
     chmod 400 ${HOME}/.globus/userkey.pem
     chmod 440 ${HOME}/.globus/usercert.pem
