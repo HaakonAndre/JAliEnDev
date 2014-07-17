@@ -17,6 +17,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.*;
 
 import lia.util.Utils;
 import alien.catalogue.access.AuthorizationFactory;
@@ -124,7 +125,7 @@ public class JBoxServer extends Thread {
 	private JBoxServer(final int listeningPort, final int iDebug) throws Exception {
 		this.port = listeningPort;
 		this.iDebugLevel = iDebug;
-		
+
 		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
 
 		if (alUser == null || alUser.getName() == null){
@@ -175,7 +176,7 @@ public class JBoxServer extends Thread {
 
 		if (sUserId == null || sUserId.length() == 0) {
 			sUserId = Utils.getOutput("id -u "+System.getProperty("user.name"));
-			
+
 			if (sUserId != null && sUserId.length() > 0){
 				System.setProperty("userid", sUserId);
 			}
@@ -381,96 +382,101 @@ public class JBoxServer extends Thread {
 			Scanner scanner = null;
 
 			try {
-
-				final String lineTerm = String.valueOf((char) 0);
-				final String SpaceSep = String.valueOf((char) 1);
-
+				Pattern p = Pattern.compile("^<cmd value=\"(.+)\" options=\"(.*)\" debug=\"([0-9])\" \\/>$");
+				String sCmdDebug = "";
+				String sCmdValue = "";
+				String sCmdOptions = "";
+				String sLine = "";
+				
 				br = new BufferedReader(new InputStreamReader(is));
 
-				scanner = new Scanner(br);
-				scanner.useDelimiter(lineTerm);
+				while((sLine = br.readLine()) != null){
+					Matcher m = p.matcher(sLine);
 
-				String sLine = null;
-				if (scanner.hasNext())
-					sLine = scanner.next();
+					if(m.matches()){
+						sCmdValue = m.group(1);
+						sCmdOptions = m.group(2);
+						sCmdDebug = m.group(3);
 
-				if (sLine != null && sLine.equals(password)) {
-					os.write(passACK.getBytes());
-					os.flush();
-				} else {
-					os.write(passNOACK.getBytes());
-					os.flush();
-					return;
-				}
-				logger.log(Level.INFO, "JSh connected.");
-
-				commander = new JAliEnCOMMander();
-				commander.start();
-
-				while (scanner.hasNext()) {
-					final String line = scanner.next();
-
-					if (line == null || line.isEmpty()) {
-						logger.log(Level.INFO, "Received emtpy line, nothing to do.");
-						// os.write(JShPrintWriter.streamend.getBytes());
-						// os.flush();
-						continue;
+						logger.log(Level.INFO, "Command received: sCmdValue=\""+sCmdValue+"\", sCmdOptions=\""+sCmdOptions+"\"");
+					}
+					else{
+						logger.log(Level.SEVERE, "Command received does not match the expected format");
+						//return;
 					}
 
-					logger.log(Level.INFO, "JBox Got line: " + line);
-
-					notifyActivity();
-
-					if ("SIGINT".equals(line)) {
-						logger.log(Level.INFO, "Received [SIGINT] from JSh.");
-
-						try {
-							commander.interrupt();
-							commander.stop();
-						} catch (final Throwable t) {
-							// ignore
-						} finally {
-							System.out.println("SIGINT reset commander");
-
-							// kill the active command and start a new instance
-							final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
-							commander = comm;
-
-							commander.start();
-
-							commander.flush();
+					if (sCmdValue != null && sCmdValue.equals("password")) {
+						if(sCmdOptions.equals(password)){
+							os.write(passACK.getBytes());
+							os.flush();
+						} else {
+							os.write(passNOACK.getBytes());
+							os.flush();
+							return;
 						}
+					}
+					else{
+						logger.log(Level.INFO, "JSh connected.");
 
-					} else if ("shutdown".equals(line))
-						shutdown();
-					else {
-						waitCommandFinish();
 
-						synchronized (commander) {
+						commander = new JAliEnCOMMander();
+						commander.start();
 
-							final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-							final List<String> args = new ArrayList<>();
-							while (t.hasMoreTokens())
-								args.add(t.nextToken());
+						notifyActivity();
 
-							if ("setshell".equals(args.get(0))) {
-								setShellPrintWriter(os, args.get(1));
-								logger.log(Level.INFO, "Set explicit print writer.");
+						if ("SIGINT".equals(sLine)) {
+							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
 
-								os.write((JShPrintWriter.streamend + "\n").getBytes());
-								os.flush();
-								continue;
+							try {
+								commander.interrupt();
+								commander.stop();
+							} catch (final Throwable t) {
+								// ignore
+							} finally {
+								System.out.println("SIGINT reset commander");
+
+								// kill the active command and start a new instance
+								final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
+								commander = comm;
+
+								commander.start();
+
+								commander.flush();
 							}
 
-							if (out == null)
-								out = new XMLPrintWriter(os);
+						} else if ("shutdown".equals(sLine))
+							shutdown();
+						else {
+							waitCommandFinish();
 
-							commander.setLine(out, args.toArray(new String[] {}));
+							synchronized (commander) {
 
-							commander.notifyAll();
+					//			final StringTokenizer t = new StringTokenizer(line, SpaceSep);
+						//		final List<String> args = new ArrayList<>();
+							//	while (t.hasMoreTokens())
+								//	args.add(t.nextToken());
+
+								if ("setshell".equals(sCmdValue)) {
+									setShellPrintWriter(os, sCmdValue);
+									logger.log(Level.INFO, "Set explicit print writer.");
+
+									os.write((JShPrintWriter.streamend + "\n").getBytes());
+									os.flush();
+									continue;
+								}
+
+								if (out == null)
+									out = new XMLPrintWriter(os);
+								String[] arCmd = {sCmdValue, sCmdOptions};
+										
+								commander.setLine(out, arCmd);
+
+								commander.notifyAll();
+							}
 						}
+						os.flush();
 					}
-					os.flush();
+
 				}
 			} catch (final Throwable e) {
 				logger.log(Level.INFO, "Error running the commander.", e);
