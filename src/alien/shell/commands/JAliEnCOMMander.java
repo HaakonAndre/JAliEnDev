@@ -373,6 +373,7 @@ public class JAliEnCOMMander extends Thread {
 		}
 
 		final String comm = arg[0];
+		logger.log(Level.INFO, "Received command = "+comm);
 
 		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
 		
@@ -530,7 +531,7 @@ public class JAliEnCOMMander extends Thread {
 	 * @throws Exception
 	 */
 	protected static JAliEnBaseCommand getCommand(final String classSuffix, final Object[] objectParm) throws Exception {
-
+		logger.log(Level.INFO, "Entering command with "+classSuffix+" and options "+objectParm);
 		@SuppressWarnings("rawtypes")
 		final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
 		@SuppressWarnings({ "rawtypes", "unchecked" })

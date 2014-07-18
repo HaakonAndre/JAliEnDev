@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -92,9 +93,11 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		if (accessRequest == AccessType.WRITE) 
 				pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 		
-		else if (accessRequest == AccessType.READ) 
-				pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
-		else
+		else if (accessRequest == AccessType.READ) {
+			logger.log(Level.INFO, "We are doing a read operation");	
+			pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
+		
+		}else
 			
 			out.printErrln("Unknown access type [error in processing].");
 
@@ -256,14 +259,21 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 
+		logger.log(Level.INFO, "Access arguments are "+alArguments);
 		java.util.ListIterator<String> arg = alArguments.listIterator();
 
 		if (arg.hasNext()) {
 			String access = arg.next();
+			logger.log(Level.INFO,"Access = "+access);
 			if (access.startsWith("write")) {
+				logger.log(Level.INFO, "We got write accesss");
 				accessRequest = AccessType.WRITE;
 			} else if (access.equals("read")) {
+				logger.log(Level.INFO, "We got read accesss");
 				accessRequest = AccessType.READ;
+			}
+			else{
+				logger.log(Level.INFO, "We got unknown accesss");
 			}
 
 			if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext()) ) {

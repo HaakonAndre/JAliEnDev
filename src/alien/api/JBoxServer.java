@@ -467,8 +467,11 @@ public class JBoxServer extends Thread {
 
 								if (out == null)
 									out = new XMLPrintWriter(os);
-								String[] arCmd = {sCmdValue, sCmdOptions};
-										
+								
+								String tmpString = sCmdValue + " " + sCmdOptions; 
+								
+								String[] arCmd = tmpString.split(" ");
+									
 								commander.setLine(out, arCmd);
 
 								commander.notifyAll();
