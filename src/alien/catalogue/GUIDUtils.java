@@ -423,6 +423,27 @@ public final class GUIDUtils {
 
 		return new GUID(id);
 	}
+	
+	public static GUID createGuid(final AliEnPrincipal user){
+		final GUID guid = createGuid();
+		
+		if (user!=null){
+			guid.owner = user.getName();
+	
+			final Set<String> roles = user.getRoles();
+	
+			if (roles != null && roles.size() > 0)
+				guid.gowner = roles.iterator().next();
+			else
+				guid.gowner = guid.owner;
+		}
+
+		guid.type = 0; // as in the catalogue
+		guid.perm = "755";
+		guid.aclId = -1;
+		
+		return guid;
+	}
 
 	/**
 	 * @param f
@@ -435,24 +456,11 @@ public final class GUIDUtils {
 	public static GUID createGuid(final File f, final AliEnPrincipal user) throws IOException {
 		final String md5 = IOUtils.getMD5(f);
 
-		final GUID guid = createGuid();
+		final GUID guid = createGuid(user);
 
 		guid.ctime = new Date(f.lastModified());
 		guid.md5 = md5;
 		guid.size = f.length();
-
-		guid.owner = user.getName();
-
-		final Set<String> roles = user.getRoles();
-
-		if (roles != null && roles.size() > 0)
-			guid.gowner = roles.iterator().next();
-		else
-			guid.gowner = guid.owner;
-
-		guid.type = 0; // as in the catalogue
-		guid.perm = "755";
-		guid.aclId = -1;
 
 		return guid;
 	}

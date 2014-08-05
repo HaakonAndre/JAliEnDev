@@ -63,30 +63,38 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		GUID guid = null;
 		boolean evenIfNotExists = false;
 
-		if (accessRequest.equals(AccessType.WRITE)){
+		if (accessRequest.equals(AccessType.WRITE)) {
 			logger.log(Level.INFO, "Access called for a write operation");
 			evenIfNotExists = true;
 		}
 
-		//obtaining LFN information for read or a new LFN for write
+		// obtaining LFN information for read or a new LFN for write
 		lfn = commander.c_api.getLFN(lfnName, evenIfNotExists);
-		
+
 		if (lfn == null) {
 			logger.log(Level.INFO, "Not able to retrieve LFN from Catalogue ");
 			out.printErrln("Not able to retrieve LFN from Catalogue [error in processing].");
 			return;
 		}
-		
-		//is it ok here? to check, is this for a new file
-		if (lfn.guid == null){
+
+		// is it ok here? to check, is this for a new file
+		if (lfn.guid == null) {
 			try {
-				guid = GUIDUtils.createGuid(new File(localFileName),commander.user);
+				File f = null;
+
+				if (localFileName != null && localFileName.length() > 0)
+					f = new File(localFileName);
+
+				if (f != null && f.exists() && f.isFile() && f.canRead())
+					guid = GUIDUtils.createGuid(new File(localFileName), commander.user);
+				else
+					guid = GUIDUtils.createGuid(commander.user);
 			} catch (IOException e) {
 				e.printStackTrace();
-				//TODO
+				// TODO
 				return;
 			}
-			
+
 			lfn.guid = guid.guid;
 			lfn.size = guid.size;
 			lfn.md5 = guid.md5;
@@ -94,67 +102,62 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			guid.lfnCache.add(lfn);
 		}
 
-		if (accessRequest == AccessType.WRITE) 
+		if (accessRequest == AccessType.WRITE)
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 		else if (accessRequest == AccessType.READ) {
-			logger.log(Level.INFO, "Acess called for a read operation");	
+			logger.log(Level.INFO, "Acess called for a read operation");
 			pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
-		}
-		else{
+		} else {
 			logger.log(Level.SEVERE, "Unknown access type");
 			out.printErrln("Unknown access type [error in processing].");
 		}
-		
-		if(pfns == null || pfns.size() < 1){
+
+		if (pfns == null || pfns.size() < 1) {
 			logger.log(Level.SEVERE, "Error getting the LFN/GUID");
 			out.printErrln("Not able to get request LFN/GUID [error in processing].");
 		}
 
-		if (out.isRootPrinter()){
-		
-			if (pfns != null && !pfns.isEmpty()){
-				for (PFN pfn : pfns){
+		if (out.isRootPrinter()) {
+
+			if (pfns != null && !pfns.isEmpty()) {
+				for (PFN pfn : pfns) {
 					out.nextResult();
-					
+
 					String envelope = pfn.ticket.envelope.getSignedEnvelope();
-					
-					if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber)
-							.getName().toLowerCase()))
+
+					if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber).getName().toLowerCase()))
 						if (commander.c_api.getSE(pfn.seNumber).needsEncryptedEnvelope)
-							envelope += "&envelope="
-									+ pfn.ticket.envelope.getEncryptedEnvelope();
+							envelope += "&envelope=" + pfn.ticket.envelope.getEncryptedEnvelope();
 
 					final StringTokenizer st = new StringTokenizer(envelope, "&");
-					
+
 					while (st.hasMoreTokens()) {
 						String t = st.nextToken();
 						String key = t.substring(0, t.indexOf('='));
 						String val = t.substring(t.indexOf('=') + 1);
-						
+
 						if (("turl").equals(key)) {
 							out.setField("url", val);
-							final StringTokenizer tpfn = new StringTokenizer(val,
-									"////");
+							final StringTokenizer tpfn = new StringTokenizer(val, "////");
 							tpfn.nextToken();
 							tpfn.nextToken();
 							StringBuilder ttpfn = new StringBuilder();
 
-							while (tpfn.hasMoreTokens()){
+							while (tpfn.hasMoreTokens()) {
 								ttpfn.append('/').append(tpfn.nextToken());
 							}
 							out.setField("pfn", ttpfn.toString());
-						}
-						else
+						} else
 							out.setField(key, val);
 					}
 					if (accessRequest.equals(AccessType.WRITE))
 						out.setField("nSEs", "1");
-					else 
+					else
 
-						out.setField("nSEs", " "+pfns.size());
+						out.setField("nSEs", " " + pfns.size());
 					out.setField("user", commander.user.getName());
 					if (accessRequest.equals(AccessType.WRITE))
-						break; 
+						break;
 				}
 			}
 		}
