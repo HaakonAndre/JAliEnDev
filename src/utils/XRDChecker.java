@@ -237,7 +237,6 @@ public class XRDChecker {
 			final XRDStatus status = entry.getValue();
 
 			if (status.commandOK) {
-				// really ?
 				final XRDStatus downloadStatus = checkByDownloading(pfn, lfn.toLowerCase().endsWith(".zip"));
 
 				if (!downloadStatus.commandOK)
