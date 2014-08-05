@@ -1,6 +1,7 @@
 package utils;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -8,6 +9,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -101,6 +105,16 @@ public class XRDChecker {
 	 * @return the check status
 	 */
 	public static final XRDStatus checkByDownloading(final PFN pfn) {
+		return checkByDownloading(pfn, false);
+	}
+	
+	/**
+	 * @param pfn
+	 * @param zipFile if <code>true</code> then the downloaded file is assumed to be a ZIP archive
+	 * 			and the code will check its structure as well
+	 * @return the check status
+	 */
+	public static final XRDStatus checkByDownloading(final PFN pfn, final boolean zipFile) {
 		final Xrootd xrootd = new Xrootd();
 
 		xrootd.setTimeout(60);
@@ -126,10 +140,19 @@ public class XRDChecker {
 			if (f.length() != guid.size)
 				return new XRDStatus(false, "Size is different: catalog=" + guid.size + ", downloaded size: " + f.length());
 
-			final String fileMD5 = IOUtils.getMD5(f);
-
-			if (!fileMD5.equalsIgnoreCase(guid.md5))
-				return new XRDStatus(false, "MD5 is different: catalog=" + guid.md5 + ", downloaded file=" + fileMD5);
+			if (guid.md5!=null && guid.md5.length()>0){
+				final String fileMD5 = IOUtils.getMD5(f);
+				
+				if (!fileMD5.equalsIgnoreCase(guid.md5))
+					return new XRDStatus(false, "MD5 is different: catalog=" + guid.md5 + ", downloaded file=" + fileMD5);
+			}
+			
+			if (zipFile){
+				final String zipMessage = checkZipFile(f);
+				
+				if (zipMessage!=null)
+					return new XRDStatus(false, "Broken ZIP archive: "+zipMessage);
+			}
 		} catch (final IOException ioe) {
 			return new XRDStatus(false, ioe.getMessage());
 		} finally {
@@ -142,6 +165,53 @@ public class XRDChecker {
 		}
 
 		return new XRDStatus(true, null);
+	}
+	
+	/**
+	 * Check the integrity of a local ZIP file
+	 * 
+	 * @param f
+	 * @return if everything is OK then the method returns <code>null</code>, otherwise it is the error message from the check
+	 */
+	public static final String checkZipFile(final File f) {
+		ZipFile zipfile = null;
+		ZipInputStream zis = null;
+		try {
+			zipfile = new ZipFile(f);
+			zis = new ZipInputStream(new FileInputStream(f));
+			ZipEntry ze = zis.getNextEntry();
+			if (ze == null) {
+				return "No entry found";
+			}
+			while (ze != null) {
+				// if it throws an exception fetching any of the following then we know the file is corrupted.
+				zipfile.getInputStream(ze);
+				ze.getCrc();
+				ze.getCompressedSize();
+				ze.getName();
+				ze = zis.getNextEntry();
+			}
+			return null;
+		} catch (IOException e) {
+			return e.getMessage();
+		} finally {
+			try {
+				if (zipfile != null) {
+					zipfile.close();
+					zipfile = null;
+				}
+			} catch (IOException e) {
+				return e.getMessage();
+			}
+			try {
+				if (zis != null) {
+					zis.close();
+					zis = null;
+				}
+			} catch (IOException e) {
+				return e.getMessage();
+			}
+		}
 	}
 
 	/**
@@ -168,7 +238,7 @@ public class XRDChecker {
 
 			if (status.commandOK) {
 				// really ?
-				final XRDStatus downloadStatus = checkByDownloading(pfn);
+				final XRDStatus downloadStatus = checkByDownloading(pfn, lfn.toLowerCase().endsWith(".zip"));
 
 				if (!downloadStatus.commandOK)
 					entry.setValue(downloadStatus);
