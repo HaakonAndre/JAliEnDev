@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 import java.util.regex.*;
 
 import lia.util.Utils;
+import alien.catalogue.LFN;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
@@ -329,7 +330,7 @@ public class JBoxServer extends Thread {
 
 		private final OutputStream os;
 
-		private JAliEnCOMMander commander;
+		private JAliEnCOMMander commander = null;
 
 		/**
 		 * One UI connection identified by the socket
@@ -346,7 +347,7 @@ public class JBoxServer extends Thread {
 
 			setName("UIConnection: " + s.getInetAddress());
 		}
-
+		
 		private void waitCommandFinish() {
 			// wait for the previous command to finish
 
@@ -391,6 +392,7 @@ public class JBoxServer extends Thread {
 				br = new BufferedReader(new InputStreamReader(is));
 
 				while((sLine = br.readLine()) != null){
+
 					Matcher m = p.matcher(sLine);
 
 					if(m.matches()){
@@ -418,9 +420,10 @@ public class JBoxServer extends Thread {
 					else{
 						logger.log(Level.INFO, "JSh connected.");
 
-
-						commander = new JAliEnCOMMander();
-						commander.start();
+						if (commander == null) {
+							commander = new JAliEnCOMMander();
+							commander.start();
+						}
 
 						notifyActivity();
 
@@ -438,12 +441,11 @@ public class JBoxServer extends Thread {
 								// kill the active command and start a new instance
 								final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
 								commander = comm;
-
+								
 								commander.start();
 
-								commander.flush();
+								commander.flush();					
 							}
-
 						} else if ("shutdown".equals(sLine))
 							shutdown();
 						else {
