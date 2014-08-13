@@ -32,7 +32,7 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 					commander.curDir = newDir;
 				}
 				else
-					out.setField("cd: ",alArguments.get(0)+": Not a directory");
+					out.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
 			}
 			else
 			{
@@ -42,21 +42,21 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		
 		else
 		{
-		if (newDir != null)
-		{
-			if(newDir.isDirectory()) //Test added by sraje (Shikhar Raje, IIIT Hyderabad)
+			if (newDir != null)
 			{
-				commander.curDir = newDir;
-				out.setReturnArgs(deserializeForRoot(1));
+				if(newDir.isDirectory()) //Test added by sraje (Shikhar Raje, IIIT Hyderabad)
+				{
+					commander.curDir = newDir;
+					out.setReturnArgs(deserializeForRoot(1));
+				}
+				else
+					out.printErrln("cd: "+alArguments.get(0)+": Not a directory");
 			}
 			else
-				out.printErrln("cd: "+alArguments.get(0)+": Not a directory");
-		}
-		else
-		{
-			out.printErrln("No such directory.");
-			out.setReturnArgs(deserializeForRoot(0));
-		}
+			{
+				out.printErrln("No such directory.");
+				out.setReturnArgs(deserializeForRoot(0));
+			}
 		}
 
 	}

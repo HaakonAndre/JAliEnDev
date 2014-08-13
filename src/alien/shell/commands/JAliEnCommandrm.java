@@ -50,17 +50,15 @@ public class JAliEnCommandrm extends JAliEnBaseCommand
 				{
 					RemoveLFNfromString a =  Dispatcher.execute(rlfn);//Remember, all checking is being done server side now.
 					
-					if (!a.wasRemoved() && bV)
+					if (!a.wasRemoved())
 					{
-						out.setField("Failed to remove", "[" + path + "]");
+						out.setReturnCode(1, "Failed to remove [" + path + "]" );
 					}
 				}
 				catch (ServerException e)
 				{
 					e.getCause().printStackTrace();
-					
-					if(bV)
-						out.setField("Error removing", "[" + path + "]");
+					out.setReturnCode(1, "Failed to remove [" + path + "]" );
 				}		
 			}
 			
