@@ -529,11 +529,13 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				sb.append(id.toString());
 			}
 
-			final DBFunctions db = host.getDB();
+			if (sb.length() > 0) {
+				final DBFunctions db = host.getDB();
 
-			db.query("DELETE FROM G" + tableName + "L" + tableSuffix + " WHERE guidId IN (" + sb.toString() + ")");
+				db.query("DELETE FROM G" + tableName + "L" + tableSuffix + " WHERE guidId IN (" + sb.toString() + ")");
 
-			db.close();
+				db.close();
+			}
 
 			return true;
 		}
