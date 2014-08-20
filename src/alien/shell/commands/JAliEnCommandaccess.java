@@ -78,23 +78,27 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		}
 
 		// is it ok here? to check, is this for a new file
-		if (lfn.guid == null) {
-			try {
-				File f = null;
+		try {
+			File f = null;
 
-				if (localFileName != null && localFileName.length() > 0)
-					f = new File(localFileName);
-
-				if (f != null && f.exists() && f.isFile() && f.canRead())
-					guid = GUIDUtils.createGuid(new File(localFileName), commander.user);
-				else
-					guid = GUIDUtils.createGuid(commander.user);
-			} catch (IOException e) {
-				e.printStackTrace();
-				// TODO
-				return;
+			if (localFileName != null && localFileName.length() > 0) {
+				f = new File(localFileName);
 			}
 
+			if (f != null && f.exists() && f.isFile() && f.canRead()) {
+				guid = GUIDUtils.createGuid(new File(localFileName), commander.user);
+			}
+			else {
+				guid = GUIDUtils.createGuid(commander.user);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+
+			// TODO
+			return;
+		}
+
+		if (lfn.guid == null) {
 			lfn.guid = guid.guid;
 			lfn.size = guid.size;
 			lfn.md5 = guid.md5;
@@ -102,7 +106,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			guid.lfnCache.add(lfn);
 		}
 
-		if (accessRequest == AccessType.WRITE)
+		if (accessRequest == AccessType.WRITE) 
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 		else if (accessRequest == AccessType.READ) {
 			logger.log(Level.INFO, "Acess called for a read operation");
