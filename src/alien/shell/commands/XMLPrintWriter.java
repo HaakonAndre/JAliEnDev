@@ -98,7 +98,7 @@ public class XMLPrintWriter extends UIPrintWriter {
 	
 	private static void dumpMap(final PrintWriter pw, final Map<String, String> result) {
 		for (final Map.Entry<String, String> entry : result.entrySet()) {
-			pw.print(" " + entry.getKey() + "=\"" + Format.escHtml(entry.getValue()) + "\"");
+			pw.print(" " + entry.getKey() + "=\"" + Format.replace(Format.escHtml(entry.getValue()), "\n", "&#10;") + "\"");
 		}
 	}
 
