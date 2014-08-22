@@ -83,8 +83,6 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 					out.setField("md5"," "+c.md5);
 				}
 			}
-			if(!isSilent())
-				out.setReturnCode(1,"Not a collection");
 		}
 		else
 		{
