@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -72,9 +73,9 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		
 		if (out.isRootPrinter())
 		{
-			out.nextResult();
 			for(final LFN c: lfns)	
 			{
+				out.nextResult();
 				out.setField("guid",c.guid.toString());
 				out.setField("lfn", c.getCanonicalName());
 				if(bZ)
