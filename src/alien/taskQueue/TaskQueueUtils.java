@@ -6,6 +6,7 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -737,6 +738,7 @@ public class TaskQueueUtils {
 	 *            for older versions the only known JDL is returned.
 	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
 	 */
+	@SuppressWarnings("deprecation")
 	public static String getJDL(final int queueId, final boolean originalJDL) {
 		final DBFunctions db = getQueueDB();
 
@@ -748,7 +750,7 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_get_jdl");
 		}
 
-		final String q;
+		String q;
 
 		if (dbStructure2_20)
 			q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " FROM QUEUEJDL WHERE queueId=?;";
@@ -757,44 +759,49 @@ public class TaskQueueUtils {
 
 		try {
 			if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
-				final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
+				Date d = new Date();
+				q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " as JDL FROM QUEUEARCHIVE" + (1900 + d.getYear()) + " WHERE queueId=?";
 
-				if (jdlArchiveDir.length() > 0) {
-					File f = new File(jdlArchiveDir, queueId + ".txt");
+				if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
+					final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
 
-					if (f.exists() && f.canRead()) {
-						String content = Utils.readFile(f.getAbsolutePath());
+					if (jdlArchiveDir.length() > 0) {
+						File f = new File(jdlArchiveDir, queueId + ".txt");
 
-						final int idx = content.indexOf("// --------");
+						if (f.exists() && f.canRead()) {
+							String content = Utils.readFile(f.getAbsolutePath());
 
-						if (idx >= 0)
-							content = content.substring(0, idx);
+							final int idx = content.indexOf("// --------");
 
-						return content;
+							if (idx >= 0)
+								content = content.substring(0, idx);
+
+							return content;
+						}
+
+						f = new File(jdlArchiveDir, queueId + ".html");
+
+						if (f.exists() && f.canRead()) {
+							String content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+
+							final int idx = content.indexOf("// --------");
+
+							if (idx >= 0)
+								content = content.substring(0, idx);
+
+							return content;
+						}
 					}
 
-					f = new File(jdlArchiveDir, queueId + ".html");
+					logger.log(Level.WARNING, "Could not locate the archived jdl of " + queueId);
 
-					if (f.exists() && f.canRead()) {
-						String content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
-
-						final int idx = content.indexOf("// --------");
-
-						if (idx >= 0)
-							content = content.substring(0, idx);
-
-						return content;
-					}
+					return null;
 				}
-
-				logger.log(Level.WARNING, "Could not locate the archived jdl of " + queueId);
-
-				return null;
 			}
 
 			if (dbStructure2_20 && !originalJDL) {
 				final String jdl = db.gets(2);
-
+				
 				if (jdl.length() > 0)
 					return jdl;
 			}
