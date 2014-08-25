@@ -6,8 +6,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import lazyj.Format;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+
+import alien.config.ConfigUtils;
 
 
 /**
@@ -15,17 +21,25 @@ import lazyj.Format;
  * @since Mar 27 2014
  */
 public class XMLPrintWriter extends UIPrintWriter {
-	
 	/**
-	 * OutputSteam that will contain the information in Root format
+	 * Logger
 	 */
-	private OutputStream os;
+	static transient final Logger logger = ConfigUtils.getLogger(XMLPrintWriter.class.getCanonicalName());
+	
+	private XMLStreamWriter writer;
 
 	/**
 	 * @param os OutputSteam that will contain the information in Root format
 	 */
 	public XMLPrintWriter(final OutputStream os) {
-		this.os = os;
+		final XMLOutputFactory factory = XMLOutputFactory.newInstance();
+		
+		try{
+			writer = factory.createXMLStreamWriter(new PrintWriter(os));
+		}
+		catch (final XMLStreamException xmlEx){
+			// ignore
+		}
 		
 		setReturnCode(0, null);
 	}
@@ -72,34 +86,47 @@ public class XMLPrintWriter extends UIPrintWriter {
 	protected void flush() {
 		nextResult();
 		
-		final PrintWriter pw = new PrintWriter(os);
-		
 		metaInfo.put("count", String.valueOf(results.size()));
-		
-		pw.print("<document");
-		dumpMap(pw, metaInfo);
-		pw.println(">");
-		
-		for (final Map<String, String> result: results){
-			pw.print("<result");
-			dumpMap(pw, result);
-			pw.println("/>");
+
+		try{
+			writer.writeStartElement("document");
+			
+			for (final Map.Entry<String, String> entry : metaInfo.entrySet()) {
+				writer.writeAttribute(entry.getKey(), entry.getValue());
+			}
+			
+			for (final Map<String, String> result: results){
+				writer.writeStartElement("r");
+				
+				for (final Map.Entry<String, String> entry: result.entrySet()){
+					writer.writeStartElement(entry.getKey());
+					
+					final String value = entry.getValue();
+					if (value.indexOf(' ')>=0 || value.indexOf('\n') >=0 || value.indexOf('\r') >=0 ){
+						writer.writeCData(value);
+					}
+					else{
+						writer.writeCharacters(value);
+					}
+					
+					writer.writeEndElement();
+				}
+				
+				writer.writeEndElement();
+			}
+			
+			writer.writeEndElement();
+			
+			writer.flush();
 		}
-		
-		pw.println("</document>");
-		
-		pw.flush();
+		catch (final XMLStreamException xmlEx){
+			logger.log(Level.WARNING, "Exception writing XML to the client", xmlEx);
+		}
 		
 		results.clear();
 		metaInfo.clear();
 		
 		setReturnCode(0, null);
-	}
-	
-	private static void dumpMap(final PrintWriter pw, final Map<String, String> result) {
-		for (final Map.Entry<String, String> entry : result.entrySet()) {
-			pw.print(" " + entry.getKey() + "=\"" + Format.replace(Format.escHtml(entry.getValue()), "\n", "&#10;") + "\"");
-		}
 	}
 
 	@Override
