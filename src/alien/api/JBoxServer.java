@@ -6,21 +6,27 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
-import java.util.StringTokenizer;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.*;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 import lia.util.Utils;
-import alien.catalogue.LFN;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
@@ -347,7 +353,7 @@ public class JBoxServer extends Thread {
 
 			setName("UIConnection: " + s.getInetAddress());
 		}
-		
+
 		private void waitCommandFinish() {
 			// wait for the previous command to finish
 
@@ -383,106 +389,241 @@ public class JBoxServer extends Thread {
 			Scanner scanner = null;
 
 			try {
-				Pattern p = Pattern.compile("^<cmd value=\"(.+)\" options=\"(.*)\" debug=\"([0-9])\" \\/>$");
-				String sCmdDebug = "";
+				//				String sCmdDebug = "";
 				String sCmdValue = "";
-				String sCmdOptions = "";
+
 				String sLine = "";
-				
+
+				//Get the DOM Builder Factory
+				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();	 
+				//Get the DOM Builder
+				DocumentBuilder builder = factory.newDocumentBuilder();
+				//Load and Parse the XML document
+				//document contains the complete XML as a Tree.
 				br = new BufferedReader(new InputStreamReader(is));
+				String sCommand = "";
 
 				while((sLine = br.readLine()) != null){
-
-					Matcher m = p.matcher(sLine);
-
-					if(m.matches()){
-						sCmdValue = m.group(1);
-						sCmdOptions = m.group(2);
-						sCmdDebug = m.group(3);
-
-						logger.log(Level.INFO, "Command received: sCmdValue=\""+sCmdValue+"\", sCmdOptions=\""+sCmdOptions+"\"");
+					if(sLine.startsWith("<document>")){
+						sCommand = sLine;
 					}
-					else{
-						logger.log(Level.SEVERE, "Command received does not match the expected format");
-						//return;
-					}
+					else if(sLine.endsWith("</document>")){
+						sCommand += sLine;
+						ArrayList<String> cmdOptions = new ArrayList<String>();
+						ArrayList<String> fullCmd = new ArrayList<String>();
+						try{
 
-					if (sCmdValue != null && sCmdValue.equals("password")) {
-						if(sCmdOptions.equals(password)){
-							os.write(passACK.getBytes());
-							os.flush();
-						} else {
-							os.write(passNOACK.getBytes());
-							os.flush();
-							return;
-						}
-					}
-					else{
-						logger.log(Level.INFO, "JSh connected.");
+							// <document>
+							//  <ls>
+							//    <o>-l</o>
+							//    <o>-a</o>
+							//    <o>/alice/cern.ch/user/t/ttothova</o>
+							//  </ls>
+							// </document>
+							logger.info("XML =\""+sCommand+"\"");
+							Document document = builder.parse(new InputSource(new StringReader(sCommand)));
 
-						if (commander == null) {
-							commander = new JAliEnCOMMander();
-							commander.start();
-						}
+							NodeList commandNodeList = document.getElementsByTagName("command");
 
-						notifyActivity();
+							if(commandNodeList != null && commandNodeList.getLength() == 1){
+								Node commandNode = commandNodeList.item(0);
+								sCmdValue = commandNode.getTextContent();
+								fullCmd.add(sCmdValue);
+								logger.info("Received command " + sCmdValue);
 
-						if ("SIGINT".equals(sLine)) {
-							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+								NodeList optionsNodeList = document.getElementsByTagName("o");
 
-							try {
-								commander.interrupt();
-								commander.stop();
-							} catch (final Throwable t) {
-								// ignore
-							} finally {
-								System.out.println("SIGINT reset commander");
-
-								// kill the active command and start a new instance
-								final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
-								commander = comm;
-								
-								commander.start();
-
-								commander.flush();					
-							}
-						} else if ("shutdown".equals(sLine))
-							shutdown();
-						else {
-							waitCommandFinish();
-
-							synchronized (commander) {
-
-					//			final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-						//		final List<String> args = new ArrayList<>();
-							//	while (t.hasMoreTokens())
-								//	args.add(t.nextToken());
-
-								if ("setshell".equals(sCmdValue)) {
-									setShellPrintWriter(os, sCmdValue);
-									logger.log(Level.INFO, "Set explicit print writer.");
-
-									os.write((JShPrintWriter.streamend + "\n").getBytes());
-									os.flush();
-									continue;
+								for (int i = 0; i < optionsNodeList.getLength(); i++) {
+									Node optionNode = optionsNodeList.item(i);
+									cmdOptions.add(optionNode.getTextContent());
+									fullCmd.add(optionNode.getTextContent());
+									logger.info("Command options = "+optionNode.getTextContent());
 								}
 
-								if (out == null)
-									out = new XMLPrintWriter(os);
-								
-								String tmpString = sCmdValue + " " + sCmdOptions; 
-								
-								String[] arCmd = tmpString.split(" ");
-									
-								commander.setLine(out, arCmd);
+								if (sCmdValue != null && sCmdValue.equals("password")){
 
-								commander.notifyAll();
+									if(cmdOptions.get(0).equals(password)){
+										os.write(passACK.getBytes());
+										os.flush();
+									} else {
+										os.write(passNOACK.getBytes());
+										os.flush();
+										return;
+									}
+								}
+								else{
+									logger.log(Level.INFO, "JSh connected.");
+
+									if (commander == null) {
+										commander = new JAliEnCOMMander();
+										commander.start();
+									}
+
+									notifyActivity();
+
+									if ("SIGINT".equals(sLine)) {
+										logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+
+										try {
+											commander.interrupt();
+											commander.stop();
+										} catch (final Throwable t) {
+											// ignore
+										} finally {
+											System.out.println("SIGINT reset commander");
+
+											// kill the active command and start a new instance
+											final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
+											commander = comm;
+
+											commander.start();
+
+											commander.flush();					
+										}
+									} else if ("shutdown".equals(sLine))
+										shutdown();
+									else {
+										waitCommandFinish();
+
+										synchronized (commander) {
+
+											//			final StringTokenizer t = new StringTokenizer(line, SpaceSep);
+											//		final List<String> args = new ArrayList<>();
+											//	while (t.hasMoreTokens())
+											//	args.add(t.nextToken());
+
+											if ("setshell".equals(sCmdValue)) {
+												setShellPrintWriter(os, sCmdValue);
+												logger.log(Level.INFO, "Set explicit print writer.");
+
+												os.write((JShPrintWriter.streamend + "\n").getBytes());
+												os.flush();
+											}
+
+											if (out == null)
+												out = new XMLPrintWriter(os);
+
+
+											commander.setLine(out, (String[]) fullCmd.toArray(new String[]{}));
+
+											commander.notifyAll();
+										}
+									}
+									os.flush();
+								}
+							}
+							else{
+								logger.severe("Received more than one command");
+								// some error, there was more than one command 
+								// attached to the document
 							}
 						}
-						os.flush();
+						catch(Exception e){
+							logger.severe("Parse error "+e.getMessage());
+						}
+					}
+					else{
+						sCommand += "\n"+sLine;
 					}
 
 				}
+
+
+
+				//				br = new BufferedReader(new InputStreamReader(is));
+
+				//				while((sLine = br.readLine()) != null){
+				//
+				//					Matcher m = p.matcher(sLine);
+				//
+				//					if(m.matches()){
+				//						sCmdValue = m.group(1);
+				//						sCmdOptions = m.group(2);
+				//						sCmdDebug = m.group(3);
+				//
+				//						logger.log(Level.INFO, "Command received: sCmdValue=\""+sCmdValue+"\", sCmdOptions=\""+sCmdOptions+"\"");
+				//					}
+				//					else{
+				//						logger.log(Level.SEVERE, "Command received does not match the expected format");
+				//						//return;
+				//					}
+				//
+				//					if (sCmdValue != null && sCmdValue.equals("password")) {
+				//						if(sCmdOptions.equals(password)){
+				//							os.write(passACK.getBytes());
+				//							os.flush();
+				//						} else {
+				//							os.write(passNOACK.getBytes());
+				//							os.flush();
+				//							return;
+				//						}
+				//					}
+				//					else{
+				//						logger.log(Level.INFO, "JSh connected.");
+				//
+				//						if (commander == null) {
+				//							commander = new JAliEnCOMMander();
+				//							commander.start();
+				//						}
+				//
+				//						notifyActivity();
+				//
+				//						if ("SIGINT".equals(sLine)) {
+				//							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+				//
+				//							try {
+				//								commander.interrupt();
+				//								commander.stop();
+				//							} catch (final Throwable t) {
+				//								// ignore
+				//							} finally {
+				//								System.out.println("SIGINT reset commander");
+				//
+				//								// kill the active command and start a new instance
+				//								final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
+				//								commander = comm;
+				//								
+				//								commander.start();
+				//
+				//								commander.flush();					
+				//							}
+				//						} else if ("shutdown".equals(sLine))
+				//							shutdown();
+				//						else {
+				//							waitCommandFinish();
+				//
+				//							synchronized (commander) {
+				//
+				//					//			final StringTokenizer t = new StringTokenizer(line, SpaceSep);
+				//						//		final List<String> args = new ArrayList<>();
+				//							//	while (t.hasMoreTokens())
+				//								//	args.add(t.nextToken());
+				//
+				//								if ("setshell".equals(sCmdValue)) {
+				//									setShellPrintWriter(os, sCmdValue);
+				//									logger.log(Level.INFO, "Set explicit print writer.");
+				//
+				//									os.write((JShPrintWriter.streamend + "\n").getBytes());
+				//									os.flush();
+				//									continue;
+				//								}
+				//
+				//								if (out == null)
+				//									out = new XMLPrintWriter(os);
+				//								
+				//								String tmpString = sCmdValue + " " + sCmdOptions; 
+				//								
+				//								String[] arCmd = tmpString.split(" ");
+				//									
+				//								commander.setLine(out, arCmd);
+				//
+				//								commander.notifyAll();
+				//							}
+				//						}
+				//						os.flush();
+				//					}
+				//
+				//				}
 			} catch (final Throwable e) {
 				logger.log(Level.INFO, "Error running the commander.", e);
 			} finally {
