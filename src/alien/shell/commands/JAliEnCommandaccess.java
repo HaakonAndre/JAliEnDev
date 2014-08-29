@@ -157,11 +157,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					if (accessRequest.equals(AccessType.WRITE))
 						out.setField("nSEs", "1");
 					else
-
 						out.setField("nSEs", " " + pfns.size());
 					out.setField("user", commander.user.getName());
-					if (accessRequest.equals(AccessType.WRITE))
-						break;
 				}
 			}
 		}
