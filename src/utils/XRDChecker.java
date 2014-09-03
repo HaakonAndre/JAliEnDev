@@ -25,6 +25,8 @@ import alien.io.IOUtils;
 import alien.io.protocols.TempFileManager;
 import alien.io.protocols.XRDStatus;
 import alien.io.protocols.Xrootd;
+import alien.se.SE;
+import alien.se.SEUtils;
 
 /**
  * @author costing
@@ -214,18 +216,32 @@ public class XRDChecker {
 		}
 	}
 
+	private static SE noSE = SEUtils.getSE("no_se");
+	
 	/**
 	 * Check all replicas of an LFN, first just remotely querying the status
 	 * then fully downloading each replica and computing the md5sum.
 	 * 
-	 * @param lfn
+	 * @param sLFN
 	 * @return the status of all replicas
 	 */
-	public static final Map<PFN, XRDStatus> fullCheckLFN(final String lfn) {
-		final Map<PFN, XRDStatus> check = XRDChecker.check(LFNUtils.getLFN(lfn));
+	public static final Map<PFN, XRDStatus> fullCheckLFN(final String sLFN) {
+		LFN lfn = LFNUtils.getLFN(sLFN);
+		
+		if (lfn==null)
+			return null;
+		
+		GUID guid = GUIDUtils.getGUID(lfn);
+		
+		if (guid == null)
+			return null;
+				
+		final Map<PFN, XRDStatus> check = XRDChecker.check(guid);
 
 		if (check == null || check.size() == 0)
 			return check;
+		
+		final boolean zipArchive = sLFN.toLowerCase().endsWith(".zip") || sLFN.substring(sLFN.lastIndexOf('/')).toLowerCase().contains("archive") || guid.hasReplica(noSE);
 
 		final Iterator<Map.Entry<PFN, XRDStatus>> it = check.entrySet().iterator();
 
@@ -237,7 +253,7 @@ public class XRDChecker {
 			final XRDStatus status = entry.getValue();
 
 			if (status.commandOK) {
-				final XRDStatus downloadStatus = checkByDownloading(pfn, lfn.toLowerCase().endsWith(".zip"));
+				final XRDStatus downloadStatus = checkByDownloading(pfn, zipArchive);
 
 				if (!downloadStatus.commandOK)
 					entry.setValue(downloadStatus);
