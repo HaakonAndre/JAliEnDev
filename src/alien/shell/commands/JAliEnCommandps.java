@@ -6,6 +6,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -53,13 +54,16 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
+		logger.log(Level.INFO, "Starting ps");
 		
 		String tracelog = commander.q_api.getTraceLog(getTrace);
-		
+		logger.log(Level.INFO, "tracelog " + tracelog);
 
 		if(out.isRootPrinter())
 		{
 			out.nextResult();
+			logger.log(Level.INFO, "getJDL " + String.valueOf(getJDL));
+
 			if (getJDL != 0) 
 			{
 				String jdl = commander.q_api.getJDL(getJDL);
@@ -75,25 +79,29 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			{
 				if (tracelog != null)
 					if(bColour)
-						
 						out.setField("value ", ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
+					else
+						out.setField("value ", tracelog);
 				out.setField("message: ", "not implemented yet");
 			}
 			
 			else 
 			{
+				logger.log(Level.INFO, "bad getJDL, bad tracelog");
 
 				if (users.size() == 0)
 					users.add(commander.getUsername());
 
 				List<Job> ps = commander.q_api.getPS(states, users, sites, nodes,
 						mjobs, jobid, orderByKey, limit);
+				logger.log(Level.INFO, "ps " + ps);
+
 
 				if (ps != null) 
 				{
 					for (Job j : ps) 
 					{
-
+						out.nextResult();
 						String owner = (j.getOwner() != null) ? j.getOwner() : "";
 						
 						String jId = bColour ? ShellColor.bold() + j.queueId +
