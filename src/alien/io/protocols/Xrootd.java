@@ -603,6 +603,10 @@ public class Xrootd extends Protocol {
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
 
 		final SE se = pfn.getSE();
+		
+		if (se == null){
+			throw new IOException("SE "+pfn.seNumber+" doesn't exist");
+		}
 
 		final int[] statRetryTimes = se.seName.toLowerCase().contains("dcache") ? statRetryTimesDCache : statRetryTimesXrootd;
 
