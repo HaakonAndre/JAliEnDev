@@ -528,7 +528,7 @@ public class LFNUtils {
 		final Set<String> ret = new HashSet<>();
 		
 		try {
-			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC LIMIT 1;");
+			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
 			while (db.moveNext()){
 				ret.add(db.gets(1));
