@@ -2,11 +2,14 @@ package alien.catalogue;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 
@@ -50,6 +53,8 @@ public class Package implements Comparable<Package>, Serializable {
 	 */
 	private final Map<String, String> platforms = new HashMap<>();
 
+	private Set<String> deps = null;
+	
 	/**
 	 * @param db
 	 */
@@ -159,5 +164,44 @@ public class Package implements Comparable<Package>, Serializable {
 	@Override
 	public int compareTo(final Package arg0) {
 		return getFullName().compareTo(arg0.getFullName());
+	}
+	
+	public Set<String> getDependencies() {
+		if (deps != null)
+			deps = new HashSet<>();
+
+		final Set<String> dirs = new HashSet<>();
+
+		for (final String lfn : platforms.values()) {
+			if (lfn.indexOf('/') >= 0)
+				dirs.add(lfn.substring(0, lfn.lastIndexOf('/') + 1));
+		}
+
+		if (dirs.size() == 0)
+			return deps;
+
+		final DBFunctions dbDeps = ConfigUtils.getDB("alice_data");
+
+		try {
+			for (final String dir : dirs) {
+				for (final String tableName : LFNUtils.getTagTableNames(dir, "PackageDef")) {
+					dbDeps.query("SELECT dependencies FROM " + tableName + " WHERE file='" + Format.escSQL(dir) + "';");
+
+					while (dbDeps.moveNext()) {
+						final StringTokenizer st = new StringTokenizer(dbDeps.gets(1), ", ");
+
+						while (st.hasMoreTokens())
+							deps.add(st.nextToken());
+					}
+
+					if (deps.size() > 0)
+						return deps;
+				}
+			}
+		} finally {
+			dbDeps.close();
+		}
+
+		return deps;
 	}
 }

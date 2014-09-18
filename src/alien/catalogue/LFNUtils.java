@@ -522,19 +522,22 @@ public class LFNUtils {
 	 * @return metadata table where this tag can be found for this path, or
 	 *         <code>null</code> if there is no such entry
 	 */
-	public static String getTagTableName(final String path, final String tag) {
+	public static Set<String> getTagTableNames(final String path, final String tag) {
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 
+		final Set<String> ret = new HashSet<>();
+		
 		try {
-			db.query("SELECT tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC LIMIT 1;");
+			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC LIMIT 1;");
 
-			if (db.moveNext())
-				return db.gets(1);
+			while (db.moveNext()){
+				ret.add(db.gets(1));
+			}
 		} finally {
 			db.close();
 		}
-
-		return null;
+		
+		return ret;
 	}
 
 	/**
@@ -546,31 +549,33 @@ public class LFNUtils {
 	 * @return the files that match the metadata query
 	 */
 	public static Set<String> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags) {
-		final String tableName = getTagTableName(path, tag);
+		DBFunctions db = null;
+		
+		final Set<String> ret = new LinkedHashSet<>();
 
-		if (tableName == null)
-			return null;
-
-		final DBFunctions db = ConfigUtils.getDB("alice_data");
-
-		String q = "SELECT file FROM " + tableName + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND " + Format.escSQL(query) + " ORDER BY version DESC";
-
-		if ((flags & FIND_BIGGEST_VERSION) != 0)
-			q += " LIMIT 1";
-
-		try {
-			if (!db.query(q))
-				return null;
-
-			final Set<String> ret = new LinkedHashSet<>();
-
-			while (db.moveNext())
-				ret.add(StringFactory.get(db.gets(1)));
-
-			return ret;
-		} finally {
-			db.close();
+		try{
+			for (final String tableName: getTagTableNames(path, tag)){
+				if (db==null)
+					db = ConfigUtils.getDB("alice_data");
+		
+				String q = "SELECT file FROM " + tableName + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND " + Format.escSQL(query) + " ORDER BY version DESC";
+		
+				if ((flags & FIND_BIGGEST_VERSION) != 0)
+					q += " LIMIT 1";
+		
+				if (!db.query(q))
+					continue;				
+	
+				while (db.moveNext())
+					ret.add(StringFactory.get(db.gets(1)));
+			}
 		}
+		finally{
+			if (db!=null)
+				db.close();
+		}
+		
+		return ret;
 	}
 
 	/**
