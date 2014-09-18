@@ -130,6 +130,21 @@ public class PackageUtils {
 		return null;
 	}
 
+	/**
+	 * Get the Package object corresponding to the given textual description.
+	 * 
+	 * @param name package name, eg. "VO_ALICE@AliRoot::vAN-20140917"
+	 * @return the corresponding Package object, if it exists
+	 */
+	public static Package getPackage(final String name) {
+		cacheCheck();
+
+		if (packages != null)
+			return packages.get(name);
+
+		return null;
+	}
+
 	public static Set<String> getCvmfsPackages() {
 		cacheCheck();
 
