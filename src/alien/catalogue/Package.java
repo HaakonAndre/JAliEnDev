@@ -168,7 +168,9 @@ public class Package implements Comparable<Package>, Serializable {
 	
 	public Set<String> getDependencies() {
 		if (deps != null)
-			deps = new HashSet<>();
+			return deps;
+		
+		deps = new HashSet<>();
 
 		final Set<String> dirs = new HashSet<>();
 
