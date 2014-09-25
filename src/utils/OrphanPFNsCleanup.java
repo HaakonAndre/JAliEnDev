@@ -368,36 +368,27 @@ public class OrphanPFNsCleanup {
 
 					try {
 						if (guid.exists()) {
-							// System.err.println("Successfully deleted one file of "+Format.size(guid.size)+" from "+se.getName());
+							System.err.println("Successfully deleted the replica of "+guid.guid+" ("+Format.size(guid.size)+") from "+se.getName());
+							
 							successOne(guid.size);
 
-							if (guid.removePFN(se, false) != null) { // we have
-																		// just
-																		// physically
-																		// deleted
-																		// this
-																		// entry,
-																		// do
-																		// _not_
-																		// queue
-																		// this
-																		// pfn
-																		// again
+							// we have just physically this entry, do _not_ queue this pfn again
+							if (guid.removePFN(se, false) != null) {
 								if (guid.getPFNs().size() == 0) {
-									if (guid.delete(false)) { // already purged
-																// all entries
-										// System.err.println("  Deleted the GUID since this was the last replica");
+									// already purged all entries
+									if (guid.delete(false)) { 
+										 System.err.println("  Deleted the GUID "+guid.guid+" since this was the last replica");
 									} else
 										System.err.println("  Failed to delete the GUID even if this was the last replica:\n" + guid);
 								} else {
-									// System.err.println("  Kept the GUID since it still has "+guid.getPFNs().size()+" replicas");
+									 System.err.println("  Kept the GUID "+guid.guid+" since it still has "+guid.getPFNs().size()+" replicas");
 								}
 							} else
-								System.err.println("Failed to remove the replica on " + se.getName() + " from " + guid.guid);
+								System.err.println("  Failed to remove the replica on " + se.getName() + " from " + guid.guid);
 						} else {
 							successOne(size);
 
-							System.err.println("Successfuly deleted from " + se.getName() + " but GUID " + guid.guid + " doesn't exist in the catalogue ...");
+							System.err.println("  GUID " + guid.guid + " doesn't exist in the catalogue any more");
 						}
 
 						db2.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
@@ -410,7 +401,7 @@ public class OrphanPFNsCleanup {
 
 				failOne();
 
-				System.err.println("Exception deleting from " + se.getName() + " : " + e.getMessage());
+				System.err.println("Exception deleting "+guid.guid+" from " + se.getName() + " : " + e.getMessage());
 
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "Exception deleting from " + se.getName(), e);
