@@ -367,9 +367,9 @@ public class OrphanPFNsCleanup {
 					concurrentQueryies.acquireUninterruptibly();
 
 					try {
+						System.err.println("Successfully deleted the replica of "+guid.guid+" ("+Format.size(guid.size)+") from "+se.getName());
+						
 						if (guid.exists()) {
-							System.err.println("Successfully deleted the replica of "+guid.guid+" ("+Format.size(guid.size)+") from "+se.getName());
-							
 							successOne(guid.size);
 
 							// we have just physically this entry, do _not_ queue this pfn again
