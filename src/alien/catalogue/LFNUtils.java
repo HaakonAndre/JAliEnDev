@@ -548,33 +548,37 @@ public class LFNUtils {
 	 * @param flags
 	 * @return the files that match the metadata query
 	 */
-	public static Set<String> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags) {
+	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags) {
 		DBFunctions db = null;
-		
-		final Set<String> ret = new LinkedHashSet<>();
 
-		try{
-			for (final String tableName: getTagTableNames(path, tag)){
-				if (db==null)
+		final Set<LFN> ret = new LinkedHashSet<>();
+
+		try {
+			for (final String tableName : getTagTableNames(path, tag)) {
+				if (db == null)
 					db = ConfigUtils.getDB("alice_data");
-		
-				String q = "SELECT file FROM " + tableName + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND " + Format.escSQL(query) + " ORDER BY version DESC";
-		
+
+				String q = "SELECT distinct file FROM " + Format.escSQL(tableName) + " " + Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
+						+ Format.escSQL(query.replace(":", "."));
+
 				if ((flags & FIND_BIGGEST_VERSION) != 0)
-					q += " LIMIT 1";
-		
+					q += " ORDER BY version DESC, entryId DESC LIMIT 1";
+
 				if (!db.query(q))
-					continue;				
-	
-				while (db.moveNext())
-					ret.add(StringFactory.get(db.gets(1)));
+					continue;
+
+				while (db.moveNext()) {
+					final LFN l = LFNUtils.getLFN(db.gets(1));
+
+					if (l != null)
+						ret.add(l);
+				}
 			}
-		}
-		finally{
-			if (db!=null)
+		} finally {
+			if (db != null)
 				db.close();
 		}
-		
+
 		return ret;
 	}
 
