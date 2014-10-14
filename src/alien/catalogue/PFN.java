@@ -14,6 +14,7 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.shell.commands.JAliEnCOMMander;
 
 /**
  * Wrapper around a G*L_PFN row
@@ -201,7 +202,7 @@ public class PFN implements Serializable, Comparable<PFN> {
 			else
 				sUuid = pfn.substring(idx, idx2);
 
-			final GUID archiveGuid = GUIDUtils.getGUID(UUID.fromString(sUuid));
+			final GUID archiveGuid = ConfigUtils.isCentralService() ? GUIDUtils.getGUID(UUID.fromString(sUuid)) : JAliEnCOMMander.getInstance().c_api.getGUID(sUuid);
 
 			if (archiveGuid != null)
 				realPFNs = archiveGuid.getPFNs();

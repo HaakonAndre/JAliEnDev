@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +42,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	/**
 	 * 
 	 */
-	protected final ArrayList<String> alArguments;
+	protected final List<String> alArguments;
 
 	private final static int padHelpUsage = 20;
 	
@@ -55,7 +55,7 @@ public abstract class JAliEnBaseCommand extends Thread{
 	 * @param out 
 	 * @param alArguments 
 	 */
-	public JAliEnBaseCommand(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments){
+	public JAliEnBaseCommand(final JAliEnCOMMander commander, final UIPrintWriter out, final List<String> alArguments){
 		this.commander = commander;
 		this.out = out;
 		this.alArguments = alArguments;

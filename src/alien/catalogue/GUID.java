@@ -23,6 +23,7 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
+import alien.shell.commands.JAliEnCOMMander;
 
 /**
  * @author costing
@@ -398,49 +399,54 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public Set<PFN> getPFNs() {
 		if (pfnCache != null)
 			return pfnCache;
-
-		final Host h = CatalogueUtils.getHost(host);
-
-		if (h == null)
-			return null;
-
-		final DBFunctions db = h.getDB();
-
-		if (db == null)
-			return null;
-
-		if (monitor != null)
-			monitor.incrementCounter("PFN_db_lookup");
-
-		final String q = "SELECT distinct guidId, pfn, seNumber FROM G" + tableName + "L_PFN WHERE guidId=?;";
-
-		boolean tainted = false;
-
-		try {
-			db.query(q, false, Long.valueOf(guidId));
-
-			pfnCache = new LinkedHashSet<>();
-
-			while (db.moveNext()) {
-				final PFN pfn = new PFN(db, host, tableName);
-
-				pfn.setGUID(this);
-
-				final Integer se = Integer.valueOf(pfn.seNumber);
-
-				if (!seStringList.contains(Integer.valueOf(pfn.seNumber))) {
-					seStringList.add(se);
-					tainted = true;
+		
+		if (ConfigUtils.isCentralService()){
+			final Host h = CatalogueUtils.getHost(host);
+	
+			if (h == null)
+				return null;
+	
+			final DBFunctions db = h.getDB();
+	
+			if (db == null)
+				return null;
+	
+			if (monitor != null)
+				monitor.incrementCounter("PFN_db_lookup");
+	
+			final String q = "SELECT distinct guidId, pfn, seNumber FROM G" + tableName + "L_PFN WHERE guidId=?;";
+	
+			boolean tainted = false;
+	
+			try {
+				db.query(q, false, Long.valueOf(guidId));
+	
+				pfnCache = new LinkedHashSet<>();
+	
+				while (db.moveNext()) {
+					final PFN pfn = new PFN(db, host, tableName);
+	
+					pfn.setGUID(this);
+	
+					final Integer se = Integer.valueOf(pfn.seNumber);
+	
+					if (!seStringList.contains(Integer.valueOf(pfn.seNumber))) {
+						seStringList.add(se);
+						tainted = true;
+					}
+	
+					pfnCache.add(pfn);
 				}
-
-				pfnCache.add(pfn);
+			} finally {
+				db.close();
 			}
-		} finally {
-			db.close();
+	
+			if (tainted)
+				update();
 		}
-
-		if (tainted)
-			update();
+		else{
+			pfnCache = JAliEnCOMMander.getInstance().c_api.getPFNs(guid.toString());
+		}
 
 		return pfnCache;
 	}

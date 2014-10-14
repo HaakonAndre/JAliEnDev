@@ -238,6 +238,9 @@ public final class SEUtils {
 	}
 
 	private static void updateSEDistanceCache() {
+		if (!ConfigUtils.isCentralService())
+			return;
+		
 		seDistanceReadLock.lock();
 
 		try {
@@ -511,7 +514,7 @@ public final class SEUtils {
 		updateSEDistanceCache();
 
 		if (seDistance == null)
-			return null;
+			return ret;
 
 		final Map<Integer, Double> ranks = seDistance.get(sSite.trim().toUpperCase());
 

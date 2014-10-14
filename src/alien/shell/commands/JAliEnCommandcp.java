@@ -313,7 +313,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		final List<PFN> pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
 
 		if (pfns != null) {
-
+			System.err.println(pfns);
+			
 			if (referenceCount == 0)
 				referenceCount = pfns.size();
 
@@ -843,7 +844,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandcp(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandcp(final JAliEnCOMMander commander, final UIPrintWriter out, final List<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();

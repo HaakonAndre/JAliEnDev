@@ -7,9 +7,12 @@ import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.LinkedHashSet;
+import java.util.StringTokenizer;
+import java.util.UUID;
 
 import lazyj.Format;
 import lazyj.Utils;
+import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 
 /**
@@ -97,12 +100,141 @@ public class XmlCollection extends LinkedHashSet<LFN>{
 			try{
 				final String fileName = sLine.substring(idx+7, sLine.indexOf('"', idx+8));
 
-				add(LFNUtils.getLFN(fileName));
+				if (ConfigUtils.isCentralService()){
+					add(LFNUtils.getLFN(fileName));
+				}
+				else{
+					final StringTokenizer st = new StringTokenizer(sLine, "\"", true);
+										
+					String time = null;
+					String lowner = null;
+					String group = null;
+					String lfn = null;
+					String md5 = null;
+					String size = null;
+					String guid = null;
+					String perm = null;
+					String entryId = null;
+					String dir = null;
+					String jobId = null;
+					String broken = null;
+					String expires = null;
+					String type = null;
+					String replicated = null;
+					String guidtime = null;
+					
+					while (st.hasMoreTokens()){
+						final String tok = st.nextToken().trim();
+						
+						if (st.hasMoreTokens())
+							st.nextToken();
+						else
+							break;
+												
+						if (tok.equals("ctime="))
+							time = value(st);
+						else
+						if (tok.equals("gowner="))
+							group = value(st);
+						else
+						if (tok.equals("owner="))
+							lowner = value(st);
+						else
+						if (tok.equals("lfn="))
+							lfn = value(st);
+						else
+						if (tok.equals("size="))
+							size = value(st);
+						else
+						if (tok.equals("md5="))
+							md5 = value(st);
+						else
+						if (tok.equals("guid="))
+							guid = value(st);
+						else
+						if (tok.equals("perm="))
+							perm = value(st);
+						else
+						if (tok.equals("entryId="))
+							entryId = value(st);
+						else
+						if (tok.equals("dir="))
+							dir = value(st);
+						else
+						if (tok.equals("jobId="))
+							jobId = value(st);
+						else
+						if (tok.equals("broken="))
+							broken = value(st);
+						else
+						if (tok.equals("expiretime="))
+							expires = value(st);
+						else
+						if (tok.equals("type="))
+							type = value(st);
+						else
+						if (tok.equals("guidtime="))
+							guidtime = value(st);
+						else
+						if (tok.equals("replicated="))
+							replicated = value(st);
+						else
+							value(st);
+					}
+
+					final LFN l = new LFN(lfn);
+
+					if (time != null)
+						l.ctime = Format.parseDate(time);
+
+					if (size != null)
+						l.size = Long.parseLong(size);
+
+					if (guid != null)
+						l.guid = UUID.fromString(guid);
+					
+					if (dir != null)
+						l.dir = Long.parseLong(dir);
+					
+					if (entryId != null)
+						l.entryId = Long.parseLong(entryId);
+					
+					if (jobId != null)
+						l.jobid = Integer.parseInt(jobId);
+					
+					if (expires != null)
+						l.expiretime = Format.parseDate(expires);
+					
+					if (broken != null)
+						l.broken = Utils.stringToBool(broken, false);
+
+					l.md5 = md5;
+					l.owner = lowner;
+					l.gowner = group;
+					l.perm = perm;
+					l.type = type!=null && type.length() > 0 ? type.charAt(0) : 'f';
+					l.guidtime = guidtime;
+					l.replicated = Utils.stringToBool(replicated, false);
+					
+					add(l);
+				}
 			}
 			catch (final Throwable t){
 				throw new IOException("Exception parsing XML", t);
 			}
 		}
+	}
+	
+	private static final String value(final StringTokenizer st){
+		final String s = st.nextToken();
+		
+		if (s.equals("\""))
+			return "";
+		
+		if (st.hasMoreTokens())
+			st.nextToken();
+		
+		return s;
 	}
 	
 	private String collectionName;

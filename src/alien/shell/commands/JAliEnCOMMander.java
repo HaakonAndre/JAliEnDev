@@ -39,12 +39,12 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 *
 	 */
-	protected final CatalogueApiUtils c_api;
+	public final CatalogueApiUtils c_api;
 
 	/**
 	 * 
 	 */
-	protected final TaskQueueApiUtils q_api;
+	public final TaskQueueApiUtils q_api;
 
 	/**
 	 * The commands that have a JAliEnCommand* implementation
@@ -96,6 +96,18 @@ public class JAliEnCOMMander extends Thread {
 
 	private boolean degraded = false;
 
+	private static JAliEnCOMMander lastInstance = null;
+	
+	/**
+	 * @return a commander instance
+	 */
+	public static synchronized JAliEnCOMMander getInstance(){
+		if (lastInstance == null)
+			lastInstance = new JAliEnCOMMander();
+		
+		return lastInstance;
+	}
+	
 	/**
 	 */
 	public JAliEnCOMMander() {
@@ -111,7 +123,6 @@ public class JAliEnCOMMander extends Thread {
 		initializeJCentralConnection();
 
 		setName("Commander");
-
 	}
 
 	/**

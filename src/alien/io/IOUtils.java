@@ -197,7 +197,7 @@ public class IOUtils {
 			for (final PFN realPfn : sortedRealPFNs) {
 				if (realPfn.ticket == null) {
 					logger.log(Level.WARNING, "Missing ticket for " + realPfn.pfn);
-					continue; // no access to this guy
+					// try even if there is no read ticket since read is normally allowed without an access token 
 				}
 
 				final List<Protocol> protocols = Transfer.getAccessProtocols(realPfn);

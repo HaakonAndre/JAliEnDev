@@ -156,7 +156,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (idx == lfn.length() - 1)
 			idx = lfn.lastIndexOf('/', idx);
 
-		if (idx >= 0) {
+		if (idx >= 0 && ConfigUtils.isCentralService()) {
 			final String sDir = lfn.substring(0, idx - 1);
 
 			parentDir = LFNUtils.getLFN(sDir, true);
@@ -173,6 +173,17 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		}
 	}
 
+	LFN(final String canonicalLFN){
+		this.canonicalName = canonicalLFN;
+		
+		int idx = canonicalName.lastIndexOf('/');
+		
+		if (idx>0)
+			lfn = canonicalName.substring(idx+1);
+		else
+			lfn = canonicalName;
+	}
+	
 	/**
 	 * Get the parent directory
 	 * 
@@ -222,7 +233,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	@Override
 	public int hashCode() {
-		return this.indexTableEntry.hashCode() * 7 + (int) dir * 13 + lfn.hashCode() * 17;
+		return (this.indexTableEntry!=null ? this.indexTableEntry.hashCode() * 7 : 0) + (int) dir * 13 + lfn.hashCode() * 17;
 	}
 
 	private void init(final DBFunctions db) {
@@ -434,10 +445,12 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (this == o)
 			return 0;
 
-		final int diff = indexTableEntry.compareTo(o.indexTableEntry);
+		if (indexTableEntry!=null){
+			final int diff = indexTableEntry.compareTo(o.indexTableEntry);
 
-		if (diff != 0)
-			return diff;
+			if (diff != 0)
+				return diff;
+		}
 
 		return lfn.compareTo(o.lfn);
 	}

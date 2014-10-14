@@ -58,14 +58,16 @@ public final class CatalogueUtils {
 		protected Host resolve(final Integer key) {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-			try {
-				if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
-					return null;
-
-				if (db.moveNext())
-					return new Host(db);
-			} finally {
-				db.close();
+			if (db!=null){			
+				try {
+					if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
+						return null;
+	
+					if (db.moveNext())
+						return new Host(db);
+				} finally {
+					db.close();
+				}
 			}
 
 			return null;
