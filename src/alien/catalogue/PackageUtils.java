@@ -47,6 +47,11 @@ public class PackageUtils {
 
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
 
+			if (db == null) {
+				lastCacheCheck = System.currentTimeMillis();
+				return;
+			}
+
 			if (monitor != null)
 				monitor.incrementCounter("Package_db_lookup");
 
