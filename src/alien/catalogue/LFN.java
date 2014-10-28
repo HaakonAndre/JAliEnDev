@@ -783,4 +783,14 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		}
 
 	};
+
+	@Override
+	public long getSize() {
+		return size;
+	}
+
+	@Override
+	public String getMD5() {
+		return md5;
+	}
 }

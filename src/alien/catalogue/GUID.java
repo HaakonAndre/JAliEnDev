@@ -1156,4 +1156,14 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		return ret;
 	}
+
+	@Override
+	public long getSize() {
+		return size;
+	}
+
+	@Override
+	public String getMD5() {
+		return md5;
+	}
 }

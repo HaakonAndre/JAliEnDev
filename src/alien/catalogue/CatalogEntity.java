@@ -36,4 +36,13 @@ public interface CatalogEntity extends Serializable {
 	 */
 	public char getType();
 	
+	/**
+	 * @return entity size in bytes
+	 */
+	public long getSize();
+	
+	/**
+	 * @return the MD5 checksum of the content of this entity
+	 */
+	public String getMD5();
 }
