@@ -94,16 +94,24 @@ public class TransferBroker {
 		}
 	}
 
+	private int updateCount = -1;
+	
 	private final boolean executeQuery(final DBConnection dbc, final String query) {
 		executeClose();
 
 		try {
 			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
-			if (stat.execute(query, Statement.NO_GENERATED_KEYS))
+			if (stat.execute(query, Statement.NO_GENERATED_KEYS)){
+				updateCount = -1;
+				
 				resultSet = stat.getResultSet();
-			else
+			}
+			else{
+				updateCount = stat.getUpdateCount();
+				
 				executeClose();
+			}
 
 			return true;
 		} catch (final SQLException e) {
@@ -219,17 +227,29 @@ public class TransferBroker {
 							
 							continue;
 						}
+						
+						final DBConnection dbc = db.getConnection();
+						
+						executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, active_transfers write;");
 
-						db.query("update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
+						try {
+							executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
 
-						if (db.getUpdateCount() == 0) {
-							logger.log(Level.INFO, "Concurrent selection of " + transferId + ", retrying");
-							transferId = -1;
-							continue;
+							if (updateCount == 0) {
+								logger.log(Level.INFO, "Concurrent selection of " + transferId + ", retrying");
+								transferId = -1;
+								continue;
+							}
+
+							executeQuery(dbc, "insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
+									+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
+							
+						} finally {
+							executeQuery(dbc, "unlock tables;");
+							executeClose();
+
+							dbc.free();
 						}
-
-						db.query("insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
-								+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
 						
 						break;
 					}
@@ -609,17 +629,25 @@ public class TransferBroker {
 	 * @param t
 	 * @param ta
 	 */
-	public static synchronized void touch(final Transfer t, final TransferAgent ta) {
+	public static synchronized boolean touch(final Transfer t, final TransferAgent ta) {
 		final DBFunctions db = ConfigUtils.getDB("transfers");
 
 		if (db == null)
-			return;
+			return false;
 
 		try {
 			if (t == null) {
 				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(ta.getPID()),
 						ta.getHostName());
-				return;
+				return true;
+			}
+			
+			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Integer.valueOf(t.getTransferId()), Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
+			
+			if (db.moveNext()){
+				logger.log(Level.WARNING, "Transfer "+t.getTransferId()+" was already picked up by "+db.gets(1)+" @ "+db.gets(3)+"/"+db.gets(2)+", refusing to concurrently execute it.");
+				
+				return false;
 			}
 
 			final Map<String, Object> values = new HashMap<>();
@@ -683,6 +711,8 @@ public class TransferBroker {
 		} finally {
 			db.close();
 		}
+		
+		return true;
 	}
 
 	private static boolean markTransfer(final int transferId, final int exitCode, final String reason) {

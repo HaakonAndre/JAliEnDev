@@ -82,7 +82,8 @@ public class TransferAgent extends Thread {
 				work = broker.getWork(this);
 
 				if (work != null) {
-					TransferBroker.touch(work, this);
+					if (!TransferBroker.touch(work, this))
+						return;
 
 					logger.log(Level.INFO, "Performing transfer " + work.getTransferId());
 
