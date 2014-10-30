@@ -696,16 +696,16 @@ public class TransferBroker {
 			if (db.getUpdateCount() == 0)
 				db.query(DBFunctions.composeInsert("active_transfers", values));
 
-			db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='', finished=null WHERE transferId=" + t.getTransferId() + " AND status!='TRANSFERRING';"); // just
-																																											// in
-																																											// case
-																																											// it
-																																											// was
-																																											// presumed
-																																											// expired
+			db.query("SELECT status FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(t.getTransferId()));
+			
+			final String prevStatus = db.gets(1);
+			
+			if (db.moveNext() && prevStatus.equalsIgnoreCase("TRANSFERRING")) {
+				db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='', finished=null WHERE transferId=" + t.getTransferId() + " AND status!='TRANSFERRING';");
 
-			if (db.getUpdateCount() > 0)
-				logger.log(Level.INFO, "Re-stated " + t.getTransferId() + " to TRANSFERRING");
+				if (db.getUpdateCount() > 0)
+					logger.log(Level.INFO, "Re-stated " + t.getTransferId() + " from " + prevStatus + " to TRANSFERRING");
+			}
 		} catch (final Throwable ex) {
 			logger.log(Level.SEVERE, "Exception updating status", ex);
 		} finally {
