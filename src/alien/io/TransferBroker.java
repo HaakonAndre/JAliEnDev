@@ -194,7 +194,7 @@ public class TransferBroker {
 					if (!dbCached.moveNext()){
 						logger.log(Level.FINE, "There is no waiting transfer in the queue");
 
-						lastTimeNoWork = System.currentTimeMillis() + 30 + rnd.nextInt(30);
+						lastTimeNoWork = System.currentTimeMillis() + 30*1000 + rnd.nextInt(30*1000);
 
 						return null;					
 					}
@@ -650,7 +650,7 @@ public class TransferBroker {
 			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Integer.valueOf(t.getTransferId()), Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
 			
 			if (db.moveNext()){
-				logger.log(Level.WARNING, "Transfer "+t.getTransferId()+" was already picked up by "+db.gets(1)+" @ "+db.gets(3)+"/"+db.gets(2)+", refusing to concurrently execute it.");
+				logger.log(Level.WARNING, "Transfer "+t.getTransferId()+" was already picked up by agent #"+db.gets(1)+" @ "+db.gets(3)+"/"+db.gets(2)+", refusing to concurrently execute it.");
 				
 				return false;
 			}
