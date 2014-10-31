@@ -217,13 +217,18 @@ public class TransferBroker {
 							return null;
 						}
 						
-						if (ignoredSEs.contains(targetSE.toLowerCase()))
+						if (ignoredSEs.contains(targetSE.toLowerCase())){
+							transferId = -1;
+							
 							continue;
+						}
 						
 						db.query("SELECT count(1) FROM active_transfers WHERE se_name='"+Format.escSQL(targetSE)+"';");
 						
 						if (db.geti(1) >= getMaxTransfers(targetSE)){
 							ignoredSEs.add(targetSE.toLowerCase());
+							
+							transferId = -1;
 							
 							continue;
 						}
