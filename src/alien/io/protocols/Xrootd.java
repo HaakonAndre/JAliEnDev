@@ -236,10 +236,11 @@ public class Xrootd extends Protocol {
 
 				command.add("xrd");
 				command.add(server);
-				command.add("rm " + spfn + "?authz=" + envelope);
+				command.add("rm \"" + spfn + "?authz=" + envelope+"\"");
 			}
 
-			// System.err.println(command);
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Executing rm command: "+command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -270,7 +271,8 @@ public class Xrootd extends Protocol {
 				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
 			}
 
-			// System.err.println(exitStatus.getStdOut());
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Exit code was zero and the output was:\n"+exitStatus.getStdOut());
 
 			return true;
 		} catch (final IOException ioe) {
