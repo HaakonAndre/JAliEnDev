@@ -97,6 +97,10 @@ public class OrphanPFNsCleanup {
 
 							SE_THREADS.put(se, t);
 						}
+						else{
+							if (logger.isLoggable(Level.INFO))
+								logger.log(Level.INFO, "Not starting an SE thread for "+se+" ("+theSE.seName+") because the key is already in SE_THREADS");
+						}
 					}
 				} finally {
 					db.close();
