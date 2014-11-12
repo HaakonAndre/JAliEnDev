@@ -458,9 +458,10 @@ public class Xrootd extends Protocol {
 
 			command.addAll(getCommonArguments());
 
-			command.add("-np");
-			command.add("-v");
-			command.add("-f");
+			command.add("-np");		// no progress bar
+			command.add("-v");		// display summary output
+			command.add("-f");		// re-create a file if already present
+			command.add("-P");		// request POSC (persist-on-successful-close) processing to create a new file
 			command.add(localFile.getCanonicalPath());
 
 			String transactionURL = pfn.pfn;
