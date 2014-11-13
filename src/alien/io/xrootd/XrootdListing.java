@@ -28,7 +28,7 @@ import alien.se.SE;
  * 
  */
 public class XrootdListing {
-	
+
 	static transient final Logger logger = ConfigUtils.getLogger(XrootdListing.class.getCanonicalName());
 
 	/**
@@ -132,29 +132,27 @@ public class XrootdListing {
 		try {
 			exitStatus = pBuilder.start().waitFor();
 		} catch (final InterruptedException ie) {
-			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());			
+			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 		}
 
-		int exitCode = exitStatus.getExtProcExitStatus();
-		
-		if (exitCode != 0) {
-			logger.log(Level.WARNING, "Exit code was "+exitCode+" for "+command);
-		}
+		final int exitCode = exitStatus.getExtProcExitStatus();
+
+		if (exitCode != 0)
+			logger.log(Level.WARNING, "Exit code was " + exitCode + " for " + command);
 
 		final BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()));
 
 		String sLine;
 
-		while ((sLine = br.readLine()) != null){
+		while ((sLine = br.readLine()) != null)
 			if (sLine.startsWith("-") || sLine.startsWith("d"))
 				try {
 					entries.add(new XrootdFile(sLine.trim()));
 				} catch (final IllegalArgumentException iae) {
-					logger.log(Level.WARNING, "Exception parsing response of "+command, iae);
+					logger.log(Level.WARNING, "Exception parsing response of " + command, iae);
 				}
-			else
-				logger.log(Level.WARNING, "Unknown response line in the output of "+command+"\n\n"+sLine);
-		}
+			else if (sLine.length() > 0 && sLine.trim().length() > 0)
+				logger.log(Level.WARNING, "Unknown response line in the output of " + command + "\n\n" + sLine);
 	}
 
 	/**

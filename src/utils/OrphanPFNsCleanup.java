@@ -152,7 +152,7 @@ public class OrphanPFNsCleanup {
 						// and release them from the catalogue nevertheless ?
 						// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 
-						db.query("SELECT binary2string(guid),size,md5sum,pfn FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC, size DESC LIMIT 10000;", false,
+						db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC, size DESC LIMIT 10000;", false,
 								Integer.valueOf(seNumber));
 					} finally {
 						concurrentQueryies.release();
@@ -199,7 +199,7 @@ public class OrphanPFNsCleanup {
 					}
 
 					do
-						executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4)));
+						executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
 					while (db.moveNext());
 				} finally {
 					db.close();
@@ -275,13 +275,15 @@ public class OrphanPFNsCleanup {
 		final long size;
 		final String md5;
 		final String knownPFN;
+		final int flags;
 
-		public CleanupTask(final String sGUID, final int se, final long size, final String md5, final String knownPFN) {
+		public CleanupTask(final String sGUID, final int se, final long size, final String md5, final String knownPFN, final int flags) {
 			this.sGUID = sGUID;
 			this.seNumber = se;
 			this.size = size;
 			this.md5 = md5;
 			this.knownPFN = knownPFN;
+			this.flags = flags;
 		}
 
 		@Override
@@ -290,12 +292,17 @@ public class OrphanPFNsCleanup {
 
 			final GUID guid;
 
-			concurrentQueryies.acquireUninterruptibly();
+			if ( (flags & 1) == 1){
+				guid = new GUID(uuid);
+			}
+			else{
+				concurrentQueryies.acquireUninterruptibly();
 
-			try {
-				guid = GUIDUtils.getGUID(uuid, true);
-			} finally {
-				concurrentQueryies.release();
+				try {
+					guid = GUIDUtils.getGUID(uuid, true);
+				} finally {
+					concurrentQueryies.release();
+				}
 			}
 
 			final SE se = SEUtils.getSE(seNumber);
@@ -385,7 +392,8 @@ public class OrphanPFNsCleanup {
 						} else {
 							successOne(size);
 
-							System.err.println("  GUID " + guid.guid + " doesn't exist in the catalogue any more");
+							if ( (flags & 1) == 0)
+								System.err.println("  GUID " + guid.guid + " doesn't exist in the catalogue any more");
 						}
 
 						db2.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));

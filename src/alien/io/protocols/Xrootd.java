@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
 
 import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
@@ -22,7 +21,6 @@ import lia.util.process.ExternalProcessBuilder;
 import utils.ExternalCalls;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
-import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
@@ -207,7 +205,7 @@ public class Xrootd extends Protocol {
 			command.add(transactionURL);
 
 			if (logger.isLoggable(Level.FINEST))
-				logger.log(Level.FINEST, "Executing rm command: "+command);
+				logger.log(Level.FINEST, "Executing rm command: " + command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -233,13 +231,13 @@ public class Xrootd extends Protocol {
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, exitStatus.getStdOut());
+					logger.log(Level.FINE, "Exit code " + exitStatus.getExtProcExitStatus() + " and output is\n" + exitStatus.getStdOut());
 
 				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
 			}
 
 			if (logger.isLoggable(Level.FINEST))
-				logger.log(Level.FINEST, "Exit code was zero and the output was:\n"+exitStatus.getStdOut());
+				logger.log(Level.FINEST, "Exit code was zero and the output was:\n" + exitStatus.getStdOut());
 
 			return true;
 		} catch (final IOException ioe) {
@@ -249,14 +247,12 @@ public class Xrootd extends Protocol {
 
 			throw new IOException("delete aborted because " + t);
 		}
-
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueReadAccess, java.lang.String)
+	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
 	public File get(final PFN pfn, final File localFile) throws IOException {
@@ -286,10 +282,9 @@ public class Xrootd extends Protocol {
 			}
 		}
 
-		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ){
+		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ)
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "The envelope for PFN " + pfn.toString() + (pfn.ticket == null ? " could not be found" : " is not a READ one"));
-		}
 
 		try {
 			final List<String> command = new LinkedList<>();
@@ -305,13 +300,13 @@ public class Xrootd extends Protocol {
 
 			String transactionURL = pfn.pfn;
 
-			if (pfn.ticket!=null && pfn.ticket.envelope != null)
+			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
 
-			if (pfn.ticket!=null && pfn.ticket.envelope != null)
+			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
@@ -324,7 +319,7 @@ public class Xrootd extends Protocol {
 			pBuilder.returnOutputOnExit(true);
 
 			// 20KB/s should be available to anybody
-			long maxTime = pfn.getGuid().size / 20000; 
+			long maxTime = pfn.getGuid().size / 20000;
 
 			maxTime += timeout;
 
@@ -369,7 +364,7 @@ public class Xrootd extends Protocol {
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
 			else {
 				// make sure it doesn't pop up later after an interrupt
-				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target); 
+				TempFileManager.putTemp(alien.catalogue.GUIDUtils.createGuid(), target);
 				TempFileManager.release(target);
 			}
 
@@ -399,8 +394,7 @@ public class Xrootd extends Protocol {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
+	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
 	 */
 	@Override
 	public String put(final PFN pfn, final File localFile) throws IOException {
@@ -425,10 +419,10 @@ public class Xrootd extends Protocol {
 
 			command.addAll(getCommonArguments());
 
-			command.add("-np");		// no progress bar
-			command.add("-v");		// display summary output
-			command.add("-f");		// re-create a file if already present
-			command.add("-P");		// request POSC (persist-on-successful-close) processing to create a new file
+			command.add("-np"); // no progress bar
+			command.add("-v"); // display summary output
+			command.add("-f"); // re-create a file if already present
+			command.add("-P"); // request POSC (persist-on-successful-close) processing to create a new file
 			command.add(localFile.getCanonicalPath());
 
 			String transactionURL = pfn.pfn;
@@ -521,13 +515,11 @@ public class Xrootd extends Protocol {
 	}
 
 	/**
-	 * Check if the PFN has the correct properties, such as described in the
-	 * access envelope
+	 * Check if the PFN has the correct properties, such as described in the access envelope
 	 * 
 	 * @param pfn
 	 * @param returnEnvelope
-	 * @return the signed envelope from the storage, if it knows how to generate
-	 *         one
+	 * @return the signed envelope from the storage, if it knows how to generate one
 	 * @throws IOException
 	 *             if the remote file properties are not what is expected
 	 */
@@ -558,25 +550,22 @@ public class Xrootd extends Protocol {
 	}
 
 	/**
-	 * Check if the PFN has the correct properties, such as described in the
-	 * access envelope
+	 * Check if the PFN has the correct properties, such as described in the access envelope
 	 * 
 	 * @param pfn
 	 * @param returnEnvelope
 	 * @param retryWithDelay
 	 * @param forceRecalcMd5
-	 * @return the signed envelope from the storage, if it knows how to generate
-	 *         one
+	 * @return the signed envelope from the storage, if it knows how to generate one
 	 * @throws IOException
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
 
 		final SE se = pfn.getSE();
-		
-		if (se == null){
-			throw new IOException("SE "+pfn.seNumber+" doesn't exist");
-		}
+
+		if (se == null)
+			throw new IOException("SE " + pfn.seNumber + " doesn't exist");
 
 		final int[] statRetryTimes = se.seName.toLowerCase().contains("dcache") ? statRetryTimesDCache : statRetryTimesXrootd;
 
@@ -679,9 +668,7 @@ public class Xrootd extends Protocol {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueWriteAccess)
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
 	public String transfer(final PFN source, final PFN target) throws IOException {

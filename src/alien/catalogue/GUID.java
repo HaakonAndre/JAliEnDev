@@ -128,9 +128,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	Set<LFN> lfns;
 
 	/**
-	 * Set to <code>true</code> if the entry existed in the database, or to
-	 * <code>false</code> if not. Setting the other fields will only be
-	 * permitted if this field is false.
+	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not. Setting the other fields will only be permitted if this field is false.
 	 */
 	private boolean exists;
 
@@ -154,7 +152,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * 
 	 * @param newID
 	 */
-	GUID(final UUID newID) {
+	public GUID(final UUID newID) {
 		this.guid = newID;
 
 		this.exists = false;
@@ -263,7 +261,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		try {
 			// only the SE list can change, and the size for a collection, and md5 when it was missing
-			if (!db.query("UPDATE G" + tableName + "L SET seStringlist=" + setToString(seStringList) + ", size=" + size + ", md5='"+Format.escSQL(md5)+"' WHERE guidId=" + guidId))
+			if (!db.query("UPDATE G" + tableName + "L SET seStringlist=" + setToString(seStringList) + ", size=" + size + ", md5='" + Format.escSQL(md5) + "' WHERE guidId=" + guidId))
 				// wrong table name or what?
 				return false;
 
@@ -399,54 +397,52 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public Set<PFN> getPFNs() {
 		if (pfnCache != null)
 			return pfnCache;
-		
-		if (ConfigUtils.isCentralService()){
+
+		if (ConfigUtils.isCentralService()) {
 			final Host h = CatalogueUtils.getHost(host);
-	
+
 			if (h == null)
 				return null;
-	
+
 			final DBFunctions db = h.getDB();
-	
+
 			if (db == null)
 				return null;
-	
+
 			if (monitor != null)
 				monitor.incrementCounter("PFN_db_lookup");
-	
+
 			final String q = "SELECT distinct guidId, pfn, seNumber FROM G" + tableName + "L_PFN WHERE guidId=?;";
-	
+
 			boolean tainted = false;
-	
+
 			try {
 				db.query(q, false, Long.valueOf(guidId));
-	
+
 				pfnCache = new LinkedHashSet<>();
-	
+
 				while (db.moveNext()) {
 					final PFN pfn = new PFN(db, host, tableName);
-	
+
 					pfn.setGUID(this);
-	
+
 					final Integer se = Integer.valueOf(pfn.seNumber);
-	
+
 					if (!seStringList.contains(Integer.valueOf(pfn.seNumber))) {
 						seStringList.add(se);
 						tainted = true;
 					}
-	
+
 					pfnCache.add(pfn);
 				}
 			} finally {
 				db.close();
 			}
-	
+
 			if (tainted)
 				update();
-		}
-		else{
+		} else
 			pfnCache = JAliEnCOMMander.getInstance().c_api.getPFNs(guid.toString());
-		}
 
 		return pfnCache;
 	}
@@ -656,11 +652,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * Completely delete this GUID from the database
 	 * 
 	 * @param purge
-	 *            if <code>true</code> then the physical files are queued for
-	 *            deletion
+	 *            if <code>true</code> then the physical files are queued for deletion
 	 * 
-	 * @return <code>true</code> if the GUID was successfully removed from the
-	 *         database
+	 * @return <code>true</code> if the GUID was successfully removed from the database
 	 */
 	public boolean delete(final boolean purge) {
 		if (!exists)
@@ -687,7 +681,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		try {
 			if (purge && (pfnCache == null || pfnCache.size() > 0)) {
-				final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (guid,se,md5sum,size) SELECT guid,seNumber,md5,size FROM G" + tableName + "L INNER JOIN G" + tableName
+				final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size) SELECT 1,guid,seNumber,md5,size FROM G" + tableName + "L INNER JOIN G" + tableName
 						+ "L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId=? AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';";
 
 				if (db.query(purgeQuery, false, Integer.valueOf(guidId))) {
@@ -730,13 +724,11 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 
 	/**
-	 * Remove an associated PFN. It does <b>NOT</b> check if it was the last
-	 * PFN.
+	 * Remove an associated PFN. It does <b>NOT</b> check if it was the last PFN.
 	 * 
 	 * @param pfn
 	 * @param purge
-	 *            if <code>true</code> then physically remove this PFN from the
-	 *            respective storage
+	 *            if <code>true</code> then physically remove this PFN from the respective storage using the asynchronous delete queue.
 	 * @return <code>true</code> if the PFN could be removed
 	 */
 	public boolean removePFN(final PFN pfn, final boolean purge) {
@@ -780,8 +772,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 							final SE se = SEUtils.getSE(pfn.seNumber);
 
 							if (se != null && !(se.getName().equalsIgnoreCase("no_se")))
-								db.query("INSERT INTO orphan_pfns (guid,se,md5sum,size) VALUES (string2binary(?), ?, ?, ?);", false, g.guid.toString(), Integer.valueOf(pfn.seNumber), g.md5,
-										Long.valueOf(g.size));
+								db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size) VALUES (1,string2binary(?), ?, ?, ?);", false, g.guid.toString(), Integer.valueOf(pfn.seNumber),
+										g.md5, Long.valueOf(g.size));
 						}
 					}
 				} else
@@ -805,8 +797,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * 
 	 * @param se
 	 * @param purge
-	 *            if <code>true</code> then physically remove this PFN from the
-	 *            respective storage
+	 *            if <code>true</code> then physically remove this PFN from the respective storage using the asynchronous delete queue.
 	 * @return The PFN that was deleted, <code>null</code> if no change happened
 	 */
 	public String removePFN(final SE se, final boolean purge) {
@@ -835,8 +826,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public Set<LFN> lfnCache = null;
 
 	/**
-	 * Clear the cache, in case you expect the structure to have changed since
-	 * the last call
+	 * Clear the cache, in case you expect the structure to have changed since the last call
 	 */
 	public void cleanLFNCache() {
 		lfnCache = null;
@@ -1019,18 +1009,16 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @param guid
 	 * @return chash
 	 */
-	public static int getCHash(final String guid){
+	public static int getCHash(final String guid) {
 		int csum = 0;
-		
-		for (char c: guid.toCharArray()){
-			if (c!='-'){
+
+		for (final char c : guid.toCharArray())
+			if (c != '-')
 				csum += hexToInt(c);
-			}
-		}
-		
-		return csum%16;
+
+		return csum % 16;
 	}
-	
+
 	/**
 	 * From AliEn/GUID.pm#GetCHash
 	 * 
@@ -1045,10 +1033,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * 
 	 * @return hash code
 	 */
-	public int getHash(){
+	public int getHash() {
 		return getHash(guid.toString());
 	}
-	
+
 	/**
 	 * From AliEn/GUID.pm#GetHash
 	 * 
@@ -1077,8 +1065,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 
 	/**
-	 * @return <code>true</code> if the guid was taken from the database,
-	 *         <code>false</code> if it is a newly generated one
+	 * @return <code>true</code> if the guid was taken from the database, <code>false</code> if it is a newly generated one
 	 */
 	public boolean exists() {
 		return exists;

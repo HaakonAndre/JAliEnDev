@@ -22,8 +22,7 @@ import alien.se.SE;
 import alien.se.SEUtils;
 
 /**
- * Single threaded listing of Xrootd server content and injecting in the
- * deletion queue the files that should not be there
+ * Single threaded listing of Xrootd server content and injecting in the deletion queue the files that should not be there
  * 
  * @author costing
  * 
@@ -82,7 +81,7 @@ public class XrootdCleanupSingle {
 	 * @param path
 	 */
 	void storageCleanup(final String path) {
-		System.err.println(se.seName+" : entering " + path);
+		System.err.println(se.seName + " : entering " + path);
 
 		dirsSeen.incrementAndGet();
 
@@ -179,7 +178,7 @@ public class XrootdCleanupSingle {
 
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-		db.query("INSERT IGNORE INTO orphan_pfns (guid,se,size) VALUES (string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
+		db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
 
 		db.close();
 
@@ -194,8 +193,7 @@ public class XrootdCleanupSingle {
 
 	/**
 	 * @param args
-	 *            the only argument taken by this class is the name of the
-	 *            storage to be cleaned
+	 *            the only argument taken by this class is the name of the storage to be cleaned
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
@@ -219,15 +217,13 @@ public class XrootdCleanupSingle {
 
 			for (final SE se : SEUtils.getSEs(null))
 				ses.add(se.getName());
-		} else
-		if (options.has("d")) {
+		} else if (options.has("d")) {
 			ses = new LinkedList<>();
-			
+
 			for (final SE se : SEUtils.getSEs(null))
 				if (se.isQosType("disk"))
 					ses.add(se.getName());
-		}
-		else
+		} else
 			ses = options.nonOptionArguments();
 
 		final long lStart = System.currentTimeMillis();
@@ -239,11 +235,14 @@ public class XrootdCleanupSingle {
 					setName(se);
 
 					final XrootdCleanupSingle cleanup = new XrootdCleanupSingle(se);
-					
-					for (int i=0; i<=15; i++)
-						cleanup.storageCleanup("/"+(i<10? "0" : "")+i+"/");
-					
-					System.err.println(cleanup + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
+
+					for (int i = 0; i <= 15; i++) {
+						cleanup.storageCleanup("/" + (i < 10 ? "0" : "") + i + "/");
+
+						System.err.println("Progress report (" + i + "): " + cleanup + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
+					}
+
+					System.err.println("Final report: " + cleanup + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
 				}
 			}.start();
 	}
