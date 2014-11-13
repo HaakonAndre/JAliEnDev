@@ -226,12 +226,18 @@ public class XRDChecker {
 	 * @return the status of all replicas
 	 */
 	public static final Map<PFN, XRDStatus> fullCheckLFN(final String sLFN) {
-		LFN lfn = LFNUtils.getLFN(sLFN);
+		final GUID guid;
 		
-		if (lfn==null)
-			return null;
-		
-		GUID guid = GUIDUtils.getGUID(lfn);
+		if (GUIDUtils.isValidGUID(sLFN))
+			guid = GUIDUtils.getGUID(sLFN);
+		else{
+			LFN lfn = LFNUtils.getLFN(sLFN);
+			
+			if (lfn==null)
+				return null;
+			
+			guid = GUIDUtils.getGUID(lfn);
+		}
 		
 		if (guid == null)
 			return null;
