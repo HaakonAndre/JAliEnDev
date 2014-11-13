@@ -203,10 +203,11 @@ public class XrootdCleanupSingle {
 
 		parser.accepts("?", "Print this help");
 		parser.accepts("a", "Run on all known SEs");
+		parser.accepts("d", "Run on all known disk-only SEs");
 
 		final OptionSet options = parser.parse(args);
 
-		if ((options.nonOptionArguments().size() == 0 && !options.has("a")) || options.has("?")) {
+		if ((options.nonOptionArguments().size() == 0 && !options.has("a") && !options.has("d")) || options.has("?")) {
 			parser.printHelpOn(System.out);
 			return;
 		}
@@ -219,6 +220,14 @@ public class XrootdCleanupSingle {
 			for (final SE se : SEUtils.getSEs(null))
 				ses.add(se.getName());
 		} else
+		if (options.has("d")) {
+			ses = new LinkedList<>();
+			
+			for (final SE se : SEUtils.getSEs(null))
+				if (se.isQosType("disk"))
+					ses.add(se.getName());
+		}
+		else
 			ses = options.nonOptionArguments();
 
 		final long lStart = System.currentTimeMillis();
