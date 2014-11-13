@@ -161,23 +161,6 @@ public class Xrootd extends Protocol {
 		return null;
 	}
 
-	private boolean usexrdrm = true;
-
-	/**
-	 * Whether to use "xrdrm" (<code>true</code>) or "xrd rm" (
-	 * <code>false</code>)
-	 * 
-	 * @param newValue
-	 * @return the previous setting
-	 */
-	public boolean setUseXrdRm(final boolean newValue) {
-		final boolean prev = usexrdrm;
-
-		usexrdrm = newValue;
-
-		return prev;
-	}
-
 	@Override
 	public boolean delete(final PFN pfn) throws IOException {
 		if (pfn == null || pfn.ticket == null || pfn.ticket.type != AccessType.DELETE)
@@ -199,45 +182,29 @@ public class Xrootd extends Protocol {
 
 			File fAuthz = null;
 
-			if (usexrdrm) {
-				command.add("xrdrm");
-				command.add("-v");
+			command.add("xrdrm");
+			command.add("-v");
 
-				String transactionURL = pfn.pfn;
+			String transactionURL = pfn.pfn;
 
-				if (pfn.ticket.envelope != null)
-					transactionURL = pfn.ticket.envelope.getTransactionURL();
+			if (pfn.ticket.envelope != null)
+				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
-				if (envelope != null) {
-					fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
+			if (envelope != null) {
+				fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
 
-					final FileWriter fw = new FileWriter(fAuthz);
+				final FileWriter fw = new FileWriter(fAuthz);
 
-					fw.write(envelope);
+				fw.write(envelope);
 
-					fw.flush();
-					fw.close();
+				fw.flush();
+				fw.close();
 
-					command.add("-authz");
-					command.add(fAuthz.getCanonicalPath());
-				}
-
-				command.add(transactionURL);
-			} else {
-				final Matcher m = XrootDEnvelope.PFN_EXTRACT.matcher(pfn.pfn);
-
-				if (!m.matches()) {
-					System.err.println("Pattern doesn't match " + pfn.pfn);
-					return false;
-				}
-
-				final String server = m.group(1);
-				final String spfn = m.group(4);
-
-				command.add("xrd");
-				command.add(server);
-				command.add("rm \"" + spfn + "?authz=" + envelope+"\"");
+				command.add("-authz");
+				command.add(fAuthz.getCanonicalPath());
 			}
+
+			command.add(transactionURL);
 
 			if (logger.isLoggable(Level.FINEST))
 				logger.log(Level.FINEST, "Executing rm command: "+command);

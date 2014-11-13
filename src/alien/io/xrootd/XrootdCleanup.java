@@ -278,8 +278,6 @@ public class XrootdCleanup {
 
 		final Xrootd xrootd = new Xrootd();
 
-		xrootd.setUseXrdRm(true);
-
 		try {
 			if (!xrootd.delete(pfn)) {
 				System.err.println("Could not delete : " + pfn);

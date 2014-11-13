@@ -26,7 +26,6 @@ import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.protocols.Factory;
-import alien.io.protocols.Xrootd;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 import alien.se.SEUtils;
@@ -66,9 +65,6 @@ public class OrphanPFNsCleanup {
 		AppConfig.getProperty("lia.Monitor.group"); // initialize it
 
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
-
-		final Xrootd x = Factory.xrootd;
-		x.setUseXrdRm(AppConfig.getb("utils.OrphanPFNsCleanup.useXrdRm", true));
 
 		long lastCheck = 0;
 
@@ -195,11 +191,8 @@ public class OrphanPFNsCleanup {
 							}
 						});
 
-						executor.setKeepAliveTime(1, TimeUnit.MINUTES); // 1
-																		// minute
-																		// activity
-																		// timeout
-
+						// 1 minute (in)activity timeout
+						executor.setKeepAliveTime(1, TimeUnit.MINUTES);
 						executor.allowCoreThreadTimeOut(true);
 
 						EXECUTORS.put(Integer.valueOf(seNumber), executor);
