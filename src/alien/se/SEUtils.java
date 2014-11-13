@@ -33,9 +33,9 @@ import alien.api.catalogue.SEfromString;
 import alien.catalogue.CatalogueUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDIndex;
+import alien.catalogue.GUIDIndex.SEUsageStats;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.Host;
-import alien.catalogue.GUIDIndex.SEUsageStats;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 
@@ -184,8 +184,7 @@ public final class SEUtils {
 	 * Get all SE objects that have the given names
 	 * 
 	 * @param ses
-	 *            names to get the objects for, can be <code>null</code> in
-	 *            which case all known SEs are returned
+	 *            names to get the objects for, can be <code>null</code> in which case all known SEs are returned
 	 * @return SE objects
 	 */
 	public static List<SE> getSEs(final List<String> ses) {
@@ -240,7 +239,7 @@ public final class SEUtils {
 	private static void updateSEDistanceCache() {
 		if (!ConfigUtils.isCentralService())
 			return;
-		
+
 		seDistanceReadLock.lock();
 
 		try {
@@ -363,13 +362,11 @@ public final class SEUtils {
 	}
 
 	/**
-	 * Get all the SEs available to one site, sorted by the relative distance to
-	 * the site, exclude exSEs
+	 * Get all the SEs available to one site, sorted by the relative distance to the site, exclude exSEs
 	 * 
 	 * @param site
 	 * @param write
-	 *            <code>true</code> for write operations, <code>false</code> for
-	 *            read
+	 *            <code>true</code> for write operations, <code>false</code> for read
 	 * @return sorted list of SEs based on MonALISA distance metric
 	 */
 	public static List<SE> getClosestSEs(final String site, final boolean write) {
@@ -377,14 +374,12 @@ public final class SEUtils {
 	}
 
 	/**
-	 * Get all the SEs available to one site, sorted by the relative distance to
-	 * the site, exclude exSEs
+	 * Get all the SEs available to one site, sorted by the relative distance to the site, exclude exSEs
 	 * 
 	 * @param site
 	 * @param exSEs
 	 * @param write
-	 *            <code>true</code> for write operations, <code>false</code> for
-	 *            read
+	 *            <code>true</code> for write operations, <code>false</code> for read
 	 * @return sorted list of SEs based on MonALISA distance metric
 	 */
 	public static List<SE> getClosestSEs(final String site, final List<SE> exSEs, final boolean write) {
@@ -439,12 +434,15 @@ public final class SEUtils {
 	 * Get if possible all SEs for a certain site with specs
 	 * 
 	 * @param site
+	 *            name of the site the job/client currently is
 	 * @param ses
+	 *            force writing on these SEs irrespective of the QoS
 	 * @param exses
+	 *            exclude these SEs, usually because the operation was already tried on them
 	 * @param qos
+	 *            SE type and number of replicas, for writing
 	 * @param write
-	 *            <code>true</code> for write operations, <code>false</code> for
-	 *            read
+	 *            <code>true</code> for write operations, <code>false</code> for read
 	 * @return the list of SEs
 	 */
 	public static List<SE> getBestSEsOnSpecs(final String site, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean write) {
@@ -455,7 +453,7 @@ public final class SEUtils {
 			logger.log(Level.FINE, "got qos: " + qos);
 		}
 
-		final List<SE> SEs = SEUtils.getSEs(ses);
+		final List<SE> SEs = ses != null ? SEUtils.getSEs(ses) : new ArrayList<SE>();
 
 		final List<SE> exSEs = SEUtils.getSEs(exses);
 
@@ -465,7 +463,6 @@ public final class SEUtils {
 
 		for (final Map.Entry<String, Integer> qosDef : qos.entrySet())
 			if (qosDef.getValue().intValue() > 0) {
-
 				// TODO: get a number #qos.get(qosType) of qosType SEs
 				final List<SE> discoveredSEs = SEUtils.getClosestSEs(site, exSEs, write);
 
@@ -491,15 +488,13 @@ public final class SEUtils {
 	}
 
 	/**
-	 * Sort a collection of PFNs by their relative distance to a given site
-	 * (where the job is running for example)
+	 * Sort a collection of PFNs by their relative distance to a given site (where the job is running for example)
 	 * 
 	 * @param pfns
 	 * @param sSite
 	 * @param removeBrokenSEs
 	 * @param write
-	 *            <code>true</code> for write operations, <code>false</code> for
-	 *            read
+	 *            <code>true</code> for write operations, <code>false</code> for read
 	 * @return the sorted list of locations
 	 */
 	public static List<PFN> sortBySite(final Collection<PFN> pfns, final String sSite, final boolean removeBrokenSEs, final boolean write) {
@@ -540,8 +535,7 @@ public final class SEUtils {
 	}
 
 	/**
-	 * Sort a collection of PFNs by their relative distance to a given site
-	 * (where the job is running for example), priorize SEs, exclude exSEs
+	 * Sort a collection of PFNs by their relative distance to a given site (where the job is running for example), priorize SEs, exclude exSEs
 	 * 
 	 * @param pfns
 	 * @param sSite
@@ -549,8 +543,7 @@ public final class SEUtils {
 	 * @param SEs
 	 * @param exSEs
 	 * @param write
-	 *            <code>true</code> for write operations, <code>false</code> for
-	 *            read
+	 *            <code>true</code> for write operations, <code>false</code> for read
 	 * @return the sorted list of locations
 	 */
 	public static List<PFN> sortBySiteSpecifySEs(final Collection<PFN> pfns, final String sSite, final boolean removeBrokenSEs, final List<SE> SEs, final List<SE> exSEs, final boolean write) {
@@ -589,8 +582,7 @@ public final class SEUtils {
 		/**
 		 * @param distance
 		 * @param write
-		 *            <code>true</code> for write operations, <code>false</code>
-		 *            for read
+		 *            <code>true</code> for write operations, <code>false</code> for read
 		 */
 		public SEComparator(final Map<Integer, Double> distance, final boolean write) {
 			this.distance = distance;
@@ -632,8 +624,7 @@ public final class SEUtils {
 	 * @param sSite
 	 * @param removeBrokenSEs
 	 * @param write
-	 *            <code>true</code> for write operations, <code>false</code> for
-	 *            read
+	 *            <code>true</code> for write operations, <code>false</code> for read
 	 * @return the sorted list of SEs
 	 */
 	public static List<SE> sortSEsBySite(final Collection<SE> ses, final String sSite, final boolean removeBrokenSEs, final boolean write) {
@@ -681,13 +672,10 @@ public final class SEUtils {
 	 * @param sSite
 	 *            reference site
 	 * @param toSE
-	 *            target se, can be either a {@link SE} object, a name (as
-	 *            String) or a SE number (Integer), anything else will throw an
-	 *            exception
+	 *            target se, can be either a {@link SE} object, a name (as String) or a SE number (Integer), anything else will throw an exception
 	 * @param write
 	 *            <code>true</code> for writing, <code>false</code> for reading
-	 * @return the distance (0 = local, 1 = far away, with negative values being
-	 *         strongly preferred and >1 values highly demoted)
+	 * @return the distance (0 = local, 1 = far away, with negative values being strongly preferred and >1 values highly demoted)
 	 */
 	public static Double getDistance(final String sSite, final Object toSE, final boolean write) {
 		if (toSE == null)
@@ -728,8 +716,7 @@ public final class SEUtils {
 	}
 
 	/**
-	 * Update the number of files and the total size for each known SE,
-	 * according to the G*L and G*L_PFN tables
+	 * Update the number of files and the total size for each known SE, according to the G*L and G*L_PFN tables
 	 */
 	public static void updateSEUsageCache() {
 		final Map<Integer, SEUsageStats> m = getSEUsage();
@@ -781,188 +768,187 @@ public final class SEUtils {
 	public static void main(final String[] args) {
 		updateSEUsageCache();
 	}
-	
+
 	/**
-	 * @param purge if <code>true</code> then all PFNs present on these SEs will be queued for physical deletion from the storage.
-	 * 	Set it to <code>false</code> if the content was already deleted, the storage was disconnected or there is another reason why 
-	 *  you don't care if the storage is cleaned or not.
-	 * @param seNames list of SE names to remove from the catalogue
+	 * @param purge
+	 *            if <code>true</code> then all PFNs present on these SEs will be queued for physical deletion from the storage. Set it to <code>false</code> if the content was already deleted, the
+	 *            storage was disconnected or there is another reason why you don't care if the storage is cleaned or not.
+	 * @param seNames
+	 *            list of SE names to remove from the catalogue
 	 * @throws IOException
 	 */
-	public static void purgeSE(final boolean purge, final String... seNames) throws IOException{
+	public static void purgeSE(final boolean purge, final String... seNames) throws IOException {
 		final StringBuilder sbSE = new StringBuilder();
 
 		final Set<SE> ses = new HashSet<>();
-		
-		for (final String seName: seNames){
-			SE se = SEUtils.getSE(seName);
-		
-			if (se==null){
-				System.err.println("Unknown SE: "+seName);
 
-				if (seName.equals("ALICE::KISTI_GSDC::SE")){
+		for (final String seName : seNames) {
+			SE se = SEUtils.getSE(seName);
+
+			if (se == null) {
+				System.err.println("Unknown SE: " + seName);
+
+				if (seName.equals("ALICE::KISTI_GSDC::SE"))
 					se = new SE(seName, 311, "disk", "/", "root://xh11.sdfarm.kr:1094");
-				}
-				else
-				if (seName.equals("ALICE::GSI::SE")){
+				else if (seName.equals("ALICE::GSI::SE"))
 					se = new SE(seName, 195, "disk", "/alien", "root://grid2.gsi.de:1094");
-				}
 				else
 					return;
 			}
-								
+
 			ses.add(se);
 		}
-		
-		for (final SE se: ses){
-			System.err.println("Deleting all replicas from: "+se);
-			
-			if (sbSE.length()>0)
+
+		for (final SE se : ses) {
+			System.err.println("Deleting all replicas from: " + se);
+
+			if (sbSE.length() > 0)
 				sbSE.append(',');
-			
+
 			sbSE.append(se.seNumber);
 		}
-		
+
 		final PrintWriter pw = new PrintWriter(new FileWriter("orphaned_guids.txt", true));
-		
-		int copies[] = new int[10];
-		
-		int cnt=0;
-		
-		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()){
+
+		final int copies[] = new int[10];
+
+		int cnt = 0;
+
+		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
 			final Host h = CatalogueUtils.getHost(idx.hostIndex);
-			
+
 			final DBFunctions gdb = h.getDB();
 
-			gdb.query("select binary2string(guid) from G"+idx.tableName+"L inner join G"+idx.tableName+"L_PFN using (guidId) WHERE seNumber IN ("+sbSE+");");
-			
-			while (gdb.moveNext()){
-				if ((++cnt)%10000 == 0)
+			gdb.query("select binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber IN (" + sbSE + ");");
+
+			while (gdb.moveNext()) {
+				if ((++cnt) % 10000 == 0)
 					System.err.println(cnt);
-				
-				final String sguid = gdb.gets(1); 
-				
+
+				final String sguid = gdb.gets(1);
+
 				final GUID g = GUIDUtils.getGUID(sguid);
-				
-				if (g==null){
-					System.err.println("Unexpected: cannot load the GUID content of "+gdb.gets(1));
+
+				if (g == null) {
+					System.err.println("Unexpected: cannot load the GUID content of " + gdb.gets(1));
 					continue;
 				}
-				
-				for (final SE se: ses){
-					if (true){
+
+				for (final SE se : ses) {
+					if (true) {
 						g.removePFN(se, purge);
-						
-						if (g.getPFNs().size()==0){
-							System.err.println("Orphaned GUID "+sguid);
-							
+
+						if (g.getPFNs().size() == 0) {
+							System.err.println("Orphaned GUID " + sguid);
+
 							pw.println(sguid);
 						}
 					}
-					
-					copies[Math.min(g.getPFNs().size(), copies.length-1)] ++;
+
+					copies[Math.min(g.getPFNs().size(), copies.length - 1)]++;
 				}
-			}			
+			}
 		}
-		
-		for (int i=0; i<copies.length; i++){
-			System.err.println(i+" replicas: "+copies[i]);
-		}
-		
+
+		for (int i = 0; i < copies.length; i++)
+			System.err.println(i + " replicas: " + copies[i]);
+
 		pw.flush();
 		pw.close();
 	}
-	
+
 	/**
-	 * Redirect all files indicated to be on the source SE to point to the destination SE instead.
-	 * To be used if a temporary SE took in all the files of an older SE by other means than the
-	 * AliEn data management tools.
+	 * Redirect all files indicated to be on the source SE to point to the destination SE instead. To be used if a temporary SE took in all the files of an older SE by other means than the AliEn data
+	 * management tools.
 	 * 
-	 * @param seSource source SE, to be freed
-	 * @param seDest destination SE, that accepted the files already
-	 * @param debug if <code>true</code> then the operation will NOT be executed, the queries will only be
-	 *   logged on screen for manually checking them. It is recommended to run it once in this more and only
-	 *   if everything looks ok to commit to executing it, by passing <code>false</code> as this parameter.
+	 * @param seSource
+	 *            source SE, to be freed
+	 * @param seDest
+	 *            destination SE, that accepted the files already
+	 * @param debug
+	 *            if <code>true</code> then the operation will NOT be executed, the queries will only be logged on screen for manually checking them. It is recommended to run it once in this more and
+	 *            only if everything looks ok to commit to executing it, by passing <code>false</code> as this parameter.
 	 */
-	public static void moveSEContent(final String seSource, final String seDest, final boolean debug){
+	public static void moveSEContent(final String seSource, final String seDest, final boolean debug) {
 		final SE source = SEUtils.getSE(seSource);
 		final SE dest = SEUtils.getSE(seDest);
-		
-		if (source==null || dest==null){
+
+		if (source == null || dest == null) {
 			System.err.println("Invalid SEs");
 			return;
 		}
-		
-		System.err.println("Renumbering "+source.seNumber+" to "+dest.seNumber);
-		
-		for (final GUIDIndex idx: CatalogueUtils.getAllGUIDIndexes()){
+
+		System.err.println("Renumbering " + source.seNumber + " to " + dest.seNumber);
+
+		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
 			final DBFunctions db = CatalogueUtils.getHost(idx.hostIndex).getDB();
-			
-			if (db == null){
-				System.err.println("Cannot get DB for "+idx);
+
+			if (db == null) {
+				System.err.println("Cannot get DB for " + idx);
 				continue;
 			}
-			
-			final String q1 = "UPDATE G"+idx.tableName+"L_PFN SET seNumber="+dest.seNumber+" WHERE seNumber="+source.seNumber;
-			final String q2 = "UPDATE G"+idx.tableName+"L SET seStringlist=replace(sestringlist,',"+source.seNumber+",',',"+dest.seNumber+",') WHERE seStringlist LIKE '%,"+source.seNumber+",%';"; 
-			
-			if (debug){
+
+			final String q1 = "UPDATE G" + idx.tableName + "L_PFN SET seNumber=" + dest.seNumber + " WHERE seNumber=" + source.seNumber;
+			final String q2 = "UPDATE G" + idx.tableName + "L SET seStringlist=replace(sestringlist,'," + source.seNumber + ",','," + dest.seNumber + ",') WHERE seStringlist LIKE '%,"
+					+ source.seNumber + ",%';";
+
+			if (debug) {
 				System.err.println(q1);
 				System.err.println(q2);
-			}
-			else{
+			} else {
 				boolean ok = db.query(q1);
-				System.err.println(q1+" : "+ok+" : "+db.getUpdateCount());
-				
+				System.err.println(q1 + " : " + ok + " : " + db.getUpdateCount());
+
 				ok = db.query(q2);
-				
-				System.err.println(q2+" : "+ok+" : "+db.getUpdateCount());
+
+				System.err.println(q2 + " : " + ok + " : " + db.getUpdateCount());
 			}
 		}
 	}
-	
+
 	/**
 	 * Dump all PFNs present in the given SEs in individual CSV files named "<SE name>.file_list", with the following format:<br>
 	 * #PFN,size,MD5
 	 * 
-	 * @param realPFNs if <code>true</code> the catalogue PFNs will be written, if <code>false</code> the PFNs will be generated from the code again.
-	 *   It should be set to <code>false</code> if there were any reindexing done in the database and the PFN strings still point to the old SE.
-	 * @param ses SEs to dump the content from
+	 * @param realPFNs
+	 *            if <code>true</code> the catalogue PFNs will be written, if <code>false</code> the PFNs will be generated from the code again. It should be set to <code>false</code> if there were
+	 *            any reindexing done in the database and the PFN strings still point to the old SE.
+	 * @param ses
+	 *            SEs to dump the content from
 	 * @throws Exception
 	 */
 	public static void masterSE(final boolean realPFNs, final String... ses) throws Exception {
 		final NumberFormat twoDigits = new DecimalFormat("00");
 		final NumberFormat fiveDigits = new DecimalFormat("00000");
-		
-		for (final String seName: ses){
+
+		for (final String seName : ses) {
 			final SE se = SEUtils.getSE(seName);
-			
-			final PrintWriter pw = new PrintWriter(new FileWriter(seName+".file_list"));
-			
+
+			final PrintWriter pw = new PrintWriter(new FileWriter(seName + ".file_list"));
+
 			pw.println("#PFN,size,MD5");
-			
-			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()){
+
+			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
 				final Host h = CatalogueUtils.getHost(idx.hostIndex);
-				
+
 				final DBFunctions gdb = h.getDB();
-	
-				if (realPFNs){
-					gdb.query("select pfn,size,md5 from G"+idx.tableName+"L inner join G"+idx.tableName+"L_PFN using (guidId) WHERE seNumber="+se.seNumber+";");
-					
+
+				if (realPFNs) {
+					gdb.query("select pfn,size,md5 from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
+
 					while (gdb.moveNext())
-						pw.println(gdb.gets(1)+","+gdb.getl(2)+","+gdb.gets(3));
-				}
-				else{
-					gdb.query("select binary2string(guid),size,md5 from G"+idx.tableName+"L INNER JOIN G"+idx.tableName+"L_PFN using(guidId) where seNumber="+se.seNumber+";");
-					
-					while (gdb.moveNext()){
+						pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
+				} else {
+					gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
+
+					while (gdb.moveNext()) {
 						final String guid = gdb.gets(1);
-						
-						pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid+","+gdb.getl(2)+","+gdb.gets(3));
+
+						pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3));
 					}
 				}
 			}
-			
+
 			pw.flush();
 			pw.close();
 		}
