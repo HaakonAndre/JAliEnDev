@@ -109,11 +109,11 @@ public class XRDChecker {
 	public static final XRDStatus checkByDownloading(final PFN pfn) {
 		return checkByDownloading(pfn, false);
 	}
-	
+
 	/**
 	 * @param pfn
-	 * @param zipFile if <code>true</code> then the downloaded file is assumed to be a ZIP archive
-	 * 			and the code will check its structure as well
+	 * @param zipFile
+	 *            if <code>true</code> then the downloaded file is assumed to be a ZIP archive and the code will check its structure as well
 	 * @return the check status
 	 */
 	public static final XRDStatus checkByDownloading(final PFN pfn, final boolean zipFile) {
@@ -142,18 +142,18 @@ public class XRDChecker {
 			if (f.length() != guid.size)
 				return new XRDStatus(false, "Size is different: catalog=" + guid.size + ", downloaded size: " + f.length());
 
-			if (guid.md5!=null && guid.md5.length()>0){
+			if (guid.md5 != null && guid.md5.length() > 0) {
 				final String fileMD5 = IOUtils.getMD5(f);
-				
+
 				if (!fileMD5.equalsIgnoreCase(guid.md5))
 					return new XRDStatus(false, "MD5 is different: catalog=" + guid.md5 + ", downloaded file=" + fileMD5);
 			}
-			
-			if (zipFile){
+
+			if (zipFile) {
 				final String zipMessage = checkZipFile(f);
-				
-				if (zipMessage!=null)
-					return new XRDStatus(false, "Broken ZIP archive: "+zipMessage);
+
+				if (zipMessage != null)
+					return new XRDStatus(false, "Broken ZIP archive: " + zipMessage);
 			}
 		} catch (final IOException ioe) {
 			return new XRDStatus(false, ioe.getMessage());
@@ -168,7 +168,7 @@ public class XRDChecker {
 
 		return new XRDStatus(true, null);
 	}
-	
+
 	/**
 	 * Check the integrity of a local ZIP file
 	 * 
@@ -182,9 +182,8 @@ public class XRDChecker {
 			zipfile = new ZipFile(f);
 			zis = new ZipInputStream(new FileInputStream(f));
 			ZipEntry ze = zis.getNextEntry();
-			if (ze == null) {
+			if (ze == null)
 				return "No entry found";
-			}
 			while (ze != null) {
 				// if it throws an exception fetching any of the following then we know the file is corrupted.
 				zipfile.getInputStream(ze);
@@ -194,7 +193,7 @@ public class XRDChecker {
 				ze = zis.getNextEntry();
 			}
 			return null;
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			return e.getMessage();
 		} finally {
 			try {
@@ -202,7 +201,7 @@ public class XRDChecker {
 					zipfile.close();
 					zipfile = null;
 				}
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				return e.getMessage();
 			}
 			try {
@@ -210,44 +209,47 @@ public class XRDChecker {
 					zis.close();
 					zis = null;
 				}
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				return e.getMessage();
 			}
 		}
 	}
 
 	private static SE noSE = SEUtils.getSE("no_se");
-	
+
 	/**
-	 * Check all replicas of an LFN, first just remotely querying the status
-	 * then fully downloading each replica and computing the md5sum.
+	 * Check all replicas of an LFN, first just remotely querying the status then fully downloading each replica and computing the md5sum.
 	 * 
 	 * @param sLFN
 	 * @return the status of all replicas
 	 */
 	public static final Map<PFN, XRDStatus> fullCheckLFN(final String sLFN) {
 		final GUID guid;
-		
-		if (GUIDUtils.isValidGUID(sLFN))
+
+		final boolean zipArchive;
+
+		if (GUIDUtils.isValidGUID(sLFN)) {
 			guid = GUIDUtils.getGUID(sLFN);
-		else{
-			LFN lfn = LFNUtils.getLFN(sLFN);
-			
-			if (lfn==null)
+
+			zipArchive = false;
+		} else {
+			final LFN lfn = LFNUtils.getLFN(sLFN);
+
+			if (lfn == null)
 				return null;
-			
+
 			guid = GUIDUtils.getGUID(lfn);
+
+			zipArchive = sLFN.toLowerCase().endsWith(".zip") || sLFN.substring(sLFN.lastIndexOf('/')).toLowerCase().contains("archive") || guid.hasReplica(noSE);
 		}
-		
+
 		if (guid == null)
 			return null;
-				
+
 		final Map<PFN, XRDStatus> check = XRDChecker.check(guid);
 
 		if (check == null || check.size() == 0)
 			return check;
-		
-		final boolean zipArchive = sLFN.toLowerCase().endsWith(".zip") || sLFN.substring(sLFN.lastIndexOf('/')).toLowerCase().contains("archive") || guid.hasReplica(noSE);
 
 		final Iterator<Map.Entry<PFN, XRDStatus>> it = check.entrySet().iterator();
 
