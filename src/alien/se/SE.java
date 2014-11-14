@@ -211,6 +211,17 @@ public class SE implements Serializable, Comparable<SE> {
 	 * @return the protocol part
 	 */
 	public String generateProtocol() {
+		return generateProtocol(seioDaemons, seStoragePath);
+	}
+
+	/**
+	 * The protocol to access a storage element, including the storage prefix
+	 * 
+	 * @param seioDaemons
+	 * @param seStoragePath
+	 * @return the protocol part
+	 */
+	public static String generateProtocol(final String seioDaemons, final String seStoragePath){
 		if (seioDaemons == null || seioDaemons.length() == 0)
 			return null;
 
@@ -224,7 +235,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 		return ret;
 	}
-
+	
 	/**
 	 * @param guid
 	 * @return the PFN for this storage

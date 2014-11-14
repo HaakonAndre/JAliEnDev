@@ -27,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.SEfromString;
@@ -888,7 +889,17 @@ public final class SEUtils {
 				continue;
 			}
 
-			final String q1 = "UPDATE G" + idx.tableName + "L_PFN SET seNumber=" + dest.seNumber + " WHERE seNumber=" + source.seNumber;
+			String q1 = "UPDATE G" + idx.tableName + "L_PFN SET seNumber=" + dest.seNumber;
+			
+			if (!source.seStoragePath.equals(dest.seStoragePath))
+				q1 += ", pfn=replace(replace(pfn, '"+Format.escSQL(source.seioDaemons)+"', '"+Format.escSQL(dest.seioDaemons)+"'), '"+
+						Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath))+"', '"+Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath))+"')";
+			else
+			if (!source.seioDaemons.equals(dest.seioDaemons))
+				q1 += ", pfn=replace(pfn, '"+Format.escSQL(source.seioDaemons)+"', '"+Format.escSQL(dest.seioDaemons)+"')";
+					
+			q1 += " WHERE seNumber=" + source.seNumber;
+			
 			final String q2 = "UPDATE G" + idx.tableName + "L SET seStringlist=replace(sestringlist,'," + source.seNumber + ",','," + dest.seNumber + ",') WHERE seStringlist LIKE '%,"
 					+ source.seNumber + ",%';";
 
