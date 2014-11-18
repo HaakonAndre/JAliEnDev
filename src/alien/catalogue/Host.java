@@ -45,6 +45,11 @@ public class Host implements Comparable<Host>{
 	 */
 	public final String organization;
 	
+	/**
+	 * JDBC URL
+	 */
+	public final String jdbcURL;
+	
 	private ExtProperties dbProperties = null;
 	
 	/**
@@ -59,6 +64,7 @@ public class Host implements Comparable<Host>{
 		this.db = StringFactory.get(db.gets("db"));
 		driver = StringFactory.get(db.gets("driver").toLowerCase());
 		organization = StringFactory.get(db.gets("organization"));
+		jdbcURL = StringFactory.get(db.gets("jdbcurl"));
 		
 		final ExtProperties parent = ConfigUtils.getDBConfiguration().get("alice_users");
 		
@@ -67,11 +73,14 @@ public class Host implements Comparable<Host>{
 		else
 			dbProperties = new ExtProperties();
 		
+		if (jdbcURL.length()>0)
+			dbProperties.set("url", jdbcURL);
+		
 		dbProperties.set("database", this.db);
 		dbProperties.set("host", address.substring(0, address.indexOf(':')));
 		dbProperties.set("port", address.substring(address.indexOf(':')+1));
 		
-		if (driver.indexOf("mysql")>=0)
+		if (driver.indexOf("mysql")>=0 && dbProperties.gets("driver", "").toLowerCase().indexOf("mysql")<0)
 			dbProperties.set("driver", "com.mysql.jdbc.Driver");
 		else
 		if (driver.indexOf("postgres")>=0)

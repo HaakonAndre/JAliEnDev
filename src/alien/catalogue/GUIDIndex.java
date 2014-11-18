@@ -129,6 +129,8 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 			return ret;
 
 		try {
+			db.setReadOnly(true);
+			
 			db.query("select seNumber, sum(size),count(1) from G" + tableName + "L INNER JOIN G" + tableName + "L_PFN USING(guidId) GROUP BY seNumber;");
 
 			while (db.moveNext()) {
