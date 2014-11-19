@@ -135,7 +135,9 @@ public class BookingTable {
 			db.query("DELETE FROM LFN_BOOKED WHERE guid=string2binary(?) AND se=? AND pfn=? AND expiretime<0;", false, requestedGUID.guid.toString(), se.getName(), pfn.getPFN());
 			
 			// now check the booking table for previous attempts
+			db.setReadOnly(true);
 			db.query("SELECT owner FROM LFN_BOOKED WHERE guid=string2binary(?) AND se=? AND pfn=? AND expiretime>0;", false, requestedGUID.guid.toString(), se.getName(), pfn.getPFN());
+			db.setReadOnly(false);
 			
 			if (db.moveNext()){
 				// there is a previous attempt on this GUID to this SE, who is the owner?
@@ -272,7 +274,11 @@ public class BookingTable {
 				return false;
 			}
 	
+			db.setReadOnly(true);
+			
 			db.query("SELECT lfn,jobid FROM LFN_BOOKED WHERE "+w);
+			
+			db.setReadOnly(false);
 	
 			while (db.moveNext()){
 				final String sLFN = db.gets(1);
@@ -341,6 +347,8 @@ public class BookingTable {
 	 */
 	public static PFN getBookedPFN(final String pfn) throws IOException{
 		final DBFunctions db = getDB();
+		
+		db.setReadOnly(true);
 		
 		try{
 			if (!db.query("SELECT *, binary2string(guid) as guid_as_string FROM LFN_BOOKED WHERE pfn=?;", false, pfn))

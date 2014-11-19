@@ -52,6 +52,8 @@ public final class QuotaUtilities {
 							logger.log(Level.FINER, "Updating Quotas cache");
 
 						final DBFunctions db = ConfigUtils.getDB("processes");
+						
+						db.setReadOnly(true);
 
 						String q = "SELECT * FROM PRIORITY";
 
@@ -110,6 +112,8 @@ public final class QuotaUtilities {
 							logger.log(Level.FINER, "Updating File Quota cache");
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
+						
+						db.setReadOnly(true);
 
 						try {
 							if (db.query("SELECT * FROM FQUOTAS;")) {

@@ -21,6 +21,8 @@ public class RemoveSERequirements {
 	public static void main(final String[] args) {
 		final DBFunctions db = TaskQueueUtils.getQueueDB();
 		
+		db.setReadOnly(true);
+		
 		if (args.length==0){			
 			if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*';")){
 				System.err.println("Could not query the QUEUE, check your config/password.properies and config/processes.properties");

@@ -12,7 +12,6 @@ import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
-import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
@@ -528,6 +527,8 @@ public class LFNUtils {
 		final Set<String> ret = new HashSet<>();
 		
 		try {
+			db.setReadOnly(true);
+			
 			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
 			while (db.moveNext()){
@@ -557,6 +558,12 @@ public class LFNUtils {
 			for (final String tableName : getTagTableNames(path, tag)) {
 				if (db == null)
 					db = ConfigUtils.getDB("alice_data");
+				
+				if (db == null){
+					logger.log(Level.WARNING, "Cannot get a DB instance");
+					
+					return ret;
+				}
 
 				String q = "SELECT distinct file FROM " + Format.escSQL(tableName) + " " + Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
 						+ Format.escSQL(query.replace(":", "."));
@@ -564,6 +571,8 @@ public class LFNUtils {
 				if ((flags & FIND_BIGGEST_VERSION) != 0)
 					q += " ORDER BY version DESC, entryId DESC LIMIT 1";
 
+				db.setReadOnly(true);
+				
 				if (!db.query(q))
 					continue;
 
@@ -664,7 +673,11 @@ public class LFNUtils {
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
 
 		try {
+			db.setReadOnly(true);
+			
 			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
+			
+			db.setReadOnly(false);
 
 			if (!db.moveNext())
 				return false;
@@ -794,7 +807,11 @@ public class LFNUtils {
 		final Set<String> currentLFNs = collection.listCollection();
 
 		try {
+			db.setReadOnly(true);
+			
 			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
+			
+			db.setReadOnly(false);
 
 			if (!db.moveNext()) {
 				logger.log(Level.WARNING, "Didn't find any collectionId for guid " + collection.guid.toString());

@@ -100,21 +100,48 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 		return "GUIDIndex : hostIndex : " + hostIndex + "\n" + "tableName\t: " + tableName + "\n" + "indexId\t: " + indexId + "\n" + "guidTime\t: " + Long.toHexString(guidTime);
 	}
 
+	/**
+	 * SE usage statistics for a SE (usage and file count)
+	 * 
+	 * @author costing
+	 * @since Nov 19, 2014
+	 */
 	public static class SEUsageStats {
+		/**
+		 * total amount of space allocated on the SE (as the catalogue sees it) 
+		 */
 		public long usedSpace = 0;
+		
+		/**
+		 * number of files on that SE
+		 */
 		public long fileCount = 0;
 
+		/**
+		 * Initial value
+		 * 
+		 * @param usedSpace
+		 * @param fileCount
+		 */
 		public SEUsageStats(final long usedSpace, final long fileCount) {
 			this.usedSpace = usedSpace;
 			this.fileCount = fileCount;
 		}
 
+		/**
+		 * Merge with the results coming from the next G*L_PFN table
+		 * 
+		 * @param other
+		 */
 		public void merge(final SEUsageStats other) {
 			this.usedSpace += other.usedSpace;
 			this.fileCount += other.fileCount;
 		}
 	}
 
+	/**
+	 * @return SE usage statistics for every (found) seNumber in the G*L_PFN tables
+	 */
 	public Map<Integer, SEUsageStats> getSEUsageStats() {
 		final Map<Integer, SEUsageStats> ret = new HashMap<>();
 

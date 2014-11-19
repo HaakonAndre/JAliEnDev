@@ -163,6 +163,8 @@ public final class GUIDUtils {
 
 		if (db == null)
 			return null;
+		
+		db.setReadOnly(true);
 
 		try {
 			final int tableName = GUIDUtils.getTableNameForGUID(guid);
@@ -230,6 +232,8 @@ public final class GUIDUtils {
 
 			if (monitor != null)
 				monitor.incrementCounter("GUID_db_lookup");
+			
+			db.setReadOnly(true);
 
 			if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString()))
 				throw new IllegalStateException("Failed querying the G" + tableName + "L table for guid " + guid);
@@ -424,6 +428,10 @@ public final class GUIDUtils {
 		return new GUID(id);
 	}
 	
+	/**
+	 * @param user
+	 * @return a new GUID
+	 */
 	public static GUID createGuid(final AliEnPrincipal user){
 		final GUID guid = createGuid();
 		

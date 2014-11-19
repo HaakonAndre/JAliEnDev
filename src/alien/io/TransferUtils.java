@@ -57,6 +57,8 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_get_by_id");
 		}
 
+		db.setReadOnly(true);
+		
 		try {
 			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(id));
 
@@ -84,6 +86,8 @@ public final class TransferUtils {
 			monitor.incrementCounter("TRANSFERS_get_by_destination");
 		}
 
+		db.setReadOnly(true);
+		
 		try {
 			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
 
@@ -107,6 +111,8 @@ public final class TransferUtils {
 
 		if (db == null)
 			return null;
+		
+		db.setReadOnly(true);
 
 		if (monitor != null) {
 			monitor.incrementCounter("TRANSFERS_db_lookup");
@@ -120,13 +126,15 @@ public final class TransferUtils {
 
 		q += "ORDER BY transferId";
 
+		db.setReadOnly(true);
+		
 		try {
 			if (username != null && username.length() > 0)
 				db.query(q, false, username);
 			else
 				db.query(q);
 
-			final List<TransferDetails> ret = new ArrayList<>(db.count());
+			final List<TransferDetails> ret = new ArrayList<>();
 
 			while (db.moveNext())
 				ret.add(new TransferDetails(db));
@@ -245,10 +253,14 @@ public final class TransferUtils {
 			lfnToCopy = l;
 
 		try {
+			db.setReadOnly(true);
+			
 			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, lfnToCopy.getCanonicalName(), se.seName);
 
 			if (db.moveNext())
 				return db.geti(1);
+			
+			db.setReadOnly(false);
 
 			db.setLastGeneratedKey(true);
 
@@ -396,10 +408,13 @@ public final class TransferUtils {
 
 		try {
 			if (checkPreviousTransfers) {
+				db.setReadOnly(true);
 				db.query(PREVIOUS_TRANSFER_ID_QUERY, false, sGUID, se.seName);
 
 				if (db.moveNext())
 					return db.geti(1);
+				
+				db.setReadOnly(false);
 			}
 
 			db.setLastGeneratedKey(true);

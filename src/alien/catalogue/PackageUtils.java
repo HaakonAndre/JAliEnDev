@@ -150,6 +150,11 @@ public class PackageUtils {
 		return null;
 	}
 
+	/**
+	 * Get the set of packages registered in CVMFS (should be a subset of the AliEn packages)
+	 * 
+	 * @return set of packages
+	 */
 	public static Set<String> getCvmfsPackages() {
 		cacheCheck();
 

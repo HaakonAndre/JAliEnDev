@@ -77,6 +77,8 @@ public final class SEUtils {
 							logger.log(Level.FINER, "Updating SE cache");
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
+						
+						db.setReadOnly(true);
 
 						try {
 							if (db.query("SELECT * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
@@ -221,6 +223,8 @@ public final class SEUtils {
 	static {
 		if (ConfigUtils.isCentralService()) {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
+			
+			db.setReadOnly(true);
 
 			try {
 				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
@@ -255,6 +259,8 @@ public final class SEUtils {
 							logger.log(Level.FINER, "Updating SE Ranks cache");
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
+						
+						db.setReadOnly(true);
 
 						try {
 							if (db.query(SEDISTANCE_QUERY)) {
@@ -724,6 +730,8 @@ public final class SEUtils {
 
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 
+		db.setReadOnly(true);
+		
 		try {
 			for (final Map.Entry<Integer, SEUsageStats> entry : m.entrySet()) {
 				db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
@@ -819,6 +827,8 @@ public final class SEUtils {
 			final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
 			final DBFunctions gdb = h.getDB();
+			
+			gdb.setReadOnly(true);
 
 			gdb.query("select binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber IN (" + sbSE + ");");
 
@@ -943,6 +953,8 @@ public final class SEUtils {
 				final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
 				final DBFunctions gdb = h.getDB();
+				
+				gdb.setReadOnly(true);
 
 				if (realPFNs) {
 					gdb.query("select pfn,size,md5 from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");

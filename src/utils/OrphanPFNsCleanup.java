@@ -65,13 +65,17 @@ public class OrphanPFNsCleanup {
 		AppConfig.getProperty("lia.Monitor.group"); // initialize it
 
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
-
+		
 		long lastCheck = 0;
 
 		while (true) {
 			if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
 				try {
+					db.setReadOnly(true);
+					
 					db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
+					
+					db.setReadOnly(false);
 
 					while (db.moveNext()) {
 						final Integer se = Integer.valueOf(db.geti(1));
@@ -140,6 +144,8 @@ public class OrphanPFNsCleanup {
 			setName("SEThread (" + seNumber + ")");
 
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
+			
+			db.setReadOnly(true);
 
 			ThreadPoolExecutor executor = EXECUTORS.get(Integer.valueOf(seNumber));
 

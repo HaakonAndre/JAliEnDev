@@ -67,6 +67,8 @@ public class TaskQueueUtils {
 		final DBFunctions db = getQueueDB();
 
 		if (db != null) {
+			db.setReadOnly(true);
+			
 			db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 
 			dbStructure2_20 = db.geti(1) == 1;
@@ -160,6 +162,8 @@ public class TaskQueueUtils {
 		else
 			q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
 
+		db.setReadOnly(true);
+		
 		try {
 			if (!db.query(q, false, Integer.valueOf(queueId)))
 				return null;
@@ -253,6 +257,8 @@ public class TaskQueueUtils {
 
 		final long lQueryStart = System.currentTimeMillis();
 
+		db.setReadOnly(true);
+		
 		try {
 			db.query(q);
 
@@ -340,6 +346,8 @@ public class TaskQueueUtils {
 		else
 			q = "select split,status,count(1) from QUEUE where split in (" + sb.toString() + ") AND status!='KILLED' group by split,status order by 1,2;";
 
+		db.setReadOnly(true);
+		
 		try {
 			db.query(q);
 
@@ -448,6 +456,8 @@ public class TaskQueueUtils {
 		final List<Job> ret = new ArrayList<>();
 
 		final long lQueryStart = System.currentTimeMillis();
+		
+		db.setReadOnly(true);
 
 		try {
 			db.query(q, false, Integer.valueOf(queueId));
@@ -571,13 +581,13 @@ public class TaskQueueUtils {
 		else
 			q = "SELECT queueId,status,split,execHost FROM QUEUE WHERE " + where + " ORDER BY queueId ASC limit " + lim + ";";
 
+		db.setReadOnly(true);
+		
 		try {
 			if (!db.query(q))
 				return null;
 
 			final List<Job> ret = new ArrayList<>();
-
-			db.query(q);
 
 			while (db.moveNext())
 				ret.add(new Job(db, false));
@@ -664,6 +674,8 @@ public class TaskQueueUtils {
 			q = "SELECT status FROM QUEUE where queueId=?;";
 
 		try {
+			db.setReadOnly(true);
+			
 			if (!db.query(q, false, Integer.valueOf(job))) {
 				logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
 
@@ -675,6 +687,8 @@ public class TaskQueueUtils {
 
 				return false;
 			}
+			
+			db.setReadOnly(false);
 
 			JobStatus oldStatus;
 
@@ -756,6 +770,8 @@ public class TaskQueueUtils {
 			q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " FROM QUEUEJDL WHERE queueId=?;";
 		else
 			q = "SELECT jdl FROM QUEUE WHERE queueId=?;";
+		
+		db.setReadOnly(true);
 
 		try {
 			if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
@@ -977,6 +993,8 @@ public class TaskQueueUtils {
 			q = "SELECT " + ALL_BUT_JDL + " FROM QUEUE " + where + orderBy + " limit " + lim + ";";
 
 		// System.out.println("SQL: " + q);
+		
+		db.setReadOnly(true);
 
 		try {
 			if (!db.query(q))
@@ -1010,6 +1028,8 @@ public class TaskQueueUtils {
 			monitor.incrementCounter("TQ_db_lookup");
 			monitor.incrementCounter("TQ_matching_histogram");
 		}
+		
+		db.setReadOnly(true);
 
 		try {
 			db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site");
@@ -1057,6 +1077,8 @@ public class TaskQueueUtils {
 		if (db == null)
 			return ret;
 
+		db.setReadOnly(true);
+		
 		final Map<String, AtomicInteger> work = new HashMap<>();
 
 		if (monitor != null) {
@@ -1808,6 +1830,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
+			db.setReadOnly(true);
+			
 			try {
 				db.query("SELECT command FROM QUEUE_COMMAND where commandId=?", false, key);
 
@@ -2098,6 +2122,8 @@ public class TaskQueueUtils {
 		final long lQueryStart = System.currentTimeMillis();
 
 		final String q = "SELECT * FROM JOBTOKEN WHERE jobId=?;";
+		
+		db.setReadOnly(true);
 
 		try {
 			if (!db.query(q, false, Integer.valueOf(jobId)))
@@ -2299,6 +2325,8 @@ public class TaskQueueUtils {
 
 		q += "GROUP BY 1 ORDER BY 1;";
 
+		db.setReadOnly(true);
+		
 		try {
 			db.query(q);
 

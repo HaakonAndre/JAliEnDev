@@ -119,6 +119,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 		final String q = "SELECT * from L" + tableName + "L WHERE guid=string2binary(?);";
 
+		db.setReadOnly(true);
+		
 		try {
 			if (!db.query(q, false, guid.toString()))
 				return null;
@@ -161,6 +163,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 		String q = "SELECT * FROM L" + tableName + "L WHERE lfn=?";
 
+		db.setReadOnly(true);
+		
 		try {
 			if (!sSearch.endsWith("/")) {
 				q += " OR lfn=?";
@@ -237,6 +241,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			q += " ORDER BY lfn";
 
 		try {
+			db.setReadOnly(true);
+			
 			if (!db.query(q))
 				return null;
 
@@ -261,6 +267,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	public LFN getLFN(final long entryId) {
 		final DBFunctions db = getDB();
 
+		db.setReadOnly(true);
+		
 		try {
 			if (!db.query("SELECT * FROM L" + tableName + "L WHERE entryId=?;", false, Long.valueOf(entryId)))
 				return null;

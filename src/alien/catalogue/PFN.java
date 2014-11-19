@@ -270,6 +270,8 @@ public class PFN implements Serializable, Comparable<PFN> {
 					monitor.incrementCounter("GUID_db_lookup");
 
 				try {
+					db.setReadOnly(true);
+					
 					db.query("SELECT * FROM G" + tableNumber + "L WHERE guidId=?;", false, Integer.valueOf(guidId));
 
 					if (db.moveNext()) {

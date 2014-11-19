@@ -315,7 +315,11 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				if (generatedId == null) {
 					logger.log(Level.WARNING, "Insert query didn't generate an ID!");
 
+					db.setReadOnly(true);
+					
 					db.query("SELECT guidId FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid);
+					
+					db.setReadOnly(false);
 
 					if (!db.moveNext()) {
 						logger.log(Level.WARNING, "And in fact the entry was not found by the fallback checking");
@@ -416,6 +420,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 			boolean tainted = false;
 
+			db.setReadOnly(true);
+			
 			try {
 				db.query(q, false, Long.valueOf(guidId));
 
@@ -513,6 +519,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		 * Commit the deletes to the database
 		 * 
 		 * @param tableSuffix
+		 * @return <code>true</code> if the update was done, <code>false</code> if not
 		 */
 		public boolean flush(final String tableSuffix) {
 			if (guidIDs.size() == 0)
@@ -859,6 +866,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		if (monitor != null)
 			monitor.incrementCounter("LFNREF_db_lookup");
+		
+		db.setReadOnly(true);
 
 		try {
 			db.query("SELECT distinct lfnRef FROM G" + tablename + "L_REF WHERE guidId=?;", false, Integer.valueOf(guidId));
@@ -888,6 +897,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 				if (db2 == null)
 					continue;
+				
+				db2.setReadOnly(true);
 
 				try {
 					if (monitor != null)
@@ -1039,6 +1050,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * From AliEn/GUID.pm#GetHash
+	 * @param guidValue the UUID string representation
 	 * 
 	 * @return hash code
 	 */

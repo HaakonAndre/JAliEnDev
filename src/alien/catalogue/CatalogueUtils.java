@@ -57,8 +57,10 @@ public final class CatalogueUtils {
 		@Override
 		protected Host resolve(final Integer key) {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
-
-			if (db!=null){			
+			
+			if (db!=null){
+				db.setReadOnly(true);
+				
 				try {
 					if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
 						return null;
@@ -112,24 +114,30 @@ public final class CatalogueUtils {
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-						if (db != null && db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
-							final LinkedList<GUIDIndex> ret = new LinkedList<>();
+						if (db != null) {
+							db.setReadOnly(true);
 
-							try {
-								while (db.moveNext())
-									ret.add(new GUIDIndex(db));
-							} finally {
-								db.close();
+							if (db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
+								final LinkedList<GUIDIndex> ret = new LinkedList<>();
+
+								try {
+									while (db.moveNext())
+										ret.add(new GUIDIndex(db));
+								}
+								finally {
+									db.close();
+								}
+
+								guidIndexCache = ret;
+
+								guidIndexCacheUpdated = System.currentTimeMillis();
 							}
-
-							guidIndexCache = ret;
-
-							guidIndexCacheUpdated = System.currentTimeMillis();
-						} else
-							// in case of a DB connection failure, try again in
-							// 10 seconds, until then reuse the existing value
-							// (if any)
-							guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+							else
+								// in case of a DB connection failure, try again in
+								// 10 seconds, until then reuse the existing value
+								// (if any)
+								guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+						}
 					}
 				} finally {
 					guidIndexWriteLock.unlock();
@@ -203,31 +211,37 @@ public final class CatalogueUtils {
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-						if (db != null && db.query("SELECT * FROM INDEXTABLE;")) {
-							final Set<IndexTableEntry> newIndextable = new HashSet<>();
-							final Set<String> newTableentries = new HashSet<>();
+						if (db != null) {
+							db.setReadOnly(true);
 
-							try {
-								while (db.moveNext()) {
-									final IndexTableEntry entry = new IndexTableEntry(db);
+							if (db.query("SELECT * FROM INDEXTABLE;")) {
+								final Set<IndexTableEntry> newIndextable = new HashSet<>();
+								final Set<String> newTableentries = new HashSet<>();
 
-									newIndextable.add(entry);
+								try {
+									while (db.moveNext()) {
+										final IndexTableEntry entry = new IndexTableEntry(db);
 
-									newTableentries.add(db.gets("lfn"));
+										newIndextable.add(entry);
+
+										newTableentries.add(db.gets("lfn"));
+									}
 								}
-							} finally {
-								db.close();
+								finally {
+									db.close();
+								}
+
+								indextable = newIndextable;
+								tableentries = newTableentries;
+
+								lastIndexTableUpdate = System.currentTimeMillis();
 							}
-
-							indextable = newIndextable;
-							tableentries = newTableentries;
-
-							lastIndexTableUpdate = System.currentTimeMillis();
-						} else
-							// in case of a DB connection failure, try again in
-							// 10 seconds, until then reuse the existing value
-							// (if any)
-							lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+							else
+								// in case of a DB connection failure, try again in
+								// 10 seconds, until then reuse the existing value
+								// (if any)
+								lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+						}
 					}
 				} finally {
 					indextableWriteLock.unlock();
@@ -355,11 +369,12 @@ public final class CatalogueUtils {
 	
 	/**
 	 * Create a local file with the list of GUIDs that have no LFNs pointing to them any more
+	 * @param outputFile file name that will contain the list of GUIDs at the end
 	 * 
 	 * @throws IOException if the indicated local file cannot be created
 	 */
-	public static void guidCleanup(final String ouputFile) throws IOException {
-		final PrintWriter pw = new PrintWriter(new FileWriter(ouputFile));
+	public static void guidCleanup(final String outputFile) throws IOException {
+		final PrintWriter pw = new PrintWriter(new FileWriter(outputFile));
 		
 		final HashMap<UUID, Long> guids = new HashMap<>(1100000000);
 		
@@ -388,6 +403,8 @@ public final class CatalogueUtils {
 			final DBFunctions gdb = h.getDB();
 
 			gdb.query("set wait_timeout=31536000;");
+			
+			gdb.setReadOnly(true);
 			
 			int read;
 			
@@ -486,6 +503,8 @@ public final class CatalogueUtils {
 			final DBFunctions db = ite.getDB();
 			
 			db.query("set wait_timeout=31536000;");
+			
+			db.setReadOnly(true);
 			
 			long read = 0;
 			

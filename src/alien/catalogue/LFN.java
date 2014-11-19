@@ -173,6 +173,11 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		}
 	}
 
+	/**
+	 * Simple constructor with the canonical 
+	 * 
+	 * @param canonicalLFN
+	 */
 	LFN(final String canonicalLFN){
 		this.canonicalName = canonicalLFN;
 		
@@ -709,6 +714,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			final String q = "SELECT * FROM L" + other.tableName + "L WHERE dir=(SELECT entryId FROM L" + other.tableName + "L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 
 			try {
+				db.setReadOnly(true);
+				
 				db.query(q);
 
 				while (db.moveNext())
@@ -724,6 +731,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		final String q = "SELECT * FROM L" + indexTableEntry.tableName + "L WHERE dir=? AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 
+		db.setReadOnly(true);
+		
 		try {
 			db.query(q, false, Long.valueOf(entryId));
 
@@ -745,6 +754,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			return null;
 
 		final DBFunctions db = ConfigUtils.getDB("alice_data");
+		
+		db.setReadOnly(true);
 
 		try {
 			if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary(?) ORDER BY 1;", false, guid.toString()))

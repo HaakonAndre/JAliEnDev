@@ -130,13 +130,15 @@ public class TransferBroker {
 	private ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>();
 	
 	private int getMaxTransfers(final String seName){
-		Integer i = maxTransfersCache.get(seName.toLowerCase());
+		final Integer i = maxTransfersCache.get(seName.toLowerCase());
 		
 		if (i!=null){
 			return i.intValue();
 		}
 		
-		DBFunctions db = ConfigUtils.getDB("transfers");
+		final DBFunctions db = ConfigUtils.getDB("transfers");
+		
+		db.setReadOnly(true);
 		
 		db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename='"+Format.escSQL(seName)+"';");
 		
@@ -165,6 +167,8 @@ public class TransferBroker {
 
 		if (dbCached == null) {
 			dbCached = ConfigUtils.getDB("transfers");
+			
+			dbCached.setReadOnly(true);
 			
 			if (dbCached==null){	
 				logger.log(Level.WARNING, "Could not connect to the transfers database");
@@ -223,7 +227,11 @@ public class TransferBroker {
 							continue;
 						}
 						
+						db.setReadOnly(true);
+						
 						db.query("SELECT count(1) FROM active_transfers WHERE se_name='"+Format.escSQL(targetSE)+"';");
+						
+						db.setReadOnly(false);
 						
 						if (db.geti(1) >= getMaxTransfers(targetSE)){
 							ignoredSEs.add(targetSE.toLowerCase());
@@ -633,6 +641,7 @@ public class TransferBroker {
 	 * 
 	 * @param t
 	 * @param ta
+	 * @return <code>false</code> if the operation cannot be performed
 	 */
 	public static synchronized boolean touch(final Transfer t, final TransferAgent ta) {
 		final DBFunctions db = ConfigUtils.getDB("transfers");
@@ -647,7 +656,11 @@ public class TransferBroker {
 				return true;
 			}
 			
+			db.setReadOnly(true);
+			
 			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Integer.valueOf(t.getTransferId()), Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
+			
+			db.setReadOnly(false);
 			
 			if (db.moveNext()){
 				logger.log(Level.WARNING, "Transfer "+t.getTransferId()+" was already picked up by agent #"+db.gets(1)+" @ "+db.gets(3)+"/"+db.gets(2)+", refusing to concurrently execute it.");
@@ -701,7 +714,11 @@ public class TransferBroker {
 			if (db.getUpdateCount() == 0)
 				db.query(DBFunctions.composeInsert("active_transfers", values));
 
+			db.setReadOnly(true);
+			
 			db.query("SELECT status FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(t.getTransferId()));
+			
+			db.setReadOnly(false);
 			
 			final String prevStatus = db.gets(1);
 			
@@ -735,7 +752,9 @@ public class TransferBroker {
 			int finalExitCode = exitCode;
 
 			if (exitCode > Transfer.OK && exitCode < Transfer.DELAYED) {
+				db.setReadOnly(true);
 				db.query("SELECT attempts FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(transferId));
+				db.setReadOnly(false);
 
 				if (db.moveNext() && db.geti(1) > 0)
 					finalExitCode = Transfer.DELAYED;

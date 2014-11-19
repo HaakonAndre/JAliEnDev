@@ -166,6 +166,11 @@ public class Package implements Comparable<Package>, Serializable {
 		return getFullName().compareTo(arg0.getFullName());
 	}
 	
+	/**
+	 * Get the package names that are required by this package.
+	 * 
+	 * @return the set of packages
+	 */
 	public Set<String> getDependencies() {
 		if (deps != null)
 			return deps;
@@ -183,6 +188,8 @@ public class Package implements Comparable<Package>, Serializable {
 			return deps;
 
 		final DBFunctions dbDeps = ConfigUtils.getDB("alice_data");
+		
+		dbDeps.setReadOnly(true);
 
 		try {
 			for (final String dir : dirs) {
