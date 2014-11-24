@@ -761,12 +761,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary(?) ORDER BY 1;", false, guid.toString()))
 				return null;
 
-			final int count = db.count();
-
 			final TreeSet<String> ret = new TreeSet<>();
-
-			if (count <= 0)
-				return new TreeSet<>();
 
 			while (db.moveNext())
 				ret.add(StringFactory.get(db.gets(1)));

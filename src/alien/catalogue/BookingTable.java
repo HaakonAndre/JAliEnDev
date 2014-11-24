@@ -1,6 +1,7 @@
 package alien.catalogue;
 
 import java.io.IOException;
+import java.sql.ResultSet;
 import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
@@ -349,6 +350,7 @@ public class BookingTable {
 		final DBFunctions db = getDB();
 		
 		db.setReadOnly(true);
+		db.setCursorType(ResultSet.TYPE_SCROLL_INSENSITIVE);
 		
 		try{
 			if (!db.query("SELECT *, binary2string(guid) as guid_as_string FROM LFN_BOOKED WHERE pfn=?;", false, pfn))

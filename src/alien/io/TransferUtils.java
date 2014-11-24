@@ -91,7 +91,7 @@ public final class TransferUtils {
 		try {
 			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
 
-			final List<TransferDetails> ret = new ArrayList<>(db.count());
+			final List<TransferDetails> ret = new ArrayList<>();
 
 			while (db.moveNext())
 				ret.add(new TransferDetails(db));
