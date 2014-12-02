@@ -347,7 +347,7 @@ public class Xrootd extends Protocol {
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
-				logger.log(Level.WARNING, "GET failed with " + exitStatus.getStdOut());
+				logger.log(Level.WARNING, "GET of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null)
 					sMessage = xrdcpCommand + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
