@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -40,30 +41,30 @@ public class TextCache extends ExtendedServlet {
 	private static final long serialVersionUID = 6024682549531639348L;
 
 	private static final ExpirationCache<String, Integer> defaultNamespaceExpiration = new ExpirationCache<>();
-	
-	private static int getDefaultExpiration(final String namespace){
+
+	private static int getDefaultExpiration(final String namespace) {
 		final Integer i = defaultNamespaceExpiration.get(namespace);
-		
-		if (i!=null)
+
+		if (i != null)
 			return i.intValue();
-		
-		int nsDefault = 60*60;
+
+		int nsDefault = 60 * 60;
 
 		try {
-		    try {
-			nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl_" + namespace));
-		    } catch (final Throwable t1) {
-			nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl"));
-		    }
+			try {
+				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl_" + namespace));
+			} catch (final Throwable t1) {
+				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl"));
+			}
 		} catch (final Throwable t) {
-		    // ignore
+			// ignore
 		}
 
-		defaultNamespaceExpiration.put(namespace, Integer.valueOf(nsDefault), 60*5*1000);
-		
+		defaultNamespaceExpiration.put(namespace, Integer.valueOf(nsDefault), 60 * 5 * 1000);
+
 		return nsDefault;
 	}
-	
+
 	private static final class CacheValue {
 		public final String value;
 
@@ -319,7 +320,7 @@ public class TextCache extends ExtendedServlet {
 						cache.clear();
 					}
 				}
-			else if (gets("ns").length() == 0){
+			else if (gets("ns").length() == 0) {
 				for (final Map.Entry<String, Map<String, CacheValue>> entry : namespaces.entrySet()) {
 					final Map<String, CacheValue> cache = entry.getValue();
 
@@ -350,14 +351,13 @@ public class TextCache extends ExtendedServlet {
 						pwOut.println(entry.getKey() + " : " + cache.size() + " (min: " + min + ", avg: " + Format.point(avg) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits
 								+ " hits");
 				}
-			
+
 				final Runtime r = Runtime.getRuntime();
-				
-				pwOut.println("\nJava memory stats: "+Format.size(r.totalMemory())+" total memory, "+Format.size(r.maxMemory())+" max memory, "+Format.size(r.freeMemory())+" free");
-				pwOut.println("Java version: "+System.getProperty("java.version"));
-				pwOut.println("Uptime: "+Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
-			}
-			else {
+
+				pwOut.println("\nJava memory stats: " + Format.size(r.totalMemory()) + " total memory, " + Format.size(r.maxMemory()) + " max memory, " + Format.size(r.freeMemory()) + " free");
+				pwOut.println("Java version: " + System.getProperty("java.version"));
+				pwOut.println("Uptime: " + Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
+			} else {
 				final Map<String, CacheValue> cache = namespaces.get(ns);
 
 				if (cache == null || cache.size() == 0)
@@ -460,10 +460,17 @@ public class TextCache extends ExtendedServlet {
 			synchronized (cache) {
 				final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
 
+				Matcher m = null;
+
 				while (it.hasNext()) {
 					final Map.Entry<String, CacheValue> entry = it.next();
 
-					if (p.matcher(entry.getKey()).matches()) {
+					if (m == null)
+						m = p.matcher(entry.getKey());
+					else
+						m.reset(entry.getKey());
+
+					if (m.matches()) {
 						notifyEntryRemoved(ns, entry.getKey(), entry.getValue());
 						it.remove();
 						removed++;
