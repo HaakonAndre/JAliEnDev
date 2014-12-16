@@ -445,56 +445,73 @@ public class TextCache extends ExtendedServlet {
 		}
 
 		if (getb("clear", false)) {
-			final Pattern p;
-
-			try {
-				p = Pattern.compile("^" + key + "$");
-			} catch (final PatternSyntaxException e) {
-				pwOut.println("ERR: invalid pattern syntax: " + key);
-				pwOut.flush();
-				return;
-			}
-
 			int removed = 0;
-			
-            String sLargestPart = "";
 
-            String[] parts = key.split("\\.(\\+|\\*)");
+			for (final String keyValue : getValues("key")) {
+				String sLargestPart = "";
 
-            for (String part : parts) {
-                if (part.length() > sLargestPart.length()) {
-                    sLargestPart = part;
-                }
-            }
+				final String[] parts = keyValue.split("\\.(\\+|\\*)");
 
-			synchronized (cache) {
-				final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
+				for (final String part : parts)
+					if (part.length() > sLargestPart.length())
+						sLargestPart = part;
 
-				Matcher m = null;
+				if (sLargestPart.equals(keyValue)) {
+					CacheValue old;
 
-				while (it.hasNext()) {
-					final Map.Entry<String, CacheValue> entry = it.next();
+					synchronized (cache) {
+						old = cache.remove(keyValue);
+					}
 
-					if (sLargestPart.length()>0 && entry.getKey().indexOf(sLargestPart)<0)
-						continue;
-					
-					if (m == null)
-						m = p.matcher(entry.getKey());
-					else
-						m.reset(entry.getKey());
-
-					if (m.matches()) {
-						notifyEntryRemoved(ns, entry.getKey(), entry.getValue());
-						it.remove();
+					if (old != null) {
+						notifyEntryRemoved(ns, keyValue, old);
 						removed++;
 					}
+
+					continue;
 				}
+
+				final Pattern p;
+
+				try {
+					p = Pattern.compile("^" + keyValue + "$");
+				} catch (final PatternSyntaxException e) {
+					pwOut.println("ERR: invalid pattern syntax: " + keyValue);
+					pwOut.flush();
+					return;
+				}
+
+				synchronized (cache) {
+					final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
+
+					Matcher m = null;
+
+					while (it.hasNext()) {
+						final Map.Entry<String, CacheValue> entry = it.next();
+
+						final String itKey = entry.getKey();
+
+						if (sLargestPart.length() > 0 && itKey.indexOf(sLargestPart) < 0)
+							continue;
+
+						if (m == null)
+							m = p.matcher(itKey);
+						else
+							m.reset(itKey);
+
+						if (m.matches()) {
+							notifyEntryRemoved(ns, entry.getKey(), entry.getValue());
+							it.remove();
+							removed++;
+						}
+					}
+				}
+
+				if (monitor != null)
+					monitor.incrementCounter("CLEARPATTERN_" + ns);
 			}
 
-			if (monitor != null)
-				monitor.incrementCounter("CLEARPATTERN_" + ns);
-
-			pwOut.println("OK: removed " + removed + " values from ns '" + ns + "' matching '" + key + "'");
+			pwOut.println("OK: removed " + removed + " values from ns '" + ns + "' matching " + getValues("key"));
 			pwOut.flush();
 
 			return;
