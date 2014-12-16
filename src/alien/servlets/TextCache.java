@@ -456,6 +456,16 @@ public class TextCache extends ExtendedServlet {
 			}
 
 			int removed = 0;
+			
+            String sLargestPart = "";
+
+            String[] parts = key.split("\\.(\\+|\\*)");
+
+            for (String part : parts) {
+                if (part.length() > sLargestPart.length()) {
+                    sLargestPart = part;
+                }
+            }
 
 			synchronized (cache) {
 				final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
@@ -465,6 +475,9 @@ public class TextCache extends ExtendedServlet {
 				while (it.hasNext()) {
 					final Map.Entry<String, CacheValue> entry = it.next();
 
+					if (sLargestPart.length()>0 && entry.getKey().indexOf(sLargestPart)<0)
+						continue;
+					
 					if (m == null)
 						m = p.matcher(entry.getKey());
 					else
