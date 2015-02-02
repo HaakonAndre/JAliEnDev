@@ -10,6 +10,7 @@ import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -511,7 +512,7 @@ public class TextCache extends ExtendedServlet {
 					monitor.incrementCounter("CLEARPATTERN_" + ns);
 			}
 
-			pwOut.println("OK: removed " + removed + " values from ns '" + ns + "' matching " + getValues("key"));
+			pwOut.println("OK: removed " + removed + " values from ns '" + ns + "' matching " + Arrays.toString(getValues("key")));
 			pwOut.flush();
 
 			return;
