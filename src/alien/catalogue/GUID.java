@@ -454,12 +454,12 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 
 	/**
-	 * Package protected. Should be accessed only from BookingTable
+	 * Add a known PFN to an existing GUID
 	 * 
 	 * @param pfn
 	 * @return true if inserting was ok
 	 */
-	boolean addPFN(final PFN pfn) {
+	public boolean addPFN(final PFN pfn) {
 		final Host h = CatalogueUtils.getHost(host);
 
 		if (h == null)
