@@ -31,6 +31,7 @@ import lazyj.cache.ExpirationCache;
 import lia.Monitor.monitor.ShutdownReceiver;
 import lia.util.ShutdownManager;
 import lia.util.StringFactory;
+import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 
@@ -555,6 +556,24 @@ public class TextCache extends ExtendedServlet {
 		pwOut.flush();
 	}
 
+	public static void invalidateLFN(final String lfn) {
+		try {
+			invalidateCache("whereis", "irtc_" + lfn, "irc_" + lfn);
+			invalidateCache("access", "^" + lfn);
+		} catch (final Throwable t) {
+			// ignore
+		}
+	}
+
+	public static String invalidateCache(final String ns, final String... pattern) throws IOException {
+		final String url = ConfigUtils.getConfig().gets("alien.servlets.TextCache.URL", "http://aliendb3.cern.ch:8888/TextCache");
+
+		if (url.trim().length() == 0)
+			return null;
+
+		return invalidateCacheEntry(url, ns, pattern);
+	}
+
 	/**
 	 * @param baseURL
 	 *            URL to TextCache
@@ -565,8 +584,15 @@ public class TextCache extends ExtendedServlet {
 	 * @return the outcome of the query as indicated by the server
 	 * @throws IOException
 	 */
-	public static String invalidateCacheEntry(final String baseURL, final String ns, final String pattern) throws IOException {
-		return Utils.download(baseURL + "?ns=" + Format.encode(ns) + "&key=" + Format.encode(pattern) + "&clear=true", null);
+	public static String invalidateCacheEntry(final String baseURL, final String ns, final String... pattern) throws IOException {
+		final StringBuilder sb = new StringBuilder(baseURL);
+
+		sb.append("?clear=true&ns=").append(Format.encode(ns));
+
+		for (final String p : pattern)
+			sb.append("&key=").append(Format.encode(p));
+
+		return Utils.download(sb.toString(), null);
 	}
 
 }

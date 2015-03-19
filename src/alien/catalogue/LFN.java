@@ -16,6 +16,7 @@ import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
 import alien.config.ConfigUtils;
+import alien.servlets.TextCache;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -656,6 +657,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		try {
 			if (db.query(q, false, Long.valueOf(entryId))) {
+				TextCache.invalidateLFN(getCanonicalName());
+				
 				exists = false;
 				entryId = 0;
 				ok = true;
