@@ -130,7 +130,11 @@ public class ConfigUtils {
 
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 
-		appConfig = applicationConfig != null ? applicationConfig : new ExtProperties();
+		appConfig = applicationConfig != null ? new ExtProperties(applicationConfig.getProperties()) : new ExtProperties();
+
+		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
+			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
+
 		appConfig.makeReadOnly();
 	}
 
@@ -158,16 +162,12 @@ public class ConfigUtils {
 	}
 
 	/**
-	 * Get a DB connection to a specific database key. The code relies on the
-	 * <i>AlienConfig</i> system property to point to a base directory where
-	 * files named <code>key</code>.properties can be found. If a file for this
-	 * key can be found it is returned to the caller, otherwise a
-	 * <code>null</code> value is returned.
+	 * Get a DB connection to a specific database key. The code relies on the <i>AlienConfig</i> system property to point to a base directory where files named <code>key</code>.properties can be
+	 * found. If a file for this key can be found it is returned to the caller, otherwise a <code>null</code> value is returned.
 	 * 
 	 * @param key
 	 *            database class, something like &quot;catalogue_admin&quot;
-	 * @return the database connection, or <code>null</code> if it is not
-	 *         available.
+	 * @return the database connection, or <code>null</code> if it is not available.
 	 */
 	public static final DBFunctions getDB(final String key) {
 		final ExtProperties p = dbConfigFiles.get(key);
@@ -198,8 +198,7 @@ public class ConfigUtils {
 	}
 
 	/**
-	 * Set the Java logging properties and subscribe to changes on the
-	 * configuration files
+	 * Set the Java logging properties and subscribe to changes on the configuration files
 	 * 
 	 * @author costing
 	 * @since Nov 3, 2010
