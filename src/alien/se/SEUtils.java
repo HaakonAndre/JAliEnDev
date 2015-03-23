@@ -77,7 +77,7 @@ public final class SEUtils {
 							logger.log(Level.FINER, "Updating SE cache");
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
-						
+
 						db.setReadOnly(true);
 
 						try {
@@ -223,7 +223,7 @@ public final class SEUtils {
 	static {
 		if (ConfigUtils.isCentralService()) {
 			final DBFunctions db = ConfigUtils.getDB("alice_users");
-			
+
 			db.setReadOnly(true);
 
 			try {
@@ -259,7 +259,7 @@ public final class SEUtils {
 							logger.log(Level.FINER, "Updating SE Ranks cache");
 
 						final DBFunctions db = ConfigUtils.getDB("alice_users");
-						
+
 						db.setReadOnly(true);
 
 						try {
@@ -731,7 +731,7 @@ public final class SEUtils {
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 
 		db.setReadOnly(true);
-		
+
 		try {
 			for (final Map.Entry<Integer, SEUsageStats> entry : m.entrySet()) {
 				db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
@@ -787,8 +787,6 @@ public final class SEUtils {
 	 * @throws IOException
 	 */
 	public static void purgeSE(final boolean purge, final String... seNames) throws IOException {
-		final StringBuilder sbSE = new StringBuilder();
-
 		final Set<SE> ses = new HashSet<>();
 
 		for (final String seName : seNames) {
@@ -797,16 +795,20 @@ public final class SEUtils {
 			if (se == null) {
 				System.err.println("Unknown SE: " + seName);
 
-				if (seName.equals("ALICE::KISTI_GSDC::SE"))
-					se = new SE(seName, 311, "disk", "/", "root://xh11.sdfarm.kr:1094");
-				else if (seName.equals("ALICE::GSI::SE"))
-					se = new SE(seName, 195, "disk", "/alien", "root://grid2.gsi.de:1094");
-				else
-					return;
+				return;
 			}
 
 			ses.add(se);
 		}
+
+		if (ses.size() == 0)
+			return;
+
+		purgeSE(purge, ses.toArray(new SE[0]));
+	}
+
+	public static void purgeSE(final boolean purge, final SE... ses) throws IOException {
+		final StringBuilder sbSE = new StringBuilder();
 
 		for (final SE se : ses) {
 			System.err.println("Deleting all replicas from: " + se);
@@ -827,7 +829,7 @@ public final class SEUtils {
 			final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
 			final DBFunctions gdb = h.getDB();
-			
+
 			gdb.setReadOnly(true);
 
 			gdb.query("select binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber IN (" + sbSE + ");");
@@ -900,16 +902,15 @@ public final class SEUtils {
 			}
 
 			String q1 = "UPDATE G" + idx.tableName + "L_PFN SET seNumber=" + dest.seNumber;
-			
+
 			if (!source.seStoragePath.equals(dest.seStoragePath))
-				q1 += ", pfn=replace(replace(pfn, '"+Format.escSQL(source.seioDaemons)+"', '"+Format.escSQL(dest.seioDaemons)+"'), '"+
-						Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath))+"', '"+Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath))+"')";
-			else
-			if (!source.seioDaemons.equals(dest.seioDaemons))
-				q1 += ", pfn=replace(pfn, '"+Format.escSQL(source.seioDaemons)+"', '"+Format.escSQL(dest.seioDaemons)+"')";
-					
+				q1 += ", pfn=replace(replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "'), '"
+						+ Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath)) + "', '" + Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath)) + "')";
+			else if (!source.seioDaemons.equals(dest.seioDaemons))
+				q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
+
 			q1 += " WHERE seNumber=" + source.seNumber;
-			
+
 			final String q2 = "UPDATE G" + idx.tableName + "L SET seStringlist=replace(sestringlist,'," + source.seNumber + ",','," + dest.seNumber + ",') WHERE seStringlist LIKE '%,"
 					+ source.seNumber + ",%';";
 
@@ -953,7 +954,7 @@ public final class SEUtils {
 				final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
 				final DBFunctions gdb = h.getDB();
-				
+
 				gdb.setReadOnly(true);
 
 				if (realPFNs) {
