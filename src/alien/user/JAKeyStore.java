@@ -258,10 +258,14 @@ public class JAKeyStore {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
-		final String user_key = config.gets("user.cert.priv.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator")
+		final String user_key = config.gets("user.cert.priv.location", 
+				System.getProperty("user.home") + System.getProperty("file.separator") + 
+				".globus" + System.getProperty("file.separator")
 				+ "userkey.pem");
 
-		final String user_cert = config.gets("user.cert.pub.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator")
+		final String user_cert = config.gets("user.cert.pub.location", 
+				System.getProperty("user.home") + System.getProperty("file.separator") + 
+				".globus" + System.getProperty("file.separator")
 				+ "usercert.pem");
 
 		if (!checkKeyPermissions(user_key, user_cert))
