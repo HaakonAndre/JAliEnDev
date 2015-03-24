@@ -194,7 +194,7 @@ public class JBoxServer extends Thread {
 		}
 
 		try {
-			final int iUserId = Integer.parseInt(sUserId);
+			final int iUserId = Integer.parseInt(sUserId.trim());
 
 			final String sFileName = "/tmp/gclient_token_" + iUserId;
 
@@ -275,7 +275,7 @@ public class JBoxServer extends Thread {
 		// }
 
 		try {
-			final int iUserId = Integer.parseInt(sUserId);
+			final int iUserId = Integer.parseInt(sUserId.trim());
 
 			final String sFileName = "/tmp/gclient_env_" + iUserId;
 
