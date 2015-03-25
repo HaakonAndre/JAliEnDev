@@ -147,6 +147,9 @@ public final class SEUtils {
 		if (seCache == null)
 			return null;
 
+		if (seNumber.intValue() <= 0 && seCache.size() > 0)
+			return seCache.values().iterator().next();
+
 		return seCache.get(seNumber);
 	}
 
@@ -790,7 +793,7 @@ public final class SEUtils {
 		final Set<SE> ses = new HashSet<>();
 
 		for (final String seName : seNames) {
-			SE se = SEUtils.getSE(seName);
+			final SE se = SEUtils.getSE(seName);
 
 			if (se == null) {
 				System.err.println("Unknown SE: " + seName);
