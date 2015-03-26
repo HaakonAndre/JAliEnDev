@@ -111,7 +111,7 @@ public class Xrootd extends Protocol {
 					if (exitStatus.getExtProcExitStatus() == 0) {
 						final String version = exitStatus.getStdOut();
 
-						logger.log(Level.FINE, "Local Xrootd version is "+version);
+						logger.log(Level.FINE, "Local Xrootd version is " + version);
 
 						if (version.indexOf('.') > 0) {
 							xrootdNewerThan4 = version.substring(0, version.indexOf('.')).compareTo("v4") >= 0;
@@ -240,7 +240,7 @@ public class Xrootd extends Protocol {
 				command.add("rm");
 				command.add(qProt.substring(qProt.indexOf('/') + 1) + "?authz=" + Format.encode(envelope));
 			} else {
-				command.add("xrdrm");
+				command.add(xrootd_default_path + "/bin/xrdrm");
 				command.add("-v");
 
 				String transactionURL = pfn.pfn;
@@ -671,7 +671,7 @@ public class Xrootd extends Protocol {
 
 						command.add(qpfn);
 					} else {
-						command.add(xrootd_default_path+"/bin/xrdstat");
+						command.add(xrootd_default_path + "/bin/xrdstat");
 						command.addAll(getCommonArguments());
 						command.add(pfn.getPFN());
 					}
