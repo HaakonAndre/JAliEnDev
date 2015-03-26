@@ -20,6 +20,9 @@ import alien.shell.BusyBox;
 import alien.shell.ShellColor;
 import alien.shell.commands.JAliEnBaseCommand;
 
+import lazyj.commands.CommandOutput;
+import lazyj.commands.SystemCommand;
+
 /**
  * @author ron
  * @since Jun 21, 2011
@@ -31,6 +34,10 @@ public class JSh {
 		ConfigUtils.getVersion();
 	}
 	
+	/**
+	 * name of the OS the shell is running in 
+	 */
+	static String osName;
 	
 	/**
 	 * 
@@ -67,7 +74,8 @@ public class JSh {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-
+		osName = getOsName();
+		
 		try{
 			sun.misc.Signal.handle(new sun.misc.Signal("INT"), new sun.misc.SignalHandler() {
 			@Override
@@ -144,6 +152,9 @@ public class JSh {
 	 */
 	static boolean appendOnExit = true;
 	
+	private static String getOsName(){		
+		return System.getProperty("os.name");
+	}
 	
     /**
      * Trigger no 'exit\n' to be written out on exit
@@ -317,6 +328,66 @@ public class JSh {
 					
 					if (buffer!=null && buffer.contains("alien.JBox"))
 						return true;
+=======
+			if( osName.startsWith( "Mac" ) ){
+				CommandOutput co = SystemCommand.bash("ps -p " + pid, false);
+				
+				return co.stdout.contains("alien.JBox");
+			}
+			
+//			timeStamp("got JBOX PID: ");
+//
+//			if (!(new File(fuser)).exists())
+//				return true;
+//
+//			if (port == 0) {
+//				return false;
+//			}
+//
+//			if (pid == 0)
+//				return true; 
+//
+//			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
+//					new String[] { fuser, port + "/tcp" });
+//
+//			pBuilder.returnOutputOnExit(true);
+//			pBuilder.timeout(2, TimeUnit.SECONDS);
+//			pBuilder.redirectErrorStream(true);
+//			final ExitStatus exitStatus;
+//			try {
+//				exitStatus = pBuilder.start().waitFor();
+//			} catch (Exception e) {
+//				return false;
+//			}
+//			if (exitStatus.getExtProcExitStatus() == 0) {
+//				String line[] = exitStatus.getStdOut().trim().split(":");
+//				if (!line[0].trim().equals(port + "/tcp")
+//						|| !line[1].trim().equals(pid + "")) {
+//					return false;
+//				}
+//
+//			} else {
+//				return false;
+//			}
+
+			File f = new File("/proc/" + pid + "/cmdline");
+			if (f.exists()) {
+				String buffer = "";
+				BufferedReader fi = null;
+				try {
+					fi = new BufferedReader(new InputStreamReader(
+							new FileInputStream(f)));
+					buffer = fi.readLine();
+				} catch (IOException e) {
+					return false;
+				} finally {
+					if (fi != null)
+						try {
+							fi.close();
+						} catch (IOException e) {
+							// ignore
+						}
+>>>>>>> c51e956 JSh: fixed connection to JBox on OSX
 				}
 			}
 		}
@@ -327,9 +398,8 @@ public class JSh {
 	private static boolean getJBoxPID() {
 
 		File f = new File("/tmp/gclient_token_"+System.getProperty("userid"));
-
+				
 		if (f.exists()) {
-
 			byte[] buffer = new byte[(int) f.length()];
 			BufferedInputStream fi = null;
 			try {
@@ -374,8 +444,9 @@ public class JSh {
 			}
 			return true;
 		}
-		// else
-		//	System.err.println("Token file does not exists.");
+		//else
+		//	System.err.println("Token file does not exists.");		
+		
 		return false;
 	}
 	
