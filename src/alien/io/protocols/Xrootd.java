@@ -9,16 +9,19 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import lazyj.Format;
 import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import utils.ExternalCalls;
+import alien.catalogue.GUID;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
@@ -34,41 +37,93 @@ public class Xrootd extends Protocol {
 	 * 
 	 */
 	private static final long serialVersionUID = 7860814883144320429L;
+
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
+
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
-
-	private final static String xrdcpCommand = "xrdcpapmon";
 
 	private static String xrootd_default_path = null;
 
 	private static String xrdcpPath = null;
+
+	protected static boolean xrootdNewerThan4 = false;
 
 	static {
 		if (ConfigUtils.getConfig() != null) {
 			xrootd_default_path = ConfigUtils.getConfig().gets("xrootd.location", null);
 
 			if (xrootd_default_path != null) {
-				xrdcpPath = xrootd_default_path + "/bin/" + xrdcpCommand;
+				for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
+					final File test = new File(xrootd_default_path + "/bin/" + command);
 
-				final File test = new File(xrdcpPath);
-
-				if (!test.exists() || !test.isFile() || !test.canExecute())
-					xrdcpPath = null;
+					if (test.exists() && test.isFile() && test.canExecute()) {
+						xrdcpPath = test.getAbsolutePath();
+						break;
+					}
+				}
 			}
 		}
 
 		if (xrdcpPath == null) {
-			xrdcpPath = ExternalCalls.programExistsInPath(xrdcpCommand);
+			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
+				xrdcpPath = ExternalCalls.programExistsInPath(command);
 
-			if (xrdcpPath != null) {
-				int idx = xrdcpPath.lastIndexOf('/');
+				if (xrdcpPath != null) {
+					int idx = xrdcpPath.lastIndexOf('/');
 
-				if (idx > 0) {
-					idx = xrdcpPath.lastIndexOf('/', idx);
+					if (idx > 0) {
+						idx = xrdcpPath.lastIndexOf('/', idx);
 
-					if (idx >= 0)
-						xrootd_default_path = xrdcpPath.substring(0, idx);
+						if (idx >= 0)
+							xrootd_default_path = xrdcpPath.substring(0, idx);
+					}
+
+					break;
 				}
+			}
+		}
+
+		if (xrdcpPath != null) {
+			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(Arrays.asList(xrdcpPath, "--version"));
+
+			checkLibraryPath(pBuilder);
+
+			pBuilder.returnOutputOnExit(true);
+
+			pBuilder.timeout(15, TimeUnit.SECONDS);
+
+			pBuilder.redirectErrorStream(true);
+
+			final ExitStatus exitStatus;
+
+			ExternalProcess p = null;
+
+			try {
+				p = pBuilder.start();
+
+				if (p != null) {
+					exitStatus = p.waitFor();
+
+					if (exitStatus.getExtProcExitStatus() == 0) {
+						final String version = exitStatus.getStdOut();
+
+						logger.log(Level.FINE, "Local Xrootd version is "+version);
+
+						if (version.indexOf('.') > 0) {
+							xrootdNewerThan4 = version.substring(0, version.indexOf('.')).compareTo("v4") >= 0;
+						}
+					}
+				} else
+					logger.log(Level.WARNING, "Cannot execute " + xrdcpPath);
+			} catch (final IOException | InterruptedException ie) {
+				if (p != null)
+					p.destroy();
+
+				logger.log(Level.WARNING, "Interrupted while waiting for `" + xrdcpPath + " --version` to finish");
 			}
 		}
 	}
@@ -80,11 +135,6 @@ public class Xrootd extends Protocol {
 	// last value must be 0 for a clean exit
 	private static final int statRetryTimesXrootd[] = { 1, 5, 10, 0 };
 	private static final int statRetryTimesDCache[] = { 5, 10, 15, 20, 20, 20, 30, 30, 30, 30, 0 };
-
-	/**
-	 * Logger
-	 */
-	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
 
 	/**
 	 * package protected
@@ -180,32 +230,43 @@ public class Xrootd extends Protocol {
 
 			File fAuthz = null;
 
-			command.add("xrdrm");
-			command.add("-v");
+			if (xrootdNewerThan4) {
+				final String qProt = pfn.getPFN().substring(7);
+				final String host = qProt.substring(0, qProt.indexOf(':'));
+				final String port = qProt.substring(qProt.indexOf(':') + 1, qProt.indexOf('/'));
 
-			String transactionURL = pfn.pfn;
+				command.add(xrootd_default_path + "/bin/xrdfs");
+				command.add(host + ":" + port);
+				command.add("rm");
+				command.add(qProt.substring(qProt.indexOf('/') + 1) + "?authz=" + Format.encode(envelope));
+			} else {
+				command.add("xrdrm");
+				command.add("-v");
 
-			if (pfn.ticket.envelope != null)
-				transactionURL = pfn.ticket.envelope.getTransactionURL();
+				String transactionURL = pfn.pfn;
 
-			if (envelope != null) {
-				fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
+				if (pfn.ticket.envelope != null)
+					transactionURL = pfn.ticket.envelope.getTransactionURL();
 
-				final FileWriter fw = new FileWriter(fAuthz);
+				if (envelope != null) {
+					fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
 
-				fw.write(envelope);
+					final FileWriter fw = new FileWriter(fAuthz);
 
-				fw.flush();
-				fw.close();
+					fw.write(envelope);
 
-				command.add("-authz");
-				command.add(fAuthz.getCanonicalPath());
+					fw.flush();
+					fw.close();
+
+					command.add("-authz");
+					command.add(fAuthz.getCanonicalPath());
+				}
+
+				command.add(transactionURL);
+
+				if (logger.isLoggable(Level.FINEST))
+					logger.log(Level.FINEST, "Executing rm command: " + command);
 			}
-
-			command.add(transactionURL);
-
-			if (logger.isLoggable(Level.FINEST))
-				logger.log(Level.FINEST, "Executing rm command: " + command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -264,9 +325,11 @@ public class Xrootd extends Protocol {
 			target = localFile;
 		}
 
+		final GUID guid = pfn.getGuid();
+
 		if (target == null) {
 			// we are free to use any cached value
-			target = TempFileManager.getAny(pfn.getGuid());
+			target = TempFileManager.getAny(guid);
 
 			if (target != null) {
 				logger.log(Level.FINE, "Reusing cached file: " + target.getCanonicalPath());
@@ -290,27 +353,32 @@ public class Xrootd extends Protocol {
 			final List<String> command = new LinkedList<>();
 
 			if (xrdcpPath == null) {
-				logger.log(Level.SEVERE, "Could not find [" + xrdcpCommand + "] in path.");
-				throw new SourceException("Could not find [" + xrdcpCommand + "] in path.");
+				logger.log(Level.SEVERE, "Could not find xrdcp in path.");
+				throw new SourceException("Could not find xrdcp in path.");
 			}
 
 			command.add(xrdcpPath);
 
 			command.addAll(getCommonArguments());
 
+			/*
+			 * TODO: enable when servers support checksum queries, at the moment most don't if (xrootdNewerThan4 && guid.md5 != null && guid.md5.length() > 0) { command.add("-C"); command.add("md5:" +
+			 * guid.md5); }
+			 */
+
 			String transactionURL = pfn.pfn;
 
 			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
-
-			command.add(transactionURL);
-			command.add(target.getCanonicalPath());
 
 			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
+
+			command.add(transactionURL);
+			command.add(target.getCanonicalPath());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -319,7 +387,7 @@ public class Xrootd extends Protocol {
 			pBuilder.returnOutputOnExit(true);
 
 			// 20KB/s should be available to anybody
-			long maxTime = pfn.getGuid().size / 20000;
+			long maxTime = guid.size / 20000;
 
 			maxTime += timeout;
 
@@ -350,7 +418,7 @@ public class Xrootd extends Protocol {
 				logger.log(Level.WARNING, "GET of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null)
-					sMessage = xrdcpCommand + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+					sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				else
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 
@@ -358,7 +426,7 @@ public class Xrootd extends Protocol {
 			}
 
 			if (!checkDownloadedFile(target, pfn))
-				throw new SourceException("Local file doesn't match catalogue details (" + (target.exists() ? "" + target.length() : "n/a") + " vs " + pfn.getGuid().size + ")");
+				throw new SourceException("Local file doesn't match catalogue details (" + (target.exists() ? "" + target.length() : "n/a") + " vs " + guid.size + ")");
 		} catch (final SourceException ioe) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
@@ -384,9 +452,9 @@ public class Xrootd extends Protocol {
 		}
 
 		if (localFile == null)
-			TempFileManager.putTemp(pfn.getGuid(), target);
+			TempFileManager.putTemp(guid, target);
 		else
-			TempFileManager.putPersistent(pfn.getGuid(), target);
+			TempFileManager.putPersistent(guid, target);
 
 		return target;
 	}
@@ -404,15 +472,17 @@ public class Xrootd extends Protocol {
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.WRITE)
 			throw new TargetException("No access to this PFN");
 
-		if (localFile.length() != pfn.getGuid().size)
-			throw new TargetException("Difference in sizes: local=" + localFile.length() + " / pfn=" + pfn.getGuid().size);
+		final GUID guid = pfn.getGuid();
+
+		if (localFile.length() != guid.size)
+			throw new TargetException("Difference in sizes: local=" + localFile.length() + " / pfn=" + guid.size);
 
 		try {
 			final List<String> command = new LinkedList<>();
 
 			if (xrdcpPath == null) {
-				logger.log(Level.SEVERE, "Could not find [" + xrdcpCommand + "] in path.");
-				throw new TargetException("Could not find [" + xrdcpCommand + "] in path.");
+				logger.log(Level.SEVERE, "Could not find xrdcp in path.");
+				throw new TargetException("Could not find xrdcp in path.");
 			}
 
 			command.add(xrdcpPath);
@@ -423,6 +493,12 @@ public class Xrootd extends Protocol {
 			command.add("-v"); // display summary output
 			command.add("-f"); // re-create a file if already present
 			command.add("-P"); // request POSC (persist-on-successful-close) processing to create a new file
+
+			/*
+			 * TODO: enable when storages support checksum queries, at the moment most don't if (xrootdNewerThan4 && guid.md5!=null && guid.md5.length()>0){ command.add("-C");
+			 * command.add("md5:"+guid.md5); }
+			 */
+
 			command.add(localFile.getCanonicalPath());
 
 			String transactionURL = pfn.pfn;
@@ -430,13 +506,13 @@ public class Xrootd extends Protocol {
 			if (pfn.ticket.envelope != null)
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
-			command.add(transactionURL);
-
 			if (pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OD&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+
+			command.add(transactionURL);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -444,10 +520,8 @@ public class Xrootd extends Protocol {
 
 			pBuilder.returnOutputOnExit(true);
 
-			long maxTime = pfn.getGuid().size / 20000; // 20KB/s should be
-														// available to anybody
-
-			maxTime += timeout;
+			// 20KB/s should be available to anybody
+			final long maxTime = timeout + guid.size / 20000;
 
 			pBuilder.timeout(maxTime, TimeUnit.SECONDS);
 
@@ -467,7 +541,7 @@ public class Xrootd extends Protocol {
 				logger.log(Level.WARNING, "PUT of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null)
-					sMessage = xrdcpCommand + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+					sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				else
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 
@@ -573,38 +647,34 @@ public class Xrootd extends Protocol {
 			try {
 				final List<String> command = new LinkedList<>();
 
-				if (returnEnvelope) {
-					// e.g. xrd pcaliense01:1095 query 32
-					// /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
-					// TODO:
-					// clean the following up, it's working but not very good
-					// looking
-					command.add("xrd");
-					final String qProt = pfn.getPFN().substring(7);
-					final String host = qProt.substring(0, qProt.indexOf(':'));
-					String port = qProt.substring(qProt.indexOf(':') + 1, qProt.indexOf('/'));
+				final String qProt = pfn.getPFN().substring(7);
+				final String host = qProt.substring(0, qProt.indexOf(':'));
+				final String port = qProt.substring(qProt.indexOf(':') + 1, qProt.indexOf('/'));
 
-					try {
-						int pno = Integer.parseInt(port);
-						pno++;
-						port = "" + pno;
-					} catch (final NumberFormatException n) {
-						// port was not a number, keeping the default port
-					}
-
+				if (xrootdNewerThan4) {
+					command.add(xrootd_default_path + "/bin/xrdfs");
 					command.add(host + ":" + port);
-					command.add("query");
-					command.add("32");
-					String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
-
-					if (forceRecalcMd5)
-						qpfn += "\\&recomputemd5=1";
-
-					command.add(qpfn);
+					command.add("stat");
+					command.add(qProt.substring(qProt.indexOf('/') + 1));
 				} else {
-					command.add("xrdstat");
-					command.addAll(getCommonArguments());
-					command.add(pfn.getPFN());
+					if (returnEnvelope) {
+						// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+						command.add(xrootd_default_path + "/bin/xrd");
+
+						command.add(host + ":" + port);
+						command.add("query");
+						command.add("32");
+						String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
+
+						if (forceRecalcMd5)
+							qpfn += "\\&recomputemd5=1";
+
+						command.add(qpfn);
+					} else {
+						command.add(xrootd_default_path+"/bin/xrdstat");
+						command.addAll(getCommonArguments());
+						command.add(pfn.getPFN());
+					}
 				}
 
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
@@ -682,26 +752,33 @@ public class Xrootd extends Protocol {
 	}
 
 	private static long checkOldOutputOnSize(final String stdout) {
-
 		long size = 0;
 		String line = null;
 		final BufferedReader reader = new BufferedReader(new StringReader(stdout));
 
 		try {
-			while ((line = reader.readLine()) != null)
-				if (line.startsWith("xstat:")) {
+			while ((line = reader.readLine()) != null) {
+				if (xrootdNewerThan4) {
+					if (line.startsWith("Size:")) {
+						size = Long.parseLong(line.substring(line.lastIndexOf(':') + 1).trim());
+						break;
+					}
+				} else if (line.startsWith("xstat:")) {
 					final int idx = line.indexOf("size=");
 
 					if (idx > 0) {
 						final int idx2 = line.indexOf(" ", idx);
 
 						size = Long.parseLong(line.substring(idx + 5, idx2));
+
+						break;
 					}
 				}
-
+			}
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
+
 		return size;
 	}
 
