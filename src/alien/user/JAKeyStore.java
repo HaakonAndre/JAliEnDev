@@ -1,6 +1,8 @@
 package alien.user;
 
 import java.io.BufferedReader;
+import java.io.StringReader;
+import java.io.Reader;
 import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
@@ -362,7 +364,17 @@ public class JAKeyStore {
 		// + " password: ")) != null)
 		// password = String.valueOf(passwd);
 
-		final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+		final Console cons = System.console();
+		Reader isr = null;
+		if( cons == null )
+			isr = new InputStreamReader(System.in);
+		else{
+			char[] passwd = cons.readPassword("Grid certificate password: ");
+			String password = String.valueOf( passwd );
+			isr = new StringReader( password );			
+		}
+					
+		final BufferedReader in = new BufferedReader( isr );
 
 		try {
 			final String line = in.readLine();
