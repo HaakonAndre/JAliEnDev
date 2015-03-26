@@ -294,66 +294,33 @@ public class JSh {
 	}
 
 	private static boolean JBoxRunning() {
-
 		if (JSh.getJBoxPID()) {
-//			timeStamp("got JBOX PID: ");
-//
-//			if (!(new File(fuser)).exists())
-//				return true;
-//
-//			if (port == 0) {
-//				return false;
-//			}
-//
-//			if (pid == 0)
-//				return true; 
-//
-//			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(
-//					new String[] { fuser, port + "/tcp" });
-//
-//			pBuilder.returnOutputOnExit(true);
-//			pBuilder.timeout(2, TimeUnit.SECONDS);
-//			pBuilder.redirectErrorStream(true);
-//			final ExitStatus exitStatus;
-//			try {
-//				exitStatus = pBuilder.start().waitFor();
-//			} catch (Exception e) {
-//				return false;
-//			}
-//			if (exitStatus.getExtProcExitStatus() == 0) {
-//				String line[] = exitStatus.getStdOut().trim().split(":");
-//				if (!line[0].trim().equals(port + "/tcp")
-//						|| !line[1].trim().equals(pid + "")) {
-//					return false;
-//				}
-//
-//			} else {
-//				return false;
-//			}
-
-			File f = new File("/proc/" + pid + "/cmdline");
-			if (f.exists()) {
-				String buffer = "";
-				BufferedReader fi = null;
-				try {
-					fi = new BufferedReader(new InputStreamReader(
-							new FileInputStream(f)));
-					buffer = fi.readLine();
-				} catch (IOException e) {
-					return false;
-				} finally {
-					if (fi != null)
-						try {
-							fi.close();
-						} catch (IOException e) {
-							// ignore
-						}
+			if (System.getProperty ("os.name").equals("Linux")){
+				File f = new File("/proc/" + pid + "/cmdline");
+				if (f.exists()) {
+					String buffer = "";
+					BufferedReader fi = null;
+					try {
+						fi = new BufferedReader(new InputStreamReader(
+								new FileInputStream(f)));
+						buffer = fi.readLine();
+					} catch (IOException e) {
+						return false;
+					} finally {
+						if (fi != null)
+							try {
+								fi.close();
+							} catch (IOException e) {
+								// ignore
+							}
+					}
+					
+					if (buffer!=null && buffer.contains("alien.JBox"))
+						return true;
 				}
-				
-				if (buffer!=null && buffer.contains("alien.JBox"))
-					return true;
 			}
 		}
+		
 		return false;
 	}
 
