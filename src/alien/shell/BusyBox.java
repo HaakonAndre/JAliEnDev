@@ -16,7 +16,9 @@ import jline.ArgumentCompletor;
 import jline.Completor;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
+import lazyj.Format;
 import alien.JSh;
+import alien.api.JBoxServer;
 import alien.config.JAliEnIAm;
 import alien.shell.commands.JShPrintWriter;
 
@@ -76,9 +78,38 @@ public class BusyBox {
 	private Socket s = null;
 
 	private InputStream is;
+	
+	private BufferedReader br;
 
 	private OutputStream os;
 
+	private static String toXML(final String... commandAndArguments){
+		final StringBuilder sb = new StringBuilder();
+		
+		sb.append("<document>\n");
+		sb.append("<command>");
+		sb.append(Format.escHtml(commandAndArguments[0]));
+		sb.append("</command>\n");
+		
+		if (commandAndArguments.length>1)
+			for (int i=1; i<commandAndArguments.length; i++){
+				sb.append("<o>");
+				sb.append(Format.escHtml(commandAndArguments[i]));
+				sb.append("</o>\n");
+			}
+		
+		sb.append("</document>\n");
+		
+		return sb.toString();
+	}
+	
+	private void sendCommand(final String... commandAndArguments) throws IOException{
+		final String xml = toXML(commandAndArguments);
+		
+		os.write(xml.getBytes());
+		os.flush();
+	}
+	
 	private boolean connect(final String addr, final int port, final String password) {
 
 		if (addr != null && port != 0 && password != null)
@@ -86,11 +117,19 @@ public class BusyBox {
 				s = new Socket(addr, port);
 
 				is = s.getInputStream();
+				br = new BufferedReader(new InputStreamReader(is));
+				
 				os = s.getOutputStream();
 
-				os.write((password + JShPrintWriter.lineTerm).getBytes());
-				os.flush();
-
+				sendCommand("password", password);
+				
+				byte[] passACK = new byte[JBoxServer.passACK.length()];
+				
+				int read = is.read(passACK);
+				
+				if ( read!=9 || !"OKPASSACK".equals(new String(passACK)) )
+					return false;
+				
 				return (!noSignal.equals(callJBoxGetString("setshell jaliensh")));
 			} catch (final IOException e) {
 				return false;
@@ -200,7 +239,7 @@ public class BusyBox {
 		reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
 		final Completor[] comp = new Completor[] {
 
-		new SimpleCompletor(callJBoxGetString("commandlist").split(" ")), new GridLocalFileCompletor(this) };
+		new SimpleCompletor(callJBoxGetString("commandlist").split("\\s+")), new GridLocalFileCompletor(this) };
 		reader.addCompletor(new ArgumentCompletor(comp));
 
 		String prefixCNo = "0";
@@ -236,20 +275,13 @@ public class BusyBox {
 			try {
 
 				if (socketThere(s)) {
-
-					sline = sline.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
-
-					os.write(sline.getBytes());
-					os.flush();
-
-					final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+					sendCommand(sline.split("\\s+"));
 
 					final StringBuilder ret = new StringBuilder();
 					String sLine = null;
 					boolean signal = false;
 
 					while ((sLine = br.readLine()) != null) {
-
 						if (sLine.startsWith(JShPrintWriter.degradedSignal)) {
 							printJCentralConnError();
 							break;
@@ -297,19 +329,12 @@ public class BusyBox {
 			try {
 
 				if (socketThere(s)) {
-
-					sline = sline.replace(" ", JShPrintWriter.SpaceSep) + JShPrintWriter.lineTerm;
-
-					os.write(sline.getBytes());
-					os.flush();
-
-					final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+					sendCommand(sline.split("\\s+"));
 
 					String sLine;
 					boolean signal = false;
 
 					while ((sLine = br.readLine()) != null) {
-
 						if (sLine.startsWith(JShPrintWriter.degradedSignal)) {
 							printJCentralConnError();
 							break;
@@ -479,8 +504,7 @@ public class BusyBox {
 		try {
 			System.out.print("Shutting down jBox...");
 			if (socketThere(s)) {
-				os.write(("shutdown" + JShPrintWriter.lineTerm).getBytes());
-				os.flush();
+				sendCommand("shutdown");
 
 				// TODO: How to tell that jBox was killed successfully
 				// if(socketThere(s))
