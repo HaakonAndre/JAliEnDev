@@ -492,19 +492,19 @@ public class JBoxServer extends Thread {
 											//	while (t.hasMoreTokens())
 											//	args.add(t.nextToken());
 
-											if ("setshell".equals(sCmdValue)) {
-												setShellPrintWriter(os, sCmdValue);
-												logger.log(Level.INFO, "Set explicit print writer.");
+											if ("setshell".equals(sCmdValue) && cmdOptions.size()>0) {
+												setShellPrintWriter(os, cmdOptions.get(0));
+												logger.log(Level.INFO, "Set explicit print writer: "+cmdOptions.get(0));
 
 												os.write((JShPrintWriter.streamend + "\n").getBytes());
 												os.flush();
+												continue;
 											}
 
 											if (out == null)
 												out = new XMLPrintWriter(os);
 
-
-											commander.setLine(out, (String[]) fullCmd.toArray(new String[]{}));
+											commander.setLine(out, fullCmd.toArray(new String[0]));
 
 											commander.notifyAll();
 										}
