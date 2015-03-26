@@ -368,6 +368,8 @@ public final class MonitorFactory {
 			// on Linux
 			selfProcessID = Integer.parseInt((new File(PROC_SELF)).getCanonicalFile().getName());
 
+			selfProcessID = Integer.parseInt( System.getProperty("pid") );
+			
 			return selfProcessID;
 		} catch (final Throwable t) {
 			// ignore
@@ -381,7 +383,7 @@ public final class MonitorFactory {
 			// ignore
 		}
 
-		selfProcessID = -1;
+		// selfProcessID = -1;
 
 		return selfProcessID;
 	}
