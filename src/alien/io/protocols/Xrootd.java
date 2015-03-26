@@ -263,10 +263,10 @@ public class Xrootd extends Protocol {
 				}
 
 				command.add(transactionURL);
-
-				if (logger.isLoggable(Level.FINEST))
-					logger.log(Level.FINEST, "Executing rm command: " + command);
 			}
+			
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Executing rm command: " + command);
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
