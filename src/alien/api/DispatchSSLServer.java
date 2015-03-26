@@ -51,14 +51,14 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Getting requests by this stream
 	 */
-	private final ObjectInputStream ois;
+	private ObjectInputStream ois;
 
 	/**
 	 * Writing replies here
 	 */
-	private final ObjectOutputStream oos;
+	private ObjectOutputStream oos;
 
-	private final OutputStream os;
+	private OutputStream os;
 
 	private X509Certificate partnerCerts[] = null;
 
@@ -70,8 +70,7 @@ public class DispatchSSLServer extends Thread {
 	private int objectsSentCounter = 0;
 
 	/**
-	 * E.g. the CE proxy should act as a fowarding bridge between JA and central
-	 * services
+	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
 	 * 
 	 * @param servName
 	 *            name of the config parameter for the host:port settings
@@ -90,23 +89,28 @@ public class DispatchSSLServer extends Thread {
 	public DispatchSSLServer(final Socket connection) throws IOException {
 		this.connection = connection;
 
-		connection.setTcpNoDelay(true);
-		connection.setTrafficClass(0x10);
-
-		this.os = connection.getOutputStream();
-
-		this.oos = new ObjectOutputStream(this.os);
-		this.oos.flush();
-		this.os.flush();
-
-		this.ois = new ObjectInputStream(connection.getInputStream());
-
 		setName(connection.getInetAddress().toString());
 		setDaemon(true);
 	}
 
 	@Override
 	public void run() {
+		try {
+			connection.setTcpNoDelay(true);
+			connection.setTrafficClass(0x10);
+
+			this.os = connection.getOutputStream();
+
+			this.oos = new ObjectOutputStream(this.os);
+			this.oos.flush();
+			this.os.flush();
+
+			this.ois = new ObjectInputStream(connection.getInputStream());
+		} catch (final IOException e) {
+			logger.log(Level.WARNING, "Exception initializing the SSL socket", e);
+			return;
+		}
+
 		long lLasted = 0;
 
 		try {
@@ -295,8 +299,7 @@ public class DispatchSSLServer extends Thread {
 	}
 
 	/**
-	 * Total amount of time (in milliseconds) spent in writing objects to the
-	 * socket.
+	 * Total amount of time (in milliseconds) spent in writing objects to the socket.
 	 */
 	public static long lSerialization = 0;
 
