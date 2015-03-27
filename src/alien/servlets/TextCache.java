@@ -129,7 +129,7 @@ public class TextCache extends ExtendedServlet {
 						long soonestToExpire = 0;
 						long latestToExpire = now;
 
-						namespace.readLock();
+						namespace.writeLock();
 
 						try {
 							final Iterator<Map.Entry<String, CacheValue>> it = namespace.cache.entrySet().iterator();
@@ -155,7 +155,7 @@ public class TextCache extends ExtendedServlet {
 							parameters.add(nsName + "_size");
 							values.add(Integer.valueOf(namespace.cache.size()));
 						} finally {
-							namespace.readUnlock();
+							namespace.writeUnlock();
 						}
 
 						if (soonestToExpire > 0) {
@@ -517,9 +517,12 @@ public class TextCache extends ExtendedServlet {
 					monitor.incrementCounter("SET_EOF_" + ns);
 			}
 
+			final CacheValue cv = new CacheValue(value, System.currentTimeMillis() + getl("timeout", getDefaultExpiration(ns)) * 1000);
+					
 			namespace.writeLock();
+			
 			try {
-				old = namespace.cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", getDefaultExpiration(ns)) * 1000));
+				old = namespace.cache.put(key, cv);
 			} finally {
 				namespace.writeUnlock();
 			}
