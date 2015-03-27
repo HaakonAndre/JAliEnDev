@@ -487,8 +487,10 @@ public class JAliEnCOMMander extends Thread {
 					JAliEnCommandscrlog.addScreenLogLine(Integer.valueOf(logno), "we will screen to" + logno);
 					args.remove(args.size() - 1);
 				}
-
-				if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
+				if( jcommand == null ){
+					out.setReturnCode(-6, "No such command or not implemented yet. ");					
+				}
+				else if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
 					jcommand.run();
 				}
 				else {
@@ -543,10 +545,17 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	protected static JAliEnBaseCommand getCommand(final String classSuffix, final Object[] objectParm) throws Exception {
 		logger.log(Level.INFO, "Entering command with "+classSuffix+" and options "+objectParm);
-		@SuppressWarnings("rawtypes")
-		final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
+		try{
+			@SuppressWarnings("rawtypes")
+			final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
+		
 		@SuppressWarnings({ "rawtypes", "unchecked" })
-		final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class });
+		final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] 
+				{ JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class });
 		return (JAliEnBaseCommand) co.newInstance(objectParm);
+		}catch( ClassNotFoundException e ){
+			//System.out.println("No such command or not implemented");
+			return null;
+		}
 	}
 }
