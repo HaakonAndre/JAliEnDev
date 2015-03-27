@@ -423,8 +423,8 @@ public class TextCache extends ExtendedServlet {
 					if (min < 0)
 						pwOut.println(entry.getKey() + " : empty");
 					else
-						pwOut.println(entry.getKey() + " : " + namespace.cache.size() + " (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: "
-								+ Format.size(total) + ") : " + hits + " hits");
+						pwOut.println(entry.getKey() + " : " + nssize + " (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: " + Format.size(total)
+								+ ") : " + hits + " hits");
 				}
 
 				final Runtime r = Runtime.getRuntime();
@@ -435,8 +435,8 @@ public class TextCache extends ExtendedServlet {
 			} else {
 				final Namespace namespace = namespaces.get(ns);
 
-				if (namespace == null || namespace.cache.size() == 0)
-					pwOut.println("Namespace is empty");
+				if (namespace == null)
+					pwOut.println("No such namespace: " + ns);
 				else {
 					int min = -1;
 					int max = 0;
@@ -473,8 +473,12 @@ public class TextCache extends ExtendedServlet {
 						namespace.readUnlock();
 					}
 
-					pwOut.println("\n\n----------------\n\n" + nssize + " entries (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: "
-							+ Format.size(total) + ") : " + hits + " hits");
+					pwOut.print("\n\n----------------\n\n" + nssize + " entries");
+
+					if (nssize > 0)
+						pwOut.println("(min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits + " hits");
+					else
+						pwOut.println();
 				}
 			}
 			pwOut.flush();
@@ -518,9 +522,9 @@ public class TextCache extends ExtendedServlet {
 			}
 
 			final CacheValue cv = new CacheValue(value, System.currentTimeMillis() + getl("timeout", getDefaultExpiration(ns)) * 1000);
-					
+
 			namespace.writeLock();
-			
+
 			try {
 				old = namespace.cache.put(key, cv);
 			} finally {
