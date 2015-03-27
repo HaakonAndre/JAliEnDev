@@ -75,13 +75,16 @@ public class ConfigUtils {
 							// System.err.println("Found configuration file: "+sName);
 
 							final ExtProperties prop = new ExtProperties(sConfigFolder, sName);
-							prop.makeReadOnly();
 							prop.setAutoReload(1000 * 60);
 
-							if (sName.equals("logging")) {
+							if (sName.equals("config")){
+								applicationConfig = prop;
+							}
+							else{
+							    prop.makeReadOnly();
+							    
+							    if (sName.equals("logging")) {
 								logging = new LoggingConfigurator(prop);
-
-								logging.update(null, null);
 
 								if (System.getProperty("lia.Monitor.ConfigURL") == null) {
 									// give the ML components the same logging
@@ -96,15 +99,15 @@ public class ConfigUtils {
 									// instantiates correctly
 									AppConfig.lastReloaded();
 								}
-							} else if (sName.equals("config"))
-								applicationConfig = prop;
-							else if (prop.gets("driver").length() > 0) {
+							    }
+							    else if (prop.gets("driver").length() > 0) {
 								dbconfig.put(sName, prop);
 
 								if (prop.gets("password").length() > 0)
 									hasDirectDBConnection = true;
-							} else
+							    } else
 								otherconfig.put(sName, prop);
+							}
 						}
 			}
 
@@ -130,7 +133,7 @@ public class ConfigUtils {
 
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 
-		appConfig = applicationConfig != null ? new ExtProperties(applicationConfig.getProperties()) : new ExtProperties();
+		appConfig = applicationConfig != null ? applicationConfig : new ExtProperties();
 
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
 			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
