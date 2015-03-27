@@ -156,7 +156,8 @@ public class TextCache extends ExtendedServlet {
 						}
 					}
 
-					monitor.sendParameters(parameters, values);
+					if (monitor != null)
+						monitor.sendParameters(parameters, values);
 				} catch (final Throwable t) {
 					// ignore
 				}
@@ -286,6 +287,20 @@ public class TextCache extends ExtendedServlet {
 
 		return ret;
 	}
+	
+	private static long slowQueryThreshold = 0;
+	
+	private static long slowQueryThresholdCheck = 0;
+	
+	private static synchronized long getSlowQueryThreshold(){
+		if (System.currentTimeMillis() - slowQueryThresholdCheck > 1000*60){
+			slowQueryThreshold = ConfigUtils.getConfig().getl("alien.servlets.TextCache.logSlowQueries", 0) * 1000000;
+			
+			slowQueryThresholdCheck = System.currentTimeMillis();
+		}
+		
+		return slowQueryThreshold;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -300,7 +315,13 @@ public class TextCache extends ExtendedServlet {
 
 		final long duration = System.nanoTime() - start;
 
-		monitor.addMeasurement("ms_to_answer", duration / 1000000d);
+		if (monitor != null)
+			monitor.addMeasurement("ms_to_answer", duration / 1000000d);
+		
+		final long logSlowQueries = getSlowQueryThreshold();
+		
+		if (logSlowQueries > 0 && duration > logSlowQueries)
+			System.err.println("Slow query : "+Format.point(duration/1000000d)+"ms : "+request.getRemoteAddr()+" : "+request.getQueryString());
 	}
 
 	private final void execRealGet() {
@@ -559,7 +580,7 @@ public class TextCache extends ExtendedServlet {
 	public static void invalidateLFN(final String lfn) {
 		try {
 			invalidateCache("whereis", "irtc_" + lfn, "irc_" + lfn);
-			invalidateCache("access", "^" + lfn);
+			invalidateCache("access", "^" + lfn + ".*");
 		} catch (final Throwable t) {
 			// ignore
 		}
