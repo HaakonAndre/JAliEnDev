@@ -19,6 +19,9 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -118,15 +121,18 @@ public class TextCache extends ExtendedServlet {
 					final Vector<String> parameters = new Vector<>();
 					final Vector<Object> values = new Vector<>();
 
-					for (final Map.Entry<String, Map<String, CacheValue>> nsEntry : namespaces.entrySet()) {
-						final String ns = nsEntry.getKey();
-						final Map<String, CacheValue> cache = nsEntry.getValue();
+					for (final Map.Entry<String, Namespace> nsEntry : namespaces.entrySet()) {
+						final String nsName = nsEntry.getKey();
+
+						final Namespace namespace = nsEntry.getValue();
 
 						long soonestToExpire = 0;
 						long latestToExpire = now;
 
-						synchronized (cache) {
-							final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
+						namespace.readLock();
+
+						try {
+							final Iterator<Map.Entry<String, CacheValue>> it = namespace.cache.entrySet().iterator();
 
 							while (it.hasNext()) {
 								final Map.Entry<String, CacheValue> entry = it.next();
@@ -134,7 +140,7 @@ public class TextCache extends ExtendedServlet {
 								final long expires = entry.getValue().expires;
 
 								if (expires < now) {
-									notifyEntryRemoved(ns, entry.getKey(), entry.getValue());
+									notifyEntryRemoved(nsName, entry.getKey(), entry.getValue());
 
 									it.remove();
 								} else {
@@ -146,12 +152,14 @@ public class TextCache extends ExtendedServlet {
 								}
 							}
 
-							parameters.add(ns + "_size");
-							values.add(Integer.valueOf(cache.size()));
+							parameters.add(nsName + "_size");
+							values.add(Integer.valueOf(namespace.cache.size()));
+						} finally {
+							namespace.readUnlock();
 						}
 
 						if (soonestToExpire > 0) {
-							parameters.add(ns + "_hours");
+							parameters.add(nsName + "_hours");
 							values.add(Double.valueOf((latestToExpire - soonestToExpire) / (3600000d)));
 						}
 					}
@@ -177,11 +185,16 @@ public class TextCache extends ExtendedServlet {
 
 			@Override
 			public void Shutdown() {
-				for (final Map.Entry<String, Map<String, CacheValue>> entry : namespaces.entrySet()) {
-					final Map<String, CacheValue> cache = entry.getValue();
-					synchronized (cache) {
-						for (final Map.Entry<String, CacheValue> entryToDelete : cache.entrySet())
+				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
+					final Namespace namespace = entry.getValue();
+
+					namespace.readLock();
+
+					try {
+						for (final Map.Entry<String, CacheValue> entryToDelete : namespace.cache.entrySet())
 							notifyEntryRemoved(entry.getKey(), entryToDelete.getKey(), entryToDelete.getValue());
+					} finally {
+						namespace.readUnlock();
 					}
 				}
 			}
@@ -191,7 +204,7 @@ public class TextCache extends ExtendedServlet {
 	/**
 	 * Big cache structure
 	 */
-	final static Map<String, Map<String, CacheValue>> namespaces = new ConcurrentHashMap<>();
+	final static Map<String, Namespace> namespaces = new ConcurrentHashMap<>();
 
 	/**
 	 * Monitoring component
@@ -263,42 +276,72 @@ public class TextCache extends ExtendedServlet {
 
 	}
 
-	private static final Map<String, CacheValue> getNamespace(final String name) {
-		Map<String, CacheValue> ret = namespaces.get(name);
+	private static final class Namespace {
+		public final Map<String, CacheValue> cache;
+
+		private final ReentrantReadWriteLock rwLock = new ReentrantReadWriteLock();
+
+		private final WriteLock wLock = rwLock.writeLock();
+
+		private final ReadLock rLock = rwLock.readLock();
+
+		public Namespace(final String name) {
+			int size;
+
+			try {
+				try {
+					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size_" + name));
+				} catch (final Throwable t1) {
+					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
+				}
+			} catch (final Throwable t) {
+				size = 50000;
+			}
+
+			cache = new NotifyLRUMap(size, name);
+		}
+
+		public void readLock() {
+			rLock.lock();
+		}
+
+		public void readUnlock() {
+			rLock.unlock();
+		}
+
+		public void writeLock() {
+			wLock.lock();
+		}
+
+		public void writeUnlock() {
+			wLock.unlock();
+		}
+	}
+
+	private static final Namespace getNamespace(final String name) {
+		Namespace ret = namespaces.get(name);
 
 		if (ret != null)
 			return ret;
 
-		int size;
-
-		try {
-			try {
-				size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size_" + name));
-			} catch (final Throwable t1) {
-				size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
-			}
-		} catch (final Throwable t) {
-			size = 50000;
-		}
-
-		ret = new NotifyLRUMap(size, name);
+		ret = new Namespace(name);
 
 		namespaces.put(name, ret);
 
 		return ret;
 	}
-	
+
 	private static long slowQueryThreshold = 0;
-	
+
 	private static long slowQueryThresholdCheck = 0;
-	
-	private static synchronized long getSlowQueryThreshold(){
-		if (System.currentTimeMillis() - slowQueryThresholdCheck > 1000*60){
+
+	private static synchronized long getSlowQueryThreshold() {
+		if (System.currentTimeMillis() - slowQueryThresholdCheck > 1000 * 60) {
 			slowQueryThreshold = ConfigUtils.getConfig().getl("alien.servlets.TextCache.logSlowQueries", 0) * 1000000;
-			
+
 			slowQueryThresholdCheck = System.currentTimeMillis();
 		}
-		
+
 		return slowQueryThreshold;
 	}
 
@@ -317,11 +360,11 @@ public class TextCache extends ExtendedServlet {
 
 		if (monitor != null)
 			monitor.addMeasurement("ms_to_answer", duration / 1000000d);
-		
+
 		final long logSlowQueries = getSlowQueryThreshold();
-		
+
 		if (logSlowQueries > 0 && duration > logSlowQueries)
-			System.err.println("Slow query : "+Format.point(duration/1000000d)+"ms : "+request.getRemoteAddr()+" : "+request.getQueryString());
+			System.err.println("Slow query : " + Format.point(duration / 1000000d) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
 	}
 
 	private final void execRealGet() {
@@ -333,29 +376,36 @@ public class TextCache extends ExtendedServlet {
 
 		if (key.length() == 0) {
 			if (gets("clean", null) != null)
-				for (final Map.Entry<String, Map<String, CacheValue>> entry : namespaces.entrySet()) {
-					final Map<String, CacheValue> cache = entry.getValue();
+				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
+					final Namespace namespace = entry.getValue();
 
-					synchronized (cache) {
-						for (final Map.Entry<String, CacheValue> entryToDelete : cache.entrySet())
+					namespace.writeLock();
+
+					try {
+						for (final Map.Entry<String, CacheValue> entryToDelete : namespace.cache.entrySet())
 							notifyEntryRemoved(entry.getKey(), entryToDelete.getKey(), entryToDelete.getValue());
 
-						cache.clear();
+						namespace.cache.clear();
+					} finally {
+						namespace.writeUnlock();
 					}
 				}
 			else if (gets("ns").length() == 0) {
-				for (final Map.Entry<String, Map<String, CacheValue>> entry : namespaces.entrySet()) {
-					final Map<String, CacheValue> cache = entry.getValue();
+				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
+					final Namespace namespace = entry.getValue();
 
 					int min = -1;
 					int max = 0;
 					long total = 0;
-					double avg;
 
 					long hits = 0;
 
-					synchronized (cache) {
-						for (final CacheValue c : cache.values()) {
+					int nssize;
+
+					namespace.readLock();
+
+					try {
+						for (final CacheValue c : namespace.cache.values()) {
 							final int size = c.value.length();
 
 							min = (min < 0 || size < min) ? size : min;
@@ -365,14 +415,16 @@ public class TextCache extends ExtendedServlet {
 							hits += c.accesses.intValue();
 						}
 
-						avg = (double) total / cache.size();
+						nssize = namespace.cache.size();
+					} finally {
+						namespace.readUnlock();
 					}
 
 					if (min < 0)
 						pwOut.println(entry.getKey() + " : empty");
 					else
-						pwOut.println(entry.getKey() + " : " + cache.size() + " (min: " + min + ", avg: " + Format.point(avg) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits
-								+ " hits");
+						pwOut.println(entry.getKey() + " : " + namespace.cache.size() + " (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: "
+								+ Format.size(total) + ") : " + hits + " hits");
 				}
 
 				final Runtime r = Runtime.getRuntime();
@@ -381,21 +433,24 @@ public class TextCache extends ExtendedServlet {
 				pwOut.println("Java version: " + System.getProperty("java.version"));
 				pwOut.println("Uptime: " + Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
 			} else {
-				final Map<String, CacheValue> cache = namespaces.get(ns);
+				final Namespace namespace = namespaces.get(ns);
 
-				if (cache == null || cache.size() == 0)
+				if (namespace == null || namespace.cache.size() == 0)
 					pwOut.println("Namespace is empty");
 				else {
 					int min = -1;
 					int max = 0;
 					long total = 0;
-					double avg;
 					int hits = 0;
 
 					final boolean values = gets("values").length() > 0;
 
-					synchronized (cache) {
-						final ArrayList<Map.Entry<String, CacheValue>> entries = new ArrayList<>(cache.entrySet());
+					int nssize;
+
+					namespace.readLock();
+
+					try {
+						final ArrayList<Map.Entry<String, CacheValue>> entries = new ArrayList<>(namespace.cache.entrySet());
 
 						Collections.sort(entries, entryComparator);
 
@@ -413,11 +468,13 @@ public class TextCache extends ExtendedServlet {
 							pwOut.println(me.getKey() + " : size " + size + ", " + cv.accesses + " hits" + (values ? " : " + cv.value : ""));
 						}
 
-						avg = (double) total / cache.size();
+						nssize = namespace.cache.size();
+					} finally {
+						namespace.readUnlock();
 					}
 
-					pwOut.println("\n\n----------------\n\n" + cache.size() + " entries (min: " + min + ", avg: " + Format.point(avg) + ", max: " + max + ", total: " + Format.size(total) + ") : "
-							+ hits + " hits");
+					pwOut.println("\n\n----------------\n\n" + nssize + " entries (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: "
+							+ Format.size(total) + ") : " + hits + " hits");
 				}
 			}
 			pwOut.flush();
@@ -425,7 +482,7 @@ public class TextCache extends ExtendedServlet {
 			return;
 		}
 
-		final Map<String, CacheValue> cache = getNamespace(ns);
+		final Namespace namespace = getNamespace(ns);
 
 		String value = gets("value", null);
 
@@ -435,8 +492,11 @@ public class TextCache extends ExtendedServlet {
 			CacheValue old;
 
 			if (getb("ifnull", false) == true) {
-				synchronized (cache) {
-					old = cache.get(key);
+				namespace.readLock();
+				try {
+					old = namespace.cache.get(key);
+				} finally {
+					namespace.readUnlock();
 				}
 
 				if (old != null && old.expires >= System.currentTimeMillis()) {
@@ -457,8 +517,11 @@ public class TextCache extends ExtendedServlet {
 					monitor.incrementCounter("SET_EOF_" + ns);
 			}
 
-			synchronized (cache) {
-				old = cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", getDefaultExpiration(ns)) * 1000));
+			namespace.writeLock();
+			try {
+				old = namespace.cache.put(key, new CacheValue(value, System.currentTimeMillis() + getl("timeout", getDefaultExpiration(ns)) * 1000));
+			} finally {
+				namespace.writeUnlock();
 			}
 
 			if (old != null)
@@ -482,8 +545,11 @@ public class TextCache extends ExtendedServlet {
 				if (sLargestPart.equals(keyValue)) {
 					CacheValue old;
 
-					synchronized (cache) {
-						old = cache.remove(keyValue);
+					namespace.writeLock();
+					try {
+						old = namespace.cache.remove(keyValue);
+					} finally {
+						namespace.writeUnlock();
 					}
 
 					if (old != null) {
@@ -504,8 +570,9 @@ public class TextCache extends ExtendedServlet {
 					return;
 				}
 
-				synchronized (cache) {
-					final Iterator<Map.Entry<String, CacheValue>> it = cache.entrySet().iterator();
+				namespace.writeLock();
+				try {
+					final Iterator<Map.Entry<String, CacheValue>> it = namespace.cache.entrySet().iterator();
 
 					Matcher m = null;
 
@@ -528,6 +595,8 @@ public class TextCache extends ExtendedServlet {
 							removed++;
 						}
 					}
+				} finally {
+					namespace.writeUnlock();
 				}
 
 				if (monitor != null)
@@ -542,8 +611,11 @@ public class TextCache extends ExtendedServlet {
 
 		CacheValue existing;
 
-		synchronized (cache) {
-			existing = cache.get(key);
+		namespace.readLock();
+		try {
+			existing = namespace.cache.get(key);
+		} finally {
+			namespace.readUnlock();
 		}
 
 		if (existing == null) {
