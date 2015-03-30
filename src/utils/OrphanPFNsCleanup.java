@@ -158,7 +158,7 @@ public class OrphanPFNsCleanup {
 						// and release them from the catalogue nevertheless ?
 						// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 
-						db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY fail_count ASC, size DESC LIMIT 10000;", false,
+						db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;", false,
 								Integer.valueOf(seNumber));
 					} finally {
 						concurrentQueryies.release();
