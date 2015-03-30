@@ -5,13 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import jline.FileNameCompletor;
+import jline.console.completer.FileNameCompleter;
 
 /**
  * @author ron
  * @since September 29, 2011
  */
-public class GridLocalFileCompletor extends FileNameCompletor {
+public class GridLocalFileCompletor extends FileNameCompleter {
 
 	private final BusyBox busy;
 
@@ -65,7 +65,7 @@ public class GridLocalFileCompletor extends FileNameCompletor {
 
 		} finally {
 			// we want to output a sorted list of files
-			sortFileNames(candidates);
+			// sortFileNames(candidates);
 		}
 	}
 

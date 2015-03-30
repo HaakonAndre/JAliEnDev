@@ -2,7 +2,6 @@ package alien.shell;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -12,10 +11,9 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
-import jline.ArgumentCompletor;
-import jline.Completor;
-import jline.ConsoleReader;
-import jline.SimpleCompletor;
+import jline.console.ConsoleReader;
+import jline.console.completer.ArgumentCompleter;
+import jline.console.completer.StringsCompleter;
 import lazyj.Format;
 import alien.JSh;
 import alien.api.JBoxServer;
@@ -236,11 +234,8 @@ public class BusyBox {
 
 		reader = new ConsoleReader();
 		reader.setBellEnabled(false);
-		reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
-		final Completor[] comp = new Completor[] {
-
-		new SimpleCompletor(callJBoxGetString("commandlist").split("\\s+")), new GridLocalFileCompletor(this) };
-		reader.addCompletor(new ArgumentCompletor(comp));
+		//reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
+		reader.addCompleter(new ArgumentCompleter(new StringsCompleter(callJBoxGetString("commandlist").split("\\s+")), new GridLocalFileCompletor(this)));
 
 		String prefixCNo = "0";
 		while ((line = reader.readLine(genPromptPrefix() + "[" + prefixCNo + commNo + "] " + currentDir + promptSuffix)) != null) {
