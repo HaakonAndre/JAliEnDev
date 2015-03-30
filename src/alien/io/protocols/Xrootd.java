@@ -76,7 +76,7 @@ public class Xrootd extends Protocol {
 					int idx = xrdcpPath.lastIndexOf('/');
 
 					if (idx > 0) {
-						idx = xrdcpPath.lastIndexOf('/', idx);
+						idx = xrdcpPath.lastIndexOf('/', idx - 1);
 
 						if (idx >= 0)
 							xrootd_default_path = xrdcpPath.substring(0, idx);
