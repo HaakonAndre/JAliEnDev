@@ -1,19 +1,15 @@
 package alien;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.Security;
-import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
 
 import alien.io.xrootd.envelopes.EncryptedAuthzToken;
+import alien.user.JAKeyStore;
 
 /**
  * @author ron
@@ -41,20 +37,18 @@ public class CreateAndCheckEnvelopes {
 		RSAPublicKey sePubKey = null;
 
 		try {
-			authenPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(new BufferedReader(new FileReader(
-				AuthenPrivLocation))).readObject()).getPrivate();
-			authenPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(new BufferedReader(new FileReader(
-				AuthenPubLocation))).readObject()).getPublicKey();
+			authenPrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(AuthenPrivLocation, null);
+			
+			authenPubKey = (RSAPublicKey) JAKeyStore.loadPubX509(AuthenPubLocation)[0].getPublicKey(); 
 		}
 		catch (IOException ioe) {
 			// ignore
 		}
 
 		try {
-			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(new BufferedReader(new FileReader(SEPrivLocation)))
-				.readObject()).getPrivate();
-			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(
-				new BufferedReader(new FileReader(SEPubLocation))).readObject()).getPublicKey();
+			sePrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(SEPrivLocation, null); 
+
+			sePubKey = (RSAPublicKey) JAKeyStore.loadPubX509(SEPubLocation)[0].getPublicKey(); 
 		}
 		catch (IOException ioe) {
 			// ignore

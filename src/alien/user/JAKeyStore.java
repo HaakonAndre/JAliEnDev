@@ -1,8 +1,6 @@
 package alien.user;
 
 import java.io.BufferedReader;
-import java.io.StringReader;
-import java.io.Reader;
 import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,16 +9,18 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Security;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.logging.Level;
@@ -34,9 +34,18 @@ import lazyj.Utils;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
+import org.bouncycastle.openssl.PEMDecryptorProvider;
+import org.bouncycastle.openssl.PEMEncryptedKeyPair;
+import org.bouncycastle.openssl.PEMException;
+import org.bouncycastle.openssl.PEMKeyPair;
+import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PasswordFinder;
+import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
 
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
@@ -260,14 +269,10 @@ public class JAKeyStore {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
-		final String user_key = config.gets("user.cert.priv.location", 
-				System.getProperty("user.home") + System.getProperty("file.separator") + 
-				".globus" + System.getProperty("file.separator")
+		final String user_key = config.gets("user.cert.priv.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator")
 				+ "userkey.pem");
 
-		final String user_cert = config.gets("user.cert.pub.location", 
-				System.getProperty("user.home") + System.getProperty("file.separator") + 
-				".globus" + System.getProperty("file.separator")
+		final String user_cert = config.gets("user.cert.pub.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator")
 				+ "usercert.pem");
 
 		if (!checkKeyPermissions(user_key, user_cert))
@@ -366,15 +371,15 @@ public class JAKeyStore {
 
 		final Console cons = System.console();
 		Reader isr = null;
-		if( cons == null )
+		if (cons == null)
 			isr = new InputStreamReader(System.in);
-		else{
-			char[] passwd = cons.readPassword("Grid certificate password: ");
-			String password = String.valueOf( passwd );
-			isr = new StringReader( password );			
+		else {
+			final char[] passwd = cons.readPassword("Grid certificate password: ");
+			final String password = String.valueOf(passwd);
+			isr = new StringReader(password);
 		}
-					
-		final BufferedReader in = new BufferedReader( isr );
+
+		final BufferedReader in = new BufferedReader(isr);
 
 		try {
 			final String line = in.readLine();
@@ -424,8 +429,7 @@ public class JAKeyStore {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final PasswordFinder pFinder) throws Exception {
-
-		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder), loadPubX509(pubKeyLocation)), new KeyStore.PasswordProtection(pass));
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder.getPassword()), loadPubX509(pubKeyLocation)), new KeyStore.PasswordProtection(pass));
 	}
 
 	@SuppressWarnings("unused")
@@ -465,29 +469,49 @@ public class JAKeyStore {
 	 * @return priv key
 	 * @throws Exception
 	 */
-	public static PrivateKey loadPrivX509(final String keyFileLocation, final PasswordFinder pFinder) throws Exception {
+	public static PrivateKey loadPrivX509(final String keyFileLocation, final char[] password) throws IOException, PEMException {
 
 		if (logger.isLoggable(Level.INFO))
-			logger.log(Level.INFO, "Loading private key ... " + keyFileLocation);
+			logger.log(Level.INFO, "Loading private key: " + keyFileLocation);
 
 		BufferedReader priv = null;
 
-		PEMReader reader = null;
+		PEMParser reader = null;
 
 		try {
 			priv = new BufferedReader(new FileReader(keyFileLocation));
 
-			if (pFinder == null)
-				reader = new PEMReader(priv);
-			else
-				reader = new PEMReader(priv, pFinder);
+			reader = new PEMParser(priv);
 
 			Object obj;
-			while ((obj = reader.readObject()) != null)
+			while ((obj = reader.readObject()) != null) {
+				if (obj instanceof PEMEncryptedKeyPair) {
+					final PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().build(password);
+					final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+
+					final KeyPair kp = converter.getKeyPair(((PEMEncryptedKeyPair) obj).decryptKeyPair(decProv));
+
+					return kp.getPrivate();
+				}
+
+				if (obj instanceof PEMKeyPair)
+					obj = ((PEMKeyPair) obj).getPrivateKeyInfo();
+				// and let if fall through the next case
+
+				if (obj instanceof PrivateKeyInfo) {
+					final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+
+					return converter.getPrivateKey(((PrivateKeyInfo) obj));
+				}
+
 				if (obj instanceof PrivateKey)
 					return (PrivateKey) obj;
-				else if (obj instanceof KeyPair)
+
+				if (obj instanceof KeyPair)
 					return ((KeyPair) obj).getPrivate();
+
+				System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
+			}
 
 			return null;
 		} finally {
@@ -508,29 +532,60 @@ public class JAKeyStore {
 	 * @return Cert chain
 	 * @throws IOException
 	 */
-	public static Certificate[] loadPubX509(final String certFileLocation) throws IOException {
+	public static X509Certificate[] loadPubX509(final String certFileLocation) {
 
 		if (logger.isLoggable(Level.INFO))
-			logger.log(Level.INFO, "Loading public ... " + certFileLocation);
+			logger.log(Level.INFO, "Loading public key: " + certFileLocation);
 
 		BufferedReader pub = null;
 
-		PEMReader reader = null;
+		PEMParser reader = null;
 
 		try {
 			pub = new BufferedReader(new FileReader(certFileLocation));
 
-			reader = new PEMReader(pub);
+			reader = new PEMParser(pub);
 
-			return new Certificate[] { (Certificate) reader.readObject() };
+			Object obj;
+
+			final ArrayList<X509Certificate> chain = new ArrayList<>();
+
+			while ((obj = reader.readObject()) != null)
+				if (obj instanceof X509Certificate)
+					chain.add((X509Certificate) obj);
+				else if (obj instanceof X509CertificateHolder) {
+					final X509CertificateHolder ch = (X509CertificateHolder) obj;
+
+					try {
+						final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
+
+						chain.add(c);
+					} catch (final CertificateException ce) {
+						logger.log(Level.SEVERE, "Exception loading certificate", ce);
+					}
+				} else
+					System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
+
+			if (chain.size() > 0)
+				return chain.toArray(new X509Certificate[0]);
+
+			return null;
 		} catch (final IOException e) {
 			e.printStackTrace();
 		} finally {
 			if (reader != null)
-				reader.close();
+				try {
+					reader.close();
+				} catch (final IOException ioe) {
+					// ignore
+				}
 
 			if (pub != null)
-				pub.close();
+				try {
+					pub.close();
+				} catch (final IOException ioe) {
+					// ignore
+				}
 		}
 
 		return null;
@@ -565,5 +620,4 @@ public class JAKeyStore {
 		}
 		return s.toString().toCharArray();
 	}
-
 }

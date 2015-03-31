@@ -1,11 +1,8 @@
 package alien.io.xrootd.envelopes;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.security.Signature;
@@ -19,11 +16,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
 
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
+import alien.user.JAKeyStore;
 
 /**
  * @author ron
@@ -47,9 +44,7 @@ public class XrootDEnvelopeSigner {
 	private static final RSAPublicKey SEPubKey;
 
 	/**
-	 * load the RSA keys for envelope signature, keys are supposed to be in pem,
-	 * and can be created with: openssl req -x509 -nodes -days 365 -newkey
-	 * rsa:4096 -keyout lpriv.pem -out lpub.pem
+	 * load the RSA keys for envelope signature, keys are supposed to be in pem, and can be created with: openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout lpriv.pem -out lpub.pem
 	 */
 	static {
 		Security.addProvider(new BouncyCastleProvider());
@@ -81,57 +76,27 @@ public class XrootDEnvelopeSigner {
 		RSAPrivateKey sePrivKey = null;
 		RSAPublicKey sePubKey = null;
 
-		BufferedReader jAuthZPriv = null;
-		BufferedReader jAuthZPub = null;
-
 		try {
-			jAuthZPriv = new BufferedReader(new FileReader(JAuthZPrivLocation));
-			jAuthZPub = new BufferedReader(new FileReader(JAuthZPubLocation));
+			jAuthZPrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(JAuthZPrivLocation, null);
 
-			jAuthZPrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(jAuthZPriv).readObject()).getPrivate();
-			jAuthZPubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(jAuthZPub).readObject()).getPublicKey();
+			final X509Certificate[] certChain = JAKeyStore.loadPubX509(JAuthZPubLocation);
+
+			if (certChain != null)
+				jAuthZPubKey = (RSAPublicKey) certChain[0].getPublicKey();
 		} catch (final IOException ioe) {
 			logger.log(Level.WARNING, "Authen keys could not be loaded from " + JAuthZPrivLocation + "/" + JAuthZPubLocation);
-		} finally {
-			if (jAuthZPriv != null)
-				try {
-					jAuthZPriv.close();
-				} catch (final IOException e) {
-					// ignore
-				}
-
-			if (jAuthZPub != null)
-				try {
-					jAuthZPub.close();
-				} catch (final IOException e) {
-					// ignore
-				}
 		}
 
-		BufferedReader sePriv = null;
-		BufferedReader sePub = null;
-
 		try {
-			sePriv = new BufferedReader(new FileReader(SEPrivLocation));
-			sePub = new BufferedReader(new FileReader(SEPubLocation));
+			sePrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(SEPrivLocation, null);
 
-			sePrivKey = (RSAPrivateKey) ((KeyPair) new PEMReader(sePriv).readObject()).getPrivate();
-			sePubKey = (RSAPublicKey) ((X509Certificate) new PEMReader(sePub).readObject()).getPublicKey();
+			final X509Certificate[] certChain = JAKeyStore.loadPubX509(SEPubLocation);
+
+			if (certChain != null)
+				sePubKey = (RSAPublicKey) certChain[0].getPublicKey();
+
 		} catch (final IOException ioe) {
 			logger.log(Level.WARNING, "SE keys could not be loaded from " + SEPrivLocation + "/" + SEPubLocation);
-		} finally {
-			if (sePriv != null)
-				try {
-					sePriv.close();
-				} catch (final IOException e) {
-					// ignore
-				}
-			if (sePub != null)
-				try {
-					sePub.close();
-				} catch (final IOException e) {
-					// ignore
-				}
 		}
 
 		JAuthZPrivKey = jAuthZPrivKey;
@@ -297,6 +262,8 @@ public class XrootDEnvelopeSigner {
 	}
 
 	/**
+	 * Testing method that decrypts an envelope received from the console (until Ctrl-D)
+	 * 
 	 * @param args
 	 * @throws GeneralSecurityException
 	 * @throws IOException

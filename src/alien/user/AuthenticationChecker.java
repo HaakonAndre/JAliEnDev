@@ -1,11 +1,7 @@
 package alien.user;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.Signature;
 import java.security.SignatureException;
@@ -15,8 +11,6 @@ import java.security.interfaces.RSAPublicKey;
 
 import lazyj.Utils;
 
-import org.bouncycastle.openssl.PEMReader;
-import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.util.encoders.Hex;
 
 import alien.config.ConfigUtils;
@@ -45,66 +39,35 @@ public class AuthenticationChecker {
 	/**
 	 * @param pFinder
 	 * @throws IOException
+	 *             TODO : re-implement
 	 */
-	public static void loadPrivKey(final PasswordFinder pFinder) throws IOException {
-
-		if (privKey == null) {
-			BufferedReader priv = null;
-
-			PEMReader reader = null;
-
-			try {
-				priv = new BufferedReader(new FileReader(ConfigUtils.getConfig().gets("user.cert.priv.location").trim()));
-
-				if (pFinder.getPassword().length == 0)
-					reader = new PEMReader(priv);
-				else
-					reader = new PEMReader(priv, pFinder);
-
-				privKey = (RSAPrivateKey) ((KeyPair) reader.readObject()).getPrivate();
-			} finally {
-				try {
-					if (reader != null)
-						reader.close();
-				} catch (final IOException ioe) {
-					// ignore
-				}
-
-				try {
-					if (priv != null)
-						priv.close();
-				} catch (final IOException ioe) {
-					// ignore
-				}
-			}
-		}
-	}
+	/*
+	 * public static void loadPrivKey(final PasswordFinder pFinder) throws IOException {
+	 * 
+	 * if (privKey == null) { BufferedReader priv = null;
+	 * 
+	 * PEMParser reader = null;
+	 * 
+	 * try { priv = new BufferedReader(new FileReader(ConfigUtils.getConfig().gets("user.cert.priv.location").trim()));
+	 * 
+	 * if (pFinder.getPassword().length == 0) reader = new PEMParser(priv); else reader = new PEMParser(priv, pFinder);
+	 * 
+	 * privKey = (RSAPrivateKey) ((KeyPair) reader.readObject()).getPrivate(); } finally { try { if (reader != null) reader.close(); } catch (final IOException ioe) { // ignore }
+	 * 
+	 * try { if (priv != null) priv.close(); } catch (final IOException ioe) { // ignore } } } }
+	 */
 
 	/**
 	 * @param pubCert
 	 */
 	public static void loadPubCert(final String pubCert) {
+		final X509Certificate[] certChain = JAKeyStore.loadPubX509(pubCert);
 
-		PEMReader pemReader = null;
-
-		try {
-			final StringReader pub = new StringReader(pubCert);
-
-			pemReader = new PEMReader(pub);
-
-			cert = ((X509Certificate) pemReader.readObject());
-
+		if (certChain != null) {
+			cert = certChain[0];
 			pubKey = (RSAPublicKey) cert.getPublicKey();
-		} catch (final IOException e) {
-			e.printStackTrace();
-		} finally {
-			if (pemReader != null)
-				try {
-					pemReader.close();
-				} catch (final IOException ioe) {
-					// ignore
-				}
-		}
+		} else
+			System.err.println("Didn't find any certificate");
 	}
 
 	/**
