@@ -125,7 +125,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 		out.printOutln(helpUsage("rmdir"," [<option>] <directory>"));
 		out.printOutln(helpStartOptions());
 		out.printOutln(helpOption("--ignore-fail-on-non-empty","  ignore each failure that is solely because a directory is non-empty"));
-		out.printOutln(helpOption("-p ", "--parents   Remove DIRECTORY and its ancestors.  E.g., ‘rmdir -p a/b/c’ is similar to ‘rmdir a/b/c a/b a’."));
+		out.printOutln(helpOption("-p ", "--parents   Remove DIRECTORY and its ancestors.  E.g., 'rmdir -p a/b/c' is similar to 'rmdir a/b/c a/b a'."));
 		out.printOutln(helpOption("-v ", "--verbose  output a diagnostic for every directory processed"));
 		out.printOutln(helpOption(" "  , "--help      display this help and exit"));
 		out.printOutln(helpOption(" "  , "--version  output version information and exit"));
