@@ -1868,9 +1868,9 @@ public class TaskQueueUtils {
 
 			final Job j = getJob(queueId, true);
 
-			// setJobStatus(j, JobStatus.KILLED,"",null,null,null);
+			setJobStatus(j, JobStatus.KILLED,"",null,null,null);
 
-			if (j.execHost != null && false) {
+			if (j.execHost != null) {
 
 				// my ($port) =
 				// $self->{DB}->getFieldFromHosts($data->{exechost}, "hostport")
