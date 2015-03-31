@@ -16,6 +16,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCSException;
 
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
@@ -83,8 +85,8 @@ public class XrootDEnvelopeSigner {
 
 			if (certChain != null)
 				jAuthZPubKey = (RSAPublicKey) certChain[0].getPublicKey();
-		} catch (final IOException ioe) {
-			logger.log(Level.WARNING, "Authen keys could not be loaded from " + JAuthZPrivLocation + "/" + JAuthZPubLocation);
+		} catch (final IOException | PKCSException | OperatorCreationException e) {
+			logger.log(Level.WARNING, "Authen keys could not be loaded from " + JAuthZPrivLocation + "/" + JAuthZPubLocation, e);
 		}
 
 		try {
@@ -95,8 +97,8 @@ public class XrootDEnvelopeSigner {
 			if (certChain != null)
 				sePubKey = (RSAPublicKey) certChain[0].getPublicKey();
 
-		} catch (final IOException ioe) {
-			logger.log(Level.WARNING, "SE keys could not be loaded from " + SEPrivLocation + "/" + SEPubLocation);
+		} catch (final IOException | PKCSException | OperatorCreationException e) {
+			logger.log(Level.WARNING, "SE keys could not be loaded from " + SEPrivLocation + "/" + SEPubLocation, e);
 		}
 
 		JAuthZPrivKey = jAuthZPrivKey;

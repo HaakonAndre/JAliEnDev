@@ -34,6 +34,7 @@ import lazyj.Utils;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
+import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -45,8 +46,14 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
+import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+import org.bouncycastle.operator.InputDecryptorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
+import org.bouncycastle.pkcs.PKCSException;
 
+import sun.security.pkcs.PKCS8Key;
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 
@@ -467,9 +474,11 @@ public class JAKeyStore {
 	 * @param keyFileLocation
 	 * @param pFinder
 	 * @return priv key
+	 * @throws OperatorCreationException 
+	 * @throws PKCSException 
 	 * @throws Exception
 	 */
-	public static PrivateKey loadPrivX509(final String keyFileLocation, final char[] password) throws IOException, PEMException {
+	public static PrivateKey loadPrivX509(final String keyFileLocation, final char[] password) throws IOException, PEMException, OperatorCreationException, PKCSException {
 
 		if (logger.isLoggable(Level.INFO))
 			logger.log(Level.INFO, "Loading private key: " + keyFileLocation);
@@ -498,6 +507,12 @@ public class JAKeyStore {
 					obj = ((PEMKeyPair) obj).getPrivateKeyInfo();
 				// and let if fall through the next case
 
+				if (obj instanceof PKCS8EncryptedPrivateKeyInfo){
+					InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(password);
+					
+					obj = ((PKCS8EncryptedPrivateKeyInfo) obj).decryptPrivateKeyInfo(pkcs8Prov);
+				}
+				
 				if (obj instanceof PrivateKeyInfo) {
 					final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
 

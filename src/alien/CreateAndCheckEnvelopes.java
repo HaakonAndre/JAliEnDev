@@ -1,6 +1,5 @@
 package alien;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Security;
 import java.security.interfaces.RSAPrivateKey;
@@ -41,7 +40,7 @@ public class CreateAndCheckEnvelopes {
 			
 			authenPubKey = (RSAPublicKey) JAKeyStore.loadPubX509(AuthenPubLocation)[0].getPublicKey(); 
 		}
-		catch (IOException ioe) {
+		catch (Throwable t) {
 			// ignore
 		}
 
@@ -50,7 +49,7 @@ public class CreateAndCheckEnvelopes {
 
 			sePubKey = (RSAPublicKey) JAKeyStore.loadPubX509(SEPubLocation)[0].getPublicKey(); 
 		}
-		catch (IOException ioe) {
+		catch (Throwable t) {
 			// ignore
 		}
 
