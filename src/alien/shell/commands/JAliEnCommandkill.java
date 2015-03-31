@@ -30,7 +30,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 			out.setReturnCode(1,"not implemented yet ");
 		}
 		else
-		out.printErrln("--- not implemented yet ---");
+			out.printErrln("--- not implemented yet ---");
 
 	}
 
