@@ -109,9 +109,8 @@ public final class SEUtils {
 					}
 				} finally {
 					seCacheWriteLock.unlock();
+					seCacheReadLock.lock();
 				}
-
-				seCacheReadLock.lock();
 			}
 		} finally {
 			seCacheReadLock.unlock();

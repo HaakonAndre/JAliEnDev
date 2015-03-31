@@ -1,21 +1,15 @@
 package alien.catalogue.access;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
-import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PEMReader;
 
 import alien.catalogue.GUID;
 import alien.catalogue.PFN;
@@ -24,6 +18,7 @@ import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
+import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 
 /**
@@ -61,21 +56,10 @@ public final class AuthorizationFactory {
 
 				}
 				else {
-					Security.addProvider(new BouncyCastleProvider());
-
-					PEMReader pr = null;
-
-					try {
-						pr = new PEMReader(new BufferedReader(new FileReader(file)));
-
-						final X509Certificate cert = (X509Certificate) pr.readObject();
-
-						user = UserFactory.getByCertificate(new X509Certificate[] { cert });
-					}
-					finally {
-						if (pr != null)
-							pr.close();
-					}
+					final X509Certificate[] certChain = JAKeyStore.loadPubX509(file);
+					
+					if (certChain != null)
+						user = UserFactory.getByCertificate(certChain);
 				}
 			}
 			catch (Throwable t) {
