@@ -68,9 +68,6 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 	public JAliEnCommandkill(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-
-		if(alArguments.size()<1)
-			throw new JAliEnCommandException();
 		
 		queueIds = new ArrayList<>(alArguments.size());
 		
