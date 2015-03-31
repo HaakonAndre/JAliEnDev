@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 import joptsimple.OptionException;
@@ -26,7 +27,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	/**
 	 * the list of directories that will be created
 	 * */
-	private ArrayList<String> alPaths = null;
+	private List<String> alPaths = null;
 	
 	private boolean success = true;
 	
@@ -156,8 +157,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			final OptionSet options = parser.parse(alArguments
 					.toArray(new String[] {}));
 
-			alPaths = new ArrayList<>(options.nonOptionArguments().size());
-			alPaths.addAll(options.nonOptionArguments());
+			alPaths = optionToString(options.nonOptionArguments());
 
 			if(options.has("s"))
 				silent();

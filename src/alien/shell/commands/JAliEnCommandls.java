@@ -51,7 +51,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	private boolean bB = false;
 
-	private ArrayList<String> alPaths = null;
+	private List<String> alPaths = null;
 
 	/**
 	 * list of the LFNs that came up by the ls command
@@ -253,8 +253,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
-			alPaths = new ArrayList<>(options.nonOptionArguments().size());
-			alPaths.addAll(options.nonOptionArguments());
+			alPaths = optionToString(options.nonOptionArguments());
 
 			bL = options.has("l");
 			// bBulk = options.has("bulk");

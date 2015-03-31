@@ -923,10 +923,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (options.has("t") && options.hasArgument("t"))
 				out.printOutln("t has val: " + (String) options.valueOf("t"));
 
-			source = options.nonOptionArguments().get(0);
+			final List<String> nonOptionArguments = optionToString(options.nonOptionArguments());
+			
+			source = nonOptionArguments.get(0);
 			if (!(options.nonOptionArguments().size() == 1 && options.has("t")))
-				target = options.nonOptionArguments().get(1);
-
+				target = nonOptionArguments.get(1);
 		}
 		catch (final OptionException e) {
 			printHelp();

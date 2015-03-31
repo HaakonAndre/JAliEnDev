@@ -3,7 +3,6 @@ package alien.io.xrootd;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -360,8 +359,7 @@ public class XrootdCleanup {
 
 	/**
 	 * @param args
-	 *            the only argument taken by this class is the name of the
-	 *            storage to be cleaned
+	 *            the only argument taken by this class is the name of the storage to be cleaned
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
@@ -392,15 +390,14 @@ public class XrootdCleanup {
 
 		System.err.println("Parallel threads per SE : " + threads);
 
-		Collection<String> ses;
+		final List<String> ses = new LinkedList<>();
 
-		if (options.has("a")) {
-			ses = new LinkedList<>();
-
+		if (options.has("a"))
 			for (final SE se : SEUtils.getSEs(null))
 				ses.add(se.getName());
-		} else
-			ses = options.nonOptionArguments();
+		else
+			for (final Object o : options.nonOptionArguments())
+				ses.add(o.toString());
 
 		for (final String se : ses) {
 			final XrootdCleanup cleanup = new XrootdCleanup(se, dryRun, threads);

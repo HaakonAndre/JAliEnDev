@@ -62,7 +62,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	private boolean bL= false;
 	
-	private ArrayList<String> alPaths = null;
+	private List<String> alPaths = null;
 	
 	private Collection<LFN> lfns = null;
 	private List<LFN> directory = null;
@@ -339,8 +339,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 				fileName = (String) options.valueOf("c");
 				
 			}
-			alPaths = new ArrayList<>(options.nonOptionArguments().size());
-			alPaths.addAll(options.nonOptionArguments());
+			
+			alPaths = optionToString(options.nonOptionArguments());
 
 			bL = options.has("l");
 			bS = options.has("s");

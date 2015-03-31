@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 import joptsimple.OptionException;
@@ -17,7 +18,8 @@ import alien.user.AuthorizationChecker;
 public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
 	private boolean bP = false;
-	private ArrayList<String> alPaths = null;
+	private List<String> alPaths = null;
+	
 	@Override
 	public void run() {
 
@@ -165,10 +167,9 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 			parser.accepts("s");
 			
 
-			final OptionSet options = parser.parse(alArguments
-					.toArray(new String[] {}));
-			alPaths = new ArrayList<>(options.nonOptionArguments().size());
-			alPaths.addAll(options.nonOptionArguments());
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
+
+			alPaths = optionToString(options.nonOptionArguments());
 
 			if(options.has("s"))
 				silent();

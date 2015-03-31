@@ -1,5 +1,6 @@
 package alien.shell.commands;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -241,4 +242,22 @@ public abstract class JAliEnBaseCommand extends Thread{
 		return new String(c);
 	}
 	
+	/**
+	 * For the new jopt library, convert the options from generic objects to Strings
+	 * 
+	 * @param options
+	 * @return
+	 */
+	public static final List<String> optionToString(final List<?> options){
+		if (options == null)
+			return null;
+		
+		final LinkedList<String> ret = new LinkedList<>();
+		
+		for (final Object o: options){
+			ret.add(o.toString());
+		}
+		
+		return ret;
+	}
 }

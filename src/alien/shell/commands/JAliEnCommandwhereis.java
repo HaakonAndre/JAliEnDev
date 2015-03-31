@@ -39,68 +39,47 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	public void run() {
 
 		String guid = null;
-		
-		if (bG) 
-		{
+
+		if (bG) {
 			guid = lfnOrGuid;
-		} 
-		else 
-		{
-			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
-					commander.user.getName(), commander.getCurrentDir()
-							.getCanonicalName(), lfnOrGuid));
-			if(lfn!=null && lfn.guid!=null)
+		} else {
+			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfnOrGuid));
+			if (lfn != null && lfn.guid != null)
 				guid = lfn.guid.toString();
 		}
 		// what message in case of error?
-		if (guid != null) 
-		{
+		if (guid != null) {
 
 			Set<PFN> pfns = commander.c_api.getPFNs(guid);
 
 			if (bR)
 				if (pfns.toArray()[0] != null)
-					if (((PFN) pfns.toArray()[0]).pfn.toLowerCase().startsWith(
-							"guid://"))
-						pfns = commander.c_api.getGUID(
-								((PFN) pfns.toArray()[0]).pfn.substring(8, 44))
-								.getPFNs();
-			if(out.isRootPrinter())
-			{
+					if (((PFN) pfns.toArray()[0]).pfn.toLowerCase().startsWith("guid://"))
+						pfns = commander.c_api.getGUID(((PFN) pfns.toArray()[0]).pfn.substring(8, 44)).getPFNs();
+			if (out.isRootPrinter()) {
 				if (!isSilent())
-					out.setField("value ", AlienTime.getStamp()
-						+ " the file "
-						+ lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1,
-								lfnOrGuid.length()) + " is in");
-				for (PFN pfn : pfns) 
-				{
+					out.setField("value ", AlienTime.getStamp() + " the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in");
+				for (PFN pfn : pfns) {
 					String se = commander.c_api.getSE(pfn.seNumber).seName;
 					if (!isSilent())
-						out.setField("\t\t SE => ",padRight(se, 30) + " pfn =>"
-								+ pfn.pfn + "\n");
+						out.setField("\t\t SE => ", padRight(se, 30) + " pfn =>" + pfn.pfn + "\n");
 				}
 			}
-			
-			else{
-			
-			if (!isSilent())
-				out.printOutln(AlienTime.getStamp()
-						+ " the file "
-						+ lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1,
-								lfnOrGuid.length()) + " is in\n");
-			for (PFN pfn : pfns) 
-			{
 
-				String se = commander.c_api.getSE(pfn.seNumber).seName;
+			else {
+
 				if (!isSilent())
-					out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>"
-							+ pfn.pfn + "\n");
+					out.printOutln(AlienTime.getStamp() + " the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in\n");
+				for (PFN pfn : pfns) {
+
+					String se = commander.c_api.getSE(pfn.seNumber).seName;
+					if (!isSilent())
+						out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>" + pfn.pfn + "\n");
+				}
 			}
-			}
-		} 
-		
-		else 
-		{
+		}
+
+		else {
 			if (!isSilent())
 				out.printOutln("No such file: [" + lfnOrGuid + "]");
 		}
@@ -111,12 +90,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		
+
 		out.printOutln();
-		out.printOutln(helpUsage("whereis","[-options] [<filename>]"));
+		out.printOutln(helpUsage("whereis", "[-options] [<filename>]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-g","use the lfn as guid"));
-		out.printOutln(helpOption("-r","resolve links (do not give back pointers to zip archives)"));
+		out.printOutln(helpOption("-g", "use the lfn as guid"));
+		out.printOutln(helpOption("-r", "resolve links (do not give back pointers to zip archives)"));
 		out.printOutln();
 	}
 
@@ -132,27 +111,26 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
-	public JAliEnCommandwhereis(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out,alArguments);
+	public JAliEnCommandwhereis(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, out, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("g");
 
-			final OptionSet options = parser.parse(alArguments
-					.toArray(new String[] {}));
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			bG = options.has("g");
 
 			if (options.nonOptionArguments().iterator().hasNext())
-				lfnOrGuid = options.nonOptionArguments().iterator().next();
+				lfnOrGuid = options.nonOptionArguments().iterator().next().toString();
 			else
 				printHelp();
 		} catch (OptionException e) {

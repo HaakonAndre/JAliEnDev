@@ -210,21 +210,18 @@ public class XrootdCleanupSingle {
 			return;
 		}
 
-		Collection<String> ses;
+		final Collection<String> ses = new LinkedList<>();
 
-		if (options.has("a")) {
-			ses = new LinkedList<>();
-
+		if (options.has("a"))
 			for (final SE se : SEUtils.getSEs(null))
 				ses.add(se.getName());
-		} else if (options.has("d")) {
-			ses = new LinkedList<>();
-
+		else if (options.has("d")) {
 			for (final SE se : SEUtils.getSEs(null))
 				if (se.isQosType("disk"))
 					ses.add(se.getName());
 		} else
-			ses = options.nonOptionArguments();
+			for (final Object o : options.nonOptionArguments())
+				ses.add(o.toString());
 
 		final long lStart = System.currentTimeMillis();
 

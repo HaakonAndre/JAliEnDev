@@ -7,7 +7,6 @@ import java.util.List;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-
 import alien.perl.commands.AlienTime;
 
 /**
@@ -32,52 +31,40 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * execute the sclog
 	 */
 	@Override
-	public void run() 
-	{
-		if(out.isRootPrinter())
-		{
-			if (logno.intValue() != -1) 
-			{
+	public void run() {
+		if (out.isRootPrinter()) {
+			if (logno.intValue() != -1) {
 				if (bC)
 					scrlogs.put(logno, new ArrayList<String>());
-				else if (scrlogs.get(logno) != null) 
-				{
+				else if (scrlogs.get(logno) != null) {
 					out.setField("message", ":" + logno + " [screenlog pasting]");
-					for (String logline : scrlogs.get(logno)) 
-					{
+					for (String logline : scrlogs.get(logno)) {
 						out.setField("value", logline);
 					}
-				}
-				else
-					out.setField("message",":" + logno + " [screenlog is empty]");
+				} else
+					out.setField("message", ":" + logno + " [screenlog is empty]");
+			}
+		} else {
+			if (logno.intValue() != -1) {
+				if (bC)
+					scrlogs.put(logno, new ArrayList<String>());
+				else if (scrlogs.get(logno) != null) {
+					System.out.println(":" + logno + " [screenlog pasting]");
+					for (String logline : scrlogs.get(logno)) {
+						System.out.println(logline);
+					}
+				} else
+					System.out.println(":" + logno + " [screenlog is empty]");
 			}
 		}
-		else
-		{
-		if (logno.intValue() != -1) 
-		{
-			if (bC)
-				scrlogs.put(logno, new ArrayList<String>());
-			else if (scrlogs.get(logno) != null) 
-			{
-				System.out.println(":" + logno + " [screenlog pasting]");
-				for (String logline : scrlogs.get(logno)) 
-				{
-					System.out.println(logline);
-				}
-			}
-			else
-				System.out.println(":" + logno + " [screenlog is empty]");
-		}
-		}
-		
-		
+
 	}
 
 	/**
 	 * get the directory listing of the ls
-	 * @param logno 
-	 * @param line 
+	 * 
+	 * @param logno
+	 * @param line
 	 * 
 	 */
 	protected static void addScreenLogLine(Integer logno, String line) {
@@ -95,10 +82,8 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		System.out.println(AlienTime.getStamp() + "Usage: scrlog [-c] <no>");
-		System.out
-				.println("You have 0-9 log screens, that you can fill and display");
-		System.out
-				.println("call '<command> &<no>' to log <command> to screen <no> in background");
+		System.out.println("You have 0-9 log screens, that you can fill and display");
+		System.out.println("call '<command> &<no>' to log <command> to screen <no> in background");
 		System.out.println("default '<command> &' will go to numer 0");
 		System.out.println("scrlog <no> to display the log");
 		System.out.println("scrlog -c <no> to clear the log");
@@ -119,13 +104,13 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 * 
 	 * out.printOutln( the arguments of the command
-	 * @param commander 
-	 * @param out 
-	 * @param alArguments 
-	 * @throws OptionException 
+	 * 
+	 * @param commander
+	 * @param out
+	 * @param alArguments
+	 * @throws OptionException
 	 */
-	public JAliEnCommandscrlog(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException{
+	public JAliEnCommandscrlog(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		try {
@@ -133,16 +118,15 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("c");
 
-			final OptionSet options = parser.parse(alArguments
-					.toArray(new String[] {}));
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			if (options.nonOptionArguments().size() != 1)
 				printHelp();
 			else
 				try {
-					logno = Integer.valueOf(options.nonOptionArguments().get(0));
+					logno = Integer.valueOf(options.nonOptionArguments().get(0).toString());
 				} catch (NumberFormatException n) {
-					//ignore
+					// ignore
 				}
 
 			bC = options.has("c");

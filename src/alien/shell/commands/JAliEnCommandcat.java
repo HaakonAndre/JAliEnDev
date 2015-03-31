@@ -224,7 +224,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 				}
 				
 				alPaths = new ArrayList<>(options.nonOptionArguments().size());
-				alPaths.addAll(options.nonOptionArguments());
+				alPaths.addAll(optionToString(options.nonOptionArguments()));
 
 				
 				bO = options.has("o");

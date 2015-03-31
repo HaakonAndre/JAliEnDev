@@ -2,7 +2,6 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 import java.util.Set;
-import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -195,7 +194,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		if (options.nonOptionArguments().size() != 1)
 			throw new JAliEnCommandException();
 
-		sPath = options.nonOptionArguments().get(0);
+		sPath = options.nonOptionArguments().get(0).toString();
 
 	}
 

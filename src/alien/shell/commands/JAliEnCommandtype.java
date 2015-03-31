@@ -28,28 +28,21 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	public void run() {
 
 		if (sPath != null)
-			
-			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
-					commander.user.getName(), commander.getCurrentDir()
-							.getCanonicalName(), sPath));
+
+			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sPath));
 
 		if (lfn == null)
 			out.printOutln("No such file or directory: [" + sPath + "]");
 
-		if (out.isRootPrinter())
-		{
+		if (out.isRootPrinter()) {
 			out.nextResult();
 			if (lfn.isFile())
-				out.setField("type","file");
-			else 
-				if(lfn.isDirectory())
-					out.setField("type","directory");
-			else 
-				if(lfn.isCollection())
-					out.setField("type","collection");
-		}
-		else 
-		{
+				out.setField("type", "file");
+			else if (lfn.isDirectory())
+				out.setField("type", "directory");
+			else if (lfn.isCollection())
+				out.setField("type", "collection");
+		} else {
 			String ret = "";
 			if (lfn.isFile())
 				ret += "file";
@@ -91,11 +84,8 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 		if (lfn == null)
 			return super.deserializeForRoot(0);
-		
 
-		String ret = RootPrintWriter.columnseparator
-				+ RootPrintWriter.fielddescriptor + "type"
-				+ RootPrintWriter.fieldseparator;
+		String ret = RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "type" + RootPrintWriter.fieldseparator;
 
 		if (lfn.isFile())
 			ret += "file";
@@ -109,7 +99,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 		return ret;
 
 	}
-	
+
 	/**
 	 * Constructor needed for the command factory in commander
 	 * 
@@ -120,8 +110,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandtype(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandtype(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		final OptionParser parser = new OptionParser();
@@ -129,8 +118,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 		parser.accepts("z");
 		parser.accepts("s");
 
-		final OptionSet options = parser.parse(alArguments
-				.toArray(new String[] {}));
+		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 		if (options.has("s"))
 			silent();
@@ -138,7 +126,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 		if (options.nonOptionArguments().size() != 1)
 			throw new JAliEnCommandException();
 
-		sPath = options.nonOptionArguments().get(0);
+		sPath = options.nonOptionArguments().get(0).toString();
 
 	}
 
