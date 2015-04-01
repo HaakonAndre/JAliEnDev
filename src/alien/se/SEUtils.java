@@ -732,7 +732,7 @@ public final class SEUtils {
 
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
 
-		db.setReadOnly(true);
+		db.setReadOnly(false);
 
 		try {
 			for (final Map.Entry<Integer, SEUsageStats> entry : m.entrySet()) {
