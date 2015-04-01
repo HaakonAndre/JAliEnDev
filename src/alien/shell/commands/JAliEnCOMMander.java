@@ -49,15 +49,14 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] {"ls", "ls2", 
-			"get", "cat", "whereis", "cp", "cd", "time", "mkdir","mkdir2", "find",
-			"find2", "listFilesFromCollection", "listFilesFromCollection2", "scrlog", 
-			"submit", "motd","access","access2","commit","commit2", "packages","packages2", 
-			"pwd","pwd2", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "role", 
-			"type","type2", "kill", "lfn2guid", "guid2lfn", "w", "uptime",
-			"addFileToCollection", "addMirror", "addTag", "addTagValue", "chgroup", "chown",
-			"createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo",
-			"jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum",
+	private static final String[] jAliEnCommandList = new String[] {"ls", 
+			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
+			"listFilesFromCollection", "scrlog", "submit", "motd","access",
+			"commit", "packages", "pwd", "ps", "rmdir", "rm", "mv", 
+			"masterjob", "user", "touch", "role", "type", "kill", "lfn2guid", 
+			"guid2lfn", "w", "uptime", "addFileToCollection", "addMirror", 
+			"addTag", "addTagValue", "chgroup", "chown", "createCollection", 
+			"deleteMirror", "df", "du", "fquota", "jobinfo","jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum",
 			"mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag",
 			"removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue",
 			"spy", "top"};
