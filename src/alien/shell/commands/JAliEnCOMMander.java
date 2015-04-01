@@ -56,12 +56,12 @@ public class JAliEnCOMMander extends Thread {
 			"masterjob", "user", "touch", "role", "type", "kill", "lfn2guid", 
 			"guid2lfn", "w", "uptime", "addFileToCollection", "addMirror", 
 			"addTag", "addTagValue", "chgroup", "chown", "createCollection", 
-			"deleteMirror", "df", "du", "fquota", "jobinfo","jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum",
-			"mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag",
-			"removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue",
-			"spy", "top"};
+			"deleteMirror", "df", "du", "fquota", "jobinfo","jquota", "killTransfer", 
+			"listSEDistance", "listTransfer", "md5sum", "mirror", "queue", 
+			"queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", 
+			"resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top"};
 	
-	private static final String[] jAlienAdminCommandList = new String[]{
+	private static final String[] jAliEnAdminCommandList = new String[]{
 			"addTrigger", "addHost", "queue", "register", "addSE", "addUser",
 			"calculateFileQuota", "calculateJobQuota"
 	};
@@ -72,8 +72,10 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] commandList;
 
 	static {
-		final List<String> comms = new ArrayList<>(Arrays.asList(jAliEnCommandList));
-
+		List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));		
+		final List<String> comms = comm_set; 
+		if( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) )
+			comms.addAll( Arrays.asList(jAliEnAdminCommandList) );
 		comms.add("shutdown");
 
 		comms.addAll(FileEditor.getAvailableEditorCommands());
@@ -84,8 +86,9 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection", "cdir", "commandlist", "gfilecomplete", "cdirtiled", "blackwhite", "color",
-			"setshell", "type" };
+	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", 
+				"listFilesFromCollection", "cdir", "commandlist", "gfilecomplete", "cdirtiled", 
+				"blackwhite", "color", "setshell", "type" };
 
 	private UIPrintWriter out = null;
 
@@ -217,6 +220,15 @@ public class JAliEnCOMMander extends Thread {
 				commands.append(' ');
 
 			commands.append(commandList[i]);
+		}
+		
+		if( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole() ) ){
+			for (int i = 0; i < commandList.length; i++) {
+				if (i > 0)
+					commands.append(' ');
+
+				commands.append(commandList[i]);
+			}
 		}
 
 		return commands.toString();
@@ -437,7 +449,9 @@ public class JAliEnCOMMander extends Thread {
 							args.remove(arg[i]);
 						}
 
-		if (!Arrays.asList(jAliEnCommandList).contains(comm)) {
+		if (!Arrays.asList(jAliEnCommandList).contains(comm) || 
+				( AliEnPrincipal.roleIsAdmin( getRole()) && 
+							!Arrays.asList(jAliEnAdminCommandList).contains(comm) ) ) {
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
 				if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
