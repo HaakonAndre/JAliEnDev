@@ -34,7 +34,6 @@ import lazyj.Utils;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
-import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -53,7 +52,6 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
 
-import sun.security.pkcs.PKCS8Key;
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 
