@@ -54,7 +54,18 @@ public class JAliEnCOMMander extends Thread {
 			"find2", "listFilesFromCollection", "listFilesFromCollection2", "scrlog", 
 			"submit", "motd","access","access2","commit","commit2", "packages","packages2", 
 			"pwd","pwd2", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "role", 
-			"type","type2", "kill", "lfn2guid", "guid2lfn", "w", "uptime" };
+			"type","type2", "kill", "lfn2guid", "guid2lfn", "w", "uptime",
+			"addFileToCollection", "addMirror", "addTag", "addTagValue", "chgroup", "chown",
+			"createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo",
+			"jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum",
+			"mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag",
+			"removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue",
+			"spy", "top"};
+	
+	private static final String[] jAlienAdminCommandList = new String[]{
+			"addTrigger", "addHost", "queue", "register", "addSE", "addUser",
+			"calculateFileQuota", "calculateJobQuota"
+	};
 
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
