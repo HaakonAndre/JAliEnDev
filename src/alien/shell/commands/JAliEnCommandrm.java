@@ -141,7 +141,7 @@ public class JAliEnCommandrm extends JAliEnBaseCommand
 		catch (OptionException e)
 		{
 			printHelp();
-			throw e;
+			//throw e;
 		}
 	}
 }
