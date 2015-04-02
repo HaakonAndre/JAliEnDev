@@ -66,7 +66,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			{
 			if(bP)
 			{
-				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
+					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path),true)==null)
 				{
@@ -78,7 +78,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			}
 			else 
 			{
-				if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
+					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
 						commander.user.getName(),
 						commander.getCurrentDir().getCanonicalName(),path))==null)
 				{

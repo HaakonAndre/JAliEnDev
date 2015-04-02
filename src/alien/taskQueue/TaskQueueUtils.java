@@ -1870,7 +1870,7 @@ public class TaskQueueUtils {
 
 			setJobStatus(j, JobStatus.KILLED,"",null,null,null);
 
-			System.out.println( "Exec host: " + j.execHost );
+			System.out.println( "Exec host: " + j.execHost );	
 			
 			if (j.execHost != null) {
 

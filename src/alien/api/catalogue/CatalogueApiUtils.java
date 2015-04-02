@@ -281,6 +281,24 @@ public class CatalogueApiUtils {
 	public LFN createCatalogueDirectory(final String path) {
 		return createCatalogueDirectory(path, false);
 	}
+	
+	/**
+	 * 
+	 * @param path
+	 * @return LFN of the created file, if successful, else <code>null</code>
+	 */
+	public LFN touchLFN(final String path){
+		try {
+			return Dispatcher.execute(new TouchLFNfromString(commander.getUser(), 
+									commander.getRole(), path )).getLFN();
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not create the CatDir: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
 
 	/**
 	 * Create a directory in the Catalogue
