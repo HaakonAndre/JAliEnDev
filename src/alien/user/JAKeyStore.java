@@ -434,7 +434,7 @@ public class JAKeyStore {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final PasswordFinder pFinder) throws Exception {
-		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder.getPassword()), loadPubX509(pubKeyLocation)), new KeyStore.PasswordProtection(pass));
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder!=null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation)), new KeyStore.PasswordProtection(pass));
 	}
 
 	@SuppressWarnings("unused")
