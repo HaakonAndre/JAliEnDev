@@ -521,6 +521,8 @@ public class TextCache extends ExtendedServlet {
 					pwOut.flush();
 					return;
 				}
+				
+				final int largestPartSize = sLargestPart.length();
 
 				synchronized (namespace) {
 					final Iterator<Map.Entry<String, CacheValue>> it = namespace.cache.entrySet().iterator();
@@ -532,7 +534,7 @@ public class TextCache extends ExtendedServlet {
 
 						final String itKey = entry.getKey();
 
-						if (sLargestPart.length() > 0 && itKey.indexOf(sLargestPart) < 0)
+						if (largestPartSize > 0 && (itKey.length() < largestPartSize || itKey.indexOf(sLargestPart) < 0) )
 							continue;
 
 						if (m == null)
@@ -597,8 +599,8 @@ public class TextCache extends ExtendedServlet {
 
 	public static void invalidateLFN(final String lfn) {
 		try {
-			invalidateCache("whereis", "irtc_" + lfn, "irc_" + lfn);
-			invalidateCache("access", "^" + lfn + ".*");
+			invalidateCache("whereis", "(irtc|irc)_" + lfn);
+			invalidateCache("access", lfn + ".*");
 		} catch (final Throwable t) {
 			// ignore
 		}
