@@ -656,7 +656,7 @@ public class TextCache extends ExtendedServlet {
 
 			if (ConfigUtils.getConfig().getb("alien.servlets.TextCache.web_log", false))
 				try {
-					pwLogOut = new PrintWriter(new FileWriter("access_log"));
+					pwLogOut = new PrintWriter(new FileWriter("access_log", true));
 				} catch (final IOException ioe) {
 					System.err.println("Cannot open access_log: " + ioe.getMessage());
 				}
