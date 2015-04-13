@@ -676,17 +676,18 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		try {
 			if (db.query(q, false, Long.valueOf(entryId))) {
-				try{
-					String toWipe = getCanonicalName();
+				if (notifyCache)
+					try{
+						String toWipe = getCanonicalName();
+						
+						if(isDirectory())
+							toWipe += ".*";
 					
-					if(isDirectory())
-						toWipe += ".*";
-				
-					TextCache.invalidateLFN(toWipe);
-				}
-				catch (final Throwable t){
-					logger.log(java.util.logging.Level.WARNING, "Cannot invalidate cache entry", t);
-				}
+						TextCache.invalidateLFN(toWipe);
+					}
+					catch (final Throwable t){
+						logger.log(java.util.logging.Level.WARNING, "Cannot invalidate cache entry", t);
+					}
 				
 				exists = false;
 				entryId = 0;
