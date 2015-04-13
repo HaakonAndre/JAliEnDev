@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.GUIDUtils;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -17,6 +18,11 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(), commander.getCurrentDir()
 							.getCanonicalName(), lfnName));
+			if( lfn.md5 != null )
+				out.printOutln ( "md5: " + lfn.md5 );
+			else
+				out.printErrln( "Can not get md5 for this file" );
+			//GUID guid = GUIDUtils.getGUID(  );
 		}
 
 	}
