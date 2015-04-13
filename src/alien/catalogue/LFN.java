@@ -620,7 +620,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			db.close();
 		}
 	}
-
 	/**
 	 * Delete this LFN in the Catalogue
 	 * 
@@ -633,6 +632,24 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * @return <code>true</code> if this LFN entry was deleted in the database
 	 */
 	public boolean delete(final boolean purge, final boolean recursive) {
+	    return delete(purge, recursive, true);
+	}
+	
+	/**
+	 * Delete this LFN in the Catalogue
+	 * 
+	 * @param purge
+	 *            physically delete the PFNs
+	 * @param recursive
+	 *            for directories, remove all subentries. <B>This code doesn't
+	 *            check permissions, do the check before!</B>
+	 * @param notifyCache
+	 *            whether or not to notify AliEn's access and whereis caches of
+	 *            removed entries
+	 * 
+	 * @return <code>true</code> if this LFN entry was deleted in the database
+	 */
+	public boolean delete(final boolean purge, final boolean recursive, final boolean notifyCache) {
 		if (!exists)
 			throw new IllegalAccessError("You asked to delete an LFN that doesn't exist in the database");
 
@@ -644,8 +661,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 					return false; // asked to delete a non-empty directory
 									// without indicating the recursive flag
 
+				// do not notify the cache of every subentry but only once for the entire folder
 				for (final LFN subentry : subentries)
-					subentry.delete(purge, recursive);
+					subentry.delete(purge, recursive, false);
 			}
 		}
 
@@ -658,7 +676,13 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		try {
 			if (db.query(q, false, Long.valueOf(entryId))) {
 				try{
-					TextCache.invalidateLFN(getCanonicalName());
+					String toWipe = getCanonicalName();
+					
+					if(isDirectory()){
+						toWipe += ".*";
+					}
+				
+					TextCache.invalidateLFN(toWipe);
 				}
 				catch (final Throwable t){
 					logger.log(java.util.logging.Level.WARNING, "Cannot invalidate cache entry", t);
