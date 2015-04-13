@@ -9,10 +9,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -181,7 +183,7 @@ public class TextCache extends ExtendedServlet {
 				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
 					final Namespace namespace = entry.getValue();
 
-					synchronized (namespace){
+					synchronized (namespace) {
 						for (final Map.Entry<String, CacheValue> entryToDelete : namespace.cache.entrySet())
 							notifyEntryRemoved(entry.getKey(), entryToDelete.getKey(), entryToDelete.getValue());
 					}
@@ -332,6 +334,7 @@ public class TextCache extends ExtendedServlet {
 
 		if (logSlowQueries > 0 && duration > logSlowQueries)
 			System.err.println("Slow query : " + Format.point(duration / 1000000d) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
+
 	}
 
 	private final void execRealGet() {
@@ -521,7 +524,7 @@ public class TextCache extends ExtendedServlet {
 					pwOut.flush();
 					return;
 				}
-				
+
 				final int largestPartSize = sLargestPart.length();
 
 				synchronized (namespace) {
@@ -534,7 +537,7 @@ public class TextCache extends ExtendedServlet {
 
 						final String itKey = entry.getKey();
 
-						if (largestPartSize > 0 && (itKey.length() < largestPartSize || itKey.indexOf(sLargestPart) < 0) )
+						if (largestPartSize > 0 && (itKey.length() < largestPartSize || itKey.indexOf(sLargestPart) < 0))
 							continue;
 
 						if (m == null)
@@ -636,4 +639,51 @@ public class TextCache extends ExtendedServlet {
 		return Utils.download(sb.toString(), null);
 	}
 
+	private static final SimpleDateFormat apacheTimeFormat = new SimpleDateFormat("dd/MMM/yyyy:HH:mm:ss ZZ");
+
+	private static PrintWriter pwLogOut = null;
+
+	private static long lastOpened = 0;
+
+	private static synchronized PrintWriter getLogWriter() {
+		if (System.currentTimeMillis() - lastOpened > 1000 * 60) {
+			if (pwLogOut != null)
+				pwLogOut.close();
+
+			pwLogOut = null;
+
+			if (ConfigUtils.getConfig().getb("alien.servlets.TextCache.web_log", false))
+				try {
+					pwLogOut = new PrintWriter("access_log");
+				} catch (final IOException ioe) {
+					System.err.println("Cannot open access_log: " + ioe.getMessage());
+				}
+
+			lastOpened = System.currentTimeMillis();
+		}
+
+		return pwLogOut;
+	}
+
+	public synchronized void logRequest() {
+		@SuppressWarnings("resource")
+		final PrintWriter pw = getLogWriter();
+
+		if (pw != null)
+			try {
+				final String sIP = request.getRemoteAddr();
+
+				String sDate;
+
+				synchronized (apacheTimeFormat) {
+					sDate = apacheTimeFormat.format(new Date());
+				}
+
+				final String sURL = request.getMethod() + getCurrentPage() + " HTTP/1.1";
+
+				pw.println(sIP + " [" + sDate + "] \"" + sURL + "\"");
+			} catch (final Throwable t) {
+				// ignore
+			}
+	}
 }
