@@ -491,7 +491,7 @@ public class TextCache extends ExtendedServlet {
 			for (final String keyValue : getValues("key")) {
 				String sLargestPart = "";
 
-				final String[] parts = keyValue.split("\\.(\\+|\\*)");
+				final String[] parts = keyValue.split("\\.(\\+|\\*)|\\(|\\)|\\|");
 
 				for (final String part : parts)
 					if (part.length() > sLargestPart.length())
