@@ -182,7 +182,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	LFN(final String canonicalLFN){
 		this.canonicalName = canonicalLFN;
 		
-		int idx = canonicalName.lastIndexOf('/');
+		final int idx = canonicalName.lastIndexOf('/');
 		
 		if (idx>0)
 			lfn = canonicalName.substring(idx+1);
@@ -663,7 +663,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 				// do not notify the cache of every subentry but only once for the entire folder
 				for (final LFN subentry : subentries)
-					subentry.delete(purge, recursive, false);
+					if (!subentry.delete(purge, recursive, false))
+						return false;
 			}
 		}
 
@@ -678,9 +679,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				try{
 					String toWipe = getCanonicalName();
 					
-					if(isDirectory()){
+					if(isDirectory())
 						toWipe += ".*";
-					}
 				
 					TextCache.invalidateLFN(toWipe);
 				}
