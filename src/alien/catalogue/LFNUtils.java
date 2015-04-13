@@ -409,7 +409,7 @@ public class LFNUtils {
 
 			lfn.type = 'f';
 			lfn.size = 0;
-			lfn.md5 = null;
+			lfn.md5 = "d41d8cd98f00b204e9800998ecf8427e";
 			lfn.guid = null;
 			lfn.guidtime = null;
 			lfn.owner = user.getName();
