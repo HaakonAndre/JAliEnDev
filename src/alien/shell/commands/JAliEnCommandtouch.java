@@ -3,12 +3,18 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.catalogue.FileSystemUtils;
+
 public class JAliEnCommandtouch extends JAliEnBaseCommand {
 	private final List<String> filelist;
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
+		for (String path: this.filelist){
+			commander.c_api.touchLFN(FileSystemUtils.getAbsolutePath(
+				commander.user.getName(),
+				commander.getCurrentDir().getCanonicalName(),path));
+		}
 		
 	}
 

@@ -293,7 +293,7 @@ public class CatalogueApiUtils {
 									commander.getRole(), path )).getLFN();
 		}
 		catch (final ServerException e) {
-			logger.log(Level.WARNING, "Could not create the CatDir: " + path);
+			logger.log(Level.WARNING, "Could not create the file: " + path);
 			e.getCause().printStackTrace();
 		}
 
