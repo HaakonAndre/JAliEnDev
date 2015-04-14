@@ -13,7 +13,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 		//Quota q = QuotaUtilities.getJobQuota( username );
 		FileQuota q = commander.q_api.getFileQuota();
 		if( q == null ){
-			out.printErrln("No jobs quota found for user " + username );
+			out.printErrln("No file quota found for user " + username );
 			return;
 		}
 /*		out.setField( "user", new String( q.user ) );
