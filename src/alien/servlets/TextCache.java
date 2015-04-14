@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.FileWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
@@ -335,6 +336,7 @@ public class TextCache extends ExtendedServlet {
 		if (logSlowQueries > 0 && duration > logSlowQueries)
 			System.err.println("Slow query : " + Format.point(duration / 1000000d) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
 
+		logRequest();
 	}
 
 	private final void execRealGet() {
@@ -654,11 +656,11 @@ public class TextCache extends ExtendedServlet {
 
 			if (ConfigUtils.getConfig().getb("alien.servlets.TextCache.web_log", false))
 				try {
-					pwLogOut = new PrintWriter("access_log");
+					pwLogOut = new PrintWriter(new FileWriter("access_log", true));
 				} catch (final IOException ioe) {
 					System.err.println("Cannot open access_log: " + ioe.getMessage());
 				}
-
+				
 			lastOpened = System.currentTimeMillis();
 		}
 
@@ -679,7 +681,7 @@ public class TextCache extends ExtendedServlet {
 					sDate = apacheTimeFormat.format(new Date());
 				}
 
-				final String sURL = request.getMethod() + getCurrentPage() + " HTTP/1.1";
+				final String sURL = request.getMethod() + " " + getCurrentPage() + " HTTP/1.1";
 
 				pw.println(sIP + " [" + sDate + "] \"" + sURL + "\"");
 			} catch (final Throwable t) {
