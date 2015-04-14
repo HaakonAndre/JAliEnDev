@@ -12,6 +12,8 @@ import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
 import alien.quotas.Quota;
+import alien.quotas.FileQuota;
+
 
 /**
  * Get the JDL object
@@ -242,14 +244,25 @@ public class TaskQueueApiUtils {
 	public Quota getJobsQuota(){
 		try{
 			GetQuota gq = new GetQuota(commander.getUser());
-
 			Dispatcher.execute(gq);
 			return gq.getQuota();
 		}
 		catch( Exception e ){
-			;
+			System.out.println( "Exception in GetQuota: " + e.getMessage() );
 		}
 		return null;
 	}
 
+	
+	public FileQuota getFileQuota(){
+		try{
+			GetFileQuota gq = new GetFileQuota(commander.getUser());
+			Dispatcher.execute(gq);
+			return gq.getFileQuota();
+		}
+		catch( Exception e ){
+			System.out.println( "Exception in GetQuota: " + e.getMessage() );
+		}
+		return null;
+	}
 }
