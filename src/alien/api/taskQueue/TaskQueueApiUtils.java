@@ -11,6 +11,7 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
+import alien.quotas.Quota;
 
 /**
  * Get the JDL object
@@ -236,6 +237,19 @@ public class TaskQueueApiUtils {
 			e.printStackTrace();
 		}
 		return false;
+	}
+	
+	public Quota getJobsQuota(){
+		try{
+			GetQuota gq = new GetQuota(commander.getUser());
+
+			Dispatcher.execute(gq);
+			return gq.getQuota();
+		}
+		catch( Exception e ){
+			;
+		}
+		return null;
 	}
 
 }
