@@ -11,8 +11,9 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	@Override
 	public void run() { 
 		String username = commander.user.getName();
-		System.out.println("________" + username);
-		Quota q = QuotaUtilities.getJobQuota( username );		
+		
+		//Quota q = QuotaUtilities.getJobQuota( username );
+		Quota q = commander.q_api.getJobsQuota();
 		if( q == null ){
 			out.printErrln("No jobs quota found for user " + username );
 			return;
@@ -22,7 +23,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 		out.setField( "maxParallelJobs", Float.toString( q.maxparallelJobs ) );
 		out.setField( "computed priority", Float.toString( q.computedpriority ) );
 		out.setField( "maxUnfinishedJobs", Float.toString( q.maxUnfinishedJobs ) );
-		out.setField( "maxTotalRunningTime", Float.toString( q.maxTotalRunningTime ) );
+		out.setField( "maxTotalRunningTime", Float.toString( q.maxTotalRunningTime ) );			
 	}
 
 	@Override
