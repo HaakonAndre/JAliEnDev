@@ -244,8 +244,8 @@ public class TaskQueueApiUtils {
 	public Quota getJobsQuota(){
 		try{
 			GetQuota gq = new GetQuota(commander.getUser());
-			Dispatcher.execute(gq);
-			return gq.getQuota();
+			GetQuota gqres = Dispatcher.execute(gq);
+			return gqres.getQuota();
 		}
 		catch( Exception e ){
 			System.out.println( "Exception in GetQuota: " + e.getMessage() );
@@ -257,8 +257,9 @@ public class TaskQueueApiUtils {
 	public FileQuota getFileQuota(){
 		try{
 			GetFileQuota gq = new GetFileQuota(commander.getUser());
-			Dispatcher.execute(gq);
-			return gq.getFileQuota();
+			GetFileQuota gqres = Dispatcher.execute(gq);
+			
+			return gqres.getFileQuota();
 		}
 		catch( Exception e ){
 			System.out.println( "Exception in GetQuota: " + e.getMessage() );
