@@ -162,6 +162,21 @@ public final class QuotaUtilities {
 
 		return jobQuotas.get(account.toLowerCase());
 	}
+	
+	/**
+	 * Saves file quota
+	 * 
+	 * @param q
+	 * @return
+	 */
+	public static boolean saveJobQuota( String username, String fld, String val){
+		final DBFunctions db = ConfigUtils.getDB("processes");
+		String query = "UPDATE PRIORITY p LEFT JOIN QUEUE_USER qu "
+				+ "ON qu.user='" + username + "' SET p." 
+				+ fld + "=" + val + " WHERE qu.userid=p.userid";
+		updateJobQuotasCache();
+		return true;
+	}
 
 	/**
 	 * Get the file quota for a particular account
@@ -179,6 +194,20 @@ public final class QuotaUtilities {
 			return null;
 
 		return fileQuotas.get(account.toLowerCase());
+	}
+	
+	/**
+	 * 
+	 * @param q
+	 * @return
+	 */
+	public static boolean saveFileQuota( String username, String fld, String val ){
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		String query = "UPDATE FQUOTA SET " + fld + "='" + val + "'" +
+				" WHERE user='" + username + "'";
+		db.query( query );
+		updateFileQuotasCache();
+		return true;
 	}
 
 	/**
