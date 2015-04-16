@@ -73,9 +73,8 @@ public class JAliEnCOMMander extends Thread {
 
 	static {
 		List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));		
-		final List<String> comms = comm_set; 
-		if( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) )
-			comms.addAll( Arrays.asList(jAliEnAdminCommandList) );
+		final List<String> comms = comm_set;		
+		comms.addAll( Arrays.asList(jAliEnAdminCommandList) );
 		comms.add("shutdown");
 
 		comms.addAll(FileEditor.getAvailableEditorCommands());
@@ -164,7 +163,7 @@ public class JAliEnCOMMander extends Thread {
 		this.curDir = curDir;
 		degraded = false;
 
-		setName("Commander");
+		setName("Commander");		
 	}
 
 	private boolean initializeJCentralConnection() {
@@ -398,7 +397,6 @@ public class JAliEnCOMMander extends Thread {
 	 * 
 	 */
 	public void execute() throws Exception {
-
 		boolean help = false;
 
 		boolean silent = false;
