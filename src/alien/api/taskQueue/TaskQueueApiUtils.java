@@ -266,4 +266,17 @@ public class TaskQueueApiUtils {
 		}
 		return null;
 	}
+	
+	public boolean setFileQuota( String fld, String val){
+		try{
+			SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);
+			SetFileQuota sqres = Dispatcher.execute(sq);
+			
+			return true;
+		}
+		catch( Exception e ){
+			System.out.println( "Exception in GetFileQuota: " + e.getMessage() );
+		}
+		return false;
+	}
 }

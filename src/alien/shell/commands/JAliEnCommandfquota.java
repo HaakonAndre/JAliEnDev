@@ -46,6 +46,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 				return;
 			}
 			// run the update
+			commander.q_api.setFileQuota( this.param_to_set, this.value_to_set.toString() );
 		}
 				
 	}
