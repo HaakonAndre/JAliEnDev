@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import alien.quotas.FileQuota;
 import joptsimple.OptionException;
@@ -8,9 +9,15 @@ import joptsimple.OptionException;
 public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	private boolean isAdmin;
 	private String command;
+	private String user_to_set;
+	private String param_to_set;
+	private Integer value_to_set;
 	
-	public void run() {
-		System.out.println(this.command);
+	private final ArrayList<String> allowed_fields = new ArrayList<String>( 
+			Arrays.asList( "maxNbFiles",
+						"maxTotalSize" ) );
+	
+	public void run() {		
 		if( !this.command.equals("list") && !(isAdmin && this.command.equals("set") ) ){
 			out.printErrln("Wrong command passed" );
 			printHelp();
@@ -18,8 +25,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 		}
 			
 		String username = commander.user.getName();
-		
-		//Quota q = QuotaUtilities.getJobQuota( username );
+				
 		if( command.equals("list") ){
 			FileQuota q = commander.q_api.getFileQuota();
 			if( q == null ){
@@ -31,15 +37,17 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 			return;
 		}
 		
-		if( command.equals("set") ){}
-		
-/*		out.setField( "user", new String( q.user ) );
-		out.setField( "priority", Float.toString( q.priority ) );
-		out.setField( "maxParallelJobs", Float.toString( q.maxparallelJobs ) );
-		out.setField( "computed priority", Float.toString( q.computedpriority ) );
-		out.setField( "maxUnfinishedJobs", Float.toString( q.maxUnfinishedJobs ) );
-		out.setField( "maxTotalRunningTime", Float.toString( q.maxTotalRunningTime ) );
-		*/			
+		if( command.equals("set") ){
+			if( this.param_to_set==null || 
+					this.value_to_set==null || 
+					this.value_to_set==0 ){
+				out.printErrln("Error in parameter or value" );
+				printHelp();
+				return;
+			}
+			// run the update
+		}
+				
 	}
 
 	@Override
@@ -66,6 +74,18 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	public JAliEnCommandfquota(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		this.isAdmin = commander.getUser().canBecome("admin");
-		this.command = alArguments.get(0);
+		if( alArguments.size() > 0 )
+			this.command = alArguments.get(0);
+		if( this.command.equals("set") && alArguments.size()==4 ){
+			this.user_to_set = alArguments.get(1);
+			String param = alArguments.get(2);
+			if( !this.allowed_fields.contains( param ) )
+				return;
+			this.param_to_set = param;
+			try{
+				this.value_to_set = Integer.parseInt( alArguments.get(3) );
+			}
+			catch( Exception e ){}
+		}
 	}
 }

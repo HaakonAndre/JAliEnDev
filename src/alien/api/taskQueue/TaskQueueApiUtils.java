@@ -262,7 +262,7 @@ public class TaskQueueApiUtils {
 			return gqres.getFileQuota();
 		}
 		catch( Exception e ){
-			System.out.println( "Exception in GetQuota: " + e.getMessage() );
+			System.out.println( "Exception in GetFileQuota: " + e.getMessage() );
 		}
 		return null;
 	}
