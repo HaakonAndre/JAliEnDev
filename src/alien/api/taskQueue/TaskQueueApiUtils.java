@@ -269,11 +269,21 @@ public class TaskQueueApiUtils {
 	
 	public boolean setFileQuota( String fld, String val){
 		try{
-			System.out.println("Running set file quota");
 			SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);
 			SetFileQuota sqres = Dispatcher.execute(sq);
-			System.out.println( sqres );
-			return true;
+			return sqres.getSucceeded();
+		}
+		catch( Exception e ){
+			System.out.println( "Exception in setFileQuota: " + e.getMessage() );
+		}
+		return false;
+	}
+	
+	public boolean setJobsQuota( String fld, String val){
+		try{
+			SetFileQuota sq = new SetJobsQuota(commander.getUser(), fld, val);
+			SetFileQuota sqres = Dispatcher.execute(sq);
+			return sqres.getSucceeded();
 		}
 		catch( Exception e ){
 			System.out.println( "Exception in setFileQuota: " + e.getMessage() );

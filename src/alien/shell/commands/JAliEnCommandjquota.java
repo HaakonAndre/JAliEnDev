@@ -1,8 +1,10 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+
 import alien.quotas.QuotaUtilities;
 import alien.quotas.Quota;
+
 import java.util.Arrays;
 
 import joptsimple.OptionException;
@@ -10,6 +12,9 @@ import joptsimple.OptionException;
 public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	private boolean isAdmin;
 	private String command;
+	private String user_to_set;
+	private String param_to_set;
+	private Long value_to_set;
 	private final ArrayList<String> allowed_fields = new ArrayList<String>( 
 								Arrays.asList( 
 											"maxUnfinishedJobs", 
@@ -37,27 +42,63 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 		}
 		
 		if( command.equals("set") ){
-			;
-		}						
+			if( this.param_to_set==null ){
+				out.printErrln("Error in parameter name" );
+				return;
+			}
+			else if( this.value_to_set==null || 
+					this.value_to_set==0 ){
+				out.printErrln("Error in value" );
+				printHelp();
+				return;
+			}
+			// run the update
+			commander.q_api.setJobsQuota( this.param_to_set, this.value_to_set.toString() );
+		}					
 	}
 
 	@Override
 	public void printHelp() {
 		out.printOutln();
-		out.printOutln(helpUsage("jquota",""));		
+		out.printOutln("jquota: Displays information about Job Quotas.");
+		out.printOutln("Usage:");
+		out.printOutln("  jquota list <user>                - list the user quota for job");
+		out.printOutln("                                     use just 'jquota list' for all users");
 		out.printOutln();
+		out.printOutln("  jquota set <user> <field> <value> - set the user quota for job");
+		out.printOutln("                                      (maxUnfinishedJobs, maxTotalCpuCost, maxTotalRunningTime)");
+		out.printOutln("                                      use <user>=% for all users");
 	}
 
 	@Override
 	public boolean canRunWithoutArguments() {
-		return true;
+		return false;
 	}
 	
 	public JAliEnCommandjquota(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+		/*super(commander, out, alArguments);
 		this.isAdmin = commander.getUser().canBecome("admin");
 		if( alArguments.size() > 0 )
-			this.command = alArguments.get(0);
+			this.command = alArguments.get(0);*/
+			
+		super(commander, out, alArguments);
+		this.isAdmin = commander.getUser().canBecome("admin");
+		if( alArguments.size() == 0 )
+			return;
+		this.command = alArguments.get(0);
+		System.out.println( alArguments );
+		if( this.command.equals("set") && alArguments.size()==4 ){
+			this.user_to_set = alArguments.get(1);
+			String param = alArguments.get(2);
+			if( !this.allowed_fields.contains( param ) )
+				return;
+			this.param_to_set = param;
+			try{
+				this.value_to_set = Long.parseLong( alArguments.get(3) );
+			}
+			catch( Exception e ){}
+		}
+	}
 	}
 
 }
