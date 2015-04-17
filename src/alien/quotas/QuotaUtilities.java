@@ -165,9 +165,11 @@ public final class QuotaUtilities {
 	}
 	
 	/**
-	 * Saves file quota
+	 * Sets job quota field value for a username
 	 * 
-	 * @param q
+	 * @param username
+	 * @param fld
+	 * @param val
 	 * @return
 	 */
 	public static boolean saveJobQuota( String username, String fld, String val){
@@ -203,8 +205,11 @@ public final class QuotaUtilities {
 	}
 	
 	/**
+	 * Sets file quota field value for a username
 	 * 
-	 * @param q
+	 * @param username
+	 * @param fld
+	 * @param val
 	 * @return
 	 */
 	public static boolean saveFileQuota( String username, String fld, String val ){
