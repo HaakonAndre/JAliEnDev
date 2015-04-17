@@ -174,6 +174,7 @@ public final class QuotaUtilities {
 		String query = "UPDATE PRIORITY p LEFT JOIN QUEUE_USER qu "
 				+ "ON qu.user='" + username + "' SET p." 
 				+ fld + "=" + val + " WHERE qu.userid=p.userid";
+		db.query(query);
 		updateJobQuotasCache();
 		return true;
 	}

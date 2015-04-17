@@ -46,7 +46,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 				out.printErrln("Error in parameter name" );
 				return;
 			}
-			else if( this.value_to_set==null || 
+			if( this.value_to_set==null || 
 					this.value_to_set==0 ){
 				out.printErrln("Error in value" );
 				printHelp();
