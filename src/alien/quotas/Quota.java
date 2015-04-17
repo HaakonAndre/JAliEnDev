@@ -10,6 +10,9 @@ import lazyj.DBFunctions;
 import lia.util.StringFactory;
 import alien.config.ConfigUtils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 /**
  * @author costing
  * @since Nov 4, 2010
@@ -136,6 +139,13 @@ public class Quota implements Serializable, Comparable<Quota> {
 	 * Temp increased number of files
 	 */
 	public final int tmpIncreasedNbFiles;
+	
+	/**
+	 * Fields allowed to modify via jquota set command
+	 */
+	private final static ArrayList<String> allowed_to_update = 
+			new ArrayList<String>( Arrays.asList( "maxUnfinishedJobs", "maxTotalCpuCost", 
+											"maxTotalRunningTime" ) );
 
 	/**
 	 * @param db
@@ -217,5 +227,9 @@ public class Quota implements Serializable, Comparable<Quota> {
 			return true;
 
 		return false;
+	}
+	
+	public static boolean canUpdateField( String fieldname ){
+		return allowed_to_update.contains( fieldname );
 	}
 }

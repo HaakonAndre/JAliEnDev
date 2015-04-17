@@ -1,6 +1,8 @@
 package alien.quotas;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import lazyj.DBFunctions;
 import lazyj.Format;
@@ -57,6 +59,12 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 	 * Temp increase
 	 */
 	public final int tmpIncreasedNbFiles;
+	
+	/**
+	 * Fields allowed to modify via fquota set command
+	 */
+	private final static ArrayList<String> allowed_to_update = 
+			new ArrayList<String>( Arrays.asList(  "maxNbFiles", "maxTotalSize" ) );
 
 	/**
 	 * @param db
@@ -106,5 +114,9 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 			return true;
 
 		return false;
+	}
+	
+	public static boolean canUpdateField( String fieldname ){
+		return allowed_to_update.contains( fieldname );
 	}
 }
