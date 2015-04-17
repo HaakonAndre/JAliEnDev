@@ -262,20 +262,21 @@ public class TaskQueueApiUtils {
 			return gqres.getFileQuota();
 		}
 		catch( Exception e ){
-			System.out.println( "Exception in GetFileQuota: " + e.getMessage() );
+			System.out.println( "Exception in getFileQuota: " + e.getMessage() );
 		}
 		return null;
 	}
 	
 	public boolean setFileQuota( String fld, String val){
 		try{
+			System.out.println("Running set file quota");
 			SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);
 			SetFileQuota sqres = Dispatcher.execute(sq);
-			
+			System.out.println( sqres );
 			return true;
 		}
 		catch( Exception e ){
-			System.out.println( "Exception in GetFileQuota: " + e.getMessage() );
+			System.out.println( "Exception in setFileQuota: " + e.getMessage() );
 		}
 		return false;
 	}

@@ -203,8 +203,9 @@ public final class QuotaUtilities {
 	 */
 	public static boolean saveFileQuota( String username, String fld, String val ){
 		final DBFunctions db = ConfigUtils.getDB("alice_users");
-		String query = "UPDATE FQUOTA SET " + fld + "='" + val + "'" +
-				" WHERE user='" + username + "'";
+		String query = "UPDATE FQUOTAS SET " 
+					+ fld + "='" + val + "'" +
+					" WHERE user='" + username + "'";
 		db.query( query );
 		updateFileQuotasCache();
 		return true;
