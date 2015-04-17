@@ -99,6 +99,5 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 			catch( Exception e ){}
 		}
 	}
-	}
 
 }
