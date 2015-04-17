@@ -281,8 +281,8 @@ public class TaskQueueApiUtils {
 	
 	public boolean setJobsQuota( String fld, String val){
 		try{
-			SetFileQuota sq = new SetJobsQuota(commander.getUser(), fld, val);
-			SetFileQuota sqres = Dispatcher.execute(sq);
+			SetJobsQuota sq = new SetJobsQuota(commander.getUser(), fld, val);
+			SetJobsQuota sqres = Dispatcher.execute(sq);
 			return sqres.getSucceeded();
 		}
 		catch( Exception e ){
