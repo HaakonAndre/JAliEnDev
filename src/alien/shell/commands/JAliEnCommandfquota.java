@@ -49,7 +49,12 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 				return;
 			}
 			// run the update
-			commander.q_api.setFileQuota( this.param_to_set, this.value_to_set.toString() );
+			if( commander.q_api.setFileQuota( this.param_to_set, this.value_to_set.toString() ) )
+				out.printOutln( "Result: ok, " + this.param_to_set + 
+						"=" + this.value_to_set.toString() + " for user=" + username );
+			else
+				out.printOutln( "Result: failed to set " + this.param_to_set + 
+						"=" + this.value_to_set.toString() + " for user=" + username );
 		}
 	}
 
@@ -84,7 +89,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 		if( this.command.equals("set") && alArguments.size()==4 ){
 			this.user_to_set = alArguments.get(1);
 			String param = alArguments.get(2);
-			if( !this.allowed_fields.contains( param ) )
+			if( FileQuota.canUpdateField( param ) )
 				return;
 			this.param_to_set = param;
 			try{

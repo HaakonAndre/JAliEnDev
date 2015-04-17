@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import alien.quotas.FileQuota;
 import alien.quotas.QuotaUtilities;
 import alien.quotas.Quota;
 
@@ -15,11 +16,6 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	private String user_to_set;
 	private String param_to_set;
 	private Long value_to_set;
-	private final ArrayList<String> allowed_fields = new ArrayList<String>( 
-								Arrays.asList( 
-											"maxUnfinishedJobs", 
-											"maxTotalCpuCost", 
-											"maxTotalRunningTime" ) );
 	
 	@Override
 	public void run() { 
@@ -53,7 +49,12 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 				return;
 			}
 			// run the update
-			commander.q_api.setJobsQuota( this.param_to_set, this.value_to_set.toString() );
+			if( commander.q_api.setJobsQuota( this.param_to_set, this.value_to_set.toString() ) )
+				out.printOutln( "Result: ok, " + this.param_to_set + 
+						"=" + this.value_to_set.toString() + " for user=" + username );
+			else
+				out.printOutln( "Result: failed to set " + this.param_to_set + 
+						"=" + this.value_to_set.toString() + " for user=" + username );
 		}					
 	}
 
@@ -76,11 +77,6 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	}
 	
 	public JAliEnCommandjquota(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		/*super(commander, out, alArguments);
-		this.isAdmin = commander.getUser().canBecome("admin");
-		if( alArguments.size() > 0 )
-			this.command = alArguments.get(0);*/
-			
 		super(commander, out, alArguments);
 		this.isAdmin = commander.getUser().canBecome("admin");
 		if( alArguments.size() == 0 )
@@ -90,7 +86,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 		if( this.command.equals("set") && alArguments.size()==4 ){
 			this.user_to_set = alArguments.get(1);
 			String param = alArguments.get(2);
-			if( !this.allowed_fields.contains( param ) )
+			if( FileQuota.canUpdateField( param ) )
 				return;
 			this.param_to_set = param;
 			try{
