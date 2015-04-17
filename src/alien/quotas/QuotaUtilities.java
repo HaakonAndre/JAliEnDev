@@ -175,6 +175,7 @@ public final class QuotaUtilities {
 				+ "ON qu.user='" + username + "' SET p." 
 				+ fld + "=" + val + " WHERE qu.userid=p.userid";
 		db.query(query);
+		jobQuotasLastUpdated = 0;
 		updateJobQuotasCache();
 		return true;
 	}
@@ -208,6 +209,7 @@ public final class QuotaUtilities {
 					+ fld + "='" + val + "'" +
 					" WHERE user='" + username + "'";
 		db.query( query );
+		fileQuotasLastUpdated = 0;
 		updateFileQuotasCache();
 		return true;
 	}
