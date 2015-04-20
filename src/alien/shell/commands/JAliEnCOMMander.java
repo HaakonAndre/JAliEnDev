@@ -63,7 +63,7 @@ public class JAliEnCOMMander extends Thread {
 	
 	private static final String[] jAliEnAdminCommandList = new String[]{
 			"addTrigger", "addHost", "queue", "register", "addSE", "addUser",
-			"calculateFileQuota", "calculateJobQuota"
+			"calculateFileQuota", "calculateJobQuota", "groupmembers"
 	};
 
 	/**

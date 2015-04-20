@@ -412,5 +412,25 @@ public class CatalogueApiUtils {
 
 		return null;
 	}
-
+	
+	public LFN chownLFN( String lfn_name, String username_to_chown, String groupname_to_chown ){
+		if( lfn_name == "" || lfn_name == null )
+			return null;
+		LFN lfn = this.getLFN( lfn_name, false );
+		if( lfn == null )
+			return null;
+		try {
+			ChownLFN cl = Dispatcher.execute( new ChownLFN( commander.getUser(), 
+															commander.getRole(), lfn_name, 
+															username_to_chown, 
+															groupname_to_chown ) );
+			if( cl.getSuccess() )
+				return lfn;
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not chown " + lfn_name + " for " + username_to_chown);
+			e.getCause().printStackTrace();
+		}
+		return null;
+	}
 }

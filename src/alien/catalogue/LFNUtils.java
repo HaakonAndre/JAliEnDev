@@ -882,5 +882,17 @@ public class LFNUtils {
 
 		return true;
 	}
+	
+	public static boolean chownLFN( String path, String new_owner, String new_group ){
+		LFN lfn = getLFN( path );
+		if( lfn == null )
+			return false;
+		if( new_owner == null || new_owner == "" )
+			return false;
+		lfn.owner = new_owner;
+		if( new_group != null || new_group != "" )
+			lfn.gowner = new_group;
+		return lfn.update();
+	}
 
 }
