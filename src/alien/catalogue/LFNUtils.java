@@ -887,10 +887,10 @@ public class LFNUtils {
 		LFN lfn = getLFN( path );
 		if( lfn == null )
 			return false;
-		if( new_owner == null || new_owner == "" )
+		if( new_owner == null || new_owner.equals("") )
 			return false;
 		lfn.owner = new_owner;
-		if( new_group != null || new_group != "" )
+		if( new_group != null && !new_group.equals("") )
 			lfn.gowner = new_group;
 		return lfn.update();
 	}
