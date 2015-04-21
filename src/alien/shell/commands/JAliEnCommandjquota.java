@@ -10,6 +10,9 @@ import java.util.Arrays;
 
 import joptsimple.OptionException;
 
+// TODO: check user permissions
+// TODO: use effective user on server side
+
 public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	private boolean isAdmin;
 	private String command;
