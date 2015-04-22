@@ -255,4 +255,17 @@ public class AliEnPrincipal implements Principal, Serializable {
 		else
 			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 	}
+	
+	/**
+	 * Returns user list for a role
+	 * 
+	 * @param role
+	 * @return list of users
+	 */
+	public static Set<String> getRoleMembers( String role ){
+		if( role == null || role.equals("") )
+			return null;
+		final Set<String> sUsers = LDAPHelper.checkLdapInformation("uid=" + role, "ou=Roles,", "users");
+		return sUsers;
+	}
 }
