@@ -15,6 +15,8 @@ import alien.shell.ShellColor;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
 
+// FIXME: echoes "states: []" in the JCentral terminal and an exception in JBox
+
 /**
  * @author ron
  * @since June 9, 2011
