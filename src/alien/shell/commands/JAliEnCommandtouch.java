@@ -20,7 +20,6 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		// TODO Auto-generated method stub
 		out.printOutln();
 		out.printOutln(helpUsage("touch",
 				" <LFN> [<LFN>[,<LFN>]]"));		
@@ -29,7 +28,6 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 
 	@Override
 	public boolean canRunWithoutArguments() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	
