@@ -59,7 +59,8 @@ public class JAliEnCOMMander extends Thread {
 			"deleteMirror", "df", "du", "fquota", "jobinfo","jquota", "killTransfer", 
 			"listSEDistance", "listTransfer", "md5sum", "mirror", "queue", 
 			"queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", 
-			"resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top"};
+			"resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", 
+			"top", "groups"};
 	
 	private static final String[] jAliEnAdminCommandList = new String[]{
 			"addTrigger", "addHost", "queue", "register", "addSE", "addUser",
@@ -152,7 +153,7 @@ public class JAliEnCOMMander extends Thread {
 		c_api = new CatalogueApiUtils(this);
 
 		q_api = new TaskQueueApiUtils(this);
-
+		
 		this.user = user;
 		this.role = role;
 		this.site = site;
@@ -168,6 +169,7 @@ public class JAliEnCOMMander extends Thread {
 
 	private boolean initializeJCentralConnection() {
 		triedConnects++;
+		
 		try {
 			curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
 			degraded = false;
