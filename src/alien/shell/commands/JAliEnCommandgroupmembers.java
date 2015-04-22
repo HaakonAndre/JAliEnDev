@@ -23,7 +23,8 @@ public class JAliEnCommandgroupmembers extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		out.printOutln("groupmembers <group> : displays group members ");
-		out.printOutln();		
+		out.printOutln();
+		
 	}
 
 	@Override
@@ -31,7 +32,7 @@ public class JAliEnCommandgroupmembers extends JAliEnBaseCommand {
 		return false;
 	}
 	
-	public JAliEnCommandgroupmembers(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandgroupmembers(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 		if( alArguments.size() == 1 ) 
 			this.group = alArguments.get(0);		
