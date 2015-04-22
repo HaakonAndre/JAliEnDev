@@ -290,4 +290,16 @@ public class TaskQueueApiUtils {
 		}
 		return false;
 	}
+	
+	public Set<String> getGroupMembers( String group ){
+		try{
+			GetGroupMembers gm = new GetGroupMembers(commander.getUser(), group);
+			GetGroupMembers gmres = Dispatcher.execute(gm);
+			return gmres.getMembers();
+		}
+		catch( Exception e ){
+			System.out.println( "Exception in setFileQuota: " + e.getMessage() );
+		}
+		return null;
+	}
 }
