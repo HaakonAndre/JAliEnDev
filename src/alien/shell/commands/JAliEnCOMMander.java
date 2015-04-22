@@ -21,6 +21,9 @@ import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
 
+// TODO: remove comments
+// TODO: discuss whether the whole command list has to be seen for anyone
+
 /**
  * @author ron
  * @since June 4, 2011
@@ -449,9 +452,9 @@ public class JAliEnCOMMander extends Thread {
 							args.remove(arg[i]);
 						}
 
-		if (!Arrays.asList(jAliEnCommandList).contains(comm) || 
-				( AliEnPrincipal.roleIsAdmin( getRole()) && 
-							!Arrays.asList(jAliEnAdminCommandList).contains(comm) ) ) {
+		if (!Arrays.asList(jAliEnCommandList).contains(comm) &&
+				//( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) && 
+							!Arrays.asList(jAliEnAdminCommandList).contains(comm) /*) */ ) {
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
 				if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
@@ -577,10 +580,10 @@ public class JAliEnCOMMander extends Thread {
 			@SuppressWarnings("rawtypes")
 			final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
 		
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] 
+			@SuppressWarnings({ "rawtypes", "unchecked" })
+			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] 
 				{ JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class });
-		return (JAliEnBaseCommand) co.newInstance(objectParm);
+			return (JAliEnBaseCommand) co.newInstance(objectParm);
 		}catch( ClassNotFoundException e ){
 			//System.out.println("No such command or not implemented");
 			return null;
