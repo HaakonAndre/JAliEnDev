@@ -24,6 +24,9 @@ import alien.catalogue.LFN;
  *        -b : print in GUID format <br />
  *        -c : print canonical paths <br />
  */
+
+// FIXME: freezes on passing incorrect arguments, I tried ls -R
+
 public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**
