@@ -4,6 +4,8 @@ import java.util.Set;
 import java.util.ArrayList;
 
 import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 public class JAliEnCommandgroups extends JAliEnBaseCommand {
 
@@ -25,7 +27,13 @@ public class JAliEnCommandgroups extends JAliEnBaseCommand {
 		super(commander, out, alArguments);
 		Set<String> roles = commander.getUser().getRoles();
 		String username = commander.getUser().getName();
-		out.printOutln("User: " + username + roles.toString());
+		String maingroup = commander.getUser().userRole();
+		out.printOutln("User: " + username + ", main group: " + maingroup);
+		out.printOut("Member of groups: ");
+		for( String role : roles ){
+			out.printOut( role + " " );
+		}
+		out.printOutln();
 	}
 
 }
