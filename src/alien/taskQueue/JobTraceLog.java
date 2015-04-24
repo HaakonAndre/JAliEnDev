@@ -20,7 +20,7 @@ public class JobTraceLog {
 	 */
 	JobTraceLog(final int id) {
 		final String queueId = String.valueOf(id);
-		retrieve(jobTraceLogURLPrefix + queueId.substring(0, 4) + "/" + queueId + ".log");
+		retrieve(jobTraceLogURLPrefix + (queueId.length() > 4 ? queueId.substring(0, 4) : queueId) + "/" + queueId + ".log");
 	}
 
 	private void retrieve(final String url) {

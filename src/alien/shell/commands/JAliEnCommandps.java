@@ -15,8 +15,6 @@ import alien.shell.ShellColor;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
 
-// FIXME: echoes "states: []" in the JCentral terminal and an exception in JBox
-
 /**
  * @author ron
  * @since June 9, 2011
@@ -58,9 +56,6 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	public void run() {
 		logger.log(Level.INFO, "Starting ps");
 		
-		String tracelog = commander.q_api.getTraceLog(getTrace);
-		logger.log(Level.INFO, "tracelog " + tracelog);
-
 		if(out.isRootPrinter())
 		{
 			out.nextResult();
@@ -77,8 +72,11 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 						out.setField("value ",jdl);
 				}
 			}
-			else if (getTrace != 0) 
+			else if (getTrace > 0) 
 			{
+				String tracelog = commander.q_api.getTraceLog(getTrace);
+				logger.log(Level.FINE, "tracelog " + tracelog);
+				
 				if (tracelog != null)
 					if(bColour)
 						out.setField("value ", ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
@@ -150,8 +148,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					out.printOutln(jdl);
 			}
 		} 
-		else if (getTrace != 0) 
+		else if (getTrace > 0) 
 		{
+			String tracelog = commander.q_api.getTraceLog(getTrace);
+			logger.log(Level.FINE, "tracelog " + tracelog);
 			
 			if (tracelog != null)
 				if(bColour)
