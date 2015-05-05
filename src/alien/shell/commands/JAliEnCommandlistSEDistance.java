@@ -14,14 +14,21 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		// TODO Auto-generated method stub
-
+		out.printOutln();
+		out.printOutln("listSEDistance: Returns the closest working SE for a particular site. Usage");
+		out.printOutln();
+		out.printOutln(" listSEDistance [<site>] [read [<lfn>]|write]");
+		out.printOutln();
+		out.printOutln();
+		out.printOutln(" Options:");
+		out.printOutln("   <site>: site name. Default: current site");
+		out.printOutln("   [read|write]: action. Default write. In the case of read, if an lfn is specified, use only SE that contain that file");
+		out.printOutln();
 	}
 
 	@Override
-	public boolean canRunWithoutArguments() {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean canRunWithoutArguments() {		
+		return true;
 	}
 
 	public JAliEnCommandlistSEDistance(JAliEnCOMMander commander, UIPrintWriter out,
