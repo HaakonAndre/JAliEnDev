@@ -60,13 +60,13 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			}				
 			this.lfn = lfns.get(0);			
 
-			keepSamePath = options.has("f");
+			//keepSamePath = options.has("f");
 			useLFNasGuid = options.has("g");
 			checkFileIsPresentOnDest = options.has("u");
 			transferWholeArchive = options.has("r");
 						
-			if( options.has("m") )
-				masterTransferId = Integer.parseInt( (String) options.valueOf("m") );
+			//if( options.has("m") )
+			//	masterTransferId = Integer.parseInt( (String) options.valueOf("m") );
 			if( options.has("try") )
 				attempts = Integer.parseInt( (String) options.valueOf("try") );
 			
@@ -144,10 +144,10 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 		out.printOutln("mirror Copies a file into another SE");
 		out.printOutln(" Usage:");
 		out.printOutln("	mirror [-fgur] [-m <number>] [-c <collection>] [-try <number>] <lfn> [<SE>]");
-		out.printOutln(" Options:        -f       keep the same relative path");
+		//out.printOutln(" Options:        -f       keep the same relative path");
 		out.printOutln("                 -g:      Use the lfn as a guid");
 		out.printOutln("                 -S                     :  [se[,se2[,!se3[,qos:count]]]]");
-		out.printOutln("                 -m <id>  Put the transfer under the masterTransfer of <id>");
+		//out.printOutln("                 -m <id>  Put the transfer under the masterTransfer of <id>");
 		out.printOutln("                 -u       Don't issue the transfer if the file is already in that SE");
 		out.printOutln("                 -r       If the file is in a zip archive, transfer the whole archive");
 		out.printOutln("                 -try <NumOfAttempts>     Specifies the number of attempts to try and mirror the file");
