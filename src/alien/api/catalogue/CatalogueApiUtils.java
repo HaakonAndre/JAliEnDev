@@ -433,4 +433,41 @@ public class CatalogueApiUtils {
 		}
 		return null;
 	}
+	
+	
+	public boolean mirrorLFN( String lfn_name,
+								String dstSE,
+								boolean keepSamePath,
+								boolean useLFNasGuid,
+								boolean checkFileIsPresentOnDest,
+								boolean transferWholeArchive,							
+								Integer masterTransferId,
+								Integer attempts){
+		
+		if( lfn_name == "" || lfn_name == null )
+			return false;
+		LFN lfn = this.getLFN( lfn_name, false );
+		if( lfn == null )
+			return false;
+		
+		try {
+			MirrorLFN ml = Dispatcher.execute( new MirrorLFN( commander.getUser(), 
+															commander.getRole(), 
+															lfn_name, 
+															dstSE,
+															keepSamePath,
+															useLFNasGuid,
+															checkFileIsPresentOnDest,
+															transferWholeArchive,
+															masterTransferId,
+															attempts ) );
+			return ml.getSuccess();
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Problems mirroring LFN");
+			e.getCause().printStackTrace();
+		}
+		
+		return true;
+	}
 }
