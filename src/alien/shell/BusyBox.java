@@ -234,6 +234,7 @@ public class BusyBox {
 
 		reader = new ConsoleReader();
 		reader.setBellEnabled(false);
+		reader.setExpandEvents(false);
 		//reader.setDebug(new PrintWriter(new FileWriter("writer.debug", true)));
 		reader.addCompleter(new ArgumentCompleter(new StringsCompleter(callJBoxGetString("commandlist").split("\\s+")), new GridLocalFileCompletor(this)));
 
