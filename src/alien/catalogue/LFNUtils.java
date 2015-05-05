@@ -13,6 +13,9 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import alien.config.ConfigUtils;
+import alien.io.TransferUtils;
+import alien.se.SE;
+import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 
@@ -893,6 +896,22 @@ public class LFNUtils {
 		if( new_group != null && !new_group.equals("") )
 			lfn.gowner = new_group;
 		return lfn.update();
+	}
+	
+	public static int mirrorLFN( String path ){
+		LFN lfn = getLFN( path );
+		if( lfn == null )
+			return -256;
+				
+		// find closest SE
+		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
+		List<SE> ses = SEUtils.getClosestSEs(site, true);
+		
+		if( ses.size() == 0 )
+			return -256;
+		
+		// run mirror
+		return (TransferUtils.mirror( lfn, ses.get(0) ) );				
 	}
 
 }

@@ -56,7 +56,6 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 			List<String> lfns = optionToString(options.nonOptionArguments());
 			if( lfns==null || lfns.size()==0 ){
-				//this.printHelp();
 				return;
 			}				
 			this.lfn = lfns.get(0);			
@@ -125,10 +124,18 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 	@Override
 	public void run(){
 		if( this.dstSE != null );
-		/*commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
+		commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
 				commander.user.getName(),
 				commander.getCurrentDir().getCanonicalName(),
-				path));*/
+				lfn),
+				this.dstSE,
+				this.keepSamePath,
+				this.useLFNasGuid,
+				this.checkFileIsPresentOnDest,
+				this.transferWholeArchive,												
+				this.masterTransferId,
+				this.attempts
+				);
 	}
 
 	@Override
