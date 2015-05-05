@@ -898,20 +898,28 @@ public class LFNUtils {
 		return lfn.update();
 	}
 	
-	public static int mirrorLFN( String path ){
+	public static int mirrorLFN( String path, String dstSE ){
 		LFN lfn = getLFN( path );
 		if( lfn == null )
 			return -256;
+		
+		if( dstSE=="" || dstSE==null )
+			return -255;
+		
+		SE se = SEUtils.getSE( dstSE );		
+		if(se==null)
+			return -254;
 				
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		List<SE> ses = SEUtils.getClosestSEs(site, true);
 		
 		if( ses.size() == 0 )
-			return -256;
+			return -253;
 		
 		// run mirror
-		return (TransferUtils.mirror( lfn, ses.get(0) ) );				
+		return (TransferUtils.mirror( lfn, se ) ); 
+				//ses.get(0) ) );				
 	}
 
 }

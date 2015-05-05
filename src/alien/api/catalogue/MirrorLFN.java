@@ -9,7 +9,8 @@ import java.util.List;
 public class MirrorLFN extends Request {
 	private String path;	
 	private int success;
-	private String ses;	
+	private String ses;
+	private String dstSE;
 	
 	public MirrorLFN( final AliEnPrincipal user, final String role, 
 							String lfn_name,
@@ -27,19 +28,20 @@ public class MirrorLFN extends Request {
 	
 	public MirrorLFN( final AliEnPrincipal user, final String role, 
 			String lfn_name,
-			String dstSE,
+			String destSE,
 			boolean keepSamePath,
 			boolean useLFNasGuid,
 			boolean checkFileIsPresentOnDest,
 			boolean transferWholeArchive,
 			Integer masterTransferId,
 			Integer attempts ){
-		this.path = lfn_name;		
+		this.path = lfn_name;
+		this.dstSE = destSE;
 	}
 	
 	@Override
 	public void run() {
-		this.success = LFNUtils.mirrorLFN( this.path );
+		this.success = LFNUtils.mirrorLFN( this.path, this.dstSE );
 	}
 	
 	public boolean getSuccess(){
