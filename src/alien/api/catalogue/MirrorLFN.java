@@ -24,12 +24,7 @@ public class MirrorLFN extends Request {
 							List<String> ses,
 							List<String> exses,
 							HashMap<String, Integer> qos,
-							//boolean keepSamePath,
 							boolean useLFNasGuid,
-							//boolean checkFileIsPresentOnDest,
-							//boolean transferWholeArchive,
-							//boolean waitUntilTransferFinished,
-							//Integer masterTransferId,
 							Integer attempts_cnt ){
 		this.path = lfn_name;
 		this.useGUID = useLFNasGuid;
@@ -43,11 +38,7 @@ public class MirrorLFN extends Request {
 	public MirrorLFN( final AliEnPrincipal user, final String role, 
 			String lfn_name,
 			String destSE,
-			//boolean keepSamePath,
-			boolean useLFNasGuid,
-			//boolean checkFileIsPresentOnDest,
-			//boolean transferWholeArchive,
-			//Integer masterTransferId,
+			boolean useLFNasGuid,			
 			Integer attempts_cnt ){
 		this.path = lfn_name;
 		this.useGUID = useLFNasGuid;
@@ -78,5 +69,9 @@ public class MirrorLFN extends Request {
 	
 	public int getResult(){
 		return this.success;
+	}
+	
+	public HashMap<String,Integer> getResultHashMap(){
+		return this.results;
 	}
 }

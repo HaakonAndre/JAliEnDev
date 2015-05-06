@@ -912,7 +912,7 @@ public class LFNUtils {
 		else
 			lfn = getLFN( path );
 		
-		if( lfn == null )
+		if( lfn==null )
 			return -256;
 		
 		if( dstSE=="" || dstSE==null )

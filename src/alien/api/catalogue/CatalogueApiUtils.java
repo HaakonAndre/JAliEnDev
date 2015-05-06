@@ -437,29 +437,20 @@ public class CatalogueApiUtils {
 	
 	public int mirrorLFN( String lfn_name,
 								String dstSE,
-								//boolean keepSamePath,
 								boolean useLFNasGuid,
-								//boolean checkFileIsPresentOnDest,
-								//boolean transferWholeArchive,							
-								//Integer masterTransferId,
 								Integer attempts){
 		
 		if( lfn_name == "" || lfn_name == null )
 			return -320;
 		LFN lfn = this.getLFN( lfn_name, false );
 		if( lfn == null )
-			return -330;
-		
+			return -330;	
 		try {
 			MirrorLFN ml = Dispatcher.execute( new MirrorLFN( commander.getUser(), 
 															commander.getRole(), 
 															lfn_name, 
 															dstSE,
-															//keepSamePath,
 															useLFNasGuid,
-															//checkFileIsPresentOnDest,
-															//transferWholeArchive,
-															//masterTransferId,
 															attempts ) );
 			return ml.getResult();
 		}
@@ -469,5 +460,34 @@ public class CatalogueApiUtils {
 		}
 		
 		return -350;
+	}
+	
+	public HashMap<String, Integer> mirrorLFN( String lfn_name,
+			List<String> ses,
+			List<String> exses,
+			HashMap<String, Integer> qos,
+			boolean useLFNasGuid,
+			Integer attempts){
+
+		if( lfn_name == "" || lfn_name == null )
+			return null;
+		LFN lfn = this.getLFN( lfn_name, false );
+		if( lfn == null )
+			return null;	
+		try {
+			MirrorLFN ml = Dispatcher.execute( new MirrorLFN( commander.getUser(), 
+													commander.getRole(), 
+													lfn_name,
+													ses, exses, qos,												
+													useLFNasGuid,
+													attempts ) );
+			return ml.getResultHashMap();
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Problems mirroring LFN");
+			e.getCause().printStackTrace();
+		}
+		
+		return null;
 	}
 }

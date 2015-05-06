@@ -122,33 +122,38 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 	@Override
 	public void run(){
-		if( this.dstSE==null || this.dstSE.length()==0 ){ 
-			if( this.ses.size()==0 ){
-				out.printErrln("No destination SEs specification found, please consult help for mirror command");
-				return;
-			}
-			
-			
-		}
-		
 		if( this.useLFNasGuid && !GUIDUtils.isValidGUID( this.lfn ) ){
 			out.printErrln("Invalid GUID was specified");
 			return;
 		}
 		
-		Integer result = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
-				commander.user.getName(),
-				commander.getCurrentDir().getCanonicalName(),
-				lfn),
-				this.dstSE,
-				//this.keepSamePath,
-				this.useLFNasGuid,
-				//this.checkFileIsPresentOnDest,
-				//this.transferWholeArchive,												
-				//this.masterTransferId,
-				this.attempts
-				);
-		System.out.println( "Mirror result: " + result );
+		if( this.dstSE==null || this.dstSE.length()==0 ){ 
+			if( this.ses.size()==0 ){
+				out.printErrln("No destination SEs specification found, please consult help for mirror command");
+				return;
+			}
+			HashMap<String,Integer> results = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
+					commander.user.getName(),
+					commander.getCurrentDir().getCanonicalName(),
+					lfn),
+					this.ses, this.exses, this.qos,
+					this.useLFNasGuid,
+					this.attempts
+					);
+			System.out.println( "Mirror result: " + results + " to " + this.dstSE);
+			
+		}
+		else{						
+			Integer result = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
+					commander.user.getName(),
+					commander.getCurrentDir().getCanonicalName(),
+					lfn),
+					this.dstSE,
+					this.useLFNasGuid,
+					this.attempts
+					);
+			System.out.println( "Mirror result: " + result + " to " + this.dstSE);
+		}
 	}
 
 	@Override
