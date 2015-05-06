@@ -437,11 +437,11 @@ public class CatalogueApiUtils {
 	
 	public boolean mirrorLFN( String lfn_name,
 								String dstSE,
-								boolean keepSamePath,
+								//boolean keepSamePath,
 								boolean useLFNasGuid,
-								boolean checkFileIsPresentOnDest,
-								boolean transferWholeArchive,							
-								Integer masterTransferId,
+								//boolean checkFileIsPresentOnDest,
+								//boolean transferWholeArchive,							
+								//Integer masterTransferId,
 								Integer attempts){
 		
 		if( lfn_name == "" || lfn_name == null )
@@ -455,11 +455,11 @@ public class CatalogueApiUtils {
 															commander.getRole(), 
 															lfn_name, 
 															dstSE,
-															keepSamePath,
+															//keepSamePath,
 															useLFNasGuid,
-															checkFileIsPresentOnDest,
-															transferWholeArchive,
-															masterTransferId,
+															//checkFileIsPresentOnDest,
+															//transferWholeArchive,
+															//masterTransferId,
 															attempts ) );
 			return ml.getSuccess();
 		}

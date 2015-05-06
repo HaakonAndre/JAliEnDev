@@ -16,12 +16,12 @@ public class MirrorLFN extends Request {
 							String lfn_name,
 							List<String> ses,
 							List<String> exses,
-							boolean keepSamePath,
+							//boolean keepSamePath,
 							boolean useLFNasGuid,
-							boolean checkFileIsPresentOnDest,
-							boolean transferWholeArchive,
-							boolean waitUntilTransferFinished,
-							Integer masterTransferId,
+							//boolean checkFileIsPresentOnDest,
+							//boolean transferWholeArchive,
+							//boolean waitUntilTransferFinished,
+							//Integer masterTransferId,
 							Integer attempts ){
 		this.path = lfn_name;
 	}
@@ -29,11 +29,11 @@ public class MirrorLFN extends Request {
 	public MirrorLFN( final AliEnPrincipal user, final String role, 
 			String lfn_name,
 			String destSE,
-			boolean keepSamePath,
+			//boolean keepSamePath,
 			boolean useLFNasGuid,
-			boolean checkFileIsPresentOnDest,
-			boolean transferWholeArchive,
-			Integer masterTransferId,
+			//boolean checkFileIsPresentOnDest,
+			//boolean transferWholeArchive,
+			//Integer masterTransferId,
 			Integer attempts ){
 		this.path = lfn_name;
 		this.dstSE = destSE;

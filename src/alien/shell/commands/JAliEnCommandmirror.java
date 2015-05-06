@@ -11,6 +11,7 @@ import joptsimple.OptionSet;
 import java.util.StringTokenizer;
 
 import alien.catalogue.FileSystemUtils;
+import alien.catalogue.GUIDUtils;
 
 /**
  * @author psvirin
@@ -45,12 +46,12 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 		try {
 			final OptionParser parser = new OptionParser();
 
-			parser.accepts("f");
+			//parser.accepts("f");
 			parser.accepts("try").withRequiredArg();
 			parser.accepts("S").withRequiredArg();
 			parser.accepts("g");
-			parser.accepts("u");
-			parser.accepts("m").withRequiredArg();
+			//parser.accepts("u");
+			//parser.accepts("m").withRequiredArg();
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -123,17 +124,30 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 	@Override
 	public void run(){
-		if( this.dstSE != null );
+		if( this.dstSE==null || this.dstSE.length()==0 ){ 
+			if( this.ses.size()==0 ){
+				out.printErrln("No destination SEs specification found, please consult help for mirror command");
+				return;
+			}
+			
+			
+		}
+		
+		if( this.useLFNasGuid && !GUIDUtils.isValidGUID( this.lfn ) ){
+			out.printErrln("Invalid GUID was specified");
+			return;
+		}
+		
 		commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
 				commander.user.getName(),
 				commander.getCurrentDir().getCanonicalName(),
 				lfn),
 				this.dstSE,
-				this.keepSamePath,
+				//this.keepSamePath,
 				this.useLFNasGuid,
-				this.checkFileIsPresentOnDest,
-				this.transferWholeArchive,												
-				this.masterTransferId,
+				//this.checkFileIsPresentOnDest,
+				//this.transferWholeArchive,												
+				//this.masterTransferId,
 				this.attempts
 				);
 	}
@@ -143,13 +157,13 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 		out.printOutln();
 		out.printOutln("mirror Copies a file into another SE");
 		out.printOutln(" Usage:");
-		out.printOutln("	mirror [-fgur] [-m <number>] [-c <collection>] [-try <number>] <lfn> [<SE>]");
+		out.printOutln("	mirror [-g] [-try <number>] [-S [se[,se2[,!se3[,qos:count]]]]] <lfn> [<SE>]");
 		//out.printOutln(" Options:        -f       keep the same relative path");
 		out.printOutln("                 -g:      Use the lfn as a guid");
-		out.printOutln("                 -S                     :  [se[,se2[,!se3[,qos:count]]]]");
+		out.printOutln("                 -S:     specifies the destination SEs to be used");
 		//out.printOutln("                 -m <id>  Put the transfer under the masterTransfer of <id>");
-		out.printOutln("                 -u       Don't issue the transfer if the file is already in that SE");
-		out.printOutln("                 -r       If the file is in a zip archive, transfer the whole archive");
+		//out.printOutln("                 -u       Don't issue the transfer if the file is already in that SE");
+		//out.printOutln("                 -r       If the file is in a zip archive, transfer the whole archive");
 		out.printOutln("                 -try <NumOfAttempts>     Specifies the number of attempts to try and mirror the file");
 		out.printOutln();
 	}
