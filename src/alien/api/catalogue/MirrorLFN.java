@@ -75,4 +75,8 @@ public class MirrorLFN extends Request {
 		return this.success >= 0;
 	}
 	
+	
+	public int getResult(){
+		return this.success;
+	}
 }
