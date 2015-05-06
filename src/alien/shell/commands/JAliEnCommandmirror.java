@@ -99,7 +99,6 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 									}
 									else
 										throw new JAliEnCommandException();
-
 								}
 								catch (final Exception e) {
 									throw new JAliEnCommandException();
@@ -114,8 +113,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 				if( lfns.size() != 2 )
 					throw new JAliEnCommandException();
 				this.dstSE = lfns.get(1);
-			}
-			System.out.println(this.exses);
+			}			
 		} catch (OptionException e) {
 			printHelp();
 			throw e;
