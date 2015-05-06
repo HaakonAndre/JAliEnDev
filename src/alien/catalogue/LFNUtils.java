@@ -2,11 +2,13 @@ package alien.catalogue;
 
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -898,8 +900,18 @@ public class LFNUtils {
 		return lfn.update();
 	}
 	
-	public static int mirrorLFN( String path, String dstSE ){
-		LFN lfn = getLFN( path );
+	public static int mirrorLFN( String path, String dstSE, 
+								boolean is_guid,
+								Integer attempts ){
+		LFN lfn;
+		if( is_guid ){
+			GUID g = GUIDUtils.getGUID(UUID.fromString(path),
+					false);
+			lfn = getLFN( g );
+		}
+		else
+			lfn = getLFN( path );
+		
 		if( lfn == null )
 			return -256;
 		
@@ -918,8 +930,32 @@ public class LFNUtils {
 			return -253;
 		
 		// run mirror
-		return (TransferUtils.mirror( lfn, se ) ); 
+		return (TransferUtils.mirror(lfn, se) ); 
 				//ses.get(0) ) );				
 	}
-
+	
+	public static HashMap<String,Integer> mirrorLFN( String path, 
+								List<String> ses,
+								List<String> exses,
+								HashMap<String, Integer> qos, 
+								boolean is_guid,
+								Integer attempts ){
+		LFN lfn;
+		if( is_guid ){
+			GUID g = GUIDUtils.getGUID(UUID.fromString(path),
+					false);
+			lfn = getLFN( g );
+		}
+		else
+			lfn = getLFN( path );
+		
+		// find closest SE
+		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
+		List<SE> found_ses= SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
+		HashMap<String, Integer> resmap = new HashMap<String, Integer>();
+		for( SE s : found_ses ){
+			resmap.put(s.getName(),TransferUtils.mirror(lfn, s));
+		}
+		return resmap;
+	}	
 }
