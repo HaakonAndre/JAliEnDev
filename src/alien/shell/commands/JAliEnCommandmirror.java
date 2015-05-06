@@ -136,7 +136,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			return;
 		}
 		
-		commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
+		Integer result = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
 				commander.user.getName(),
 				commander.getCurrentDir().getCanonicalName(),
 				lfn),
@@ -148,6 +148,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 				//this.masterTransferId,
 				this.attempts
 				);
+		System.out.println( "Mirror result: " + result );
 	}
 
 	@Override

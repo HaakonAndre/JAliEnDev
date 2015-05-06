@@ -435,7 +435,7 @@ public class CatalogueApiUtils {
 	}
 	
 	
-	public boolean mirrorLFN( String lfn_name,
+	public int mirrorLFN( String lfn_name,
 								String dstSE,
 								//boolean keepSamePath,
 								boolean useLFNasGuid,
@@ -445,10 +445,10 @@ public class CatalogueApiUtils {
 								Integer attempts){
 		
 		if( lfn_name == "" || lfn_name == null )
-			return false;
+			return -320;
 		LFN lfn = this.getLFN( lfn_name, false );
 		if( lfn == null )
-			return false;
+			return -330;
 		
 		try {
 			MirrorLFN ml = Dispatcher.execute( new MirrorLFN( commander.getUser(), 
@@ -461,13 +461,13 @@ public class CatalogueApiUtils {
 															//transferWholeArchive,
 															//masterTransferId,
 															attempts ) );
-			return ml.getSuccess();
+			return ml.getResult();
 		}
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Problems mirroring LFN");
 			e.getCause().printStackTrace();
 		}
 		
-		return true;
+		return -350;
 	}
 }
