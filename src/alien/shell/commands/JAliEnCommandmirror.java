@@ -127,24 +127,38 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			return;
 		}
 		
-		if( this.dstSE==null || this.dstSE.length()==0 ){ 
-			if( this.ses.size()==0 ){
+		if( this.qos.size()!=0 && (this.dstSE==null || this.dstSE.length()==0) ){ 
+			/*if( this.ses.size()==0 ){
 				out.printErrln("No destination SEs specification found, please consult help for mirror command");
 				return;
-			}
-			HashMap<String,Integer> results = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
-					commander.user.getName(),
-					commander.getCurrentDir().getCanonicalName(),
-					lfn),
-					this.ses, this.exses, this.qos,
-					this.useLFNasGuid,
-					this.attempts
-					);
-			System.out.println( "Mirror result: " + results + " to " + this.dstSE);
-			
+			}*/
+			HashMap<String,Integer> results;
+			try{
+				results = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
+						commander.user.getName(),
+						commander.getCurrentDir().getCanonicalName(),
+						lfn),
+						this.ses, this.exses, this.qos,
+						this.useLFNasGuid,
+						this.attempts
+						);
+				for( String s : results.keySet() ){
+					String result_string;
+					int result = results.get(s);
+					result_string = JAliEnCommandmirror.Errcode2Text( result );
+					if(result>0)
+						out.printOutln( s + ": transfer scheduled");
+					else
+						out.printErrln( s + ": " + result_string );
+				}			
+			}catch(IllegalArgumentException e){
+				out.printErrln( e.getMessage() );
+			}						
 		}
-		else{						
-			Integer result = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
+		else{
+			Integer result;
+			try{
+				result = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
 					commander.user.getName(),
 					commander.getCurrentDir().getCanonicalName(),
 					lfn),
@@ -152,8 +166,38 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 					this.useLFNasGuid,
 					this.attempts
 					);
-			System.out.println( "Mirror result: " + result + " to " + this.dstSE);
+				String result_string;				
+				result_string = JAliEnCommandmirror.Errcode2Text( result );
+				if(result>0)
+					out.printOutln( this.dstSE + " transfer scheduled");
+				else
+					out.printErrln( this.dstSE + " " + result_string );
+			}
+			catch(IllegalArgumentException e){
+				out.printErrln( e.getMessage() );
+			}			
 		}
+	}
+	
+	protected static String Errcode2Text( int error ){
+		String text=null;
+		switch(error){
+			case 0: text = "file already exists on SE"; break;
+			case -256: text = "problem getting LFN"; break;
+			case -320: text = "LFN name empty"; break;
+			case -330: text = "LFN name empty"; break;
+			case -350: text = "other problem"; break;
+			case -255: text = "no destination SE name"; break;
+			case -254: text = "unable to connect to SE"; break;
+			case -253: text = "empty SE list"; break;
+			case -1: text = "wrong mirror parameters"; break;
+			case -2: text = "database connection missing"; break;
+			case -3: text = "cannot locate real pfns"; break;
+			case -4: text = "DB query failed"; break;
+			case -5: text = "DB query didn't generate a transfer ID"; break;
+			case -6: text = "cannot locate the archive LFN to mirror"; break;
+		}
+		return text;
 	}
 
 	@Override

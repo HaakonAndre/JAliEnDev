@@ -48,11 +48,13 @@ public class MirrorLFN extends Request {
 	
 	@Override
 	public void run() {
-		if( this.dstSE!=null )
+		if( this.dstSE!=null ){
 			this.success = LFNUtils.mirrorLFN( this.path, 
 												this.dstSE, 
 												this.useGUID, 
 												this.attempts );
+			this.results.put( dstSE, this.success );
+		}
 		else
 			this.results = LFNUtils.mirrorLFN( this.path,
 												this.ses,
@@ -65,8 +67,7 @@ public class MirrorLFN extends Request {
 	public boolean getSuccess(){
 		return this.success >= 0;
 	}
-	
-	
+		
 	public int getResult(){
 		return this.success;
 	}
