@@ -510,9 +510,8 @@ public class LFNUtils {
 
 			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
-			while (db.moveNext()) {
+			while (db.moveNext())
 				ret.add(db.gets(1));
-			}
 		}
 
 		return ret;
@@ -840,8 +839,8 @@ public class LFNUtils {
 		return true;
 	}
 
-	public static boolean chownLFN(String path, String new_owner, String new_group) {
-		LFN lfn = getLFN(path);
+	public static boolean chownLFN(final String path, final String new_owner, final String new_group) {
+		final LFN lfn = getLFN(path);
 		if (lfn == null)
 			return false;
 		if (new_owner == null || new_owner.equals(""))
@@ -852,10 +851,10 @@ public class LFNUtils {
 		return lfn.update();
 	}
 
-	public static int mirrorLFN(String path, String dstSE, boolean is_guid, Integer attempts) {
+	public static int mirrorLFN(final String path, final String dstSE, final boolean is_guid, final Integer attempts) {
 		LFN lfn;
 		if (is_guid) {
-			GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
+			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
 			lfn = getLFN(g);
 		} else
 			lfn = getLFN(path);
@@ -866,13 +865,13 @@ public class LFNUtils {
 		if (dstSE == "" || dstSE == null)
 			return -255;
 
-		SE se = SEUtils.getSE(dstSE);
+		final SE se = SEUtils.getSE(dstSE);
 		if (se == null)
 			return -254;
 
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
-		List<SE> ses = SEUtils.getClosestSEs(site, true);
+		final List<SE> ses = SEUtils.getClosestSEs(site, true);
 
 		if (ses.size() == 0)
 			return -253;
@@ -883,21 +882,21 @@ public class LFNUtils {
 		// ses.get(0) ) );
 	}
 
-	public static HashMap<String, Integer> mirrorLFN(String path, List<String> ses, List<String> exses, HashMap<String, Integer> qos, boolean is_guid, Integer attempts) {
+	public static HashMap<String, Integer> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean is_guid,
+			final Integer attempts) {
 		LFN lfn;
 		if (is_guid) {
-			GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
+			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
 			lfn = getLFN(g);
 		} else
 			lfn = getLFN(path);
 
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
-		List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
-		HashMap<String, Integer> resmap = new HashMap<String, Integer>();
-		for (SE s : found_ses) {
-			resmap.put(s.getName(), TransferUtils.mirror(lfn, s));
-		}
+		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
+		final HashMap<String, Integer> resmap = new HashMap<>();
+		for (final SE s : found_ses)
+			resmap.put(s.getName(), Integer.valueOf(TransferUtils.mirror(lfn, s)));
 		return resmap;
 	}
 }
