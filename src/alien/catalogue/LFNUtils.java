@@ -70,8 +70,7 @@ public class LFNUtils {
 	}
 
 	/**
-	 * Get the LFN entry for this catalog filename, optionally returning an
-	 * empty object if the entry doesn't exist (yet)
+	 * Get the LFN entry for this catalog filename, optionally returning an empty object if the entry doesn't exist (yet)
 	 * 
 	 * @param fileName
 	 * @param evenIfDoesntExist
@@ -251,9 +250,7 @@ public class LFNUtils {
 	 *            owner of the newly created structure(s)
 	 * @param path
 	 *            the path to be created
-	 * @return the (new or existing) directory, if the owner can create it,
-	 *         <code>null</code> if the owner is not allowed to do this
-	 *         operation
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
 	public static LFN mkdir(final AliEnPrincipal owner, final String path) {
 		return mkdir(owner, path, false);
@@ -266,9 +263,7 @@ public class LFNUtils {
 	 *            owner of the newly created structure(s)
 	 * @param path
 	 *            the path to be created
-	 * @return the (new or existing) directory, if the owner can create it,
-	 *         <code>null</code> if the owner is not allowed to do this
-	 *         operation
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
 	public static LFN mkdirs(final AliEnPrincipal owner, final String path) {
 		return mkdir(owner, path, true);
@@ -282,12 +277,8 @@ public class LFNUtils {
 	 * @param path
 	 *            the path to be created
 	 * @param createMissingParents
-	 *            if <code>true</code> then it will try to create any number of
-	 *            intermediate directories, otherwise the direct parent must
-	 *            already exist
-	 * @return the (new or existing) directory, if the owner can create it,
-	 *         <code>null</code> if the owner is not allowed to do this
-	 *         operation
+	 *            if <code>true</code> then it will try to create any number of intermediate directories, otherwise the direct parent must already exist
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
 	public static LFN mkdir(final AliEnPrincipal owner, final String path, final boolean createMissingParents) {
 		final LFN lfn = LFNUtils.getLFN(path, true);
@@ -302,9 +293,7 @@ public class LFNUtils {
 	 *            owner of the newly created structure(s)
 	 * @param lfn
 	 *            the path to be created
-	 * @return the (new or existing) directory, if the owner can create it,
-	 *         <code>null</code> if the owner is not allowed to do this
-	 *         operation
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
 	public static LFN mkdir(final AliEnPrincipal owner, final LFN lfn) {
 		return mkdir(owner, lfn, false);
@@ -317,9 +306,7 @@ public class LFNUtils {
 	 *            owner of the newly created structure(s)
 	 * @param lfn
 	 *            the path to be created
-	 * @return the (new or existing) directory, if the owner can create it,
-	 *         <code>null</code> if the owner is not allowed to do this
-	 *         operation
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
 	public static LFN mkdirs(final AliEnPrincipal owner, final LFN lfn) {
 		return mkdir(owner, lfn, true);
@@ -333,12 +320,8 @@ public class LFNUtils {
 	 * @param lfn
 	 *            the path to be created
 	 * @param createMissingParents
-	 *            if <code>true</code> then it will try to create any number of
-	 *            intermediate directories, otherwise the direct parent must
-	 *            already exist
-	 * @return the (new or existing) directory, if the owner can create it,
-	 *         <code>null</code> if the owner is not allowed to do this
-	 *         operation
+	 *            if <code>true</code> then it will try to create any number of intermediate directories, otherwise the direct parent must already exist
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
 	public static LFN mkdir(final AliEnPrincipal owner, final LFN lfn, final boolean createMissingParents) {
 
@@ -391,16 +374,12 @@ public class LFNUtils {
 	}
 
 	/**
-	 * Touch an LFN: if the entry exists, update its timestamp, otherwise try to
-	 * create an empty file
+	 * Touch an LFN: if the entry exists, update its timestamp, otherwise try to create an empty file
 	 * 
 	 * @param user
 	 *            who wants to do the operation
 	 * @param lfn
-	 *            LFN to be touched (from
-	 *            {@link LFNUtils#getLFN(String, boolean)}, called with the
-	 *            second argument <code>false</code> if the entry doesn't exist
-	 *            yet
+	 *            LFN to be touched (from {@link LFNUtils#getLFN(String, boolean)}, called with the second argument <code>false</code> if the entry doesn't exist yet
 	 * @return <code>true</code> if the LFN was touched
 	 */
 	public static boolean touchLFN(final AliEnPrincipal user, final LFN lfn) {
@@ -437,8 +416,7 @@ public class LFNUtils {
 	 * Insert an LFN in the catalogue
 	 * 
 	 * @param lfn
-	 * @return true if the entry was inserted (or previously existed), false if
-	 *         there was an error
+	 * @return true if the entry was inserted (or previously existed), false if there was an error
 	 */
 	static boolean insertLFN(final LFN lfn) {
 		if (lfn.exists)
@@ -486,8 +464,7 @@ public class LFNUtils {
 	public static final int FIND_BIGGEST_VERSION = 4;
 
 	/**
-	 * Use Perl-style regexp in the pattern instead of SQL-style (which is the
-	 * default for find). This is to be used for wildcard expansion.
+	 * Use Perl-style regexp in the pattern instead of SQL-style (which is the default for find). This is to be used for wildcard expansion.
 	 */
 	public static final int FIND_REGEXP = 8;
 
@@ -523,26 +500,21 @@ public class LFNUtils {
 	/**
 	 * @param path
 	 * @param tag
-	 * @return metadata table where this tag can be found for this path, or
-	 *         <code>null</code> if there is no such entry
+	 * @return metadata table where this tag can be found for this path, or <code>null</code> if there is no such entry
 	 */
 	public static Set<String> getTagTableNames(final String path, final String tag) {
-		final DBFunctions db = ConfigUtils.getDB("alice_data");
-
 		final Set<String> ret = new HashSet<>();
-		
-		try {
+
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);
-			
+
 			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
-			while (db.moveNext()){
+			while (db.moveNext()) {
 				ret.add(db.gets(1));
 			}
-		} finally {
-			db.close();
 		}
-		
+
 		return ret;
 	}
 
@@ -555,21 +527,16 @@ public class LFNUtils {
 	 * @return the files that match the metadata query
 	 */
 	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags) {
-		DBFunctions db = null;
-
 		final Set<LFN> ret = new LinkedHashSet<>();
 
-		try {
-			for (final String tableName : getTagTableNames(path, tag)) {
-				if (db == null)
-					db = ConfigUtils.getDB("alice_data");
-				
-				if (db == null){
-					logger.log(Level.WARNING, "Cannot get a DB instance");
-					
-					return ret;
-				}
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			if (db == null) {
+				logger.log(Level.WARNING, "Cannot get a DB instance");
 
+				return ret;
+			}
+
+			for (final String tableName : getTagTableNames(path, tag)) {
 				String q = "SELECT distinct file FROM " + Format.escSQL(tableName) + " " + Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
 						+ Format.escSQL(query.replace(":", "."));
 
@@ -577,7 +544,7 @@ public class LFNUtils {
 					q += " ORDER BY version DESC, entryId DESC LIMIT 1";
 
 				db.setReadOnly(true);
-				
+
 				if (!db.query(q))
 					continue;
 
@@ -588,9 +555,6 @@ public class LFNUtils {
 						ret.add(l);
 				}
 			}
-		} finally {
-			if (db != null)
-				db.close();
 		}
 
 		return ret;
@@ -652,15 +616,11 @@ public class LFNUtils {
 		if (!insertLFN(lfn))
 			return null;
 
-		final DBFunctions db = ConfigUtils.getDB("alice_data");
-
 		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary(?));";
 
-		try {
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			if (!db.query(q, false, lfn.guid.toString()))
 				return null;
-		} finally {
-			db.close();
 		}
 
 		return lfn;
@@ -675,13 +635,11 @@ public class LFNUtils {
 		if (!collection.exists || !collection.isCollection() || lfns == null || lfns.size() == 0)
 			return false;
 
-		final DBFunctions db = ConfigUtils.getDB("alice_data");
-
-		try {
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);
-			
+
 			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
-			
+
 			db.setReadOnly(false);
 
 			if (!db.moveNext())
@@ -764,8 +722,6 @@ public class LFNUtils {
 			}
 
 			return false;
-		} finally {
-			db.close();
 		}
 	}
 
@@ -807,15 +763,13 @@ public class LFNUtils {
 			return false;
 		}
 
-		final DBFunctions db = ConfigUtils.getDB("alice_data");
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			final Set<String> currentLFNs = collection.listCollection();
 
-		final Set<String> currentLFNs = collection.listCollection();
-
-		try {
 			db.setReadOnly(true);
-			
+
 			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
-			
+
 			db.setReadOnly(false);
 
 			if (!db.moveNext()) {
@@ -881,81 +835,69 @@ public class LFNUtils {
 
 			guid.update();
 			collection.update();
-		} finally {
-			db.close();
 		}
 
 		return true;
 	}
-	
-	public static boolean chownLFN( String path, String new_owner, String new_group ){
-		LFN lfn = getLFN( path );
-		if( lfn == null )
+
+	public static boolean chownLFN(String path, String new_owner, String new_group) {
+		LFN lfn = getLFN(path);
+		if (lfn == null)
 			return false;
-		if( new_owner == null || new_owner.equals("") )
+		if (new_owner == null || new_owner.equals(""))
 			return false;
 		lfn.owner = new_owner;
-		if( new_group != null && !new_group.equals("") )
+		if (new_group != null && !new_group.equals(""))
 			lfn.gowner = new_group;
 		return lfn.update();
 	}
-	
-	public static int mirrorLFN( String path, String dstSE, 
-								boolean is_guid,
-								Integer attempts ){
+
+	public static int mirrorLFN(String path, String dstSE, boolean is_guid, Integer attempts) {
 		LFN lfn;
-		if( is_guid ){
-			GUID g = GUIDUtils.getGUID(UUID.fromString(path),
-					false);
-			lfn = getLFN( g );
-		}
-		else
-			lfn = getLFN( path );
-		
-		if( lfn==null )
+		if (is_guid) {
+			GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
+			lfn = getLFN(g);
+		} else
+			lfn = getLFN(path);
+
+		if (lfn == null)
 			return -256;
-		
-		if( dstSE=="" || dstSE==null )
+
+		if (dstSE == "" || dstSE == null)
 			return -255;
-		
-		SE se = SEUtils.getSE( dstSE );		
-		if(se==null)
+
+		SE se = SEUtils.getSE(dstSE);
+		if (se == null)
 			return -254;
-				
+
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		List<SE> ses = SEUtils.getClosestSEs(site, true);
-		
-		if( ses.size() == 0 )
+
+		if (ses.size() == 0)
 			return -253;
-		
+
 		// run mirror
-		return (TransferUtils.mirror(lfn, se) ); 
-				//ses.get(0) ) );				
+		return (TransferUtils.mirror(lfn, se));
+		// ses.get(0) ) );
+		// ses.get(0) ) );
 	}
-	
-	public static HashMap<String,Integer> mirrorLFN( String path, 
-								List<String> ses,
-								List<String> exses,
-								HashMap<String, Integer> qos, 
-								boolean is_guid,
-								Integer attempts ){
+
+	public static HashMap<String, Integer> mirrorLFN(String path, List<String> ses, List<String> exses, HashMap<String, Integer> qos, boolean is_guid, Integer attempts) {
 		LFN lfn;
-		if( is_guid ){
-			GUID g = GUIDUtils.getGUID(UUID.fromString(path),
-					false);
-			lfn = getLFN( g );
-		}
-		else
-			lfn = getLFN( path );
-		
+		if (is_guid) {
+			GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
+			lfn = getLFN(g);
+		} else
+			lfn = getLFN(path);
+
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
-		List<SE> found_ses= SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
+		List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
 		HashMap<String, Integer> resmap = new HashMap<String, Integer>();
-		for( SE s : found_ses ){
-			resmap.put(s.getName(),TransferUtils.mirror(lfn, s));
+		for (SE s : found_ses) {
+			resmap.put(s.getName(), TransferUtils.mirror(lfn, s));
 		}
 		return resmap;
-	}	
+	}
 }
