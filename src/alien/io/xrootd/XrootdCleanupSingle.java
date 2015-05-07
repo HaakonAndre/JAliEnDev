@@ -176,11 +176,9 @@ public class XrootdCleanupSingle {
 
 		System.err.println("RM " + uuid + " FROM " + se.seName + ", " + file.size + " (" + Format.size(file.size) + "), " + file.date);
 
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
-
-		db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
-
-		db.close();
+		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
+		}
 
 		return true;
 	}

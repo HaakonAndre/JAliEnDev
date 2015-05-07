@@ -175,21 +175,21 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	}
 
 	/**
-	 * Simple constructor with the canonical 
+	 * Simple constructor with the canonical
 	 * 
 	 * @param canonicalLFN
 	 */
-	LFN(final String canonicalLFN){
+	LFN(final String canonicalLFN) {
 		this.canonicalName = canonicalLFN;
-		
+
 		final int idx = canonicalName.lastIndexOf('/');
-		
-		if (idx>0)
-			lfn = canonicalName.substring(idx+1);
+
+		if (idx > 0)
+			lfn = canonicalName.substring(idx + 1);
 		else
 			lfn = canonicalName;
 	}
-	
+
 	/**
 	 * Get the parent directory
 	 * 
@@ -239,7 +239,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	@Override
 	public int hashCode() {
-		return (this.indexTableEntry!=null ? this.indexTableEntry.hashCode() * 7 : 0) + (int) dir * 13 + lfn.hashCode() * 17;
+		return (this.indexTableEntry != null ? this.indexTableEntry.hashCode() * 7 : 0) + (int) dir * 13 + lfn.hashCode() * 17;
 	}
 
 	private void init(final DBFunctions db) {
@@ -418,12 +418,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	}
 
 	/**
-	 * Check whether or not this LFN points to a physical file or is a pointer
-	 * to an archive
+	 * Check whether or not this LFN points to a physical file or is a pointer to an archive
 	 * 
-	 * @return <code>true</code> if the file is physically on disk,
-	 *         <code>false</code> if it is located inside an archive or even if
-	 *         doesn't exist
+	 * @return <code>true</code> if the file is physically on disk, <code>false</code> if it is located inside an archive or even if doesn't exist
 	 */
 	public boolean isReal() {
 		if (!exists || guid == null)
@@ -451,7 +448,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (this == o)
 			return 0;
 
-		if (indexTableEntry!=null){
+		if (indexTableEntry != null) {
 			final int diff = indexTableEntry.compareTo(o.indexTableEntry);
 
 			if (diff != 0)
@@ -566,8 +563,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	/**
 	 * Insert a new LFN in the catalogue
 	 * 
-	 * @return <code>true</code> if the new entry was inserted,
-	 *         <code>false</code> if the query failed
+	 * @return <code>true</code> if the new entry was inserted, <code>false</code> if the query failed
 	 */
 	boolean insert() {
 		String lfnToInsert = lfn;
@@ -584,9 +580,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				+ (aclId > 0 ? "" + aclId : "null") + "," + e(lfnToInsert) + "," + e(format(expiretime)) + "," + size + "," + dir + "," + e(gowner) + "," + (type > 0 ? e("" + type) : "null") + ","
 				+ e(perm) + "," + (guid != null ? "string2binary('" + guid + "')," : "null,") + e(md5) + "," + e(guidtime) + "," + (broken ? 1 : 0) + "," + (jobid > 0 ? "" + jobid : "null") + ");";
 
-		final DBFunctions db = indexTableEntry.getDB();
-
-		try {
+		try (DBFunctions db = indexTableEntry.getDB()) {
 			db.setLastGeneratedKey(true);
 
 			final boolean result = db.query(q);
@@ -597,8 +591,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			}
 
 			return result;
-		} finally {
-			db.close();
 		}
 	}
 
@@ -609,43 +601,37 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (!exists)
 			return false;
 
-		final String q = "UPDATE L" + indexTableEntry.tableName + "L SET size=" + size + ",owner=" + e(owner) + ",gowner=" + e(gowner) + ",ctime=" + e(format(ctime))+
-			",md5="+e(md5)+" WHERE entryId=" + entryId;
+		final String q = "UPDATE L" + indexTableEntry.tableName + "L SET size=" + size + ",owner=" + e(owner) + ",gowner=" + e(gowner) + ",ctime=" + e(format(ctime)) + ",md5=" + e(md5)
+				+ " WHERE entryId=" + entryId;
 
-		final DBFunctions db = indexTableEntry.getDB();
-
-		try {
+		try (DBFunctions db = indexTableEntry.getDB()) {
 			return db.query(q) && db.getUpdateCount() == 1;
-		} finally {
-			db.close();
 		}
 	}
+
 	/**
 	 * Delete this LFN in the Catalogue
 	 * 
 	 * @param purge
 	 *            physically delete the PFNs
 	 * @param recursive
-	 *            for directories, remove all subentries. <B>This code doesn't
-	 *            check permissions, do the check before!</B>
+	 *            for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
 	 * 
 	 * @return <code>true</code> if this LFN entry was deleted in the database
 	 */
 	public boolean delete(final boolean purge, final boolean recursive) {
-	    return delete(purge, recursive, true);
+		return delete(purge, recursive, true);
 	}
-	
+
 	/**
 	 * Delete this LFN in the Catalogue
 	 * 
 	 * @param purge
 	 *            physically delete the PFNs
 	 * @param recursive
-	 *            for directories, remove all subentries. <B>This code doesn't
-	 *            check permissions, do the check before!</B>
+	 *            for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
 	 * @param notifyCache
-	 *            whether or not to notify AliEn's access and whereis caches of
-	 *            removed entries
+	 *            whether or not to notify AliEn's access and whereis caches of removed entries
 	 * 
 	 * @return <code>true</code> if this LFN entry was deleted in the database
 	 */
@@ -670,25 +656,22 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		final String q = "DELETE FROM L" + indexTableEntry.tableName + "L WHERE entryId=?;";
 
-		final DBFunctions db = indexTableEntry.getDB();
-
 		boolean ok = false;
 
-		try {
+		try (DBFunctions db = indexTableEntry.getDB()) {
 			if (db.query(q, false, Long.valueOf(entryId))) {
 				if (notifyCache)
-					try{
+					try {
 						String toWipe = getCanonicalName();
-						
-						if(isDirectory())
+
+						if (isDirectory())
 							toWipe += ".*";
-					
+
 						TextCache.invalidateLFN(toWipe);
-					}
-					catch (final Throwable t){
+					} catch (final Throwable t) {
 						logger.log(java.util.logging.Level.WARNING, "Cannot invalidate cache entry", t);
 					}
-				
+
 				exists = false;
 				entryId = 0;
 				ok = true;
@@ -700,8 +683,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				if (g != null)
 					g.delete(true);
 			}
-		} finally {
-			db.close();
 		}
 
 		return ok;
@@ -711,8 +692,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * Change the ownership of this LFN.
 	 * 
 	 * @param newOwner
-	 * @return the previous owner, if the ownership was updated, or
-	 *         <code>null</code> if nothing was touched
+	 * @return the previous owner, if the ownership was updated, or <code>null</code> if nothing was touched
 	 */
 	public String chown(final AliEnPrincipal newOwner) {
 		if (!exists)
@@ -742,55 +722,44 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (CatalogueUtils.isSeparateTable(getCanonicalName())) {
 			final IndexTableEntry other = CatalogueUtils.getClosestMatch(getCanonicalName());
 
-			final DBFunctions db = other.getDB();
-
 			final String q = "SELECT * FROM L" + other.tableName + "L WHERE dir=(SELECT entryId FROM L" + other.tableName + "L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 
-			try {
+			try (DBFunctions db = other.getDB()) {
 				db.setReadOnly(true);
-				
+
 				db.query(q);
 
 				while (db.moveNext())
 					ret.add(new LFN(db, other));
-			} finally {
-				db.close();
 			}
 
 			return ret;
 		}
 
-		final DBFunctions db = indexTableEntry.getDB();
-
 		final String q = "SELECT * FROM L" + indexTableEntry.tableName + "L WHERE dir=? AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 
-		db.setReadOnly(true);
-		
-		try {
+		try (DBFunctions db = indexTableEntry.getDB()) {
+			db.setReadOnly(true);
+
 			db.query(q, false, Long.valueOf(entryId));
 
 			while (db.moveNext())
 				ret.add(new LFN(db, indexTableEntry));
-		} finally {
-			db.close();
 		}
 
 		return ret;
 	}
 
 	/**
-	 * @return the set of files in this collection, or <code>null</code> if this
-	 *         is not a collection
+	 * @return the set of files in this collection, or <code>null</code> if this is not a collection
 	 */
 	public Set<String> listCollection() {
 		if (!isCollection() || !exists)
 			return null;
 
-		final DBFunctions db = ConfigUtils.getDB("alice_data");
-		
-		db.setReadOnly(true);
+		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setReadOnly(true);
 
-		try {
 			if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary(?) ORDER BY 1;", false, guid.toString()))
 				return null;
 
@@ -800,8 +769,6 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				ret.add(StringFactory.get(db.gets(1)));
 
 			return ret;
-		} finally {
-			db.close();
 		}
 	}
 

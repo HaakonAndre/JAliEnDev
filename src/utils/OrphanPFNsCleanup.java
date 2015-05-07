@@ -53,8 +53,7 @@ public class OrphanPFNsCleanup {
 	static Map<Integer, SEThread> SE_THREADS = new ConcurrentHashMap<>();
 
 	/**
-	 * Whether or not the stats have changed and they should be printed on
-	 * screen
+	 * Whether or not the stats have changed and they should be printed on screen
 	 */
 	volatile static boolean dirtyStats = true;
 
@@ -64,17 +63,15 @@ public class OrphanPFNsCleanup {
 	public static void main(final String[] args) {
 		AppConfig.getProperty("lia.Monitor.group"); // initialize it
 
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
-		
 		long lastCheck = 0;
 
 		while (true) {
 			if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
-				try {
+				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 					db.setReadOnly(true);
-					
+
 					db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
-					
+
 					db.setReadOnly(false);
 
 					while (db.moveNext()) {
@@ -96,14 +93,11 @@ public class OrphanPFNsCleanup {
 							t.start();
 
 							SE_THREADS.put(se, t);
-						}
-						else{
+						} else {
 							if (logger.isLoggable(Level.INFO))
-								logger.log(Level.INFO, "Not starting an SE thread for "+se+" ("+theSE.seName+") because the key is already in SE_THREADS");
+								logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + theSE.seName + ") because the key is already in SE_THREADS");
 						}
 					}
-				} finally {
-					db.close();
 				}
 
 				lastCheck = System.currentTimeMillis();
@@ -118,11 +112,13 @@ public class OrphanPFNsCleanup {
 			final long count = reclaimedCount.getAndSet(0);
 			final long size = reclaimedSize.getAndSet(0);
 
-			if (count > 0)
-				db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + count + " WHERE status_key='reclaimedc';");
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				if (count > 0)
+					db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + count + " WHERE status_key='reclaimedc';");
 
-			if (size > 0)
-				db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + size + " WHERE status_key='reclaimedb';");
+				if (size > 0)
+					db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + size + " WHERE status_key='reclaimedb';");
+			}
 
 			if (dirtyStats) {
 				System.err.println("Removed: " + removed + " (" + Format.size(reclaimedSpace.longValue()) + "), failed to remove: " + failed + " (delta: " + count + " files, " + Format.size(size)
@@ -143,16 +139,14 @@ public class OrphanPFNsCleanup {
 		public void run() {
 			setName("SEThread (" + seNumber + ")");
 
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
-			
-			db.setReadOnly(true);
-
 			ThreadPoolExecutor executor = EXECUTORS.get(Integer.valueOf(seNumber));
 
 			while (true) {
 				concurrentQueryies.acquireUninterruptibly();
 
-				try {
+				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+					db.setReadOnly(true);
+
 					try {
 						// TODO : what to do with these PFNs ? Iterate over them
 						// and release them from the catalogue nevertheless ?
@@ -207,8 +201,6 @@ public class OrphanPFNsCleanup {
 					do
 						executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
 					while (db.moveNext());
-				} finally {
-					db.close();
 				}
 
 				while (executor.getQueue().size() > 0 || executor.getActiveCount() > 0)
@@ -298,10 +290,9 @@ public class OrphanPFNsCleanup {
 
 			final GUID guid;
 
-			if ( (flags & 1) == 1){
+			if ((flags & 1) == 1) {
 				guid = new GUID(uuid);
-			}
-			else{
+			} else {
 				concurrentQueryies.acquireUninterruptibly();
 
 				try {
@@ -359,9 +350,7 @@ public class OrphanPFNsCleanup {
 
 			pfn.ticket = new AccessTicket(AccessType.DELETE, env);
 
-			final DBFunctions db2 = ConfigUtils.getDB("alice_users");
-
-			try {
+			try (DBFunctions db2 = ConfigUtils.getDB("alice_users")) {
 				if (!Factory.xrootd.delete(pfn)) {
 					System.err.println("Could not delete from " + se.getName());
 
@@ -377,8 +366,8 @@ public class OrphanPFNsCleanup {
 					concurrentQueryies.acquireUninterruptibly();
 
 					try {
-						System.err.println("Successfully deleted the replica of "+guid.guid+" ("+Format.size(guid.size)+") from "+se.getName());
-						
+						System.err.println("Successfully deleted the replica of " + guid.guid + " (" + Format.size(guid.size) + ") from " + se.getName());
+
 						if (guid.exists()) {
 							successOne(guid.size);
 
@@ -386,19 +375,19 @@ public class OrphanPFNsCleanup {
 							if (guid.removePFN(se, false) != null) {
 								if (guid.getPFNs().size() == 0) {
 									// already purged all entries
-									if (guid.delete(false)) { 
-										 System.err.println("  Deleted the GUID "+guid.guid+" since this was the last replica");
+									if (guid.delete(false)) {
+										System.err.println("  Deleted the GUID " + guid.guid + " since this was the last replica");
 									} else
 										System.err.println("  Failed to delete the GUID even if this was the last replica:\n" + guid);
 								} else {
-									 System.err.println("  Kept the GUID "+guid.guid+" since it still has "+guid.getPFNs().size()+" replicas");
+									System.err.println("  Kept the GUID " + guid.guid + " since it still has " + guid.getPFNs().size() + " replicas");
 								}
 							} else
 								System.err.println("  Failed to remove the replica on " + se.getName() + " from " + guid.guid);
 						} else {
 							successOne(size);
 
-							if ( (flags & 1) == 0)
+							if ((flags & 1) == 0)
 								System.err.println("  GUID " + guid.guid + " doesn't exist in the catalogue any more");
 						}
 
@@ -412,20 +401,18 @@ public class OrphanPFNsCleanup {
 
 				failOne();
 
-				System.err.println("Exception deleting "+guid.guid+" from " + se.getName() + " : " + e.getMessage());
+				System.err.println("Exception deleting " + guid.guid + " from " + se.getName() + " : " + e.getMessage());
 
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "Exception deleting from " + se.getName(), e);
 
 				concurrentQueryies.acquireUninterruptibly();
 
-				try {
+				try (DBFunctions db2 = ConfigUtils.getDB("alice_users")) {
 					db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
 				} finally {
 					concurrentQueryies.release();
 				}
-			} finally {
-				db2.close();
 			}
 		}
 	}

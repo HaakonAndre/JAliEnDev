@@ -109,19 +109,17 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * @return the LFN, if it exists in this table, or <code>null</code> if not
 	 */
 	public LFN getLFN(final UUID guid) {
-		final DBFunctions db = getDB();
+		try (DBFunctions db = getDB()) {
+			if (db == null)
+				return null;
 
-		if (db == null)
-			return null;
+			if (monitor != null)
+				monitor.incrementCounter("LFN_db_lookup");
 
-		if (monitor != null)
-			monitor.incrementCounter("LFN_db_lookup");
+			final String q = "SELECT * from L" + tableName + "L WHERE guid=string2binary(?);";
 
-		final String q = "SELECT * from L" + tableName + "L WHERE guid=string2binary(?);";
+			db.setReadOnly(true);
 
-		db.setReadOnly(true);
-		
-		try {
 			if (!db.query(q, false, guid.toString()))
 				return null;
 
@@ -133,8 +131,6 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			}
 
 			return new LFN(db, this);
-		} finally {
-			db.close();
 		}
 	}
 
@@ -143,9 +139,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * 
 	 * @param sPath
 	 * @param evenIfDoesntExist
-	 * @return the LFN, either the existing entry, or if
-	 *         <code>evenIfDoesntExist</code> is <code>true</code> then a bogus
-	 *         entry is returned
+	 * @return the LFN, either the existing entry, or if <code>evenIfDoesntExist</code> is <code>true</code> then a bogus entry is returned
 	 */
 	public LFN getLFN(final String sPath, final boolean evenIfDoesntExist) {
 		String sSearch = sPath;
@@ -153,19 +147,17 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		if (sSearch.startsWith("/"))
 			sSearch = sSearch.substring(lfn.length());
 
-		final DBFunctions db = getDB();
+		try (DBFunctions db = getDB()) {
+			if (db == null)
+				return null;
 
-		if (db == null)
-			return null;
+			if (monitor != null)
+				monitor.incrementCounter("LFN_db_lookup");
 
-		if (monitor != null)
-			monitor.incrementCounter("LFN_db_lookup");
+			String q = "SELECT * FROM L" + tableName + "L WHERE lfn=?";
 
-		String q = "SELECT * FROM L" + tableName + "L WHERE lfn=?";
+			db.setReadOnly(true);
 
-		db.setReadOnly(true);
-		
-		try {
 			if (!sSearch.endsWith("/")) {
 				q += " OR lfn=?";
 
@@ -185,15 +177,12 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			}
 
 			return new LFN(db, this);
-		} finally {
-			db.close();
 		}
 	}
 
 	/**
 	 * @param sPath
-	 *            base path where to start searching, must be an absolute path
-	 *            ending in /
+	 *            base path where to start searching, must be an absolute path ending in /
 	 * @param sPattern
 	 *            pattern to search for, in SQL wildcard format
 	 * @param flags
@@ -201,48 +190,46 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * @return the LFNs from this table that match
 	 */
 	public List<LFN> find(final String sPath, final String sPattern, final int flags) {
-		final DBFunctions db = getDB();
+		try (DBFunctions db = getDB()) {
+			if (db == null)
+				return null;
 
-		if (db == null)
-			return null;
+			if (monitor != null)
+				monitor.incrementCounter("LFN_find");
 
-		if (monitor != null)
-			monitor.incrementCounter("LFN_find");
+			final List<LFN> ret = new ArrayList<>();
 
-		final List<LFN> ret = new ArrayList<>();
+			String sSearch = sPath;
 
-		String sSearch = sPath;
+			if (sSearch.startsWith("/"))
+				if (lfn.length() <= sSearch.length())
+					sSearch = sSearch.substring(lfn.length());
+				else
+					sSearch = "";
 
-		if (sSearch.startsWith("/"))
-			if (lfn.length() <= sSearch.length())
-				sSearch = sSearch.substring(lfn.length());
-			else
-				sSearch = "";
+			String q = "SELECT * FROM L" + tableName + "L WHERE ";
 
-		String q = "SELECT * FROM L" + tableName + "L WHERE ";
+			if ((flags & LFNUtils.FIND_REGEXP) == 0) {
+				if (!sPattern.startsWith("%"))
+					sSearch += "%";
 
-		if ((flags & LFNUtils.FIND_REGEXP) == 0) {
-			if (!sPattern.startsWith("%"))
-				sSearch += "%";
+				sSearch += sPattern;
 
-			sSearch += sPattern;
+				if (!sPattern.endsWith("%"))
+					sSearch += "%";
 
-			if (!sPattern.endsWith("%"))
-				sSearch += "%";
+				q += "lfn LIKE '" + Format.escSQL(sSearch) + "' AND replicated=0";
+			} else
+				q += "lfn RLIKE '" + Format.escSQL(sSearch + sPattern) + "' AND replicated=0";
 
-			q += "lfn LIKE '" + Format.escSQL(sSearch) + "' AND replicated=0";
-		} else
-			q += "lfn RLIKE '" + Format.escSQL(sSearch + sPattern) + "' AND replicated=0";
+			if ((flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
+				q += " AND type!='d'";
 
-		if ((flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
-			q += " AND type!='d'";
+			if ((flags & LFNUtils.FIND_NO_SORT) == 0)
+				q += " ORDER BY lfn";
 
-		if ((flags & LFNUtils.FIND_NO_SORT) == 0)
-			q += " ORDER BY lfn";
-
-		try {
 			db.setReadOnly(true);
-			
+
 			if (!db.query(q))
 				return null;
 
@@ -251,11 +238,9 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 				ret.add(l);
 			}
-		} finally {
-			db.close();
-		}
 
-		return ret;
+			return ret;
+		}
 	}
 
 	/**
@@ -265,11 +250,9 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * @return the LFN, or <code>null</code>
 	 */
 	public LFN getLFN(final long entryId) {
-		final DBFunctions db = getDB();
+		try (DBFunctions db = getDB()) {
+			db.setReadOnly(true);
 
-		db.setReadOnly(true);
-		
-		try {
 			if (!db.query("SELECT * FROM L" + tableName + "L WHERE entryId=?;", false, Long.valueOf(entryId)))
 				return null;
 
@@ -277,8 +260,6 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 				return null;
 
 			return new LFN(db, this);
-		} finally {
-			db.close();
 		}
 	}
 

@@ -235,8 +235,7 @@ public class PFN implements Serializable, Comparable<PFN> {
 	}
 
 	/**
-	 * @return get the UUID associated to the GUID of which this entry is a
-	 *         replica
+	 * @return get the UUID associated to the GUID of which this entry is a replica
 	 */
 	public UUID getUUID() {
 		if (uuid == null)
@@ -261,25 +260,21 @@ public class PFN implements Serializable, Comparable<PFN> {
 				if (h == null)
 					return null;
 
-				final DBFunctions db = h.getDB();
+				try (DBFunctions db = h.getDB()) {
+					if (db == null)
+						return null;
 
-				if (db == null)
-					return null;
+					if (monitor != null)
+						monitor.incrementCounter("GUID_db_lookup");
 
-				if (monitor != null)
-					monitor.incrementCounter("GUID_db_lookup");
-
-				try {
 					db.setReadOnly(true);
-					
+
 					db.query("SELECT * FROM G" + tableNumber + "L WHERE guidId=?;", false, Integer.valueOf(guidId));
 
 					if (db.moveNext()) {
 						guid = new GUID(db, host, tableNumber);
 						uuid = guid.guid;
 					}
-				} finally {
-					db.close();
 				}
 			}
 

@@ -45,19 +45,19 @@ public class PackageUtils {
 		if ((System.currentTimeMillis() - lastCacheCheck) > 1000 * 60) {
 			final Map<String, Package> newPackages = new LinkedHashMap<>();
 
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				if (db == null) {
+					lastCacheCheck = System.currentTimeMillis();
+					return;
+				}
 
-			if (db == null) {
-				lastCacheCheck = System.currentTimeMillis();
-				return;
-			}
+				if (monitor != null)
+					monitor.incrementCounter("Package_db_lookup");
 
-			if (monitor != null)
-				monitor.incrementCounter("Package_db_lookup");
+				final String q = "SELECT DISTINCT packageVersion, packageName, username, platform, lfn FROM PACKAGES ORDER BY 3,2,1,4,5;";
 
-			final String q = "SELECT DISTINCT packageVersion, packageName, username, platform, lfn FROM PACKAGES ORDER BY 3,2,1,4,5;";
-
-			try {
+				db.setReadOnly(true);
+				
 				if (!db.query(q))
 					return;
 
@@ -75,8 +75,6 @@ public class PackageUtils {
 						newPackages.put(next.getFullName(), next);
 					}
 				}
-			} finally {
-				db.close();
 			}
 
 			final Set<String> newCvmfsPackages = new HashSet<>();
@@ -138,7 +136,8 @@ public class PackageUtils {
 	/**
 	 * Get the Package object corresponding to the given textual description.
 	 * 
-	 * @param name package name, eg. "VO_ALICE@AliRoot::vAN-20140917"
+	 * @param name
+	 *            package name, eg. "VO_ALICE@AliRoot::vAN-20140917"
 	 * @return the corresponding Package object, if it exists
 	 */
 	public static Package getPackage(final String name) {

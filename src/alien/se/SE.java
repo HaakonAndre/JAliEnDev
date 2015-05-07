@@ -43,8 +43,7 @@ public class SE implements Serializable, Comparable<SE> {
 	public final int seNumber;
 
 	/**
-	 * SE version number, if < 219, then triggers encrypted xrootd envelope
-	 * creation over boolean needsEncryptedEnvelope
+	 * SE version number, if < 219, then triggers encrypted xrootd envelope creation over boolean needsEncryptedEnvelope
 	 */
 	public final int seVersion;
 
@@ -221,7 +220,7 @@ public class SE implements Serializable, Comparable<SE> {
 	 * @param seStoragePath
 	 * @return the protocol part
 	 */
-	public static String generateProtocol(final String seioDaemons, final String seStoragePath){
+	public static String generateProtocol(final String seioDaemons, final String seStoragePath) {
 		if (seioDaemons == null || seioDaemons.length() == 0)
 			return null;
 
@@ -235,7 +234,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 		return ret;
 	}
-	
+
 	/**
 	 * @param guid
 	 * @return the PFN for this storage
@@ -273,8 +272,7 @@ public class SE implements Serializable, Comparable<SE> {
 	}
 
 	/**
-	 * Convert one of the sets to the database representation of it, a
-	 * comma-separated list of elements
+	 * Convert one of the sets to the database representation of it, a comma-separated list of elements
 	 * 
 	 * @param set
 	 * @return the comma separated list of the values in the given set
@@ -341,8 +339,7 @@ public class SE implements Serializable, Comparable<SE> {
 	}
 
 	/**
-	 * @return Storage Element declared size, in KB, or <code>-1</code> if the
-	 *         SE is not defined
+	 * @return Storage Element declared size, in KB, or <code>-1</code> if the SE is not defined
 	 */
 	private final long getSize() {
 		final int idx = seName.indexOf("::");
@@ -391,14 +388,12 @@ public class SE implements Serializable, Comparable<SE> {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			db.query("SELECT * FROM SE WHERE sename='ALICE::IHEP::File';");
 
-		db.query("SELECT * FROM SE WHERE sename='ALICE::IHEP::File';");
+			final SE se = new SE(db);
 
-		final SE se = new SE(db);
-
-		db.close();
-
-		System.err.println(se);
+			System.err.println(se);
+		}
 	}
 }

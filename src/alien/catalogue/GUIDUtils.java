@@ -5,7 +5,9 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
@@ -145,8 +147,7 @@ public final class GUIDUtils {
 	 * Get the referring GUIDs (members of the archive, if any)
 	 * 
 	 * @param guid
-	 * @return the set of GUIDs pointing to this archive, or <code>null</code>
-	 *         if there is no such file
+	 * @return the set of GUIDs pointing to this archive, or <code>null</code> if there is no such file
 	 */
 	public static Set<GUID> getReferringGUID(final UUID guid) {
 		final int host = getGUIDHost(guid);
@@ -159,14 +160,12 @@ public final class GUIDUtils {
 		if (h == null)
 			return null;
 
-		final DBFunctions db = h.getDB();
+		try (DBFunctions db = h.getDB()) {
+			if (db == null)
+				return null;
 
-		if (db == null)
-			return null;
-		
-		db.setReadOnly(true);
+			db.setReadOnly(true);
 
-		try {
 			final int tableName = GUIDUtils.getTableNameForGUID(guid);
 
 			if (tableName < 0)
@@ -194,8 +193,6 @@ public final class GUIDUtils {
 			while (db.moveNext());
 
 			return ret;
-		} finally {
-			db.close();
 		}
 	}
 
@@ -204,8 +201,7 @@ public final class GUIDUtils {
 	 * 
 	 * @param guid
 	 * @param evenIfDoesntExist
-	 *            if <code>true</code>, if the entry doesn't exist then a new
-	 *            GUID is returned
+	 *            if <code>true</code>, if the entry doesn't exist then a new GUID is returned
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
 	public static GUID getGUID(final UUID guid, final boolean evenIfDoesntExist) {
@@ -219,12 +215,10 @@ public final class GUIDUtils {
 		if (h == null)
 			return null;
 
-		final DBFunctions db = h.getDB();
+		try (DBFunctions db = h.getDB()) {
+			if (db == null)
+				return null;
 
-		if (db == null)
-			return null;
-
-		try {
 			final int tableName = GUIDUtils.getTableNameForGUID(guid);
 
 			if (tableName < 0)
@@ -232,7 +226,7 @@ public final class GUIDUtils {
 
 			if (monitor != null)
 				monitor.incrementCounter("GUID_db_lookup");
-			
+
 			db.setReadOnly(true);
 
 			if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString()))
@@ -252,8 +246,6 @@ public final class GUIDUtils {
 
 				return null;
 			}
-		} finally {
-			db.close();
 		}
 	}
 
@@ -299,7 +291,7 @@ public final class GUIDUtils {
 
 	/**
 	 * @param referenceTime
-	 * @return a time UUID with the time field set to the reference time 
+	 * @return a time UUID with the time field set to the reference time
 	 */
 	public static synchronized UUID generateTimeUUID(final long referenceTime) {
 		final long time = referenceTime * 10000 + 122192928000000000L;
@@ -354,6 +346,19 @@ public final class GUIDUtils {
 		return ret;
 	}
 
+	/**
+	 * Extract the MAC address from the given UUID. There is no guarantee on the value of this field, it's just the bytes that would have the MAC address in a v1 UUID.
+	 * 
+	 * @param uuid
+	 * @return
+	 */
+	public static String getMacAddr(final UUID uuid) {
+		long mac = uuid.getLeastSignificantBits() & 0xFFFFFFFFFFFFL;
+
+		return String.format("%02x:%02x:%02x:%02x:%02x:%02x", Long.valueOf(mac >> 40 & 0xFF), Long.valueOf(mac >> 32 & 0xFF), Long.valueOf(mac >> 24 & 0xFF), Long.valueOf(mac >> 16 & 0xFF),
+				Long.valueOf(mac >> 8 & 0xFF), Long.valueOf(mac & 0xFF));
+	}
+
 	private static byte[] MACAddress = null;
 
 	private static final String SYS_ENTRY = "/sys/class/net";
@@ -370,21 +375,28 @@ public final class GUIDUtils {
 			if (f.exists()) {
 				final String[] devices = f.list();
 
-				if (devices != null)
+				if (devices != null) {
+					final List<String> files = Arrays.asList(devices);
+
+					Collections.sort(files);
+
 					for (final String dev : devices) {
+						System.err.println("Looking at " + SYS_ENTRY + "/" + dev + "/address");
+
 						final String addr = lazyj.Utils.readFile(SYS_ENTRY + "/" + dev + "/address");
+
+						System.err.println("Addr: " + addr);
 
 						if (addr != null && !addr.equals("00:00:00:00:00:00")) {
 							sMac = addr;
 							break;
 						}
 					}
+				}
 			}
 
 			if (sMac == null)
-				try {
-					final BufferedReader br = new BufferedReader(new StringReader(ExternalProcesses.getCmdOutput(Arrays.asList("/sbin/ifconfig", "-a"), false, 30, TimeUnit.SECONDS)));
-
+				try (BufferedReader br = new BufferedReader(new StringReader(ExternalProcesses.getCmdOutput(Arrays.asList("/sbin/ifconfig", "-a"), false, 30, TimeUnit.SECONDS)))) {
 					String s;
 
 					while ((s = br.readLine()) != null) {
@@ -393,17 +405,22 @@ public final class GUIDUtils {
 						while (st.hasMoreTokens()) {
 							final String tok = st.nextToken();
 
-							if (tok.equals("HWaddr") && st.hasMoreTokens())
+							if (tok.equals("HWaddr") && st.hasMoreTokens()) {
 								sMac = st.nextToken();
+								break;
+							}
 						}
-					}
 
-					br.close();
+						if (sMac != null)
+							break;
+					}
 				} catch (final Throwable t) {
 					// ignore
 				}
 
 			if (sMac != null) {
+				System.err.println("Parsing mac: " + sMac);
+
 				final StringTokenizer st = new StringTokenizer(sMac, ":");
 
 				for (int i = 0; i < 6; i++)
@@ -427,19 +444,19 @@ public final class GUIDUtils {
 
 		return new GUID(id);
 	}
-	
+
 	/**
 	 * @param user
 	 * @return a new GUID
 	 */
-	public static GUID createGuid(final AliEnPrincipal user){
+	public static GUID createGuid(final AliEnPrincipal user) {
 		final GUID guid = createGuid();
-		
-		if (user!=null){
+
+		if (user != null) {
 			guid.owner = user.getName();
-	
+
 			final Set<String> roles = user.getRoles();
-	
+
 			if (roles != null && roles.size() > 0)
 				guid.gowner = roles.iterator().next();
 			else
@@ -449,7 +466,7 @@ public final class GUIDUtils {
 		guid.type = 0; // as in the catalogue
 		guid.perm = "755";
 		guid.aclId = -1;
-		
+
 		return guid;
 	}
 
@@ -501,71 +518,69 @@ public final class GUIDUtils {
 	public static final String getIndexTime(final UUID uuid) {
 		return Long.toHexString(indexTime(uuid)).toUpperCase();
 	}
-	
+
 	/**
 	 * Check if the MD5 sum is set to both the LFN and the underlying GUID. If not set the missing one (or both) from the other or by downloading the file and computing the MD5 sum.
 	 * 
 	 * @param lfn
 	 * @return <code>true</code> if the MD5 was already set or if it could be now set, <code>false</code> if there was any error setting it
 	 */
-	public static boolean checkMD5(final LFN lfn){
+	public static boolean checkMD5(final LFN lfn) {
 		final GUID g = getGUID(lfn);
-		
-		if (g==null){
-			logger.log(Level.WARNING, "No GUID for "+lfn.getCanonicalName());
+
+		if (g == null) {
+			logger.log(Level.WARNING, "No GUID for " + lfn.getCanonicalName());
 			return false;
 		}
-		
-		if (lfn.md5==null || lfn.md5.length()<10 || g.md5==null || g.md5.length()<10){
-			if (g.md5!=null && g.md5.length()>=10){
+
+		if (lfn.md5 == null || lfn.md5.length() < 10 || g.md5 == null || g.md5.length() < 10) {
+			if (g.md5 != null && g.md5.length() >= 10) {
 				lfn.md5 = g.md5;
-				logger.log(Level.INFO, "Setting md5 of "+g.guid+" from "+lfn.getCanonicalName()+" to "+lfn.md5);
+				logger.log(Level.INFO, "Setting md5 of " + g.guid + " from " + lfn.getCanonicalName() + " to " + lfn.md5);
 				return lfn.update();
 			}
-			
-			if (lfn.md5!=null && lfn.md5.length()>=10){
+
+			if (lfn.md5 != null && lfn.md5.length() >= 10) {
 				g.md5 = lfn.md5;
-				logger.log(Level.INFO, "Setting md5 of "+lfn.getCanonicalName()+" from "+g.guid+" to "+g.md5);
+				logger.log(Level.INFO, "Setting md5 of " + lfn.getCanonicalName() + " from " + g.guid + " to " + g.md5);
 				return g.update();
 			}
-			
+
 			final String reason = AuthorizationFactory.fillAccess(g, AccessType.READ);
-			
-			if (reason!=null){
-				logger.log(Level.WARNING, "Could not get authorization to read "+g.guid+" : "+reason);
+
+			if (reason != null) {
+				logger.log(Level.WARNING, "Could not get authorization to read " + g.guid + " : " + reason);
 				return false;
 			}
-			
+
 			File temp = IOUtils.get(g);
-			
-			if (temp!=null){
-				try{
+
+			if (temp != null) {
+				try {
 					g.md5 = IOUtils.getMD5(temp);
-				
+
 					if (!g.update())
 						return false;
-					
+
 					lfn.md5 = g.md5;
-					
+
 					if (!lfn.update())
 						return false;
-						
+
 					return true;
-				}
-				catch (final IOException ioe){
-					logger.log(Level.WARNING, "Unable to compute the MD5 sum of "+lfn.getCanonicalName(), ioe);
-					
+				} catch (final IOException ioe) {
+					logger.log(Level.WARNING, "Unable to compute the MD5 sum of " + lfn.getCanonicalName(), ioe);
+
 					return false;
-				}
-				finally{
+				} finally {
 					temp.delete();
 				}
 			}
-			logger.log(Level.WARNING, "Could not download "+g.guid);
-				
+			logger.log(Level.WARNING, "Could not download " + g.guid);
+
 			return false;
 		}
-		
+
 		return true;
 	}
 }

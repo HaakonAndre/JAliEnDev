@@ -54,7 +54,7 @@ public class Package implements Comparable<Package>, Serializable {
 	private final Map<String, String> platforms = new HashMap<>();
 
 	private Set<String> deps = null;
-	
+
 	/**
 	 * @param db
 	 */
@@ -131,8 +131,7 @@ public class Package implements Comparable<Package>, Serializable {
 
 	/**
 	 * @param platform
-	 * @return <code>true</code> if this package is available for the given
-	 *         platform
+	 * @return <code>true</code> if this package is available for the given platform
 	 */
 	public boolean isAvailable(final String platform) {
 		return platforms.containsKey(platform);
@@ -165,7 +164,7 @@ public class Package implements Comparable<Package>, Serializable {
 	public int compareTo(final Package arg0) {
 		return getFullName().compareTo(arg0.getFullName());
 	}
-	
+
 	/**
 	 * Get the package names that are required by this package.
 	 * 
@@ -174,7 +173,7 @@ public class Package implements Comparable<Package>, Serializable {
 	public Set<String> getDependencies() {
 		if (deps != null)
 			return deps;
-		
+
 		deps = new HashSet<>();
 
 		final Set<String> dirs = new HashSet<>();
@@ -187,11 +186,9 @@ public class Package implements Comparable<Package>, Serializable {
 		if (dirs.size() == 0)
 			return deps;
 
-		final DBFunctions dbDeps = ConfigUtils.getDB("alice_data");
-		
-		dbDeps.setReadOnly(true);
+		try (DBFunctions dbDeps = ConfigUtils.getDB("alice_data")) {
+			dbDeps.setReadOnly(true);
 
-		try {
 			for (final String dir : dirs) {
 				for (final String tableName : LFNUtils.getTagTableNames(dir, "PackageDef")) {
 					dbDeps.query("SELECT dependencies FROM " + tableName + " WHERE file='" + Format.escSQL(dir) + "';");
@@ -207,8 +204,6 @@ public class Package implements Comparable<Package>, Serializable {
 						return deps;
 				}
 			}
-		} finally {
-			dbDeps.close();
 		}
 
 		return deps;
