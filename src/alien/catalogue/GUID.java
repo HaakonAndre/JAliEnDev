@@ -245,21 +245,19 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		if (h == null)
 			return false;
 
-		final DBFunctions db = h.getDB();
+		try (DBFunctions db = h.getDB()) {
+			if (db == null)
+				return false;
 
-		if (db == null)
-			return false;
+			if (!exists) {
+				final boolean insertOK = insert(db);
 
-		if (!exists) {
-			final boolean insertOK = insert(db);
+				if (insertOK)
+					pfnCache = new LinkedHashSet<>();
 
-			if (insertOK)
-				pfnCache = new LinkedHashSet<>();
+				return insertOK;
+			}
 
-			return insertOK;
-		}
-
-		try {
 			// only the SE list can change, and the size for a collection, and md5 when it was missing
 			if (!db.query("UPDATE G" + tableName + "L SET seStringlist=" + setToString(seStringList) + ", size=" + size + ", md5='" + Format.escSQL(md5) + "' WHERE guidId=" + guidId))
 				// wrong table name or what?
@@ -268,8 +266,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			if (db.getUpdateCount() == 0)
 				// the entry did not exist in fact, what's going on?
 				return false;
-		} finally {
-			db.close();
 		}
 
 		if (monitor != null)
@@ -316,9 +312,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 					logger.log(Level.WARNING, "Insert query didn't generate an ID!");
 
 					db.setReadOnly(true);
-					
+
 					db.query("SELECT guidId FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid);
-					
+
 					db.setReadOnly(false);
 
 					if (!db.moveNext()) {
@@ -408,21 +404,19 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			if (h == null)
 				return null;
 
-			final DBFunctions db = h.getDB();
-
-			if (db == null)
-				return null;
-
-			if (monitor != null)
-				monitor.incrementCounter("PFN_db_lookup");
-
-			final String q = "SELECT distinct guidId, pfn, seNumber FROM G" + tableName + "L_PFN WHERE guidId=?;";
-
 			boolean tainted = false;
 
-			db.setReadOnly(true);
-			
-			try {
+			try (DBFunctions db = h.getDB()) {
+				if (db == null)
+					return null;
+
+				if (monitor != null)
+					monitor.incrementCounter("PFN_db_lookup");
+
+				final String q = "SELECT distinct guidId, pfn, seNumber FROM G" + tableName + "L_PFN WHERE guidId=?;";
+
+				db.setReadOnly(true);
+
 				db.query(q, false, Long.valueOf(guidId));
 
 				pfnCache = new LinkedHashSet<>();
@@ -441,8 +435,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 					pfnCache.add(pfn);
 				}
-			} finally {
-				db.close();
 			}
 
 			if (tainted)
@@ -465,12 +457,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		if (h == null)
 			return false;
 
-		final DBFunctions db = h.getDB();
+		try (DBFunctions db = h.getDB()) {
+			if (db == null)
+				return false;
 
-		if (db == null)
-			return false;
-
-		try {
 			if (monitor != null)
 				monitor.incrementCounter("PFN_db_insert");
 
@@ -488,8 +478,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 				pfnCache.add(pfn);
 			}
-		} finally {
-			db.close();
 		}
 
 		return true;
@@ -539,11 +527,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			}
 
 			if (sb.length() > 0) {
-				final DBFunctions db = host.getDB();
-
-				db.query("DELETE FROM G" + tableName + "L" + tableSuffix + " WHERE guidId IN (" + sb.toString() + ")");
-
-				db.close();
+				try (DBFunctions db = host.getDB()) {
+					db.query("DELETE FROM G" + tableName + "L" + tableSuffix + " WHERE guidId IN (" + sb.toString() + ")");
+				}
 			}
 
 			return true;
@@ -674,19 +660,17 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			return false;
 		}
 
-		final DBFunctions db = h.getDB();
-
-		if (db == null) {
-			logger.log(Level.WARNING, "Host DB is null for: " + h);
-			return false;
-		}
-
-		if (monitor != null)
-			monitor.incrementCounter("GUID_db_delete");
-
 		boolean removed;
 
-		try {
+		try (DBFunctions db = h.getDB()) {
+			if (db == null) {
+				logger.log(Level.WARNING, "Host DB is null for: " + h);
+				return false;
+			}
+
+			if (monitor != null)
+				monitor.incrementCounter("GUID_db_delete");
+
 			if (purge && (pfnCache == null || pfnCache.size() > 0)) {
 				final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size) SELECT 1,guid,seNumber,md5,size FROM G" + tableName + "L INNER JOIN G" + tableName
 						+ "L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId=? AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';";
@@ -723,8 +707,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			}
 
 			exists = !removed;
-		} finally {
-			db.close();
 		}
 
 		return removed;
@@ -746,25 +728,25 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			return false;
 		}
 
-		final DBFunctions db = h.getDB();
-
-		if (db == null) {
-			logger.log(Level.WARNING, "Host DB is null for: " + h);
-			return false;
-		}
-
-		if (monitor != null)
-			monitor.incrementCounter("PFN_db_delete");
-
-		final boolean removedSENumber = removeSE(pfn.seNumber);
-
 		boolean removedSuccessfuly = false;
 
-		// final String q =
-		// "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
-		final String q = "DELETE FROM G" + tableName + "L_PFN WHERE guidId=? AND seNumber=?;";
+		boolean removedSENumber;
 
-		try {
+		try (DBFunctions db = h.getDB()) {
+			if (db == null) {
+				logger.log(Level.WARNING, "Host DB is null for: " + h);
+				return false;
+			}
+
+			if (monitor != null)
+				monitor.incrementCounter("PFN_db_delete");
+
+			removedSENumber = removeSE(pfn.seNumber);
+
+			// final String q =
+			// "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
+			final String q = "DELETE FROM G" + tableName + "L_PFN WHERE guidId=? AND seNumber=?;";
+
 			if (db.query(q, false, Integer.valueOf(guidId), Integer.valueOf(pfn.seNumber))) {
 				if (db.getUpdateCount() > 0) {
 					removedSuccessfuly = true;
@@ -787,8 +769,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 					logger.log(Level.WARNING, "Query didn't change anything: " + q);
 			} else
 				logger.log(Level.WARNING, "Query failed: " + q);
-		} finally {
-			db.close();
 		}
 
 		if (!removedSuccessfuly && removedSENumber) {
@@ -857,19 +837,17 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		if (lfnCache != null)
 			return lfnCache;
 
-		final DBFunctions db = GUIDUtils.getDBForGUID(guid);
+		try (DBFunctions db = GUIDUtils.getDBForGUID(guid)) {
+			if (db == null)
+				return null;
 
-		if (db == null)
-			return null;
+			final int tablename = GUIDUtils.getTableNameForGUID(guid);
 
-		final int tablename = GUIDUtils.getTableNameForGUID(guid);
+			if (monitor != null)
+				monitor.incrementCounter("LFNREF_db_lookup");
 
-		if (monitor != null)
-			monitor.incrementCounter("LFNREF_db_lookup");
-		
-		db.setReadOnly(true);
+			db.setReadOnly(true);
 
-		try {
 			db.query("SELECT distinct lfnRef FROM G" + tablename + "L_REF WHERE guidId=?;", false, Integer.valueOf(guidId));
 
 			if (!db.moveNext())
@@ -897,7 +875,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 				if (db2 == null)
 					continue;
-				
+
 				db2.setReadOnly(true);
 
 				try {
@@ -912,8 +890,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 					db2.close();
 				}
 			} while (db.moveNext());
-		} finally {
-			db.close();
 		}
 
 		return lfnCache;
@@ -1050,7 +1026,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * From AliEn/GUID.pm#GetHash
-	 * @param guidValue the UUID string representation
+	 * 
+	 * @param guidValue
+	 *            the UUID string representation
 	 * 
 	 * @return hash code
 	 */

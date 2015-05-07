@@ -30,14 +30,9 @@ public class Quota implements Serializable, Comparable<Quota> {
 	static transient final Logger logger = ConfigUtils.getLogger(Quota.class.getCanonicalName());
 
 	/*
-	 * user | varchar(64) priority | float maxparallelJobs | int(11) userload |
-	 * float nominalparallelJobs | int(11) computedpriority | float waiting |
-	 * int(11) running | int(11) maxUnfinishedJobs | int(11) maxTotalCpuCost |
-	 * float totalRunningTimeLast24h | bigint(20) unfinishedJobsLast24h |
-	 * int(11) totalSize | bigint(20) maxNbFiles | int(11) nbFiles | int(11)
-	 * tmpIncreasedTotalSize | bigint(20) totalCpuCostLast24h | float
-	 * maxTotalSize | bigint(20) maxTotalRunningTime | bigint(20)
-	 * tmpIncreasedNbFiles | int(11)
+	 * user | varchar(64) priority | float maxparallelJobs | int(11) userload | float nominalparallelJobs | int(11) computedpriority | float waiting | int(11) running | int(11) maxUnfinishedJobs |
+	 * int(11) maxTotalCpuCost | float totalRunningTimeLast24h | bigint(20) unfinishedJobsLast24h | int(11) totalSize | bigint(20) maxNbFiles | int(11) nbFiles | int(11) tmpIncreasedTotalSize |
+	 * bigint(20) totalCpuCostLast24h | float maxTotalSize | bigint(20) maxTotalRunningTime | bigint(20) tmpIncreasedNbFiles | int(11)
 	 */
 
 	/**
@@ -139,13 +134,11 @@ public class Quota implements Serializable, Comparable<Quota> {
 	 * Temp increased number of files
 	 */
 	public final int tmpIncreasedNbFiles;
-	
+
 	/**
 	 * Fields allowed to modify via jquota set command
 	 */
-	private final static ArrayList<String> allowed_to_update = 
-			new ArrayList<String>( Arrays.asList( "maxUnfinishedJobs", "maxTotalCpuCost", 
-											"maxTotalRunningTime" ) );
+	private final static ArrayList<String> allowed_to_update = new ArrayList<>(Arrays.asList("maxUnfinishedJobs", "maxTotalCpuCost", "maxTotalRunningTime"));
 
 	/**
 	 * @param db
@@ -219,8 +212,7 @@ public class Quota implements Serializable, Comparable<Quota> {
 	}
 
 	/**
-	 * @return <code>true</code> if the user is below the quota and is allowed
-	 *         to submit more jobs
+	 * @return <code>true</code> if the user is below the quota and is allowed to submit more jobs
 	 */
 	public boolean canSubmit() {
 		if (totalCpuCostLast24h < maxTotalCpuCost && totalRunningTimeLast24h < maxTotalRunningTime && (running + waiting) < maxUnfinishedJobs)
@@ -228,8 +220,8 @@ public class Quota implements Serializable, Comparable<Quota> {
 
 		return false;
 	}
-	
-	public static boolean canUpdateField( String fieldname ){
-		return allowed_to_update.contains( fieldname );
+
+	public static boolean canUpdateField(String fieldname) {
+		return allowed_to_update.contains(fieldname);
 	}
 }

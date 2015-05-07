@@ -56,19 +56,15 @@ public final class CatalogueUtils {
 
 		@Override
 		protected Host resolve(final Integer key) {
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
-			
-			if (db!=null){
-				db.setReadOnly(true);
-				
-				try {
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				if (db != null) {
+					db.setReadOnly(true);
+
 					if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
 						return null;
-	
+
 					if (db.moveNext())
 						return new Host(db);
-				} finally {
-					db.close();
 				}
 			}
 
@@ -112,31 +108,25 @@ public final class CatalogueUtils {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating GUIDINDEX cache");
 
-						final DBFunctions db = ConfigUtils.getDB("alice_users");
+						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+							if (db != null) {
+								db.setReadOnly(true);
 
-						if (db != null) {
-							db.setReadOnly(true);
+								if (db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
+									final LinkedList<GUIDIndex> ret = new LinkedList<>();
 
-							if (db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
-								final LinkedList<GUIDIndex> ret = new LinkedList<>();
-
-								try {
 									while (db.moveNext())
 										ret.add(new GUIDIndex(db));
-								}
-								finally {
-									db.close();
-								}
 
-								guidIndexCache = ret;
+									guidIndexCache = ret;
 
-								guidIndexCacheUpdated = System.currentTimeMillis();
+									guidIndexCacheUpdated = System.currentTimeMillis();
+								} else
+									// in case of a DB connection failure, try again in
+									// 10 seconds, until then reuse the existing value
+									// (if any)
+									guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
 							}
-							else
-								// in case of a DB connection failure, try again in
-								// 10 seconds, until then reuse the existing value
-								// (if any)
-								guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
 				} finally {
@@ -209,16 +199,14 @@ public final class CatalogueUtils {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating INDEXTABLE cache");
 
-						final DBFunctions db = ConfigUtils.getDB("alice_users");
+						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+							if (db != null) {
+								db.setReadOnly(true);
 
-						if (db != null) {
-							db.setReadOnly(true);
+								if (db.query("SELECT * FROM INDEXTABLE;")) {
+									final Set<IndexTableEntry> newIndextable = new HashSet<>();
+									final Set<String> newTableentries = new HashSet<>();
 
-							if (db.query("SELECT * FROM INDEXTABLE;")) {
-								final Set<IndexTableEntry> newIndextable = new HashSet<>();
-								final Set<String> newTableentries = new HashSet<>();
-
-								try {
 									while (db.moveNext()) {
 										final IndexTableEntry entry = new IndexTableEntry(db);
 
@@ -226,21 +214,17 @@ public final class CatalogueUtils {
 
 										newTableentries.add(db.gets("lfn"));
 									}
-								}
-								finally {
-									db.close();
-								}
 
-								indextable = newIndextable;
-								tableentries = newTableentries;
+									indextable = newIndextable;
+									tableentries = newTableentries;
 
-								lastIndexTableUpdate = System.currentTimeMillis();
+									lastIndexTableUpdate = System.currentTimeMillis();
+								} else
+									// in case of a DB connection failure, try again in
+									// 10 seconds, until then reuse the existing value
+									// (if any)
+									lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
 							}
-							else
-								// in case of a DB connection failure, try again in
-								// 10 seconds, until then reuse the existing value
-								// (if any)
-								lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
 				} finally {
@@ -366,181 +350,182 @@ public final class CatalogueUtils {
 
 		return tableentries.contains(path);
 	}
-	
+
 	/**
 	 * Create a local file with the list of GUIDs that have no LFNs pointing to them any more
-	 * @param outputFile file name that will contain the list of GUIDs at the end
 	 * 
-	 * @throws IOException if the indicated local file cannot be created
+	 * @param outputFile
+	 *            file name that will contain the list of GUIDs at the end
+	 * 
+	 * @throws IOException
+	 *             if the indicated local file cannot be created
 	 */
 	public static void guidCleanup(final String outputFile) throws IOException {
 		final PrintWriter pw = new PrintWriter(new FileWriter(outputFile));
-		
+
 		final HashMap<UUID, Long> guids = new HashMap<>(1100000000);
-		
+
 		final long started = System.currentTimeMillis();
-		
+
 		int cnt = 0;
-		
+
 		final List<GUIDIndex> guidTables = new ArrayList<>(CatalogueUtils.getAllGUIDIndexes());
-		
+
 		Collections.sort(guidTables);
 		Collections.reverse(guidTables);
-		
-		int invalid = 0;
-		
-		long totalSize = 0;
-		
-		final long LIMIT = 1000000;
-		
-		for (final GUIDIndex idx : guidTables){
-			cnt++;
-			
-			System.err.println("Reached G"+idx.tableName+"L ("+cnt+" / "+guidTables.size()+")");
-			
-			final Host h = CatalogueUtils.getHost(idx.hostIndex);
-			
-			final DBFunctions gdb = h.getDB();
 
-			gdb.query("set wait_timeout=31536000;");
-			
-			gdb.setReadOnly(true);
-			
-			int read;
-			
-			long offset = 0;
-			
-			do{
-				read = 0;
-				
-				final String q = "select guid,size from G"+idx.tableName+"L LIMIT "+LIMIT+" OFFSET "+offset+";";
-				
-				while (!gdb.query(q))
-					System.err.println("Retrying query "+q);
-				
-				while (gdb.moveNext()){
-					read++;
-					
-					try{
-						final byte[] data = gdb.getBytes(1);
-						
-						if (data!=null && data.length==16){
-							final UUID uuid = GUID.getUUID(data);
-							
-							if (uuid!=null){
-								guids.put(uuid, Long.valueOf(gdb.getl(2)));
-								totalSize += gdb.getl(2);
-							}
-							else
+		int invalid = 0;
+
+		long totalSize = 0;
+
+		final long LIMIT = 1000000;
+
+		for (final GUIDIndex idx : guidTables) {
+			cnt++;
+
+			System.err.println("Reached G" + idx.tableName + "L (" + cnt + " / " + guidTables.size() + ")");
+
+			final Host h = CatalogueUtils.getHost(idx.hostIndex);
+
+			try (DBFunctions gdb = h.getDB()) {
+
+				gdb.query("set wait_timeout=31536000;");
+
+				gdb.setReadOnly(true);
+
+				int read;
+
+				long offset = 0;
+
+				do {
+					read = 0;
+
+					final String q = "select guid,size from G" + idx.tableName + "L LIMIT " + LIMIT + " OFFSET " + offset + ";";
+
+					while (!gdb.query(q))
+						System.err.println("Retrying query " + q);
+
+					while (gdb.moveNext()) {
+						read++;
+
+						try {
+							final byte[] data = gdb.getBytes(1);
+
+							if (data != null && data.length == 16) {
+								final UUID uuid = GUID.getUUID(data);
+
+								if (uuid != null) {
+									guids.put(uuid, Long.valueOf(gdb.getl(2)));
+									totalSize += gdb.getl(2);
+								} else
+									invalid++;
+							} else {
 								invalid++;
-						}
-						else{
+							}
+						} catch (final Exception e) {
 							invalid++;
 						}
+
+						if (guids.size() % 1000000 == 0) {
+							System.err.println("Reached " + guids.size() + " in G" + idx.tableName + "L");
+							System.err.println(Format.toInterval(System.currentTimeMillis() - started) + " : free " + Format.size(Runtime.getRuntime().freeMemory()) + " / total "
+									+ Format.size(Runtime.getRuntime().totalMemory()));
+						}
 					}
-					catch (final Exception e){
-					    invalid++;
-					}
-					
-					if (guids.size()%1000000==0){
-						System.err.println("Reached "+guids.size()+" in G"+idx.tableName+"L");
-						System.err.println(Format.toInterval(System.currentTimeMillis() - started)+" : free "+Format.size(Runtime.getRuntime().freeMemory())+" / total "+Format.size(Runtime.getRuntime().totalMemory()));
-					}
-				}
-				
-				offset += read;
+
+					offset += read;
+				} while (read == LIMIT);
 			}
-			while (read==LIMIT);
-			
-			if (guids.size()>1000000000){
-				System.err.println("Intermediate cleanup @ "+guids.size());
-				
+
+			if (guids.size() > 1000000000) {
+				System.err.println("Intermediate cleanup @ " + guids.size());
+
 				if (!lfnCleanup(guids, true))
 					System.err.println("Intermediate cleanup was not completely successful");
-				
-				System.err.println("Intermediate cleanup result: "+guids.size());
+
+				System.err.println("Intermediate cleanup result: " + guids.size());
 			}
 		}
 
-		System.err.println("Final parsing starting with "+guids.size()+" UUIDs in memory, "+invalid+" rows had invalid GUID representation, total size: "+Format.size(totalSize));
-		System.err.println(Format.toInterval(System.currentTimeMillis() - started)+" : free "+Format.size(Runtime.getRuntime().freeMemory())+" / total "+Format.size(Runtime.getRuntime().totalMemory()));
-		
-		if (!lfnCleanup(guids, false)){
+		System.err.println("Final parsing starting with " + guids.size() + " UUIDs in memory, " + invalid + " rows had invalid GUID representation, total size: " + Format.size(totalSize));
+		System.err.println(Format.toInterval(System.currentTimeMillis() - started) + " : free " + Format.size(Runtime.getRuntime().freeMemory()) + " / total "
+				+ Format.size(Runtime.getRuntime().totalMemory()));
+
+		if (!lfnCleanup(guids, false)) {
 			System.err.println("Final iteration could not load all content from LFN tables, bailing out");
 			pw.close();
 			return;
 		}
-		
-		System.err.println("Finally we are left with "+guids.size()+" orphan UUIDs");
-		
+
+		System.err.println("Finally we are left with " + guids.size() + " orphan UUIDs");
+
 		long totalToReclaim = 0;
-		
-		for (final Map.Entry<UUID, Long> uuid: guids.entrySet()){
-			pw.println(uuid.getKey()+" "+uuid.getValue());
-			
+
+		for (final Map.Entry<UUID, Long> uuid : guids.entrySet()) {
+			pw.println(uuid.getKey() + " " + uuid.getValue());
+
 			totalToReclaim += uuid.getValue().longValue();
 		}
-		
-		System.err.println("sum(GUID size) = "+totalToReclaim);
-		
+
+		System.err.println("sum(GUID size) = " + totalToReclaim);
+
 		pw.close();
 	}
 
-	private static boolean lfnCleanup(final Map<UUID, Long> guids, final boolean intermediate){
+	private static boolean lfnCleanup(final Map<UUID, Long> guids, final boolean intermediate) {
 		final Set<IndexTableEntry> indextableCollection = CatalogueUtils.getAllIndexTables();
-		
-		int cnt=0;
-		
+
+		int cnt = 0;
+
 		final int LIMIT = 1000000;
-		
+
 		boolean ret = true;
-		
-		for (final IndexTableEntry ite: indextableCollection){
+
+		for (final IndexTableEntry ite : indextableCollection) {
 			cnt++;
-			
-			System.err.println("Checking the content of L"+ite.tableName+"L from "+ite.hostIndex+" ("+cnt+"/"+indextableCollection.size()+"), "+guids.size()+" UUIDs left");
-			
-			final DBFunctions db = ite.getDB();
-			
-			db.query("set wait_timeout=31536000;");
-			
-			db.setReadOnly(true);
-			
-			long read = 0;
-			
-			long offset = 0;
-			
-			do{
-				read = 0;
-				
-				final String q = "SELECT guid FROM L"+ite.tableName+"L where guid is not null LIMIT "+LIMIT+" OFFSET "+offset+";";
-				
-				while (!db.query(q)){
-					System.err.println("Retrying query");
-				}
-				
-				while (db.moveNext()){
-					read++;
-					try{
-						final byte[] data = db.getBytes(1);
-						
-						if (data!=null && data.length==16){
-							final UUID uuid = GUID.getUUID(data);
-							
-							if (uuid!=null)
-								guids.remove(uuid);
+
+			System.err.println("Checking the content of L" + ite.tableName + "L from " + ite.hostIndex + " (" + cnt + "/" + indextableCollection.size() + "), " + guids.size() + " UUIDs left");
+
+			try (DBFunctions db = ite.getDB()) {
+
+				db.query("set wait_timeout=31536000;");
+
+				db.setReadOnly(true);
+
+				long read = 0;
+
+				long offset = 0;
+
+				do {
+					read = 0;
+
+					final String q = "SELECT guid FROM L" + ite.tableName + "L where guid is not null LIMIT " + LIMIT + " OFFSET " + offset + ";";
+
+					while (!db.query(q)) {
+						System.err.println("Retrying query");
+					}
+
+					while (db.moveNext()) {
+						read++;
+						try {
+							final byte[] data = db.getBytes(1);
+
+							if (data != null && data.length == 16) {
+								final UUID uuid = GUID.getUUID(data);
+
+								if (uuid != null)
+									guids.remove(uuid);
+							}
+						} catch (final Exception e) {
+							// ignore
 						}
 					}
-					catch (final Exception e){
-					    // ignore
-					}
-				}
-				
-				offset += read;
+
+					offset += read;
+				} while (read == LIMIT);
 			}
-			while (read == LIMIT);
 		}
-		
+
 		return ret;
 	}
 }

@@ -52,16 +52,14 @@ public final class QuotaUtilities {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating Quotas cache");
 
-						final DBFunctions db = ConfigUtils.getDB("processes");
-						
-						db.setReadOnly(true);
+						try (DBFunctions db = ConfigUtils.getDB("processes")) {
+							db.setReadOnly(true);
 
-						String q = "SELECT * FROM PRIORITY";
+							String q = "SELECT * FROM PRIORITY";
 
-						if (TaskQueueUtils.dbStructure2_20)
-							q += " inner join QUEUE_USER using(userId)";
+							if (TaskQueueUtils.dbStructure2_20)
+								q += " inner join QUEUE_USER using(userId)";
 
-						try {
 							if (db.query(q)) {
 								final Map<String, Quota> newQuotas = new HashMap<>();
 
@@ -76,8 +74,6 @@ public final class QuotaUtilities {
 								jobQuotasLastUpdated = System.currentTimeMillis();
 							} else
 								jobQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
-						} finally {
-							db.close();
 						}
 					}
 				} finally {
@@ -112,11 +108,9 @@ public final class QuotaUtilities {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating File Quota cache");
 
-						final DBFunctions db = ConfigUtils.getDB("alice_users");
-						
-						db.setReadOnly(true);
+						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+							db.setReadOnly(true);
 
-						try {
 							if (db.query("SELECT * FROM FQUOTAS;")) {
 								final Map<String, FileQuota> newQuotas = new HashMap<>();
 
@@ -131,8 +125,6 @@ public final class QuotaUtilities {
 								fileQuotasLastUpdated = System.currentTimeMillis();
 							} else
 								fileQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
-						} finally {
-							db.close();
 						}
 					}
 				} finally {
@@ -163,7 +155,7 @@ public final class QuotaUtilities {
 
 		return jobQuotas.get(account.toLowerCase());
 	}
-	
+
 	/**
 	 * Sets job quota field value for a username
 	 * 
@@ -172,17 +164,17 @@ public final class QuotaUtilities {
 	 * @param val
 	 * @return
 	 */
-	public static boolean saveJobQuota( String username, String fld, String val){
-		if( !Quota.canUpdateField( fld ) )
+	public static boolean saveJobQuota(String username, String fld, String val) {
+		if (!Quota.canUpdateField(fld))
 			return false;
-		final DBFunctions db = ConfigUtils.getDB("processes");
-		String query = "UPDATE PRIORITY p LEFT JOIN QUEUE_USER qu "
-				+ "ON qu.user='" + Format.escSQL(username) + "' SET p." 
-				+ Format.escSQL(fld) + "=" + Format.escSQL(val) 
-				+ " WHERE qu.userid=p.userid";
-		db.query(query);
-		jobQuotasLastUpdated = 0;
-		updateJobQuotasCache();
+		try (DBFunctions db = ConfigUtils.getDB("processes")) {
+			String query = "UPDATE PRIORITY p LEFT JOIN QUEUE_USER qu " + "ON qu.user='" + Format.escSQL(username) + "' SET p." + Format.escSQL(fld) + "=" + Format.escSQL(val)
+					+ " WHERE qu.userid=p.userid";
+			db.query(query);
+			jobQuotasLastUpdated = 0;
+			updateJobQuotasCache();
+		}
+
 		return true;
 	}
 
@@ -203,7 +195,7 @@ public final class QuotaUtilities {
 
 		return fileQuotas.get(account.toLowerCase());
 	}
-	
+
 	/**
 	 * Sets file quota field value for a username
 	 * 
@@ -212,16 +204,17 @@ public final class QuotaUtilities {
 	 * @param val
 	 * @return
 	 */
-	public static boolean saveFileQuota( String username, String fld, String val ){
-		if( !FileQuota.canUpdateField( fld ) )
+	public static boolean saveFileQuota(String username, String fld, String val) {
+		if (!FileQuota.canUpdateField(fld))
 			return false;
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
-		String query = "UPDATE FQUOTAS SET " 
-					+ Format.escSQL(fld) + "='" + Format.escSQL(val) + "'" +
-					" WHERE user='" + Format.escSQL(username) + "'";
-		db.query( query );
-		fileQuotasLastUpdated = 0;
-		updateFileQuotasCache();
+
+		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			String query = "UPDATE FQUOTAS SET " + Format.escSQL(fld) + "='" + Format.escSQL(val) + "'" + " WHERE user='" + Format.escSQL(username) + "'";
+			db.query(query);
+			fileQuotasLastUpdated = 0;
+			updateFileQuotasCache();
+		}
+
 		return true;
 	}
 

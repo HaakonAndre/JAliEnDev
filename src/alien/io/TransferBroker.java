@@ -95,21 +95,20 @@ public class TransferBroker {
 	}
 
 	private int updateCount = -1;
-	
+
 	private final boolean executeQuery(final DBConnection dbc, final String query) {
 		executeClose();
 
 		try {
 			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
-			if (stat.execute(query, Statement.NO_GENERATED_KEYS)){
+			if (stat.execute(query, Statement.NO_GENERATED_KEYS)) {
 				updateCount = -1;
-				
+
 				resultSet = stat.getResultSet();
-			}
-			else{
+			} else {
 				updateCount = stat.getUpdateCount();
-				
+
 				executeClose();
 			}
 
@@ -122,44 +121,43 @@ public class TransferBroker {
 	}
 
 	private long lastTimeNoWork = 0;
-	
+
 	private final Random rnd = new Random(System.currentTimeMillis());
-	
+
 	private DBFunctions dbCached = ConfigUtils.getDB("transfers");
 
 	private ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>();
-	
-	private int getMaxTransfers(final String seName){
+
+	private int getMaxTransfers(final String seName) {
 		final Integer i = maxTransfersCache.get(seName.toLowerCase());
-		
-		if (i!=null){
+
+		if (i != null) {
 			return i.intValue();
 		}
-		
-		final DBFunctions db = ConfigUtils.getDB("transfers");
-		
-		db.setReadOnly(true);
-		
-		db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename='"+Format.escSQL(seName)+"';");
-		
+
 		int ret = 0;
-		
-		if (db.moveNext()){
-			ret = db.geti(1);
+
+		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
+			db.setReadOnly(true);
+
+			db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename='" + Format.escSQL(seName) + "';");
+
+			if (db.moveNext()) {
+				ret = db.geti(1);
+			}
 		}
-		
-		maxTransfersCache.put(seName.toLowerCase(), Integer.valueOf(ret), 1000*60*5);
-		
+
+		maxTransfersCache.put(seName.toLowerCase(), Integer.valueOf(ret), 1000 * 60 * 5);
+
 		return ret;
 	}
-	
+
 	/**
-	 * @return the next transfer to be performed, or <code>null</code> if there
-	 *         is nothing to do
+	 * @return the next transfer to be performed, or <code>null</code> if there is nothing to do
 	 */
 	/**
 	 * @param agent
-	 * @return the next transfer to execute, if any is available 
+	 * @return the next transfer to execute, if any is available
 	 */
 	public synchronized Transfer getWork(final TransferAgent agent) {
 		if (System.currentTimeMillis() < lastTimeNoWork)
@@ -167,14 +165,14 @@ public class TransferBroker {
 
 		if (dbCached == null) {
 			dbCached = ConfigUtils.getDB("transfers");
-			
+
 			dbCached.setReadOnly(true);
-			
-			if (dbCached==null){	
+
+			if (dbCached == null) {
 				logger.log(Level.WARNING, "Could not connect to the transfers database");
-	
+
 				lastTimeNoWork = System.currentTimeMillis();
-	
+
 				return null;
 			}
 		}
@@ -187,95 +185,86 @@ public class TransferBroker {
 		String sLFN = null;
 		String targetSE = null;
 		String onDeleteRemoveReplica = null;
-		
-		final DBFunctions db = ConfigUtils.getDB("transfers");
 
-		try {
-			while (transferId < 0){
-				if (!dbCached.moveNext()){
-					dbCached.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT where status='WAITING' and destination IN (select distinct sename from PROTOCOLS LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers)) and attempts>=0 order by attempts desc,transferId asc limit 50;");
+		while (transferId < 0) {
+			if (!dbCached.moveNext()) {
+				dbCached.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT where status='WAITING' and destination IN (select distinct sename from PROTOCOLS LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers)) and attempts>=0 order by attempts desc,transferId asc limit 50;");
 
-					if (!dbCached.moveNext()){
-						logger.log(Level.FINE, "There is no waiting transfer in the queue");
+				if (!dbCached.moveNext()) {
+					logger.log(Level.FINE, "There is no waiting transfer in the queue");
 
-						lastTimeNoWork = System.currentTimeMillis() + 30*1000 + rnd.nextInt(30*1000);
+					lastTimeNoWork = System.currentTimeMillis() + 30 * 1000 + rnd.nextInt(30 * 1000);
 
-						return null;					
-					}
+					return null;
 				}
-				
-				final Set<String> ignoredSEs = new HashSet<>();
-				
-				do {
-					try {
-						transferId = dbCached.geti(1);
-						sLFN = dbCached.gets(2);
-						targetSE = dbCached.gets(3);
-						onDeleteRemoveReplica = dbCached.gets(4);
-
-						if (transferId < 0 || sLFN == null || sLFN.length() == 0 || targetSE == null || targetSE.length() == 0) {
-							logger.log(Level.INFO, "Transfer details are wrong");
-
-							lastTimeNoWork = System.currentTimeMillis();
-
-							return null;
-						}
-						
-						if (ignoredSEs.contains(targetSE.toLowerCase())){
-							transferId = -1;
-							
-							continue;
-						}
-						
-						db.setReadOnly(true);
-						
-						db.query("SELECT count(1) FROM active_transfers WHERE se_name='"+Format.escSQL(targetSE)+"';");
-						
-						db.setReadOnly(false);
-						
-						if (db.geti(1) >= getMaxTransfers(targetSE)){
-							ignoredSEs.add(targetSE.toLowerCase());
-							
-							transferId = -1;
-							
-							continue;
-						}
-						
-						final DBConnection dbc = db.getConnection();
-						
-						executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, active_transfers write;");
-
-						try {
-							executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
-
-							if (updateCount == 0) {
-								logger.log(Level.INFO, "Concurrent selection of " + transferId + ", retrying");
-								transferId = -1;
-								continue;
-							}
-
-							executeQuery(dbc, "insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
-									+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
-							
-						} finally {
-							executeQuery(dbc, "unlock tables;");
-							executeClose();
-
-							dbc.free();
-						}
-						
-						break;
-					}
-					catch (final Exception e) {
-						logger.log(Level.WARNING, "Exception fetching data from the query", e);
-						// ignore
-					}
-				}
-				while (dbCached.moveNext());
 			}
-		}
-		finally{
-			db.close();
+
+			final Set<String> ignoredSEs = new HashSet<>();
+
+			do {
+				try (DBFunctions db = ConfigUtils.getDB("transfers")) {
+					transferId = dbCached.geti(1);
+					sLFN = dbCached.gets(2);
+					targetSE = dbCached.gets(3);
+					onDeleteRemoveReplica = dbCached.gets(4);
+
+					if (transferId < 0 || sLFN == null || sLFN.length() == 0 || targetSE == null || targetSE.length() == 0) {
+						logger.log(Level.INFO, "Transfer details are wrong");
+
+						lastTimeNoWork = System.currentTimeMillis();
+
+						return null;
+					}
+
+					if (ignoredSEs.contains(targetSE.toLowerCase())) {
+						transferId = -1;
+
+						continue;
+					}
+
+					db.setReadOnly(true);
+
+					db.query("SELECT count(1) FROM active_transfers WHERE se_name='" + Format.escSQL(targetSE) + "';");
+
+					db.setReadOnly(false);
+
+					if (db.geti(1) >= getMaxTransfers(targetSE)) {
+						ignoredSEs.add(targetSE.toLowerCase());
+
+						transferId = -1;
+
+						continue;
+					}
+
+					final DBConnection dbc = db.getConnection();
+
+					executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, active_transfers write;");
+
+					try {
+						executeQuery(dbc, "update TRANSFERS_DIRECT set status='TRANSFERRING' where transferId=" + transferId + " AND status='WAITING';");
+
+						if (updateCount == 0) {
+							logger.log(Level.INFO, "Concurrent selection of " + transferId + ", retrying");
+							transferId = -1;
+							continue;
+						}
+
+						executeQuery(dbc, "insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
+								+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
+
+					} finally {
+						executeQuery(dbc, "unlock tables;");
+						executeClose();
+
+						dbc.free();
+					}
+
+					break;
+				} catch (final Exception e) {
+					logger.log(Level.WARNING, "Exception fetching data from the query", e);
+					// ignore
+				}
+			} while (dbCached.moveNext());
 		}
 
 		GUID guid;
@@ -557,9 +546,7 @@ public class TransferBroker {
 
 		lastCleanedUp = System.currentTimeMillis();
 
-		try {
-			final DBFunctions db = ConfigUtils.getDB("transfers");
-
+		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 			if (db == null)
 				return;
 
@@ -592,27 +579,22 @@ public class TransferBroker {
 
 		lastArchived = System.currentTimeMillis();
 
-		try {
-			final DBFunctions db = ConfigUtils.getDB("transfers");
+		final String archiveTableName = "TRANSFERSARCHIVE" + Calendar.getInstance().get(Calendar.YEAR);
+		final long limit = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 7;
+		final long limitReceived = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 30 * 2;
 
+		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 			if (db == null)
 				return;
 
-			final String archiveTableName = "TRANSFERSARCHIVE" + Calendar.getInstance().get(Calendar.YEAR);
+			if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true))
+				if (!db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
+					logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
+					return;
+				}
+		}
 
-			final long limit = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 7;
-			final long limitReceived = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 30 * 2;
-
-			try {
-				if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true))
-					if (!db.query("CREATE TABLE " + archiveTableName + " LIKE TRANSFERS_DIRECT;")) {
-						logger.log(Level.SEVERE, "Exception creating the archive table " + archiveTableName);
-						return;
-					}
-			} finally {
-				db.close();
-			}
-
+		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 			final DBConnection dbc = db.getConnection();
 
 			try {
@@ -644,27 +626,27 @@ public class TransferBroker {
 	 * @return <code>false</code> if the operation cannot be performed
 	 */
 	public static synchronized boolean touch(final Transfer t, final TransferAgent ta) {
-		final DBFunctions db = ConfigUtils.getDB("transfers");
+		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
+			if (db == null)
+				return false;
 
-		if (db == null)
-			return false;
-
-		try {
 			if (t == null) {
 				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(ta.getPID()),
 						ta.getHostName());
 				return true;
 			}
-			
+
 			db.setReadOnly(true);
-			
-			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Integer.valueOf(t.getTransferId()), Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
-			
+
+			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Integer.valueOf(t.getTransferId()),
+					Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
+
 			db.setReadOnly(false);
-			
-			if (db.moveNext()){
-				logger.log(Level.WARNING, "Transfer "+t.getTransferId()+" was already picked up by agent #"+db.gets(1)+" @ "+db.gets(3)+"/"+db.gets(2)+", refusing to concurrently execute it.");
-				
+
+			if (db.moveNext()) {
+				logger.log(Level.WARNING, "Transfer " + t.getTransferId() + " was already picked up by agent #" + db.gets(1) + " @ " + db.gets(3) + "/" + db.gets(2)
+						+ ", refusing to concurrently execute it.");
+
 				return false;
 			}
 
@@ -715,13 +697,13 @@ public class TransferBroker {
 				db.query(DBFunctions.composeInsert("active_transfers", values));
 
 			db.setReadOnly(true);
-			
+
 			db.query("SELECT status FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(t.getTransferId()));
-			
+
 			db.setReadOnly(false);
-			
+
 			final String prevStatus = db.gets(1);
-			
+
 			if (db.moveNext() && prevStatus.equalsIgnoreCase("TRANSFERRING")) {
 				db.query("UPDATE TRANSFERS_DIRECT SET status='TRANSFERRING', reason='', finished=null WHERE transferId=" + t.getTransferId() + " AND status!='TRANSFERRING';");
 
@@ -730,20 +712,16 @@ public class TransferBroker {
 			}
 		} catch (final Throwable ex) {
 			logger.log(Level.SEVERE, "Exception updating status", ex);
-		} finally {
-			db.close();
 		}
-		
+
 		return true;
 	}
 
 	private static boolean markTransfer(final int transferId, final int exitCode, final String reason) {
-		final DBFunctions db = ConfigUtils.getDB("transfers");
+		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
+			if (db == null)
+				return false;
 
-		if (db == null)
-			return false;
-
-		try {
 			String formattedReason = reason;
 
 			if (formattedReason != null && formattedReason.length() > 250)
@@ -768,8 +746,6 @@ public class TransferBroker {
 
 			db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId=?);", false,
 					Integer.valueOf(transferId));
-		} finally {
-			db.close();
 		}
 
 		return true;
@@ -859,8 +835,7 @@ public class TransferBroker {
 	}
 
 	/**
-	 * When a transfer has completed, call this method to update the database
-	 * status
+	 * When a transfer has completed, call this method to update the database status
 	 * 
 	 * @param t
 	 */

@@ -108,10 +108,10 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 	 */
 	public static class SEUsageStats {
 		/**
-		 * total amount of space allocated on the SE (as the catalogue sees it) 
+		 * total amount of space allocated on the SE (as the catalogue sees it)
 		 */
 		public long usedSpace = 0;
-		
+
 		/**
 		 * number of files on that SE
 		 */
@@ -150,14 +150,12 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 		if (h == null)
 			return ret;
 
-		final DBFunctions db = h.getDB();
+		try (DBFunctions db = h.getDB()) {
+			if (db == null)
+				return ret;
 
-		if (db == null)
-			return ret;
-
-		try {
 			db.setReadOnly(true);
-			
+
 			db.query("select seNumber, sum(size),count(1) from G" + tableName + "L INNER JOIN G" + tableName + "L_PFN USING(guidId) GROUP BY seNumber;");
 
 			while (db.moveNext()) {
@@ -167,8 +165,6 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 
 				ret.put(key, se);
 			}
-		} finally {
-			db.close();
 		}
 
 		return ret;

@@ -76,11 +76,9 @@ public final class SEUtils {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating SE cache");
 
-						final DBFunctions db = ConfigUtils.getDB("alice_users");
+						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+							db.setReadOnly(true);
 
-						db.setReadOnly(true);
-
-						try {
 							if (db.query("SELECT * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
 								final Map<Integer, SE> ses = new HashMap<>();
 
@@ -103,8 +101,6 @@ public final class SEUtils {
 								}
 							} else
 								seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
-						} finally {
-							db.close();
 						}
 					}
 				} finally {
@@ -224,17 +220,13 @@ public final class SEUtils {
 
 	static {
 		if (ConfigUtils.isCentralService()) {
-			final DBFunctions db = ConfigUtils.getDB("alice_users");
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				db.setReadOnly(true);
 
-			db.setReadOnly(true);
-
-			try {
 				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
 					SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
 				else
 					SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
-			} finally {
-				db.close();
 			}
 
 			updateSECache();
@@ -260,11 +252,9 @@ public final class SEUtils {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating SE Ranks cache");
 
-						final DBFunctions db = ConfigUtils.getDB("alice_users");
+						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+							db.setReadOnly(true);
 
-						db.setReadOnly(true);
-
-						try {
 							if (db.query(SEDISTANCE_QUERY)) {
 								final Map<String, Map<Integer, Double>> newDistance = new HashMap<>();
 
@@ -302,8 +292,6 @@ public final class SEUtils {
 								}
 							} else
 								seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
-						} finally {
-							db.close();
 						}
 					}
 				} finally {
@@ -730,11 +718,9 @@ public final class SEUtils {
 	public static void updateSEUsageCache() {
 		final Map<Integer, SEUsageStats> m = getSEUsage();
 
-		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			db.setReadOnly(false);
 
-		db.setReadOnly(false);
-
-		try {
 			for (final Map.Entry<Integer, SEUsageStats> entry : m.entrySet()) {
 				db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
 
@@ -745,8 +731,6 @@ public final class SEUtils {
 					se.seNumFiles = entry.getValue().fileCount;
 				}
 			}
-		} finally {
-			db.close();
 		}
 	}
 
@@ -830,37 +814,37 @@ public final class SEUtils {
 		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
 			final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
-			final DBFunctions gdb = h.getDB();
+			try (DBFunctions gdb = h.getDB()) {
+				gdb.setReadOnly(true);
 
-			gdb.setReadOnly(true);
+				gdb.query("select binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber IN (" + sbSE + ");");
 
-			gdb.query("select binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber IN (" + sbSE + ");");
+				while (gdb.moveNext()) {
+					if ((++cnt) % 10000 == 0)
+						System.err.println(cnt);
 
-			while (gdb.moveNext()) {
-				if ((++cnt) % 10000 == 0)
-					System.err.println(cnt);
+					final String sguid = gdb.gets(1);
 
-				final String sguid = gdb.gets(1);
+					final GUID g = GUIDUtils.getGUID(sguid);
 
-				final GUID g = GUIDUtils.getGUID(sguid);
-
-				if (g == null) {
-					System.err.println("Unexpected: cannot load the GUID content of " + gdb.gets(1));
-					continue;
-				}
-
-				for (final SE se : ses) {
-					if (true) {
-						g.removePFN(se, purge);
-
-						if (g.getPFNs().size() == 0) {
-							System.err.println("Orphaned GUID " + sguid);
-
-							pw.println(sguid);
-						}
+					if (g == null) {
+						System.err.println("Unexpected: cannot load the GUID content of " + gdb.gets(1));
+						continue;
 					}
 
-					copies[Math.min(g.getPFNs().size(), copies.length - 1)]++;
+					for (final SE se : ses) {
+						if (true) {
+							g.removePFN(se, purge);
+
+							if (g.getPFNs().size() == 0) {
+								System.err.println("Orphaned GUID " + sguid);
+
+								pw.println(sguid);
+							}
+						}
+
+						copies[Math.min(g.getPFNs().size(), copies.length - 1)]++;
+					}
 				}
 			}
 		}
@@ -896,36 +880,36 @@ public final class SEUtils {
 		System.err.println("Renumbering " + source.seNumber + " to " + dest.seNumber);
 
 		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
-			final DBFunctions db = CatalogueUtils.getHost(idx.hostIndex).getDB();
+			try (DBFunctions db = CatalogueUtils.getHost(idx.hostIndex).getDB()) {
+				if (db == null) {
+					System.err.println("Cannot get DB for " + idx);
+					continue;
+				}
 
-			if (db == null) {
-				System.err.println("Cannot get DB for " + idx);
-				continue;
-			}
+				String q1 = "UPDATE G" + idx.tableName + "L_PFN SET seNumber=" + dest.seNumber;
 
-			String q1 = "UPDATE G" + idx.tableName + "L_PFN SET seNumber=" + dest.seNumber;
+				if (!source.seStoragePath.equals(dest.seStoragePath))
+					q1 += ", pfn=replace(replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "'), '"
+							+ Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath)) + "', '" + Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath)) + "')";
+				else if (!source.seioDaemons.equals(dest.seioDaemons))
+					q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
 
-			if (!source.seStoragePath.equals(dest.seStoragePath))
-				q1 += ", pfn=replace(replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "'), '"
-						+ Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath)) + "', '" + Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath)) + "')";
-			else if (!source.seioDaemons.equals(dest.seioDaemons))
-				q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
+				q1 += " WHERE seNumber=" + source.seNumber;
 
-			q1 += " WHERE seNumber=" + source.seNumber;
+				final String q2 = "UPDATE G" + idx.tableName + "L SET seStringlist=replace(sestringlist,'," + source.seNumber + ",','," + dest.seNumber + ",') WHERE seStringlist LIKE '%,"
+						+ source.seNumber + ",%';";
 
-			final String q2 = "UPDATE G" + idx.tableName + "L SET seStringlist=replace(sestringlist,'," + source.seNumber + ",','," + dest.seNumber + ",') WHERE seStringlist LIKE '%,"
-					+ source.seNumber + ",%';";
+				if (debug) {
+					System.err.println(q1);
+					System.err.println(q2);
+				} else {
+					boolean ok = db.query(q1);
+					System.err.println(q1 + " : " + ok + " : " + db.getUpdateCount());
 
-			if (debug) {
-				System.err.println(q1);
-				System.err.println(q2);
-			} else {
-				boolean ok = db.query(q1);
-				System.err.println(q1 + " : " + ok + " : " + db.getUpdateCount());
+					ok = db.query(q2);
 
-				ok = db.query(q2);
-
-				System.err.println(q2 + " : " + ok + " : " + db.getUpdateCount());
+					System.err.println(q2 + " : " + ok + " : " + db.getUpdateCount());
+				}
 			}
 		}
 	}
@@ -955,22 +939,22 @@ public final class SEUtils {
 			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
 				final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
-				final DBFunctions gdb = h.getDB();
+				try (DBFunctions gdb = h.getDB()) {
+					gdb.setReadOnly(true);
 
-				gdb.setReadOnly(true);
+					if (realPFNs) {
+						gdb.query("select pfn,size,md5 from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
 
-				if (realPFNs) {
-					gdb.query("select pfn,size,md5 from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
+						while (gdb.moveNext())
+							pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
+					} else {
+						gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
 
-					while (gdb.moveNext())
-						pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
-				} else {
-					gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
+						while (gdb.moveNext()) {
+							final String guid = gdb.gets(1);
 
-					while (gdb.moveNext()) {
-						final String guid = gdb.gets(1);
-
-						pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3));
+							pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3));
+						}
 					}
 				}
 			}

@@ -15,9 +15,7 @@ import lazyj.StringFactory;
 public final class FileQuota implements Serializable, Comparable<FileQuota> {
 
 	/*
-	 * user | varchar(64) totalSize | bigint(20) maxNbFiles | int(11) nbFiles |
-	 * int(11) tmpIncreasedTotalSize | bigint(20) maxTotalSize | bigint(20)
-	 * tmpIncreasedNbFiles | int(11)
+	 * user | varchar(64) totalSize | bigint(20) maxNbFiles | int(11) nbFiles | int(11) tmpIncreasedTotalSize | bigint(20) maxTotalSize | bigint(20) tmpIncreasedNbFiles | int(11)
 	 */
 
 	/**
@@ -59,12 +57,11 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 	 * Temp increase
 	 */
 	public final int tmpIncreasedNbFiles;
-	
+
 	/**
 	 * Fields allowed to modify via fquota set command
 	 */
-	private final static ArrayList<String> allowed_to_update = 
-			new ArrayList<String>( Arrays.asList(  "maxNbFiles", "maxTotalSize" ) );
+	private final static ArrayList<String> allowed_to_update = new ArrayList<>(Arrays.asList("maxNbFiles", "maxTotalSize"));
 
 	/**
 	 * @param db
@@ -106,8 +103,7 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 	/**
 	 * @param noFiles
 	 * @param size
-	 * @return <code>true</code> if the user is allowed to upload this number of
-	 *         files with the given total size
+	 * @return <code>true</code> if the user is allowed to upload this number of files with the given total size
 	 */
 	public boolean canUpload(final int noFiles, final long size) {
 		if (totalSize + size <= (maxTotalSize + tmpIncreasedTotalSize) && nbFiles + noFiles <= (maxNbFiles + tmpIncreasedNbFiles))
@@ -115,8 +111,8 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 
 		return false;
 	}
-	
-	public static boolean canUpdateField( String fieldname ){
-		return allowed_to_update.contains( fieldname );
+
+	public static boolean canUpdateField(String fieldname) {
+		return allowed_to_update.contains(fieldname);
 	}
 }
