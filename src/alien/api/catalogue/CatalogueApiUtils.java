@@ -509,9 +509,22 @@ public class CatalogueApiUtils {
 					lfn ) );
 			return ( lsd!=null ? lsd.getSE() : null );
 		} catch (ServerException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
+		}		
+	}
+	
+	public int deleteMirror( String file, boolean isGuid, String se ){
+		try {
+			DeleteMirror dm = Dispatcher.execute( new DeleteMirror( commander.getUser(), 
+					commander.getRole(), 
+					file,
+					isGuid,
+					se ) );
+			return dm.getResult();
+		} catch (ServerException e) {
+			e.printStackTrace();
+			return -1;
 		}		
 	}
 }

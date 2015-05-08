@@ -33,10 +33,18 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 			}
 
 			int result = commander.c_api.deleteMirror( lfn, this.useLFNasGuid, se );
-			if( result ==0)
+			if( result == 0)
 				out.printOutln("Mirror scheduled to be deleted from " + this.se);
-			else
-				out.printErrln("Error deleting mirror");
+			else{
+				String errline=null;
+				switch( result ){
+					case -1: errline="invalid GUID"; break;
+					case -2: errline="failed to get SE"; break;
+					case -3: errline="user not authorized"; break;
+					case -4: errline="unknown error"; break;
+				}
+				out.printErrln("Error deleting mirror: " + errline);
+			}
 		}
 		// check is PFN		
 	}
