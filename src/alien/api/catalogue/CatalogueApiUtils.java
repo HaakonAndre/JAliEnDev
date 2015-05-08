@@ -4,13 +4,16 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.Package;
 import alien.catalogue.access.AccessType;
@@ -442,7 +445,13 @@ public class CatalogueApiUtils {
 		
 		if( lfn_name == "" || lfn_name == null )
 			return -320;
-		LFN lfn = this.getLFN( lfn_name, false );
+		LFN lfn;
+		if( useLFNasGuid ){
+			final GUID g = GUIDUtils.getGUID(UUID.fromString(lfn_name), false);
+			lfn = LFNUtils.getLFN(g); 
+		}
+		else
+			lfn = this.getLFN( lfn_name, false );
 		if( lfn == null )
 			return -330;	
 		try {
@@ -486,8 +495,23 @@ public class CatalogueApiUtils {
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Problems mirroring LFN");
 			e.getCause().printStackTrace();
-		}
-		
+		}		
 		return null;
+	}
+	
+	public List<SE> listSEDistance(final String site, boolean write, final String lfn){		
+		ListSEDistance lsd;
+		try {
+			lsd = Dispatcher.execute( new ListSEDistance( commander.getUser(), 
+					commander.getRole(), 
+					site,
+					write,
+					lfn ) );
+			return ( lsd!=null ? lsd.getSE() : null );
+		} catch (ServerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}		
 	}
 }
