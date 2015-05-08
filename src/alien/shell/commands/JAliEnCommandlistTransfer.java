@@ -5,7 +5,17 @@ import java.util.ArrayList;
 import joptsimple.OptionException;
 
 public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
-
+	private String status;
+	private String site;
+	private String user;
+	private String id;
+	private boolean master;
+	private boolean verbose;
+	private boolean summary;
+	private boolean all_status;
+	private boolean jdl;
+	private int count;	
+	
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
