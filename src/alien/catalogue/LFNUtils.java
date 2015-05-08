@@ -878,8 +878,6 @@ public class LFNUtils {
 
 		// run mirror
 		return (TransferUtils.mirror(lfn, se));
-		// ses.get(0) ) );
-		// ses.get(0) ) );
 	}
 
 	public static HashMap<String, Integer> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean is_guid,
