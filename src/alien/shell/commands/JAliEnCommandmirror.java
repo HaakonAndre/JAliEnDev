@@ -166,8 +166,10 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 					this.useLFNasGuid,
 					this.attempts
 					);
-				String result_string;				
+				String result_string;
+				
 				result_string = JAliEnCommandmirror.Errcode2Text( result );
+				out.printOutln( result.toString() );
 				if(result>0)
 					out.printOutln( this.dstSE + " transfer scheduled");
 				else
@@ -205,13 +207,9 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 		out.printOutln();
 		out.printOutln("mirror Copies a file into another SE");
 		out.printOutln(" Usage:");
-		out.printOutln("	mirror [-g] [-try <number>] [-S [se[,se2[,!se3[,qos:count]]]]] <lfn> [<SE>]");
-		//out.printOutln(" Options:        -f       keep the same relative path");
+		out.printOutln("	mirror [-g] [-try <number>] [-S [se[,se2[,!se3[,qos:count]]]]] <lfn> [<SE>]");		
 		out.printOutln("                 -g:      Use the lfn as a guid");
-		out.printOutln("                 -S:     specifies the destination SEs to be used");
-		//out.printOutln("                 -m <id>  Put the transfer under the masterTransfer of <id>");
-		//out.printOutln("                 -u       Don't issue the transfer if the file is already in that SE");
-		//out.printOutln("                 -r       If the file is in a zip archive, transfer the whole archive");
+		out.printOutln("                 -S:     specifies the destination SEs to be used");		
 		out.printOutln("                 -try <NumOfAttempts>     Specifies the number of attempts to try and mirror the file");
 		out.printOutln();
 	}
