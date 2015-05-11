@@ -27,5 +27,11 @@ public class JAliEnCommanddf extends JAliEnBaseCommand {
 	public JAliEnCommanddf(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
+		try{
+			
+		}catch(OptionException e) {
+			printHelp();
+			throw e;
+		}
 	}
 }

@@ -85,7 +85,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 		if( alArguments.size() == 0 )
 			return;
 		this.command = alArguments.get(0);
-		System.out.println( alArguments );
+		//System.out.println( alArguments );
 		if( this.command.equals("set") && alArguments.size()==4 ){
 			this.user_to_set = alArguments.get(1);
 			String param = alArguments.get(2);

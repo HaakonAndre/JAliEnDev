@@ -56,12 +56,16 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 	 */
 	public JAliEnCommandmd5sum(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		
-		final OptionParser parser = new OptionParser();					
-		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
-		
-		alPaths = new ArrayList<>(options.nonOptionArguments().size());
-		alPaths.addAll(optionToString(options.nonOptionArguments()));
+		try{
+			final OptionParser parser = new OptionParser();					
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
+			
+			alPaths = new ArrayList<>(options.nonOptionArguments().size());
+			alPaths.addAll(optionToString(options.nonOptionArguments()));
+		} catch(OptionException e) {
+			printHelp();
+			throw e;
+		}
 	}
 	
 }

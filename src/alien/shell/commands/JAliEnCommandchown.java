@@ -51,20 +51,24 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 	
 	public JAliEnCommandchown(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		
-		// check 2 arguments
-		if( alArguments.size() != 2 )
-			return;
-		
-		// get user/group				
-		String[] usergrp = alArguments.get(0).split("\\.");
-		System.out.println(usergrp);
-		this.user = usergrp[0];
-		if( usergrp.length == 2 )
-			this.group = usergrp[1];
-		
-		// get file
-		this.file = alArguments.get(1);		
+		try{
+			// check 2 arguments
+			if( alArguments.size() != 2 )
+				return;
+			
+			// get user/group				
+			String[] usergrp = alArguments.get(0).split("\\.");
+			System.out.println(usergrp);
+			this.user = usergrp[0];
+			if( usergrp.length == 2 )
+				this.group = usergrp[1];
+			
+			// get file
+			this.file = alArguments.get(1);
+		}catch(OptionException e) {
+			printHelp();
+			throw e;
+		}
 	}
 
 }
