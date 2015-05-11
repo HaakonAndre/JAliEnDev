@@ -318,7 +318,7 @@ public class JAliEnCOMMander extends Thread {
 
 	private void waitForCommand() {
 		while (out == null) {
-			// logger.log(Level.INFO, "Waiting for command");
+			// logger.log(Level.INFO, "Waiting for command");			
 
 			synchronized (this) {
 				try {
@@ -333,7 +333,7 @@ public class JAliEnCOMMander extends Thread {
 
 	@Override
 	public void run() {
-		logger.log(Level.INFO, "Starting excution");
+		logger.log(Level.INFO, "Starting execution");
 
 		try {
 			while (true) {
@@ -348,7 +348,7 @@ public class JAliEnCOMMander extends Thread {
 								Thread.sleep(triedConnects * maxTryConnect * 500);
 							}
 							catch (final InterruptedException e) {
-								// e.printStackTrace();
+								e.printStackTrace();
 							}
 						}
 					}
@@ -373,7 +373,6 @@ public class JAliEnCOMMander extends Thread {
 						setName("Commander: Idle");
 
 						status.set(0);
-
 						synchronized (status) {
 							status.notifyAll();
 						}
@@ -488,18 +487,17 @@ public class JAliEnCOMMander extends Thread {
 			catch (final Exception e) {
 
 				if (e.getCause() instanceof OptionException) {
-					out.setReturnCode(-2, "Illegal command options");
+					out.setReturnCode(-2, "Illegal command options\n");					
 				}
 				else {
-					e.printStackTrace();
-					
+					e.printStackTrace();					
 					out.setReturnCode(-3, "Error executing command ["+comm+"] : \n"+Format.stackTraceToString(e));
 				}
 				
 				out.flush();
 				return;
 			}
-
+			
 			if (silent)
 				jcommand.silent();
 
