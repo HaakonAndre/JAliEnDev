@@ -11,13 +11,9 @@ import alien.user.AliEnPrincipal;
  * @since Jun 05, 2011
  */
 public class KillJob extends Request {
+	
+	private static final long serialVersionUID = -3089514086638736684L;
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 7349968366381661013L;
-	
-	
 	private final int queueId;
 	
 	private boolean wasKilled = false;

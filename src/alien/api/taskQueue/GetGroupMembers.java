@@ -6,6 +6,10 @@ import alien.user.AliEnPrincipal;
 import java.util.Set;
 
 public class GetGroupMembers extends Request {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3645332494815939574L;
 	private String username;
 	private Set<String> members;
 	private String groupname;

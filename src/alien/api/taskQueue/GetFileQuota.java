@@ -7,6 +7,8 @@ import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
 public class GetFileQuota extends Request {
+
+	private static final long serialVersionUID = -5786988633059376978L;
 	private String username;
 	private FileQuota q;
 	

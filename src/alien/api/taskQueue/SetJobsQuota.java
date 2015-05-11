@@ -7,6 +7,8 @@ import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
 public class SetJobsQuota extends Request {
+
+	private static final long serialVersionUID = 249641308455725934L;
 	private boolean succeeded;
 	private boolean isAdmin;
 	private String field;
