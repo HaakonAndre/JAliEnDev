@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class MirrorLFN extends Request {
+	private static final long serialVersionUID = -3323349253430911576L;
 	private String path;	
 	private int success;
 	private List<String> ses;

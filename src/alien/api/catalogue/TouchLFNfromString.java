@@ -6,10 +6,8 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 public class TouchLFNfromString extends Request {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -8266256263179660272L;
+
+	private static final long serialVersionUID = -2792425667105358669L;
 	private final String path;
 	private boolean createNonExistentParents = false;
 	

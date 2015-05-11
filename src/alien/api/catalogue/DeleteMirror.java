@@ -13,6 +13,10 @@ import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 
 public class DeleteMirror extends Request {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 5308609993726210313L;
 	private String path;
 	private String se;	
 	private boolean isGuid ;

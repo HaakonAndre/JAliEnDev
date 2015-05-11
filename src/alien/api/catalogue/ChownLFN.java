@@ -6,10 +6,16 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 public class ChownLFN extends Request {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4209526023185462132L;
 	private String path;
 	private String chown_user;
 	private String chown_group;
 	private boolean success ;
+	
+	
 	
 	public ChownLFN( final AliEnPrincipal user, final String role, 
 								final String fpath, 
