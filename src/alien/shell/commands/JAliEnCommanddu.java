@@ -31,5 +31,13 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 	public JAliEnCommanddu(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
+		
+		try{
+			
+		}
+		catch(OptionException e) {
+			printHelp();
+			throw e;
+		}
 	}
 }
