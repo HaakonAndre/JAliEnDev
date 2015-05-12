@@ -28,13 +28,13 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 			if (guid == null)
 				out.setField("message", "Could not get the GUID [" + guidName + "].");
 			else if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
-				out.setField("message", padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next());
+				out.setField("message", padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
 			else
 				out.setField("message", "No LFNs are associated to this GUID [" + guid.guid + "].");
 		} else if (guid == null)
 			out.printErrln("Could not get the GUID [" + guidName + "].");
 		else if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
-			out.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next());
+			out.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
 		else
 			out.printErrln("No LFNs are associated to this GUID [" + guid.guid + "].");
 	}
