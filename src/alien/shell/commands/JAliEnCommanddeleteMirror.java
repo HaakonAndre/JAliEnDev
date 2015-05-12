@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import joptsimple.OptionException;
@@ -31,8 +32,13 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 				out.printErrln("No such GUID");
 				return;
 			}
+		}
 
-			int result = commander.c_api.deleteMirror( lfn, this.useLFNasGuid, se );
+			int result = commander.c_api.deleteMirror( 
+					FileSystemUtils.getAbsolutePath(
+							commander.user.getName(),
+							commander.getCurrentDir().getCanonicalName(), lfn), 
+							this.useLFNasGuid, se );
 			if( result == 0)
 				out.printOutln("Mirror scheduled to be deleted from " + this.se);
 			else{
@@ -44,8 +50,7 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 					case -4: errline="unknown error"; break;
 				}
 				out.printErrln("Error deleting mirror: " + errline);
-			}
-		}
+			}		
 		// check is PFN		
 	}
 
@@ -69,24 +74,33 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 	public JAliEnCommanddeleteMirror(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		
-		final OptionParser parser = new OptionParser();		
-		parser.accepts("g");		
-
-		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
-
-		List<String> lfns = optionToString(options.nonOptionArguments());
-		if( lfns==null )
-			return;
-		int argLen = lfns.size();
-		if(argLen!=2){
-			this.printHelp();
-			return;
+		try{
+			System.out.println("Starting parse");
+			final OptionParser parser = new OptionParser();		
+			parser.accepts("g");		
+	
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
+	
+			List<String> lfns = optionToString(options.nonOptionArguments());
+			if( lfns==null ){
+				System.out.println( lfns );
+				return;
+			}
+			int argLen = lfns.size();
+			if(argLen!=2){
+				this.printHelp();
+				return;
+			}
+					
+			this.lfn = lfns.get(0);
+			this.se = lfns.get(1);
+			
+			useLFNasGuid = options.has("g");
+						
+		}catch(OptionException e) {
+			printHelp();
+			throw e;
 		}
-				
-		this.lfn = lfns.get(0);
-		this.se = lfns.get(1);
-		
-		useLFNasGuid = options.has("g");
+
 	}
 }
