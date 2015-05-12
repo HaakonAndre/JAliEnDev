@@ -54,7 +54,7 @@ public class MirrorLFN extends Request {
 												this.dstSE, 
 												this.useGUID, 
 												this.attempts );
-			this.results.put( dstSE, this.success );
+			this.results.put( this.dstSE, this.success );
 		}
 		else
 			this.results = LFNUtils.mirrorLFN( this.path,

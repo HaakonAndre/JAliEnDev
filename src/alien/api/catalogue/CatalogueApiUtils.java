@@ -438,39 +438,6 @@ public class CatalogueApiUtils {
 	}
 	
 	
-	public int mirrorLFN( String lfn_name,
-								String dstSE,
-								boolean useLFNasGuid,
-								Integer attempts){
-		
-		if( lfn_name == "" || lfn_name == null )
-			return -320;
-		LFN lfn;
-		if( useLFNasGuid ){
-			final GUID g = GUIDUtils.getGUID(UUID.fromString(lfn_name), false);
-			lfn = LFNUtils.getLFN(g); 
-		}
-		else
-			lfn = this.getLFN( lfn_name, false );
-		if( lfn == null )
-			return -330;	
-		try {
-			MirrorLFN ml = Dispatcher.execute( new MirrorLFN( commander.getUser(), 
-															commander.getRole(), 
-															lfn_name, 
-															dstSE,
-															useLFNasGuid,
-															attempts ) );
-			return ml.getResult();
-		}
-		catch (final ServerException e) {
-			logger.log(Level.WARNING, "Problems mirroring LFN");
-			e.getCause().printStackTrace();
-		}
-		
-		return -350;
-	}
-	
 	public HashMap<String, Integer> mirrorLFN( String lfn_name,
 			List<String> ses,
 			List<String> exses,
@@ -524,7 +491,7 @@ public class CatalogueApiUtils {
 			return dm.getResult();
 		} catch (ServerException e) {
 			e.printStackTrace();
-			return -1;
+			return -100;
 		}		
 	}
 }

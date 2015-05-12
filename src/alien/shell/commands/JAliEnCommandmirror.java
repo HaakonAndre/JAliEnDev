@@ -70,6 +70,8 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			//	masterTransferId = Integer.parseInt( (String) options.valueOf("m") );
 			if( options.has("try") )
 				attempts = Integer.parseInt( (String) options.valueOf("try") );
+			else
+				attempts = 1;
 			
 			if (options.has("S") && options.hasArgument("S")) {
 				if ((String) options.valueOf("S") != null) {
@@ -127,16 +129,16 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			return;
 		}
 		
-		if( this.qos.size()!=0 && (this.dstSE==null || this.dstSE.length()==0) ){ 
-			/*if( this.ses.size()==0 ){
-				out.printErrln("No destination SEs specification found, please consult help for mirror command");
-				return;
-			}*/
+		if( this.ses.size()==0 && this.dstSE!=null && this.dstSE.length()!=0 )
+			this.ses.add(this.dstSE);
+				
+		if( this.ses.size()!=0 || this.qos.size()!=0 ){		
 			HashMap<String,Integer> results;
 			try{
+				System.out.println( this.ses );
 				results = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
-						commander.user.getName(),
-						commander.getCurrentDir().getCanonicalName(),
+							commander.user.getName(),
+							commander.getCurrentDir().getCanonicalName(),
 						lfn),
 						this.ses, this.exses, this.qos,
 						this.useLFNasGuid,
@@ -154,30 +156,6 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			}catch(IllegalArgumentException e){
 				out.printErrln( e.getMessage() );
 			}						
-		}
-		else{
-			Integer result;
-			try{
-				result = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
-					commander.user.getName(),
-					commander.getCurrentDir().getCanonicalName(),
-					lfn),
-					this.dstSE,
-					this.useLFNasGuid,
-					this.attempts
-					);
-				String result_string;
-				
-				result_string = JAliEnCommandmirror.Errcode2Text( result );
-				out.printOutln( result.toString() );
-				if(result>0)
-					out.printOutln( this.dstSE + " transfer scheduled");
-				else
-					out.printErrln( this.dstSE + " " + result_string );
-			}
-			catch(IllegalArgumentException e){
-				out.printErrln( e.getMessage() );
-			}			
 		}
 	}
 	
