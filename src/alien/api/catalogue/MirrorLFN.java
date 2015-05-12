@@ -1,12 +1,17 @@
 package alien.api.catalogue;
 
 import alien.api.Request;
+import alien.api.ServerException;
+import alien.catalogue.CatalogEntity;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 
 public class MirrorLFN extends Request {
 	private static final long serialVersionUID = -3323349253430911576L;
@@ -26,7 +31,7 @@ public class MirrorLFN extends Request {
 							List<String> exses,
 							HashMap<String, Integer> qos,
 							boolean useLFNasGuid,
-							Integer attempts_cnt ){
+							Integer attempts_cnt ) throws ServerException{
 		this.path = lfn_name;
 		this.useGUID = useLFNasGuid;
 		this.attempts = attempts_cnt;
@@ -34,30 +39,36 @@ public class MirrorLFN extends Request {
 		this.exses = exses;
 		this.qos = qos;
 		this.results = new HashMap<String,Integer>();
+		CatalogEntity c = ( this.useGUID ? GUIDUtils.getGUID(UUID.fromString(this.path), false)
+				: LFNUtils.getLFN(this.path) );		
+		if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
+			throw new ServerException("You do not own this file", null);
 	}
 	
-	public MirrorLFN( final AliEnPrincipal user, final String role, 
+/*	public MirrorLFN( final AliEnPrincipal user, final String role, 
 			String lfn_name,
 			String destSE,
 			boolean useLFNasGuid,			
 			Integer attempts_cnt ){
+		
 		this.path = lfn_name;
 		this.useGUID = useLFNasGuid;
 		this.dstSE = destSE;
 		this.attempts = attempts_cnt;
-	}
+	}*/
 	
 	@Override
-	public void run() {
-		if( this.dstSE!=null ){
+	public void run(){
+		/*if( this.dstSE!=null ){			
 			this.success = LFNUtils.mirrorLFN( this.path, 
 												this.dstSE, 
 												this.useGUID, 
 												this.attempts );
 			this.results.put( this.dstSE, this.success );
 		}
-		else
-			this.results = LFNUtils.mirrorLFN( this.path,
+		else */		
+		
+		this.results = LFNUtils.mirrorLFN( this.path,
 												this.ses,
 												this.exses,
 												this.qos,
