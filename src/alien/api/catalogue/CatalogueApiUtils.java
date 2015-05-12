@@ -458,9 +458,9 @@ public class CatalogueApiUtils {
 			return ml.getResultHashMap();
 		}
 		catch (final ServerException e) {
-			logger.log(Level.WARNING, "Problems mirroring LFN");
-			e.getCause().printStackTrace();
-		}		
+			logger.log(Level.WARNING, e.getMessage());
+			//e.getCause().printStackTrace();
+		}
 		return null;
 	}
 	

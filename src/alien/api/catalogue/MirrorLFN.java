@@ -40,7 +40,8 @@ public class MirrorLFN extends Request {
 		this.qos = qos;
 		this.results = new HashMap<String,Integer>();
 		CatalogEntity c = ( this.useGUID ? GUIDUtils.getGUID(UUID.fromString(this.path), false)
-				: LFNUtils.getLFN(this.path) );		
+										: LFNUtils.getLFN(this.path) );
+		System.out.println( getEffectiveRequester() );
 		if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
 			throw new ServerException("You do not own this file", null);
 	}
