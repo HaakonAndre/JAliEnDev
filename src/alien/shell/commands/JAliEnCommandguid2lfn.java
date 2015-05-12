@@ -12,7 +12,7 @@ import alien.catalogue.GUID;
 public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 
 	/**
-	 * entry the call is executed on, either representing a LFN 
+	 * entry the call is executed on, either representing a LFN
 	 */
 	private String guidName = null;
 
@@ -21,37 +21,22 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void run() {
+		final GUID guid = commander.c_api.getGUID(guidName, false, true);
 
-			GUID guid = commander.c_api.getGUID(guidName);
-			
-			if (out.isRootPrinter()) 
-			{
-				out.nextResult();
-				if(guid==null)
+		if (out.isRootPrinter()) {
+			out.nextResult();
+			if (guid == null)
 				out.setField("message", "Could not get the GUID [" + guidName + "].");
-				else
-				{
-					if(guid.getLFNs()!=null && guid.getLFNs().iterator().hasNext())
-						out.setField("message",padRight(guid.guid+"", 40) + guid.getLFNs().iterator().next());
-					else 
-						out.setField("message", "Could not get the GUID for [" + guid.guid + "].");
-				}
-			}
+			else if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
+				out.setField("message", padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next());
 			else
-			{
-			if(guid==null)
-				out.printErrln("Could not get the GUID [" + guidName + "].");
-			else{
-				// TODO: DOES NOT WORK! we don't get the LFNs
-				if(guid.getLFNs()!=null && guid.getLFNs().iterator().hasNext())
-					out.printOutln(padRight(guid.guid+"", 40) + guid.getLFNs().iterator().next());
-				else
-					out.printErrln("Could not get the GUID for [" + guid.guid + "].");
-			}
-			}
-			
-			
-	
+				out.setField("message", "No LFNs are associated to this GUID [" + guid.guid + "].");
+		} else if (guid == null)
+			out.printErrln("Could not get the GUID [" + guidName + "].");
+		else if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
+			out.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next());
+		else
+			out.printErrln("No LFNs are associated to this GUID [" + guid.guid + "].");
 	}
 
 	/**
@@ -59,9 +44,9 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		
+
 		out.printOutln();
-		out.printOutln(helpUsage("guid2lfn","<GUID>"));
+		out.printOutln(helpUsage("guid2lfn", "<GUID>"));
 		out.printOutln();
 	}
 
@@ -77,23 +62,22 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
-	public JAliEnCommandguid2lfn(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out,alArguments);
-		
-		if(alArguments.size()!=1)
+	public JAliEnCommandguid2lfn(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, out, alArguments);
+
+		if (alArguments.size() != 1)
 			throw new JAliEnCommandException();
-		
+
 		guidName = alArguments.get(0);
-		
-		
+
 	}
 
 }
