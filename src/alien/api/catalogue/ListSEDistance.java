@@ -17,13 +17,8 @@ import java.util.List;
  * @author costing
  * @since 2011-03-04
  */
-public class ListSEDistance extends Request {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -1720547988105993480L;
-		
+public class ListSEDistance extends Request {	
+	private static final long serialVersionUID = 726995834931008148L;
 	private LFN lfn;
 	private boolean write;
 	private String site;
