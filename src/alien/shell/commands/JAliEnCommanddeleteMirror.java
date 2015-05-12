@@ -33,11 +33,13 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 				return;
 			}
 		}
+		else
+			lfn = FileSystemUtils.getAbsolutePath(
+					commander.user.getName(),
+					commander.getCurrentDir().getCanonicalName(), lfn);
 
 			int result = commander.c_api.deleteMirror( 
-					FileSystemUtils.getAbsolutePath(
-							commander.user.getName(),
-							commander.getCurrentDir().getCanonicalName(), lfn), 
+							lfn, 
 							this.useLFNasGuid, se );
 			if( result == 0)
 				out.printOutln("Mirror scheduled to be deleted from " + this.se);
@@ -75,7 +77,6 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try{
-			System.out.println("Starting parse");
 			final OptionParser parser = new OptionParser();		
 			parser.accepts("g");		
 	
@@ -95,8 +96,7 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 			this.lfn = lfns.get(0);
 			this.se = lfns.get(1);
 			
-			useLFNasGuid = options.has("g");
-						
+			useLFNasGuid = options.has("g");						
 		}catch(OptionException e) {
 			printHelp();
 			throw e;
