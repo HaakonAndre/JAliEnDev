@@ -45,14 +45,10 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 		
 		try {
 			final OptionParser parser = new OptionParser();
-
-			//parser.accepts("f");
 			parser.accepts("try").withRequiredArg();
 			parser.accepts("S").withRequiredArg();
 			parser.accepts("g");
-			//parser.accepts("u");
-			//parser.accepts("m").withRequiredArg();
-
+			
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			List<String> lfns = optionToString(options.nonOptionArguments());
@@ -60,14 +56,11 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 				return;
 			}				
 			this.lfn = lfns.get(0);			
-
-			//keepSamePath = options.has("f");
+			
 			useLFNasGuid = options.has("g");
 			checkFileIsPresentOnDest = options.has("u");
 			transferWholeArchive = options.has("r");
 						
-			//if( options.has("m") )
-			//	masterTransferId = Integer.parseInt( (String) options.valueOf("m") );
 			if( options.has("try") )
 				attempts = Integer.parseInt( (String) options.valueOf("try") );
 			else
@@ -134,12 +127,13 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 				
 		if( this.ses.size()!=0 || this.qos.size()!=0 ){		
 			HashMap<String,Integer> results;
-			try{
-				System.out.println( this.ses );
-				results = commander.c_api.mirrorLFN(FileSystemUtils.getAbsolutePath(
+			try{				
+				if( !this.useLFNasGuid )
+					lfn = FileSystemUtils.getAbsolutePath(
 							commander.user.getName(),
 							commander.getCurrentDir().getCanonicalName(),
-						lfn),
+							lfn);
+				results = commander.c_api.mirrorLFN(lfn,
 						this.ses, this.exses, this.qos,
 						this.useLFNasGuid,
 						this.attempts

@@ -448,9 +448,6 @@ public class CatalogueApiUtils {
 
 		if( lfn_name == "" || lfn_name == null )
 			throw new IllegalArgumentException("Empty LFN name");
-		LFN lfn = this.getLFN( lfn_name, false );
-		if( lfn == null )
-			throw new IllegalArgumentException("Unable to fetch LFN name");	
 		try {
 			MirrorLFN ml = Dispatcher.execute( new MirrorLFN( commander.getUser(), 
 													commander.getRole(), 
