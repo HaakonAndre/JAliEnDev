@@ -5,6 +5,8 @@ import java.util.UUID;
 import alien.api.Request;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
@@ -20,26 +22,36 @@ public class GUIDfromString extends Request {
 	private static final long serialVersionUID = -3670065132137151044L;
 	private final String sguid;
 	private final boolean evenIfDoesNotExist;
+	private final boolean resolveLFNs;
 
 	private GUID guid;
 
 	/**
-	 * @param user 
-	 * @param role 
+	 * @param user
+	 * @param role
 	 * @param sguid
 	 * @param evenIfDoesNotExist
 	 */
-	public GUIDfromString(final AliEnPrincipal user, final String role, final String sguid, final boolean evenIfDoesNotExist) {
+	public GUIDfromString(final AliEnPrincipal user, final String role, final String sguid, final boolean evenIfDoesNotExist, final boolean resolveLFNs) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.sguid = sguid;
 		this.evenIfDoesNotExist = evenIfDoesNotExist;
+		this.resolveLFNs = resolveLFNs;
 	}
 
 	@Override
 	public void run() {
-		this.guid = GUIDUtils.getGUID(UUID.fromString(sguid),
-				evenIfDoesNotExist);
+		this.guid = GUIDUtils.getGUID(UUID.fromString(sguid), evenIfDoesNotExist);
+
+		if (resolveLFNs) {
+			if (this.guid.getLFNs() == null) {
+				final LFN l = LFNUtils.getLFN(this.guid);
+
+				if (l != null)
+					this.guid.addKnownLFN(l);
+			}
+		}
 	}
 
 	/**
@@ -51,7 +63,6 @@ public class GUIDfromString extends Request {
 
 	@Override
 	public String toString() {
-		return "Asked for : " + this.sguid + " (" + this.evenIfDoesNotExist
-				+ "), reply is:\n" + this.guid;
+		return "Asked for : " + this.sguid + " (" + this.evenIfDoesNotExist + "), reply is:\n" + this.guid;
 	}
 }

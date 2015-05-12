@@ -138,7 +138,7 @@ public class CatalogueApiUtils {
 	 * @return the GUID object
 	 */
 	public GUID getGUID(final String sguid) {
-		return getGUID(sguid, false);
+		return getGUID(sguid, false, false);
 	}
 
 	/**
@@ -147,11 +147,12 @@ public class CatalogueApiUtils {
 	 * @param sguid
 	 *            GUID as String
 	 * @param evenIfDoesNotExist
+	 * @param resolveLFNs populate the LFN cache of the GUID object
 	 * @return the GUID object
 	 */
-	public GUID getGUID(final String sguid, final boolean evenIfDoesNotExist) {
+	public GUID getGUID(final String sguid, final boolean evenIfDoesNotExist, final boolean resolveLFNs) {
 		try {
-			return Dispatcher.execute(new GUIDfromString(commander.getUser(), commander.getRole(), sguid, evenIfDoesNotExist)).getGUID();
+			return Dispatcher.execute(new GUIDfromString(commander.getUser(), commander.getRole(), sguid, evenIfDoesNotExist, resolveLFNs)).getGUID();
 		}
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get GUID: " + sguid);
