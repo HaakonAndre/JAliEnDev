@@ -9,6 +9,7 @@ import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -57,6 +58,7 @@ public class ListSEDistance extends Request {
 				
 		//for read with lfn specified
 		List<PFN> lp = SEUtils.sortBySite( lfn.whereis(), site, true, false);
+		this.ses = new ArrayList<SE>();
 		for( PFN p : lp ){
 			this.ses.add( p.getSE() );
 		}
