@@ -3,6 +3,8 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.catalogue.FileSystemUtils;
+import alien.se.SE;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -14,8 +16,26 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-
+		System.out.println( this.site + " " + this.useWriteMetrics + " " + this.lfn_name );
+		
+		if( lfn_name!=null && lfn_name.length()!=0 ){
+			this.lfn_name = FileSystemUtils.getAbsolutePath(
+					commander.user.getName(),
+					commander.getCurrentDir().getCanonicalName(),
+					this.lfn_name );
+		}
+		System.out.println(this.lfn_name);
+		List<SE> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name);
+		for( SE s: results ){			
+			out.printOutln( String.format("%1$"+ 40 + "s", s.seName)
+					+ "\t(read: " + 
+					String.format( "%.9f", s.demoteRead ) + 
+					",  write: " + 
+					String.format( "%.9f", s.demoteWrite ) +
+					",  distance: " + 
+					")");
+		}
+		out.printOutln();
 	}
 
 	@Override
@@ -57,9 +77,12 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 			this.site = this.lfn_name;
 		else
 			this.useWriteMetrics = (arg.equals("write"));
-		if( argLen==2 )
+		if( argLen==2 && !this.useWriteMetrics )
 			return;
+		arg = alArguments.get(2);
 		if( !this.useWriteMetrics && this.lfn_name==null && argLen==3 )
 			this.lfn_name = arg;
+		
+		System.out.println( this.site + " " + this.useWriteMetrics + " " + this.lfn_name );
 	}
 }

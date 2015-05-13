@@ -4,6 +4,7 @@ import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
@@ -41,7 +42,7 @@ public class ListSEDistance extends Request {
 			this.lfn = LFNUtils.getLFN(lfn);
 		this.write = write;		
 		if(site==null || site.length()==0)
-			;
+			this.site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		else
 			this.site = site; 
 	}
