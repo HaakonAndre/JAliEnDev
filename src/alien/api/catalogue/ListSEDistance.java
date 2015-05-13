@@ -57,8 +57,10 @@ public class ListSEDistance extends Request {
 		}
 				
 		//for read with lfn specified
-		List<PFN> lp = SEUtils.sortBySite( lfn.whereis(), site, true, false);
+		List<PFN> lp = SEUtils.sortBySite( this.lfn.whereis(), this.site, true, false);
 		this.ses = new ArrayList<SE>();
+		if( lp==null )
+			return;
 		for( PFN p : lp ){
 			this.ses.add( p.getSE() );
 		}
