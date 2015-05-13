@@ -34,7 +34,7 @@ public class ListSEDistance extends Request {
 	 */
 	public ListSEDistance(final AliEnPrincipal user, 
 							final String role,
-							final String site,
+							final String sitename,
 							final boolean write, 
 							final String lfn){
 		setRequestUser(user);
@@ -42,10 +42,10 @@ public class ListSEDistance extends Request {
 		if( lfn!=null && lfn.length()!=0 )
 			this.lfn = LFNUtils.getLFN(lfn);
 		this.write = write;		
-		if(site==null || site.length()==0)
+		if(sitename==null || sitename.length()==0)
 			this.site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		else
-			this.site = site; 
+			this.site = sitename; 
 	}
 	
 	@Override
