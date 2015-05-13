@@ -36,11 +36,11 @@ public class ListSEDistance extends Request {
 							final String role,
 							final String sitename,
 							final boolean write, 
-							final String lfn){
+							final String lfn_name){
 		setRequestUser(user);
 		setRoleRequest(role);
-		if( lfn!=null && lfn.length()!=0 )
-			this.lfn = LFNUtils.getLFN(lfn);
+		if( lfn_name!=null && lfn_name.length()!=0 )
+			this.lfn = LFNUtils.getLFN(lfn_name);
 		this.write = write;		
 		if(sitename==null || sitename.length()==0)
 			this.site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
@@ -58,7 +58,7 @@ public class ListSEDistance extends Request {
 				
 		//for read with lfn specified
 		this.ses = new ArrayList<SE>();
-		if( this.lfn.whereis() == null )
+		if( this.lfn==null )
 			return;
 		List<PFN> lp = SEUtils.sortBySite( this.lfn.whereis(), this.site, true, false);
 		
