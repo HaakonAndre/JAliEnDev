@@ -467,11 +467,12 @@ public class CatalogueApiUtils {
 	public List<SE> listSEDistance(final String site, boolean write, final String lfn){		
 		ListSEDistance lsd;
 		try {
+			System.out.println(lfn);
 			lsd = Dispatcher.execute( new ListSEDistance( commander.getUser(), 
 					commander.getRole(), 
 					site,
 					write,
-					lfn ) );
+					lfn ) );			
 			return ( lsd!=null ? lsd.getSE() : null );
 		} catch (ServerException e) {
 			e.printStackTrace();
