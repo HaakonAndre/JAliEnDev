@@ -464,7 +464,7 @@ public class CatalogueApiUtils {
 		return null;
 	}
 	
-	public List<SE> listSEDistance(final String site, boolean write, final String lfn){		
+	public List<HashMap<SE,Double>> listSEDistance(final String site, boolean write, final String lfn){		
 		ListSEDistance lsd;
 		try {
 			System.out.println(lfn);
@@ -472,8 +472,8 @@ public class CatalogueApiUtils {
 					commander.getRole(), 
 					site,
 					write,
-					lfn ) );			
-			return ( lsd!=null ? lsd.getSE() : null );
+					lfn ) );
+			return ( lsd!=null ? lsd.getSEDistances() : null );
 		} catch (ServerException e) {
 			e.printStackTrace();
 			return null;

@@ -1,7 +1,9 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import alien.catalogue.FileSystemUtils;
 import alien.se.SE;
@@ -24,16 +26,19 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 					commander.getCurrentDir().getCanonicalName(),
 					this.lfn_name );
 		}
-		System.out.println(this.lfn_name);
-		List<SE> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name);
-		for( SE s: results ){			
-			out.printOutln( String.format("%1$"+ 40 + "s", s.seName)
-					+ "\t(read: " + 
-					String.format( "%.9f", s.demoteRead ) + 
-					",  write: " + 
-					String.format( "%.9f", s.demoteWrite ) +
-					",  distance: " + 
-					")");
+		List<HashMap<SE,Double>> results = commander.c_api.listSEDistance(site, 
+											this.useWriteMetrics, 
+											this.lfn_name);
+		for( HashMap<SE,Double> smap: results ){
+				Set<SE> selist = smap.keySet();
+				for( SE s: selist )
+					out.printOutln( String.format("%1$"+ 40 + "s", s.seName)
+							+ "\t(read: " + 
+							String.format( "%.9f", s.demoteRead ) + 
+							",  write: " + 
+							String.format( "%.9f", s.demoteWrite ) +
+							",  distance: " + String.format( "%.9f", smap.get(s) ) +  
+							")");
 		}
 		out.printOutln();
 	}

@@ -85,9 +85,13 @@ public class ListSEDistance extends Request {
 	}
 	
 	/**
-	 * @return the requested LFN
+	 * @return SE list sorted by distance
 	 */
 	public List<SE> getSE(){
 		return this.ses;
-	}		
+	}
+	
+	public List<HashMap<SE,Double>> getSEDistances(){
+		return this.distances;
+	}
 }
