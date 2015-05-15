@@ -18,9 +18,6 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	
 	@Override
 	public void run() {
-		System.out.println( "Site: " + this.site + 
-							"\nwrite: " + this.useWriteMetrics + "\nlfn: " + this.lfn_name );
-		
 		if( !this.useWriteMetrics && 
 				(this.lfn_name==null || this.lfn_name.length()==0) ){
 			out.printErrln("No LFN specified for read metrics");

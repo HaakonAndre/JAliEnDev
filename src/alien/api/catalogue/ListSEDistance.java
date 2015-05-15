@@ -51,12 +51,10 @@ public class ListSEDistance extends Request {
 	}
 	
 	@Override
-	public void run() {
-		// this is for write
+	public void run() {				
+		// this is for write		
 		if( this.write ){
-			this.ses = SEUtils.getClosestSEs(this.site, true);
-			
-			//return;
+			this.ses = SEUtils.getClosestSEs(this.site, true);		
 		}
 		else{
 			//for read with lfn specified
