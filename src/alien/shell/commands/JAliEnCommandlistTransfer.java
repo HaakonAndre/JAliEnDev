@@ -70,9 +70,14 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			this.toSE = (String) options.valueOf("destination");
 			
 		} 
-		catch (NumberFormatException | OptionException e) {
+		catch (OptionException e) {
 			printHelp();
 			throw e;
-		}		
+		}
+		catch(NumberFormatException e){
+			out.printErrln("Please provide a number for -list argument");
+			printHelp();
+			throw e;
+		}
 	}
 }
