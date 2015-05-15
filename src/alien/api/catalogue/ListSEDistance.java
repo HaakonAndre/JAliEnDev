@@ -11,6 +11,7 @@ import alien.user.AliEnPrincipal;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 
@@ -73,6 +74,8 @@ public class ListSEDistance extends Request {
 				this.ses.add( p.getSE() );
 			}
 		}
+		
+		this.distances = new LinkedList<HashMap <SE,Double>>();
 		
 		for( SE se : this.ses ){
 			HashMap<SE,Double> hm = new HashMap<SE,Double>();
