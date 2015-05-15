@@ -1,7 +1,9 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import alien.io.TransferDetails;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -20,8 +22,18 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-
+		out.printOutln("TransferId\tStatus\tUser\tDestination\tSize" +
+				( this.jdl ? "\tSource" : "" ) +
+				"\tAttempts");
+		List<TransferDetails> transfers = commander.c_api.listTransfer();
+		if( transfers == null )
+			return;
+		for( TransferDetails t : transfers ){
+			out.printOutln( t.transferId + "\t" + t.status + "\t" + t.user + "\t" +
+						t.destination + "\t" + t.size + 
+						( this.jdl ? "\t" + t.jdl : "" ) + 
+						"\t" + t.attempts);
+		}
 	}
 
 	@Override
@@ -57,8 +69,16 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			parser.accepts("destination").withRequiredArg();
 			
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
-
-			this.count = Integer.parseInt( (String)options.valueOf("list") );
+			
+			
+			if( options.has("list") ){
+				int cnt = Integer.parseInt( (String)options.valueOf("list") );
+				if( cnt < 0 ) throw new NumberFormatException();
+				this.count = cnt;
+			}
+			else
+				this.count = -1;
+			
 			this.status = (String) options.valueOf("status");
 			this.user = (String) options.valueOf("user");
 			this.id = (String)options.valueOf("id");
@@ -67,16 +87,13 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			this.summary = options.has("summary");
 			this.all_status = options.has("all_status");
 			this.jdl = options.has("jdl");
-			this.toSE = (String) options.valueOf("destination");
-			
+			this.toSE = (String) options.valueOf("destination");			
 		} 
-		catch (OptionException e) {
-			printHelp();
+		catch (OptionException e) {			
 			throw e;
 		}
 		catch(NumberFormatException e){
-			out.printErrln("Please provide a number for -list argument");
-			printHelp();
+			out.printErrln("Please provide a valid number for -list argument");			
 			throw e;
 		}
 	}
