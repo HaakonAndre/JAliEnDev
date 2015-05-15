@@ -10,6 +10,7 @@ import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 
@@ -25,6 +26,7 @@ public class ListSEDistance extends Request {
 	private boolean write;
 	private String site;
 	private List<SE> ses;
+	private List<HashMap <SE,Double>> distances;
 	
 	/**
 	 * @param user 
@@ -52,22 +54,30 @@ public class ListSEDistance extends Request {
 		// this is for write
 		if( this.write ){
 			this.ses = SEUtils.getClosestSEs(this.site, true);
-			return;
+			
+			//return;
 		}
-				
-		//for read with lfn specified
-		this.ses = new ArrayList<SE>();
-		if( this.lfn_name==null )
-			return;
-		LFN lfn = null;
-		if( this.lfn_name!=null && this.lfn_name.length()!=0 )
-			lfn = LFNUtils.getLFN(this.lfn_name);
-		List<PFN> lp = SEUtils.sortBySite(lfn.whereis(), this.site, true, false);
+		else{
+			//for read with lfn specified
+			this.ses = new ArrayList<SE>();
+			if( this.lfn_name==null )
+				return;
+			LFN lfn = null;
+			if( this.lfn_name!=null && this.lfn_name.length()!=0 )
+				lfn = LFNUtils.getLFN(this.lfn_name);
+			List<PFN> lp = SEUtils.sortBySite(lfn.whereis(), this.site, true, false);
+			
+			if( lp==null )
+				return;
+			for( PFN p : lp ){
+				this.ses.add( p.getSE() );
+			}
+		}
 		
-		if( lp==null )
-			return;
-		for( PFN p : lp ){
-			this.ses.add( p.getSE() );
+		for( SE se : this.ses ){
+			HashMap<SE,Double> hm = new HashMap<SE,Double>();
+			hm.put( se, SEUtils.getDistance(this.site, se, true) );
+			this.distances.add( hm );
 		}
 	}
 	
