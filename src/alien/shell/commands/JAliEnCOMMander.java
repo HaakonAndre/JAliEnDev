@@ -486,7 +486,8 @@ public class JAliEnCOMMander extends Thread {
 			}
 			catch (final Exception e) {
 
-				if (e.getCause() instanceof OptionException) {
+				if (e.getCause() instanceof OptionException ||
+						e.getCause() instanceof NumberFormatException ) {
 					out.setReturnCode(-2, "Illegal command options\n");					
 				}
 				else {
