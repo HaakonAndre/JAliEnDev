@@ -3,10 +3,12 @@ package alien.shell.commands;
 import java.util.ArrayList;
 
 import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	private String status;
-	private String site;
+	private String toSE;
 	private String user;
 	private String id;
 	private boolean master;
@@ -40,5 +42,37 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	public JAliEnCommandlistTransfer(JAliEnCOMMander commander, UIPrintWriter out,
 			final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
+		
+		try {
+			final OptionParser parser = new OptionParser();
+			parser.accepts("list").withRequiredArg();
+			parser.accepts("status").withRequiredArg();
+			parser.accepts("user").withRequiredArg();
+			parser.accepts("id").withRequiredArg();
+			parser.accepts("verbose");
+			parser.accepts("master");
+			parser.accepts("summary");
+			parser.accepts("all_status");
+			parser.accepts("jdl");
+			parser.accepts("destination").withRequiredArg();
+			
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
+
+			this.count = Integer.parseInt( (String)options.valueOf("list") );
+			this.status = (String) options.valueOf("status");
+			this.user = (String) options.valueOf("user");
+			this.id = (String)options.valueOf("id");
+			this.verbose = options.has("verbose");
+			this.master = options.has("master");
+			this.summary = options.has("summary");
+			this.all_status = options.has("all_status");
+			this.jdl = options.has("jdl");
+			this.toSE = (String) options.valueOf("destination");
+			
+		} 
+		catch (NumberFormatException | OptionException e) {
+			printHelp();
+			throw e;
+		}		
 	}
 }
