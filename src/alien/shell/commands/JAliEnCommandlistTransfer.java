@@ -12,7 +12,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	private String status;
 	private String toSE;
 	private String user;
-	private String id;
+	private Integer id;
 	private boolean master;
 	private boolean verbose;
 	private boolean summary;
@@ -26,15 +26,15 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 				( this.jdl ? "\tSource" : "" ) +
 				"\tAttempts");
 		List<TransferDetails> transfers = commander.c_api.listTransfer(
-							this.status,
 							this.toSE,
 							this.user,
+							this.status,							
 							this.id,
 							this.master,
-							this.verbose,
-							this.summary,
-							this.all_status,
-							this.jdl,
+							//this.verbose,
+							//this.summary,
+							//this.all_status,
+							//this.jdl,
 							this.count );
 		if( transfers == null )
 			return;
@@ -91,7 +91,8 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			
 			this.status = (String) options.valueOf("status");
 			this.user = (String) options.valueOf("user");
-			this.id = (String)options.valueOf("id");
+			if(options.has("id"))
+				this.id = new Integer( (String)options.valueOf("id") );
 			this.verbose = options.has("verbose");
 			this.master = options.has("master");
 			this.summary = options.has("summary");

@@ -467,8 +467,7 @@ public class CatalogueApiUtils {
 	
 	public List<HashMap<SE,Double>> listSEDistance(final String site, boolean write, final String lfn){		
 		ListSEDistance lsd;
-		try {
-			System.out.println(lfn);
+		try {			
 			lsd = Dispatcher.execute( new ListSEDistance( commander.getUser(), 
 					commander.getRole(), 
 					site,
@@ -484,14 +483,29 @@ public class CatalogueApiUtils {
 	public List<TransferDetails> listTransfer(String status,
 											String toSE,
 											String user,
-											String id,
+											Integer id,
 											boolean master,
-											boolean verbose,
-											boolean summary,
-											boolean all_status,
-											boolean jdl,
+											//boolean verbose,
+											//boolean summary,
+											//boolean all_status,
+											//boolean jdl,
 											int count ){
-		return null;
+		
+		ListTransfer lt;
+		try {			
+			lt = Dispatcher.execute( new ListTransfer( commander.getUser(), 
+					commander.getRole(), 
+					status,
+					toSE,
+					user,
+					id,
+					master,
+					count ) );
+			return ( lt!=null ? lt.getTransfers() : null );
+		} catch (ServerException e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 	
 	public int deleteMirror( String file, boolean isGuid, String se ){
