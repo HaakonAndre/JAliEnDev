@@ -88,8 +88,6 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 			arg = alArguments.get(2);
 			if( !this.useWriteMetrics && this.lfn_name==null )
 				this.lfn_name = arg;
-		}catch( IndexOutOfBoundsException e ){ ; }
-		
-		System.out.println( this.site + " " + this.useWriteMetrics + " " + this.lfn_name );
+		}catch( IndexOutOfBoundsException e ){ ; }				
 	}
 }
