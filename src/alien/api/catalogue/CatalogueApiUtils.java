@@ -18,6 +18,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.Package;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
+import alien.io.TransferDetails;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 
@@ -478,6 +479,19 @@ public class CatalogueApiUtils {
 			e.printStackTrace();
 			return null;
 		}		
+	}
+	
+	public List<TransferDetails> listTransfer(String status,
+											String toSE,
+											String user,
+											String id,
+											boolean master,
+											boolean verbose,
+											boolean summary,
+											boolean all_status,
+											boolean jdl,
+											int count ){
+		return null;
 	}
 	
 	public int deleteMirror( String file, boolean isGuid, String se ){

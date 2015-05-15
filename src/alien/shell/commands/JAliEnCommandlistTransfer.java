@@ -25,7 +25,17 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 		out.printOutln("TransferId\tStatus\tUser\tDestination\tSize" +
 				( this.jdl ? "\tSource" : "" ) +
 				"\tAttempts");
-		List<TransferDetails> transfers = commander.c_api.listTransfer();
+		List<TransferDetails> transfers = commander.c_api.listTransfer(
+							this.status,
+							this.toSE,
+							this.user,
+							this.id,
+							this.master,
+							this.verbose,
+							this.summary,
+							this.all_status,
+							this.jdl,
+							this.count );
 		if( transfers == null )
 			return;
 		for( TransferDetails t : transfers ){
