@@ -18,7 +18,14 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	
 	@Override
 	public void run() {
-		System.out.println( this.site + " " + this.useWriteMetrics + " " + this.lfn_name );
+		System.out.println( "Site: " + this.site + 
+							"\nwrite: " + this.useWriteMetrics + "\nlfn: " + this.lfn_name );
+		
+		if( !this.useWriteMetrics && 
+				(this.lfn_name==null || this.lfn_name.length()==0) ){
+			out.printErrln("No LFN specified for read metrics");
+			return;
+		}
 		
 		if( lfn_name!=null && lfn_name.length()!=0 ){
 			this.lfn_name = FileSystemUtils.getAbsolutePath(
@@ -67,26 +74,24 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 		super(commander, out, alArguments);
 		
 		this.useWriteMetrics = true;
-		int argLen = alArguments.size();
-		if( argLen==0 )
-			return;
-		String arg = alArguments.get(0);
-		if( !arg.equals("read") && !arg.equals("write") )
-			this.site = arg;
-		else
-			this.useWriteMetrics = (arg.equals("write"));
-		if( argLen==1 )
-			return;
-		arg = alArguments.get(1);
-		if( !arg.equals("read") && !arg.equals("write") )
-			this.site = this.lfn_name;
-		else
-			this.useWriteMetrics = (arg.equals("write"));
-		if( argLen==2 && !this.useWriteMetrics )
-			return;
-		arg = alArguments.get(2);
-		if( !this.useWriteMetrics && this.lfn_name==null && argLen==3 )
-			this.lfn_name = arg;
+		try{
+			int argLen = alArguments.size();
+			if( argLen==0 )
+				return;
+			String arg = alArguments.get(0);
+			if( !arg.equals("read") && !arg.equals("write") )
+				this.site = arg;
+			else
+				this.useWriteMetrics = (arg.equals("write"));
+			arg = alArguments.get(1);
+			if( !arg.equals("read") && !arg.equals("write") )
+				this.lfn_name = arg;
+			else
+				this.useWriteMetrics = (arg.equals("write"));
+			arg = alArguments.get(2);
+			if( !this.useWriteMetrics && this.lfn_name==null )
+				this.lfn_name = arg;
+		}catch( IndexOutOfBoundsException e ){ ; }
 		
 		System.out.println( this.site + " " + this.useWriteMetrics + " " + this.lfn_name );
 	}
