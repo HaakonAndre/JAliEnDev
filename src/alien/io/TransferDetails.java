@@ -1,6 +1,7 @@
 package alien.io;
 
 
+import java.io.Serializable;
 import java.util.Date;
 
 import lazyj.DBFunctions;
@@ -11,7 +12,7 @@ import lia.util.StringFactory;
  * 
  * @author costing
  */
-public class TransferDetails {
+public class TransferDetails implements Serializable{
 
 	/**
 	 * transfer queue id
