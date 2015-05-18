@@ -52,7 +52,10 @@ public class ListTransfer extends Request {
 		if( this.count==0 )
 			return;
 		List<TransferDetails> tlst;
-		if(this.user==null || this.user.length()==0)
+		if((this.user==null || this.user.length()==0) && 
+				(this.toSE==null || this.toSE.length()==0) )
+			tlst = TransferUtils.getAllActiveTransfers();
+		else if(this.user==null || this.user.length()==0)
 			tlst = TransferUtils.getActiveTransfersBySE(this.toSE);
 		else
 			tlst = TransferUtils.getActiveTransfersByUser(this.user);

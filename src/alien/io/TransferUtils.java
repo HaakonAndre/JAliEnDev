@@ -83,13 +83,33 @@ public final class TransferUtils {
 
 			db.setReadOnly(true);
 
-			String qry = "SELECT * FROM TRANSFERS_DIRECT " + 
-					( targetSE!=null && targetSE.length()!=0 ? 
-							"WHERE destination=?" : 
-							"" ) + 
-					" ORDER BY transferId";
-			//db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
-			db.query(qry, false, targetSE);
+			db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
+
+			final List<TransferDetails> ret = new ArrayList<>();
+
+			while (db.moveNext())
+				ret.add(new TransferDetails(db));
+
+			return ret;
+		}
+	}
+	
+	/**
+	 * @return all active transfers
+	 */
+	public static List<TransferDetails> getAllActiveTransfers() {
+		try (DBFunctions db = getDB()) {
+			if (db == null)
+				return null;
+
+			if (monitor != null) {
+				monitor.incrementCounter("TRANSFERS_db_lookup");
+				monitor.incrementCounter("TRANSFERS_get_by_destination");
+			}
+
+			db.setReadOnly(true);
+
+			db.query("SELECT * FROM TRANSFERS_DIRECT ORDER BY transferId", false);
 
 			final List<TransferDetails> ret = new ArrayList<>();
 
