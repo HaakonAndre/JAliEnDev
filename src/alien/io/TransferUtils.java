@@ -84,7 +84,9 @@ public final class TransferUtils {
 			db.setReadOnly(true);
 
 			String qry = "SELECT * FROM TRANSFERS_DIRECT " + 
-					( targetSE!=null ? "WHERE destination=?" : "" ) + 
+					( targetSE!=null && targetSE.length()!=0 ? 
+							"WHERE destination=?" : 
+							"" ) + 
 					" ORDER BY transferId";
 			//db.query("SELECT * FROM TRANSFERS_DIRECT WHERE destination=? ORDER BY transferId", false, targetSE);
 			db.query(qry, false, targetSE);
