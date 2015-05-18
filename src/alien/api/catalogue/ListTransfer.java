@@ -65,7 +65,7 @@ public class ListTransfer extends Request {
 					(this.toSE==null || this.toSE.length()==0) && 
 					( !t.user.equals(this.user) || !t.destination.equals(this.toSE)))
 				continue;
-			if( (this.status!=null || this.status.length()!=0) 
+			if( (this.status!=null && this.status.length()!=0) 
 					&& !t.status.equals(this.status))
 				continue;
 			if( (this.id!=null) 
