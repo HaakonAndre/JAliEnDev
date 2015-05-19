@@ -60,7 +60,7 @@ public class ListTransfer extends Request {
 													this.user,
 													this.status,
 													this.id,
-													this.count,
+													(this.count==-1 ? null : this.count),
 													this.sort_desc
 					);
 		
