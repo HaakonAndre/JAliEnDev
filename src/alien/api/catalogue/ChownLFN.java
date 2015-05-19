@@ -4,6 +4,7 @@ import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 
 public class ChownLFN extends Request {
 	/**
@@ -28,6 +29,8 @@ public class ChownLFN extends Request {
 	
 	@Override
 	public void run() {
+		if( !AliEnPrincipal.roleIsAdmin( getEffectiveRequester().getName() ) )
+			throw new SecurityException( "Only administrators can do it" );
 		this.success = LFNUtils.chownLFN( this.path, this.chown_user, this.chown_group );
 	}
 	

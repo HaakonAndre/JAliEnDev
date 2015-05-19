@@ -9,8 +9,7 @@ import alien.user.AliEnPrincipal;
 public class SetJobsQuota extends Request {
 
 	private static final long serialVersionUID = 249641308455725934L;
-	private boolean succeeded;
-	private boolean isAdmin;
+	private boolean succeeded;	
 	private String field;
 	private String value;
 	private String username;
@@ -21,7 +20,6 @@ public class SetJobsQuota extends Request {
 	 * @param queueId
 	 */
 	public SetJobsQuota(final AliEnPrincipal user, String fld, String val) {
-		this.isAdmin = user.canBecome("admin");
 		this.field = fld;
 		this.value = val;
 		this.username = user.getName();
@@ -29,8 +27,8 @@ public class SetJobsQuota extends Request {
 	
 	@Override
 	public void run() {
-		if( !this.isAdmin )
-			return;
+		if( !AliEnPrincipal.roleIsAdmin( getEffectiveRequester().getName() ) )
+			throw new SecurityException( "Only administrators can do it" );
 		
 		this.succeeded = QuotaUtilities.saveJobQuota( this.username, 
 														this.field,
