@@ -18,7 +18,8 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	private boolean summary;
 	private boolean all_status;
 	private boolean jdl;
-	private int count;	
+	private int count;
+	private boolean sort_desc;
 	
 	@Override
 	public void run() {
@@ -35,7 +36,8 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 							//this.summary,
 							//this.all_status,
 							//this.jdl,
-							this.count );
+							this.count,
+							this.sort_desc );		
 		if( transfers == null )
 			return;
 		for( TransferDetails t : transfers ){
@@ -51,7 +53,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 		out.printOutln();
 		out.printOutln("listTransfer: returns all the transfers that are waiting in the system");
 		out.printOutln("        Usage:");
-		out.printOutln("                listTransfer [-status <status>] [-user <user>] [-id <queueId>] [-verbose] [-master] [-summary] [-all_status] [-jdl] [-destination <site>]  [-list=<number(all transfers by default)>]");
+		out.printOutln("                listTransfer [-status <status>] [-user <user>] [-id <queueId>] [-verbose] [-master] [-summary] [-all_status] [-jdl] [-destination <site>]  [-list=<number(all transfers by default)>] [-desc]");
 		out.printOutln();
 		
 	}
@@ -76,6 +78,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			parser.accepts("summary");
 			parser.accepts("all_status");
 			parser.accepts("jdl");
+			parser.accepts("desc");
 			parser.accepts("destination").withRequiredArg();
 			
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
@@ -98,6 +101,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			this.summary = options.has("summary");
 			this.all_status = options.has("all_status");
 			this.jdl = options.has("jdl");
+			this.sort_desc = options.has("desc");
 			this.toSE = (String) options.valueOf("destination");			
 		} 
 		catch (OptionException e) {			

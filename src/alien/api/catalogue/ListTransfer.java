@@ -21,6 +21,7 @@ public class ListTransfer extends Request {
 	private boolean all_status;
 	private boolean jdl;
 	private int count;
+	private boolean sort_desc;
 	
 	public ListTransfer(final AliEnPrincipal user, 
 			final String role, 
@@ -33,7 +34,8 @@ public class ListTransfer extends Request {
 			boolean summary, */
 			//boolean all_status,
 			//boolean jdl,
-			int count ){
+			int count,
+			boolean desc){
 		this.status = status;
 		this.toSE = toSE;
 		this.user = userTransfer;
@@ -44,6 +46,7 @@ public class ListTransfer extends Request {
 //		this.all_status = all_status;
 //		this.jdl = jdl;
 		this.count = count;
+		this.sort_desc = desc;
 	}
 	
 	@Override
@@ -52,38 +55,17 @@ public class ListTransfer extends Request {
 		if( this.count==0 )
 			return;
 		List<TransferDetails> tlst;
-		//if((this.user==null || this.user.length()==0) && 
-		//		(this.toSE==null || this.toSE.length()==0) )
+		
 		tlst = TransferUtils.getAllActiveTransfers( this.toSE,
 													this.user,
 													this.status,
 													this.id,
 													this.count,
-													true
+													this.sort_desc
 					);
-/*		else if(this.user==null || this.user.length()==0)
-			tlst = TransferUtils.getActiveTransfersBySE(this.toSE);
-		else
-			tlst = TransferUtils.getActiveTransfersByUser(this.user);
-*/		
 		
-		int found = 0;
-		for( TransferDetails t : tlst ){
-/*			if( this.count!=-1 && found==this.count )
-				break;
-			if( (this.user==null || this.user.length()==0 ) &&
-					(this.toSE==null || this.toSE.length()==0) && 
-					( !t.user.equals(this.user) || !t.destination.equals(this.toSE)))
-				continue;
-			if( (this.status!=null && this.status.length()!=0) 
-					&& !t.status.equals(this.status))
-				continue;
-			if( (this.id!=null) 
-					&& t.transferId!=this.id )
-				continue;
-*/			
-			this.transfers.add(t);
-			found++;
+		for( TransferDetails t : tlst ){			
+			this.transfers.add(t);		
 		}
 	}
 	

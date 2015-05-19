@@ -489,7 +489,8 @@ public class CatalogueApiUtils {
 											//boolean summary,
 											//boolean all_status,
 											//boolean jdl,
-											int count ){
+											int count,
+											boolean desc ){
 		
 		ListTransfer lt;
 		try {			
@@ -500,7 +501,8 @@ public class CatalogueApiUtils {
 					user,
 					id,
 					master,
-					count ) );
+					count,
+					desc ) );
 			return ( lt!=null ? lt.getTransfers() : null );
 		} catch (ServerException e) {
 			e.printStackTrace();
