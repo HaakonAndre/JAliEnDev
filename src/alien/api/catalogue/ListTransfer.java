@@ -52,17 +52,24 @@ public class ListTransfer extends Request {
 		if( this.count==0 )
 			return;
 		List<TransferDetails> tlst;
-		if((this.user==null || this.user.length()==0) && 
-				(this.toSE==null || this.toSE.length()==0) )
-			tlst = TransferUtils.getAllActiveTransfers();
-		else if(this.user==null || this.user.length()==0)
+		//if((this.user==null || this.user.length()==0) && 
+		//		(this.toSE==null || this.toSE.length()==0) )
+		tlst = TransferUtils.getAllActiveTransfers( this.toSE,
+													this.user,
+													this.status,
+													this.id,
+													this.count,
+													true
+					);
+/*		else if(this.user==null || this.user.length()==0)
 			tlst = TransferUtils.getActiveTransfersBySE(this.toSE);
 		else
 			tlst = TransferUtils.getActiveTransfersByUser(this.user);
+*/		
 		
 		int found = 0;
 		for( TransferDetails t : tlst ){
-			if( this.count>0 && found==this.count )
+/*			if( this.count!=-1 && found==this.count )
 				break;
 			if( (this.user==null || this.user.length()==0 ) &&
 					(this.toSE==null || this.toSE.length()==0) && 
@@ -74,7 +81,7 @@ public class ListTransfer extends Request {
 			if( (this.id!=null) 
 					&& t.transferId!=this.id )
 				continue;
-			
+*/			
 			this.transfers.add(t);
 			found++;
 		}

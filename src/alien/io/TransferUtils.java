@@ -97,7 +97,20 @@ public final class TransferUtils {
 	/**
 	 * @return all active transfers
 	 */
-	public static List<TransferDetails> getAllActiveTransfers() {
+	public static List<TransferDetails> getAllActiveTransfers( final String targetSE,
+																final String user,
+																final String status,
+																final Integer id,
+																final Integer count,
+																final boolean orderAsc ) {
+		if( id!=null ){
+			List<TransferDetails> l = new ArrayList<TransferDetails>();
+			TransferDetails d = getTransfer( id );
+			if( d!=null )
+				l.add(d);
+			return l;
+		}
+		
 		try (DBFunctions db = getDB()) {
 			if (db == null)
 				return null;
@@ -109,7 +122,17 @@ public final class TransferUtils {
 
 			db.setReadOnly(true);
 
-			db.query("SELECT * FROM TRANSFERS_DIRECT ORDER BY transferId", false);
+			String orderClause = ( orderAsc ? " ORDER BY transferId ASC" : 
+												" ORDER BY transferId DESC" );
+			String limitClause = ( count != null ? " LIMIT " + count.toString() : "" );
+			String whereStatement = "";
+			
+			String query = "SELECT * FROM TRANSFERS_DIRECT WHERE "+
+							"(? IS NULL OR user=?) AND (? IS NULL OR destination=?)" +
+							" AND (? IS NULL OR status=?)";
+			//db.query("SELECT * FROM TRANSFERS_DIRECT ORDER BY transferId", false);
+			query += orderClause + limitClause;
+			db.query(query, false, user, user, targetSE, targetSE, status, status  );
 
 			final List<TransferDetails> ret = new ArrayList<>();
 
