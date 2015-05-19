@@ -43,7 +43,7 @@ public class MirrorLFN extends Request {
 										: LFNUtils.getLFN(this.path) );
 		System.out.println( getEffectiveRequester() );
 		if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
-			throw new ServerException("You do not own this file", null);
+			throw new SecurityException("You do not own this file");
 	}
 	
 /*	public MirrorLFN( final AliEnPrincipal user, final String role, 
