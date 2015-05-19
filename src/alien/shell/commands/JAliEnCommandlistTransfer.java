@@ -23,9 +23,10 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	
 	@Override
 	public void run() {
-		out.printOutln("TransferId\tStatus\tUser\tDestination\tSize" +
-				( this.jdl ? "\tSource" : "" ) +
-				"\tAttempts");
+		out.printOutln("TransferId\t   Status\t   User\t\tDestination      \tSize" +
+				( this.jdl ? "\t\tSource" : "" ) +
+				"\t\tAttempts" + 
+				( this.verbose ? "\t\tError reason" : "" ) );
 		if( this.count == 0 ){
 			out.printOutln();
 			out.printOutln( "Total: 0 transfers" );
@@ -46,10 +47,11 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 		if( transfers == null )
 			return;
 		for( TransferDetails t : transfers ){
-			out.printOutln( t.transferId + "\t" + t.status + "\t" + t.user + "\t" +
-						t.destination + "\t" + t.size + 
-						( this.jdl ? "\t" + t.jdl : "" ) + 
-						"\t" + t.attempts);
+			out.printOutln( t.transferId + "\t   " + t.status + "\t   " + t.user + "\t" +
+						t.destination + String.format("%14d", t.size) + // t.size + 
+						( this.jdl && t.jdl!=null ? "\t\t" + t.jdl : "\t\t" ) + 
+						"\t" + t.attempts + 
+						( this.verbose && t.reason!=null ? "\t" + t.reason : "" ) );
 		}
 		out.printOutln();
 		out.printOutln( "Total: " + transfers.size() + " transfers" );
