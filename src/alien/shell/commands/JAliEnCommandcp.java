@@ -440,6 +440,23 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, targetLFN), true);
 
+		if (lfn.exists){
+			if (lfn.isFile()){
+				if (!commander.c_api.removeLFN(lfn.getCanonicalName())){
+					if (!isSilent())
+						out.printErrln("Cannot remove the previously existing file: "+lfn.getCanonicalName());
+					else
+						throw new IOError(new IOException("Cannot remove the previously existing file: "+lfn.getCanonicalName()));					
+				}
+			}
+			else{
+				if (!isSilent())
+					out.printErrln("Target existing and is not a file: "+lfn.getCanonicalName());
+				else
+					throw new IOError(new IOException("Target existing and is not a file: "+lfn.getCanonicalName()));
+			}
+		}
+		
 		final GUID guid;
 
 		try {
