@@ -40,29 +40,9 @@ public class MirrorLFN extends Request {
 		this.qos = qos;		
 	}
 	
-/*	public MirrorLFN( final AliEnPrincipal user, final String role, 
-			String lfn_name,
-			String destSE,
-			boolean useLFNasGuid,			
-			Integer attempts_cnt ){
-		
-		this.path = lfn_name;
-		this.useGUID = useLFNasGuid;
-		this.dstSE = destSE;
-		this.attempts = attempts_cnt;
-	}*/
 	
 	@Override
 	public void run(){
-		/*if( this.dstSE!=null ){			
-			this.success = LFNUtils.mirrorLFN( this.path, 
-												this.dstSE, 
-												this.useGUID, 
-												this.attempts );
-			this.results.put( this.dstSE, this.success );
-		}
-		else */		
-		
 		this.results = new HashMap<String,Integer>();
 		CatalogEntity c = ( this.useGUID ? 	GUIDUtils.getGUID(UUID.fromString(this.path), false)
 										: LFNUtils.getLFN(this.path) );

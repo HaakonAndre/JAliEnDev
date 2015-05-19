@@ -458,9 +458,12 @@ public class CatalogueApiUtils {
 													attempts ) );
 			return ml.getResultHashMap();
 		}
+		catch (final  SecurityException e){
+			logger.log(Level.WARNING, e.getMessage());
+		}
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, e.getMessage());
-			//e.getCause().printStackTrace();
+			e.getCause().printStackTrace();
 		}
 		return null;
 	}
