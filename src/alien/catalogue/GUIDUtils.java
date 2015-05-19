@@ -381,11 +381,7 @@ public final class GUIDUtils {
 					Collections.sort(files);
 
 					for (final String dev : devices) {
-						System.err.println("Looking at " + SYS_ENTRY + "/" + dev + "/address");
-
 						final String addr = lazyj.Utils.readFile(SYS_ENTRY + "/" + dev + "/address");
-
-						System.err.println("Addr: " + addr);
 
 						if (addr != null && !addr.equals("00:00:00:00:00:00")) {
 							sMac = addr;
@@ -419,12 +415,15 @@ public final class GUIDUtils {
 				}
 
 			if (sMac != null) {
-				System.err.println("Parsing mac: " + sMac);
+				final StringTokenizer st = new StringTokenizer(sMac.trim(), ":");
 
-				final StringTokenizer st = new StringTokenizer(sMac, ":");
-
-				for (int i = 0; i < 6; i++)
-					MACAddress[i] = (byte) Integer.parseInt(st.nextToken(), 16);
+				for (int i = 0; i < 6; i++) {
+					try {
+						MACAddress[i] = (byte) Integer.parseInt(st.nextToken(), 16);
+					} catch (final NumberFormatException nfe) {
+						// ignore
+					}
+				}
 			}
 		}
 
