@@ -37,14 +37,7 @@ public class MirrorLFN extends Request {
 		this.attempts = attempts_cnt;
 		this.ses = ses;
 		this.exses = exses;
-		this.qos = qos;
-		this.results = new HashMap<String,Integer>();
-		CatalogEntity c = ( this.useGUID ? GUIDUtils.getGUID(UUID.fromString(this.path), false)
-										: LFNUtils.getLFN(this.path) );
-		System.out.println( getEffectiveRequester() );
-		if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
-			throw new SecurityException("You do not own this file: " + lfn_name +
-					", requester: " + getEffectiveRequester() );
+		this.qos = qos;		
 	}
 	
 /*	public MirrorLFN( final AliEnPrincipal user, final String role, 
@@ -69,6 +62,13 @@ public class MirrorLFN extends Request {
 			this.results.put( this.dstSE, this.success );
 		}
 		else */		
+		
+		this.results = new HashMap<String,Integer>();
+		CatalogEntity c = ( this.useGUID ? 	GUIDUtils.getGUID(UUID.fromString(this.path), false)
+										: LFNUtils.getLFN(this.path) );
+		if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
+			throw new SecurityException("You do not own this file: " + c +
+					", requester: " + getEffectiveRequester() );
 		
 		this.results = LFNUtils.mirrorLFN( this.path,
 												this.ses,
