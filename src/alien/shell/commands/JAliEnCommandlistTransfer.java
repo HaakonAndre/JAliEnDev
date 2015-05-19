@@ -26,8 +26,11 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 		out.printOutln("TransferId\tStatus\tUser\tDestination\tSize" +
 				( this.jdl ? "\tSource" : "" ) +
 				"\tAttempts");
-		if( this.count == 0 )
+		if( this.count == 0 ){
+			out.printOutln();
+			out.printOutln( "Total: 0 transfers" );
 			return;
+		}
 		List<TransferDetails> transfers = commander.c_api.listTransfer(
 							this.toSE,
 							this.user,
@@ -48,6 +51,8 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 						( this.jdl ? "\t" + t.jdl : "" ) + 
 						"\t" + t.attempts);
 		}
+		out.printOutln();
+		out.printOutln( "Total: " + transfers.size() + " transfers" );
 	}
 
 	@Override
