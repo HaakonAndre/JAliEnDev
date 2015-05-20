@@ -15,7 +15,10 @@ public class JAliEnCommandgroups extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		out.printOutln("groups: shows the groups current user is a member of.");
+		out.printOutln();
+		out.printOutln("groups [<username>]");
+		out.printOutln("shows the groups current user is a member of.");
+		out.printOutln();
 	}
 
 	@Override
