@@ -403,8 +403,8 @@ public class OrphanPFNsCleanup {
 
 				System.err.println("Exception deleting " + guid.guid + " from " + se.getName() + " : " + e.getMessage());
 
-				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, "Exception deleting from " + se.getName(), e);
+				if (logger.isLoggable(Level.FINER))
+					logger.log(Level.FINER, "Exception deleting from " + se.getName(), e);
 
 				concurrentQueryies.acquireUninterruptibly();
 
