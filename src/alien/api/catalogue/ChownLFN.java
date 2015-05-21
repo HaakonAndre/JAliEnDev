@@ -55,7 +55,7 @@ public class ChownLFN extends Request {
 			return;
 		}
 		
-		Collection<LFN> lfns = LFNUtils.find(this.path, "*", 0);
+		Collection<LFN> lfns = LFNUtils.find(this.path, "*", LFNUtils.FIND_INCLUDE_DIRS );
 		for( LFN l : lfns ){
 			if( !AuthorizationChecker.isOwner( l, getEffectiveRequester() ) )
 				throw new SecurityException("You do not own this file: " + l +
