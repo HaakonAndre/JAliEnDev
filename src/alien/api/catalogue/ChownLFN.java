@@ -43,24 +43,29 @@ public class ChownLFN extends Request {
 		
 		this.results = new HashMap<String, Boolean>(); 
 		
-		if( !this.recursive ){
-			CatalogEntity c = LFNUtils.getLFN(this.path);
-			if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
-				throw new SecurityException("You do not own this file: " + c +
-						", requester: " + getEffectiveRequester() );
+		
+		CatalogEntity c = LFNUtils.getLFN(this.path);
+		if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
+			this.success = false;
+		else
+			//throw new SecurityException("You do not own this file: " + c +
+			//		", requester: " + getEffectiveRequester() );
 			this.success = LFNUtils.chownLFN( this.path, 
-												this.chown_user, 
-												this.chown_group );
-			results.put( this.path, this.success );
+											this.chown_user, 
+											this.chown_group );
+		results.put( this.path, this.success );
+		
+		if( !this.recursive || !this.success )
 			return;
-		}
 		
 		Collection<LFN> lfns = LFNUtils.find(this.path, "*", LFNUtils.FIND_INCLUDE_DIRS );
 		for( LFN l : lfns ){
 			if( !AuthorizationChecker.isOwner( l, getEffectiveRequester() ) )
-				throw new SecurityException("You do not own this file: " + l +
-						", requester: " + getEffectiveRequester() );
-			this.success = LFNUtils.chownLFN( l.getCanonicalName(), 
+				this.success = false;
+			else
+			//	throw new SecurityException("You do not own this file: " + l +
+			//			", requester: " + getEffectiveRequester() );
+				this.success = LFNUtils.chownLFN( l.getCanonicalName(), 
 												this.chown_user, 
 												this.chown_group );
 			results.put( this.path, this.success );
