@@ -43,7 +43,7 @@ public class ChownLFN extends Request {
 		
 		this.results = new HashMap<String, Boolean>(); 
 		
-		if( this.recursive ){
+		if( !this.recursive ){
 			CatalogEntity c = LFNUtils.getLFN(this.path);
 			if( !AuthorizationChecker.isOwner( c, getEffectiveRequester() ) )
 				throw new SecurityException("You do not own this file: " + c +
