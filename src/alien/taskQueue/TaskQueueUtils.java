@@ -1,8 +1,14 @@
 package alien.taskQueue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -738,7 +744,7 @@ public class TaskQueueUtils {
 			db.setReadOnly(true);
 
 			if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
-				Date d = new Date();
+				final Date d = new Date();
 				q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " as JDL FROM QUEUEARCHIVE" + (1900 + d.getYear()) + " WHERE queueId=?";
 
 				if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
@@ -760,9 +766,33 @@ public class TaskQueueUtils {
 
 						f = new File(jdlArchiveDir, queueId + ".html");
 
-						if (f.exists() && f.canRead()) {
-							String content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+						String content = null;
 
+						if (f.exists() && f.canRead())
+							content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+						else {
+							f = new File(jdlArchiveDir, (queueId / 10000000) + ".zip");
+
+							if (f.exists() && f.canRead()) {
+								final Path zipFile = Paths.get(f.getAbsolutePath());
+
+								try (FileSystem fileSystem = FileSystems.newFileSystem(zipFile, null)) {
+									final Path source = fileSystem.getPath(queueId + ".html");
+
+									if (source != null) {
+										final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+										Files.copy(source, baos);
+
+										content = baos.toString();
+									}
+								} catch (final IOException e) {
+									// ignore
+								}
+							}
+						}
+
+						if (content != null) {
 							final int idx = content.indexOf("// --------");
 
 							if (idx >= 0)
@@ -1670,7 +1700,7 @@ public class TaskQueueUtils {
 					return null;
 
 				db.setReadOnly(true);
-				
+
 				db.query("SELECT user FROM QUEUE_USER where userId=?;", false, key);
 
 				if (db.moveNext())
@@ -1705,7 +1735,7 @@ public class TaskQueueUtils {
 			try (DBFunctions db = getQueueDB()) {
 				if (db == null)
 					return null;
-				
+
 				db.setReadOnly(true);
 
 				db.query("SELECT host FROM QUEUE_HOST where hostId=?;", false, key);
@@ -1737,7 +1767,7 @@ public class TaskQueueUtils {
 			try (DBFunctions db = getQueueDB()) {
 				if (db == null)
 					return null;
-				
+
 				db.setReadOnly(true);
 
 				db.query("SELECT notify FROM QUEUE_NOTIFY where notifyId=?;", false, key);
