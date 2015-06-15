@@ -769,7 +769,7 @@ public class TaskQueueUtils {
 						String content = null;
 
 						if (f.exists() && f.canRead())
-							content = Utils.htmlToText(Utils.readFile(f.getAbsolutePath()));
+							content = Utils.readFile(f.getAbsolutePath());
 						else {
 							f = new File(jdlArchiveDir, (queueId / 10000000) + ".zip");
 
@@ -793,6 +793,8 @@ public class TaskQueueUtils {
 						}
 
 						if (content != null) {
+							content = Utils.htmlToText(content);
+							
 							final int idx = content.indexOf("// --------");
 
 							if (idx >= 0)
