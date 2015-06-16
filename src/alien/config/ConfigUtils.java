@@ -19,6 +19,7 @@ import lazyj.DBFunctions;
 import lazyj.ExtProperties;
 import lazyj.cache.ExpirationCache;
 import lia.Monitor.monitor.AppConfig;
+import lia.util.Utils;
 
 /**
  * @author costing
@@ -282,6 +283,18 @@ public class ConfigUtils {
 	public static final String getVersion() {
 		return jAliEnVersion;
 	}
+	
+
+	/**
+	 * @return machine platform
+	 */
+	public static final String getPlatform() {
+		return Utils.getOutput("uname -s").trim()+
+				"-"+
+				Utils.getOutput("uname -m").trim();
+	}
+	
+	
 
 	/**
 	 * @return the site name closest to where this JVM runs

@@ -1,10 +1,12 @@
 package alien.api.taskQueue;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import lazyj.DBFunctions;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.shell.commands.JAliEnCOMMander;
@@ -302,4 +304,19 @@ public class TaskQueueApiUtils {
 		}
 		return null;
 	}
+	
+
+	public GetMatchJob getMatchJob(final HashMap<String, Object> matchRequest) {
+		
+		try {
+			GetMatchJob gmj = Dispatcher.execute( new GetMatchJob(commander.getUser(), commander.getRole(), matchRequest) ); 
+			return gmj;
+		}
+		catch (ServerException e) {
+			System.out.println("Could get not a match Job: "+e.getMessage());
+			e.getCause().printStackTrace();
+		}
+		return null;
+	}
+	
 }

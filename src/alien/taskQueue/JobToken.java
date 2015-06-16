@@ -96,10 +96,12 @@ public class JobToken implements Comparable<JobToken> {
 	 * 
 	 * @param db
 	 */
-	public void spawnToken(final DBFunctions db) {
+	public boolean spawnToken(final DBFunctions db) {
 		this.token = generateToken();
 
 		update(db);
+		
+		return token.length()==32;
 	}
 
 	/**

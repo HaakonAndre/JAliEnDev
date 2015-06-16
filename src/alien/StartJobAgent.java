@@ -4,9 +4,9 @@ import alien.api.DispatchSSLClient;
 import alien.site.JobAgent;
 import alien.user.JAKeyStore;
 
-/**
- * @author ron
- *  @since Jun 22, 2011
+/** 
+ * @author mmmartin, ron
+ * @since  Apr 1, 2015
  */
 public class StartJobAgent {
 	
@@ -17,13 +17,13 @@ public class StartJobAgent {
 	 */
 	public static void main(String[] args) throws Exception {
 		
-		try {
-			JAKeyStore.loadPilotKeyStorage();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		DispatchSSLClient.overWriteServiceAndForward("siteProxyService");
+//		try {
+//			JAKeyStore.loadPilotKeyStorage();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//		DispatchSSLClient.overWriteServiceAndForward("siteProxyService");
 		
 		JobAgent jA = new JobAgent();
 		jA.start();

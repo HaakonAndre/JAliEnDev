@@ -4,20 +4,32 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.InvalidKeyException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.security.cert.X509Certificate;
 
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
+import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
+import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -26,55 +38,287 @@ import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
+import alien.servlets.TextCache;
+import alien.shell.commands.JAliEnCOMMander;
+import alien.site.packman.CVMFS;
+import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
-import alien.taskQueue.Job;
+import alien.taskQueue.Job; 
 import alien.taskQueue.JobSigner;
 import alien.taskQueue.JobStatus;
 import alien.taskQueue.JobSubmissionException;
 import alien.user.AliEnPrincipal;
 
 /**
- * @author ron
- * @since June 5, 2011
+ * @author mmmartin, ron
+ * @since Apr 1, 2015
  */
 public class JobAgent extends Thread {
 
+	// Folders and files
 	private static final String tempDirPrefix = "jAliEn.JobAgent.tmp";
 	private File tempDir = null;
-
 	private static final String defaultOutputDirPrefix = "~/jalien-job-";
 
-	private final AliEnPrincipal user = null;
+	// Variables passed through VoBox environment
+	private final Map<String, String> env = System.getenv();
 	private final String site;
-
+	private final String ce;
+	private int origTtl;
+	
+    // Job variables
 	private JDL jdl = null;
 	private String sjdl = null;
 	private Job job = null;
-
+	private final AliEnPrincipal user = null;
+	private int queueId;
+	private int jobToken;
+	private String username;
+	private String jobAgentId = "";
+	private String workdir = null;
+	private HashMap<String, Object> matchedJob = null;
+	private String partition;
+	private String ceRequirements = "";
+	private String[] packages;
+	private String[] installedPackages;
+	private HashMap<String, Object> siteMap = new HashMap<String, Object>();
+	
+	private int totalJobs;
+	private final long jobAgentStartTime = new java.util.Date().getTime();
+	
+	// Other
+	private PackMan packMan = null;
 	private final CatalogueApiUtils c_api = null;
+	private String hostName = null ;
+	private String alienCm = null;
+	JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
+	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
+	
+	static transient final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
+	
 	/**
 	 */
 	public JobAgent() {
-		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
+		site 		= env.get("site"); // or ConfigUtils.getConfig().gets("alice_close_site").trim();		
+		ce 			= env.get("CE");
+		
+		totalJobs 	= 0;
+		
+		partition = "";
+		if (env.containsKey("partition")) 
+			partition = env.get("partition");
+		
+		if (env.containsKey("TTL")){
+			origTtl = Integer.parseInt( env.get("TTL") ); 
+		}
+		else {
+			origTtl = 12*3600;
+		}
+		
+		if (env.containsKey("cerequirements")){
+			ceRequirements = env.get("cerequirements");
+		}
+		
+		try {
+			hostName = InetAddress.getLocalHost().getCanonicalHostName();
+		} catch (UnknownHostException e) {
+			System.err.println("Couldn't get hostname");
+			e.printStackTrace();
+		}
+
+		alienCm = hostName;
+		if (env.containsKey("ALIEN_CM_AS_LDAP_PROXY")){
+			alienCm =  env.get("ALIEN_CM_AS_LDAP_PROXY");
+		}
+		
+		if (env.containsKey("ALIEN_JOBAGENT_ID")){
+			jobAgentId =  env.get("ALIEN_JOBAGENT_ID");
+		}
+		jobAgentId = jobAgentId + "_" + 
+						ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+		
+		workdir = env.get("HOME");
+		if( env.containsKey("WORKDIR") 	) 	workdir = env.get("WORKDIR");
+		if( env.containsKey("TMPBATCH") ) 	workdir = env.get("TMPBATCH");   
+		
+		siteMap = getSiteParameters();
 	}
 
 	@Override
 	public void run() {
-
-		while (true) {
-			// Job j = TaskQueueApiUtils.getJob();
-			// if (j != null)
-			// handleJob(j);
-			// else {
-			// System.out.println("Nothing to run right now. Idling 5secs...");
-			// try {
-			// sleep(5000);
-			// } catch (InterruptedException e) {
-			// e.printStackTrace();
-			// }
-			// }
+		
+		logger.log(Level.INFO, "Starting JobAgent in "+hostName);
+		
+		// We start, if needed, the node JBox
+		// Does it check a previous one is already running?
+		try {
+			System.out.println("Trying to start JBox");
+			JBoxServer.startJBoxService(0);
+		} catch (Exception e) {
+			System.err.println("Unable to start JBox.");
+			e.printStackTrace();
 		}
+
+		int count = 1; // to modify
+		while ( count>0 ) {
+			if (!updateDynamicParameters())
+				break;
+			
+			System.out.println(siteMap.toString());
+			
+			try{
+				logger.log(Level.INFO, "Trying to get a match...");
+				
+				GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
+				matchedJob = jobMatch.getMatchJob();
+				
+				if ( matchedJob != null && !matchedJob.containsKey("Error") ) {
+//					jdl 		= new JDL((String) matchedJob.get("JDL"));
+//					queueId 	= (int)	matchedJob.get("queueId");
+//					jobToken 	= (int)	matchedJob.get("jobToken");
+//					username 	= (String) matchedJob.get("User");
+//					
+//					System.out.println("Matched job received with:");
+//					System.out.println("JDL:\n"+jdl.toString());
+//					System.out.println("queueId:\n"+queueId);
+//					System.out.println("jobToken:\n"+jobToken);
+//					System.out.println("User:\n"+username);
+					System.out.println(matchedJob.toString());
+					System.exit(0);
+					
+					// handleJob(j);
+					totalJobs++;
+				}
+				else{
+					if (matchedJob !=null && matchedJob.containsKey("Error") )
+						logger.log(Level.INFO, (String) matchedJob.get("Error") );
+					else
+						logger.log(Level.INFO, "Nothing to run right now. Idling 10secs zZz...");
+					
+					try {
+						sleep(10000);
+					} catch (InterruptedException e) {
+						e.printStackTrace();
+					}
+				}
+			} catch (Exception e){
+				logger.log(Level.INFO, "Error getting a matching job: "+e);
+			}
+			count--;
+		}
+		
+		logger.log(Level.INFO, "JobAgent finished, id: "+jobAgentId+" totalJobs: "+totalJobs);
+		System.exit(0);
+	}
+
+	/**
+	 * @return the site parameters to send to the job broker (packages, ttl, ce/site...)
+	 */
+	private HashMap<String, Object> getSiteParameters() {
+		logger.log(Level.INFO, "Getting jobAgent map");
+
+		// getting packages from PackMan
+		packMan = (PackMan) getPackman();
+		packages = packMan.getListPackages();	
+		installedPackages = packMan.getListInstalledPackages();	
+		
+		// get users from cerequirements field
+		ArrayList<String> users = new ArrayList<String>();	
+		if (!ceRequirements.equals("")){
+			Pattern p = Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"");
+			Matcher m = p.matcher(ceRequirements);
+			while(m.find()){
+				users.add(m.group(1));
+			}
+		}
+		// setting entries for the map object
+		siteMap.put("TTL", origTtl);
+		
+		// We prepare the packages for direct matching
+		String packs =",";
+		Arrays.sort(packages);
+		for (String pack : packages){
+			packs += pack+",,";
+		}
+		packs.substring(0,packs.length()-1);
+		
+		String instpacks =",";
+		Arrays.sort(installedPackages);
+		for (String pack : installedPackages){
+			instpacks += pack+",,";
+		}
+		instpacks.substring(0,instpacks.length()-1);
+		
+		siteMap.put("Platform", ConfigUtils.getPlatform());
+		siteMap.put("Packages", packs);
+		siteMap.put("InstalledPackages", instpacks);
+		siteMap.put("CE", ce);
+		siteMap.put("Site", site);
+		siteMap.put("Partition", partition);
+		siteMap.put("Users", users);
+		siteMap.put("Host", alienCm);
+		siteMap.put("Disk", new File(workdir).getFreeSpace()/1024);
+		
+		return siteMap;
+	}
+	
+	private PackMan getPackman() {
+		return new CVMFS();
+	}
+
+	/**
+	 * updates jobagent parameters that change between job requests
+	 * @return false if we can't run because of current conditions, true if positive
+	 */
+	private boolean updateDynamicParameters() {
+		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
+
+		//free disk recalculation
+		long space = new File(workdir).getFreeSpace()/1024;
+		
+		//ttl recalculation
+		long jobAgentCurrentTime = new java.util.Date().getTime();
+		int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
+		int timeleft = origTtl - time_subs;
+		
+		logger.log(Level.INFO, 
+				"Still have "+timeleft+" seconds to live ("+jobAgentCurrentTime+"-"+jobAgentStartTime+"="+time_subs+")");
+
+		// we check if the proxy timeleft is smaller than the ttl itself
+		int proxy = getRemainingProxyTime();
+		logger.log(Level.INFO, "Proxy timeleft is "+proxy);
+		if (proxy > 0 && proxy < timeleft)
+			timeleft=proxy;
+		
+		// safety time for saving, etc
+		timeleft-=300;
+		
+		// what is the minimum we want to run with? (100MB?)
+		if(space <= 100*1024*1024){
+			logger.log(Level.INFO, "There is not enough space left: "+space);
+			return false;
+		}
+		
+		if(timeleft <= 0){
+			logger.log(Level.INFO, "There is not enough time left: "+timeleft);
+			return false;
+		}
+		
+		siteMap.put("Disk", space);
+		siteMap.put("TTL", timeleft);
+		
+		return true;
+	}
+	
+	/**
+	 * @return the time in seconds that proxy is still valid for
+	 */
+	private int getRemainingProxyTime() {
+		// to be modified!
+		return origTtl;
 	}
 
 	private void handleJob(final Job thejob) {
