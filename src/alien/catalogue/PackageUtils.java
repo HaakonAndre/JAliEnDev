@@ -110,6 +110,13 @@ public class PackageUtils {
 	}
 
 	/**
+	 * Force a reload of package list from the database.
+	 */
+	public static void refresh(){
+		lastCacheCheck = 0;
+	}
+
+	/**
 	 * @return list of defined packages
 	 */
 	public static List<Package> getPackages() {
