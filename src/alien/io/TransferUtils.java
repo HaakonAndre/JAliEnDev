@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -239,40 +240,10 @@ public final class TransferUtils {
 			if (monitor != null)
 				monitor.incrementCounter("TRANSFERS_db_insert");
 
-			LFN lfnToCopy;
-
-			if (!l.isReal()) {
-				// infer the real LFN from the same directory
-
-				UUID guid = null;
-
-				for (final PFN p : l.whereis())
-					if (p.pfn.startsWith("guid:/"))
-						try {
-							guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-						} catch (final Exception e) {
-							return -6;
-						}
-
-				if (guid == null)
-					return -6;
-
-				lfnToCopy = null;
-
-				try {
-					for (final LFN otherFile : l.getParentDir().list())
-						if (otherFile.isFile() && otherFile.guid.equals(guid)) {
-							lfnToCopy = otherFile;
-							break;
-						}
-				} catch (final Exception e) {
-					return -6;
-				}
-
-				if (lfnToCopy == null)
-					return -6;
-			} else
-				lfnToCopy = l;
+			final LFN lfnToCopy = LFNUtils.getRealLFN(l);
+			
+			if (lfnToCopy == null)
+				return -6;
 
 			db.setReadOnly(true);
 

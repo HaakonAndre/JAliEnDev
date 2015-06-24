@@ -897,4 +897,42 @@ public class LFNUtils {
 			resmap.put(s.getName(), Integer.valueOf(TransferUtils.mirror(lfn, s)));
 		return resmap;
 	}
+
+	/**
+	 * Get the real file to which the given LFN belongs to. It can be the same file if it exists and has a physical replica or a zip archive containing it, if such an archive can be located.
+	 * 
+	 * @param file
+	 *            reference LFN
+	 * @return an LFN with physical backing containing the given file, if such an entry can be found, <code>null</code> if not
+	 */
+	public static LFN getRealLFN(final LFN file) {
+		if (file == null || !file.exists)
+			return null;
+
+		if (file.isReal())
+			return file;
+
+		UUID guid = null;
+
+		for (final PFN p : file.whereis())
+			if (p.pfn.startsWith("guid:/"))
+				try {
+					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+				} catch (final Exception e) {
+					return null;
+				}
+
+		if (guid == null)
+			return null;
+
+		try {
+			for (final LFN otherFile : file.getParentDir().list())
+				if (otherFile.isFile() && otherFile.guid.equals(guid))
+					return otherFile;
+		} catch (final Exception e) {
+			// ignore
+		}
+
+		return null;
+	}
 }
