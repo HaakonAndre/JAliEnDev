@@ -46,7 +46,7 @@ public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
 
-	private static String xrootd_default_path = null;
+	protected static String xrootd_default_path = null;
 
 	private static String xrdcpPath = null;
 
@@ -143,7 +143,7 @@ public class Xrootd extends Protocol {
 		// package protected
 	}
 
-	private static void checkLibraryPath(final ExternalProcessBuilder p) {
+	protected static void checkLibraryPath(final ExternalProcessBuilder p) {
 		if (xrootd_default_path != null) {
 			String ldpath = "";
 			if (p.environment().containsKey("LD_LIBRARY_PATH"))

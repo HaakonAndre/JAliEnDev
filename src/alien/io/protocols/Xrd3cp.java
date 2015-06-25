@@ -38,9 +38,7 @@ public class Xrd3cp extends Xrootd {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueWriteAccess)
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
 	public String transfer(final PFN source, final PFN target) throws IOException {
@@ -54,18 +52,18 @@ public class Xrd3cp extends Xrootd {
 				throw new IOException("The ticket for target PFN " + target.toString() + " could not be found or is not a WRITE one.");
 
 			final List<String> command = new LinkedList<>();
-			command.add("xrd3cp");
+			command.add(xrootd_default_path + "/bin/xrd3cp");
 			command.add("-m");
 
 			final SE targetSE = target.getSE();
-			
-			final String targetSEName = targetSE!=null ? targetSE.getName().toLowerCase() : "";
-			
+
+			final String targetSEName = targetSE != null ? targetSE.getName().toLowerCase() : "";
+
 			// CERN::EOS, CERN::OCDB, NDGF::DCACHE, NDGF::DCACHE_TAPE,
 			// NSC::DCACHE, SARA::DCACHE, SARA::DCACHE_TAPE, SNIC::DCACHE
 			// All these SEs need to pass the opaque parameters, native xrootd
 			// SEs fail to perform the 3rd party transfer if this is given
-			if (targetSEName.indexOf("::eos")>=0 || targetSEName.indexOf("::dcache")>=0 || targetSEName.equals("alice::cern::ocdb"))
+			if (targetSEName.indexOf("::eos") >= 0 || targetSEName.indexOf("::dcache") >= 0 || targetSEName.equals("alice::cern::ocdb"))
 				command.add("-O");
 
 			command.add("-S");
@@ -97,6 +95,8 @@ public class Xrd3cp extends Xrootd {
 					command.add(target.ticket.envelope.getSignedEnvelope());
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 

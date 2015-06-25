@@ -37,9 +37,7 @@ public class Xrd3cp4 extends Xrootd {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueWriteAccess)
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
 	public String transfer(final PFN source, final PFN target) throws IOException {
@@ -47,7 +45,7 @@ public class Xrd3cp4 extends Xrootd {
 
 		if (!xrootdNewerThan4)
 			throw new IOException("Xrootd client v4+ is required for Xrd3cp4");
-		
+
 		try {
 			if (source.ticket == null || source.ticket.type != AccessType.READ)
 				throw new IOException("The ticket for source PFN " + source.toString() + " could not be found or is not a READ one.");
@@ -56,7 +54,7 @@ public class Xrd3cp4 extends Xrootd {
 				throw new IOException("The ticket for target PFN " + target.toString() + " could not be found or is not a WRITE one.");
 
 			final List<String> command = new LinkedList<>();
-			command.add("xrdcp");
+			command.add(xrootd_default_path + "/bin/xrdcp");
 			command.add("--tpc");
 			command.add("only");
 			command.add("--force");
@@ -68,9 +66,9 @@ public class Xrd3cp4 extends Xrootd {
 			final boolean targetEnvelope = target.ticket != null && target.ticket.envelope != null;
 
 			String sourcePath;
-			
+
 			String targetPath;
-			
+
 			if (sourceEnvelope)
 				sourcePath = source.ticket.envelope.getTransactionURL();
 			else
@@ -85,18 +83,20 @@ public class Xrd3cp4 extends Xrootd {
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					sourcePath += "?authz=" + source.ticket.envelope.getEncryptedEnvelope();
 				else if (source.ticket.envelope.getSignedEnvelope() != null)
-					sourcePath += "?"+source.ticket.envelope.getSignedEnvelope();
+					sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					targetPath += "?authz=" + target.ticket.envelope.getEncryptedEnvelope();
 				else if (target.ticket.envelope.getSignedEnvelope() != null)
-					targetPath += "?"+target.ticket.envelope.getSignedEnvelope();
+					targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
 
 			command.add(sourcePath);
 			command.add(targetPath);
-			
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 

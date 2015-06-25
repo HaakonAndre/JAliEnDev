@@ -15,7 +15,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 
 /**
- * 3rd party Xrootd transfers via a set of well-connected gateway servers at CERN 
+ * 3rd party Xrootd transfers via a set of well-connected gateway servers at CERN
  * 
  * @author costing
  * @since Jun 25 2015
@@ -33,28 +33,26 @@ public class Xrd3cpGW extends Xrootd {
 	Xrd3cpGW() {
 		// package protected
 	}
-	
-	private static final String[] transferServers = new String[]{"eosaliceftp01.cern.ch:21000", "eosaliceftp02.cern.ch:21000", "eosaliceftp03.cern.ch:21000", "eosaliceftp04.cern.ch:21000"};
-	
+
+	private static final String[] transferServers = new String[] { "eosaliceftp01.cern.ch:21000", "eosaliceftp02.cern.ch:21000", "eosaliceftp03.cern.ch:21000", "eosaliceftp04.cern.ch:21000" };
+
 	private static int serverIdx = 0;
-	
-	private static synchronized String getTransferServerInstance(){
+
+	private static synchronized String getTransferServerInstance() {
 		serverIdx = (serverIdx + 1) % transferServers.length;
-		
+
 		return transferServers[serverIdx];
 	}
 
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueWriteAccess)
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
 	public String transfer(final PFN source, final PFN target) throws IOException {
 		// copying between two storages through a gateway Xrootd server
-		
+
 		if (!xrootdNewerThan4)
 			throw new IOException("Xrootd client v4+ is required for Xrd3cpGW");
 
@@ -66,7 +64,7 @@ public class Xrd3cpGW extends Xrootd {
 				throw new IOException("The ticket for target PFN " + target.toString() + " could not be found or is not a WRITE one.");
 
 			final List<String> command = new LinkedList<>();
-			command.add("xrdcp");
+			command.add(xrootd_default_path + "/bin/xrdcp");
 			command.add("--tpc");
 			command.add("only");
 			command.add("--force");
@@ -77,10 +75,10 @@ public class Xrd3cpGW extends Xrootd {
 
 			final boolean targetEnvelope = target.ticket != null && target.ticket.envelope != null;
 
-			String sourcePath = "root://"+getTransferServerInstance()+"//";
-			
+			String sourcePath = "root://" + getTransferServerInstance() + "//";
+
 			String targetPath = sourcePath;
-			
+
 			if (sourceEnvelope)
 				sourcePath += source.ticket.envelope.getTransactionURL();
 			else
@@ -95,18 +93,20 @@ public class Xrd3cpGW extends Xrootd {
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					sourcePath += "?authz=" + source.ticket.envelope.getEncryptedEnvelope();
 				else if (source.ticket.envelope.getSignedEnvelope() != null)
-					sourcePath += "?"+source.ticket.envelope.getSignedEnvelope();
+					sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					targetPath += "?authz=" + target.ticket.envelope.getEncryptedEnvelope();
 				else if (target.ticket.envelope.getSignedEnvelope() != null)
-					targetPath += "?"+target.ticket.envelope.getSignedEnvelope();
+					targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
 
 			command.add(sourcePath);
 			command.add(targetPath);
-			
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+			checkLibraryPath(pBuilder);
 
 			pBuilder.returnOutputOnExit(true);
 
