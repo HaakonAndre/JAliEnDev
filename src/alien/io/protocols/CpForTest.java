@@ -280,6 +280,6 @@ public class CpForTest extends Protocol {
 
 	@Override
 	int getPreference() {
-		return 5;
+		return 20;
 	}
 }

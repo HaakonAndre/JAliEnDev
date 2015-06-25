@@ -110,6 +110,6 @@ public class Torrent extends Protocol {
 	
 	@Override
 	int getPreference() {
-		return 3;
+		return 15;
 	}
 }

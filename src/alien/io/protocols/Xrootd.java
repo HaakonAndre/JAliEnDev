@@ -794,7 +794,7 @@ public class Xrootd extends Protocol {
 
 	@Override
 	int getPreference() {
-		return 2;
+		return 10;
 	}
 
 }

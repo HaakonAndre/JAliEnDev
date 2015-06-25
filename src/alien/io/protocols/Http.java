@@ -117,6 +117,6 @@ public class Http extends Protocol {
 	
 	@Override
 	int getPreference() {
-		return 4;
+		return 11;
 	}
 }

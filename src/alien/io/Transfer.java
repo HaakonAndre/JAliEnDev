@@ -65,14 +65,12 @@ public class Transfer implements Serializable, Runnable {
 	public static final int FAILED_TARGET = 3;
 
 	/**
-	 * It is not clear from the message if the source or the target was a
-	 * problem
+	 * It is not clear from the message if the source or the target was a problem
 	 */
 	public static final int FAILED_UNKNOWN = 4;
 
 	/**
-	 * Transfer should be retried later (currently staging from tape for
-	 * example)
+	 * Transfer should be retried later (currently staging from tape for example)
 	 */
 	public static final int DELAYED = 10;
 
@@ -125,8 +123,7 @@ public class Transfer implements Serializable, Runnable {
 	 * @param sources
 	 *            source PFNs (one or more, sorted by preference)
 	 * @param targets
-	 *            target PFN, can be <code>null</code> if the file is to be
-	 *            copied to the local disk in a temporary file
+	 *            target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
 	 */
 	public Transfer(final int transferId, final Collection<PFN> sources, final Collection<PFN> targets, final String onCompleteRemoveReplica) {
 		this.sources = sources;
@@ -180,8 +177,11 @@ public class Transfer implements Serializable, Runnable {
 		final String s = sPFN.substring(0, idx).trim().toLowerCase();
 
 		if (s.equals("root")) {
-			if (!onlyAccess)
+			if (!onlyAccess) {
+				ret.add(Factory.xrd3cp4);
 				ret.add(Factory.xrd3cp);
+				ret.add(Factory.xrd3cpGW);
+			}
 
 			ret.add(Factory.xrootd);
 		} else if (s.equals("http"))
@@ -199,8 +199,7 @@ public class Transfer implements Serializable, Runnable {
 	 * 
 	 * @param source
 	 * @param target
-	 *            target PFN (can be <code>null</code>, meaning a local
-	 *            temporary file)
+	 *            target PFN (can be <code>null</code>, meaning a local temporary file)
 	 * @return protocols that match both
 	 */
 	public static List<Protocol> getProtocols(final PFN source, final PFN target) {
@@ -209,11 +208,11 @@ public class Transfer implements Serializable, Runnable {
 		final List<Protocol> targetProtocols = getProtocols(target);
 
 		ret.retainAll(targetProtocols);
-		
-//		SE targetSE = target.getSE();
-//		
-//		if (targetSE!=null && targetSE.getName().toLowerCase().indexOf("::eos")>=0)
-//			ret.remove(Factory.xrd3cp);
+
+		// SE targetSE = target.getSE();
+		//
+		// if (targetSE!=null && targetSE.getName().toLowerCase().indexOf("::eos")>=0)
+		// ret.remove(Factory.xrd3cp);
 
 		return ret;
 	}
@@ -313,7 +312,7 @@ public class Transfer implements Serializable, Runnable {
 			// sort pfns function of the distance between source, target and
 			// ourselves
 
-			final List<PFN> sortedSources = SEUtils.sortBySite(sources, p == Factory.xrd3cp ? targetSite : ConfigUtils.getSite(), false, false);
+			final List<PFN> sortedSources = SEUtils.sortBySite(sources, (p == Factory.xrd3cp || p == Factory.xrd3cp4) ? targetSite : ConfigUtils.getSite(), false, false);
 
 			final Set<PFN> brokenSources = new HashSet<>();
 
@@ -476,9 +475,7 @@ public class Transfer implements Serializable, Runnable {
 	}
 
 	/**
-	 * @return the exit code, if &lt;0 then the operation is ongoing still, if 0
-	 *         then the transfer was successful, otherwise it failed and the
-	 *         message is in {@link #getFailureReason()}
+	 * @return the exit code, if &lt;0 then the operation is ongoing still, if 0 then the transfer was successful, otherwise it failed and the message is in {@link #getFailureReason()}
 	 */
 	public int getExitCode() {
 		return exitCode;
@@ -492,8 +489,7 @@ public class Transfer implements Serializable, Runnable {
 	}
 
 	/**
-	 * For a successful operation, get the PFN of the target, either the local
-	 * (no protocol) or remote (with protocol) file
+	 * For a successful operation, get the PFN of the target, either the local (no protocol) or remote (with protocol) file
 	 * 
 	 * @return target PFN
 	 */
