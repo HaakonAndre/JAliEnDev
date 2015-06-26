@@ -77,7 +77,7 @@ public class Xrd3cpGW extends Xrootd {
 
 		serverIdx = (serverIdx + 1) % transferServers.size();
 
-		return transferServers.get(serverIdx) + ConfigUtils.getConfig().geti("xrootdgw.port", 21000);
+		return transferServers.get(serverIdx) + ":" + ConfigUtils.getConfig().geti("xrootdgw.port", 21000);
 	}
 
 	private static String addURLParameter(final String URL, final String parameter) {
