@@ -48,7 +48,7 @@ public class Xrd3cpGW extends Xrootd {
 
 	private static synchronized void updateServerList() {
 		if (transferServers == null || (System.currentTimeMillis() - lastUpdated) > 1000 * 60) {
-			final String servers = ConfigUtils.getConfig().gets("xrootdgw.servers", "p05614910a92540.cern.ch");
+			final String servers = ConfigUtils.getConfig().gets("xrootdgw.servers", "eosaliceftp01.cern.ch,eosaliceftp02.cern.ch,eosaliceftp03.cern.ch,eosaliceftp04.cern.ch");
 
 			final StringTokenizer stServers = new StringTokenizer(servers, ",; \r\n\t");
 
