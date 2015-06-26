@@ -4,8 +4,13 @@
 package alien.io.protocols;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
@@ -13,6 +18,7 @@ import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
+import alien.config.ConfigUtils;
 
 /**
  * 3rd party Xrootd transfers via a set of well-connected gateway servers at CERN
@@ -34,14 +40,51 @@ public class Xrd3cpGW extends Xrootd {
 		// package protected
 	}
 
-	private static final String[] transferServers = new String[] { "eosaliceftp01.cern.ch:21000", "eosaliceftp02.cern.ch:21000", "eosaliceftp03.cern.ch:21000", "eosaliceftp04.cern.ch:21000" };
+	private static List<String> transferServers = null;
 
 	private static int serverIdx = 0;
 
-	private static synchronized String getTransferServerInstance() {
-		serverIdx = (serverIdx + 1) % transferServers.length;
+	private static long lastUpdated = 0;
 
-		return transferServers[serverIdx];
+	private static synchronized void updateServerList() {
+		if (transferServers == null || (System.currentTimeMillis() - lastUpdated) > 1000 * 60) {
+			final String servers = ConfigUtils.getConfig().gets("xrootdgw.servers", "p05614910a92540.cern.ch");
+
+			final StringTokenizer stServers = new StringTokenizer(servers, ",; \r\n\t");
+
+			transferServers = new ArrayList<>();
+
+			while (stServers.hasMoreTokens()) {
+				final String server = stServers.nextToken();
+
+				try {
+					final InetAddress[] addresses = InetAddress.getAllByName(server);
+
+					if (addresses != null)
+						for (final InetAddress addr : addresses)
+							transferServers.add(addr.getHostAddress());
+				} catch (final UnknownHostException uhe) {
+					logger.log(Level.WARNING, "Cannot resolve address of " + server);
+				}
+			}
+
+			Collections.sort(transferServers);
+		}
+	}
+
+	private static synchronized String getTransferServerInstance() {
+		updateServerList();
+
+		serverIdx = (serverIdx + 1) % transferServers.size();
+
+		return transferServers.get(serverIdx) + ConfigUtils.getConfig().geti("xrootdgw.port", 21000);
+	}
+
+	private static String addURLParameter(final String URL, final String parameter) {
+		if (URL.indexOf('?') > 0)
+			return URL + "&" + parameter;
+
+		return URL + "?" + parameter;
 	}
 
 	/*
@@ -89,17 +132,24 @@ public class Xrd3cpGW extends Xrootd {
 			else
 				targetPath += target.pfn;
 
+			final String urlParameters = ConfigUtils.getConfig().gets("xrootdgw.urlparameters", "diamond.tpc.blocksize=32M");
+
+			if (urlParameters.length() > 0) {
+				sourcePath = addURLParameter(sourcePath, urlParameters);
+				targetPath = addURLParameter(targetPath, urlParameters);
+			}
+
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
-					sourcePath += "?authz=" + source.ticket.envelope.getEncryptedEnvelope();
+					sourcePath = addURLParameter(sourcePath, "authz=" + source.ticket.envelope.getEncryptedEnvelope());
 				else if (source.ticket.envelope.getSignedEnvelope() != null)
-					sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
+					sourcePath = addURLParameter(sourcePath, source.ticket.envelope.getSignedEnvelope());
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
-					targetPath += "?authz=" + target.ticket.envelope.getEncryptedEnvelope();
+					targetPath = addURLParameter(targetPath, "authz=" + target.ticket.envelope.getEncryptedEnvelope());
 				else if (target.ticket.envelope.getSignedEnvelope() != null)
-					targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
+					targetPath = addURLParameter(targetPath, target.ticket.envelope.getSignedEnvelope());
 
 			command.add(sourcePath);
 			command.add(targetPath);
