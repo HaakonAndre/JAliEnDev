@@ -112,4 +112,9 @@ public class Torrent extends Protocol {
 	int getPreference() {
 		return 15;
 	}
+	
+	@Override
+	public boolean isSupported() {
+		return true;
+	}
 }

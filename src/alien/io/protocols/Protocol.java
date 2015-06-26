@@ -92,4 +92,8 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>{
 	 */
 	abstract int getPreference();
 	
+	/**
+	 * @return <code>true</code> if the protocol is supported (by the tools for example)
+	 */
+	abstract boolean isSupported();
 }

@@ -282,4 +282,9 @@ public class CpForTest extends Protocol {
 	int getPreference() {
 		return 20;
 	}
+	
+	@Override
+	public boolean isSupported() {
+		return true;
+	}
 }

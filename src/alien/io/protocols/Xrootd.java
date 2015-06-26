@@ -793,4 +793,8 @@ public class Xrootd extends Protocol {
 		return 10;
 	}
 
+	@Override
+	public boolean isSupported(){
+		return true;
+	}
 }

@@ -237,4 +237,9 @@ public class Xrd3cpGW extends Xrootd {
 	int getPreference() {
 		return 5;
 	}
+	
+	@Override
+	public boolean isSupported() {
+		return xrootdNewerThan4;
+	}
 }

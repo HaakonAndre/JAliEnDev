@@ -177,4 +177,9 @@ public class Xrd3cp extends Xrootd {
 	int getPreference() {
 		return 1;
 	}
+	
+	@Override
+	public boolean isSupported() {
+		return !xrootdNewerThan4;
+	}
 }

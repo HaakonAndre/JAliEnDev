@@ -119,4 +119,9 @@ public class Http extends Protocol {
 	int getPreference() {
 		return 11;
 	}
+	
+	@Override
+	public boolean isSupported() {
+		return true;
+	}
 }
