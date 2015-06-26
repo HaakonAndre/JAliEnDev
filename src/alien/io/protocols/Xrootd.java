@@ -145,11 +145,7 @@ public class Xrootd extends Protocol {
 
 	protected static void checkLibraryPath(final ExternalProcessBuilder p) {
 		if (xrootd_default_path != null) {
-			String ldpath = "";
-			if (p.environment().containsKey("LD_LIBRARY_PATH"))
-				ldpath = p.environment().get("LD_LIBRARY_PATH");
-
-			p.environment().put("LD_LIBRARY_PATH", ldpath + ":" + xrootd_default_path + "/lib");
+			p.environment().put("LD_LIBRARY_PATH", xrootd_default_path + "/lib");
 		}
 	}
 
