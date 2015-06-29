@@ -77,7 +77,7 @@ public class Xrd3cpGW extends Xrootd {
 
 		serverIdx = (serverIdx + 1) % transferServers.size();
 
-		return transferServers.get(serverIdx) + ":" + ConfigUtils.getConfig().geti("xrootdgw.port", 21000);
+		return transferServers.get(serverIdx);
 	}
 
 	private static String addURLParameter(final String URL, final String parameter) {
@@ -118,9 +118,11 @@ public class Xrd3cpGW extends Xrootd {
 
 			final boolean targetEnvelope = target.ticket != null && target.ticket.envelope != null;
 
-			String sourcePath = "root://" + getTransferServerInstance() + "//";
+			final String serverInstance =getTransferServerInstance(); 
+			
+			String sourcePath = "root://" + serverInstance + ":" + ConfigUtils.getConfig().geti("xrootdgw.port.source", 20999) + "//";
 
-			String targetPath = sourcePath;
+			String targetPath = "root://" + serverInstance + ":" + ConfigUtils.getConfig().geti("xrootdgw.port.target", 21000) + "//";
 
 			if (sourceEnvelope)
 				sourcePath += source.ticket.envelope.getTransactionURL();
