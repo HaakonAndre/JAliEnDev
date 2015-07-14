@@ -142,10 +142,14 @@ public class Xrootd extends Protocol {
 	public Xrootd() {
 		// package protected
 	}
-
+	
 	protected static void checkLibraryPath(final ExternalProcessBuilder p) {
-		if (xrootd_default_path != null) {
-			p.environment().put("LD_LIBRARY_PATH", xrootd_default_path + "/lib");
+		checkLibraryPath(p, xrootd_default_path);
+	}
+
+	protected static void checkLibraryPath(final ExternalProcessBuilder p, final String path) {
+		if (path != null) {
+			p.environment().put("LD_LIBRARY_PATH", path + "/lib");
 		}
 	}
 
@@ -260,7 +264,7 @@ public class Xrootd extends Protocol {
 
 				command.add(transactionURL);
 			}
-			
+
 			if (logger.isLoggable(Level.FINEST))
 				logger.log(Level.FINEST, "Executing rm command: " + command);
 
@@ -794,7 +798,7 @@ public class Xrootd extends Protocol {
 	}
 
 	@Override
-	public boolean isSupported(){
+	public boolean isSupported() {
 		return true;
 	}
 }

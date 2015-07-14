@@ -3,6 +3,7 @@
  */
 package alien.io.protocols;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -11,8 +12,10 @@ import java.util.logging.Level;
 
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
+import utils.ExternalCalls;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
+import alien.config.ConfigUtils;
 import alien.se.SE;
 
 /**
@@ -35,6 +38,42 @@ public class Xrd3cp extends Xrootd {
 
 	private static final String QUOTES = ""; //
 
+	private static String xrd3cpPath = null;
+	private static boolean cachedPath = false;
+
+	private static synchronized String getXrd3cpPath() {
+		if (cachedPath)
+			return xrd3cpPath;
+
+		cachedPath = true;
+
+		for (final String path : new String[] { xrootd_default_path, ConfigUtils.getConfig().gets("xrd3cp.location", null), System.getProperty("user.home") + "/alien/api", "/opt/alien/api" }) {
+			if (path != null) {
+				final File test = new File(path + "/bin/xrd3cp");
+
+				if (test.exists() && test.isFile() && test.canExecute()) {
+					xrd3cpPath = path;
+					return xrd3cpPath;
+				}
+			}
+		}
+
+		xrd3cpPath = ExternalCalls.programExistsInPath("xrd3cp");
+
+		if (xrd3cpPath != null) {
+			int idx = xrd3cpPath.lastIndexOf('/');
+
+			if (idx > 0) {
+				idx = xrd3cpPath.lastIndexOf('/', idx - 1);
+
+				if (idx >= 0)
+					xrd3cpPath = xrd3cpPath.substring(0, idx);
+			}
+		}
+
+		return xrd3cpPath;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -52,7 +91,7 @@ public class Xrd3cp extends Xrootd {
 				throw new IOException("The ticket for target PFN " + target.toString() + " could not be found or is not a WRITE one.");
 
 			final List<String> command = new LinkedList<>();
-			command.add(xrootd_default_path + "/bin/xrd3cp");
+			command.add(getXrd3cpPath() + "/bin/xrd3cp");
 			command.add("-m");
 
 			final SE targetSE = target.getSE();
@@ -96,7 +135,7 @@ public class Xrd3cp extends Xrootd {
 
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
-			checkLibraryPath(pBuilder);
+			checkLibraryPath(pBuilder, getXrd3cpPath());
 
 			pBuilder.returnOutputOnExit(true);
 
@@ -177,9 +216,18 @@ public class Xrd3cp extends Xrootd {
 	int getPreference() {
 		return 1;
 	}
-	
+
 	@Override
 	public boolean isSupported() {
-		return !xrootdNewerThan4;
+		return getXrd3cpPath() != null;
+	}
+
+	/**
+	 * Testing method for getting the xrd3cp path
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		System.err.println("xrd3cp location: " + getXrd3cpPath());
 	}
 }
