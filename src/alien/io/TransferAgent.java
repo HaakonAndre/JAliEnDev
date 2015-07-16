@@ -157,7 +157,7 @@ public class TransferAgent extends Thread {
 
 				workers = config.geti("alien.io.TransferAgent.workers", workers);
 
-				if (workers < 0 || workers > 100) // typo ?!
+				if (workers < 0 || workers > 1000) // typo ?!
 					workers = 5;
 
 				final Iterator<TransferAgent> it = agents.iterator();
