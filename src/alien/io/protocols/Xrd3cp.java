@@ -214,7 +214,7 @@ public class Xrd3cp extends Xrootd {
 
 	@Override
 	int getPreference() {
-		return 1;
+		return 3;
 	}
 
 	@Override
