@@ -142,7 +142,7 @@ public class Xrootd extends Protocol {
 	public Xrootd() {
 		// package protected
 	}
-	
+
 	protected static void checkLibraryPath(final ExternalProcessBuilder p) {
 		checkLibraryPath(p, xrootd_default_path);
 	}
@@ -204,6 +204,17 @@ public class Xrootd extends Protocol {
 				idx2 = message.length();
 
 			return message.substring(idx + 1, idx2);
+		}
+
+		idx = message.lastIndexOf("Run: ");
+
+		if (idx >= 0) {
+			int idx2 = message.indexOf('\n', idx);
+
+			if (idx2 < 0)
+				idx2 = message.length();
+
+			return message.substring(idx + 5, idx2);
 		}
 
 		return null;
