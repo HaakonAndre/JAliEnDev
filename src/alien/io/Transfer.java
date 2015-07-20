@@ -310,7 +310,7 @@ public class Transfer implements Serializable, Runnable {
 			logger.log(Level.FINE, transferId + " : Target site: " + targetSite);
 
 		// sort protocols by preference
-		final List<Protocol> sortedProtocols = new LinkedList<>(protocols);
+		final List<Protocol> sortedProtocols = new ArrayList<>(TransferUtils.filterProtocols(s, protocols));
 
 		Collections.sort(sortedProtocols);
 

@@ -1,6 +1,8 @@
 package alien.io;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -9,11 +11,13 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
+import lazyj.cache.ExpirationCache;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import alien.io.protocols.Factory;
 import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -411,11 +415,81 @@ public final class TransferUtils {
 		try (DBFunctions db = getDB()) {
 			if (db != null)
 				if (ConfigUtils.getConfig().getb("alien.io.TransferUtils.logReason", false))
-					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, reason) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
-							Integer.valueOf(target.seNumber), Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), failureReason);
+					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, reason, etime) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
+							Integer.valueOf(target.seNumber), Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), failureReason, Long.valueOf(System.currentTimeMillis() / 1000));
 				else
-					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status) VALUES (?, ?, ?, ?);", false, Integer.valueOf(source.seNumber), Integer.valueOf(target.seNumber),
-							Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode));
+					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, etime) VALUES (?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
+							Integer.valueOf(target.seNumber), Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), Long.valueOf(System.currentTimeMillis() / 1000));
 		}
+	}
+
+	private static final class ProtocolStats {
+		public int ok = 0;
+		public int fail = 0;
+
+		public ProtocolStats() {
+			// nothing
+		}
+
+		public void update(final DBFunctions db) {
+			if (db.getb(2, false))
+				ok += db.geti(3);
+			else
+				fail += db.geti(4);
+		}
+	}
+
+	private static ExpirationCache<SE, Map<Integer, ProtocolStats>> protocolStatCache = new ExpirationCache<>();
+
+	public static Set<Protocol> filterProtocols(final SE target, final Set<Protocol> protocols) {
+		final Set<Protocol> ret = new HashSet<>(protocols.size());
+
+		Map<Integer, ProtocolStats> stats = protocolStatCache.get(target);
+
+		if (stats == null) {
+			stats = new HashMap<>();
+
+			try (DBFunctions db = getDB()) {
+				db.query("select protocol,status=0,count(1) from transfer_attempts where destination=? and etime>? group by 1,2", false, Integer.valueOf(target.seNumber),
+						Long.valueOf(System.currentTimeMillis() / 1000 - 60 * 60 * 6));
+
+				while (db.moveNext()) {
+					final Integer protocolID = Integer.valueOf(db.geti(1));
+
+					ProtocolStats pstats = stats.get(protocolID);
+
+					if (pstats == null) {
+						pstats = new ProtocolStats();
+						stats.put(protocolID, pstats);
+					}
+
+					pstats.update(db);
+				}
+			}
+
+			protocolStatCache.put(target, stats, 1000 * 60 * 5);
+		}
+
+		for (final Protocol p : protocols) {
+			final ProtocolStats pstats = stats.get(Integer.valueOf(p.protocolID()));
+
+			if (pstats == null || pstats.ok > pstats.fail / 10) {
+				ret.add(p);
+				continue;
+			}
+		}
+
+		return ret;
+	}
+
+	public static void main(String[] args) {
+		Set<Protocol> protocols = new HashSet<>();
+		protocols.add(Factory.xrd3cp);
+		protocols.add(Factory.xrd3cp4);
+		protocols.add(Factory.xrd3cpGW);
+		protocols.add(Factory.xrootd);
+
+		System.err.println(filterProtocols(SEUtils.getSE("ALICE::NDGF::DCACHE_TAPE"), protocols));
+		System.err.println(filterProtocols(SEUtils.getSE("ALICE::ORNL::EOS"), protocols));
 	}
 }
