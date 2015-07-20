@@ -407,11 +407,11 @@ public final class TransferUtils {
 		return 0;
 	}
 
-	public static final void logAttempt(final Protocol p, final PFN source, final PFN target, final int exitCode) {
+	public static final void logAttempt(final Protocol p, final PFN source, final PFN target, final int exitCode, final String failureReason) {
 		try (DBFunctions db = getDB()) {
 			if (db != null)
-				db.query("INSERT INTO transfer_attempts (source, destination, protocol, status) VALUES (?, ?, ?, ?);", false, Integer.valueOf(source.seNumber), Integer.valueOf(target.seNumber),
-						Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode));
+				db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, reason) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber), Integer.valueOf(target.seNumber),
+						Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), failureReason);
 		}
 	}
 }

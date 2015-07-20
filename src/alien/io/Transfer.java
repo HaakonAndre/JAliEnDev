@@ -480,9 +480,9 @@ public class Transfer implements Serializable, Runnable {
 
 			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with generic exception: "
 					+ failureReason);
+		} finally {
+			TransferUtils.logAttempt(p, source, target, exitCode, failureReason);
 		}
-
-		TransferUtils.logAttempt(p, source, target, exitCode);
 	}
 
 	/**
