@@ -410,8 +410,12 @@ public final class TransferUtils {
 	public static final void logAttempt(final Protocol p, final PFN source, final PFN target, final int exitCode, final String failureReason) {
 		try (DBFunctions db = getDB()) {
 			if (db != null)
-				db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, reason) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber), Integer.valueOf(target.seNumber),
-						Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), failureReason);
+				if (ConfigUtils.getConfig().getb("alien.io.TransferUtils.logReason", false))
+					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, reason) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
+							Integer.valueOf(target.seNumber), Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), failureReason);
+				else
+					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status) VALUES (?, ?, ?, ?);", false, Integer.valueOf(source.seNumber), Integer.valueOf(target.seNumber),
+							Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode));
 		}
 	}
 }
