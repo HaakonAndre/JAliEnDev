@@ -415,10 +415,10 @@ public final class TransferUtils {
 		try (DBFunctions db = getDB()) {
 			if (db != null)
 				if (ConfigUtils.getConfig().getb("alien.io.TransferUtils.logReason", false))
-					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, reason, etime) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
+					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, reason, etime) VALUES (?, ?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
 							Integer.valueOf(target.seNumber), Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), failureReason, Long.valueOf(System.currentTimeMillis() / 1000));
 				else
-					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, etime) VALUES (?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
+					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, etime) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
 							Integer.valueOf(target.seNumber), Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), Long.valueOf(System.currentTimeMillis() / 1000));
 		}
 	}
