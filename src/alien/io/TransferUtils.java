@@ -421,6 +421,8 @@ public final class TransferUtils {
 					db.query("INSERT INTO transfer_attempts (source, destination, protocol, status, etime) VALUES (?, ?, ?, ?, ?);", false, Integer.valueOf(source.seNumber),
 							Integer.valueOf(target.seNumber), Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode), Long.valueOf(System.currentTimeMillis() / 1000));
 		}
+
+		transferAttemptsCleanup();
 	}
 
 	private static final class ProtocolStats {
@@ -478,8 +480,25 @@ public final class TransferUtils {
 				continue;
 			}
 		}
+		
+		if (ret.size() == 0){
+			// retry all protocols in case all previous attempts failed (storage problems)
+			ret.addAll(protocols);
+		}
 
 		return ret;
+	}
+
+	private static long lastCleanup = 0;
+
+	private static void transferAttemptsCleanup() {
+		if (System.currentTimeMillis() - lastCleanup > 1000 * 60 * 60 * 6) {
+			lastCleanup = System.currentTimeMillis();
+
+			try (DBFunctions db = getDB()) {
+				db.query("DELETE FROM transfer_attempts WHERE etime<?;", false, Long.valueOf(System.currentTimeMillis() / 1000 - 60 * 60 * 24 * 7));
+			}
+		}
 	}
 
 	public static void main(String[] args) {
@@ -489,7 +508,10 @@ public final class TransferUtils {
 		protocols.add(Factory.xrd3cpGW);
 		protocols.add(Factory.xrootd);
 
+		System.err.println(SEUtils.getSE("ALICE::FZK::TAPE"));
+
 		System.err.println(filterProtocols(SEUtils.getSE("ALICE::NDGF::DCACHE_TAPE"), protocols));
+		System.err.println(filterProtocols(SEUtils.getSE("ALICE::FZK::TAPE"), protocols));
 		System.err.println(filterProtocols(SEUtils.getSE("ALICE::ORNL::EOS"), protocols));
 	}
 }
