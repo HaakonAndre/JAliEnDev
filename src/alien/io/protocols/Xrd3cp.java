@@ -47,7 +47,7 @@ public class Xrd3cp extends Xrootd {
 
 		cachedPath = true;
 
-		for (final String path : new String[] { xrootd_default_path, ConfigUtils.getConfig().gets("xrd3cp.location", null), System.getProperty("user.home") + "/alien/api", "/opt/alien/api" }) {
+		for (final String path : new String[] { xrootd_default_path, ConfigUtils.getConfig().gets("xrd3cp.location", null), System.getProperty("user.home") + "/alien/api", "/opt/alien/api" })
 			if (path != null) {
 				final File test = new File(path + "/bin/xrd3cp");
 
@@ -56,7 +56,6 @@ public class Xrd3cp extends Xrootd {
 					return xrd3cpPath;
 				}
 			}
-		}
 
 		xrd3cpPath = ExternalCalls.programExistsInPath("xrd3cp");
 
@@ -227,7 +226,12 @@ public class Xrd3cp extends Xrootd {
 	 * 
 	 * @param args
 	 */
-	public static void main(String[] args) {
+	public static void main(final String[] args) {
 		System.err.println("xrd3cp location: " + getXrd3cpPath());
+	}
+
+	@Override
+	public byte protocolID() {
+		return 4;
 	}
 }

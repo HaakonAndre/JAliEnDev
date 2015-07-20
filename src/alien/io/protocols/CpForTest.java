@@ -105,8 +105,7 @@ public class CpForTest extends Protocol {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueReadAccess, java.lang.String)
+	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
 	public File get(final PFN pfn, final File localFile) throws IOException {
@@ -188,8 +187,7 @@ public class CpForTest extends Protocol {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
+	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
 	 */
 	@Override
 	public String put(final PFN pfn, final File localFile) throws IOException {
@@ -253,9 +251,7 @@ public class CpForTest extends Protocol {
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN,
-	 * alien.catalogue.access.CatalogueWriteAccess)
+	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
 	public String transfer(final PFN source, final PFN target) throws IOException {
@@ -282,9 +278,14 @@ public class CpForTest extends Protocol {
 	int getPreference() {
 		return 20;
 	}
-	
+
 	@Override
 	public boolean isSupported() {
 		return true;
+	}
+
+	@Override
+	public byte protocolID() {
+		return 0;
 	}
 }

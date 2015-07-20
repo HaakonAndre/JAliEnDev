@@ -74,7 +74,7 @@ public class Xrd3cpGW extends Xrootd {
 	}
 
 	private static Random rand = new Random(System.currentTimeMillis());
-	
+
 	private static synchronized String getTransferServerInstance() {
 		updateServerList();
 
@@ -121,8 +121,8 @@ public class Xrd3cpGW extends Xrootd {
 
 			final boolean targetEnvelope = target.ticket != null && target.ticket.envelope != null;
 
-			final String serverInstance =getTransferServerInstance(); 
-			
+			final String serverInstance = getTransferServerInstance();
+
 			String sourcePath = "root://" + serverInstance + ":" + ConfigUtils.getConfig().geti("xrootdgw.port.source", 20999) + "//";
 
 			String targetPath = "root://" + serverInstance + ":" + ConfigUtils.getConfig().geti("xrootdgw.port.target", 21000) + "//";
@@ -242,9 +242,14 @@ public class Xrd3cpGW extends Xrootd {
 	int getPreference() {
 		return 5;
 	}
-	
+
 	@Override
 	public boolean isSupported() {
 		return xrootdNewerThan4;
+	}
+
+	@Override
+	public byte protocolID() {
+		return 6;
 	}
 }

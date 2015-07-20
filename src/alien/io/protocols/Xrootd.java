@@ -56,7 +56,7 @@ public class Xrootd extends Protocol {
 		if (ConfigUtils.getConfig() != null) {
 			xrootd_default_path = ConfigUtils.getConfig().gets("xrootd.location", null);
 
-			if (xrootd_default_path != null) {
+			if (xrootd_default_path != null)
 				for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
 					final File test = new File(xrootd_default_path + "/bin/" + command);
 
@@ -65,10 +65,9 @@ public class Xrootd extends Protocol {
 						break;
 					}
 				}
-			}
 		}
 
-		if (xrdcpPath == null) {
+		if (xrdcpPath == null)
 			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
 				xrdcpPath = ExternalCalls.programExistsInPath(command);
 
@@ -85,7 +84,6 @@ public class Xrootd extends Protocol {
 					break;
 				}
 			}
-		}
 
 		if (xrdcpPath != null) {
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(Arrays.asList(xrdcpPath, "--version"));
@@ -113,9 +111,8 @@ public class Xrootd extends Protocol {
 
 						logger.log(Level.FINE, "Local Xrootd version is " + version);
 
-						if (version.indexOf('.') > 0) {
+						if (version.indexOf('.') > 0)
 							xrootdNewerThan4 = version.substring(0, version.indexOf('.')).compareTo("v4") >= 0;
-						}
 					}
 				} else
 					logger.log(Level.WARNING, "Cannot execute " + xrdcpPath);
@@ -148,9 +145,8 @@ public class Xrootd extends Protocol {
 	}
 
 	protected static void checkLibraryPath(final ExternalProcessBuilder p, final String path) {
-		if (path != null) {
+		if (path != null)
 			p.environment().put("LD_LIBRARY_PATH", path + "/lib");
-		}
 	}
 
 	/**
@@ -667,25 +663,23 @@ public class Xrootd extends Protocol {
 					command.add(host + ":" + port);
 					command.add("stat");
 					command.add(qProt.substring(qProt.indexOf('/') + 1));
+				} else if (returnEnvelope) {
+					// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+					command.add(xrootd_default_path + "/bin/xrd");
+
+					command.add(host + ":" + port);
+					command.add("query");
+					command.add("32");
+					String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
+
+					if (forceRecalcMd5)
+						qpfn += "\\&recomputemd5=1";
+
+					command.add(qpfn);
 				} else {
-					if (returnEnvelope) {
-						// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
-						command.add(xrootd_default_path + "/bin/xrd");
-
-						command.add(host + ":" + port);
-						command.add("query");
-						command.add("32");
-						String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
-
-						if (forceRecalcMd5)
-							qpfn += "\\&recomputemd5=1";
-
-						command.add(qpfn);
-					} else {
-						command.add(xrootd_default_path + "/bin/xrdstat");
-						command.addAll(getCommonArguments());
-						command.add(pfn.getPFN());
-					}
+					command.add(xrootd_default_path + "/bin/xrdstat");
+					command.addAll(getCommonArguments());
+					command.add(pfn.getPFN());
 				}
 
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
@@ -768,7 +762,7 @@ public class Xrootd extends Protocol {
 		final BufferedReader reader = new BufferedReader(new StringReader(stdout));
 
 		try {
-			while ((line = reader.readLine()) != null) {
+			while ((line = reader.readLine()) != null)
 				if (xrootdNewerThan4) {
 					if (line.startsWith("Size:")) {
 						size = Long.parseLong(line.substring(line.lastIndexOf(':') + 1).trim());
@@ -785,7 +779,6 @@ public class Xrootd extends Protocol {
 						break;
 					}
 				}
-			}
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
@@ -811,5 +804,10 @@ public class Xrootd extends Protocol {
 	@Override
 	public boolean isSupported() {
 		return true;
+	}
+
+	@Override
+	public byte protocolID() {
+		return 3;
 	}
 }

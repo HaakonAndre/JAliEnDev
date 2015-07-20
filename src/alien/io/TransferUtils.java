@@ -6,7 +6,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
@@ -15,6 +14,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
@@ -94,24 +94,19 @@ public final class TransferUtils {
 			return ret;
 		}
 	}
-	
+
 	/**
 	 * @return all active transfers
 	 */
-	public static List<TransferDetails> getAllActiveTransfers( final String targetSE,
-																final String user,
-																final String status,
-																final Integer id,
-																final Integer count,
-																final boolean orderAsc ) {
-		if( id!=null ){
-			List<TransferDetails> l = new ArrayList<TransferDetails>();
-			TransferDetails d = getTransfer( id );
-			if( d!=null )
+	public static List<TransferDetails> getAllActiveTransfers(final String targetSE, final String user, final String status, final Integer id, final Integer count, final boolean orderAsc) {
+		if (id != null) {
+			final List<TransferDetails> l = new ArrayList<>();
+			final TransferDetails d = getTransfer(id.intValue());
+			if (d != null)
 				l.add(d);
 			return l;
 		}
-		
+
 		try (DBFunctions db = getDB()) {
 			if (db == null)
 				return null;
@@ -123,17 +118,13 @@ public final class TransferUtils {
 
 			db.setReadOnly(true);
 
-			String orderClause = ( orderAsc ? " ORDER BY transferId ASC" : 
-												" ORDER BY transferId DESC" );
-			String limitClause = ( count != null ? " LIMIT " + count.toString() : "" );
-			String whereStatement = "";
-			
-			String query = "SELECT * FROM TRANSFERS_DIRECT WHERE "+
-							"(? IS NULL OR user=?) AND (? IS NULL OR destination=?)" +
-							" AND (? IS NULL OR status=?)";
-			//db.query("SELECT * FROM TRANSFERS_DIRECT ORDER BY transferId", false);
+			final String orderClause = (orderAsc ? " ORDER BY transferId ASC" : " ORDER BY transferId DESC");
+			final String limitClause = (count != null ? " LIMIT " + count.toString() : "");
+
+			String query = "SELECT * FROM TRANSFERS_DIRECT WHERE " + "(? IS NULL OR user=?) AND (? IS NULL OR destination=?)" + " AND (? IS NULL OR status=?)";
+			// db.query("SELECT * FROM TRANSFERS_DIRECT ORDER BY transferId", false);
 			query += orderClause + limitClause;
-			db.query(query, false, user, user, targetSE, targetSE, status, status  );
+			db.query(query, false, user, user, targetSE, targetSE, status, status);
 
 			final List<TransferDetails> ret = new ArrayList<>();
 
@@ -241,7 +232,7 @@ public final class TransferUtils {
 				monitor.incrementCounter("TRANSFERS_db_insert");
 
 			final LFN lfnToCopy = LFNUtils.getRealLFN(l);
-			
+
 			if (lfnToCopy == null)
 				return -6;
 
@@ -411,10 +402,16 @@ public final class TransferUtils {
 			return i.intValue();
 		}
 	}
-	
-	public static int removeMirror( LFN lfn, SE se ){
-		return 0;		
+
+	public static int removeMirror(final LFN lfn, final SE se) {
+		return 0;
 	}
-	
-	
+
+	public static final void logAttempt(final Protocol p, final PFN source, final PFN target, final int exitCode) {
+		try (DBFunctions db = getDB()) {
+			if (db != null)
+				db.query("INSERT INTO transfer_attempts (source, destination, protocol, status) VALUES (?, ?, ?, ?);", false, Integer.valueOf(source.seNumber), Integer.valueOf(target.seNumber),
+						Byte.valueOf(p.protocolID()), Integer.valueOf(exitCode));
+		}
+	}
 }

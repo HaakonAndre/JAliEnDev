@@ -183,25 +183,22 @@ public class Transfer implements Serializable, Runnable {
 
 				if (Factory.xrd3cp4.isSupported())
 					ret.add(Factory.xrd3cp4);
-				
+
 				if (Factory.xrd3cpGW.isSupported())
 					ret.add(Factory.xrd3cpGW);
 			}
 
 			if (Factory.xrootd.isSupported())
 				ret.add(Factory.xrootd);
-		} else if (s.equals("http")){
+		} else if (s.equals("http")) {
 			if (Factory.http.isSupported())
 				ret.add(Factory.http);
-		}
-		else if (s.equals("torrent")){
+		} else if (s.equals("torrent")) {
 			if (Factory.torrent.isSupported())
 				ret.add(Factory.torrent);
-		}
-		else if (s.equals("file")){
+		} else if (s.equals("file"))
 			if (Factory.cp.isSupported())
 				ret.add(Factory.cp);
-		}
 
 		return ret;
 	}
@@ -484,6 +481,8 @@ public class Transfer implements Serializable, Runnable {
 			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with generic exception: "
 					+ failureReason);
 		}
+
+		TransferUtils.logAttempt(p, source, target, exitCode);
 	}
 
 	/**
