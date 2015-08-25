@@ -508,10 +508,9 @@ public final class TransferUtils {
 		protocols.add(Factory.xrd3cpGW);
 		protocols.add(Factory.xrootd);
 
-		System.err.println(SEUtils.getSE("ALICE::FZK::TAPE"));
+		System.err.println(SEUtils.getSE("ALICE::ORNL::EOS"));
+		System.err.println(SEUtils.getSE("ALICE::LLNL::SE"));
 
-		System.err.println(filterProtocols(SEUtils.getSE("ALICE::NDGF::DCACHE_TAPE"), protocols));
-		System.err.println(filterProtocols(SEUtils.getSE("ALICE::FZK::TAPE"), protocols));
 		System.err.println(filterProtocols(SEUtils.getSE("ALICE::ORNL::EOS"), protocols));
 	}
 }
