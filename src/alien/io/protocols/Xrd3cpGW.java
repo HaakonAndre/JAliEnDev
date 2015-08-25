@@ -185,7 +185,7 @@ public class Xrd3cpGW extends Xrootd {
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
-				logger.log(Level.WARNING, "TRANSFER failed with " + exitStatus.getStdOut());
+				logger.log(Level.WARNING, "TRANSFER via " + serverInstance + " failed with " + exitStatus.getStdOut());
 
 				if (sMessage != null)
 					sMessage = "xrdcp --tpc only exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
