@@ -1,11 +1,14 @@
 package alien.catalogue;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -69,17 +72,7 @@ public class LFNUtils {
 		return getLFN(fileName, false);
 	}
 
-	/**
-	 * Get the LFN entry for this catalog filename, optionally returning an empty object if the entry doesn't exist (yet)
-	 * 
-	 * @param fileName
-	 * @param evenIfDoesntExist
-	 * @return entry
-	 */
-	public static LFN getLFN(final String fileName, final boolean evenIfDoesntExist) {
-		if (fileName == null || fileName.length() == 0)
-			return null;
-
+	private static String processFileName(final String fileName) {
 		String processedFileName = fileName;
 
 		while (processedFileName.indexOf("//") >= 0)
@@ -107,6 +100,22 @@ public class LFNUtils {
 				processedFileName = processedFileName.substring(0, idx2);
 		}
 
+		return processedFileName;
+	}
+
+	/**
+	 * Get the LFN entry for this catalog filename, optionally returning an empty object if the entry doesn't exist (yet)
+	 * 
+	 * @param fileName
+	 * @param evenIfDoesntExist
+	 * @return entry
+	 */
+	public static LFN getLFN(final String fileName, final boolean evenIfDoesntExist) {
+		if (fileName == null || fileName.length() == 0)
+			return null;
+
+		final String processedFileName = processFileName(fileName);
+
 		final IndexTableEntry ite = CatalogueUtils.getClosestMatch(processedFileName);
 
 		if (ite == null) {
@@ -119,6 +128,62 @@ public class LFNUtils {
 			logger.log(Level.FINER, "Using " + ite + " for: " + processedFileName);
 
 		return ite.getLFN(processedFileName, evenIfDoesntExist);
+	}
+
+	/**
+	 * Get the LFN entry for this catalog filename, optionally returning an empty object if the entry doesn't exist (yet)
+	 * 
+	 * @param fileName
+	 * @param evenIfDoesntExist
+	 * @return entry
+	 */
+	public static List<LFN> getLFNs(final boolean ignoreFolders, final Collection<String> fileName) {
+		if (fileName == null || fileName.size() == 0)
+			return null;
+
+		final List<LFN> retList = new ArrayList<>(fileName.size());
+
+		if (fileName.size() == 1) {
+			final LFN l = getLFN(fileName.iterator().next());
+
+			if (l != null) {
+				retList.add(l);
+				return retList;
+			}
+
+			return null;
+		}
+
+		final Map<IndexTableEntry, List<String>> mapping = new HashMap<>();
+
+		for (final String file : fileName) {
+			final String processedFileName = processFileName(file);
+
+			final IndexTableEntry ite = CatalogueUtils.getClosestMatch(processedFileName);
+
+			if (ite != null) {
+				List<String> files = mapping.get(ite);
+
+				if (files == null) {
+					files = new LinkedList<>();
+					mapping.put(ite, files);
+				}
+
+				files.add(processedFileName);
+			}
+		}
+
+		if (mapping.size() == 0)
+			return null;
+
+		for (final Map.Entry<IndexTableEntry, List<String>> entry : mapping.entrySet()) {
+			final List<LFN> tempList = entry.getKey().getLFNs(ignoreFolders, entry.getValue());
+
+			if (tempList != null && tempList.size() > 0)
+				retList.addAll(tempList);
+		}
+
+		return retList;
 	}
 
 	/**
@@ -730,17 +795,15 @@ public class LFNUtils {
 	 * @return <code>true</code> if anything was changed
 	 */
 	public static boolean addToCollection(final LFN collection, final Collection<String> lfns) {
+		if (lfns == null || lfns.size() == 0)
+			return false;
+
 		final TreeSet<LFN> toAdd = new TreeSet<>();
 
-		for (final String fileName : lfns) {
-			final LFN l = getLFN(fileName);
+		final List<LFN> foundLFNs = LFNUtils.getLFNs(true, lfns);
 
-			if (l != null)
-				toAdd.add(getLFN(fileName));
-			else {
-				logger.log(Level.WARNING, "Could not get the LFN for '" + fileName + "'");
-				return false;
-			}
+		if (foundLFNs != null) {
+			toAdd.addAll(foundLFNs);
 		}
 
 		if (toAdd.size() == 0) {

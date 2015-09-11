@@ -2,6 +2,7 @@ package alien.catalogue;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -100,6 +101,52 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 */
 	public LFN getLFN(final String sPath) {
 		return getLFN(sPath, false);
+	}
+
+	public List<LFN> getLFNs(final boolean ignoreFolders, final Collection<String> path) {
+		if (path == null || path.size() == 0)
+			return null;
+
+		try (DBFunctions db = getDB()) {
+			if (db == null)
+				return null;
+
+			if (monitor != null)
+				monitor.incrementCounter("LFN_db_lookup");
+
+			final StringBuilder q = new StringBuilder("SELECT * FROM L" + tableName + "L WHERE ");
+
+			db.setReadOnly(true);
+
+			boolean first = true;
+
+			for (String sSearch : path) {
+				if (sSearch.startsWith("/"))
+					sSearch = sSearch.substring(lfn.length());
+
+				sSearch = Format.escSQL(sSearch);
+
+				if (!first)
+					q.append(" OR ");
+				else
+					first = false;
+
+				q.append("lfn='").append(sSearch).append("'");
+
+				if (!ignoreFolders && !sSearch.endsWith("/"))
+					q.append(" OR lfn='").append(sSearch).append("/'");
+			}
+
+			if (!db.query(q.toString()))
+				return null;
+
+			final List<LFN> retList = new ArrayList<>(path.size());
+
+			while (db.moveNext())
+				retList.add(new LFN(db, this));
+
+			return retList;
+		}
 	}
 
 	/**

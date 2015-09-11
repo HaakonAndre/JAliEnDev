@@ -51,8 +51,7 @@ public class JDL implements Serializable {
 	private final Map<String, Object> jdlContent = new LinkedHashMap<>();
 
 	/**
-	 * Empty constructor. The values can be populated with
-	 * {@link #set(String, Object)} and {@link #append(String, String...)}
+	 * Empty constructor. The values can be populated with {@link #set(String, Object)} and {@link #append(String, String...)}
 	 */
 	public JDL() {
 		// empty
@@ -103,8 +102,7 @@ public class JDL implements Serializable {
 	 * 
 	 * @param jobID
 	 * @param originalJDL
-	 *            whether to load the original JDL (submitted by the user) or
-	 *            the processed one (if available)
+	 *            whether to load the original JDL (submitted by the user) or the processed one (if available)
 	 * @throws IOException
 	 */
 	public JDL(final int jobID, final boolean originalJDL) throws IOException {
@@ -259,8 +257,8 @@ public class JDL implements Serializable {
 
 		return null;
 	}
-	
-	public boolean getb(final String key, final boolean defaultValue){
+
+	public boolean getb(final String key, final boolean defaultValue) {
 		return Utils.stringToBool(gets(key), defaultValue);
 	}
 
@@ -269,8 +267,7 @@ public class JDL implements Serializable {
 	 * 
 	 * @param key
 	 * 
-	 * @return the single value if this was a String, the first entry of a
-	 *         Collection (based on the iterator)...
+	 * @return the single value if this was a String, the first entry of a Collection (based on the iterator)...
 	 */
 	public String gets(final String key) {
 		final Object o = get(key);
@@ -280,8 +277,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
-	 * @return the integer value, or <code>null</code> if the key is not defined
-	 *         or is not a number
+	 * @return the integer value, or <code>null</code> if the key is not defined or is not a number
 	 */
 	public Integer getInteger(final String key) {
 		final Object o = get(key);
@@ -303,8 +299,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * @param key
-	 * @return the float value, or <code>null</code> if the key is not defined
-	 *         or is not a number
+	 * @return the float value, or <code>null</code> if the key is not defined or is not a number
 	 */
 	public Float getFloat(final String key) {
 		final Object o = get(key);
@@ -422,8 +417,7 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Get the number of jobs this masterjob will split into. Only works for
-	 * productions that split in a fixed number of jobs.
+	 * Get the number of jobs this masterjob will split into. Only works for productions that split in a fixed number of jobs.
 	 * 
 	 * @return the number of subjobs
 	 */
@@ -444,13 +438,14 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * @return the InputFile tag, as LFNs. If the InputFile is an XML
-	 *         collection, return the entire content of that collection.
+	 * @return the InputFile tag, as LFNs. If the InputFile is an XML collection, return the entire content of that collection.
 	 */
 	public Collection<LFN> getInputLFNs() {
 		final List<String> dataFiles = getInputData();
 
 		final List<LFN> ret = new LinkedList<>();
+
+		final List<String> otherInputFiles = new LinkedList<>();
 
 		for (final String file : dataFiles) {
 			if (file.endsWith(".xml"))
@@ -462,8 +457,13 @@ public class JDL implements Serializable {
 					// ignore
 				}
 
-			ret.add(LFNUtils.getLFN(file));
+			otherInputFiles.add(file);
 		}
+
+		final List<LFN> tempList = LFNUtils.getLFNs(true, otherInputFiles);
+
+		if (tempList != null && tempList.size() > 0)
+			ret.addAll(tempList);
 
 		return ret;
 	}
@@ -500,8 +500,7 @@ public class JDL implements Serializable {
 	 * Get the list of input files
 	 * 
 	 * @param bNodownloadIncluded
-	 *            flag to include/exclude the files for which ",nodownload" is
-	 *            indicated in the JDL
+	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
 	 * @return list of input files
 	 */
 	public List<String> getInputFiles(final boolean bNodownloadIncluded) {
@@ -573,8 +572,7 @@ public class JDL implements Serializable {
 	 * Get the list of input files for a given tag
 	 * 
 	 * @param bNodownloadIncluded
-	 *            flag to include/exclude the files for which ",nodownload" is
-	 *            indicated in the JDL
+	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
 	 * @param sTag
 	 *            tag to extract the list from
 	 * @return input list
@@ -703,8 +701,7 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT
-	 * -> v5-26-00b-6) }
+	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT -> v5-26-00b-6) }
 	 * 
 	 * @return packages
 	 */
@@ -817,10 +814,10 @@ public class JDL implements Serializable {
 			return -1;
 
 		for (final String file : inputFiles)
-			if (file.endsWith("sim.C")){
+			if (file.endsWith("sim.C")) {
 				int simFactor = getSimFactor(LFNUtils.getLFN(file));
-				
-				if (simFactor>0)
+
+				if (simFactor > 0)
 					return simFactor;
 			}
 
@@ -934,10 +931,8 @@ public class JDL implements Serializable {
 	 * Set the value of a key. As value you can pass either:<br>
 	 * <ul>
 	 * <li>a String object, the value of which is to be put in quotes</li>
-	 * <li>a StringBuilder object, then the content is set in the JDL without
-	 * quotes (for example the Requirements field)</li>
-	 * <li>a Collection, the values of which will be saved as an array of
-	 * strings in the JDL</li>
+	 * <li>a StringBuilder object, then the content is set in the JDL without quotes (for example the Requirements field)</li>
+	 * <li>a Collection, the values of which will be saved as an array of strings in the JDL</li>
 	 * <li>a Number object, which will be saved without quotes</li>
 	 * <li>any other Object, for which toString() will be called</li>
 	 * </ul>
@@ -977,9 +972,7 @@ public class JDL implements Serializable {
 	}
 
 	/**
-	 * Append some String values to an array. If there is a previously set
-	 * single value then it is transformed in an array and the previously set
-	 * value is kept as the first entry of it.
+	 * Append some String values to an array. If there is a previously set single value then it is transformed in an array and the previously set value is kept as the first entry of it.
 	 * 
 	 * @param key
 	 * @param value
