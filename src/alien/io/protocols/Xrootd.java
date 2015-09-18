@@ -835,6 +835,9 @@ public class Xrootd extends Protocol {
 			command.add(sourcePath);
 			command.add(targetPath);
 
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Executing command:\n" + command);
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
