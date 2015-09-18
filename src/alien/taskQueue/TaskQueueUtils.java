@@ -794,7 +794,7 @@ public class TaskQueueUtils {
 
 						if (content != null) {
 							content = Utils.htmlToText(content);
-							
+
 							final int idx = content.indexOf("// --------");
 
 							if (idx >= 0)
@@ -821,7 +821,6 @@ public class TaskQueueUtils {
 		}
 	}
 
-	
 	/**
 	 * @param states
 	 * @param users
@@ -1309,7 +1308,7 @@ public class TaskQueueUtils {
 		jdl.addRequirement(jdl.gets("OrigRequirements"));
 
 		jdl.addRequirement("other.TTL > " + ttl);
-		jdl.addRequirement("other.Price <= 1");
+		jdl.addRequirement("other.Price <= " + price.intValue());
 
 		final List<String> inputFiles = jdl.getList("InputFile");
 
@@ -2162,16 +2161,16 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
-		
-			logger.log(Level.INFO,"We would be asked to kill jobAgent: [" + jobagentId + "].");
-			
+
+			logger.log(Level.INFO, "We would be asked to kill jobAgent: [" + jobagentId + "].");
+
 			db.query("update JOBAGENT set counter=counter-1 where entryId=?", false, jobagentId);
-			
+
 			int updated = db.getUpdateCount();
-			
-		    db.query("delete from JOBAGENT where counter<1");
-		    
-		    return updated>0;
+
+			db.query("delete from JOBAGENT where counter<1");
+
+			return updated > 0;
 		}
 	}
 
@@ -2307,93 +2306,88 @@ public class TaskQueueUtils {
 
 		return ret;
 	}
-	
-	
+
 	public static void setSiteQueueStatus(String ce, String status, Object... extraparams) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
-			
-			db.query("update SITEQUEUES set statustime=now(), status=? where site=?", 
-					false, 
-					status, ce);
-			
-			if ( db.getUpdateCount()==0 ){
+
+			db.query("update SITEQUEUES set statustime=now(), status=? where site=?", false, status, ce);
+
+			if (db.getUpdateCount() == 0) {
 				insertSiteQueue(ce);
 			}
 		}
 	}
-	
+
 	public static void insertSiteQueue(String ce) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
 
-			if ( !db.query("insert into SITEQUEUES (siteid, site) select ifnull(max(siteid)+1,1), ? from SITEQUEUES", 
-					false, 
-					ce) ){
-				logger.log(Level.INFO, "Couldn't insert queue "+ce);
+			if (!db.query("insert into SITEQUEUES (siteid, site) select ifnull(max(siteid)+1,1), ? from SITEQUEUES", false, ce)) {
+				logger.log(Level.INFO, "Couldn't insert queue " + ce);
 				return;
 			}
-			
+
 			resyncSiteQueueTable();
 		}
 	}
-	
+
 	public static void resyncSiteQueueTable() {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
-		
-			HashMap<String,Integer> status = getJobStatusFromDB();
-			
-			String sql=" update SITEQUEUES left join (select siteid, sum(cost) REALCOST, ";
-			String set=" Group by statusId, siteid) dd group by siteid) bb using (siteid) set cost=REALCOST, ";
-			
-			for (String st : status.keySet() ){
-			  	  sql+=" max(if(statusId="+status.get(st)+", count, 0)) REAL"+st+",";
-			  	  set+=" "+st+"=REAL"+st+","; 
+
+			HashMap<String, Integer> status = getJobStatusFromDB();
+
+			String sql = " update SITEQUEUES left join (select siteid, sum(cost) REALCOST, ";
+			String set = " Group by statusId, siteid) dd group by siteid) bb using (siteid) set cost=REALCOST, ";
+
+			for (String st : status.keySet()) {
+				sql += " max(if(statusId=" + status.get(st) + ", count, 0)) REAL" + st + ",";
+				set += " " + st + "=REAL" + st + ",";
 			}
-			sql = sql.substring(0, sql.length()-1);
-			sql = set.substring(0, set.length()-1);
-			
+			sql = sql.substring(0, sql.length() - 1);
+			sql = set.substring(0, set.length() - 1);
+
 			sql += " from (select siteid, statusId, sum(cost) as cost, count(*) as count from QUEUE join QUEUEPROC using(queueid) ";
 			sql += set;
-			
-			logger.log(Level.INFO, "resyncSiteQueueTable with "+sql);
-			
+
+			logger.log(Level.INFO, "resyncSiteQueueTable with " + sql);
+
 			db.query(sql, false);
 		}
 	}
-	
-	public static HashMap<String,Integer> getJobStatusFromDB() {
+
+	public static HashMap<String, Integer> getJobStatusFromDB() {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
 
-			db.query("select status, statusId from QUEUE_STATUS",false);
-			HashMap<String,Integer> status = new HashMap<String,Integer>();
-			
-			while (db.moveNext()){
+			db.query("select status, statusId from QUEUE_STATUS", false);
+			HashMap<String, Integer> status = new HashMap<String, Integer>();
+
+			while (db.moveNext()) {
 				status.put(db.gets(1), db.geti(2));
-			}	
-		
+			}
+
 			return status;
 		}
 	}
-		
+
 	public static boolean updateHostStatus(String host, String status) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
 
-			if ( host==null || host.equals("") || status==null || status.equals("") ){
+			if (host == null || host.equals("") || status == null || status.equals("")) {
 				logger.log(Level.INFO, "Host or status parameters are empty");
 				return false;
 			}
-			
-			if( !db.query("update HOSTS set status=?,date=now() where hostName=?",false, status, host) ){
-				logger.log(Level.INFO, "Update HOSTS failed: "+host+" and "+status);
+
+			if (!db.query("update HOSTS set status=?,date=now() where hostName=?", false, status, host)) {
+				logger.log(Level.INFO, "Update HOSTS failed: " + host + " and " + status);
 				return false;
 			}
 
@@ -2406,22 +2400,22 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			String table="QUEUE_"+key.toUpperCase();
-			String id=key+"id";
-			
-			db.query("select "+id+" from "+table+" where "+key+"=?", false, value);
-			
+			String table = "QUEUE_" + key.toUpperCase();
+			String id = key + "id";
+
+			db.query("select " + id + " from " + table + " where " + key + "=?", false, value);
+
 			// the host exists
-			if(db.moveNext()){
-				logger.log(Level.INFO, "The host exists: "+db.geti(1));
+			if (db.moveNext()) {
+				logger.log(Level.INFO, "The host exists: " + db.geti(1));
 				return db.geti(1);
-			} else{ // host doesn't exist, we insert it
+			} else { // host doesn't exist, we insert it
 				logger.log(Level.INFO, "The host doesn't exist. Inserting...");
 
-				if(db.query("insert into "+table+" ("+key+") values (?)", true, value))
+				if (db.query("insert into " + table + " (" + key + ") values (?)", true, value))
 					return db.getLastGeneratedKey();
 			}
-					
+
 			// something went wrong ? :-(
 			return 0;
 		}
@@ -2431,14 +2425,14 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
-		
-			db.query("select siteid from SITEQUEUES where site=?",false, ceName);
-			
-			if(db.moveNext()){
+
+			db.query("select siteid from SITEQUEUES where site=?", false, ceName);
+
+			if (db.moveNext()) {
 				return db.geti(1);
-			}	
+			}
 		}
-		return 0;	
+		return 0;
 	}
-	
+
 }
