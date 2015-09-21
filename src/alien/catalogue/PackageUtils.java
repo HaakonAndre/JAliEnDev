@@ -46,33 +46,32 @@ public class PackageUtils {
 			final Map<String, Package> newPackages = new LinkedHashMap<>();
 
 			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-				if (db == null) {
+				if (db == null)
 					lastCacheCheck = System.currentTimeMillis();
-					return;
-				}
+				else {
+					if (monitor != null)
+						monitor.incrementCounter("Package_db_lookup");
 
-				if (monitor != null)
-					monitor.incrementCounter("Package_db_lookup");
+					final String q = "SELECT DISTINCT packageVersion, packageName, username, platform, lfn FROM PACKAGES ORDER BY 3,2,1,4,5;";
 
-				final String q = "SELECT DISTINCT packageVersion, packageName, username, platform, lfn FROM PACKAGES ORDER BY 3,2,1,4,5;";
+					db.setReadOnly(true);
 
-				db.setReadOnly(true);
-				
-				if (!db.query(q))
-					return;
+					if (!db.query(q))
+						return;
 
-				Package prev = null;
+					Package prev = null;
 
-				while (db.moveNext()) {
-					final Package next = new Package(db);
+					while (db.moveNext()) {
+						final Package next = new Package(db);
 
-					if (prev != null && next.equals(prev))
-						prev.setLFN(db.gets("platform"), db.gets("lfn"));
-					else {
-						next.setLFN(db.gets("platform"), db.gets("lfn"));
-						prev = next;
+						if (prev != null && next.equals(prev))
+							prev.setLFN(db.gets("platform"), db.gets("lfn"));
+						else {
+							next.setLFN(db.gets("platform"), db.gets("lfn"));
+							prev = next;
 
-						newPackages.put(next.getFullName(), next);
+							newPackages.put(next.getFullName(), next);
+						}
 					}
 				}
 			}
@@ -112,7 +111,7 @@ public class PackageUtils {
 	/**
 	 * Force a reload of package list from the database.
 	 */
-	public static void refresh(){
+	public static void refresh() {
 		lastCacheCheck = 0;
 	}
 
