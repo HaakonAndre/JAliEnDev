@@ -764,15 +764,17 @@ public class LFNUtils {
 
 							final Set<PFN> whereis = l.whereisReal();
 
-							final Set<Integer> lses = new HashSet<>();
+							if (whereis != null) {
+								final Set<Integer> lses = new HashSet<>();
 
-							for (final PFN pfn : whereis)
-								lses.add(Integer.valueOf(pfn.seNumber));
+								for (final PFN pfn : whereis)
+									lses.add(Integer.valueOf(pfn.seNumber));
 
-							if (ses != null)
-								ses.retainAll(lses);
-							else
-								ses = lses;
+								if (ses != null)
+									ses.retainAll(lses);
+								else
+									ses = lses;
+							}
 						}
 
 					if (ses != null)
@@ -865,15 +867,17 @@ public class LFNUtils {
 				if (commonSEs == null || commonSEs.size() > 0) {
 					final Set<PFN> pfns = lfn.whereisReal();
 
-					final Set<Integer> ses = new HashSet<>();
+					if (pfns != null) {
+						final Set<Integer> ses = new HashSet<>();
 
-					for (final PFN pfn : pfns)
-						ses.add(Integer.valueOf(pfn.seNumber));
+						for (final PFN pfn : pfns)
+							ses.add(Integer.valueOf(pfn.seNumber));
 
-					if (commonSEs != null)
-						commonSEs.retainAll(ses);
-					else
-						commonSEs = ses;
+						if (commonSEs != null)
+							commonSEs.retainAll(ses);
+						else
+							commonSEs = ses;
+					}
 				}
 
 				if (db.query("INSERT INTO COLLECTIONS_ELEM (collectionId,origLFN,guid) VALUES (" + collectionId + ", '" + Format.escSQL(lfn.getCanonicalName()) + "', string2binary('"
