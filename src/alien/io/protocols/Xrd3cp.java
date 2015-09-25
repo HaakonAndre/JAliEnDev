@@ -132,6 +132,8 @@ public class Xrd3cp extends Xrootd {
 				else if (target.ticket.envelope.getSignedEnvelope() != null)
 					command.add(target.ticket.envelope.getSignedEnvelope());
 
+			setLastCommand(command);
+			
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder, getXrd3cpPath());
@@ -151,7 +153,9 @@ public class Xrd3cp extends Xrootd {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
+				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 

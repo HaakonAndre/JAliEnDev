@@ -6,7 +6,9 @@ package alien.io.protocols;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
+import lia.util.process.ExternalProcess.ExitStatus;
 import alien.catalogue.PFN;
 
 /**
@@ -104,5 +106,34 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 	 */
 	abstract boolean isSupported();
 
+	/**
+	 * @return unique identifier of each protocol
+	 */
 	public abstract byte protocolID();
+
+	private ExitStatus lastExitStatus = null;
+
+	/**
+	 * @return exit status of last executed command
+	 */
+	public ExitStatus getLastExitCode() {
+		return lastExitStatus;
+	}
+
+	protected void setLastExitStatus(final ExitStatus status) {
+		this.lastExitStatus = status;
+	}
+
+	private List<String> lastCommand = null;
+
+	/**
+	 * @return full command line that was last executed
+	 */
+	public List<String> getLastCommand() {
+		return lastCommand;
+	}
+
+	protected void setLastCommand(final List<String> cmd) {
+		this.lastCommand = cmd;
+	}
 }

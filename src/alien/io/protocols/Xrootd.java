@@ -275,6 +275,8 @@ public class Xrootd extends Protocol {
 			if (logger.isLoggable(Level.FINEST))
 				logger.log(Level.FINEST, "Executing rm command: " + command);
 
+			setLastCommand(command);
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
@@ -289,7 +291,9 @@ public class Xrootd extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
+				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 			} finally {
 				if (fAuthz != null)
@@ -387,6 +391,8 @@ public class Xrootd extends Protocol {
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
 
+			setLastCommand(command);
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
@@ -409,11 +415,14 @@ public class Xrootd extends Protocol {
 			try {
 				p = pBuilder.start();
 
-				if (p != null)
+				if (p != null) {
 					exitStatus = p.waitFor();
-				else
+					setLastExitStatus(exitStatus);
+				} else
 					throw new SourceException("Cannot start the process");
 			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
+
 				p.destroy();
 
 				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString());
@@ -521,6 +530,8 @@ public class Xrootd extends Protocol {
 
 			command.add(transactionURL);
 
+			setLastCommand(command);
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
@@ -538,7 +549,10 @@ public class Xrootd extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
+
+				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
 				throw new TargetException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 
@@ -682,6 +696,8 @@ public class Xrootd extends Protocol {
 					command.add(pfn.getPFN());
 				}
 
+				setLastCommand(command);
+
 				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 				checkLibraryPath(pBuilder);
@@ -696,7 +712,9 @@ public class Xrootd extends Protocol {
 
 				try {
 					exitStatus = pBuilder.start().waitFor();
+					setLastExitStatus(exitStatus);
 				} catch (final InterruptedException ie) {
+					setLastExitStatus(null);
 					throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 				}
 
@@ -759,10 +777,19 @@ public class Xrootd extends Protocol {
 		}
 	}
 
+	/**
+	 * Do not force any TPC mode
+	 */
 	public static final int TPC_DEFAULT = 0;
 
+	/**
+	 * Force TPC-only transfers
+	 */
 	public static final int TPC_ONLY = 1;
 
+	/**
+	 * Try TPC first
+	 */
 	public static final int TPC_FIRST = 2;
 
 	/**
@@ -838,6 +865,8 @@ public class Xrootd extends Protocol {
 			if (logger.isLoggable(Level.FINE))
 				logger.log(Level.FINE, "Executing command:\n" + command);
 
+			setLastCommand(command);
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
@@ -857,7 +886,9 @@ public class Xrootd extends Protocol {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
+				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 

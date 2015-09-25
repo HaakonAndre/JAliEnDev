@@ -159,6 +159,8 @@ public class Xrd3cpGW extends Xrootd {
 			command.add(sourcePath);
 			command.add(targetPath);
 
+			setLastCommand(command);
+			
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
@@ -178,7 +180,9 @@ public class Xrd3cpGW extends Xrootd {
 
 			try {
 				exitStatus = pBuilder.start().waitFor();
+				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
 			}
 
