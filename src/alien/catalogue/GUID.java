@@ -342,7 +342,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public String toString() {
 		return "guidID\t\t: " + guidId + " (exists: " + exists + ")\n" + "ctime\t\t: " + (ctime != null ? ctime.toString() : "null") + "\n" + "owner\t\t: " + owner + ":" + gowner + "\n"
 				+ "SE lists\t: " + seStringList + " , " + seAutoStringList + "\n" + "aclId\t\t: " + aclId + "\n" + "expireTime\t: " + expiretime + "\n" + "size\t\t: " + size + "\n" + "guid\t\t: "
-				+ guid + "\n" + "type\t\t: " + type + " (" + (int) type + ")\n" + "md5\t\t: " + md5 + "\n" + "permissions\t: " + perm;
+				+ guid + "\n" + "type\t\t: " + (type != (char) 0 ? type : '0') + " (" + (int) type + ")\n" + "md5\t\t: " + md5 + "\n" + "permissions\t: " + perm;
 	}
 
 	private static final Set<Integer> stringToSet(final String s) {
@@ -526,11 +526,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				sb.append(id.toString());
 			}
 
-			if (sb.length() > 0) {
+			if (sb.length() > 0)
 				try (DBFunctions db = host.getDB()) {
 					db.query("DELETE FROM G" + tableName + "L" + tableSuffix + " WHERE guidId IN (" + sb.toString() + ")");
 				}
-			}
 
 			return true;
 		}
