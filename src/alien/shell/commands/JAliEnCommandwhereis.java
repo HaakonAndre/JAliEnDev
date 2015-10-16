@@ -25,7 +25,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	/**
 	 * marker for -R argument
 	 */
-	private boolean bR = false;
+	private final boolean bR = false;
 
 	/**
 	 * entry the call is executed on, either representing a LFN or a GUID
@@ -40,10 +40,10 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 		String guid = null;
 
-		if (bG) {
+		if (bG)
 			guid = lfnOrGuid;
-		} else {
-			LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfnOrGuid));
+		else {
+			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfnOrGuid));
 			if (lfn != null && lfn.guid != null)
 				guid = lfn.guid.toString();
 		}
@@ -59,8 +59,8 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			if (out.isRootPrinter()) {
 				if (!isSilent())
 					out.setField("value ", AlienTime.getStamp() + " the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in");
-				for (PFN pfn : pfns) {
-					String se = commander.c_api.getSE(pfn.seNumber).seName;
+				for (final PFN pfn : pfns) {
+					final String se = commander.c_api.getSE(pfn.seNumber).seName;
 					if (!isSilent())
 						out.setField("\t\t SE => ", padRight(se, 30) + " pfn =>" + pfn.pfn + "\n");
 				}
@@ -70,19 +70,15 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 				if (!isSilent())
 					out.printOutln(AlienTime.getStamp() + " the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in\n");
-				for (PFN pfn : pfns) {
+				for (final PFN pfn : pfns) {
 
-					String se = commander.c_api.getSE(pfn.seNumber).seName;
+					final String se = commander.c_api.getSE(pfn.seNumber).seName;
 					if (!isSilent())
 						out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>" + pfn.pfn + "\n");
 				}
 			}
-		}
-
-		else {
-			if (!isSilent())
-				out.printOutln("No such file: [" + lfnOrGuid + "]");
-		}
+		} else if (!isSilent())
+			out.printOutln("No such file: [" + lfnOrGuid + "]");
 	}
 
 	/**
@@ -119,7 +115,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandwhereis(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandwhereis(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
@@ -133,7 +129,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				lfnOrGuid = options.nonOptionArguments().iterator().next().toString();
 			else
 				printHelp();
-		} catch (OptionException e) {
+		} catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

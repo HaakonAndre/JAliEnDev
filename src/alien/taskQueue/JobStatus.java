@@ -357,6 +357,9 @@ public enum JobStatus {
 		return level;
 	}
 
+	/**
+	 * @return alien dictionary ID for this status
+	 */
 	public int getAliEnLevel() {
 		return alienLevel;
 	}
@@ -376,6 +379,11 @@ public enum JobStatus {
 		return name();
 	}
 
+	/**
+	 * Debug method
+	 * 
+	 * @param args
+	 */
 	public static void main(final String[] args) {
 		System.err.println(alienToStatus.keySet());
 	}

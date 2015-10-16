@@ -6,16 +6,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import lazyj.DBFunctions;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
+import alien.quotas.FileQuota;
+import alien.quotas.Quota;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-import alien.quotas.Quota;
-import alien.quotas.FileQuota;
-
 
 /**
  * Get the JDL object
@@ -30,7 +28,7 @@ public class TaskQueueApiUtils {
 	/**
 	 * @param commander
 	 */
-	public TaskQueueApiUtils(JAliEnCOMMander commander) {
+	public TaskQueueApiUtils(final JAliEnCOMMander commander) {
 		this.commander = commander;
 	}
 
@@ -42,8 +40,7 @@ public class TaskQueueApiUtils {
 			final GetUptime uptime = Dispatcher.execute(new GetUptime());
 
 			return uptime.getStats();
-		}
-		catch (ServerException e) {
+		} catch (final ServerException e) {
 			System.out.println("Could not get an uptime stats: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -66,11 +63,10 @@ public class TaskQueueApiUtils {
 			final Collection<Integer> jobid, final String orderByKey, final int limit) {
 
 		try {
-			GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit));
+			final GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit));
 
 			return ps.returnPS();
-		}
-		catch (ServerException e) {
+		} catch (final ServerException e) {
 			System.out.println("Could not get a PS listing: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -94,13 +90,12 @@ public class TaskQueueApiUtils {
 			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {
-			GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit,bExpunge));
+			final GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge));
 
 			// return mj.masterJobStatus();
 			return mj.subJobStatus();
 
-		}
-		catch (ServerException e) {
+		} catch (final ServerException e) {
 			System.out.println("Could get a PS listing: ");
 			e.getCause().printStackTrace();
 		}
@@ -115,11 +110,10 @@ public class TaskQueueApiUtils {
 	public String getTraceLog(final int queueId) {
 
 		try {
-			GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId));
+			final GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId));
 
 			return trace.getTraceLog();
-		}
-		catch (ServerException e) {
+		} catch (final ServerException e) {
 			System.out.println("Could get not a TraceLog: ");
 			e.getCause().printStackTrace();
 		}
@@ -134,12 +128,11 @@ public class TaskQueueApiUtils {
 	public String getJDL(final int queueId) {
 
 		try {
-			GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId));
+			final GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId));
 
 			return jdl.getJDL();
-		}
-		catch (ServerException e) {
-			System.out.println("Could get not a JDL: "+e.getMessage());
+		} catch (final ServerException e) {
+			System.out.println("Could get not a JDL: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
 		return null;
@@ -153,12 +146,11 @@ public class TaskQueueApiUtils {
 	public Job getJob(final int queueId) {
 
 		try {
-			GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId));
+			final GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId));
 
 			return job.getJob();
-		}
-		catch (ServerException e) {
-			System.out.println("Could get not the Job: "+e.getMessage());
+		} catch (final ServerException e) {
+			System.out.println("Could get not the Job: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
 		return null;
@@ -172,12 +164,11 @@ public class TaskQueueApiUtils {
 	public List<Job> getJobs(final List<Integer> queueIds) {
 
 		try {
-			GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds));
+			final GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds));
 
 			return job.getJobs();
-		}
-		catch (ServerException e) {
-			System.out.println("Could get not the Jobs: "+e.getMessage());
+		} catch (final ServerException e) {
+			System.out.println("Could get not the Jobs: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
 		return null;
@@ -194,9 +185,8 @@ public class TaskQueueApiUtils {
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status));
 
-		}
-		catch (ServerException e) {
-			System.out.println("Could get not a Job's status: "+e.getMessage());
+		} catch (final ServerException e) {
+			System.out.println("Could get not a Job's status: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
 	}
@@ -206,17 +196,17 @@ public class TaskQueueApiUtils {
 	 * 
 	 * @param jdl
 	 * @return queueId
-	 * @throws ServerException 
+	 * @throws ServerException
 	 */
 	public int submitJob(final JDL jdl) throws ServerException {
 
-			//final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
-			
-			final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), jdl);
-			
-			final SubmitJob response = Dispatcher.execute(j);
-			
-			return response.getJobID();
+		// final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
+
+		final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), jdl);
+
+		final SubmitJob response = Dispatcher.execute(j);
+
+		return response.getJobID();
 
 	}
 
@@ -227,96 +217,111 @@ public class TaskQueueApiUtils {
 	 * 
 	 * @return status of the kill
 	 */
-	public boolean killJob(int queueId) {
+	public boolean killJob(final int queueId) {
 
 		try {
-			KillJob j = new KillJob(commander.getUser(), commander.getRole(), queueId);
+			final KillJob j = new KillJob(commander.getUser(), commander.getRole(), queueId);
 
 			Dispatcher.execute(j);
 			return j.wasKilled();
 
-		}
-		catch (Exception e) {
+		} catch (final Exception e) {
 			System.out.println("Could not kill the job  with id: [" + queueId + "]");
 			e.printStackTrace();
 		}
 		return false;
 	}
-	
-	public Quota getJobsQuota(){
-		try{
-			GetQuota gq = new GetQuota(commander.getUser());
-			GetQuota gqres = Dispatcher.execute(gq);
-			return gqres.getQuota();
-		}
-		catch( Exception e ){
-			System.out.println( "Exception in GetQuota: " + e.getMessage() );
-		}
-		return null;
-	}
 
-	
-	public FileQuota getFileQuota(){
-		try{
-			GetFileQuota gq = new GetFileQuota(commander.getUser());
-			GetFileQuota gqres = Dispatcher.execute(gq);
-			
-			return gqres.getFileQuota();
-		}
-		catch( Exception e ){
-			System.out.println( "Exception in getFileQuota: " + e.getMessage() );
-		}
-		return null;
-	}
-	
-	public boolean setFileQuota( String fld, String val){
-		try{
-			SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);
-			SetFileQuota sqres = Dispatcher.execute(sq);
-			return sqres.getSucceeded();
-		}
-		catch( Exception e ){
-			System.out.println( "Exception in setFileQuota: " + e.getMessage() );
-		}
-		return false;
-	}
-	
-	public boolean setJobsQuota( String fld, String val){
-		try{
-			SetJobsQuota sq = new SetJobsQuota(commander.getUser(), fld, val);
-			SetJobsQuota sqres = Dispatcher.execute(sq);
-			return sqres.getSucceeded();
-		}
-		catch( Exception e ){
-			System.out.println( "Exception in setFileQuota: " + e.getMessage() );
-		}
-		return false;
-	}
-	
-	public Set<String> getGroupMembers( String group ){
-		try{
-			GetGroupMembers gm = new GetGroupMembers(commander.getUser(), group);
-			GetGroupMembers gmres = Dispatcher.execute(gm);
-			return gmres.getMembers();
-		}
-		catch( Exception e ){
-			System.out.println( "Exception in setFileQuota: " + e.getMessage() );
-		}
-		return null;
-	}
-	
-
-	public GetMatchJob getMatchJob(final HashMap<String, Object> matchRequest) {
-		
+	/**
+	 * @return jobs quota for the current user
+	 */
+	public Quota getJobsQuota() {
 		try {
-			GetMatchJob gmj = Dispatcher.execute( new GetMatchJob(commander.getUser(), commander.getRole(), matchRequest) ); 
-			return gmj;
+			final GetQuota gq = new GetQuota(commander.getUser());
+			final GetQuota gqres = Dispatcher.execute(gq);
+			return gqres.getQuota();
+		} catch (final Exception e) {
+			System.out.println("Exception in GetQuota: " + e.getMessage());
 		}
-		catch (ServerException e) {
-			System.out.println("Could get not a match Job: "+e.getMessage());
+		return null;
+	}
+
+	/**
+	 * @return file quota for the current user
+	 */
+	public FileQuota getFileQuota() {
+		try {
+			final GetFileQuota gq = new GetFileQuota(commander.getUser());
+			final GetFileQuota gqres = Dispatcher.execute(gq);
+
+			return gqres.getFileQuota();
+		} catch (final Exception e) {
+			System.out.println("Exception in getFileQuota: " + e.getMessage());
+		}
+		return null;
+	}
+
+	/**
+	 * @param fld
+	 * @param val
+	 * @return <code>true</code> if the operation was successful
+	 */
+	public boolean setFileQuota(final String fld, final String val) {
+		try {
+			final SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);
+			final SetFileQuota sqres = Dispatcher.execute(sq);
+			return sqres.getSucceeded();
+		} catch (final Exception e) {
+			System.out.println("Exception in setFileQuota: " + e.getMessage());
+		}
+		return false;
+	}
+
+	/**
+	 * @param fld
+	 * @param val
+	 * @return <code>true</code> if the operation was successful
+	 */
+	public boolean setJobsQuota(final String fld, final String val) {
+		try {
+			final SetJobsQuota sq = new SetJobsQuota(commander.getUser(), fld, val);
+			final SetJobsQuota sqres = Dispatcher.execute(sq);
+			return sqres.getSucceeded();
+		} catch (final Exception e) {
+			System.out.println("Exception in setFileQuota: " + e.getMessage());
+		}
+		return false;
+	}
+
+	/**
+	 * @param group
+	 * @return group members
+	 */
+	public Set<String> getGroupMembers(final String group) {
+		try {
+			final GetGroupMembers gm = new GetGroupMembers(commander.getUser(), group);
+			final GetGroupMembers gmres = Dispatcher.execute(gm);
+			return gmres.getMembers();
+		} catch (final Exception e) {
+			System.out.println("Exception in setFileQuota: " + e.getMessage());
+		}
+		return null;
+	}
+
+	/**
+	 * @param matchRequest
+	 * @return matching job
+	 */
+	public GetMatchJob getMatchJob(final HashMap<String, Object> matchRequest) {
+
+		try {
+			final GetMatchJob gmj = Dispatcher.execute(new GetMatchJob(commander.getUser(), commander.getRole(), matchRequest));
+			return gmj;
+		} catch (final ServerException e) {
+			System.out.println("Could get not a match Job: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
 		return null;
 	}
-	
+
 }

@@ -1,5 +1,10 @@
 package alien.api.catalogue;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+
 import alien.api.Request;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -9,87 +14,83 @@ import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-
-
 /**
  * Get the LFN object for this path
  * 
  * @author costing
  * @since 2011-03-04
  */
-public class ListSEDistance extends Request {	
+public class ListSEDistance extends Request {
 	private static final long serialVersionUID = 726995834931008148L;
-	private String lfn_name;
-	private boolean write;
+	private final String lfn_name;
+	private final boolean write;
 	private String site;
 	private List<SE> ses;
-	private List<HashMap <SE,Double>> distances;
-	
+	private List<HashMap<SE, Double>> distances;
+
 	/**
-	 * @param user 
-	 * @param role 
-	 * @param path
-	 * @param evenIfDoesNotExist
+	 * @param user
+	 * @param role
+	 * @param sitename
+	 * @param write
+	 * @param lfn_name
 	 */
-	public ListSEDistance(final AliEnPrincipal user, 
-							final String role,
-							final String sitename,
-							final boolean write, 
-							final String lfn_name){
+	public ListSEDistance(final AliEnPrincipal user, final String role, final String sitename, final boolean write, final String lfn_name) {
 		setRequestUser(user);
 		setRoleRequest(role);
-		this.lfn_name = lfn_name;		
-		this.write = write;		
-		if(sitename==null || sitename.length()==0)
+		this.lfn_name = lfn_name;
+		this.write = write;
+		if (sitename == null || sitename.length() == 0)
 			this.site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		else
-			this.site = sitename; 
+			this.site = sitename;
 	}
-	
+
 	@Override
-	public void run() {				
-		// this is for write		
-		if( this.write ){
-			this.ses = SEUtils.getClosestSEs(this.site, true);		
-		}
-		else{
-			//for read with lfn specified
-			this.ses = new ArrayList<SE>();
-			if( this.lfn_name==null )
+	public void run() {
+		// this is for write
+		if (this.write)
+			this.ses = SEUtils.getClosestSEs(this.site, true);
+		else {
+			// for read with lfn specified
+			this.ses = new ArrayList<>();
+			if (this.lfn_name == null)
 				return;
 			LFN lfn = null;
-			if( this.lfn_name!=null && this.lfn_name.length()!=0 )
+			if (this.lfn_name != null && this.lfn_name.length() != 0)
 				lfn = LFNUtils.getLFN(this.lfn_name);
-			List<PFN> lp = SEUtils.sortBySite(lfn.whereis(), this.site, true, false);
-			
-			if( lp==null )
+
+			if (lfn == null)
 				return;
-			for( PFN p : lp ){
-				this.ses.add( p.getSE() );
-			}
+
+			final List<PFN> lp = SEUtils.sortBySite(lfn.whereis(), this.site, true, false);
+
+			if (lp == null)
+				return;
+			for (final PFN p : lp)
+				this.ses.add(p.getSE());
 		}
-		
-		this.distances = new LinkedList<HashMap <SE,Double>>();
-		
-		for( SE se : this.ses ){
-			HashMap<SE,Double> hm = new HashMap<SE,Double>();
-			hm.put( se, SEUtils.getDistance(this.site, se, true) );
-			this.distances.add( hm );
+
+		this.distances = new LinkedList<>();
+
+		for (final SE se : this.ses) {
+			final HashMap<SE, Double> hm = new HashMap<>();
+			hm.put(se, SEUtils.getDistance(this.site, se, true));
+			this.distances.add(hm);
 		}
 	}
-	
+
 	/**
 	 * @return SE list sorted by distance
 	 */
-	public List<SE> getSE(){
+	public List<SE> getSE() {
 		return this.ses;
 	}
-	
-	public List<HashMap<SE,Double>> getSEDistances(){
+
+	/**
+	 * @return distance list
+	 */
+	public List<HashMap<SE, Double>> getSEDistances() {
 		return this.distances;
 	}
 }

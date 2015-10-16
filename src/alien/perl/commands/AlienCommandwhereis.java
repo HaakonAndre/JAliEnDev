@@ -12,7 +12,6 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
-import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
 /**

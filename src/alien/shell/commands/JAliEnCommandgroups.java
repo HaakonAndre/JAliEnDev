@@ -1,16 +1,25 @@
 package alien.shell.commands;
 
-import java.util.Set;
 import java.util.ArrayList;
+import java.util.Set;
 
 import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 
+/**
+ * @author costing
+ */
 public class JAliEnCommandgroups extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
+		final Set<String> roles = commander.getUser().getRoles();
+		final String username = commander.getUser().getName();
+		final String maingroup = commander.getUser().getDefaultRole();
+		out.printOutln("User: " + username + ", main group: " + maingroup);
+		out.printOut("Member of groups: ");
+		for (final String role : roles)
+			out.printOut(role + " ");
+		out.printOutln();
 	}
 
 	@Override
@@ -25,18 +34,15 @@ public class JAliEnCommandgroups extends JAliEnBaseCommand {
 	public boolean canRunWithoutArguments() {
 		return true;
 	}
-	
-	public JAliEnCommandgroups(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+
+	/**
+	 * @param commander
+	 * @param out
+	 * @param alArguments
+	 * @throws OptionException
+	 */
+	public JAliEnCommandgroups(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		Set<String> roles = commander.getUser().getRoles();
-		String username = commander.getUser().getName();
-		String maingroup = commander.getUser().userRole();
-		out.printOutln("User: " + username + ", main group: " + maingroup);
-		out.printOut("Member of groups: ");
-		for( String role : roles ){
-			out.printOut( role + " " );
-		}
-		out.printOutln();
 	}
 
 }

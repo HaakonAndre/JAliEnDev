@@ -112,7 +112,11 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 		return false;
 	}
 
-	public static boolean canUpdateField(String fieldname) {
+	/**
+	 * @param fieldname
+	 * @return <code>true</code> if the field is update-able
+	 */
+	public static boolean canUpdateField(final String fieldname) {
 		return allowed_to_update.contains(fieldname);
 	}
 }

@@ -33,30 +33,24 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (out.isRootPrinter()) {
-			if (logno.intValue() != -1) {
+			if (logno.intValue() != -1)
 				if (bC)
 					scrlogs.put(logno, new ArrayList<String>());
 				else if (scrlogs.get(logno) != null) {
 					out.setField("message", ":" + logno + " [screenlog pasting]");
-					for (String logline : scrlogs.get(logno)) {
+					for (final String logline : scrlogs.get(logno))
 						out.setField("value", logline);
-					}
 				} else
 					out.setField("message", ":" + logno + " [screenlog is empty]");
-			}
-		} else {
-			if (logno.intValue() != -1) {
-				if (bC)
-					scrlogs.put(logno, new ArrayList<String>());
-				else if (scrlogs.get(logno) != null) {
-					System.out.println(":" + logno + " [screenlog pasting]");
-					for (String logline : scrlogs.get(logno)) {
-						System.out.println(logline);
-					}
-				} else
-					System.out.println(":" + logno + " [screenlog is empty]");
-			}
-		}
+		} else if (logno.intValue() != -1)
+			if (bC)
+				scrlogs.put(logno, new ArrayList<String>());
+			else if (scrlogs.get(logno) != null) {
+				System.out.println(":" + logno + " [screenlog pasting]");
+				for (final String logline : scrlogs.get(logno))
+					System.out.println(logline);
+			} else
+				System.out.println(":" + logno + " [screenlog is empty]");
 
 	}
 
@@ -67,7 +61,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * @param line
 	 * 
 	 */
-	protected static void addScreenLogLine(Integer logno, String line) {
+	protected static void addScreenLogLine(final Integer logno, final String line) {
 		if (scrlogs.get(logno) == null)
 			scrlogs.put(logno, new ArrayList<String>());
 		// ArrayList<String> buf = (ArrayList<String>) scrlogs.get(logno);
@@ -110,7 +104,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandscrlog(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandscrlog(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		try {
@@ -125,7 +119,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 			else
 				try {
 					logno = Integer.valueOf(options.nonOptionArguments().get(0).toString());
-				} catch (NumberFormatException n) {
+				} catch (final NumberFormatException n) {
 					// ignore
 				}
 
@@ -133,7 +127,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 
 			if (logno.intValue() > 9)
 				printHelp();
-		} catch (OptionException e) {
+		} catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

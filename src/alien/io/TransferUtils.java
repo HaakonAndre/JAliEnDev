@@ -100,6 +100,12 @@ public final class TransferUtils {
 	}
 
 	/**
+	 * @param targetSE
+	 * @param user
+	 * @param status
+	 * @param id
+	 * @param count
+	 * @param orderAsc
 	 * @return all active transfers
 	 */
 	public static List<TransferDetails> getAllActiveTransfers(final String targetSE, final String user, final String status, final Integer id, final Integer count, final boolean orderAsc) {
@@ -407,11 +413,26 @@ public final class TransferUtils {
 		}
 	}
 
+	/**
+	 * @param lfn
+	 * @param se
+	 * @return ?
+	 */
 	public static int removeMirror(final LFN lfn, final SE se) {
+		// TODO
 		return 0;
 	}
 
-	public static final void logAttempt(final Protocol p, final PFN source, final PFN target, final int exitCode, final String failureReason) {
+	/**
+	 * Log a transfer attempt
+	 * 
+	 * @param p
+	 * @param source
+	 * @param target
+	 * @param exitCode
+	 * @param failureReason
+	 */
+	static final void logAttempt(final Protocol p, final PFN source, final PFN target, final int exitCode, final String failureReason) {
 		try (DBFunctions db = getDB()) {
 			if (db != null)
 				if (ConfigUtils.getConfig().getb("alien.io.TransferUtils.logReason", false))
@@ -443,6 +464,11 @@ public final class TransferUtils {
 
 	private static ExpirationCache<SE, Map<Integer, ProtocolStats>> protocolStatCache = new ExpirationCache<>();
 
+	/**
+	 * @param target
+	 * @param protocols
+	 * @return supported transfer protocols to a target SE
+	 */
 	public static Set<Protocol> filterProtocols(final SE target, final Set<Protocol> protocols) {
 		final Set<Protocol> ret = new HashSet<>(protocols.size());
 
@@ -480,11 +506,10 @@ public final class TransferUtils {
 				continue;
 			}
 		}
-		
-		if (ret.size() == 0){
+
+		if (ret.size() == 0)
 			// retry all protocols in case all previous attempts failed (storage problems)
 			ret.addAll(protocols);
-		}
 
 		return ret;
 	}
@@ -501,8 +526,13 @@ public final class TransferUtils {
 		}
 	}
 
-	public static void main(String[] args) {
-		Set<Protocol> protocols = new HashSet<>();
+	/**
+	 * Debug method
+	 * 
+	 * @param args
+	 */
+	public static void main(final String[] args) {
+		final Set<Protocol> protocols = new HashSet<>();
 		protocols.add(Factory.xrd3cp);
 		protocols.add(Factory.xrd3cp4);
 		protocols.add(Factory.xrd3cpGW);

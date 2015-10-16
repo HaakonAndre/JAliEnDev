@@ -117,6 +117,15 @@ public class SE implements Serializable, Comparable<SE> {
 	 */
 	public long size;
 
+	/**
+	 * Build an arbitrary SE from the corresponding fields
+	 * 
+	 * @param seName
+	 * @param seNumber
+	 * @param qos
+	 * @param seStoragePath
+	 * @param seioDaemons
+	 */
 	public SE(final String seName, final int seNumber, final String qos, final String seStoragePath, final String seioDaemons) {
 		this.seName = seName;
 		this.seNumber = seNumber;

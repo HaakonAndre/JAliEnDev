@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.FileWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.text.SimpleDateFormat;
@@ -602,6 +601,11 @@ public class TextCache extends ExtendedServlet {
 		pwOut.flush();
 	}
 
+	/**
+	 * Call the remote text cache to remove all entries related to the given path
+	 * 
+	 * @param lfn
+	 */
 	public static void invalidateLFN(final String lfn) {
 		try {
 			invalidateCache("whereis", "(irtc|irc)_" + lfn);
@@ -611,6 +615,14 @@ public class TextCache extends ExtendedServlet {
 		}
 	}
 
+	/**
+	 * Remove entries from the text cache from a given namespace and one or more patterns
+	 * 
+	 * @param ns
+	 * @param pattern
+	 * @return the outcome of the query as indicated by the server
+	 * @throws IOException
+	 */
 	public static String invalidateCache(final String ns, final String... pattern) throws IOException {
 		final String url = ConfigUtils.getConfig().gets("alien.servlets.TextCache.URL", "http://aliendb3.cern.ch:8888/TextCache");
 
@@ -660,13 +672,16 @@ public class TextCache extends ExtendedServlet {
 				} catch (final IOException ioe) {
 					System.err.println("Cannot open access_log: " + ioe.getMessage());
 				}
-				
+
 			lastOpened = System.currentTimeMillis();
 		}
 
 		return pwLogOut;
 	}
 
+	/**
+	 * Log the request in an apache-like access log
+	 */
 	public synchronized void logRequest() {
 		@SuppressWarnings("resource")
 		final PrintWriter pw = getLogWriter();

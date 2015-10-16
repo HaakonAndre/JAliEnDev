@@ -191,12 +191,11 @@ public class DispatchSSLServer extends Thread {
 					// ignore
 				}
 
-			if (connection != null)
-				try {
-					connection.close();
-				} catch (final IOException ioe) {
-					// ignore
-				}
+			try {
+				connection.close();
+			} catch (final IOException ioe) {
+				// ignore
+			}
 		}
 	}
 

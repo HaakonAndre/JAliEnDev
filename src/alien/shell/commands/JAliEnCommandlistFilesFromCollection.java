@@ -25,92 +25,80 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	private Set<LFN> lfns = null;
 
 	private String errorMessage = null;
-	
+
 	/*
 	 * The command received -v verbose argument
-	 * */
+	 */
 	private boolean bZ = false;
-	
+
 	/**
 	 * execute the type
 	 */
 	@Override
-	public void run() 
-	{
-		
-		//A9D461B2-1386-11E1-9717-7623A10ABEEF  (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)
-		// -v  A9D461B2-1386-11E1-9717-7623A10ABEEF  (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
-		
+	public void run() {
+
+		// A9D461B2-1386-11E1-9717-7623A10ABEEF (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)
+		// -v A9D461B2-1386-11E1-9717-7623A10ABEEF (from the file /alice/data/2011/LHC11h/000168512/raw/11000168512082.99.root)( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
+
 		String collectionPath;
-		
-		if(sPath.startsWith("/"))
+
+		if (sPath.startsWith("/"))
 			collectionPath = sPath;
 		else
-		{
-			collectionPath = commander.getCurrentDir().getCanonicalName()+sPath;	
-		}
-		
-		try
-		{
+			collectionPath = commander.getCurrentDir().getCanonicalName() + sPath;
+
+		try {
 			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), collectionPath));
-			
+
 			lfns = ret.getLFNs();
-		}
-		catch (ServerException e)
-		{
-			Throwable cause = e.getCause();
-			
+		} catch (final ServerException e) {
+			final Throwable cause = e.getCause();
+
 			errorMessage = cause.getMessage();
 		}
-		
-		if (errorMessage != null){
-			if(!isSilent())
+
+		if (errorMessage != null) {
+			if (!isSilent())
 				out.printErrln(errorMessage);
-			
+
 			return;
 		}
-		
+
 		if (out.isRootPrinter())
-		{
-			for(final LFN c: lfns)	
-			{
+			for (final LFN c : lfns) {
 				out.nextResult();
-				out.setField("guid",c.guid.toString());
+				out.setField("guid", c.guid.toString());
 				out.setField("lfn", c.getCanonicalName());
-				if(bZ)
-				{
-					out.setField("size"," "+c.size);
-					out.setField("md5"," "+c.md5);
+				if (bZ) {
+					out.setField("size", " " + c.size);
+					out.setField("md5", " " + c.md5);
 				}
 			}
-		}
-		else
-		{
-			StringBuilder sb = new StringBuilder();
-		
-			for(LFN lfn: lfns){
-			sb.append(lfn.guid);
-			sb.append(" (from the file ");
-			sb.append(lfn.getCanonicalName());
-			sb.append(")");
-		
-			//( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
-			if(bZ){
-				sb.append(" (size = ");
-				sb.append(lfn.size);
-				sb.append(") ");
-				sb.append("(md5 = ");
-				sb.append(lfn.md5);
+		else {
+			final StringBuilder sb = new StringBuilder();
+
+			for (final LFN lfn : lfns) {
+				sb.append(lfn.guid);
+				sb.append(" (from the file ");
+				sb.append(lfn.getCanonicalName());
 				sb.append(")");
+
+				// ( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
+				if (bZ) {
+					sb.append(" (size = ");
+					sb.append(lfn.size);
+					sb.append(") ");
+					sb.append("(md5 = ");
+					sb.append(lfn.md5);
+					sb.append(")");
+				}
+
+				sb.append("\n");
 			}
-			
-			sb.append("\n");
+
+			out.printOutln(sb.toString());
 		}
-		
-		out.printOutln(sb.toString());
-		}
-		
-		
+
 	}
 
 	/**
@@ -130,40 +118,39 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	public boolean canRunWithoutArguments() {
 		return false;
 	}
-	
-	
+
 	/**
-	 * serialize return values for gapi/root
-	 * from root it is allways called with -v -z
+	 * serialize return values for gapi/root from root it is allways called with -v -z
+	 * 
 	 * @return serialized return
 	 */
-	
+
 	@Override
 	public String deserializeForRoot() {
-		if (lfns == null || lfns.size()==0)
+		if (lfns == null || lfns.size() == 0)
 			return "";
-		
+
 		final StringBuilder ret = new StringBuilder();
 
-		for(final LFN c: lfns){
-			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("origLFN").append(RootPrintWriter.fieldseparator);
-			 
-			 ret.append(c.lfn);
-			 
-			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("localName").append(RootPrintWriter.fieldseparator);
-			 //skipped
-			 
-			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("data").append(RootPrintWriter.fieldseparator);
-			 //skipped
-			 
-			 ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("guid").append(RootPrintWriter.fieldseparator);
-			 ret.append(c.guid);
-				
+		for (final LFN c : lfns) {
+			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("origLFN").append(RootPrintWriter.fieldseparator);
+
+			ret.append(c.lfn);
+
+			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("localName").append(RootPrintWriter.fieldseparator);
+			// skipped
+
+			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("data").append(RootPrintWriter.fieldseparator);
+			// skipped
+
+			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("guid").append(RootPrintWriter.fieldseparator);
+			ret.append(c.guid);
+
 		}
 
 		return ret.toString();
 	}
-	
+
 	/**
 	 * Constructor needed for the command factory in commander
 	 * 
@@ -174,8 +161,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandlistFilesFromCollection(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandlistFilesFromCollection(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		final OptionParser parser = new OptionParser();
@@ -183,14 +169,13 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		parser.accepts("z");
 		parser.accepts("s");
 
-		final OptionSet options = parser.parse(alArguments
-				.toArray(new String[] {}));
+		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 		if (options.has("s"))
 			silent();
 
 		bZ = options.has("z");
-		
+
 		if (options.nonOptionArguments().size() != 1)
 			throw new JAliEnCommandException();
 

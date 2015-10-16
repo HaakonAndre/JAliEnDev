@@ -49,17 +49,14 @@ public class RootPrintWriter extends UIPrintWriter {
 	private String clientenv = "";
 
 	/**
-	 * Array that will contain the standard output for Root stream
-	 * The  stdout stream is identified {@link #stderrindicator} 
+	 * Array that will contain the standard output for Root stream The stdout stream is identified {@link #stderrindicator}
 	 */
-	private ArrayList<String> stdout = new ArrayList<>();
+	private final ArrayList<String> stdout = new ArrayList<>();
 
 	/**
-	 * Array that will contaning the standard error for Root stream
-	 * The stderr stream is identified by {@link #stderrindicator} 
+	 * Array that will contaning the standard error for Root stream The stderr stream is identified by {@link #stderrindicator}
 	 */
-	private ArrayList<String> stderr = new ArrayList<>();
-
+	private final ArrayList<String> stderr = new ArrayList<>();
 
 	private String args = "";
 
@@ -71,29 +68,30 @@ public class RootPrintWriter extends UIPrintWriter {
 	/**
 	 * OutputSteam that will contain the information in Root format
 	 */
-	private OutputStream os;
+	private final OutputStream os;
 
 	/**
-	 * @param os OutputSteam that will contain the information in Root format
+	 * @param os
+	 *            OutputSteam that will contain the information in Root format
 	 */
-	public RootPrintWriter(OutputStream os) {
+	public RootPrintWriter(final OutputStream os) {
 		this.os = os;
 	}
 
 	@Override
 	protected void printOut(final String line) {
-		logger.log(Level.FINEST, "Writing to stdout \""+line+"\"");
-		stdout.add(line);		
+		logger.log(Level.FINEST, "Writing to stdout \"" + line + "\"");
+		stdout.add(line);
 	}
 
 	@Override
-	protected void printErr(String line) {
-		logger.log(Level.FINEST, "Writing to stderr \""+line+"\"");
+	protected void printErr(final String line) {
+		logger.log(Level.FINEST, "Writing to stderr \"" + line + "\"");
 		stderr.add(line);
 	}
 
 	@Override
-	protected void setenv(String cDir, String user, String cRole) {
+	protected void setenv(final String cDir, final String user, final String cRole) {
 		clientenv = cDir;
 	}
 
@@ -103,104 +101,96 @@ public class RootPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	protected void setReturnArgs(String args) {
+	protected void setReturnArgs(final String args) {
 		this.args = args;
 	}
 
 	@Override
 	protected void flush() {
 		try {
-			String sDebug = printDebug();
+			final String sDebug = printDebug();
 
 			logger.info("Root format output: \n" + sDebug);
 			System.out.println(sDebug);
 
-
 			logger.finer("Starting to write Root stdout");
 			os.write(stdoutindicator.getBytes());
 
-			if (stdout.size() > 0) {
-				for (String out : stdout){
+			if (stdout.size() > 0)
+				for (final String out : stdout) {
 					logger.finer(testMakeTagsVisible(columnseparator + fieldseparator + out));
 					os.write((columnseparator + fieldseparator + out).getBytes());
 				}
-			} 
-			else{
+			else {
 				logger.finer(testMakeTagsVisible(columnseparator + fieldseparator));
 				os.write((columnseparator + fieldseparator).getBytes());
 			}
-			
+
 			logger.finer("Ending Root stdout");
-			
-			logger.finer( "Starting to write Root stderr");
+
+			logger.finer("Starting to write Root stderr");
 			os.write(stderrindicator.getBytes());
 
-			if (stderr.size() > 0) {
-				for (String err : stderr){
-					os.write((columnseparator + fieldseparator + err)
-							.getBytes());
+			if (stderr.size() > 0)
+				for (final String err : stderr) {
+					os.write((columnseparator + fieldseparator + err).getBytes());
 					logger.finer(testMakeTagsVisible(columnseparator + fieldseparator + err));
 				}
-			} 
 			else {
 				os.write((columnseparator + fieldseparator).getBytes());
 				logger.finer(testMakeTagsVisible(columnseparator + fieldseparator));
 			}
 			logger.finer("Endding Root stderr");
-			
+
 			logger.finer("Starting to write env information");
-			
-			os.write((outputindicator + args + outputterminator
-					+ columnseparator + fielddescriptor + "pwd"
-					+ fieldseparator + clientenv + streamend).getBytes());
-			
-			logger.fine(testMakeTagsVisible(outputindicator + args + outputterminator
-					+ columnseparator + fielddescriptor + "pwd"
-					+ fieldseparator + clientenv + streamend));
-			
+
+			os.write((outputindicator + args + outputterminator + columnseparator + fielddescriptor + "pwd" + fieldseparator + clientenv + streamend).getBytes());
+
+			logger.fine(testMakeTagsVisible(outputindicator + args + outputterminator + columnseparator + fielddescriptor + "pwd" + fieldseparator + clientenv + streamend));
+
 			logger.finer("Ending env information");
-			
+
 			logger.finer("Flushing os");
 			os.flush();
-			
+
 			logger.finer("Clearing args, stdout and stderr");
 			args = "";
 			stdout.clear();
 			stderr.clear();
 
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			e.printStackTrace();
 			logger.log(Level.SEVERE, "Could not write to OutputStream", e);
 		}
 	}
 
-
 	@Override
-	protected void pending(){
-		//ignore - not to be implemented in the root printer
+	protected void pending() {
+		// ignore - not to be implemented in the root printer
 	}
 
 	@Override
-	protected void degraded(){
-		//ignore - not to be implemented in the root printer
+	protected void degraded() {
+		// ignore - not to be implemented in the root printer
 	}
 
 	@Override
-	protected void blackwhitemode(){
-		//ignore - not to be implemented in the root printer
+	protected void blackwhitemode() {
+		// ignore - not to be implemented in the root printer
 	}
 
 	@Override
-	protected void colourmode(){
-		//ignore - not to be implemented in the root printer
+	protected void colourmode() {
+		// ignore - not to be implemented in the root printer
 	}
 
 	/**
 	 * the root printer is always BW
+	 * 
 	 * @return true
 	 */
 	@Override
-	protected boolean colour(){
+	protected boolean colour() {
 		return false;
 	}
 
@@ -212,20 +202,20 @@ public class RootPrintWriter extends UIPrintWriter {
 		debug.append("\nSTDOUT START\n");
 		debug.append(stdoutindicator);
 
-		if (stdout.size() > 0) {
-			for (String out : stdout)
+		if (stdout.size() > 0)
+			for (final String out : stdout)
 				debug.append(columnseparator).append(fieldseparator).append(out);
-		} else
+		else
 			debug.append(columnseparator).append(fieldseparator);
 
 		debug.append("\nSTDOUT END\n");
 		debug.append("\nSTDERR START\n");
 		debug.append(stderrindicator);
 
-		if (stderr.size() > 0) {
-			for (String err : stderr)
+		if (stderr.size() > 0)
+			for (final String err : stderr)
 				debug.append(columnseparator).append(fieldseparator).append(err);
-		} else
+		else
 			debug.append(columnseparator).append(fieldseparator);
 		debug.append("\nSTDERR END\n");
 
@@ -233,8 +223,7 @@ public class RootPrintWriter extends UIPrintWriter {
 		debug.append(outputindicator).append(args).append(outputterminator);
 		debug.append("\nOUTPUT END\n");
 
-		debug.append(columnseparator).append(fielddescriptor).append("pwd").append(fieldseparator).append(clientenv).
-		append(streamend);
+		debug.append(columnseparator).append(fielddescriptor).append("pwd").append(fieldseparator).append(clientenv).append(streamend);
 
 		debug.append("\nRootPrintWrite:printDebug - End Root response");
 		return testMakeTagsVisible(debug.toString());
@@ -259,6 +248,7 @@ public class RootPrintWriter extends UIPrintWriter {
 
 		return line1;
 	}
+
 	// testcode end
 
 	@Override
@@ -267,12 +257,12 @@ public class RootPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	void setField(String key, String value) {
+	void setField(final String key, final String value) {
 		// ignored
 	}
 
 	@Override
-	void setReturnCode(int exitCode, String errorMessage) {
+	void setReturnCode(final int exitCode, final String errorMessage) {
 		// ignored
 	}
 

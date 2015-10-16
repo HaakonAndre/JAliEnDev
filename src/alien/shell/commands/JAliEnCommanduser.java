@@ -12,26 +12,20 @@ import alien.user.UserFactory;
  * @since Oct 30, 2011
  */
 public class JAliEnCommanduser extends JAliEnBaseCommand {
-	
+
 	private final String user;
-	
+
 	@Override
 	public void run() {
-		
-		if(AuthorizationFactory.getDefaultUser().canBecome(user))
-		{
+
+		if (AuthorizationFactory.getDefaultUser().canBecome(user)) {
 			commander.user = UserFactory.getByUsername(user);
 			commander.role = AliEnPrincipal.userRole();
-		}
+		} else if (out.isRootPrinter())
+			out.setField("message", "Permission denied.");
 		else
-		{
-			if(out.isRootPrinter())
-				out.setField("message","Permission denied.");
-			else
-				out.printErrln("Permission denied.");
-		}
-	
-		
+			out.printErrln("Permission denied.");
+
 	}
 
 	/**
@@ -40,34 +34,35 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		out.printOutln();
-		out.printOutln(helpUsage("user","<user name>"));
+		out.printOutln(helpUsage("user", "<user name>"));
 		out.printOutln();
 		out.printOutln(helpParameter("Change effective role as specified."));
 	}
 
 	/**
-	 * role can not run without arguments 
+	 * role can not run without arguments
+	 * 
 	 * @return <code>false</code>
 	 */
 	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
 	}
-	
+
 	/**
 	 * Constructor needed for the command factory in commander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
-	public JAliEnCommanduser(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out,alArguments);
+	public JAliEnCommanduser(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, out, alArguments);
 
-		if(alArguments.size()==1)
+		if (alArguments.size() == 1)
 			user = alArguments.get(0);
 		else
 			throw new JAliEnCommandException();

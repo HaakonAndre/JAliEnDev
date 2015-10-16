@@ -1,41 +1,43 @@
 package alien.api.taskQueue;
 
 import alien.api.Request;
-import alien.quotas.FileQuota;
 import alien.quotas.QuotaUtilities;
-import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
+/**
+ * Set job quota for a given account
+ */
 public class SetJobsQuota extends Request {
 
 	private static final long serialVersionUID = 249641308455725934L;
-	private boolean succeeded;	
-	private String field;
-	private String value;
-	private String username;
-	
+	private boolean succeeded;
+	private final String field;
+	private final String value;
+	private final String username;
+
 	/**
-	 * @param user 
-	 * @param role 
-	 * @param queueId
+	 * @param user
+	 * @param fld
+	 * @param val
 	 */
-	public SetJobsQuota(final AliEnPrincipal user, String fld, String val) {
+	public SetJobsQuota(final AliEnPrincipal user, final String fld, final String val) {
 		this.field = fld;
 		this.value = val;
 		this.username = user.getName();
 	}
-	
+
 	@Override
 	public void run() {
-		if( !AliEnPrincipal.roleIsAdmin( getEffectiveRequester().getName() ) )
-			throw new SecurityException( "Only administrators can do it" );
-		
-		this.succeeded = QuotaUtilities.saveJobQuota( this.username, 
-														this.field,
-														this.value);		
+		if (!AliEnPrincipal.roleIsAdmin(getEffectiveRequester().getName()))
+			throw new SecurityException("Only administrators can do it");
+
+		this.succeeded = QuotaUtilities.saveJobQuota(this.username, this.field, this.value);
 	}
-	
-	public boolean getSucceeded(){
+
+	/**
+	 * @return <code>true</code> if the operation was successful
+	 */
+	public boolean getSucceeded() {
 		return this.succeeded;
 	}
 }

@@ -31,8 +31,10 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sPath));
 
-		if (lfn == null)
+		if (lfn == null){
 			out.printOutln("No such file or directory: [" + sPath + "]");
+			return;
+		}
 
 		if (out.isRootPrinter()) {
 			out.nextResult();
@@ -110,7 +112,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandtype(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandtype(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		final OptionParser parser = new OptionParser();

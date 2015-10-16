@@ -15,7 +15,6 @@ import javax.xml.stream.XMLStreamWriter;
 
 import alien.config.ConfigUtils;
 
-
 /**
  * @author costing
  * @since Mar 27 2014
@@ -25,31 +24,31 @@ public class XMLPrintWriter extends UIPrintWriter {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(XMLPrintWriter.class.getCanonicalName());
-	
+
 	private XMLStreamWriter writer;
 
 	/**
-	 * @param os OutputSteam that will contain the information in Root format
+	 * @param os
+	 *            OutputSteam that will contain the information in Root format
 	 */
 	public XMLPrintWriter(final OutputStream os) {
 		final XMLOutputFactory factory = XMLOutputFactory.newInstance();
-		
-		try{
+
+		try {
 			writer = factory.createXMLStreamWriter(new PrintWriter(os));
-		}
-		catch (final XMLStreamException xmlEx){
+		} catch (final XMLStreamException xmlEx) {
 			// ignore
 		}
-		
+
 		setReturnCode(0, null);
 	}
-	
+
 	private final Map<String, String> metaInfo = new TreeMap<>();
-	
+
 	private final List<Map<String, String>> results = new ArrayList<>();
-	
+
 	private Map<String, String> currentResult = null;
-	
+
 	@Override
 	protected void blackwhitemode() {
 		// nothing
@@ -66,12 +65,12 @@ public class XMLPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	protected void printOut(String line) {
+	protected void printOut(final String line) {
 		// nothing
 	}
 
 	@Override
-	protected void printErr(String line) {
+	protected void printErr(final String line) {
 		// nothing
 	}
 
@@ -85,47 +84,43 @@ public class XMLPrintWriter extends UIPrintWriter {
 	@Override
 	protected void flush() {
 		nextResult();
-		
+
 		metaInfo.put("count", String.valueOf(results.size()));
 
-		try{
+		try {
 			writer.writeStartElement("document");
-			
-			for (final Map.Entry<String, String> entry : metaInfo.entrySet()) {
+
+			for (final Map.Entry<String, String> entry : metaInfo.entrySet())
 				writer.writeAttribute(entry.getKey(), entry.getValue());
-			}
-			
-			for (final Map<String, String> result: results){
+
+			for (final Map<String, String> result : results) {
 				writer.writeStartElement("r");
-				
-				for (final Map.Entry<String, String> entry: result.entrySet()){
+
+				for (final Map.Entry<String, String> entry : result.entrySet()) {
 					writer.writeStartElement(entry.getKey());
-					
+
 					final String value = entry.getValue();
-					if (value.indexOf(' ')>=0 || value.indexOf('\n') >=0 || value.indexOf('\r') >=0 ){
+					if (value.indexOf(' ') >= 0 || value.indexOf('\n') >= 0 || value.indexOf('\r') >= 0)
 						writer.writeCData(value);
-					}
-					else{
+					else
 						writer.writeCharacters(value);
-					}
-					
+
 					writer.writeEndElement();
 				}
-				
+
 				writer.writeEndElement();
 			}
-			
+
 			writer.writeEndElement();
-			
+
 			writer.flush();
-		}
-		catch (final XMLStreamException xmlEx){
+		} catch (final XMLStreamException xmlEx) {
 			logger.log(Level.WARNING, "Exception writing XML to the client", xmlEx);
 		}
-		
+
 		results.clear();
 		metaInfo.clear();
-		
+
 		setReturnCode(0, null);
 	}
 
@@ -138,15 +133,15 @@ public class XMLPrintWriter extends UIPrintWriter {
 	protected void degraded() {
 		// nothing
 	}
-	
+
 	@Override
-	protected boolean isRootPrinter(){
+	protected boolean isRootPrinter() {
 		return true;
 	}
 
 	@Override
 	void nextResult() {
-		if (currentResult!=null){
+		if (currentResult != null) {
 			results.add(currentResult);
 			currentResult = null;
 		}
@@ -154,10 +149,9 @@ public class XMLPrintWriter extends UIPrintWriter {
 
 	@Override
 	void setField(final String key, final String value) {
-		if (currentResult==null){
+		if (currentResult == null)
 			currentResult = new TreeMap<>();
-		}
-		
+
 		currentResult.put(key, value);
 	}
 
@@ -168,13 +162,13 @@ public class XMLPrintWriter extends UIPrintWriter {
 	 * @param value
 	 * @return the previous meta information value for this key
 	 */
-	public String setMetaInfo(final String key, final String value){
-		if (value!=null)
+	public String setMetaInfo(final String key, final String value) {
+		if (value != null)
 			return metaInfo.put(key, value);
-		
+
 		return metaInfo.remove(key);
 	}
-	
+
 	@Override
 	void setReturnCode(final int exitCode, final String errorMessage) {
 		setMetaInfo("exitcode", String.valueOf(exitCode));

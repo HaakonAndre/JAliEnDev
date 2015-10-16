@@ -13,22 +13,18 @@ import alien.user.AuthorizationChecker;
  */
 public class JAliEnCommandkill extends JAliEnBaseCommand {
 
-
 	private final List<Integer> queueIds;
 
 	@Override
 	public void run() {
-		
+
 		final List<Job> jobs = commander.q_api.getJobs(queueIds);
-		
-		for(Job job : jobs){
-			if(AuthorizationChecker.canModifyJob(job, commander.user, commander.role))
+
+		for (final Job job : jobs)
+			if (AuthorizationChecker.canModifyJob(job, commander.user, commander.role))
 				commander.q_api.killJob(job.queueId);
-		}
-		if(out.isRootPrinter())
-		{
-			out.setReturnCode(1,"not implemented yet ");
-		}
+		if (out.isRootPrinter())
+			out.setReturnCode(1, "not implemented yet ");
 		else
 			out.printErrln("--- not implemented yet ---");
 
@@ -39,7 +35,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		
+
 		out.printOutln();
 		out.printOutln(helpUsage("kill", "<jobId> [<jobId>[,<jobId>]]"));
 		out.printOutln();
@@ -63,23 +59,19 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
-	public JAliEnCommandkill(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandkill(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		
+
 		queueIds = new ArrayList<>(alArguments.size());
-		
-		for(String id: alArguments){
-			try{
+
+		for (final String id : alArguments)
+			try {
 				queueIds.add(Integer.valueOf(id));
-			}
-			catch(NumberFormatException e ){
+			} catch (final NumberFormatException e) {
 				throw new JAliEnCommandException();
 			}
-		}
 	}
-	
-	
+
 }

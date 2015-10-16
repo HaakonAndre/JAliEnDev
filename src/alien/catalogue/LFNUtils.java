@@ -133,8 +133,8 @@ public class LFNUtils {
 	/**
 	 * Get the LFN entry for this catalog filename, optionally returning an empty object if the entry doesn't exist (yet)
 	 * 
+	 * @param ignoreFolders
 	 * @param fileName
-	 * @param evenIfDoesntExist
 	 * @return entry
 	 */
 	public static List<LFN> getLFNs(final boolean ignoreFolders, final Collection<String> fileName) {
@@ -804,9 +804,8 @@ public class LFNUtils {
 
 		final List<LFN> foundLFNs = LFNUtils.getLFNs(true, lfns);
 
-		if (foundLFNs != null) {
+		if (foundLFNs != null)
 			toAdd.addAll(foundLFNs);
-		}
 
 		if (toAdd.size() == 0) {
 			logger.log(Level.FINER, "Quick exit");
@@ -906,6 +905,14 @@ public class LFNUtils {
 		return true;
 	}
 
+	/**
+	 * Change owner
+	 * 
+	 * @param path
+	 * @param new_owner
+	 * @param new_group
+	 * @return <code>true</code> if successful
+	 */
 	public static boolean chownLFN(final String path, final String new_owner, final String new_group) {
 		final LFN lfn = getLFN(path);
 		if (lfn == null)
@@ -918,6 +925,13 @@ public class LFNUtils {
 		return lfn.update();
 	}
 
+	/**
+	 * @param path
+	 * @param dstSE
+	 * @param is_guid
+	 * @param attempts
+	 * @return transfer ID
+	 */
 	public static int mirrorLFN(final String path, final String dstSE, final boolean is_guid, final Integer attempts) {
 		LFN lfn;
 		if (is_guid) {
@@ -929,7 +943,7 @@ public class LFNUtils {
 		if (lfn == null)
 			return -256;
 
-		if (dstSE == "" || dstSE == null)
+		if (dstSE == null || dstSE.length() == 0)
 			return -255;
 
 		final SE se = SEUtils.getSE(dstSE);
@@ -947,6 +961,15 @@ public class LFNUtils {
 		return (TransferUtils.mirror(lfn, se));
 	}
 
+	/**
+	 * @param path
+	 * @param ses
+	 * @param exses
+	 * @param qos
+	 * @param is_guid
+	 * @param attempts
+	 * @return transfer IDs to each SE
+	 */
 	public static HashMap<String, Integer> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean is_guid,
 			final Integer attempts) {
 		LFN lfn;

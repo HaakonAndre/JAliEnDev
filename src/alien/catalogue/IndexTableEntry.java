@@ -103,6 +103,13 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		return getLFN(sPath, false);
 	}
 
+	/**
+	 * Get the LFN from this table
+	 * 
+	 * @param ignoreFolders
+	 * @param path
+	 * @return the LFNs for the given paths, bulk extraction where possible
+	 */
 	public List<LFN> getLFNs(final boolean ignoreFolders, final Collection<String> path) {
 		if (path == null || path.size() == 0)
 			return null;

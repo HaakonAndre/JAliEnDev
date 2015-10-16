@@ -258,6 +258,11 @@ public class JDL implements Serializable {
 		return null;
 	}
 
+	/**
+	 * @param key
+	 * @param defaultValue
+	 * @return the boolean for this key
+	 */
 	public boolean getb(final String key, final boolean defaultValue) {
 		return Utils.stringToBool(gets(key), defaultValue);
 	}
@@ -815,7 +820,7 @@ public class JDL implements Serializable {
 
 		for (final String file : inputFiles)
 			if (file.endsWith("sim.C")) {
-				int simFactor = getSimFactor(LFNUtils.getLFN(file));
+				final int simFactor = getSimFactor(LFNUtils.getLFN(file));
 
 				if (simFactor > 0)
 					return simFactor;

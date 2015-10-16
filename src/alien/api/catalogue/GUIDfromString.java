@@ -31,6 +31,7 @@ public class GUIDfromString extends Request {
 	 * @param role
 	 * @param sguid
 	 * @param evenIfDoesNotExist
+	 * @param resolveLFNs
 	 */
 	public GUIDfromString(final AliEnPrincipal user, final String role, final String sguid, final boolean evenIfDoesNotExist, final boolean resolveLFNs) {
 		setRequestUser(user);
@@ -44,14 +45,13 @@ public class GUIDfromString extends Request {
 	public void run() {
 		this.guid = GUIDUtils.getGUID(UUID.fromString(sguid), evenIfDoesNotExist);
 
-		if (resolveLFNs) {
+		if (resolveLFNs)
 			if (this.guid.getLFNs() == null) {
 				final LFN l = LFNUtils.getLFN(this.guid);
 
 				if (l != null)
 					this.guid.addKnownLFN(l);
 			}
-		}
 	}
 
 	/**

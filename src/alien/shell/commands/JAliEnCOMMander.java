@@ -52,23 +52,12 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] {"ls", 
-			"get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find",
-			"listFilesFromCollection", "scrlog", "submit", "motd","access",
-			"commit", "packages", "pwd", "ps", "rmdir", "rm", "mv", 
-			"masterjob", "user", "touch", "role", "type", "kill", "lfn2guid", 
-			"guid2lfn", "w", "uptime", "addFileToCollection", "addMirror", 
-			"addTag", "addTagValue", "chgroup", "chown", "createCollection", 
-			"deleteMirror", "df", "du", "fquota", "jobinfo","jquota", "killTransfer", 
-			"listSEDistance", "listTransfer", "md5sum", "mirror", "queue", 
-			"queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", 
-			"resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", 
-			"top", "groups"};
-	
-	private static final String[] jAliEnAdminCommandList = new String[]{
-			"addTrigger", "addHost", "queue", "register", "addSE", "addUser",
-			"calculateFileQuota", "calculateJobQuota", "groupmembers"
-	};
+	private static final String[] jAliEnCommandList = new String[] { "ls", "get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find", "listFilesFromCollection", "scrlog", "submit", "motd",
+			"access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "role", "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime", "addFileToCollection",
+			"addMirror", "addTag", "addTagValue", "chgroup", "chown", "createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo", "jquota", "killTransfer", "listSEDistance", "listTransfer",
+			"md5sum", "mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups" };
+
+	private static final String[] jAliEnAdminCommandList = new String[] { "addTrigger", "addHost", "queue", "register", "addSE", "addUser", "calculateFileQuota", "calculateJobQuota", "groupmembers" };
 
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
@@ -76,9 +65,9 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] commandList;
 
 	static {
-		List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));		
-		final List<String> comms = comm_set;		
-		comms.addAll( Arrays.asList(jAliEnAdminCommandList) );
+		final List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));
+		final List<String> comms = comm_set;
+		comms.addAll(Arrays.asList(jAliEnAdminCommandList));
 		comms.add("shutdown");
 
 		comms.addAll(FileEditor.getAvailableEditorCommands());
@@ -89,9 +78,8 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * Commands to let UI talk internally with us here
 	 */
-	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", 
-				"listFilesFromCollection", "cdir", "commandlist", "gfilecomplete", "cdirtiled", 
-				"blackwhite", "color", "setshell", "type" };
+	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection", "cdir", "commandlist", "gfilecomplete", "cdirtiled", "blackwhite", "color",
+			"setshell", "type" };
 
 	private UIPrintWriter out = null;
 
@@ -117,17 +105,17 @@ public class JAliEnCOMMander extends Thread {
 	private boolean degraded = false;
 
 	private static JAliEnCOMMander lastInstance = null;
-	
+
 	/**
 	 * @return a commander instance
 	 */
-	public static synchronized JAliEnCOMMander getInstance(){
+	public static synchronized JAliEnCOMMander getInstance() {
 		if (lastInstance == null)
 			lastInstance = new JAliEnCOMMander();
-		
+
 		return lastInstance;
 	}
-	
+
 	/**
 	 */
 	public JAliEnCOMMander() {
@@ -156,7 +144,7 @@ public class JAliEnCOMMander extends Thread {
 		c_api = new CatalogueApiUtils(this);
 
 		q_api = new TaskQueueApiUtils(this);
-		
+
 		this.user = user;
 		this.role = role;
 		this.site = site;
@@ -167,17 +155,16 @@ public class JAliEnCOMMander extends Thread {
 		this.curDir = curDir;
 		degraded = false;
 
-		setName("Commander");		
+		setName("Commander");
 	}
 
 	private boolean initializeJCentralConnection() {
 		triedConnects++;
-		
+
 		try {
 			curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
 			degraded = false;
-		}
-		catch (final Exception e) {
+		} catch (final Exception e) {
 			degraded = true;
 		}
 		return !degraded;
@@ -225,15 +212,14 @@ public class JAliEnCOMMander extends Thread {
 
 			commands.append(commandList[i]);
 		}
-		
-		if( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole() ) ){
+
+		if (AliEnPrincipal.roleIsAdmin(AliEnPrincipal.userRole()))
 			for (int i = 0; i < commandList.length; i++) {
 				if (i > 0)
 					commands.append(' ');
 
 				commands.append(commandList[i]);
 			}
-		}
 
 		return commands.toString();
 	}
@@ -317,18 +303,14 @@ public class JAliEnCOMMander extends Thread {
 	public AtomicInteger status = new AtomicInteger(0);
 
 	private void waitForCommand() {
-		while (out == null) {
-			// logger.log(Level.INFO, "Waiting for command");			
-
+		while (out == null)
 			synchronized (this) {
 				try {
 					wait(1000);
-				}
-				catch (final InterruptedException e) {
+				} catch (final InterruptedException e) {
 					// ignore
 				}
 			}
-		}
 	}
 
 	@Override
@@ -343,21 +325,17 @@ public class JAliEnCOMMander extends Thread {
 					if (triedConnects < maxTryConnect) {
 						if (!initializeJCentralConnection())
 							flush();
-						if (triedConnects < maxTryConnect) {
+						if (triedConnects < maxTryConnect)
 							try {
 								Thread.sleep(triedConnects * maxTryConnect * 500);
-							}
-							catch (final InterruptedException e) {
+							} catch (final InterruptedException e) {
 								e.printStackTrace();
 							}
-						}
-					}
-					else {
+					} else {
 						System.out.println("Giving up...");
 						break;
 					}
-				}
-				else {
+				} else {
 					waitForCommand();
 
 					try {
@@ -366,8 +344,7 @@ public class JAliEnCOMMander extends Thread {
 						setName("Commander: Executing: " + Arrays.toString(arg));
 
 						execute();
-					}
-					finally {
+					} finally {
 						out = null;
 
 						setName("Commander: Idle");
@@ -379,8 +356,7 @@ public class JAliEnCOMMander extends Thread {
 					}
 				}
 			}
-		}
-		catch (final Exception e) {
+		} catch (final Exception e) {
 			logger.log(Level.WARNING, "Got exception", e);
 		}
 	}
@@ -412,93 +388,75 @@ public class JAliEnCOMMander extends Thread {
 		}
 
 		final String comm = arg[0];
-		logger.log(Level.INFO, "Received command = "+comm);
+		logger.log(Level.INFO, "Received command = " + comm);
 
 		final ArrayList<String> args = new ArrayList<>(Arrays.asList(arg));
-		
-		System.out.println("Received JSh call "+args);
 
-		if (logger.isLoggable(Level.INFO)) {
-			logger.log(Level.INFO, "Received JSh call "+args);
-		}
-		
-		
+		System.out.println("Received JSh call " + args);
+
+		if (logger.isLoggable(Level.INFO))
+			logger.log(Level.INFO, "Received JSh call " + args);
+
 		args.remove(arg[0]);
 
 		for (int i = 1; i < arg.length; i++)
 			if (arg[i].startsWith("-pwd=")) {
 				curDir = c_api.getLFN(arg[i].substring(arg[i].indexOf('=') + 1));
 				args.remove(arg[i]);
-			}
-			else
-				if (arg[i].startsWith("-debug=")) {
-					try {
-						debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
-					}
-					catch (final NumberFormatException n) {
-						// ignore
-					}
-					args.remove(arg[i]);
+			} else if (arg[i].startsWith("-debug=")) {
+				try {
+					debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
+				} catch (final NumberFormatException n) {
+					// ignore
 				}
-				else
-					if ("-silent".equals(arg[i])) {
-						silent = true;
-						args.remove(arg[i]);
-					}
-					else
-						if ("-h".equals(arg[i]) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
-							help = true;
-							args.remove(arg[i]);
-						}
+				args.remove(arg[i]);
+			} else if ("-silent".equals(arg[i])) {
+				silent = true;
+				args.remove(arg[i]);
+			} else if ("-h".equals(arg[i]) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
+				help = true;
+				args.remove(arg[i]);
+			}
 
 		if (!Arrays.asList(jAliEnCommandList).contains(comm) &&
-				//( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) && 
-							!Arrays.asList(jAliEnAdminCommandList).contains(comm) /*) */ ) {
+		// ( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) &&
+				!Arrays.asList(jAliEnAdminCommandList).contains(comm) /* ) */) {
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
 				if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
-				else
-					if ("whoami".equals(comm))
-						out.printOutln(getUsername());
-					else
-						if ("roleami".equals(comm))
-							out.printOutln(getRole());
-						else
-							if ("blackwhite".equals(comm))
-								out.blackwhitemode();
-							else
-								if ("color".equals(comm))
-									out.colourmode();
+				else if ("whoami".equals(comm))
+					out.printOutln(getUsername());
+				else if ("roleami".equals(comm))
+					out.printOutln(getRole());
+				else if ("blackwhite".equals(comm))
+					out.blackwhitemode();
+				else if ("color".equals(comm))
+					out.colourmode();
 				// else if ("shutdown".equals(comm))
 				// jbox.shutdown();
 				// } else if (!"setshell".equals(comm)) {
-			}
-			else
+			} else
 				out.setReturnCode(-1, "Command [" + comm + "] not found!");
 			// }
-		}
-		else {
+		} else {
 
 			final Object[] param = { this, out, args };
 
 			try {
 				jcommand = getCommand(comm, param);
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 
-				if (e.getCause() instanceof OptionException ||
-						e.getCause() instanceof NumberFormatException ) {
-					out.setReturnCode(-2, "Illegal command options\n");					
-				}
+				if (e.getCause() instanceof OptionException || e.getCause() instanceof NumberFormatException)
+					out.setReturnCode(-2, "Illegal command options\n");
 				else {
-					e.printStackTrace();					
-					out.setReturnCode(-3, "Error executing command ["+comm+"] : \n"+Format.stackTraceToString(e));
+					e.printStackTrace();
+					out.setReturnCode(-3, "Error executing command [" + comm + "] : \n" + Format.stackTraceToString(e));
 				}
-				
+
 				out.flush();
 				return;
 			}
-			
+
 			if (silent)
 				jcommand.silent();
 
@@ -506,32 +464,27 @@ public class JAliEnCOMMander extends Thread {
 
 				if (args.size() != 0 && args.get(args.size() - 1).startsWith("&")) {
 					int logno = 0;
-					if (args.get(args.size() - 1).length() > 1) {
+					if (args.get(args.size() - 1).length() > 1)
 						try {
 							logno = Integer.parseInt(args.get(args.size() - 1).substring(1));
-						}
-						catch (final NumberFormatException n) {
+						} catch (final NumberFormatException n) {
 							// ignore
 						}
-					}
 					JAliEnCommandscrlog.addScreenLogLine(Integer.valueOf(logno), "we will screen to" + logno);
 					args.remove(args.size() - 1);
 				}
-				if( jcommand == null ){
-					out.setReturnCode(-6, "No such command or not implemented yet. ");					
-				}
-				else if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
+				if (jcommand == null)
+					out.setReturnCode(-6, "No such command or not implemented yet. ");
+				else if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments()))
 					jcommand.run();
-				}
 				else {
 					out.setReturnCode(-4, "Command requires an argument");
 					jcommand.printHelp();
 				}
-			}
-			catch (final Exception e) {
+			} catch (final Exception e) {
 				e.printStackTrace();
 
-				out.setReturnCode(-5, "Error executing the command ["+comm+"]: \n"+Format.stackTraceToString(e));
+				out.setReturnCode(-5, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
 			}
 		}
 		flush();
@@ -544,8 +497,7 @@ public class JAliEnCOMMander extends Thread {
 		if (degraded) {
 			out.degraded();
 			out.setenv(UsersHelper.getHomeDir(user.getName()), getUsername(), getRole());
-		}
-		else
+		} else
 			out.setenv(getCurrentDirName(), getUsername(), getRole());
 		out.flush();
 	}
@@ -574,17 +526,16 @@ public class JAliEnCOMMander extends Thread {
 	 * @throws Exception
 	 */
 	protected static JAliEnBaseCommand getCommand(final String classSuffix, final Object[] objectParm) throws Exception {
-		logger.log(Level.INFO, "Entering command with "+classSuffix+" and options "+objectParm);
-		try{
+		logger.log(Level.INFO, "Entering command with " + classSuffix + " and options " + Arrays.toString(objectParm));
+		try {
 			@SuppressWarnings("rawtypes")
 			final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
-		
+
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] 
-				{ JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class });
+			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class });
 			return (JAliEnBaseCommand) co.newInstance(objectParm);
-		}catch( ClassNotFoundException e ){
-			//System.out.println("No such command or not implemented");
+		} catch (final ClassNotFoundException e) {
+			// System.out.println("No such command or not implemented");
 			return null;
 		}
 	}

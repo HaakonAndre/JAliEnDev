@@ -65,35 +65,28 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 		final List<PFN> pfns;
 
-		if (rawenvelope.contains("signature=")) 
-		{
+		if (rawenvelope.contains("signature="))
 			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope));
-		}
-		else 
-		{
+		else
 			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5, lfn, perm, expire, pfn, se, guid);
-		}
 
-		if (out.isRootPrinter())
-		{
-			if(pfns != null && pfns.size() > 0)
+		if (out.isRootPrinter()) {
+			if (pfns != null && pfns.size() > 0)
 				out.setField("lfn", "1");
-			else 
+			else
 				out.setField("lfn", "0");
-		}
-		else 
-		{
+		} else {
 			String ret = "";
-			if(pfns != null && pfns.size() > 0)
-				ret+=lfn+padSpace(1)+"1";
-			else 
-				ret+=lfn+padSpace(1)+"0";
+			if (pfns != null && pfns.size() > 0)
+				ret += lfn + padSpace(1) + "1";
+			else
+				ret += lfn + padSpace(1) + "0";
 			logger.info("Commit line : " + ret);
 
 			if (!isSilent())
 				out.printOutln(ret);
 		}
-		
+
 	}
 
 	/**
@@ -121,26 +114,22 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * 
 	 * @return serialized return
 	 */
-	public String deserializeForRoot(final boolean status) 
-	{
+	public String deserializeForRoot(final boolean status) {
 		final StringBuilder str = new StringBuilder();
-	
+
 		if (status)
 			str.append("<").append("lfn").append(">").append(lfn).append("0").append("<").append("lfn").append(">");
-		else 
+		else
 			str.append("<").append("lfn").append(">").append(lfn).append("1").append("<").append("lfn").append(">");
 		return str.toString();
 	}
-		/**
-			return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + 
-					lfn + RootPrintWriter.fieldseparator + "0";
-
-		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + 
-				lfn + RootPrintWriter.fieldseparator + "1";
-	}
 
 	/**
-	 * Constructor needed for the command factory in commander
+	 * return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "0";
+	 * 
+	 * return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1"; }
+	 * 
+	 * /** Constructor needed for the command factory in commander
 	 * 
 	 * @param commander
 	 * @param out
@@ -155,14 +144,12 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 		if (arg.hasNext()) {
 			rawenvelope = arg.next();
-			if (arg.hasNext()) {
+			if (arg.hasNext())
 				try {
 					size = Integer.parseInt(arg.next());
-				}
-				catch (final NumberFormatException e) {
+				} catch (final NumberFormatException e) {
 					// ignore
 				}
-			}
 			if (arg.hasNext())
 				lfn = arg.next();
 			if (arg.hasNext())
@@ -178,8 +165,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 			if (arg.hasNext())
 				md5 = arg.next();
 
-		}
-		else
+		} else
 			out.printErrln("No envelope to register passed.");
 
 	}

@@ -11,7 +11,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Scanner;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -379,6 +378,7 @@ public class JBoxServer extends Thread {
 				out = new XMLPrintWriter(os);
 		}
 
+		@SuppressWarnings("deprecation")
 		@Override
 		public void run() {
 			connectedClients.incrementAndGet();
@@ -386,7 +386,6 @@ public class JBoxServer extends Thread {
 			notifyActivity();
 
 			BufferedReader br = null;
-			Scanner scanner = null;
 
 			try {
 				//				String sCmdDebug = "";
@@ -409,8 +408,8 @@ public class JBoxServer extends Thread {
 					}
 					else if(sLine.endsWith("</document>")){
 						sCommand += sLine;
-						ArrayList<String> cmdOptions = new ArrayList<String>();
-						ArrayList<String> fullCmd = new ArrayList<String>();
+						ArrayList<String> cmdOptions = new ArrayList<>();
+						ArrayList<String> fullCmd = new ArrayList<>();
 						try{
 
 							// <document>
@@ -628,9 +627,6 @@ public class JBoxServer extends Thread {
 				logger.log(Level.INFO, "Error running the commander.", e);
 			} finally {
 				waitCommandFinish();
-
-				if (scanner != null)
-					scanner.close();
 
 				if (br != null)
 					try {

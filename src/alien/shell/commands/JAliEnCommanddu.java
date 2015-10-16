@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 import joptsimple.OptionException;
 
+/**
+ * 
+ */
 public class JAliEnCommanddu extends JAliEnBaseCommand {
 
 	@Override
@@ -15,7 +18,7 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		out.printOutln("Gives the disk space usge of a directory");
-		out.printOutln("Usage: du [-hf] <dir>");		        
+		out.printOutln("Usage: du [-hf] <dir>");
 		out.printOutln();
 		out.printOutln("Options:");
 		out.printOutln("	-h: Give the output in human readable format");
@@ -28,16 +31,13 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 		return true;
 	}
 
-	public JAliEnCommanddu(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	/**
+	 * @param commander
+	 * @param out
+	 * @param alArguments
+	 * @throws OptionException
+	 */
+	public JAliEnCommanddu(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		
-		try{
-			
-		}
-		catch(OptionException e) {
-			printHelp();
-			throw e;
-		}
 	}
 }

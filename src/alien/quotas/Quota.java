@@ -4,14 +4,13 @@
 package alien.quotas;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 import lazyj.DBFunctions;
 import lia.util.StringFactory;
 import alien.config.ConfigUtils;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * @author costing
@@ -221,7 +220,11 @@ public class Quota implements Serializable, Comparable<Quota> {
 		return false;
 	}
 
-	public static boolean canUpdateField(String fieldname) {
+	/**
+	 * @param fieldname
+	 * @return <code>true</code> if the field is update-able
+	 */
+	public static boolean canUpdateField(final String fieldname) {
 		return allowed_to_update.contains(fieldname);
 	}
 }

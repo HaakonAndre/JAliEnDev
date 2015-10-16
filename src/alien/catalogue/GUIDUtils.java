@@ -350,10 +350,10 @@ public final class GUIDUtils {
 	 * Extract the MAC address from the given UUID. There is no guarantee on the value of this field, it's just the bytes that would have the MAC address in a v1 UUID.
 	 * 
 	 * @param uuid
-	 * @return
+	 * @return MAC address of the machine that generated the UUID (not guaranteed information)
 	 */
 	public static String getMacAddr(final UUID uuid) {
-		long mac = uuid.getLeastSignificantBits() & 0xFFFFFFFFFFFFL;
+		final long mac = uuid.getLeastSignificantBits() & 0xFFFFFFFFFFFFL;
 
 		return String.format("%02x:%02x:%02x:%02x:%02x:%02x", Long.valueOf(mac >> 40 & 0xFF), Long.valueOf(mac >> 32 & 0xFF), Long.valueOf(mac >> 24 & 0xFF), Long.valueOf(mac >> 16 & 0xFF),
 				Long.valueOf(mac >> 8 & 0xFF), Long.valueOf(mac & 0xFF));
@@ -417,13 +417,12 @@ public final class GUIDUtils {
 			if (sMac != null) {
 				final StringTokenizer st = new StringTokenizer(sMac.trim(), ":");
 
-				for (int i = 0; i < 6; i++) {
+				for (int i = 0; i < 6; i++)
 					try {
 						MACAddress[i] = (byte) Integer.parseInt(st.nextToken(), 16);
 					} catch (final NumberFormatException nfe) {
 						// ignore
 					}
-				}
 			}
 		}
 
@@ -552,9 +551,9 @@ public final class GUIDUtils {
 				return false;
 			}
 
-			File temp = IOUtils.get(g);
+			final File temp = IOUtils.get(g);
 
-			if (temp != null) {
+			if (temp != null)
 				try {
 					g.md5 = IOUtils.getMD5(temp);
 
@@ -574,7 +573,6 @@ public final class GUIDUtils {
 				} finally {
 					temp.delete();
 				}
-			}
 			logger.log(Level.WARNING, "Could not download " + g.guid);
 
 			return false;

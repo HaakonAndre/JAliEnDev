@@ -35,6 +35,9 @@ public class FileEditor {
 
 	private final String editor;
 
+	/**
+	 * @return list of available editor commands
+	 */
 	public static final List<String> getAvailableEditorCommands() {
 		final List<String> ret = new ArrayList<>();
 
@@ -56,19 +59,13 @@ public class FileEditor {
 
 	/**
 	 * @param filename
+	 * @return exit code from the executed application
 	 */
-	public void edit(final String filename) {
+	public int edit(final String filename) {
 		final SystemProcess edit = new SystemProcess(editor + " " + filename);
 
-		edit.execute();
-
-		try {
-			edit.wait();
-		} catch (final InterruptedException e) {
-			e.printStackTrace();
-		} catch (final IllegalMonitorStateException e) {
-			// ignore
-		}
+		// it only returns when the process ends
+		return edit.execute();
 	}
 
 	private static String which(final String command) {

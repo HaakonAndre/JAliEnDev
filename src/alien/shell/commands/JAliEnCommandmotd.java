@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 /**
  * @author ron
- *
+ * 
  */
 public class JAliEnCommandmotd extends JAliEnBaseCommand {
 
@@ -13,21 +13,16 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 	 * @param out
 	 * @param alArguments
 	 */
-	public JAliEnCommandmotd(JAliEnCOMMander commander, UIPrintWriter out,
-			ArrayList<String> alArguments) {
+	public JAliEnCommandmotd(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 	}
 
 	@Override
-	public void run(){
+	public void run() {
 
-		String sMotdMessage = 
-				"\n###############################################################\n" +
-				"# AliEn Service Message: All is well in the Grid world. Enjoy!#\n"+
-				"##############################################################\n"+
-				"* Operational problems: Latchezar.Betev@cern.ch\n"+
-				"* Bug reports: http://savannah.cern.ch/bugs/?group=alien&func=additem\n"+
-				"###############################################################\n";
+		final String sMotdMessage = "\n###############################################################\n" + "# AliEn Service Message: All is well in the Grid world. Enjoy!#\n"
+				+ "##############################################################\n" + "* Operational problems: Latchezar.Betev@cern.ch\n"
+				+ "* Bug reports: http://savannah.cern.ch/bugs/?group=alien&func=additem\n" + "###############################################################\n";
 
 		out.printOutln(sMotdMessage);
 
@@ -35,7 +30,7 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		//ignore
+		// ignore
 
 	}
 

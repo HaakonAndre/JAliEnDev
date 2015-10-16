@@ -158,7 +158,7 @@ public class SetupTestVO {
 
 		jsh.start();
 
-		jsh.wait();
+		jsh.join();
 
 		if (jsh.getStatus() != 0)
 			throw new TestException("The Thread of jSh had an exception.");

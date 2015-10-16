@@ -5,44 +5,34 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
+import joptsimple.OptionException;
 import alien.catalogue.FileSystemUtils;
 import alien.se.SE;
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 
+/**
+ * @author costing
+ * 
+ */
 public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	private boolean useWriteMetrics;
 	private String site;
 	private String lfn_name;
-	
+
 	@Override
 	public void run() {
-		if( !this.useWriteMetrics && 
-				(this.lfn_name==null || this.lfn_name.length()==0) ){
+		if (!this.useWriteMetrics && (this.lfn_name == null || this.lfn_name.length() == 0)) {
 			out.printErrln("No LFN specified for read metrics");
 			return;
 		}
-		
-		if( lfn_name!=null && lfn_name.length()!=0 ){
-			this.lfn_name = FileSystemUtils.getAbsolutePath(
-					commander.user.getName(),
-					commander.getCurrentDir().getCanonicalName(),
-					this.lfn_name );
-		}
-		List<HashMap<SE,Double>> results = commander.c_api.listSEDistance(site, 
-											this.useWriteMetrics, 
-											this.lfn_name);
-		for( HashMap<SE,Double> smap: results ){
-				Set<SE> selist = smap.keySet();
-				for( SE s: selist )
-					out.printOutln( String.format("%1$"+ 40 + "s", s.seName)
-							+ "\t(read: " + 
-							String.format( "%.9f", s.demoteRead ) + 
-							",  write: " + 
-							String.format( "%.9f", s.demoteWrite ) +
-							",  distance: " + String.format( "%.9f", smap.get(s) ) +  
-							")");
+
+		if (lfn_name != null && lfn_name.length() != 0)
+			this.lfn_name = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), this.lfn_name);
+		final List<HashMap<SE, Double>> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name);
+		for (final HashMap<SE, Double> smap : results) {
+			final Set<SE> selist = smap.keySet();
+			for (final SE s : selist)
+				out.printOutln(String.format("%1$" + 40 + "s", s.seName) + "\t(read: " + String.format("%.9f", Double.valueOf(s.demoteRead)) + ",  write: "
+						+ String.format("%.9f", Double.valueOf(s.demoteWrite)) + ",  distance: " + String.format("%.9f", smap.get(s)) + ")");
 		}
 		out.printOutln();
 	}
@@ -62,32 +52,39 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	}
 
 	@Override
-	public boolean canRunWithoutArguments() {		
+	public boolean canRunWithoutArguments() {
 		return true;
 	}
 
-	public JAliEnCommandlistSEDistance(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	/**
+	 * @param commander
+	 * @param out
+	 * @param alArguments
+	 * @throws OptionException
+	 */
+	public JAliEnCommandlistSEDistance(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
-		
+
 		this.useWriteMetrics = true;
-		try{
-			int argLen = alArguments.size();
-			if( argLen==0 )
+		try {
+			final int argLen = alArguments.size();
+			if (argLen == 0)
 				return;
 			String arg = alArguments.get(0);
-			if( !arg.equals("read") && !arg.equals("write") )
+			if (!arg.equals("read") && !arg.equals("write"))
 				this.site = arg;
 			else
 				this.useWriteMetrics = (arg.equals("write"));
 			arg = alArguments.get(1);
-			if( !arg.equals("read") && !arg.equals("write") )
+			if (!arg.equals("read") && !arg.equals("write"))
 				this.lfn_name = arg;
 			else
 				this.useWriteMetrics = (arg.equals("write"));
 			arg = alArguments.get(2);
-			if( !this.useWriteMetrics && this.lfn_name==null )
+			if (!this.useWriteMetrics && this.lfn_name == null)
 				this.lfn_name = arg;
-		}catch( IndexOutOfBoundsException e ){ ; }				
+		} catch (final IndexOutOfBoundsException e) {
+			// ignore
+		}
 	}
 }

@@ -1,13 +1,10 @@
 package alien.shell.commands;
 
-
 /**
  * @author ron
  * @since July 15, 2011
  */
 public abstract class UIPrintWriter {
-
-	
 
 	/**
 	 * Print set output black'n white
@@ -21,30 +18,32 @@ public abstract class UIPrintWriter {
 
 	/**
 	 * Print get the color output mode
+	 * 
 	 * @return state of the color mode
 	 */
 	abstract protected boolean colour();
-	
+
 	/**
 	 * Add this line as it is
 	 * 
 	 * @param line
 	 */
 	abstract protected void printOut(String line);
-	
+
 	/**
-	 * Print empty stdout line 
+	 * Print empty stdout line
 	 */
-	final protected void printOutln(){
+	final protected void printOutln() {
 		printOut("\n");
 	}
-	
+
 	/**
-	 * Print stdout after appending line feed 
-	 * @param line 
+	 * Print stdout after appending line feed
+	 * 
+	 * @param line
 	 */
-	final protected void printOutln(String line){
-		printOut(line+"\n");
+	final protected void printOutln(final String line) {
+		printOut(line + "\n");
 	}
 
 	/**
@@ -53,68 +52,69 @@ public abstract class UIPrintWriter {
 	 * @param line
 	 */
 	abstract protected void printErr(String line);
-	
+
 	/**
 	 * Print empty stderr line
 	 */
-	final protected void printErrln(){
+	final protected void printErrln() {
 		printErr("\n");
 	}
-	
+
 	/**
-	 * Print stderr after appending line feed 
-	 * @param line 
+	 * Print stderr after appending line feed
+	 * 
+	 * @param line
 	 */
-	final protected void printErrln(String line){
-		printErr(line+"\n");
+	final protected void printErrln(final String line) {
+		printErr(line + "\n");
 	}
-	
+
 	/**
 	 * Set the env for the client (needed for gapi)
-	 * @param cDir 
-	 * @param user 
-	 * @param cRole 
+	 * 
+	 * @param cDir
+	 * @param user
+	 * @param cRole
 	 */
 	abstract protected void setenv(String cDir, String user, String cRole);
-	
-	
+
 	/**
 	 * Flush a set of lines as one transaction
 	 */
 	abstract protected void flush();
-	
-	
+
 	/**
 	 * 
 	 */
 	abstract protected void pending();
-	
+
 	/**
 	 * 
 	 */
 	abstract protected void degraded();
-	
-	
+
 	/**
-	 * identify the RootPrinter from above 
+	 * identify the RootPrinter from above
+	 * 
 	 * @return if it is a RootPrinter
 	 */
 	@SuppressWarnings("static-method")
-	protected boolean isRootPrinter(){
+	protected boolean isRootPrinter() {
 		return false;
 	}
-	
+
 	/**
 	 * dummy for RootPrinter
-	 * @param args 
+	 * 
+	 * @param args
 	 */
-	protected void setReturnArgs(String args) {
-		//void
+	protected void setReturnArgs(final String args) {
+		// void
 	}
-	
+
 	abstract void nextResult();
-	
+
 	abstract void setField(final String key, final String value);
-	
+
 	abstract void setReturnCode(final int exitCode, final String errorMessage);
 }

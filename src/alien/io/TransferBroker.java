@@ -166,8 +166,6 @@ public class TransferBroker {
 		if (dbCached == null) {
 			dbCached = ConfigUtils.getDB("transfers");
 
-			dbCached.setReadOnly(true);
-
 			if (dbCached == null) {
 				logger.log(Level.WARNING, "Could not connect to the transfers database");
 
@@ -175,6 +173,8 @@ public class TransferBroker {
 
 				return null;
 			}
+
+			dbCached.setReadOnly(true);
 		}
 
 		cleanup();

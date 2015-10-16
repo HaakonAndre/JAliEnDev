@@ -1,7 +1,6 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 /**
  * @author ron
@@ -13,18 +12,14 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	 * execute the pwd
 	 */
 	@Override
-	public void run() 
-	{
-		
-		if (out.isRootPrinter()) 
-		{
+	public void run() {
+
+		if (out.isRootPrinter()) {
 			out.nextResult();
 			out.setField("pwd", commander.curDir.getCanonicalName());
-		}
-		else 
-		{
+		} else {
 			String ret = "";
-			ret+=commander.curDir.getCanonicalName();
+			ret += commander.curDir.getCanonicalName();
 			logger.info("PWD line : " + ret);
 			if (!isSilent())
 				out.printOutln(ret);
@@ -48,7 +43,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	public boolean canRunWithoutArguments() {
 		return true;
 	}
-	
+
 	/**
 	 * serialize return values for gapi/root
 	 * 
@@ -56,10 +51,9 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	 */
 	@Override
 	public String deserializeForRoot() {
-		return RootPrintWriter.columnseparator 
-				+ RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator + "1";
+		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator + "1";
 	}
-		
+
 	/**
 	 * Constructor needed for the command factory in commander
 	 * 
@@ -69,8 +63,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandpwd(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+	public JAliEnCommandpwd(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 
 	}

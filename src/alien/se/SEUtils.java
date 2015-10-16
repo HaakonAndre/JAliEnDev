@@ -793,6 +793,13 @@ public final class SEUtils {
 		purgeSE(purge, ses.toArray(new SE[0]));
 	}
 
+	/**
+	 * Remove all catalogue entries corresponding to these SEs. To be called when a storage is decomissioned for example.
+	 * 
+	 * @param purge
+	 * @param ses
+	 * @throws IOException
+	 */
 	public static void purgeSE(final boolean purge, final SE... ses) throws IOException {
 		final StringBuilder sbSE = new StringBuilder();
 
@@ -879,7 +886,7 @@ public final class SEUtils {
 
 		System.err.println("Renumbering " + source.seNumber + " to " + dest.seNumber);
 
-		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
+		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes())
 			try (DBFunctions db = CatalogueUtils.getHost(idx.hostIndex).getDB()) {
 				if (db == null) {
 					System.err.println("Cannot get DB for " + idx);
@@ -911,7 +918,6 @@ public final class SEUtils {
 					System.err.println(q2 + " : " + ok + " : " + db.getUpdateCount());
 				}
 			}
-		}
 	}
 
 	/**

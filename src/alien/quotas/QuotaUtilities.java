@@ -13,9 +13,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import lazyj.Format;
 
 import lazyj.DBFunctions;
+import lazyj.Format;
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 import alien.taskQueue.TaskQueueUtils;
@@ -162,13 +162,13 @@ public final class QuotaUtilities {
 	 * @param username
 	 * @param fld
 	 * @param val
-	 * @return
+	 * @return <code>true</code> if the field was updated
 	 */
-	public static boolean saveJobQuota(String username, String fld, String val) {
+	public static boolean saveJobQuota(final String username, final String fld, final String val) {
 		if (!Quota.canUpdateField(fld))
 			return false;
 		try (DBFunctions db = ConfigUtils.getDB("processes")) {
-			String query = "UPDATE PRIORITY p LEFT JOIN QUEUE_USER qu " + "ON qu.user='" + Format.escSQL(username) + "' SET p." + Format.escSQL(fld) + "=" + Format.escSQL(val)
+			final String query = "UPDATE PRIORITY p LEFT JOIN QUEUE_USER qu " + "ON qu.user='" + Format.escSQL(username) + "' SET p." + Format.escSQL(fld) + "=" + Format.escSQL(val)
 					+ " WHERE qu.userid=p.userid";
 			db.query(query);
 			jobQuotasLastUpdated = 0;
@@ -202,14 +202,14 @@ public final class QuotaUtilities {
 	 * @param username
 	 * @param fld
 	 * @param val
-	 * @return
+	 * @return <code>true</code> if the field was updated
 	 */
-	public static boolean saveFileQuota(String username, String fld, String val) {
+	public static boolean saveFileQuota(final String username, final String fld, final String val) {
 		if (!FileQuota.canUpdateField(fld))
 			return false;
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-			String query = "UPDATE FQUOTAS SET " + Format.escSQL(fld) + "='" + Format.escSQL(val) + "'" + " WHERE user='" + Format.escSQL(username) + "'";
+			final String query = "UPDATE FQUOTAS SET " + Format.escSQL(fld) + "='" + Format.escSQL(val) + "'" + " WHERE user='" + Format.escSQL(username) + "'";
 			db.query(query);
 			fileQuotasLastUpdated = 0;
 			updateFileQuotasCache();

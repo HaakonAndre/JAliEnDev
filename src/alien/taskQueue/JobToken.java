@@ -42,9 +42,7 @@ public class JobToken implements Comparable<JobToken> {
 	public String token;
 
 	/**
-	 * Set to <code>true</code> if the entry existed in the database, or to
-	 * <code>false</code> if not. Setting the other fields will only be
-	 * permitted if this field is false.
+	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not. Setting the other fields will only be permitted if this field is false.
 	 */
 	private boolean exists;
 
@@ -95,18 +93,18 @@ public class JobToken implements Comparable<JobToken> {
 	 * Create a 32 chars long token (job token)
 	 * 
 	 * @param db
+	 * @return <code>true</code> if the token was successfully generated
 	 */
 	public boolean spawnToken(final DBFunctions db) {
 		this.token = generateToken();
 
 		update(db);
-		
-		return token.length()==32;
+
+		return token.length() == 32;
 	}
 
 	/**
-	 * The special value for when the job is in INSERTING and then a real value
-	 * will be assigned by AliEn
+	 * The special value for when the job is in INSERTING and then a real value will be assigned by AliEn
 	 * 
 	 * @param db
 	 */
@@ -213,8 +211,7 @@ public class JobToken implements Comparable<JobToken> {
 	}
 
 	/**
-	 * @return <code>true</code> if the guid was taken from the database,
-	 *         <code>false</code> if it is a newly generated one
+	 * @return <code>true</code> if the guid was taken from the database, <code>false</code> if it is a newly generated one
 	 */
 	public boolean exists() {
 		return exists;

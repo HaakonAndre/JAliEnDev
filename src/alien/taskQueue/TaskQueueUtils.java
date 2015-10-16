@@ -1931,6 +1931,15 @@ public class TaskQueueUtils {
 		return true;
 	}
 
+	/**
+	 * @param j
+	 * @param newStatus
+	 * @param arg
+	 * @param site
+	 * @param spyurl
+	 * @param node
+	 * @return <code>true</code> if the status was successfully changed
+	 */
 	public static boolean setJobStatus(final Job j, final JobStatus newStatus, final String arg, final String site, final String spyurl, final String node) {
 
 		final String time = String.valueOf(System.currentTimeMillis() / 1000);
@@ -2056,6 +2065,12 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * @param jobId
+	 * @param username
+	 * @param forceUpdate
+	 * @return the new token
+	 */
 	public static JobToken insertJobToken(final int jobId, final String username, final boolean forceUpdate) {
 		try (DBFunctions db = getQueueDB()) {
 			JobToken jb = getJobToken(jobId);
@@ -2164,9 +2179,9 @@ public class TaskQueueUtils {
 
 			logger.log(Level.INFO, "We would be asked to kill jobAgent: [" + jobagentId + "].");
 
-			db.query("update JOBAGENT set counter=counter-1 where entryId=?", false, jobagentId);
+			db.query("update JOBAGENT set counter=counter-1 where entryId=?", false, Integer.valueOf(jobagentId));
 
-			int updated = db.getUpdateCount();
+			final int updated = db.getUpdateCount();
 
 			db.query("delete from JOBAGENT where counter<1");
 
@@ -2307,20 +2322,27 @@ public class TaskQueueUtils {
 		return ret;
 	}
 
-	public static void setSiteQueueStatus(String ce, String status, Object... extraparams) {
+	/**
+	 * @param ce
+	 * @param status
+	 * @param extraparams
+	 */
+	public static void setSiteQueueStatus(final String ce, final String status, final Object... extraparams) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
 
 			db.query("update SITEQUEUES set statustime=now(), status=? where site=?", false, status, ce);
 
-			if (db.getUpdateCount() == 0) {
+			if (db.getUpdateCount() == 0)
 				insertSiteQueue(ce);
-			}
 		}
 	}
 
-	public static void insertSiteQueue(String ce) {
+	/**
+	 * @param ce
+	 */
+	public static void insertSiteQueue(final String ce) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
@@ -2334,17 +2356,20 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * 
+	 */
 	public static void resyncSiteQueueTable() {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
 
-			HashMap<String, Integer> status = getJobStatusFromDB();
+			final HashMap<String, Integer> status = getJobStatusFromDB();
 
 			String sql = " update SITEQUEUES left join (select siteid, sum(cost) REALCOST, ";
 			String set = " Group by statusId, siteid) dd group by siteid) bb using (siteid) set cost=REALCOST, ";
 
-			for (String st : status.keySet()) {
+			for (final String st : status.keySet()) {
 				sql += " max(if(statusId=" + status.get(st) + ", count, 0)) REAL" + st + ",";
 				set += " " + st + "=REAL" + st + ",";
 			}
@@ -2360,23 +2385,31 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * @return dictionary of job statuses
+	 */
 	public static HashMap<String, Integer> getJobStatusFromDB() {
+		// FIXME cache the result
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
 
 			db.query("select status, statusId from QUEUE_STATUS", false);
-			HashMap<String, Integer> status = new HashMap<String, Integer>();
+			final HashMap<String, Integer> status = new HashMap<>();
 
-			while (db.moveNext()) {
-				status.put(db.gets(1), db.geti(2));
-			}
+			while (db.moveNext())
+				status.put(db.gets(1), Integer.valueOf(db.geti(2)));
 
 			return status;
 		}
 	}
 
-	public static boolean updateHostStatus(String host, String status) {
+	/**
+	 * @param host
+	 * @param status
+	 * @return <code>true</code> if the status was updated
+	 */
+	public static boolean updateHostStatus(final String host, final String status) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
@@ -2395,13 +2428,19 @@ public class TaskQueueUtils {
 		}
 	}
 
-	public static int getOrInsertFromLookupTable(String key, String value) {
+	/**
+	 * @param key
+	 * @param value
+	 * @return value for this key
+	 */
+	public static int getOrInsertFromLookupTable(final String key, final String value) {
+		// FIXME: these values can also be cached
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
 
-			String table = "QUEUE_" + key.toUpperCase();
-			String id = key + "id";
+			final String table = "QUEUE_" + key.toUpperCase();
+			final String id = key + "id";
 
 			db.query("select " + id + " from " + table + " where " + key + "=?", false, value);
 
@@ -2409,28 +2448,34 @@ public class TaskQueueUtils {
 			if (db.moveNext()) {
 				logger.log(Level.INFO, "The host exists: " + db.geti(1));
 				return db.geti(1);
-			} else { // host doesn't exist, we insert it
-				logger.log(Level.INFO, "The host doesn't exist. Inserting...");
-
-				if (db.query("insert into " + table + " (" + key + ") values (?)", true, value))
-					return db.getLastGeneratedKey();
 			}
+			// host doesn't exist, we insert it
+			logger.log(Level.INFO, "The host doesn't exist. Inserting...");
+
+			db.setLastGeneratedKey(true);
+
+			if (db.query("insert into " + table + " (" + key + ") values (?)", true, value))
+				return db.getLastGeneratedKey().intValue();
 
 			// something went wrong ? :-(
 			return 0;
 		}
 	}
 
-	public static int getSiteId(String ceName) {
+	/**
+	 * @param ceName
+	 * @return site ID
+	 */
+	public static int getSiteId(final String ceName) {
+		// FIXME cache the values
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
 
 			db.query("select siteid from SITEQUEUES where site=?", false, ceName);
 
-			if (db.moveNext()) {
+			if (db.moveNext())
 				return db.geti(1);
-			}
 		}
 		return 0;
 	}

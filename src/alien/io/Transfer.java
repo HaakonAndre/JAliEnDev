@@ -115,6 +115,9 @@ public class Transfer implements Serializable, Runnable {
 	private final Collection<PFN> successfulTransfers = new ArrayList<>();
 	private final Collection<PFN> failedTransfers = new ArrayList<>();
 
+	/**
+	 * Which of the replica to remove after a successful transfer
+	 */
 	public final String onCompleteRemoveReplica;
 
 	/**
@@ -124,6 +127,8 @@ public class Transfer implements Serializable, Runnable {
 	 *            source PFNs (one or more, sorted by preference)
 	 * @param targets
 	 *            target PFN, can be <code>null</code> if the file is to be copied to the local disk in a temporary file
+	 * @param onCompleteRemoveReplica
+	 *            replica to remove after a successful transfer
 	 */
 	public Transfer(final int transferId, final Collection<PFN> sources, final Collection<PFN> targets, final String onCompleteRemoveReplica) {
 		this.sources = sources;

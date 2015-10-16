@@ -312,10 +312,17 @@ public class PFN implements Serializable, Comparable<PFN> {
 		return null;
 	}
 
+	/**
+	 * @param se
+	 *            new SE
+	 */
 	public void setOverrideSE(final SE se) {
 		this.overrideSE = se;
 	}
 
+	/**
+	 * @return the SE
+	 */
 	public SE getSE() {
 		if (this.overrideSE != null)
 			return this.overrideSE;

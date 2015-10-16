@@ -12,10 +12,10 @@ import alien.catalogue.FileSystemUtils;
 /**
  * @author ron
  * @since June 6, 2011 <br>
- * usage: mkdir   [-options] directory [directory[,directory]] <br>
- * options: <br>
- *                   -p                     :  create parents as needed <br>
- *                   -silent                :  execute command silently <br>
+ *        usage: mkdir [-options] directory [directory[,directory]] <br>
+ *        options: <br>
+ *        -p : create parents as needed <br>
+ *        -silent : execute command silently <br>
  */
 public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
@@ -23,75 +23,41 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 * marker for -p argument : create parents as needed
 	 */
 	private boolean bP = false;
-	
+
 	/**
 	 * the list of directories that will be created
 	 * */
 	private List<String> alPaths = null;
-	
-	private boolean success = true;
-	
-	@Override
-	public void run() 
-	{
-		
-		for (String path: alPaths)
-		{
 
-			if(out.isRootPrinter())
-			{
+	private boolean success = true;
+
+	@Override
+	public void run() {
+
+		for (final String path : alPaths)
+			if (out.isRootPrinter()) {
 				out.nextResult();
-				if(bP)
-				{
-					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
-							commander.user.getName(),
-							commander.getCurrentDir().getCanonicalName(),path),true)==null)
-					{
-						if(!isSilent())
-						out.setReturnCode(1,"Could not create directory (or non-existing parents): " + path);
-					}
-				}
-				else 
-				{
-					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
-							commander.user.getName(),
-							commander.getCurrentDir().getCanonicalName(),path))==null)
-					{
-						if(!isSilent())
-						out.setReturnCode(2,"Could not create directory: " + path);
-					}
-				}
-			}
-			else
-			{
-			if(bP)
-			{
-					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
-						commander.user.getName(),
-						commander.getCurrentDir().getCanonicalName(),path),true)==null)
-				{
-					if(!isSilent())
+				if (bP) {
+					if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path), true) == null)
+						if (!isSilent())
+							out.setReturnCode(1, "Could not create directory (or non-existing parents): " + path);
+				} else if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path)) == null)
+					if (!isSilent())
+						out.setReturnCode(2, "Could not create directory: " + path);
+			} else if (bP) {
+				if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path), true) == null) {
+					if (!isSilent())
 						out.printErrln("Could not create directory (or non-existing parents): " + path);
-					logger.log(Level.WARNING,"Could not create directory (or non-existing parents): " + path);
+					logger.log(Level.WARNING, "Could not create directory (or non-existing parents): " + path);
 					success = false;
 				}
+			} else if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path)) == null) {
+				if (!isSilent())
+					out.printErrln("Could not create directory: " + path);
+				logger.log(Level.WARNING, "Could not create directory: " + path);
+				success = false;
 			}
-			else 
-			{
-					if(commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(
-						commander.user.getName(),
-						commander.getCurrentDir().getCanonicalName(),path))==null)
-				{
-					if(!isSilent())
-						out.printErrln("Could not create directory: " + path);
-					logger.log(Level.WARNING,"Could not create directory: " + path);
-					success = false;
-				}
-			}
-			}
-		}		
 	}
-	
 
 	/**
 	 * serialize return values for gapi/root
@@ -101,16 +67,15 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	@Override
 	public String deserializeForRoot() {
 
-		String ret = RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__"
-				 + RootPrintWriter.fieldseparator;
-		if(success)
+		String ret = RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator;
+		if (success)
 			ret += "1";
 		else
 			ret += "0";
-		
+
 		return ret;
 	}
-	
+
 	/**
 	 * printout the help info
 	 */
@@ -118,10 +83,10 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	public void printHelp() {
 
 		out.printOutln();
-		out.printOutln(helpUsage("mkdir","[-options] <directory> [<directory>[,<directory>]]"));
+		out.printOutln(helpUsage("mkdir", "[-options] <directory> [<directory>[,<directory>]]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-p","create parents as needed"));
-		out.printOutln(helpOption("-silent","execute command silently"));
+		out.printOutln(helpOption("-p", "create parents as needed"));
+		out.printOutln(helpOption("-silent", "execute command silently"));
 		out.printOutln();
 	}
 
@@ -137,15 +102,15 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
-	public JAliEnCommandmkdir(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandmkdir(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 
 		try {
@@ -154,15 +119,14 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 			parser.accepts("p");
 			parser.accepts("s");
 
-			final OptionSet options = parser.parse(alArguments
-					.toArray(new String[] {}));
+			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			alPaths = optionToString(options.nonOptionArguments());
 
-			if(options.has("s"))
+			if (options.has("s"))
 				silent();
 			bP = options.has("p");
-		} catch (OptionException e) {
+		} catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

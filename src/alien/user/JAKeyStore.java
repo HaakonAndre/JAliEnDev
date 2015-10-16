@@ -125,12 +125,8 @@ public class JAKeyStore {
 				cf = CertificateFactory.getInstance("X.509");
 
 				for (final File trust : trustsDir.listFiles())
-					if (trust.getName().endsWith("der") || trust.getName().endsWith(".0")) {
-						FileInputStream fis = null;
-
-						try {
-							fis = new FileInputStream(trust);
-
+					if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
+						try (FileInputStream fis = new FileInputStream(trust)) {
 							final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
 							if (logger.isLoggable(Level.INFO))
 								logger.log(Level.INFO, "Trusting now: " + c.getSubjectDN());
@@ -145,15 +141,7 @@ public class JAKeyStore {
 
 						} catch (final Exception e) {
 							e.printStackTrace();
-						} finally {
-							if (fis != null)
-								try {
-									fis.close();
-								} catch (final IOException ioe) {
-									// ignore
-								}
 						}
-					}
 			} else {
 				if (logger.isLoggable(Level.SEVERE))
 					logger.log(Level.SEVERE, "Found no trusts to load in: " + trustsDir);
@@ -434,7 +422,8 @@ public class JAKeyStore {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final PasswordFinder pFinder) throws Exception {
-		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder!=null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation)), new KeyStore.PasswordProtection(pass));
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation)),
+				new KeyStore.PasswordProtection(pass));
 	}
 
 	@SuppressWarnings("unused")
@@ -470,11 +459,12 @@ public class JAKeyStore {
 
 	/**
 	 * @param keyFileLocation
-	 * @param pFinder
+	 * @param password
 	 * @return priv key
-	 * @throws OperatorCreationException 
-	 * @throws PKCSException 
-	 * @throws Exception
+	 * @throws IOException
+	 * @throws PEMException
+	 * @throws OperatorCreationException
+	 * @throws PKCSException
 	 */
 	public static PrivateKey loadPrivX509(final String keyFileLocation, final char[] password) throws IOException, PEMException, OperatorCreationException, PKCSException {
 
@@ -505,12 +495,12 @@ public class JAKeyStore {
 					obj = ((PEMKeyPair) obj).getPrivateKeyInfo();
 				// and let if fall through the next case
 
-				if (obj instanceof PKCS8EncryptedPrivateKeyInfo){
-					InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(password);
-					
+				if (obj instanceof PKCS8EncryptedPrivateKeyInfo) {
+					final InputDecryptorProvider pkcs8Prov = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(password);
+
 					obj = ((PKCS8EncryptedPrivateKeyInfo) obj).decryptPrivateKeyInfo(pkcs8Prov);
 				}
-				
+
 				if (obj instanceof PrivateKeyInfo) {
 					final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
 
@@ -543,7 +533,6 @@ public class JAKeyStore {
 	/**
 	 * @param certFileLocation
 	 * @return Cert chain
-	 * @throws IOException
 	 */
 	public static X509Certificate[] loadPubX509(final String certFileLocation) {
 

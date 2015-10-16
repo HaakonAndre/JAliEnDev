@@ -4,6 +4,9 @@ import java.util.ArrayList;
 
 import joptsimple.OptionException;
 
+/**
+ * 
+ */
 public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 
 	@Override
@@ -19,7 +22,7 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 		out.printOutln("        Usage:");
 		out.printOutln("                resubmit <jobid1> [<jobid2>....]");
 		out.printOutln();
-		
+
 	}
 
 	@Override
@@ -27,8 +30,13 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 		return false;
 	}
 
-	public JAliEnCommandresubmit(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
+	/**
+	 * @param commander
+	 * @param out
+	 * @param alArguments
+	 * @throws OptionException
+	 */
+	public JAliEnCommandresubmit(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 	}
 }

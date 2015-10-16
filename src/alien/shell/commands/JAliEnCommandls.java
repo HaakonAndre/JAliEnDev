@@ -1,7 +1,6 @@
 package alien.shell.commands;
 
 import java.text.DateFormat;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -72,7 +71,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		if (iDirs == 0)
 			alPaths.add(commander.getCurrentDir().getCanonicalName());
 
-		StringBuilder pathsNotFound = new StringBuilder();
+		final StringBuilder pathsNotFound = new StringBuilder();
 
 		for (String sPath : alPaths) {
 
@@ -84,15 +83,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 			final List<LFN> subdirectory = commander.c_api.getLFNs(sPath);
 
-			if (subdirectory != null) 
-			{
+			if (subdirectory != null) {
 				if (directory == null)
 					directory = new ArrayList<>(subdirectory);
 				else
 					directory.addAll(subdirectory);
 
-				for (final LFN localLFN : subdirectory) 
-				{
+				for (final LFN localLFN : subdirectory) {
 
 					logger.log(Level.FINE, localLFN.toString());
 
@@ -102,64 +99,37 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					if (bB && localLFN.isDirectory())
 						continue;
 
-					if (out.isRootPrinter()) 
-					{
+					if (out.isRootPrinter()) {
 						out.nextResult();
 
-						if (bB) 
-						{
+						if (bB) {
 							out.setField("guid", localLFN.guid.toString().toUpperCase());
 							out.setField("lfn", bC ? localLFN.getCanonicalName() : localLFN.getFileName());
-						} 
-						else 
-						{
-							if (bL)
-							{
-								out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
-								out.setField("owner", localLFN.owner);
-								out.setField("group", localLFN.gowner);
-								out.setField("size", String.valueOf(localLFN.size));
-								out.setField("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
-								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
-							} 
-							else 
-							{
-								out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
-							}
-						}
-					} 
-					else 
-					{
+						} else if (bL) {
+							out.setField("perm", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
+							out.setField("owner", localLFN.owner);
+							out.setField("group", localLFN.gowner);
+							out.setField("size", String.valueOf(localLFN.size));
+							out.setField("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
+							out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
+						} else
+							out.setField("lfn", (bC ? localLFN.getCanonicalName() : localLFN.getFileName()) + (bF && localLFN.isDirectory() ? "/" : ""));
+					} else {
 						String ret = "";
-						if (bB) 
-						{
+						if (bB)
 							ret += localLFN.guid.toString().toUpperCase() + padSpace(3) + localLFN.getName();
-						} 
-						else 
-						{
-							if (bC)
-								ret += localLFN.getCanonicalName();
-							else 
-							{
-								if (bL)
-									ret += FileSystemUtils
-									.getFormatedTypeAndPerm(localLFN)
-									+ padSpace(3)
-									+ padLeft(localLFN.owner, 8)
-									+ padSpace(1)
-									+ padLeft(localLFN.gowner, 8)
-									+ padSpace(1)
-									+ padLeft(String.valueOf(localLFN.size), 12)
-									+ padSpace(1)
-									+ format(localLFN.ctime)
-									+ padSpace(4) + localLFN.getFileName();
-	
-								else
-									ret += localLFN.getFileName();
+						else if (bC)
+							ret += localLFN.getCanonicalName();
+						else {
+							if (bL)
+								ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
+										+ padLeft(String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getFileName();
 
-								if (bF && (localLFN.type == 'd'))
-									ret += "/";
-							}
+							else
+								ret += localLFN.getFileName();
+
+							if (bF && (localLFN.type == 'd'))
+								ret += "/";
 						}
 
 						logger.info("LS line : " + ret);
@@ -168,9 +138,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 							out.printOutln(ret);
 					}
 				}
-			} 
-			else 
-			{
+			} else {
 				if (pathsNotFound.length() > 0)
 					pathsNotFound.append(", ");
 
@@ -182,9 +150,8 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 		}
 
-		if (pathsNotFound.length() > 0) {
+		if (pathsNotFound.length() > 0)
 			out.setReturnCode(1, "No such file or directory: " + pathsNotFound);
-		}
 
 		// if (out.isRootPrinter())
 		// out.setReturnArgs(deserializeForRoot());
@@ -241,7 +208,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandls(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandls(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
 		super(commander, out, alArguments);
 		try {
 
@@ -264,7 +231,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 			bA = options.has("a");
 			bF = options.has("F");
 			bC = options.has("c");
-		} catch (OptionException e) {
+		} catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}
@@ -272,7 +239,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
+		final StringBuilder sb = new StringBuilder();
 
 		sb.append("\n { JAliEnCommandls received\n");
 		sb.append("Arguments: ");

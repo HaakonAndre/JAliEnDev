@@ -63,9 +63,7 @@ public class ShellEditor {
 
 	/**
 	 * @param localFile
-	 * @return <code>true</code> if the file was successfully edited (command
-	 *         was called, but we are not sure if the file was actually changed
-	 *         or not)
+	 * @return <code>true</code> if the file was successfully edited (command was called, but we are not sure if the file was actually changed or not)
 	 */
 	protected static boolean editFile(final String localFile) {
 		getAvailableEditors();

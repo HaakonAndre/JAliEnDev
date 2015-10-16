@@ -25,10 +25,8 @@ import lazyj.Log;
  *         <li>SOAP argument - the arguments of the method called through WS.</li>
  *         </ul>
  * 
- *         The SOAP action arguments are encapsulated into an Array of objects
- *         that can he either simple strings or hashmaps <br />
- *         Arrays are not supported because perl SOAP:Lite is not able to encode
- *         them
+ *         The SOAP action arguments are encapsulated into an Array of objects that can he either simple strings or hashmaps <br />
+ *         Arrays are not supported because perl SOAP:Lite is not able to encode them
  */
 public class SoapRequestWrapper {
 
@@ -57,18 +55,14 @@ public class SoapRequestWrapper {
 	private String namespace = "";
 
 	/**
-	 * @return SOAP action arguments - contains the username that issued the
-	 *         request, the directory from where the command was issued, the
-	 *         command and its arguments
+	 * @return SOAP action arguments - contains the username that issued the request, the directory from where the command was issued, the command and its arguments
 	 */
 	public ArrayList<Object> getActionArguments() {
 		return actionArguments;
 	}
 
 	/**
-	 * SOAP action arguments - contains the username that issued the request,
-	 * the directory from where the command was issued, the command and its
-	 * arguments
+	 * SOAP action arguments - contains the username that issued the request, the directory from where the command was issued, the command and its arguments
 	 */
 	private final ArrayList<Object> actionArguments;
 
@@ -90,7 +84,7 @@ public class SoapRequestWrapper {
 		this.actionName = sAction;
 		this.namespace = sNameSpace;
 
-		final InputStream in = request.getInputStream();
+		
 
 		final MessageFactory mf = MessageFactory.newInstance();
 
@@ -105,7 +99,12 @@ public class SoapRequestWrapper {
 			mh.addHeader(s, request.getHeader(s));
 		}
 
-		final SOAPMessage sm = mf.createMessage(mh, in);
+		final SOAPMessage sm; 
+		
+		try (final InputStream in = request.getInputStream()){
+			sm = mf.createMessage(mh, in);
+		}
+		
 		final SOAPBody sb = sm.getSOAPBody();
 
 		final Iterator<?> itsp = sb.getChildElements(new QName(sNameSpace, sAction));
@@ -126,7 +125,7 @@ public class SoapRequestWrapper {
 		this.actionArguments = alRequestParam;
 
 	}
-	
+
 	private Object parseSoapElement(final SOAPElement se) {
 
 		if (se.getAttribute("xsi:type") != null && se.getAttribute("xsi:type").equals("xsd:string")) {

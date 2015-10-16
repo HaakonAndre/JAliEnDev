@@ -5,36 +5,37 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
+/**
+ * touch an LFN
+ */
 public class TouchLFNfromString extends Request {
 
 	private static final long serialVersionUID = -2792425667105358669L;
 	private final String path;
-	private boolean createNonExistentParents = false;
-	
+
 	private boolean success;
 
 	private LFN lfn;
-	
+
 	/**
 	 * @param user
-	 * @param role 
+	 * @param role
 	 * @param path
-	 * @param createNonExistentParents 
 	 */
 	public TouchLFNfromString(final AliEnPrincipal user, final String role, final String path) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.path = path;
-		//this.createNonExistentParents = createNonExistentParents;
+		// this.createNonExistentParents = createNonExistentParents;
 	}
-	
+
 	@Override
 	public void run() {
 		// if(createNonExistentParents)
-		this.lfn = LFNUtils.getLFN(path, true); 
+		this.lfn = LFNUtils.getLFN(path, true);
 		this.success = LFNUtils.touchLFN(getEffectiveRequester(), this.lfn);
-		// else 
-		// 	this.lfn = FileSystemUtils.createCatalogueDirectory(user, path);
+		// else
+		// this.lfn = FileSystemUtils.createCatalogueDirectory(user, path);
 
 	}
 
@@ -43,6 +44,13 @@ public class TouchLFNfromString extends Request {
 	 */
 	public LFN getLFN() {
 		return this.lfn;
+	}
+
+	/**
+	 * @return <code>true</code> if the LFN was touched
+	 */
+	public boolean isSuccessful() {
+		return this.success;
 	}
 
 	@Override

@@ -11,22 +11,18 @@ import alien.user.AliEnPrincipal;
  * @since Oct 30, 2011
  */
 public class JAliEnCommandrole extends JAliEnBaseCommand {
-	
+
 	private String role;
-	
+
 	@Override
 	public void run() {
-		
-		if(AuthorizationFactory.getDefaultUser().hasRole(role)){
+
+		if (AuthorizationFactory.getDefaultUser().hasRole(role))
 			commander.role = role;
-		}
+		else if (out.isRootPrinter())
+			out.setField("Error ", "Permission denied.");
 		else
-		{
-			if(out.isRootPrinter())
-				out.setField("Error ", "Permission denied.");
-			else
-				out.printErrln("Permission denied.");
-		}
+			out.printErrln("Permission denied.");
 	}
 
 	/**
@@ -35,42 +31,42 @@ public class JAliEnCommandrole extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		out.printOutln();
-		out.printOutln(helpUsage("role","[<role name>]"));
+		out.printOutln(helpUsage("role", "[<role name>]"));
 		out.printOutln();
 		out.printOutln(helpParameter("Change effective role as specified."));
-		out.printOutln(helpParameter("Without role name, changes to default user group [" + AliEnPrincipal.userRole()
-				+ "]."));
+		out.printOutln(helpParameter("Without role name, changes to default user group [" + AliEnPrincipal.userRole() + "]."));
 	}
 
 	/**
-	 * role can run without arguments 
+	 * role can run without arguments
+	 * 
 	 * @return <code>true</code>
 	 */
 	@Override
 	public boolean canRunWithoutArguments() {
 		return true;
 	}
-	
+
 	/**
 	 * Constructor needed for the command factory in commander
-	 * @param commander 
-	 * @param out 
+	 * 
+	 * @param commander
+	 * @param out
 	 * 
 	 * @param alArguments
 	 *            the arguments of the command
-	 * @throws OptionException 
+	 * @throws OptionException
 	 */
-	public JAliEnCommandrole(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out,alArguments);
+	public JAliEnCommandrole(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, out, alArguments);
 
 		System.out.println("Role called with: [" + alArguments + "]");
-		
-		if(alArguments.size()==1)
+
+		if (alArguments.size() == 1)
 			role = alArguments.get(0);
-		else if (alArguments.size()<1)
+		else if (alArguments.size() < 1)
 			role = AliEnPrincipal.userRole();
-		else 
+		else
 			throw new JAliEnCommandException();
 	}
 }

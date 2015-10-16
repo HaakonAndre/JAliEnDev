@@ -37,16 +37,15 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 	private int referenceCount = 0;
 
-	private List<String> ses = new ArrayList<>();
-	private List<String> exses = new ArrayList<>();
+	private final List<String> ses = new ArrayList<>();
+	private final List<String> exses = new ArrayList<>();
 
-	private HashMap<String,Integer> qos = new HashMap<>();
+	private final HashMap<String, Integer> qos = new HashMap<>();
 
 	/**
 	 * name of a local File that will be written
 	 */
 	private String localFileName = null;
-
 
 	/**
 	 * return pfns;
@@ -81,17 +80,14 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 		try {
 			File f = null;
 
-			if (localFileName != null && localFileName.length() > 0) {
+			if (localFileName != null && localFileName.length() > 0)
 				f = new File(localFileName);
-			}
 
-			if (f != null && f.exists() && f.isFile() && f.canRead()) {
+			if (f != null && f.exists() && f.isFile() && f.canRead())
 				guid = GUIDUtils.createGuid(new File(localFileName), commander.user);
-			}
-			else {
+			else
 				guid = GUIDUtils.createGuid(commander.user);
-			}
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			e.printStackTrace();
 
 			// TODO
@@ -106,7 +102,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			guid.lfnCache.add(lfn);
 		}
 
-		if (accessRequest == AccessType.WRITE) 
+		if (accessRequest == AccessType.WRITE)
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 		else if (accessRequest == AccessType.READ) {
 			logger.log(Level.INFO, "Acess called for a read operation");
@@ -121,10 +117,9 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			out.printErrln("Not able to get request LFN/GUID [error in processing].");
 		}
 
-		if (out.isRootPrinter()) {
-
-			if (pfns != null && !pfns.isEmpty()) {
-				for (PFN pfn : pfns) {
+		if (out.isRootPrinter())
+			if (pfns != null && !pfns.isEmpty())
+				for (final PFN pfn : pfns) {
 					out.nextResult();
 
 					String envelope = pfn.ticket.envelope.getSignedEnvelope();
@@ -136,20 +131,19 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					final StringTokenizer st = new StringTokenizer(envelope, "&");
 
 					while (st.hasMoreTokens()) {
-						String t = st.nextToken();
-						String key = t.substring(0, t.indexOf('='));
-						String val = t.substring(t.indexOf('=') + 1);
+						final String t = st.nextToken();
+						final String key = t.substring(0, t.indexOf('='));
+						final String val = t.substring(t.indexOf('=') + 1);
 
 						if (("turl").equals(key)) {
 							out.setField("url", val);
 							final StringTokenizer tpfn = new StringTokenizer(val, "////");
 							tpfn.nextToken();
 							tpfn.nextToken();
-							StringBuilder ttpfn = new StringBuilder();
+							final StringBuilder ttpfn = new StringBuilder();
 
-							while (tpfn.hasMoreTokens()) {
+							while (tpfn.hasMoreTokens())
 								ttpfn.append('/').append(tpfn.nextToken());
-							}
 							out.setField("pfn", ttpfn.toString());
 						} else
 							out.setField(key, val);
@@ -160,8 +154,6 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 						out.setField("nSEs", " " + pfns.size());
 					out.setField("user", commander.user.getName());
 				}
-			}
-		}
 	}
 
 	/**
@@ -188,7 +180,6 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * @return serialized return
 	 */
 
-
 	/**
 	 * Constructor needed for the command factory in commander
 	 * 
@@ -198,70 +189,63 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandaccess(JAliEnCOMMander commander, UIPrintWriter out,
-			final ArrayList<String> alArguments) {
+	public JAliEnCommandaccess(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 
-		logger.log(Level.INFO, "Access arguments are "+alArguments);
-		java.util.ListIterator<String> arg = alArguments.listIterator();
+		logger.log(Level.INFO, "Access arguments are " + alArguments);
+		final java.util.ListIterator<String> arg = alArguments.listIterator();
 
 		if (arg.hasNext()) {
-			String access = arg.next();
-			logger.log(Level.INFO,"Access = "+access);
+			final String access = arg.next();
+			logger.log(Level.INFO, "Access = " + access);
 			if (access.startsWith("write")) {
 				logger.log(Level.INFO, "We got write accesss");
 				accessRequest = AccessType.WRITE;
 			} else if (access.equals("read")) {
 				logger.log(Level.INFO, "We got read accesss");
 				accessRequest = AccessType.READ;
-			}
-			else{
+			} else
 				logger.log(Level.INFO, "We got unknown accesss");
-			}
 
-			if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext()) ) {
+			if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext())) {
 				lfnName = arg.next();
 
-				if(accessRequest.equals(AccessType.WRITE))
+				if (accessRequest.equals(AccessType.WRITE))
 					if (arg.hasNext())
 						localFileName = arg.next();
 					else
 						out.printErrln("Missing local file name for size and checksum consideration [error in request].");
 
-
 				if (arg.hasNext()) {
 					final StringTokenizer st = new StringTokenizer(arg.next(), ",");
 					while (st.hasMoreElements()) {
-						String spec = st.nextToken();
+						final String spec = st.nextToken();
 						if (spec.contains("::")) {
-							if (spec.indexOf("::") != spec.lastIndexOf("::")) { // any SE spec
+							if (spec.indexOf("::") != spec.lastIndexOf("::"))
 								if (spec.startsWith("!")) // an exSE spec
 									exses.add(spec.toUpperCase());
 								else {// an SE spec
 									ses.add(spec.toUpperCase());
 									referenceCount++;
 								}
-							}
-						} else if (spec.contains(":")) {// a qosTag:count spec
+						} else if (spec.contains(":"))
 							try {
 
-								int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
 								if (c > 0) {
 									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
 									referenceCount = referenceCount + c;
 								} else
 									throw new JAliEnCommandException();
 
-							} catch (Exception e) {
+							} catch (final Exception e) {
 								throw new JAliEnCommandException();
 							}
-						} else if (!spec.equals(""))
+						else if (!spec.equals(""))
 							throw new JAliEnCommandException();
 					}
 
-
 				}
-
 
 			} else
 				out.printErrln("Illegal Request type specified [error in request].");
