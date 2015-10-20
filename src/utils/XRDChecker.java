@@ -189,7 +189,7 @@ public class XRDChecker {
 				zipfile.getInputStream(ze);
 				ze.getCrc();
 				ze.getCompressedSize();
-				ze.getName();
+				//ze.getName();
 				ze = zis.getNextEntry();
 			}
 			return null;

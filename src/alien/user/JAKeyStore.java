@@ -119,12 +119,14 @@ public class JAKeyStore {
 			final File trustsDir = new File(ConfigUtils.getConfig().gets("trusted.certificates.location",
 					System.getProperty("user.home") + System.getProperty("file.separator") + ".j" + System.getProperty("file.separator") + "trusts"));
 
-			if (trustsDir.exists() && trustsDir.isDirectory()) {
+			final File[] dirContents;
+
+			if (trustsDir.exists() && trustsDir.isDirectory() && (dirContents = trustsDir.listFiles()) != null) {
 				CertificateFactory cf;
 
 				cf = CertificateFactory.getInstance("X.509");
 
-				for (final File trust : trustsDir.listFiles())
+				for (final File trust : dirContents)
 					if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
 						try (FileInputStream fis = new FileInputStream(trust)) {
 							final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);

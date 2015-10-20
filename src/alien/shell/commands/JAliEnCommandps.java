@@ -640,21 +640,29 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			else {
 				final char[] flags = line.toCharArray();
 				for (final char f : flags)
-					if (f == 'r') {
+					switch (f) {
+					case 'a':
 						all = true;
 						break;
-					} else if (f == 'r')
+					case 'r':
 						states.addAll(flag_r());
-					else if (f == 'q')
+						break;
+					case 'q':
 						states.addAll(flag_q());
-					else if (f == 'f')
+						break;
+					case 'f':
 						states.addAll(flag_f());
-					else if (f == 'd')
+						break;
+					case 'd':
 						states.addAll(flag_d());
-					else if (f == 't')
+						break;
+					case 't':
 						states.addAll(flag_t());
-					else if (f == 's')
+						break;
+					case 's':
 						states.addAll(flag_s());
+						break;
+					}
 			}
 		} else {
 			final StringTokenizer st = new StringTokenizer(line, ",");

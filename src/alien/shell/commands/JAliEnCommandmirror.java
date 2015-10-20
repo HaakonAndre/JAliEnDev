@@ -16,12 +16,7 @@ import alien.catalogue.GUIDUtils;
  * 
  */
 public class JAliEnCommandmirror extends JAliEnBaseCommand {
-	private boolean keepSamePath;
 	private boolean useLFNasGuid;
-	private boolean checkFileIsPresentOnDest;
-	private boolean transferWholeArchive;
-	private String collection;
-	private Integer masterTransferId;
 	private Integer attempts;
 	private String lfn;
 	private String dstSE;
@@ -53,8 +48,6 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			this.lfn = lfns.get(0);
 
 			useLFNasGuid = options.has("g");
-			checkFileIsPresentOnDest = options.has("u");
-			transferWholeArchive = options.has("r");
 
 			if (options.has("try"))
 				attempts = Integer.valueOf(options.valueOf("try").toString());

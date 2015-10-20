@@ -36,9 +36,7 @@ public class JobSigner {
 	static transient final Logger logger = ConfigUtils.getLogger(XrootDEnvelopeSigner.class.getCanonicalName());
 
 	/**
-	 * load the RSA keys for envelope signature, keys are supposed to be in pem,
-	 * and can be created with: openssl req -x509 -nodes -days 365 -newkey
-	 * rsa:4096 -keyout lpriv.pem -out lpub.pem
+	 * load the RSA keys for envelope signature, keys are supposed to be in pem, and can be created with: openssl req -x509 -nodes -days 365 -newkey rsa:4096 -keyout lpriv.pem -out lpub.pem
 	 */
 	static {
 		Security.addProvider(new BouncyCastleProvider());
@@ -74,11 +72,7 @@ public class JobSigner {
 	public static JDL signJob(final KeyStore ks, final String keyAlias, final char[] pass, final String alienUsername, final JDL ojdl) throws NoSuchAlgorithmException, InvalidKeyException,
 			SignatureException {
 
-		if (ojdl != null) {
-			System.out.println(".. with " + ojdl.toString());
-			System.out.println("Calling JDL parser...");
-			final String lala = parseJDLToSignString(ojdl);
-		} else
+		if (ojdl == null)
 			return null;
 
 		final long issued = System.currentTimeMillis() / 1000L;

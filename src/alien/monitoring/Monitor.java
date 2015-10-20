@@ -162,12 +162,15 @@ public class Monitor implements Runnable {
 	public long incrementCounter(final String counterKey, final long count) {
 		final MonitoringObject mo = monitoringObjects.get(counterKey);
 
-		final Counter c;
+		Counter c;
 
 		if (mo == null) {
 			c = new Counter(counterKey);
 
-			monitoringObjects.put(counterKey, c);
+			final MonitoringObject old = monitoringObjects.putIfAbsent(counterKey, c);
+
+			if (old != null && (old instanceof Counter))
+				c = (Counter) old;
 		} else if (mo instanceof Counter)
 			c = (Counter) mo;
 		else
@@ -177,8 +180,7 @@ public class Monitor implements Runnable {
 	}
 
 	/**
-	 * Add a measurement value. This can be the time (recommended in seconds)
-	 * that took a command to executed, a file size (in bytes) and so on.
+	 * Add a measurement value. This can be the time (recommended in seconds) that took a command to executed, a file size (in bytes) and so on.
 	 * 
 	 * @param key
 	 * @param quantity
@@ -186,12 +188,15 @@ public class Monitor implements Runnable {
 	public void addMeasurement(final String key, final double quantity) {
 		final MonitoringObject mo = monitoringObjects.get(key);
 
-		final Measurement t;
+		Measurement t;
 
 		if (mo == null) {
 			t = new Measurement(key);
 
-			monitoringObjects.put(key, t);
+			final MonitoringObject old = monitoringObjects.putIfAbsent(key, t);
+
+			if (old != null && (old instanceof Measurement))
+				t = (Measurement) old;
 		} else if (mo instanceof Measurement)
 			t = (Measurement) mo;
 		else
@@ -204,18 +209,20 @@ public class Monitor implements Runnable {
 	 * Get the CacheMonitor for this key.
 	 * 
 	 * @param key
-	 * @return the existing, or newly created, object, or <code>null</code> if a
-	 *         different type of object was already associated to this key
+	 * @return the existing, or newly created, object, or <code>null</code> if a different type of object was already associated to this key
 	 */
 	public CacheMonitor getCacheMonitor(final String key) {
 		final MonitoringObject mo = monitoringObjects.get(key);
 
-		final CacheMonitor cm;
+		CacheMonitor cm;
 
 		if (mo == null) {
 			cm = new CacheMonitor(key);
 
-			monitoringObjects.put(key, cm);
+			final MonitoringObject old = monitoringObjects.putIfAbsent(key, cm);
+
+			if (old != null && (old instanceof CacheMonitor))
+				cm = (CacheMonitor) old;
 		} else if (mo instanceof CacheMonitor)
 			cm = (CacheMonitor) mo;
 		else
@@ -378,9 +385,7 @@ public class Monitor implements Runnable {
 	}
 
 	/**
-	 * Send only one parameter. This method of sending is less efficient than
-	 * {@link #sendParameters(Vector, Vector)} and so it should only be used
-	 * when there is exactly one parameter to be sent.
+	 * Send only one parameter. This method of sending is less efficient than {@link #sendParameters(Vector, Vector)} and so it should only be used when there is exactly one parameter to be sent.
 	 * 
 	 * @param parameterName
 	 *            parameter name
