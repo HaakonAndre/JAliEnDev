@@ -14,9 +14,11 @@ import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,8 +27,6 @@ import java.util.regex.Pattern;
 
 import javax.security.cert.X509Certificate;
 
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.GetMatchJob;
@@ -49,6 +49,8 @@ import alien.taskQueue.JobSigner;
 import alien.taskQueue.JobStatus;
 import alien.taskQueue.JobSubmissionException;
 import alien.user.AliEnPrincipal;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 /**
  * @author mmmartin, ron
@@ -110,31 +112,27 @@ public class JobAgent extends Thread {
 		if (env.containsKey("partition"))
 			partition = env.get("partition");
 
-		if (env.containsKey("TTL")) {
+		if (env.containsKey("TTL"))
 			origTtl = Integer.parseInt(env.get("TTL"));
-		} else {
+		else
 			origTtl = 12 * 3600;
-		}
 
-		if (env.containsKey("cerequirements")) {
+		if (env.containsKey("cerequirements"))
 			ceRequirements = env.get("cerequirements");
-		}
 
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-		} catch (UnknownHostException e) {
+		} catch (final UnknownHostException e) {
 			System.err.println("Couldn't get hostname");
 			e.printStackTrace();
 		}
 
 		alienCm = hostName;
-		if (env.containsKey("ALIEN_CM_AS_LDAP_PROXY")) {
+		if (env.containsKey("ALIEN_CM_AS_LDAP_PROXY"))
 			alienCm = env.get("ALIEN_CM_AS_LDAP_PROXY");
-		}
 
-		if (env.containsKey("ALIEN_JOBAGENT_ID")) {
+		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
-		}
 		jobAgentId = jobAgentId + "_" + ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
 		workdir = env.get("HOME");
@@ -156,7 +154,7 @@ public class JobAgent extends Thread {
 		try {
 			System.out.println("Trying to start JBox");
 			JBoxServer.startJBoxService(0);
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
@@ -171,7 +169,7 @@ public class JobAgent extends Thread {
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
 
-				GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
+				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 				matchedJob = jobMatch.getMatchJob();
 
 				if (matchedJob != null && !matchedJob.containsKey("Error")) {
@@ -198,11 +196,11 @@ public class JobAgent extends Thread {
 
 					try {
 						sleep(10000);
-					} catch (InterruptedException e) {
+					} catch (final InterruptedException e) {
 						e.printStackTrace();
 					}
 				}
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				logger.log(Level.INFO, "Error getting a matching job: " + e);
 			}
 			count--;
@@ -224,13 +222,12 @@ public class JobAgent extends Thread {
 		installedPackages = packMan.getListInstalledPackages();
 
 		// get users from cerequirements field
-		ArrayList<String> users = new ArrayList<>();
+		final ArrayList<String> users = new ArrayList<>();
 		if (!ceRequirements.equals("")) {
-			Pattern p = Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"");
-			Matcher m = p.matcher(ceRequirements);
-			while (m.find()) {
+			final Pattern p = Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"");
+			final Matcher m = p.matcher(ceRequirements);
+			while (m.find())
 				users.add(m.group(1));
-			}
 		}
 		// setting entries for the map object
 		siteMap.put("TTL", Integer.valueOf(origTtl));
@@ -238,17 +235,15 @@ public class JobAgent extends Thread {
 		// We prepare the packages for direct matching
 		String packs = ",";
 		Collections.sort(packages);
-		for (String pack : packages) {
+		for (final String pack : packages)
 			packs += pack + ",,";
-		}
-		
+
 		packs = packs.substring(0, packs.length() - 1);
 
 		String instpacks = ",";
 		Collections.sort(installedPackages);
-		for (String pack : installedPackages) {
+		for (final String pack : installedPackages)
 			instpacks += pack + ",,";
-		}
 
 		instpacks = instpacks.substring(0, instpacks.length() - 1);
 
@@ -271,24 +266,24 @@ public class JobAgent extends Thread {
 
 	/**
 	 * updates jobagent parameters that change between job requests
-	 * 
+	 *
 	 * @return false if we can't run because of current conditions, true if positive
 	 */
 	private boolean updateDynamicParameters() {
 		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
 
 		// free disk recalculation
-		long space = new File(workdir).getFreeSpace() / 1024;
+		final long space = new File(workdir).getFreeSpace() / 1024;
 
 		// ttl recalculation
-		long jobAgentCurrentTime = new java.util.Date().getTime();
-		int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
+		final long jobAgentCurrentTime = new java.util.Date().getTime();
+		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
 		int timeleft = origTtl - time_subs;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
 		// we check if the proxy timeleft is smaller than the ttl itself
-		int proxy = getRemainingProxyTime();
+		final int proxy = getRemainingProxyTime();
 		logger.log(Level.INFO, "Proxy timeleft is " + proxy);
 		if (proxy > 0 && proxy < timeleft)
 			timeleft = proxy;
@@ -366,42 +361,78 @@ public class JobAgent extends Thread {
 	}
 
 	private boolean getInputFiles() {
+		final Set<String> filesToDownload = new HashSet<>();
 
-		boolean gotAllInputFiles = true;
-		if (jdl.getInputFiles() != null && jdl.getInputFiles().size() > 0)
-			for (final String slfn : jdl.getInputFiles()) {
-				File localFile;
-				try {
-					localFile = new File(tempDir.getCanonicalFile() + "/" + slfn.substring(slfn.lastIndexOf('/') + 1));
+		List<String> list = jdl.getInputFiles(false);
 
-					System.out.println("Getting input file into local file: " + tempDir.getCanonicalFile() + "/" + slfn.substring(slfn.lastIndexOf('/') + 1));
+		if (list != null)
+			filesToDownload.addAll(list);
 
-					System.out.println("Getting input file: " + slfn);
-					final LFN lfn = c_api.getLFN(slfn);
-					System.out.println("Getting input file lfn: " + lfn);
-					final List<PFN> pfns = c_api.getPFNsToRead(lfn, null, null);
-					System.out.println("Getting input file pfns: " + pfns);
+		list = jdl.getInputData(false);
 
-					for (final PFN pfn : pfns) {
+		if (list != null)
+			filesToDownload.addAll(list);
 
-						final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-						for (final Protocol protocol : protocols) {
+		String s = jdl.getExecutable();
 
-							localFile = protocol.get(pfn, localFile);
-							break;
+		if (s != null)
+			filesToDownload.add(s);
 
-						}
-						System.out.println("Suppossed to have input file: " + localFile.getCanonicalPath());
+		s = jdl.gets("ValidationCommand");
+
+		if (s != null)
+			filesToDownload.add(s);
+
+		final List<LFN> iFiles = c_api.getLFNs(filesToDownload, true, false);
+
+		if (iFiles == null || iFiles.size() != filesToDownload.size()) {
+			System.out.println("Not all requested files could be located");
+			return false;
+		}
+
+		final Map<LFN, File> localFiles = new HashMap<>();
+
+		for (final LFN l : iFiles) {
+			File localFile = new File(tempDir, l.getFileName());
+
+			final int i = 0;
+
+			while (localFile.exists() && i < 100000)
+				localFile = new File(tempDir, l.getFileName() + "." + i);
+
+			if (localFile.exists())
+				System.out.println("Too many occurences of " + l.getFileName() + " in " + tempDir.getAbsolutePath());
+
+			localFiles.put(l, localFile);
+		}
+
+		for (final Map.Entry<LFN, File> entry : localFiles.entrySet()) {
+			final List<PFN> pfns = c_api.getPFNsToRead(entry.getKey(), null, null);
+
+			for (final PFN pfn : pfns) {
+				final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+				File f = null;
+
+				for (final Protocol protocol : protocols) {
+					try {
+						f = protocol.get(pfn, entry.getValue());
+					} catch (final Throwable t) {
+						System.out.println("Warning: could not get copy of " + entry.getKey().getCanonicalName() + " from " + pfn.getPFN() + " via " + protocol.toString());
+						t.printStackTrace(System.out);
 					}
-					if (!localFile.exists())
-						gotAllInputFiles = false;
-				} catch (final IOException e) {
-					e.printStackTrace();
-					gotAllInputFiles = false;
+
+					if (f != null)
+						break;
+				}
+
+				if (f == null) {
+					System.out.println("Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
+					return false;
 				}
 			}
-		return gotAllInputFiles;
+		}
 
+		return true;
 	}
 
 	private boolean execute() {

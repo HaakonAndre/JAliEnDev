@@ -1,5 +1,6 @@
 package alien.api.catalogue;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +53,18 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Get LFN from String
+	 * 
+	 * @param slfn
+	 * @param evenIfDoesntExist
+	 * @return the LFN object, that might exist or not (if <code>evenIfDoesntExist = true</code>)
+	 */
+	public LFN getLFN(final String slfn, final boolean evenIfDoesntExist) {
+		Collection<LFN> ret = getLFNs(Arrays.asList(slfn), false, evenIfDoesntExist);
+		return ret != null && ret.size() > 0 ? ret.iterator().next() : null;
+	}
+
+	/**
 	 * Get LFNs from String as a directory listing, only if it exists
 	 * 
 	 * @param slfn
@@ -74,13 +87,13 @@ public class CatalogueApiUtils {
 	 * 
 	 * @param slfn
 	 *            name of the LFN
-	 * @param evenIfDoesNotExist
+	 * @param ignoreFolders
+	 * @param evenIfDoesntExist
 	 * @return the LFN object
 	 */
-	public LFN getLFN(final String slfn, final boolean evenIfDoesNotExist) {
-
+	public List<LFN> getLFNs(final Collection<String> slfn, final boolean ignoreFolders, final boolean evenIfDoesntExist) {
 		try {
-			return Dispatcher.execute(new LFNfromString(commander.getUser(), commander.getRole(), slfn, evenIfDoesNotExist)).getLFN();
+			return Dispatcher.execute(new LFNfromString(commander.getUser(), commander.getRole(), ignoreFolders, evenIfDoesntExist, slfn)).getLFNs();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
 			e.getCause().printStackTrace();
@@ -409,7 +422,8 @@ public class CatalogueApiUtils {
 		if (lfn_name == null || lfn_name.length() == 0)
 			return null;
 
-		final LFN lfn = this.getLFN(lfn_name, false);
+		final LFN lfn = this.getLFN(lfn_name);
+
 		if (lfn == null)
 			return null;
 		try {
@@ -478,10 +492,10 @@ public class CatalogueApiUtils {
 	 * @return transfer details
 	 */
 	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Integer id, final boolean master,
-	// boolean verbose,
-	// boolean summary,
-	// boolean all_status,
-	// boolean jdl,
+			// boolean verbose,
+			// boolean summary,
+			// boolean all_status,
+			// boolean jdl,
 			final int count, final boolean desc) {
 
 		ListTransfer lt;

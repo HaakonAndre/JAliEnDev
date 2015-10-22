@@ -26,11 +26,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
-import lazyj.StringFactory;
-import lazyj.Utils;
-import lazyj.cache.GenericLastValuesCache;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.LFNfromString;
@@ -45,6 +40,11 @@ import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
 import alien.user.UsersHelper;
+import lazyj.DBFunctions;
+import lazyj.Format;
+import lazyj.StringFactory;
+import lazyj.Utils;
+import lazyj.cache.GenericLastValuesCache;
 
 /**
  * @author ron
@@ -104,7 +104,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the Job from the QUEUE
-	 * 
+	 *
 	 * @param queueId
 	 * @return the job, or <code>null</code> if it cannot be located
 	 */
@@ -116,7 +116,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the Job from the QUEUE
-	 * 
+	 *
 	 * @param queueId
 	 * @param loadJDL
 	 * @return the job, or <code>null</code> if it cannot be located
@@ -127,7 +127,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the Job from the QUEUE
-	 * 
+	 *
 	 * @param queueId
 	 * @param loadJDL
 	 * @param archiveYear
@@ -179,7 +179,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the list of active masterjobs
-	 * 
+	 *
 	 * @param account
 	 *            the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
 	 * @return the list of active masterjobs for this account
@@ -190,7 +190,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the list of active masterjobs
-	 * 
+	 *
 	 * @param account
 	 *            the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
 	 * @param loadJDL
@@ -202,7 +202,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the list of active masterjobs
-	 * 
+	 *
 	 * @param account
 	 *            the account for which the masterjobs are needed, or <code>null</code> for all active masterjobs, of everybody
 	 * @param loadJDL
@@ -381,7 +381,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the subjobs of this masterjob
-	 * 
+	 *
 	 * @param queueId
 	 * @return the subjobs, if any
 	 */
@@ -391,7 +391,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the subjobs of this masterjob
-	 * 
+	 *
 	 * @param queueId
 	 * @param loadJDL
 	 * @return the subjobs, if any
@@ -402,7 +402,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the subjobs of this masterjob
-	 * 
+	 *
 	 * @param queueId
 	 * @param loadJDL
 	 * @param archiveYear
@@ -458,7 +458,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the subjob status of this masterjob
-	 * 
+	 *
 	 * @param queueId
 	 * @param status
 	 * @param id
@@ -1114,7 +1114,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Kill a job in the queue
-	 * 
+	 *
 	 * @param user
 	 * @param queueId
 	 * @return status of the kill
@@ -1202,33 +1202,30 @@ public class TaskQueueUtils {
 		boolean found = false;
 
 		try {
-			LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, executable, false));
+			final List<String> options = new LinkedList<>();
+			options.add(executable);
 
-			if ((answer.getLFN() == null || !answer.getLFN().isFile()) && !executable.startsWith("/")) {
-				// try to find the path in standard directories
-
-				final List<String> options = new LinkedList<>();
-				options.add("/bin/");
-				options.add("/alice/bin/");
-				options.add("/panda/bin/");
+			if (!executable.startsWith("/")) {
+				options.add("/bin/" + executable);
+				options.add("/alice/bin/" + executable);
+				options.add("/panda/bin/" + executable);
 
 				if (role != null && !account.getName().equals(role))
-					options.add(UsersHelper.getHomeDir(role) + "bin/");
+					options.add(UsersHelper.getHomeDir(role) + "bin/" + executable);
 
-				options.add(UsersHelper.getHomeDir(account.getName()) + "bin/");
+				options.add(UsersHelper.getHomeDir(account.getName()) + "bin/" + executable);
+			}
 
-				for (final String path : options) {
-					answer = Dispatcher.execute(new LFNfromString(account, role, path + executable, false));
+			final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, true, false, options));
 
-					if (answer.getLFN() != null && answer.getLFN().isFile()) {
-						jdl.set("Executable", answer.getLFN().getCanonicalName());
+			final List<LFN> lfns = answer.getLFNs();
 
+			if (lfns != null)
+				for (final LFN l : lfns)
+					if (l.isFile()) {
 						found = true;
-						break;
+						jdl.set("Executable", l.getCanonicalName());
 					}
-				}
-			} else
-				found = true;
 		} catch (final ServerException se) {
 			throw new IOException(se.getMessage(), se);
 		}
@@ -1241,7 +1238,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Submit the JDL indicated by this file
-	 * 
+	 *
 	 * @param file
 	 *            the catalogue name of the JDL to be submitted
 	 * @param account
@@ -1385,7 +1382,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Submit this JDL body
-	 * 
+	 *
 	 * @param j
 	 *            job description, in plain text
 	 * @param account
@@ -2051,8 +2048,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return false;
 
-			final String q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('" + Format.escSQL(target) + "','" + Format.escSQL(service) + "','"
-					+ Format.escSQL(message) + "','" + Format.escSQL(messageArgs) + "'," + Format.escSQL(expires + "") + ");";
+			final String q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('" + Format.escSQL(target) + "','" + Format.escSQL(service) + "','" + Format.escSQL(message)
+					+ "','" + Format.escSQL(messageArgs) + "'," + Format.escSQL(expires + "") + ");";
 
 			if (db.query(q)) {
 				if (monitor != null)
@@ -2205,7 +2202,7 @@ public class TaskQueueUtils {
 		// if ($info->{split}) {
 		// $self->info("We have to check if all the subjobs of $info->{split} have finished");
 		// $self->do(
-		// "insert  into JOBSTOMERGE (masterId) select ? from DUAL  where not exists (select masterid from JOBSTOMERGE where masterid = ?)",
+		// "insert into JOBSTOMERGE (masterId) select ? from DUAL where not exists (select masterid from JOBSTOMERGE where masterid = ?)",
 		// {bind_values => [ $info->{split}, $info->{split} ]}
 		// );
 		// $self->do("update ACTIONS set todo=1 where action='MERGING'");
@@ -2275,7 +2272,7 @@ public class TaskQueueUtils {
 
 	/**
 	 * Get the number of jobs in the respective state
-	 * 
+	 *
 	 * @param states
 	 * @return the aggregated number of jobs per user
 	 */
@@ -2357,7 +2354,7 @@ public class TaskQueueUtils {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public static void resyncSiteQueueTable() {
 		try (DBFunctions db = getQueueDB()) {
