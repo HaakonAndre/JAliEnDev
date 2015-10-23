@@ -50,4 +50,12 @@ public class PackMan {
 		return;
 	}
 
+	public String getMethod() {
+		return "PackMan";
+	}
+	
+	public boolean installPackage (String pack){
+		return false;
+	} 
+
 }

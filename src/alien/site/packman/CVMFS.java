@@ -74,4 +74,14 @@ public class CVMFS extends PackMan {
 		}
 		return null;
 	}
+
+	public String getMethod() {
+		return "CVMFS";
+	}
+	
+	public boolean installPackage (String pack){
+		// TODO
+		return true;
+	} 
+	
 }

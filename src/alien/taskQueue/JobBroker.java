@@ -44,6 +44,8 @@ public class JobBroker {
 			HashMap<String, Object> matchAnswer = new HashMap<>();
 			HashMap<String, Object> waiting = new HashMap<>();
 
+			logger.log(Level.INFO, "We received parameters: "+matchRequest.toString());
+
 			// Checking if the CE is open
 			final int openQueue = checkQueueOpen((String) matchRequest.get("CE"));
 			if (openQueue != 1) {
@@ -55,8 +57,8 @@ public class JobBroker {
 			matchRequest.put("Remote", Integer.valueOf(0));
 			matchRequest.put("Return", "entryId"); // skipping ,filebroker
 
-			// print output to JobBroker/host file
-			if (!TaskQueueUtils.updateHostStatus((String) matchRequest.get("CE"), "ACTIVE")) {
+			// TODO: to fully test, print output to JobBroker/host file
+			if (!TaskQueueUtils.updateHostStatus((String) matchRequest.get("Host"), "ACTIVE")) {
 				logger.log(Level.INFO, "Updating queue failed!");
 				matchAnswer.put("Error", "Updating host failed");
 				return matchAnswer;
@@ -88,6 +90,7 @@ public class JobBroker {
 					TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-install-pack");
 
 					matchAnswer.put("Error", "Packages needed to install: " + list.toString());
+					matchAnswer.put("Packages", list);
 					matchAnswer.put("Code", Integer.valueOf(-3));
 				} else {
 					// try remote access (no site)
@@ -116,11 +119,12 @@ public class JobBroker {
 							final ArrayList<String> list = new ArrayList<>(Arrays.asList(packages.split(",")));
 							list.removeAll(Collections.singleton("%"));
 
-							logger.log(Level.INFO, "After removing, we have to install @packs ");
+							logger.log(Level.INFO, "After removing, we have to install "+list.toString());
 
 							TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-install-pack");
 
 							matchAnswer.put("Error", "Packages needed to install (remote): " + list.toString());
+							matchAnswer.put("Packages", list);
 							matchAnswer.put("Code", Integer.valueOf(-3));
 						} else {
 							logger.log(Level.INFO, "Removing site and packages requirements hasn't been enough. Nothing to run!");
@@ -137,7 +141,7 @@ public class JobBroker {
 				// success!!
 				matchAnswer.put("Code", Integer.valueOf(1));
 
-				// TODO:joblog
+				// TODO:joblog, test jobtoken
 				// putlog($queueid, "state", "Job state transition from WAITING to ASSIGNED (to $queueName)");
 
 				final JobToken jobToken = TaskQueueUtils.insertJobToken(((Integer) matchAnswer.get("queueId")).intValue(), (String) matchAnswer.get("User"), false);
@@ -187,9 +191,11 @@ public class JobBroker {
 
 			logger.log(Level.INFO, "Getting a waiting job for " + agentId + " and " + host + " and " + hostId);
 
+			final HashMap<String, Object> job = new HashMap<>();
+
 			String extra = "";
 			if (((Integer) waiting.get("Remote")).intValue() == 1)
-				extra = "and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,$self->{DEFAULTREMOTETIMEOUT})";
+				extra = "and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)";
 
 			db.query("UPDATE QUEUE set statusId=" + JobStatus.ASSIGNED.getAliEnLevel() + " ,siteid=?, exechostid=?, sent=now() " + "where statusId=" + JobStatus.WAITING.getAliEnLevel()
 					+ " and agentid=? " + extra + " and @assigned_job:=queueid limit 1", false, Integer.valueOf(siteId), Integer.valueOf(hostId), agentId);
@@ -203,20 +209,22 @@ public class JobBroker {
 				db.query("select queueId, origjdl jdl, user from QUEUEJDL join QUEUE using (queueid) " + "join QUEUE_USER using (userId) where queueId=@assigned_job", false);
 
 				if (db.moveNext()) {
+					logger.log(Level.INFO, "Updated and getting fields queueId, jdl, user");
 					queueId = db.geti(1);
 					jdl = db.gets(2);
 					user = db.gets(3);
 				} else {
-					logger.log(Level.INFO, "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
-					return null;
-				}
+			  		logger.log(Level.INFO, "Couldn't get the queueId, jdl and user for the agentId: "+agentId);
+					job.put("Error", "Couldn't get the queueId, jdl and user for the agentId: "+agentId);
+					job.put("Code", -5);
+			  		return job;
+			  	}
 
 				db.query("update QUEUEPROC set lastupdate=CURRENT_TIMESTAMP where queueId=@assigned_job", false);
 
 				db.query("update SITEQUEUES set ASSIGNED=ASSIGNED+1 where siteid=?", false, Integer.valueOf(siteId));
 				db.query("update SITEQUEUES set WAITING=WAITING-1 where siteid=?", false, Integer.valueOf(siteId));
 
-				final HashMap<String, Object> job = new HashMap<>();
 				job.put("queueId", Integer.valueOf(queueId));
 				job.put("JDL", jdl);
 				job.put("User", user);
@@ -225,7 +233,9 @@ public class JobBroker {
 				return job;
 			}
 			logger.log(Level.INFO, "No jobs to give back");
-			return null;
+			job.put("Error", "No jobs to give back");
+			job.put("Code", -2);
+	  		return job;
 		}
 	}
 
@@ -243,9 +253,14 @@ public class JobBroker {
 
 			db.query("select count(*) from SITEQUEUES where blocked='open' and site='" + ce + "'");
 
-			if (db.moveNext())
-				if (db.geti(1) > 0)
-					return 1;
+		  	if (db.moveNext()){
+		  		if( db.geti(1)>0 ){
+		  			return 1;
+		  		}
+		  		else{
+		  			// TODO: use TaskQueueUtils.setSiteQueueStatus(ce, "closed-blocked");
+		  		}
+		  	}
 
 			return -1;
 		}
@@ -309,9 +324,10 @@ public class JobBroker {
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
 				for (final String user : users) {
+					final int userId = TaskQueueUtils.getUserIdFromName(user);	
 					where += orconcat + "userId like ?";
 					orconcat = " or ";
-					bindValues.add(user);
+					bindValues.add(userId);
 				}
 				where += ")";
 			}
@@ -346,7 +362,8 @@ public class JobBroker {
 			db.setReadOnly(true);
 
 			final String q = "select " + ret + " from JOBAGENT where 1=1 " + where + " order by priority desc limit 1";
-			logger.log(Level.INFO, "Going to select agents (" + q + ")");
+			logger.log(Level.INFO,"Going to select agents ("+q+")"); 
+			logger.log(Level.INFO,"Bind values: "+bindValues.toString()); 
 
 			db.query(q, false, bindValues.toArray(new Object[0]));
 
@@ -354,8 +371,10 @@ public class JobBroker {
 				final String[] columns = db.getColumnNames();
 				matchAnswer.put("Code", Integer.valueOf(1));
 
-				for (final String col : columns)
+				for (final String col : columns){
+					logger.log(Level.INFO,"Putting "+col+"-"+db.gets(col));
 					matchAnswer.put(col, db.gets(col));
+				}
 			}
 
 			return matchAnswer;

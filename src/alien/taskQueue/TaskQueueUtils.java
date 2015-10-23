@@ -2328,11 +2328,17 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
+				
+			logger.log(Level.INFO, "Setting site with ce "+ce+" to "+status);
 
-			db.query("update SITEQUEUES set statustime=now(), status=? where site=?", false, status, ce);
+			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", 
+					false, 
+					status, ce);
 
-			if (db.getUpdateCount() == 0)
+			if ( db.getUpdateCount()==0 ){
+				logger.log(Level.INFO, "Inserting the site "+ce);
 				insertSiteQueue(ce);
+			}
 		}
 	}
 
@@ -2416,7 +2422,9 @@ public class TaskQueueUtils {
 				return false;
 			}
 
-			if (!db.query("update HOSTS set status=?,date=now() where hostName=?", false, status, host)) {
+			logger.log(Level.INFO, "Updating host "+host+" to status "+status);
+
+			if( !db.query("update HOSTS set status=?,date=UNIX_TIMESTAMP(NOW()) where hostName=?",false, status, host) ){
 				logger.log(Level.INFO, "Update HOSTS failed: " + host + " and " + status);
 				return false;
 			}
@@ -2438,8 +2446,12 @@ public class TaskQueueUtils {
 
 			final String table = "QUEUE_" + key.toUpperCase();
 			final String id = key + "id";
-
-			db.query("select " + id + " from " + table + " where " + key + "=?", false, value);
+			final String q = "select "+id+" from "+table+" where "+key+"=?";
+			
+			logger.log(Level.INFO, "Going to get hostId, query: "+q);
+			
+			db.setReadOnly(true);
+			db.query(q, false, value);
 
 			// the host exists
 			if (db.moveNext()) {
@@ -2469,10 +2481,28 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
+			logger.log(Level.INFO, "Going to select siteId: select siteid from SITEQUEUES where site=? "+ceName);
+			
+			db.setReadOnly(true);
 			db.query("select siteid from SITEQUEUES where site=?", false, ceName);
 
 			if (db.moveNext())
 				return db.geti(1);
+		}
+		return 0;
+	}
+
+	public static int getUserIdFromName(final String user) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+		
+			db.setReadOnly(true);
+			db.query("select userId from QUEUE_USER where user=?",false, user);
+			
+			if(db.moveNext()){
+				return db.geti(1);
+			}	
 		}
 		return 0;
 	}

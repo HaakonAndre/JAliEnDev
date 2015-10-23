@@ -1,15 +1,13 @@
 package alien.site;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.security.InvalidKeyException;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,8 +25,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.security.cert.X509Certificate;
-
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.GetMatchJob;
@@ -48,11 +46,8 @@ import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
-import alien.taskQueue.JobSigner;
 import alien.taskQueue.JobStatus;
-import alien.taskQueue.JobSubmissionException;
 import alien.taskQueue.TaskQueueUtils;
-import alien.user.AliEnPrincipal;
 
 /**
  * @author mmmartin, ron
@@ -63,7 +58,8 @@ public class JobAgent extends Thread {
 	// Folders and files
 	private static final String tempDirPrefix = "jAliEn.JobAgent.tmp";
 	private File tempDir = null;
-	private static final String defaultOutputDirPrefix = "~/jalien-job-";
+	private static final String defaultOutputDirPrefix = "/jalien-job-";
+	private String jobWorkdir = "";
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -73,11 +69,10 @@ public class JobAgent extends Thread {
 
 	// Job variables
 	private JDL jdl = null;
-	private String sjdl = null;
 	private Job job = null;
-	private final AliEnPrincipal user = null;
+	//private final AliEnPrincipal user = null;
 	private int queueId;
-	private int jobToken;
+	private String jobToken;
 	private String username;
 	private String jobAgentId = "";
 	private String workdir = null;
@@ -95,8 +90,11 @@ public class JobAgent extends Thread {
 	private PackMan packMan = null;
 	private String hostName = null;
 	private String alienCm = null;
+	private String pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
+	private HashMap<String, Integer> jaStatus = new HashMap<>();
+	private int jobagent_requests = 1; // TODO: restore to 5
 
 	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
@@ -135,7 +133,7 @@ public class JobAgent extends Thread {
 
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
-		jobAgentId = jobAgentId + "_" + ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+		pid = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
 		workdir = env.get("HOME");
 		if (env.containsKey("WORKDIR"))
@@ -144,6 +142,18 @@ public class JobAgent extends Thread {
 			workdir = env.get("TMPBATCH");
 
 		siteMap = getSiteParameters();
+		
+		jaStatus.put("REQUESTING_JOB",	1);
+		jaStatus.put("INSTALLING_PKGS",	2);
+		jaStatus.put("JOB_STARTED",		3);
+		jaStatus.put("RUNNING_JOB",		4);
+		jaStatus.put("DONE",			5);
+		jaStatus.put("ERROR_HC",		-1); // error in getting host classad
+		jaStatus.put("ERROR_IP",		-2); // error installing packages
+		jaStatus.put("ERROR_GET_JDL",	-3); // error getting jdl
+		jaStatus.put("ERROR_JDL",		-4); // incorrect jdl
+		jaStatus.put("ERROR_DIRS",		-5); // error creating directories, not enough free space in workdir
+		jaStatus.put("ERROR_START",		-6); // error forking to start job	
 	}
 
 	@Override
@@ -161,7 +171,7 @@ public class JobAgent extends Thread {
 			e.printStackTrace();
 		}
 
-		int count = 1; // to modify
+		int count = jobagent_requests;
 		while (count > 0) {
 			if (!updateDynamicParameters())
 				break;
@@ -170,34 +180,46 @@ public class JobAgent extends Thread {
 
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
+				
+				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
+				monitor.sendParameter("TTL", siteMap.get("TTL"));
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 				matchedJob = jobMatch.getMatchJob();
 
-				if (matchedJob != null && !matchedJob.containsKey("Error")) {
-					// jdl = new JDL((String) matchedJob.get("JDL"));
-					// queueId = (int) matchedJob.get("queueId");
-					// jobToken = (int) matchedJob.get("jobToken");
-					// username = (String) matchedJob.get("User");
-					//
-					// System.out.println("Matched job received with:");
-					// System.out.println("JDL:\n"+jdl.toString());
-					// System.out.println("queueId:\n"+queueId);
-					// System.out.println("jobToken:\n"+jobToken);
-					// System.out.println("User:\n"+username);
-					System.out.println(matchedJob.toString());
+				if ( matchedJob != null && !matchedJob.containsKey("Error") ) {
+					jdl 		= new JDL( Job.sanitizeJDL((String) matchedJob.get("JDL")) );
+					queueId 	= (int)	matchedJob.get("queueId");
+					username 	= (String) matchedJob.get("User");
+					jobToken 	= (String)	matchedJob.get("jobToken");
+					
+					System.out.println(jdl.getExecutable());
+					System.out.println(username);
+					System.out.println(queueId);
+					System.out.println(jobToken);
+					
 					System.exit(0);
-
-					// handleJob(j);
-					totalJobs++;
+					// process payload
+					handleJob();
+					
+					cleanup();
 				} else {
-					if (matchedJob != null && matchedJob.containsKey("Error"))
+					if (matchedJob != null && matchedJob.containsKey("Error")){
 						logger.log(Level.INFO, (String) matchedJob.get("Error"));
+					
+						if( (int) matchedJob.get("Code") == -3 ){
+							ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
+							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
+							installPackages(packToInstall);
+						}
+					
+					}
 					else
-						logger.log(Level.INFO, "Nothing to run right now. Idling 10secs zZz...");
+						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
 
 					try {
-						sleep(10000);
+						// TODO?: monitor.sendBgMonitoring
+						sleep(20000);
 					} catch (final InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -212,6 +234,31 @@ public class JobAgent extends Thread {
 		System.exit(0);
 	}
 
+	private void cleanup() {
+		// TODO: clean sandbox and restore variables
+		logger.log(Level.INFO, "Cleaning up after execution...");
+	}
+
+	private boolean installPackages(ArrayList<String> packToInstall) {
+		boolean ok = true;
+		
+		for (String pack : packToInstall){
+			ok = packMan.installPackage(pack);
+			if(!ok){
+				logger.log(Level.INFO, "Error installing the package "+pack);
+			    monitor.sendParameter("ja_status", "ERROR_IP");
+			    System.exit(1);
+			}
+		}
+		return ok;
+	}
+
+	private Integer getJaStatusForML (String status){
+		if (jaStatus.containsKey(status))
+			return jaStatus.get(status);
+		return 0;
+	}
+
 	/**
 	 * @return the site parameters to send to the job broker (packages, ttl, ce/site...)
 	 */
@@ -219,7 +266,7 @@ public class JobAgent extends Thread {
 		logger.log(Level.INFO, "Getting jobAgent map");
 
 		// getting packages from PackMan
-		packMan = getPackman();
+		packMan = (PackMan) getPackman();
 		packages = packMan.getListPackages();
 		installedPackages = packMan.getListInstalledPackages();
 
@@ -254,10 +301,12 @@ public class JobAgent extends Thread {
 		siteMap.put("InstalledPackages", instpacks);
 		siteMap.put("CE", ce);
 		siteMap.put("Site", site);
-		siteMap.put("Partition", partition);
 		siteMap.put("Users", users);
 		siteMap.put("Host", alienCm);
 		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
+
+		if (!partition.equals(""))
+			siteMap.put("Partition", partition);
 
 		return siteMap;
 	}
@@ -318,31 +367,29 @@ public class JobAgent extends Thread {
 		return origTtl;
 	}
 
-	private void handleJob(final Job thejob) {
-		this.job = thejob;
+	private void handleJob() {
+		totalJobs++;
 		try {
-			sjdl = thejob.getOriginalJDL();
-			System.out.println("started JA with: " + sjdl);
-			jdl = new JDL(thejob.getJDL());
+			logger.log(Level.INFO, "Started JA with: " + jdl);
 
-			if (!verifiedJob()) {
-				TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.ERROR_VER);
-				return;
-			}
+			//if (!verifiedJob()) {
+			//	TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.ERROR_VER);
+			//	return;
+			//}
 
-			TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.STARTED);
+			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.STARTED); // TODO: this works ?
 
 			if (!createTempDir()) {
-				TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.ERROR_E);
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_E);
 				return;
 			}
 
 			if (!getInputFiles()) {
-				TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.ERROR_IB);
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_IB);
 				return;
 			}
 
-			TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.RUNNING);
+			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.RUNNING);
 
 			JobStatus status = JobStatus.DONE;
 
@@ -351,14 +398,14 @@ public class JobAgent extends Thread {
 			else if (!validate())
 				status = JobStatus.ERROR_V;
 
-			TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.SAVING);
+			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.SAVING);
 
-			if (!uploadOutputFiles(status))
-				TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.ERROR_SV);
+			if (!uploadOutputFiles())
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_SV);
 			else
-				TaskQueueApiUtils.setJobStatus(thejob.queueId, status);
-		} catch (final IOException e) {
-			System.err.println("Unable to get JDL from Job.");
+				TaskQueueApiUtils.setJobStatus(queueId, status);
+		} catch (final Exception e) {
+			System.err.println("Unable to handle job");
 			e.printStackTrace();
 		}
 	}
@@ -444,23 +491,23 @@ public class JobAgent extends Thread {
 		return code == 0;
 	}
 
-	private boolean verifiedJob() {
-		try {
-			return JobSigner.verifyJobToRun(new X509Certificate[] { job.userCertificate }, sjdl);
-
-		} catch (final InvalidKeyException e) {
-			e.printStackTrace();
-		} catch (final NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (final SignatureException e) {
-			e.printStackTrace();
-		} catch (final KeyStoreException e) {
-			e.printStackTrace();
-		} catch (final JobSubmissionException e) {
-			e.printStackTrace();
-		}
-		return false;
-	}
+//	private boolean verifiedJob() {
+//		try {
+//			return JobSigner.verifyJobToRun(new X509Certificate[] { job.userCertificate }, sjdl);
+//
+//		} catch (final InvalidKeyException e) {
+//			e.printStackTrace();
+//		} catch (final NoSuchAlgorithmException e) {
+//			e.printStackTrace();
+//		} catch (final SignatureException e) {
+//			e.printStackTrace();
+//		} catch (final KeyStoreException e) {
+//			e.printStackTrace();
+//		} catch (final JobSubmissionException e) {
+//			e.printStackTrace();
+//		}
+//		return false;
+//	}
 
 	private boolean getInputFiles() {
 		final Set<String> filesToDownload = new HashSet<>();
@@ -534,21 +581,64 @@ public class JobAgent extends Thread {
 	}
 
 	private boolean execute() {
-		final int code = executeCommand(jdl.getExecutable(), jdl.getArguments(), 24, TimeUnit.HOURS);
 
-		System.out.println("Execution code: " + code);
+		boolean ran = true;
 
-		return code == 0;
+		final LinkedList<String> command = new LinkedList<>();
+
+		command.add(jdl.getExecutable());
+
+		if (jdl.getArguments() != null)
+			command.addAll(jdl.getArguments());
+
+		logger.log(Level.INFO, "We will run: " + command.toString());
+		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+		pBuilder.returnOutputOnExit(true);
+
+		pBuilder.directory(tempDir);
+
+		pBuilder.timeout(24, TimeUnit.HOURS); // TODO: ttl ?
+
+		pBuilder.redirectErrorStream(true);
+
+		try {
+			final ExitStatus exitStatus;
+
+			TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.RUNNING);
+
+			exitStatus = pBuilder.start().waitFor();
+
+			if (exitStatus.getExtProcExitStatus() == 0) {
+
+				final BufferedWriter out = new BufferedWriter(new FileWriter(tempDir.getCanonicalFile() + "/stdout"));
+				out.write(exitStatus.getStdOut());
+				out.close();
+				final BufferedWriter err = new BufferedWriter(new FileWriter(tempDir.getCanonicalFile() + "/stderr"));
+				err.write(exitStatus.getStdErr());
+				err.close();
+
+				logger.log(Level.INFO, "We ran, stdout+stderr should be there now.");
+			}
+
+			logger.log(Level.INFO, "A local cat on stdout: " + exitStatus.getStdOut());
+			logger.log(Level.INFO, "A local cat on stderr: " + exitStatus.getStdErr());
+
+		} catch (final InterruptedException ie) {
+			logger.log(Level.INFO, "Interrupted while waiting for the following command to finish : " + command.toString());
+			ran = false;
+		} catch (final IOException e) {
+			ran = false;
+		}
+		return ran;
 	}
 
-	private boolean uploadOutputFiles(final JobStatus status) {
+	
+	private boolean uploadOutputFiles() {
+
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
-
-		final List<String> outputFilesList = status == JobStatus.ERROR_E ? jdl.getInputList(false, "OutputErrorE") : jdl.getOutputFiles();
-
-		if (outputFilesList == null || outputFilesList.size() == 0)
-			return true;
+		TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.SAVING);
 
 		String outputDir = jdl.getOutputDir();
 
@@ -557,9 +647,9 @@ public class JobAgent extends Thread {
 
 		System.out.println("QueueID: " + job.queueId);
 
-		System.out.println("Full catpath of outDir is: " + FileSystemUtils.getAbsolutePath(user.getName(), "~", outputDir));
+		System.out.println("Full catpath of outDir is: " + FileSystemUtils.getAbsolutePath(username, "~", outputDir));
 
-		if (c_api.getLFN(FileSystemUtils.getAbsolutePath(user.getName(), null, outputDir)) != null) {
+		if (c_api.getLFN(FileSystemUtils.getAbsolutePath(username, null, outputDir)) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
 			return false;
 		}
@@ -569,8 +659,9 @@ public class JobAgent extends Thread {
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir + "].");
 			uploadedAllOutFiles = false;
-		} else
-			for (final String slfn : outputFilesList) {
+		}
+		else
+			for (final String slfn : jdl.getOutputFiles()) {
 				File localFile;
 				try {
 					localFile = new File(tempDir.getCanonicalFile() + "/" + slfn);
@@ -649,6 +740,30 @@ public class JobAgent extends Thread {
 			TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.ERROR_SV);
 
 		return uploadedAllOutFiles;
+	}
+	
+	
+	private boolean createWorkDir() {
+		logger.log(Level.INFO, "Creating sandbox and chdir");
+		
+		// TODO: redirect log, insert localjobdb ?
+		jobWorkdir = String.format("%s%s%d", workdir,defaultOutputDirPrefix,queueId);
+		
+		final File tmpDir = new File(jobWorkdir);
+		if (!tmpDir.exists()) {
+			final boolean created = tmpDir.mkdirs();
+			if (!created) {
+				logger.log(Level.INFO, "Workdir does not exist and can't be created: "+jobWorkdir);
+				return false;
+			}
+		}
+
+		// chdir
+		System.setProperty("user.dir", jobWorkdir);
+
+		// TODO: create the extra directories
+		
+		return true;
 	}
 
 	private boolean createTempDir() {
