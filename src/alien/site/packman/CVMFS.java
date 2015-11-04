@@ -3,8 +3,11 @@
  */
 package alien.site.packman;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -79,9 +82,30 @@ public class CVMFS extends PackMan {
 		return "CVMFS";
 	}
 	
-	public boolean installPackage (String pack){
-		// TODO
-		return true;
+	public Map<String,String> installPackage (String user, String packages, String version){
+		HashMap<String,String> environment = new HashMap<>();		
+		String args = packages;
+		  
+		if (version != null) {
+			args += "/" + version;
+		}
+
+		String source = Utils.getOutput(alienv_bin + " printenv "+args);
+
+//		  $source =~ s/([^=]*)=([^;]*)\s+\;/$1=\"$2\"\;/g;
+//		  ALICE=/cvmfs/Packages/AliRoot ;export ALICE;ALICE_PHYSICS=/cvmfs/AliPhysics/v5-07-03-01-1 ;export ALICE_PHYSICS;
+		    
+		ArrayList<String> parts =  new ArrayList<String>(Arrays.asList( source.split(";") ));
+		parts.remove(parts.size()-1);
+		
+		for (String value : parts){
+			if( !value.contains("export") ){
+				String[] str = value.split("=");
+				environment.put(str[0], str[1]);
+			}
+		}
+		
+		return environment;
 	} 
 	
 }

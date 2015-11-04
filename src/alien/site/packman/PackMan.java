@@ -1,6 +1,7 @@
 package alien.site.packman;
 
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,8 +55,8 @@ public class PackMan {
 		return "PackMan";
 	}
 	
-	public boolean installPackage (String pack){
-		return false;
+	public Map<String,String> installPackage (String user, String packages, String version){
+		return null;
 	} 
 
 }
