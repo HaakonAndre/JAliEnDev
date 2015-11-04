@@ -122,7 +122,7 @@ public class DispatchSSLClient extends Thread {
 				logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).getSubjectDN());
 
 				try {
-					((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("User.cert")[0]).checkValidity();
+					((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).checkValidity();
 				} catch (final CertificateException e) {
 					logger.log(Level.SEVERE, "Your certificate has expired or is invalid!");
 					return null;
