@@ -8,6 +8,7 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -119,6 +120,13 @@ public class DispatchSSLClient extends Thread {
 				final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
 
 				logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).getSubjectDN());
+
+				try {
+					((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("User.cert")[0]).checkValidity();
+				} catch (final CertificateException e) {
+					logger.log(Level.SEVERE, "Your certificate has expired or is invalid!");
+					return null;
+				}
 
 				// initialize factory, with clientCert(incl. priv+pub)
 				kmf.init(JAKeyStore.clientCert, JAKeyStore.pass);

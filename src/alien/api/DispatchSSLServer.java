@@ -240,8 +240,6 @@ public class DispatchSSLServer extends Thread {
 			}
 			logCertInfo += ((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).getSubjectDN();
 
-			System.out.println(logCertInfo);
-
 			logger.log(Level.INFO, logCertInfo);
 
 			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
