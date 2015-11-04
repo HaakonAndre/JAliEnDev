@@ -271,8 +271,12 @@ public class DispatchSSLServer extends Thread {
 					// communication
 					final SSLSocket c = (SSLSocket) server.accept();
 
+					if (!c.getSession().isValid()){
+						logger.log(Level.WARNING, "Invalid SSL connection from "+c.getRemoteSocketAddress());
+						continue;
+					}
+					
 					if (server.getNeedClientAuth() == true) {
-
 						logger.log(Level.INFO, "Printing client information:");
 						final X509Certificate[] peerCerts = c.getSession().getPeerCertificateChain();
 
