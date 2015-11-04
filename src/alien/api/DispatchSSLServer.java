@@ -5,6 +5,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.security.KeyStoreException;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateException;
@@ -199,6 +200,16 @@ public class DispatchSSLServer extends Thread {
 		}
 	}
 
+	private static boolean isHostCertValid() {
+		try {
+			((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).checkValidity();
+		} catch (final CertificateException | KeyStoreException e) {
+			return false;
+		}
+
+		return true;
+	}
+
 	/**
 	 * @throws IOException
 	 */
@@ -231,16 +242,12 @@ public class DispatchSSLServer extends Thread {
 
 			kmf.init(JAKeyStore.hostCert, JAKeyStore.pass);
 
-			String logCertInfo = "Running JCentral with host cert: ";
-
-			try {
-				((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).checkValidity();
-			} catch (final CertificateException e) {
-				logCertInfo = "Our host certificate expired or is invalid!";
+			if (!isHostCertValid()) {
+				logger.log(Level.SEVERE, "Host certificate is not valid!");
+				return;
 			}
-			logCertInfo += ((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).getSubjectDN();
 
-			logger.log(Level.INFO, logCertInfo);
+			logger.log(Level.INFO, "Running JCentral with host cert: " + ((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).getSubjectDN());
 
 			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
 
@@ -264,7 +271,12 @@ public class DispatchSSLServer extends Thread {
 
 			logger.log(Level.INFO, "JCentral listening on  " + server.getLocalPort());
 
-			while (true)
+			while (true) {
+				if (!isHostCertValid()) {
+					logger.log(Level.SEVERE, "Host certificate is not valid any more, please renew it and restart the service");
+					return;
+				}
+
 				try {
 					@SuppressWarnings("resource")
 					// this object is passed to another thread to deal with the
@@ -295,6 +307,7 @@ public class DispatchSSLServer extends Thread {
 				} catch (final IOException ioe) {
 					logger.log(Level.WARNING, "Exception treating a client", ioe);
 				}
+			}
 
 		} catch (final Throwable e) {
 			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket.", e);
