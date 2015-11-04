@@ -91,9 +91,6 @@ public class CVMFS extends PackMan {
 		}
 
 		String source = Utils.getOutput(alienv_bin + " printenv "+args);
-
-//		  $source =~ s/([^=]*)=([^;]*)\s+\;/$1=\"$2\"\;/g;
-//		  ALICE=/cvmfs/Packages/AliRoot ;export ALICE;ALICE_PHYSICS=/cvmfs/AliPhysics/v5-07-03-01-1 ;export ALICE_PHYSICS;
 		    
 		ArrayList<String> parts =  new ArrayList<String>(Arrays.asList( source.split(";") ));
 		parts.remove(parts.size()-1);
