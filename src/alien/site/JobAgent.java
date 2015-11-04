@@ -239,12 +239,12 @@ public class JobAgent extends Thread {
 		logger.log(Level.INFO, "Cleaning up after execution...");
 	}
 
-	private boolean installPackages(ArrayList<String> packToInstall) {
-		boolean ok = true;
+	private Map<String,String> installPackages(ArrayList<String> packToInstall) {
+		Map<String,String> ok = null;
 		
 		for (String pack : packToInstall){
-			ok = packMan.installPackage(pack);
-			if(!ok){
+			ok = packMan.installPackage(username,pack,null);
+			if(ok == null){
 				logger.log(Level.INFO, "Error installing the package "+pack);
 			    monitor.sendParameter("ja_status", "ERROR_IP");
 			    System.exit(1);
