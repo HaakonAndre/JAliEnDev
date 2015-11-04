@@ -56,8 +56,7 @@ public class DispatchSSLClient extends Thread {
 	private final OutputStream os;
 
 	/**
-	 * E.g. the CE proxy should act as a fowarding bridge between JA and central
-	 * services
+	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
 	 * 
 	 * @param servName
 	 *            name of the config parameter for the host:port settings
@@ -123,6 +122,8 @@ public class DispatchSSLClient extends Thread {
 
 				// initialize factory, with clientCert(incl. priv+pub)
 				kmf.init(JAKeyStore.clientCert, JAKeyStore.pass);
+
+				java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
 
 				final SSLContext ssc = SSLContext.getInstance("TLS");
 
@@ -203,8 +204,7 @@ public class DispatchSSLClient extends Thread {
 	}
 
 	/**
-	 * Total amount of time (in milliseconds) spent in writing objects to the
-	 * socket.
+	 * Total amount of time (in milliseconds) spent in writing objects to the socket.
 	 */
 	public static long lSerialization = 0;
 

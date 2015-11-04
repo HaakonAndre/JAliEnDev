@@ -244,6 +244,8 @@ public class DispatchSSLServer extends Thread {
 
 			logger.log(Level.INFO, logCertInfo);
 
+			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+
 			final SSLContext sc = SSLContext.getInstance("TLS");
 
 			final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
@@ -271,11 +273,11 @@ public class DispatchSSLServer extends Thread {
 					// communication
 					final SSLSocket c = (SSLSocket) server.accept();
 
-					if (!c.getSession().isValid()){
-						logger.log(Level.WARNING, "Invalid SSL connection from "+c.getRemoteSocketAddress());
+					if (!c.getSession().isValid()) {
+						logger.log(Level.WARNING, "Invalid SSL connection from " + c.getRemoteSocketAddress());
 						continue;
 					}
-					
+
 					if (server.getNeedClientAuth() == true) {
 						logger.log(Level.INFO, "Printing client information:");
 						final X509Certificate[] peerCerts = c.getSession().getPeerCertificateChain();
@@ -320,11 +322,11 @@ public class DispatchSSLServer extends Thread {
 	 */
 	// private static String printServerSocketInfo(SSLServerSocket s) {
 	// return "Server socket class: " + s.getClass()
-	// + "\n   Socket address = " + s.getInetAddress().toString()
-	// + "\n   Socket port = " + s.getLocalPort()
-	// + "\n   Need client authentication = " + s.getNeedClientAuth()
-	// + "\n   Want client authentication = " + s.getWantClientAuth()
-	// + "\n   Use client mode = " + s.getUseClientMode();
+	// + "\n Socket address = " + s.getInetAddress().toString()
+	// + "\n Socket port = " + s.getLocalPort()
+	// + "\n Need client authentication = " + s.getNeedClientAuth()
+	// + "\n Want client authentication = " + s.getWantClientAuth()
+	// + "\n Use client mode = " + s.getUseClientMode();
 	// }
 
 }
