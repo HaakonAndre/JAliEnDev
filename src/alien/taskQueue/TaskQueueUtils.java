@@ -490,7 +490,7 @@ public class TaskQueueUtils {
 				return null;
 
 			if (status != null && status.size() > 0 && !status.contains(JobStatus.ANY)) {
-				final StringBuilder whe = new StringBuilder(" ( status in (");
+				final StringBuilder whe = new StringBuilder(" ( statusId in (");
 
 				boolean first = true;
 
