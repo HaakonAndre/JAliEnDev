@@ -236,7 +236,7 @@ public abstract class Request implements Serializable, Runnable {
 					}
 			} else {
 				logger.log(Level.INFO, "User '" + requester_uid + "' doesn't indicate a different role, keeping itself by default");
-				requester_ruid = requester_uid;
+				requester_euid = requester_ruid = requester_uid;
 				return true;
 			}
 
