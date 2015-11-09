@@ -34,13 +34,14 @@ import alien.user.UserFactory;
 
 /**
  * @author Alina Grigoras
- * @since May 25, 2011
- * implements AliEn "authorize" command 
- * */
+ * @since May 25, 2011 implements AliEn "authorize" command
+ */
 public class AlienCommandauthorize extends AlienCommand {
 	/**
-	 * @param p AliEn principal received from the https request
-	 * @param al SOAP arguments received from the http request 
+	 * @param p
+	 *            AliEn principal received from the https request
+	 * @param al
+	 *            SOAP arguments received from the http request
 	 * @throws Exception
 	 */
 	public AlienCommandauthorize(final AliEnPrincipal p, final ArrayList<Object> al) throws Exception {
@@ -48,156 +49,148 @@ public class AlienCommandauthorize extends AlienCommand {
 	}
 
 	/**
-	 * @param p AliEn principal received from the https request
-	 * @param sUsername username received from SOAP request. It can be a different user than the user received through the AliEn principal (the user can su into a different user)
-	 * @param sCurrentDirectory current directory when the command was issued 
-	 * @param sCommand the command requested by the user
-	 * @param iDebugLevel 
-	 * @param alArguments the arguments to the commnad, can be null or empty
+	 * @param p
+	 *            AliEn principal received from the https request
+	 * @param sUsername
+	 *            username received from SOAP request. It can be a different user than the user received through the AliEn principal (the user can su into a different user)
+	 * @param sCurrentDirectory
+	 *            current directory when the command was issued
+	 * @param sCommand
+	 *            the command requested by the user
+	 * @param iDebugLevel
+	 * @param alArguments
+	 *            the arguments to the commnad, can be null or empty
 	 * @throws Exception
 	 */
-	public AlienCommandauthorize (final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final int iDebugLevel, final List<?> alArguments) throws Exception {
-		super(p, sUsername, sCurrentDirectory, sCommand, iDebugLevel,alArguments);
+	public AlienCommandauthorize(final AliEnPrincipal p, final String sUsername, final String sCurrentDirectory, final String sCommand, final int iDebugLevel, final List<?> alArguments)
+			throws Exception {
+		super(p, sUsername, sCurrentDirectory, sCommand, iDebugLevel, alArguments);
 	}
 
 	/**
 	 * execute authorize command <br>
-	 * the list of arguments 
-	 * 		<ul>
-	 * 			<li>first argument must contain the access string: 
-	 * 				write/read/mirror/register/delete/registerenvs 
-	 * 			</li>
-	 * 			<li>second argument can be an array list if access is "registerenvs" or a map for the rest </li>
-	 * 			<li>third arguments appears only in the case of map and it is the job id </li>
-	 * 		</ul>
-	 * @return 	 the response is a map with the keys: 
-	 * 		<ul>
-	 * 			<li>rcvalues - the actual values used by the command </li> 
-	 * 			<li>rcmessages - the printed logs </li>
-	 * 		</ul>
+	 * the list of arguments
+	 * <ul>
+	 * <li>first argument must contain the access string: write/read/mirror/register/delete/registerenvs</li>
+	 * <li>second argument can be an array list if access is "registerenvs" or a map for the rest</li>
+	 * <li>third arguments appears only in the case of map and it is the job id</li>
+	 * </ul>
+	 * 
+	 * @return the response is a map with the keys:
+	 *         <ul>
+	 *         <li>rcvalues - the actual values used by the command</li>
+	 *         <li>rcmessages - the printed logs</li>
+	 *         </ul>
 	 */
 	@Override
-	public HashMap<String, ArrayList<String>> executeCommand() throws Exception{
+	public HashMap<String, ArrayList<String>> executeCommand() throws Exception {
 		Log.log(Log.FINER, "Entering authorize command");
-		
+
 		HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
 
 		ArrayList<String> alrcValues;
 		ArrayList<String> alrcMessages = new ArrayList<>();
-		
+
 		boolean bDebug = false;
 
 		alrcMessages.add("This is just a simple log\n");
 
-		//we need to have at least 2 parameters
-		if(this.alArguments != null && this.alArguments.size() >= 2){
-			//first argument must be access string
+		// we need to have at least 2 parameters
+		if (this.alArguments != null && this.alArguments.size() >= 2) {
+			// first argument must be access string
 			String sAccess = (String) this.alArguments.get(0);
-			Log.log(Log.FINER, "Authorize access = "+sAccess);
-			
-			int iJobId = 0;
-			int envelopeCount = this.alArguments.size()-1;
+			Log.log(Log.FINER, "Authorize access = " + sAccess);
 
-			if(this.alArguments.size() >= 2){
+			int iJobId = 0;
+			int envelopeCount = this.alArguments.size() - 1;
+
+			if (this.alArguments.size() >= 2) {
 				try {
-					if(this.alArguments.get(this.alArguments.size()-1) instanceof String){
-						iJobId = Integer.parseInt((String) this.alArguments.get(this.alArguments.size()-1));
+					if (this.alArguments.get(this.alArguments.size() - 1) instanceof String) {
+						iJobId = Integer.parseInt((String) this.alArguments.get(this.alArguments.size() - 1));
 						envelopeCount--;
 					}
-				} 
-				catch(NumberFormatException e){
+				} catch (NumberFormatException e) {
 					// nothing to do, then the jobID is just not set by Perl ...
 				}
 			}
-			
-			Log.log(Log.FINER, "Authorize Job id = "+iJobId);
 
-			if("registerenvs".equals(sAccess)){
+			Log.log(Log.FINER, "Authorize Job id = " + iJobId);
+
+			if ("registerenvs".equals(sAccess)) {
 				ArrayList<String> alInfo = new ArrayList<>(this.alArguments.size());
-				for(int i=1; i<= envelopeCount;i++)
+				for (int i = 1; i <= envelopeCount; i++)
 					alInfo.add((String) this.alArguments.get(i));
-			
-				alrcValues = (ArrayList<String>) registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, alInfo, iJobId,this.iDebug);
-		
-			}
-			else{
+
+				alrcValues = (ArrayList<String>) registerEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory, sAccess, alInfo, iJobId, this.iDebug);
+
+			} else {
 				@SuppressWarnings("unchecked")
 				HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
-				
 
-				alrcValues = (ArrayList<String>) authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory , sAccess, hmInfo, iJobId, this.iDebug);
+				alrcValues = (ArrayList<String>) authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory, sAccess, hmInfo, iJobId, this.iDebug);
 				alrcMessages.addAll(alrcValues);
 			}
 
-		}
-		else{
-			throw new Exception("Invalid authorize command arguments");		
+		} else {
+			throw new Exception("Invalid authorize command arguments");
 		}
 
-		if(!bDebug) alrcMessages.clear();
+		if (!bDebug)
+			alrcMessages.clear();
 
 		hmReturn.put("rcvalues", alrcValues);
 		hmReturn.put("rcmessages", alrcMessages);
 
 		Log.log(Log.FINER, "Existing authorize command");
-		
+
 		return hmReturn;
 	}
 
-	
-
 	/**
-	 * @param user 
+	 * @param user
 	 * @param p_user
 	 * @param p_dir
 	 * @param access
 	 * @param envelopes
-	 * @param jobid 
-	 * @param debugLevel 
+	 * @param jobid
+	 * @param debugLevel
 	 * @return the list of envelopes
 	 */
-	public static List<String> registerEnvelope(final AliEnPrincipal user, final String p_user,
-			final String p_dir, final String access, final ArrayList<String> envelopes,
-			final int jobid, final int debugLevel) {
+	public static List<String> registerEnvelope(final AliEnPrincipal user, final String p_user, final String p_dir, final String access, final ArrayList<String> envelopes, final int jobid,
+			final int debugLevel) {
 
 		AliEnPrincipal effectiveUser = user;
-		
+
 		if (effectiveUser.canBecome(p_user))
-			effectiveUser= UserFactory.getByUsername(p_user);
+			effectiveUser = UserFactory.getByUsername(p_user);
 		else {
-			System.err.println("You [" + effectiveUser.getName()
-					+ "] have not the rights to become " + p_user);
+			System.err.println("You [" + effectiveUser.getName() + "] have not the rights to become " + p_user);
 			return null;
 		}
 
 		ArrayList<String> retenv = new ArrayList<>(envelopes.size());
 
 		for (String env : envelopes) {
-			
+
 			System.out.println("We received an envelope for registration: " + env);
 
 			try {
-				
+
 				if (XrootDEnvelopeSigner.verifyEnvelope(env, true)) {
 					XrootDEnvelope xenv = new XrootDEnvelope(env);
-					System.out.println("Self Signature VERIFIED! : "
-							+ xenv.pfn.pfn);
-					if (BookingTable.commit(effectiveUser,
-							BookingTable.getBookedPFN(xenv.pfn.pfn))) {
-						System.out.println("Successfully moved " + xenv.pfn.pfn
-								+ " to the Catalogue");
+					System.out.println("Self Signature VERIFIED! : " + xenv.pfn.pfn);
+					if (BookingTable.commit(effectiveUser, BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
+						System.out.println("Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
 						retenv.add(env);
 					}
 
 				} else if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
 					XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
-					System.out.println("SE Signature VERIFIED! : "
-							+ xenv.pfn.pfn);
-					if (BookingTable.commit(effectiveUser,
-							BookingTable.getBookedPFN(xenv.pfn.pfn))) {
-						System.out.println("Successfully moved " + xenv.pfn.pfn
-								+ " to the Catalogue");
+					System.out.println("SE Signature VERIFIED! : " + xenv.pfn.pfn);
+					if (BookingTable.commit(effectiveUser, BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
+						System.out.println("Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 						retenv.add(env);
 					}
 
@@ -225,16 +218,15 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * @param p_dir
 	 * @param access
 	 * @param optionHash
-	 * @param jobid 
-	 * @param debugLevel 
+	 * @param jobid
+	 * @param debugLevel
 	 * @return the list of envelopes
 	 */
-	public static List<String> authorizeEnvelope(final AliEnPrincipal user, final String p_user,
-			final String p_dir, final String access, final Map<String, String> optionHash,
-			final int jobid, final int debugLevel) {
+	public static List<String> authorizeEnvelope(final AliEnPrincipal user, final String p_user, final String p_dir, final String access, final Map<String, String> optionHash, final int jobid,
+			final int debugLevel) {
 
 		AliEnPrincipal effectiveUser = user;
-		
+
 		System.out.println();
 		System.out.println("JAuthen SOAP request for authorize...");
 
@@ -242,8 +234,7 @@ public class AlienCommandauthorize extends AlienCommand {
 		if (effectiveUser.canBecome(p_user))
 			effectiveUser = UserFactory.getByUsername(p_user);
 		else {
-			System.err.println("You [" + effectiveUser.getName()
-					+ "] have not the rights to become " + p_user);
+			System.err.println("You [" + effectiveUser.getName() + "] have not the rights to become " + p_user);
 			return null;
 		}
 
@@ -261,25 +252,21 @@ public class AlienCommandauthorize extends AlienCommand {
 			return null;
 		}
 
-		int p_size = Integer.parseInt(sanitizePerlString(
-				optionHash.get("size"), true));
-		int p_qosCount = Integer.parseInt(sanitizePerlString(
-				optionHash.get("writeQosCount"), true));
+		int p_size = Integer.parseInt(sanitizePerlString(optionHash.get("size"), true));
+		int p_qosCount = Integer.parseInt(sanitizePerlString(optionHash.get("writeQosCount"), true));
 
 		String p_lfn = sanitizePerlString(optionHash.get("lfn"), false);
 		if (!p_lfn.startsWith("/"))
 			p_lfn = p_dir + p_lfn;
 		String p_guid = sanitizePerlString(optionHash.get("guid"), false);
-		String p_guidrequest = sanitizePerlString(
-				optionHash.get("guidRequest"), false);
+		String p_guidrequest = sanitizePerlString(optionHash.get("guidRequest"), false);
 		String p_md5 = sanitizePerlString(optionHash.get("md5"), false);
 		String p_qos = sanitizePerlString(optionHash.get("writeQos"), false);
 		String p_pfn = sanitizePerlString(optionHash.get("pfn"), false);
 		String p_links = sanitizePerlString(optionHash.get("links"), false);
 		String p_site = sanitizePerlString(optionHash.get("site"), false);
 
-		String[] splitWishedSE = sanitizePerlString(optionHash.get("wishedSE"),
-				false).split(";");
+		String[] splitWishedSE = sanitizePerlString(optionHash.get("wishedSE"), false).split(";");
 		List<SE> ses = new ArrayList<>(splitWishedSE.length);
 		for (String sename : Arrays.asList(splitWishedSE)) {
 			SE se = SEUtils.getSE(sename);
@@ -289,8 +276,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			}
 		}
 
-		String[] splitExcludeSE = sanitizePerlString(
-				optionHash.get("excludeSE"), false).split(";");
+		String[] splitExcludeSE = sanitizePerlString(optionHash.get("excludeSE"), false).split(";");
 		List<SE> exxSes = new ArrayList<>(splitExcludeSE.length);
 		for (String sename : Arrays.asList(splitExcludeSE)) {
 			SE se = SEUtils.getSE(sename);
@@ -305,12 +291,8 @@ public class AlienCommandauthorize extends AlienCommand {
 			p_qosCount = 2;
 		}
 
-		System.out.println("we are invoked:  user: " + p_user + "\naccess: "
-				+ access + "\nlfn: " + p_lfn + "\nsize: " + p_size
-				+ "\nrequestguid: " + p_guidrequest + "\nqos: " + p_qos
-				+ "\nqosCount: " + p_qosCount + "\nsitename: " + p_site
-				+ "\nSEs: " + optionHash.get("wishedSE") + "\nexSEs: "
-				+ optionHash.get("excludeSE") + "\n...\n");
+		System.out.println("we are invoked:  user: " + p_user + "\naccess: " + access + "\nlfn: " + p_lfn + "\nsize: " + p_size + "\nrequestguid: " + p_guidrequest + "\nqos: " + p_qos + "\nqosCount: "
+				+ p_qosCount + "\nsitename: " + p_site + "\nSEs: " + optionHash.get("wishedSE") + "\nexSEs: " + optionHash.get("excludeSE") + "\n...\n");
 
 		LFN lfn = null;
 		GUID guid = null;
@@ -322,8 +304,7 @@ public class AlienCommandauthorize extends AlienCommand {
 				if ("".equals(p_guidrequest))
 					guid = GUIDUtils.createGuid();
 				else
-					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest),
-							true);
+					guid = GUIDUtils.getGUID(UUID.fromString(p_guidrequest), true);
 				lfn.guid = guid.guid;
 				guid.lfnCache = new LinkedHashSet<>(1);
 				guid.lfnCache.add(lfn);
@@ -343,21 +324,17 @@ public class AlienCommandauthorize extends AlienCommand {
 
 				// statis list of specified SEs
 				for (SE se : ses) {
-					System.out.println("Trying to book writing on static SE: "
-							+ se.getName());
+					System.out.println("Trying to book writing on static SE: " + se.getName());
 
 					if (!se.canWrite(effectiveUser)) {
-						System.err
-								.println("You are not allowed to write to this SE.");
+						System.err.println("You are not allowed to write to this SE.");
 						continue;
 					}
 
 					try {
-						pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid,
-								null, jobid, se));
+						pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, jobid, se));
 					} catch (Exception e) {
-						System.out.println("Error for the request on "
-								+ se.getName() + ", message: " + e);
+						System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 					}
 				}
 
@@ -373,15 +350,11 @@ public class AlienCommandauthorize extends AlienCommand {
 						if (!se.canWrite(effectiveUser))
 							continue;
 
-						System.out
-								.println("Trying to book writing on discoverd SE: "
-										+ se.getName());
+						System.out.println("Trying to book writing on discoverd SE: " + se.getName());
 						try {
-							pfns.add(BookingTable.bookForWriting(effectiveUser, lfn,
-									guid, null, jobid, se));
+							pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, jobid, se));
 						} catch (Exception e) {
-							System.out.println("Error for the request on "
-									+ se.getName() + ", message: " + e);
+							System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 							continue;
 						}
 						counter++;
@@ -406,13 +379,11 @@ public class AlienCommandauthorize extends AlienCommand {
 					}
 					UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
 					if (archiveLinkedTo != null) {
-						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo,
-								false);
+						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo, false);
 						setArchiveAnchor = lfn;
 						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID()).getPFNs(), p_site, true, ses, exxSes, false);
 						if (!AuthorizationChecker.canRead(archiveguid, effectiveUser)) {
-							System.err
-									.println("Access refused because: Not allowed to read sub-archive");
+							System.err.println("Access refused because: Not allowed to read sub-archive");
 							continue;
 						}
 
@@ -420,13 +391,10 @@ public class AlienCommandauthorize extends AlienCommand {
 							reason = AuthorizationFactory.fillAccess(effectiveUser, apfn, AccessType.READ);
 
 							if (reason != null) {
-								System.err.println("Access refused because: "
-										+ reason);
+								System.err.println("Access refused because: " + reason);
 								continue;
 							}
-							System.out
-									.println("We have an evenlope candidate: "
-											+ apfn.getPFN());
+							System.out.println("We have an evenlope candidate: " + apfn.getPFN());
 							readpfn = apfn;
 							break;
 
@@ -456,27 +424,22 @@ public class AlienCommandauthorize extends AlienCommand {
 					// automatic
 					XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
 				} catch (SignatureException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
+					System.err.println("Sorry ... Could not sign the envelope!");
 				} catch (InvalidKeyException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
+					System.err.println("Sorry ... Could not sign the envelope!");
 				} catch (NoSuchAlgorithmException e) {
-					System.err
-							.println("Sorry ... Could not sign the envelope!");
+					System.err.println("Sorry ... Could not sign the envelope!");
 				}
 				String addEnv = pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\&");
 
 				final SE se = pfn.getSE();
-				
+
 				// drop the following once LDAP schema is updated and version
 				// number properly on
 				if (!"alice::cern::setest".equalsIgnoreCase(se.getName())) {
 					if (se.needsEncryptedEnvelope) {
-						addEnv += "\\&oldEnvelope="
-								+ pfn.ticket.envelope.getEncryptedEnvelope();
-						System.out.println("Creating ticket (encrypted): "
-								+ pfn.ticket.envelope.getUnEncryptedEnvelope());
+						addEnv += "\\&oldEnvelope=" + pfn.ticket.envelope.getEncryptedEnvelope();
+						System.out.println("Creating ticket (encrypted): " + pfn.ticket.envelope.getUnEncryptedEnvelope());
 					}
 				}
 				envelopes.add(addEnv);
@@ -503,6 +466,4 @@ public class AlienCommandauthorize extends AlienCommand {
 		return maybeNull;
 	}
 
-	
-	
 }
