@@ -3,6 +3,7 @@ package alien.catalogue;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -180,7 +181,7 @@ public class PackageUtils {
 		if (packages == null)
 			return "Package list could not be fetched from the database";
 
-		final List<String> packageVersions = j.getList("Packages");
+		final Collection<String> packageVersions = j.getList("Packages");
 
 		if (packageVersions == null || packageVersions.size() == 0)
 			return null;

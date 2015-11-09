@@ -5,13 +5,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -22,9 +22,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lazyj.Format;
-import lazyj.StringFactory;
-import lazyj.Utils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -32,6 +29,9 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import lazyj.Format;
+import lazyj.StringFactory;
+import lazyj.Utils;
 
 /**
  * @author costing
@@ -350,7 +350,7 @@ public class JDL implements Serializable {
 			if (!value.endsWith("}"))
 				throw new IOException("JDL syntax error: unclosed brackets in the value of tag " + tag);
 
-			return toList(value.substring(1, value.length() - 1));
+			return toSet(value.substring(1, value.length() - 1));
 		}
 
 		try {
@@ -633,8 +633,8 @@ public class JDL implements Serializable {
 		return ret;
 	}
 
-	private static List<String> toList(final String value) {
-		final List<String> ret = new LinkedList<>();
+	private static Set<String> toSet(final String value) {
+		final Set<String> ret = new LinkedHashSet<>();
 
 		int idx = value.indexOf('"');
 
@@ -687,8 +687,8 @@ public class JDL implements Serializable {
 	 * @param comment
 	 */
 	public void setComment(final String comment) {
-		final List<String> oldTag = getList("Jobtag");
-		final List<String> newTag = new ArrayList<>();
+		final Collection<String> oldTag = getList("Jobtag");
+		final Collection<String> newTag = new LinkedHashSet<>();
 
 		if (oldTag != null) {
 			for (final String s : oldTag)
@@ -747,14 +747,20 @@ public class JDL implements Serializable {
 	 * @return the list for this key
 	 */
 	@SuppressWarnings("unchecked")
-	public List<String> getList(final String key) {
+	public Collection<String> getList(final String key) {
 		final Object o = get(key);
 
 		if (o == null)
 			return null;
 
-		if (o instanceof List)
-			return Collections.unmodifiableList((List<String>) o);
+		if (o instanceof Collection) {
+			final Collection<String> c = (Collection<String>) o;
+
+			if (c.size() > 0)
+				return Collections.unmodifiableCollection(c);
+
+			return null;
+		}
 
 		if (o instanceof CharSequence)
 			return Arrays.asList(o.toString());
@@ -773,12 +779,12 @@ public class JDL implements Serializable {
 		if (o == null)
 			return;
 
-		if (o instanceof List) {
-			((List<?>) o).clear();
+		if (o instanceof Collection) {
+			((Collection<?>) o).clear();
 			return;
 		}
 
-		set(key, new LinkedList<String>());
+		set(key, new LinkedHashSet<String>());
 	}
 
 	/**
@@ -865,7 +871,7 @@ public class JDL implements Serializable {
 		return -1;
 	}
 
-	private static final String tab = "        ";
+	private static final String tab = " ";
 
 	@Override
 	public String toString() {
@@ -954,15 +960,21 @@ public class JDL implements Serializable {
 
 		final Object old = get(key);
 
-		Object newValue = value;
+		Object newValue;
 
-		if (newValue instanceof Collection) {
-			final List<String> localCopy = new LinkedList<>();
+		if (value instanceof Collection) {
+			final LinkedHashSet<String> localCopy = new LinkedHashSet<>();
 
-			for (final Object o : (Collection<?>) newValue)
+			for (final Object o : (Collection<?>) value)
 				localCopy.add(StringFactory.get(o.toString()));
-		} else if (newValue instanceof String)
-			newValue = StringFactory.get((String) newValue);
+
+			newValue = localCopy;
+		} else if (value instanceof String)
+			newValue = StringFactory.get((String) value);
+		else if (value instanceof StringBuilder)
+			newValue = new StringBuilder(((StringBuilder) value).toString());
+		else
+			newValue = value.toString();
 
 		if (old != null) {
 			for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
@@ -992,12 +1004,12 @@ public class JDL implements Serializable {
 		final Collection<String> values;
 
 		if (old == null) {
-			values = new LinkedList<>();
+			values = new LinkedHashSet<>();
 			jdlContent.put(key, values);
 		} else if (old instanceof Collection)
 			values = (Collection<String>) old;
 		else {
-			values = new LinkedList<>();
+			values = new LinkedHashSet<>();
 			values.add(old.toString());
 
 			boolean added = false;
@@ -1243,17 +1255,17 @@ public class JDL implements Serializable {
 	}
 
 	private static final List<String> correctTags = Arrays.asList("Arguments", "Executable", "GUIDFile", "InputBox", "InputData", "InputDataCollection", "InputDataList", "InputDataListFormat",
-			"InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables", "JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize",
-			"OrigRequirements", "Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type", "User", "ValidationCommand",
-			"WorkDirectorySize", "Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID", "LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction",
-			"LegoResubmitZombies", "RunOnAODs", "LegoDataSetType", "LPMJobTypeID", "LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType",
-			"LPMProductionTag", "LPMAnchorYear", "LPMInteractionType");
+			"InputDownload", "InputFile", "JDLArguments", "JDLPath", "JDLProcessor", "JDLVariables", "JobLogOnClusterMonitor", "JobTag", "LPMActivity", "MasterJobID", "MemorySize", "OrigRequirements",
+			"Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type", "User", "ValidationCommand", "WorkDirectorySize",
+			"Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID", "LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies",
+			"RunOnAODs", "LegoDataSetType", "LPMJobTypeID", "LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType", "LPMProductionTag",
+			"LPMAnchorYear", "LPMInteractionType");
 
 	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "jdlarguments", "executable", "arguments", "inputfile", "split", "splitarguments",
 			"inputdatacollection", "splitmaxinputfilenumber", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile",
 			"requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", "maxfailfraction",
-			"maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables", "lpmjobtypeid", "lpmproductiontag", "lpmproductiontype",
-			"lpminteractiontype", "lpmrunnumber", "lpmanchorproduction", "lpmanchorrun", "lpmanchoryear", "lpmmetadata");
+			"maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables", "lpmjobtypeid", "lpmproductiontag", "lpmproductiontype", "lpminteractiontype",
+			"lpmrunnumber", "lpmanchorproduction", "lpmanchorrun", "lpmanchoryear", "lpmmetadata");
 
 	private static final Map<String, String> correctedTags = new HashMap<>(correctTags.size());
 

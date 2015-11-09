@@ -1296,7 +1296,7 @@ public class TaskQueueUtils {
 
 		jdl.addRequirement("other.Type == \"machine\"");
 
-		final List<String> packages = jdl.getList("Packages");
+		final Collection<String> packages = jdl.getList("Packages");
 
 		if (packages != null)
 			for (final String pack : packages)
@@ -1307,7 +1307,7 @@ public class TaskQueueUtils {
 		jdl.addRequirement("other.TTL > " + ttl);
 		jdl.addRequirement("other.Price <= " + price.intValue());
 
-		final List<String> inputFiles = jdl.getList("InputFile");
+		final Collection<String> inputFiles = jdl.getList("InputFile");
 
 		if (inputFiles != null)
 			for (final String file : inputFiles) {
@@ -1327,7 +1327,7 @@ public class TaskQueueUtils {
 					throw new IOException("InputFile " + lfn + " doesn't exist in the catalogue");
 			}
 
-		final List<String> inputData = jdl.getList("InputData");
+		final Collection<String> inputData = jdl.getList("InputData");
 
 		if (inputData != null)
 			for (final String file : inputData) {
@@ -1354,7 +1354,7 @@ public class TaskQueueUtils {
 		// sanity check of other tags
 
 		for (final String tag : Arrays.asList("Executable", "ValidationCommand", "InputDataCollection")) {
-			final List<String> files = jdl.getList(tag);
+			final Collection<String> files = jdl.getList(tag);
 
 			if (files == null) {
 				if (tag.equals("Executable"))
