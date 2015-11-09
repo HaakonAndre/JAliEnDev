@@ -8,9 +8,6 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
-import lazyj.StringFactory;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
@@ -20,6 +17,9 @@ import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
+import lazyj.DBFunctions;
+import lazyj.Format;
+import lazyj.StringFactory;
 
 /**
  * @author costing
@@ -212,7 +212,7 @@ public class BookingTable {
 	 * @param pfn
 	 * @return true if successful, false if not
 	 */
-	public static boolean commit(final AliEnPrincipal user, final PFN pfn) {
+	public static LFN commit(final AliEnPrincipal user, final PFN pfn) {
 		return mark(user, pfn, true);
 	}
 
@@ -224,19 +224,21 @@ public class BookingTable {
 	 * @return true if marking was ok, false if not
 	 */
 	public static boolean reject(final AliEnPrincipal user, final PFN pfn) {
-		return mark(user, pfn, false);
+		return mark(user, pfn, false) != null;
 	}
 
-	private static boolean mark(final AliEnPrincipal user, final PFN pfn, final boolean ok) {
+	private static LFN mark(final AliEnPrincipal user, final PFN pfn, final boolean ok) {
+		LFN ret = null;
+
 		try (DBFunctions db = getDB()) {
 			if (user == null) {
 				logger.log(Level.WARNING, "Not marking since the user is null");
-				return false;
+				return null;
 			}
 
 			if (pfn == null) {
 				logger.log(Level.WARNING, "Not marking since the PFN is null");
-				return false;
+				return null;
 			}
 
 			String w = "pfn" + eq(pfn.getPFN());
@@ -245,7 +247,7 @@ public class BookingTable {
 
 			if (se == null) {
 				logger.log(Level.WARNING, "Not marking since there is no valid SE in this PFN: " + pfn);
-				return false;
+				return null;
 			}
 
 			w += " AND se" + eq(se.getName());
@@ -254,7 +256,7 @@ public class BookingTable {
 
 			if (guid == null) {
 				logger.log(Level.WARNING, "Not marking since there is no GUID in this PFN: " + pfn);
-				return false;
+				return null;
 			}
 
 			w += " AND guid=string2binary(" + e(guid.guid.toString()) + ")";
@@ -263,12 +265,12 @@ public class BookingTable {
 
 			if (!ok) {
 				db.query("UPDATE LFN_BOOKED SET expiretime=-1*(unix_timestamp(now())+60*60*24*30) WHERE " + w);
-				return db.getUpdateCount() > 0;
+				return new LFN("/bogus");
 			}
 
 			if (!guid.addPFN(pfn)) {
 				logger.log(Level.WARNING, "Could not add the PFN to this GUID: " + guid + "\nPFN: " + pfn);
-				return false;
+				return null;
 			}
 
 			db.setReadOnly(true);
@@ -307,7 +309,10 @@ public class BookingTable {
 
 					if (!inserted) {
 						logger.log(Level.WARNING, "Could not insert this LFN in the catalog : " + lfn);
+						return null;
 					}
+
+					ret = lfn;
 				}
 			}
 
@@ -315,7 +320,7 @@ public class BookingTable {
 			db.query("DELETE FROM LFN_BOOKED WHERE " + w);
 		}
 
-		return true;
+		return ret;
 	}
 
 	private static final String eq(final String s) {

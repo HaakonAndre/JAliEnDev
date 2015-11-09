@@ -1092,7 +1092,15 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @return the set of real GUIDs of this file
 	 */
 	public Set<GUID> getRealGUIDs() {
-		if (!exists)
+		return getRealGUIDs(false);
+	}
+
+	/**
+	 * @param evenIfDoesntExist if <code>true</code> it will create those GUID object if they don't exist already in the database 
+	 * @return the set of real GUIDs of this file
+	 */
+	public Set<GUID> getRealGUIDs(final boolean evenIfDoesntExist) {
+		if (!exists && !evenIfDoesntExist)
 			return null;
 
 		final Set<GUID> ret = new HashSet<>();
@@ -1119,7 +1127,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				else
 					sUuid = pfn.substring(idx, idx2);
 
-				final GUID archiveGuid = GUIDUtils.getGUID(UUID.fromString(sUuid));
+				final GUID archiveGuid = GUIDUtils.getGUID(UUID.fromString(sUuid), evenIfDoesntExist);
 
 				if (archiveGuid != null)
 					ret.add(archiveGuid);
