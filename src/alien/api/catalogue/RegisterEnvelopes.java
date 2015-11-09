@@ -107,7 +107,7 @@ public class RegisterEnvelopes extends Request {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Self Signature VERIFIED! : " + xenv.pfn.pfn);
 
-						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn))) {
+						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
 							if (logger.isLoggable(Level.FINE))
 								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
@@ -120,7 +120,7 @@ public class RegisterEnvelopes extends Request {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "SE Signature VERIFIED! : " + xenv.pfn.pfn);
 
-						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn))) {
+						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
 							if (logger.isLoggable(Level.FINE))
 								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
@@ -167,7 +167,7 @@ public class RegisterEnvelopes extends Request {
 						bookedpfn.getGuid().md5 = md5;
 
 					try {
-						if (BookingTable.commit(getEffectiveRequester(), bookedpfn)) {
+						if (BookingTable.commit(getEffectiveRequester(), bookedpfn) != null) {
 							if (logger.isLoggable(Level.FINE))
 								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
