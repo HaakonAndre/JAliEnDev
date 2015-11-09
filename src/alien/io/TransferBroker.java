@@ -188,7 +188,8 @@ public class TransferBroker {
 
 		while (transferId < 0) {
 			if (!dbCached.moveNext()) {
-				dbCached.query("select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
+				dbCached.query(
+						"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
 
 				if (!dbCached.moveNext()) {
 					logger.log(Level.FINE, "There is no waiting transfer in the queue");
@@ -644,8 +645,8 @@ public class TransferBroker {
 			db.setReadOnly(false);
 
 			if (db.moveNext()) {
-				logger.log(Level.WARNING, "Transfer " + t.getTransferId() + " was already picked up by agent #" + db.gets(1) + " @ " + db.gets(3) + "/" + db.gets(2)
-						+ ", refusing to concurrently execute it.");
+				logger.log(Level.WARNING,
+						"Transfer " + t.getTransferId() + " was already picked up by agent #" + db.gets(1) + " @ " + db.gets(3) + "/" + db.gets(2) + ", refusing to concurrently execute it.");
 
 				return false;
 			}
@@ -853,7 +854,7 @@ public class TransferBroker {
 			owner = UserFactory.getByUsername("admin");
 
 		for (final PFN target : t.getSuccessfulTransfers())
-			if (!BookingTable.commit(owner, target)) {
+			if (BookingTable.commit(owner, target) == null) {
 				logger.log(Level.WARNING, "Could not commit booked transfer: " + target);
 
 				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: " + target);
@@ -882,8 +883,8 @@ public class TransferBroker {
 				if (g.removePFN(SEUtils.getSE(t.onCompleteRemoveReplica), true) == null)
 					logger.log(Level.WARNING, "Was asked to remove the replica on " + t.onCompleteRemoveReplica + " of transfer ID " + t.getTransferId() + " but the removal didn't work");
 			} else
-				logger.log(Level.WARNING, "Was asked to remove the replica on " + t.onCompleteRemoveReplica + " of transfer ID " + t.getTransferId()
-						+ " but I cannot do that since the GUID is unknown");
+				logger.log(Level.WARNING,
+						"Was asked to remove the replica on " + t.onCompleteRemoveReplica + " of transfer ID " + t.getTransferId() + " but I cannot do that since the GUID is unknown");
 		}
 	}
 }
