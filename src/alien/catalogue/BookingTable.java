@@ -23,7 +23,7 @@ import lazyj.StringFactory;
 
 /**
  * @author costing
- * 
+ *
  */
 public class BookingTable {
 
@@ -85,16 +85,15 @@ public class BookingTable {
 
 		LFN check = lfn;
 
-		if (!check.exists) {
+		if (!check.exists)
 			check = check.getParentDir();
-		}
 
 		if (!AuthorizationChecker.canWrite(check, user)) {
 			String message = "User " + user.getName() + " is not allowed to write LFN " + lfn.getCanonicalName();
 
-			if (check == null) {
+			if (check == null)
 				message += ": no such folder " + lfn.getParentName();
-			} else if (!check.equals(lfn))
+			else if (!check.equals(lfn))
 				message += ": not enough rights on " + check.getCanonicalName();
 
 			throw new IOException(message);
@@ -102,7 +101,7 @@ public class BookingTable {
 
 		try (DBFunctions db = getDB()) {
 			// check if the GUID is already booked in the catalogue
-			GUID checkGUID = GUIDUtils.getGUID(requestedGUID.guid);
+			final GUID checkGUID = GUIDUtils.getGUID(requestedGUID.guid);
 
 			if (checkGUID != null) {
 				// first question, is the user allowed to write it ?
@@ -112,11 +111,10 @@ public class BookingTable {
 				// check if there isn't a replica already on this storage element
 				final Set<PFN> pfns = checkGUID.getPFNs();
 
-				if (pfns != null) {
+				if (pfns != null)
 					for (final PFN pfn : pfns)
 						if (se.equals(pfn.getSE()))
 							throw new IOException("This GUID already has a replica in the requested SE");
-				}
 			} else {
 				// check the file quota only for new files, extra replicas don't count towards the quota limit
 
@@ -207,7 +205,7 @@ public class BookingTable {
 
 	/**
 	 * Promote this entry to the catalog
-	 * 
+	 *
 	 * @param user
 	 * @param pfn
 	 * @return true if successful, false if not
@@ -218,7 +216,7 @@ public class BookingTable {
 
 	/**
 	 * Mark this entry as failed, to be recycled
-	 * 
+	 *
 	 * @param user
 	 * @param pfn
 	 * @return true if marking was ok, false if not
@@ -287,7 +285,9 @@ public class BookingTable {
 
 				final LFN lfn = LFNUtils.getLFN(sLFN, true);
 
-				if (!lfn.exists) {
+				if (lfn.exists)
+					ret = lfn;
+				else {
 					lfn.size = guid.size;
 					lfn.owner = guid.owner;
 					lfn.gowner = guid.gowner;
@@ -339,7 +339,7 @@ public class BookingTable {
 
 	/**
 	 * Get the object for a booked PFN
-	 * 
+	 *
 	 * @param pfn
 	 * @return the object, if exactly one entry exists, <code>null</code> if it was not booked
 	 * @throws IOException
