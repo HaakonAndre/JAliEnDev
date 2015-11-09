@@ -18,14 +18,14 @@ import alien.user.AliEnPrincipal;
  * @since 2011-03-04
  */
 public abstract class Request implements Serializable, Runnable {
-	
+
 	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Request.class.getCanonicalName());
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -8044096743871226167L;
 
@@ -47,8 +47,7 @@ public abstract class Request implements Serializable, Runnable {
 	}
 
 	/**
-	 * @return current sequence number (number of requests created since VM
-	 *         startup)
+	 * @return current sequence number (number of requests created since VM startup)
 	 */
 	public static final Long getCurrentSequenceNumber() {
 		return Long.valueOf(ID_SEQUENCE.get());
@@ -83,12 +82,12 @@ public abstract class Request implements Serializable, Runnable {
 	 * Effective role (the role which will be considered while authorizing the execution)
 	 */
 	private String requester_erid = requester_uid.getName();
-	
+
 	/**
 	 * Requested role (the role that is requested)
 	 */
 	private String requester_rrid = requester_uid.getName();
-	
+
 	/**
 	 * Set on receiving a request over the network
 	 */
@@ -99,7 +98,6 @@ public abstract class Request implements Serializable, Runnable {
 	 */
 	private transient X509Certificate[] partner_certificate = null;
 
-	
 	/**
 	 * Set on receiving a request over the network
 	 */
@@ -132,7 +130,6 @@ public abstract class Request implements Serializable, Runnable {
 	public final AliEnPrincipal getEffectiveRequester() {
 		return requester_euid;
 	}
-	
 
 	/**
 	 * @return effective role that is considered while the request is executed
@@ -154,101 +151,100 @@ public abstract class Request implements Serializable, Runnable {
 	public final X509Certificate[] getPartnerCertificate() {
 		return partner_certificate;
 	}
-	
+
 	/**
 	 * @param id
-	 *            identity of the partner. This is called on receiving a request
-	 *            over the wire.
+	 *            identity of the partner. This is called on receiving a request over the wire.
 	 */
 	protected final void setPartnerIdentity(final AliEnPrincipal id) {
 		if (partner_identity != null)
-			throw new IllegalAccessError(
-					"You are not allowed to overwrite this field!");
+			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 
 		partner_identity = id;
 	}
-	
 
 	/**
-	 * @param cert 
-	 *            certificate of the partner. This is called on receiving a request
-	 *            over the wire.
+	 * @param cert
+	 *            certificate of the partner. This is called on receiving a request over the wire.
 	 */
-	protected final void setPartnerCertificate(final X509Certificate[]  cert) {
+	protected final void setPartnerCertificate(final X509Certificate[] cert) {
 		if (partner_certificate != null)
-			throw new IllegalAccessError(
-					"You are not allowed to overwrite this field!");
+			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 
 		partner_certificate = cert;
 	}
 
-	
 	/**
 	 * let the request run with a different user name
-	 * 
+	 *
 	 * @param user
 	 */
-	protected final void setRequestUser(AliEnPrincipal user){
-			requester_ruid = user;
+	protected final void setRequestUser(final AliEnPrincipal user) {
+		requester_ruid = user;
 	}
-	
+
 	/**
 	 * let the request run with a different role
-	 * 
+	 *
 	 * @param role
 	 */
-	protected final void setRoleRequest(String role){
-			requester_rrid = role;
+	protected final void setRoleRequest(final String role) {
+		requester_rrid = role;
 	}
 
 	/**
 	 * get the requester role
+	 *
 	 * @return selected role
 	 */
-	protected final String getRoleRequest(){
+	protected final String getRoleRequest() {
 		return requester_rrid;
 	}
-	
+
 	/**
-	 *  Authorize a role change 
+	 * Authorize a role change
+	 *
 	 * @return permission for role change
 	 */
 	protected final boolean authorizeUserAndRole() {
 
-//		System.err.println("uid: "+requester_uid);
-//		System.err.println("ruid: "+requester_ruid);
-//		System.err.println("rrid: "+requester_rrid);
-		
+		// System.err.println("uid: "+requester_uid);
+		// System.err.println("ruid: "+requester_ruid);
+		// System.err.println("rrid: "+requester_rrid);
+
 		// first the user
-		if(requester_uid !=null && requester_ruid!=null){
-			if(requester_ruid.getName()!=null){
-				if(requester_uid.canBecome(requester_ruid.getName())){
-					if (logger.isLoggable(Level.FINE))
-						logger.log(Level.FINE, "Successfully switched user from '"+requester_euid+"' to '"+ requester_ruid +"'.");
-					
-					requester_euid = requester_ruid;
-
-					// now the role
-					if(requester_rrid!=null && requester_euid.hasRole(requester_rrid)){
+		if (requester_uid != null)
+			if (requester_ruid != null) {
+				if (requester_ruid.getName() != null)
+					if (requester_uid.canBecome(requester_ruid.getName())) {
 						if (logger.isLoggable(Level.FINE))
-							logger.log(Level.FINE, "Successfully switched role from '"+requester_erid+"' to '"+ requester_rrid +"'.");
+							logger.log(Level.FINE, "Successfully switched user from '" + requester_euid + "' to '" + requester_ruid + "'.");
 
-						requester_erid = requester_rrid;
-						
-						return true;
+						requester_euid = requester_ruid;
+
+						// now the role
+						if (requester_rrid != null && requester_euid.hasRole(requester_rrid)) {
+							if (logger.isLoggable(Level.FINE))
+								logger.log(Level.FINE, "Successfully switched role from '" + requester_erid + "' to '" + requester_rrid + "'.");
+
+							requester_erid = requester_rrid;
+
+							return true;
+						}
+
+						logger.log(Level.WARNING, "User '" + requester_euid.getName() + "' doesn't have the role '" + requester_rrid + "'.");
 					}
-					
-					logger.log(Level.WARNING, "User '"+requester_euid.getName()+"' doesn't have the role '"+ requester_rrid +"'.");
-				}
+			} else {
+				logger.log(Level.INFO, "User '" + requester_uid + "' doesn't indicate a different role, keeping itself by default");
+				requester_ruid = requester_uid;
+				return true;
 			}
-		}
-		
-		logger.log(Level.WARNING, "User '"+requester_uid+"' was denied role switching action.");
-		
+
+		logger.log(Level.WARNING, "User '" + requester_uid + "' was denied role switching action to '" + requester_ruid + "'.");
+
 		return false;
 	}
-	
-	
+
 	/**
 	 * @return partner's IP address
 	 */
@@ -266,22 +262,22 @@ public abstract class Request implements Serializable, Runnable {
 
 		this.partner_address = ip;
 	}
-	
+
 	private ServerException exception = null;
-	
+
 	/**
 	 * In case of an execution problem set the exception flag to the underlying cause
-	 * 
+	 *
 	 * @param exception
 	 */
-	public final void setException(final ServerException exception){
+	public final void setException(final ServerException exception) {
 		this.exception = exception;
 	}
-	
+
 	/**
 	 * @return the server side exception, if any
 	 */
-	public final ServerException getException(){
+	public final ServerException getException() {
 		return exception;
 	}
 }
