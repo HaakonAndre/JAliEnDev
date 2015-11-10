@@ -311,8 +311,15 @@ public class JobAgent extends Thread {
 		return siteMap;
 	}
 
-	private static PackMan getPackman() {
-		return new CVMFS();
+	private PackMan getPackman() {		
+		switch( env.get("installationMethod") ){
+			case "CVMFS":
+				siteMap.put("CVMFS", 1);
+				return new CVMFS();
+			default:
+				siteMap.put("CVMFS", 1);
+				return new CVMFS();
+		}
 	}
 
 	/**
@@ -829,4 +836,5 @@ public class JobAgent extends Thread {
 
 		System.err.println("Validate status: " + validate);
 	}
+	
 }

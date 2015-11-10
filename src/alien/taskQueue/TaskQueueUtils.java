@@ -2507,4 +2507,27 @@ public class TaskQueueUtils {
 		return 0;
 	}
 
+	public static int deleteJobAgent(int agentId, int queueId) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+			
+			ArrayList<Object> bindValues = new ArrayList<>();
+			String oldestQueueIdQ = "";
+			
+			if (queueId > 0) {
+				bindValues.add(queueId);
+				oldestQueueIdQ=",oldestQueueId=?";
+			}
+			
+			bindValues.add(agentId);
+		
+			db.query("update JOBAGENT set counter=counter-1 " + oldestQueueIdQ + " where entryId=?",
+					false, bindValues.toArray(new Object[0]));
+			
+			db.query("delete from JOBAGENT where counter<1", false);
+		}
+		return 1;
+	}
+
 }
