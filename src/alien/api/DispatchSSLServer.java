@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.security.KeyStoreException;
 import java.security.SecureRandom;
@@ -30,7 +31,7 @@ import alien.user.UserFactory;
 
 /**
  * @author costing
- * 
+ *
  */
 public class DispatchSSLServer extends Thread {
 
@@ -63,7 +64,7 @@ public class DispatchSSLServer extends Thread {
 
 	private X509Certificate partnerCerts[] = null;
 
-	private static final int defaultPort = 5282;
+	private static final int defaultPort = 8098;
 	private static String serviceName = "apiService";
 
 	private static boolean forwardRequest = false;
@@ -72,7 +73,7 @@ public class DispatchSSLServer extends Thread {
 
 	/**
 	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
-	 * 
+	 *
 	 * @param servName
 	 *            name of the config parameter for the host:port settings
 	 */
@@ -216,22 +217,24 @@ public class DispatchSSLServer extends Thread {
 	@SuppressWarnings("resource")
 	public static void runService() throws IOException {
 
-		int port = 0;
+		int port = defaultPort;
 
-		final String address = ConfigUtils.getConfig().gets(serviceName).trim();
+		String address = ConfigUtils.getConfig().gets(serviceName).trim();
 
 		if (address.length() != 0) {
-
 			final int idx = address.indexOf(':');
 
 			if (idx >= 0)
 				try {
-					port = Integer.parseInt(address.substring(idx + 1));
-					// address = address.substring(0, idx);
+					port = Integer.parseInt(address.substring(idx + 1).trim());
+					address = address.substring(0, idx).trim();
 				} catch (final Exception e) {
 					port = defaultPort;
 				}
 		}
+
+		if (address.equals("*"))
+			address = "";
 
 		SSLServerSocket server = null;
 
@@ -260,16 +263,19 @@ public class DispatchSSLServer extends Thread {
 
 			final SSLServerSocketFactory ssf = sc.getServerSocketFactory();
 
-			server = (SSLServerSocket) ssf.createServerSocket(port);
+			if (address.length() > 0)
+				server = (SSLServerSocket) ssf.createServerSocket(port, 0, InetAddress.getByName(address));
+			else
+				server = (SSLServerSocket) ssf.createServerSocket(port);
 
 			server.setWantClientAuth(true);
 			server.setNeedClientAuth(true);
 
 			server.setUseClientMode(false);
 
-			System.out.println("JCentral listening on " + server.getLocalPort());
+			System.out.println("JCentral listening on " + server.getLocalSocketAddress());
 
-			logger.log(Level.INFO, "JCentral listening on  " + server.getLocalPort());
+			logger.log(Level.INFO, "JCentral listening on  " + server.getLocalSocketAddress());
 
 			while (true) {
 				if (!isHostCertValid()) {
