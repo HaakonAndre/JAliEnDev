@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -1302,5 +1303,99 @@ public class JDL implements Serializable {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * Get the set of files (and patterns!) that the job is expected to register
+	 * 
+	 * @param includeArchiveMembers
+	 *            if <code>true</code> then archive member (patterns) are included
+	 * @param excludeArchives
+	 *            if <code>true</code> then archives will be skipped
+	 * @return the set of files
+	 */
+	public Set<String> getOutputFileSet(boolean includeArchiveMembers, boolean excludeArchives) {
+		final List<String> outputFiles = getOutputFiles();
+
+		final Set<String> ret = new TreeSet<>();
+
+		if (outputFiles == null || outputFiles.size() == 0)
+			return ret;
+
+		for (String of : outputFiles) {
+			int idx = of.indexOf('@');
+
+			if (idx >= 0)
+				of = of.substring(0, idx);
+
+			idx = of.indexOf(':');
+
+			if (idx >= 0) {
+				if (!includeArchiveMembers && excludeArchives)
+					continue;
+
+				if (!includeArchiveMembers)
+					of = of.substring(0, idx);
+				else if (excludeArchives)
+					of = of.substring(idx + 1);
+			}
+
+			final StringTokenizer st = new StringTokenizer(of, ":,");
+
+			while (st.hasMoreTokens()) {
+				final String tok = st.nextToken().trim();
+
+				if (tok.length() > 0)
+					ret.add(tok);
+			}
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Remove the file patterns from outputFiles and add them as patterns to the outputPatterns object
+	 * 
+	 * @param outputFiles
+	 *            input, all file names and patterns, which is going to be altered by removing patterns from them
+	 * @param outputPatterns
+	 */
+	public static void moveFilePatterns(final Set<String> outputFiles, final Set<Pattern> outputPatterns) {
+		final Iterator<String> it = outputFiles.iterator();
+
+		while (it.hasNext()) {
+			String file = it.next();
+
+			if (file.indexOf('*') >= 0) {
+				file = Format.replace(file, ".", "\\.");
+				file = Format.replace(file, "*", ".*");
+
+				outputPatterns.add(Pattern.compile("^" + file + "$"));
+
+				it.remove();
+			}
+		}
+	}
+
+	/**
+	 * Check if a given file belongs to the output set
+	 * 
+	 * @param outputFiles
+	 * @param outputPatterns
+	 * @param fileName
+	 * @return <code>true</code> if the indicated file name belongs to the output
+	 */
+	public static boolean fileBelongsToOutput(final Set<String> outputFiles, final Set<Pattern> outputPatterns, final String fileName) {
+		if (outputFiles != null && outputFiles.contains(fileName))
+			return true;
+
+		if (outputPatterns != null && outputPatterns.size() > 0) {
+			for (Pattern p : outputPatterns) {
+				if (p.matcher(fileName).matches())
+					return true;
+			}
+		}
+
+		return false;
 	}
 }
