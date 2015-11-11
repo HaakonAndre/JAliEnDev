@@ -189,12 +189,12 @@ public class JobBroker {
 			if (hostId == 0 || siteId == 0)
 				logger.log(Level.INFO, "The value for " + (hostId > 0 ? "site" : "host") + " is missing");
 
-			logger.log(Level.INFO, "Getting a waiting job for " + agentId + " and " + host + " and " + hostId);
+			logger.log(Level.INFO, "Getting a waiting job for " + agentId + " and " + host + " and " + hostId + " and " + siteId);
 
 			final HashMap<String, Object> job = new HashMap<>();
 
 			String extra = "";
-			if (((Integer) waiting.get("Remote")).intValue() == 1)
+			if (waiting.containsKey("Remote") && ((Integer) waiting.get("Remote")).intValue() == 1)
 				extra = "and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)";
 
 			// Lock QUEUE
