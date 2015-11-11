@@ -186,6 +186,10 @@ public class JobAgent extends Thread {
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 				matchedJob = jobMatch.getMatchJob();
+				
+				// TODELETE
+				if(matchedJob != null)
+					System.out.println(matchedJob.toString());
 
 				if ( matchedJob != null && !matchedJob.containsKey("Error") ) {
 					jdl 		= new JDL( Job.sanitizeJDL((String) matchedJob.get("JDL")) );
@@ -216,7 +220,7 @@ public class JobAgent extends Thread {
 					}
 					else
 						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
-
+					
 					try {
 						// TODO?: monitor.sendBgMonitoring
 						sleep(20000);
@@ -301,7 +305,8 @@ public class JobAgent extends Thread {
 		siteMap.put("InstalledPackages", instpacks);
 		siteMap.put("CE", ce);
 		siteMap.put("Site", site);
-		siteMap.put("Users", users);
+		if(users.size()>0)
+			siteMap.put("Users", users);
 		siteMap.put("Host", alienCm);
 		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
 

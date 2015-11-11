@@ -406,6 +406,8 @@ public class JobBroker {
 					logger.log(Level.INFO,"Putting "+col+"-"+db.gets(col));
 					matchAnswer.put(col, db.gets(col));
 				}
+				matchAnswer.put("CE", matchRequest.get("CE"));
+				matchAnswer.put("Host", matchRequest.get("Host"));
 			}
 
 			return matchAnswer;
