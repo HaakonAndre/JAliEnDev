@@ -975,7 +975,7 @@ public class JDL implements Serializable {
 		else if (value instanceof StringBuilder)
 			newValue = new StringBuilder(((StringBuilder) value).toString());
 		else
-			newValue = value.toString();
+			newValue = value;
 
 		if (old != null) {
 			for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
