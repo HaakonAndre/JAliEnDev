@@ -884,7 +884,7 @@ public class JDL implements Serializable {
 			if (sb.length() > 0)
 				sb.append('\n');
 
-			sb.append(entry.getKey()).append(" = ");
+			sb.append(tab).append(entry.getKey()).append(" = ");
 
 			append(sb, entry.getValue());
 
@@ -910,10 +910,10 @@ public class JDL implements Serializable {
 				else
 					first = false;
 
-				sb.append("\n").append(tab).append("\"").append(o2).append("\"");
+				sb.append("\n").append(tab).append(tab).append("\"").append(o2).append("\"");
 			}
 
-			sb.append(tab).append("\n").append("}");
+			sb.append("\n").append(tab).append("}");
 		} else
 			sb.append('"').append(o.toString()).append('"');
 	}
