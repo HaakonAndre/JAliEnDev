@@ -1454,6 +1454,11 @@ public class TaskQueueUtils {
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
 			values.put("split", Integer.valueOf(0));
 
+			if (j.get("Split") != null)
+				values.put("masterjob", Integer.valueOf(1));
+			else
+				values.put("masterjob", Integer.valueOf(0));
+
 			final String insert = DBFunctions.composeInsert("QUEUE", values);
 
 			db.setLastGeneratedKey(true);
@@ -2328,15 +2333,13 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
-				
-			logger.log(Level.INFO, "Setting site with ce "+ce+" to "+status);
 
-			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", 
-					false, 
-					status, ce);
+			logger.log(Level.INFO, "Setting site with ce " + ce + " to " + status);
 
-			if ( db.getUpdateCount()==0 ){
-				logger.log(Level.INFO, "Inserting the site "+ce);
+			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", false, status, ce);
+
+			if (db.getUpdateCount() == 0) {
+				logger.log(Level.INFO, "Inserting the site " + ce);
 				insertSiteQueue(ce);
 			}
 		}
@@ -2422,9 +2425,9 @@ public class TaskQueueUtils {
 				return false;
 			}
 
-			logger.log(Level.INFO, "Updating host "+host+" to status "+status);
+			logger.log(Level.INFO, "Updating host " + host + " to status " + status);
 
-			if( !db.query("update HOSTS set status=?,date=UNIX_TIMESTAMP(NOW()) where hostName=?",false, status, host) ){
+			if (!db.query("update HOSTS set status=?,date=UNIX_TIMESTAMP(NOW()) where hostName=?", false, status, host)) {
 				logger.log(Level.INFO, "Update HOSTS failed: " + host + " and " + status);
 				return false;
 			}
@@ -2446,10 +2449,10 @@ public class TaskQueueUtils {
 
 			final String table = "QUEUE_" + key.toUpperCase();
 			final String id = key + "id";
-			final String q = "select "+id+" from "+table+" where "+key+"=?";
-			
-			logger.log(Level.INFO, "Going to get hostId, query: "+q);
-			
+			final String q = "select " + id + " from " + table + " where " + key + "=?";
+
+			logger.log(Level.INFO, "Going to get hostId, query: " + q);
+
 			db.setReadOnly(true);
 			db.query(q, false, value);
 
@@ -2481,8 +2484,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			logger.log(Level.INFO, "Going to select siteId: select siteid from SITEQUEUES where site=? "+ceName);
-			
+			logger.log(Level.INFO, "Going to select siteId: select siteid from SITEQUEUES where site=? " + ceName);
+
 			db.setReadOnly(true);
 			db.query("select siteid from SITEQUEUES where site=?", false, ceName);
 
@@ -2496,13 +2499,13 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
-		
+
 			db.setReadOnly(true);
-			db.query("select userId from QUEUE_USER where user=?",false, user);
-			
-			if(db.moveNext()){
+			db.query("select userId from QUEUE_USER where user=?", false, user);
+
+			if (db.moveNext()) {
 				return db.geti(1);
-			}	
+			}
 		}
 		return 0;
 	}
@@ -2511,20 +2514,19 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
-			
+
 			ArrayList<Object> bindValues = new ArrayList<>();
 			String oldestQueueIdQ = "";
-			
+
 			if (queueId > 0) {
 				bindValues.add(queueId);
-				oldestQueueIdQ=",oldestQueueId=?";
+				oldestQueueIdQ = ",oldestQueueId=?";
 			}
-			
+
 			bindValues.add(agentId);
-		
-			db.query("update JOBAGENT set counter=counter-1 " + oldestQueueIdQ + " where entryId=?",
-					false, bindValues.toArray(new Object[0]));
-			
+
+			db.query("update JOBAGENT set counter=counter-1 " + oldestQueueIdQ + " where entryId=?", false, bindValues.toArray(new Object[0]));
+
 			db.query("delete from JOBAGENT where counter<1", false);
 		}
 		return 1;
