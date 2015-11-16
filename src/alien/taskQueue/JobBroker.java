@@ -99,6 +99,7 @@ public class JobBroker {
 					matchRequest.put("Return", "entryId");
 					matchRequest.put("Remote", Integer.valueOf(1));
 					matchRequest.remove("Site");
+					matchRequest.remove("Extrasites");
 
 					waiting = getNumberWaitingForSite(matchRequest);
 
@@ -325,9 +326,22 @@ public class JobBroker {
 			}
 
 			if (matchRequest.containsKey("Site")) {
-				where += "and (site='' or site like concat('%,',?,',%')) ";
+				where += "and (site='' or site like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("Site"));
 			}
+			
+			if (matchRequest.containsKey("Extrasites")) {
+				final ArrayList<String> extrasites = (ArrayList<String>) matchRequest.get("Extrasites");
+				for (final String site : extrasites) {
+					where += " or site like concat('%,',?,',%') ";
+					bindValues.add(site);
+				}
+				where += ") ";				
+			}
+			else if (matchRequest.containsKey("Site")) {
+				where += ") ";
+			}
+			
 			// skipping extrasites: used ?
 
 			if(!matchRequest.containsKey("CVMFS")){

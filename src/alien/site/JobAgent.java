@@ -9,6 +9,7 @@ import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -81,6 +82,7 @@ public class JobAgent extends Thread {
 	private String ceRequirements = "";
 	private List<String> packages;
 	private List<String> installedPackages;
+	private ArrayList<String> extrasites;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 
 	private int totalJobs;
@@ -119,7 +121,10 @@ public class JobAgent extends Thread {
 
 		if (env.containsKey("cerequirements"))
 			ceRequirements = env.get("cerequirements");
-
+		
+		if (env.containsKey("closeSE"))
+			extrasites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
+		
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 		} catch (final UnknownHostException e) {
@@ -202,7 +207,6 @@ public class JobAgent extends Thread {
 					System.out.println(queueId);
 					System.out.println(jobToken);
 					
-					System.exit(0);
 					// process payload
 					handleJob();
 					
@@ -307,6 +311,8 @@ public class JobAgent extends Thread {
 		siteMap.put("Site", site);
 		if(users.size()>0)
 			siteMap.put("Users", users);
+		if(extrasites.size()>0)
+			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
 		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
 
