@@ -532,7 +532,7 @@ public class JDL implements Serializable {
 			ret.addAll(retf);
 		final List<String> reta = getInputList(false, "OutputArchive");
 		if (reta != null)
-			ret.addAll(retf);
+			ret.addAll(reta);
 
 		return ret;
 	}
@@ -715,10 +715,10 @@ public class JDL implements Serializable {
 	public Map<String, String> getPackages() {
 		final Object o = get("Packages");
 
-		if (!(o instanceof List))
+		if (!(o instanceof Collection))
 			return null;
 
-		final Iterator<String> it = ((List<String>) o).iterator();
+		final Iterator<String> it = ((Collection<String>) o).iterator();
 
 		final Map<String, String> ret = new HashMap<>();
 
