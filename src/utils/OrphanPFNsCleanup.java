@@ -135,6 +135,13 @@ public class OrphanPFNsCleanup {
 			this.seNumber = seNumber;
 		}
 
+		private static final int getPoolSize(final int seNumber) {
+			int ret = ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE", 16);
+			ret = ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE." + seNumber, ret);
+
+			return ret;
+		}
+
 		@Override
 		public void run() {
 			setName("SEThread (" + seNumber + ")");
@@ -178,10 +185,7 @@ public class OrphanPFNsCleanup {
 
 					if (executor == null) {
 						// lazy init of the thread pool
-						int threadsPerSE = ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE", 16);
-						threadsPerSE = ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.threadsPerSE." + seNumber, threadsPerSE);
-
-						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(threadsPerSE, new ThreadFactory() {
+						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getPoolSize(seNumber), new ThreadFactory() {
 							@Override
 							public Thread newThread(final Runnable r) {
 								final Thread t = new Thread(r);
@@ -196,6 +200,11 @@ public class OrphanPFNsCleanup {
 						executor.allowCoreThreadTimeOut(true);
 
 						EXECUTORS.put(Integer.valueOf(seNumber), executor);
+					} else {
+						final int threads = getPoolSize(seNumber);
+
+						executor.setCorePoolSize(threads);
+						executor.setMaximumPoolSize(threads);
 					}
 
 					do
