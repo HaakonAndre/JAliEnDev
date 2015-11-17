@@ -122,7 +122,7 @@ public class Xrd3cp extends Xrootd {
 			else
 				targetPath = target.pfn;
 
-			targetPath = addURLParameter(targetPath, "oss.asize=" + source.getGuid().size);
+//			targetPath = addURLParameter(targetPath, "oss.asize=" + source.getGuid().size);
 
 			command.add(targetPath);
 

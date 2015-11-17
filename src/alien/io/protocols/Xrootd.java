@@ -528,8 +528,8 @@ public class Xrootd extends Protocol {
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 
-			if (!xrootdNewerThan4)
-				transactionURL = addURLParameter(transactionURL, "oss.asize=" + guid.size);
+//			if (!xrootdNewerThan4)
+//				transactionURL = addURLParameter(transactionURL, "oss.asize=" + guid.size);
 
 			command.add(transactionURL);
 
