@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
-import lia.util.process.ExternalProcess.ExitStatus;
 import alien.catalogue.PFN;
+import lia.util.process.ExternalProcess.ExitStatus;
 
 /**
  * @author costing
@@ -18,7 +18,7 @@ import alien.catalogue.PFN;
 public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 6159560194424790552L;
 
@@ -40,7 +40,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 	/**
 	 * Download the file locally
-	 * 
+	 *
 	 * @param pfn
 	 *            location
 	 * @param localFile
@@ -53,7 +53,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 	/**
 	 * Upload the local file
-	 * 
+	 *
 	 * @param pfn
 	 *            target PFN
 	 * @param localFile
@@ -66,7 +66,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 	/**
 	 * Direct transfer between the two involved storage elements
-	 * 
+	 *
 	 * @param source
 	 * @param target
 	 * @return storage reply envelope
@@ -76,7 +76,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 	/**
 	 * Check the consistency of the downloaded file
-	 * 
+	 *
 	 * @param f
 	 * @param pfn
 	 * @return <code>true</code> if the file matches catalogue information, <code>false</code> otherwise
@@ -135,5 +135,19 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 	protected void setLastCommand(final List<String> cmd) {
 		this.lastCommand = cmd;
+	}
+
+	/**
+	 * Add a parameter to an existing URL. It assumes the parameter is already formatted (usual "key=value" syntax)
+	 *
+	 * @param URL
+	 * @param parameter
+	 * @return the modified URL
+	 */
+	public static String addURLParameter(final String URL, final String parameter) {
+		if (URL.indexOf('?') > 0)
+			return URL + "&" + parameter;
+
+		return URL + "?" + parameter;
 	}
 }

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -15,22 +15,22 @@ import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 /**
  * 3rd party Xrootd transfers via a set of well-connected gateway servers at CERN
- * 
+ *
  * @author costing
  * @since Jun 25 2015
  */
 public class Xrd3cpGW extends Xrootd {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 9084272684664087714L;
 
@@ -83,16 +83,9 @@ public class Xrd3cpGW extends Xrootd {
 		return rand.nextInt(100000000) + "@" + transferServers.get(serverIdx);
 	}
 
-	private static String addURLParameter(final String URL, final String parameter) {
-		if (URL.indexOf('?') > 0)
-			return URL + "&" + parameter;
-
-		return URL + "?" + parameter;
-	}
-
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
@@ -160,7 +153,7 @@ public class Xrd3cpGW extends Xrootd {
 			command.add(targetPath);
 
 			setLastCommand(command);
-			
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
@@ -234,7 +227,7 @@ public class Xrd3cpGW extends Xrootd {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -16,17 +16,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.Format;
-import lia.util.process.ExternalProcess;
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
-import utils.ExternalCalls;
 import alien.catalogue.GUID;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
+import lazyj.Format;
+import lia.util.process.ExternalProcess;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
+import utils.ExternalCalls;
 
 /**
  * @author costing
@@ -34,7 +34,7 @@ import alien.se.SE;
  */
 public class Xrootd extends Protocol {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 7860814883144320429L;
 
@@ -159,7 +159,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Set the xrdcp timeout
-	 * 
+	 *
 	 * @param seconds
 	 */
 	public void setTimeout(final int seconds) {
@@ -168,7 +168,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Extract the most relevant failure reason from an xrdcp / xrd3cp output
-	 * 
+	 *
 	 * @param message
 	 * @return relevant portion of the output
 	 */
@@ -323,7 +323,7 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
@@ -477,7 +477,7 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
 	 */
 	@Override
@@ -519,14 +519,17 @@ public class Xrootd extends Protocol {
 
 			String transactionURL = pfn.pfn;
 
-			if (pfn.ticket.envelope != null)
+			if (pfn.ticket.envelope != null) {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
-			if (pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OD&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+			}
+
+			if (!xrootdNewerThan4)
+				transactionURL = addURLParameter(transactionURL, "oss.asize=" + guid.size);
 
 			command.add(transactionURL);
 
@@ -611,7 +614,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Check if the PFN has the correct properties, such as described in the access envelope
-	 * 
+	 *
 	 * @param pfn
 	 * @param returnEnvelope
 	 * @return the signed envelope from the storage, if it knows how to generate one
@@ -646,7 +649,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Check if the PFN has the correct properties, such as described in the access envelope
-	 * 
+	 *
 	 * @param pfn
 	 * @param returnEnvelope
 	 * @param retryWithDelay
@@ -760,7 +763,7 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
@@ -794,7 +797,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Transfer a file between a source and a target
-	 * 
+	 *
 	 * @param source
 	 *            source PFN
 	 * @param target
@@ -970,7 +973,7 @@ public class Xrootd extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
-import utils.ExternalCalls;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.se.SE;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
+import utils.ExternalCalls;
 
 /**
  * @author costing
@@ -25,7 +25,7 @@ import alien.se.SE;
 public class Xrd3cp extends Xrootd {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 9084272684664087714L;
 
@@ -75,7 +75,7 @@ public class Xrd3cp extends Xrootd {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
@@ -115,10 +115,16 @@ public class Xrd3cp extends Xrootd {
 			else
 				command.add(source.pfn);
 
+			String targetPath;
+
 			if (targetEnvelope)
-				command.add(target.ticket.envelope.getTransactionURL());
+				targetPath = target.ticket.envelope.getTransactionURL();
 			else
-				command.add(target.pfn);
+				targetPath = target.pfn;
+
+			targetPath = addURLParameter(targetPath, "oss.asize=" + source.getGuid().size);
+
+			command.add(targetPath);
 
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
@@ -133,7 +139,7 @@ public class Xrd3cp extends Xrootd {
 					command.add(target.ticket.envelope.getSignedEnvelope());
 
 			setLastCommand(command);
-			
+
 			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 			checkLibraryPath(pBuilder, getXrd3cpPath());
@@ -207,7 +213,7 @@ public class Xrd3cp extends Xrootd {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -227,7 +233,7 @@ public class Xrd3cp extends Xrootd {
 
 	/**
 	 * Testing method for getting the xrd3cp path
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {
