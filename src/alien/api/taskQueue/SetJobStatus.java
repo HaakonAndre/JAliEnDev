@@ -3,6 +3,7 @@ package alien.api.taskQueue;
 import alien.api.Request;
 import alien.taskQueue.JobStatus;
 import alien.taskQueue.TaskQueueFakeUtils;
+import alien.taskQueue.TaskQueueUtils;
 
 /**
  * Get a JDL object
@@ -29,7 +30,7 @@ public class SetJobStatus extends Request {
 	
 	@Override
 	public void run() {
-		TaskQueueFakeUtils.setJobStatus(this.jobnumber, this.status);
+		TaskQueueUtils.setJobStatus(this.jobnumber, this.status);
 	}
 
 	

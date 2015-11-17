@@ -1,9 +1,11 @@
 package alien.site;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -220,7 +222,6 @@ public class JobAgent extends Thread {
 							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 							installPackages(packToInstall);
 						}
-					
 					}
 					else
 						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
@@ -311,7 +312,7 @@ public class JobAgent extends Thread {
 		siteMap.put("Site", site);
 		if(users.size()>0)
 			siteMap.put("Users", users);
-		if(extrasites.size()>0)
+		if(extrasites != null && extrasites.size()>0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
 		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
@@ -390,14 +391,12 @@ public class JobAgent extends Thread {
 		try {
 			logger.log(Level.INFO, "Started JA with: " + jdl);
 
-			//if (!verifiedJob()) {
-			//	TaskQueueApiUtils.setJobStatus(thejob.queueId, JobStatus.ERROR_VER);
-			//	return;
-			//}
-
+			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+	        String s = "";
+			
 			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.STARTED); // TODO: this works ?
 
-			if (!createTempDir()) {
+			if (!createWorkDir()) {
 				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_E);
 				return;
 			}
@@ -406,6 +405,9 @@ public class JobAgent extends Thread {
 				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_IB);
 				return;
 			}
+			
+			System.out.print("Before Running");
+	        s = br.readLine();
 
 			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.RUNNING);
 
@@ -593,7 +595,7 @@ public class JobAgent extends Thread {
 			}
 		}
 
-		System.err.println("Sandbox prepared : " + tempDir.getAbsolutePath());
+		System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
 
 		return true;
 	}
@@ -767,9 +769,9 @@ public class JobAgent extends Thread {
 		// TODO: redirect log, insert localjobdb ?
 		jobWorkdir = String.format("%s%s%d", workdir,defaultOutputDirPrefix,queueId);
 		
-		final File tmpDir = new File(jobWorkdir);
-		if (!tmpDir.exists()) {
-			final boolean created = tmpDir.mkdirs();
+		tempDir = new File(jobWorkdir);
+		if (!tempDir.exists()) {
+			final boolean created = tempDir.mkdirs();
 			if (!created) {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: "+jobWorkdir);
 				return false;
