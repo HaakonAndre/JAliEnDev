@@ -256,6 +256,7 @@ public class JobAgent extends Thread {
 			if(ok == null){
 				logger.log(Level.INFO, "Error installing the package "+pack);
 			    monitor.sendParameter("ja_status", "ERROR_IP");
+			    System.out.println("Error installing " + pack);
 			    System.exit(1);
 			}
 		}
@@ -390,9 +391,6 @@ public class JobAgent extends Thread {
 		totalJobs++;
 		try {
 			logger.log(Level.INFO, "Started JA with: " + jdl);
-
-			BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-	        String s = "";
 			
 			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.STARTED); // TODO: this works ?
 
@@ -405,13 +403,8 @@ public class JobAgent extends Thread {
 				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_IB);
 				return;
 			}
-			
-			System.out.print("Before Running");
-	        s = br.readLine();
 
-			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.RUNNING);
-
-			JobStatus status = JobStatus.DONE;
+			JobStatus status = JobStatus.SAVED;
 
 			if (!execute())
 				status = JobStatus.ERROR_E;
@@ -607,7 +600,17 @@ public class JobAgent extends Thread {
 		final LinkedList<String> command = new LinkedList<>();
 
 		command.add(jdl.getExecutable());
+		
+//		// TODO: TODELETE
+//		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+//        String s = "";
+//		System.out.print("Before Running");
+//        s = br.readLine();
 
+		HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+
+		System.exit(0);
+		
 		if (jdl.getArguments() != null)
 			command.addAll(jdl.getArguments());
 
@@ -615,7 +618,7 @@ public class JobAgent extends Thread {
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
 		pBuilder.returnOutputOnExit(true);
-
+		
 		pBuilder.directory(tempDir);
 
 		pBuilder.timeout(24, TimeUnit.HOURS); // TODO: ttl ?
@@ -654,6 +657,28 @@ public class JobAgent extends Thread {
 	}
 
 	
+	private HashMap<String, String> getJobPackagesEnvironment() {
+		String voalice = "VO_ALICE@";
+		String packagestring = "";
+		HashMap<String,String> packs = (HashMap<String, String>) jdl.getPackages();	
+				
+		for (String pack: packs.keySet()) {
+			packagestring += voalice + pack + "::" + packs.get(pack) + ",";			
+		}
+		packagestring = packagestring.substring(0, packagestring.length()-1);
+		
+		ArrayList<String> packages = new ArrayList<String>();
+		packages.add(packagestring);
+		
+		logger.log(Level.INFO, packagestring);
+		
+		HashMap<String, String> envmap = (HashMap<String, String>) installPackages(packages);
+		
+		logger.log(Level.INFO, envmap.toString());
+		
+		return envmap;
+	}
+
 	private boolean uploadOutputFiles() {
 
 		boolean uploadedAllOutFiles = true;

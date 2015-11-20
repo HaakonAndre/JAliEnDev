@@ -2,7 +2,6 @@ package alien.api.taskQueue;
 
 import alien.api.Request;
 import alien.taskQueue.JobStatus;
-import alien.taskQueue.TaskQueueFakeUtils;
 import alien.taskQueue.TaskQueueUtils;
 
 /**
