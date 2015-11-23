@@ -192,9 +192,8 @@ public class SE implements Serializable, Comparable<SE> {
 	@Override
 	public String toString() {
 		return "SE: seName: " + seName + "\n" + "seNumber\t: " + seNumber + "\n" + "seVersion\t: " + seVersion + "\n" + "qos\t: " + qos + "\n" + "seioDaemons\t: " + seioDaemons + "\n"
-				+ "seStoragePath\t: " + seStoragePath + "\n" + "seSize:\t: " + size + "\n" + "seUsedSpace\t: " + seUsedSpace + "\n" + "seNumFiles\t: " + seNumFiles + "\n" + "seMinSize\t: "
-				+ seMinSize + "\n" + "seType\t: " + seType + "\n" + "exclusiveUsers\t: " + exclusiveUsers + "\n" + "seExclusiveRead\t: " + seExclusiveRead + "\n" + "seExclusiveWrite\t: "
-				+ seExclusiveWrite;
+				+ "seStoragePath\t: " + seStoragePath + "\n" + "seSize:\t: " + size + "\n" + "seUsedSpace\t: " + seUsedSpace + "\n" + "seNumFiles\t: " + seNumFiles + "\n" + "seMinSize\t: " + seMinSize
+				+ "\n" + "seType\t: " + seType + "\n" + "exclusiveUsers\t: " + exclusiveUsers + "\n" + "seExclusiveRead\t: " + seExclusiveRead + "\n" + "seExclusiveWrite\t: " + seExclusiveWrite;
 	}
 
 	/**
@@ -254,8 +253,16 @@ public class SE implements Serializable, Comparable<SE> {
 		if (ret == null)
 			return ret;
 
-		ret += "/" + twoDigits.format(guid.getCHash()) + "/" + fiveDigits.format(guid.getHash()) + "/" + guid.guid.toString();
+		ret += generatePath(guid.guid.toString());
 		return StringFactory.get(ret);
+	}
+
+	/**
+	 * @param uuid
+	 * @return path to this UUID (the two levels of folders to it)
+	 */
+	public static String generatePath(final String uuid) {
+		return "/" + twoDigits.format(GUID.getCHash(uuid)) + "/" + fiveDigits.format(GUID.getHash(uuid)) + "/" + uuid;
 	}
 
 	/**
