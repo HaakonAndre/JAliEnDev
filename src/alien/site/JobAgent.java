@@ -413,6 +413,8 @@ public class JobAgent extends Thread {
 
 			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.SAVING);
 
+			System.exit(0); //TODELETE
+			
 			if (!uploadOutputFiles())
 				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_SV);
 			else
@@ -458,17 +460,22 @@ public class JobAgent extends Thread {
 		System.err.println("Executing: " + cmd + ", arguments is " + arguments);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+		
+		pBuilder.directory(tempDir);
+		
+		HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+		Map<String, String> processEnv = pBuilder.environment();
+		processEnv.putAll(environment_packages);
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
-
 		pBuilder.redirectErrorStream(true);
-
-		pBuilder.directory(tempDir);
 
 		final Process p;
 
 		try {
+			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.RUNNING);
+			
 			p = pBuilder.start();
 		} catch (final IOException ioe) {
 			System.out.println("Exception running " + cmd + " : " + ioe.getMessage());
@@ -495,9 +502,22 @@ public class JobAgent extends Thread {
 			t.cancel();
 		}
 	}
+	
+	private boolean execute() {
+		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), jdl.getInteger("TTL")+300, TimeUnit.SECONDS);
+
+		System.err.println("Execution code: " + code);
+
+		return code == 0;
+	}
 
 	private boolean validate() {
-		final int code = executeCommand(jdl.gets("ValidationCommand"), null, 5, TimeUnit.MINUTES);
+		int code = 0;
+		
+		String validation = jdl.gets("ValidationCommand");
+		
+		if(validation != null)
+			executeCommand(validation, null, 5, TimeUnit.MINUTES);
 
 		System.err.println("Validation code: " + code);
 
@@ -593,69 +613,6 @@ public class JobAgent extends Thread {
 		return true;
 	}
 
-	private boolean execute() {
-
-		boolean ran = true;
-
-		final LinkedList<String> command = new LinkedList<>();
-
-		command.add(jdl.getExecutable());
-		
-//		// TODO: TODELETE
-//		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-//        String s = "";
-//		System.out.print("Before Running");
-//        s = br.readLine();
-
-		HashMap<String, String> environment_packages = getJobPackagesEnvironment();
-
-		System.exit(0);
-		
-		if (jdl.getArguments() != null)
-			command.addAll(jdl.getArguments());
-
-		logger.log(Level.INFO, "We will run: " + command.toString());
-		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-
-		pBuilder.returnOutputOnExit(true);
-		
-		pBuilder.directory(tempDir);
-
-		pBuilder.timeout(24, TimeUnit.HOURS); // TODO: ttl ?
-
-		pBuilder.redirectErrorStream(true);
-
-		try {
-			final ExitStatus exitStatus;
-
-			TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.RUNNING);
-
-			exitStatus = pBuilder.start().waitFor();
-
-			if (exitStatus.getExtProcExitStatus() == 0) {
-
-				final BufferedWriter out = new BufferedWriter(new FileWriter(tempDir.getCanonicalFile() + "/stdout"));
-				out.write(exitStatus.getStdOut());
-				out.close();
-				final BufferedWriter err = new BufferedWriter(new FileWriter(tempDir.getCanonicalFile() + "/stderr"));
-				err.write(exitStatus.getStdErr());
-				err.close();
-
-				logger.log(Level.INFO, "We ran, stdout+stderr should be there now.");
-			}
-
-			logger.log(Level.INFO, "A local cat on stdout: " + exitStatus.getStdOut());
-			logger.log(Level.INFO, "A local cat on stderr: " + exitStatus.getStdErr());
-
-		} catch (final InterruptedException ie) {
-			logger.log(Level.INFO, "Interrupted while waiting for the following command to finish : " + command.toString());
-			ran = false;
-		} catch (final IOException e) {
-			ran = false;
-		}
-		return ran;
-	}
-
 	
 	private HashMap<String, String> getJobPackagesEnvironment() {
 		String voalice = "VO_ALICE@";
@@ -680,10 +637,8 @@ public class JobAgent extends Thread {
 	}
 
 	private boolean uploadOutputFiles() {
-
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
-		TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.SAVING);
 
 		String outputDir = jdl.getOutputDir();
 
