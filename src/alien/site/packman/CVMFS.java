@@ -98,6 +98,10 @@ public class CVMFS extends PackMan {
 		for (String value : parts){
 			if( !value.contains("export") ){
 				String[] str = value.split("=");
+				
+				if(str[1].contains("\\"))
+					str[1] = str[1].replace("\\", "");
+				
 				environment.put(str[0], str[1]);
 			}
 		}

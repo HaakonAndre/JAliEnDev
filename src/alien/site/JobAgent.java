@@ -392,7 +392,7 @@ public class JobAgent extends Thread {
 		try {
 			logger.log(Level.INFO, "Started JA with: " + jdl);
 			
-			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.STARTED); // TODO: this works ?
+			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.STARTED);
 
 			if (!createWorkDir()) {
 				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_E);
@@ -746,7 +746,6 @@ public class JobAgent extends Thread {
 	private boolean createWorkDir() {
 		logger.log(Level.INFO, "Creating sandbox and chdir");
 		
-		// TODO: redirect log, insert localjobdb ?
 		jobWorkdir = String.format("%s%s%d", workdir,defaultOutputDirPrefix,queueId);
 		
 		tempDir = new File(jobWorkdir);
