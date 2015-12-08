@@ -742,6 +742,34 @@ public class JDL implements Serializable {
 
 		return ret;
 	}
+	
+
+	/**
+	 * Get the JDLVARIABLES. Ex: { LPMJobTypeId -> 1 }
+	 * 
+	 * @return packages
+	 */
+	@SuppressWarnings("unchecked")
+	public Map<String, Object> getJDLVariables() {
+		final Object o = get("JDLVariables");
+		
+		if (!(o instanceof Collection))
+			return null;
+
+		final Iterator<String> it = ((Collection<String>) o).iterator();
+
+		final Map<String, Object> ret = new HashMap<>();
+
+		while (it.hasNext()) {
+			final String s = it.next();			
+			try {
+				ret.put(s, get(s));
+			} catch (final Throwable t) {
+				System.err.println("Exception parsing JDL variable definition: " + s);
+			}
+		}
+		return ret;
+	}
 
 	/**
 	 * @param key

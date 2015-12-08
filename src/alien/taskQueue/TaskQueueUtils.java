@@ -2100,10 +2100,10 @@ public class TaskQueueUtils {
 	}
 
 	private static JobToken getJobToken(final int jobId) {
-		try (DBFunctions db = getAdminDB()) {
+		try (DBFunctions db = getQueueDB()) {
 			if (monitor != null) {
-				monitor.incrementCounter("ADM_db_lookup");
-				monitor.incrementCounter("ADM_jobtokendetails");
+				monitor.incrementCounter("TQ_db_lookup");
+				monitor.incrementCounter("TQ_jobtokendetails");
 			}
 
 			final long lQueryStart = System.currentTimeMillis();
@@ -2115,7 +2115,7 @@ public class TaskQueueUtils {
 			if (!db.query(q, false, Integer.valueOf(jobId)))
 				return null;
 
-			monitor.addMeasurement("ADM_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
+			monitor.addMeasurement("TQ_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
 
 			if (!db.moveNext())
 				return null;

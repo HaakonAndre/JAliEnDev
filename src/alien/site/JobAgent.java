@@ -1,20 +1,18 @@
 package alien.site;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -28,14 +26,14 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
+import lia.util.Utils;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
@@ -72,7 +70,7 @@ public class JobAgent extends Thread {
 
 	// Job variables
 	private JDL jdl = null;
-	private Job job = null;
+//	private Job job = null;
 	//private final AliEnPrincipal user = null;
 	private int queueId;
 	private String jobToken;
@@ -204,6 +202,8 @@ public class JobAgent extends Thread {
 					username 	= (String) matchedJob.get("User");
 					jobToken 	= (String)	matchedJob.get("jobToken");
 					
+					//TODO: commander.setUser(username); commander.setSite(site);
+					
 					System.out.println(jdl.getExecutable());
 					System.out.println(username);
 					System.out.println(queueId);
@@ -211,7 +211,7 @@ public class JobAgent extends Thread {
 					
 					// process payload
 					handleJob();
-					
+															
 					cleanup();
 				} else {
 					if (matchedJob != null && matchedJob.containsKey("Error")){
@@ -244,8 +244,9 @@ public class JobAgent extends Thread {
 	}
 
 	private void cleanup() {
-		// TODO: clean sandbox and restore variables
-		logger.log(Level.INFO, "Cleaning up after execution...");
+		System.out.println("Cleaning up after execution...Removing sandbox: "+jobWorkdir);
+		// Remove sandbox, TODO: use Java builtin
+		Utils.getOutput("rm -rf "+jobWorkdir);
 	}
 
 	private Map<String,String> installPackages(ArrayList<String> packToInstall) {
@@ -403,22 +404,23 @@ public class JobAgent extends Thread {
 				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_IB);
 				return;
 			}
-
-			JobStatus status = JobStatus.SAVED;
-
-			if (!execute())
-				status = JobStatus.ERROR_E;
-			else if (!validate())
-				status = JobStatus.ERROR_V;
-
-			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.SAVING);
-
-			System.exit(0); //TODELETE
 			
-			if (!uploadOutputFiles())
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_SV);
-			else
-				TaskQueueApiUtils.setJobStatus(queueId, status);
+			boolean errorState = false;
+			
+			if (!execute()){
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_E);
+				errorState = true;
+			}
+			else if (!validate()){
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_V);
+				errorState = true;
+			}
+			
+			if (!errorState)
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.SAVING);
+			
+			uploadOutputFiles(errorState);
+
 		} catch (final Exception e) {
 			System.err.println("Unable to handle job");
 			e.printStackTrace();
@@ -466,6 +468,7 @@ public class JobAgent extends Thread {
 		HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		Map<String, String> processEnv = pBuilder.environment();
 		processEnv.putAll(environment_packages);
+		processEnv.putAll( loadJDLEnvironmentVariables() );
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
@@ -504,6 +507,8 @@ public class JobAgent extends Thread {
 	}
 	
 	private boolean execute() {
+		loadJDLEnvironmentVariables();
+		
 		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), jdl.getInteger("TTL")+300, TimeUnit.SECONDS);
 
 		System.err.println("Execution code: " + code);
@@ -636,35 +641,41 @@ public class JobAgent extends Thread {
 		return envmap;
 	}
 
-	private boolean uploadOutputFiles() {
+	private boolean uploadOutputFiles(boolean errorState) {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
 		String outputDir = jdl.getOutputDir();
 
 		if (outputDir == null)
-			outputDir = defaultOutputDirPrefix + job.queueId;
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
-		System.out.println("QueueID: " + job.queueId);
+		System.out.println("queueId: " + queueId);
+		System.out.println("outputDir: " + outputDir);
 
-		System.out.println("Full catpath of outDir is: " + FileSystemUtils.getAbsolutePath(username, "~", outputDir));
-
-		if (c_api.getLFN(FileSystemUtils.getAbsolutePath(username, null, outputDir)) != null) {
+		if (c_api.getLFN(outputDir) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
 			return false;
 		}
-
+		
 		final LFN outDir = c_api.createCatalogueDirectory(outputDir);
-
+		
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir + "].");
 			uploadedAllOutFiles = false;
 		}
-		else
-			for (final String slfn : jdl.getOutputFiles()) {
+		else {		
+			ParsedOutput filesTable = new ParsedOutput(queueId, jdl, jobWorkdir);
+
+			for (final OutputEntry entry : filesTable.getEntries()) {
 				File localFile;
 				try {
-					localFile = new File(tempDir.getCanonicalFile() + "/" + slfn);
+					if(entry.isArchive()) {
+						entry.createZip(jobWorkdir);
+					}
+					
+					localFile = new File(jobWorkdir + "/" + entry.getName());
+					System.out.println("Processing output file: "+localFile);
 
 					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 
@@ -680,28 +691,28 @@ public class JobAgent extends Thread {
 						if (md5 == null)
 							System.err.println("Could not calculate md5 checksum of the local file: " + localFile.getAbsolutePath());
 
-						List<PFN> pfns = null;
+						LFN lfn = c_api.getLFN(outDir.getCanonicalName() + "/" + entry.getName(), true);
+						lfn.size 	= size;
+						lfn.md5 	= md5;
+						lfn.jobid 	= queueId;
+						lfn.type	= 'f';
+						GUID guid 	= GUIDUtils.createGuid(localFile, commander.getUser());
+						lfn.guid 	= guid.guid;
+						ArrayList<String> exses = entry.getSEsDeprioritized();
+						
+						
+						List<PFN> pfns = c_api.getPFNsToWrite(lfn, guid, entry.getSEsPrioritized(), exses, entry.getQoS());
 
-						LFN lfn = null;
-						lfn = c_api.getLFN(outDir.getCanonicalName() + slfn, true);
-
-						lfn.size = size;
-						lfn.md5 = md5;
-
-						pfns = c_api.getPFNsToWrite(lfn, null, null, null, null);
-
-						if (pfns != null) {
+						System.out.println("LFN :"+lfn+ "\npfns: "+pfns.toString());
+						
+						if (pfns != null && !pfns.isEmpty()) {
 							final ArrayList<String> envelopes = new ArrayList<>(pfns.size());
 							for (final PFN pfn : pfns) {
-
 								final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 								for (final Protocol protocol : protocols) {
-
 									envelopes.add(protocol.put(pfn, localFile));
 									break;
-
 								}
-
 							}
 
 							// drop the following three lines once put replies
@@ -712,18 +723,18 @@ public class JobAgent extends Thread {
 								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 
 							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes);
-							if (!pfns.equals(pfnsok))
+							if (!pfns.equals(pfnsok)){
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size() + " could be uploaded");
 									uploadedNotAllCopies = true;
 								} else {
-
 									System.err.println("Upload failed, sorry!");
 									uploadedAllOutFiles = false;
 									break;
 								}
-						} else
-							System.out.println("Couldn't get write envelopes for output file");
+							}
+						}
+						else { System.out.println("Couldn't get write envelopes for output file"); }
 					} else
 						System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 
@@ -732,16 +743,20 @@ public class JobAgent extends Thread {
 					uploadedAllOutFiles = false;
 				}
 			}
-		if (uploadedNotAllCopies)
-			TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.DONE_WARN);
-		else if (uploadedAllOutFiles)
-			TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.DONE);
-		else
-			TaskQueueApiUtils.setJobStatus(job.queueId, JobStatus.ERROR_SV);
-
+		}	
+		
+		if(!errorState){
+			if (uploadedNotAllCopies)
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.DONE_WARN);
+			else if (uploadedAllOutFiles)
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.DONE);
+			else
+				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_SV);
+		}
+			
 		return uploadedAllOutFiles;
 	}
-	
+
 	
 	private boolean createWorkDir() {
 		logger.log(Level.INFO, "Creating sandbox and chdir");
@@ -801,6 +816,46 @@ public class JobAgent extends Thread {
 		}
 
 		return true;
+	}
+	
+	private HashMap<String,String> loadJDLEnvironmentVariables() {
+		HashMap<String,String> hashret = new HashMap<>();
+		
+		try {
+			HashMap<String,Object> vars = (HashMap<String, Object>) jdl.getJDLVariables();
+			
+			if(vars != null){
+				for (String s:vars.keySet()){
+					String value = "";
+					Object val = jdl.get(s);
+					
+					if(val instanceof Collection){
+						final Iterator<String> it = ((Collection<String>) val).iterator();
+						String sbuff = "";
+						boolean isFirst = true;
+						
+						while (it.hasNext()) {
+							if(!isFirst){
+								sbuff += "##";
+					        }
+							String v = it.next().toString();
+							sbuff += v;
+					        isFirst = false;	
+						}
+						value = sbuff;
+					}
+					else{
+						value = val.toString();
+					}
+					
+					hashret.put("ALIEN_JDL_"+s.toUpperCase(), value);
+				}
+			}
+		} catch (Exception e){
+			System.out.println("There was a problem getting JDLVariables: "+e);
+		}
+				
+		return hashret;
 	}
 
 	/**
