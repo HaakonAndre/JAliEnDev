@@ -165,12 +165,14 @@ public class ParsedOutput {
 	private JDL jdl;
 	private int queueId;
 	private String pwd;
+	private String tag;
 	
 	public ParsedOutput(int queueId, JDL jdl){
 		this.jobOutput	= new ArrayList<>();
 		this.jdl 		= jdl;
 		this.queueId 	= queueId;
 		this.pwd		= "";
+		this.tag		= "Output";
 		parseOutput();
 	}
 	
@@ -179,13 +181,23 @@ public class ParsedOutput {
 		this.jdl 		= jdl;
 		this.queueId 	= queueId;
 		this.pwd 		= path+"/";
+		this.tag		= "Output";
 		parseOutput();
 	}
 	
-	// TODELETE SYSOUTS
+	public ParsedOutput(int queueId, JDL jdl, String path, String tag){
+		this.jobOutput	= new ArrayList<>();
+		this.jdl 		= jdl;
+		this.queueId 	= queueId;
+		this.pwd 		= path+"/";
+		this.tag 		= tag;
+		parseOutput();
+	}
 	
+	//TODELETE SYSOUTS
+		
 	public void parseOutput(){
-		List<String> files = jdl.getOutputFiles();
+		List<String> files = jdl.getOutputFiles(this.tag);
 		
 		if(files.size() == 0){
 			// Create default archive

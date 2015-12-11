@@ -536,6 +536,19 @@ public class JDL implements Serializable {
 
 		return ret;
 	}
+	
+	/**
+	 * Get the list of output files
+	 * 
+	 * @return list of output files
+	 */
+	public List<String> getOutputFiles(String tag) {
+		List<String> ret = getInputList(false, tag);
+		if (ret == null)
+			ret = new LinkedList<>();
+		
+		return ret;
+	}
 
 	/**
 	 * Get the list of arguments

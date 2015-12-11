@@ -333,7 +333,7 @@ public final class MonitorFactory {
 	 * 
 	 * @return the sender
 	 */
-	static synchronized ApMon getApMonSender() {
+	public static synchronized ApMon getApMonSender() {
 		if (apmonInstance != null)
 			return apmonInstance;
 
