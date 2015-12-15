@@ -266,6 +266,22 @@ public class TaskQueueApiUtils {
 	 * @param val
 	 * @return <code>true</code> if the operation was successful
 	 */
+	public void putJobLog(final int jobid, final String tag, final String message) {
+		try {
+			final PutJobLog sq = new PutJobLog(jobid,tag,message);
+			Dispatcher.execute(sq);
+		} catch (final Exception e) {
+			System.out.println("Exception in putJobLog: " + e.getMessage());
+		}
+		return;
+	}
+	
+	
+	/**
+	 * @param fld
+	 * @param val
+	 * @return <code>true</code> if the operation was successful
+	 */
 	public boolean setFileQuota(final String fld, final String val) {
 		try {
 			final SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);

@@ -401,10 +401,12 @@ public class JobAgent extends Thread {
 		totalJobs++;
 		try {
 			logger.log(Level.INFO, "Started JA with: " + jdl);
+
+			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: "+hostName);
 			
 			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.STARTED);
 			jobStatus = JobStatus.STARTED;
-
+			
 			if (!createWorkDir() || !getInputFiles()) {
 				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_IB);
 				jobStatus = JobStatus.ERROR_IB;
