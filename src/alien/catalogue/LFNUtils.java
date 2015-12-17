@@ -15,20 +15,20 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
 import alien.config.ConfigUtils;
 import alien.io.TransferUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
+import lazyj.DBFunctions;
+import lazyj.Format;
 
 /**
  * LFN utilities
- * 
+ *
  * @author costing
- * 
+ *
  */
 public class LFNUtils {
 
@@ -39,7 +39,7 @@ public class LFNUtils {
 
 	/**
 	 * Get an LFN which corresponds to the given GUID
-	 * 
+	 *
 	 * @param g
 	 * @return one of the matching LFNs, if there is any such entry
 	 */
@@ -64,7 +64,7 @@ public class LFNUtils {
 
 	/**
 	 * Get the LFN entry for this catalog filename
-	 * 
+	 *
 	 * @param fileName
 	 * @return LFN entry
 	 */
@@ -105,7 +105,7 @@ public class LFNUtils {
 
 	/**
 	 * Get the LFN entry for this catalog filename, optionally returning an empty object if the entry doesn't exist (yet)
-	 * 
+	 *
 	 * @param fileName
 	 * @param evenIfDoesntExist
 	 * @return entry
@@ -132,7 +132,7 @@ public class LFNUtils {
 
 	/**
 	 * Get the LFN entry for this catalog filename, optionally returning an empty object if the entry doesn't exist (yet)
-	 * 
+	 *
 	 * @param ignoreFolders
 	 * @param fileName
 	 * @return entry
@@ -276,7 +276,7 @@ public class LFNUtils {
 
 	/**
 	 * Make sure the parent directory exists
-	 * 
+	 *
 	 * @param lfn
 	 * @return the updated LFN entry
 	 */
@@ -310,7 +310,7 @@ public class LFNUtils {
 
 	/**
 	 * Create a new directory with a given owner
-	 * 
+	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
 	 * @param path
@@ -323,7 +323,7 @@ public class LFNUtils {
 
 	/**
 	 * Create a new directory hierarchy with a given owner
-	 * 
+	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
 	 * @param path
@@ -336,7 +336,7 @@ public class LFNUtils {
 
 	/**
 	 * Create a new directory (hierarchy) with a given owner
-	 * 
+	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
 	 * @param path
@@ -353,7 +353,7 @@ public class LFNUtils {
 
 	/**
 	 * Create a new directory with a given owner
-	 * 
+	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
 	 * @param lfn
@@ -366,7 +366,7 @@ public class LFNUtils {
 
 	/**
 	 * Create a new directory hierarchy with a given owner
-	 * 
+	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
 	 * @param lfn
@@ -379,7 +379,7 @@ public class LFNUtils {
 
 	/**
 	 * Create a new directory (hierarchy) with a given owner
-	 * 
+	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
 	 * @param lfn
@@ -440,7 +440,7 @@ public class LFNUtils {
 
 	/**
 	 * Touch an LFN: if the entry exists, update its timestamp, otherwise try to create an empty file
-	 * 
+	 *
 	 * @param user
 	 *            who wants to do the operation
 	 * @param lfn
@@ -479,7 +479,7 @@ public class LFNUtils {
 
 	/**
 	 * Insert an LFN in the catalogue
-	 * 
+	 *
 	 * @param lfn
 	 * @return true if the entry was inserted (or previously existed), false if there was an error
 	 */
@@ -626,7 +626,7 @@ public class LFNUtils {
 
 	/**
 	 * Create a new collection with the given path
-	 * 
+	 *
 	 * @param collectionName
 	 *            full path (LFN) of the collection
 	 * @param owner
@@ -907,7 +907,7 @@ public class LFNUtils {
 
 	/**
 	 * Change owner
-	 * 
+	 *
 	 * @param path
 	 * @param new_owner
 	 * @param new_group
@@ -989,8 +989,44 @@ public class LFNUtils {
 	}
 
 	/**
+	 * Get the archive members, if any
+	 *
+	 * @param archive
+	 *            .zip file
+	 * @return the file in the same directory with the given file that are members of this zip archive. Can return <code>null</code> if the input is not an archive
+	 */
+	public static List<LFN> getArchiveMembers(final LFN archive) {
+		if (archive == null || !archive.exists || !archive.isFile() || !archive.isReal())
+			return null;
+
+		final List<LFN> sameDirListing = archive.getParentDir().list();
+
+		if (sameDirListing == null || sameDirListing.size() == 0)
+			return null;
+
+		final List<LFN> ret = new ArrayList<>();
+
+		for (final LFN file : sameDirListing)
+			if (file.isFile())
+				for (final PFN p : file.whereis())
+					if (p.pfn.startsWith("guid:/"))
+						try {
+							final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+
+							if (guid.equals(archive.guid)) {
+								ret.add(file);
+								continue;
+							}
+						} catch (final Exception e) {
+							return null;
+						}
+
+		return ret;
+	}
+
+	/**
 	 * Get the real file to which the given LFN belongs to. It can be the same file if it exists and has a physical replica or a zip archive containing it, if such an archive can be located.
-	 * 
+	 *
 	 * @param file
 	 *            reference LFN
 	 * @return an LFN with physical backing containing the given file, if such an entry can be found, <code>null</code> if not
