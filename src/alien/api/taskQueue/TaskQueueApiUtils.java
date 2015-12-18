@@ -262,9 +262,9 @@ public class TaskQueueApiUtils {
 	}
 
 	/**
-	 * @param fld
-	 * @param val
-	 * @return <code>true</code> if the operation was successful
+	 * @param jobid
+	 * @param tag
+	 * @param message
 	 */
 	public void putJobLog(final int jobid, final String tag, final String message) {
 		try {

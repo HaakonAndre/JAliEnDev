@@ -20,7 +20,8 @@ public class PutJobLog extends Request {
 	
 	/**
 	 * @param jobnumber 
-	 * @param status 
+	 * @param tag  
+	 * @param string 
 	 */
 	public PutJobLog(int jobnumber, String tag, String message){
 		this.jobnumber = jobnumber;

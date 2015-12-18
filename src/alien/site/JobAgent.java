@@ -1,11 +1,15 @@
 package alien.site;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,7 +40,9 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.io.Transfer;
@@ -623,6 +629,7 @@ public class JobAgent extends Thread {
 			else {
 				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
 			}
+			commander.q_api.putJobLog(queueId, "trace", "Disk requested: "+workdirMaxSizeMB);		
 		} else 
 			workdirMaxSizeMB = 0;
 		
@@ -649,14 +656,17 @@ public class JobAgent extends Thread {
 			}
 			else {
 				jobMaxMemoryMB = Integer.parseInt(maxmemory);
-			}			
+			}	
+			commander.q_api.putJobLog(queueId, "trace", "Memory requested: "+jobMaxMemoryMB);
 		}
 		else
 			jobMaxMemoryMB = 0;
 		
 	}
 
-	private int execute() {		
+	private int execute() {
+		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
+		
 		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), jdl.getInteger("TTL")+300, TimeUnit.SECONDS);
 
 		System.err.println("Execution code: " + code);
@@ -669,9 +679,10 @@ public class JobAgent extends Thread {
 		
 		String validation = jdl.gets("ValidationCommand");
 		
-		if(validation != null)
+		if(validation != null){
+			commander.q_api.putJobLog(queueId, "trace", "Starting validation");
 			code = executeCommand(validation, null, 5, TimeUnit.MINUTES);
-
+		}
 		System.err.println("Validation code: " + code);
 
 		return code == 0;
@@ -735,7 +746,9 @@ public class JobAgent extends Thread {
 			}
 
 			final GUID g = pfns.iterator().next().getGuid();
-
+			
+			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: "+entry.getKey().getCanonicalName());
+			
 			final File f = IOUtils.get(g, entry.getValue());
 
 			if (f == null) {
@@ -744,12 +757,51 @@ public class JobAgent extends Thread {
 			}
 		}
 
+		dumpInputDataList();
+		
 		System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
 
 		return true;
 	}
 
 	
+	private void dumpInputDataList() {
+		// creates xml file with the InputData
+		try {
+			String list = jdl.gets("InputDataList");
+			
+			if(list==null) 
+				return;
+			
+			System.out.println("Going to create XML: "+list);
+			
+			String format = jdl.gets("InputDataListFormat");
+			if(format==null || !format.equals("xml-single")){
+				System.out.println("XML format not understood");
+				return;
+			}
+			
+			final XmlCollection c = new XmlCollection();
+			c.setName("jobinputdata");
+			List<String> datalist = jdl.getInputData(true);
+			
+			for (String s:datalist){
+				LFN l = c_api.getLFN(s);
+				if (l == null)
+					continue;
+				c.add(l);
+			}
+			
+			String content = c.toString();
+
+			Files.write(Paths.get(jobWorkdir+"/"+list), content.getBytes());
+			
+		}catch(Exception e){
+			System.out.println("Problem dumping XML: "+e.toString());
+		}
+		
+	}
+
 	private HashMap<String, String> getJobPackagesEnvironment() {
 		String voalice = "VO_ALICE@";
 		String packagestring = "";
@@ -778,10 +830,15 @@ public class JobAgent extends Thread {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
-		String outputDir = jdl.getOutputDir();
+		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
+		
+		String outputDir = jdl.getOutputDir();;
 
-		if (outputDir == null)
+		if(jobStatus==JobStatus.ERROR_V || jobStatus==JobStatus.ERROR_E){
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" +defaultOutputDirPrefix + queueId);
+		} else if (outputDir == null) {
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+		}
 
 		System.out.println("queueId: " + queueId);
 		System.out.println("outputDir: " + outputDir);
@@ -843,6 +900,8 @@ public class JobAgent extends Thread {
 						List<PFN> pfns = c_api.getPFNsToWrite(lfn, guid, entry.getSEsPrioritized(), exses, entry.getQoS());
 
 						System.out.println("LFN :"+lfn+ "\npfns: "+pfns.toString());
+						
+						commander.q_api.putJobLog(queueId, "trace", "Uploading: "+lfn);
 						
 						if (pfns != null && !pfns.isEmpty()) {
 							final ArrayList<String> envelopes = new ArrayList<>(pfns.size());
@@ -920,6 +979,7 @@ public class JobAgent extends Thread {
 		// chdir
 		System.setProperty("user.dir", jobWorkdir);
 
+		commander.q_api.putJobLog(queueId, "trace", "Created workdir: "+jobWorkdir);
 		// TODO: create the extra directories
 		
 		return true;
