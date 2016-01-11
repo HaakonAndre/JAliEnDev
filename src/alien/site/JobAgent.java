@@ -399,10 +399,23 @@ public class JobAgent extends Thread {
 	 * @return the time in seconds that proxy is still valid for
 	 */
 	private int getRemainingProxyTime() {
-		// to be modified!
+		// TODO: to be modified!
 		return origTtl;
 	}
 
+	private long ttlForJob() {
+		int ttl=jdl.getInteger("TTL")+300;
+		commander.q_api.putJobLog(queueId, "trace", "Job asks to run for "+ttl+" seconds");
+		
+		String proxyttl = jdl.gets("ProxyTTL");
+		if(proxyttl != null){
+			ttl = (int) siteMap.get("TTL") - 600;
+			commander.q_api.putJobLog(queueId, "trace", "ProxyTTL enabled, running for "+ttl+" seconds"); 
+		}
+		
+		return ttl;
+	}
+	
 	private void handleJob() {
 		totalJobs++;
 		try {
@@ -410,12 +423,10 @@ public class JobAgent extends Thread {
 
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: "+hostName);
 			
-			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.STARTED);
-			jobStatus = JobStatus.STARTED;
+			changeStatus(JobStatus.STARTED);
 			
 			if (!createWorkDir() || !getInputFiles()) {
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_IB);
-				jobStatus = JobStatus.ERROR_IB;
+				changeStatus(JobStatus.ERROR_IB);
 				return;
 			}
 			
@@ -423,19 +434,15 @@ public class JobAgent extends Thread {
 			
 			// run payload
 			if(execute() < 0){
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_E);
-				jobStatus = JobStatus.ERROR_E;
+				changeStatus(JobStatus.ERROR_E);
 			}
 				
 			if (!validate()){
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_V);
-				jobStatus = JobStatus.ERROR_V;
-
+				changeStatus(JobStatus.ERROR_V);
 			}
 			
 			if (jobStatus == JobStatus.RUNNING){
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.SAVING);
-				jobStatus = JobStatus.SAVING;
+				changeStatus(JobStatus.SAVING);
 			}
 			
 			uploadOutputFiles();
@@ -497,8 +504,7 @@ public class JobAgent extends Thread {
 		final Process p;
 
 		try {
-			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.RUNNING);
-			jobStatus = JobStatus.RUNNING;
+			changeStatus(JobStatus.RUNNING);
 			
 			p = pBuilder.start();
 		} catch (final IOException ioe) {
@@ -537,6 +543,9 @@ public class JobAgent extends Thread {
 				    code = p.exitValue();
 				    processNotFinished = false;
 				} catch (IllegalThreadStateException e) {
+					// check job-token exist (job not killed)
+					
+					
 				    // process hasn't terminated
 					String error = checkProcessResources();						
 					if (error != null){
@@ -667,12 +676,13 @@ public class JobAgent extends Thread {
 	private int execute() {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 		
-		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), jdl.getInteger("TTL")+300, TimeUnit.SECONDS);
+		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS);
 
 		System.err.println("Execution code: " + code);
 
 		return code;
 	}
+
 
 	private boolean validate() {
 		int code = 0;
@@ -808,12 +818,17 @@ public class JobAgent extends Thread {
 		HashMap<String,String> packs = (HashMap<String, String>) jdl.getPackages();	
 		HashMap<String, String> envmap = new HashMap<>(); 
 		
-		if (packs != null){
+		if (packs != null){	
 			for (String pack: packs.keySet()) {
 				packagestring += voalice + pack + "::" + packs.get(pack) + ",";			
 			}
-			packagestring = packagestring.substring(0, packagestring.length()-1);
 			
+			if(!packs.containsKey("APISCONFIG")){
+				packagestring += voalice + "APISCONFIG,";
+			}
+			
+			packagestring = packagestring.substring(0, packagestring.length()-1);
+						
 			ArrayList<String> packages = new ArrayList<String>();
 			packages.add(packagestring);
 			
@@ -832,21 +847,14 @@ public class JobAgent extends Thread {
 
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
 		
-		String outputDir = jdl.getOutputDir();;
-
-		if(jobStatus==JobStatus.ERROR_V || jobStatus==JobStatus.ERROR_E){
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" +defaultOutputDirPrefix + queueId);
-		} else if (outputDir == null) {
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
-		}
+		String outputDir = getJobOutputDir();
 
 		System.out.println("queueId: " + queueId);
 		System.out.println("outputDir: " + outputDir);
 
 		if (c_api.getLFN(outputDir) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
-			TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_SV);
-			jobStatus = JobStatus.ERROR_SV;
+			changeStatus(JobStatus.ERROR_SV);
 			return false;
 		}
 		
@@ -945,16 +953,13 @@ public class JobAgent extends Thread {
 		
 		if(jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V){
 			if (uploadedNotAllCopies){
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.DONE_WARN);
-				jobStatus = JobStatus.DONE_WARN;
+				changeStatus(JobStatus.DONE_WARN);
 			}
 			else if (uploadedAllOutFiles){
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.DONE);
-				jobStatus = JobStatus.DONE;
+				changeStatus(JobStatus.DONE);
 			}
 			else{
-				TaskQueueApiUtils.setJobStatus(queueId, JobStatus.ERROR_SV);
-				jobStatus = JobStatus.ERROR_SV;
+				changeStatus(JobStatus.ERROR_SV);
 			}
 		}
 			
@@ -1029,6 +1034,33 @@ public class JobAgent extends Thread {
 	public static void main(final String[] args) throws IOException {
 		final JobAgent ja = new JobAgent();
 		ja.run();
+	}
+	
+	public void changeStatus(JobStatus newStatus){	
+		// if final status with saved files, we set the path
+		if(newStatus==JobStatus.DONE || newStatus==JobStatus.DONE_WARN 
+				|| newStatus==JobStatus.ERROR_E || newStatus==JobStatus.ERROR_V ){
+			HashMap<String,Object> extrafields = new HashMap<>();
+			extrafields.put("path", getJobOutputDir());
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+		} else 	
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+		
+		jobStatus = newStatus;
+		
+		return;
+	}
+	
+	public String getJobOutputDir(){
+		String outputDir = jdl.getOutputDir();
+
+		if(jobStatus==JobStatus.ERROR_V || jobStatus==JobStatus.ERROR_E){
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" +defaultOutputDirPrefix + queueId);
+		} else if (outputDir == null) {
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+		}
+		
+		return outputDir;
 	}
 	
 }

@@ -190,6 +190,23 @@ public class TaskQueueApiUtils {
 			e.getCause().printStackTrace();
 		}
 	}
+	
+	/**
+	 * Set a job's status and sets extra fields on the DB
+	 * 
+	 * @param jobnumber
+	 * @param status
+	 * @param extrafields
+	 */
+	public static void setJobStatus(final int jobnumber, final JobStatus status, final HashMap<String,Object> extrafields) {
+		try {
+			Dispatcher.execute(new SetJobStatus(jobnumber, status, extrafields));
+
+		} catch (final ServerException e) {
+			System.out.println("Could get not a Job's status: " + e.getMessage());
+			e.getCause().printStackTrace();
+		}
+	}
 
 	/**
 	 * Submit a job
