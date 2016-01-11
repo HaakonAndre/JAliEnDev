@@ -1416,6 +1416,14 @@ public class TaskQueueUtils {
 	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
 	 */
 	public static int submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
+		final String owner = prepareSubmission(j, account, role);
+
+		final String clientAddress;
+
+		return insertJob(j, account, owner, null);
+	}
+
+	public static String prepareSubmission(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
 		// TODO : check this account's quota before submitting
 
 		final String packageMessage = PackageUtils.checkPackageRequirements(j);
@@ -1423,40 +1431,58 @@ public class TaskQueueUtils {
 		if (packageMessage != null)
 			throw new IOException(packageMessage);
 
+		final String owner = role != null && (account.hasRole(role) || account.canBecome(role)) ? role : account.getName();
+
+		prepareJDLForSubmission(j, owner);
+
+		return owner;
+	}
+
+	/**
+	 * Insert a job in the given status. N
+	 *
+	 * @param j
+	 *            full JDL
+	 * @param account
+	 *            AliEn account
+	 * @param owner
+	 *            AliEn account name that the indicated account has access to
+	 * @param targetStatus
+	 *            job status. Can be <code>null</code> to have the default behavior of putting it to <code>INSERTING</code> and letting AliEn process it.
+	 * @return the just inserted job ID
+	 * @throws IOException
+	 */
+	public static int insertJob(final JDL j, final AliEnPrincipal account, final String owner, final JobStatus targetStatus) throws IOException {
+		final String clientAddress;
+
+		final InetAddress addr = account.getRemoteEndpoint();
+
+		if (addr != null)
+			clientAddress = addr.getCanonicalHostName();
+		else
+			clientAddress = MonitorFactory.getSelfHostname();
+
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				throw new IOException("This service has no direct database connection");
 
 			final Map<String, Object> values = new HashMap<>();
 
-			final String owner = role != null && (account.hasRole(role) || account.canBecome(role)) ? role : account.getName();
-
-			prepareJDLForSubmission(j, owner);
-
 			final String executable = j.getExecutable();
 
 			final Float price = j.getFloat("Price");
 
-			final String clientAddress;
-
-			final InetAddress addr = account.getRemoteEndpoint();
-
-			if (addr != null)
-				clientAddress = addr.getCanonicalHostName();
-			else
-				clientAddress = MonitorFactory.getSelfHostname();
-
 			// final JobStatus targetStatus = j.get("split")!=null ?
 			// JobStatus.SPLITTING : JobStatus.INSERTING;
-
-			final JobStatus targetStatus = JobStatus.INSERTING;
 
 			values.put("priority", Integer.valueOf(0));
 
 			final String notify = j.gets("email");
 
+			final JobStatus jobStatus = targetStatus != null ? targetStatus : JobStatus.INSERTING;
+
 			if (dbStructure2_20) {
-				values.put("statusId", Integer.valueOf(targetStatus.getAliEnLevel()));
+				values.put("statusId", Integer.valueOf(jobStatus.getAliEnLevel()));
 				values.put("userId", getUserId(owner));
 				values.put("submitHostId", getHostId(clientAddress));
 				values.put("commandId", getCommandId(executable));
@@ -1464,7 +1490,7 @@ public class TaskQueueUtils {
 				if (notify != null && notify.length() > 0)
 					values.put("notifyId", getNotifyId(notify));
 			} else {
-				values.put("status", targetStatus.toSQL());
+				values.put("status", jobStatus.toSQL());
 				values.put("jdl", "\n    [\n" + j.toString() + "\n    ]");
 				values.put("submitHost", owner + "@" + clientAddress);
 				values.put("notify", notify);
@@ -1474,7 +1500,13 @@ public class TaskQueueUtils {
 			values.put("chargeStatus", Integer.valueOf(0));
 			values.put("price", price);
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
-			values.put("split", Integer.valueOf(0));
+
+			final Integer masterjobID = j.getInteger("MasterJobID");
+
+			if (masterjobID != null)
+				values.put("split", masterjobID);
+			else
+				values.put("split", Integer.valueOf(0));
 
 			if (j.get("Split") != null)
 				values.put("masterjob", Integer.valueOf(1));
@@ -1512,7 +1544,7 @@ public class TaskQueueUtils {
 
 			setAction(targetStatus);
 
-			putJobLog(pid.intValue(), "state", "Job state transition to " + targetStatus.toString(), null);
+			putJobLog(pid.intValue(), "state", "Job state transition to " + jobStatus.toString(), null);
 
 			return pid.intValue();
 		}
@@ -2525,19 +2557,18 @@ public class TaskQueueUtils {
 			db.setReadOnly(true);
 			db.query("select userId from QUEUE_USER where user=?", false, user);
 
-			if (db.moveNext()) {
+			if (db.moveNext())
 				return db.geti(1);
-			}
 		}
 		return 0;
 	}
 
-	public static int deleteJobAgent(int agentId, int queueId) {
+	public static int deleteJobAgent(final int agentId, final int queueId) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
 
-			ArrayList<Object> bindValues = new ArrayList<>();
+			final ArrayList<Object> bindValues = new ArrayList<>();
 			String oldestQueueIdQ = "";
 
 			if (queueId > 0) {
