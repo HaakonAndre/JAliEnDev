@@ -66,14 +66,14 @@ public class TaskQueueUtils {
 	 * Flag that tells if the QUEUE table is v2.20+ (JDL text in QUEUEJDL, using status, host, user, notification ids and so on instead of the string versions)
 	 */
 	public static final boolean dbStructure2_20;
-	
-    private static final Map<String, String> fieldMap;
-    static
-    {
-    	fieldMap = new HashMap<String, String>();
-    	fieldMap.put("path_table", "QUEUEJDL");
-    	fieldMap.put("path_field", "path");
-    }
+
+	private static final Map<String, String> fieldMap;
+
+	static {
+		fieldMap = new HashMap<String, String>();
+		fieldMap.put("path_table", "QUEUEJDL");
+		fieldMap.put("path_field", "path");
+	}
 
 	static {
 		try (DBFunctions db = getQueueDB()) {
@@ -636,8 +636,7 @@ public class TaskQueueUtils {
 	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint, 
-			final HashMap<String,Object> extrafields) {
+	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint, final HashMap<String, Object> extrafields) {
 		if (job <= 0)
 			throw new IllegalArgumentException("Job ID " + job + " is illegal");
 
@@ -713,14 +712,14 @@ public class TaskQueueUtils {
 
 			if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED)
 				deleteJobToken(job);
-			
-			if(extrafields != null){
-				logger.log(Level.INFO, "extrafields: "+extrafields.toString());
-				for (String key: extrafields.keySet()){
-					if (fieldMap.containsKey(key+"_table")){
-						HashMap<String,Object> map = new HashMap<>();
-						map.put(fieldMap.get(key+"_field"), extrafields.get(key));
-						String query = DBFunctions.composeUpdate(fieldMap.get(key+"_table"), map, null);
+
+			if (extrafields != null) {
+				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
+				for (String key : extrafields.keySet()) {
+					if (fieldMap.containsKey(key + "_table")) {
+						HashMap<String, Object> map = new HashMap<>();
+						map.put(fieldMap.get(key + "_field"), extrafields.get(key));
+						String query = DBFunctions.composeUpdate(fieldMap.get(key + "_table"), map, null);
 						query += " where queueId = ?";
 						db.query(query, false, Integer.valueOf(job));
 					}
@@ -1418,11 +1417,22 @@ public class TaskQueueUtils {
 	public static int submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
 		final String owner = prepareSubmission(j, account, role);
 
-		final String clientAddress;
-
 		return insertJob(j, account, owner, null);
 	}
 
+	/**
+	 * Check the validity of the JDL (package versions, existing critical input files etc) and if the indicated account has access to the indicated role. Will also decorate the JDL with various helper
+	 * tags.
+	 * 
+	 * @param j
+	 *            JDL to submit
+	 * @param account
+	 *            AliEn account that requests the submission
+	 * @param role
+	 *            one of the role names to which the account has access to
+	 * @return the AliEn account name that will own the job
+	 * @throws IOException
+	 */
 	public static String prepareSubmission(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
 		// TODO : check this account's quota before submitting
 
