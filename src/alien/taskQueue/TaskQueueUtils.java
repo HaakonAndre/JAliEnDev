@@ -636,6 +636,18 @@ public class TaskQueueUtils {
 	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
 	 * @return <code>true</code> if the job status was changed
 	 */
+	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint) {
+		return setJobStatus(job, newStatus, oldStatusConstraint, null);
+	}
+
+	/**
+	 * @param job
+	 * @param newStatus
+	 * @param oldStatusConstraint
+	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
+	 * @param extrafields other fields to set at the same time
+	 * @return <code>true</code> if the job status was changed
+	 */
 	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint, final HashMap<String, Object> extrafields) {
 		if (job <= 0)
 			throw new IllegalArgumentException("Job ID " + job + " is illegal");
