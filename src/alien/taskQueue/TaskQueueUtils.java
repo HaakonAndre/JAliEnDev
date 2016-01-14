@@ -1563,7 +1563,7 @@ public class TaskQueueUtils {
 			// somebody, don't insert anything at this stage
 			// insertJobToken(pid.intValue(), owner, true);
 
-			setAction(targetStatus);
+			setAction(jobStatus);
 
 			putJobLog(pid.intValue(), "state", "Job state transition to " + jobStatus.toString(), null);
 
