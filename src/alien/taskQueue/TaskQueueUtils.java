@@ -645,7 +645,8 @@ public class TaskQueueUtils {
 	 * @param newStatus
 	 * @param oldStatusConstraint
 	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
-	 * @param extrafields other fields to set at the same time
+	 * @param extrafields
+	 *            other fields to set at the same time
 	 * @return <code>true</code> if the job status was changed
 	 */
 	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint, final HashMap<String, Object> extrafields) {
@@ -1520,17 +1521,18 @@ public class TaskQueueUtils {
 			values.put("price", price);
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
 
-			final Integer masterjobID = j.getInteger("MasterJobID");
+			Integer masterjobID = j.getInteger("MasterJobID");
+
+			if (jobStatus.equals(JobStatus.SPLIT) || j.get("Split") != null) {
+				values.put("masterjob", Integer.valueOf(1));
+				masterjobID = null;
+			} else
+				values.put("masterjob", Integer.valueOf(0));
 
 			if (masterjobID != null)
 				values.put("split", masterjobID);
 			else
 				values.put("split", Integer.valueOf(0));
-
-			if (j.get("Split") != null)
-				values.put("masterjob", Integer.valueOf(1));
-			else
-				values.put("masterjob", Integer.valueOf(0));
 
 			final String insert = DBFunctions.composeInsert("QUEUE", values);
 
