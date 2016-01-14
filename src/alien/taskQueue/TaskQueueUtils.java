@@ -1494,9 +1494,6 @@ public class TaskQueueUtils {
 
 			final Float price = j.getFloat("Price");
 
-			// final JobStatus targetStatus = j.get("split")!=null ?
-			// JobStatus.SPLITTING : JobStatus.INSERTING;
-
 			values.put("priority", Integer.valueOf(0));
 
 			final String notify = j.gets("email");
