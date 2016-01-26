@@ -7,7 +7,10 @@ import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
@@ -16,8 +19,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lia.util.process.ExternalProcesses;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
@@ -25,6 +26,8 @@ import alien.io.IOUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
+import lazyj.DBFunctions;
+import lia.util.process.ExternalProcesses;
 
 /**
  * @author costing
@@ -194,6 +197,101 @@ public final class GUIDUtils {
 
 			return ret;
 		}
+	}
+
+	/**
+	 * Bulk operation to retrieve GUID objects from the catalogue
+	 * 
+	 * @param guidList
+	 *            List of UUIDs to retrieve the GUIDs for
+	 * @return the set of GUIDs that could be looked up in the catalogue
+	 */
+	public static Set<GUID> getGUIDs(final UUID... guidList) {
+		final Set<GUID> ret = new LinkedHashSet<>();
+
+		if (guidList == null || guidList.length == 0)
+			return ret;
+
+		final Map<Host, Map<Integer, Set<UUID>>> mapping = new LinkedHashMap<>();
+
+		for (final UUID guid : guidList) {
+			final int host = getGUIDHost(guid);
+
+			if (host < 0)
+				continue;
+
+			final Host h = CatalogueUtils.getHost(host);
+
+			if (h == null)
+				continue;
+
+			final int tableName = GUIDUtils.getTableNameForGUID(guid);
+
+			if (tableName < 0)
+				continue;
+
+			final Integer iTableName = Integer.valueOf(tableName);
+
+			Map<Integer, Set<UUID>> hostMap = mapping.get(h);
+
+			if (hostMap == null) {
+				hostMap = new LinkedHashMap<>();
+				mapping.put(h, hostMap);
+			}
+
+			Set<UUID> uuidList = hostMap.get(iTableName);
+
+			if (uuidList == null) {
+				uuidList = new LinkedHashSet<>();
+				hostMap.put(iTableName, uuidList);
+			}
+
+			uuidList.add(guid);
+		}
+
+		for (final Map.Entry<Host, Map<Integer, Set<UUID>>> entry : mapping.entrySet()) {
+			final Host h = entry.getKey();
+
+			final Map<Integer, Set<UUID>> hostMapping = entry.getValue();
+
+			try (DBFunctions db = h.getDB()) {
+				if (db == null)
+					continue;
+
+				db.setReadOnly(true);
+
+				for (final Map.Entry<Integer, Set<UUID>> tableEntry : hostMapping.entrySet()) {
+					final Integer tableName = tableEntry.getKey();
+
+					if (monitor != null)
+						monitor.incrementCounter("GUID_db_lookup");
+
+					StringBuilder sb = new StringBuilder();
+
+					for (final UUID u : tableEntry.getValue()) {
+						if (sb.length() > 0)
+							sb.append(',');
+
+						sb.append("string2binary('").append(u.toString()).append("')");
+					}
+
+					final String q = "SELECT * FROM G" + tableName + "L WHERE guid IN (" + sb.toString() + ");";
+
+					if (!db.query(q))
+						throw new IllegalStateException("Failed executing query: " + q);
+
+					while (db.moveNext()) {
+						try {
+							ret.add(new GUID(db, h.hostIndex, tableName.intValue()));
+						} catch (final Exception e) {
+							logger.log(Level.WARNING, "Exception instantiating some guid from " + tableName, e);
+						}
+					}
+				}
+			}
+		}
+
+		return ret;
 	}
 
 	/**
