@@ -134,12 +134,24 @@ public class ConfigUtils {
 
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 
-		appConfig = applicationConfig != null ? applicationConfig : new ExtProperties();
+		if (applicationConfig!=null){
+			appConfig = applicationConfig;
+		}
+		else{
+			if (System.getProperty("lia.Monitor.ConfigURL") !=null)
+				appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
+			else
+				appConfig = new ExtProperties();
+		}
 
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
 			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
 
 		appConfig.makeReadOnly();
+		
+		if (logging == null){
+			logging = new LoggingConfigurator(appConfig);
+		}
 	}
 
 	/**
@@ -283,18 +295,13 @@ public class ConfigUtils {
 	public static final String getVersion() {
 		return jAliEnVersion;
 	}
-	
 
 	/**
 	 * @return machine platform
 	 */
 	public static final String getPlatform() {
-		return Utils.getOutput("uname -s").trim()+
-				"-"+
-				Utils.getOutput("uname -m").trim();
+		return Utils.getOutput("uname -s").trim() + "-" + Utils.getOutput("uname -m").trim();
 	}
-	
-	
 
 	/**
 	 * @return the site name closest to where this JVM runs
