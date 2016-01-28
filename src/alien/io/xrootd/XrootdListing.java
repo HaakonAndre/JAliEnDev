@@ -20,6 +20,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
+import alien.io.protocols.Xrootd;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 
@@ -110,20 +111,20 @@ public class XrootdListing {
 
 			final String envelope = env.getEncryptedEnvelope();
 
-			// xrdcommand+="?authz=" + Format.encode(Format.replace(envelope,
-			// "\n", ""));
 			xrdcommand += "?authz=" + envelope;
 		}
 
-		final List<String> command = Arrays.asList("xrd", server, xrdcommand);
+		final List<String> command = Arrays.asList(Xrootd.getXrootdDefaultPath() + "/bin/xrd", server, xrdcommand);
 
 		logger.log(Level.INFO, "Executing:\n" + command);
 
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+		
+		Xrootd.checkLibraryPath(pBuilder);
 
 		pBuilder.returnOutputOnExit(true);
 
-		pBuilder.timeout(24, TimeUnit.HOURS);
+		pBuilder.timeout(1, TimeUnit.HOURS);
 
 		pBuilder.redirectErrorStream(true);
 

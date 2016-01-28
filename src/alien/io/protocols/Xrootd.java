@@ -139,11 +139,23 @@ public class Xrootd extends Protocol {
 		// package protected
 	}
 
-	protected static void checkLibraryPath(final ExternalProcessBuilder p) {
+	/**
+	 * Set the LD_LIBRARY_PATH of this process to default Xrootd's lib/ dir  
+	 * 
+	 * @param p
+	 */
+	public static void checkLibraryPath(final ExternalProcessBuilder p) {
 		checkLibraryPath(p, xrootd_default_path);
 	}
 
-	protected static void checkLibraryPath(final ExternalProcessBuilder p, final String path) {
+
+	/**
+	 * Set the LD_LIBRARY_PATH of this process to the lib directory of the given path  
+	 * 
+	 * @param p
+	 * @param path 
+	 */
+	public static void checkLibraryPath(final ExternalProcessBuilder p, final String path) {
 		if (path != null)
 			p.environment().put("LD_LIBRARY_PATH", path + "/lib");
 	}
@@ -169,7 +181,7 @@ public class Xrootd extends Protocol {
 	 * Extract the most relevant failure reason from an xrdcp / xrd3cp output
 	 *
 	 * @param message
-	 * @return relevant portion of the output
+	 * @return relevant portion of the output 
 	 */
 	public static final String parseXrootdError(final String message) {
 		if (message == null || message.length() == 0)
@@ -993,5 +1005,13 @@ public class Xrootd extends Protocol {
 	@Override
 	public byte protocolID() {
 		return 3;
+	}
+
+	/**
+	 * @return the path for the default Xrootd version (base directory, append /bin or /lib to it)
+	 * @see Xrootd#checkLibraryPath(ExternalProcessBuilder)
+	 */
+	public static String getXrootdDefaultPath() {
+		return xrootd_default_path;
 	}
 }
