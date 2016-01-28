@@ -22,7 +22,6 @@ import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
-import lazyj.Format;
 import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
@@ -245,7 +244,7 @@ public class Xrootd extends Protocol {
 				command.add(xrootd_default_path + "/bin/xrdfs");
 				command.add(host + ":" + port);
 				command.add("rm");
-				command.add(qProt.substring(qProt.indexOf('/') + 1) + "?authz=" + Format.encode(envelope));
+				command.add(qProt.substring(qProt.indexOf('/') + 1) + "?authz=" + envelope);
 			} else {
 				command.add(xrootd_default_path + "/bin/xrdrm");
 				command.add("-v");
