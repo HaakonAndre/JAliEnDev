@@ -140,7 +140,7 @@ public class Xrootd extends Protocol {
 	}
 
 	/**
-	 * Set the LD_LIBRARY_PATH of this process to default Xrootd's lib/ dir  
+	 * Set the LD_LIBRARY_PATH of this process to default Xrootd's lib/ dir
 	 * 
 	 * @param p
 	 */
@@ -148,12 +148,11 @@ public class Xrootd extends Protocol {
 		checkLibraryPath(p, xrootd_default_path);
 	}
 
-
 	/**
-	 * Set the LD_LIBRARY_PATH of this process to the lib directory of the given path  
+	 * Set the LD_LIBRARY_PATH of this process to the lib directory of the given path
 	 * 
 	 * @param p
-	 * @param path 
+	 * @param path
 	 */
 	public static void checkLibraryPath(final ExternalProcessBuilder p, final String path) {
 		if (path != null)
@@ -181,7 +180,7 @@ public class Xrootd extends Protocol {
 	 * Extract the most relevant failure reason from an xrdcp / xrd3cp output
 	 *
 	 * @param message
-	 * @return relevant portion of the output 
+	 * @return relevant portion of the output
 	 */
 	public static final String parseXrootdError(final String message) {
 		if (message == null || message.length() == 0)
@@ -533,14 +532,19 @@ public class Xrootd extends Protocol {
 			if (pfn.ticket.envelope != null) {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
-				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
-					command.add("-OD&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
+				if (pfn.ticket.envelope.getEncryptedEnvelope() != null){
+					String opaqueParams = "-OD";
+
+					if (!xrootdNewerThan4)
+						opaqueParams += "eos.bookingsize=" + guid.size + "&";
+					
+					opaqueParams += "authz=" + pfn.ticket.envelope.getEncryptedEnvelope();
+					
+					command.add(opaqueParams);
+				}
 				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 			}
-
-			if (!xrootdNewerThan4)
-				transactionURL = addURLParameter(transactionURL, "eos.bookingsize=" + guid.size);
 
 			command.add(transactionURL);
 
