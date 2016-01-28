@@ -148,10 +148,6 @@ public class ConfigUtils {
 			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
 
 		appConfig.makeReadOnly();
-		
-		if (logging == null){
-			logging = new LoggingConfigurator(appConfig);
-		}
 	}
 
 	/**
