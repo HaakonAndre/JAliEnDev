@@ -143,8 +143,6 @@ public class XrootdListing {
 
 		final int exitCode = exitStatus.getExtProcExitStatus();
 
-		System.err.println(exitStatus.getStdOut());
-
 		if (exitCode != 0)
 			logger.log(Level.WARNING, "Exit code was " + exitCode + " for " + command + ":\n" + exitStatus.getStdOut());
 
