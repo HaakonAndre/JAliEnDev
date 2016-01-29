@@ -12,10 +12,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
@@ -23,10 +22,12 @@ import alien.config.ConfigUtils;
 import alien.io.protocols.Xrootd;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 /**
  * @author costing
- * 
+ *
  */
 public class XrootdListing {
 
@@ -85,16 +86,18 @@ public class XrootdListing {
 	private void init() throws IOException {
 		entries = new TreeSet<>();
 
-		String xrdcommand = "ls " + path;
+		String xrdcommand = path;
 
 		if (se != null) {
 			// dcache requires envelopes for listing
 
 			final GUID guid = GUIDUtils.createGuid();
 
+			guid.addKnownLFN(LFNUtils.getLFN(path, true));
+
 			final PFN pfn = new PFN(guid, se);
 
-			pfn.pfn = se.generateProtocol() + path;
+			pfn.pfn = SE.generateProtocol(se.seioDaemons, path);
 
 			final XrootDEnvelope env = new XrootDEnvelope(AccessType.READ, pfn);
 
@@ -109,17 +112,19 @@ public class XrootdListing {
 				return;
 			}
 
+			System.err.println(env.getUnEncryptedEnvelope());
+
 			final String envelope = env.getEncryptedEnvelope();
 
 			xrdcommand += "?authz=" + envelope;
 		}
 
-		final List<String> command = Arrays.asList(Xrootd.getXrootdDefaultPath() + "/bin/xrd", server, xrdcommand);
+		final List<String> command = Arrays.asList(Xrootd.getXrootdDefaultPath() + "/bin/xrdfs", server, "ls", "-l", xrdcommand);
 
 		logger.log(Level.INFO, "Executing:\n" + command);
 
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
-		
+
 		Xrootd.checkLibraryPath(pBuilder);
 
 		pBuilder.returnOutputOnExit(true);
@@ -138,8 +143,10 @@ public class XrootdListing {
 
 		final int exitCode = exitStatus.getExtProcExitStatus();
 
+		System.err.println(exitStatus.getStdOut());
+
 		if (exitCode != 0)
-			logger.log(Level.WARNING, "Exit code was " + exitCode + " for " + command);
+			logger.log(Level.WARNING, "Exit code was " + exitCode + " for " + command + ":\n" + exitStatus.getStdOut());
 
 		final BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()));
 
