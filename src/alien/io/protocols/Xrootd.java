@@ -141,7 +141,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Set the LD_LIBRARY_PATH of this process to default Xrootd's lib/ dir
-	 * 
+	 *
 	 * @param p
 	 */
 	public static void checkLibraryPath(final ExternalProcessBuilder p) {
@@ -150,7 +150,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Set the LD_LIBRARY_PATH of this process to the lib directory of the given path
-	 * 
+	 *
 	 * @param p
 	 * @param path
 	 */
@@ -247,23 +247,29 @@ public class Xrootd extends Protocol {
 
 			File fAuthz = null;
 
+			String transactionURL = pfn.pfn;
+
+			if (pfn.ticket.envelope != null)
+				transactionURL = pfn.ticket.envelope.getTransactionURL();
+
 			if (xrootdNewerThan4) {
-				final String qProt = pfn.getPFN().substring(7);
-				final String host = qProt.substring(0, qProt.indexOf(':'));
-				final String port = qProt.substring(qProt.indexOf(':') + 1, qProt.indexOf('/'));
+				final org.apache.catalina.util.URL url = new org.apache.catalina.util.URL(pfn.ticket.envelope.getTransactionURL());
+
+				final String host = url.getHost();
+				final int port = url.getPort() > 0 ? url.getPort() : 1094;
+
+				String path = url.getPath();
+
+				if (path.startsWith("//"))
+					path = path.substring(1);
 
 				command.add(xrootd_default_path + "/bin/xrdfs");
 				command.add(host + ":" + port);
 				command.add("rm");
-				command.add(qProt.substring(qProt.indexOf('/') + 1) + "?authz=" + envelope);
+				command.add(path + "?authz=" + envelope);
 			} else {
 				command.add(xrootd_default_path + "/bin/xrdrm");
 				command.add("-v");
-
-				String transactionURL = pfn.pfn;
-
-				if (pfn.ticket.envelope != null)
-					transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 				if (envelope != null) {
 					fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
@@ -532,17 +538,16 @@ public class Xrootd extends Protocol {
 			if (pfn.ticket.envelope != null) {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
-				if (pfn.ticket.envelope.getEncryptedEnvelope() != null){
+				if (pfn.ticket.envelope.getEncryptedEnvelope() != null) {
 					String opaqueParams = "-OD";
 
 					if (!xrootdNewerThan4)
 						opaqueParams += "eos.bookingsize=" + guid.size + "&";
-					
+
 					opaqueParams += "authz=" + pfn.ticket.envelope.getEncryptedEnvelope();
-					
+
 					command.add(opaqueParams);
-				}
-				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
+				} else if (pfn.ticket.envelope.getSignedEnvelope() != null)
 					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 
