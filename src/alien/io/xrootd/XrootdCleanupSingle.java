@@ -10,22 +10,22 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import lazyj.DBFunctions;
-import lazyj.Format;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import lazyj.DBFunctions;
+import lazyj.Format;
 
 /**
  * Single threaded listing of Xrootd server content and injecting in the deletion queue the files that should not be there
- * 
+ *
  * @author costing
- * 
+ *
  */
 public class XrootdCleanupSingle {
 	/**
@@ -53,9 +53,11 @@ public class XrootdCleanupSingle {
 	 */
 	final AtomicInteger processed = new AtomicInteger(0);
 
+	final boolean setSE;
+
 	/**
 	 * Check all GUID files in this storage by listing recursively its contents.
-	 * 
+	 *
 	 * @param sSE
 	 */
 	public XrootdCleanupSingle(final String sSE) {
@@ -63,11 +65,14 @@ public class XrootdCleanupSingle {
 
 		if (se == null) {
 			server = null;
+			setSE = false;
 
 			System.err.println("No such SE " + sSE);
 
 			return;
 		}
+
+		setSE = se.getName().toLowerCase().contains("dcache") || se.getName().toLowerCase().contains("dpm");
 
 		String sBase = se.seioDaemons;
 
@@ -81,21 +86,22 @@ public class XrootdCleanupSingle {
 	 * @param path
 	 */
 	void storageCleanup(final String path) {
-		System.err.println(se.seName + " : entering " + path);
+		final String actualPath = Format.replace(SE.generateProtocol(se.seStoragePath, path), "//", "/");
 
 		dirsSeen.incrementAndGet();
 
 		try {
-			final boolean setSE = se.getName().toLowerCase().contains("dcache");
-
-			final XrootdListing listing = new XrootdListing(server, path, setSE ? se : null);
+			final XrootdListing listing = new XrootdListing(server, actualPath, setSE ? se : null);
 
 			for (final XrootdFile file : listing.getFiles())
 				fileCheck(file);
 
-			for (final XrootdFile dir : listing.getDirs())
-				if (dir.path.matches("^/\\d{2}(/\\d{5})?$"))
-					storageCleanup(dir.path);
+			for (final XrootdFile dir : listing.getDirs()) {
+				final int idx = dir.path.indexOf(actualPath);
+
+				if (idx >= 0 && dir.path.matches(".*/\\d{2}(/\\d{5})?/?$"))
+					storageCleanup(dir.path.substring(idx + actualPath.length() - path.length()));
+			}
 		} catch (final IOException ioe) {
 			System.err.println(ioe.getMessage());
 			ioe.printStackTrace();
@@ -232,7 +238,7 @@ public class XrootdCleanupSingle {
 					final XrootdCleanupSingle cleanup = new XrootdCleanupSingle(se);
 
 					for (int i = 0; i <= 15; i++) {
-						cleanup.storageCleanup("/" + (i < 10 ? "0" : "") + i + "/");
+						cleanup.storageCleanup((i < 10 ? "0" : "") + i + "/");
 
 						System.err.println("Progress report (" + i + "): " + cleanup + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
 					}
