@@ -37,10 +37,8 @@ public class XrootdCleanupSingle {
 
 	private final AtomicLong sizeRemoved = new AtomicLong();
 	private final AtomicLong sizeKept = new AtomicLong();
-	private final AtomicLong sizeFailed = new AtomicLong();
 	private final AtomicLong filesRemoved = new AtomicLong();
 	private final AtomicLong filesKept = new AtomicLong();
-	private final AtomicLong filesFailed = new AtomicLong();
 	private final AtomicLong dirsSeen = new AtomicLong();
 
 	/**
@@ -151,9 +149,6 @@ public class XrootdCleanupSingle {
 				if (removeFile(file)) {
 					sizeRemoved.addAndGet(file.size);
 					filesRemoved.incrementAndGet();
-				} else {
-					sizeFailed.addAndGet(file.size);
-					filesFailed.incrementAndGet();
 				}
 			} else {
 				sizeKept.addAndGet(file.size);
@@ -175,15 +170,22 @@ public class XrootdCleanupSingle {
 
 		final UUID uuid;
 
-		if (m.matches())
-			uuid = UUID.fromString(m.group(1));
-		else
+		final String sUUID;
+
+		if (m.matches()) {
+			sUUID = m.group(1);
+			uuid = UUID.fromString(sUUID);
+		} else
 			return false;
 
 		System.err.println("RM " + uuid + " FROM " + se.seName + ", " + file.size + " (" + Format.size(file.size) + "), " + file.date);
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-			db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
+			if (sUUID.equals(uuid.toString()))
+				db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
+			else
+				db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size,pfn) VALUES (1,string2binary(?), ?, ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size),
+						SE.generateProtocol(se.seioDaemons, file.path));
 		}
 
 		return true;
@@ -191,8 +193,8 @@ public class XrootdCleanupSingle {
 
 	@Override
 	public String toString() {
-		return "Removed " + filesRemoved + " files (" + Format.size(sizeRemoved.longValue()) + "), " + "failed to remove " + filesFailed + " (" + Format.size(sizeFailed.longValue()) + "), " + "kept "
-				+ filesKept + " (" + Format.size(sizeKept.longValue()) + "), " + dirsSeen + " directories from " + se.seName;
+		return "Removed " + filesRemoved + " files (" + Format.size(sizeRemoved.longValue()) + "), " + "kept " + filesKept + " (" + Format.size(sizeKept.longValue()) + "), " + dirsSeen
+				+ " directories from " + se.seName;
 	}
 
 	/**
