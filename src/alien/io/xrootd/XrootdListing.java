@@ -22,6 +22,7 @@ import alien.config.ConfigUtils;
 import alien.io.protocols.Xrootd;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
+import lazyj.Format;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 
@@ -112,8 +113,6 @@ public class XrootdListing {
 				return;
 			}
 
-			System.err.println(env.getUnEncryptedEnvelope());
-
 			final String envelope = env.getEncryptedEnvelope();
 
 			xrdcommand += "?authz=" + envelope;
@@ -146,7 +145,25 @@ public class XrootdListing {
 		if (exitCode != 0)
 			logger.log(Level.WARNING, "Exit code was " + exitCode + " for " + command + ":\n" + exitStatus.getStdOut());
 
-		final BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()));
+		String listing = exitStatus.getStdOut();
+
+		final int idxAuthz = listing.indexOf("?authz=");
+
+		if (idxAuthz > 0) {
+			final char c = listing.charAt(idxAuthz - 1);
+
+			int idxAuthzEnd = listing.indexOf("-----END SEALED ENVELOPE-----", idxAuthz);
+
+			if (idxAuthzEnd >= 0) {
+				idxAuthzEnd = listing.indexOf('/', idxAuthzEnd);
+
+				final String token = listing.substring(idxAuthz, idxAuthzEnd + (c == '/' ? 1 : 0));
+
+				listing = Format.replace(listing, token, "");
+			}
+		}
+
+		final BufferedReader br = new BufferedReader(new StringReader(listing));
 
 		String sLine;
 
