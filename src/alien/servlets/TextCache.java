@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.servlets;
 
@@ -25,6 +25,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
+import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import lazyj.ExtendedServlet;
 import lazyj.Format;
 import lazyj.LRUMap;
@@ -33,9 +36,6 @@ import lazyj.cache.ExpirationCache;
 import lia.Monitor.monitor.ShutdownReceiver;
 import lia.util.ShutdownManager;
 import lia.util.StringFactory;
-import alien.config.ConfigUtils;
-import alien.monitoring.Monitor;
-import alien.monitoring.MonitorFactory;
 
 /**
  * @author costing
@@ -208,7 +208,7 @@ public class TextCache extends ExtendedServlet {
 
 	/**
 	 * Call this one entry is removed to log the number of hits
-	 * 
+	 *
 	 * @param namespace
 	 * @param key
 	 * @param value
@@ -238,7 +238,7 @@ public class TextCache extends ExtendedServlet {
 
 	/**
 	 * @author costing
-	 * 
+	 *
 	 */
 	public static final class NotifyLRUMap extends LRUMap<String, CacheValue> {
 		private static final long serialVersionUID = -9117776082771411054L;
@@ -316,7 +316,7 @@ public class TextCache extends ExtendedServlet {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see lazyj.ExtendedServlet#execGet()
 	 */
 	@Override
@@ -408,29 +408,29 @@ public class TextCache extends ExtendedServlet {
 
 					final boolean values = gets("values").length() > 0;
 
-					int nssize;
+					final ArrayList<Map.Entry<String, CacheValue>> entries;
 
 					synchronized (namespace) {
-						final ArrayList<Map.Entry<String, CacheValue>> entries = new ArrayList<>(namespace.cache.entrySet());
-
-						Collections.sort(entries, entryComparator);
-
-						for (final Map.Entry<String, CacheValue> me : entries) {
-							final CacheValue cv = me.getValue();
-
-							final int size = cv.value.length();
-
-							min = (min < 0 || size < min) ? size : min;
-							max = Math.max(max, size);
-							total += size;
-
-							hits += cv.accesses.intValue();
-
-							pwOut.println(me.getKey() + " : size " + size + ", " + cv.accesses + " hits" + (values ? " : " + cv.value : ""));
-						}
-
-						nssize = namespace.cache.size();
+						entries = new ArrayList<>(namespace.cache.entrySet());
 					}
+
+					Collections.sort(entries, entryComparator);
+
+					for (final Map.Entry<String, CacheValue> me : entries) {
+						final CacheValue cv = me.getValue();
+
+						final int size = cv.value.length();
+
+						min = (min < 0 || size < min) ? size : min;
+						max = Math.max(max, size);
+						total += size;
+
+						hits += cv.accesses.intValue();
+
+						pwOut.println(me.getKey() + " : size " + size + ", " + cv.accesses + " hits" + (values ? " : " + cv.value : ""));
+					}
+
+					final int nssize = namespace.cache.size();
 
 					pwOut.print("\n\n----------------\n\n" + nssize + " entries");
 
@@ -455,9 +455,7 @@ public class TextCache extends ExtendedServlet {
 			CacheValue old;
 
 			if (getb("ifnull", false) == true) {
-				synchronized (namespace) {
-					old = namespace.cache.get(key);
-				}
+				old = namespace.cache.get(key);
 
 				if (old != null && old.expires >= System.currentTimeMillis()) {
 					if (monitor != null)
@@ -528,28 +526,41 @@ public class TextCache extends ExtendedServlet {
 
 				final int largestPartSize = sLargestPart.length();
 
-				synchronized (namespace) {
-					final Iterator<Map.Entry<String, CacheValue>> it = namespace.cache.entrySet().iterator();
+				final ArrayList<String> candidates = new ArrayList<>();
 
-					Matcher m = null;
+				synchronized (namespace) {
+					final Iterator<String> it = namespace.cache.keySet().iterator();
 
 					while (it.hasNext()) {
-						final Map.Entry<String, CacheValue> entry = it.next();
-
-						final String itKey = entry.getKey();
+						final String itKey = it.next();
 
 						if (largestPartSize > 0 && (itKey.length() < largestPartSize || itKey.indexOf(sLargestPart) < 0))
 							continue;
 
+						candidates.add(itKey);
+					}
+				}
+
+				if (candidates.size() > 0) {
+					Matcher m = null;
+
+					for (final String itKey : candidates) {
 						if (m == null)
 							m = p.matcher(itKey);
 						else
 							m.reset(itKey);
 
 						if (m.matches()) {
-							notifyEntryRemoved(ns, entry.getKey(), entry.getValue());
-							it.remove();
-							removed++;
+							final CacheValue old;
+
+							synchronized (namespace) {
+								old = namespace.cache.remove(itKey);
+							}
+
+							if (old != null) {
+								notifyEntryRemoved(ns, itKey, old);
+								removed++;
+							}
 						}
 					}
 				}
@@ -564,11 +575,7 @@ public class TextCache extends ExtendedServlet {
 			return;
 		}
 
-		CacheValue existing;
-
-		synchronized (namespace) {
-			existing = namespace.cache.get(key);
-		}
+		final CacheValue existing = namespace.cache.get(key);
 
 		if (existing == null) {
 			if (monitor != null)
@@ -603,7 +610,7 @@ public class TextCache extends ExtendedServlet {
 
 	/**
 	 * Call the remote text cache to remove all entries related to the given path
-	 * 
+	 *
 	 * @param lfn
 	 */
 	public static void invalidateLFN(final String lfn) {
@@ -617,7 +624,7 @@ public class TextCache extends ExtendedServlet {
 
 	/**
 	 * Remove entries from the text cache from a given namespace and one or more patterns
-	 * 
+	 *
 	 * @param ns
 	 * @param pattern
 	 * @return the outcome of the query as indicated by the server
