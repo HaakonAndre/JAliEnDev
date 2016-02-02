@@ -455,7 +455,9 @@ public class TextCache extends ExtendedServlet {
 			CacheValue old;
 
 			if (getb("ifnull", false) == true) {
-				old = namespace.cache.get(key);
+				synchronized (namespace) {
+					old = namespace.cache.get(key);
+				}
 
 				if (old != null && old.expires >= System.currentTimeMillis()) {
 					if (monitor != null)
@@ -575,7 +577,11 @@ public class TextCache extends ExtendedServlet {
 			return;
 		}
 
-		final CacheValue existing = namespace.cache.get(key);
+		final CacheValue existing;
+
+		synchronized (namespace) {
+			existing = namespace.cache.get(key);
+		}
 
 		if (existing == null) {
 			if (monitor != null)
