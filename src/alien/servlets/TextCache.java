@@ -18,8 +18,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.Vector;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -137,7 +139,7 @@ public class TextCache extends ExtendedServlet {
 								final long expires = entry.getValue().expires;
 
 								if (expires < now) {
-									notifyEntryRemoved(nsName, entry.getKey(), entry.getValue());
+									notifyEntryRemoved(namespace, entry.getKey(), entry.getValue(), true);
 
 									it.remove();
 								} else {
@@ -185,7 +187,7 @@ public class TextCache extends ExtendedServlet {
 
 					synchronized (namespace) {
 						for (final Map.Entry<String, CacheValue> entryToDelete : namespace.cache.entrySet())
-							notifyEntryRemoved(entry.getKey(), entryToDelete.getKey(), entryToDelete.getValue());
+							notifyEntryRemoved(namespace, entryToDelete.getKey(), entryToDelete.getValue(), false);
 					}
 				}
 			}
@@ -212,8 +214,12 @@ public class TextCache extends ExtendedServlet {
 	 * @param namespace
 	 * @param key
 	 * @param value
+	 * @param removeFromKeysSet
 	 */
-	static synchronized void notifyEntryRemoved(final String namespace, final String key, final CacheValue value) {
+	static synchronized void notifyEntryRemoved(final Namespace namespace, final String key, final CacheValue value, final boolean removeFromKeysSet) {
+		if (removeFromKeysSet)
+			namespace.keys.remove(key);
+
 		if (requestLogger == null)
 			try {
 				requestLogger = new PrintWriter(new FileWriter("cache.log", true));
@@ -243,13 +249,13 @@ public class TextCache extends ExtendedServlet {
 	public static final class NotifyLRUMap extends LRUMap<String, CacheValue> {
 		private static final long serialVersionUID = -9117776082771411054L;
 
-		private final String namespace;
+		private final Namespace namespace;
 
 		/**
 		 * @param iCacheSize
 		 * @param namespace
 		 */
-		public NotifyLRUMap(final int iCacheSize, final String namespace) {
+		public NotifyLRUMap(final int iCacheSize, final Namespace namespace) {
 			super(iCacheSize);
 
 			this.namespace = namespace;
@@ -260,7 +266,7 @@ public class TextCache extends ExtendedServlet {
 			final boolean ret = super.removeEldestEntry(eldest);
 
 			if (ret)
-				notifyEntryRemoved(namespace, eldest.getKey(), eldest.getValue());
+				notifyEntryRemoved(namespace, eldest.getKey(), eldest.getValue(), true);
 
 			return ret;
 		}
@@ -269,9 +275,13 @@ public class TextCache extends ExtendedServlet {
 
 	private static final class Namespace {
 		public final Map<String, CacheValue> cache;
+		public final Set<String> keys;
+		public final String name;
 
 		public Namespace(final String name) {
 			int size;
+
+			this.name = name;
 
 			try {
 				try {
@@ -283,7 +293,13 @@ public class TextCache extends ExtendedServlet {
 				size = 50000;
 			}
 
-			cache = new NotifyLRUMap(size, name);
+			cache = new NotifyLRUMap(size, this);
+			keys = new ConcurrentSkipListSet<>();
+		}
+
+		@Override
+		public String toString() {
+			return name;
 		}
 	}
 
@@ -352,9 +368,10 @@ public class TextCache extends ExtendedServlet {
 
 					synchronized (namespace) {
 						for (final Map.Entry<String, CacheValue> entryToDelete : namespace.cache.entrySet())
-							notifyEntryRemoved(entry.getKey(), entryToDelete.getKey(), entryToDelete.getValue());
+							notifyEntryRemoved(namespace, entryToDelete.getKey(), entryToDelete.getValue(), false);
 
 						namespace.cache.clear();
+						namespace.keys.clear();
 					}
 				}
 			else if (gets("ns").length() == 0) {
@@ -386,8 +403,8 @@ public class TextCache extends ExtendedServlet {
 					if (min < 0)
 						pwOut.println(entry.getKey() + " : empty");
 					else
-						pwOut.println(entry.getKey() + " : " + nssize + " (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: " + Format.size(total)
-								+ ") : " + hits + " hits");
+						pwOut.println(entry.getKey() + " : " + nssize + " / " + namespace.keys.size() + " keys (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max
+								+ ", total: " + Format.size(total) + ") : " + hits + " hits");
 				}
 
 				final Runtime r = Runtime.getRuntime();
@@ -484,7 +501,9 @@ public class TextCache extends ExtendedServlet {
 			}
 
 			if (old != null)
-				notifyEntryRemoved(ns, key, old);
+				notifyEntryRemoved(namespace, key, old, false);
+			else
+				namespace.keys.add(key);
 
 			return;
 		}
@@ -509,7 +528,7 @@ public class TextCache extends ExtendedServlet {
 					}
 
 					if (old != null) {
-						notifyEntryRemoved(ns, keyValue, old);
+						notifyEntryRemoved(namespace, keyValue, old, true);
 						removed++;
 					}
 
@@ -528,42 +547,34 @@ public class TextCache extends ExtendedServlet {
 
 				final int largestPartSize = sLargestPart.length();
 
-				final ArrayList<String> candidates = new ArrayList<>();
+				Matcher m = null;
 
-				synchronized (namespace) {
-					final Iterator<String> it = namespace.cache.keySet().iterator();
+				final Iterator<String> it = namespace.keys.iterator();
 
-					while (it.hasNext()) {
-						final String itKey = it.next();
+				while (it.hasNext()) {
+					final String itKey = it.next();
 
-						if (largestPartSize > 0 && (itKey.length() < largestPartSize || itKey.indexOf(sLargestPart) < 0))
-							continue;
+					if (largestPartSize > 0 && (itKey.length() < largestPartSize || itKey.indexOf(sLargestPart) < 0))
+						continue;
 
-						candidates.add(itKey);
-					}
-				}
+					if (m == null)
+						m = p.matcher(itKey);
+					else
+						m.reset(itKey);
 
-				if (candidates.size() > 0) {
-					Matcher m = null;
+					if (m.matches()) {
+						final CacheValue old;
 
-					for (final String itKey : candidates) {
-						if (m == null)
-							m = p.matcher(itKey);
-						else
-							m.reset(itKey);
-
-						if (m.matches()) {
-							final CacheValue old;
-
-							synchronized (namespace) {
-								old = namespace.cache.remove(itKey);
-							}
-
-							if (old != null) {
-								notifyEntryRemoved(ns, itKey, old);
-								removed++;
-							}
+						synchronized (namespace) {
+							old = namespace.cache.remove(itKey);
 						}
+
+						if (old != null) {
+							notifyEntryRemoved(namespace, itKey, old, false);
+							removed++;
+						}
+
+						it.remove();
 					}
 				}
 
