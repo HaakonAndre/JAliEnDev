@@ -15,9 +15,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
-import lia.Monitor.monitor.AppConfig;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
@@ -27,20 +24,27 @@ import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.io.protocols.Factory;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
+import lazyj.DBFunctions;
+import lazyj.Format;
+import lia.Monitor.monitor.AppConfig;
 
 /**
  * Go over the orphan_pfns and try to physically remove the entries
- * 
+ *
  * @author costing
- * 
+ *
  */
 public class OrphanPFNsCleanup {
 	/**
 	 * logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(OrphanPFNsCleanup.class.getCanonicalName());
+
+	static transient final Monitor monitor = MonitorFactory.getMonitor(OrphanPFNsCleanup.class.getCanonicalName());
 
 	/**
 	 * Thread pool per SE
@@ -93,10 +97,8 @@ public class OrphanPFNsCleanup {
 							t.start();
 
 							SE_THREADS.put(se, t);
-						} else {
-							if (logger.isLoggable(Level.INFO))
-								logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + theSE.seName + ") because the key is already in SE_THREADS");
-						}
+						} else if (logger.isLoggable(Level.INFO))
+							logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + theSE.seName + ") because the key is already in SE_THREADS");
 					}
 				}
 
@@ -244,9 +246,13 @@ public class OrphanPFNsCleanup {
 
 	/**
 	 * Fail one file
+	 *
+	 * @param se
 	 */
-	static final void failOne() {
+	static final void failOne(final SE se) {
 		failed.incrementAndGet();
+
+		monitor.incrementCounter(se.getName() + "_fail_count");
 
 		dirtyStats = true;
 	}
@@ -256,10 +262,12 @@ public class OrphanPFNsCleanup {
 
 	/**
 	 * Successful deletion of one file
-	 * 
+	 *
+	 * @param se
+	 *
 	 * @param size
 	 */
-	static final void successOne(final long size) {
+	static final void successOne(final SE se, final long size) {
 		removed.incrementAndGet();
 		reclaimedCount.incrementAndGet();
 
@@ -267,6 +275,9 @@ public class OrphanPFNsCleanup {
 			reclaimedSpace.addAndGet(size);
 			reclaimedSize.addAndGet(size);
 		}
+
+		monitor.incrementCounter(se.getName() + "_success_count");
+		monitor.incrementCounter(se.getName() + "_success_size", size);
 
 		dirtyStats = true;
 	}
@@ -299,9 +310,9 @@ public class OrphanPFNsCleanup {
 
 			final GUID guid;
 
-			if ((flags & 1) == 1) {
+			if ((flags & 1) == 1)
 				guid = new GUID(uuid);
-			} else {
+			else {
 				concurrentQueryies.acquireUninterruptibly();
 
 				try {
@@ -367,7 +378,7 @@ public class OrphanPFNsCleanup {
 					try {
 						db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
 
-						failOne();
+						failOne(se);
 					} finally {
 						concurrentQueryies.release();
 					}
@@ -378,23 +389,22 @@ public class OrphanPFNsCleanup {
 						System.err.println("Successfully deleted the replica of " + guid.guid + " (" + Format.size(guid.size) + ") from " + se.getName());
 
 						if (guid.exists()) {
-							successOne(guid.size);
+							successOne(se, guid.size);
 
 							// we have just physically this entry, do _not_ queue this pfn again
 							if (guid.removePFN(se, false) != null) {
 								if (guid.getPFNs().size() == 0) {
 									// already purged all entries
-									if (guid.delete(false)) {
+									if (guid.delete(false))
 										System.err.println("  Deleted the GUID " + guid.guid + " since this was the last replica");
-									} else
+									else
 										System.err.println("  Failed to delete the GUID even if this was the last replica:\n" + guid);
-								} else {
+								} else
 									System.err.println("  Kept the GUID " + guid.guid + " since it still has " + guid.getPFNs().size() + " replicas");
-								}
 							} else
 								System.err.println("  Failed to remove the replica on " + se.getName() + " from " + guid.guid);
 						} else {
-							successOne(size);
+							successOne(se, size);
 
 							if ((flags & 1) == 0)
 								System.err.println("  GUID " + guid.guid + " doesn't exist in the catalogue any more");
@@ -408,7 +418,7 @@ public class OrphanPFNsCleanup {
 			} catch (final IOException e) {
 				// e.printStackTrace();
 
-				failOne();
+				failOne(se);
 
 				System.err.println("Exception deleting " + guid.guid + " from " + se.getName() + " : " + e.getMessage());
 
