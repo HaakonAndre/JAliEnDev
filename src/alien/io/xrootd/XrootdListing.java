@@ -120,7 +120,10 @@ public class XrootdListing {
 
 		final List<String> command = Arrays.asList(Xrootd.getXrootdDefaultPath() + "/bin/xrdfs", server, "ls", "-l", xrdcommand);
 
-		logger.log(Level.INFO, "Executing:\n" + command);
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Executing:\n" + command);
+
+		// System.err.println(command);
 
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
 
@@ -147,21 +150,24 @@ public class XrootdListing {
 
 		String listing = exitStatus.getStdOut();
 
+		// System.err.println(listing.substring(Math.max(listing.length() - 2000, 0)));
+
 		final int idxAuthz = listing.indexOf("?authz=");
 
 		if (idxAuthz > 0) {
-			final char c = listing.charAt(idxAuthz - 1);
-
 			int idxAuthzEnd = listing.indexOf("-----END SEALED ENVELOPE-----", idxAuthz);
 
 			if (idxAuthzEnd >= 0) {
-				idxAuthzEnd = listing.indexOf('/', idxAuthzEnd);
+				idxAuthzEnd = listing.indexOf('\n', idxAuthzEnd);
 
-				final String token = listing.substring(idxAuthz, idxAuthzEnd + (c == '/' ? 1 : 0));
+				final String token = listing.substring(idxAuthz, idxAuthzEnd + 1);
 
 				listing = Format.replace(listing, token, "");
+				listing = Format.replace(listing, "//", "/");
 			}
 		}
+
+		// System.err.println(listing.substring(Math.max(listing.length() - 2000, 0)));
 
 		final BufferedReader br = new BufferedReader(new StringReader(listing));
 
