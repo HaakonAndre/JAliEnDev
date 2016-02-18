@@ -12,14 +12,14 @@ import alien.taskQueue.JobToken;
 
 /**
  * Generate unique job tokens
- * 
+ *
  * @author costing
  * @since 2014-01-20
  */
 public class TokenGenerator extends HttpServlet {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1599249953957590702L;
 
