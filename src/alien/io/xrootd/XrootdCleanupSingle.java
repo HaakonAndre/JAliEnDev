@@ -193,7 +193,7 @@ public class XrootdCleanupSingle {
 
 	@Override
 	public String toString() {
-		return "Removed " + filesRemoved + " files (" + Format.size(sizeRemoved.longValue()) + "), " + "kept " + filesKept + " (" + Format.size(sizeKept.longValue()) + "), " + dirsSeen
+		return "Removed " + filesRemoved + " files (" + Format.size(sizeRemoved.longValue()) + "), " + "kept " + filesKept + " files (" + Format.size(sizeKept.longValue()) + "), listed " + dirsSeen
 				+ " directories from " + se.seName;
 	}
 
