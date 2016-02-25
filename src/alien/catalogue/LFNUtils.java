@@ -496,7 +496,7 @@ public class LFNUtils {
 			return false;
 		}
 
-		final LFN parent = ensureDir(lfn.getParentDir());
+		final LFN parent = ensureDir(lfn.getParentDir(true));
 
 		if (parent == null) {
 			logger.log(Level.WARNING, "Parent dir is null for " + lfn.getCanonicalName());
@@ -541,7 +541,7 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags) {
-		final Set<LFN> ret = (flags & FIND_NO_SORT) != 0 ? new LinkedHashSet<LFN>() : new TreeSet<LFN>();
+		final Set<LFN> ret = (flags & FIND_NO_SORT) != 0 ? new LinkedHashSet<>() : new TreeSet<>();
 
 		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
