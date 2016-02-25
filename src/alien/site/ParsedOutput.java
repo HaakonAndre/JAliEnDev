@@ -211,7 +211,7 @@ public class ParsedOutput {
 			
 			String[] parts = line.split("@");
 			
-			System.out.println("Parts: "+parts[0]+" "+parts[1]);
+//			System.out.println("Parts: "+parts[0]+" "+parts[1]);
 						
 			String options = parts.length>1 ? parts[1] : "";
 			
