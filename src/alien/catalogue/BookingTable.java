@@ -267,8 +267,12 @@ public class BookingTable {
 			}
 
 			if (!guid.addPFN(pfn)) {
-				logger.log(Level.WARNING, "Could not add the PFN to this GUID: " + guid + "\nPFN: " + pfn);
-				return null;
+				if (guid.hasReplica(pfn.seNumber)) {
+					logger.log(Level.FINE, "Could not add the PFN to this GUID: " + guid + "\nPFN: " + pfn);
+				} else {
+					logger.log(Level.WARNING, "Could not add the PFN to this GUID: " + guid + "\nPFN: " + pfn);
+					return null;
+				}
 			}
 
 			db.setReadOnly(true);
