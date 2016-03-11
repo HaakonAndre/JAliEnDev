@@ -212,11 +212,14 @@ public class TextCache extends ExtendedServlet {
 
 	private static int logCounter = 0;
 
+	static String lastLogFile = null;
+
 	private static class MyGZIPOutputStream extends GZIPOutputStream {
 		// The FileOutputStream object is closed by close() on this object
 		@SuppressWarnings("resource")
 		public MyGZIPOutputStream(final String filename) throws IOException {
 			super(new FileOutputStream(filename));
+			lastLogFile = filename;
 			def.setLevel(Deflater.BEST_COMPRESSION);
 		}
 	}
@@ -235,7 +238,7 @@ public class TextCache extends ExtendedServlet {
 
 		if (requestLogger == null)
 			try {
-				requestLogger = new PrintWriter(new OutputStreamWriter(new MyGZIPOutputStream("cache.log-" + System.currentTimeMillis()+".gz")));
+				requestLogger = new PrintWriter(new OutputStreamWriter(new MyGZIPOutputStream("cache.log-" + System.currentTimeMillis() + ".gz")));
 			} catch (final IOException e) {
 				System.err.println("Could not write to cache.log");
 				return;
@@ -248,17 +251,19 @@ public class TextCache extends ExtendedServlet {
 		else if (++logCounter > 1000) {
 			logCounter = 0;
 
-			final File f = new File("cache.log");
+			if (lastLogFile != null) {
+				final File f = new File(lastLogFile);
 
-			if (!f.exists()) {
-				if (requestLogger != null)
-					try {
-						requestLogger.close();
-					} catch (final Throwable t) {
-						// ignore, too late to do anything about this file
-					}
+				if (!f.exists()) {
+					if (requestLogger != null)
+						try {
+							requestLogger.close();
+						} catch (final Throwable t) {
+							// ignore, too late to do anything about this file
+						}
 
-				requestLogger = null;
+					requestLogger = null;
+				}
 			}
 		}
 	}
