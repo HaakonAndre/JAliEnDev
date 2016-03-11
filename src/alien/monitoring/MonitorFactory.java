@@ -17,6 +17,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.config.ConfigUtils;
+import apmon.ApMon;
+import apmon.ApMonException;
 import lazyj.ExtProperties;
 import lazyj.Utils;
 import lia.Monitor.modules.DiskDF;
@@ -28,9 +31,6 @@ import lia.Monitor.modules.monLMSensors;
 import lia.Monitor.modules.monProcIO;
 import lia.Monitor.modules.monProcLoad;
 import lia.Monitor.modules.monProcStat;
-import alien.config.ConfigUtils;
-import apmon.ApMon;
-import apmon.ApMonException;
 
 /**
  * @author costing
@@ -96,7 +96,7 @@ public final class MonitorFactory {
 
 	/**
 	 * Get the monitor for this component
-	 * 
+	 *
 	 * @param component
 	 * @return the monitor
 	 */
@@ -206,6 +206,9 @@ public final class MonitorFactory {
 			return;
 
 		selfMonitor = getMonitor("Self");
+
+		if (selfMonitor == null)
+			return;
 
 		selfMonitor.addMonitoring("self", new SelfMonitor());
 
@@ -330,7 +333,7 @@ public final class MonitorFactory {
 
 	/**
 	 * Get the ApMon sender
-	 * 
+	 *
 	 * @return the sender
 	 */
 	public static synchronized ApMon getApMonSender() {
@@ -356,9 +359,8 @@ public final class MonitorFactory {
 
 	/**
 	 * Get JVM's process ID
-	 * 
-	 * @return the process id, if it can be determined, or <code>-1</code> if
-	 *         not
+	 *
+	 * @return the process id, if it can be determined, or <code>-1</code> if not
 	 */
 	public static final int getSelfProcessID() {
 		if (selfProcessID != 0)
@@ -368,8 +370,8 @@ public final class MonitorFactory {
 			// on Linux
 			selfProcessID = Integer.parseInt((new File(PROC_SELF)).getCanonicalFile().getName());
 
-			selfProcessID = Integer.parseInt( System.getProperty("pid") );
-			
+			selfProcessID = Integer.parseInt(System.getProperty("pid"));
+
 			return selfProcessID;
 		} catch (final Throwable t) {
 			// ignore
