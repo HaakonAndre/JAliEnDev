@@ -4,8 +4,10 @@
 package alien.servlets;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
@@ -26,6 +28,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.zip.Deflater;
+import java.util.zip.GZIPOutputStream;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -208,6 +212,15 @@ public class TextCache extends ExtendedServlet {
 
 	private static int logCounter = 0;
 
+	private static class MyGZIPOutputStream extends GZIPOutputStream {
+		// The FileOutputStream object is closed by close() on this object
+		@SuppressWarnings("resource")
+		public MyGZIPOutputStream(final String filename) throws IOException {
+			super(new FileOutputStream(filename));
+			def.setLevel(Deflater.BEST_COMPRESSION);
+		}
+	}
+
 	/**
 	 * Call this one entry is removed to log the number of hits
 	 *
@@ -222,7 +235,7 @@ public class TextCache extends ExtendedServlet {
 
 		if (requestLogger == null)
 			try {
-				requestLogger = new PrintWriter(new FileWriter("cache.log", true));
+				requestLogger = new PrintWriter(new OutputStreamWriter(new MyGZIPOutputStream("cache.log-" + System.currentTimeMillis())));
 			} catch (final IOException e) {
 				System.err.println("Could not write to cache.log");
 				return;
@@ -237,8 +250,16 @@ public class TextCache extends ExtendedServlet {
 
 			final File f = new File("cache.log");
 
-			if (!f.exists())
+			if (!f.exists()) {
+				if (requestLogger != null)
+					try {
+						requestLogger.close();
+					} catch (final Throwable t) {
+						// ignore, too late to do anything about this file
+					}
+
 				requestLogger = null;
+			}
 		}
 	}
 
