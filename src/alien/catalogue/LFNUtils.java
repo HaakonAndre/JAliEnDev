@@ -17,6 +17,8 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.io.TransferUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
@@ -36,6 +38,11 @@ public class LFNUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(LFNUtils.class.getCanonicalName());
+
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(LFNUtils.class.getCanonicalName());
 
 	/**
 	 * Get an LFN which corresponds to the given GUID
@@ -593,6 +600,9 @@ public class LFNUtils {
 	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags) {
 		final Set<LFN> ret = new LinkedHashSet<>();
 
+		if (monitor != null)
+			monitor.incrementCounter("LFN_findByMetadata");
+
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			if (db == null) {
 				logger.log(Level.WARNING, "Cannot get a DB instance");
@@ -680,6 +690,9 @@ public class LFNUtils {
 		if (!insertLFN(lfn))
 			return null;
 
+		if (monitor != null)
+			monitor.incrementCounter("LFN_createCollection");
+
 		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary(?));";
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
@@ -698,6 +711,9 @@ public class LFNUtils {
 	public static boolean removeFromCollection(final LFN collection, final Set<LFN> lfns) {
 		if (!collection.exists || !collection.isCollection() || lfns == null || lfns.size() == 0)
 			return false;
+
+		if (monitor != null)
+			monitor.incrementCounter("LFN_removeFromCollection");
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);
@@ -825,6 +841,9 @@ public class LFNUtils {
 			logger.log(Level.FINER, "Quick exit");
 			return false;
 		}
+
+		if (monitor != null)
+			monitor.incrementCounter("LFN_addToCollection");
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			final Set<String> currentLFNs = collection.listCollection();

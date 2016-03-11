@@ -8,22 +8,22 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
-import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import lazyj.DBFunctions;
+import lazyj.Format;
+import lazyj.StringFactory;
 
 /**
  * Wrapper around a row in INDEXTABLE
- * 
+ *
  * @author costing
  */
 public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry> {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -2978796807690712492L;
 
@@ -61,7 +61,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 	/**
 	 * Initialize from one entry in INDEXTABLE
-	 * 
+	 *
 	 * @param db
 	 */
 	public IndexTableEntry(final DBFunctions db) {
@@ -95,7 +95,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 	/**
 	 * Get the LFN from this table
-	 * 
+	 *
 	 * @param sPath
 	 * @return the LFN, or <code>null</code> if it doesn't exist
 	 */
@@ -105,7 +105,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 	/**
 	 * Get the LFN from this table
-	 * 
+	 *
 	 * @param ignoreFolders
 	 * @param path
 	 * @return the LFNs for the given paths, bulk extraction where possible
@@ -158,7 +158,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 	/**
 	 * Get the LFN having the indicated GUID
-	 * 
+	 *
 	 * @param guid
 	 * @return the LFN, if it exists in this table, or <code>null</code> if not
 	 */
@@ -190,7 +190,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 	/**
 	 * Get the LFN from this table
-	 * 
+	 *
 	 * @param sPath
 	 * @param evenIfDoesntExist
 	 * @return the LFN, either the existing entry, or if <code>evenIfDoesntExist</code> is <code>true</code> then a bogus entry is returned
@@ -299,13 +299,16 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 	/**
 	 * Get the LFN from this table
-	 * 
+	 *
 	 * @param entryId
 	 * @return the LFN, or <code>null</code>
 	 */
 	public LFN getLFN(final long entryId) {
 		try (DBFunctions db = getDB()) {
 			db.setReadOnly(true);
+
+			if (monitor != null)
+				monitor.incrementCounter("LFN_db_lookup_entryId");
 
 			if (!db.query("SELECT * FROM L" + tableName + "L WHERE entryId=?;", false, Long.valueOf(entryId)))
 				return null;

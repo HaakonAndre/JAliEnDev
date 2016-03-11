@@ -5,19 +5,21 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
+import lazyj.DBFunctions;
 
 /**
  * One row from alice_users.GUIDINDEX
- * 
+ *
  * @author costing
  * @since Nov 3, 2010
  */
 public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -6989985910318299235L;
 
@@ -25,6 +27,11 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(GUIDIndex.class.getCanonicalName());
+
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(GUIDIndex.class.getCanonicalName());
 
 	/**
 	 * Host index ID
@@ -48,7 +55,7 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 
 	/**
 	 * Initialize from a DB query from alice_users.GUIDINDEX
-	 * 
+	 *
 	 * @param db
 	 * @see CatalogueUtils#getGUIDIndex(long)
 	 */
@@ -102,7 +109,7 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 
 	/**
 	 * SE usage statistics for a SE (usage and file count)
-	 * 
+	 *
 	 * @author costing
 	 * @since Nov 19, 2014
 	 */
@@ -119,7 +126,7 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 
 		/**
 		 * Initial value
-		 * 
+		 *
 		 * @param usedSpace
 		 * @param fileCount
 		 */
@@ -130,7 +137,7 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 
 		/**
 		 * Merge with the results coming from the next G*L_PFN table
-		 * 
+		 *
 		 * @param other
 		 */
 		public void merge(final SEUsageStats other) {
@@ -149,6 +156,9 @@ public class GUIDIndex implements Serializable, Comparable<GUIDIndex> {
 
 		if (h == null)
 			return ret;
+
+		if (monitor != null)
+			monitor.incrementCounter("GUID_seUsageStats");
 
 		try (DBFunctions db = h.getDB()) {
 			if (db == null)

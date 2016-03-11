@@ -12,21 +12,23 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Logger;
 
+import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
+import alien.servlets.TextCache;
+import alien.user.AliEnPrincipal;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
-import alien.config.ConfigUtils;
-import alien.servlets.TextCache;
-import alien.user.AliEnPrincipal;
 
 /**
  * @author costing
- * 
+ *
  */
 public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -4419468872696081193L;
 
@@ -34,6 +36,11 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(LFN.class.getCanonicalName());
+
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(LFN.class.getCanonicalName());
 
 	/**
 	 * entryId
@@ -62,7 +69,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * short LFN
-	 * 
+	 *
 	 * @see IndexTableEntry
 	 */
 	public String lfn;
@@ -139,7 +146,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Job ID that produced this file
-	 * 
+	 *
 	 * @since AliEn 2.19
 	 */
 	public int jobid;
@@ -176,7 +183,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Simple constructor with the canonical
-	 * 
+	 *
 	 * @param canonicalLFN
 	 */
 	LFN(final String canonicalLFN) {
@@ -192,7 +199,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Get the parent directory
-	 * 
+	 *
 	 * @return parent directory
 	 */
 	public LFN getParentDir() {
@@ -219,10 +226,10 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				if (idx == sParentDir.length() - 1)
 					idx = sParentDir.lastIndexOf('/', idx - 1);
 
-				if (idx >= 0){
+				if (idx >= 0) {
 					parentDir = LFNUtils.getLFN(sParentDir.substring(0, idx + 1), evenIfNotExist);
-					
-					if (!parentDir.exists){
+
+					if (!parentDir.exists) {
 						parentDir.owner = this.owner;
 						parentDir.gowner = this.gowner;
 						parentDir.perm = this.perm;
@@ -306,7 +313,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Get the canonical name (full path and name)
-	 * 
+	 *
 	 * @return canonical name without the '/' at the end, if any
 	 */
 	public String getStrippedCanonicalName() {
@@ -320,7 +327,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Get the canonical name (full path and name)
-	 * 
+	 *
 	 * @return canonical name
 	 */
 	public String getCanonicalName() {
@@ -374,7 +381,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Get the physical locations of this file
-	 * 
+	 *
 	 * @return the physical locations for this file
 	 */
 	public Set<PFN> whereis() {
@@ -391,7 +398,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Get the real physical locations of this file
-	 * 
+	 *
 	 * @return real locations
 	 */
 	public Set<PFN> whereisReal() {
@@ -426,7 +433,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Check whether or not this LFN points to a physical file or is a pointer to an archive
-	 * 
+	 *
 	 * @return <code>true</code> if the file is physically on disk, <code>false</code> if it is located inside an archive or even if doesn't exist
 	 */
 	public boolean isReal() {
@@ -480,7 +487,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getGroup()
 	 */
 	@Override
@@ -490,7 +497,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getName()
 	 */
 	@Override
@@ -500,7 +507,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getOwner()
 	 */
 	@Override
@@ -510,7 +517,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getPermissions()
 	 */
 	@Override
@@ -520,7 +527,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getType()
 	 */
 	@Override
@@ -530,7 +537,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * is this LFN a directory
-	 * 
+	 *
 	 * @return <code>true</code> if this LFN is a directory
 	 */
 	public boolean isDirectory() {
@@ -569,7 +576,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Insert a new LFN in the catalogue
-	 * 
+	 *
 	 * @return <code>true</code> if the new entry was inserted, <code>false</code> if the query failed
 	 */
 	boolean insert() {
@@ -583,9 +590,12 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				lfnToInsert = lfnToInsert.substring(0, lfnToInsert.length() - 1);
 
 		final String q = "INSERT INTO L" + indexTableEntry.tableName + "L (owner, ctime, replicated, aclId, lfn, expiretime, size, "
-				+ "dir, gowner, type, perm, guid, md5, guidtime, broken, jobid) VALUES (" + e(owner) + "," + e(format(ctime)) + "," + (replicated ? "1" : "0") + ","
-				+ (aclId > 0 ? "" + aclId : "null") + "," + e(lfnToInsert) + "," + e(format(expiretime)) + "," + size + "," + dir + "," + e(gowner) + "," + (type > 0 ? e("" + type) : "null") + ","
-				+ e(perm) + "," + (guid != null ? "string2binary('" + guid + "')," : "null,") + e(md5) + "," + e(guidtime) + "," + (broken ? 1 : 0) + "," + (jobid > 0 ? "" + jobid : "null") + ");";
+				+ "dir, gowner, type, perm, guid, md5, guidtime, broken, jobid) VALUES (" + e(owner) + "," + e(format(ctime)) + "," + (replicated ? "1" : "0") + "," + (aclId > 0 ? "" + aclId : "null")
+				+ "," + e(lfnToInsert) + "," + e(format(expiretime)) + "," + size + "," + dir + "," + e(gowner) + "," + (type > 0 ? e("" + type) : "null") + "," + e(perm) + ","
+				+ (guid != null ? "string2binary('" + guid + "')," : "null,") + e(md5) + "," + e(guidtime) + "," + (broken ? 1 : 0) + "," + (jobid > 0 ? "" + jobid : "null") + ");";
+
+		if (monitor != null)
+			monitor.incrementCounter("LFN_insert");
 
 		try (DBFunctions db = indexTableEntry.getDB()) {
 			db.setLastGeneratedKey(true);
@@ -611,6 +621,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		final String q = "UPDATE L" + indexTableEntry.tableName + "L SET size=" + size + ",owner=" + e(owner) + ",gowner=" + e(gowner) + ",ctime=" + e(format(ctime)) + ",md5=" + e(md5)
 				+ " WHERE entryId=" + entryId;
 
+		if (monitor != null)
+			monitor.incrementCounter("LFN_update");
+
 		try (DBFunctions db = indexTableEntry.getDB()) {
 			return db.query(q) && db.getUpdateCount() == 1;
 		}
@@ -618,12 +631,12 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Delete this LFN in the Catalogue
-	 * 
+	 *
 	 * @param purge
 	 *            physically delete the PFNs
 	 * @param recursive
 	 *            for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
-	 * 
+	 *
 	 * @return <code>true</code> if this LFN entry was deleted in the database
 	 */
 	public boolean delete(final boolean purge, final boolean recursive) {
@@ -632,14 +645,14 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Delete this LFN in the Catalogue
-	 * 
+	 *
 	 * @param purge
 	 *            physically delete the PFNs
 	 * @param recursive
 	 *            for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
 	 * @param notifyCache
 	 *            whether or not to notify AliEn's access and whereis caches of removed entries
-	 * 
+	 *
 	 * @return <code>true</code> if this LFN entry was deleted in the database
 	 */
 	public boolean delete(final boolean purge, final boolean recursive, final boolean notifyCache) {
@@ -660,6 +673,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 						return false;
 			}
 		}
+
+		if (monitor != null)
+			monitor.incrementCounter("LFN_delete");
 
 		final String q = "DELETE FROM L" + indexTableEntry.tableName + "L WHERE entryId=?;";
 
@@ -697,7 +713,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 	/**
 	 * Change the ownership of this LFN.
-	 * 
+	 *
 	 * @param newOwner
 	 * @return the previous owner, if the ownership was updated, or <code>null</code> if nothing was touched
 	 */
@@ -726,18 +742,23 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		final List<LFN> ret = new ArrayList<>();
 
+		if (monitor != null)
+			monitor.incrementCounter("LFN_list");
+
 		if (CatalogueUtils.isSeparateTable(getCanonicalName())) {
 			final IndexTableEntry other = CatalogueUtils.getClosestMatch(getCanonicalName());
 
-			final String q = "SELECT * FROM L" + other.tableName + "L WHERE dir=(SELECT entryId FROM L" + other.tableName + "L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
+			if (other != null) {
+				final String q = "SELECT * FROM L" + other.tableName + "L WHERE dir=(SELECT entryId FROM L" + other.tableName + "L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 
-			try (DBFunctions db = other.getDB()) {
-				db.setReadOnly(true);
+				try (DBFunctions db = other.getDB()) {
+					db.setReadOnly(true);
 
-				db.query(q);
+					db.query(q);
 
-				while (db.moveNext())
-					ret.add(new LFN(db, other));
+					while (db.moveNext())
+						ret.add(new LFN(db, other));
+				}
 			}
 
 			return ret;
@@ -763,6 +784,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	public Set<String> listCollection() {
 		if (!isCollection() || !exists)
 			return null;
+
+		if (monitor != null)
+			monitor.incrementCounter("LFN_listcollection");
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);

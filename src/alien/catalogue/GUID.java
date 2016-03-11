@@ -15,19 +15,19 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
-import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.shell.commands.JAliEnCOMMander;
+import lazyj.DBFunctions;
+import lazyj.Format;
+import lazyj.StringFactory;
 
 /**
  * @author costing
- * 
+ *
  */
 public class GUID implements Comparable<GUID>, CatalogEntity {
 	private static final long serialVersionUID = -2625119814122149207L;
@@ -134,7 +134,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Load one row from a G*L table
-	 * 
+	 *
 	 * @param db
 	 * @param host
 	 * @param tableName
@@ -149,7 +149,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Create a new GUID
-	 * 
+	 *
 	 * @param newID
 	 */
 	public GUID(final UUID newID) {
@@ -205,7 +205,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Inform the GUID about another replica in the given SE. If the entry
-	 * 
+	 *
 	 * @param seNumber
 	 * @return true if updating was ok, false if the entry was not updated
 	 */
@@ -223,7 +223,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Inform the GUID about another replica in the given SE. If the entry
-	 * 
+	 *
 	 * @param seNumber
 	 * @return true if updating was ok, false if the entry was not updated
 	 */
@@ -391,7 +391,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Get the PFNs for this GUID
-	 * 
+	 *
 	 * @return set of physical locations
 	 */
 	public Set<PFN> getPFNs() {
@@ -447,7 +447,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Add a known PFN to an existing GUID
-	 * 
+	 *
 	 * @param pfn
 	 * @return true if inserting was ok
 	 */
@@ -485,7 +485,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * @author costing
-	 * 
+	 *
 	 */
 	private static final class GUIDCleanup {
 		public final Integer tableName;
@@ -505,7 +505,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		/**
 		 * Commit the deletes to the database
-		 * 
+		 *
 		 * @param tableSuffix
 		 * @return <code>true</code> if the update was done, <code>false</code> if not
 		 */
@@ -525,6 +525,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 				sb.append(id.toString());
 			}
+
+			if (monitor != null)
+				monitor.incrementCounter("GUID_flush");
 
 			if (sb.length() > 0)
 				try (DBFunctions db = host.getDB()) {
@@ -642,10 +645,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Completely delete this GUID from the database
-	 * 
+	 *
 	 * @param purge
 	 *            if <code>true</code> then the physical files are queued for deletion
-	 * 
+	 *
 	 * @return <code>true</code> if the GUID was successfully removed from the database
 	 */
 	public boolean delete(final boolean purge) {
@@ -713,7 +716,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Remove an associated PFN. It does <b>NOT</b> check if it was the last PFN.
-	 * 
+	 *
 	 * @param pfn
 	 * @param purge
 	 *            if <code>true</code> then physically remove this PFN from the respective storage using the asynchronous delete queue.
@@ -780,7 +783,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Remove the associated PFN from this particular SE
-	 * 
+	 *
 	 * @param se
 	 * @param purge
 	 *            if <code>true</code> then physically remove this PFN from the respective storage using the asynchronous delete queue.
@@ -896,7 +899,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * Get the UUID for the given value array
-	 * 
+	 *
 	 * @param data
 	 * @return the UUID
 	 */
@@ -933,7 +936,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getGroup()
 	 */
 	@Override
@@ -943,7 +946,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getName()
 	 */
 	@Override
@@ -953,7 +956,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getOwner()
 	 */
 	@Override
@@ -963,7 +966,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getPermissions()
 	 */
 	@Override
@@ -973,7 +976,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.catalogue.CatalogEntity#getType()
 	 */
 	@Override
@@ -1007,7 +1010,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * From AliEn/GUID.pm#GetCHash
-	 * 
+	 *
 	 * @return hash code
 	 */
 	public int getCHash() {
@@ -1016,7 +1019,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * From AliEn/GUID.pm#GetHash
-	 * 
+	 *
 	 * @return hash code
 	 */
 	public int getHash() {
@@ -1025,10 +1028,10 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 	/**
 	 * From AliEn/GUID.pm#GetHash
-	 * 
+	 *
 	 * @param guidValue
 	 *            the UUID string representation
-	 * 
+	 *
 	 * @return hash code
 	 */
 	public static int getHash(final String guidValue) {
@@ -1096,7 +1099,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 
 	/**
-	 * @param evenIfDoesntExist if <code>true</code> it will create those GUID object if they don't exist already in the database 
+	 * @param evenIfDoesntExist
+	 *            if <code>true</code> it will create those GUID object if they don't exist already in the database
 	 * @return the set of real GUIDs of this file
 	 */
 	public Set<GUID> getRealGUIDs(final boolean evenIfDoesntExist) {
