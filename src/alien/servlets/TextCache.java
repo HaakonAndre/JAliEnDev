@@ -235,7 +235,7 @@ public class TextCache extends ExtendedServlet {
 
 		if (requestLogger == null)
 			try {
-				requestLogger = new PrintWriter(new OutputStreamWriter(new MyGZIPOutputStream("cache.log-" + System.currentTimeMillis())));
+				requestLogger = new PrintWriter(new OutputStreamWriter(new MyGZIPOutputStream("cache.log-" + System.currentTimeMillis()+".gz")));
 			} catch (final IOException e) {
 				System.err.println("Could not write to cache.log");
 				return;
