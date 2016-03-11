@@ -173,6 +173,14 @@ public class TextCache extends ExtendedServlet {
 		}
 	}
 
+	static final void closeStreams() {
+		if (requestLogger != null) {
+			requestLogger.flush();
+			requestLogger.close();
+			requestLogger = null;
+		}
+	}
+
 	/**
 	 * Goes through the entries and removes the expired ones
 	 */
@@ -194,6 +202,8 @@ public class TextCache extends ExtendedServlet {
 							notifyEntryRemoved(namespace, entryToDelete.getKey(), entryToDelete.getValue(), false);
 					}
 				}
+
+				closeStreams();
 			}
 		});
 	}
@@ -254,16 +264,8 @@ public class TextCache extends ExtendedServlet {
 			if (lastLogFile != null) {
 				final File f = new File(lastLogFile);
 
-				if (!f.exists()) {
-					if (requestLogger != null)
-						try {
-							requestLogger.close();
-						} catch (final Throwable t) {
-							// ignore, too late to do anything about this file
-						}
-
-					requestLogger = null;
-				}
+				if (!f.exists())
+					closeStreams();
 			}
 		}
 	}
