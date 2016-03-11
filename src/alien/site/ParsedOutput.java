@@ -152,7 +152,7 @@ class OutputEntry {
     } 
     
     public String toString(){
-    	String toString =  "Name: "+this.name+" Options: "+this.options;
+    	String toString =  "Name: "+this.name+" Options: "+this.options+ " Files?: ";
     	if(this.filesIncluded != null){
     		toString += this.filesIncluded.toString();
     	}

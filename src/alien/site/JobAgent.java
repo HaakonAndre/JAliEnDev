@@ -909,7 +909,7 @@ public class JobAgent extends Thread {
 
 						System.out.println("LFN :"+lfn+ "\npfns: "+pfns.toString());
 						
-						commander.q_api.putJobLog(queueId, "trace", "Uploading: "+lfn);
+						commander.q_api.putJobLog(queueId, "trace", "Uploading: "+lfn.getName());
 						
 						if (pfns != null && !pfns.isEmpty()) {
 							final ArrayList<String> envelopes = new ArrayList<>(pfns.size());
