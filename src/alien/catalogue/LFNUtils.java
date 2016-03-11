@@ -548,7 +548,7 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags) {
-		final Set<LFN> ret = (flags & FIND_NO_SORT) != 0 ? new LinkedHashSet<>() : new TreeSet<>();
+		final Set<LFN> ret = (flags & FIND_NO_SORT) != 0 ? new LinkedHashSet<LFN>() : new TreeSet<LFN>();
 
 		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
