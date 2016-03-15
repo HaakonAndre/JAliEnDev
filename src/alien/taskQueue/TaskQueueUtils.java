@@ -2541,7 +2541,11 @@ public class TaskQueueUtils {
 
 			db.setLastGeneratedKey(true);
 
-			if (db.query("insert into " + table + " (" + key + ") values (?)", true, value))
+			boolean ret = db.query("insert into " + table + " (" + key + ") values (?)", false, value);
+			
+			logger.log(Level.INFO, "insert into " + table + " (" + key + ") values (?) with ?="+value+": "+ret);
+			
+			if (ret)
 				return db.getLastGeneratedKey().intValue();
 
 			// something went wrong ? :-(
