@@ -2545,8 +2545,11 @@ public class TaskQueueUtils {
 			
 			logger.log(Level.INFO, "insert into " + table + " (" + key + ") values (?) with ?="+value+": "+ret);
 			
-			if (ret)
-				return db.getLastGeneratedKey().intValue();
+			if (ret){
+				int val = db.getLastGeneratedKey().intValue();
+				logger.log(Level.INFO, "Returning: "+val);
+				return val;
+			}
 
 			// something went wrong ? :-(
 			return 0;
