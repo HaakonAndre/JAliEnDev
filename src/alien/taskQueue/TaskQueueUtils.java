@@ -73,6 +73,10 @@ public class TaskQueueUtils {
 		fieldMap = new HashMap<String, String>();
 		fieldMap.put("path_table", "QUEUEJDL");
 		fieldMap.put("path_field", "path");
+		fieldMap.put("spyurl_table", "QUEUEPROC");
+		fieldMap.put("spyurl_field", "spyurl");
+		fieldMap.put("node_table", "QUEUE");
+		fieldMap.put("node_field", "nodeId");
 	}
 
 	static {
@@ -709,8 +713,13 @@ public class TaskQueueUtils {
 			Object newstatus;
 
 			if (dbStructure2_20) {
+				String extra="";
+				if(newStatus == JobStatus.RUNNING){
+					extra = ",started=UNIX_TIMESTAMP()";
+				}
+				
 				newstatus = Integer.valueOf(newStatus.getAliEnLevel());
-				q = "UPDATE QUEUE SET statusId=? WHERE queueId=?;";
+				q = "UPDATE QUEUE SET statusId=?"+extra+" WHERE queueId=?;";
 			} else {
 				newstatus = newStatus.toSQL();
 				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
@@ -731,7 +740,15 @@ public class TaskQueueUtils {
 				for (String key : extrafields.keySet()) {
 					if (fieldMap.containsKey(key + "_table")) {
 						HashMap<String, Object> map = new HashMap<>();
-						map.put(fieldMap.get(key + "_field"), extrafields.get(key));
+						
+						int hostId;
+						if (key.contains("node")){
+							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", extrafields.get(key).toString());
+							map.put(fieldMap.get(key + "_field"), hostId);
+						}else {
+							map.put(fieldMap.get(key + "_field"), extrafields.get(key));
+						}
+						
 						String query = DBFunctions.composeUpdate(fieldMap.get(key + "_table"), map, null);
 						query += " where queueId = ?";
 						db.query(query, false, Integer.valueOf(job));

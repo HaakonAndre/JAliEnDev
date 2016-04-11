@@ -95,6 +95,7 @@ public class JBoxServer extends Thread {
 	static void notifyActivity() {
 		lastOperation = System.currentTimeMillis();
 	}
+	
 
 	static {
 		new Thread() {
@@ -761,5 +762,14 @@ public class JBoxServer extends Thread {
 			e.printStackTrace();
 		}
 	}
-
+	
+	/**
+	 * 
+	 * Get the port used by JBoxServer
+	 * 
+	 */
+	public static int getPort() {
+		return server!=null ? server.port : -1;
+	}
+	
 }

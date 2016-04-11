@@ -12,6 +12,15 @@ done
 export CLASSPATH
 
 java \
+	-server \
+	-Xms16G -Xmx16G \
+	-XX:+UseG1GC \
+	-XX:+DisableExplicitGC \
+	-XX:+UseCompressedOops \
+	-XX:+AggressiveOpts \
+	-XX:+OptimizeStringConcat \
+	-XX:MaxTrivialSize=1K \
+	-XX:CompileThreshold=20000 \
 	-Duserid=$(id -u) \
 	-Dcom.sun.jndi.ldap.connect.pool=false \
 	"$@"

@@ -1,9 +1,7 @@
 package alien.site;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
@@ -16,6 +14,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,7 +39,6 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
-import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
@@ -56,8 +54,10 @@ import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
 import apmon.ApMon;
+import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.MonitoredJob;
+import apmon.BkThread;
 
 /**
  * @author mmmartin, ron
@@ -117,6 +117,22 @@ public class JobAgent extends Thread {
 	static transient final Monitor monitor 	= MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
 	static transient final ApMon apmon 		= MonitorFactory.getApMonSender();
 	
+	// Resource monitoring vars
+	private Double 	RES_WORKDIR_SIZE 	= 0.0;
+	private Double 	RES_VMEM 			= 0.0;
+	private Double 	RES_RMEM 			= 0.0;
+	private Double 	RES_VMEMMAX 		= 0.0;
+	private Double 	RES_RMEMMAX 		= 0.0;
+	private Double 	RES_MEMUSAGE 		= 0.0;
+	private Double 	RES_CPUTIME 		= 0.0;
+	private Double 	RES_CPUUSAGE 		= 0.0;
+	private String 	RES_RESOURCEUSAGE 	= "";
+	private Long 	RES_RUNTIME 		= 0l;
+	private String 	RES_FRUNTIME 		= "";
+	private int 	RES_NOCPUS 			= 1;
+	private String 	RES_CPUMHZ 			= "";
+	private String 	RES_CPUFAMILY		= "";
+	
 	/**
 	 */
 	public JobAgent() {
@@ -174,6 +190,24 @@ public class JobAgent extends Thread {
 		jaStatus.put("ERROR_JDL",		-4); // incorrect jdl
 		jaStatus.put("ERROR_DIRS",		-5); // error creating directories, not enough free space in workdir
 		jaStatus.put("ERROR_START",		-6); // error forking to start job	
+
+		Hashtable<Long, String> cpuinfo;
+		try {
+			cpuinfo = BkThread.getCpuInfo();
+			RES_CPUFAMILY = cpuinfo.get(ApMonMonitoringConstants.LGEN_CPU_FAMILY);
+			RES_CPUMHZ = cpuinfo.get(ApMonMonitoringConstants.LGEN_CPU_MHZ);
+			RES_CPUMHZ = RES_CPUMHZ.substring(0, RES_CPUMHZ.indexOf("."));
+			RES_NOCPUS = BkThread.getNumCPUs();
+						
+			System.out.println("CPUFAMILY: "+RES_CPUFAMILY);
+			System.out.println("CPUMHZ: "	+RES_CPUMHZ);
+			System.out.println("NOCPUS: "	+RES_NOCPUS);
+		} catch (IOException e) {
+			System.out.println("Problem with the monitoring objects IO Exception: "+e.toString());
+		} catch (ApMonException e) {
+			System.out.println("Problem with the monitoring objects ApMon Exception: "+e.toString());
+		}
+
 	}
 
 	@Override
@@ -262,6 +296,17 @@ public class JobAgent extends Thread {
 		System.out.println("Cleaning up after execution...Removing sandbox: "+jobWorkdir);
 		// Remove sandbox, TODO: use Java builtin
 		Utils.getOutput("rm -rf "+jobWorkdir);
+		RES_WORKDIR_SIZE 	= 0.0;
+		RES_VMEM 			= 0.0;
+		RES_RMEM 			= 0.0;
+		RES_VMEMMAX			= 0.0;
+		RES_RMEMMAX			= 0.0;
+		RES_MEMUSAGE		= 0.0;
+		RES_CPUTIME			= 0.0;
+		RES_CPUUSAGE		= 0.0;
+		RES_RESOURCEUSAGE	= "";
+		RES_RUNTIME			= 0l;
+		RES_FRUNTIME		= "";
 	}
 
 	private Map<String,String> installPackages(ArrayList<String> packToInstall) {
@@ -365,7 +410,7 @@ public class JobAgent extends Thread {
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
 		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
-		int timeleft = origTtl - time_subs;
+		int timeleft = origTtl - time_subs - 300;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
@@ -461,7 +506,7 @@ public class JobAgent extends Thread {
 	 * @return <code>0</code> if everything went fine, a positive number with the process exit code (which would mean a problem) and a negative error code in case of timeout or other supervised
 	 *         execution errors
 	 */
-	private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit) {
+	private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit, final boolean monitor) {
 		final List<String> cmd = new LinkedList<>();
 
 		final int idx = command.lastIndexOf('/');
@@ -532,26 +577,37 @@ public class JobAgent extends Thread {
 		boolean processNotFinished = true;
 		int code = 0;		
 		
-		payloadPID = child.get(1);
-		apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); // TODO: test
-		mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
+		if (monitor){
+			payloadPID = child.get(1);
+			apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); // TODO: test
+			mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
+			checkProcessResources();
+			sendProcessResources();
+		}
 		
+		int monitor_loops=0;
 		try { 
 			while (processNotFinished){
 				try {
-				    Thread.sleep(5 * 1000); // TODO: change to 60, and send every 600
+				    Thread.sleep(60 * 1000);
 				    code = p.exitValue();
 				    processNotFinished = false;
 				} catch (IllegalThreadStateException e) {
-					// check job-token exist (job not killed)
-					
+					// TODO: check job-token exist (job not killed)
 					
 				    // process hasn't terminated
-					String error = checkProcessResources();						
-					if (error != null){
-						p.destroy();
-						System.out.println("Process overusing resources: "+error);
-						return -2;
+					if (monitor) {
+						monitor_loops++;
+						String error = checkProcessResources();
+						if (error != null){
+							p.destroy();
+							System.out.println("Process overusing resources: "+error);
+							return -2;
+						}
+						if(monitor_loops==10){
+							monitor_loops=0;
+							sendProcessResources();
+						}
 					}
 				}
 			}
@@ -564,6 +620,17 @@ public class JobAgent extends Thread {
 		}
 	}
 	
+	private void sendProcessResources() {
+		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k	
+		String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", 
+			RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM,
+			RES_VMEM, RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
+		System.out.println("+++++ Sending resources info +++++");
+		System.out.println(procinfo);
+		
+		commander.q_api.putJobLog(queueId, "proc", procinfo);
+	}
+	
 	private String checkProcessResources() {
 		String error = null;
 		System.out.println("Checking resources usage");
@@ -572,35 +639,55 @@ public class JobAgent extends Thread {
 			HashMap<Long, Double> jobinfo 	= mj.readJobInfo();
 			HashMap<Long, Double> diskinfo 	= mj.readJobDiskUsage();
 			
-			System.out.println("Workdir MB: "+diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE));
-			System.out.println("VMEM MB: "+jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM)/1024);
-			System.out.println("CPUTime: "+jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME));
+			// gettng cpu, memory and runtime info
+			RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
+			RES_VMEM = jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM)/1024;
+			RES_RMEM = jobinfo.get(ApMonMonitoringConstants.LJOB_RSS)/1024;
+			RES_CPUTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
+			RES_CPUUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE);
+			RES_RUNTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue();
+			RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
+			RES_RESOURCEUSAGE = String.format("%.02f", RES_CPUTIME * Double.parseDouble(RES_CPUMHZ)/1000);
+
+			// max memory consumption
+			if(RES_RMEM > RES_RMEMMAX)
+				RES_RMEMMAX = RES_RMEM;
+
+			if(RES_VMEM > RES_VMEMMAX)
+				RES_VMEMMAX = RES_VMEM;
 			
-			System.out.println("Workdir JDL MB: "+workdirMaxSizeMB);
-			System.out.println("VMEM JDL MB: "+jobMaxMemoryMB);
+			// formatted runtime
+		    if (RES_RUNTIME < 60 ) {
+		    	RES_FRUNTIME = String.format("00:00:%02d", RES_RUNTIME); 
+		    } 
+		    else if (RES_RUNTIME <3600) {
+		    	RES_FRUNTIME = String.format("00:%02d:%02d", RES_RUNTIME/60, RES_RUNTIME%60);
+		    } else {
+		    	RES_FRUNTIME = String.format("%02d:%02d:%02d", 
+		    			(RES_RUNTIME/3600), (RES_RUNTIME-(RES_RUNTIME/3600)*3600)/60, (RES_RUNTIME-(RES_RUNTIME/3600)*3600)%60);
+		    }
 			
 			// check disk usage
 			if (workdirMaxSizeMB != 0 
-					&& diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE) > workdirMaxSizeMB){
-				error = "Disk space limit is "+workdirMaxSizeMB+", using "+diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
+					&& RES_WORKDIR_SIZE > workdirMaxSizeMB){
+				error = "Disk space limit is "+workdirMaxSizeMB+", using "+RES_WORKDIR_SIZE;
 			}
 			
 			// check disk usage
 			if (jobMaxMemoryMB != 0 
-					&& jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM)/1024 > jobMaxMemoryMB){
-				error = "Memory usage limit is "+jobMaxMemoryMB+", using "+jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM)/1024;
+					&& RES_VMEM > jobMaxMemoryMB){
+				error = "Memory usage limit is "+jobMaxMemoryMB+", using "+RES_VMEM;
 			}
 			
 			// cpu
-			Double cputime 	= jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
 			long time = System.currentTimeMillis();
 			
 			if ( prevTime != 0 && prevTime+(20*60*1000)<time 
-					&& cputime==prevCpuTime ){
+					&& RES_CPUTIME==prevCpuTime ){
 				error = "The job hasn't used the CPU for 20 minutes";
 			}
 			else {
-				prevCpuTime = cputime;
+				prevCpuTime = RES_CPUTIME;
 				prevTime 	= time;
 			}
 						
@@ -676,7 +763,7 @@ public class JobAgent extends Thread {
 	private int execute() {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 		
-		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS);
+		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, true);
 
 		System.err.println("Execution code: " + code);
 
@@ -691,7 +778,7 @@ public class JobAgent extends Thread {
 		
 		if(validation != null){
 			commander.q_api.putJobLog(queueId, "trace", "Starting validation");
-			code = executeCommand(validation, null, 5, TimeUnit.MINUTES);
+			code = executeCommand(validation, null, 5, TimeUnit.MINUTES, false);
 		}
 		System.err.println("Validation code: " + code);
 
@@ -1042,8 +1129,16 @@ public class JobAgent extends Thread {
 				|| newStatus==JobStatus.ERROR_E || newStatus==JobStatus.ERROR_V ){
 			HashMap<String,Object> extrafields = new HashMap<>();
 			extrafields.put("path", getJobOutputDir());
+			
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else 	
+		} else if(newStatus==JobStatus.RUNNING){
+			HashMap<String,Object> extrafields = new HashMap<>();
+			extrafields.put("spyurl", hostName+":"+JBoxServer.getPort());
+			extrafields.put("node", hostName);
+			
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+		}
+		else 	
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus);
 		
 		jobStatus = newStatus;
