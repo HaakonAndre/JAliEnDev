@@ -266,14 +266,13 @@ public class BookingTable {
 				return new LFN("/bogus");
 			}
 
-			if (!guid.addPFN(pfn)) {
-				if (guid.hasReplica(pfn.seNumber)) {
+			if (!guid.addPFN(pfn))
+				if (guid.hasReplica(pfn.seNumber))
 					logger.log(Level.FINE, "Could not add the PFN to this GUID: " + guid + "\nPFN: " + pfn);
-				} else {
+				else {
 					logger.log(Level.WARNING, "Could not add the PFN to this GUID: " + guid + "\nPFN: " + pfn);
 					return null;
 				}
-			}
 
 			db.setReadOnly(true);
 
@@ -307,7 +306,7 @@ public class BookingTable {
 
 					lfn.guidtime = GUIDUtils.getIndexTime(guid.guid);
 
-					lfn.jobid = db.geti(2, -1);
+					lfn.jobid = db.getl(2, -1);
 
 					final boolean inserted = LFNUtils.insertLFN(lfn);
 

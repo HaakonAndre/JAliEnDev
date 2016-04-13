@@ -17,7 +17,7 @@ import alien.taskQueue.JobStatus;
 
 /**
  * Get the JDL object
- * 
+ *
  * @author ron
  * @since Jun 05, 2011
  */
@@ -161,7 +161,7 @@ public class TaskQueueApiUtils {
 	 * @param queueIds
 	 * @return a Job
 	 */
-	public List<Job> getJobs(final List<Integer> queueIds) {
+	public List<Job> getJobs(final List<Long> queueIds) {
 
 		try {
 			final GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds));
@@ -177,11 +177,11 @@ public class TaskQueueApiUtils {
 
 	/**
 	 * Set a job's status
-	 * 
+	 *
 	 * @param jobnumber
 	 * @param status
 	 */
-	public static void setJobStatus(final int jobnumber, final JobStatus status) {
+	public static void setJobStatus(final long jobnumber, final JobStatus status) {
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status));
 
@@ -190,15 +190,15 @@ public class TaskQueueApiUtils {
 			e.getCause().printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Set a job's status and sets extra fields on the DB
-	 * 
+	 *
 	 * @param jobnumber
 	 * @param status
 	 * @param extrafields
 	 */
-	public static void setJobStatus(final int jobnumber, final JobStatus status, final HashMap<String,Object> extrafields) {
+	public static void setJobStatus(final long jobnumber, final JobStatus status, final HashMap<String, Object> extrafields) {
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status, extrafields));
 
@@ -210,7 +210,7 @@ public class TaskQueueApiUtils {
 
 	/**
 	 * Submit a job
-	 * 
+	 *
 	 * @param jdl
 	 * @return queueId
 	 * @throws ServerException
@@ -229,9 +229,9 @@ public class TaskQueueApiUtils {
 
 	/**
 	 * Kill a job
-	 * 
+	 *
 	 * @param queueId
-	 * 
+	 *
 	 * @return status of the kill
 	 */
 	public boolean killJob(final int queueId) {
@@ -283,17 +283,16 @@ public class TaskQueueApiUtils {
 	 * @param tag
 	 * @param message
 	 */
-	public void putJobLog(final int jobid, final String tag, final String message) {
+	public void putJobLog(final long jobid, final String tag, final String message) {
 		try {
-			final PutJobLog sq = new PutJobLog(jobid,tag,message);
+			final PutJobLog sq = new PutJobLog(jobid, tag, message);
 			Dispatcher.execute(sq);
 		} catch (final Exception e) {
 			System.out.println("Exception in putJobLog: " + e.getMessage());
 		}
 		return;
 	}
-	
-	
+
 	/**
 	 * @param fld
 	 * @param val

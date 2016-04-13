@@ -70,7 +70,7 @@ public class TaskQueueUtils {
 	private static final Map<String, String> fieldMap;
 
 	static {
-		fieldMap = new HashMap<String, String>();
+		fieldMap = new HashMap<>();
 		fieldMap.put("path_table", "QUEUEJDL");
 		fieldMap.put("path_field", "path");
 		fieldMap.put("spyurl_table", "QUEUEPROC");
@@ -120,7 +120,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return the job, or <code>null</code> if it cannot be located
 	 */
-	public static Job getJob(final int queueId) {
+	public static Job getJob(final long queueId) {
 		return getJob(queueId, false);
 	}
 
@@ -133,7 +133,7 @@ public class TaskQueueUtils {
 	 * @param loadJDL
 	 * @return the job, or <code>null</code> if it cannot be located
 	 */
-	public static Job getJob(final int queueId, final boolean loadJDL) {
+	public static Job getJob(final long queueId, final boolean loadJDL) {
 		return getJob(queueId, loadJDL, 0);
 	}
 
@@ -146,7 +146,7 @@ public class TaskQueueUtils {
 	 *            queue archive year to query instead of the main queue
 	 * @return the job, or <code>null</code> if it cannot be located
 	 */
-	public static Job getJob(final int queueId, final boolean loadJDL, final int archiveYear) {
+	public static Job getJob(final long queueId, final boolean loadJDL, final int archiveYear) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
@@ -177,7 +177,7 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(true);
 
-			if (!db.query(q, false, Integer.valueOf(queueId)))
+			if (!db.query(q, false, Long.valueOf(queueId)))
 				return null;
 
 			monitor.addMeasurement("TQ_jobdetails_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
@@ -653,7 +653,7 @@ public class TaskQueueUtils {
 	 *            other fields to set at the same time
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint, final HashMap<String, Object> extrafields) {
+	public static boolean setJobStatus(final long job, final JobStatus newStatus, final JobStatus oldStatusConstraint, final HashMap<String, Object> extrafields) {
 		if (job <= 0)
 			throw new IllegalArgumentException("Job ID " + job + " is illegal");
 
@@ -676,7 +676,7 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(true);
 
-			if (!db.query(q, false, Integer.valueOf(job))) {
+			if (!db.query(q, false, Long.valueOf(job))) {
 				logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
 
 				return false;
@@ -713,19 +713,18 @@ public class TaskQueueUtils {
 			Object newstatus;
 
 			if (dbStructure2_20) {
-				String extra="";
-				if(newStatus == JobStatus.RUNNING){
+				String extra = "";
+				if (newStatus == JobStatus.RUNNING)
 					extra = ",started=UNIX_TIMESTAMP()";
-				}
-				
+
 				newstatus = Integer.valueOf(newStatus.getAliEnLevel());
-				q = "UPDATE QUEUE SET statusId=?"+extra+" WHERE queueId=?;";
+				q = "UPDATE QUEUE SET statusId=?" + extra + " WHERE queueId=?;";
 			} else {
 				newstatus = newStatus.toSQL();
 				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
 			}
 
-			if (!db.query(q, false, newstatus, Integer.valueOf(job)))
+			if (!db.query(q, false, newstatus, Long.valueOf(job)))
 				return false;
 
 			final boolean updated = db.getUpdateCount() != 0;
@@ -737,23 +736,21 @@ public class TaskQueueUtils {
 
 			if (extrafields != null) {
 				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
-				for (String key : extrafields.keySet()) {
+				for (final String key : extrafields.keySet())
 					if (fieldMap.containsKey(key + "_table")) {
-						HashMap<String, Object> map = new HashMap<>();
-						
+						final HashMap<String, Object> map = new HashMap<>();
+
 						int hostId;
-						if (key.contains("node")){
+						if (key.contains("node")) {
 							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", extrafields.get(key).toString());
-							map.put(fieldMap.get(key + "_field"), hostId);
-						}else {
+							map.put(fieldMap.get(key + "_field"), Integer.valueOf(hostId));
+						} else
 							map.put(fieldMap.get(key + "_field"), extrafields.get(key));
-						}
-						
+
 						String query = DBFunctions.composeUpdate(fieldMap.get(key + "_table"), map, null);
 						query += " where queueId = ?";
-						db.query(query, false, Integer.valueOf(job));
+						db.query(query, false, Long.valueOf(job));
 					}
-				}
 			}
 
 			return updated;
@@ -1453,7 +1450,7 @@ public class TaskQueueUtils {
 	/**
 	 * Check the validity of the JDL (package versions, existing critical input files etc) and if the indicated account has access to the indicated role. Will also decorate the JDL with various helper
 	 * tags.
-	 * 
+	 *
 	 * @param j
 	 *            JDL to submit
 	 * @param account
@@ -2216,7 +2213,7 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static boolean deleteJobToken(final int queueId) {
+	private static boolean deleteJobToken(final long queueId) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
@@ -2224,7 +2221,7 @@ public class TaskQueueUtils {
 			if (monitor != null)
 				monitor.incrementCounter("QUEUE_db_lookup");
 
-			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Integer.valueOf(queueId))) {
+			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Long.valueOf(queueId))) {
 				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
 
 				return false;
@@ -2245,7 +2242,7 @@ public class TaskQueueUtils {
 	 * @param joblogtags
 	 * @return <code>true</code> if the log was successfully added
 	 */
-	public static boolean putJobLog(final int queueId, final String action, final String message, final HashMap<String, String> joblogtags) {
+	public static boolean putJobLog(final long queueId, final String action, final String message, final HashMap<String, String> joblogtags) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
@@ -2258,7 +2255,7 @@ public class TaskQueueUtils {
 			final Map<String, Object> insertValues = new HashMap<>(4);
 
 			insertValues.put("timestamp", Long.valueOf(System.currentTimeMillis() / 1000));
-			insertValues.put("jobId", Integer.valueOf(queueId));
+			insertValues.put("jobId", Long.valueOf(queueId));
 			insertValues.put("procinfo", message);
 			insertValues.put("tag", action);
 
@@ -2558,15 +2555,15 @@ public class TaskQueueUtils {
 
 			db.setLastGeneratedKey(true);
 
-			String qi = "insert into " + table + " (" + key + ") values (?);";
+			final String qi = "insert into " + table + " (" + key + ") values (?);";
 			db.setReadOnly(false);
-			boolean ret = db.query(qi, false, value);
-			
-			logger.log(Level.INFO, qi+" with ?="+value+": "+ret);
-			
-			if (ret){
-				int val = db.getLastGeneratedKey().intValue();
-				logger.log(Level.INFO, "Returning: "+val);
+			final boolean ret = db.query(qi, false, value);
+
+			logger.log(Level.INFO, qi + " with ?=" + value + ": " + ret);
+
+			if (ret) {
+				final int val = db.getLastGeneratedKey().intValue();
+				logger.log(Level.INFO, "Returning: " + val);
 				return val;
 			}
 
@@ -2619,11 +2616,11 @@ public class TaskQueueUtils {
 			String oldestQueueIdQ = "";
 
 			if (queueId > 0) {
-				bindValues.add(queueId);
+				bindValues.add(Integer.valueOf(queueId));
 				oldestQueueIdQ = ",oldestQueueId=?";
 			}
 
-			bindValues.add(agentId);
+			bindValues.add(Integer.valueOf(agentId));
 
 			db.query("update JOBAGENT set counter=counter-1 " + oldestQueueIdQ + " where entryId=?", false, bindValues.toArray(new Object[0]));
 

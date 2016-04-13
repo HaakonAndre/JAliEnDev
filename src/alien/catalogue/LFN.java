@@ -149,7 +149,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 *
 	 * @since AliEn 2.19
 	 */
-	public int jobid;
+	public long jobid;
 
 	/**
 	 * @param lfn
@@ -301,7 +301,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		broken = db.getb("broken", false);
 
-		jobid = db.geti("jobid", -1);
+		jobid = db.getl("jobid", -1);
 	}
 
 	@Override

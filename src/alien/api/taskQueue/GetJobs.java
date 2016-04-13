@@ -10,26 +10,26 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
- * 
+ *
  * @author ron
  * @since Oct 28, 2011
  */
 public class GetJobs extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 385621115781357192L;
 
 	private List<Job> jobs;
 
-	private final List<Integer> queueIds;
+	private final List<Long> queueIds;
 
 	/**
 	 * @param user
 	 * @param role
 	 * @param queueIds
 	 */
-	public GetJobs(final AliEnPrincipal user, final String role, final List<Integer> queueIds) {
+	public GetJobs(final AliEnPrincipal user, final String role, final List<Long> queueIds) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.queueIds = queueIds;
@@ -38,8 +38,8 @@ public class GetJobs extends Request {
 	@Override
 	public void run() {
 		jobs = new ArrayList<>(queueIds.size());
-		for (final int qId : queueIds)
-			jobs.add(TaskQueueUtils.getJob(qId));
+		for (final Long qId : queueIds)
+			jobs.add(TaskQueueUtils.getJob(qId.longValue()));
 	}
 
 	/**

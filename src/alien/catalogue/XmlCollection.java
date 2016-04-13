@@ -10,102 +10,101 @@ import java.util.LinkedHashSet;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
-import lazyj.Format;
-import lazyj.Utils;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import lazyj.Format;
+import lazyj.Utils;
 
 /**
  * XML collection wrapper
- * 
+ *
  * @author costing
  * @since 2012-02-15
  */
-public class XmlCollection extends LinkedHashSet<LFN>{
+public class XmlCollection extends LinkedHashSet<LFN> {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 3567611755762002384L;
 
 	/**
 	 * Empty collection to start with
 	 */
-	public XmlCollection(){
+	public XmlCollection() {
 		// empty collection
 	}
-	
+
 	/**
 	 * Read the content of a local XML file
-	 * 
+	 *
 	 * @param localFile
-	 * @throws IOException 
+	 * @throws IOException
 	 */
-	public XmlCollection(final File localFile) throws IOException{
+	public XmlCollection(final File localFile) throws IOException {
 		this(Utils.readFile(localFile.getAbsolutePath()));
 	}
-	
+
 	/**
 	 * Parse this XML
-	 * 
+	 *
 	 * @param content
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public XmlCollection(final String content) throws IOException {
 		parseXML(content);
 	}
-	
+
 	/**
 	 * read the contents of a LFN in the catalogue
-	 * 
+	 *
 	 * @param lfn
 	 * @throws IOException
 	 */
 	public XmlCollection(final LFN lfn) throws IOException {
-		if (lfn==null || !lfn.isFile())
+		if (lfn == null || !lfn.isFile())
 			throw new IOException("LFN is not readable");
-		
+
 		parseXML(IOUtils.getContents(lfn));
 	}
-	
+
 	/**
 	 * read the contents of a GUID in the catalogue
-	 * 
+	 *
 	 * @param guid
 	 * @throws IOException
 	 */
 	public XmlCollection(final GUID guid) throws IOException {
-		if (guid==null)
+		if (guid == null)
 			throw new IOException("GUID is not readable");
 
 		parseXML(IOUtils.getContents(guid));
 	}
-	
+
 	private void parseXML(final String content) throws IOException {
 		final BufferedReader br = new BufferedReader(new StringReader(content));
-		
+
 		String sLine;
-		
-		while ( (sLine=br.readLine()) != null ){
+
+		while ((sLine = br.readLine()) != null) {
 			sLine = sLine.trim();
-			
+
 			if (!sLine.startsWith("<file name=\""))
 				continue;
-			
-			final int idx = sLine.indexOf("\" lfn=\"/");
-			
-			if (idx<0)
-				continue;
-			
-			try{
-				final String fileName = sLine.substring(idx+7, sLine.indexOf('"', idx+8));
 
-				if (ConfigUtils.isCentralService()){
+			final int idx = sLine.indexOf("\" lfn=\"/");
+
+			if (idx < 0)
+				continue;
+
+			try {
+				final String fileName = sLine.substring(idx + 7, sLine.indexOf('"', idx + 8));
+
+				if (ConfigUtils.isCentralService())
 					add(LFNUtils.getLFN(fileName));
-				}
-				else{
+				else {
 					final StringTokenizer st = new StringTokenizer(sLine, "\"", true);
-										
+
 					String time = null;
 					String lowner = null;
 					String group = null;
@@ -122,61 +121,46 @@ public class XmlCollection extends LinkedHashSet<LFN>{
 					String type = null;
 					String replicated = null;
 					String guidtime = null;
-					
-					while (st.hasMoreTokens()){
+
+					while (st.hasMoreTokens()) {
 						final String tok = st.nextToken().trim();
-						
+
 						if (st.hasMoreTokens())
 							st.nextToken();
 						else
 							break;
-												
+
 						if (tok.equals("ctime="))
 							time = value(st);
-						else
-						if (tok.equals("gowner="))
+						else if (tok.equals("gowner="))
 							group = value(st);
-						else
-						if (tok.equals("owner="))
+						else if (tok.equals("owner="))
 							lowner = value(st);
-						else
-						if (tok.equals("lfn="))
+						else if (tok.equals("lfn="))
 							lfn = value(st);
-						else
-						if (tok.equals("size="))
+						else if (tok.equals("size="))
 							size = value(st);
-						else
-						if (tok.equals("md5="))
+						else if (tok.equals("md5="))
 							md5 = value(st);
-						else
-						if (tok.equals("guid="))
+						else if (tok.equals("guid="))
 							guid = value(st);
-						else
-						if (tok.equals("perm="))
+						else if (tok.equals("perm="))
 							perm = value(st);
-						else
-						if (tok.equals("entryId="))
+						else if (tok.equals("entryId="))
 							entryId = value(st);
-						else
-						if (tok.equals("dir="))
+						else if (tok.equals("dir="))
 							dir = value(st);
-						else
-						if (tok.equals("jobId="))
+						else if (tok.equals("jobId="))
 							jobId = value(st);
-						else
-						if (tok.equals("broken="))
+						else if (tok.equals("broken="))
 							broken = value(st);
-						else
-						if (tok.equals("expiretime="))
+						else if (tok.equals("expiretime="))
 							expires = value(st);
-						else
-						if (tok.equals("type="))
+						else if (tok.equals("type="))
 							type = value(st);
-						else
-						if (tok.equals("guidtime="))
+						else if (tok.equals("guidtime="))
 							guidtime = value(st);
-						else
-						if (tok.equals("replicated="))
+						else if (tok.equals("replicated="))
 							replicated = value(st);
 						else
 							value(st);
@@ -192,19 +176,19 @@ public class XmlCollection extends LinkedHashSet<LFN>{
 
 					if (guid != null)
 						l.guid = UUID.fromString(guid);
-					
+
 					if (dir != null)
 						l.dir = Long.parseLong(dir);
-					
+
 					if (entryId != null)
 						l.entryId = Long.parseLong(entryId);
-					
+
 					if (jobId != null)
-						l.jobid = Integer.parseInt(jobId);
-					
+						l.jobid = Long.parseLong(jobId);
+
 					if (expires != null)
 						l.expiretime = Format.parseDate(expires);
-					
+
 					if (broken != null)
 						l.broken = Utils.stringToBool(broken, false);
 
@@ -212,144 +196,130 @@ public class XmlCollection extends LinkedHashSet<LFN>{
 					l.owner = lowner;
 					l.gowner = group;
 					l.perm = perm;
-					l.type = type!=null && type.length() > 0 ? type.charAt(0) : 'f';
+					l.type = type != null && type.length() > 0 ? type.charAt(0) : 'f';
 					l.guidtime = guidtime;
 					l.replicated = Utils.stringToBool(replicated, false);
-					
+
 					add(l);
 				}
-			}
-			catch (final Throwable t){
+			} catch (final Throwable t) {
 				throw new IOException("Exception parsing XML", t);
 			}
 		}
 	}
-	
-	private static final String value(final StringTokenizer st){
+
+	private static final String value(final StringTokenizer st) {
 		final String s = st.nextToken();
-		
+
 		if (s.equals("\""))
 			return "";
-		
+
 		if (st.hasMoreTokens())
 			st.nextToken();
-		
+
 		return s;
 	}
-	
+
 	private String collectionName;
-	
+
 	/**
 	 * Set collection name
-	 * 
+	 *
 	 * @param newName
 	 */
-	public void setName(final String newName){
+	public void setName(final String newName) {
 		collectionName = newName;
 	}
-	
+
 	/**
 	 * @return the collection name
 	 */
-	public String getName(){
+	public String getName() {
 		return collectionName;
 	}
-	
+
 	private String owner;
-	
+
 	/**
 	 * Set ownership
-	 * 
+	 *
 	 * @param newOwner
 	 */
-	public void setOwner(final String newOwner){
+	public void setOwner(final String newOwner) {
 		owner = newOwner;
 	}
-	
+
 	/**
 	 * @return currently set owner
 	 */
-	public String getOwner(){
+	public String getOwner() {
 		return owner;
 	}
-	
+
 	private String command;
-	
+
 	/**
 	 * command that has generated this collection
-	 * 
+	 *
 	 * @param newCommand
 	 */
-	public void setCommand(final String newCommand){
+	public void setCommand(final String newCommand) {
 		command = newCommand;
 	}
-	
+
 	/**
 	 * @return the command that has generated this collection
 	 */
-	public String getCommand(){
+	public String getCommand() {
 		return command;
 	}
-	
+
 	private static final SimpleDateFormat ALIEN_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-	
-	private static String formatTimestamp(final Date d){
-		if (d==null)
+
+	private static String formatTimestamp(final Date d) {
+		if (d == null)
 			return "";
-		
-		synchronized (ALIEN_TIME_FORMAT){
+
+		synchronized (ALIEN_TIME_FORMAT) {
 			return ALIEN_TIME_FORMAT.format(d);
 		}
 	}
-	
-	private static String getXMLPortion(final LFN l){
-		return "      <file name=\""+Format.escHtml(l.getFileName())+"\" "+
-	       "aclId=\""+(l.aclId>0 ? String.valueOf(l.aclId) : "") +"\" "+
-		   "broken=\""+(l.broken ? 1 : 0)+"\" "+
-	       "ctime=\""+formatTimestamp(l.ctime)+"\" "+
-		   "dir=\""+l.dir+"\" "+
-	       "entryId=\""+l.entryId+"\" "+
-		   "expiretime=\""+formatTimestamp(l.expiretime)+"\" "+
-	       "gowner=\""+Format.escHtml(l.gowner)+"\" "+
-		   "guid=\""+l.guid.toString()+"\" "+
-	       "guidtime=\"\" "+
-		   "jobid=\""+(l.jobid>0 ? String.valueOf(l.jobid) : "")+"\" "+
-	       "lfn=\""+l.getCanonicalName()+"\" "+
-		   "md5=\""+Format.escHtml(l.md5)+"\" "+
-	       "owner=\""+Format.escHtml(l.owner)+"\" "+
-		   "perm=\""+Format.escHtml(l.perm)+"\" "+
-	       "replicated=\""+(l.replicated ? 1 : 0)+"\" "+
-		   "size=\""+l.size+"\" "+
-	       "turl=\"alien://"+Format.escHtml(l.getCanonicalName())+"\" "+
-		   "type=\""+l.type+"\" />";
+
+	private static String getXMLPortion(final LFN l) {
+		return "      <file name=\"" + Format.escHtml(l.getFileName()) + "\" " + "aclId=\"" + (l.aclId > 0 ? String.valueOf(l.aclId) : "") + "\" " + "broken=\"" + (l.broken ? 1 : 0) + "\" "
+				+ "ctime=\"" + formatTimestamp(l.ctime) + "\" " + "dir=\"" + l.dir + "\" " + "entryId=\"" + l.entryId + "\" " + "expiretime=\"" + formatTimestamp(l.expiretime) + "\" " + "gowner=\""
+				+ Format.escHtml(l.gowner) + "\" " + "guid=\"" + l.guid.toString() + "\" " + "guidtime=\"\" " + "jobid=\"" + (l.jobid > 0 ? String.valueOf(l.jobid) : "") + "\" " + "lfn=\""
+				+ l.getCanonicalName() + "\" " + "md5=\"" + Format.escHtml(l.md5) + "\" " + "owner=\"" + Format.escHtml(l.owner) + "\" " + "perm=\"" + Format.escHtml(l.perm) + "\" " + "replicated=\""
+				+ (l.replicated ? 1 : 0) + "\" " + "size=\"" + l.size + "\" " + "turl=\"alien://" + Format.escHtml(l.getCanonicalName()) + "\" " + "type=\"" + l.type + "\" />";
 	}
-	
+
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("<?xml version=\"1.0\"?>").append('\n');
 		sb.append("<alien>\n");
-		sb.append("  <collection name=\""+Format.escHtml(collectionName!=null && collectionName.length()>0 ? collectionName : "tempCollection")+"\">\n");
-		
+		sb.append("  <collection name=\"" + Format.escHtml(collectionName != null && collectionName.length() > 0 ? collectionName : "tempCollection") + "\">\n");
+
 		int iCount = 0;
-		
-		for (final LFN l : this){
+
+		for (final LFN l : this) {
 			final String sXML = getXMLPortion(l);
-				
-			if (sXML!=null){
-				iCount ++;
-				
-				sb.append("    <event name=\""+iCount+"\">\n");
+
+			if (sXML != null) {
+				iCount++;
+
+				sb.append("    <event name=\"" + iCount + "\">\n");
 				sb.append(sXML).append('\n');
 				sb.append("    </event>\n");
 			}
 		}
-		
+
 		final long lNow = System.currentTimeMillis();
-		
-	    sb.append("    <info command=\""+Format.escHtml(command!=null ? command : "alien.catalogue.XmlCollection")+"\" creator=\""+Format.escHtml(owner!=null ? owner : "JAliEn-Central")+"\" date=\"").append(new Date(lNow)).append("\" timestamp=\"").append(lNow).append("\" />\n");
-	    sb.append("  </collection>\n");                                                                                                                                                  
-	    sb.append("</alien>");       
-	        
+
+		sb.append("    <info command=\"" + Format.escHtml(command != null ? command : "alien.catalogue.XmlCollection") + "\" creator=\"" + Format.escHtml(owner != null ? owner : "JAliEn-Central")
+				+ "\" date=\"").append(new Date(lNow)).append("\" timestamp=\"").append(lNow).append("\" />\n");
+		sb.append("  </collection>\n");
+		sb.append("</alien>");
+
 		return sb.toString();
 	}
 }

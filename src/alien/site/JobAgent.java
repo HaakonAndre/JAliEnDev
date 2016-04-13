@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lia.util.Utils;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.GetMatchJob;
@@ -47,6 +46,7 @@ import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
@@ -56,14 +56,16 @@ import alien.taskQueue.JobStatus;
 import apmon.ApMon;
 import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
-import apmon.MonitoredJob;
 import apmon.BkThread;
+import apmon.MonitoredJob;
+import lazyj.Format;
+import lia.util.Utils;
 
 /**
  * @author mmmartin, ron
  * @since Apr 1, 2015
  */
-public class JobAgent extends Thread {
+public class JobAgent extends Thread implements MonitoringObject {
 
 	// Folders and files
 	private File tempDir = null;
@@ -78,7 +80,7 @@ public class JobAgent extends Thread {
 
 	// Job variables
 	private JDL jdl = null;
-	private int queueId;
+	private long queueId;
 	private String jobToken;
 	private String username;
 	private String jobAgentId = "";
@@ -105,34 +107,51 @@ public class JobAgent extends Thread {
 	private PackMan packMan = null;
 	private String hostName = null;
 	private String alienCm = null;
-	private int pid;
+	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
-	private HashMap<String, Integer> jaStatus = new HashMap<>();
-	private int jobagent_requests = 1; // TODO: restore to 5
+	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
+	static {
+		jaStatus.put("REQUESTING_JOB", Integer.valueOf(1));
+		jaStatus.put("INSTALLING_PKGS", Integer.valueOf(2));
+		jaStatus.put("JOB_STARTED", Integer.valueOf(3));
+		jaStatus.put("RUNNING_JOB", Integer.valueOf(4));
+		jaStatus.put("DONE", Integer.valueOf(5));
+		jaStatus.put("ERROR_HC", Integer.valueOf(-1)); // error in getting host classad
+		jaStatus.put("ERROR_IP", Integer.valueOf(-2)); // error installing packages
+		jaStatus.put("ERROR_GET_JDL", Integer.valueOf(-3)); // error getting jdl
+		jaStatus.put("ERROR_JDL", Integer.valueOf(-4)); // incorrect jdl
+		jaStatus.put("ERROR_DIRS", Integer.valueOf(-5)); // error creating directories, not enough free space in workdir
+		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to start job
+	}
+
+	private final int jobagent_requests = 1; // TODO: restore to 5
 
 	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
-	static transient final Monitor monitor 	= MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
-	static transient final ApMon apmon 		= MonitorFactory.getApMonSender();
-	
+	static transient final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
+	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+
 	// Resource monitoring vars
-	private Double 	RES_WORKDIR_SIZE 	= 0.0;
-	private Double 	RES_VMEM 			= 0.0;
-	private Double 	RES_RMEM 			= 0.0;
-	private Double 	RES_VMEMMAX 		= 0.0;
-	private Double 	RES_RMEMMAX 		= 0.0;
-	private Double 	RES_MEMUSAGE 		= 0.0;
-	private Double 	RES_CPUTIME 		= 0.0;
-	private Double 	RES_CPUUSAGE 		= 0.0;
-	private String 	RES_RESOURCEUSAGE 	= "";
-	private Long 	RES_RUNTIME 		= 0l;
-	private String 	RES_FRUNTIME 		= "";
-	private int 	RES_NOCPUS 			= 1;
-	private String 	RES_CPUMHZ 			= "";
-	private String 	RES_CPUFAMILY		= "";
-	
+
+	private static final Double ZERO = Double.valueOf(0);
+
+	private Double RES_WORKDIR_SIZE = ZERO;
+	private Double RES_VMEM = ZERO;
+	private Double RES_RMEM = ZERO;
+	private Double RES_VMEMMAX = ZERO;
+	private Double RES_RMEMMAX = ZERO;
+	private Double RES_MEMUSAGE = ZERO;
+	private Double RES_CPUTIME = ZERO;
+	private Double RES_CPUUSAGE = ZERO;
+	private String RES_RESOURCEUSAGE = "";
+	private Long RES_RUNTIME = Long.valueOf(0);
+	private String RES_FRUNTIME = "";
+	private Integer RES_NOCPUS = Integer.valueOf(1);
+	private String RES_CPUMHZ = "";
+	private String RES_CPUFAMILY = "";
+
 	/**
 	 */
 	public JobAgent() {
@@ -152,10 +171,10 @@ public class JobAgent extends Thread {
 
 		if (env.containsKey("cerequirements"))
 			ceRequirements = env.get("cerequirements");
-		
+
 		if (env.containsKey("closeSE"))
 			extrasites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
-		
+
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 		} catch (final UnknownHostException e) {
@@ -170,7 +189,7 @@ public class JobAgent extends Thread {
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
-		
+
 		workdir = env.get("HOME");
 		if (env.containsKey("WORKDIR"))
 			workdir = env.get("WORKDIR");
@@ -178,18 +197,6 @@ public class JobAgent extends Thread {
 			workdir = env.get("TMPBATCH");
 
 		siteMap = getSiteParameters();
-		
-		jaStatus.put("REQUESTING_JOB",	1);
-		jaStatus.put("INSTALLING_PKGS",	2);
-		jaStatus.put("JOB_STARTED",		3);
-		jaStatus.put("RUNNING_JOB",		4);
-		jaStatus.put("DONE",			5);
-		jaStatus.put("ERROR_HC",		-1); // error in getting host classad
-		jaStatus.put("ERROR_IP",		-2); // error installing packages
-		jaStatus.put("ERROR_GET_JDL",	-3); // error getting jdl
-		jaStatus.put("ERROR_JDL",		-4); // incorrect jdl
-		jaStatus.put("ERROR_DIRS",		-5); // error creating directories, not enough free space in workdir
-		jaStatus.put("ERROR_START",		-6); // error forking to start job	
 
 		Hashtable<Long, String> cpuinfo;
 		try {
@@ -197,17 +204,18 @@ public class JobAgent extends Thread {
 			RES_CPUFAMILY = cpuinfo.get(ApMonMonitoringConstants.LGEN_CPU_FAMILY);
 			RES_CPUMHZ = cpuinfo.get(ApMonMonitoringConstants.LGEN_CPU_MHZ);
 			RES_CPUMHZ = RES_CPUMHZ.substring(0, RES_CPUMHZ.indexOf("."));
-			RES_NOCPUS = BkThread.getNumCPUs();
-						
-			System.out.println("CPUFAMILY: "+RES_CPUFAMILY);
-			System.out.println("CPUMHZ: "	+RES_CPUMHZ);
-			System.out.println("NOCPUS: "	+RES_NOCPUS);
-		} catch (IOException e) {
-			System.out.println("Problem with the monitoring objects IO Exception: "+e.toString());
-		} catch (ApMonException e) {
-			System.out.println("Problem with the monitoring objects ApMon Exception: "+e.toString());
+			RES_NOCPUS = Integer.valueOf(BkThread.getNumCPUs());
+
+			System.out.println("CPUFAMILY: " + RES_CPUFAMILY);
+			System.out.println("CPUMHZ: " + RES_CPUMHZ);
+			System.out.println("NOCPUS: " + RES_NOCPUS);
+		} catch (final IOException e) {
+			System.out.println("Problem with the monitoring objects IO Exception: " + e.toString());
+		} catch (final ApMonException e) {
+			System.out.println("Problem with the monitoring objects ApMon Exception: " + e.toString());
 		}
 
+		monitor.addMonitoring("jobAgent-TODO", this);
 	}
 
 	@Override
@@ -234,47 +242,46 @@ public class JobAgent extends Thread {
 
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
-				
+
 				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 				matchedJob = jobMatch.getMatchJob();
-				
+
 				// TODELETE
-				if(matchedJob != null)
+				if (matchedJob != null)
 					System.out.println(matchedJob.toString());
 
-				if ( matchedJob != null && !matchedJob.containsKey("Error") ) {
-					jdl 		= new JDL( Job.sanitizeJDL((String) matchedJob.get("JDL")) );
-					queueId 	= (int)	matchedJob.get("queueId");
-					username 	= (String) matchedJob.get("User");
-					jobToken 	= (String)	matchedJob.get("jobToken");
-					
-					//TODO: commander.setUser(username); commander.setSite(site);
-					
+				if (matchedJob != null && !matchedJob.containsKey("Error")) {
+					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
+					queueId = ((Integer) matchedJob.get("queueId")).intValue();
+					username = (String) matchedJob.get("User");
+					jobToken = (String) matchedJob.get("jobToken");
+
+					// TODO: commander.setUser(username); commander.setSite(site);
+
 					System.out.println(jdl.getExecutable());
 					System.out.println(username);
 					System.out.println(queueId);
 					System.out.println(jobToken);
-					
+
 					// process payload
 					handleJob();
-															
+
 					cleanup();
 				} else {
-					if (matchedJob != null && matchedJob.containsKey("Error")){
+					if (matchedJob != null && matchedJob.containsKey("Error")) {
 						logger.log(Level.INFO, (String) matchedJob.get("Error"));
-					
-						if( (int) matchedJob.get("Code") == -3 ){
-							ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
+
+						if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
+							final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
 							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 							installPackages(packToInstall);
 						}
-					}
-					else
+					} else
 						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
-					
+
 					try {
 						// TODO?: monitor.sendBgMonitoring
 						sleep(20000);
@@ -293,41 +300,41 @@ public class JobAgent extends Thread {
 	}
 
 	private void cleanup() {
-		System.out.println("Cleaning up after execution...Removing sandbox: "+jobWorkdir);
+		System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
 		// Remove sandbox, TODO: use Java builtin
-		Utils.getOutput("rm -rf "+jobWorkdir);
-		RES_WORKDIR_SIZE 	= 0.0;
-		RES_VMEM 			= 0.0;
-		RES_RMEM 			= 0.0;
-		RES_VMEMMAX			= 0.0;
-		RES_RMEMMAX			= 0.0;
-		RES_MEMUSAGE		= 0.0;
-		RES_CPUTIME			= 0.0;
-		RES_CPUUSAGE		= 0.0;
-		RES_RESOURCEUSAGE	= "";
-		RES_RUNTIME			= 0l;
-		RES_FRUNTIME		= "";
+		Utils.getOutput("rm -rf " + jobWorkdir);
+		RES_WORKDIR_SIZE = ZERO;
+		RES_VMEM = ZERO;
+		RES_RMEM = ZERO;
+		RES_VMEMMAX = ZERO;
+		RES_RMEMMAX = ZERO;
+		RES_MEMUSAGE = ZERO;
+		RES_CPUTIME = ZERO;
+		RES_CPUUSAGE = ZERO;
+		RES_RESOURCEUSAGE = "";
+		RES_RUNTIME = Long.valueOf(0);
+		RES_FRUNTIME = "";
 	}
 
-	private Map<String,String> installPackages(ArrayList<String> packToInstall) {
-		Map<String,String> ok = null;
-		
-		for (String pack : packToInstall){
-			ok = packMan.installPackage(username,pack,null);
-			if(ok == null){
-				logger.log(Level.INFO, "Error installing the package "+pack);
-			    monitor.sendParameter("ja_status", "ERROR_IP");
-			    System.out.println("Error installing " + pack);
-			    System.exit(1);
+	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
+		Map<String, String> ok = null;
+
+		for (final String pack : packToInstall) {
+			ok = packMan.installPackage(username, pack, null);
+			if (ok == null) {
+				logger.log(Level.INFO, "Error installing the package " + pack);
+				monitor.sendParameter("ja_status", "ERROR_IP");
+				System.out.println("Error installing " + pack);
+				System.exit(1);
 			}
 		}
 		return ok;
 	}
 
-	private Integer getJaStatusForML (String status){
-		if (jaStatus.containsKey(status))
-			return jaStatus.get(status);
-		return 0;
+	private static Integer getJaStatusForML(final String status) {
+		final Integer value = jaStatus.get(status);
+
+		return value != null ? value : Integer.valueOf(0);
 	}
 
 	/**
@@ -337,7 +344,7 @@ public class JobAgent extends Thread {
 		logger.log(Level.INFO, "Getting jobAgent map");
 
 		// getting packages from PackMan
-		packMan = (PackMan) getPackman();
+		packMan = getPackman();
 		packages = packMan.getListPackages();
 		installedPackages = packMan.getListInstalledPackages();
 
@@ -372,9 +379,9 @@ public class JobAgent extends Thread {
 		siteMap.put("InstalledPackages", instpacks);
 		siteMap.put("CE", ce);
 		siteMap.put("Site", site);
-		if(users.size()>0)
+		if (users.size() > 0)
 			siteMap.put("Users", users);
-		if(extrasites != null && extrasites.size()>0)
+		if (extrasites != null && extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
 		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
@@ -385,14 +392,14 @@ public class JobAgent extends Thread {
 		return siteMap;
 	}
 
-	private PackMan getPackman() {		
-		switch( env.get("installationMethod") ){
-			case "CVMFS":
-				siteMap.put("CVMFS", 1);
-				return new CVMFS();
-			default:
-				siteMap.put("CVMFS", 1);
-				return new CVMFS();
+	private PackMan getPackman() {
+		switch (env.get("installationMethod")) {
+		case "CVMFS":
+			siteMap.put("CVMFS", Integer.valueOf(1));
+			return new CVMFS();
+		default:
+			siteMap.put("CVMFS", Integer.valueOf(1));
+			return new CVMFS();
 		}
 	}
 
@@ -449,47 +456,46 @@ public class JobAgent extends Thread {
 	}
 
 	private long ttlForJob() {
-		int ttl=jdl.getInteger("TTL")+300;
-		commander.q_api.putJobLog(queueId, "trace", "Job asks to run for "+ttl+" seconds");
-		
-		String proxyttl = jdl.gets("ProxyTTL");
-		if(proxyttl != null){
-			ttl = (int) siteMap.get("TTL") - 600;
-			commander.q_api.putJobLog(queueId, "trace", "ProxyTTL enabled, running for "+ttl+" seconds"); 
+		final Integer iTTL = jdl.getInteger("TTL");
+
+		int ttl = (iTTL != null ? iTTL.intValue() : 0) + 300;
+		commander.q_api.putJobLog(queueId, "trace", "Job asks to run for " + ttl + " seconds");
+
+		final String proxyttl = jdl.gets("ProxyTTL");
+		if (proxyttl != null) {
+			ttl = ((Integer) siteMap.get("TTL")).intValue() - 600;
+			commander.q_api.putJobLog(queueId, "trace", "ProxyTTL enabled, running for " + ttl + " seconds");
 		}
-		
+
 		return ttl;
 	}
-	
+
 	private void handleJob() {
 		totalJobs++;
 		try {
 			logger.log(Level.INFO, "Started JA with: " + jdl);
 
-			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: "+hostName);
-			
+			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
+
 			changeStatus(JobStatus.STARTED);
-			
+
 			if (!createWorkDir() || !getInputFiles()) {
 				changeStatus(JobStatus.ERROR_IB);
 				return;
 			}
-			
+
 			getMemoryRequirements();
-			
+
 			// run payload
-			if(execute() < 0){
+			if (execute() < 0)
 				changeStatus(JobStatus.ERROR_E);
-			}
-				
-			if (!validate()){
+
+			if (!validate())
 				changeStatus(JobStatus.ERROR_V);
-			}
-			
-			if (jobStatus == JobStatus.RUNNING){
+
+			if (jobStatus == JobStatus.RUNNING)
 				changeStatus(JobStatus.SAVING);
-			}
-			
+
 			uploadOutputFiles();
 
 		} catch (final Exception e) {
@@ -498,7 +504,6 @@ public class JobAgent extends Thread {
 		}
 	}
 
-
 	/**
 	 * @param command
 	 * @param arguments
@@ -506,7 +511,7 @@ public class JobAgent extends Thread {
 	 * @return <code>0</code> if everything went fine, a positive number with the process exit code (which would mean a problem) and a negative error code in case of timeout or other supervised
 	 *         execution errors
 	 */
-	private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit, final boolean monitor) {
+	private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit, final boolean monitorJob) {
 		final List<String> cmd = new LinkedList<>();
 
 		final int idx = command.lastIndexOf('/');
@@ -531,26 +536,26 @@ public class JobAgent extends Thread {
 						cmd.add(st.nextToken());
 				}
 
-		System.err.println("Executing: " + cmd + ", arguments is " + arguments+" pid: "+pid);
+		System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
-		
+
 		pBuilder.directory(tempDir);
-		
-		HashMap<String, String> environment_packages = getJobPackagesEnvironment();
-		Map<String, String> processEnv = pBuilder.environment();
+
+		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+		final Map<String, String> processEnv = pBuilder.environment();
 		processEnv.putAll(environment_packages);
-		processEnv.putAll( loadJDLEnvironmentVariables() );
+		processEnv.putAll(loadJDLEnvironmentVariables());
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
-//		pBuilder.redirectErrorStream(true);
+		// pBuilder.redirectErrorStream(true);
 
 		final Process p;
 
 		try {
 			changeStatus(JobStatus.RUNNING);
-			
+
 			p = pBuilder.start();
 		} catch (final IOException ioe) {
 			System.out.println("Exception running " + cmd + " : " + ioe.getMessage());
@@ -565,52 +570,50 @@ public class JobAgent extends Thread {
 			}
 		}, TimeUnit.MILLISECONDS.convert(timeout, unit));
 
-
 		mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
-		Vector<Integer> child = mj.getChildren();
-		if (child == null || child.size() <= 1){
-			System.err.println("Can't get children. Failed to execute? "+cmd.toString()+" child: "+child.toString());
+		final Vector<Integer> child = mj.getChildren();
+		if (child == null || child.size() <= 1) {
+			System.err.println("Can't get children. Failed to execute? " + cmd.toString() + " child: " + child);
 			return -1;
 		}
-		System.out.println("Child: "+child.get(1).toString());
-		
+		System.out.println("Child: " + child.get(1).toString());
+
 		boolean processNotFinished = true;
-		int code = 0;		
-		
-		if (monitor){
-			payloadPID = child.get(1);
+		int code = 0;
+
+		if (monitorJob) {
+			payloadPID = child.get(1).intValue();
 			apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); // TODO: test
 			mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
 			checkProcessResources();
 			sendProcessResources();
 		}
-		
-		int monitor_loops=0;
-		try { 
-			while (processNotFinished){
+
+		int monitor_loops = 0;
+		try {
+			while (processNotFinished)
 				try {
-				    Thread.sleep(60 * 1000);
-				    code = p.exitValue();
-				    processNotFinished = false;
-				} catch (IllegalThreadStateException e) {
+					Thread.sleep(60 * 1000);
+					code = p.exitValue();
+					processNotFinished = false;
+				} catch (final IllegalThreadStateException e) {
 					// TODO: check job-token exist (job not killed)
-					
-				    // process hasn't terminated
-					if (monitor) {
+
+					// process hasn't terminated
+					if (monitorJob) {
 						monitor_loops++;
-						String error = checkProcessResources();
-						if (error != null){
+						final String error = checkProcessResources();
+						if (error != null) {
 							p.destroy();
-							System.out.println("Process overusing resources: "+error);
+							System.out.println("Process overusing resources: " + error);
 							return -2;
 						}
-						if(monitor_loops==10){
-							monitor_loops=0;
+						if (monitor_loops == 10) {
+							monitor_loops = 0;
 							sendProcessResources();
 						}
 					}
 				}
-			}
 			return code;
 		} catch (final InterruptedException ie) {
 			System.out.println("Interrupted while waiting for this command to finish: " + cmd.toString());
@@ -619,150 +622,135 @@ public class JobAgent extends Thread {
 			t.cancel();
 		}
 	}
-	
+
 	private void sendProcessResources() {
-		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k	
-		String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", 
-			RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM,
-			RES_VMEM, RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
+		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
+		final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
+				RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
 		System.out.println("+++++ Sending resources info +++++");
 		System.out.println(procinfo);
-		
+
 		commander.q_api.putJobLog(queueId, "proc", procinfo);
 	}
-	
+
 	private String checkProcessResources() {
 		String error = null;
 		System.out.println("Checking resources usage");
-		
+
 		try {
-			HashMap<Long, Double> jobinfo 	= mj.readJobInfo();
-			HashMap<Long, Double> diskinfo 	= mj.readJobDiskUsage();
-			
+			final HashMap<Long, Double> jobinfo = mj.readJobInfo();
+			final HashMap<Long, Double> diskinfo = mj.readJobDiskUsage();
+
 			// gettng cpu, memory and runtime info
 			RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
-			RES_VMEM = jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM)/1024;
-			RES_RMEM = jobinfo.get(ApMonMonitoringConstants.LJOB_RSS)/1024;
-			RES_CPUTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME);
-			RES_CPUUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE);
-			RES_RUNTIME = jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue();
+			RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
+			RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RSS).doubleValue() / 1024);
+			RES_CPUTIME = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME).doubleValue());
+			RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
+			RES_RUNTIME = Long.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue());
 			RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
-			RES_RESOURCEUSAGE = String.format("%.02f", RES_CPUTIME * Double.parseDouble(RES_CPUMHZ)/1000);
+			RES_RESOURCEUSAGE = Format.showDottedDouble(RES_CPUTIME.doubleValue() * Double.parseDouble(RES_CPUMHZ) / 1000, 2);
 
 			// max memory consumption
-			if(RES_RMEM > RES_RMEMMAX)
+			if (RES_RMEM.doubleValue() > RES_RMEMMAX.doubleValue())
 				RES_RMEMMAX = RES_RMEM;
 
-			if(RES_VMEM > RES_VMEMMAX)
+			if (RES_VMEM.doubleValue() > RES_VMEMMAX.doubleValue())
 				RES_VMEMMAX = RES_VMEM;
-			
+
 			// formatted runtime
-		    if (RES_RUNTIME < 60 ) {
-		    	RES_FRUNTIME = String.format("00:00:%02d", RES_RUNTIME); 
-		    } 
-		    else if (RES_RUNTIME <3600) {
-		    	RES_FRUNTIME = String.format("00:%02d:%02d", RES_RUNTIME/60, RES_RUNTIME%60);
-		    } else {
-		    	RES_FRUNTIME = String.format("%02d:%02d:%02d", 
-		    			(RES_RUNTIME/3600), (RES_RUNTIME-(RES_RUNTIME/3600)*3600)/60, (RES_RUNTIME-(RES_RUNTIME/3600)*3600)%60);
-		    }
-			
+			if (RES_RUNTIME.doubleValue() < 60)
+				RES_FRUNTIME = String.format("00:00:%02d", RES_RUNTIME);
+			else if (RES_RUNTIME.doubleValue() < 3600)
+				RES_FRUNTIME = String.format("00:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 60), Double.valueOf(RES_RUNTIME.doubleValue() % 60));
+			else
+				RES_FRUNTIME = String.format("%02d:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 3600),
+						Double.valueOf((RES_RUNTIME.doubleValue() - (RES_RUNTIME.doubleValue() / 3600) * 3600) / 60),
+						Double.valueOf((RES_RUNTIME.doubleValue() - (RES_RUNTIME.doubleValue() / 3600) * 3600) % 60));
+
 			// check disk usage
-			if (workdirMaxSizeMB != 0 
-					&& RES_WORKDIR_SIZE > workdirMaxSizeMB){
-				error = "Disk space limit is "+workdirMaxSizeMB+", using "+RES_WORKDIR_SIZE;
-			}
-			
+			if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
+				error = "Disk space limit is " + workdirMaxSizeMB + ", using " + RES_WORKDIR_SIZE;
+
 			// check disk usage
-			if (jobMaxMemoryMB != 0 
-					&& RES_VMEM > jobMaxMemoryMB){
-				error = "Memory usage limit is "+jobMaxMemoryMB+", using "+RES_VMEM;
-			}
-			
+			if (jobMaxMemoryMB != 0 && RES_VMEM.doubleValue() > jobMaxMemoryMB)
+				error = "Memory usage limit is " + jobMaxMemoryMB + ", using " + RES_VMEM;
+
 			// cpu
-			long time = System.currentTimeMillis();
-			
-			if ( prevTime != 0 && prevTime+(20*60*1000)<time 
-					&& RES_CPUTIME==prevCpuTime ){
+			final long time = System.currentTimeMillis();
+
+			if (prevTime != 0 && prevTime + (20 * 60 * 1000) < time && RES_CPUTIME == prevCpuTime)
 				error = "The job hasn't used the CPU for 20 minutes";
-			}
 			else {
 				prevCpuTime = RES_CPUTIME;
-				prevTime 	= time;
+				prevTime = time;
 			}
-						
-			
-		} catch (IOException e) {
-			System.out.println("Problem with the monitoring objects: "+e.toString());
+
+		} catch (final IOException e) {
+			System.out.println("Problem with the monitoring objects: " + e.toString());
 		}
-		
-       	return error;
+
+		return error;
 	}
-	
-	
+
 	private void getMemoryRequirements() {
 		// Sandbox size
-		String workdirMaxSize = jdl.gets("Workdirectorysize");
-		
-		if (workdirMaxSize != null){
-			Pattern p = Pattern.compile("\\p{L}");
-			Matcher m = p.matcher(workdirMaxSize);
+		final String workdirMaxSize = jdl.gets("Workdirectorysize");
+
+		if (workdirMaxSize != null) {
+			final Pattern p = Pattern.compile("\\p{L}");
+			final Matcher m = p.matcher(workdirMaxSize);
 			if (m.find()) {
-			    String number 	= workdirMaxSize.substring(0, m.start());
-			    String unit 	= workdirMaxSize.substring(m.start());
-			    
-			    switch(unit){
-			    	case "KB":
-			    		workdirMaxSizeMB = Integer.parseInt(number)/1024;
-			    		break;
-		    		case "GB":
-			    		workdirMaxSizeMB = Integer.parseInt(number)*1024;
-			    		break;
-		    		default: // MB
-				    	workdirMaxSizeMB = Integer.parseInt(number);
-			    }
-			}
-			else {
+				final String number = workdirMaxSize.substring(0, m.start());
+				final String unit = workdirMaxSize.substring(m.start());
+
+				switch (unit) {
+				case "KB":
+					workdirMaxSizeMB = Integer.parseInt(number) / 1024;
+					break;
+				case "GB":
+					workdirMaxSizeMB = Integer.parseInt(number) * 1024;
+					break;
+				default: // MB
+					workdirMaxSizeMB = Integer.parseInt(number);
+				}
+			} else
 				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
-			}
-			commander.q_api.putJobLog(queueId, "trace", "Disk requested: "+workdirMaxSizeMB);		
-		} else 
+			commander.q_api.putJobLog(queueId, "trace", "Disk requested: " + workdirMaxSizeMB);
+		} else
 			workdirMaxSizeMB = 0;
-		
+
 		// Memory use
-		String maxmemory = jdl.gets("Memorysize");
-		
-		if(maxmemory!=null){
-			Pattern p = Pattern.compile("\\p{L}");
-			Matcher m = p.matcher(maxmemory);
+		final String maxmemory = jdl.gets("Memorysize");
+
+		if (maxmemory != null) {
+			final Pattern p = Pattern.compile("\\p{L}");
+			final Matcher m = p.matcher(maxmemory);
 			if (m.find()) {
-			    String number 	= maxmemory.substring(0, m.start());
-			    String unit 	= maxmemory.substring(m.start());
-			    			    
-			    switch(unit){
-			    	case "KB":
-			    		jobMaxMemoryMB = Integer.parseInt(number)/1024;
-			    		break;
-		    		case "GB":
-		    			jobMaxMemoryMB = Integer.parseInt(number)*1024;
-		    			break;
-		    		default: // MB
-		    			jobMaxMemoryMB = Integer.parseInt(number);
-			    }
-			}
-			else {
+				final String number = maxmemory.substring(0, m.start());
+				final String unit = maxmemory.substring(m.start());
+
+				switch (unit) {
+				case "KB":
+					jobMaxMemoryMB = Integer.parseInt(number) / 1024;
+					break;
+				case "GB":
+					jobMaxMemoryMB = Integer.parseInt(number) * 1024;
+					break;
+				default: // MB
+					jobMaxMemoryMB = Integer.parseInt(number);
+				}
+			} else
 				jobMaxMemoryMB = Integer.parseInt(maxmemory);
-			}	
-			commander.q_api.putJobLog(queueId, "trace", "Memory requested: "+jobMaxMemoryMB);
-		}
-		else
+			commander.q_api.putJobLog(queueId, "trace", "Memory requested: " + jobMaxMemoryMB);
+		} else
 			jobMaxMemoryMB = 0;
-		
+
 	}
 
 	private int execute() {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
-		
+
 		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, true);
 
 		System.err.println("Execution code: " + code);
@@ -770,13 +758,12 @@ public class JobAgent extends Thread {
 		return code;
 	}
 
-
 	private boolean validate() {
 		int code = 0;
-		
-		String validation = jdl.gets("ValidationCommand");
-		
-		if(validation != null){
+
+		final String validation = jdl.gets("ValidationCommand");
+
+		if (validation != null) {
 			commander.q_api.putJobLog(queueId, "trace", "Starting validation");
 			code = executeCommand(validation, null, 5, TimeUnit.MINUTES, false);
 		}
@@ -784,7 +771,6 @@ public class JobAgent extends Thread {
 
 		return code == 0;
 	}
-
 
 	private boolean getInputFiles() {
 		final Set<String> filesToDownload = new HashSet<>();
@@ -843,9 +829,9 @@ public class JobAgent extends Thread {
 			}
 
 			final GUID g = pfns.iterator().next().getGuid();
-			
-			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: "+entry.getKey().getCanonicalName());
-			
+
+			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
+
 			final File f = IOUtils.get(g, entry.getValue());
 
 			if (f == null) {
@@ -855,75 +841,72 @@ public class JobAgent extends Thread {
 		}
 
 		dumpInputDataList();
-		
+
 		System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
 
 		return true;
 	}
 
-	
 	private void dumpInputDataList() {
 		// creates xml file with the InputData
 		try {
-			String list = jdl.gets("InputDataList");
-			
-			if(list==null) 
+			final String list = jdl.gets("InputDataList");
+
+			if (list == null)
 				return;
-			
-			System.out.println("Going to create XML: "+list);
-			
-			String format = jdl.gets("InputDataListFormat");
-			if(format==null || !format.equals("xml-single")){
+
+			System.out.println("Going to create XML: " + list);
+
+			final String format = jdl.gets("InputDataListFormat");
+			if (format == null || !format.equals("xml-single")) {
 				System.out.println("XML format not understood");
 				return;
 			}
-			
+
 			final XmlCollection c = new XmlCollection();
 			c.setName("jobinputdata");
-			List<String> datalist = jdl.getInputData(true);
-			
-			for (String s:datalist){
-				LFN l = c_api.getLFN(s);
+			final List<String> datalist = jdl.getInputData(true);
+
+			for (final String s : datalist) {
+				final LFN l = c_api.getLFN(s);
 				if (l == null)
 					continue;
 				c.add(l);
 			}
-			
-			String content = c.toString();
 
-			Files.write(Paths.get(jobWorkdir+"/"+list), content.getBytes());
-			
-		}catch(Exception e){
-			System.out.println("Problem dumping XML: "+e.toString());
+			final String content = c.toString();
+
+			Files.write(Paths.get(jobWorkdir + "/" + list), content.getBytes());
+
+		} catch (final Exception e) {
+			System.out.println("Problem dumping XML: " + e.toString());
 		}
-		
+
 	}
 
 	private HashMap<String, String> getJobPackagesEnvironment() {
-		String voalice = "VO_ALICE@";
+		final String voalice = "VO_ALICE@";
 		String packagestring = "";
-		HashMap<String,String> packs = (HashMap<String, String>) jdl.getPackages();	
-		HashMap<String, String> envmap = new HashMap<>(); 
-		
-		if (packs != null){	
-			for (String pack: packs.keySet()) {
-				packagestring += voalice + pack + "::" + packs.get(pack) + ",";			
-			}
-			
-			if(!packs.containsKey("APISCONFIG")){
+		final HashMap<String, String> packs = (HashMap<String, String>) jdl.getPackages();
+		HashMap<String, String> envmap = new HashMap<>();
+
+		if (packs != null) {
+			for (final String pack : packs.keySet())
+				packagestring += voalice + pack + "::" + packs.get(pack) + ",";
+
+			if (!packs.containsKey("APISCONFIG"))
 				packagestring += voalice + "APISCONFIG,";
-			}
-			
-			packagestring = packagestring.substring(0, packagestring.length()-1);
-						
-			ArrayList<String> packages = new ArrayList<String>();
-			packages.add(packagestring);
-			
+
+			packagestring = packagestring.substring(0, packagestring.length() - 1);
+
+			final ArrayList<String> packagesList = new ArrayList<>();
+			packagesList.add(packagestring);
+
 			logger.log(Level.INFO, packagestring);
-		
-			envmap = (HashMap<String, String>) installPackages(packages);
+
+			envmap = (HashMap<String, String>) installPackages(packagesList);
 		}
-		
+
 		logger.log(Level.INFO, envmap.toString());
 		return envmap;
 	}
@@ -933,8 +916,8 @@ public class JobAgent extends Thread {
 		boolean uploadedNotAllCopies = false;
 
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
-		
-		String outputDir = getJobOutputDir();
+
+		final String outputDir = getJobOutputDir();
 
 		System.out.println("queueId: " + queueId);
 		System.out.println("outputDir: " + outputDir);
@@ -944,29 +927,27 @@ public class JobAgent extends Thread {
 			changeStatus(JobStatus.ERROR_SV);
 			return false;
 		}
-		
+
 		final LFN outDir = c_api.createCatalogueDirectory(outputDir);
-		
+
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir + "].");
 			uploadedAllOutFiles = false;
-		}
-		else {
+		} else {
 			String tag = "Output";
 			if (jobStatus == JobStatus.ERROR_E)
 				tag = "OutputErrorE";
-			
-			ParsedOutput filesTable = new ParsedOutput(queueId, jdl, jobWorkdir, tag);
+
+			final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, jobWorkdir, tag);
 
 			for (final OutputEntry entry : filesTable.getEntries()) {
 				File localFile;
 				try {
-					if(entry.isArchive()) {
+					if (entry.isArchive())
 						entry.createZip(jobWorkdir);
-					}
-					
+
 					localFile = new File(jobWorkdir + "/" + entry.getName());
-					System.out.println("Processing output file: "+localFile);
+					System.out.println("Processing output file: " + localFile);
 
 					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 
@@ -982,22 +963,21 @@ public class JobAgent extends Thread {
 						if (md5 == null)
 							System.err.println("Could not calculate md5 checksum of the local file: " + localFile.getAbsolutePath());
 
-						LFN lfn = c_api.getLFN(outDir.getCanonicalName() + "/" + entry.getName(), true);
-						lfn.size 	= size;
-						lfn.md5 	= md5;
-						lfn.jobid 	= queueId;
-						lfn.type	= 'f';
-						GUID guid 	= GUIDUtils.createGuid(localFile, commander.getUser());
-						lfn.guid 	= guid.guid;
-						ArrayList<String> exses = entry.getSEsDeprioritized();
-						
-						
-						List<PFN> pfns = c_api.getPFNsToWrite(lfn, guid, entry.getSEsPrioritized(), exses, entry.getQoS());
+						final LFN lfn = c_api.getLFN(outDir.getCanonicalName() + "/" + entry.getName(), true);
+						lfn.size = size;
+						lfn.md5 = md5;
+						lfn.jobid = queueId;
+						lfn.type = 'f';
+						final GUID guid = GUIDUtils.createGuid(localFile, commander.getUser());
+						lfn.guid = guid.guid;
+						final ArrayList<String> exses = entry.getSEsDeprioritized();
 
-						System.out.println("LFN :"+lfn+ "\npfns: "+pfns.toString());
-						
-						commander.q_api.putJobLog(queueId, "trace", "Uploading: "+lfn.getName());
-						
+						final List<PFN> pfns = c_api.getPFNsToWrite(lfn, guid, entry.getSEsPrioritized(), exses, entry.getQoS());
+
+						System.out.println("LFN :" + lfn + "\npfns: " + pfns);
+
+						commander.q_api.putJobLog(queueId, "trace", "Uploading: " + lfn.getName());
+
 						if (pfns != null && !pfns.isEmpty()) {
 							final ArrayList<String> envelopes = new ArrayList<>(pfns.size());
 							for (final PFN pfn : pfns) {
@@ -1016,7 +996,7 @@ public class JobAgent extends Thread {
 								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 
 							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes);
-							if (!pfns.equals(pfnsok)){
+							if (!pfns.equals(pfnsok))
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size() + " could be uploaded");
 									uploadedNotAllCopies = true;
@@ -1025,9 +1005,8 @@ public class JobAgent extends Thread {
 									uploadedAllOutFiles = false;
 									break;
 								}
-							}
-						}
-						else { System.out.println("Couldn't get write envelopes for output file"); }
+						} else
+							System.out.println("Couldn't get write envelopes for output file");
 					} else
 						System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 
@@ -1036,34 +1015,29 @@ public class JobAgent extends Thread {
 					uploadedAllOutFiles = false;
 				}
 			}
-		}	
-		
-		if(jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V){
-			if (uploadedNotAllCopies){
-				changeStatus(JobStatus.DONE_WARN);
-			}
-			else if (uploadedAllOutFiles){
-				changeStatus(JobStatus.DONE);
-			}
-			else{
-				changeStatus(JobStatus.ERROR_SV);
-			}
 		}
-			
+
+		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V)
+			if (uploadedNotAllCopies)
+				changeStatus(JobStatus.DONE_WARN);
+			else if (uploadedAllOutFiles)
+				changeStatus(JobStatus.DONE);
+			else
+				changeStatus(JobStatus.ERROR_SV);
+
 		return uploadedAllOutFiles;
 	}
 
-	
 	private boolean createWorkDir() {
 		logger.log(Level.INFO, "Creating sandbox and chdir");
-		
-		jobWorkdir = String.format("%s%s%d", workdir,defaultOutputDirPrefix,queueId);
-		
+
+		jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
+
 		tempDir = new File(jobWorkdir);
 		if (!tempDir.exists()) {
 			final boolean created = tempDir.mkdirs();
 			if (!created) {
-				logger.log(Level.INFO, "Workdir does not exist and can't be created: "+jobWorkdir);
+				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
 				return false;
 			}
 		}
@@ -1071,91 +1045,104 @@ public class JobAgent extends Thread {
 		// chdir
 		System.setProperty("user.dir", jobWorkdir);
 
-		commander.q_api.putJobLog(queueId, "trace", "Created workdir: "+jobWorkdir);
+		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);
 		// TODO: create the extra directories
-		
+
 		return true;
 	}
-	
-	private HashMap<String,String> loadJDLEnvironmentVariables() {
-		HashMap<String,String> hashret = new HashMap<>();
-		
+
+	private HashMap<String, String> loadJDLEnvironmentVariables() {
+		final HashMap<String, String> hashret = new HashMap<>();
+
 		try {
-			HashMap<String,Object> vars = (HashMap<String, Object>) jdl.getJDLVariables();
-			
-			if(vars != null){
-				for (String s:vars.keySet()){
+			final HashMap<String, Object> vars = (HashMap<String, Object>) jdl.getJDLVariables();
+
+			if (vars != null)
+				for (final String s : vars.keySet()) {
 					String value = "";
-					Object val = jdl.get(s);
-					
-					if(val instanceof Collection){
+					final Object val = jdl.get(s);
+
+					if (val instanceof Collection<?>) {
 						final Iterator<String> it = ((Collection<String>) val).iterator();
 						String sbuff = "";
 						boolean isFirst = true;
-						
+
 						while (it.hasNext()) {
-							if(!isFirst){
+							if (!isFirst)
 								sbuff += "##";
-					        }
-							String v = it.next().toString();
+							final String v = it.next().toString();
 							sbuff += v;
-					        isFirst = false;	
+							isFirst = false;
 						}
 						value = sbuff;
-					}
-					else{
+					} else
 						value = val.toString();
-					}
-					
-					hashret.put("ALIEN_JDL_"+s.toUpperCase(), value);
+
+					hashret.put("ALIEN_JDL_" + s.toUpperCase(), value);
 				}
-			}
-		} catch (Exception e){
-			System.out.println("There was a problem getting JDLVariables: "+e);
+		} catch (final Exception e) {
+			System.out.println("There was a problem getting JDLVariables: " + e);
 		}
-				
+
 		return hashret;
 	}
 
-	
+	/**
+	 * @param args
+	 * @throws IOException
+	 */
 	public static void main(final String[] args) throws IOException {
 		final JobAgent ja = new JobAgent();
 		ja.run();
 	}
-	
-	public void changeStatus(JobStatus newStatus){	
+
+	/**
+	 * @param newStatus
+	 */
+	public void changeStatus(final JobStatus newStatus) {
 		// if final status with saved files, we set the path
-		if(newStatus==JobStatus.DONE || newStatus==JobStatus.DONE_WARN 
-				|| newStatus==JobStatus.ERROR_E || newStatus==JobStatus.ERROR_V ){
-			HashMap<String,Object> extrafields = new HashMap<>();
+		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
+			final HashMap<String, Object> extrafields = new HashMap<>();
 			extrafields.put("path", getJobOutputDir());
-			
+
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else if(newStatus==JobStatus.RUNNING){
-			HashMap<String,Object> extrafields = new HashMap<>();
-			extrafields.put("spyurl", hostName+":"+JBoxServer.getPort());
+		} else if (newStatus == JobStatus.RUNNING) {
+			final HashMap<String, Object> extrafields = new HashMap<>();
+			extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
 			extrafields.put("node", hostName);
-			
+
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		}
-		else 	
+		} else
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus);
-		
+
 		jobStatus = newStatus;
-		
+
 		return;
 	}
-	
-	public String getJobOutputDir(){
+
+	/**
+	 * @return job output dir (as indicated in the JDL if OK, or the recycle path if not)
+	 */
+	public String getJobOutputDir() {
 		String outputDir = jdl.getOutputDir();
 
-		if(jobStatus==JobStatus.ERROR_V || jobStatus==JobStatus.ERROR_E){
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" +defaultOutputDirPrefix + queueId);
-		} else if (outputDir == null) {
+		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
+		else if (outputDir == null)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
-		}
-		
+
 		return outputDir;
 	}
-	
+
+	@Override
+	public void fillValues(final Vector<String> paramNames, final Vector<Object> paramValues) {
+		if (queueId > 0) {
+			paramNames.add("jobID");
+			paramValues.add(Double.valueOf(queueId));
+
+			paramNames.add("statusID");
+			paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
+		}
+	}
+
 }

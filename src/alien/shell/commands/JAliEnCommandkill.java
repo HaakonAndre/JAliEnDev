@@ -3,9 +3,9 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import joptsimple.OptionException;
 import alien.taskQueue.Job;
 import alien.user.AuthorizationChecker;
+import joptsimple.OptionException;
 
 /**
  * @author ron
@@ -13,7 +13,7 @@ import alien.user.AuthorizationChecker;
  */
 public class JAliEnCommandkill extends JAliEnBaseCommand {
 
-	private final List<Integer> queueIds;
+	private final List<Long> queueIds;
 
 	@Override
 	public void run() {
@@ -43,7 +43,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 	/**
 	 * cat cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -53,10 +53,10 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
@@ -68,7 +68,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 		for (final String id : alArguments)
 			try {
-				queueIds.add(Integer.valueOf(id));
+				queueIds.add(Long.valueOf(id));
 			} catch (final NumberFormatException e) {
 				throw new JAliEnCommandException();
 			}

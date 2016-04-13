@@ -130,7 +130,7 @@ public class Monitor implements Runnable {
 	 * @param key
 	 * @param obj
 	 */
-	void addMonitoring(final String key, final MonitoringObject obj) {
+	public void addMonitoring(final String key, final MonitoringObject obj) {
 		monitoringObjects.put(key, obj);
 	}
 
