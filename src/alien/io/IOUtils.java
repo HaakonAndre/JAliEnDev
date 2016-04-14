@@ -100,12 +100,10 @@ public class IOUtils {
 	}
 
 	/**
-	 * Download the file in a temporary location. The GUID should be filled with
-	 * authorization tokens before calling this method.
+	 * Download the file in a temporary location. The GUID should be filled with authorization tokens before calling this method.
 	 * 
 	 * @param guid
-	 * @return the temporary file name. You should handle the deletion of this
-	 *         temporary file!
+	 * @return the temporary file name. You should handle the deletion of this temporary file!
 	 * @see TempFileManager#release(File)
 	 * @see #get(GUID, File)
 	 * @see AuthorizationFactory#fillAccess(GUID, AccessType)
@@ -114,28 +112,24 @@ public class IOUtils {
 		return get(guid, null);
 	}
 
-	private static final ThreadPoolExecutor PARALLEL_DW_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE, ConfigUtils.getConfig().getl(
-			"alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
-		@Override
-		public Thread newThread(final Runnable r) {
-			final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
-			t.setDaemon(true);
+	private static final ThreadPoolExecutor PARALLEL_DW_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+			ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+				@Override
+				public Thread newThread(final Runnable r) {
+					final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
+					t.setDaemon(true);
 
-			return t;
-		}
-	});
+					return t;
+				}
+			});
 
 	/**
-	 * Download the file in a specified location. The GUID should be filled with
-	 * authorization tokens before calling this method.
+	 * Download the file in a specified location. The GUID should be filled with authorization tokens before calling this method.
 	 * 
 	 * @param guid
 	 * @param localFile
-	 *            path where the file should be downloaded. Can be
-	 *            <code>null</code> in which case a temporary location will be
-	 *            used, but then you should handle the temporary files.
-	 * @return the downloaded file, or <code>null</code> if the file could not
-	 *         be retrieved
+	 *            path where the file should be downloaded. Can be <code>null</code> in which case a temporary location will be used, but then you should handle the temporary files.
+	 * @return the downloaded file, or <code>null</code> if the file could not be retrieved
 	 * @see TempFileManager#release(File)
 	 * @see AuthorizationFactory#fillAccess(GUID, AccessType)
 	 */
@@ -197,7 +191,7 @@ public class IOUtils {
 			for (final PFN realPfn : sortedRealPFNs) {
 				if (realPfn.ticket == null) {
 					logger.log(Level.WARNING, "Missing ticket for " + realPfn.pfn);
-					// try even if there is no read ticket since read is normally allowed without an access token 
+					// try even if there is no read ticket since read is normally allowed without an access token
 				}
 
 				final List<Protocol> protocols = Transfer.getAccessProtocols(realPfn);
@@ -433,8 +427,7 @@ public class IOUtils {
 
 	/**
 	 * @param guid
-	 * @return the contents of the file, or <code>null</code> if there was a
-	 *         problem getting it
+	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
 	 */
 	public static String getContents(final GUID guid) {
 		final String reason = AuthorizationFactory.fillAccess(guid, AccessType.READ);
@@ -461,8 +454,7 @@ public class IOUtils {
 
 	/**
 	 * @param lfn
-	 * @return the contents of the file, or <code>null</code> if there was a
-	 *         problem getting it
+	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
 	 */
 	public static String getContents(final LFN lfn) {
 		if (lfn == null)
@@ -478,8 +470,7 @@ public class IOUtils {
 
 	/**
 	 * @param lfn
-	 * @return the contents of the file, or <code>null</code> if there was a
-	 *         problem getting it
+	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
 	 */
 	public static String getContents(final String lfn) {
 		return getContents(LFNUtils.getLFN(lfn));
@@ -489,8 +480,7 @@ public class IOUtils {
 	 * @param lfn
 	 *            relative paths are allowed
 	 * @param owner
-	 * @return <code>true</code> if the indicated LFN doesn't exist (any more)
-	 *         in the catalogue and can be created again
+	 * @return <code>true</code> if the indicated LFN doesn't exist (any more) in the catalogue and can be created again
 	 */
 	public static boolean backupFile(final String lfn, final AliEnPrincipal owner) {
 		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, lfn);
@@ -557,12 +547,33 @@ public class IOUtils {
 	 * @param replicaCount
 	 * @param progressReport
 	 * @param deleteSourceAfterUpload
-	 *            if <code>true</code> then the local file (the source) is to be
-	 *            deleted after the operation completes
+	 *            if <code>true</code> then the local file (the source) is to be deleted after the operation completes
 	 * @throws IOException
 	 */
 	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final int replicaCount, final OutputStream progressReport, final boolean deleteSourceAfterUpload)
 			throws IOException {
+		final ArrayList<String> cpArgs = new ArrayList<>();
+
+		if (deleteSourceAfterUpload)
+			cpArgs.add("-d");
+
+		cpArgs.add("-S");
+		cpArgs.add("disk:" + replicaCount);
+
+		upload(localFile, toLFN, owner, progressReport, cpArgs.toArray(new String[0]));
+	}
+
+	/**
+	 * Upload a local file to the Grid
+	 * 
+	 * @param localFile local file to upload
+	 * @param toLFN catalogue entry name
+	 * @param owner owner of the new file
+	 * @param progressReport if you want progress report displayed (for user interface)
+	 * @param args other `cp` command parameters to pass
+	 * @throws IOException
+	 */
+	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final OutputStream progressReport, final String... args) throws IOException {
 		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, toLFN);
 
 		final LFN l = LFNUtils.getLFN(absolutePath, true);
@@ -574,11 +585,9 @@ public class IOUtils {
 		cpArgs.add("file:" + localFile.getAbsolutePath());
 		cpArgs.add(absolutePath);
 
-		if (deleteSourceAfterUpload)
-			cpArgs.add("-d");
-
-		cpArgs.add("-S");
-		cpArgs.add("disk:" + replicaCount);
+		if (args != null)
+			for (final String arg : args)
+				cpArgs.add(arg);
 
 		final UIPrintWriter out = progressReport != null ? new PlainWriter(progressReport) : null;
 
