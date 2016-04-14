@@ -19,9 +19,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.PFNforWrite;
@@ -35,6 +32,9 @@ import alien.io.Transfer;
 import alien.io.protocols.Protocol;
 import alien.io.protocols.TempFileManager;
 import alien.se.SE;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -69,6 +69,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	private String target = null;
 
 	private File localFile = null;
+
+	private long jobId = -1;
 
 	// public long timingChallenge = 0;
 
@@ -315,15 +317,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		return null;
 	}
 
-	private static final ExecutorService UPLOAD_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE, ConfigUtils.getConfig().getl(
-			"alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
-		@Override
-		public Thread newThread(final Runnable r) {
-			final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
+	private static final ExecutorService UPLOAD_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+				@Override
+				public Thread newThread(final Runnable r) {
+					final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
 
-			return t;
-		}
-	});
+					return t;
+				}
+			});
 
 	/**
 	 * Upload one file in a separate thread
@@ -427,6 +429,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		lfn.guid = guid.guid;
 		lfn.size = guid.size;
 		lfn.md5 = guid.md5;
+		lfn.jobid = jobId;
 		guid.lfnCache = new LinkedHashSet<>(1);
 		guid.lfnCache.add(lfn);
 
@@ -795,6 +798,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("w");
 			parser.accepts("W");
 			parser.accepts("d");
+			parser.accepts("j").withRequiredArg();
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -814,6 +818,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (options.has("d"))
 				bD = true;
+
+			if (options.has("j"))
+				jobId = Long.parseLong((String) options.valueOf("j"));
 
 			if (options.has("S") && options.hasArgument("S"))
 				if ((String) options.valueOf("S") != null) {
