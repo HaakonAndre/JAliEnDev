@@ -31,7 +31,8 @@ public class CVMFS extends PackMan {
 	 */
 	public CVMFS() {
 		try {
-			alienv_bin = Utils.getOutput("which /cvmfs/alice.cern.ch/bin/alienv").trim();
+			//alienv_bin = Utils.getOutput("which /cvmfs/alice.cern.ch/bin/alienv").trim();
+			alienv_bin = Utils.getOutput("which alienv").trim();
 		} catch (final Exception e) {
 			System.out.println("which alienv not ok: " + e.getMessage());
 		}

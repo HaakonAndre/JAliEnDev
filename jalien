@@ -32,6 +32,9 @@ fi
 if [ "$1" == "login" ]; then
     cd $JALIEN_HOME
     ./run.sh -DAliEnConfig=${CONFIG_DIR} alien.JBox $@
+elif [ "$1" == "JobAgent" ]; then
+    cd $JALIEN_HOME
+    ./run.sh -DAliEnConfig=${CONFIG_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent
 else
     cd $JALIEN_HOME
     ./run.sh -DAliEnConfig=${CONFIG_DIR} alien.JSh $@

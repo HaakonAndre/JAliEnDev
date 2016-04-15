@@ -255,13 +255,15 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 				if (matchedJob != null && !matchedJob.containsKey("Error")) {
 					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
-					queueId = ((Long) matchedJob.get("queueId")).longValue();
+					queueId = ((Integer) matchedJob.get("queueId")).intValue();
 					username = (String) matchedJob.get("User");
 					jobToken = (String) matchedJob.get("jobToken");
 
 					// TODO: commander.setUser(username); commander.setSite(site);
 
 					System.out.println(jdl.getExecutable());
+					System.out.println(jdl.toString());
+					System.out.println("====================");
 					System.out.println(username);
 					System.out.println(queueId);
 					System.out.println(jobToken);
