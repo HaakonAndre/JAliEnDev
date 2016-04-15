@@ -450,7 +450,12 @@ public final class SEUtils {
 			logger.log(Level.FINE, "got qos: " + qos);
 		}
 
-		final List<SE> SEs = ses != null ? SEUtils.getSEs(ses) : new ArrayList<>();
+		final List<SE> SEs;
+		
+		if (ses != null)
+			SEs = SEUtils.getSEs(ses);
+		else
+			SEs = new ArrayList<>();
 
 		final List<SE> exSEs = SEUtils.getSEs(exses);
 
