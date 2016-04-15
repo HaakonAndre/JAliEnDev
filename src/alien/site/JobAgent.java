@@ -255,7 +255,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 				if (matchedJob != null && !matchedJob.containsKey("Error")) {
 					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
-					queueId = ((Integer) matchedJob.get("queueId")).intValue();
+					queueId = ((Long) matchedJob.get("queueId")).longValue();
 					username = (String) matchedJob.get("User");
 					jobToken = (String) matchedJob.get("jobToken");
 
