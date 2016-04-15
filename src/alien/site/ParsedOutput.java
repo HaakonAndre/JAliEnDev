@@ -96,18 +96,20 @@ class OutputEntry {
 		return this.filesIncluded != null && this.filesIncluded.size() > 0;
 	}
 
-	public void createZip(String path) {
+	public void createZip(final String targetFolder) {
+		String path = targetFolder;
+
 		if (path == null)
 			path = System.getProperty("user.dir");
+
 		if (!path.endsWith("/"))
 			path += "/";
 
 		if (this.filesIncluded == null)
 			return;
 
-		try {
+		try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path + this.name))) {
 			// output file
-			final ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path + this.name));
 			if (this.isRootArchive)
 				out.setLevel(0);
 
@@ -122,16 +124,16 @@ class OutputEntry {
 				hasPhysicalFiles = true;
 
 				// input file
-				final FileInputStream in = new FileInputStream(path + file);
-				// name of the file inside the zip file
-				out.putNextEntry(new ZipEntry(file));
+				try (FileInputStream in = new FileInputStream(path + file)) {
+					// name of the file inside the zip file
+					out.putNextEntry(new ZipEntry(file));
 
-				final byte[] b = new byte[1024];
-				int count;
+					final byte[] b = new byte[1024];
+					int count;
 
-				while ((count = in.read(b)) > 0)
-					out.write(b, 0, count);
-				in.close();
+					while ((count = in.read(b)) > 0)
+						out.write(b, 0, count);
+				}
 			}
 			out.close();
 
@@ -287,7 +289,7 @@ public class ParsedOutput {
 	}
 
 	/**
-	 * @return
+	 * @return list of output entries
 	 */
 	public ArrayList<OutputEntry> getEntries() {
 		return this.jobOutput;
