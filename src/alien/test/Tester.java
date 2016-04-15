@@ -45,7 +45,7 @@ public class Tester {
 		try {
 			CreateLDAP.stopLDAP();
 			CreateDB.stopDatabase();
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 		System.out.println("Don't worry about any errors up to here!");

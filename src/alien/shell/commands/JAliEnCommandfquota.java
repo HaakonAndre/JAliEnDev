@@ -2,11 +2,11 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
-import joptsimple.OptionException;
 import alien.quotas.FileQuota;
+import joptsimple.OptionException;
 
 /**
- * 
+ *
  */
 public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	private boolean isAdmin;
@@ -96,7 +96,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 			this.param_to_set = param;
 			try {
 				this.value_to_set = Long.valueOf(alArguments.get(3));
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// FIXME ignoring invalid numeric arguments
 			}
 		}

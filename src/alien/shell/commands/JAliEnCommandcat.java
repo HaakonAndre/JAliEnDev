@@ -43,15 +43,10 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 					try {
 						while ((line = br.readLine()) != null) {
-							if (bO) {
-
-								final FileWriter fstream = new FileWriter(eachFileName);
-								final BufferedWriter o = new BufferedWriter(fstream);
-								o.write(content);
-								fstream.close();
-								o.close();
-
-							}
+							if (bO)
+								try (FileWriter fstream = new FileWriter(eachFileName); BufferedWriter o = new BufferedWriter(fstream)) {
+									o.write(content);
+								}
 							if (out.isRootPrinter()) {
 								if (bN)
 									out.setField("count", count + "");
@@ -84,10 +79,9 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 						}
 
-					} catch (final IOException ioe) {
+					} catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, cannot happen
 					}
-
 				}
 
 				else if (!isSilent())
@@ -162,7 +156,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 	/**
 	 * cat cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -172,10 +166,10 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
@@ -194,7 +188,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			parser.accepts("T");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
-			
+
 			alPaths = new ArrayList<>(options.nonOptionArguments().size());
 			alPaths.addAll(optionToString(options.nonOptionArguments()));
 

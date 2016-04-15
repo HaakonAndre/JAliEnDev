@@ -3,16 +3,16 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author costing
- * 
+ *
  */
 public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 	private boolean useLFNasGuid;

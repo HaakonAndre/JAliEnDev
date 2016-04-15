@@ -3,11 +3,11 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.catalogue.FileSystemUtils;
+import alien.catalogue.LFN;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.LFN;
 
 /**
  * @author ron
@@ -82,7 +82,8 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 						out.setField("error ",
 								"If there are 2 arguments then only:\n1. File to file\n2. File to directory\n3. Directory to Directory\n is supported\nMost probably a directory to file mv is being attempted");
 					else
-						out.printErrln("If there are 2 arguments then only:\n1. File to file\n2. File to directory\n3. Directory to Directory\n is supported\nMost probably a directory to file mv is being attempted");
+						out.printErrln(
+								"If there are 2 arguments then only:\n1. File to file\n2. File to directory\n3. Directory to Directory\n is supported\nMost probably a directory to file mv is being attempted");
 					if (out.isRootPrinter())
 						out.setReturnArgs(deserializeForRoot(0));
 				}
@@ -123,10 +124,10 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
@@ -221,7 +222,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 // @Override
 // public void printHelp() {
 // out.printOutln();
-// out.printOutln(helpUsage("mv"," <LFN>  <newLFN> > " +
+// out.printOutln(helpUsage("mv"," <LFN> <newLFN> > " +
 // ""));
 // out.printOutln();
 // }

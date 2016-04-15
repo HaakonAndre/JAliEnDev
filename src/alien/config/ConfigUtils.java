@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.config;
 
@@ -78,36 +78,35 @@ public class ConfigUtils {
 							final ExtProperties prop = new ExtProperties(sConfigFolder, sName);
 							prop.setAutoReload(1000 * 60);
 
-							if (sName.equals("config")){
+							if (sName.equals("config"))
 								applicationConfig = prop;
-							}
-							else{
-							    prop.makeReadOnly();
-							    
-							    if (sName.equals("logging")) {
-								logging = new LoggingConfigurator(prop);
+							else {
+								prop.makeReadOnly();
 
-								if (System.getProperty("lia.Monitor.ConfigURL") == null) {
-									// give the ML components the same logging
-									// configuration file if not explicitly set
-									try {
-										System.setProperty("lia.Monitor.ConfigURL", "file:" + sub.getCanonicalPath());
-									} catch (final IOException ioe) {
-										// ignore
+								if (sName.equals("logging")) {
+									logging = new LoggingConfigurator(prop);
+
+									if (System.getProperty("lia.Monitor.ConfigURL") == null) {
+										// give the ML components the same logging
+										// configuration file if not explicitly set
+										try {
+											System.setProperty("lia.Monitor.ConfigURL", "file:" + sub.getCanonicalPath());
+										} catch (final IOException ioe) {
+											System.err.println("Could not resolve the canonical path of " + sub.getAbsolutePath() + " : " + ioe.getMessage());
+											// ignore
+										}
+
+										// force a call to this guy so everything
+										// instantiates correctly
+										AppConfig.lastReloaded();
 									}
+								} else if (prop.gets("driver").length() > 0) {
+									dbconfig.put(sName, prop);
 
-									// force a call to this guy so everything
-									// instantiates correctly
-									AppConfig.lastReloaded();
-								}
-							    }
-							    else if (prop.gets("driver").length() > 0) {
-								dbconfig.put(sName, prop);
-
-								if (prop.gets("password").length() > 0)
-									hasDirectDBConnection = true;
-							    } else
-								otherconfig.put(sName, prop);
+									if (prop.gets("password").length() > 0)
+										hasDirectDBConnection = true;
+								} else
+									otherconfig.put(sName, prop);
 							}
 						}
 			}
@@ -134,15 +133,12 @@ public class ConfigUtils {
 
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 
-		if (applicationConfig!=null){
+		if (applicationConfig != null)
 			appConfig = applicationConfig;
-		}
-		else{
-			if (System.getProperty("lia.Monitor.ConfigURL") !=null)
-				appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
-			else
-				appConfig = new ExtProperties();
-		}
+		else if (System.getProperty("lia.Monitor.ConfigURL") != null)
+			appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
+		else
+			appConfig = new ExtProperties();
 
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
 			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
@@ -166,7 +162,7 @@ public class ConfigUtils {
 
 	/**
 	 * Get all database-related configuration files
-	 * 
+	 *
 	 * @return db configurations
 	 */
 	public static final Map<String, ExtProperties> getDBConfiguration() {
@@ -176,7 +172,7 @@ public class ConfigUtils {
 	/**
 	 * Get a DB connection to a specific database key. The code relies on the <i>AlienConfig</i> system property to point to a base directory where files named <code>key</code>.properties can be
 	 * found. If a file for this key can be found it is returned to the caller, otherwise a <code>null</code> value is returned.
-	 * 
+	 *
 	 * @param key
 	 *            database class, something like &quot;catalogue_admin&quot;
 	 * @return the database connection, or <code>null</code> if it is not available.
@@ -192,7 +188,7 @@ public class ConfigUtils {
 
 	/**
 	 * Get the global application configuration
-	 * 
+	 *
 	 * @return application configuration
 	 */
 	public static final ExtProperties getConfig() {
@@ -201,7 +197,7 @@ public class ConfigUtils {
 
 	/**
 	 * Get the contents of the configuration file indicated by the key
-	 * 
+	 *
 	 * @param key
 	 * @return configuration contents
 	 */
@@ -211,7 +207,7 @@ public class ConfigUtils {
 
 	/**
 	 * Set the Java logging properties and subscribe to changes on the configuration files
-	 * 
+	 *
 	 * @author costing
 	 * @since Nov 3, 2010
 	 */
@@ -220,7 +216,7 @@ public class ConfigUtils {
 
 		/**
 		 * Set the logging configuration
-		 * 
+		 *
 		 * @param p
 		 */
 		LoggingConfigurator(final ExtProperties p) {
@@ -242,12 +238,6 @@ public class ConfigUtils {
 				t.printStackTrace();
 			}
 
-			try {
-				baos.flush();
-			} catch (final Exception ex) {
-				// ignore
-			}
-
 			final byte[] buff = baos.toByteArray();
 
 			final ByteArrayInputStream bais = new ByteArrayInputStream(buff);
@@ -263,7 +253,7 @@ public class ConfigUtils {
 
 	/**
 	 * Get the logger for this component
-	 * 
+	 *
 	 * @param component
 	 * @return the logger
 	 */

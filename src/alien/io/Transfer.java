@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io;
 
@@ -75,7 +75,7 @@ public class Transfer implements Serializable, Runnable {
 	public static final int DELAYED = 10;
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -4620016257875988468L;
 
@@ -145,7 +145,7 @@ public class Transfer implements Serializable, Runnable {
 
 	/**
 	 * Get the list of protocols via which this PFN can be accessed
-	 * 
+	 *
 	 * @param pfn
 	 * @return list of protocols
 	 */
@@ -155,7 +155,7 @@ public class Transfer implements Serializable, Runnable {
 
 	/**
 	 * Get the protocols supported by this guy
-	 * 
+	 *
 	 * @param pfn
 	 * @return list of protocols
 	 */
@@ -210,7 +210,7 @@ public class Transfer implements Serializable, Runnable {
 
 	/**
 	 * Get the protocols that are common between these two PFNs
-	 * 
+	 *
 	 * @param source
 	 * @param target
 	 *            target PFN (can be <code>null</code>, meaning a local temporary file)
@@ -237,7 +237,7 @@ public class Transfer implements Serializable, Runnable {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
@@ -393,7 +393,7 @@ public class Transfer implements Serializable, Runnable {
 					exitCode = OK;
 					failureReason = null;
 					return;
-				} catch (final UnsupportedOperationException uoe) {
+				} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 					// ignore
 				} catch (final IOException ioe) {
 					exitCode = FAILED_SOURCE;
@@ -420,7 +420,7 @@ public class Transfer implements Serializable, Runnable {
 			try {
 				temp = p.get(source, null);
 				break;
-			} catch (final UnsupportedOperationException uoe) {
+			} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 				// ignore
 			} catch (final IOException ioe) {
 				exitCode = FAILED_SOURCE;
@@ -442,7 +442,7 @@ public class Transfer implements Serializable, Runnable {
 				targetPFN = target.pfn;
 
 				return;
-			} catch (final UnsupportedOperationException uoe) {
+			} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 				// ignore
 			} catch (final IOException ioe) {
 				exitCode = FAILED_TARGET;
@@ -465,26 +465,26 @@ public class Transfer implements Serializable, Runnable {
 			targetPFN = target.pfn;
 
 			return;
-		} catch (final UnsupportedOperationException uoe) {
+		} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 			// ignore, move to the next one
 		} catch (final SourceException se) {
 			exitCode = FAILED_SOURCE;
 			failureReason = se.getMessage();
 
-			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with source exception: "
-					+ failureReason);
+			logger.log(Level.WARNING,
+					"Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with source exception: " + failureReason);
 		} catch (final TargetException se) {
 			exitCode = FAILED_TARGET;
 			failureReason = se.getMessage();
 
-			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with target exception: "
-					+ failureReason);
+			logger.log(Level.WARNING,
+					"Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with target exception: " + failureReason);
 		} catch (final IOException e) {
 			exitCode = FAILED_SYSTEM;
 			failureReason = e.getMessage();
 
-			logger.log(Level.WARNING, "Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with generic exception: "
-					+ failureReason);
+			logger.log(Level.WARNING,
+					"Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with generic exception: " + failureReason);
 		} finally {
 			TransferUtils.logAttempt(p, source, target, exitCode, failureReason);
 		}
@@ -506,7 +506,7 @@ public class Transfer implements Serializable, Runnable {
 
 	/**
 	 * For a successful operation, get the PFN of the target, either the local (no protocol) or remote (with protocol) file
-	 * 
+	 *
 	 * @return target PFN
 	 */
 	public String getTargetPFN() {
@@ -515,7 +515,7 @@ public class Transfer implements Serializable, Runnable {
 
 	/**
 	 * For a successful operation, get the reply envelope for the storage
-	 * 
+	 *
 	 * @return storage reply envelope
 	 */
 	public String getStorageReplyEnvelope() {

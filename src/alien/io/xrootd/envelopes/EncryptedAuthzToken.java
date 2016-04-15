@@ -19,18 +19,14 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
- * This class does the decoding/decryption + encoding/encryption of a given
- * authorization token which has to apply to the follwing format:
- * 
- * -----BEGIN SEALED CIPHER----- .. .. (Base64-encoded cipher) .. -----END
- * SEALED CIPHER----- -----BEGIN SEALED ENVELOPE----- .. .. (Base64-encoded
- * envelope) .. -----END SEALED ENVELOPE-----
- * 
- * The result is an authorization token object. Based on original dCache code
- * from Martin Radicke
- * 
+ * This class does the decoding/decryption + encoding/encryption of a given authorization token which has to apply to the follwing format:
+ *
+ * -----BEGIN SEALED CIPHER----- .. .. (Base64-encoded cipher) .. -----END SEALED CIPHER----- -----BEGIN SEALED ENVELOPE----- .. .. (Base64-encoded envelope) .. -----END SEALED ENVELOPE-----
+ *
+ * The result is an authorization token object. Based on original dCache code from Martin Radicke
+ *
  * @author ron
- * 
+ *
  */
 public class EncryptedAuthzToken {
 
@@ -77,13 +73,13 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * 
+	 *
 	 * Creates a new instance either for encryption or decryption
-	 * 
+	 *
 	 * @param PrivKey
 	 * @param PubKey
 	 * @param Decrypt
-	 * 
+	 *
 	 * @throws GeneralSecurityException
 	 */
 	public EncryptedAuthzToken(final RSAPrivateKey PrivKey, final RSAPublicKey PubKey, final boolean Decrypt) throws GeneralSecurityException {
@@ -99,9 +95,9 @@ public class EncryptedAuthzToken {
 
 	/**
 	 * Does the actual creation and encryption/encoding of a token.
-	 * 
+	 *
 	 * @param message
-	 * 
+	 *
 	 * @return the encrypted envelope or NULL if signature could not be verified
 	 * @throws GeneralSecurityException
 	 */
@@ -129,9 +125,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Encrypts the first component of the sealed token, which contains the
-	 * session key (aka symmetric key).
-	 * 
+	 * Encrypts the first component of the sealed token, which contains the session key (aka symmetric key).
+	 *
 	 * @throws GeneralSecurityException
 	 */
 	private void encryptSealedCipher() throws GeneralSecurityException {
@@ -177,9 +172,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Encrypts the actual envelope (the 2nd component) using the symmetric key
-	 * and extracts the signature.
-	 * 
+	 * Encrypts the actual envelope (the 2nd component) using the symmetric key and extracts the signature.
+	 *
 	 * @throws GeneralSecurityException
 	 */
 	private void encryptSealedEnvelope() throws GeneralSecurityException {
@@ -232,9 +226,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Verifies the authenticity of the envelope by comparing the SHA1 hash of
-	 * the envlope with the signature
-	 * 
+	 * Verifies the authenticity of the envelope by comparing the SHA1 hash of the envlope with the signature
+	 *
 	 * @return true after successful verifi cation
 	 * @throws GeneralSecurityException
 	 */
@@ -247,9 +240,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Splits the raw token (see class description for format) into its two
-	 * components cipher and envelope
-	 * 
+	 * Splits the raw token (see class description for format) into its two components cipher and envelope
+	 *
 	 * @param rawToken
 	 *            the token which is going to be splitted
 	 * @throws GeneralSecurityException
@@ -260,11 +252,10 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Does the actual decryption/decoding of the raw token. This method should
-	 * not be called for more than one times.
-	 * 
+	 * Does the actual decryption/decoding of the raw token. This method should not be called for more than one times.
+	 *
 	 * @param rawToken
-	 * 
+	 *
 	 * @return the decrypted envelope or NULL if signature could not be verified
 	 * @throws GeneralSecurityException
 	 */
@@ -290,9 +281,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Decrypts the first component of the sealed token, which contains the
-	 * session key (aka symmetric key).
-	 * 
+	 * Decrypts the first component of the sealed token, which contains the session key (aka symmetric key).
+	 *
 	 * @throws GeneralSecurityException
 	 */
 	private void decryptSealedCipher() throws GeneralSecurityException {
@@ -310,9 +300,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Decrypts the actual envelope (the 2nd component) using the symmetric key
-	 * and extracts the signature.
-	 * 
+	 * Decrypts the actual envelope (the 2nd component) using the symmetric key and extracts the signature.
+	 *
 	 * @throws GeneralSecurityException
 	 */
 	private void decryptSealedEnvelope() throws GeneralSecurityException {
@@ -351,9 +340,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Verifies the authenticity of the envelope by comparing the SHA1 hash of
-	 * the envlope with the signature
-	 * 
+	 * Verifies the authenticity of the envelope by comparing the SHA1 hash of the envlope with the signature
+	 *
 	 * @return true after successful verification
 	 * @throws GeneralSecurityException
 	 */
@@ -366,9 +354,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * Splits the raw token (see class description for format) into its two
-	 * components cipher and envelope
-	 * 
+	 * Splits the raw token (see class description for format) into its two components cipher and envelope
+	 *
 	 * @param rawToken
 	 *            the token which is going to be splitted
 	 * @throws GeneralSecurityException
@@ -379,9 +366,7 @@ public class EncryptedAuthzToken {
 
 		final Stack<String> stack = new Stack<>();
 
-		final LineNumberReader input = new LineNumberReader(new StringReader(rawToken));
-
-		try {
+		try (LineNumberReader input = new LineNumberReader(new StringReader(rawToken))) {
 			String line = null;
 
 			while ((line = input.readLine()) != null) {
@@ -426,22 +411,14 @@ public class EncryptedAuthzToken {
 					continue;
 				}
 			}
-
 		} catch (final IOException e) {
-			throw new GeneralSecurityException("error reading from token string");
+			throw new GeneralSecurityException("error reading from token string", e);
 		}
-
-		try {
-			input.close();
-		} catch (final IOException e) {
-			throw new GeneralSecurityException("error closing stream where token string was parsed from");
-		}
-
 	}
 
 	/**
 	 * Helper method to print out anarray in hex notation.
-	 * 
+	 *
 	 * @param name
 	 *            the name to prefix the hex dump
 	 * @param array
@@ -473,9 +450,8 @@ public class EncryptedAuthzToken {
 	}
 
 	/**
-	 * This method parses the decrypted envelope and returns its representation
-	 * object.
-	 * 
+	 * This method parses the decrypted envelope and returns its representation object.
+	 *
 	 * @return an envelope object
 	 * @throws GeneralSecurityException
 	 *             is thrown if envelope has expired

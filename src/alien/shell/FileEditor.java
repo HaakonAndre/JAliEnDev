@@ -80,7 +80,7 @@ public class FileEditor {
 			if (exitStatus.getExtProcExitStatus() == 0)
 				return exitStatus.getStdOut().trim();
 
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 

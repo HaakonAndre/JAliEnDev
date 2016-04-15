@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import alien.perl.commands.AlienTime;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.perl.commands.AlienTime;
 
 /**
  * @author ron
@@ -56,10 +56,10 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 
 	/**
 	 * get the directory listing of the ls
-	 * 
+	 *
 	 * @param logno
 	 * @param line
-	 * 
+	 *
 	 */
 	protected static void addScreenLogLine(final Integer logno, final String line) {
 		if (scrlogs.get(logno) == null)
@@ -86,7 +86,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 
 	/**
 	 * ls can run without arguments
-	 * 
+	 *
 	 * @return <code>true</code>
 	 */
 	@Override
@@ -96,9 +96,9 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * out.printOutln( the arguments of the command
-	 * 
+	 *
 	 * @param commander
 	 * @param out
 	 * @param alArguments
@@ -119,7 +119,7 @@ public class JAliEnCommandscrlog extends JAliEnBaseCommand {
 			else
 				try {
 					logno = Integer.valueOf(options.nonOptionArguments().get(0).toString());
-				} catch (final NumberFormatException n) {
+				} catch (@SuppressWarnings("unused") final NumberFormatException n) {
 					// ignore
 				}
 

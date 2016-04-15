@@ -59,7 +59,7 @@ public class XrootdFile implements Comparable<XrootdFile> {
 			lsize = Long.parseLong(t2);
 
 			datePart = t3 + " " + t4;
-		} catch (final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			lsize = Long.parseLong(t4);
 
 			datePart = t2 + " " + t3;
@@ -74,7 +74,7 @@ public class XrootdFile implements Comparable<XrootdFile> {
 			date = Format.parseDate(datePart);
 		} catch (final NumberFormatException nfe) {
 			System.err.println("Could not parse date `" + datePart + "` of `" + line + "`");
-			throw new IllegalArgumentException("Date not in a parseable format `" + datePart + "`");
+			throw new IllegalArgumentException("Date not in a parseable format `" + datePart + "`", nfe);
 		}
 
 		if (date == null)

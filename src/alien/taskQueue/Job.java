@@ -19,7 +19,7 @@ import lia.util.StringFactory;
 public class Job implements Comparable<Job>, Serializable {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 7214453241953215533L;
 
@@ -110,7 +110,7 @@ public class Job implements Comparable<Job>, Serializable {
 
 	/**
 	 * command
-	 * 
+	 *
 	 * @deprecated
 	 */
 	@Deprecated
@@ -143,9 +143,8 @@ public class Job implements Comparable<Job>, Serializable {
 
 	/**
 	 * the submitter's certificate (public)
-	 * 
-	 * TODO : X509Certificate objects are not serializable, be careful with this
-	 * field ...
+	 *
+	 * TODO : X509Certificate objects are not serializable, be careful with this field ...
 	 */
 	public transient X509Certificate userCertificate;
 
@@ -221,7 +220,7 @@ public class Job implements Comparable<Job>, Serializable {
 
 	/**
 	 * Load one row from a G*L table
-	 * 
+	 *
 	 * @param db
 	 */
 	Job(final DBFunctions db) {
@@ -322,12 +321,12 @@ public class Job implements Comparable<Job>, Serializable {
 	public String toString() {
 		return "Job queueId\t\t: " + queueId + "\n" + " priority\t\t: " + priority + "\n" + " execHost\t\t: " + execHost + "\n" + " sent\t\t\t: " + sent + "\n" + " split\t\t\t: " + split + "\n"
 				+ " name\t\t\t: " + name + "\n" + " spyurl\t\t\t: " + spyurl + "\n" + " commandArg\t\t: " + commandArg + "\n" + " finished\t\t: " + finished + "\n" + " masterjob\t\t: " + masterjob
-				+ "\n" + " status\t\t\t: " + status + "\n" + " splitting\t\t: " + splitting + "\n" + " node\t\t\t: " + node + "\n" + " error\t\t\t: " + error + "\n" + " current\t\t: " + current
-				+ "\n" + " received\t\t: " + received + "\n" + " validate\t\t: " + validate + "\n" + " command\t\t: " + command + "\n" + " merging\t\t: " + merging + "\n" + " user\t\t\t: " + user
-				+ "\n" + " submitHost\t\t: " + submitHost + "\n" + " path\t\t\t: " + path + "\n" + " site\t\t\t: " + site + "\n" + " started\t\t: " + started + "\n" + " expires\t\t: " + expires
-				+ "\n" + " finalPrice\t\t: " + finalPrice + "\n" + " effectivePriority\t: " + effectivePriority + "\n" + " price\t\t\t: " + price + "\n" + " si2k\t\t\t: " + si2k + "\n"
-				+ " jobagentId\t\t: " + jobagentId + "\n" + " agentid\t\t: " + agentid + "\n" + " notify\t\t\t: " + notify + "\n" + " chargeStatus\t\t: " + chargeStatus + "\n" + " optimized\t\t: "
-				+ optimized + "\n" + " mtime\t\t\t: " + mtime + "\n" + " jdl\t\t\t: " + jdl;
+				+ "\n" + " status\t\t\t: " + status + "\n" + " splitting\t\t: " + splitting + "\n" + " node\t\t\t: " + node + "\n" + " error\t\t\t: " + error + "\n" + " current\t\t: " + current + "\n"
+				+ " received\t\t: " + received + "\n" + " validate\t\t: " + validate + "\n" + " command\t\t: " + command + "\n" + " merging\t\t: " + merging + "\n" + " user\t\t\t: " + user + "\n"
+				+ " submitHost\t\t: " + submitHost + "\n" + " path\t\t\t: " + path + "\n" + " site\t\t\t: " + site + "\n" + " started\t\t: " + started + "\n" + " expires\t\t: " + expires + "\n"
+				+ " finalPrice\t\t: " + finalPrice + "\n" + " effectivePriority\t: " + effectivePriority + "\n" + " price\t\t\t: " + price + "\n" + " si2k\t\t\t: " + si2k + "\n" + " jobagentId\t\t: "
+				+ jobagentId + "\n" + " agentid\t\t: " + agentid + "\n" + " notify\t\t\t: " + notify + "\n" + " chargeStatus\t\t: " + chargeStatus + "\n" + " optimized\t\t: " + optimized + "\n"
+				+ " mtime\t\t\t: " + mtime + "\n" + " jdl\t\t\t: " + jdl;
 	}
 
 	/**
@@ -348,9 +347,7 @@ public class Job implements Comparable<Job>, Serializable {
 
 	/**
 	 * @param initialJDL
-	 *            if <code>true</code> then the original JDL (what the user has
-	 *            submitted) is returned. This should be the normal case, since
-	 *            the alternative is to return the JDL as processed by the
+	 *            if <code>true</code> then the original JDL (what the user has submitted) is returned. This should be the normal case, since the alternative is to return the JDL as processed by the
 	 *            central services, which is not user-friendly.
 	 * @return original JDL as in the QUEUE table
 	 */
@@ -432,16 +429,14 @@ public class Job implements Comparable<Job>, Serializable {
 	}
 
 	/**
-	 * @return <code>true</code> if the job has failed but should not be
-	 *         resubmitted since it will fail just the same
+	 * @return <code>true</code> if the job has failed but should not be resubmitted since it will fail just the same
 	 */
 	public boolean isFinalError() {
 		return status == JobStatus.FAILED;
 	}
 
 	/**
-	 * @return <code>true</code> if the job is in a final state (either
-	 *         successful or failed)
+	 * @return <code>true</code> if the job is in a final state (either successful or failed)
 	 */
 	public boolean isFinalState() {
 		return isDone() || isError();
@@ -474,11 +469,7 @@ public class Job implements Comparable<Job>, Serializable {
 			final JDL j = new JDL(jdl);
 
 			return Integer.parseInt(j.gets("validate")) == 1;
-		} catch (final IOException ioe) {
-			// ignore
-		} catch (final NumberFormatException nfe) {
-			// ignore
-		} catch (final NullPointerException npe) {
+		} catch (@SuppressWarnings("unused") final IOException | NumberFormatException | NullPointerException e) {
 			// ignore
 		}
 

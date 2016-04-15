@@ -20,7 +20,7 @@ import lazyj.Format;
 
 /**
  * @author costing
- * 
+ *
  */
 public class CacheLogAnalyzer {
 
@@ -245,11 +245,9 @@ public class CacheLogAnalyzer {
 	 * @throws IOException
 	 */
 	public static void main(final String args[]) throws NumberFormatException, IOException {
-		final BufferedReader br = new BufferedReader(new FileReader("cache.log"));
-
 		String sLine;
 
-		try {
+		try (BufferedReader br = new BufferedReader(new FileReader("cache.log"))) {
 			while ((sLine = br.readLine()) != null) {
 				final StringTokenizer st = new StringTokenizer(sLine);
 
@@ -266,8 +264,6 @@ public class CacheLogAnalyzer {
 				else if (namespace.equals("find"))
 					processFind(hits, key);
 			}
-		} finally {
-			br.close();
 		}
 
 		for (final Map.Entry<String, Map<String, Map<String, AtomicInteger>>> me : stats.entrySet()) {

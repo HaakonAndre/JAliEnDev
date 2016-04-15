@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.LRUMap;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import lazyj.LRUMap;
 
 /**
  * @author costing
@@ -26,7 +26,7 @@ import alien.io.IOUtils;
 public class TempFileManager extends LRUMap<GUID, File> {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -6481164994092554757L;
 
@@ -49,15 +49,15 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		this.delete = delete;
 	}
 
-	private static final TempFileManager tempInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 50), ConfigUtils.getConfig().getl(
-			"alien.io.protocols.TempFileManager.temp.size", 10 * 1024 * 1024 * 1024L), true);
+	private static final TempFileManager tempInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.temp.entries", 50),
+			ConfigUtils.getConfig().getl("alien.io.protocols.TempFileManager.temp.size", 10 * 1024 * 1024 * 1024L), true);
 	private static final TempFileManager persistentInstance = new TempFileManager(ConfigUtils.getConfig().geti("alien.io.protocols.TempFileManager.persistent.entries", 100), 0, false);
 
 	private static List<File> lockedLocalFiles = new LinkedList<>();
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see lazyj.LRUMap#removeEldestEntry(java.util.Map.Entry)
 	 */
 	@Override
@@ -89,7 +89,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.HashMap#put(java.lang.Object, java.lang.Object)
 	 */
 	@Override
@@ -126,7 +126,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		try {
 			if (f != null && f.exists() && f.isFile() && f.canRead() && f.length() == key.size && IOUtils.getMD5(f).equalsIgnoreCase(key.md5))
 				return f;
-		} catch (final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			return null;
 		}
 
@@ -159,7 +159,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 	/**
 	 * Re-pin a temporary file on disk until its processing is over.
-	 * 
+	 *
 	 * @param f
 	 * @see #release(File)
 	 */
@@ -177,10 +177,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	}
 
 	/**
-	 * For temporary downloaded files, call this when you are done working with
-	 * the local file to allow the garbage collector to reclaim the space when
-	 * needed.
-	 * 
+	 * For temporary downloaded files, call this when you are done working with the local file to allow the garbage collector to reclaim the space when needed.
+	 *
 	 * @param f
 	 * @return <code>true</code> if this file was indeed released
 	 */
@@ -247,9 +245,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	}
 
 	/**
-	 * Periodically call this method to go through all cached entries and check
-	 * their validity
-	 * 
+	 * Periodically call this method to go through all cached entries and check their validity
+	 *
 	 * @return number of collected entries
 	 */
 	static int gc() {
@@ -283,7 +280,7 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 				try {
 					sleep(sleepTime);
-				} catch (final InterruptedException e) {
+				} catch (@SuppressWarnings("unused") final InterruptedException e) {
 					return;
 				}
 			}

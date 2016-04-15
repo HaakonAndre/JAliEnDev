@@ -12,11 +12,7 @@ import alien.user.JAKeyStore;
 public class TestService extends Thread{
 
 	private boolean jBox = false;
-	
-	private int jBoxPort = 0;
-	
-	private String jBoxPass = "";
-	
+		
 	private boolean jCentral = false;
 	
 	private boolean jSh = false;

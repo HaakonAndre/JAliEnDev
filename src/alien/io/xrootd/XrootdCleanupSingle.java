@@ -116,7 +116,7 @@ public class XrootdCleanupSingle {
 
 			try {
 				uuid = UUID.fromString(file.getName());
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// not an alien file name, ignore
 				return;
 			}

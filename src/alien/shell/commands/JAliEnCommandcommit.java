@@ -99,7 +99,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 	/**
 	 * get cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -109,9 +109,9 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @param status
-	 * 
+	 *
 	 * @return serialized return
 	 */
 	public String deserializeForRoot(final boolean status) {
@@ -126,14 +126,14 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 	/**
 	 * return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "0";
-	 * 
+	 *
 	 * return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + lfn + RootPrintWriter.fieldseparator + "1"; }
-	 * 
+	 *
 	 * /** Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
@@ -147,7 +147,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 			if (arg.hasNext())
 				try {
 					size = Integer.parseInt(arg.next());
-				} catch (final NumberFormatException e) {
+				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 					// ignore
 				}
 			if (arg.hasNext())

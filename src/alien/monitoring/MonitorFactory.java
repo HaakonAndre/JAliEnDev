@@ -273,7 +273,7 @@ public final class MonitorFactory {
 
 		try {
 			return Double.parseDouble(sValue);
-		} catch (final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			return defaultValue;
 		}
 	}
@@ -292,7 +292,7 @@ public final class MonitorFactory {
 
 		try {
 			return Integer.parseInt(sValue);
-		} catch (final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			return defaultValue;
 		}
 	}
@@ -373,7 +373,7 @@ public final class MonitorFactory {
 			selfProcessID = Integer.parseInt(System.getProperty("pid"));
 
 			return selfProcessID;
-		} catch (final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -381,7 +381,7 @@ public final class MonitorFactory {
 			final String s = java.lang.management.ManagementFactory.getRuntimeMXBean().getName();
 
 			selfProcessID = Integer.parseInt(s.substring(0, s.indexOf('@')));
-		} catch (final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -399,7 +399,7 @@ public final class MonitorFactory {
 		if (thisHostname == null)
 			try {
 				thisHostname = InetAddress.getLocalHost().getCanonicalHostName();
-			} catch (final UnknownHostException uhe) {
+			} catch (@SuppressWarnings("unused") final UnknownHostException uhe) {
 				thisHostname = "localhost";
 			}
 

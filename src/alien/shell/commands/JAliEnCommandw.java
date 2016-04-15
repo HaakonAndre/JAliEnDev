@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Formatter;
 import java.util.Map;
 
-import joptsimple.OptionException;
 import alien.api.taskQueue.GetUptime.UserStats;
 import alien.api.taskQueue.TaskQueueApiUtils;
+import joptsimple.OptionException;
 
 /**
  * @author ron
@@ -30,30 +30,28 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 
 		final StringBuilder sb = new StringBuilder();
 
-		final Formatter formatter = new Formatter(sb);
+		try (Formatter formatter = new Formatter(sb)) {
+			formatter.format(formatH, "Account name", "Active jobs", "Waiting jobs");
 
-		formatter.format(formatH, "Account name", "Active jobs", "Waiting jobs");
+			sb.append(separator);
 
-		sb.append(separator);
+			int i = 0;
 
-		int i = 0;
+			for (final Map.Entry<String, UserStats> entry : stats.entrySet()) {
+				final String username = entry.getKey();
+				final UserStats us = entry.getValue();
 
-		for (final Map.Entry<String, UserStats> entry : stats.entrySet()) {
-			final String username = entry.getKey();
-			final UserStats us = entry.getValue();
+				i++;
 
-			i++;
+				formatter.format(format, Integer.valueOf(i), username, String.valueOf(us.runningJobs), String.valueOf(us.waitingJobs));
 
-			formatter.format(format, Integer.valueOf(i), username, String.valueOf(us.runningJobs), String.valueOf(us.waitingJobs));
+				totals.add(us);
+			}
 
-			totals.add(us);
+			sb.append(separator);
+
+			formatter.format(formatH, "TOTAL", String.valueOf(totals.runningJobs), String.valueOf(totals.waitingJobs));
 		}
-
-		sb.append(separator);
-
-		formatter.format(formatH, "TOTAL", String.valueOf(totals.runningJobs), String.valueOf(totals.waitingJobs));
-
-		formatter.close();
 
 		if (out.isRootPrinter())
 			out.setField("value", sb.toString());
@@ -74,7 +72,7 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 
 	/**
 	 * mkdir cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -84,10 +82,10 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

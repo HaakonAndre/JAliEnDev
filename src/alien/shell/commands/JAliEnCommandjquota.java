@@ -2,9 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
-import joptsimple.OptionException;
 import alien.quotas.FileQuota;
 import alien.quotas.Quota;
+import joptsimple.OptionException;
 
 // TODO: check user permissions
 // TODO: use effective user on server side
@@ -97,7 +97,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 			this.param_to_set = param;
 			try {
 				this.value_to_set = Long.valueOf(alArguments.get(3));
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// FIXME invalid numeric values are ignored
 			}
 		}

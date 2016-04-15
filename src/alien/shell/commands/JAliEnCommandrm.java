@@ -3,12 +3,12 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.logging.Level;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.RemoveLFNfromString;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -19,7 +19,7 @@ import alien.api.catalogue.RemoveLFNfromString;
 public class JAliEnCommandrm extends JAliEnBaseCommand {
 	/**
 	 * Variable for -f "Force" flag and -i "Interactive" flag. These 2 flags contradict each other, and hence only 1 variable for them. (Source: GNU Man pages for rm).
-	 * 
+	 *
 	 * @val True if interactive; False if forced.
 	 */
 	boolean bIF = false;
@@ -80,7 +80,7 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 
 	/**
 	 * rm cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -90,10 +90,10 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
@@ -113,7 +113,7 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			bIF = !options.has("f");
 			bR = options.has("r");
 			bV = options.has("v");
-		} catch (final OptionException e) {
+		} catch (@SuppressWarnings("unused") final OptionException e) {
 			printHelp();
 			// throw e;
 		}

@@ -28,10 +28,10 @@ public class GridLocalFileCompletor extends FileNameCompleter {
 		if (buf != null && buf.contains("file://") && cursor >= buf.indexOf("file://"))
 			return super.complete(buf.replace("file://", ""), cursor - 7, candidates) + 7;
 
-		return gridComplete(buf, cursor, candidates);
+		return gridComplete(buf, candidates);
 	}
 
-	private int gridComplete(final String buf, final int cursor, final List<String> candidates) {
+	private int gridComplete(final String buf, final List<String> candidates) {
 
 		final String buffer = (buf == null) ? "" : buf;
 

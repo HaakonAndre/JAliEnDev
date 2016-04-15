@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
+import alien.catalogue.FileSystemUtils;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.catalogue.FileSystemUtils;
 
 /**
  * @author ron
@@ -26,7 +26,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
 	/**
 	 * the list of directories that will be created
-	 * */
+	 */
 	private List<String> alPaths = null;
 
 	private boolean success = true;
@@ -61,7 +61,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @return serialized return
 	 */
 	@Override
@@ -92,7 +92,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
 	/**
 	 * mkdir cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -102,10 +102,10 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

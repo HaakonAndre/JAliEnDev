@@ -14,9 +14,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import lazyj.Format;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
@@ -27,10 +24,13 @@ import alien.io.protocols.Xrootd;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 import alien.se.SEUtils;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import lazyj.Format;
 
 /**
  * @author costing
- * 
+ *
  */
 public class XrootdCleanup {
 	/**
@@ -62,7 +62,7 @@ public class XrootdCleanup {
 
 	/**
 	 * Check all GUID files in this storage by listing recursively its contents.
-	 * 
+	 *
 	 * @param sSE
 	 * @param dryRun
 	 * @param threads
@@ -95,7 +95,7 @@ public class XrootdCleanup {
 		while (inProgress.intValue() > 0) {
 			try {
 				Thread.sleep(1000);
-			} catch (final InterruptedException ie) {
+			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 				// ignore
 			}
 
@@ -158,7 +158,7 @@ public class XrootdCleanup {
 							}
 						}
 					}
-				} catch (final InterruptedException ie) {
+				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// ignore
 				}
 		}
@@ -302,7 +302,7 @@ public class XrootdCleanup {
 
 			try {
 				uuid = UUID.fromString(file.getName());
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// not an alien file name, ignore
 				return;
 			}

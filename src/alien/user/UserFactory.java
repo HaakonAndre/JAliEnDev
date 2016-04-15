@@ -27,7 +27,7 @@ public final class UserFactory {
 
 	/**
 	 * Get the account for the given username
-	 * 
+	 *
 	 * @param username
 	 * @return the account, or <code>null</code> if it is not a valid username
 	 */
@@ -48,10 +48,9 @@ public final class UserFactory {
 
 	/**
 	 * Get the account corresponding to this certificate chain
-	 * 
+	 *
 	 * @param certChain
-	 * @return account, or <code>null</code> if no account has this certificate
-	 *         associated to it
+	 * @return account, or <code>null</code> if no account has this certificate associated to it
 	 */
 	public static AliEnPrincipal getByCertificate(final javax.security.cert.X509Certificate[] certChain) {
 		final ArrayList<X509Certificate> certs = new ArrayList<>(certChain.length);
@@ -67,10 +66,9 @@ public final class UserFactory {
 
 	/**
 	 * Get the account corresponding to this certificate chain
-	 * 
+	 *
 	 * @param certChain
-	 * @return account, or <code>null</code> if no account has this certificate
-	 *         associated to it
+	 * @return account, or <code>null</code> if no account has this certificate associated to it
 	 */
 	public static AliEnPrincipal getByCertificate(final X509Certificate[] certChain) {
 		for (int i = 0; i < certChain.length; i++) {
@@ -96,7 +94,7 @@ public final class UserFactory {
 
 			try {
 				Long.parseLong(sDNTransformed.substring(idx + 1));
-			} catch (final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// try the next certificate in chain only if the last item is a
 				// number, so it might be a proxy
 				// certificate in fact
@@ -109,10 +107,9 @@ public final class UserFactory {
 
 	/**
 	 * Get the account corresponding to this certificate DN
-	 * 
+	 *
 	 * @param dn
-	 * @return account, or <code>null</code> if no account has this certificate
-	 *         associated to it
+	 * @return account, or <code>null</code> if no account has this certificate associated to it
 	 */
 	public static AliEnPrincipal getByDN(final String dn) {
 		final Set<AliEnPrincipal> allPrincipal = getAllByDN(dn);
@@ -124,14 +121,10 @@ public final class UserFactory {
 	}
 
 	/**
-	 * Transform a DN from the comma notation to slash notation, in reverse
-	 * order. Example:
-	 * 
-	 * Input: CN=Alina Gabriela
-	 * Grigoras,CN=659434,CN=agrigora,OU=Users,OU=Organic Units,DC=cern,DC=ch
-	 * Output: /DC=ch/DC=cern/OU=Organic
-	 * Units/OU=Users/CN=agrigora/CN=659434/CN=Alina Gabriela Grigoras
-	 * 
+	 * Transform a DN from the comma notation to slash notation, in reverse order. Example:
+	 *
+	 * Input: CN=Alina Gabriela Grigoras,CN=659434,CN=agrigora,OU=Users,OU=Organic Units,DC=cern,DC=ch Output: /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=agrigora/CN=659434/CN=Alina Gabriela Grigoras
+	 *
 	 * @param subject
 	 * @return AliEn-style subject
 	 */
@@ -153,7 +146,7 @@ public final class UserFactory {
 
 	/**
 	 * Get all accounts to which this certificate subject is associated
-	 * 
+	 *
 	 * @param dn
 	 *            subject, in slash notation
 	 * @return all accounts, or <code>null</code> if none matches in fact
@@ -189,14 +182,8 @@ public final class UserFactory {
 			final ByteArrayInputStream bis = new ByteArrayInputStream(encoded);
 			final java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X.509");
 			return (java.security.cert.X509Certificate) cf.generateCertificate(bis);
-		} catch (final java.security.cert.CertificateEncodingException e) {
-			// ignore
-		} catch (final javax.security.cert.CertificateEncodingException e) {
-			// ignore
-
-		} catch (final java.security.cert.CertificateException e) {
-			// ignore
-
+		} catch (final javax.security.cert.CertificateEncodingException | java.security.cert.CertificateException e) {
+			logger.log(Level.FINE, "Cannot convert javax to java X509 Certificate", e);
 		}
 		return null;
 	}
@@ -209,12 +196,8 @@ public final class UserFactory {
 		try {
 			final byte[] encoded = cert.getEncoded();
 			return javax.security.cert.X509Certificate.getInstance(encoded);
-		} catch (final java.security.cert.CertificateEncodingException e) {
-			// ignore
-		} catch (final javax.security.cert.CertificateEncodingException e) {
-			// ignore
-		} catch (final javax.security.cert.CertificateException e) {
-			// ignore
+		} catch (final java.security.cert.CertificateEncodingException | javax.security.cert.CertificateException e) {
+			logger.log(Level.FINE, "Cannot convert java to javax X509 Certificate", e);
 		}
 
 		return null;

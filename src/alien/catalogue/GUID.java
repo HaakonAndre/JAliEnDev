@@ -356,7 +356,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		while (st.hasMoreTokens())
 			try {
 				ret.add(Integer.valueOf(st.nextToken()));
-			} catch (final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -622,7 +622,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 						synchronized (queue) {
 							try {
 								queue.wait(1000);
-							} catch (final InterruptedException ie) {
+							} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 								// ignore
 							}
 						}
@@ -873,14 +873,12 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 					continue;
 				}
 
-				final DBFunctions db2 = h.getDB();
+				try (DBFunctions db2 = h.getDB()) {
+					if (db2 == null)
+						continue;
 
-				if (db2 == null)
-					continue;
+					db2.setReadOnly(true);
 
-				db2.setReadOnly(true);
-
-				try {
 					if (monitor != null)
 						monitor.incrementCounter("LFN_db_lookup");
 
@@ -888,8 +886,6 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 					while (db2.moveNext())
 						lfnCache.add(new LFN(db2, CatalogueUtils.getIndexTable(iHostID, iLFNTableIndex)));
-				} finally {
-					db2.close();
 				}
 			} while (db.moveNext());
 		}

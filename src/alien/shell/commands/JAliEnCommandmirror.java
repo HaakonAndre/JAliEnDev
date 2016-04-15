@@ -5,15 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import alien.catalogue.FileSystemUtils;
+import alien.catalogue.GUIDUtils;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.GUIDUtils;
 
 /**
  * @author psvirin
- * 
+ *
  */
 public class JAliEnCommandmirror extends JAliEnBaseCommand {
 	private boolean useLFNasGuid;
@@ -64,10 +64,10 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 								// SE
 								// spec
 								if (spec.startsWith("!"))
-									exses.add(spec.substring(1).toUpperCase());
+								exses.add(spec.substring(1).toUpperCase());
 								else {// an SE spec
-									ses.add(spec.toUpperCase());
-									referenceCount++;
+								ses.add(spec.toUpperCase());
+								referenceCount++;
 								}
 						} else if (spec.contains(":"))
 							try {
@@ -76,9 +76,9 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
 									referenceCount = referenceCount + c;
 								} else
-									throw new JAliEnCommandException();
+									throw new JAliEnCommandException("Number of replicas cannot be negative, in QoS string " + spec);
 							} catch (final Exception e) {
-								throw new JAliEnCommandException();
+								throw new JAliEnCommandException("Exception parsing QoS string " + spec, e);
 							}
 						else if (!spec.equals(""))
 							throw new JAliEnCommandException();

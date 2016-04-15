@@ -11,14 +11,14 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.StringTokenizer;
 
-import jline.console.ConsoleReader;
-import jline.console.completer.ArgumentCompleter;
-import jline.console.completer.StringsCompleter;
-import lazyj.Format;
 import alien.JSh;
 import alien.api.JBoxServer;
 import alien.config.JAliEnIAm;
 import alien.shell.commands.JShPrintWriter;
+import jline.console.ConsoleReader;
+import jline.console.completer.ArgumentCompleter;
+import jline.console.completer.StringsCompleter;
+import lazyj.Format;
 
 /**
  * @author ron
@@ -55,7 +55,7 @@ public class BusyBox {
 	private String currentDir;
 
 	/**
-	 * 
+	 *
 	 * @return the current directory
 	 */
 	public String getCurrentDir() {
@@ -129,7 +129,7 @@ public class BusyBox {
 					return false;
 
 				return (!noSignal.equals(callJBoxGetString("setshell jaliensh")));
-			} catch (final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				return false;
 			}
 		return false;
@@ -163,11 +163,11 @@ public class BusyBox {
 
 	/**
 	 * the JAliEn busy box
-	 * 
+	 *
 	 * @param addr
 	 * @param port
 	 * @param password
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	public BusyBox(final String addr, final int port, final String password) throws IOException {
@@ -177,13 +177,13 @@ public class BusyBox {
 
 	/**
 	 * the JAliEn busy box
-	 * 
+	 *
 	 * @param addr
 	 * @param port
 	 * @param password
 	 * @param username
 	 * @param startPrompt
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	public BusyBox(final String addr, final int port, final String password, final String username, final boolean startPrompt) throws IOException {
@@ -225,7 +225,7 @@ public class BusyBox {
 
 	/**
 	 * loop the prompt for the user
-	 * 
+	 *
 	 * @throws IOException
 	 */
 	public void prompt() throws IOException {
@@ -299,7 +299,7 @@ public class BusyBox {
 						return ret.toString();
 				}
 
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// e.printStackTrace();
 			}
 		while (reconnect());
@@ -374,7 +374,7 @@ public class BusyBox {
 						return true;
 				}
 
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// ignore
 				// e.printStackTrace();
 			}
@@ -399,7 +399,7 @@ public class BusyBox {
 
 	/**
 	 * execute a command
-	 * 
+	 *
 	 * @param callLine
 	 *            arguments of the command, first one is the command
 	 */
@@ -471,7 +471,7 @@ public class BusyBox {
 
 	/**
 	 * true once running the prompt
-	 * 
+	 *
 	 * @return are we running a prompt
 	 */
 	public boolean prompting() {
@@ -504,7 +504,7 @@ public class BusyBox {
 				// System.out.println("JBox might still be running.");
 				// }
 			}
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// e.printStackTrace();
 		}
 		JSh.printGoodBye();
@@ -542,7 +542,7 @@ public class BusyBox {
 
 		try {
 			editor = new FileEditor(editcmd);
-		} catch (final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			JSh.printErr("The editor [" + editcmd + "] was not found on your system.");
 			return;
 		}

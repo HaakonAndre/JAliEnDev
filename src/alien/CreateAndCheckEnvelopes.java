@@ -12,13 +12,13 @@ import alien.user.JAKeyStore;
 
 /**
  * @author ron
- * 
+ *
  */
 public class CreateAndCheckEnvelopes {
 
 	/**
 	 * Debugger method
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {
@@ -43,7 +43,7 @@ public class CreateAndCheckEnvelopes {
 			authenPrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(AuthenPrivLocation, null);
 
 			authenPubKey = (RSAPublicKey) JAKeyStore.loadPubX509(AuthenPubLocation)[0].getPublicKey();
-		} catch (final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -51,7 +51,7 @@ public class CreateAndCheckEnvelopes {
 			sePrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(SEPrivLocation, null);
 
 			sePubKey = (RSAPublicKey) JAKeyStore.loadPubX509(SEPubLocation)[0].getPublicKey();
-		} catch (final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -60,17 +60,17 @@ public class CreateAndCheckEnvelopes {
 		final RSAPrivateKey SEPrivKey = sePrivKey;
 		final RSAPublicKey SEPubKey = sePubKey;
 
-		// String ticket = "<authz>\n  <file>\n"
-		// + "    <access>read</access>\n"
+		// String ticket = "<authz>\n <file>\n"
+		// + " <access>read</access>\n"
 		// +
-		// "    <turl>root://voalice16.cern.ch:1094//02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</turl>\n"
-		// + "    <lfn>/alice/cern.ch/user/s/sschrein/jtest</lfn>\n"
-		// + "    <size>9096</size>\n"
-		// + "    <se>ALICE::CERN::ALICEDISK</se>\n"
-		// + "    <guid>DE81D1C8-2E18-11E0-B66A-001CC4624D66</guid>\n"
-		// + "    <md5>e73f3a05b652affbf22ce7b1128c1869</md5>\n"
-		// + "    <pfn>/02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</pfn>\n"
-		// + "  </file>\n</authz>\n";
+		// " <turl>root://voalice16.cern.ch:1094//02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</turl>\n"
+		// + " <lfn>/alice/cern.ch/user/s/sschrein/jtest</lfn>\n"
+		// + " <size>9096</size>\n"
+		// + " <se>ALICE::CERN::ALICEDISK</se>\n"
+		// + " <guid>DE81D1C8-2E18-11E0-B66A-001CC4624D66</guid>\n"
+		// + " <md5>e73f3a05b652affbf22ce7b1128c1869</md5>\n"
+		// + " <pfn>/02/44930/de81d1c8-2e18-11e0-b66a-001cc4624d66</pfn>\n"
+		// + " </file>\n</authz>\n";
 
 		final String ticket = "<authz>\n  <file>\n" + "    <access>read</access>\n" + "    <turl>root://pcepalice11.cern.ch:1094//tmp/xrd/00/19194/02bbaa0a-2e32-11e0-b69a-001e0b24002f</turl>\n"
 				+ "    <lfn>/pcepalice11/user/a/admin/juduididid</lfn>\n" + "    <size>72624</size>\n" + "    <se>pcepalice11::CERN::XRD</se>\n"

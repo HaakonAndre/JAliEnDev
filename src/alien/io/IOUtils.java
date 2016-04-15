@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,7 +26,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipInputStream;
 
-import lazyj.Utils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -44,10 +44,11 @@ import alien.shell.commands.PlainWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
+import lazyj.Utils;
 
 /**
  * Helper functions for IO
- * 
+ *
  * @author costing
  */
 public class IOUtils {
@@ -66,12 +67,14 @@ public class IOUtils {
 		if (f == null || !f.isFile() || !f.canRead())
 			throw new IOException("Cannot read from this file: " + f);
 
-		DigestInputStream dis = null;
-
+		MessageDigest md;
 		try {
-			final MessageDigest md = MessageDigest.getInstance("MD5");
-			dis = new DigestInputStream(new FileInputStream(f), md);
+			md = MessageDigest.getInstance("MD5");
+		} catch (final NoSuchAlgorithmException e1) {
+			throw new IOException("Could not initialize MD5 digester", e1);
+		}
 
+		try (DigestInputStream dis = new DigestInputStream(new FileInputStream(f), md)) {
 			final byte[] buff = new byte[10240];
 
 			int cnt;
@@ -85,23 +88,12 @@ public class IOUtils {
 			return String.format("%032x", new BigInteger(1, digest));
 		} catch (final IOException ioe) {
 			throw ioe;
-		} catch (final Exception e) {
-			// ignore
-		} finally {
-			if (dis != null)
-				try {
-					dis.close();
-				} catch (final IOException ioe) {
-					// ignore
-				}
 		}
-
-		return null;
 	}
 
 	/**
 	 * Download the file in a temporary location. The GUID should be filled with authorization tokens before calling this method.
-	 * 
+	 *
 	 * @param guid
 	 * @return the temporary file name. You should handle the deletion of this temporary file!
 	 * @see TempFileManager#release(File)
@@ -125,7 +117,7 @@ public class IOUtils {
 
 	/**
 	 * Download the file in a specified location. The GUID should be filled with authorization tokens before calling this method.
-	 * 
+	 *
 	 * @param guid
 	 * @param localFile
 	 *            path where the file should be downloaded. Can be <code>null</code> in which case a temporary location will be used, but then you should handle the temporary files.
@@ -189,10 +181,9 @@ public class IOUtils {
 			final List<PFN> sortedRealPFNs = SEUtils.sortBySite(realPFNsSet, site, false, false);
 
 			for (final PFN realPfn : sortedRealPFNs) {
-				if (realPfn.ticket == null) {
+				if (realPfn.ticket == null)
 					logger.log(Level.WARNING, "Missing ticket for " + realPfn.pfn);
-					// try even if there is no read ticket since read is normally allowed without an access token
-				}
+				// try even if there is no read ticket since read is normally allowed without an access token
 
 				final List<Protocol> protocols = Transfer.getAccessProtocols(realPfn);
 
@@ -224,9 +215,7 @@ public class IOUtils {
 
 					final String archiveFileName = p.pfn.substring(p.pfn.lastIndexOf('=') + 1);
 
-					try {
-						final ZipInputStream zi = new ZipInputStream(new FileInputStream(f));
-
+					try (ZipInputStream zi = new ZipInputStream(new FileInputStream(f))) {
 						ZipEntry zipentry = zi.getNextEntry();
 
 						File target = null;
@@ -254,8 +243,6 @@ public class IOUtils {
 
 							zipentry = zi.getNextEntry();
 						}
-
-						zi.close();
 
 						if (target != null)
 							if (localFile == null)
@@ -311,7 +298,7 @@ public class IOUtils {
 					synchronized (lock) {
 						lock.notifyAll();
 					}
-			} catch (final Throwable t) {
+			} catch (@SuppressWarnings("unused") final Throwable t) {
 				if (f != null)
 					TempFileManager.release(f);
 			}
@@ -386,7 +373,7 @@ public class IOUtils {
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					} catch (final InterruptedException e) {
+					} catch (@SuppressWarnings("unused") final InterruptedException e) {
 						break;
 					}
 				}
@@ -443,7 +430,7 @@ public class IOUtils {
 		if (f != null)
 			try {
 				return Utils.readFile(f.getCanonicalPath());
-			} catch (final IOException ioe) {
+			} catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore, shouldn't be ...
 			} finally {
 				TempFileManager.release(f);
@@ -501,7 +488,7 @@ public class IOUtils {
 
 	/**
 	 * Upload a local file to the Grid
-	 * 
+	 *
 	 * @param localFile
 	 * @param toLFN
 	 * @param owner
@@ -513,7 +500,7 @@ public class IOUtils {
 
 	/**
 	 * Upload a local file to the Grid
-	 * 
+	 *
 	 * @param localFile
 	 * @param toLFN
 	 * @param owner
@@ -526,7 +513,7 @@ public class IOUtils {
 
 	/**
 	 * Upload a local file to the Grid
-	 * 
+	 *
 	 * @param localFile
 	 * @param toLFN
 	 * @param owner
@@ -540,7 +527,7 @@ public class IOUtils {
 
 	/**
 	 * Upload a local file to the Grid
-	 * 
+	 *
 	 * @param localFile
 	 * @param toLFN
 	 * @param owner
@@ -565,12 +552,17 @@ public class IOUtils {
 
 	/**
 	 * Upload a local file to the Grid
-	 * 
-	 * @param localFile local file to upload
-	 * @param toLFN catalogue entry name
-	 * @param owner owner of the new file
-	 * @param progressReport if you want progress report displayed (for user interface)
-	 * @param args other `cp` command parameters to pass
+	 *
+	 * @param localFile
+	 *            local file to upload
+	 * @param toLFN
+	 *            catalogue entry name
+	 * @param owner
+	 *            owner of the new file
+	 * @param progressReport
+	 *            if you want progress report displayed (for user interface)
+	 * @param args
+	 *            other `cp` command parameters to pass
 	 * @throws IOException
 	 */
 	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final OutputStream progressReport, final String... args) throws IOException {

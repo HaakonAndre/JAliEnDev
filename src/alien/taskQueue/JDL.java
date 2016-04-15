@@ -36,7 +36,7 @@ import lazyj.Utils;
 
 /**
  * @author costing
- * 
+ *
  */
 public class JDL implements Serializable {
 
@@ -46,7 +46,7 @@ public class JDL implements Serializable {
 	static transient final Logger logger = ConfigUtils.getLogger(JDL.class.getCanonicalName());
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -4803377858842338873L;
 	private final Map<String, Object> jdlContent = new LinkedHashMap<>();
@@ -60,7 +60,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * A file in the catalogue
-	 * 
+	 *
 	 * @param file
 	 * @throws IOException
 	 */
@@ -70,7 +70,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * A file in the catalogue
-	 * 
+	 *
 	 * @param file
 	 * @throws IOException
 	 */
@@ -80,7 +80,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * a local file
-	 * 
+	 *
 	 * @param file
 	 * @throws IOException
 	 */
@@ -90,7 +90,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * a job ID
-	 * 
+	 *
 	 * @param jobID
 	 * @throws IOException
 	 */
@@ -100,7 +100,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * a job ID
-	 * 
+	 *
 	 * @param jobID
 	 * @param originalJDL
 	 *            whether to load the original JDL (submitted by the user) or the processed one (if available)
@@ -131,7 +131,7 @@ public class JDL implements Serializable {
 
 				sb.append(line).append('\n');
 			}
-		} catch (final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			// cannot be
 		}
 
@@ -140,7 +140,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * the full contents
-	 * 
+	 *
 	 * @param origContent
 	 * @throws IOException
 	 */
@@ -201,7 +201,7 @@ public class JDL implements Serializable {
 				// throw new
 				// IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
 				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, "JDL syntax error: Tag " + sKey + " doesn't finish with a semicolumn, full text is\n" + content);
+				logger.log(Level.FINE, "JDL syntax error: Tag " + sKey + " doesn't finish with a semicolumn, full text is\n" + content);
 
 			final String sValue = content.substring(idxEqual + 1, idxEnd).trim();
 
@@ -246,9 +246,9 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the value of a key
-	 * 
+	 *
 	 * @param key
-	 * 
+	 *
 	 * @return the value, can be a String, a Number, a Collection ...
 	 */
 	public Object get(final String key) {
@@ -270,9 +270,9 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the value of this key as String
-	 * 
+	 *
 	 * @param key
-	 * 
+	 *
 	 * @return the single value if this was a String, the first entry of a Collection (based on the iterator)...
 	 */
 	public String gets(final String key) {
@@ -296,7 +296,7 @@ public class JDL implements Serializable {
 
 		try {
 			return Integer.valueOf(Integer.valueOf(getString(o)).intValue());
-		} catch (final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -318,7 +318,7 @@ public class JDL implements Serializable {
 
 		try {
 			return Float.valueOf(getString(o));
-		} catch (final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -356,13 +356,13 @@ public class JDL implements Serializable {
 
 		try {
 			return Integer.valueOf(value);
-		} catch (final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
 		try {
 			return Double.valueOf(value);
-		} catch (final NumberFormatException nfe) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -374,7 +374,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the run number if this job is a simulation job
-	 * 
+	 *
 	 * @return run number
 	 */
 	public int getSimRun() {
@@ -410,7 +410,7 @@ public class JDL implements Serializable {
 
 					try {
 						return Integer.parseInt(run);
-					} catch (final NumberFormatException nfe) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						return -1;
 					}
 				}
@@ -424,7 +424,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the number of jobs this masterjob will split into. Only works for productions that split in a fixed number of jobs.
-	 * 
+	 *
 	 * @return the number of subjobs
 	 */
 	public int getSplitCount() {
@@ -436,7 +436,7 @@ public class JDL implements Serializable {
 		if (split.startsWith("production:"))
 			try {
 				return Integer.parseInt(split.substring(split.lastIndexOf('-') + 1));
-			} catch (final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -459,7 +459,7 @@ public class JDL implements Serializable {
 					final XmlCollection x = new XmlCollection(LFNUtils.getLFN(file));
 
 					return x;
-				} catch (final IOException ioe) {
+				} catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
@@ -476,7 +476,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the list of input files
-	 * 
+	 *
 	 * @return the list of input files
 	 */
 	public List<String> getInputFiles() {
@@ -492,10 +492,10 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the list of input data
-	 * 
+	 *
 	 * @param bNodownloadIncluded
 	 *            include or not the files with the ",nodownload" option
-	 * 
+	 *
 	 * @return list of input data to the job
 	 */
 	public List<String> getInputData(final boolean bNodownloadIncluded) {
@@ -504,7 +504,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the list of input files
-	 * 
+	 *
 	 * @param bNodownloadIncluded
 	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
 	 * @return list of input files
@@ -520,7 +520,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the list of output files
-	 * 
+	 *
 	 * @return list of output files
 	 */
 	public List<String> getOutputFiles() {
@@ -536,23 +536,26 @@ public class JDL implements Serializable {
 
 		return ret;
 	}
-	
+
 	/**
 	 * Get the list of output files
-	 * 
+	 *
+	 * @param tag
+	 *            JDL tag to take the list from
+	 *
 	 * @return list of output files
 	 */
-	public List<String> getOutputFiles(String tag) {
+	public List<String> getOutputFiles(final String tag) {
 		List<String> ret = getInputList(false, tag);
 		if (ret == null)
 			ret = new LinkedList<>();
-		
+
 		return ret;
 	}
 
 	/**
 	 * Get the list of arguments
-	 * 
+	 *
 	 * @return list of arguments
 	 */
 	public List<String> getArguments() {
@@ -561,7 +564,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the user name of the job
-	 * 
+	 *
 	 * @return user
 	 */
 	public String getUser() {
@@ -570,7 +573,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the executable
-	 * 
+	 *
 	 * @return executable
 	 */
 	public String getExecutable() {
@@ -579,7 +582,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the output directory, the unparsed value of the "OutputDir" tag.
-	 * 
+	 *
 	 * @return output directory
 	 * @see #getOutputDir()
 	 */
@@ -589,7 +592,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the list of input files for a given tag
-	 * 
+	 *
 	 * @param bNodownloadIncluded
 	 *            flag to include/exclude the files for which ",nodownload" is indicated in the JDL
 	 * @param sTag
@@ -680,7 +683,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the job comment
-	 * 
+	 *
 	 * @return job comment
 	 */
 	public String getComment() {
@@ -697,7 +700,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Set the job comment
-	 * 
+	 *
 	 * @param comment
 	 */
 	public void setComment(final String comment) {
@@ -721,7 +724,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the (package, version) mapping. Ex: { (AliRoot -> v4-19-16-AN), (ROOT -> v5-26-00b-6) }
-	 * 
+	 *
 	 * @return packages
 	 */
 	@SuppressWarnings("unchecked")
@@ -749,23 +752,22 @@ public class JDL implements Serializable {
 
 				ret.put(sPackage, sVersion);
 			} catch (final Throwable t) {
-				System.err.println("Exception parsing package definition: " + s);
+				System.err.println("Exception parsing package definition: " + s + " : " + t.getMessage());
 			}
 		}
 
 		return ret;
 	}
-	
 
 	/**
 	 * Get the JDLVARIABLES. Ex: { LPMJobTypeId -> 1 }
-	 * 
+	 *
 	 * @return packages
 	 */
 	@SuppressWarnings("unchecked")
 	public Map<String, Object> getJDLVariables() {
 		final Object o = get("JDLVariables");
-		
+
 		if (!(o instanceof Collection))
 			return null;
 
@@ -774,11 +776,11 @@ public class JDL implements Serializable {
 		final Map<String, Object> ret = new HashMap<>();
 
 		while (it.hasNext()) {
-			final String s = it.next();			
+			final String s = it.next();
 			try {
 				ret.put(s, get(s));
 			} catch (final Throwable t) {
-				System.err.println("Exception parsing JDL variable definition: " + s);
+				System.err.println("Exception parsing JDL variable definition: " + s + " : " + t.getMessage());
 			}
 		}
 		return ret;
@@ -812,7 +814,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Clear a list
-	 * 
+	 *
 	 * @param key
 	 */
 	public void clear(final String key) {
@@ -831,7 +833,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the base output directory, removing any #alien*# keywords from it
-	 * 
+	 *
 	 * @return output directory
 	 */
 	public String getOutputDir() {
@@ -857,7 +859,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the number of events/job in this simulation run
-	 * 
+	 *
 	 * @return events/job, of -1 if not supported
 	 */
 	public int getSimFactor() {
@@ -883,7 +885,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the number of events/job that this macro is expected to produce
-	 * 
+	 *
 	 * @param f
 	 * @return events/job, or -1 if not supported
 	 */
@@ -906,7 +908,7 @@ public class JDL implements Serializable {
 				if (m.matches())
 					return Integer.parseInt(m.group(2));
 			}
-		} catch (final IOException ioe) {
+		} catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, cannot happen
 		}
 
@@ -961,7 +963,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Delete a key
-	 * 
+	 *
 	 * @param key
 	 * @return the old value, if any
 	 */
@@ -989,7 +991,7 @@ public class JDL implements Serializable {
 	 * <li>a Number object, which will be saved without quotes</li>
 	 * <li>any other Object, for which toString() will be called</li>
 	 * </ul>
-	 * 
+	 *
 	 * @param key
 	 *            JDL key name
 	 * @param value
@@ -1032,7 +1034,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Append some String values to an array. If there is a previously set single value then it is transformed in an array and the previously set value is kept as the first entry of it.
-	 * 
+	 *
 	 * @param key
 	 * @param value
 	 */
@@ -1348,14 +1350,14 @@ public class JDL implements Serializable {
 
 	/**
 	 * Get the set of files (and patterns!) that the job is expected to register
-	 * 
+	 *
 	 * @param includeArchiveMembers
 	 *            if <code>true</code> then archive member (patterns) are included
 	 * @param excludeArchives
 	 *            if <code>true</code> then archives will be skipped
 	 * @return the set of files
 	 */
-	public Set<String> getOutputFileSet(boolean includeArchiveMembers, boolean excludeArchives) {
+	public Set<String> getOutputFileSet(final boolean includeArchiveMembers, final boolean excludeArchives) {
 		final List<String> outputFiles = getOutputFiles();
 
 		final Set<String> ret = new TreeSet<>();
@@ -1396,7 +1398,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Remove the file patterns from outputFiles and add them as patterns to the outputPatterns object
-	 * 
+	 *
 	 * @param outputFiles
 	 *            input, all file names and patterns, which is going to be altered by removing patterns from them
 	 * @param outputPatterns
@@ -1420,7 +1422,7 @@ public class JDL implements Serializable {
 
 	/**
 	 * Check if a given file belongs to the output set
-	 * 
+	 *
 	 * @param outputFiles
 	 * @param outputPatterns
 	 * @param fileName
@@ -1430,12 +1432,10 @@ public class JDL implements Serializable {
 		if (outputFiles != null && outputFiles.contains(fileName))
 			return true;
 
-		if (outputPatterns != null && outputPatterns.size() > 0) {
-			for (Pattern p : outputPatterns) {
+		if (outputPatterns != null && outputPatterns.size() > 0)
+			for (final Pattern p : outputPatterns)
 				if (p.matcher(fileName).matches())
 					return true;
-			}
-		}
 
 		return false;
 	}

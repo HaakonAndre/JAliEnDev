@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import lazyj.DBFunctions;
 
 /**
- * 
+ *
  */
 public class JobBroker {
 
@@ -44,7 +44,7 @@ public class JobBroker {
 			HashMap<String, Object> matchAnswer = new HashMap<>();
 			HashMap<String, Object> waiting = new HashMap<>();
 
-			logger.log(Level.INFO, "We received parameters: "+matchRequest.toString());
+			logger.log(Level.INFO, "We received parameters: " + matchRequest.toString());
 
 			// Checking if the CE is open
 			final int openQueue = checkQueueOpen((String) matchRequest.get("CE"));
@@ -120,7 +120,7 @@ public class JobBroker {
 							final ArrayList<String> list = new ArrayList<>(Arrays.asList(packages.split(",")));
 							list.removeAll(Collections.singleton("%"));
 
-							logger.log(Level.INFO, "After removing, we have to install "+list.toString());
+							logger.log(Level.INFO, "After removing, we have to install " + list.toString());
 
 							TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-install-pack");
 
@@ -141,19 +141,18 @@ public class JobBroker {
 			if (matchAnswer.containsKey("queueId")) {
 				// success!!
 				matchAnswer.put("Code", Integer.valueOf(1));
-				Integer queueId = (Integer) matchAnswer.get("queueId");
+				final Long queueId = (Long) matchAnswer.get("queueId");
 
 				// TODO:joblog, test jobtoken
 				// putlog($queueid, "state", "Job state transition from WAITING to ASSIGNED (to $queueName)");
 
-				final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId, (String) matchAnswer.get("User"), false);
+				final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"), false);
 
 				if (jobToken == null || !jobToken.spawnToken(db)) {
 					logger.log(Level.INFO, "The job already had a jobToken (or failed creating)!");
 					db.setReadOnly(true);
-					if (db.query("select * from QUEUE where queueId=?", false, queueId)) {
-						TaskQueueUtils.setJobStatus(queueId, JobStatus.ERROR_A);
-					}
+					if (db.query("select * from QUEUE where queueId=?", false, queueId))
+						TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
 					// TODO: putlog($queueid, "state", "Job state transition from ASSIGNED to ERRROR_A");
 					matchAnswer.put("Code", Integer.valueOf(-1));
 					matchAnswer.put("Error", "Error getting the token of the job " + queueId);
@@ -178,9 +177,9 @@ public class JobBroker {
 			if (db == null)
 				return null;
 
-			final String agentId 	= (String) waiting.get("entryId");
-			final String host 		= (String) waiting.get("Host");
-			final String ceName 	= (String) waiting.get("CE");
+			final String agentId = (String) waiting.get("entryId");
+			final String host = (String) waiting.get("Host");
+			final String ceName = (String) waiting.get("CE");
 
 			int hostId, siteId;
 
@@ -199,63 +198,60 @@ public class JobBroker {
 				extra = "and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)";
 
 			// Lock QUEUE
-			if (!db.query("LOCK TABLE QUEUE WRITE", false)){
+			if (!db.query("LOCK TABLE QUEUE WRITE", false)) {
 				job.put("Error", "Failed locking QUEUE");
-				job.put("Code", -5);
-		  		return job;
+				job.put("Code", Integer.valueOf(-5));
+				return job;
 			}
-			
+
 			// Get a job
-			int queueId;
+			long queueId;
 			db.query("SELECT min(queueId) FROM QUEUE where statusId=5 and agentid=? " + extra, false, agentId);
 			if (db.moveNext()) {
-				queueId = db.geti(1);
+				queueId = db.getl(1);
 				logger.log(Level.INFO, "Got the queueId: " + queueId);
 			} else {
-		  		logger.log(Level.INFO, "Couldn't get the queueId for agentId: "+agentId);
-				job.put("Error", "Couldn't get the queueId for the agentId: "+agentId);
-				job.put("Code", -6);
-		  		return job;
-		  	}
-			
-			// Update to ASSIGNED
-			db.query("UPDATE QUEUE set statusId=6,siteid=?, exechostid=? where statusId=5 and queueId=? limit 1",
-					false, Integer.valueOf(siteId), Integer.valueOf(hostId), Integer.valueOf(queueId));
-
-			int count = db.getUpdateCount();
-			
-			// Unlock QUEUE
-			if (!db.query("UNLOCK TABLES", false)){
-				logger.log(Level.INFO, "Failed unlocking QUEUE");
+				logger.log(Level.INFO, "Couldn't get the queueId for agentId: " + agentId);
+				job.put("Error", "Couldn't get the queueId for the agentId: " + agentId);
+				job.put("Code", Integer.valueOf(-6));
+				return job;
 			}
-			
+
+			// Update to ASSIGNED
+			db.query("UPDATE QUEUE set statusId=6,siteid=?, exechostid=? where statusId=5 and queueId=? limit 1", false, Integer.valueOf(siteId), Integer.valueOf(hostId), Long.valueOf(queueId));
+
+			final int count = db.getUpdateCount();
+
+			// Unlock QUEUE
+			if (!db.query("UNLOCK TABLES", false))
+				logger.log(Level.INFO, "Failed unlocking QUEUE");
+
 			if (count > 0) {
 				// we got something to run
 				String jdl, user;
-				
-				db.query("select queueId, origjdl jdl, user from QUEUEJDL join QUEUE using (queueid) " + "join QUEUE_USER using (userId) where queueId=?", 
-						false, Integer.valueOf(queueId));
+
+				db.query("select queueId, origjdl jdl, user from QUEUEJDL join QUEUE using (queueid) " + "join QUEUE_USER using (userId) where queueId=?", false, Long.valueOf(queueId));
 
 				if (db.moveNext()) {
 					logger.log(Level.INFO, "Updated and getting fields queueId, jdl, user");
-					queueId = db.geti(1);
+					queueId = db.getl(1);
 					jdl = db.gets(2);
 					user = db.gets(3);
 				} else {
-			  		logger.log(Level.INFO, "Couldn't get the queueId, jdl and user for the agentId: "+agentId);
-					job.put("Error", "Couldn't get the queueId, jdl and user for the agentId: "+agentId);
-					job.put("Code", -7);
-			  		return job;
-			  	}
+					logger.log(Level.INFO, "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
+					job.put("Error", "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
+					job.put("Code", Integer.valueOf(-7));
+					return job;
+				}
 
-				db.query("update QUEUEPROC set lastupdate=CURRENT_TIMESTAMP where queueId=?", false, Integer.valueOf(queueId));
+				db.query("update QUEUEPROC set lastupdate=CURRENT_TIMESTAMP where queueId=?", false, Long.valueOf(queueId));
 
 				db.query("update SITEQUEUES set ASSIGNED=ASSIGNED+1 where siteid=?", false, Integer.valueOf(siteId));
 				db.query("update SITEQUEUES set WAITING=WAITING-1 where siteid=?", false, Integer.valueOf(siteId));
 
-				TaskQueueUtils.deleteJobAgent(Integer.valueOf(agentId), queueId);
-				
-				job.put("queueId", Integer.valueOf(queueId));
+				TaskQueueUtils.deleteJobAgent(Long.parseLong(agentId), queueId);
+
+				job.put("queueId", Long.valueOf(queueId));
 				job.put("JDL", jdl);
 				job.put("User", user);
 
@@ -264,8 +260,8 @@ public class JobBroker {
 			}
 			logger.log(Level.INFO, "No jobs to give back");
 			job.put("Error", "No jobs to give back");
-			job.put("Code", -2);
-	  		return job;
+			job.put("Code", Integer.valueOf(-2));
+			return job;
 		}
 	}
 
@@ -283,14 +279,12 @@ public class JobBroker {
 
 			db.query("select count(*) from SITEQUEUES where blocked='open' and site='" + ce + "'");
 
-		  	if (db.moveNext()){
-		  		if( db.geti(1)>0 ){
-		  			return 1;
-		  		}
-		  		else{
-		  			// TODO: use TaskQueueUtils.setSiteQueueStatus(ce, "closed-blocked");
-		  		}
-		  	}
+			if (db.moveNext())
+				if (db.geti(1) > 0)
+					return 1;
+				else {
+					// TODO: use TaskQueueUtils.setSiteQueueStatus(ce, "closed-blocked");
+				}
 
 			return -1;
 		}
@@ -313,7 +307,7 @@ public class JobBroker {
 			if (matchRequest.containsKey("Return"))
 				ret = (String) matchRequest.get("Return");
 
-			ArrayList<Object> bindValues = new ArrayList<>();
+			final ArrayList<Object> bindValues = new ArrayList<>();
 
 			if (matchRequest.containsKey("TTL")) {
 				where += "and ttl < ? ";
@@ -329,22 +323,20 @@ public class JobBroker {
 				where += "and (site='' or site like concat('%,',?,',%')";
 				bindValues.add(matchRequest.get("Site"));
 			}
-			
+
 			if (matchRequest.containsKey("Extrasites")) {
 				final ArrayList<String> extrasites = (ArrayList<String>) matchRequest.get("Extrasites");
 				for (final String site : extrasites) {
 					where += " or site like concat('%,',?,',%') ";
 					bindValues.add(site);
 				}
-				where += ") ";				
-			}
-			else if (matchRequest.containsKey("Site")) {
 				where += ") ";
-			}
-			
+			} else if (matchRequest.containsKey("Site"))
+				where += ") ";
+
 			// skipping extrasites: used ?
 
-			if(!matchRequest.containsKey("CVMFS")){
+			if (!matchRequest.containsKey("CVMFS"))
 				if (matchRequest.containsKey("InstalledPackages")) {
 					where += "and ? like packages ";
 					bindValues.add(matchRequest.get("InstalledPackages"));
@@ -352,8 +344,7 @@ public class JobBroker {
 					where += "and ? like packages ";
 					bindValues.add(matchRequest.get("Packages"));
 				}
-			}
-				
+
 			if (matchRequest.containsKey("Partition")) {
 				where += "and ? like concat('%,',`partition`, '%,') ";
 				bindValues.add(matchRequest.get("Partition"));
@@ -369,10 +360,13 @@ public class JobBroker {
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
 				for (final String user : users) {
-					final int userId = TaskQueueUtils.getUserIdFromName(user);	
-					where += orconcat + "userId like ?";
-					orconcat = " or ";
-					bindValues.add(userId);
+					final Integer userId = TaskQueueUtils.getUserId(user);
+
+					if (userId != null) {
+						where += orconcat + "userId like ?";
+						orconcat = " or ";
+						bindValues.add(userId);
+					}
 				}
 				where += ")";
 			}
@@ -407,8 +401,8 @@ public class JobBroker {
 			db.setReadOnly(true);
 
 			final String q = "select " + ret + " from JOBAGENT where 1=1 " + where + " order by priority desc, price desc, oldestQueueId asc limit 1";
-			logger.log(Level.INFO,"Going to select agents ("+q+")"); 
-			logger.log(Level.INFO,"Bind values: "+bindValues.toString()); 
+			logger.log(Level.INFO, "Going to select agents (" + q + ")");
+			logger.log(Level.INFO, "Bind values: " + bindValues.toString());
 
 			db.query(q, false, bindValues.toArray(new Object[0]));
 
@@ -416,8 +410,8 @@ public class JobBroker {
 				final String[] columns = db.getColumnNames();
 				matchAnswer.put("Code", Integer.valueOf(1));
 
-				for (final String col : columns){
-					logger.log(Level.INFO,"Putting "+col+"-"+db.gets(col));
+				for (final String col : columns) {
+					logger.log(Level.INFO, "Putting " + col + "-" + db.gets(col));
 					matchAnswer.put(col, db.gets(col));
 				}
 				matchAnswer.put("CE", matchRequest.get("CE"));

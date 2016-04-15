@@ -56,7 +56,7 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 
 	/**
 	 * cd can run without arguments
-	 * 
+	 *
 	 * @return <code>true</code>
 	 */
 	@Override
@@ -66,10 +66,10 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */

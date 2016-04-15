@@ -65,7 +65,7 @@ public class Xrd3cpGW extends Xrootd {
 						for (final InetAddress addr : addresses)
 							transferServers.add(addr.getHostAddress());
 				} catch (final UnknownHostException uhe) {
-					logger.log(Level.WARNING, "Cannot resolve address of " + server);
+					logger.log(Level.WARNING, "Cannot resolve address of " + server, uhe);
 				}
 			}
 
@@ -176,7 +176,7 @@ public class Xrd3cpGW extends Xrootd {
 				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
-				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {

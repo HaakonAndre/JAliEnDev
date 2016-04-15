@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import lazyj.Log;
-
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -31,6 +29,7 @@ import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.UserFactory;
+import lazyj.Log;
 
 /**
  * @author Alina Grigoras
@@ -75,7 +74,7 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * <li>second argument can be an array list if access is "registerenvs" or a map for the rest</li>
 	 * <li>third arguments appears only in the case of map and it is the job id</li>
 	 * </ul>
-	 * 
+	 *
 	 * @return the response is a map with the keys:
 	 *         <ul>
 	 *         <li>rcvalues - the actual values used by the command</li>
@@ -86,39 +85,38 @@ public class AlienCommandauthorize extends AlienCommand {
 	public HashMap<String, ArrayList<String>> executeCommand() throws Exception {
 		Log.log(Log.FINER, "Entering authorize command");
 
-		HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
+		final HashMap<String, ArrayList<String>> hmReturn = new HashMap<>();
 
 		ArrayList<String> alrcValues;
-		ArrayList<String> alrcMessages = new ArrayList<>();
+		final ArrayList<String> alrcMessages = new ArrayList<>();
 
-		boolean bDebug = false;
+		final boolean bDebug = false;
 
 		alrcMessages.add("This is just a simple log\n");
 
 		// we need to have at least 2 parameters
 		if (this.alArguments != null && this.alArguments.size() >= 2) {
 			// first argument must be access string
-			String sAccess = (String) this.alArguments.get(0);
+			final String sAccess = (String) this.alArguments.get(0);
 			Log.log(Log.FINER, "Authorize access = " + sAccess);
 
 			int iJobId = 0;
 			int envelopeCount = this.alArguments.size() - 1;
 
-			if (this.alArguments.size() >= 2) {
+			if (this.alArguments.size() >= 2)
 				try {
 					if (this.alArguments.get(this.alArguments.size() - 1) instanceof String) {
 						iJobId = Integer.parseInt((String) this.alArguments.get(this.alArguments.size() - 1));
 						envelopeCount--;
 					}
-				} catch (NumberFormatException e) {
+				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 					// nothing to do, then the jobID is just not set by Perl ...
 				}
-			}
 
 			Log.log(Log.FINER, "Authorize Job id = " + iJobId);
 
 			if ("registerenvs".equals(sAccess)) {
-				ArrayList<String> alInfo = new ArrayList<>(this.alArguments.size());
+				final ArrayList<String> alInfo = new ArrayList<>(this.alArguments.size());
 				for (int i = 1; i <= envelopeCount; i++)
 					alInfo.add((String) this.alArguments.get(i));
 
@@ -126,15 +124,14 @@ public class AlienCommandauthorize extends AlienCommand {
 
 			} else {
 				@SuppressWarnings("unchecked")
-				HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
+				final HashMap<String, String> hmInfo = (HashMap<String, String>) this.alArguments.get(1);
 
 				alrcValues = (ArrayList<String>) authorizeEnvelope(this.pAlienUser, this.sUsername, this.sCurrentDirectory, sAccess, hmInfo, iJobId, this.iDebug);
 				alrcMessages.addAll(alrcValues);
 			}
 
-		} else {
+		} else
 			throw new Exception("Invalid authorize command arguments");
-		}
 
 		if (!bDebug)
 			alrcMessages.clear();
@@ -169,16 +166,16 @@ public class AlienCommandauthorize extends AlienCommand {
 			return null;
 		}
 
-		ArrayList<String> retenv = new ArrayList<>(envelopes.size());
+		final ArrayList<String> retenv = new ArrayList<>(envelopes.size());
 
-		for (String env : envelopes) {
+		for (final String env : envelopes) {
 
 			System.out.println("We received an envelope for registration: " + env);
 
 			try {
 
 				if (XrootDEnvelopeSigner.verifyEnvelope(env, true)) {
-					XrootDEnvelope xenv = new XrootDEnvelope(env);
+					final XrootDEnvelope xenv = new XrootDEnvelope(env);
 					System.out.println("Self Signature VERIFIED! : " + xenv.pfn.pfn);
 					if (BookingTable.commit(effectiveUser, BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
 						System.out.println("Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
@@ -187,25 +184,20 @@ public class AlienCommandauthorize extends AlienCommand {
 					}
 
 				} else if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
-					XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
+					final XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
 					System.out.println("SE Signature VERIFIED! : " + xenv.pfn.pfn);
 					if (BookingTable.commit(effectiveUser, BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
 						System.out.println("Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 						retenv.add(env);
 					}
 
-				} else {
+				} else
 					System.out.println("COULD NOT VERIFY ANY SIGNATURE!");
-				}
 
-			} catch (SignatureException e) {
-				System.err.println("Sorry ... Could not sign the envelope!");
-			} catch (InvalidKeyException e) {
-				System.err.println("Sorry ... Could not sign the envelope!");
-			} catch (NoSuchAlgorithmException e) {
-				System.err.println("Sorry ... Could not sign the envelope!");
-			} catch (IOException e) {
-				System.err.println("Sorry ... Error getting the PFN!");
+			} catch (SignatureException | InvalidKeyException | NoSuchAlgorithmException e) {
+				System.err.println("Sorry ... Could not sign the envelope : " + e.getMessage());
+			} catch (final IOException e) {
+				System.err.println("Sorry ... Error getting the PFN : " + e.getMessage());
 			}
 		}
 
@@ -243,43 +235,43 @@ public class AlienCommandauthorize extends AlienCommand {
 		if (access.startsWith("write")) {
 			accessRequest = AccessType.WRITE;
 			evenIfNotExists = true;
-		} else if (access.equals("read")) {
+		} else if (access.equals("read"))
 			accessRequest = AccessType.READ;
-		} else if (access.equals("delete")) {
+		else if (access.equals("delete"))
 			accessRequest = AccessType.DELETE;
-		} else {
+		else {
 			System.out.println("illegal access type!");
 			return null;
 		}
 
-		int p_size = Integer.parseInt(sanitizePerlString(optionHash.get("size"), true));
+		final int p_size = Integer.parseInt(sanitizePerlString(optionHash.get("size"), true));
 		int p_qosCount = Integer.parseInt(sanitizePerlString(optionHash.get("writeQosCount"), true));
 
 		String p_lfn = sanitizePerlString(optionHash.get("lfn"), false);
 		if (!p_lfn.startsWith("/"))
 			p_lfn = p_dir + p_lfn;
-		String p_guid = sanitizePerlString(optionHash.get("guid"), false);
-		String p_guidrequest = sanitizePerlString(optionHash.get("guidRequest"), false);
-		String p_md5 = sanitizePerlString(optionHash.get("md5"), false);
+		final String p_guid = sanitizePerlString(optionHash.get("guid"), false);
+		final String p_guidrequest = sanitizePerlString(optionHash.get("guidRequest"), false);
+		final String p_md5 = sanitizePerlString(optionHash.get("md5"), false);
 		String p_qos = sanitizePerlString(optionHash.get("writeQos"), false);
-		String p_pfn = sanitizePerlString(optionHash.get("pfn"), false);
-		String p_links = sanitizePerlString(optionHash.get("links"), false);
-		String p_site = sanitizePerlString(optionHash.get("site"), false);
+		final String p_pfn = sanitizePerlString(optionHash.get("pfn"), false);
+		final String p_links = sanitizePerlString(optionHash.get("links"), false);
+		final String p_site = sanitizePerlString(optionHash.get("site"), false);
 
-		String[] splitWishedSE = sanitizePerlString(optionHash.get("wishedSE"), false).split(";");
-		List<SE> ses = new ArrayList<>(splitWishedSE.length);
-		for (String sename : Arrays.asList(splitWishedSE)) {
-			SE se = SEUtils.getSE(sename);
+		final String[] splitWishedSE = sanitizePerlString(optionHash.get("wishedSE"), false).split(";");
+		final List<SE> ses = new ArrayList<>(splitWishedSE.length);
+		for (final String sename : Arrays.asList(splitWishedSE)) {
+			final SE se = SEUtils.getSE(sename);
 			if (se != null) {
 				ses.add(se);
 				System.out.println("An SE found: " + se.getName());
 			}
 		}
 
-		String[] splitExcludeSE = sanitizePerlString(optionHash.get("excludeSE"), false).split(";");
-		List<SE> exxSes = new ArrayList<>(splitExcludeSE.length);
-		for (String sename : Arrays.asList(splitExcludeSE)) {
-			SE se = SEUtils.getSE(sename);
+		final String[] splitExcludeSE = sanitizePerlString(optionHash.get("excludeSE"), false).split(";");
+		final List<SE> exxSes = new ArrayList<>(splitExcludeSE.length);
+		for (final String sename : Arrays.asList(splitExcludeSE)) {
+			final SE se = SEUtils.getSE(sename);
 			if (se != null) {
 				exxSes.add(se);
 				System.out.println("An exSE found: " + se.getName());
@@ -296,9 +288,9 @@ public class AlienCommandauthorize extends AlienCommand {
 
 		LFN lfn = null;
 		GUID guid = null;
-		if (GUIDUtils.isValidGUID(p_lfn)) {
+		if (GUIDUtils.isValidGUID(p_lfn))
 			guid = GUIDUtils.getGUID(UUID.fromString(p_lfn), evenIfNotExists);
-		} else {
+		else {
 			lfn = LFNUtils.getLFN(p_lfn, evenIfNotExists);
 			if (lfn.guid == null) {
 				if ("".equals(p_guidrequest))
@@ -310,9 +302,8 @@ public class AlienCommandauthorize extends AlienCommand {
 				guid.lfnCache.add(lfn);
 				guid.size = p_size;
 				guid.md5 = p_md5;
-			} else {
+			} else
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
-			}
 		}
 
 		List<PFN> pfns = new ArrayList<>(ses.size() + p_qosCount);
@@ -323,7 +314,7 @@ public class AlienCommandauthorize extends AlienCommand {
 			if (accessRequest == AccessType.WRITE) {
 
 				// statis list of specified SEs
-				for (SE se : ses) {
+				for (final SE se : ses) {
 					System.out.println("Trying to book writing on static SE: " + se.getName());
 
 					if (!se.canWrite(effectiveUser)) {
@@ -333,19 +324,19 @@ public class AlienCommandauthorize extends AlienCommand {
 
 					try {
 						pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, jobid, se));
-					} catch (Exception e) {
+					} catch (final Exception e) {
 						System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 					}
 				}
 
 				if (p_qosCount > 0) {
 					ses.addAll(exxSes);
-					List<SE> SEs = SEUtils.getClosestSEs(p_site, ses, true);
+					final List<SE> SEs = SEUtils.getClosestSEs(p_site, ses, true);
 					final Iterator<SE> it = SEs.iterator();
 
 					int counter = 0;
 					while (counter < p_qosCount && it.hasNext()) {
-						SE se = it.next();
+						final SE se = it.next();
 
 						if (!se.canWrite(effectiveUser))
 							continue;
@@ -353,7 +344,7 @@ public class AlienCommandauthorize extends AlienCommand {
 						System.out.println("Trying to book writing on discoverd SE: " + se.getName());
 						try {
 							pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, jobid, se));
-						} catch (Exception e) {
+						} catch (final Exception e) {
 							System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 							continue;
 						}
@@ -368,7 +359,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 				pfns = SEUtils.sortBySiteSpecifySEs(guid.getPFNs(), p_site, true, ses, exxSes, false);
 
-				for (PFN pfn : pfns) {
+				for (final PFN pfn : pfns) {
 					System.err.println(pfn);
 					System.out.println("Asking read for " + effectiveUser.getName() + " to " + pfn.getPFN());
 					String reason = AuthorizationFactory.fillAccess(effectiveUser, pfn, AccessType.READ);
@@ -377,17 +368,17 @@ public class AlienCommandauthorize extends AlienCommand {
 						System.err.println("Access refused because: " + reason);
 						continue;
 					}
-					UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
+					final UUID archiveLinkedTo = pfn.retrieveArchiveLinkedGUID();
 					if (archiveLinkedTo != null) {
-						GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo, false);
+						final GUID archiveguid = GUIDUtils.getGUID(archiveLinkedTo, false);
 						setArchiveAnchor = lfn;
-						List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID()).getPFNs(), p_site, true, ses, exxSes, false);
+						final List<PFN> apfns = SEUtils.sortBySiteSpecifySEs(GUIDUtils.getGUID(pfn.retrieveArchiveLinkedGUID()).getPFNs(), p_site, true, ses, exxSes, false);
 						if (!AuthorizationChecker.canRead(archiveguid, effectiveUser)) {
 							System.err.println("Access refused because: Not allowed to read sub-archive");
 							continue;
 						}
 
-						for (PFN apfn : apfns) {
+						for (final PFN apfn : apfns) {
 							reason = AuthorizationFactory.fillAccess(effectiveUser, apfn, AccessType.READ);
 
 							if (reason != null) {
@@ -399,36 +390,31 @@ public class AlienCommandauthorize extends AlienCommand {
 							break;
 
 						}
-					} else {
+					} else
 						readpfn = pfn;
-					}
 					pfns.clear();
 					pfns.add(readpfn);
 					break;
 
 				}
 			}
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			System.out.println("exception: " + e.toString());
 		}
 
-		List<String> envelopes = new ArrayList<>(pfns.size());
+		final List<String> envelopes = new ArrayList<>(pfns.size());
 
-		for (PFN pfn : pfns) {
-			if (pfn.ticket.envelope == null) {
+		for (final PFN pfn : pfns)
+			if (pfn.ticket.envelope == null)
 				System.err.println("Sorry ... Envelope is null!");
-			} else {
+			else {
 				pfn.ticket.envelope.setArchiveAnchor(setArchiveAnchor);
 				try {
 					// we need to both encrypt and sign, the later is not
 					// automatic
 					XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-				} catch (SignatureException e) {
-					System.err.println("Sorry ... Could not sign the envelope!");
-				} catch (InvalidKeyException e) {
-					System.err.println("Sorry ... Could not sign the envelope!");
-				} catch (NoSuchAlgorithmException e) {
-					System.err.println("Sorry ... Could not sign the envelope!");
+				} catch (SignatureException | InvalidKeyException | NoSuchAlgorithmException e) {
+					System.err.println("Sorry ... Could not sign the envelope : " + e.getMessage());
 				}
 				String addEnv = pfn.ticket.envelope.getSignedEnvelope().replace("&", "\\&");
 
@@ -436,16 +422,14 @@ public class AlienCommandauthorize extends AlienCommand {
 
 				// drop the following once LDAP schema is updated and version
 				// number properly on
-				if (!"alice::cern::setest".equalsIgnoreCase(se.getName())) {
+				if (!"alice::cern::setest".equalsIgnoreCase(se.getName()))
 					if (se.needsEncryptedEnvelope) {
 						addEnv += "\\&oldEnvelope=" + pfn.ticket.envelope.getEncryptedEnvelope();
 						System.out.println("Creating ticket (encrypted): " + pfn.ticket.envelope.getUnEncryptedEnvelope());
 					}
-				}
 				envelopes.add(addEnv);
 
 			}
-		}
 
 		return envelopes;
 
@@ -456,7 +440,7 @@ public class AlienCommandauthorize extends AlienCommand {
 	 * @param isInteger
 	 * @return a non-null value, defaulting to "0" if isInteger
 	 */
-	public static String sanitizePerlString(String maybeNull, boolean isInteger) {
+	public static String sanitizePerlString(final String maybeNull, final boolean isInteger) {
 		if (maybeNull == null) {
 			if (isInteger)
 				return "0";

@@ -2,9 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
-import joptsimple.OptionException;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.user.AliEnPrincipal;
+import joptsimple.OptionException;
 
 /**
  * @author ron
@@ -39,7 +39,7 @@ public class JAliEnCommandrole extends JAliEnBaseCommand {
 
 	/**
 	 * role can run without arguments
-	 * 
+	 *
 	 * @return <code>true</code>
 	 */
 	@Override
@@ -49,10 +49,10 @@ public class JAliEnCommandrole extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

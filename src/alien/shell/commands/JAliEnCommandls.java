@@ -7,12 +7,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 
+import alien.catalogue.FileSystemUtils;
+import alien.catalogue.LFN;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import lazyj.Log;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.LFN;
 
 /**
  * @author ron
@@ -165,7 +165,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**
 	 * get the directory listing of the ls
-	 * 
+	 *
 	 * @return list of the LFNs
 	 */
 	protected List<LFN> getDirectoryListing() {
@@ -190,7 +190,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**
 	 * ls can run without arguments
-	 * 
+	 *
 	 * @return <code>true</code>
 	 */
 	@Override
@@ -200,10 +200,10 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

@@ -162,7 +162,7 @@ public class Xrd3cp extends Xrootd {
 				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
-				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {

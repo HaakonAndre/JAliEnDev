@@ -3,13 +3,13 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.io.TransferDetails;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.io.TransferDetails;
 
 /**
- * 
+ *
  */
 public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	private String status;
@@ -31,10 +31,10 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			return;
 		}
 		final List<TransferDetails> transfers = commander.c_api.listTransfer(this.toSE, this.user, this.status, this.id, this.master,
-		// this.verbose,
-		// this.summary,
-		// this.all_status,
-		// this.jdl,
+				// this.verbose,
+				// this.summary,
+				// this.all_status,
+				// this.jdl,
 				this.count, this.sort_desc);
 		if (transfers == null)
 			return;
@@ -50,7 +50,8 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 		out.printOutln();
 		out.printOutln("listTransfer: returns all the transfers that are waiting in the system");
 		out.printOutln("        Usage:");
-		out.printOutln("                listTransfer [-status <status>] [-user <user>] [-id <queueId>] [-verbose] [-master] [-summary] [-all_status] [-jdl] [-destination <site>]  [-list=<number(all transfers by default)>] [-desc]");
+		out.printOutln(
+				"                listTransfer [-status <status>] [-user <user>] [-id <queueId>] [-verbose] [-master] [-summary] [-all_status] [-jdl] [-destination <site>]  [-list=<number(all transfers by default)>] [-desc]");
 		out.printOutln();
 
 	}

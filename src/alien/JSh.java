@@ -11,16 +11,16 @@ import java.io.PrintWriter;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
-import lazyj.commands.CommandOutput;
-import lazyj.commands.SystemCommand;
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import alien.api.JBoxServer;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.shell.BusyBox;
 import alien.shell.ShellColor;
 import alien.shell.commands.JAliEnBaseCommand;
+import lazyj.commands.CommandOutput;
+import lazyj.commands.SystemCommand;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 /**
  * @author ron
@@ -39,7 +39,7 @@ public class JSh {
 	static String osName;
 
 	/**
-	 * 
+	 *
 	 */
 	static BusyBox boombox = null;
 
@@ -61,7 +61,7 @@ public class JSh {
 
 	/**
 	 * is color output mode enabled
-	 * 
+	 *
 	 * @return enabled or not
 	 */
 	public static boolean doWeColor() {
@@ -83,7 +83,7 @@ public class JSh {
 						boombox.callJBoxGetString("SIGINT");
 				}
 			});
-		} catch (final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore if not on a SUN VM
 		}
 
@@ -115,7 +115,7 @@ public class JSh {
 								break;
 							a = a * 2;
 						}
-					} catch (final InterruptedException e) {
+					} catch (@SuppressWarnings("unused") final InterruptedException e) {
 						// ignore
 					}
 
@@ -170,7 +170,7 @@ public class JSh {
 			p = Runtime.getRuntime().exec(new String[] { "java", "-Duserid=" + System.getProperty("userid"), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-client", "alien.JBox" });
 
 		} catch (final IOException ioe) {
-			System.err.println("Error starting jBox.");
+			System.err.println("Error starting jBox : " + ioe.getMessage());
 			return false;
 		}
 
@@ -184,7 +184,7 @@ public class JSh {
 				System.err.println("Error getting console.");
 
 		} catch (final Exception e) {
-			System.err.println("Error asking for password.");
+			System.err.println("Error asking for password : " + e.getMessage());
 			p.destroy();
 			return false;
 		}
@@ -202,22 +202,22 @@ public class JSh {
 			}
 
 		} catch (final IOException ioe) {
-			System.err.println("Error starting jBox.");
+			System.err.println("Error starting jBox: " + ioe.getMessage());
 			return false;
 		} finally {
 			try {
 				p.getOutputStream().close();
-			} catch (final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 			try {
 				p.getInputStream().close();
-			} catch (final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 			try {
 				p.getErrorStream().close();
-			} catch (final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 		}
@@ -272,7 +272,7 @@ public class JSh {
 					System.err.println("Could not kill the JBox, PID:" + pid);
 
 			} catch (final Throwable e) {
-				System.err.println("Could not kill the JBox, PID:" + pid);
+				System.err.println("Could not kill the JBox, PID:" + pid + " : " + e.getMessage());
 			}
 		} else
 			System.out.println("We didn't find any JBox running.");
@@ -291,19 +291,10 @@ public class JSh {
 				final File f = new File("/proc/" + pid + "/cmdline");
 				if (f.exists()) {
 					String buffer = "";
-					BufferedReader fi = null;
-					try {
-						fi = new BufferedReader(new InputStreamReader(new FileInputStream(f)));
+					try (BufferedReader fi = new BufferedReader(new InputStreamReader(new FileInputStream(f)))) {
 						buffer = fi.readLine();
-					} catch (final IOException e) {
+					} catch (@SuppressWarnings("unused") final IOException e) {
 						return false;
-					} finally {
-						if (fi != null)
-							try {
-								fi.close();
-							} catch (final IOException e) {
-								// ignore
-							}
 					}
 
 					if (buffer != null && buffer.contains("alien.JBox"))
@@ -322,20 +313,11 @@ public class JSh {
 
 		if (f.exists()) {
 			final byte[] buffer = new byte[(int) f.length()];
-			BufferedInputStream fi = null;
-			try {
-				fi = new BufferedInputStream(new FileInputStream(f));
+			try (BufferedInputStream fi = new BufferedInputStream(new FileInputStream(f))) {
 				fi.read(buffer);
-			} catch (final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				port = 0;
 				return false;
-			} finally {
-				if (fi != null)
-					try {
-						fi.close();
-					} catch (final IOException e) {
-						// ignore
-					}
 			}
 
 			final String[] specs = new String(buffer).split("\n");
@@ -348,13 +330,13 @@ public class JSh {
 				else if (("Port").equals(kval[0].trim()))
 					try {
 						port = Integer.parseInt(kval[1].trim());
-					} catch (final NumberFormatException e) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 						port = 0;
 					}
 				else if (("PID").equals(kval[0].trim()))
 					try {
 						pid = Integer.parseInt(kval[1].trim());
-					} catch (final NumberFormatException e) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 						pid = 0;
 					}
 				else if (("Passwd").equals(kval[0].trim()))
@@ -409,7 +391,7 @@ public class JSh {
 
 	/**
 	 * reconnect
-	 * 
+	 *
 	 * @return success
 	 */
 	public static boolean reconnect() {

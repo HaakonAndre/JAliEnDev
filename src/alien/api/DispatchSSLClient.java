@@ -26,7 +26,7 @@ import alien.user.JAKeyStore;
 
 /**
  * @author costing
- * 
+ *
  */
 public class DispatchSSLClient extends Thread {
 
@@ -58,7 +58,7 @@ public class DispatchSSLClient extends Thread {
 
 	/**
 	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
-	 * 
+	 *
 	 * @param servName
 	 *            name of the config parameter for the host:port settings
 	 */
@@ -124,7 +124,7 @@ public class DispatchSSLClient extends Thread {
 				try {
 					((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).checkValidity();
 				} catch (final CertificateException e) {
-					logger.log(Level.SEVERE, "Your certificate has expired or is invalid!");
+					logger.log(Level.SEVERE, "Your certificate has expired or is invalid!", e);
 					return null;
 				}
 
@@ -152,7 +152,7 @@ public class DispatchSSLClient extends Thread {
 
 				final X509Certificate[] peerCerts =
 
-				client.getSession().getPeerCertificateChain();
+						client.getSession().getPeerCertificateChain();
 
 				if (peerCerts != null) {
 
@@ -231,7 +231,7 @@ public class DispatchSSLClient extends Thread {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1));
 					addr = address.substring(0, idx);
-				} catch (final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					addr = defaultHost;
 					port = defaultPort;
 				}
@@ -247,14 +247,14 @@ public class DispatchSSLClient extends Thread {
 		initializeSocketInfo();
 		try {
 			return dispatchARequest(r);
-		} catch (final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			// Now let's try, if we can reconnect
 			instance.put(Integer.valueOf(port), null);
 			try {
 				return dispatchARequest(r);
 			} catch (final IOException e1) {
 				// This time we give up
-				logger.log(Level.SEVERE, "Error running request, potential connection error.");
+				logger.log(Level.SEVERE, "Error running request, potential connection error.", e1);
 				return null;
 			}
 		}

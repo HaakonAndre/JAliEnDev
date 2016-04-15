@@ -3,13 +3,13 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.Set;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.perl.commands.AlienTime;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -97,7 +97,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 	/**
 	 * whereis cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -107,10 +107,10 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

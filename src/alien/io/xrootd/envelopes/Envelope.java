@@ -22,18 +22,14 @@ import java.util.StringTokenizer;
 import java.util.UUID;
 
 /**
- * 
- * This class represents an immutable authorization envelope. For a detailed
- * format description please refer to
- * "Authorization of data access in distributed storage systems" by Feichtinger
- * and Peters.
- * 
- * 
+ *
+ * This class represents an immutable authorization envelope. For a detailed format description please refer to "Authorization of data access in distributed storage systems" by Feichtinger and Peters.
+ *
+ *
  * @author Martin Radicke (original)
- * 
- *         rewritten and added with encryption functionality by ron as of Nov 9,
- *         2010
- * 
+ *
+ *         rewritten and added with encryption functionality by ron as of Nov 9, 2010
+ *
  */
 public class Envelope {
 
@@ -79,13 +75,11 @@ public class Envelope {
 	// static Logger logger = LoggerFactory.getLogger(Envelope.class);
 
 	/**
-	 * This class encapsulates all permission and location information for one
-	 * file in the grid context, particularly the mapping between the logical
-	 * filename (lfn) and the physical filename (transport URI, TURL) as well as
-	 * the access permission granted by the file catalogue.
-	 * 
+	 * This class encapsulates all permission and location information for one file in the grid context, particularly the mapping between the logical filename (lfn) and the physical filename
+	 * (transport URI, TURL) as well as the access permission granted by the file catalogue.
+	 *
 	 * @author Martin Radicke
-	 * 
+	 *
 	 */
 	public static class GridFile {
 
@@ -190,7 +184,7 @@ public class Envelope {
 
 		/**
 		 * Returns the username and password, if present
-		 * 
+		 *
 		 * @return username OR username:password or null if no info available
 		 */
 		public String getUserInfo() {
@@ -244,7 +238,7 @@ public class Envelope {
 	private final static String BODY_START = "-----BEGIN ENVELOPE BODY-----";
 	private final static String BODY_STOP = "-----END ENVELOPE BODY-----";
 
-	private void initializeEnvelope(final String envelopein, final int expireAfter, final String certificateString) {
+	private void initializeEnvelope(final int expireAfter, final String certificateString) {
 
 		// cipheralgorithm = "Blowfish";
 		creator = "AuthenX";
@@ -266,18 +260,18 @@ public class Envelope {
 	 */
 	public String create_ALICE_SE_Envelope(final String envelopein) {
 
-		initializeEnvelope(envelopein, 24, "none");
+		initializeEnvelope(24, "none");
 
 		lEnvelope = "";
 		lEnvelope += ENVELOPE_START + "\n";
 		lEnvelope += "CREATOR:     " + creator + "\n";
-		// lEnvelope += "MD5:         " + fMD5SUM + "\n";
+		// lEnvelope += "MD5: " + fMD5SUM + "\n";
 		lEnvelope += "UNIXTIME:    " + created + "\n";
 		lEnvelope += "DATE:        " + creationDate + "\n";
 		// Mon Nov 8 03:01:00 2010
-		// lEnvelope += "EXPIRES:     " + expires + "\n";
+		// lEnvelope += "EXPIRES: " + expires + "\n";
 		lEnvelope += "EXPIRES:     0\n";
-		// lEnvelope += "EXPDATE:     " + expireDate + "\n";
+		// lEnvelope += "EXPDATE: " + expireDate + "\n";
 		lEnvelope += "EXPDATE:     never\n";
 		lEnvelope += "CERTIFICATE: " + certificate + "\n";
 		lEnvelope += BODY_START + "\n";
@@ -290,11 +284,8 @@ public class Envelope {
 	}
 
 	/**
-	 * build a lookup table for the string (XML) representations of the file
-	 * permissions from the enum. This will help in mapping from the string
-	 * values in the authorization XML to the ordinal values associated with the
-	 * enum entries. It is preferred to have the strings tied to the enum for
-	 * consistency.
+	 * build a lookup table for the string (XML) representations of the file permissions from the enum. This will help in mapping from the string values in the authorization XML to the ordinal values
+	 * associated with the enum entries. It is preferred to have the strings tied to the enum for consistency.
 	 */
 	public static final Map<String, FilePerm> filePermissions = new HashMap<>();
 	static {
@@ -317,7 +308,7 @@ public class Envelope {
 
 	/**
 	 * Parses the envelope and verifies its validity.
-	 * 
+	 *
 	 * @param envelope
 	 *            the envelope in plain text to be parsed
 	 * @throws CorruptedEnvelopeException
@@ -332,7 +323,7 @@ public class Envelope {
 
 	/**
 	 * Parses the envelope. Distinguishes between header and body.
-	 * 
+	 *
 	 * @param envelope
 	 *            the envelope to be parsed
 	 * @throws CorruptedEnvelopeException
@@ -340,9 +331,7 @@ public class Envelope {
 	 */
 	private void parse(final String envelope) throws CorruptedEnvelopeException {
 
-		final LineNumberReader input = new LineNumberReader(new StringReader(envelope));
-
-		try {
+		try (LineNumberReader input = new LineNumberReader(new StringReader(envelope))) {
 			String line = null;
 
 			while ((line = input.readLine()) != null) {
@@ -397,19 +386,13 @@ public class Envelope {
 
 			}
 		} catch (final IOException e) {
-			throw new CorruptedEnvelopeException("Error reading from envelope String while parsing");
-		}
-
-		try {
-			input.close();
-		} catch (final IOException e) {
-			throw new CorruptedEnvelopeException("Error closing stream where envelope string was parsed from");
+			throw new CorruptedEnvelopeException("Error reading from envelope String while parsing", e);
 		}
 	}
 
 	/**
 	 * Parses a single header line
-	 * 
+	 *
 	 * @param line
 	 */
 	private void parseHeader(final String line) {
@@ -419,8 +402,7 @@ public class Envelope {
 
 		try {
 			key = tokenizer.nextToken();
-		} catch (final NoSuchElementException e) {
-
+		} catch (@SuppressWarnings("unused") final NoSuchElementException e) {
 			// ignore empty line
 			return;
 		}
@@ -445,9 +427,8 @@ public class Envelope {
 	}
 
 	/**
-	 * Parses the envelope body which is expressed in XML. The body contains
-	 * permission/location information for at least one file.
-	 * 
+	 * Parses the envelope body which is expressed in XML. The body contains permission/location information for at least one file.
+	 *
 	 * @param xmlBody
 	 *            the substring which holds the envelope body
 	 * @throws CorruptedEnvelopeException
@@ -534,9 +515,8 @@ public class Envelope {
 	}
 
 	/**
-	 * Checks the envelope for valid expiration date and minimum number of
-	 * specified files
-	 * 
+	 * Checks the envelope for valid expiration date and minimum number of specified files
+	 *
 	 * @throws GeneralSecurityException
 	 *             if envelope has expired
 	 * @throws CorruptedEnvelopeException
@@ -562,7 +542,7 @@ public class Envelope {
 
 	/**
 	 * Gets the creation time of the envelope
-	 * 
+	 *
 	 * @return the creation time as an UNIX timestamp
 	 */
 	public long getCreationTime() {
@@ -571,7 +551,7 @@ public class Envelope {
 
 	/**
 	 * Gets the creation time of the envelope formatted as Date
-	 * 
+	 *
 	 * @return the creation time as Date
 	 */
 	public Date getCreationDate() {
@@ -580,7 +560,7 @@ public class Envelope {
 
 	/**
 	 * Returns the name of the creator
-	 * 
+	 *
 	 * @return the creator's name
 	 */
 	public String getCreator() {
@@ -589,9 +569,8 @@ public class Envelope {
 
 	/**
 	 * Returns the experation time
-	 * 
-	 * @return the experation time as an UNIX timestamp or 0 if envelope never
-	 *         expires
+	 *
+	 * @return the experation time as an UNIX timestamp or 0 if envelope never expires
 	 */
 	public long getExpirationTime() {
 		return expires;
@@ -599,7 +578,7 @@ public class Envelope {
 
 	/**
 	 * Returns the expiration time formatted as Date
-	 * 
+	 *
 	 * @return the expiration time as Date or null if envelope never expires
 	 */
 	public Date getExpirationDate() {
@@ -608,9 +587,8 @@ public class Envelope {
 
 	/**
 	 * Returns whether this envelope is valid or already expired
-	 * 
-	 * @return true if, and only if, the expiration date is ahead the current
-	 *         date or if expire is equal to zero (will never expire)
+	 *
+	 * @return true if, and only if, the expiration date is ahead the current date or if expire is equal to zero (will never expire)
 	 */
 	public boolean isValid() {
 		return valid;
@@ -618,7 +596,7 @@ public class Envelope {
 
 	/**
 	 * Returns access to the list of specified files
-	 * 
+	 *
 	 * @return an interator the the file list
 	 */
 	public Iterator<GridFile> getFiles() {

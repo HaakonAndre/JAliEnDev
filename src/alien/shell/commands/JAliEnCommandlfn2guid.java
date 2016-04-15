@@ -2,9 +2,9 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
-import joptsimple.OptionException;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import joptsimple.OptionException;
 
 /**
  * @author ron
@@ -63,7 +63,7 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 
 	/**
 	 * lfn2guid cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -73,10 +73,10 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

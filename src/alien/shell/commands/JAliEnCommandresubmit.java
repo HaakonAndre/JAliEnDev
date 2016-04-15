@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import joptsimple.OptionException;
 
 /**
- * 
+ *
  */
 public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 

@@ -124,11 +124,8 @@ public class Functions {
 	 * @throws Exception
 	 */
 	public static void writeOutFile(final String file_name, final String content) throws Exception {
-		final Writer out = new OutputStreamWriter(new FileOutputStream(file_name));
-		try {
+		try (Writer out = new OutputStreamWriter(new FileOutputStream(file_name))) {
 			out.write(content);
-		} finally {
-			out.close();
 		}
 	}
 
@@ -149,7 +146,7 @@ public class Functions {
 			if (exitStatus.getExtProcExitStatus() == 0)
 				return exitStatus.getStdOut().trim();
 
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 		System.err.println("Command [" + command + "] not found.");
@@ -164,40 +161,35 @@ public class Functions {
 	 */
 	public static final void unzip(final File zip, final File extractTo) throws IOException {
 
-		final ZipFile archive = new ZipFile(zip);
-		final Enumeration<? extends ZipEntry> e = archive.entries();
-		while (e.hasMoreElements()) {
-			final ZipEntry entry = e.nextElement();
-			final File file = new File(extractTo, entry.getName());
-			if (entry.isDirectory() && !file.exists()) {
-				if (!file.mkdirs())
-					System.err.println("Cannot create base directory: " + file);
-			} else {
-				if (!file.getParentFile().exists()) {
-					final File f = file.getParentFile();
+		try (ZipFile archive = new ZipFile(zip)) {
+			final Enumeration<? extends ZipEntry> e = archive.entries();
+			while (e.hasMoreElements()) {
+				final ZipEntry entry = e.nextElement();
+				final File file = new File(extractTo, entry.getName());
+				if (entry.isDirectory() && !file.exists()) {
+					if (!file.mkdirs())
+						System.err.println("Cannot create base directory: " + file);
+				} else {
+					if (!file.getParentFile().exists()) {
+						final File f = file.getParentFile();
 
-					if (f.exists()) {
-						if (!f.isDirectory())
-							System.err.println("File exists but is not a directory: " + f);
-					} else if (!f.mkdirs())
-						System.err.println("Cannot create directory: " + f);
+						if (f.exists()) {
+							if (!f.isDirectory())
+								System.err.println("File exists but is not a directory: " + f);
+						} else if (!f.mkdirs())
+							System.err.println("Cannot create directory: " + f);
+					}
+
+					try (InputStream in = archive.getInputStream(entry); BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file))) {
+						final byte[] buffer = new byte[8192];
+						int read;
+
+						while (-1 != (read = in.read(buffer)))
+							out.write(buffer, 0, read);
+					}
 				}
-
-				final InputStream in = archive.getInputStream(entry);
-				final BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-
-				final byte[] buffer = new byte[8192];
-				int read;
-
-				while (-1 != (read = in.read(buffer)))
-					out.write(buffer, 0, read);
-
-				in.close();
-				out.close();
 			}
 		}
-
-		archive.close();
 	}
 
 }

@@ -21,7 +21,7 @@ import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 03, 2011
  */
@@ -47,7 +47,7 @@ public class PFNforWrite extends Request {
 
 	/**
 	 * Get PFNs to write
-	 * 
+	 *
 	 * @param user
 	 * @param role
 	 * @param site
@@ -111,7 +111,7 @@ public class PFNforWrite extends Request {
 				else
 					try {
 						count = Integer.valueOf(defQos.substring(idx + 1).trim());
-					} catch (final NumberFormatException nfe) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						count = Integer.valueOf(1);
 					}
 

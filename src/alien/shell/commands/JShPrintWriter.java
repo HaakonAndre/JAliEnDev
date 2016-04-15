@@ -19,21 +19,21 @@ public class JShPrintWriter extends UIPrintWriter {
 	static transient final Logger logger = ConfigUtils.getLogger(JShPrintWriter.class.getCanonicalName());
 
 	/**
-	 * 
+	 *
 	 */
 	public static final String degradedSignal = String.valueOf((char) 25);
 
 	/**
-	 * 
+	 *
 	 */
 	public static final String lineTerm = String.valueOf((char) 0);
 	/**
-	 * 
+	 *
 	 */
 	public static final String SpaceSep = String.valueOf((char) 1);
 
 	/**
-	 * 
+	 *
 	 */
 	public static final String pendSignal = String.valueOf((char) 9);
 
@@ -79,7 +79,7 @@ public class JShPrintWriter extends UIPrintWriter {
 
 	/**
 	 * color status
-	 * 
+	 *
 	 * @return state of the color mode
 	 */
 	@Override

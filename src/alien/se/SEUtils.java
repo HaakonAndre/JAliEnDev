@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.se;
 
@@ -26,8 +26,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.SEfromString;
@@ -39,6 +37,8 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.Host;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
+import lazyj.DBFunctions;
+import lazyj.Format;
 
 /**
  * @author costing
@@ -115,7 +115,7 @@ public final class SEUtils {
 
 	/**
 	 * Get the SE by its number
-	 * 
+	 *
 	 * @param seNumber
 	 * @return the SE, if it exists, or <code>null</code> if it doesn't
 	 */
@@ -125,7 +125,7 @@ public final class SEUtils {
 
 	/**
 	 * Get the SE by its number
-	 * 
+	 *
 	 * @param seNumber
 	 * @return the SE, if it exists, or <code>null</code> if it doesn't
 	 */
@@ -133,7 +133,7 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				return Dispatcher.execute(new SEfromString(null, null, seNumber.intValue())).getSE();
-			} catch (final ServerException se) {
+			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
 
@@ -150,7 +150,7 @@ public final class SEUtils {
 
 	/**
 	 * Get the SE object that has this name
-	 * 
+	 *
 	 * @param seName
 	 * @return SE, if defined, otherwise <code>null</code>
 	 */
@@ -161,7 +161,7 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				return Dispatcher.execute(new SEfromString(null, null, seName)).getSE();
-			} catch (final ServerException se) {
+			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
 
@@ -183,7 +183,7 @@ public final class SEUtils {
 
 	/**
 	 * Get all SE objects that have the given names
-	 * 
+	 *
 	 * @param ses
 	 *            names to get the objects for, can be <code>null</code> in which case all known SEs are returned
 	 * @return SE objects
@@ -307,7 +307,7 @@ public final class SEUtils {
 
 	private static final class PFNComparatorBySite implements Serializable, Comparator<PFN> {
 		/**
-		 * 
+		 *
 		 */
 		private static final long serialVersionUID = 3852623282834261566L;
 
@@ -360,7 +360,7 @@ public final class SEUtils {
 
 	/**
 	 * Get all the SEs available to one site, sorted by the relative distance to the site, exclude exSEs
-	 * 
+	 *
 	 * @param site
 	 * @param write
 	 *            <code>true</code> for write operations, <code>false</code> for read
@@ -372,7 +372,7 @@ public final class SEUtils {
 
 	/**
 	 * Get all the SEs available to one site, sorted by the relative distance to the site, exclude exSEs
-	 * 
+	 *
 	 * @param site
 	 * @param exSEs
 	 * @param write
@@ -429,7 +429,7 @@ public final class SEUtils {
 
 	/**
 	 * Get if possible all SEs for a certain site with specs
-	 * 
+	 *
 	 * @param site
 	 *            name of the site the job/client currently is
 	 * @param ses
@@ -450,7 +450,7 @@ public final class SEUtils {
 			logger.log(Level.FINE, "got qos: " + qos);
 		}
 
-		final List<SE> SEs = ses != null ? SEUtils.getSEs(ses) : new ArrayList<SE>();
+		final List<SE> SEs = ses != null ? SEUtils.getSEs(ses) : new ArrayList<>();
 
 		final List<SE> exSEs = SEUtils.getSEs(exses);
 
@@ -486,7 +486,7 @@ public final class SEUtils {
 
 	/**
 	 * Sort a collection of PFNs by their relative distance to a given site (where the job is running for example)
-	 * 
+	 *
 	 * @param pfns
 	 * @param sSite
 	 * @param removeBrokenSEs
@@ -533,7 +533,7 @@ public final class SEUtils {
 
 	/**
 	 * Sort a collection of PFNs by their relative distance to a given site (where the job is running for example), priorize SEs, exclude exSEs
-	 * 
+	 *
 	 * @param pfns
 	 * @param sSite
 	 * @param removeBrokenSEs
@@ -568,7 +568,7 @@ public final class SEUtils {
 	 */
 	public static final class SEComparator implements Comparator<SE>, Serializable {
 		/**
-		 * 
+		 *
 		 */
 		private static final long serialVersionUID = -5231000693345849547L;
 
@@ -665,7 +665,7 @@ public final class SEUtils {
 
 	/**
 	 * Get the distance between a site and a target SE
-	 * 
+	 *
 	 * @param sSite
 	 *            reference site
 	 * @param toSE
@@ -757,7 +757,7 @@ public final class SEUtils {
 
 	/**
 	 * Debug method
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {
@@ -795,7 +795,7 @@ public final class SEUtils {
 
 	/**
 	 * Remove all catalogue entries corresponding to these SEs. To be called when a storage is decomissioned for example.
-	 * 
+	 *
 	 * @param purge
 	 * @param ses
 	 * @throws IOException
@@ -812,61 +812,59 @@ public final class SEUtils {
 			sbSE.append(se.seNumber);
 		}
 
-		final PrintWriter pw = new PrintWriter(new FileWriter("orphaned_guids.txt", true));
+		try (PrintWriter pw = new PrintWriter(new FileWriter("orphaned_guids.txt", true))) {
 
-		final int copies[] = new int[10];
+			final int copies[] = new int[10];
 
-		int cnt = 0;
+			int cnt = 0;
 
-		for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
-			final Host h = CatalogueUtils.getHost(idx.hostIndex);
+			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
+				final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
-			try (DBFunctions gdb = h.getDB()) {
-				gdb.setReadOnly(true);
+				try (DBFunctions gdb = h.getDB()) {
+					gdb.setReadOnly(true);
 
-				gdb.query("select binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber IN (" + sbSE + ");");
+					gdb.query("select binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber IN (" + sbSE + ");");
 
-				while (gdb.moveNext()) {
-					if ((++cnt) % 10000 == 0)
-						System.err.println(cnt);
+					while (gdb.moveNext()) {
+						if ((++cnt) % 10000 == 0)
+							System.err.println(cnt);
 
-					final String sguid = gdb.gets(1);
+						final String sguid = gdb.gets(1);
 
-					final GUID g = GUIDUtils.getGUID(sguid);
+						final GUID g = GUIDUtils.getGUID(sguid);
 
-					if (g == null) {
-						System.err.println("Unexpected: cannot load the GUID content of " + gdb.gets(1));
-						continue;
-					}
-
-					for (final SE se : ses) {
-						if (true) {
-							g.removePFN(se, purge);
-
-							if (g.getPFNs().size() == 0) {
-								System.err.println("Orphaned GUID " + sguid);
-
-								pw.println(sguid);
-							}
+						if (g == null) {
+							System.err.println("Unexpected: cannot load the GUID content of " + gdb.gets(1));
+							continue;
 						}
 
-						copies[Math.min(g.getPFNs().size(), copies.length - 1)]++;
+						for (final SE se : ses) {
+							if (true) {
+								g.removePFN(se, purge);
+
+								if (g.getPFNs().size() == 0) {
+									System.err.println("Orphaned GUID " + sguid);
+
+									pw.println(sguid);
+								}
+							}
+
+							copies[Math.min(g.getPFNs().size(), copies.length - 1)]++;
+						}
 					}
 				}
 			}
+
+			for (int i = 0; i < copies.length; i++)
+				System.err.println(i + " replicas: " + copies[i]);
 		}
-
-		for (int i = 0; i < copies.length; i++)
-			System.err.println(i + " replicas: " + copies[i]);
-
-		pw.flush();
-		pw.close();
 	}
 
 	/**
 	 * Redirect all files indicated to be on the source SE to point to the destination SE instead. To be used if a temporary SE took in all the files of an older SE by other means than the AliEn data
 	 * management tools.
-	 * 
+	 *
 	 * @param seSource
 	 *            source SE, to be freed
 	 * @param seDest
@@ -923,7 +921,7 @@ public final class SEUtils {
 	/**
 	 * Dump all PFNs present in the given SEs in individual CSV files named "<SE name>.file_list", with the following format:<br>
 	 * #PFN,size,MD5
-	 * 
+	 *
 	 * @param realPFNs
 	 *            if <code>true</code> the catalogue PFNs will be written, if <code>false</code> the PFNs will be generated from the code again. It should be set to <code>false</code> if there were
 	 *            any reindexing done in the database and the PFN strings still point to the old SE.
@@ -938,35 +936,32 @@ public final class SEUtils {
 		for (final String seName : ses) {
 			final SE se = SEUtils.getSE(seName);
 
-			final PrintWriter pw = new PrintWriter(new FileWriter(seName + ".file_list"));
+			try (PrintWriter pw = new PrintWriter(new FileWriter(seName + ".file_list"))) {
+				pw.println("#PFN,size,MD5");
 
-			pw.println("#PFN,size,MD5");
+				for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
+					final Host h = CatalogueUtils.getHost(idx.hostIndex);
 
-			for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
-				final Host h = CatalogueUtils.getHost(idx.hostIndex);
+					try (DBFunctions gdb = h.getDB()) {
+						gdb.setReadOnly(true);
 
-				try (DBFunctions gdb = h.getDB()) {
-					gdb.setReadOnly(true);
+						if (realPFNs) {
+							gdb.query("select pfn,size,md5 from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
 
-					if (realPFNs) {
-						gdb.query("select pfn,size,md5 from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
+							while (gdb.moveNext())
+								pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
+						} else {
+							gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
 
-						while (gdb.moveNext())
-							pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
-					} else {
-						gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
+							while (gdb.moveNext()) {
+								final String guid = gdb.gets(1);
 
-						while (gdb.moveNext()) {
-							final String guid = gdb.gets(1);
-
-							pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3));
+								pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3));
+							}
 						}
 					}
 				}
 			}
-
-			pw.flush();
-			pw.close();
 		}
 	}
 

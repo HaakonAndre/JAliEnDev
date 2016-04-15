@@ -35,7 +35,7 @@ public abstract class JAliEnBaseCommand extends Thread {
 	protected boolean bColour;
 
 	/**
-	 * 
+	 *
 	 */
 	protected final List<String> alArguments;
 
@@ -45,7 +45,7 @@ public abstract class JAliEnBaseCommand extends Thread {
 
 	/**
 	 * Constructor based on the array received from the request
-	 * 
+	 *
 	 * @param commander
 	 * @param out
 	 * @param alArguments
@@ -59,14 +59,14 @@ public abstract class JAliEnBaseCommand extends Thread {
 
 	/**
 	 * Abstract class to execute the command / run the thread
-	 * 
+	 *
 	 */
 	@Override
 	public abstract void run();
 
 	/**
 	 * Abstract class to printout the help info of the command
-	 * 
+	 *
 	 */
 	public abstract void printHelp();
 
@@ -135,7 +135,7 @@ public abstract class JAliEnBaseCommand extends Thread {
 
 	/**
 	 * Abstract class to check if this command can run without arguments
-	 * 
+	 *
 	 * @return true if this command can run without arguments
 	 */
 	public abstract boolean canRunWithoutArguments();
@@ -168,9 +168,9 @@ public abstract class JAliEnBaseCommand extends Thread {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @param state
-	 * 
+	 *
 	 * @return serialized return
 	 */
 	public String deserializeForRoot(final int state) {
@@ -180,7 +180,7 @@ public abstract class JAliEnBaseCommand extends Thread {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @return serialized return
 	 */
 	@SuppressWarnings("static-method")
@@ -236,7 +236,7 @@ public abstract class JAliEnBaseCommand extends Thread {
 
 	/**
 	 * For the new jopt library, convert the options from generic objects to Strings
-	 * 
+	 *
 	 * @param options
 	 * @return options as strings
 	 */

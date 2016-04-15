@@ -18,14 +18,14 @@ public abstract class UIPrintWriter {
 
 	/**
 	 * Print get the color output mode
-	 * 
+	 *
 	 * @return state of the color mode
 	 */
 	abstract protected boolean colour();
 
 	/**
 	 * Add this line as it is
-	 * 
+	 *
 	 * @param line
 	 */
 	abstract protected void printOut(String line);
@@ -39,7 +39,7 @@ public abstract class UIPrintWriter {
 
 	/**
 	 * Print stdout after appending line feed
-	 * 
+	 *
 	 * @param line
 	 */
 	final protected void printOutln(final String line) {
@@ -48,7 +48,7 @@ public abstract class UIPrintWriter {
 
 	/**
 	 * Print stderr line
-	 * 
+	 *
 	 * @param line
 	 */
 	abstract protected void printErr(String line);
@@ -62,7 +62,7 @@ public abstract class UIPrintWriter {
 
 	/**
 	 * Print stderr after appending line feed
-	 * 
+	 *
 	 * @param line
 	 */
 	final protected void printErrln(final String line) {
@@ -71,7 +71,7 @@ public abstract class UIPrintWriter {
 
 	/**
 	 * Set the env for the client (needed for gapi)
-	 * 
+	 *
 	 * @param cDir
 	 * @param user
 	 * @param cRole
@@ -84,18 +84,18 @@ public abstract class UIPrintWriter {
 	abstract protected void flush();
 
 	/**
-	 * 
+	 *
 	 */
 	abstract protected void pending();
 
 	/**
-	 * 
+	 *
 	 */
 	abstract protected void degraded();
 
 	/**
 	 * identify the RootPrinter from above
-	 * 
+	 *
 	 * @return if it is a RootPrinter
 	 */
 	@SuppressWarnings("static-method")
@@ -105,7 +105,7 @@ public abstract class UIPrintWriter {
 
 	/**
 	 * dummy for RootPrinter
-	 * 
+	 *
 	 * @param args
 	 */
 	protected void setReturnArgs(final String args) {

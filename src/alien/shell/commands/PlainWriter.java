@@ -19,11 +19,11 @@ public class PlainWriter extends UIPrintWriter {
 	static transient final Logger logger = ConfigUtils.getLogger(PlainWriter.class.getCanonicalName());
 
 	/**
-	 * 
+	 *
 	 */
 	public static final String lineTerm = "\n";
 	/**
-	 * 
+	 *
 	 */
 	public static final String SpaceSep = " ";
 
@@ -69,7 +69,7 @@ public class PlainWriter extends UIPrintWriter {
 
 	/**
 	 * color status
-	 * 
+	 *
 	 * @return state of the color mode
 	 */
 	@Override

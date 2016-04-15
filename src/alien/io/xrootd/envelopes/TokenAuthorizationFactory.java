@@ -41,8 +41,7 @@ public class TokenAuthorizationFactory {
 	}
 
 	private void loadKeyStore() throws Exception, IOException {
-		final LineNumberReader in = new LineNumberReader(new FileReader(keystoreFile));
-		try {
+		try (LineNumberReader in = new LineNumberReader(new FileReader(keystoreFile))) {
 			// reset keystore
 			keystore = new Hashtable<>();
 
@@ -77,7 +76,7 @@ public class TokenAuthorizationFactory {
 					pubKeyToken = tokenizer.nextToken();
 
 				} catch (final NoSuchElementException e) {
-					throw new Exception("line no " + (in.getLineNumber()) + " : invalid format");
+					throw new Exception("line no " + (in.getLineNumber()) + " : invalid format", e);
 				}
 
 				if (!(voToken.startsWith("VO:") && privKeyToken.startsWith("PRIVKEY:") && pubKeyToken.startsWith("PUBKEY:")))
@@ -86,8 +85,6 @@ public class TokenAuthorizationFactory {
 				keystore.put(voToken.substring(voToken.indexOf(':') + 1),
 						loadKeyPair(privKeyToken.substring(privKeyToken.indexOf(':') + 1), pubKeyToken.substring(pubKeyToken.indexOf(':') + 1), keyFactory));
 			}
-		} finally {
-			in.close();
 		}
 	}
 
@@ -124,7 +121,7 @@ public class TokenAuthorizationFactory {
 
 	/**
 	 * Helper method thats reads a file.
-	 * 
+	 *
 	 * @param file
 	 *            the File which is going to be read
 	 * @return an array which holds the file content
@@ -132,21 +129,19 @@ public class TokenAuthorizationFactory {
 	 *             if reading the file fails
 	 */
 	private static byte[] readKeyfile(final File file) throws IOException {
-		final InputStream in = new FileInputStream(file);
+		try (InputStream in = new FileInputStream(file)) {
+			final byte[] result = new byte[(int) file.length()];
+			int bytesRead = 0;
 
-		final byte[] result = new byte[(int) file.length()];
-		int bytesRead = 0;
+			while ((bytesRead += in.read(result, bytesRead, (int) file.length() - bytesRead)) < file.length()) {
+				// nothing
+			}
 
-		while ((bytesRead += in.read(result, bytesRead, (int) file.length() - bytesRead)) < file.length()) {
-			// nothing
+			if (bytesRead != file.length())
+				throw new IOException("Keyfile " + file.getName() + " corrupt.");
+
+			return result;
 		}
-
-		in.close();
-
-		if (bytesRead != file.length())
-			throw new IOException("Keyfile " + file.getName() + " corrupt.");
-
-		return result;
 	}
 
 	/**

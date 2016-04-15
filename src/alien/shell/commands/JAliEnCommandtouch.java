@@ -32,23 +32,16 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
 	public JAliEnCommandtouch(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 
-		filelist = new ArrayList<>(alArguments.size());
-
-		for (final String file : alArguments)
-			try {
-				filelist.add(file);
-			} catch (final NumberFormatException e) {
-				throw new JAliEnCommandException();
-			}
+		filelist = alArguments;
 	}
 }

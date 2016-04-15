@@ -548,7 +548,12 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags) {
-		final Set<LFN> ret = (flags & FIND_NO_SORT) != 0 ? new LinkedHashSet<LFN>() : new TreeSet<LFN>();
+		final Set<LFN> ret;
+
+		if ((flags & FIND_NO_SORT) != 0)
+			ret = new LinkedHashSet<>();
+		else
+			ret = new TreeSet<>();
 
 		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
@@ -1036,7 +1041,7 @@ public class LFNUtils {
 								ret.add(file);
 								continue;
 							}
-						} catch (final Exception e) {
+						} catch (@SuppressWarnings("unused") final Exception e) {
 							return null;
 						}
 
@@ -1063,7 +1068,7 @@ public class LFNUtils {
 			if (p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					return null;
 				}
 
@@ -1074,7 +1079,7 @@ public class LFNUtils {
 			for (final LFN otherFile : file.getParentDir().list())
 				if (otherFile.isFile() && otherFile.guid.equals(guid))
 					return otherFile;
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 

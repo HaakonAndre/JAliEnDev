@@ -31,7 +31,7 @@ import lia.util.process.ExternalProcesses;
 
 /**
  * @author costing
- * 
+ *
  */
 public final class GUIDUtils {
 
@@ -47,7 +47,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Get the host where this entry should be located
-	 * 
+	 *
 	 * @param guid
 	 * @return host id
 	 * @see Host
@@ -65,7 +65,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Get the DB connection that applies for a particular GUID
-	 * 
+	 *
 	 * @param guid
 	 * @return the DB connection, or <code>null</code> if something is not right
 	 * @see #getTableNameForGUID(UUID)
@@ -86,7 +86,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Get the tablename where this GUID should be located (if any)
-	 * 
+	 *
 	 * @param guid
 	 * @return table name, or <code>null</code> if any problem
 	 * @see #getDBForGUID(UUID)
@@ -128,7 +128,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
-	 * 
+	 *
 	 * @param uuid
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
@@ -138,7 +138,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
-	 * 
+	 *
 	 * @param guid
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
@@ -148,7 +148,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Get the referring GUIDs (members of the archive, if any)
-	 * 
+	 *
 	 * @param guid
 	 * @return the set of GUIDs pointing to this archive, or <code>null</code> if there is no such file
 	 */
@@ -201,7 +201,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Bulk operation to retrieve GUID objects from the catalogue
-	 * 
+	 *
 	 * @param guidList
 	 *            List of UUIDs to retrieve the GUIDs for
 	 * @return the set of GUIDs that could be looked up in the catalogue
@@ -266,7 +266,7 @@ public final class GUIDUtils {
 					if (monitor != null)
 						monitor.incrementCounter("GUID_db_lookup");
 
-					StringBuilder sb = new StringBuilder();
+					final StringBuilder sb = new StringBuilder();
 
 					for (final UUID u : tableEntry.getValue()) {
 						if (sb.length() > 0)
@@ -280,13 +280,12 @@ public final class GUIDUtils {
 					if (!db.query(q))
 						throw new IllegalStateException("Failed executing query: " + q);
 
-					while (db.moveNext()) {
+					while (db.moveNext())
 						try {
 							ret.add(new GUID(db, h.hostIndex, tableName.intValue()));
 						} catch (final Exception e) {
 							logger.log(Level.WARNING, "Exception instantiating some guid from " + tableName, e);
 						}
-					}
 				}
 			}
 		}
@@ -296,7 +295,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Get the GUID catalogue entry when the uuid is known
-	 * 
+	 *
 	 * @param guid
 	 * @param evenIfDoesntExist
 	 *            if <code>true</code>, if the entry doesn't exist then a new GUID is returned
@@ -348,9 +347,9 @@ public final class GUIDUtils {
 	}
 
 	/**
-	 * 
+	 *
 	 * check if the string contains a valid GUID
-	 * 
+	 *
 	 * @param guid
 	 * @return yesORno
 	 */
@@ -358,7 +357,7 @@ public final class GUIDUtils {
 		try {
 			UUID.fromString(guid);
 			return true;
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			return false;
 		}
 	}
@@ -446,7 +445,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Extract the MAC address from the given UUID. There is no guarantee on the value of this field, it's just the bytes that would have the MAC address in a v1 UUID.
-	 * 
+	 *
 	 * @param uuid
 	 * @return MAC address of the machine that generated the UUID (not guaranteed information)
 	 */
@@ -508,7 +507,7 @@ public final class GUIDUtils {
 						if (sMac != null)
 							break;
 					}
-				} catch (final Throwable t) {
+				} catch (@SuppressWarnings("unused") final Throwable t) {
 					// ignore
 				}
 
@@ -518,7 +517,7 @@ public final class GUIDUtils {
 				for (int i = 0; i < 6; i++)
 					try {
 						MACAddress[i] = (byte) Integer.parseInt(st.nextToken(), 16);
-					} catch (final NumberFormatException nfe) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						// ignore
 					}
 			}
@@ -617,7 +616,7 @@ public final class GUIDUtils {
 
 	/**
 	 * Check if the MD5 sum is set to both the LFN and the underlying GUID. If not set the missing one (or both) from the other or by downloading the file and computing the MD5 sum.
-	 * 
+	 *
 	 * @param lfn
 	 * @return <code>true</code> if the MD5 was already set or if it could be now set, <code>false</code> if there was any error setting it
 	 */

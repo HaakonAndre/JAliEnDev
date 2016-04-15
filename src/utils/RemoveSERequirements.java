@@ -1,11 +1,11 @@
 /**
- * 
+ *
  */
 package utils;
 
+import alien.taskQueue.TaskQueueUtils;
 import lazyj.DBFunctions;
 import lazyj.Format;
-import alien.taskQueue.TaskQueueUtils;
 
 /**
  * @author costing
@@ -15,12 +15,12 @@ public class RemoveSERequirements {
 
 	/**
 	 * Find waiting jobs having CloseSE requirements and remove the requirements so that they can run anywhere
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {
 
-		if (args.length == 0) {
+		if (args.length == 0)
 			try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
 				db.setReadOnly(true);
 
@@ -29,12 +29,11 @@ public class RemoveSERequirements {
 					return;
 				}
 
-				while (db.moveNext()) {
+				while (db.moveNext())
 					cleanupRequirements(db.geti(1), db.gets(2));
-				}
 			}
-		} else {
-			for (final String arg : args) {
+		else
+			for (final String arg : args)
 				try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
 					try {
 						final int queueId = Integer.parseInt(arg);
@@ -46,7 +45,7 @@ public class RemoveSERequirements {
 
 						if (db.moveNext())
 							cleanupRequirements(db.geti(1), db.gets(2));
-					} catch (NumberFormatException nfe) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						if (!db.query("SELECT queueId, jdl FROM QUEUE where status='WAITING' and jdl rlike '.*other.CloseSE.*" + Format.escSQL(arg) + ".*';")) {
 							System.err.println("Could not query the QUEUE, check your config/password.properies and config/processes.properties");
 							return;
@@ -56,8 +55,6 @@ public class RemoveSERequirements {
 							cleanupRequirements(db.geti(1), db.gets(2));
 					}
 				}
-			}
-		}
 	}
 
 	/**
@@ -65,7 +62,7 @@ public class RemoveSERequirements {
 	 * @param gets
 	 */
 	private static void cleanupRequirements(final int queueId, final String jdl) {
-		int idx = jdl.indexOf(" Requirements = ");
+		final int idx = jdl.indexOf(" Requirements = ");
 
 		if (idx < 0) {
 			System.err.println(queueId + " : could not locate Requirements");

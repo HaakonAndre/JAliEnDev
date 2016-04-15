@@ -107,7 +107,7 @@ public class OrphanPFNsCleanup {
 
 			try {
 				Thread.sleep(1000 * 5);
-			} catch (final InterruptedException ie) {
+			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 				// ignore
 			}
 
@@ -217,7 +217,7 @@ public class OrphanPFNsCleanup {
 				while (executor.getQueue().size() > 0 || executor.getActiveCount() > 0)
 					try {
 						Thread.sleep(5000);
-					} catch (final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
 			}

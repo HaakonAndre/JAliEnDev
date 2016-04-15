@@ -36,7 +36,7 @@ public class XMLPrintWriter extends UIPrintWriter {
 
 		try {
 			writer = factory.createXMLStreamWriter(new PrintWriter(os));
-		} catch (final XMLStreamException xmlEx) {
+		} catch (@SuppressWarnings("unused") final XMLStreamException xmlEx) {
 			// ignore
 		}
 
@@ -157,7 +157,7 @@ public class XMLPrintWriter extends UIPrintWriter {
 
 	/**
 	 * Set a result meta information
-	 * 
+	 *
 	 * @param key
 	 * @param value
 	 * @return the previous meta information value for this key

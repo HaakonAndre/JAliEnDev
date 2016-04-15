@@ -9,54 +9,53 @@ import alien.config.ConfigUtils;
 import alien.site.JobAgent;
 
 /**
- * 
+ *
  */
-public class PackMan {
+public abstract class PackMan {
 
 	private static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	/**
 	 * @return ?
 	 */
-	public boolean getHavePath() {
-		return false;
-	}
+	abstract public boolean getHavePath();
 
 	/**
 	 * @return all defined packages
 	 */
-	public List<String> getListPackages() {
-		logger.log(Level.INFO, "PackMan: Getting list of packages shouldn't be called here!");
-		return null;
-	}
+	public abstract List<String> getListPackages();
 
 	/**
 	 * @return list of installed packages
 	 */
-	public List<String> getListInstalledPackages() {
-		logger.log(Level.INFO, "PackMan: Getting list of installed packages shouldn't be called here!");
-		return null;
-	}
+	public abstract List<String> getListInstalledPackages();
 
 	/**
 	 * @param packArray
 	 */
-	public void printPackages(List<String> packArray) {
+	public void printPackages(final List<String> packArray) {
 		logger.log(Level.INFO, this.getClass().getCanonicalName() + " printing list of packages ");
 
-		for (String pack : packArray != null ? packArray : getListPackages()) {
+		for (final String pack : packArray != null ? packArray : getListPackages())
 			System.out.println(pack);
-		}
 
 		return;
 	}
 
+	/**
+	 * @return method name
+	 */
+	@SuppressWarnings("static-method")
 	public String getMethod() {
 		return "PackMan";
 	}
-	
-	public Map<String,String> installPackage (String user, String packages, String version){
-		return null;
-	} 
+
+	/**
+	 * @param user
+	 * @param packages
+	 * @param version
+	 * @return ?
+	 */
+	public abstract Map<String, String> installPackage(String user, String packages, String version);
 
 }

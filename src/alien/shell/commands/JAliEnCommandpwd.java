@@ -36,7 +36,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 
 	/**
 	 * get cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -46,7 +46,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @return serialized return
 	 */
 	@Override
@@ -56,10 +56,10 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */

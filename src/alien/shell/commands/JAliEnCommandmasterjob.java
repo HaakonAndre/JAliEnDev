@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 
+import alien.taskQueue.Job;
+import alien.taskQueue.JobStatus;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.taskQueue.Job;
-import alien.taskQueue.JobStatus;
 
 /**
  * @author ron
@@ -268,7 +268,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	/**
 	 * cat cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -278,10 +278,10 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
@@ -291,13 +291,10 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 		try {
 			if (alArguments.size() > 0) {
-
-				{
-					try {
-						jobId = Integer.parseInt(alArguments.get(0));
-					} catch (final NumberFormatException e) {
-						throw new JAliEnCommandException();
-					}
+				try {
+					jobId = Integer.parseInt(alArguments.get(0));
+				} catch (final NumberFormatException e) {
+					throw new JAliEnCommandException("Invalid job ID " + alArguments.get(0), e);
 				}
 
 				final OptionParser parser = new OptionParser();
@@ -330,7 +327,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 					while (st.hasMoreTokens())
 						try {
 							id.add(Integer.valueOf(st.nextToken()));
-						} catch (final NumberFormatException e) {
+						} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 							// ignore
 						}
 				}

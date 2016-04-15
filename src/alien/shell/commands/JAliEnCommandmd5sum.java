@@ -2,15 +2,15 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import alien.catalogue.FileSystemUtils;
+import alien.catalogue.LFN;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.LFN;
 
 /**
  * @author costing
- * 
+ *
  */
 public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 	private ArrayList<String> alPaths = null;
@@ -48,10 +48,10 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in JAliEnCOMMander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

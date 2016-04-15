@@ -9,12 +9,12 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.StringFactory;
 import alien.catalogue.GUID;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
+import lazyj.DBFunctions;
+import lazyj.StringFactory;
 
 /**
  * @author costing
@@ -23,7 +23,7 @@ import alien.user.LDAPHelper;
 public class SE implements Serializable, Comparable<SE> {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -5338699957055031926L;
 
@@ -119,7 +119,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	/**
 	 * Build an arbitrary SE from the corresponding fields
-	 * 
+	 *
 	 * @param seName
 	 * @param seNumber
 	 * @param qos
@@ -223,7 +223,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	/**
 	 * The protocol to access a storage element, including the storage prefix
-	 * 
+	 *
 	 * @param seioDaemons
 	 * @param seStoragePath
 	 * @return the protocol part
@@ -289,7 +289,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	/**
 	 * Convert one of the sets to the database representation of it, a comma-separated list of elements
-	 * 
+	 *
 	 * @param set
 	 * @return the comma separated list of the values in the given set
 	 */
@@ -328,7 +328,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	/**
 	 * Check if the user is allowed to read files from this storage element
-	 * 
+	 *
 	 * @param user
 	 * @return <code>true</code> if allowed
 	 */
@@ -341,7 +341,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	/**
 	 * Check if the user is allowed to write files in this storage element
-	 * 
+	 *
 	 * @param user
 	 * @return <code>true</code> if allowed
 	 */
@@ -390,7 +390,7 @@ public class SE implements Serializable, Comparable<SE> {
 			while (st.hasMoreTokens())
 				try {
 					ret += Long.parseLong(st.nextToken());
-				} catch (final NumberFormatException nfe) {
+				} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 					// ignore
 				}
 		}
@@ -400,7 +400,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 	/**
 	 * Debug method
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {

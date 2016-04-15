@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io;
 
@@ -8,9 +8,9 @@ import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.ExtProperties;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
+import lazyj.ExtProperties;
 
 /**
  * @author costing
@@ -29,7 +29,7 @@ public class TransferAgent extends Thread {
 	private final String hostname = MonitorFactory.getSelfHostname();
 
 	/**
-	 * 
+	 *
 	 */
 	/**
 	 * @param transferAgentID
@@ -68,7 +68,7 @@ public class TransferAgent extends Thread {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Thread#run()
 	 */
 	@Override
@@ -112,7 +112,7 @@ public class TransferAgent extends Thread {
 						Thread.sleep(1000 * 30); // try in 30 seconds again to
 													// see if there is anything
 													// for it to do
-					} catch (final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
 			}
@@ -128,7 +128,7 @@ public class TransferAgent extends Thread {
 	 * <br>
 	 * Configuration options:<br>
 	 * alien.io.TransferAgent.workers = 5 (default)
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String args[]) {
@@ -184,7 +184,7 @@ public class TransferAgent extends Thread {
 
 					ta.signalStop();
 				}
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// ignore
 			}
 

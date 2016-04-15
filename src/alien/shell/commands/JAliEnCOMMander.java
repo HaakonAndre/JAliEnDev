@@ -9,8 +9,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import joptsimple.OptionException;
-import lazyj.Format;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.TaskQueueApiUtils;
@@ -20,6 +18,8 @@ import alien.config.ConfigUtils;
 import alien.shell.FileEditor;
 import alien.user.AliEnPrincipal;
 import alien.user.UsersHelper;
+import joptsimple.OptionException;
+import lazyj.Format;
 
 // TODO: remove comments
 // TODO: discuss whether the whole command list has to be seen for anyone
@@ -45,7 +45,7 @@ public class JAliEnCOMMander extends Thread {
 	public final CatalogueApiUtils c_api;
 
 	/**
-	 * 
+	 *
 	 */
 	public final TaskQueueApiUtils q_api;
 
@@ -84,17 +84,17 @@ public class JAliEnCOMMander extends Thread {
 	private UIPrintWriter out = null;
 
 	/**
-	 * 
+	 *
 	 */
 	protected AliEnPrincipal user;
 
 	/**
-	 * 
+	 *
 	 */
 	protected String role;
 
 	/**
-	 * 
+	 *
 	 */
 	protected String site;
 
@@ -164,7 +164,7 @@ public class JAliEnCOMMander extends Thread {
 		try {
 			curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
 			degraded = false;
-		} catch (final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			degraded = true;
 		}
 		return !degraded;
@@ -200,7 +200,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * get list of commands
-	 * 
+	 *
 	 * @return array of commands
 	 */
 	public static String getCommandList() {
@@ -226,7 +226,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Get the user
-	 * 
+	 *
 	 * @return user
 	 */
 	public AliEnPrincipal getUser() {
@@ -235,7 +235,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Get the site
-	 * 
+	 *
 	 * @return site
 	 */
 	public String getSite() {
@@ -244,7 +244,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * get the user's name
-	 * 
+	 *
 	 * @return user name
 	 */
 	public String getUsername() {
@@ -253,7 +253,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * get the user's role
-	 * 
+	 *
 	 * @return user role
 	 */
 	public String getRole() {
@@ -262,7 +262,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * get the current directory
-	 * 
+	 *
 	 * @return LFN of the current directory
 	 */
 	public LFN getCurrentDir() {
@@ -274,7 +274,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * get the current directory as string
-	 * 
+	 *
 	 * @return String of the current directory
 	 */
 	public String getCurrentDirName() {
@@ -285,7 +285,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * get the current directory, replace home with ~
-	 * 
+	 *
 	 * @return name of the current directory, ~ places home
 	 */
 	public String getCurrentDirTilded() {
@@ -307,7 +307,7 @@ public class JAliEnCOMMander extends Thread {
 			synchronized (this) {
 				try {
 					wait(1000);
-				} catch (final InterruptedException e) {
+				} catch (@SuppressWarnings("unused") final InterruptedException e) {
 					// ignore
 				}
 			}
@@ -372,9 +372,9 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * execute a command line
-	 * 
+	 *
 	 * @throws Exception
-	 * 
+	 *
 	 */
 	public void execute() throws Exception {
 		boolean help = false;
@@ -406,7 +406,7 @@ public class JAliEnCOMMander extends Thread {
 			} else if (arg[i].startsWith("-debug=")) {
 				try {
 					debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
-				} catch (final NumberFormatException n) {
+				} catch (@SuppressWarnings("unused") final NumberFormatException n) {
 					// ignore
 				}
 				args.remove(arg[i]);
@@ -467,7 +467,7 @@ public class JAliEnCOMMander extends Thread {
 					if (args.get(args.size() - 1).length() > 1)
 						try {
 							logno = Integer.parseInt(args.get(args.size() - 1).substring(1));
-						} catch (final NumberFormatException n) {
+						} catch (@SuppressWarnings("unused") final NumberFormatException n) {
 							// ignore
 						}
 					JAliEnCommandscrlog.addScreenLogLine(Integer.valueOf(logno), "we will screen to" + logno);
@@ -503,7 +503,7 @@ public class JAliEnCOMMander extends Thread {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public void killRunningCommand() {
 		if (jcommand != null) {
@@ -517,7 +517,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * create and return a object of alien.shell.commands.JAliEnCommand.JAliEnCommand<classSuffix>
-	 * 
+	 *
 	 * @param classSuffix
 	 *            the name of the shell command, which will be taken as the suffix for the classname
 	 * @param objectParm
@@ -534,7 +534,7 @@ public class JAliEnCOMMander extends Thread {
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class });
 			return (JAliEnBaseCommand) co.newInstance(objectParm);
-		} catch (final ClassNotFoundException e) {
+		} catch (@SuppressWarnings("unused") final ClassNotFoundException e) {
 			// System.out.println("No such command or not implemented");
 			return null;
 		}

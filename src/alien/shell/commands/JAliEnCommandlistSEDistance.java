@@ -5,13 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-import joptsimple.OptionException;
 import alien.catalogue.FileSystemUtils;
 import alien.se.SE;
+import joptsimple.OptionException;
 
 /**
  * @author costing
- * 
+ *
  */
 public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	private boolean useWriteMetrics;
@@ -83,7 +83,7 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 			arg = alArguments.get(2);
 			if (!this.useWriteMetrics && this.lfn_name == null)
 				this.lfn_name = arg;
-		} catch (final IndexOutOfBoundsException e) {
+		} catch (@SuppressWarnings("unused") final IndexOutOfBoundsException e) {
 			// ignore
 		}
 	}

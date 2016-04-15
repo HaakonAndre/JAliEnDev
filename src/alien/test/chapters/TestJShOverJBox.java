@@ -16,8 +16,6 @@ public class TestJShOverJBox {
 
 	private static int cno = 1;
 
-	private static boolean finalStatus = true;
-
 	private static BusyBox boombox = null;
 
 	/**
@@ -71,7 +69,6 @@ public class TestJShOverJBox {
 			System.out.print(" [ok] ");
 		} else {
 			System.out.print(" {NO} !!!!!!");
-			finalStatus = false;
 		}
 		System.out.println("    , which was: " + desc);
 		cno++;

@@ -63,10 +63,10 @@ public class TextCache extends ExtendedServlet {
 		try {
 			try {
 				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl_" + namespace));
-			} catch (final Throwable t1) {
+			} catch (@SuppressWarnings("unused") final Throwable t1) {
 				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl"));
 			}
-		} catch (final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -167,7 +167,7 @@ public class TextCache extends ExtendedServlet {
 
 					if (monitor != null)
 						monitor.sendParameters(parameters, values);
-				} catch (final Throwable t) {
+				} catch (@SuppressWarnings("unused") final Throwable t) {
 					// ignore
 				}
 		}
@@ -250,7 +250,7 @@ public class TextCache extends ExtendedServlet {
 			try {
 				requestLogger = new PrintWriter(new OutputStreamWriter(new MyGZIPOutputStream("cache.log-" + System.currentTimeMillis() + ".gz")));
 			} catch (final IOException e) {
-				System.err.println("Could not write to cache.log");
+				System.err.println("Could not write to cache.log: " + e.getMessage());
 				return;
 			}
 
@@ -314,10 +314,10 @@ public class TextCache extends ExtendedServlet {
 			try {
 				try {
 					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size_" + name));
-				} catch (final Throwable t1) {
+				} catch (@SuppressWarnings("unused") final Throwable t1) {
 					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
 				}
-			} catch (final Throwable t) {
+			} catch (@SuppressWarnings("unused") final Throwable t) {
 				size = 50000;
 			}
 
@@ -568,7 +568,7 @@ public class TextCache extends ExtendedServlet {
 				try {
 					p = Pattern.compile("^" + keyValue + "$");
 				} catch (final PatternSyntaxException e) {
-					pwOut.println("ERR: invalid pattern syntax: " + keyValue);
+					pwOut.println("ERR: invalid pattern syntax: " + keyValue + " : " + e.getMessage());
 					pwOut.flush();
 					return;
 				}
@@ -662,7 +662,7 @@ public class TextCache extends ExtendedServlet {
 		try {
 			invalidateCache("whereis", "(irtc|irc)_" + lfn);
 			invalidateCache("access", lfn + ".*");
-		} catch (final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 	}
@@ -751,7 +751,7 @@ public class TextCache extends ExtendedServlet {
 				final String sURL = request.getMethod() + " " + getCurrentPage() + " HTTP/1.1";
 
 				pw.println(sIP + " [" + sDate + "] \"" + sURL + "\"");
-			} catch (final Throwable t) {
+			} catch (@SuppressWarnings("unused") final Throwable t) {
 				// ignore
 			}
 	}

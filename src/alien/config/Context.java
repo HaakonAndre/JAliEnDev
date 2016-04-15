@@ -23,7 +23,7 @@ public class Context {
 						Thread.sleep(1000 * 60);
 
 						context.keySet().retainAll(Thread.getAllStackTraces().keySet());
-					} catch (final Throwable t) {
+					} catch (@SuppressWarnings("unused") final Throwable t) {
 						// ignore
 					}
 			}

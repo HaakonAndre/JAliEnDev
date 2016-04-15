@@ -3,9 +3,9 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.Map;
 
-import joptsimple.OptionException;
 import alien.api.taskQueue.GetUptime.UserStats;
 import alien.api.taskQueue.TaskQueueApiUtils;
+import joptsimple.OptionException;
 
 /**
  * @author ron
@@ -45,7 +45,7 @@ public class JAliEnCommanduptime extends JAliEnBaseCommand {
 
 	/**
 	 * mkdir cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -55,10 +55,10 @@ public class JAliEnCommanduptime extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

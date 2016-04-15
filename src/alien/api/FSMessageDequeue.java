@@ -11,13 +11,13 @@ import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.Format;
 import alien.api.catalogue.SEfromString;
 import alien.config.ConfigUtils;
+import lazyj.Format;
 
 /**
  * Dequeue request objects and send back replies
- * 
+ *
  * @author costing
  * @since 2015-10-14
  */
@@ -34,7 +34,7 @@ public class FSMessageDequeue {
 
 	/**
 	 * Create a dequeueing object passing the inbox path and the outbox pattern.
-	 * 
+	 *
 	 * @param inbox
 	 *            inbox directory name. The code will try to create the directory if the path doesn't exist and will throw an exception if there is any problem related to permissions and such.
 	 * @param outboxPattern
@@ -57,7 +57,7 @@ public class FSMessageDequeue {
 
 	/**
 	 * Set how long to sleep between polls to the input box
-	 * 
+	 *
 	 * @param millis
 	 * @return the old value
 	 */
@@ -85,7 +85,7 @@ public class FSMessageDequeue {
 
 	/**
 	 * Read the next request from the inbox queue
-	 * 
+	 *
 	 * @param timeout
 	 *            how long to wait for a file to show up. <code>0</code> means one-shot checking, a negative value means forever while a positive value is a timeout in milliseconds
 	 * @return the next {@link Request} object, or <code>null</code> if nothing showed up in the specified time
@@ -119,7 +119,7 @@ public class FSMessageDequeue {
 			if (timeout != 0)
 				try {
 					Thread.sleep(sleepTime);
-				} catch (final InterruptedException ie) {
+				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					return null;
 				}
 		} while (timeout < 0 || (timeout > 0 && (System.currentTimeMillis() - lStart < timeout)));
@@ -129,7 +129,7 @@ public class FSMessageDequeue {
 
 	/**
 	 * Enqueue a reply in the outbox folder constructed by combining the outbox pattern with the {@link Request} object details
-	 * 
+	 *
 	 * @param r
 	 *            object to send back
 	 * @throws IOException
@@ -154,7 +154,7 @@ public class FSMessageDequeue {
 
 	/**
 	 * testing method
-	 * 
+	 *
 	 * @param args
 	 * @throws InterruptedException
 	 */

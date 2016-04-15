@@ -2,11 +2,11 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import alien.catalogue.FileSystemUtils;
+import alien.catalogue.LFN;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.LFN;
 
 /**
  * @author ron
@@ -31,7 +31,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sPath));
 
-		if (lfn == null){
+		if (lfn == null) {
 			out.printOutln("No such file or directory: [" + sPath + "]");
 			return;
 		}
@@ -68,7 +68,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 	/**
 	 * ls can run without arguments
-	 * 
+	 *
 	 * @return <code>true</code>
 	 */
 	@Override
@@ -78,7 +78,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @return serialized return
 	 */
 	@Override
@@ -104,10 +104,10 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

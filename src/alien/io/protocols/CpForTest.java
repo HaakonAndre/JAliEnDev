@@ -8,13 +8,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lia.util.process.ExternalProcess;
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import lia.util.process.ExternalProcess;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 /**
  * @author ron
@@ -23,7 +23,7 @@ import alien.io.IOUtils;
 public class CpForTest extends Protocol {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 7899348307554604135L;
 	/**
@@ -80,7 +80,7 @@ public class CpForTest extends Protocol {
 			try {
 				exitStatus = pBuilder.start().waitFor();
 			} catch (final InterruptedException ie) {
-				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -104,7 +104,7 @@ public class CpForTest extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
@@ -150,7 +150,7 @@ public class CpForTest extends Protocol {
 				else
 					throw new IOException("Cannot start the process");
 			} catch (final InterruptedException ie) {
-				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -186,7 +186,7 @@ public class CpForTest extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess, java.lang.String)
 	 */
 	@Override
@@ -223,7 +223,7 @@ public class CpForTest extends Protocol {
 			try {
 				exitStatus = pBuilder.start().waitFor();
 			} catch (final InterruptedException ie) {
-				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -250,7 +250,7 @@ public class CpForTest extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, alien.catalogue.PFN, alien.catalogue.access.CatalogueWriteAccess)
 	 */
 	@Override
@@ -266,7 +266,7 @@ public class CpForTest extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

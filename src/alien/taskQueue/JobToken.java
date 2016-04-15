@@ -3,16 +3,16 @@ package alien.taskQueue;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.StringFactory;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import lazyj.DBFunctions;
+import lazyj.StringFactory;
 
 /**
  * @author ron
  * @since Nov 2, 2011
- * 
+ *
  */
 public class JobToken implements Comparable<JobToken> {
 
@@ -29,7 +29,7 @@ public class JobToken implements Comparable<JobToken> {
 	/**
 	 * jobId
 	 */
-	public int jobId;
+	public long jobId;
 
 	/**
 	 * Username
@@ -48,7 +48,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * Load one row from a TOKENS table
-	 * 
+	 *
 	 * @param db
 	 */
 	JobToken(final DBFunctions db) {
@@ -63,11 +63,11 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * Create a new JobToken object
-	 * 
+	 *
 	 * @param jobId
 	 * @param username
 	 */
-	JobToken(final int jobId, final String username) {
+	JobToken(final long jobId, final String username) {
 		this.jobId = jobId;
 
 		this.username = username;
@@ -91,7 +91,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * Create a 32 chars long token (job token)
-	 * 
+	 *
 	 * @param db
 	 * @return <code>true</code> if the token was successfully generated
 	 */
@@ -105,7 +105,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * The special value for when the job is in INSERTING and then a real value will be assigned by AliEn
-	 * 
+	 *
 	 * @param db
 	 */
 	public void emptyToken(final DBFunctions db) {
@@ -128,7 +128,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	private boolean insert(final DBFunctions db) {
 		try {
-			if (db.query(INSERT_QUERY, false, Integer.valueOf(jobId), username, token)) {
+			if (db.query(INSERT_QUERY, false, Long.valueOf(jobId), username, token)) {
 				if (monitor != null)
 					monitor.incrementCounter("jobToken_db_insert");
 
@@ -147,7 +147,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * update the entry in the database, inserting it if necessary
-	 * 
+	 *
 	 * @param db
 	 * @return <code>true</code> if successful
 	 */
@@ -165,7 +165,7 @@ public class JobToken implements Comparable<JobToken> {
 
 		try {
 			// only the token list can change
-			if (!db.query(UPDATE_QUERY, false, token, Integer.valueOf(jobId)))
+			if (!db.query(UPDATE_QUERY, false, token, Long.valueOf(jobId)))
 				// wrong table name or what?
 				return false;
 
@@ -189,10 +189,13 @@ public class JobToken implements Comparable<JobToken> {
 
 	@Override
 	public int compareTo(final JobToken o) {
-		final int diff = jobId - o.jobId;
+		final long diff = jobId - o.jobId;
 
-		if (diff != 0)
-			return diff;
+		if (diff < 0)
+			return -1;
+
+		if (diff > 0)
+			return 1;
 
 		return token.compareTo(o.token);
 	}
@@ -207,7 +210,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	@Override
 	public int hashCode() {
-		return jobId;
+		return (int) jobId;
 	}
 
 	/**
@@ -221,13 +224,13 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * Delete a jobToken in the DB
-	 * 
+	 *
 	 * @param db
 	 * @return success of the deletion
 	 */
 	boolean destroy(final DBFunctions db) {
 		try {
-			if (db.query(DESTROY_QUERY, false, Integer.valueOf(jobId), username, token)) {
+			if (db.query(DESTROY_QUERY, false, Long.valueOf(jobId), username, token)) {
 				if (monitor != null)
 					monitor.incrementCounter("jobToken_db_delete");
 

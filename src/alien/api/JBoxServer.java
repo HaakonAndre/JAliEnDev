@@ -19,8 +19,6 @@ import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import lia.util.Utils;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -37,10 +35,11 @@ import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
+import lia.util.Utils;
 
 /**
  * Simple UI server to be used by ROOT and command line
- * 
+ *
  * @author costing
  */
 public class JBoxServer extends Thread {
@@ -54,7 +53,7 @@ public class JBoxServer extends Thread {
 	private static boolean preemptJCentralConnection = true;
 
 	/**
-	 * 
+	 *
 	 */
 	public static final String passACK = "OKPASSACK";
 
@@ -76,7 +75,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Debug level received from the user
-	 * */
+	 */
 	final int iDebugLevel;
 
 	/**
@@ -95,7 +94,6 @@ public class JBoxServer extends Thread {
 	static void notifyActivity() {
 		lastOperation = System.currentTimeMillis();
 	}
-	
 
 	static {
 		new Thread() {
@@ -107,7 +105,7 @@ public class JBoxServer extends Thread {
 
 					try {
 						Thread.sleep(1000 * 60);
-					} catch (final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
 				}
@@ -125,7 +123,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Start the server on a given port
-	 * 
+	 *
 	 * @param listeningPort
 	 * @throws IOException
 	 */
@@ -135,9 +133,8 @@ public class JBoxServer extends Thread {
 
 		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
 
-		if (alUser == null || alUser.getName() == null){
+		if (alUser == null || alUser.getName() == null)
 			throw new Exception("Could not get your username. FATAL!");
-		}
 
 		final InetAddress localhost = InetAddress.getByName("127.0.0.1");
 
@@ -149,12 +146,12 @@ public class JBoxServer extends Thread {
 		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
 
 		// should check if the file was written and if not then exit.
-		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)){
+		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)) {
 			ssocket.close();
 			throw new Exception("Could not write the token file! No application can connect to JBox");
 		}
 
-		if (!writeEnvFile("127.0.0.1", listeningPort, alUser.getName())){
+		if (!writeEnvFile("127.0.0.1", listeningPort, alUser.getName())) {
 			ssocket.close();
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
@@ -163,14 +160,13 @@ public class JBoxServer extends Thread {
 	/**
 	 * write the configuration file that is used by gapi <br />
 	 * the filename = /tmp/gclient_token_$uid
-	 * 
+	 *
 	 * @param sHost
 	 *            hostname to connect to, by default localhost
 	 * @param iPort
 	 *            port number for listening
 	 * @param sPassword
-	 *            the password used by other application to connect to the
-	 *            JBoxServer
+	 *            the password used by other application to connect to the JBoxServer
 	 * @param sUser
 	 *            the user from the certificate
 	 * @param iDebug
@@ -182,12 +178,11 @@ public class JBoxServer extends Thread {
 		String sUserId = System.getProperty("userid");
 
 		if (sUserId == null || sUserId.length() == 0) {
-			sUserId = Utils.getOutput("id -u "+System.getProperty("user.name"));
+			sUserId = Utils.getOutput("id -u " + System.getProperty("user.name"));
 
-			if (sUserId != null && sUserId.length() > 0){
+			if (sUserId != null && sUserId.length() > 0)
 				System.setProperty("userid", sUserId);
-			}
-			else{		
+			else {
 				logger.severe("User Id empty! Could not get the token file name");
 				return false;
 			}
@@ -198,9 +193,7 @@ public class JBoxServer extends Thread {
 
 			final String sFileName = "/tmp/gclient_token_" + iUserId;
 
-			try {
-				final FileWriter fw = new FileWriter(sFileName);
-
+			try (FileWriter fw = new FileWriter(sFileName)) {
 				fw.write("Host = " + sHost + "\n");
 				logger.fine("Host = " + sHost);
 
@@ -228,16 +221,11 @@ public class JBoxServer extends Thread {
 				return true;
 
 			} catch (final Exception e1) {
-				logger.severe("Could not open file " + sFileName + " to write");
-				logger.severe(e1.getMessage());
-
-				e1.printStackTrace();
+				logger.log(Level.SEVERE, "Could not open file " + sFileName + " to write", e1);
 				return false;
 			}
 		} catch (final Throwable e) {
-			logger.severe("Could not get user id! The token file could not be created ");
-			logger.severe(e.getMessage());
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Could not get user id! The token file could not be created ", e);
 
 			return false;
 		}
@@ -252,12 +240,11 @@ public class JBoxServer extends Thread {
 	 * <li>alien_API_USER</li>
 	 * <li>LD/DYLD_LIBRARY_PATH</li>
 	 * </ol>
-	 * 
+	 *
 	 * @param iPort
 	 * @param sPassword
 	 * @param sUser
-	 * @return <code>true</code> if everything went fine, <code>false</code> if
-	 *         there was an error writing the env file
+	 * @return <code>true</code> if everything went fine, <code>false</code> if there was an error writing the env file
 	 */
 	private static boolean writeEnvFile(final String sHost, final int iPort, final String sUser) {
 		final String sUserId = System.getProperty("userid");
@@ -279,9 +266,7 @@ public class JBoxServer extends Thread {
 
 			final String sFileName = "/tmp/gclient_env_" + iUserId;
 
-			try {
-				final FileWriter fw = new FileWriter(sFileName);
-
+			try (FileWriter fw = new FileWriter(sFileName)) {
 				fw.write("export alien_API_HOST=" + sHost + "\n");
 				logger.fine("export alien_API_HOST=" + sHost);
 
@@ -300,20 +285,18 @@ public class JBoxServer extends Thread {
 				return true;
 
 			} catch (final Exception e1) {
-				logger.severe("Could not open file " + sFileName + " to write");
-				e1.printStackTrace();
+				logger.log(Level.SEVERE, "Could not open file " + sFileName + " to write", e1);
 				return false;
 			}
 		} catch (final Exception e) {
-			logger.severe("Could not get user id! The env file could not be created ");
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Could not get user id! The env file could not be created ", e);
 			return false;
 		}
 	}
 
 	/**
 	 * ramp up the ssl to JCentral
-	 * 
+	 *
 	 * @author gron
 	 */
 	static final class PreemptJCentralConnection extends Thread {
@@ -325,7 +308,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * One UI connection
-	 * 
+	 *
 	 * @author costing
 	 */
 	private class UIConnection extends Thread {
@@ -340,7 +323,7 @@ public class JBoxServer extends Thread {
 
 		/**
 		 * One UI connection identified by the socket
-		 * 
+		 *
 		 * @param s
 		 * @param jbox
 		 * @throws IOException
@@ -365,7 +348,7 @@ public class JBoxServer extends Thread {
 					synchronized (commander.status) {
 						commander.status.wait(1000);
 					}
-				} catch (final InterruptedException ie) {
+				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// ignore
 				}
 		}
@@ -389,60 +372,59 @@ public class JBoxServer extends Thread {
 			BufferedReader br = null;
 
 			try {
-				//				String sCmdDebug = "";
+				// String sCmdDebug = "";
 				String sCmdValue = "";
 
 				String sLine = "";
 
-				//Get the DOM Builder Factory
-				DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();	 
-				//Get the DOM Builder
-				DocumentBuilder builder = factory.newDocumentBuilder();
-				//Load and Parse the XML document
-				//document contains the complete XML as a Tree.
+				// Get the DOM Builder Factory
+				final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+				// Get the DOM Builder
+				final DocumentBuilder builder = factory.newDocumentBuilder();
+				// Load and Parse the XML document
+				// document contains the complete XML as a Tree.
 				br = new BufferedReader(new InputStreamReader(is));
 				String sCommand = "";
 
-				while((sLine = br.readLine()) != null){
-					if(sLine.startsWith("<document>")){
+				while ((sLine = br.readLine()) != null)
+					if (sLine.startsWith("<document>"))
 						sCommand = sLine;
-					}
-					else if(sLine.endsWith("</document>")){
+					else if (sLine.endsWith("</document>")) {
 						sCommand += sLine;
-						ArrayList<String> cmdOptions = new ArrayList<>();
-						ArrayList<String> fullCmd = new ArrayList<>();
-						try{
+						final ArrayList<String> cmdOptions = new ArrayList<>();
+						final ArrayList<String> fullCmd = new ArrayList<>();
+						try {
 
 							// <document>
-							//  <ls>
-							//    <o>-l</o>
-							//    <o>-a</o>
-							//    <o>/alice/cern.ch/user/t/ttothova</o>
-							//  </ls>
+							// <ls>
+							// <o>-l</o>
+							// <o>-a</o>
+							// <o>/alice/cern.ch/user/t/ttothova</o>
+							// </ls>
 							// </document>
-							logger.info("XML =\""+sCommand+"\"");
-							Document document = builder.parse(new InputSource(new StringReader(sCommand)));
+							logger.info("XML =\"" + sCommand + "\"");
+							final Document document = builder.parse(new InputSource(new StringReader(sCommand)));
 
-							NodeList commandNodeList = document.getElementsByTagName("command");
+							final NodeList commandNodeList = document.getElementsByTagName("command");
 
-							if(commandNodeList != null && commandNodeList.getLength() == 1){
-								Node commandNode = commandNodeList.item(0);
+							if (commandNodeList != null && commandNodeList.getLength() == 1) {
+								final Node commandNode = commandNodeList.item(0);
 								sCmdValue = commandNode.getTextContent();
 								fullCmd.add(sCmdValue);
 								logger.info("Received command " + sCmdValue);
 
-								NodeList optionsNodeList = document.getElementsByTagName("o");
+								final NodeList optionsNodeList = document.getElementsByTagName("o");
 
 								for (int i = 0; i < optionsNodeList.getLength(); i++) {
-									Node optionNode = optionsNodeList.item(i);
+									final Node optionNode = optionsNodeList.item(i);
 									cmdOptions.add(optionNode.getTextContent());
 									fullCmd.add(optionNode.getTextContent());
-									logger.info("Command options = "+optionNode.getTextContent());
+									logger.info("Command options = " + optionNode.getTextContent());
 								}
 
-								if (sCmdValue != null && sCmdValue.equals("password")){
+								if (sCmdValue != null && sCmdValue.equals("password")) {
 
-									if(cmdOptions.get(0).equals(password)){
+									if (cmdOptions.get(0).equals(password)) {
 										os.write(passACK.getBytes());
 										os.flush();
 									} else {
@@ -450,8 +432,7 @@ public class JBoxServer extends Thread {
 										os.flush();
 										return;
 									}
-								}
-								else{
+								} else {
 									logger.log(Level.INFO, "JSh connected.");
 
 									if (commander == null) {
@@ -467,7 +448,7 @@ public class JBoxServer extends Thread {
 										try {
 											commander.interrupt();
 											commander.stop();
-										} catch (final Throwable t) {
+										} catch (@SuppressWarnings("unused") final Throwable t) {
 											// ignore
 										} finally {
 											System.out.println("SIGINT reset commander");
@@ -478,7 +459,7 @@ public class JBoxServer extends Thread {
 
 											commander.start();
 
-											commander.flush();					
+											commander.flush();
 										}
 									} else if ("shutdown".equals(sLine))
 										shutdown();
@@ -487,14 +468,14 @@ public class JBoxServer extends Thread {
 
 										synchronized (commander) {
 
-											//			final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-											//		final List<String> args = new ArrayList<>();
-											//	while (t.hasMoreTokens())
-											//	args.add(t.nextToken());
+											// final StringTokenizer t = new StringTokenizer(line, SpaceSep);
+											// final List<String> args = new ArrayList<>();
+											// while (t.hasMoreTokens())
+											// args.add(t.nextToken());
 
-											if ("setshell".equals(sCmdValue) && cmdOptions.size()>0) {
+											if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
 												setShellPrintWriter(os, cmdOptions.get(0));
-												logger.log(Level.INFO, "Set explicit print writer: "+cmdOptions.get(0));
+												logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
 
 												os.write((JShPrintWriter.streamend + "\n").getBytes());
 												os.flush();
@@ -511,119 +492,110 @@ public class JBoxServer extends Thread {
 									}
 									os.flush();
 								}
-							}
-							else{
+							} else
 								logger.severe("Received more than one command");
-								// some error, there was more than one command 
-								// attached to the document
-							}
+							// some error, there was more than one command
+							// attached to the document
+						} catch (final Exception e) {
+							logger.severe("Parse error " + e.getMessage());
 						}
-						catch(Exception e){
-							logger.severe("Parse error "+e.getMessage());
-						}
-					}
-					else{
-						sCommand += "\n"+sLine;
-					}
+					} else
+						sCommand += "\n" + sLine;
 
-				}
+				// br = new BufferedReader(new InputStreamReader(is));
 
-
-
-				//				br = new BufferedReader(new InputStreamReader(is));
-
-				//				while((sLine = br.readLine()) != null){
+				// while((sLine = br.readLine()) != null){
 				//
-				//					Matcher m = p.matcher(sLine);
+				// Matcher m = p.matcher(sLine);
 				//
-				//					if(m.matches()){
-				//						sCmdValue = m.group(1);
-				//						sCmdOptions = m.group(2);
-				//						sCmdDebug = m.group(3);
+				// if(m.matches()){
+				// sCmdValue = m.group(1);
+				// sCmdOptions = m.group(2);
+				// sCmdDebug = m.group(3);
 				//
-				//						logger.log(Level.INFO, "Command received: sCmdValue=\""+sCmdValue+"\", sCmdOptions=\""+sCmdOptions+"\"");
-				//					}
-				//					else{
-				//						logger.log(Level.SEVERE, "Command received does not match the expected format");
-				//						//return;
-				//					}
+				// logger.log(Level.INFO, "Command received: sCmdValue=\""+sCmdValue+"\", sCmdOptions=\""+sCmdOptions+"\"");
+				// }
+				// else{
+				// logger.log(Level.SEVERE, "Command received does not match the expected format");
+				// //return;
+				// }
 				//
-				//					if (sCmdValue != null && sCmdValue.equals("password")) {
-				//						if(sCmdOptions.equals(password)){
-				//							os.write(passACK.getBytes());
-				//							os.flush();
-				//						} else {
-				//							os.write(passNOACK.getBytes());
-				//							os.flush();
-				//							return;
-				//						}
-				//					}
-				//					else{
-				//						logger.log(Level.INFO, "JSh connected.");
+				// if (sCmdValue != null && sCmdValue.equals("password")) {
+				// if(sCmdOptions.equals(password)){
+				// os.write(passACK.getBytes());
+				// os.flush();
+				// } else {
+				// os.write(passNOACK.getBytes());
+				// os.flush();
+				// return;
+				// }
+				// }
+				// else{
+				// logger.log(Level.INFO, "JSh connected.");
 				//
-				//						if (commander == null) {
-				//							commander = new JAliEnCOMMander();
-				//							commander.start();
-				//						}
+				// if (commander == null) {
+				// commander = new JAliEnCOMMander();
+				// commander.start();
+				// }
 				//
-				//						notifyActivity();
+				// notifyActivity();
 				//
-				//						if ("SIGINT".equals(sLine)) {
-				//							logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+				// if ("SIGINT".equals(sLine)) {
+				// logger.log(Level.INFO, "Received [SIGINT] from JSh.");
 				//
-				//							try {
-				//								commander.interrupt();
-				//								commander.stop();
-				//							} catch (final Throwable t) {
-				//								// ignore
-				//							} finally {
-				//								System.out.println("SIGINT reset commander");
+				// try {
+				// commander.interrupt();
+				// commander.stop();
+				// } catch (final Throwable t) {
+				// // ignore
+				// } finally {
+				// System.out.println("SIGINT reset commander");
 				//
-				//								// kill the active command and start a new instance
-				//								final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
-				//								commander = comm;
-				//								
-				//								commander.start();
+				// // kill the active command and start a new instance
+				// final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
+				// commander = comm;
 				//
-				//								commander.flush();					
-				//							}
-				//						} else if ("shutdown".equals(sLine))
-				//							shutdown();
-				//						else {
-				//							waitCommandFinish();
+				// commander.start();
 				//
-				//							synchronized (commander) {
+				// commander.flush();
+				// }
+				// } else if ("shutdown".equals(sLine))
+				// shutdown();
+				// else {
+				// waitCommandFinish();
 				//
-				//					//			final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-				//						//		final List<String> args = new ArrayList<>();
-				//							//	while (t.hasMoreTokens())
-				//								//	args.add(t.nextToken());
+				// synchronized (commander) {
 				//
-				//								if ("setshell".equals(sCmdValue)) {
-				//									setShellPrintWriter(os, sCmdValue);
-				//									logger.log(Level.INFO, "Set explicit print writer.");
+				// // final StringTokenizer t = new StringTokenizer(line, SpaceSep);
+				// // final List<String> args = new ArrayList<>();
+				// // while (t.hasMoreTokens())
+				// // args.add(t.nextToken());
 				//
-				//									os.write((JShPrintWriter.streamend + "\n").getBytes());
-				//									os.flush();
-				//									continue;
-				//								}
+				// if ("setshell".equals(sCmdValue)) {
+				// setShellPrintWriter(os, sCmdValue);
+				// logger.log(Level.INFO, "Set explicit print writer.");
 				//
-				//								if (out == null)
-				//									out = new XMLPrintWriter(os);
-				//								
-				//								String tmpString = sCmdValue + " " + sCmdOptions; 
-				//								
-				//								String[] arCmd = tmpString.split(" ");
-				//									
-				//								commander.setLine(out, arCmd);
+				// os.write((JShPrintWriter.streamend + "\n").getBytes());
+				// os.flush();
+				// continue;
+				// }
 				//
-				//								commander.notifyAll();
-				//							}
-				//						}
-				//						os.flush();
-				//					}
+				// if (out == null)
+				// out = new XMLPrintWriter(os);
 				//
-				//				}
+				// String tmpString = sCmdValue + " " + sCmdOptions;
+				//
+				// String[] arCmd = tmpString.split(" ");
+				//
+				// commander.setLine(out, arCmd);
+				//
+				// commander.notifyAll();
+				// }
+				// }
+				// os.flush();
+				// }
+				//
+				// }
 			} catch (final Throwable e) {
 				logger.log(Level.INFO, "Error running the commander.", e);
 			} finally {
@@ -632,7 +604,7 @@ public class JBoxServer extends Thread {
 				if (br != null)
 					try {
 						br.close();
-					} catch (final IOException ioe) {
+					} catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore
 					}
 
@@ -642,17 +614,17 @@ public class JBoxServer extends Thread {
 
 				try {
 					s.shutdownOutput();
-				} catch (final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// nothing particular
 				}
 				try {
 					s.shutdownInput();
-				} catch (final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// ignore
 				}
 				try {
 					s.close();
-				} catch (final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// ignore
 				}
 			}
@@ -673,7 +645,7 @@ public class JBoxServer extends Thread {
 
 		try {
 			ssocket.close();
-		} catch (final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore, we're dead anyway
 		}
 		logger.log(Level.INFO, "JBox: We die gracefully...Bye!");
@@ -704,7 +676,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Start once the UIServer
-	 * 
+	 *
 	 * @param iDebugLevel
 	 */
 	public static synchronized void startJBoxServer(final int iDebugLevel) {
@@ -733,9 +705,9 @@ public class JBoxServer extends Thread {
 	}
 
 	/**
-	 * 
+	 *
 	 * Load necessary keys and start JBoxServer
-	 * 
+	 *
 	 * @param iDebug
 	 */
 	public static void startJBoxService(final int iDebug) {
@@ -748,28 +720,24 @@ public class JBoxServer extends Thread {
 				System.err.println(passACK);
 				JBoxServer.startJBoxServer(iDebug);
 			}
-		} catch (final org.bouncycastle.openssl.EncryptionException e) {
-			logger.log(Level.SEVERE, "Wrong password!");
+		} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
+			logger.log(Level.SEVERE, "Wrong password!", e);
 			System.err.println("Wrong password!");
-		} catch (final javax.crypto.BadPaddingException e) {
-			logger.log(Level.SEVERE, "Wrong password!");
-			System.err.println("Wrong password!");
-		}
-
-		catch (final Exception e) {
-			logger.log(Level.SEVERE, "Error loading the key");
+		} catch (final Exception e) {
+			logger.log(Level.SEVERE, "Error loading the key", e);
 			System.err.println("Error loading the key");
-			e.printStackTrace();
 		}
 	}
-	
+
 	/**
-	 * 
+	 *
 	 * Get the port used by JBoxServer
 	 * 
+	 * @return the TCP port this server is listening on. Can be negative to signal that the server is actually not listening on any port (yet?)
+	 *
 	 */
 	public static int getPort() {
-		return server!=null ? server.port : -1;
+		return server != null ? server.port : -1;
 	}
-	
+
 }

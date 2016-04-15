@@ -218,7 +218,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		public void run() {
 			try {
 				output = proto.get(pfn, file);
-			} catch (final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				output = null;
 			}
 		}
@@ -248,7 +248,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	/**
 	 * Copy a Grid file to a local file
-	 * 
+	 *
 	 * @param sourceLFN
 	 *            Grid filename
 	 * @param toLocalFile
@@ -329,7 +329,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	/**
 	 * Upload one file in a separate thread
-	 * 
+	 *
 	 * @author costing
 	 */
 	private final class UploadWork implements Runnable {
@@ -372,7 +372,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	/**
 	 * Copy a local file to the Grid
-	 * 
+	 *
 	 * @param sourceFile
 	 *            local filename
 	 * @param targetLFN
@@ -416,9 +416,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			guid = GUIDUtils.createGuid(sourceFile, commander.user);
 		} catch (final IOException e) {
 			if (!isSilent())
-				out.printErrln("Couldn't create the GUID.");
+				out.printErrln("Couldn't create the GUID : " + e.getMessage());
 			else {
-				final IOException ex = new IOException("Couldn't create the GUID based on " + sourceFile);
+				final IOException ex = new IOException("Couldn't create the GUID based on " + sourceFile, e);
 
 				throw new IOError(ex);
 			}
@@ -532,7 +532,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					} catch (final InterruptedException e) {
+					} catch (@SuppressWarnings("unused") final InterruptedException e) {
 						return false;
 					}
 				}
@@ -680,11 +680,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					try {
 						targetPFNResult = protocol.put(pfn, sourceFile);
-					} catch (final IOException ioe) {
+					} catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, will try next protocol or fetch another
 						// replica to replace this one
 					}
-				} catch (final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// e.printStackTrace();
 				}
 
@@ -756,7 +756,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	/**
 	 * cp cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -780,7 +780,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
 	 * @param alArguments
@@ -837,16 +837,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 								}
 						} else if (spec.contains(":"))
 							try {
-
 								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
 								if (c > 0) {
 									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
 									referenceCount = referenceCount + c;
 								} else
-									throw new JAliEnCommandException();
+									throw new JAliEnCommandException("Number of replicas has to be stricly positive, in " + spec);
 
 							} catch (final Exception e) {
-								throw new JAliEnCommandException();
+								throw new JAliEnCommandException("Could not parse the QoS string " + spec, e);
 							}
 						else if (!spec.equals(""))
 							throw new JAliEnCommandException();

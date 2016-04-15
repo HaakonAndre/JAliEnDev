@@ -25,17 +25,17 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
-import lazyj.cache.ExpirationCache;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import lazyj.cache.ExpirationCache;
 
 /***
  * operations with LDAP informations
- * 
+ *
  * @author Alina Grigoras
  * @since 02-04-2007
- * */
+ */
 public class LDAPHelper {
 	private static final Logger logger = Logger.getLogger(LDAPHelper.class.getCanonicalName());
 
@@ -46,7 +46,7 @@ public class LDAPHelper {
 
 	/**
 	 * For statistics, get the number of cached query results
-	 * 
+	 *
 	 * @return number of cached queries
 	 */
 	public static int getCacheSize() {
@@ -54,8 +54,8 @@ public class LDAPHelper {
 	}
 
 	private static String ldapServers = ConfigUtils.getConfig().gets("ldap_server", "alice-ldap.cern.ch:8389");
-	
-	private static int ldapPort = ConfigUtils.getConfig().geti("ldap_port", 389); 
+
+	private static int ldapPort = ConfigUtils.getConfig().geti("ldap_port", 389);
 
 	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root", "o=alice,dc=cern,dc=ch");
 
@@ -68,13 +68,13 @@ public class LDAPHelper {
 	static {
 		final StringTokenizer tok = new StringTokenizer(ldapServers, " \t\r\n,;");
 
-		while (tok.hasMoreTokens()){
+		while (tok.hasMoreTokens()) {
 			final String addr = tok.nextToken();
-			
+
 			ldapServerList.add(addr);
 		}
-		
-		if (ldapServerList.size()>1)
+
+		if (ldapServerList.size() > 1)
 			Collections.shuffle(ldapServerList);
 
 		defaultEnv.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
@@ -124,39 +124,35 @@ public class LDAPHelper {
 			monitor.incrementCacheMisses("querycache");
 
 		final LinkedList<String> hosts = new LinkedList<>();
-		
-		for (String host: ldapServerList){
-			int idx = host.indexOf(':');
-			
+
+		for (String host : ldapServerList) {
+			final int idx = host.indexOf(':');
+
 			int thisLDAPPort = ldapPort;
-			
-			if (idx>=0 && idx==host.lastIndexOf(':')){
-				thisLDAPPort = Integer.parseInt(host.substring(idx+1));
+
+			if (idx >= 0 && idx == host.lastIndexOf(':')) {
+				thisLDAPPort = Integer.parseInt(host.substring(idx + 1));
 				host = host.substring(0, idx);
 			}
-			
-			try{
+
+			try {
 				final InetAddress[] addresses = InetAddress.getAllByName(host);
-				
-				if (addresses==null || addresses.length==0)
-					hosts.add(host+":"+thisLDAPPort);
-				else{
-					for (final InetAddress ia: addresses){
+
+				if (addresses == null || addresses.length == 0)
+					hosts.add(host + ":" + thisLDAPPort);
+				else
+					for (final InetAddress ia : addresses)
 						if (ia instanceof Inet6Address)
-							hosts.add(0, "["+ia.getHostAddress()+"]:"+thisLDAPPort);
+							hosts.add(0, "[" + ia.getHostAddress() + "]:" + thisLDAPPort);
 						else
-							hosts.add(ia.getHostAddress()+":"+thisLDAPPort);
-					}
-				}
-			}
-			catch (final UnknownHostException uhe){
-				hosts.add(host+":"+thisLDAPPort);
+							hosts.add(ia.getHostAddress() + ":" + thisLDAPPort);
+			} catch (@SuppressWarnings("unused") final UnknownHostException uhe) {
+				hosts.add(host + ":" + thisLDAPPort);
 			}
 		}
 
-		if (hosts.size() > 1) {
+		if (hosts.size() > 1)
 			Collections.shuffle(hosts);
-		}
 
 		for (final String ldapServer : hosts) {
 			tsResult = new TreeSet<>();
@@ -234,7 +230,7 @@ public class LDAPHelper {
 
 	/**
 	 * Debug method
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {
@@ -246,21 +242,21 @@ public class LDAPHelper {
 
 		try {
 			Thread.sleep(1000);
-		} catch (final Exception e) { /* nothing */
+		} catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
 		}
 
 		System.out.println(" 2 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));
 
 		try {
 			Thread.sleep(1000);
-		} catch (final Exception e) { /* nothing */
+		} catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
 		}
 
 		System.out.println(" 3 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));
 
 		try {
 			Thread.sleep(1000);
-		} catch (final Exception e) { /* nothing */
+		} catch (@SuppressWarnings("unused") final Exception e) { /* nothing */
 		}
 
 		System.out.println(" 4 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));

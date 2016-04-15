@@ -8,12 +8,12 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import alien.shell.ShellColor;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -156,8 +156,8 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 								+ padLeft(String.valueOf(site), 38) + padSpace(2) + padLeft(String.valueOf(node), 40) + padSpace(2) + abbrvStatus(j.status()) + padSpace(2)
 								+ padLeft(String.valueOf(name), 30));
 					} else
-						out.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(1) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
-								+ abbrvStatus(j.status()) + padSpace(2) + padLeft(String.valueOf(name), 32));
+						out.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(1) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2) + abbrvStatus(j.status())
+								+ padSpace(2) + padLeft(String.valueOf(name), 32));
 
 				}
 		}
@@ -453,7 +453,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	/**
 	 * cat cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -463,10 +463,10 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
@@ -507,15 +507,15 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			if (options.has("jdl") && options.hasArgument("jdl"))
 				try {
 					getJDL = Integer.parseInt((String) options.valueOf("jdl"));
-				} catch (final NumberFormatException e) {
-					out.printErrln("Illegal job ID.");
+				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+					out.printErrln("Illegal job ID " + options.valueOf("jdl"));
 					getJDL = -1;
 				}
 			else if (options.has("trace") && options.hasArgument("trace"))
 				try {
 					getTrace = Integer.parseInt((String) options.valueOf("trace"));
-				} catch (final NumberFormatException e) {
-					out.printErrln("Illegal job ID.");
+				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+					out.printErrln("Illegal job ID " + options.valueOf("trace"));
 					getTrace = -1;
 				}
 			else {
@@ -549,7 +549,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					while (st.hasMoreTokens())
 						try {
 							mjobs.add(Integer.valueOf(st.nextToken()));
-						} catch (final NumberFormatException nfe) {
+						} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 							// ignore
 						}
 
@@ -561,7 +561,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					while (st.hasMoreTokens())
 						try {
 							jobid.add(Integer.valueOf(st.nextToken()));
-						} catch (final NumberFormatException nfe) {
+						} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 							// ignore
 						}
 					states.add(JobStatus.ANY);
@@ -573,7 +573,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 						final int lim = Integer.parseInt((String) options.valueOf("l"));
 						if (lim > 0)
 							limit = lim;
-					} catch (final NumberFormatException e) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 						// ignore
 					}
 

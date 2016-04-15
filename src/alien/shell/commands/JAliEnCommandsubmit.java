@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import lazyj.Utils;
 import alien.api.ServerException;
 import alien.shell.ShellColor;
 import alien.taskQueue.JDL;
 import alien.taskQueue.TaskQueueUtils;
+import lazyj.Utils;
 
 /**
  * @author ron
@@ -110,10 +110,10 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */

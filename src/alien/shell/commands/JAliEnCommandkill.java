@@ -70,7 +70,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 			try {
 				queueIds.add(Long.valueOf(id));
 			} catch (final NumberFormatException e) {
-				throw new JAliEnCommandException();
+				throw new JAliEnCommandException("Invalid job ID: " + id, e);
 			}
 	}
 

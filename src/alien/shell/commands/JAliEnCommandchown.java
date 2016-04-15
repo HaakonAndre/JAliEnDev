@@ -5,10 +5,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
+import alien.catalogue.FileSystemUtils;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
-import alien.catalogue.FileSystemUtils;
 
 // TODO check that the user has indeed permissions on the target entry, server side
 // TODO validate that the user can become the target user name and the target role name (implicitly validating the strings)

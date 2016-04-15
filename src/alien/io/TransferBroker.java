@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io;
 
@@ -22,10 +22,6 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.DBFunctions.DBConnection;
-import lazyj.Format;
-import lazyj.cache.ExpirationCache;
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -41,6 +37,10 @@ import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import apmon.ApMon;
+import lazyj.DBFunctions;
+import lazyj.DBFunctions.DBConnection;
+import lazyj.Format;
+import lazyj.cache.ExpirationCache;
 
 /**
  * @author costing
@@ -76,7 +76,7 @@ public class TransferBroker {
 		if (resultSet != null) {
 			try {
 				resultSet.close();
-			} catch (final Throwable t) {
+			} catch (@SuppressWarnings("unused") final Throwable t) {
 				// ignore
 			}
 
@@ -86,7 +86,7 @@ public class TransferBroker {
 		if (stat != null) {
 			try {
 				stat.close();
-			} catch (final Throwable t) {
+			} catch (@SuppressWarnings("unused") final Throwable t) {
 				// ignore
 			}
 
@@ -126,14 +126,13 @@ public class TransferBroker {
 
 	private DBFunctions dbCached = ConfigUtils.getDB("transfers");
 
-	private ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>();
+	private final ExpirationCache<String, Integer> maxTransfersCache = new ExpirationCache<>();
 
 	private int getMaxTransfers(final String seName) {
 		final Integer i = maxTransfersCache.get(seName.toLowerCase());
 
-		if (i != null) {
+		if (i != null)
 			return i.intValue();
-		}
 
 		int ret = 0;
 
@@ -142,9 +141,8 @@ public class TransferBroker {
 
 			db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename='" + Format.escSQL(seName) + "';");
 
-			if (db.moveNext()) {
+			if (db.moveNext())
 				ret = db.geti(1);
-			}
 		}
 
 		maxTransfersCache.put(seName.toLowerCase(), Integer.valueOf(ret), 1000 * 60 * 5);
@@ -202,7 +200,7 @@ public class TransferBroker {
 
 			final Set<String> ignoredSEs = new HashSet<>();
 
-			do {
+			do
 				try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 					transferId = dbCached.geti(1);
 					sLFN = dbCached.gets(2);
@@ -265,7 +263,7 @@ public class TransferBroker {
 					logger.log(Level.WARNING, "Exception fetching data from the query", e);
 					// ignore
 				}
-			} while (dbCached.moveNext());
+			while (dbCached.moveNext());
 		}
 
 		GUID guid;
@@ -621,7 +619,7 @@ public class TransferBroker {
 
 	/**
 	 * Mark a transfer as active
-	 * 
+	 *
 	 * @param t
 	 * @param ta
 	 * @return <code>false</code> if the operation cannot be performed
@@ -837,7 +835,7 @@ public class TransferBroker {
 
 	/**
 	 * When a transfer has completed, call this method to update the database status
-	 * 
+	 *
 	 * @param t
 	 */
 	public static void notifyTransferComplete(final Transfer t) {

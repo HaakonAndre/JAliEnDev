@@ -182,20 +182,20 @@ public class DispatchSSLServer extends Thread {
 			if (ois != null)
 				try {
 					ois.close();
-				} catch (final IOException ioe) {
+				} catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
 			if (oos != null)
 				try {
 					oos.close();
-				} catch (final IOException ioe) {
+				} catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
 			try {
 				connection.close();
-			} catch (final IOException ioe) {
+			} catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore
 			}
 		}
@@ -204,7 +204,7 @@ public class DispatchSSLServer extends Thread {
 	private static boolean isHostCertValid() {
 		try {
 			((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).checkValidity();
-		} catch (final CertificateException | KeyStoreException e) {
+		} catch (@SuppressWarnings("unused") final CertificateException | KeyStoreException e) {
 			return false;
 		}
 
@@ -228,7 +228,7 @@ public class DispatchSSLServer extends Thread {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1).trim());
 					address = address.substring(0, idx).trim();
-				} catch (final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					port = defaultPort;
 				}
 		}

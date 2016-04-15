@@ -11,14 +11,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import lazyj.Format;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.XmlCollection;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import lazyj.Format;
 
 /**
  * @author ron
@@ -69,7 +69,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 	/**
 	 * returns the LFNs that were the result of the find
-	 * 
+	 *
 	 * @return the output file
 	 */
 
@@ -112,7 +112,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 				final StringBuilder str = new StringBuilder("find");
 
-				for (final String arg: alArguments)
+				for (final String arg : alArguments)
 					str.append(' ').append(arg);
 
 				c.setCommand(str.toString());
@@ -126,11 +126,9 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 							out.printOutln("Temp file is : " + f.getAbsolutePath());
 
 							final String content = c.toString();
-							final FileWriter fstream = new FileWriter(f);
-							final BufferedWriter o = new BufferedWriter(fstream);
-							o.write(content);
-							o.close();
-							fstream.close();
+							try (BufferedWriter o = new BufferedWriter(new FileWriter(f))) {
+								o.write(content);
+							}
 
 							final ArrayList<String> args = new ArrayList<>(2);
 							args.add("file://" + f.getAbsolutePath());
@@ -208,7 +206,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 	/**
 	 * find cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -258,10 +256,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

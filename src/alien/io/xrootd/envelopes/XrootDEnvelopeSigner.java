@@ -51,22 +51,14 @@ public class XrootDEnvelopeSigner {
 	static {
 		Security.addProvider(new BouncyCastleProvider());
 
-		JAuthZPrivLocation = ConfigUtils.getConfig().gets(
-				"jAuthZ.priv.key.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen" + System.getProperty("file.separator")
-						+ "lpriv.pem");
-		JAuthZPubLocation = ConfigUtils.getConfig()
-				.gets("jAuthZ.pub.key.location",
-						System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen" + System.getProperty("file.separator")
-								+ "lpub.pem");
-		SEPrivLocation = ConfigUtils.getConfig().gets(
-				"SE.priv.key.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen" + System.getProperty("file.separator")
-						+ "rpriv.pem");
-		SEPubLocation = ConfigUtils.getConfig()
-				.gets("SE.pub.key.location",
-						System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "authen" + System.getProperty("file.separator")
-								+ "rpub.pem");
+		JAuthZPrivLocation = ConfigUtils.getConfig().gets("jAuthZ.priv.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien"
+				+ System.getProperty("file.separator") + "authen" + System.getProperty("file.separator") + "lpriv.pem");
+		JAuthZPubLocation = ConfigUtils.getConfig().gets("jAuthZ.pub.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien"
+				+ System.getProperty("file.separator") + "authen" + System.getProperty("file.separator") + "lpub.pem");
+		SEPrivLocation = ConfigUtils.getConfig().gets("SE.priv.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator")
+				+ "authen" + System.getProperty("file.separator") + "rpriv.pem");
+		SEPubLocation = ConfigUtils.getConfig().gets("SE.pub.key.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator")
+				+ "authen" + System.getProperty("file.separator") + "rpub.pem");
 
 		// System.out.println("Using private JAuthZ Key: " + JAuthZPrivLocation
 		// + "/" + JAuthZPubLocation);
@@ -113,7 +105,7 @@ public class XrootDEnvelopeSigner {
 		if (localHostName == null)
 			try {
 				localHostName = java.net.InetAddress.getLocalHost().getHostName();
-			} catch (final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// ignore
 			}
 
@@ -265,7 +257,7 @@ public class XrootDEnvelopeSigner {
 
 	/**
 	 * Testing method that decrypts an envelope received from the console (until Ctrl-D)
-	 * 
+	 *
 	 * @param args
 	 * @throws GeneralSecurityException
 	 * @throws IOException

@@ -30,7 +30,7 @@ import alien.se.SEUtils;
 
 /**
  * @author costing
- * 
+ *
  */
 public class XRDChecker {
 
@@ -171,16 +171,12 @@ public class XRDChecker {
 
 	/**
 	 * Check the integrity of a local ZIP file
-	 * 
+	 *
 	 * @param f
 	 * @return if everything is OK then the method returns <code>null</code>, otherwise it is the error message from the check
 	 */
 	public static final String checkZipFile(final File f) {
-		ZipFile zipfile = null;
-		ZipInputStream zis = null;
-		try {
-			zipfile = new ZipFile(f);
-			zis = new ZipInputStream(new FileInputStream(f));
+		try (ZipFile zipfile = new ZipFile(f); ZipInputStream zis = new ZipInputStream(new FileInputStream(f))) {
 			ZipEntry ze = zis.getNextEntry();
 			if (ze == null)
 				return "No entry found";
@@ -189,29 +185,12 @@ public class XRDChecker {
 				zipfile.getInputStream(ze);
 				ze.getCrc();
 				ze.getCompressedSize();
-				//ze.getName();
+				// ze.getName();
 				ze = zis.getNextEntry();
 			}
 			return null;
 		} catch (final IOException e) {
 			return e.getMessage();
-		} finally {
-			try {
-				if (zipfile != null) {
-					zipfile.close();
-					zipfile = null;
-				}
-			} catch (final IOException e) {
-				return e.getMessage();
-			}
-			try {
-				if (zis != null) {
-					zis.close();
-					zis = null;
-				}
-			} catch (final IOException e) {
-				return e.getMessage();
-			}
 		}
 	}
 
@@ -219,7 +198,7 @@ public class XRDChecker {
 
 	/**
 	 * Check all replicas of an LFN, first just remotely querying the status then fully downloading each replica and computing the md5sum.
-	 * 
+	 *
 	 * @param sLFN
 	 * @return the status of all replicas
 	 */

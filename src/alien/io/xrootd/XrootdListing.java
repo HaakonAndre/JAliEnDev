@@ -140,7 +140,7 @@ public class XrootdListing {
 		try {
 			exitStatus = pBuilder.start().waitFor();
 		} catch (final InterruptedException ie) {
-			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
 
 		final int exitCode = exitStatus.getExtProcExitStatus();

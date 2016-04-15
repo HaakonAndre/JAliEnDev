@@ -119,7 +119,7 @@ public class Xrootd extends Protocol {
 				if (p != null)
 					p.destroy();
 
-				logger.log(Level.WARNING, "Interrupted while waiting for `" + xrdcpPath + " --version` to finish");
+				logger.log(Level.WARNING, "Interrupted while waiting for `" + xrdcpPath + " --version` to finish", ie);
 			}
 		}
 	}
@@ -274,12 +274,9 @@ public class Xrootd extends Protocol {
 				if (envelope != null) {
 					fAuthz = File.createTempFile("xrdrm-", ".authz", IOUtils.getTemporaryDirectory());
 
-					final FileWriter fw = new FileWriter(fAuthz);
-
-					fw.write(envelope);
-
-					fw.flush();
-					fw.close();
+					try (FileWriter fw = new FileWriter(fAuthz)) {
+						fw.write(envelope);
+					}
 
 					command.add("-authz");
 					command.add(fAuthz.getCanonicalPath());
@@ -310,7 +307,7 @@ public class Xrootd extends Protocol {
 				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
-				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			} finally {
 				if (fAuthz != null)
 					if (!fAuthz.delete())
@@ -319,7 +316,7 @@ public class Xrootd extends Protocol {
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, "Exit code " + exitStatus.getExtProcExitStatus() + " and output is:\n" + exitStatus.getStdOut()+"\n, full command was:\n"+command);
+					logger.log(Level.FINE, "Exit code " + exitStatus.getExtProcExitStatus() + " and output is:\n" + exitStatus.getStdOut() + "\n, full command was:\n" + command);
 
 				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
 			}
@@ -441,7 +438,7 @@ public class Xrootd extends Protocol {
 
 				p.destroy();
 
-				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -576,7 +573,7 @@ public class Xrootd extends Protocol {
 				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
-				throw new TargetException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new TargetException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
@@ -660,7 +657,7 @@ public class Xrootd extends Protocol {
 			while ((line = br.readLine()) != null)
 				if (!line.startsWith("Overriding '"))
 					sb.append(line).append('\n');
-		} catch (final IOException ioe) {
+		} catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, cannot happen
 		}
 
@@ -738,7 +735,7 @@ public class Xrootd extends Protocol {
 					setLastExitStatus(exitStatus);
 				} catch (final InterruptedException ie) {
 					setLastExitStatus(null);
-					throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+					throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 				}
 
 				final int sleep = statRetryTimes[statRetryCounter];
@@ -912,7 +909,7 @@ public class Xrootd extends Protocol {
 				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
-				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString());
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {

@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.user.AuthorizationChecker;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -92,7 +92,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
 	/**
 	 * mkdir cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -102,10 +102,10 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

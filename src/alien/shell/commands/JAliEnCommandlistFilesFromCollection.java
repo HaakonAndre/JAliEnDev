@@ -3,13 +3,13 @@ package alien.shell.commands;
 import java.util.ArrayList;
 import java.util.Set;
 
-import joptsimple.OptionException;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.LFNListCollectionFromString;
 import alien.catalogue.LFN;
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author ron
@@ -111,7 +111,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 	/**
 	 * ls can run without arguments
-	 * 
+	 *
 	 * @return <code>true</code>
 	 */
 	@Override
@@ -121,7 +121,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root from root it is allways called with -v -z
-	 * 
+	 *
 	 * @return serialized return
 	 */
 
@@ -153,10 +153,10 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException

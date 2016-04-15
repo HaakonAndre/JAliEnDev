@@ -24,7 +24,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 		try {
 			times = Integer.parseInt(alArguments.get(0));
 			args.remove(alArguments.get(0));
-		} catch (final NumberFormatException e) {
+		} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 			printHelp();
 		}
 
@@ -75,7 +75,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 	/**
 	 * cat cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -85,10 +85,10 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */

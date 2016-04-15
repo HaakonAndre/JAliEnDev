@@ -57,7 +57,7 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @return serialized return
 	 */
 	@Override
@@ -90,7 +90,7 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 
 	/**
 	 * cd can run without arguments
-	 * 
+	 *
 	 * @return <code>true</code>
 	 */
 	@Override
@@ -100,10 +100,10 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */

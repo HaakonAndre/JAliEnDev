@@ -629,7 +629,7 @@ public class TaskQueueUtils {
 	 * @param newStatus
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final int job, final JobStatus newStatus) {
+	public static boolean setJobStatus(final long job, final JobStatus newStatus) {
 		return setJobStatus(job, newStatus, null, null);
 	}
 
@@ -834,7 +834,7 @@ public class TaskQueueUtils {
 
 										content = baos.toString();
 									}
-								} catch (final IOException e) {
+								} catch (@SuppressWarnings("unused") final IOException e) {
 									// ignore
 								}
 							}
@@ -1612,7 +1612,7 @@ public class TaskQueueUtils {
 							try {
 								id = Integer.parseInt(s);
 								break;
-							} catch (final Throwable t) {
+							} catch (@SuppressWarnings("unused") final Throwable t) {
 								// ignore
 							}
 
@@ -1650,7 +1650,7 @@ public class TaskQueueUtils {
 		}
 	};
 
-	private static synchronized Integer getUserId(final String owner) {
+	static synchronized Integer getUserId(final String owner) {
 		if (owner == null || owner.length() == 0)
 			return null;
 
@@ -2162,7 +2162,7 @@ public class TaskQueueUtils {
 	 * @param forceUpdate
 	 * @return the new token
 	 */
-	public static JobToken insertJobToken(final int jobId, final String username, final boolean forceUpdate) {
+	public static JobToken insertJobToken(final long jobId, final String username, final boolean forceUpdate) {
 		try (DBFunctions db = getQueueDB()) {
 			JobToken jb = getJobToken(jobId);
 
@@ -2188,7 +2188,7 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static JobToken getJobToken(final int jobId) {
+	private static JobToken getJobToken(final long jobId) {
 		try (DBFunctions db = getQueueDB()) {
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
@@ -2201,7 +2201,7 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(true);
 
-			if (!db.query(q, false, Integer.valueOf(jobId)))
+			if (!db.query(q, false, Long.valueOf(jobId)))
 				return null;
 
 			monitor.addMeasurement("TQ_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
@@ -2593,21 +2593,12 @@ public class TaskQueueUtils {
 		return 0;
 	}
 
-	public static int getUserIdFromName(final String user) {
-		try (DBFunctions db = getQueueDB()) {
-			if (db == null)
-				return 0;
-
-			db.setReadOnly(true);
-			db.query("select userId from QUEUE_USER where user=?", false, user);
-
-			if (db.moveNext())
-				return db.geti(1);
-		}
-		return 0;
-	}
-
-	public static int deleteJobAgent(final int agentId, final int queueId) {
+	/**
+	 * @param agentId
+	 * @param queueId
+	 * @return 0 if no action was taken, 1 if the query succeeded (though this is no guarantee that anything was actually deleted)
+	 */
+	public static int deleteJobAgent(final long agentId, final long queueId) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
@@ -2616,11 +2607,11 @@ public class TaskQueueUtils {
 			String oldestQueueIdQ = "";
 
 			if (queueId > 0) {
-				bindValues.add(Integer.valueOf(queueId));
+				bindValues.add(Long.valueOf(queueId));
 				oldestQueueIdQ = ",oldestQueueId=?";
 			}
 
-			bindValues.add(Integer.valueOf(agentId));
+			bindValues.add(Long.valueOf(agentId));
 
 			db.query("update JOBAGENT set counter=counter-1 " + oldestQueueIdQ + " where entryId=?", false, bindValues.toArray(new Object[0]));
 

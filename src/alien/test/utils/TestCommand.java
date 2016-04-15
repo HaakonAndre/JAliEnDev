@@ -18,7 +18,7 @@ public class TestCommand {
 	private String stdout = "";
 
 	private boolean verbose = false;
-	
+
 	private boolean daemonize = false;
 
 	private ArrayList<String> command = new ArrayList<>();
@@ -53,7 +53,7 @@ public class TestCommand {
 		for (String c : command.split(" "))
 			this.command.add(c);
 	}
-	
+
 	/**
 	 * @param comm
 	 */
@@ -66,69 +66,69 @@ public class TestCommand {
 	 */
 	public String getCommand() {
 		final StringBuilder out = new StringBuilder();
-		
-		for (final String c : command){
-			if (out.length()>0)
+
+		for (final String c : command) {
+			if (out.length() > 0)
 				out.append(' ');
-			
+
 			out.append(c);
 		}
-		
+
 		return out.toString();
 	}
-	
+
 	/**
 	 * @return stdout
 	 */
-	public String getStdOut(){
+	public String getStdOut() {
 		return stdout;
 	}
 
 	/**
 	 * @return stderr
 	 */
-	public String getStdErr(){
+	public String getStdErr() {
 		return stderr;
 	}
-	
+
 	/**
 	 * set verbose
 	 */
-	public void verbose(){
+	public void verbose() {
 		verbose = true;
 	}
-	
+
 	/**
 	 * set daemonize
 	 */
-	public void daemonize(){
+	public void daemonize() {
 		daemonize = true;
 	}
-	
+
 	/**
 	 * @return success of the shell execution
 	 */
 	public boolean exec() {
-	
-		if(verbose)
+
+		if (verbose)
 			System.out.println("EXEC: " + getCommand());
-	
+
 		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(new ArrayList<>(command));
-		
-		if(!daemonize)
+
+		if (!daemonize)
 			pBuilder.returnOutputOnExit(true);
-		
+
 		// pBuilder.directory();
 
 		pBuilder.timeout(30, TimeUnit.SECONDS);
 
-		if(!daemonize)
+		if (!daemonize)
 			pBuilder.redirectErrorStream(true);
 
 		try {
 			final ExitStatus exitStatus;
-			
-			if(daemonize){
+
+			if (daemonize) {
 				pBuilder.start();
 				return true;
 			}
@@ -139,18 +139,17 @@ public class TestCommand {
 			stderr = exitStatus.getStdErr().trim();
 			if (exitStatus.getExtProcExitStatus() != 0) {
 
-			System.out.println("Error while executing [" + getCommand() + "]...");
-			System.out.println("STDOUT: " + stdout);
-			System.out.println("STDERR: " + stderr);
-			return false;
+				System.out.println("Error while executing [" + getCommand() + "]...");
+				System.out.println("STDOUT: " + stdout);
+				System.out.println("STDERR: " + stderr);
+				return false;
 			}
 
 		} catch (final InterruptedException ie) {
-			System.err
-					.println("Interrupted while waiting for the following command to finish : "
-							+ command.toString());
+			System.err.println("Interrupted while waiting for the following command to finish : " + command.toString()+" : "+ie.getMessage());
 			return false;
 		} catch (IOException e) {
+			System.err.println("IOException while waiting for the following command to finish : " + command.toString()+" : "+e.getMessage());
 			return false;
 		}
 		return true;

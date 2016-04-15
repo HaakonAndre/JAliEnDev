@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Set;
 
 /**
- * 
+ *
  */
 public class JAliEnCommandgroupmembers extends JAliEnBaseCommand {
 	private String group;

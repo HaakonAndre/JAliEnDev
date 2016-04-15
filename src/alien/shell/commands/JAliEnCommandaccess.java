@@ -166,7 +166,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 	/**
 	 * get cannot run without arguments
-	 * 
+	 *
 	 * @return <code>false</code>
 	 */
 	@Override
@@ -176,16 +176,16 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 	/**
 	 * serialize return values for gapi/root
-	 * 
+	 *
 	 * @return serialized return
 	 */
 
 	/**
 	 * Constructor needed for the command factory in commander
-	 * 
+	 *
 	 * @param commander
 	 * @param out
-	 * 
+	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
@@ -230,16 +230,15 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 								}
 						} else if (spec.contains(":"))
 							try {
-
 								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
 								if (c > 0) {
 									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
 									referenceCount = referenceCount + c;
 								} else
-									throw new JAliEnCommandException();
+									throw new JAliEnCommandException("The number replicas has to be stricly positive");
 
 							} catch (final Exception e) {
-								throw new JAliEnCommandException();
+								throw new JAliEnCommandException("Exception parsing the QoS string", e);
 							}
 						else if (!spec.equals(""))
 							throw new JAliEnCommandException();

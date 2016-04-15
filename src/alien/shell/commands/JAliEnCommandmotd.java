@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 /**
  * @author ron
- * 
+ *
  */
 public class JAliEnCommandmotd extends JAliEnBaseCommand {
 
