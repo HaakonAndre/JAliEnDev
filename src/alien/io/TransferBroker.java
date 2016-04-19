@@ -433,7 +433,7 @@ public class TransferBroker {
 				if (account.canBecome("admin"))
 					account = UserFactory.getByUsername("admin");
 
-				target = BookingTable.bookForWriting(account, lfn, guid, null, 0, se);
+				target = BookingTable.bookForWriting(account, lfn, guid, null, se);
 			} catch (final IOException ioe) {
 				final String reason = ioe.getMessage();
 				logger.log(Level.WARNING, "Could not obtain target authorization for transfer ID " + transferId + " : " + reason);

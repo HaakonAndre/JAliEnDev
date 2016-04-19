@@ -40,14 +40,13 @@ public class BookingTable {
 	 * @param lfn
 	 * @param requestedGUID
 	 * @param requestedPFN
-	 * @param jobid
 	 * @param se
 	 * @return the PFN with the write access envelope if allowed to write or <code>null</code> if the PFN doesn't indicate a physical file but the entry was successfully booked
 	 * @throws IOException
 	 *             if not allowed to do that
 	 */
-	public static PFN bookForWriting(final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
-		return bookForWriting(AuthorizationFactory.getDefaultUser(), lfn, requestedGUID, requestedPFN, jobid, se);
+	public static PFN bookForWriting(final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final SE se) throws IOException {
+		return bookForWriting(AuthorizationFactory.getDefaultUser(), lfn, requestedGUID, requestedPFN, se);
 	}
 
 	/**
@@ -59,15 +58,13 @@ public class BookingTable {
 	 *            <code>null</code> not allowed
 	 * @param requestedPFN
 	 *            can be <code>null</code> and then a PFN specific for this SE and this GUID is generated
-	 * @param jobid
-	 *            set to 0 if this request doesn't come from a job, or to the job id if known ...
 	 * @param se
 	 *            <code>null</code> not allowed
 	 * @return the PFN with the write access envelope if allowed to write or <code>null</code> if the PFN doesn't indicate a physical file but the entry was successfully booked
 	 * @throws IOException
 	 *             if not allowed to do that
 	 */
-	public static PFN bookForWriting(final AliEnPrincipal user, final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
+	public static PFN bookForWriting(final AliEnPrincipal user, final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final SE se) throws IOException {
 		if (lfn == null)
 			throw new IllegalArgumentException("LFN cannot be null");
 
@@ -189,8 +186,8 @@ public class BookingTable {
 				q.append(e(user.getName())).append(','); // user
 				q.append("string2binary('" + requestedGUID.guid.toString() + "'),"); // guid
 
-				if (jobid > 0)
-					q.append(jobid);
+				if (lfn.jobid > 0)
+					q.append(lfn.jobid);
 				else
 					q.append("null");
 

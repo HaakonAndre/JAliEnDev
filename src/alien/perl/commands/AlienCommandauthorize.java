@@ -304,6 +304,8 @@ public class AlienCommandauthorize extends AlienCommand {
 				guid.md5 = p_md5;
 			} else
 				guid = GUIDUtils.getGUID(lfn.guid, evenIfNotExists);
+			
+			lfn.jobid = jobid;
 		}
 
 		List<PFN> pfns = new ArrayList<>(ses.size() + p_qosCount);
@@ -323,7 +325,7 @@ public class AlienCommandauthorize extends AlienCommand {
 					}
 
 					try {
-						pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, jobid, se));
+						pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, se));
 					} catch (final Exception e) {
 						System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 					}
@@ -343,7 +345,7 @@ public class AlienCommandauthorize extends AlienCommand {
 
 						System.out.println("Trying to book writing on discoverd SE: " + se.getName());
 						try {
-							pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, jobid, se));
+							pfns.add(BookingTable.bookForWriting(effectiveUser, lfn, guid, null, se));
 						} catch (final Exception e) {
 							System.out.println("Error for the request on " + se.getName() + ", message: " + e);
 							continue;
