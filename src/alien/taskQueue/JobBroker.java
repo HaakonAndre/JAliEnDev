@@ -70,7 +70,8 @@ public class JobBroker {
 			if (waiting.containsKey("entryId")) {
 				logger.log(Level.INFO, "We have a job back");
 				matchAnswer = getWaitingJobForAgentId(waiting);
-			} else {
+			}
+			else {
 				// try without InstalledPackages
 				final String installedPackages = (String) matchRequest.get("InstalledPackages");
 				matchRequest.remove("InstalledPackages");
@@ -92,7 +93,8 @@ public class JobBroker {
 					matchAnswer.put("Error", "Packages needed to install: " + list.toString());
 					matchAnswer.put("Packages", list);
 					matchAnswer.put("Code", Integer.valueOf(-3));
-				} else {
+				}
+				else {
 					// try remote access (no site)
 					logger.log(Level.INFO, "Going to try with remote execution agents");
 					matchRequest.put("InstalledPackages", installedPackages);
@@ -106,7 +108,8 @@ public class JobBroker {
 					if (waiting.containsKey("entryId")) {
 						logger.log(Level.INFO, "We have a job back for remote");
 						matchAnswer = getWaitingJobForAgentId(waiting);
-					} else {
+					}
+					else {
 						// last case, no site && no packages...
 						matchRequest.put("Return", "packages");
 						matchRequest.remove("InstalledPackages");
@@ -127,7 +130,8 @@ public class JobBroker {
 							matchAnswer.put("Error", "Packages needed to install (remote): " + list.toString());
 							matchAnswer.put("Packages", list);
 							matchAnswer.put("Code", Integer.valueOf(-3));
-						} else {
+						}
+						else {
 							logger.log(Level.INFO, "Removing site and packages requirements hasn't been enough. Nothing to run!");
 							matchAnswer.put("Error", "Nothing to run :-(");
 							matchAnswer.put("Code", Integer.valueOf(-2));
@@ -156,17 +160,19 @@ public class JobBroker {
 					// TODO: putlog($queueid, "state", "Job state transition from ASSIGNED to ERRROR_A");
 					matchAnswer.put("Code", Integer.valueOf(-1));
 					matchAnswer.put("Error", "Error getting the token of the job " + queueId);
-				} else {
+				}
+				else {
 					logger.log(Level.INFO, "Creating a jobToken for the job...");
 					matchAnswer.put("jobToken", jobToken.token);
 					TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-match");
 				}
 			} // nothing back, something went wrong while obtaining queueId from the positive cases
-			else if (!matchAnswer.containsKey("Code")) {
-				matchAnswer.put("Error", "Nothing to run :-( (no waiting jobs?) ");
-				matchAnswer.put("Code", Integer.valueOf(-2));
-				TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-no-match");
-			}
+			else
+				if (!matchAnswer.containsKey("Code")) {
+					matchAnswer.put("Error", "Nothing to run :-( (no waiting jobs?) ");
+					matchAnswer.put("Code", Integer.valueOf(-2));
+					TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-no-match");
+				}
 
 			return matchAnswer;
 		}
@@ -210,7 +216,8 @@ public class JobBroker {
 			if (db.moveNext()) {
 				queueId = db.getl(1);
 				logger.log(Level.INFO, "Got the queueId: " + queueId);
-			} else {
+			}
+			else {
 				logger.log(Level.INFO, "Couldn't get the queueId for agentId: " + agentId);
 				job.put("Error", "Couldn't get the queueId for the agentId: " + agentId);
 				job.put("Code", Integer.valueOf(-6));
@@ -237,7 +244,8 @@ public class JobBroker {
 					queueId = db.getl(1);
 					jdl = db.gets(2);
 					user = db.gets(3);
-				} else {
+				}
+				else {
 					logger.log(Level.INFO, "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
 					job.put("Error", "Couldn't get the queueId, jdl and user for the agentId: " + agentId);
 					job.put("Code", Integer.valueOf(-7));
@@ -277,14 +285,11 @@ public class JobBroker {
 
 			db.setReadOnly(true);
 
-			db.query("select count(*) from SITEQUEUES where blocked='open' and site='" + ce + "'");
+			db.query("select count(1) from SITEQUEUES where blocked='open' and site='" + ce + "'");
 
-			if (db.moveNext())
-				if (db.geti(1) > 0)
-					return 1;
-				else {
-					// TODO: use TaskQueueUtils.setSiteQueueStatus(ce, "closed-blocked");
-				}
+			if (db.moveNext() && db.geti(1) > 0)
+				return 1;
+			// TODO: use TaskQueueUtils.setSiteQueueStatus(ce, "closed-blocked");
 
 			return -1;
 		}
@@ -331,8 +336,10 @@ public class JobBroker {
 					bindValues.add(site);
 				}
 				where += ") ";
-			} else if (matchRequest.containsKey("Site"))
-				where += ") ";
+			}
+			else
+				if (matchRequest.containsKey("Site"))
+					where += ") ";
 
 			// skipping extrasites: used ?
 
@@ -340,7 +347,8 @@ public class JobBroker {
 				if (matchRequest.containsKey("InstalledPackages")) {
 					where += "and ? like packages ";
 					bindValues.add(matchRequest.get("InstalledPackages"));
-				} else {
+				}
+				else {
 					where += "and ? like packages ";
 					bindValues.add(matchRequest.get("Packages"));
 				}
@@ -394,7 +402,8 @@ public class JobBroker {
 
 					// TODO: store in cache
 					// $self->{CONFIG}->{CACHE_SERVICE_ADDRESS}?ns=jobbroker&key=remoteagents&timeout=300&value=".Dumper([@$agents])
-				} else
+				}
+				else
 					return matchAnswer;
 			}
 

@@ -13,10 +13,10 @@ import alien.user.AliEnPrincipal;
  */
 public class ListTransfer extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -4583213128245636923L;
-	List<TransferDetails> transfers;
+	private List<TransferDetails> transfers;
 	private final String status;
 	private final String toSE;
 	private final String user;
@@ -31,26 +31,16 @@ public class ListTransfer extends Request {
 	 * @param userTransfer
 	 * @param status
 	 * @param id
-	 * @param master
 	 * @param count
 	 * @param desc
 	 */
-	public ListTransfer(final AliEnPrincipal user, final String role, final String toSE, final String userTransfer, final String status, final Integer id, final boolean master,
-	/*
-	 * boolean verbose, boolean summary,
-	 */
-	// boolean all_status,
-	// boolean jdl,
-			final int count, final boolean desc) {
+	public ListTransfer(final AliEnPrincipal user, final String role, final String toSE, final String userTransfer, final String status, final Integer id, final int count, final boolean desc) {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.status = status;
 		this.toSE = toSE;
 		this.user = userTransfer;
 		this.id = id;
-		/*
-		 * this.verbose = verbose; this.summary = summary;
-		 */
-		// this.all_status = all_status;
-		// this.jdl = jdl;
 		this.count = count;
 		this.sort_desc = desc;
 	}

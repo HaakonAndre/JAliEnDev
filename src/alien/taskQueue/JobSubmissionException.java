@@ -7,7 +7,7 @@ package alien.taskQueue;
 public class JobSubmissionException extends Exception {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 2548219734472243569L;
 
@@ -16,5 +16,13 @@ public class JobSubmissionException extends Exception {
 	 */
 	public JobSubmissionException(final String s) {
 		super(s);
+	}
+
+	/**
+	 * @param message
+	 * @param cause
+	 */
+	public JobSubmissionException(final String message, final Throwable cause) {
+		super(message, cause);
 	}
 }

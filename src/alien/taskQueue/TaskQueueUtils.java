@@ -87,7 +87,8 @@ public class TaskQueueUtils {
 				db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 
 				dbStructure2_20 = db.geti(1) == 1;
-			} else {
+			}
+			else {
 				logger.log(Level.WARNING, "There is no direct database connection to the task queue.");
 
 				dbStructure2_20 = false;
@@ -166,14 +167,18 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
 					else
 						q = "SELECT * FROM QUEUE WHERE queueId=?";
-				} else if (loadJDL)
-					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+				}
 				else
-					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
-			} else if (archiveYear < 2000)
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE queueId=?";
+					if (loadJDL)
+						q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+					else
+						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+			}
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+				if (archiveYear < 2000)
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE queueId=?";
+				else
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
 
 			db.setReadOnly(true);
 
@@ -242,16 +247,20 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) ";
 					else
 						q = "SELECT * FROM QUEUE ";
-				} else if (loadJDL)
-					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " ";
+				}
 				else
-					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " ";
+					if (loadJDL)
+						q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " ";
+					else
+						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " ";
 
 				q += "WHERE split=0 AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ";
-			} else if (archiveYear < 2000)
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=0 AND status!='KILLED' ";
+			}
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=0 AND status!='KILLED' ";
+				if (archiveYear < 2000)
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=0 AND status!='KILLED' ";
+				else
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=0 AND status!='KILLED' ";
 
 			if (account != null && account.length() > 0)
 				if (dbStructure2_20)
@@ -441,16 +450,20 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl AS jdl FROM QUEUE INNER JOIN QUEUEJDL using(queueId)";
 					else
 						q = "SELECT * FROM QUEUE";
-				} else if (loadJDL)
-					q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE" + archiveYear;
+				}
 				else
-					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
+					if (loadJDL)
+						q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE" + archiveYear;
+					else
+						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
 
 				q += " WHERE split=? AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ORDER BY queueId ASC";
-			} else if (archiveYear < 2000)
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+			}
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+				if (archiveYear < 2000)
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+				else
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
 
 			final long lQueryStart = System.currentTimeMillis();
 
@@ -719,7 +732,8 @@ public class TaskQueueUtils {
 
 				newstatus = Integer.valueOf(newStatus.getAliEnLevel());
 				q = "UPDATE QUEUE SET statusId=?" + extra + " WHERE queueId=?;";
-			} else {
+			}
+			else {
 				newstatus = newStatus.toSQL();
 				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
 			}
@@ -744,7 +758,8 @@ public class TaskQueueUtils {
 						if (key.contains("node")) {
 							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", extrafields.get(key).toString());
 							map.put(fieldMap.get(key + "_field"), Integer.valueOf(hostId));
-						} else
+						}
+						else
 							map.put(fieldMap.get(key + "_field"), extrafields.get(key));
 
 						String query = DBFunctions.composeUpdate(fieldMap.get(key + "_table"), map, null);
@@ -834,7 +849,8 @@ public class TaskQueueUtils {
 
 										content = baos.toString();
 									}
-								} catch (@SuppressWarnings("unused") final IOException e) {
+								} catch (@SuppressWarnings("unused")
+								final IOException e) {
 									// ignore
 								}
 							}
@@ -1523,7 +1539,8 @@ public class TaskQueueUtils {
 
 				if (notify != null && notify.length() > 0)
 					values.put("notifyId", getNotifyId(notify));
-			} else {
+			}
+			else {
 				values.put("status", jobStatus.toSQL());
 				values.put("jdl", "\n    [\n" + j.toString() + "\n    ]");
 				values.put("submitHost", owner + "@" + clientAddress);
@@ -1540,7 +1557,8 @@ public class TaskQueueUtils {
 			if (jobStatus.equals(JobStatus.SPLIT) || j.get("Split") != null) {
 				values.put("masterjob", Integer.valueOf(1));
 				masterjobID = null;
-			} else
+			}
+			else
 				values.put("masterjob", Integer.valueOf(0));
 
 			if (masterjobID != null)
@@ -1612,7 +1630,8 @@ public class TaskQueueUtils {
 							try {
 								id = Integer.parseInt(s);
 								break;
-							} catch (@SuppressWarnings("unused") final Throwable t) {
+							} catch (@SuppressWarnings("unused")
+							final Throwable t) {
 								// ignore
 							}
 
@@ -1642,7 +1661,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 
 				return null;
@@ -1650,6 +1670,12 @@ public class TaskQueueUtils {
 		}
 	};
 
+	/**
+	 * Get the user ID for a given owner string
+	 *
+	 * @param owner
+	 * @return user ID
+	 */
 	static synchronized Integer getUserId(final String owner) {
 		if (owner == null || owner.length() == 0)
 			return null;
@@ -1684,7 +1710,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -1726,7 +1753,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -1768,7 +1796,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -2006,7 +2035,8 @@ public class TaskQueueUtils {
 				// {bind_values =>
 				// [$dbsite]})
 				// TODO:
-			} else {
+			}
+			else {
 				// do(
 				// "UPDATE $self->{SITEQUEUETABLE} SET $dboldstatus = $dboldstatus-1, $status=$status+1 where site=?",
 				// {bind_values => [$dbsite]}
@@ -2046,45 +2076,53 @@ public class TaskQueueUtils {
 
 		if (newStatus == JobStatus.WAITING)
 			jdltags.put("exechost", arg);
-		else if (newStatus == JobStatus.RUNNING)
-			jdltags.put("started", time);
-		else if (newStatus == JobStatus.STARTED) {
-			jdltags.put("started", time);
-			jdltags.put("batchid", arg);
-		} else if (newStatus == JobStatus.SAVING)
-			jdltags.put("error", arg);
-		else if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
-			jdltags.put("jdl", arg);
-		else if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
-			jdltags.put("finished", time);
-			if (j.usesValidation()) {
-				final String host = j.execHost.substring(j.execHost.indexOf('@') + 1);
-				final int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
+		else
+			if (newStatus == JobStatus.RUNNING)
+				jdltags.put("started", time);
+			else
+				if (newStatus == JobStatus.STARTED) {
+					jdltags.put("started", time);
+					jdltags.put("batchid", arg);
+				}
+				else
+					if (newStatus == JobStatus.SAVING)
+						jdltags.put("error", arg);
+					else
+						if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
+							jdltags.put("jdl", arg);
+						else
+							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
+								jdltags.put("finished", time);
+								if (j.usesValidation()) {
+									final String host = j.execHost.substring(j.execHost.indexOf('@') + 1);
+									final int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
 
-				// my $executable = "";
-				// $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and
-				// $executable = $1;
-				// $executable =~ s/\"//g;
-				// my $validatejdl = "[
-				// Executable=\"$executable.validate\";
-				// Arguments=\"$queueId $data->{host} $port\";
-				// Requirements= member(other.GridPartition,\"Validation\");
-				// Type=\"Job\";
-				// ]";
-				// $DEBUG and $self->debug(1,
-				// "In changeStatusCommand sending the command to validate the result of $queueId...");
-				// $self->enterCommand("$data->{submithost}", "$validatejdl");
-				// }
+									// my $executable = "";
+									// $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and
+									// $executable = $1;
+									// $executable =~ s/\"//g;
+									// my $validatejdl = "[
+									// Executable=\"$executable.validate\";
+									// Arguments=\"$queueId $data->{host} $port\";
+									// Requirements= member(other.GridPartition,\"Validation\");
+									// Type=\"Job\";
+									// ]";
+									// $DEBUG and $self->debug(1,
+									// "In changeStatusCommand sending the command to validate the result of $queueId...");
+									// $self->enterCommand("$data->{submithost}", "$validatejdl");
+									// }
 
-			}
+								}
 
-		} else if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
+							}
+							else
+								if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
 
-			jdltags.put("spyurl", "");
-			jdltags.put("finished", time);
-			deleteJobToken(j.queueId);
+									jdltags.put("spyurl", "");
+									jdltags.put("finished", time);
+									deleteJobToken(j.queueId);
 
-		}
+								}
 		// put the JobLog message
 
 		final HashMap<String, String> joblogtags = new HashMap<>(jdltags);

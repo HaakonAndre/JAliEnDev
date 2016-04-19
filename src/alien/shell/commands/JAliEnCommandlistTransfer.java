@@ -16,7 +16,6 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	private String toSE;
 	private String user;
 	private Integer id;
-	private boolean master;
 	private boolean verbose;
 	private boolean jdl;
 	private int count;
@@ -30,17 +29,13 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			out.printOutln("Total: 0 transfers");
 			return;
 		}
-		final List<TransferDetails> transfers = commander.c_api.listTransfer(this.toSE, this.user, this.status, this.id, this.master,
-				// this.verbose,
-				// this.summary,
-				// this.all_status,
-				// this.jdl,
-				this.count, this.sort_desc);
+		final List<TransferDetails> transfers = commander.c_api.listTransfer(this.toSE, this.user, this.status, this.id, this.count, this.sort_desc);
 		if (transfers == null)
 			return;
 		for (final TransferDetails t : transfers)
-			out.printOutln(t.transferId + "\t   " + t.status + "\t   " + t.user + "\t" + t.destination + String.format("%14d", Long.valueOf(t.size)) + // t.size +
-					(this.jdl && t.jdl != null ? "\t\t" + t.jdl : "\t\t") + "\t" + t.attempts + (this.verbose && t.reason != null ? "\t" + t.reason : ""));
+			out.printOutln(t.transferId + "\t   " + t.status + "\t   " + t.user + "\t" + t.destination + String.format("%14d", Long.valueOf(t.size)) + // t.size
+																																						// +
+			(this.jdl && t.jdl != null ? "\t\t" + t.jdl : "\t\t") + "\t" + t.attempts + (this.verbose && t.reason != null ? "\t" + t.reason : ""));
 		out.printOutln();
 		out.printOutln("Total: " + transfers.size() + " transfers");
 	}
@@ -77,7 +72,6 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			parser.accepts("user").withRequiredArg();
 			parser.accepts("id").withRequiredArg();
 			parser.accepts("verbose");
-			parser.accepts("master");
 			parser.accepts("summary");
 			parser.accepts("all_status");
 			parser.accepts("jdl");
@@ -91,7 +85,8 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 				if (cnt < 0)
 					throw new NumberFormatException();
 				this.count = cnt;
-			} else
+			}
+			else
 				this.count = -1;
 
 			this.status = (String) options.valueOf("status");
@@ -99,7 +94,6 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			if (options.has("id"))
 				this.id = new Integer((String) options.valueOf("id"));
 			this.verbose = options.has("verbose");
-			this.master = options.has("master");
 			this.jdl = options.has("jdl");
 			this.sort_desc = options.has("desc");
 			this.toSE = (String) options.valueOf("destination");

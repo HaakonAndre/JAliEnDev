@@ -50,10 +50,16 @@ public class TransferAgent extends Thread {
 		return transferAgentID;
 	}
 
+	/**
+	 * @return process ID of this JVM, for activity logging purposes
+	 */
 	int getPID() {
 		return pid;
 	}
 
+	/**
+	 * @return hostname of the machine running this JVM, for activity logging purposes
+	 */
 	String getHostName() {
 		return hostname;
 	}
@@ -102,7 +108,8 @@ public class TransferAgent extends Thread {
 					}
 
 					firstTimeNoWork = true;
-				} else
+				}
+				else
 					try {
 						if (firstTimeNoWork) {
 							logger.log(Level.INFO, "Agent " + transferAgentID + " : no work for me");
@@ -112,7 +119,8 @@ public class TransferAgent extends Thread {
 						Thread.sleep(1000 * 30); // try in 30 seconds again to
 													// see if there is anything
 													// for it to do
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused")
+					final InterruptedException ie) {
 						// ignore
 					}
 			}
@@ -184,7 +192,8 @@ public class TransferAgent extends Thread {
 
 					ta.signalStop();
 				}
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			} catch (@SuppressWarnings("unused")
+			final Exception e) {
 				// ignore
 			}
 

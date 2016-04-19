@@ -17,6 +17,10 @@ import java.util.zip.ZipOutputStream;
 import alien.taskQueue.JDL;
 import lia.util.Utils;
 
+/**
+ * @author Miguel
+ * @since Apr 19, 2016
+ */
 class OutputEntry {
 	private final String name;
 	private final ArrayList<String> filesIncluded;
@@ -26,6 +30,11 @@ class OutputEntry {
 	private final ArrayList<String> exses;
 	private final HashMap<String, Integer> qos;
 
+	/**
+	 * @param name
+	 * @param filesIncluded
+	 * @param options
+	 */
 	public OutputEntry(final String name, final ArrayList<String> filesIncluded, final String options) {
 		this.name = name;
 		this.filesIncluded = filesIncluded;
@@ -68,34 +77,58 @@ class OutputEntry {
 
 	}
 
+	/**
+	 * @return entry name
+	 */
 	public String getName() {
 		return this.name;
 	}
 
+	/**
+	 * @return preferred SEs
+	 */
 	public ArrayList<String> getSEsPrioritized() {
 		return ses;
 	}
 
+	/**
+	 * @return excluded SEs
+	 */
 	public ArrayList<String> getSEsDeprioritized() {
 		return exses;
 	}
 
+	/**
+	 * @return SE QoS to replica count mapping
+	 */
 	public HashMap<String, Integer> getQoS() {
 		return qos;
 	}
 
+	/**
+	 * @return set of files included in this archive
+	 */
 	public ArrayList<String> getFilesIncluded() {
 		return this.filesIncluded;
 	}
 
+	/**
+	 * @return other options
+	 */
 	public String getOptions() {
 		return this.options;
 	}
 
+	/**
+	 * @return <code>true</code> if this entry is an archive
+	 */
 	public boolean isArchive() {
 		return this.filesIncluded != null && this.filesIncluded.size() > 0;
 	}
 
+	/**
+	 * @param targetFolder target folder name that will hold this archive
+	 */
 	public void createZip(final String targetFolder) {
 		String path = targetFolder;
 

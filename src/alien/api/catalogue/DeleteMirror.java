@@ -31,24 +31,26 @@ public class DeleteMirror extends Request {
 	 * @param se
 	 */
 	public DeleteMirror(final AliEnPrincipal user, final String role, final String fpath, final boolean isGuid, final String se) {
-		this.path = fpath;
+		setRequestUser(user);
+		setRoleRequest(role);
+		path = fpath;
 		this.isGuid = isGuid;
 		this.se = se;
 	}
 
 	@Override
 	public void run() {
-		if (isGuid && !GUIDUtils.isValidGUID(this.path)) {
-			this.result = -1; // invalid GUID
+		if (isGuid && !GUIDUtils.isValidGUID(path)) {
+			result = -1; // invalid GUID
 			return;
 		}
-		final SE s = SEUtils.getSE(this.se);
+		final SE s = SEUtils.getSE(se);
 		if (s == null) {
-			this.result = -2; // failed to get SE
+			result = -2; // failed to get SE
 			return;
 		}
 		GUID g;
-		if (this.isGuid)
+		if (isGuid)
 			g = GUIDUtils.getGUID(UUID.fromString(path), false);
 		else {
 			final LFN lfn = LFNUtils.getLFN(path, true);
@@ -56,19 +58,19 @@ public class DeleteMirror extends Request {
 		}
 		// Here check authorization for delete mirror procedure
 		if (!AuthorizationChecker.isOwner(g, this.getEffectiveRequester())) {
-			this.result = -3; // not authorized
+			result = -3; // not authorized
 			return;
 		}
 
 		final String pfn = g.removePFN(s, true);
-		this.result = (pfn != null ? 0 : -4); // failed for different reason
+		result = (pfn != null ? 0 : -4); // failed for different reason
 	}
 
 	/**
 	 * @return exit code
 	 */
 	public int getResult() {
-		return this.result;
+		return result;
 	}
 
 }

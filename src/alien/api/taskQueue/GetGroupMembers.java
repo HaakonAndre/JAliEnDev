@@ -10,7 +10,7 @@ import alien.user.AliEnPrincipal;
  */
 public class GetGroupMembers extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 3645332494815939574L;
 	private Set<String> members;
@@ -21,6 +21,7 @@ public class GetGroupMembers extends Request {
 	 * @param group
 	 */
 	public GetGroupMembers(final AliEnPrincipal user, final String group) {
+		setRequestUser(user);
 		this.groupname = group;
 	}
 

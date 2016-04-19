@@ -471,10 +471,12 @@ public class LFNUtils {
 			lfn.owner = user.getName();
 			lfn.gowner = user.getRoles().iterator().next();
 			lfn.perm = "755";
-		} else if (!AuthorizationChecker.canWrite(lfn, user)) {
-			logger.log(Level.SEVERE, "Cannot write to the Current Directory BUT file does not exist. Terminating");
-			return false;
 		}
+		else
+			if (!AuthorizationChecker.canWrite(lfn, user)) {
+				logger.log(Level.SEVERE, "Cannot write to the Current Directory BUT file does not exist. Terminating");
+				return false;
+			}
 
 		lfn.ctime = new Date();
 
@@ -961,7 +963,8 @@ public class LFNUtils {
 		if (is_guid) {
 			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
 			lfn = getLFN(g);
-		} else
+		}
+		else
 			lfn = getLFN(path);
 
 		if (lfn == null)
@@ -982,7 +985,7 @@ public class LFNUtils {
 			return -253;
 
 		// run mirror
-		return (TransferUtils.mirror(lfn, se));
+		return attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, se, null, attempts.intValue()) : TransferUtils.mirror(lfn, se);
 	}
 
 	/**
@@ -1000,15 +1003,19 @@ public class LFNUtils {
 		if (is_guid) {
 			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
 			lfn = getLFN(g);
-		} else
+		}
+		else
 			lfn = getLFN(path);
 
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
 		final HashMap<String, Integer> resmap = new HashMap<>();
-		for (final SE s : found_ses)
-			resmap.put(s.getName(), Integer.valueOf(TransferUtils.mirror(lfn, s)));
+		for (final SE s : found_ses) {
+			final int transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, s, null, attempts.intValue()) : TransferUtils.mirror(lfn, s);
+			resmap.put(s.getName(), Integer.valueOf(transferID));
+		}
+
 		return resmap;
 	}
 
@@ -1041,7 +1048,8 @@ public class LFNUtils {
 								ret.add(file);
 								continue;
 							}
-						} catch (@SuppressWarnings("unused") final Exception e) {
+						} catch (@SuppressWarnings("unused")
+						final Exception e) {
 							return null;
 						}
 
@@ -1068,7 +1076,8 @@ public class LFNUtils {
 			if (p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					return null;
 				}
 
@@ -1079,7 +1088,8 @@ public class LFNUtils {
 			for (final LFN otherFile : file.getParentDir().list())
 				if (otherFile.isFile() && otherFile.guid.equals(guid))
 					return otherFile;
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (@SuppressWarnings("unused")
+		final Exception e) {
 			// ignore
 		}
 

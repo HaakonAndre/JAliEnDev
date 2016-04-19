@@ -35,7 +35,8 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 				out.printErrln("No such GUID");
 				return;
 			}
-		} else
+		}
+		else
 			lfn = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfn);
 
 		final int result = commander.c_api.deleteMirror(lfn, this.useLFNasGuid, se);
@@ -55,6 +56,9 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 				break;
 			case -4:
 				errline = "unknown error";
+				break;
+			default:
+				errline = "unknown result code " + result;
 				break;
 			}
 			out.printErrln("Error deleting mirror: " + errline);

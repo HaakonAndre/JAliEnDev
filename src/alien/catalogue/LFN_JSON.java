@@ -125,8 +125,19 @@ public class LFN_JSON implements Comparable<LFN_JSON>, CatalogEntity {
 	 * Auxiliary class to store zip members (partial lfns) we could also create LFNs, but we don't need for now
 	 */
 	public class ZIPM {
+		/**
+		 * LFN name
+		 */
 		final String lfnName;
+
+		/**
+		 * File size, in bytes
+		 */
 		final long fileSize;
+
+		/**
+		 * MD5 checksum of the contents
+		 */
 		final String md5Sum;
 
 		/**
@@ -150,7 +161,14 @@ public class LFN_JSON implements Comparable<LFN_JSON>, CatalogEntity {
 	 * Auxiliary class to store pfns we don't need to load senumbers, guids, caches...
 	 */
 	public class PFN_JSON {
+		/**
+		 * PFN URL
+		 */
 		String pfn;
+
+		/**
+		 * SE name
+		 */
 		String seName;
 
 		/**

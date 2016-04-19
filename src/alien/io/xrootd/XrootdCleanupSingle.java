@@ -51,6 +51,9 @@ public class XrootdCleanupSingle {
 	 */
 	final AtomicInteger processed = new AtomicInteger(0);
 
+	/**
+	 * If <code>true</code> then pass the SE for dCache and DPM SEs
+	 */
 	final boolean setSE;
 
 	/**
@@ -116,7 +119,8 @@ public class XrootdCleanupSingle {
 
 			try {
 				uuid = UUID.fromString(file.getName());
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			} catch (@SuppressWarnings("unused")
+			final Exception e) {
 				// not an alien file name, ignore
 				return;
 			}
@@ -150,7 +154,8 @@ public class XrootdCleanupSingle {
 					sizeRemoved.addAndGet(file.size);
 					filesRemoved.incrementAndGet();
 				}
-			} else {
+			}
+			else {
 				sizeKept.addAndGet(file.size);
 				filesKept.incrementAndGet();
 			}
@@ -175,7 +180,8 @@ public class XrootdCleanupSingle {
 		if (m.matches()) {
 			sUUID = m.group(1);
 			uuid = UUID.fromString(sUUID);
-		} else
+		}
+		else
 			return false;
 
 		System.err.println("RM " + uuid + " FROM " + se.seName + ", " + file.size + " (" + Format.size(file.size) + "), " + file.date);
@@ -221,13 +227,15 @@ public class XrootdCleanupSingle {
 		if (options.has("a"))
 			for (final SE se : SEUtils.getSEs(null))
 				ses.add(se.getName());
-		else if (options.has("d")) {
-			for (final SE se : SEUtils.getSEs(null))
-				if (se.isQosType("disk"))
-					ses.add(se.getName());
-		} else
-			for (final Object o : options.nonOptionArguments())
-				ses.add(o.toString());
+		else
+			if (options.has("d")) {
+				for (final SE se : SEUtils.getSEs(null))
+					if (se.isQosType("disk"))
+						ses.add(se.getName());
+			}
+			else
+				for (final Object o : options.nonOptionArguments())
+					ses.add(o.toString());
 
 		final long lStart = System.currentTimeMillis();
 

@@ -15,7 +15,7 @@ import alien.user.AuthorizationChecker;
  */
 public class ChownLFN extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -4209526023185462132L;
 	private final String path;
@@ -34,9 +34,11 @@ public class ChownLFN extends Request {
 	 * @param recursive
 	 */
 	public ChownLFN(final AliEnPrincipal user, final String role, final String fpath, final String chuser, final String chgroup, final boolean recursive) {
-		this.path = fpath;
-		this.chown_user = chuser;
-		this.chown_group = chgroup;
+		setRequestUser(user);
+		setRoleRequest(role);
+		path = fpath;
+		chown_user = chuser;
+		chown_group = chgroup;
 		this.recursive = recursive;
 	}
 
@@ -45,29 +47,29 @@ public class ChownLFN extends Request {
 		// if( !AliEnPrincipal.roleIsAdmin( getEffectiveRequester().getName() ) )
 		// throw new SecurityException( "Only administrators can do it" );
 
-		this.results = new HashMap<>();
+		results = new HashMap<>();
 
-		final CatalogEntity c = LFNUtils.getLFN(this.path);
+		final CatalogEntity c = LFNUtils.getLFN(path);
 		if (!AuthorizationChecker.isOwner(c, getEffectiveRequester()))
-			this.success = false;
+			success = false;
 		else
 			// throw new SecurityException("You do not own this file: " + c +
 			// ", requester: " + getEffectiveRequester() );
-			this.success = LFNUtils.chownLFN(this.path, this.chown_user, this.chown_group);
-		results.put(this.path, Boolean.valueOf(this.success));
+			success = LFNUtils.chownLFN(path, chown_user, chown_group);
+		results.put(path, Boolean.valueOf(success));
 
-		if (!this.recursive || !this.success)
+		if (!recursive || !success)
 			return;
 
-		final Collection<LFN> lfns = LFNUtils.find(this.path, "*", LFNUtils.FIND_INCLUDE_DIRS);
+		final Collection<LFN> lfns = LFNUtils.find(path, "*", LFNUtils.FIND_INCLUDE_DIRS);
 		for (final LFN l : lfns) {
 			if (!AuthorizationChecker.isOwner(l, getEffectiveRequester()))
-				this.success = false;
+				success = false;
 			else
 				// throw new SecurityException("You do not own this file: " + l +
 				// ", requester: " + getEffectiveRequester() );
-				this.success = LFNUtils.chownLFN(l.getCanonicalName(), this.chown_user, this.chown_group);
-			results.put(this.path, Boolean.valueOf(this.success));
+				success = LFNUtils.chownLFN(l.getCanonicalName(), chown_user, chown_group);
+			results.put(path, Boolean.valueOf(success));
 		}
 	}
 
@@ -75,14 +77,14 @@ public class ChownLFN extends Request {
 	 * @return operation status
 	 */
 	public boolean getSuccess() {
-		return this.success;
+		return success;
 	}
 
 	/**
 	 * @return operation status per lfn
 	 */
 	public HashMap<String, Boolean> getResults() {
-		return this.results;
+		return results;
 	}
 
 }

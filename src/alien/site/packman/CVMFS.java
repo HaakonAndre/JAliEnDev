@@ -21,6 +21,9 @@ import lia.util.Utils;
  */
 public class CVMFS extends PackMan {
 
+	/**
+	 * logger object
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
 	private String alienv_bin = "";

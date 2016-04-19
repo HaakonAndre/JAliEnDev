@@ -22,20 +22,38 @@ import alien.catalogue.LFN_JSON;
  */
 public class CatalogueTests {
 
-	// Thread pool
+	/** Thread pool */
 	static ThreadPoolExecutor tPool = null;
 
-	// Entries processed
+	/** Entries processed */
 	static AtomicInteger global_count = new AtomicInteger();
+	/**
+	 * how many entries to create
+	 */
 	static int limit = 1000000;
+	/**
+	 * total milliseconds
+	 */
 	static AtomicLong ms_count = new AtomicLong();
 
-	// File for tracking created folders
+	/** File for tracking created folders */
 	static PrintWriter out = null;
+	/**
+	 * tracking failed folder
+	 */
 	static PrintWriter failed_folders = null;
+	/**
+	 * print activity
+	 */
 	static PrintWriter pw = null;
+	/**
+	 * Add this suffix to all files
+	 */
 	static String logs_suffix = "";
 
+	/**
+	 * Signal to stop
+	 */
 	static boolean limit_reached = false;
 
 	/**
@@ -105,10 +123,12 @@ public class CatalogueTests {
 		if (type == 0) {
 			System.out.println("Running as LFN_JSON");
 			tPool.submit(new RecurseLFNJSON(new LFN_JSON(args[0])));
-		} else if (type == 1) {
-			System.out.println("Running as DB LFN");
-			tPool.submit(new RecurseLFN(LFNUtils.getLFN(args[0])));
 		}
+		else
+			if (type == 1) {
+				System.out.println("Running as DB LFN");
+				tPool.submit(new RecurseLFN(LFNUtils.getLFN(args[0])));
+			}
 
 		try {
 			while (!tPool.awaitTermination(10, TimeUnit.SECONDS)) {
@@ -130,11 +150,13 @@ public class CatalogueTests {
 			if (limit_reached) {
 				System.out.println("Limit reached!");
 				ms_per_ls = ms_count.get() / limit;
-			} else {
+			}
+			else {
 				System.out.println("Limit not reached!");
 				ms_per_ls = ms_count.get() / global_count.get();
 			}
-		} else
+		}
+		else
 			System.out.println("!!!!! Zero folders !!!!!");
 
 		System.out.println("Final count: " + (limit_reached ? limit : global_count.get()));

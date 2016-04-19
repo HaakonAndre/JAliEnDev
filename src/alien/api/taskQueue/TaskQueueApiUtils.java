@@ -217,7 +217,8 @@ public class TaskQueueApiUtils {
 	 */
 	public int submitJob(final JDL jdl) throws ServerException {
 
-		// final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
+		// final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass,
+		// commander.getUser().getName(), ojdl);
 
 		final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), jdl);
 
@@ -283,6 +284,7 @@ public class TaskQueueApiUtils {
 	 * @param tag
 	 * @param message
 	 */
+	@SuppressWarnings("static-method")
 	public void putJobLog(final long jobid, final String tag, final String message) {
 		try {
 			final PutJobLog sq = new PutJobLog(jobid, tag, message);

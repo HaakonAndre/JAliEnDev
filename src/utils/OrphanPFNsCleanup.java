@@ -7,7 +7,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,6 +43,9 @@ public class OrphanPFNsCleanup {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(OrphanPFNsCleanup.class.getCanonicalName());
 
+	/**
+	 * ML monitor object
+	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(OrphanPFNsCleanup.class.getCanonicalName());
 
 	/**
@@ -97,8 +99,10 @@ public class OrphanPFNsCleanup {
 							t.start();
 
 							SE_THREADS.put(se, t);
-						} else if (logger.isLoggable(Level.INFO))
-							logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + theSE.seName + ") because the key is already in SE_THREADS");
+						}
+						else
+							if (logger.isLoggable(Level.INFO))
+								logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + theSE.seName + ") because the key is already in SE_THREADS");
 					}
 				}
 
@@ -107,7 +111,8 @@ public class OrphanPFNsCleanup {
 
 			try {
 				Thread.sleep(1000 * 5);
-			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+			} catch (@SuppressWarnings("unused")
+			final InterruptedException ie) {
 				// ignore
 			}
 
@@ -187,14 +192,11 @@ public class OrphanPFNsCleanup {
 
 					if (executor == null) {
 						// lazy init of the thread pool
-						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getPoolSize(seNumber), new ThreadFactory() {
-							@Override
-							public Thread newThread(final Runnable r) {
-								final Thread t = new Thread(r);
-								t.setName("Cleanup of " + seNumber);
+						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getPoolSize(seNumber), r -> {
+							final Thread t = new Thread(r);
+							t.setName("Cleanup of " + seNumber);
 
-								return t;
-							}
+							return t;
 						});
 
 						// 1 minute (in)activity timeout
@@ -202,7 +204,8 @@ public class OrphanPFNsCleanup {
 						executor.allowCoreThreadTimeOut(true);
 
 						EXECUTORS.put(Integer.valueOf(seNumber), executor);
-					} else {
+					}
+					else {
 						final int threads = getPoolSize(seNumber);
 
 						executor.setCorePoolSize(threads);
@@ -217,7 +220,8 @@ public class OrphanPFNsCleanup {
 				while (executor.getQueue().size() > 0 || executor.getActiveCount() > 0)
 					try {
 						Thread.sleep(5000);
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused")
+					final InterruptedException ie) {
 						// ignore
 					}
 			}
@@ -382,7 +386,8 @@ public class OrphanPFNsCleanup {
 					} finally {
 						concurrentQueryies.release();
 					}
-				} else {
+				}
+				else {
 					concurrentQueryies.acquireUninterruptibly();
 
 					try {
@@ -399,11 +404,14 @@ public class OrphanPFNsCleanup {
 										System.err.println("  Deleted the GUID " + guid.guid + " since this was the last replica");
 									else
 										System.err.println("  Failed to delete the GUID even if this was the last replica:\n" + guid);
-								} else
+								}
+								else
 									System.err.println("  Kept the GUID " + guid.guid + " since it still has " + guid.getPFNs().size() + " replicas");
-							} else
+							}
+							else
 								System.err.println("  Failed to remove the replica on " + se.getName() + " from " + guid.guid);
-						} else {
+						}
+						else {
 							successOne(se, size);
 
 							if ((flags & 1) == 0)

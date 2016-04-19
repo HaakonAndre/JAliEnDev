@@ -105,7 +105,8 @@ public class JBoxServer extends Thread {
 
 					try {
 						Thread.sleep(1000 * 60);
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused")
+					final InterruptedException ie) {
 						// ignore
 					}
 				}
@@ -325,10 +326,9 @@ public class JBoxServer extends Thread {
 		 * One UI connection identified by the socket
 		 *
 		 * @param s
-		 * @param jbox
 		 * @throws IOException
 		 */
-		public UIConnection(final Socket s, final JBoxServer jbox) throws IOException {
+		public UIConnection(final Socket s) throws IOException {
 			this.s = s;
 
 			is = s.getInputStream();
@@ -348,7 +348,8 @@ public class JBoxServer extends Thread {
 					synchronized (commander.status) {
 						commander.status.wait(1000);
 					}
-				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				} catch (@SuppressWarnings("unused")
+				final InterruptedException ie) {
 					// ignore
 				}
 		}
@@ -389,118 +390,126 @@ public class JBoxServer extends Thread {
 				while ((sLine = br.readLine()) != null)
 					if (sLine.startsWith("<document>"))
 						sCommand = sLine;
-					else if (sLine.endsWith("</document>")) {
-						sCommand += sLine;
-						final ArrayList<String> cmdOptions = new ArrayList<>();
-						final ArrayList<String> fullCmd = new ArrayList<>();
-						try {
+					else
+						if (sLine.endsWith("</document>")) {
+							sCommand += sLine;
+							final ArrayList<String> cmdOptions = new ArrayList<>();
+							final ArrayList<String> fullCmd = new ArrayList<>();
+							try {
 
-							// <document>
-							// <ls>
-							// <o>-l</o>
-							// <o>-a</o>
-							// <o>/alice/cern.ch/user/t/ttothova</o>
-							// </ls>
-							// </document>
-							logger.info("XML =\"" + sCommand + "\"");
-							final Document document = builder.parse(new InputSource(new StringReader(sCommand)));
+								// <document>
+								// <ls>
+								// <o>-l</o>
+								// <o>-a</o>
+								// <o>/alice/cern.ch/user/t/ttothova</o>
+								// </ls>
+								// </document>
+								logger.info("XML =\"" + sCommand + "\"");
+								final Document document = builder.parse(new InputSource(new StringReader(sCommand)));
 
-							final NodeList commandNodeList = document.getElementsByTagName("command");
+								final NodeList commandNodeList = document.getElementsByTagName("command");
 
-							if (commandNodeList != null && commandNodeList.getLength() == 1) {
-								final Node commandNode = commandNodeList.item(0);
-								sCmdValue = commandNode.getTextContent();
-								fullCmd.add(sCmdValue);
-								logger.info("Received command " + sCmdValue);
+								if (commandNodeList != null && commandNodeList.getLength() == 1) {
+									final Node commandNode = commandNodeList.item(0);
+									sCmdValue = commandNode.getTextContent();
+									fullCmd.add(sCmdValue);
+									logger.info("Received command " + sCmdValue);
 
-								final NodeList optionsNodeList = document.getElementsByTagName("o");
+									final NodeList optionsNodeList = document.getElementsByTagName("o");
 
-								for (int i = 0; i < optionsNodeList.getLength(); i++) {
-									final Node optionNode = optionsNodeList.item(i);
-									cmdOptions.add(optionNode.getTextContent());
-									fullCmd.add(optionNode.getTextContent());
-									logger.info("Command options = " + optionNode.getTextContent());
-								}
-
-								if (sCmdValue != null && sCmdValue.equals("password")) {
-
-									if (cmdOptions.get(0).equals(password)) {
-										os.write(passACK.getBytes());
-										os.flush();
-									} else {
-										os.write(passNOACK.getBytes());
-										os.flush();
-										return;
-									}
-								} else {
-									logger.log(Level.INFO, "JSh connected.");
-
-									if (commander == null) {
-										commander = new JAliEnCOMMander();
-										commander.start();
+									for (int i = 0; i < optionsNodeList.getLength(); i++) {
+										final Node optionNode = optionsNodeList.item(i);
+										cmdOptions.add(optionNode.getTextContent());
+										fullCmd.add(optionNode.getTextContent());
+										logger.info("Command options = " + optionNode.getTextContent());
 									}
 
-									notifyActivity();
+									if (sCmdValue != null && sCmdValue.equals("password")) {
 
-									if ("SIGINT".equals(sLine)) {
-										logger.log(Level.INFO, "Received [SIGINT] from JSh.");
-
-										try {
-											commander.interrupt();
-											commander.stop();
-										} catch (@SuppressWarnings("unused") final Throwable t) {
-											// ignore
-										} finally {
-											System.out.println("SIGINT reset commander");
-
-											// kill the active command and start a new instance
-											final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
-											commander = comm;
-
-											commander.start();
-
-											commander.flush();
+										if (cmdOptions.get(0).equals(password)) {
+											os.write(passACK.getBytes());
+											os.flush();
 										}
-									} else if ("shutdown".equals(sLine))
-										shutdown();
+										else {
+											os.write(passNOACK.getBytes());
+											os.flush();
+											return;
+										}
+									}
 									else {
-										waitCommandFinish();
+										logger.log(Level.INFO, "JSh connected.");
 
-										synchronized (commander) {
-
-											// final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-											// final List<String> args = new ArrayList<>();
-											// while (t.hasMoreTokens())
-											// args.add(t.nextToken());
-
-											if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
-												setShellPrintWriter(os, cmdOptions.get(0));
-												logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
-
-												os.write((JShPrintWriter.streamend + "\n").getBytes());
-												os.flush();
-												continue;
-											}
-
-											if (out == null)
-												out = new XMLPrintWriter(os);
-
-											commander.setLine(out, fullCmd.toArray(new String[0]));
-
-											commander.notifyAll();
+										if (commander == null) {
+											commander = new JAliEnCOMMander();
+											commander.start();
 										}
+
+										notifyActivity();
+
+										if ("SIGINT".equals(sLine)) {
+											logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+
+											try {
+												commander.interrupt();
+												commander.stop();
+											} catch (@SuppressWarnings("unused")
+											final Throwable t) {
+												// ignore
+											} finally {
+												System.out.println("SIGINT reset commander");
+
+												// kill the active command and start a new instance
+												final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
+												commander = comm;
+
+												commander.start();
+
+												commander.flush();
+											}
+										}
+										else
+											if ("shutdown".equals(sLine))
+												shutdown();
+											else {
+												waitCommandFinish();
+
+												synchronized (commander) {
+
+													// final StringTokenizer t = new StringTokenizer(line, SpaceSep);
+													// final List<String> args = new ArrayList<>();
+													// while (t.hasMoreTokens())
+													// args.add(t.nextToken());
+
+													if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
+														setShellPrintWriter(os, cmdOptions.get(0));
+														logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
+
+														os.write((JShPrintWriter.streamend + "\n").getBytes());
+														os.flush();
+														continue;
+													}
+
+													if (out == null)
+														out = new XMLPrintWriter(os);
+
+													commander.setLine(out, fullCmd.toArray(new String[0]));
+
+													commander.notifyAll();
+												}
+											}
+										os.flush();
 									}
-									os.flush();
 								}
-							} else
-								logger.severe("Received more than one command");
-							// some error, there was more than one command
-							// attached to the document
-						} catch (final Exception e) {
-							logger.severe("Parse error " + e.getMessage());
+								else
+									logger.severe("Received more than one command");
+								// some error, there was more than one command
+								// attached to the document
+							} catch (final Exception e) {
+								logger.severe("Parse error " + e.getMessage());
+							}
 						}
-					} else
-						sCommand += "\n" + sLine;
+						else
+							sCommand += "\n" + sLine;
 
 				// br = new BufferedReader(new InputStreamReader(is));
 
@@ -604,7 +613,8 @@ public class JBoxServer extends Thread {
 				if (br != null)
 					try {
 						br.close();
-					} catch (@SuppressWarnings("unused") final IOException ioe) {
+					} catch (@SuppressWarnings("unused")
+					final IOException ioe) {
 						// ignore
 					}
 
@@ -614,17 +624,20 @@ public class JBoxServer extends Thread {
 
 				try {
 					s.shutdownOutput();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					// nothing particular
 				}
 				try {
 					s.shutdownInput();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					// ignore
 				}
 				try {
 					s.close();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					// ignore
 				}
 			}
@@ -645,7 +658,8 @@ public class JBoxServer extends Thread {
 
 		try {
 			ssocket.close();
-		} catch (@SuppressWarnings("unused") final IOException e) {
+		} catch (@SuppressWarnings("unused")
+		final IOException e) {
 			// ignore, we're dead anyway
 		}
 		logger.log(Level.INFO, "JBox: We die gracefully...Bye!");
@@ -660,7 +674,7 @@ public class JBoxServer extends Thread {
 				@SuppressWarnings("resource")
 				final Socket s = ssocket.accept();
 
-				connection = new UIConnection(s, this);
+				connection = new UIConnection(s);
 
 				connection.start();
 			} catch (final Exception e) {
@@ -716,7 +730,8 @@ public class JBoxServer extends Thread {
 			if (!JAKeyStore.loadClientKeyStorage()) {
 				System.err.println("Grid Certificate could not be loaded.");
 				System.err.println("Exiting...");
-			} else {
+			}
+			else {
 				System.err.println(passACK);
 				JBoxServer.startJBoxServer(iDebug);
 			}
@@ -732,7 +747,7 @@ public class JBoxServer extends Thread {
 	/**
 	 *
 	 * Get the port used by JBoxServer
-	 * 
+	 *
 	 * @return the TCP port this server is listening on. Can be negative to signal that the server is actually not listening on any port (yet?)
 	 *
 	 */

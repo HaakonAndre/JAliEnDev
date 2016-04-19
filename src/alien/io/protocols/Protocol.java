@@ -120,6 +120,11 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 		return lastExitStatus;
 	}
 
+	/**
+	 * Set the status of last executed command
+	 *
+	 * @param status
+	 */
 	protected void setLastExitStatus(final ExitStatus status) {
 		this.lastExitStatus = status;
 	}
@@ -133,6 +138,11 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 		return lastCommand;
 	}
 
+	/**
+	 * Keep the command line that was last executed, for logging purposes
+	 *
+	 * @param cmd
+	 */
 	protected void setLastCommand(final List<String> cmd) {
 		this.lastCommand = cmd;
 	}

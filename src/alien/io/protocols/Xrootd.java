@@ -45,10 +45,16 @@ public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
 
+	/**
+	 * Path to the Xrootd command line binaries
+	 */
 	protected static String xrootd_default_path = null;
 
 	private static String xrdcpPath = null;
 
+	/**
+	 * Statically filled variable, <code>true</code> when
+	 */
 	protected static boolean xrootdNewerThan4 = false;
 
 	static {
@@ -113,7 +119,8 @@ public class Xrootd extends Protocol {
 						if (version.indexOf('.') > 0)
 							xrootdNewerThan4 = version.substring(0, version.indexOf('.')).compareTo("v4") >= 0;
 					}
-				} else
+				}
+				else
 					logger.log(Level.WARNING, "Cannot execute " + xrdcpPath);
 			} catch (final IOException | InterruptedException ie) {
 				if (p != null)
@@ -267,7 +274,8 @@ public class Xrootd extends Protocol {
 				command.add(host + ":" + port);
 				command.add("rm");
 				command.add(path + "?authz=" + envelope);
-			} else {
+			}
+			else {
 				command.add(xrootd_default_path + "/bin/xrdrm");
 				command.add("-v");
 
@@ -398,8 +406,9 @@ public class Xrootd extends Protocol {
 			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
-				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
+				else
+					if (pfn.ticket.envelope.getSignedEnvelope() != null)
+						command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
@@ -431,7 +440,8 @@ public class Xrootd extends Protocol {
 				if (p != null) {
 					exitStatus = p.waitFor();
 					setLastExitStatus(exitStatus);
-				} else
+				}
+				else
 					throw new SourceException("Cannot start the process");
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
@@ -544,8 +554,10 @@ public class Xrootd extends Protocol {
 					opaqueParams += "authz=" + pfn.ticket.envelope.getEncryptedEnvelope();
 
 					command.add(opaqueParams);
-				} else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+				}
+				else
+					if (pfn.ticket.envelope.getSignedEnvelope() != null)
+						command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 
 			command.add(transactionURL);
@@ -657,7 +669,8 @@ public class Xrootd extends Protocol {
 			while ((line = br.readLine()) != null)
 				if (!line.startsWith("Overriding '"))
 					sb.append(line).append('\n');
-		} catch (@SuppressWarnings("unused") final IOException ioe) {
+		} catch (@SuppressWarnings("unused")
+		final IOException ioe) {
 			// ignore, cannot happen
 		}
 
@@ -697,24 +710,27 @@ public class Xrootd extends Protocol {
 					command.add(host + ":" + port);
 					command.add("stat");
 					command.add(qProt.substring(qProt.indexOf('/') + 1));
-				} else if (returnEnvelope) {
-					// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
-					command.add(xrootd_default_path + "/bin/xrd");
-
-					command.add(host + ":" + port);
-					command.add("query");
-					command.add("32");
-					String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
-
-					if (forceRecalcMd5)
-						qpfn += "\\&recomputemd5=1";
-
-					command.add(qpfn);
-				} else {
-					command.add(xrootd_default_path + "/bin/xrdstat");
-					command.addAll(getCommonArguments());
-					command.add(pfn.getPFN());
 				}
+				else
+					if (returnEnvelope) {
+						// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+						command.add(xrootd_default_path + "/bin/xrd");
+
+						command.add(host + ":" + port);
+						command.add("query");
+						command.add("32");
+						String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
+
+						if (forceRecalcMd5)
+							qpfn += "\\&recomputemd5=1";
+
+						command.add(qpfn);
+					}
+					else {
+						command.add(xrootd_default_path + "/bin/xrdstat");
+						command.addAll(getCommonArguments());
+						command.add(pfn.getPFN());
+					}
 
 				setLastCommand(command);
 
@@ -870,14 +886,16 @@ public class Xrootd extends Protocol {
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					sourcePath += "?authz=" + source.ticket.envelope.getEncryptedEnvelope();
-				else if (source.ticket.envelope.getSignedEnvelope() != null)
-					sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
+				else
+					if (source.ticket.envelope.getSignedEnvelope() != null)
+						sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					targetPath += "?authz=" + target.ticket.envelope.getEncryptedEnvelope();
-				else if (target.ticket.envelope.getSignedEnvelope() != null)
-					targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
+				else
+					if (target.ticket.envelope.getSignedEnvelope() != null)
+						targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
 
 			command.add(sourcePath);
 			command.add(targetPath);
@@ -970,17 +988,19 @@ public class Xrootd extends Protocol {
 						size = Long.parseLong(line.substring(line.lastIndexOf(':') + 1).trim());
 						break;
 					}
-				} else if (line.startsWith("xstat:")) {
-					final int idx = line.indexOf("size=");
-
-					if (idx > 0) {
-						final int idx2 = line.indexOf(" ", idx);
-
-						size = Long.parseLong(line.substring(idx + 5, idx2));
-
-						break;
-					}
 				}
+				else
+					if (line.startsWith("xstat:")) {
+						final int idx = line.indexOf("size=");
+
+						if (idx > 0) {
+							final int idx2 = line.indexOf(" ", idx);
+
+							size = Long.parseLong(line.substring(idx + 5, idx2));
+
+							break;
+						}
+					}
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}

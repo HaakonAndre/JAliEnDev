@@ -32,6 +32,9 @@ import lia.util.process.ExternalProcessBuilder;
  */
 public class XrootdListing {
 
+	/**
+	 * Logger object
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(XrootdListing.class.getCanonicalName());
 
 	/**
@@ -180,8 +183,9 @@ public class XrootdListing {
 				} catch (final IllegalArgumentException iae) {
 					logger.log(Level.WARNING, "Exception parsing response of " + command, iae);
 				}
-			else if (sLine.length() > 0 && sLine.trim().length() > 0)
-				logger.log(Level.WARNING, "Unknown response line in the output of " + command + "\n\n" + sLine);
+			else
+				if (sLine.length() > 0 && sLine.trim().length() > 0)
+					logger.log(Level.WARNING, "Unknown response line in the output of " + command + "\n\n" + sLine);
 	}
 
 	/**

@@ -21,7 +21,7 @@ import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 03, 2011
  */
@@ -43,7 +43,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get LFN from String, only if it exists
-	 * 
+	 *
 	 * @param slfn
 	 *            name of the LFN
 	 * @return the LFN object
@@ -54,19 +54,19 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get LFN from String
-	 * 
+	 *
 	 * @param slfn
 	 * @param evenIfDoesntExist
 	 * @return the LFN object, that might exist or not (if <code>evenIfDoesntExist = true</code>)
 	 */
 	public LFN getLFN(final String slfn, final boolean evenIfDoesntExist) {
-		Collection<LFN> ret = getLFNs(Arrays.asList(slfn), false, evenIfDoesntExist);
+		final Collection<LFN> ret = getLFNs(Arrays.asList(slfn), false, evenIfDoesntExist);
 		return ret != null && ret.size() > 0 ? ret.iterator().next() : null;
 	}
 
 	/**
 	 * Get LFNs from String as a directory listing, only if it exists
-	 * 
+	 *
 	 * @param slfn
 	 *            name of the LFN
 	 * @return the LFN objects
@@ -84,7 +84,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get LFN from String
-	 * 
+	 *
 	 * @param slfn
 	 *            name of the LFN
 	 * @param ignoreFolders
@@ -104,7 +104,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Remove a LFN in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
@@ -121,7 +121,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Move a LFN in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @param newpath
 	 * @return state of the LFN's deletion <code>null</code>
@@ -139,7 +139,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get GUID from String
-	 * 
+	 *
 	 * @param sguid
 	 *            GUID as String
 	 * @return the GUID object
@@ -150,7 +150,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get GUID from String
-	 * 
+	 *
 	 * @param sguid
 	 *            GUID as String
 	 * @param evenIfDoesNotExist
@@ -171,7 +171,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get PFNs from GUID as String
-	 * 
+	 *
 	 * @param sguid
 	 *            GUID as String
 	 * @return the PFNs
@@ -189,7 +189,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get PFNs for reading by LFN
-	 * 
+	 *
 	 * @param lfn
 	 *            LFN of the entry as String
 	 * @param ses
@@ -212,7 +212,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get PFNs for writing by LFN
-	 * 
+	 *
 	 * @param lfn
 	 *            LFN of the entry as String
 	 * @param guid
@@ -237,7 +237,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Register PFNs with envelopes
-	 * 
+	 *
 	 * @param envelopes
 	 * @return PFNs that were successfully registered
 	 */
@@ -254,7 +254,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Register PFNs with enveloeps
-	 * 
+	 *
 	 * @param encryptedEnvelope
 	 * @param size
 	 * @param md5
@@ -280,7 +280,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Create a directory in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @return LFN of the created directory, if successful, else <code>null</code>
 	 */
@@ -289,7 +289,7 @@ public class CatalogueApiUtils {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param path
 	 * @return LFN of the created file, if successful, else <code>null</code>
 	 */
@@ -306,7 +306,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Create a directory in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @param createNonExistentParents
 	 * @return LFN of the created directory, if successful, else <code>null</code>
@@ -324,7 +324,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Remove a directory in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @return state of directory's deletion <code>null</code>
 	 */
@@ -341,7 +341,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * find bases on pattern
-	 * 
+	 *
 	 * @param path
 	 * @param pattern
 	 * @param flags
@@ -360,7 +360,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get an SE by its name
-	 * 
+	 *
 	 * @param se
 	 *            name of the SE
 	 * @return SE object
@@ -378,7 +378,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get an SE by its number
-	 * 
+	 *
 	 * @param seno
 	 *            number of the SE
 	 * @return SE object
@@ -396,7 +396,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get Packages for a certain platform
-	 * 
+	 *
 	 * @param platform
 	 * @return the Packages
 	 */
@@ -486,21 +486,15 @@ public class CatalogueApiUtils {
 	 * @param toSE
 	 * @param user
 	 * @param id
-	 * @param master
 	 * @param count
 	 * @param desc
 	 * @return transfer details
 	 */
-	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Integer id, final boolean master,
-			// boolean verbose,
-			// boolean summary,
-			// boolean all_status,
-			// boolean jdl,
-			final int count, final boolean desc) {
+	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Integer id, final int count, final boolean desc) {
 
 		ListTransfer lt;
 		try {
-			lt = Dispatcher.execute(new ListTransfer(commander.getUser(), commander.getRole(), status, toSE, user, id, master, count, desc));
+			lt = Dispatcher.execute(new ListTransfer(commander.getUser(), commander.getRole(), status, toSE, user, id, count, desc));
 			return (lt != null ? lt.getTransfers() : null);
 		} catch (final ServerException e) {
 			e.printStackTrace();
