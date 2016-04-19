@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import lia.util.Utils;
 import alien.taskQueue.JDL;
+import lia.util.Utils;
 
 /**
  * @author costing
@@ -92,7 +92,8 @@ public class ParsedOutput {
 
 				System.out.println("Adding archive: " + archparts[0] + " and opt: " + options);
 				jobOutput.add(new OutputEntry(archparts[0], filesincluded, options, Long.valueOf(queueId)));
-			} else {
+			}
+			else {
 				// file(s)
 				System.out.println("Single file: " + parts[0]);
 				final ArrayList<String> filesincluded = parsePatternFiles(parts[0].split(","));
@@ -127,7 +128,8 @@ public class ParsedOutput {
 								filesFound.add(fname);
 							}
 						}
-				} else
+				}
+				else
 					filesFound.add(file);
 			}
 
@@ -137,7 +139,7 @@ public class ParsedOutput {
 	}
 
 	/**
-	 * @return
+	 * @return list of entries
 	 */
 	public ArrayList<OutputEntry> getEntries() {
 		return this.jobOutput;

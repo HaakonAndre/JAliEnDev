@@ -31,7 +31,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lia.util.Utils;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.GetMatchJob;
@@ -59,6 +58,7 @@ import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
+import lia.util.Utils;
 
 /**
  * @author mmmartin, ron
@@ -133,9 +133,18 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 	private final int jobagent_requests = 1; // TODO: restore to 5
 
+	/**
+	 * logger object
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
+	/**
+	 * ML monitor object
+	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(JobAgent.class.getCanonicalName());
+	/**
+	 * ApMon sender
+	 */
 	static transient final ApMon apmon = MonitorFactory.getApMonSender();
 
 	// Resource monitoring vars
@@ -277,7 +286,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 					handleJob();
 
 					cleanup();
-				} else {
+				}
+				else {
 					if (matchedJob != null && matchedJob.containsKey("Error")) {
 						logger.log(Level.INFO, (String) matchedJob.get("Error"));
 
@@ -286,7 +296,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 							installPackages(packToInstall);
 						}
-					} else
+					}
+					else
 						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
 
 					try {
@@ -345,8 +356,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	}
 
 	/**
-	 * @return the site parameters to send to the job broker (packages, ttl,
-	 *         ce/site...)
+	 * @return the site parameters to send to the job broker (packages, ttl, ce/site...)
 	 */
 	private HashMap<String, Object> getSiteParameters() {
 		logger.log(Level.INFO, "Getting jobAgent map");
@@ -414,8 +424,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	/**
 	 * updates jobagent parameters that change between job requests
 	 *
-	 * @return false if we can't run because of current conditions, true if
-	 *         positive
+	 * @return false if we can't run because of current conditions, true if positive
 	 */
 	private boolean updateDynamicParameters() {
 		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
@@ -470,7 +479,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		int ttl = (iTTL != null ? iTTL.intValue() : 3600);
 		commander.q_api.putJobLog(queueId, "trace", "Job asks to run for " + ttl + " seconds");
 		ttl += 300; // extra time (saving)
-		
+
 		final String proxyttl = jdl.gets("ProxyTTL");
 		if (proxyttl != null) {
 			ttl = ((Integer) siteMap.get("TTL")).intValue() - 600;
@@ -518,10 +527,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 	 * @param command
 	 * @param arguments
 	 * @param timeout
-	 * @return <code>0</code> if everything went fine, a positive number with
-	 *         the process exit code (which would mean a problem) and a negative
-	 *         error code in case of timeout or other supervised execution
-	 *         errors
+	 * @return <code>0</code> if everything went fine, a positive number with the process exit code (which would mean a problem) and a negative error code in case of timeout or other supervised
+	 *         execution errors
 	 */
 	private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit, final boolean monitorJob) {
 		final List<String> cmd = new LinkedList<>();
@@ -598,7 +605,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); // TODO:
 																			// test
 			mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
-			String fs = checkProcessResources();
+			final String fs = checkProcessResources();
 			if (fs == null)
 				sendProcessResources();
 		}
@@ -607,10 +614,11 @@ public class JobAgent extends Thread implements MonitoringObject {
 		try {
 			while (processNotFinished)
 				try {
-					Thread.sleep(5 * 1000); //TODO: Change to 60
+					Thread.sleep(5 * 1000); // TODO: Change to 60
 					code = p.exitValue();
 					processNotFinished = false;
 				} catch (final IllegalThreadStateException e) {
+					logger.log(Level.WARNING, "Exception waiting for the process to finish", e);
 					// TODO: check job-token exist (job not killed)
 
 					// process hasn't terminated
@@ -630,7 +638,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 				}
 			return code;
 		} catch (final InterruptedException ie) {
-			System.out.println("Interrupted while waiting for this command to finish: " + cmd.toString());
+			System.out.println("Interrupted while waiting for this command to finish: " + cmd.toString() + "\n" + ie.getMessage());
 			return -2;
 		} finally {
 			t.cancel();
@@ -684,12 +692,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 			// formatted runtime
 			if (RES_RUNTIME.longValue() < 60)
 				RES_FRUNTIME = String.format("00:00:%02d", Long.valueOf(RES_RUNTIME.longValue()));
-			else if (RES_RUNTIME.longValue() < 3600)
-				RES_FRUNTIME = String.format("00:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 60), Long.valueOf(RES_RUNTIME.longValue() % 60));
 			else
-				RES_FRUNTIME = String.format("%02d:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 3600),
-						Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) / 60),
-						Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) % 60));
+				if (RES_RUNTIME.longValue() < 3600)
+					RES_FRUNTIME = String.format("00:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 60), Long.valueOf(RES_RUNTIME.longValue() % 60));
+				else
+					RES_FRUNTIME = String.format("%02d:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 3600), Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) / 60),
+							Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) % 60));
 
 			// check disk usage
 			if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
@@ -737,10 +745,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 				default: // MB
 					workdirMaxSizeMB = Integer.parseInt(number);
 				}
-			} else
+			}
+			else
 				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
 			commander.q_api.putJobLog(queueId, "trace", "Disk requested: " + workdirMaxSizeMB);
-		} else
+		}
+		else
 			workdirMaxSizeMB = 0;
 
 		// Memory use
@@ -763,10 +773,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 				default: // MB
 					jobMaxMemoryMB = Integer.parseInt(number);
 				}
-			} else
+			}
+			else
 				jobMaxMemoryMB = Integer.parseInt(maxmemory);
 			commander.q_api.putJobLog(queueId, "trace", "Memory requested: " + jobMaxMemoryMB);
-		} else
+		}
+		else
 			jobMaxMemoryMB = 0;
 
 	}
@@ -974,15 +986,11 @@ public class JobAgent extends Thread implements MonitoringObject {
 					// Use upload instead
 					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName());
 
-					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					IOUtils.upload(localFile,
-							outputDir + "/" + entry.getName(),
-							UserFactory.getByUsername(username),
-							out,
-							"-w", "-S", (entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2"),
-							"-j", String.valueOf(queueId));
-					String output_upload = out.toString("UTF-8");
-					String lower_output = output_upload.toLowerCase();
+					final ByteArrayOutputStream out = new ByteArrayOutputStream();
+					IOUtils.upload(localFile, outputDir + "/" + entry.getName(), UserFactory.getByUsername(username), out, "-w", "-S",
+							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2"), "-j", String.valueOf(queueId));
+					final String output_upload = out.toString("UTF-8");
+					final String lower_output = output_upload.toLowerCase();
 
 					System.out.println("Output upload: " + output_upload);
 
@@ -990,18 +998,21 @@ public class JobAgent extends Thread implements MonitoringObject {
 						uploadedNotAllCopies = true;
 						commander.q_api.putJobLog(queueId, "trace", output_upload);
 						break;
-					} else if (lower_output.contains("failed")) {
-						uploadedAllOutFiles = false;
-						commander.q_api.putJobLog(queueId, "trace", output_upload);
-						break;
 					}
+					else
+						if (lower_output.contains("failed")) {
+							uploadedAllOutFiles = false;
+							commander.q_api.putJobLog(queueId, "trace", output_upload);
+							break;
+						}
 
 					if (filesIncluded != null) {
 						// Register lfn links to archive
 						Register.register(entry, outputDir + "/", UserFactory.getByUsername(username));
 					}
 
-				} else {
+				}
+				else {
 					System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 					commander.q_api.putJobLog(queueId, "trace", "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 				}
@@ -1016,10 +1027,11 @@ public class JobAgent extends Thread implements MonitoringObject {
 		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V) {
 			if (!uploadedAllOutFiles)
 				changeStatus(JobStatus.ERROR_SV);
-			else if (uploadedNotAllCopies)
-				changeStatus(JobStatus.DONE_WARN);
 			else
-				changeStatus(JobStatus.DONE);
+				if (uploadedNotAllCopies)
+					changeStatus(JobStatus.DONE_WARN);
+				else
+					changeStatus(JobStatus.DONE);
 		}
 
 		return uploadedAllOutFiles;
@@ -1072,7 +1084,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 							isFirst = false;
 						}
 						value = sbuff;
-					} else
+					}
+					else
 						value = val.toString();
 
 					hashret.put("ALIEN_JDL_" + s.toUpperCase(), value);
@@ -1103,14 +1116,17 @@ public class JobAgent extends Thread implements MonitoringObject {
 			extrafields.put("path", getJobOutputDir());
 
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else if (newStatus == JobStatus.RUNNING) {
-			final HashMap<String, Object> extrafields = new HashMap<>();
-			extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-			extrafields.put("node", hostName);
+		}
+		else
+			if (newStatus == JobStatus.RUNNING) {
+				final HashMap<String, Object> extrafields = new HashMap<>();
+				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+				extrafields.put("node", hostName);
 
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+			}
+			else
+				TaskQueueApiUtils.setJobStatus(queueId, newStatus);
 
 		jobStatus = newStatus;
 
@@ -1118,16 +1134,16 @@ public class JobAgent extends Thread implements MonitoringObject {
 	}
 
 	/**
-	 * @return job output dir (as indicated in the JDL if OK, or the recycle
-	 *         path if not)
+	 * @return job output dir (as indicated in the JDL if OK, or the recycle path if not)
 	 */
 	public String getJobOutputDir() {
 		String outputDir = jdl.getOutputDir();
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
-		else if (outputDir == null)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+		else
+			if (outputDir == null)
+				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
 	}
