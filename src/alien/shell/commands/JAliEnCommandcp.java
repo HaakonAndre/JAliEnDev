@@ -237,8 +237,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		public void run() {
 			try {
 				output = proto.get(pfn, file);
-			} catch (@SuppressWarnings("unused")
-			final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				output = null;
 			}
 		}
@@ -338,10 +337,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	}
 
 	private static final ExecutorService UPLOAD_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), (ThreadFactory) r -> {
-				final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
+			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable r) {
+					final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
 
-				return t;
+					return t;
+				}
 			});
 
 	/**
@@ -551,8 +553,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					} catch (@SuppressWarnings("unused")
-					final InterruptedException e) {
+					} catch (@SuppressWarnings("unused") final InterruptedException e) {
 						return false;
 					}
 				}
@@ -712,13 +713,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					try {
 						targetPFNResult = protocol.put(pfn, sourceFile);
-					} catch (@SuppressWarnings("unused")
-					final IOException ioe) {
+					} catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, will try next protocol or fetch another
 						// replica to replace this one
 					}
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// e.printStackTrace();
 				}
 
