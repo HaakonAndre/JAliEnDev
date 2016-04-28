@@ -22,7 +22,7 @@ public class TaskQueueFakeUtils {
 
 	private static AtomicInteger jobcounter = new AtomicInteger((int) (System.currentTimeMillis() / 1000L));
 
-	private static HashMap<Integer, Job> queue = new HashMap<>();
+	private static HashMap<Long, Job> queue = new HashMap<>();
 
 	/**
 	 * @return a job
@@ -53,7 +53,7 @@ public class TaskQueueFakeUtils {
 
 		j.site = "";
 		j.started = 0;
-		queue.put(Integer.valueOf(j.queueId), j);
+		queue.put(Long.valueOf(j.queueId), j);
 		return j;
 	}
 
@@ -92,7 +92,7 @@ public class TaskQueueFakeUtils {
 				j.site = "";
 				j.started = 0;
 
-				queue.put(Integer.valueOf(j.queueId), j);
+				queue.put(Long.valueOf(j.queueId), j);
 
 				System.out.println("We put the job in the QUEUE: " + j.jdl);
 
@@ -122,7 +122,7 @@ public class TaskQueueFakeUtils {
 	 * @param jobID
 	 * @param status
 	 */
-	public static void setJobStatus(final int jobID, final JobStatus status) {
+	public static void setJobStatus(final long jobID, final JobStatus status) {
 		// queue.get(jobID).status = status;
 		System.out.println("Setting job [" + jobID + "] to status <" + status + ">");
 	}
@@ -131,7 +131,7 @@ public class TaskQueueFakeUtils {
 	 * @param jobID
 	 * @return the status
 	 */
-	public static JobStatus getJobStatus(final int jobID) {
+	public static JobStatus getJobStatus(final long jobID) {
 		// if (jobID != 0 && queue.containsKey(jobID))
 		// if (queue.get(jobID) != null)
 		// ignore

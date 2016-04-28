@@ -26,7 +26,7 @@ public class Job implements Comparable<Job>, Serializable {
 	/**
 	 * Job Queue ID
 	 */
-	public int queueId;
+	public long queueId;
 
 	/**
 	 * Job Priority
@@ -280,7 +280,8 @@ public class Job implements Comparable<Job>, Serializable {
 			notify = TaskQueueUtils.getNotify(db.geti("notifyId"));
 			name = command = TaskQueueUtils.getCommand(db.geti("commandId"));
 			user = TaskQueueUtils.getUser(db.geti("userId"));
-		} else {
+		}
+		else {
 			status = JobStatus.getStatus(db.gets("status"));
 			submitHost = db.gets("submitHost");
 			execHost = StringFactory.get(db.gets("execHost"));
@@ -294,14 +295,23 @@ public class Job implements Comparable<Job>, Serializable {
 			if (idx > 0) {
 				user = StringFactory.get(submitHost.substring(0, idx));
 				submitHost = StringFactory.get(submitHost.substring(idx + 1));
-			} else
+			}
+			else
 				submitHost = StringFactory.get(submitHost);
 		}
 	}
 
 	@Override
 	public int compareTo(final Job o) {
-		return queueId - o.queueId;
+		final long diff = queueId - o.queueId;
+
+		if (diff == 0)
+			return 0;
+
+		if (diff < 0)
+			return -1;
+
+		return 1;
 	}
 
 	@Override
@@ -314,7 +324,7 @@ public class Job implements Comparable<Job>, Serializable {
 
 	@Override
 	public int hashCode() {
-		return queueId;
+		return (int) queueId;
 	}
 
 	@Override

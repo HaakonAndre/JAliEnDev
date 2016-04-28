@@ -331,7 +331,7 @@ public class TaskQueueUtils {
 
 			final StringBuilder sb = new StringBuilder(jobs.size() * 10);
 
-			final Map<Integer, Job> reverse = new HashMap<>();
+			final Map<Long, Job> reverse = new HashMap<>();
 
 			for (final Job j : jobs) {
 				if (sb.length() > 0)
@@ -339,7 +339,7 @@ public class TaskQueueUtils {
 
 				sb.append(j.queueId);
 
-				reverse.put(Integer.valueOf(j.queueId), j);
+				reverse.put(Long.valueOf(j.queueId), j);
 			}
 
 			if (monitor != null) {
@@ -364,15 +364,15 @@ public class TaskQueueUtils {
 				monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
 
 			Map<JobStatus, Integer> m = null;
-			int oldJobID = -1;
+			long oldJobID = -1;
 
 			while (db.moveNext()) {
-				final int j = db.geti(1);
+				final long j = db.getl(1);
 
 				if (j != oldJobID || m == null) {
 					m = new HashMap<>();
 
-					final Integer jobId = Integer.valueOf(j);
+					final Long jobId = Long.valueOf(j);
 					ret.put(reverse.get(jobId), m);
 					reverse.remove(jobId);
 
@@ -497,7 +497,7 @@ public class TaskQueueUtils {
 	 * @param limit
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final int queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
+	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
 			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge, final int limit) {
 
 		try (DBFunctions db = getQueueDB()) {
@@ -787,7 +787,7 @@ public class TaskQueueUtils {
 	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
 	 */
 	@SuppressWarnings("deprecation")
-	public static String getJDL(final int queueId, final boolean originalJDL) {
+	public static String getJDL(final long queueId, final boolean originalJDL) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
@@ -806,11 +806,11 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(true);
 
-			if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
+			if (!db.query(q, false, Long.valueOf(queueId)) || !db.moveNext()) {
 				final Date d = new Date();
 				q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " as JDL FROM QUEUEARCHIVE" + (1900 + d.getYear()) + " WHERE queueId=?";
 
-				if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
+				if (!db.query(q, false, Long.valueOf(queueId)) || !db.moveNext()) {
 					final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
 
 					if (jdlArchiveDir.length() > 0) {
@@ -1183,7 +1183,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return status of the kill
 	 */
-	public static boolean kill(final AliEnPrincipal user, final int queueId) {
+	public static boolean kill(final AliEnPrincipal user, final long queueId) {
 		// TODO check if the user is allowed to kill and do it
 		return false;
 	}
@@ -1951,7 +1951,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return state of the kill operation
 	 */
-	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId) {
+	public static boolean killJob(final AliEnPrincipal user, final String role, final long queueId) {
 		if (AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId), user, role)) {
 			System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
 
