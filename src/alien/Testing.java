@@ -9,9 +9,9 @@ import alien.user.UserFactory;
 
 /**
  * Testing stuff
- * 
+ *
  * @author costing
- * 
+ *
  */
 public class Testing {
 

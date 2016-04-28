@@ -94,7 +94,7 @@ public class JDL implements Serializable {
 	 * @param jobID
 	 * @throws IOException
 	 */
-	public JDL(final int jobID) throws IOException {
+	public JDL(final long jobID) throws IOException {
 		this(Job.sanitizeJDL(TaskQueueUtils.getJDL(jobID)));
 	}
 
@@ -106,7 +106,7 @@ public class JDL implements Serializable {
 	 *            whether to load the original JDL (submitted by the user) or the processed one (if available)
 	 * @throws IOException
 	 */
-	public JDL(final int jobID, final boolean originalJDL) throws IOException {
+	public JDL(final long jobID, final boolean originalJDL) throws IOException {
 		this(Job.sanitizeJDL(TaskQueueUtils.getJDL(jobID, originalJDL)));
 	}
 

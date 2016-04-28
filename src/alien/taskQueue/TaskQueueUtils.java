@@ -406,7 +406,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getSubjobs(final int queueId) {
+	public static List<Job> getSubjobs(final long queueId) {
 		return getSubjobs(queueId, false);
 	}
 
@@ -417,7 +417,7 @@ public class TaskQueueUtils {
 	 * @param loadJDL
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL) {
+	public static List<Job> getSubjobs(final long queueId, final boolean loadJDL) {
 		return getSubjobs(queueId, loadJDL, 0);
 	}
 
@@ -430,7 +430,7 @@ public class TaskQueueUtils {
 	 *            archive year to query instead of the main queue table
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL, final int archiveYear) {
+	public static List<Job> getSubjobs(final long queueId, final boolean loadJDL, final int archiveYear) {
 		final List<Job> ret = new ArrayList<>();
 
 		try (DBFunctions db = getQueueDB()) {
@@ -469,7 +469,7 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(true);
 
-			db.query(q, false, Integer.valueOf(queueId));
+			db.query(q, false, Long.valueOf(queueId));
 
 			if (monitor != null)
 				monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
@@ -653,7 +653,7 @@ public class TaskQueueUtils {
 	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint) {
+	public static boolean setJobStatus(final long job, final JobStatus newStatus, final JobStatus oldStatusConstraint) {
 		return setJobStatus(job, newStatus, oldStatusConstraint, null);
 	}
 
@@ -776,7 +776,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
 	 */
-	public static String getJDL(final int queueId) {
+	public static String getJDL(final long queueId) {
 		return getJDL(queueId, true);
 	}
 

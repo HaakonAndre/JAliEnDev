@@ -2,21 +2,19 @@ package alien;
 
 import alien.site.ComputingElement;
 
-
 /**
  * @author ron
- *  @since Jun 05, 2011
+ * @since Jun 05, 2011
  */
 public class SiteCE {
-	
-	
+
 	/**
 	 * @param args
 	 * @throws Exception
 	 */
-	public static void main(String[] args) throws Exception {
+	public static void main(final String[] args) throws Exception {
 
-		ComputingElement ce = new  ComputingElement();
+		final ComputingElement ce = new ComputingElement();
 		ce.start();
 
 	}
