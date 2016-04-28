@@ -19,7 +19,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 	@Override
 	public void run() {
 
-		int queueId = 0;
+		long queueId = 0;
 		if (!isSilent())
 			out.printOutln("Submitting " + alArguments.get(0));
 

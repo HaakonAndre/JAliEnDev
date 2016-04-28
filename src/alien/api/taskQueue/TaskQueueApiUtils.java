@@ -215,7 +215,7 @@ public class TaskQueueApiUtils {
 	 * @return queueId
 	 * @throws ServerException
 	 */
-	public int submitJob(final JDL jdl) throws ServerException {
+	public long submitJob(final JDL jdl) throws ServerException {
 
 		// final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass,
 		// commander.getUser().getName(), ojdl);

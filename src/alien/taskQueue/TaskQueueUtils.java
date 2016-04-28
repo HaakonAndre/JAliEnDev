@@ -1314,7 +1314,7 @@ public class TaskQueueUtils {
 	 * @throws IOException
 	 *             in case of problems like downloading the respective JDL or not enough arguments provided to it
 	 */
-	public static int submit(final LFN file, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
+	public static long submit(final LFN file, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
 		if (file == null || !file.exists || !file.isFile())
 			throw new IllegalArgumentException("The LFN is not a valid file");
 
@@ -1457,7 +1457,7 @@ public class TaskQueueUtils {
 	 *             in case of problems such as the number of provided arguments is not enough
 	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
 	 */
-	public static int submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
+	public static long submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
 		final String owner = prepareSubmission(j, account, role);
 
 		return insertJob(j, account, owner, null);
@@ -1505,7 +1505,7 @@ public class TaskQueueUtils {
 	 * @return the just inserted job ID
 	 * @throws IOException
 	 */
-	public static int insertJob(final JDL j, final AliEnPrincipal account, final String owner, final JobStatus targetStatus) throws IOException {
+	public static long insertJob(final JDL j, final AliEnPrincipal account, final String owner, final JobStatus targetStatus) throws IOException {
 		final String clientAddress;
 
 		final InetAddress addr = account.getRemoteEndpoint();
@@ -1573,7 +1573,8 @@ public class TaskQueueUtils {
 			if (!db.query(insert))
 				throw new IOException("Could not insert the job in the queue");
 
-			final Integer pid = db.getLastGeneratedKey();
+			// TODO : change this to long!
+			final Long pid = db.getLastGeneratedKeyLong();
 
 			if (pid == null)
 				throw new IOException("Last generated key is unknown");
@@ -1597,9 +1598,9 @@ public class TaskQueueUtils {
 
 			setAction(jobStatus);
 
-			putJobLog(pid.intValue(), "state", "Job state transition to " + jobStatus.toString(), null);
+			putJobLog(pid.longValue(), "state", "Job state transition to " + jobStatus.toString(), null);
 
-			return pid.intValue();
+			return pid.longValue();
 		}
 	}
 
