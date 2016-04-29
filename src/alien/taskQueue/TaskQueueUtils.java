@@ -1259,7 +1259,7 @@ public class TaskQueueUtils {
 	}
 
 	/**
-	 * Check all the paths to the catalogue in the JDL and expand the relative ones to the first file found in user's own folders
+	 * Check all the paths to the catalogue in the JDL and expand the relative ones to the first file found in user's own folders, including the same directory from where the JDL was submitted
 	 * 
 	 * @param jdl
 	 *            JDL to check
@@ -1291,6 +1291,11 @@ public class TaskQueueUtils {
 					options.add(UsersHelper.getHomeDir(role) + "bin/" + executable);
 
 				options.add(UsersHelper.getHomeDir(account.getName()) + "bin/" + executable);
+
+				final String jdlPath = jdl.gets("JDLPath");
+
+				if (jdlPath != null && jdlPath.length() > 0 && jdlPath.indexOf('/') >= 0)
+					options.add(jdlPath.substring(0, jdlPath.lastIndexOf('/') + 1) + executable);
 			}
 
 			final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, true, false, options));
