@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -1192,7 +1193,7 @@ public class TaskQueueUtils {
 	/**
 	 * @param jdlArguments
 	 * @return array of arguments to apply to the JDL
-	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
+	 * @see #applyJDLArguments(String, String...)
 	 * @see #submit(LFN, AliEnPrincipal, String, String...)
 	 */
 	public static String[] splitArguments(final String jdlArguments) {
@@ -1259,7 +1260,8 @@ public class TaskQueueUtils {
 	}
 
 	/**
-	 * Check all the paths to the catalogue in the JDL and expand the relative ones to the first file found in user's own folders, including the same directory from where the JDL was submitted
+	 * Check the Executable and ValidationCommand paths in the catalogue and expand the relative ones to the first file found in user's own folders, including the same directory from where the JDL was
+	 * submitted
 	 * 
 	 * @param jdl
 	 *            JDL to check
@@ -1270,50 +1272,62 @@ public class TaskQueueUtils {
 	 * @throws IOException
 	 *             if some file cannot be located
 	 */
-	private static final void expandExecutable(final JDL jdl, final AliEnPrincipal account, final String role) throws IOException {
-		final String executable = jdl.getExecutable();
+	private static final void expandExecutables(final JDL jdl, final AliEnPrincipal account, final String role) throws IOException {
+		final Set<String> pathsToCheck = new LinkedHashSet<>();
 
-		if (executable == null)
-			throw new IOException("The JDL has to indicate an Executable");
+		pathsToCheck.add("/bin/");
+		pathsToCheck.add("/alice/bin/");
+		pathsToCheck.add("/panda/bin/");
 
-		boolean found = false;
+		if (role != null && !account.getName().equals(role))
+			pathsToCheck.add(UsersHelper.getHomeDir(role) + "bin/");
 
-		try {
-			final List<String> options = new LinkedList<>();
-			options.add(executable);
+		pathsToCheck.add(UsersHelper.getHomeDir(account.getName()) + "bin/");
 
-			if (!executable.startsWith("/")) {
-				options.add("/bin/" + executable);
-				options.add("/alice/bin/" + executable);
-				options.add("/panda/bin/" + executable);
+		final String jdlPath = jdl.gets("JDLPath");
 
-				if (role != null && !account.getName().equals(role))
-					options.add(UsersHelper.getHomeDir(role) + "bin/" + executable);
+		if (jdlPath != null && jdlPath.length() > 0 && jdlPath.indexOf('/') >= 0)
+			pathsToCheck.add(jdlPath.substring(0, jdlPath.lastIndexOf('/') + 1));
 
-				options.add(UsersHelper.getHomeDir(account.getName()) + "bin/" + executable);
+		for (final String jdlTag : new String[] { "Executable", "ValidationCommand" }) {
+			final String executable = jdl.gets(jdlTag);
 
-				final String jdlPath = jdl.gets("JDLPath");
+			if (executable == null) {
+				if (jdlTag.equals("Executable"))
+					throw new IOException("The JDL has to indicate an Executable");
 
-				if (jdlPath != null && jdlPath.length() > 0 && jdlPath.indexOf('/') >= 0)
-					options.add(jdlPath.substring(0, jdlPath.lastIndexOf('/') + 1) + executable);
+				continue;
 			}
 
-			final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, true, false, options));
+			boolean found = false;
 
-			final List<LFN> lfns = answer.getLFNs();
+			try {
+				final List<String> options = new LinkedList<>();
 
-			if (lfns != null)
-				for (final LFN l : lfns)
-					if (l.isFile()) {
-						found = true;
-						jdl.set("Executable", l.getCanonicalName());
-					}
-		} catch (final ServerException se) {
-			throw new IOException(se.getMessage(), se);
+				if (!executable.startsWith("/")) {
+					for (final String path : pathsToCheck)
+						options.add(path + executable);
+				}
+				else
+					options.add(executable);
+
+				final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, true, false, options));
+
+				final List<LFN> lfns = answer.getLFNs();
+
+				if (lfns != null)
+					for (final LFN l : lfns)
+						if (l.isFile()) {
+							found = true;
+							jdl.set(jdlPath, l.getCanonicalName());
+						}
+			} catch (final ServerException se) {
+				throw new IOException(se.getMessage(), se);
+			}
+
+			if (!found)
+				throw new IOException("The " + jdlTag + " name you indicated (" + executable + ") cannot be located in any standard PATH");
 		}
-
-		if (!found)
-			throw new IOException("The Executable name you indicated (" + executable + ") cannot be located in any standard PATH");
 	}
 
 	/**
@@ -1347,7 +1361,7 @@ public class TaskQueueUtils {
 	}
 
 	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal account, final String owner) throws IOException {
-		expandExecutable(jdl, account, owner);
+		expandExecutables(jdl, account, owner);
 
 		Float price = jdl.getFloat("Price");
 
