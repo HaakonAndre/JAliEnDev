@@ -1435,15 +1435,11 @@ public class TaskQueueUtils {
 
 		// sanity check of other tags
 
-		for (final String tag : Arrays.asList("Executable", "ValidationCommand", "InputDataCollection")) {
+		for (final String tag : Arrays.asList("ValidationCommand", "InputDataCollection")) {
 			final Collection<String> files = jdl.getList(tag);
 
-			if (files == null) {
-				if (tag.equals("Executable"))
-					throw new IOException("Your JDL lacks an Executable tag");
-
+			if (files == null)
 				continue;
-			}
 
 			for (final String file : files) {
 				String fileName = file;
