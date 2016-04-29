@@ -35,7 +35,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 						final String[] args = alArguments.size() > 1 ? alArguments.subList(1, alArguments.size() - 1).toArray(new String[0]) : null;
 
 						try {
-							jdl = TaskQueueUtils.applyJDLArguments(content, commander.user, commander.role, args);
+							jdl = TaskQueueUtils.applyJDLArguments(content, args);
 						} catch (final IOException ioe) {
 							if (!isSilent()) {
 								out.setField("Error submitting ", alArguments.get(0));
@@ -65,7 +65,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 					final String[] args = alArguments.size() > 1 ? alArguments.subList(1, alArguments.size() - 1).toArray(new String[0]) : null;
 
 					try {
-						jdl = TaskQueueUtils.applyJDLArguments(content, commander.user, commander.role, args);
+						jdl = TaskQueueUtils.applyJDLArguments(content, args);
 					} catch (final IOException ioe) {
 						if (!isSilent())
 							out.printErrln("Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());

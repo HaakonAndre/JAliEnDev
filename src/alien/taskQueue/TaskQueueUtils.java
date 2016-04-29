@@ -849,8 +849,7 @@ public class TaskQueueUtils {
 
 										content = baos.toString();
 									}
-								} catch (@SuppressWarnings("unused")
-								final IOException e) {
+								} catch (@SuppressWarnings("unused") final IOException e) {
 									// ignore
 								}
 							}
@@ -1214,15 +1213,13 @@ public class TaskQueueUtils {
 	/**
 	 * @param jdlContents
 	 *            JDL specification
-	 * @param account
-	 * @param role
 	 * @param arguments
 	 *            arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the parsed JDL, with all $N parameters replaced with the respective argument
 	 * @throws IOException
 	 *             if there is any problem parsing the JDL content
 	 */
-	public static JDL applyJDLArguments(final String jdlContents, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
+	public static JDL applyJDLArguments(final String jdlContents, final String... arguments) throws IOException {
 		if (jdlContents == null)
 			return null;
 
@@ -1258,6 +1255,22 @@ public class TaskQueueUtils {
 			jdl.set("JDLArguments", sb.toString());
 		}
 
+		return jdl;
+	}
+
+	/**
+	 * Check all the paths to the catalogue in the JDL and expand the relative ones to the first file found in user's own folders
+	 * 
+	 * @param jdl
+	 *            JDL to check
+	 * @param account
+	 *            account that runs it
+	 * @param role
+	 *            the role (can be <code>null</code>)
+	 * @throws IOException
+	 *             if some file cannot be located
+	 */
+	private static final void expandExecutable(final JDL jdl, final AliEnPrincipal account, final String role) throws IOException {
 		final String executable = jdl.getExecutable();
 
 		if (executable == null)
@@ -1296,8 +1309,6 @@ public class TaskQueueUtils {
 
 		if (!found)
 			throw new IOException("The Executable name you indicated (" + executable + ") cannot be located in any standard PATH");
-
-		return jdl;
 	}
 
 	/**
@@ -1323,14 +1334,16 @@ public class TaskQueueUtils {
 		if (jdlContents == null || jdlContents.length() == 0)
 			throw new IOException("Could not download " + file.getCanonicalName());
 
-		final JDL jdl = applyJDLArguments(jdlContents, account, role, arguments);
+		final JDL jdl = applyJDLArguments(jdlContents, arguments);
 
 		jdl.set("JDLPath", file.getCanonicalName());
 
 		return submit(jdl, account, role);
 	}
 
-	private static void prepareJDLForSubmission(final JDL jdl, final String owner) throws IOException {
+	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal account, final String owner) throws IOException {
+		expandExecutable(jdl, account, owner);
+
 		Float price = jdl.getFloat("Price");
 
 		if (price == null)
@@ -1455,7 +1468,7 @@ public class TaskQueueUtils {
 	 * @return the job ID
 	 * @throws IOException
 	 *             in case of problems such as the number of provided arguments is not enough
-	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
+	 * @see #applyJDLArguments(String, String...)
 	 */
 	public static long submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
 		final String owner = prepareSubmission(j, account, role);
@@ -1486,7 +1499,7 @@ public class TaskQueueUtils {
 
 		final String owner = role != null && (account.hasRole(role) || account.canBecome(role)) ? role : account.getName();
 
-		prepareJDLForSubmission(j, owner);
+		prepareJDLForSubmission(j, account, owner);
 
 		return owner;
 	}
@@ -1631,8 +1644,7 @@ public class TaskQueueUtils {
 							try {
 								id = Integer.parseInt(s);
 								break;
-							} catch (@SuppressWarnings("unused")
-							final Throwable t) {
+							} catch (@SuppressWarnings("unused") final Throwable t) {
 								// ignore
 							}
 
