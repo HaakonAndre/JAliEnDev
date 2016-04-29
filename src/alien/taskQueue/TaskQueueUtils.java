@@ -1319,7 +1319,7 @@ public class TaskQueueUtils {
 					for (final LFN l : lfns)
 						if (l.isFile()) {
 							found = true;
-							jdl.set(jdlPath, l.getCanonicalName());
+							jdl.set(jdlTag, l.getCanonicalName());
 						}
 			} catch (final ServerException se) {
 				throw new IOException(se.getMessage(), se);
