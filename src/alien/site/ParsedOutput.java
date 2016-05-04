@@ -120,8 +120,8 @@ public class ParsedOutput {
 				if (file.contains("*")) {
 					final String[] parts = Utils.getOutput("ls " + pwd + file).split("\n");
 					if (parts.length > 0)
-						for (final String f : parts) {
-							f.trim();
+						for (String f : parts) {
+							f = f.trim();
 							if (f.length() > 0) {
 								final String fname = new File(f).getName();
 								System.out.println("Adding file from ls: " + fname);

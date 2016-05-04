@@ -710,7 +710,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			// cpu
 			final long time = System.currentTimeMillis();
 
-			if (prevTime != 0 && prevTime + (20 * 60 * 1000) < time && RES_CPUTIME == prevCpuTime)
+			if (prevTime != 0 && prevTime + (20 * 60 * 1000) < time && RES_CPUTIME.equals(prevCpuTime))
 				error = "The job hasn't used the CPU for 20 minutes";
 			else {
 				prevCpuTime = RES_CPUTIME;

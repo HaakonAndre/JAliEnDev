@@ -7,6 +7,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.cert.X509Certificate;
 
@@ -20,7 +21,7 @@ import alien.user.JAKeyStore;
  */
 public class TaskQueueFakeUtils {
 
-	private static AtomicInteger jobcounter = new AtomicInteger((int) (System.currentTimeMillis() / 1000L));
+	private static AtomicLong jobcounter = new AtomicLong(System.currentTimeMillis() / 1000L);
 
 	private static HashMap<Long, Job> queue = new HashMap<>();
 
@@ -28,7 +29,7 @@ public class TaskQueueFakeUtils {
 	 * @return a job
 	 */
 	public static synchronized Job getJob() {
-		final Integer currentJobID = Integer.valueOf(jobcounter.intValue());
+		final Long currentJobID = Long.valueOf(jobcounter.longValue());
 
 		final Job j = queue.get(currentJobID);
 		if (j != null && j.status() == JobStatus.WAITING) {

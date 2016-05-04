@@ -2,6 +2,7 @@ package alien.catalogue;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -124,7 +125,12 @@ public class LFN_JSON implements Comparable<LFN_JSON>, CatalogEntity {
 	/**
 	 * Auxiliary class to store zip members (partial lfns) we could also create LFNs, but we don't need for now
 	 */
-	public class ZIPM {
+	public static class ZIPM implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -4603310052771826537L;
+
 		/**
 		 * LFN name
 		 */
@@ -160,7 +166,12 @@ public class LFN_JSON implements Comparable<LFN_JSON>, CatalogEntity {
 	/**
 	 * Auxiliary class to store pfns we don't need to load senumbers, guids, caches...
 	 */
-	public class PFN_JSON {
+	public static class PFN_JSON implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 4199659163458119586L;
+
 		/**
 		 * PFN URL
 		 */
@@ -430,12 +441,17 @@ public class LFN_JSON implements Comparable<LFN_JSON>, CatalogEntity {
 		else {
 			// Do list with java
 			final File folder = new File(canonicalName);
-			for (final File fileEntry : folder.listFiles()) {
-				String lfnjson = canonicalName + fileEntry.getName();
-				if (fileEntry.isDirectory())
-					lfnjson += "/";
 
-				ret.add(new LFN_JSON(lfnjson));
+			final File[] listing = folder.listFiles();
+
+			if (listing != null) {
+				for (final File fileEntry : listing) {
+					String lfnjson = canonicalName + fileEntry.getName();
+					if (fileEntry.isDirectory())
+						lfnjson += "/";
+
+					ret.add(new LFN_JSON(lfnjson));
+				}
 			}
 
 			// String ls = Utils.getOutput("ls -ldp "+canonicalName+"*"); // TODO: de-hardcode the location

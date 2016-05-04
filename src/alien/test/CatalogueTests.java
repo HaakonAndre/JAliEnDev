@@ -184,7 +184,7 @@ public class CatalogueTests {
 		@Override
 		public void run() {
 			if (dir == null) {
-				final String msg = "LFN DIR is null! " + dir.getCanonicalName();
+				final String msg = "LFN DIR is null!";
 				failed_folders.println(msg);
 				failed_folders.flush();
 				return;
@@ -245,7 +245,7 @@ public class CatalogueTests {
 		@Override
 		public void run() {
 			if (dir == null) {
-				final String msg = "LFN DIR is null! " + dir.getCanonicalName();
+				final String msg = "LFN DIR is null!";
 				failed_folders.println(msg);
 				failed_folders.flush();
 				return;
