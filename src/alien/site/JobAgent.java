@@ -61,6 +61,10 @@ import apmon.MonitoredJob;
 import lazyj.Format;
 import lia.util.Utils;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+
 /**
  * @author mmmartin, ron
  * @since Apr 1, 2015
@@ -255,7 +259,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 				if (matchedJob != null && !matchedJob.containsKey("Error")) {
 					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
-					queueId = ((Integer) matchedJob.get("queueId")).intValue();
+					queueId = ((Long) matchedJob.get("queueId")).intValue();
 					username = (String) matchedJob.get("User");
 					jobToken = (String) matchedJob.get("jobToken");
 
@@ -539,8 +543,36 @@ public class JobAgent extends Thread implements MonitoringObject {
 				}
 
 		System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
+		
+		//final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+		final List<String> cmd1 = new LinkedList<>();
+		cmd1.add("/lustre/atlas/scratch/psvirin/csc108/tmp/sq.sh");
+		cmd1.add(tempDir.getAbsolutePath());
+		cmd1.add(fExe.getAbsolutePath());
+		ProcessBuilder pBuilder1 = new ProcessBuilder(cmd1);	
+		ProcessBuilder pBuilder = new ProcessBuilder(cmd);	
+		try{
+			pBuilder1.start();
+			//Process p;
+			//p = Runtime.getRuntime().exec("sqlite3 /lustre/atlas/scratch/psvirin/csc108/alien.db \"INSERT INTO tasks_alien VALUES(0, '" + fExe.getAbsolutePath() + "', 'Q');\"");
+			//p = Runtime.getRuntime().exec("/lustre/atlas/scratch/psvirin/csc108/add_to_db");
+			//p.waitFor();
+			//BufferedReader reader = 
+                            //new BufferedReader(new InputStreamReader(p.getInputStream()));
 
-		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+                        //String line = "";			
+			//while ((line = reader.readLine())!= null) {
+				//System.out.println(line);
+			//}
+			//System.out.println("SQLITE run");
+		}
+		catch(Exception e){
+			System.out.println(e.getMessage());
+		}
+
+		// EXPERIMENTAL
+		//pBuilder = new ProcessBuilder(cmd);
+		pBuilder = new ProcessBuilder("sleep", "200");
 
 		pBuilder.directory(tempDir);
 
@@ -653,6 +685,16 @@ public class JobAgent extends Thread implements MonitoringObject {
 			RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
 			RES_RESOURCEUSAGE = Format.showDottedDouble(RES_CPUTIME.doubleValue() * Double.parseDouble(RES_CPUMHZ) / 1000, 2);
 
+			//RES_WORKDIR_SIZE = 0;
+			//RES_VMEM = 0;
+			//RES_RMEM = 0;
+			//RES_CPUTIME = 0;
+			//RES_CPUUSAGE = 0;
+			//RES_RUNTIME = 0;
+			//RES_MEMUSAGE = 0;
+			//RES_RESOURCEUSAGE = 0;
+
+
 			// max memory consumption
 			if (RES_RMEM.doubleValue() > RES_RMEMMAX.doubleValue())
 				RES_RMEMMAX = RES_RMEM;
@@ -663,8 +705,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 			// formatted runtime
 			if (RES_RUNTIME.doubleValue() < 60)
 				RES_FRUNTIME = String.format("00:00:%02d", RES_RUNTIME);
-			else if (RES_RUNTIME.doubleValue() < 3600)
-				RES_FRUNTIME = String.format("00:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 60), Double.valueOf(RES_RUNTIME.doubleValue() % 60));
+			else if (RES_RUNTIME.doubleValue() < 3600){
+				System.out.println(RES_RUNTIME.doubleValue()/60);
+				System.out.println(Double.valueOf(RES_RUNTIME.doubleValue() % 60));
+				//RES_FRUNTIME = String.format("00:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 60), Double.valueOf(RES_RUNTIME.doubleValue() % 60));
+				RES_FRUNTIME = String.format("00:%02d:%02d", RES_RUNTIME / 60, RES_RUNTIME % 60);
+			}
 			else
 				RES_FRUNTIME = String.format("%02d:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 3600),
 						Double.valueOf((RES_RUNTIME.doubleValue() - (RES_RUNTIME.doubleValue() / 3600) * 3600) / 60),
@@ -753,7 +799,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 	private int execute() {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 
-		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, true);
+		//final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, true);
+		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, false);
 
 		System.err.println("Execution code: " + code);
 
@@ -919,7 +966,9 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
 
-		final String outputDir = getJobOutputDir();
+		// EXPERIMENTAL
+		//final String outputDir = getJobOutputDir();
+		final String outputDir = getJobOutputDir() + "/"  + queueId;
 
 		System.out.println("queueId: " + queueId);
 		System.out.println("outputDir: " + outputDir);
