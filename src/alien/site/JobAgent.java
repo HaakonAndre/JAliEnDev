@@ -64,6 +64,15 @@ import lia.util.Utils;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 
+// EXPERIMENTAL
+// ========== imports for ORNL Titan
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+
 
 /**
  * @author mmmartin, ron
@@ -220,6 +229,19 @@ public class JobAgent extends Thread implements MonitoringObject {
 		}
 
 		monitor.addMonitoring("jobAgent-TODO", this);
+
+		// EXPERIMENTAL
+		// ========= for ORNL Titan
+		try{
+			Connection connection = DriverManager.getConnection(String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db", pid));
+			Statement statement = connection.createStatement();
+			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
+			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable string(256))");
+			connection.close();
+		}
+		catch(SQLException e){
+			System.err.println("Unable to start JobAgent for Titan: " + e.getMessage());
+		}
 	}
 
 	@Override
