@@ -165,6 +165,11 @@ public class JobAgent extends Thread implements MonitoringObject {
 	private String RES_CPUMHZ = "";
 	private String RES_CPUFAMILY = "";
 
+	// EXPERIMENTAL 
+	// for ORNL Titan
+	String dbname;
+	int numCores;
+
 	/**
 	 */
 	public JobAgent() {
@@ -232,15 +237,30 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 		// EXPERIMENTAL
 		// ========= for ORNL Titan
+		
 		try{
-			Connection connection = DriverManager.getConnection(String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db", pid));
+			String titan_cores_str = null;
+			if(env.containsKey("TITAN_CORES_CLAIMED"))
+				titan_cores_str = env.get("TITAN_CORES_CLAIMED");
+			if(titan_cores_str==null)
+				throw new NumberFormatException("Titan cores number not defined");
+			numCores = Integer.parseInt(titan_cores_str);
+			if(numCores<=0)
+				throw new NumberFormatException("Titan cores number is invalid");
+			dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db", pid);
+			Connection connection = DriverManager.getConnection(dbname);
 			Statement statement = connection.createStatement();
 			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
-			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable string(256))");
+			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
+							"environment TEXT," +
+							"exec_code INTEGER, val_code INTEGER)");
 			connection.close();
 		}
 		catch(SQLException e){
-			System.err.println("Unable to start JobAgent for Titan: " + e.getMessage());
+			System.err.println("Unable to start JobAgent for Titan because of SQLite exception: " + e.getMessage());
+		}
+		catch(NumberFormatException e){
+			System.err.println("Number of Titan cores (TITAN_CORES_CLAIMED environment variable) has incorrect value: " + e.getMessage());
 		}
 	}
 
@@ -260,6 +280,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 		}
 
 		int count = jobagent_requests;
+		// SELECT * FROM alien_jobs WHERE status='Q' OR status='R'
+		// this is numCores-count
 		while (count > 0) {
 			if (!updateDynamicParameters())
 				break;
@@ -307,8 +329,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 							installPackages(packToInstall);
 						}
-					} else
+					} else{
+						// EXPERIMENTAL 
+						// for ORNL Titan
 						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
+						break;
+					}
 
 					try {
 						// TODO?: monitor.sendBgMonitoring
@@ -324,6 +350,11 @@ public class JobAgent extends Thread implements MonitoringObject {
 		}
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
+		// EXPERIMENTAL 
+		// For ORNL Titan
+		File f = new File(dbname);
+		if(f!=null)
+			f.delete();
 		System.exit(0);
 	}
 
@@ -536,7 +567,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	 * @param command
 	 * @param arguments
 	 * @param timeout
-	 * @return <code>0</code> if everything went fine, a positive number with the process exit code (which would mean a problem) and a negative error code in case of timeout or other supervised
+	 * @return <cod>0</code> if everything went fine, a positive number with the process exit code (which would mean a problem) and a negative error code in case of timeout or other supervised
 	 *         execution errors
 	 */
 	private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit, final boolean monitorJob) {
@@ -567,13 +598,13 @@ public class JobAgent extends Thread implements MonitoringObject {
 		System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 		
 		//final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
-		final List<String> cmd1 = new LinkedList<>();
-		cmd1.add("/lustre/atlas/scratch/psvirin/csc108/tmp/sq.sh");
-		cmd1.add(tempDir.getAbsolutePath());
-		cmd1.add(fExe.getAbsolutePath());
-		ProcessBuilder pBuilder1 = new ProcessBuilder(cmd1);	
-		ProcessBuilder pBuilder = new ProcessBuilder(cmd);	
-		try{
+		//final List<String> cmd1 = new LinkedList<>();
+		//cmd1.add("/lustre/atlas/scratch/psvirin/csc108/tmp/sq.sh");
+		//cmd1.add(tempDir.getAbsolutePath());
+		//cmd1.add(fExe.getAbsolutePath());
+		//ProcessBuilder pBuilder1 = new ProcessBuilder(cmd1);	
+		//ProcessBuilder pBuilder = new ProcessBuilder(cmd);	
+		/*try{
 			pBuilder1.start();
 			//Process p;
 			//p = Runtime.getRuntime().exec("sqlite3 /lustre/atlas/scratch/psvirin/csc108/alien.db \"INSERT INTO tasks_alien VALUES(0, '" + fExe.getAbsolutePath() + "', 'Q');\"");
@@ -590,11 +621,21 @@ public class JobAgent extends Thread implements MonitoringObject {
 		}
 		catch(Exception e){
 			System.out.println(e.getMessage());
+		}*/
+
+		// EXPERIMENTAL
+		// for ORNL Titan
+		try{
+			Connection connection = DriverManager.getConnection(dbname);
+			Statement statement = connection.createStatement();
+			statement.executeUpdate("");
+		} catch(SQLException e){
+			System.err.println("Failed to insert job: " + e.getMessage());
 		}
 
 		// EXPERIMENTAL
 		//pBuilder = new ProcessBuilder(cmd);
-		pBuilder = new ProcessBuilder("sleep", "200");
+		ProcessBuilder pBuilder = new ProcessBuilder("sleep", "200");
 
 		pBuilder.directory(tempDir);
 
