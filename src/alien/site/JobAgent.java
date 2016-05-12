@@ -71,6 +71,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Stack;
 
 
 
@@ -308,27 +309,50 @@ public class JobAgent extends Thread implements MonitoringObject {
 			e.printStackTrace();
 		}
 
+		class TitanJobStatus{
+			public int rank;
+			public String  jobFolder;
+			public String status;
+			public int executionCode;
+			public int validationCode;
+			public TitanJobStatus(int r, String job_folder, String st, int exec_code, int val_code){
+				rank = r;
+				jobFolder = job_folder;
+				status = st;
+				executionCode = exec_code;
+				validationCode = val_code;
+			}
+		};
+
 		while(true){ 
 			if (!updateDynamicParameters()){
 				System.err.println("update for dynamic parameters failed. Stopping the agent.");
 				break;
 			}
 
-			int activeJobsFound = 0;
+			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
 			try{
 				Connection connection = DriverManager.getConnection(dbname);
 				Statement statement = connection.createStatement();
-				ResultSet rs = statement.executeQuery("SELECT COUNT(*) AS cnt FROM alien_jobs WHERE status='Q' OR status='R'");
-				activeJobsFound = rs.getInt("cnt");
+				ResultSet rs = statement.executeQuery("SELECT rank, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='C' OR status='I'");
+				while(rs.next()){
+					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+				}
+				
+				connection.close();
 			} catch(SQLException e){
 				System.err.println("Getting free slots failed: " + e.getMessage());
 				continue;
 			}
-			int count = numCores - activeJobsFound;
+			int count = idleRanks.size();
 			System.out.println(String.format("We can start %d jobs", count));
 
 			while (count > 0) {
 				System.out.println(siteMap.toString());
+				TitanJobStatus js = idleRanks.pop();
+				if(js.status.equals("C")){
+					;	/// upload data
+				}
 
 				try {
 					logger.log(Level.INFO, "Trying to get a match...");
