@@ -279,74 +279,95 @@ public class JobAgent extends Thread implements MonitoringObject {
 			e.printStackTrace();
 		}
 
-		int count = jobagent_requests;
-		// SELECT * FROM alien_jobs WHERE status='Q' OR status='R'
-		// this is numCores-count
-		while (count > 0) {
-			if (!updateDynamicParameters())
-				break;
-
-			System.out.println(siteMap.toString());
-
-			try {
-				logger.log(Level.INFO, "Trying to get a match...");
-
-				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
-				monitor.sendParameter("TTL", siteMap.get("TTL"));
-
-				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
-				matchedJob = jobMatch.getMatchJob();
-
-				// TODELETE
-				if (matchedJob != null)
-					System.out.println(matchedJob.toString());
-
-				if (matchedJob != null && !matchedJob.containsKey("Error")) {
-					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
-					queueId = ((Long) matchedJob.get("queueId")).intValue();
-					username = (String) matchedJob.get("User");
-					jobToken = (String) matchedJob.get("jobToken");
-
-					// TODO: commander.setUser(username); commander.setSite(site);
-
-					System.out.println(jdl.getExecutable());
-					System.out.println(jdl.toString());
-					System.out.println("====================");
-					System.out.println(username);
-					System.out.println(queueId);
-					System.out.println(jobToken);
-
-					// process payload
-					handleJob();
-
-					cleanup();
-				} else {
-					if (matchedJob != null && matchedJob.containsKey("Error")) {
-						logger.log(Level.INFO, (String) matchedJob.get("Error"));
-
-						if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
-							final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
-							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
-							installPackages(packToInstall);
-						}
-					} else{
-						// EXPERIMENTAL 
-						// for ORNL Titan
-						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
-						break;
-					}
-
-					try {
-						// TODO?: monitor.sendBgMonitoring
-						sleep(20000);
-					} catch (final InterruptedException e) {
-						e.printStackTrace();
-					}
-				}
-			} catch (final Exception e) {
-				logger.log(Level.INFO, "Error getting a matching job: " + e);
+		int tmp_count = 5;
+		//while(true){ // in reality "until TTL is less than 2 minutes (for example)
+		while(tmp_count>0){ // in reality "until TTL is less than 2 minutes (for example)
+			tmp_count--;
+			System.out.println(String.format("Running loop for %dth time", tmp_count));
+			int activeJobsFound = 0;
+			try{
+				Connection connection = DriverManager.getConnection(dbname);
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery("SELECT COUNT(*) AS cnt FROM alien_jobs WHERE status='Q' OR status='R'");
+				activeJobsFound = rs.getInt("cnt");
+			} catch(SQLException e){
+				System.err.println("Getting free slots failed: " + e.getMessage());
+				continue;
 			}
-			count--;
+			int count = numCores - activeJobsFound;
+			System.out.println(String.format("We can start %d jobs", count));
+			while (count > 0) {
+				if (!updateDynamicParameters()){
+					System.err.println("update for dynamic parameters failed");
+					break;
+				}
+
+				System.out.println(siteMap.toString());
+
+				try {
+					logger.log(Level.INFO, "Trying to get a match...");
+
+					monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
+					monitor.sendParameter("TTL", siteMap.get("TTL"));
+
+					final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
+					matchedJob = jobMatch.getMatchJob();
+
+					// TODELETE
+					if (matchedJob != null)
+						System.out.println(matchedJob.toString());
+
+					if (matchedJob != null && !matchedJob.containsKey("Error")) {
+						jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
+						queueId = ((Long) matchedJob.get("queueId")).intValue();
+						username = (String) matchedJob.get("User");
+						jobToken = (String) matchedJob.get("jobToken");
+
+						// TODO: commander.setUser(username); commander.setSite(site);
+
+						System.out.println(jdl.getExecutable());
+						System.out.println(jdl.toString());
+						System.out.println("====================");
+						System.out.println(username);
+						System.out.println(queueId);
+						System.out.println(jobToken);
+
+						// process payload
+						handleJob();
+
+						cleanup();
+					} else {
+						if (matchedJob != null && matchedJob.containsKey("Error")) {
+							logger.log(Level.INFO, (String) matchedJob.get("Error"));
+
+							if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
+								final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
+								monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
+								installPackages(packToInstall);
+							}
+							else if(Integer.valueOf(-2).equals(matchedJob.get("Code"))){
+								logger.log(Level.INFO, "Nothing to run for now, idling for a while");
+								break;
+							}
+						} else{
+							// EXPERIMENTAL 
+							// for ORNL Titan
+							logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
+							break;
+						}
+
+						try {
+							// TODO?: monitor.sendBgMonitoring
+							sleep(20000);
+						} catch (final InterruptedException e) {
+							e.printStackTrace();
+						}
+					}
+				} catch (final Exception e) {
+					logger.log(Level.INFO, "Error getting a matching job: " + e);
+				}
+				count--;
+			}
 		}
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
@@ -475,15 +496,18 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
-		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
-		int timeleft = origTtl - time_subs - 300;
+		//final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
+		final long time_subs = (long) (jobAgentCurrentTime - jobAgentStartTime);
+		//int timeleft = origTtl - time_subs - 300;
+		long timeleft = origTtl*1000 - time_subs - 300*1000;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
 		// we check if the proxy timeleft is smaller than the ttl itself
 		final int proxy = getRemainingProxyTime();
 		logger.log(Level.INFO, "Proxy timeleft is " + proxy);
-		if (proxy > 0 && proxy < timeleft)
+		//if (proxy > 0 && proxy < timeleft)
+		if (proxy > 0 && proxy*1000 < timeleft)
 			timeleft = proxy;
 
 		// safety time for saving, etc
@@ -501,7 +525,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 		}
 
 		siteMap.put("Disk", Long.valueOf(space));
-		siteMap.put("TTL", Integer.valueOf(timeleft));
+		//siteMap.put("TTL", Integer.valueOf(timeleft));
+		siteMap.put("TTL", Long.valueOf(timeleft/1000));
 
 		return true;
 	}
