@@ -254,6 +254,34 @@ public class JobAgent extends Thread implements MonitoringObject {
 			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
 							"environment TEXT," +
 							"exec_code INTEGER, val_code INTEGER)");
+			statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
+			statement.executeUpdate("INSERT INTO numbers" +
+				"select 1" +
+				"from (" +
+				   "select 0 union select 1 union select 2 " +
+				") a, (" +
+				   "select 0 union select 1 union select 2 union select 3 " +
+				   "union select 4 union select 5 union select 6 " +
+				   "union select 7 union select 8 union select 9" +
+				") b, (" +
+				   "select 0 union select 1 union select 2 union select 3 " +
+				   "union select 4 union select 5 union select 6 " +
+				   "union select 7 union select 8 union select 9" +
+				") c, (" +
+				   "select 0 union select 1 union select 2 union select 3 " +
+				   "union select 4 union select 5 union select 6 " +
+				   "union select 7 union select 8 union select 9" +
+				") d, (" +
+				   "select 0 union select 1 union select 2 union select 3 " +
+				   "union select 4 union select 5 union select 6 " +
+				   "union select 7 union select 8 union select 9" +
+				") e, (" +
+				   "select 0 union select 1 union select 2 union select 3 " +
+				   "union select 4 union select 5 union select 6 " +
+				   "union select 7 union select 8 union select 9" +
+				") f");
+			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+			statement.executeUpdate("DROP TABLE numbers");
 			connection.close();
 		}
 		catch(SQLException e){
@@ -262,6 +290,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		catch(NumberFormatException e){
 			System.err.println("Number of Titan cores (TITAN_CORES_CLAIMED environment variable) has incorrect value: " + e.getMessage());
 		}
+		// END EXPERIMENTAL
 	}
 
 	@Override
@@ -279,11 +308,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 			e.printStackTrace();
 		}
 
-		int tmp_count = 5;
-		//while(true){ // in reality "until TTL is less than 2 minutes (for example)
-		while(tmp_count>0){ // in reality "until TTL is less than 2 minutes (for example)
-			tmp_count--;
-			System.out.println(String.format("Running loop for %dth time", tmp_count));
+		while(true){ 
+			if (!updateDynamicParameters()){
+				System.err.println("update for dynamic parameters failed. Stopping the agent.");
+				break;
+			}
+
 			int activeJobsFound = 0;
 			try{
 				Connection connection = DriverManager.getConnection(dbname);
@@ -296,12 +326,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 			}
 			int count = numCores - activeJobsFound;
 			System.out.println(String.format("We can start %d jobs", count));
-			while (count > 0) {
-				if (!updateDynamicParameters()){
-					System.err.println("update for dynamic parameters failed");
-					break;
-				}
 
+			while (count > 0) {
 				System.out.println(siteMap.toString());
 
 				try {
@@ -347,7 +373,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 							}
 							else if(Integer.valueOf(-2).equals(matchedJob.get("Code"))){
 								logger.log(Level.INFO, "Nothing to run for now, idling for a while");
-								break;
 							}
 						} else{
 							// EXPERIMENTAL 
@@ -358,7 +383,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 						try {
 							// TODO?: monitor.sendBgMonitoring
-							sleep(20000);
+							sleep(60000);
+							break;
 						} catch (final InterruptedException e) {
 							e.printStackTrace();
 						}
@@ -373,6 +399,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
 		// EXPERIMENTAL 
 		// For ORNL Titan
+		// TO DELETE
 		File f = new File(dbname);
 		if(f!=null)
 			f.delete();
