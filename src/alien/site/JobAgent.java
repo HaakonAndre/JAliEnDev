@@ -72,6 +72,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Stack;
+import java.io.PrintWriter;
 
 
 
@@ -620,6 +621,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 			}
 
 			getMemoryRequirements();
+
+			// EXPERIMENTAL 
+			// for ORNL Titan
+			// save jdl into file
+			PrintWriter out = new PrintWriter(tempDir + "/jdl");
+			out.println(jdl);
 
 			// run payload
 			if (execute() < 0)
