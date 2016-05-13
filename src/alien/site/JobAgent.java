@@ -260,8 +260,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 							"environment TEXT," +
 							"exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
 			statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
-			statement.executeUpdate("INSERT INTO numbers" +
-				"select 1" +
+			statement.executeUpdate("INSERT INTO numbers " +
+				"select 1 " +
 				"from (" +
 				   "select 0 union select 1 union select 2 " +
 				") a, (" +
@@ -285,12 +285,13 @@ public class JobAgent extends Thread implements MonitoringObject {
 				   "union select 4 union select 5 union select 6 " +
 				   "union select 7 union select 8 union select 9" +
 				") f");
-			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid, '', '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
 			statement.executeUpdate("DROP TABLE numbers");
 			connection.close();
 		}
 		catch(SQLException e){
 			System.err.println("Unable to start JobAgent for Titan because of SQLite exception: " + e.getMessage());
+			System.exit(-1);
 		}
 		catch(NumberFormatException e){
 			System.err.println("Number of Titan cores (TITAN_CORES_CLAIMED environment variable) has incorrect value: " + e.getMessage());
