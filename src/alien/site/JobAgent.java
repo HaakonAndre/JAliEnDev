@@ -170,8 +170,10 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 	// EXPERIMENTAL 
 	// for ORNL Titan
-	String dbname;
-	int numCores;
+	private String dbname;
+	private int numCores;
+	private int current_rank;
+	
 
 	/**
 	 */
@@ -256,7 +258,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
 			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
 							"environment TEXT," +
-							"exec_code INTEGER, val_code INTEGER)");
+							"exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
 			statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
 			statement.executeUpdate("INSERT INTO numbers" +
 				"select 1" +
@@ -416,6 +418,10 @@ public class JobAgent extends Thread implements MonitoringObject {
 						System.out.println(queueId);
 						System.out.println(jobToken);
 
+						// EXPERIMENTAL
+						// for ORNL Titan
+						current_rank = js.rank;
+
 						// process payload
 						handleJob();
 
@@ -464,7 +470,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
 		// EXPERIMENTAL 
 		// For ORNL Titan
-		// TO DELETE
+		// TO DELETE: use deleteOnExit instead
 		File f = new File(dbname);
 		if(f!=null)
 			f.delete();
@@ -749,15 +755,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 			System.out.println(e.getMessage());
 		}*/
 
-		// EXPERIMENTAL
-		// for ORNL Titan
-		try{
-			Connection connection = DriverManager.getConnection(dbname);
-			Statement statement = connection.createStatement();
-			statement.executeUpdate("");
-		} catch(SQLException e){
-			System.err.println("Failed to insert job: " + e.getMessage());
-		}
 
 		// EXPERIMENTAL
 		//pBuilder = new ProcessBuilder(cmd);
@@ -989,11 +986,27 @@ public class JobAgent extends Thread implements MonitoringObject {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 
 		//final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, true);
-		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, false);
+		//final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, false);
 
-		System.err.println("Execution code: " + code);
+		// EXPERIMENTAL
+		// for ORNL Titan
+		try{
+			Connection connection = DriverManager.getConnection(dbname);
+			Statement statement = connection.createStatement();
+			statement.executeUpdate(String.format("INSERT INTO alien_jobs(rank, queue_id, job_folder , status , executable, validation, environment ) " + 
+									"VALUES(%d, %d, '%s', '%s', '%s', '%s', '%s')", 
+												current_rank, 0, tempDir, "Q", 
+												jdl.gets("Executable"),
+												jdl.gets("ValidationCommand"),
+												"" ));
+		} catch(SQLException e){
+			System.err.println("Failed to insert job: " + e.getMessage());
+		}
 
-		return code;
+		//System.err.println("Execution code: " + code);
+
+		//return code;
+		return 0;
 	}
 
 	private boolean validate() {
