@@ -995,7 +995,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			Statement statement = connection.createStatement();
 			statement.executeUpdate(String.format("INSERT INTO alien_jobs(rank, queue_id, job_folder , status , executable, validation, environment ) " + 
 									"VALUES(%d, %d, '%s', '%s', '%s', '%s', '%s')", 
-												current_rank, 0, tempDir, "Q", 
+												current_rank, queueId, tempDir, "Q", 
 												jdl.gets("Executable"),
 												jdl.gets("ValidationCommand"),
 												"" ));
