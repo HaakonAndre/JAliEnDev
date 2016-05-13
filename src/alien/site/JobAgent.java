@@ -356,9 +356,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 				System.out.println(siteMap.toString());
 				TitanJobStatus js = idleRanks.pop();
 				if(js.status.equals("C")){
-					// check exec status
-					// check validation status
-					// set tempDir to job folder
 					queueId = js.queueId;
 					tempDir = new File(js.jobFolder);
 					// read JDL from file
@@ -454,6 +451,13 @@ public class JobAgent extends Thread implements MonitoringObject {
 					logger.log(Level.INFO, "Error getting a matching job: " + e);
 				}
 				count--;
+
+				try{
+					sleep(60000);
+				}
+				catch(InterruptedException e){
+					System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
+				}
 			}
 		}
 
