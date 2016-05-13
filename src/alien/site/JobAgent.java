@@ -73,6 +73,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Stack;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 
 
 
@@ -253,7 +254,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			Connection connection = DriverManager.getConnection(dbname);
 			Statement statement = connection.createStatement();
 			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
-			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
+			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
 							"environment TEXT," +
 							"exec_code INTEGER, val_code INTEGER)");
 			statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
@@ -282,7 +283,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 				   "union select 4 union select 5 union select 6 " +
 				   "union select 7 union select 8 union select 9" +
 				") f");
-			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid, '', '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
 			statement.executeUpdate("DROP TABLE numbers");
 			connection.close();
 		}
@@ -312,12 +313,14 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 		class TitanJobStatus{
 			public int rank;
+			public Long queueId;
 			public String  jobFolder;
 			public String status;
 			public int executionCode;
 			public int validationCode;
-			public TitanJobStatus(int r, String job_folder, String st, int exec_code, int val_code){
+			public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code){
 				rank = r;
+				queueId = qid;
 				jobFolder = job_folder;
 				status = st;
 				executionCode = exec_code;
@@ -335,9 +338,10 @@ public class JobAgent extends Thread implements MonitoringObject {
 			try{
 				Connection connection = DriverManager.getConnection(dbname);
 				Statement statement = connection.createStatement();
-				ResultSet rs = statement.executeQuery("SELECT rank, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='C' OR status='I'");
+				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='C' OR status='I'");
 				while(rs.next()){
-					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), 
+										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
 				}
 				
 				connection.close();
@@ -352,7 +356,39 @@ public class JobAgent extends Thread implements MonitoringObject {
 				System.out.println(siteMap.toString());
 				TitanJobStatus js = idleRanks.pop();
 				if(js.status.equals("C")){
-					;	/// upload data
+					// check exec status
+					// check validation status
+					// set tempDir to job folder
+					queueId = js.queueId;
+					tempDir = new File(js.jobFolder);
+					// read JDL from file
+					//String jdl_content = readFile(js.jobFolder + "/jdl", StandardCharsets.UTF_8);
+					String jdl_content = null;
+					try{
+						byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
+						jdl_content = new String(encoded, Charset.defaultCharset());
+					}
+					catch(IOException e){
+						System.err.println("Unable to read JDL file: " + e.getMessage());
+					}
+					if( jdl_content!=null ){
+						jdl = null;
+						try{
+							jdl = new JDL(Job.sanitizeJDL(jdl_content));
+						}
+						catch(IOException e){
+							System.err.println("Unable to parse JDL: " + e.getMessage());
+						}
+						if(jdl!=null){
+							if(js.executionCode!=0) 
+								changeStatus(JobStatus.ERROR_E);
+							else if(js.validationCode!=0)
+								changeStatus(JobStatus.ERROR_V);
+							else
+								changeStatus(JobStatus.SAVING);
+							uploadOutputFiles();	// upload data
+						}
+					}
 				}
 
 				try {
@@ -625,20 +661,23 @@ public class JobAgent extends Thread implements MonitoringObject {
 			// EXPERIMENTAL 
 			// for ORNL Titan
 			// save jdl into file
-			PrintWriter out = new PrintWriter(tempDir + "/jdl");
-			out.println(jdl);
+			try(PrintWriter out = new PrintWriter(tempDir + "/jdl")){
+					out.println(jdl);
+			}
 
 			// run payload
 			if (execute() < 0)
 				changeStatus(JobStatus.ERROR_E);
 
-			if (!validate())
+			// EXPERIMENTAL
+			// for ORNL Titan
+			/*if (!validate())
 				changeStatus(JobStatus.ERROR_V);
 
 			if (jobStatus == JobStatus.RUNNING)
 				changeStatus(JobStatus.SAVING);
 
-			uploadOutputFiles();
+			uploadOutputFiles(); */
 
 		} catch (final Exception e) {
 			System.err.println("Unable to handle job");
