@@ -171,6 +171,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	// EXPERIMENTAL 
 	// for ORNL Titan
 	private String dbname;
+	private String dblink;
 	private int numCores;
 	private int current_rank;
 	
@@ -285,9 +286,14 @@ public class JobAgent extends Thread implements MonitoringObject {
 				   "union select 4 union select 5 union select 6 " +
 				   "union select 7 union select 8 union select 9" +
 				") f");
-			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
 			statement.executeUpdate("DROP TABLE numbers");
 			connection.close();
+
+			dblink = "/lustre/atlas/scratch/psvirin/csc108/workdir/database.lnk";
+		 	try(PrintWriter out = new PrintWriter(dblink)){
+                                          out.println(dbname);
+                        };
 		}
 		catch(SQLException e){
 			System.err.println("Unable to start JobAgent for Titan because of SQLite exception: " + e.getMessage());
@@ -295,6 +301,9 @@ public class JobAgent extends Thread implements MonitoringObject {
 		}
 		catch(NumberFormatException e){
 			System.err.println("Number of Titan cores (TITAN_CORES_CLAIMED environment variable) has incorrect value: " + e.getMessage());
+		}
+		catch(Exception e){
+			System.err.println("Failed to open dblink file");
 		}
 		// END EXPERIMENTAL
 	}
@@ -341,7 +350,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			try{
 				Connection connection = DriverManager.getConnection(dbname);
 				Statement statement = connection.createStatement();
-				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='C' OR status='I'");
+				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
 				while(rs.next()){
 					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), 
 										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
@@ -354,11 +363,22 @@ public class JobAgent extends Thread implements MonitoringObject {
 			}
 			int count = idleRanks.size();
 			System.out.println(String.format("We can start %d jobs", count));
+			
+			if(count==0){
+				try{
+					Thread.sleep(30000);
+				}
+				catch(InterruptedException e){}
+				finally{
+					System.out.println("Going for the next round....");
+				}
+				continue;
+			}
 
 			while (count > 0) {
 				System.out.println(siteMap.toString());
 				TitanJobStatus js = idleRanks.pop();
-				if(js.status.equals("C")){
+				if(js.status.equals("D")){
 					queueId = js.queueId;
 					tempDir = new File(js.jobFolder);
 					// read JDL from file
@@ -387,6 +407,17 @@ public class JobAgent extends Thread implements MonitoringObject {
 							else
 								changeStatus(JobStatus.SAVING);
 							uploadOutputFiles();	// upload data
+							cleanup();
+
+							try{
+								Connection connection = DriverManager.getConnection(dbname);
+								Statement statement = connection.createStatement();
+								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", js.rank));
+								connection.close();
+							}
+							catch(SQLException e){
+								System.err.println("Update job state to I failed");
+							}
 						}
 					}
 				}
@@ -426,7 +457,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 						// process payload
 						handleJob();
 
-						cleanup();
+						// cleanup();
 					} else {
 						if (matchedJob != null && matchedJob.containsKey("Error")) {
 							logger.log(Level.INFO, (String) matchedJob.get("Error"));
@@ -475,6 +506,10 @@ public class JobAgent extends Thread implements MonitoringObject {
 		File f = new File(dbname);
 		if(f!=null)
 			f.delete();
+		f = new File(dblink);
+		if(f!=null)
+			f.delete();
+
 		System.exit(0);
 	}
 
@@ -677,6 +712,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			}
 
 			// run payload
+			changeStatus(JobStatus.RUNNING);
 			if (execute() < 0)
 				changeStatus(JobStatus.ERROR_E);
 
@@ -695,6 +731,50 @@ public class JobAgent extends Thread implements MonitoringObject {
 			e.printStackTrace();
 		}
 	}
+
+
+	// EXPERIMENTAL
+	// for ORNL Titan
+	private String getLocalCommand(final String command, final List<String> arguments) {
+		final List<String> cmd = new LinkedList<>();
+
+		final int idx = command.lastIndexOf('/');
+
+		final String cmdStrip = idx < 0 ? command : command.substring(idx + 1);
+
+		final File fExe = new File(tempDir, cmdStrip);
+
+		if (!fExe.exists())
+			return null;
+
+		fExe.setExecutable(true);
+
+		//cmd.add(fExe.getAbsolutePath());
+
+		/*if (arguments != null && arguments.size() > 0){
+			for (final String argument : arguments){
+				if (argument.trim().length() > 0) {
+					final StringTokenizer st = new StringTokenizer(argument);
+
+					while (st.hasMoreTokens())
+						cmd.add(st.nextToken());
+				}
+			}
+		}
+		*/
+
+		// JAVA 8
+		String argString = "";
+		if(arguments!=null){
+			for(String s: arguments){
+				argString += " " + s;
+			}
+		}
+
+		//System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
+		return new String( fExe.getAbsolutePath() + argString );
+	}
+	// end EXPERIMENTAL
 
 	/**
 	 * @param command
@@ -994,12 +1074,19 @@ public class JobAgent extends Thread implements MonitoringObject {
 		try{
 			Connection connection = DriverManager.getConnection(dbname);
 			Statement statement = connection.createStatement();
-			statement.executeUpdate(String.format("INSERT INTO alien_jobs(rank, queue_id, job_folder , status , executable, validation, environment ) " + 
-									"VALUES(%d, %d, '%s', '%s', '%s', '%s', '%s')", 
-												current_rank, queueId, tempDir, "Q", 
-												jdl.gets("Executable"),
-												jdl.gets("ValidationCommand"),
-												"" ));
+			//statement.executeUpdate(String.format("INSERT INTO alien_jobs(rank, queue_id, job_folder , status , executable, validation, environment ) " + 
+									//"VALUES(%d, %d, '%s', '%s', '%s', '%s', '%s')", 
+												//current_rank, queueId, tempDir, "Q", 
+												//jdl.gets("Executable"),
+												//jdl.gets("ValidationCommand"),
+												//"" ));
+			String validationCommand = jdl.gets("ValidationCommand");
+			statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
+									"WHERE rank=%d", 
+									queueId, tempDir, "Q", 
+									getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
+									validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
+									"", current_rank ));
 		} catch(SQLException e){
 			System.err.println("Failed to insert job: " + e.getMessage());
 		}
