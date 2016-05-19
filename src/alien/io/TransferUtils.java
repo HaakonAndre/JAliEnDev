@@ -414,16 +414,6 @@ public final class TransferUtils {
 	}
 
 	/**
-	 * @param lfn
-	 * @param se
-	 * @return ?
-	 */
-	public static int removeMirror(final LFN lfn, final SE se) {
-		// TODO
-		return 0;
-	}
-
-	/**
 	 * Log a transfer attempt
 	 * 
 	 * @param p
