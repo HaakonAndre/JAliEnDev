@@ -375,14 +375,14 @@ public class JobAgent extends Thread implements MonitoringObject {
 				continue;
 			}
 
-			while (count > 0) {
-				System.out.println(siteMap.toString());
-				TitanJobStatus js = idleRanks.pop();
+			// uploading data from finished jobs
+			for(TitanJobStatus js: idleRanks){
 				if(js.status.equals("D")){
 					queueId = js.queueId;
+					System.err.println(String.format("Uploading job: %d", queueId));
+					jobWorkdir = js.jobFolder;
 					tempDir = new File(js.jobFolder);
 					// read JDL from file
-					//String jdl_content = readFile(js.jobFolder + "/jdl", StandardCharsets.UTF_8);
 					String jdl_content = null;
 					try{
 						byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
@@ -408,6 +408,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 								changeStatus(JobStatus.SAVING);
 							uploadOutputFiles();	// upload data
 							cleanup();
+							System.err.println(String.format("Upload job %d finished", queueId));
 
 							try{
 								Connection connection = DriverManager.getConnection(dbname);
@@ -421,6 +422,11 @@ public class JobAgent extends Thread implements MonitoringObject {
 						}
 					}
 				}
+			}
+
+			while (count > 0) {
+				System.out.println(siteMap.toString());
+				TitanJobStatus js = idleRanks.pop();
 
 				try {
 					logger.log(Level.INFO, "Trying to get a match...");
@@ -469,6 +475,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 							}
 							else if(Integer.valueOf(-2).equals(matchedJob.get("Code"))){
 								logger.log(Level.INFO, "Nothing to run for now, idling for a while");
+								count = 1; // breaking the loop
 							}
 						} else{
 							// EXPERIMENTAL 
@@ -477,25 +484,25 @@ public class JobAgent extends Thread implements MonitoringObject {
 							break;
 						}
 
-						try {
+						/*try {
 							// TODO?: monitor.sendBgMonitoring
 							sleep(60000);
 							break;
 						} catch (final InterruptedException e) {
 							e.printStackTrace();
-						}
+						}*/
 					}
 				} catch (final Exception e) {
 					logger.log(Level.INFO, "Error getting a matching job: " + e);
 				}
 				count--;
+			}
 
-				try{
-					sleep(60000);
-				}
-				catch(InterruptedException e){
-					System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
-				}
+			try{
+				sleep(60000);
+			}
+			catch(InterruptedException e){
+				System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
 			}
 		}
 
