@@ -932,9 +932,9 @@ public final class SEUtils {
 	 *            any reindexing done in the database and the PFN strings still point to the old SE.
 	 * @param ses
 	 *            SEs to dump the content from
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public static void masterSE(final boolean realPFNs, final String... ses) throws Exception {
+	public static void masterSE(final boolean realPFNs, final String... ses) throws IOException {
 		final NumberFormat twoDigits = new DecimalFormat("00");
 		final NumberFormat fiveDigits = new DecimalFormat("00000");
 
