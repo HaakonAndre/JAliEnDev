@@ -361,6 +361,12 @@ public class JDL implements Serializable {
 		}
 
 		try {
+			return Long.valueOf(value);
+		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			// ignore
+		}
+
+		try {
 			return Double.valueOf(value);
 		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
@@ -863,6 +869,23 @@ public class JDL implements Serializable {
 	 * @return events/job, of -1 if not supported
 	 */
 	public int getSimFactor() {
+		String splitarguments = gets("SplitArguments");
+
+		if (splitarguments == null || splitarguments.length() == 0)
+			splitarguments = gets("Arguments");
+
+		if (splitarguments != null && splitarguments.length() > 0) {
+			final StringTokenizer st = new StringTokenizer(splitarguments, " \t");
+
+			while (st.hasMoreTokens())
+				if (st.nextToken().equals("--nevents") && st.hasMoreTokens())
+					try {
+						return Integer.parseInt(st.nextToken());
+					} catch (final NumberFormatException nfe) {
+						System.err.println("Could not parse the number of events from this line: " + splitarguments + " : " + nfe.getMessage());
+					}
+		}
+
 		final List<String> inputFiles = getInputFiles();
 
 		if (inputFiles == null)
@@ -940,25 +963,27 @@ public class JDL implements Serializable {
 	private static final void append(final StringBuilder sb, final Object o) {
 		if (o instanceof StringBuilder || o instanceof StringBuffer || o instanceof Number)
 			sb.append(o);
-		else if (o instanceof Collection) {
-			sb.append("{");
+		else
+			if (o instanceof Collection) {
+				sb.append("{");
 
-			final Collection<?> c = (Collection<?>) o;
+				final Collection<?> c = (Collection<?>) o;
 
-			boolean first = true;
+				boolean first = true;
 
-			for (final Object o2 : c) {
-				if (!first)
-					sb.append(",");
-				else
-					first = false;
+				for (final Object o2 : c) {
+					if (!first)
+						sb.append(",");
+					else
+						first = false;
 
-				sb.append("\n").append(tab).append(tab).append("\"").append(o2).append("\"");
+					sb.append("\n").append(tab).append(tab).append("\"").append(o2).append("\"");
+				}
+
+				sb.append("\n").append(tab).append("}");
 			}
-
-			sb.append("\n").append(tab).append("}");
-		} else
-			sb.append('"').append(o.toString()).append('"');
+			else
+				sb.append('"').append(o.toString()).append('"');
 	}
 
 	/**
@@ -1013,12 +1038,15 @@ public class JDL implements Serializable {
 				localCopy.add(StringFactory.get(o.toString()));
 
 			newValue = localCopy;
-		} else if (value instanceof String)
-			newValue = StringFactory.get((String) value);
-		else if (value instanceof StringBuilder)
-			newValue = new StringBuilder(((StringBuilder) value).toString());
+		}
 		else
-			newValue = value;
+			if (value instanceof String)
+				newValue = StringFactory.get((String) value);
+			else
+				if (value instanceof StringBuilder)
+					newValue = new StringBuilder(((StringBuilder) value).toString());
+				else
+					newValue = value;
 
 		if (old != null) {
 			for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
@@ -1026,7 +1054,8 @@ public class JDL implements Serializable {
 					entry.setValue(newValue);
 					break;
 				}
-		} else
+		}
+		else
 			jdlContent.put(key, newValue);
 
 		return old;
@@ -1050,24 +1079,26 @@ public class JDL implements Serializable {
 		if (old == null) {
 			values = new LinkedHashSet<>();
 			jdlContent.put(key, values);
-		} else if (old instanceof Collection)
-			values = (Collection<String>) old;
-		else {
-			values = new LinkedHashSet<>();
-			values.add(old.toString());
-
-			boolean added = false;
-
-			for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
-				if (entry.getKey().equalsIgnoreCase(key)) {
-					added = true;
-					entry.setValue(values);
-					break;
-				}
-
-			if (!added)
-				jdlContent.put(key, values);
 		}
+		else
+			if (old instanceof Collection)
+				values = (Collection<String>) old;
+			else {
+				values = new LinkedHashSet<>();
+				values.add(old.toString());
+
+				boolean added = false;
+
+				for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
+					if (entry.getKey().equalsIgnoreCase(key)) {
+						added = true;
+						entry.setValue(values);
+						break;
+					}
+
+				if (!added)
+					jdlContent.put(key, values);
+			}
 
 		for (final String s : value)
 			values.add(StringFactory.get(s));
@@ -1101,7 +1132,8 @@ public class JDL implements Serializable {
 
 			if (newValue.length() > 0)
 				newValue.append(" && ");
-		} else {
+		}
+		else {
 			newValue = new StringBuilder();
 
 			set("Requirements", newValue);
@@ -1142,36 +1174,41 @@ public class JDL implements Serializable {
 				sb.append("<font color=darkgreen>").append(o).append("</font>");
 			else
 				sb.append(formatExpression(o.toString()));
-		} else if (o instanceof Collection) {
-			sb.append("{<br><div style='padding-left:20px'>");
+		}
+		else
+			if (o instanceof Collection) {
+				sb.append("{<br><div style='padding-left:20px'>");
 
-			final Collection<?> c = (Collection<?>) o;
+				final Collection<?> c = (Collection<?>) o;
 
-			boolean first = true;
+				boolean first = true;
 
-			for (final Object o2 : c) {
-				if (!first)
-					sb.append(",<br>");
-				else
-					first = false;
+				for (final Object o2 : c) {
+					if (!first)
+						sb.append(",<br>");
+					else
+						first = false;
 
-				String text = o2.toString();
+					String text = o2.toString();
 
-				if (key.toLowerCase().startsWith("output") && !key.toLowerCase().equals("outputdir"))
-					text = formatOutput(text);
-				else if (key.equalsIgnoreCase("packages"))
-					text = formatPackages(text);
-				else if (key.equalsIgnoreCase("jobtag"))
-					text = formatJobTag(text);
-				else
-					text = "<font color=navy>" + Format.escHtml(text) + "</font>";
+					if (key.toLowerCase().startsWith("output") && !key.toLowerCase().equals("outputdir"))
+						text = formatOutput(text);
+					else
+						if (key.equalsIgnoreCase("packages"))
+							text = formatPackages(text);
+						else
+							if (key.equalsIgnoreCase("jobtag"))
+								text = formatJobTag(text);
+							else
+								text = "<font color=navy>" + Format.escHtml(text) + "</font>";
 
-				sb.append('"').append(text).append('"');
+					sb.append('"').append(text).append('"');
+				}
+
+				sb.append("</div>}");
 			}
-
-			sb.append("</div>}");
-		} else
-			sb.append("\"<font color=navy>").append(o.toString()).append("</font>\"");
+			else
+				sb.append("\"<font color=navy>").append(o.toString()).append("</font>\"");
 	}
 
 	private static final String formatJobTag(final String text) {
@@ -1243,7 +1280,8 @@ public class JDL implements Serializable {
 
 				old = idx2 + 1;
 				idx = arg.indexOf('"', old);
-			} else
+			}
+			else
 				break;
 		}
 
@@ -1379,8 +1417,9 @@ public class JDL implements Serializable {
 
 				if (!includeArchiveMembers)
 					of = of.substring(0, idx);
-				else if (excludeArchives)
-					of = of.substring(idx + 1);
+				else
+					if (excludeArchives)
+						of = of.substring(idx + 1);
 			}
 
 			final StringTokenizer st = new StringTokenizer(of, ":,");
