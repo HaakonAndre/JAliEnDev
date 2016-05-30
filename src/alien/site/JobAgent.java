@@ -74,7 +74,8 @@ import java.sql.Statement;
 import java.util.Stack;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-
+import java.util.Map.Entry;
+import java.io.FileNotFoundException;
 
 
 /**
@@ -1087,6 +1088,22 @@ public class JobAgent extends Thread implements MonitoringObject {
 												//jdl.gets("Executable"),
 												//jdl.gets("ValidationCommand"),
 												//"" ));
+			// setting variables
+			final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
+
+			// setting variables for packages
+			final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+
+			try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
+				for(Entry<String, String> e: alice_environment_packages.entrySet()){
+					out.println(String.format( "%s=%s", e.getKey(), e.getValue()));
+				}
+
+				for(Entry<String, String> e: environment_packages.entrySet()){
+					out.println(String.format( "%s=%s", e.getKey(), e.getValue()));
+				}
+			}
+
 			String validationCommand = jdl.gets("ValidationCommand");
 			statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
 									"WHERE rank=%d", 
@@ -1096,6 +1113,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 									"", current_rank ));
 		} catch(SQLException e){
 			System.err.println("Failed to insert job: " + e.getMessage());
+		} catch(FileNotFoundException e){
+			System.err.println("Failed to write variables file");
 		}
 
 		//System.err.println("Execution code: " + code);
