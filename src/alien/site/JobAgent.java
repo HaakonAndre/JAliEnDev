@@ -1096,11 +1096,11 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 			try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
 				for(Entry<String, String> e: alice_environment_packages.entrySet()){
-					out.println(String.format( "%s=%s", e.getKey(), e.getValue()));
+					out.println(String.format("export %s=%s", e.getKey(), e.getValue()));
 				}
 
 				for(Entry<String, String> e: environment_packages.entrySet()){
-					out.println(String.format( "%s=%s", e.getKey(), e.getValue()));
+					out.println(String.format(" export %s=%s", e.getKey(), e.getValue()));
 				}
 			}
 
