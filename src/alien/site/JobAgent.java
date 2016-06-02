@@ -172,6 +172,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	// EXPERIMENTAL 
 	// for ORNL Titan
 	private String dbname;
+	private String monitoring_dbname;
 	private String dblink;
 	private int numCores;
 	private int current_rank;
@@ -289,6 +290,14 @@ public class JobAgent extends Thread implements MonitoringObject {
 				") f");
 			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
 			statement.executeUpdate("DROP TABLE numbers");
+			connection.close();
+
+			// creating monitoring db
+			monitoring_dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db.monitoring", pid);
+			connection = DriverManager.getConnection(monitoring_dbname);
+			statement = connection.createStatement();
+			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs_monitoring");
+			statement.executeUpdate("CREATE TABLE alien_jobs_monitoring (queue_id VARCHAR(20), resources VARCHAR(100))");
 			connection.close();
 
 			dblink = "/lustre/atlas/scratch/psvirin/csc108/workdir/database.lnk";
@@ -933,17 +942,54 @@ public class JobAgent extends Thread implements MonitoringObject {
 	}
 
 	private void sendProcessResources() {
-		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
-		final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
-				RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
-		System.out.println("+++++ Sending resources info +++++");
-		System.out.println(procinfo);
+		// EXPERIMENTAL
+		// for ORNL Titan
+		class ProcInfoPair{
+			public final long queue_id;
+			public final String procinfo;
+			public ProcInfoPair(String queue_id, String procinfo){
+				this.queue_id = Long.parseLong(queue_id);
+				this.procinfo = procinfo;
+			}
+		}
+		LinkedList<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
+		
+		try{
+			// open db
+			Connection connection = DriverManager.getConnection(monitoring_dbname);
+			Statement statement = connection.createStatement();
+			ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
+			// read all
+			while(rs.next()){
+				job_resources.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
+				//idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
+				//		rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+			 }
+			// delete all
+			statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
+			// close database
+			connection.close();
+		}
+		catch(SQLException e){
+			System.err.println("Unable to get monitoring data: " + e.getMessage());
+		}
+		// foreach send
 
-		commander.q_api.putJobLog(queueId, "proc", procinfo);
+		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
+		//final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
+				//RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
+		//System.out.println("+++++ Sending resources info +++++");
+		//System.out.println(procinfo);
+		for(ProcInfoPair pi: job_resources){
+			commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
+		}
 	}
 
 	private String checkProcessResources() {
 		String error = null;
+		// EXPERIMENTAL
+		// for ORNL Titan
+		/*
 		System.out.println("Checking resources usage");
 
 		try {
@@ -1012,6 +1058,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		} catch (final IOException e) {
 			System.out.println("Problem with the monitoring objects: " + e.toString());
 		}
+		*/
 
 		return error;
 	}
