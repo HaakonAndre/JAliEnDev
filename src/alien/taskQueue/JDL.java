@@ -1341,13 +1341,12 @@ public class JDL implements Serializable {
 			"Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type", "User", "ValidationCommand", "WorkDirectorySize",
 			"Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID", "LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies",
 			"RunOnAODs", "LegoDataSetType", "LPMJobTypeID", "LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType", "LPMProductionTag",
-			"LPMAnchorYear", "LPMInteractionType");
+			"LPMAnchorYear", "LPMInteractionType", "filesToCheck", "OutputErrorE");
 
-	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "jdlpath", "jdlarguments", "executable", "arguments", "inputfile", "split", "splitarguments",
-			"inputdatacollection", "splitmaxinputfilenumber", "inputdata", "inputdatalist", "inputdatalistformat", "validationcommand", "outputdir", "output", "outputarchive", "outputfile",
-			"requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmactivity", "maxwaitingtime", "maxfailfraction",
-			"maxresubmitfraction", "legoresubmitzombies", "jdlprocessor", "runonaods", "legodatasettype", "jdlvariables", "lpmjobtypeid", "lpmproductiontag", "lpmproductiontype", "lpminteractiontype",
-			"lpmrunnumber", "lpmanchorproduction", "lpmanchorrun", "lpmanchoryear", "lpmmetadata");
+	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "executable", "arguments", "inputfile", "inputdata", "inputdatalist", "inputdatalistformat",
+			"inputdatacollection", "split", "splitmaxinputfilenumber", "splitarguments", "jdlpath", "jdlarguments", "jdlprocessor", "validationcommand", "outputdir", "output", "outputerrore",
+			"outputarchive", "outputfile", "requirements", "origrequirements", "ttl", "price", "memorysize", "workdirectorysize", "masterjobid", "lpmparentpid", "lpmchainid", "lpmjobtypeid",
+			"lpmactivity", "maxwaitingtime", "maxfailfraction", "maxresubmitfraction", "runonaods", "legodatasettype", "jdlvariables");
 
 	private static final Map<String, String> correctedTags = new HashMap<>(correctTags.size());
 
@@ -1369,17 +1368,38 @@ public class JDL implements Serializable {
 	private Map<String, Object> sortContent() {
 		final LinkedHashMap<String, Object> ret = new LinkedHashMap<>(jdlContent.size());
 
+		final Set<String> orderedTags = new LinkedHashSet<>();
+
 		for (final String key : preferredOrder) {
-			final Object value = get(key);
+			orderedTags.add(key);
+
+			if (key.equals("jdlvariables")) {
+				final Collection<String> variables = getList(key);
+
+				if (variables != null)
+					for (final String variable : variables)
+						orderedTags.add(variable.toLowerCase());
+			}
+		}
+
+		for (final String key : orderedTags) {
+			String defaultKeyValue = key;
+			Object value = null;
+
+			for (final Map.Entry<String, Object> entry : jdlContent.entrySet())
+				if (entry.getKey().equalsIgnoreCase(key)) {
+					value = entry.getValue();
+					defaultKeyValue = entry.getKey();
+				}
 
 			if (value != null)
-				ret.put(getCorrectedTag(key, key), value);
+				ret.put(getCorrectedTag(key, defaultKeyValue), value);
 		}
 
 		for (final Map.Entry<String, Object> entry : jdlContent.entrySet()) {
 			final String lowerCaseKey = entry.getKey().toLowerCase();
 
-			if (!preferredOrder.contains(lowerCaseKey))
+			if (!orderedTags.contains(lowerCaseKey))
 				ret.put(getCorrectedTag(lowerCaseKey, entry.getKey()), entry.getValue());
 		}
 
