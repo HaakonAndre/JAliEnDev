@@ -341,10 +341,11 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		if (bEnds && bStarts)
 			canonicalName = sLFN.substring(0, sLFN.length() - 1) + lfn;
-		else if (!bEnds && !bStarts)
-			canonicalName = sLFN + "/" + lfn;
 		else
-			canonicalName = sLFN + lfn;
+			if (!bEnds && !bStarts)
+				canonicalName = sLFN + "/" + lfn;
+			else
+				canonicalName = sLFN + lfn;
 
 		canonicalName = StringFactory.get(canonicalName);
 
@@ -585,7 +586,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (type == 'd') {
 			if (!lfnToInsert.endsWith("/"))
 				lfnToInsert += "/";
-		} else
+		}
+		else
 			while (lfnToInsert.endsWith("/"))
 				lfnToInsert = lfnToInsert.substring(0, lfnToInsert.length() - 1);
 
@@ -701,10 +703,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			}
 
 			if (ok && purge && guid != null) {
-				final GUID g = GUIDUtils.getGUID(guid);
-
-				if (g != null)
-					g.delete(true);
+				db.query("INSERT IGNORE INTO orphan_pfns (guid,size) VALUES (string2binary(?), ?);", false, guid.toString(), Long.valueOf(size));
 			}
 		}
 
