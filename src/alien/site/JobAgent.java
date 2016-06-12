@@ -315,6 +315,28 @@ public class JobAgent extends Thread implements MonitoringObject {
 		catch(Exception e){
 			System.err.println("Failed to open dblink file");
 		}
+
+		// here create monitor thread
+		class TitanMonitorThread extends Thread {
+			private JobAgent ja;
+
+			public TitanMonitorThread(JobAgent ja){
+				this.ja = ja;
+			}
+
+			public void run() {
+				while(true){
+					try{
+						Thread.sleep(5*60*1000);
+					}
+					catch(InterruptedException e){}
+					ja.checkProcessResources();
+					ja.sendProcessResources();
+				}
+			}
+		}
+
+		new TitanMonitorThread(this).start();
 		// END EXPERIMENTAL
 	}
 
@@ -1330,8 +1352,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
 
 		// EXPERIMENTAL
-		//final String outputDir = getJobOutputDir();
-		final String outputDir = getJobOutputDir() + "/"  + queueId;
+		final String outputDir = getJobOutputDir();
+		//final String outputDir = getJobOutputDir() + "/"  + queueId;
 
 		System.out.println("queueId: " + queueId);
 		System.out.println("outputDir: " + outputDir);
@@ -1362,6 +1384,14 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 					localFile = new File(jobWorkdir + "/" + entry.getName());
 					System.out.println("Processing output file: " + localFile);
+
+					// EXPERIMENTAL
+					System.err.println("===================");
+					System.err.println("Filename: " + localFile.getName());
+					System.err.println(String.format("File exists: %b", localFile.exists()));
+					System.err.println(String.format("File is file: %b", localFile.isFile()));
+					System.err.println(String.format("File readable: %b", localFile.canRead()));
+					System.err.println(String.format("File length: %d", localFile.length()));
 
 					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 
