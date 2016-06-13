@@ -378,7 +378,7 @@ public final class CatalogueUtils {
 
 			long totalSize = 0;
 
-			final long LIMIT = 1000000;
+			final long LIMIT = 10000000;
 
 			for (final GUIDIndex idx : guidTables) {
 				cnt++;
@@ -474,7 +474,7 @@ public final class CatalogueUtils {
 
 		int cnt = 0;
 
-		final int LIMIT = 1000000;
+		final int LIMIT = 15000000;
 
 		final boolean ret = true;
 
