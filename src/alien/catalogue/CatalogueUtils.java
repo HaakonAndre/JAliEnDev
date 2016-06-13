@@ -363,7 +363,7 @@ public final class CatalogueUtils {
 	public static void guidCleanup(final String outputFile) throws IOException {
 		try (PrintWriter pw = new PrintWriter(new FileWriter(outputFile))) {
 
-			final HashMap<UUID, Long> guids = new HashMap<>(1100000000);
+			final HashMap<UUID, Long> guids = new HashMap<>(1600000000);
 
 			final long started = System.currentTimeMillis();
 
@@ -379,6 +379,8 @@ public final class CatalogueUtils {
 			long totalSize = 0;
 
 			final long LIMIT = 10000000;
+			
+			long lTotalSpaceToReclaim = 0;
 
 			for (final GUIDIndex idx : guidTables) {
 				cnt++;
@@ -436,13 +438,12 @@ public final class CatalogueUtils {
 					} while (read == LIMIT);
 				}
 
-				if (guids.size() > 1000000000) {
+				if (guids.size() > 1300000000) {
 					System.err.println("Intermediate cleanup @ " + guids.size());
 
-					if (!lfnCleanup(guids))
-						System.err.println("Intermediate cleanup was not completely successful");
+					lTotalSpaceToReclaim += lfnCleanup(guids, pw);
 
-					System.err.println("Intermediate cleanup result: " + guids.size());
+					System.err.println("So far will reclaim: " + Format.size(lTotalSpaceToReclaim));
 				}
 			}
 
@@ -450,33 +451,18 @@ public final class CatalogueUtils {
 			System.err.println(Format.toInterval(System.currentTimeMillis() - started) + " : free " + Format.size(Runtime.getRuntime().freeMemory()) + " / total "
 					+ Format.size(Runtime.getRuntime().totalMemory()));
 
-			if (!lfnCleanup(guids)) {
-				System.err.println("Final iteration could not load all content from LFN tables, bailing out");
-				return;
-			}
+			lTotalSpaceToReclaim += lfnCleanup(guids, pw);
 
-			System.err.println("Finally we are left with " + guids.size() + " orphan UUIDs");
-
-			long totalToReclaim = 0;
-
-			for (final Map.Entry<UUID, Long> uuid : guids.entrySet()) {
-				pw.println(uuid.getKey() + " " + uuid.getValue());
-
-				totalToReclaim += uuid.getValue().longValue();
-			}
-
-			System.err.println("sum(GUID size) = " + totalToReclaim);
+			System.err.println("Total space to reclaim: " + Format.size(lTotalSpaceToReclaim));
 		}
 	}
 
-	private static boolean lfnCleanup(final Map<UUID, Long> guids) {
+	private static long lfnCleanup(final Map<UUID, Long> guids, final PrintWriter pw) {
 		final Set<IndexTableEntry> indextableCollection = CatalogueUtils.getAllIndexTables();
 
 		int cnt = 0;
 
 		final int LIMIT = 15000000;
-
-		final boolean ret = true;
 
 		for (final IndexTableEntry ite : indextableCollection) {
 			cnt++;
@@ -521,7 +507,17 @@ public final class CatalogueUtils {
 				} while (read == LIMIT);
 			}
 		}
+		
+		long ret = 0;
+		
+		for (final Map.Entry<UUID, Long> uuid : guids.entrySet()) {
+			pw.println(uuid.getKey() + " " + uuid.getValue());
 
+			ret += uuid.getValue().longValue();
+		}
+		
+		guids.clear();
+		
 		return ret;
 	}
 }
