@@ -121,7 +121,8 @@ public final class CatalogueUtils {
 									guidIndexCache = ret;
 
 									guidIndexCacheUpdated = System.currentTimeMillis();
-								} else
+								}
+								else
 									// in case of a DB connection failure, try again in
 									// 10 seconds, until then reuse the existing value
 									// (if any)
@@ -219,7 +220,8 @@ public final class CatalogueUtils {
 									tableentries = newTableentries;
 
 									lastIndexTableUpdate = System.currentTimeMillis();
-								} else
+								}
+								else
 									// in case of a DB connection failure, try again in
 									// 10 seconds, until then reuse the existing value
 									// (if any)
@@ -361,8 +363,12 @@ public final class CatalogueUtils {
 	 *             if the indicated local file cannot be created
 	 */
 	public static void guidCleanup(final String outputFile) throws IOException {
-		try (PrintWriter pw = new PrintWriter(new FileWriter(outputFile))) {
+		if (Runtime.getRuntime().totalMemory() < 100 * 1024 * 1024 * 1024L) {
+			System.err.println("The cleanup should run in a JVM with a _lot_ of memory, 128 at least, if not 200GB");
+			return;
+		}
 
+		try (PrintWriter pw = new PrintWriter(new FileWriter(outputFile))) {
 			final HashMap<UUID, Long> guids = new HashMap<>(1600000000);
 
 			final long started = System.currentTimeMillis();
@@ -379,7 +385,7 @@ public final class CatalogueUtils {
 			long totalSize = 0;
 
 			final long LIMIT = 10000000;
-			
+
 			long lTotalSpaceToReclaim = 0;
 
 			for (final GUIDIndex idx : guidTables) {
@@ -419,9 +425,11 @@ public final class CatalogueUtils {
 									if (uuid != null) {
 										guids.put(uuid, Long.valueOf(gdb.getl(2)));
 										totalSize += gdb.getl(2);
-									} else
+									}
+									else
 										invalid++;
-								} else
+								}
+								else
 									invalid++;
 							} catch (@SuppressWarnings("unused") final Exception e) {
 								invalid++;
@@ -507,17 +515,17 @@ public final class CatalogueUtils {
 				} while (read == LIMIT);
 			}
 		}
-		
+
 		long ret = 0;
-		
+
 		for (final Map.Entry<UUID, Long> uuid : guids.entrySet()) {
 			pw.println(uuid.getKey() + " " + uuid.getValue());
 
 			ret += uuid.getValue().longValue();
 		}
-		
+
 		guids.clear();
-		
+
 		return ret;
 	}
 }
