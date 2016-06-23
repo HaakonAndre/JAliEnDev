@@ -669,12 +669,113 @@ public class Xrootd extends Protocol {
 			while ((line = br.readLine()) != null)
 				if (!line.startsWith("Overriding '"))
 					sb.append(line).append('\n');
-		} catch (@SuppressWarnings("unused")
-		final IOException ioe) {
+		} catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, cannot happen
 		}
 
 		return sb.toString().replaceAll("[\\n\\r\\s]+$", "");
+	}
+
+	/**
+	 * Check if the file is online or offline, and if offline request it to be prepared (staged on disk)
+	 * 
+	 * @param pfn
+	 * @return <code>true</code> if the request was queued, <code>false</code> if the file was already online
+	 * @throws IOException
+	 *             if any problem in performing the request
+	 */
+	public boolean prepareCond(final PFN pfn) throws IOException {
+		if (!xrootdNewerThan4)
+			throw new IOException("`prepare` command only supported by Xrootd 4+ clients");
+
+		String stat = xrdstat(pfn, false);
+
+		if (stat == null)
+			throw new IOException("No stat info on this pfn: " + pfn.getPFN());
+
+		int idx = stat.indexOf("Flags");
+
+		if (idx < 0)
+			throw new IOException("No flags info found in this output:\n" + stat);
+
+		if (stat.indexOf("Offline", idx) > 0) {
+			prepare(pfn);
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Stage the file on a mass storage system (TAPE SE)
+	 * 
+	 * @param pfn
+	 * @throws IOException
+	 *             if any problem in performing the request
+	 */
+	public void prepare(final PFN pfn) throws IOException {
+		if (!xrootdNewerThan4)
+			throw new IOException("`prepare` command only supported by Xrootd 4+ clients");
+
+		final List<String> command = new LinkedList<>();
+
+		final org.apache.catalina.util.URL url;
+
+		String envelope = null;
+
+		if (pfn.ticket != null && pfn.ticket.envelope != null) {
+			url = new org.apache.catalina.util.URL(pfn.ticket.envelope.getTransactionURL());
+
+			envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+			if (envelope == null)
+				envelope = pfn.ticket.envelope.getSignedEnvelope();
+		}
+		else {
+			url = new org.apache.catalina.util.URL(pfn.getPFN());
+		}
+
+		final String host = url.getHost();
+		final int port = url.getPort() > 0 ? url.getPort() : 1094;
+
+		String path = url.getPath();
+
+		command.add(xrootd_default_path + "/bin/xrdfs");
+		command.add(host + ":" + port);
+		command.add("prepare");
+
+		if (path.startsWith("//"))
+			path = path.substring(1);
+
+		if (envelope != null)
+			path += "?authz=" + envelope;
+
+		command.add(path);
+
+		setLastCommand(command);
+
+		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+
+		checkLibraryPath(pBuilder);
+
+		pBuilder.returnOutputOnExit(true);
+
+		pBuilder.timeout(15, TimeUnit.SECONDS);
+
+		pBuilder.redirectErrorStream(true);
+
+		ExitStatus exitStatus;
+
+		try {
+			exitStatus = pBuilder.start().waitFor();
+			setLastExitStatus(exitStatus);
+		} catch (final InterruptedException ie) {
+			setLastExitStatus(null);
+			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
+		}
+
+		if (exitStatus.getExtProcExitStatus() != 0)
+			throw new IOException("Command exited with exit code: " + exitStatus.getExtProcExitStatus() + ", full command and output is below:\n" + command + "\n" + exitStatus.getStdOut());
 	}
 
 	/**
