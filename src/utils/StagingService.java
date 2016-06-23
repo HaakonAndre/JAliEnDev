@@ -74,22 +74,29 @@ public class StagingService {
 
 	/**
 	 * Service entry point
-	 * 
+	 *
 	 * @param args
 	 *            no arguments can be passed
 	 * @throws InterruptedException
 	 */
 	public static void main(final String[] args) throws InterruptedException {
+		boolean lastNoWork = false;
+
 		try (DBFunctions db = getDB()) {
 			while (true) {
 				db.query("DELETE FROM staging_queue WHERE attempts>10 OR created<adddate(now(), interval -1 month);");
 				db.query("SELECT lfn FROM staging_queue ORDER BY attempts ASC, created ASC LIMIT 100000;");
 
 				if (!db.moveNext()) {
-					System.err.println("No work for me, hybernating for a while more");
+					if (!lastNoWork)
+						System.err.println("No work for me, hybernating for a while more");
+
+					lastNoWork = true;
 					Thread.sleep(1000 * 30);
 					continue;
 				}
+
+				lastNoWork = false;
 
 				do
 					executor.submit(new StageLFN(db));
@@ -99,9 +106,9 @@ public class StagingService {
 					final long lastValue = PREPARED_COMMANDS.get();
 					final long lastTimestamp = System.currentTimeMillis();
 
-					System.err.println("Queue is " + executorQueue.size() + " long, waiting for the work to finish first");
+					System.err.println("Queue is " + executorQueue.size() + " long, waiting for the current work queue to finish");
 					Thread.sleep(1000 * 30);
-					System.err.println("Command rate in this batch: " + Format.point((PREPARED_COMMANDS.get() - lastValue) * 1000. / (System.currentTimeMillis() - lastTimestamp)) + " Hz");
+					System.err.println("  command rate in this batch: " + Format.point((PREPARED_COMMANDS.get() - lastValue) * 1000. / (System.currentTimeMillis() - lastTimestamp)) + " Hz");
 				}
 			}
 		}
