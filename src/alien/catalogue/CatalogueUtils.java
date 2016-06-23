@@ -241,6 +241,13 @@ public final class CatalogueUtils {
 	}
 
 	/**
+	 * When it is known that the indextable content might have changed (eg. after a moveDirectory operation), call this to be sure the correct table is used
+	 */
+	public static void invalidateIndexTableCache() {
+		lastIndexTableUpdate = 0;
+	}
+
+	/**
 	 * Get the base folder for this table name
 	 *
 	 * @param hostId
