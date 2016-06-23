@@ -23,7 +23,7 @@ import lazyj.Format;
  */
 public class StagingService {
 	private static final LinkedBlockingQueue<Runnable> executorQueue = new LinkedBlockingQueue<>();
-	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(16, 16, 5, TimeUnit.SECONDS, executorQueue);
+	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(32, 32, 5, TimeUnit.SECONDS, executorQueue);
 
 	static final AtomicLong PREPARED_COMMANDS = new AtomicLong();
 
@@ -82,8 +82,8 @@ public class StagingService {
 	public static void main(final String[] args) throws InterruptedException {
 		try (DBFunctions db = getDB()) {
 			while (true) {
-				db.query("DELETE FROM staging_queue WHERE attempts>10;");
-				db.query("SELECT lfn FROM staging_queue ORDER BY attempts ASC LIMIT 100000;");
+				db.query("DELETE FROM staging_queue WHERE attempts>10 OR created<adddate(now(), interval -1 month);");
+				db.query("SELECT lfn FROM staging_queue ORDER BY attempts ASC, created ASC LIMIT 100000;");
 
 				if (!db.moveNext()) {
 					System.err.println("No work for me, hybernating for a while more");

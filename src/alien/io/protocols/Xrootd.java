@@ -688,7 +688,7 @@ public class Xrootd extends Protocol {
 		if (!xrootdNewerThan4)
 			throw new IOException("`prepare` command only supported by Xrootd 4+ clients");
 
-		String stat = xrdstat(pfn, false);
+		String stat = xrdstat(pfn, false, false, false);
 
 		if (stat == null)
 			throw new IOException("No stat info on this pfn: " + pfn.getPFN());
@@ -790,7 +790,6 @@ public class Xrootd extends Protocol {
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
-
 		final SE se = pfn.getSE();
 
 		if (se == null)
