@@ -26,12 +26,13 @@ import lazyj.Format;
  */
 public class StagingService {
 	private static final LinkedBlockingQueue<Runnable> executorQueue = new LinkedBlockingQueue<>();
+	private static final LinkedBlockingQueue<Runnable> bgexecutorQueue = new LinkedBlockingQueue<>();
 
 	private static final int executorThreads = ConfigUtils.getConfig().geti("utils.StagingService.executorThreads", 16);
 	private static final int bgexecutorThreads = ConfigUtils.getConfig().geti("utils.StagingService.bgexecutorThreads", 16);
 
 	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(executorThreads, executorThreads, 5, TimeUnit.SECONDS, executorQueue);
-	static final ThreadPoolExecutor bgexecutor = new ThreadPoolExecutor(bgexecutorThreads, bgexecutorThreads, 5, TimeUnit.SECONDS, executorQueue);
+	static final ThreadPoolExecutor bgexecutor = new ThreadPoolExecutor(bgexecutorThreads, bgexecutorThreads, 5, TimeUnit.SECONDS, bgexecutorQueue);
 
 	static final AtomicLong PREPARED_COMMANDS = new AtomicLong();
 
@@ -146,7 +147,7 @@ public class StagingService {
 					final long lastValue = PREPARED_COMMANDS.get();
 					final long lastTimestamp = System.currentTimeMillis();
 
-					System.err.println("Queue is " + executorQueue.size() + " long, waiting for the current work queue to finish");
+					System.err.println("Queue is " + executorQueue.size() + " long, waiting for the current work queue to finish (bg executor queue: " + bgexecutorQueue.size() + ")");
 					Thread.sleep(1000 * 30);
 					System.err.println("  command rate in this batch: " + Format.point((PREPARED_COMMANDS.get() - lastValue) * 1000. / (System.currentTimeMillis() - lastTimestamp)) + " Hz");
 				}
