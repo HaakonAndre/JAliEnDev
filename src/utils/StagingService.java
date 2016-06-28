@@ -26,8 +26,8 @@ import lazyj.Format;
  */
 public class StagingService {
 	private static final LinkedBlockingQueue<Runnable> executorQueue = new LinkedBlockingQueue<>();
-	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(32, 32, 5, TimeUnit.SECONDS, executorQueue);
-	static final ThreadPoolExecutor bgexecutor = new ThreadPoolExecutor(32, 32, 5, TimeUnit.SECONDS, executorQueue);
+	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(16, 16, 5, TimeUnit.SECONDS, executorQueue);
+	static final ThreadPoolExecutor bgexecutor = new ThreadPoolExecutor(16, 16, 5, TimeUnit.SECONDS, executorQueue);
 
 	static final AtomicLong PREPARED_COMMANDS = new AtomicLong();
 
