@@ -130,9 +130,9 @@ public class StagingService {
 
 				if (!db.moveNext()) {
 					if (!lastNoWork)
-						System.err.println("No work for me, hybernating for a while more");
+						System.err.println("No work for me, hybernating for a while more (" + bgexecutorQueue.size() + " pfns are queued for background staging)");
 
-					lastNoWork = true;
+					lastNoWork = bgexecutorQueue.size() == 0;
 					Thread.sleep(1000 * 30);
 					continue;
 				}
