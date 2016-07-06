@@ -175,6 +175,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	private String monitoring_dbname;
 	private String dblink;
 	private int numCores;
+	// maybe can be dropped later when we introduce threads
 	private int current_rank;
 	
 
@@ -408,54 +409,141 @@ public class JobAgent extends Thread implements MonitoringObject {
 			}
 
 			// uploading data from finished jobs
-			for(TitanJobStatus js: idleRanks){
-				if(js.status.equals("D")){
-					queueId = js.queueId;
-					System.err.println(String.format("Uploading job: %d", queueId));
-					jobWorkdir = js.jobFolder;
-					tempDir = new File(js.jobFolder);
-					// read JDL from file
-					String jdl_content = null;
-					try{
-						byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
-						jdl_content = new String(encoded, Charset.defaultCharset());
-					}
-					catch(IOException e){
-						System.err.println("Unable to read JDL file: " + e.getMessage());
-					}
-					if( jdl_content!=null ){
-						jdl = null;
+			// can be put to thread
+			if(false!=false){
+				for(TitanJobStatus js: idleRanks){
+					if(js.status.equals("D")){
+						queueId = js.queueId;
+						System.err.println(String.format("Uploading job: %d", queueId));
+						jobWorkdir = js.jobFolder;
+						tempDir = new File(js.jobFolder);
+						// read JDL from file
+						String jdl_content = null;
 						try{
-							jdl = new JDL(Job.sanitizeJDL(jdl_content));
+							byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
+							jdl_content = new String(encoded, Charset.defaultCharset());
 						}
 						catch(IOException e){
-							System.err.println("Unable to parse JDL: " + e.getMessage());
+							System.err.println("Unable to read JDL file: " + e.getMessage());
 						}
-						if(jdl!=null){
-							if(js.executionCode!=0) 
-								changeStatus(JobStatus.ERROR_E);
-							else if(js.validationCode!=0)
-								changeStatus(JobStatus.ERROR_V);
-							else
-								changeStatus(JobStatus.SAVING);
-							uploadOutputFiles();	// upload data
-							cleanup();
-							System.err.println(String.format("Upload job %d finished", queueId));
-
+						if( jdl_content!=null ){
+							jdl = null;
 							try{
-								Connection connection = DriverManager.getConnection(dbname);
-								Statement statement = connection.createStatement();
-								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", js.rank));
-								connection.close();
+								jdl = new JDL(Job.sanitizeJDL(jdl_content));
 							}
-							catch(SQLException e){
-								System.err.println("Update job state to I failed");
+							catch(IOException e){
+								System.err.println("Unable to parse JDL: " + e.getMessage());
+							}
+							if(jdl!=null){
+								if(js.executionCode!=0) 
+									changeStatus(JobStatus.ERROR_E);
+								else if(js.validationCode!=0)
+									changeStatus(JobStatus.ERROR_V);
+								else
+									changeStatus(JobStatus.SAVING);
+								uploadOutputFiles();	// upload data
+								cleanup();
+								System.err.println(String.format("Upload job %d finished", queueId));
+
+								try{
+									Connection connection = DriverManager.getConnection(dbname);
+									Statement statement = connection.createStatement();
+									statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", js.rank));
+									connection.close();
+								}
+								catch(SQLException e){
+									System.err.println("Update job state to I failed");
+								}
 							}
 						}
 					}
 				}
 			}
 
+			class JobUploader extends Thread{
+				TitanJobStatus js;
+				private String dbname;
+
+				public JobUploader(TitanJobStatus js){
+					this.js = js;
+				}
+
+				public void run(){
+						Long queueId = js.queueId;
+						System.err.println(String.format("Uploading job: %d", queueId));
+						String jobWorkdir = js.jobFolder;
+						File tempDir = new File(js.jobFolder);
+
+						System.err.println(String.format("Uploading job: %d", queueId));
+						String jdl_content = null;
+						try{
+							byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
+							jdl_content = new String(encoded, Charset.defaultCharset());
+						}
+						catch(IOException e){
+							System.err.println("Unable to read JDL file: " + e.getMessage());
+						}
+						if( jdl_content!=null ){
+							jdl = null;
+							try{
+								jdl = new JDL(Job.sanitizeJDL(jdl_content));
+							}
+							catch(IOException e){
+								System.err.println("Unable to parse JDL: " + e.getMessage());
+							}
+							if(jdl!=null){
+								if(js.executionCode!=0) 
+									changeStatus(JobStatus.ERROR_E);
+								else if(js.validationCode!=0)
+									changeStatus(JobStatus.ERROR_V);
+								else
+									changeStatus(JobStatus.SAVING);
+								uploadOutputFiles();	// upload data
+								cleanup();
+								System.err.println(String.format("Upload job %d finished", queueId));
+
+								try{
+									Connection connection = DriverManager.getConnection(dbname);
+									Statement statement = connection.createStatement();
+									statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", js.rank));
+									connection.close();
+								}
+								catch(SQLException e){
+									System.err.println("Update job state to I failed");
+								}
+							}
+						}
+				}
+
+				public void setDbName(String dbn){
+					dbname = dbn;
+				}
+			}
+
+			// create upload threads
+			ArrayList<Thread> upload_threads = new ArrayList<>();
+			for(TitanJobStatus js: idleRanks){
+				if(js.status.equals("D")){
+					JobUploader ju = new JobUploader(js);
+					ju.setDbName(dbname);
+					upload_threads.add(ju);
+					ju.start();
+				}
+			}
+			
+			// join all threads
+			for(Thread t: upload_threads){
+				try{
+					t.join();
+				}
+				catch(InterruptedException e){
+					System.err.println("Join for upload thread has been interrupted");
+				}
+			}
+
+			// can be put to thread
+			// while count>0 ->  produce threads
+			// threads will be able to 
 			while (count > 0) {
 				System.out.println(siteMap.toString());
 				TitanJobStatus js = idleRanks.pop();
@@ -986,7 +1074,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 				job_resources.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
 				//idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
 				//		rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
-			 }
+			}
 			// delete all
 			statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
 			// close database
