@@ -101,7 +101,7 @@ public class DispatchSSLMTClient extends Thread {
 	}
 
 	//private static HashMap<Integer, DispatchSSLMTClient> instance = new HashMap<>(20);
-	HashMap<Integer, DispatchSSLMTClient> instance; // = new HashMap<>(20);
+	//HashMap<Integer, DispatchSSLMTClient> instance; // = new HashMap<>(20);
 
 	private static final int MAX_INSTANCES = 100;
 
@@ -123,14 +123,21 @@ public class DispatchSSLMTClient extends Thread {
 		DispatchSSLMTClient sc = null;
 		while(numRetries>0){
 			try{
-				sc = instances.pop();
+				synchronized(instances){
+					System.out.println("Trying to get a client");
+					System.out.println(instances.empty());
+					sc = instances.pop();
+					return sc;
+				}
 			}
 			catch(EmptyStackException e){
+				System.err.println("Nothing in the stack, creating new SSLClient");
 				synchronized(instances){
 					if(numInstances<MAX_INSTANCES){
-						DispatchSSLMTClient c = initializeInstance(address, p);
-						instances.push(c);
+						sc = initializeInstance(address, p);
+						//instances.push(c);
 						numInstances++;
+						return sc;
 					}
 					else{
 						// for now let it sleep
@@ -159,10 +166,8 @@ public class DispatchSSLMTClient extends Thread {
 			Security.addProvider(new BouncyCastleProvider());
 
 			try {
-
 				// get factory
 				final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
-
 				logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).getSubjectDN());
 
 				try {
@@ -207,6 +212,7 @@ public class DispatchSSLMTClient extends Thread {
 
 					final DispatchSSLMTClient sc = new DispatchSSLMTClient(client);
 					System.out.println("Connection to JCentral established.");
+					logger.log(Level.INFO, "Connection to JCentral established.");
 					return sc;
 					//instance.put(Integer.valueOf(p), sc);
 
@@ -218,7 +224,7 @@ public class DispatchSSLMTClient extends Thread {
 				System.err.println("Could not connect to JCentral: [" + e.getMessage() + "].");
 			} catch (final Throwable e) {
 				logger.log(Level.SEVERE, "Could not initiate SSL connection to the server.", e);
-				// e.printStackTrace();
+				e.printStackTrace();
 				System.err.println("Could not initiate SSL connection to the server.");
 			}
 //		}
@@ -249,7 +255,7 @@ public class DispatchSSLMTClient extends Thread {
 				// ignore
 			}
 
-		instance = null;
+		//instance = null;
 	}
 
 	/**
@@ -284,17 +290,18 @@ public class DispatchSSLMTClient extends Thread {
 	 * @return the reply, or <code>null</code> in case of connectivity problems
 	 * @throws ServerException
 	 */
-	public synchronized <T extends Request> T dispatchRequest(final T r) throws ServerException {
+	public static  <T extends Request> T dispatchRequest(final T r) throws ServerException {
 		//initializeSocketInfo();
 		try {
 			return dispatchARequest(r);
 		} catch (@SuppressWarnings("unused") final IOException e) {
 			// Now let's try, if we can reconnect
-			instance.put(Integer.valueOf(port), null);
+			// instance.put(Integer.valueOf(port), null);
 			try {
 				return dispatchARequest(r);
 			} catch (final IOException e1) {
 				// This time we give up
+				e1.printStackTrace();
 				logger.log(Level.SEVERE, "Error running request, potential connection error.", e1);
 				return null;
 			}
@@ -309,7 +316,7 @@ public class DispatchSSLMTClient extends Thread {
 	 * @throws ServerException
 	 *             if the server didn't like the request content
 	 */
-	public <T extends Request> T dispatchARequest(final T r) throws IOException, ServerException {
+	public static <T extends Request> T dispatchARequest(final T r) throws IOException, ServerException {
 
 		// here to get instance
 		final DispatchSSLMTClient c = getInstance(addr, port);
@@ -348,7 +355,9 @@ public class DispatchSSLMTClient extends Thread {
 
 		// here to return c back to connections stack
 		synchronized(instances){
+			System.out.println("Pushing socket back to stack");
 			instances.push(c);
+			System.out.println(instances.empty());
 		}
 
 		return reply;
