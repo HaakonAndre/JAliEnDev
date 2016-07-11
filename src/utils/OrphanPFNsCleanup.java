@@ -86,12 +86,18 @@ public class OrphanPFNsCleanup {
 						while (db.moveNext()) {
 							final Integer se = Integer.valueOf(db.geti(1));
 
-							final SE theSE = SEUtils.getSE(se);
+							final SE theSE;
 
-							if (theSE == null && se.intValue() > 0) {
-								System.err.println("No such SE: " + se);
-								continue;
+							if (se.intValue() > 0) {
+								theSE = SEUtils.getSE(se);
+
+								if (theSE == null) {
+									System.err.println("No such SE: " + se);
+									continue;
+								}
 							}
+							else
+								theSE = null;
 
 							if (!SE_THREADS.containsKey(se)) {
 								if (logger.isLoggable(Level.INFO))
