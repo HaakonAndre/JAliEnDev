@@ -225,8 +225,8 @@ public class OrphanPFNsCleanup {
 					// there are no tasks for this SE now, check again
 					// sometime later
 
-					if (logger.isLoggable(Level.FINE))
-						logger.log(Level.FINE, "No more PFNs to clean up for " + seNumber + ", freeing the respective thread and executor for now");
+					if (logger.isLoggable(Level.INFO))
+						logger.log(Level.INFO, "No more PFNs to clean up for " + seNumber + ", freeing the respective thread and executor for now");
 
 					if (executor != null) {
 						executor.shutdown();
