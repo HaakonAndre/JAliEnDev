@@ -160,9 +160,11 @@ public class OrphanPFNsCleanup {
 
 		@Override
 		public void run() {
-			setName("SEThread (" + seNumber + ")");
+			setName("SEThread (" + seNumber + ") - just started");
 
 			ThreadPoolExecutor executor = EXECUTORS.get(Integer.valueOf(seNumber));
+
+			int tasks = 0;
 
 			while (true) {
 				concurrentQueryies.acquireUninterruptibly();
@@ -212,12 +214,14 @@ public class OrphanPFNsCleanup {
 								executor.setMaximumPoolSize(threads);
 							}
 
-							do
+							do {
 								if (seNumber > 0)
 									executor.submit(new CleanupTask(h, db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
 								else
 									executor.submit(new NullSETask(h, db.gets(1)));
-							while (db.moveNext());
+
+								tasks++;
+							} while (db.moveNext());
 						}
 					}
 
@@ -226,7 +230,7 @@ public class OrphanPFNsCleanup {
 					// sometime later
 
 					if (logger.isLoggable(Level.INFO))
-						logger.log(Level.INFO, "No more PFNs to clean up for " + seNumber + ", freeing the respective thread and executor for now");
+						logger.log(Level.INFO, "No more PFNs to clean up for " + seNumber + ", freeing the respective thread and executor for now after executing " + tasks + " tasks");
 
 					if (executor != null) {
 						executor.shutdown();
@@ -239,12 +243,21 @@ public class OrphanPFNsCleanup {
 					return;
 				}
 
-				while (executor.getQueue().size() > 0 || executor.getActiveCount() > 0)
+				setName("SEThread (" + seNumber + ") - " + tasks + " tasks");
+
+				int queued;
+
+				do {
 					try {
 						Thread.sleep(5000);
 					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
+
+					queued = executor.getQueue().size() + executor.getActiveCount();
+
+					setName("SEThread (" + seNumber + ") - " + tasks + " total tasks, " + queued + " queued");
+				} while (queued > 0);
 			}
 		}
 	}
