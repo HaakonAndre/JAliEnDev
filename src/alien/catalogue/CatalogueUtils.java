@@ -82,6 +82,25 @@ public final class CatalogueUtils {
 		return hostsCache.get(Integer.valueOf(idx <= 0 ? 1 : idx));
 	}
 
+	/**
+	 * @return all configured catalogue hosts
+	 */
+	public static Set<Host> getAllHosts() {
+		final Set<Host> ret = new HashSet<>();
+
+		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			if (db != null) {
+				db.setReadOnly(true);
+				db.query("SELECT hostIndex FROM HOSTS;");
+
+				while (db.moveNext())
+					ret.add(getHost(db.geti(1)));
+			}
+		}
+
+		return ret;
+	}
+
 	private static List<GUIDIndex> guidIndexCache = null;
 	private static long guidIndexCacheUpdated = 0;
 

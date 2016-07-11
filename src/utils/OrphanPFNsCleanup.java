@@ -14,8 +14,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.catalogue.CatalogueUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
+import alien.catalogue.Host;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessTicket;
 import alien.catalogue.access.AccessType;
@@ -73,38 +75,40 @@ public class OrphanPFNsCleanup {
 
 		while (true) {
 			if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
-				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-					db.setReadOnly(true);
+				for (final Host h : CatalogueUtils.getAllHosts())
+					try (DBFunctions db = h.getDB()) {
+						db.setReadOnly(true);
 
-					db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
+						db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
 
-					db.setReadOnly(false);
+						db.setReadOnly(false);
 
-					while (db.moveNext()) {
-						final Integer se = Integer.valueOf(db.geti(1));
+						while (db.moveNext()) {
+							final Integer se = Integer.valueOf(db.geti(1));
 
-						final SE theSE = SEUtils.getSE(se);
+							final SE theSE = SEUtils.getSE(se);
 
-						if (theSE == null && se.intValue() > 0) {
-							System.err.println("No such SE: " + se);
-							continue;
+							if (theSE == null && se.intValue() > 0) {
+								System.err.println("No such SE: " + se);
+								continue;
+							}
+
+							if (!SE_THREADS.containsKey(se)) {
+								if (logger.isLoggable(Level.INFO))
+									logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
+
+								final SEThread t = new SEThread(se.intValue());
+
+								t.start();
+
+								SE_THREADS.put(se, t);
+							}
+							else
+								if (logger.isLoggable(Level.INFO))
+									logger.log(Level.INFO,
+											"Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
 						}
-
-						if (!SE_THREADS.containsKey(se)) {
-							if (logger.isLoggable(Level.INFO))
-								logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
-
-							final SEThread t = new SEThread(se.intValue());
-
-							t.start();
-
-							SE_THREADS.put(se, t);
-						}
-						else
-							if (logger.isLoggable(Level.INFO))
-								logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
 					}
-				}
 
 				lastCheck = System.currentTimeMillis();
 			}
@@ -157,69 +161,76 @@ public class OrphanPFNsCleanup {
 			while (true) {
 				concurrentQueryies.acquireUninterruptibly();
 
-				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-					db.setReadOnly(true);
+				boolean nothingToDelete = true;
 
-					try {
-						// TODO : what to do with these PFNs ? Iterate over them
-						// and release them from the catalogue nevertheless ?
-						// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
+				for (final Host h : CatalogueUtils.getAllHosts())
+					try (DBFunctions db = h.getDB()) {
+						db.setReadOnly(true);
 
-						if (seNumber > 0)
-							db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;", false,
-									Integer.valueOf(seNumber));
-						else
-							db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se IS NULL AND fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;");
-					} finally {
-						concurrentQueryies.release();
-					}
+						try {
+							// TODO : what to do with these PFNs ? Iterate over them
+							// and release them from the catalogue nevertheless ?
+							// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 
-					if (!db.moveNext()) {
-						// there are no tasks for this SE now, check again
-						// sometime later
-
-						if (logger.isLoggable(Level.FINE))
-							logger.log(Level.FINE, "No more PFNs to clean up for " + seNumber + ", freeing the respective thread and executor for now");
-
-						if (executor != null) {
-							executor.shutdown();
-
-							EXECUTORS.remove(Integer.valueOf(seNumber));
+							if (seNumber > 0)
+								db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;",
+										false, Integer.valueOf(seNumber));
+							else
+								db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se IS NULL AND fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;");
+						} finally {
+							concurrentQueryies.release();
 						}
 
-						SE_THREADS.remove(Integer.valueOf(seNumber));
+						if (db.moveNext()) {
+							nothingToDelete = false;
 
-						return;
+							if (executor == null) {
+								// lazy init of the thread pool
+								executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getPoolSize(seNumber), r -> {
+									final Thread t = new Thread(r);
+									t.setName("Cleanup of " + seNumber);
+
+									return t;
+								});
+
+								// 5 minutes (in)activity timeout
+								executor.setKeepAliveTime(5, TimeUnit.MINUTES);
+								executor.allowCoreThreadTimeOut(true);
+
+								EXECUTORS.put(Integer.valueOf(seNumber), executor);
+							}
+							else {
+								final int threads = getPoolSize(seNumber);
+
+								executor.setCorePoolSize(threads);
+								executor.setMaximumPoolSize(threads);
+							}
+
+							do
+								if (seNumber > 0)
+									executor.submit(new CleanupTask(h, db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
+								else
+									executor.submit(new NullSETask(h, db.gets(1)));
+							while (db.moveNext());
+						}
 					}
 
-					if (executor == null) {
-						// lazy init of the thread pool
-						executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getPoolSize(seNumber), r -> {
-							final Thread t = new Thread(r);
-							t.setName("Cleanup of " + seNumber);
+				if (nothingToDelete) {
+					// there are no tasks for this SE now, check again
+					// sometime later
 
-							return t;
-						});
+					if (logger.isLoggable(Level.FINE))
+						logger.log(Level.FINE, "No more PFNs to clean up for " + seNumber + ", freeing the respective thread and executor for now");
 
-						// 1 minute (in)activity timeout
-						executor.setKeepAliveTime(1, TimeUnit.MINUTES);
-						executor.allowCoreThreadTimeOut(true);
+					if (executor != null) {
+						executor.shutdown();
 
-						EXECUTORS.put(Integer.valueOf(seNumber), executor);
-					}
-					else {
-						final int threads = getPoolSize(seNumber);
-
-						executor.setCorePoolSize(threads);
-						executor.setMaximumPoolSize(threads);
+						EXECUTORS.remove(Integer.valueOf(seNumber));
 					}
 
-					do
-						if (seNumber > 0)
-							executor.submit(new CleanupTask(db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
-						else
-							executor.submit(new NullSETask(db.gets(1)));
-					while (db.moveNext());
+					SE_THREADS.remove(Integer.valueOf(seNumber));
+
+					return;
 				}
 
 				while (executor.getQueue().size() > 0 || executor.getActiveCount() > 0)
@@ -296,9 +307,11 @@ public class OrphanPFNsCleanup {
 	static final Semaphore concurrentQueryies = new Semaphore(ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.concurrentQueries", 32));
 
 	private static class NullSETask implements Runnable {
+		final Host h;
 		final String sGUID;
 
-		public NullSETask(final String sGUID) {
+		public NullSETask(final Host h, final String sGUID) {
+			this.h = h;
 			this.sGUID = sGUID;
 		}
 
@@ -306,7 +319,7 @@ public class OrphanPFNsCleanup {
 		public void run() {
 			concurrentQueryies.acquireUninterruptibly();
 
-			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			try (DBFunctions db = h.getDB()) {
 				final GUID g = GUIDUtils.getGUID(sGUID);
 
 				if (g != null)
@@ -320,6 +333,7 @@ public class OrphanPFNsCleanup {
 	}
 
 	private static class CleanupTask implements Runnable {
+		final Host h;
 		final String sGUID;
 		final int seNumber;
 		final long size;
@@ -327,7 +341,8 @@ public class OrphanPFNsCleanup {
 		final String knownPFN;
 		final int flags;
 
-		public CleanupTask(final String sGUID, final int se, final long size, final String md5, final String knownPFN, final int flags) {
+		public CleanupTask(final Host h, final String sGUID, final int se, final long size, final String md5, final String knownPFN, final int flags) {
+			this.h = h;
 			this.sGUID = sGUID;
 			this.seNumber = se;
 			this.size = size;
@@ -402,7 +417,7 @@ public class OrphanPFNsCleanup {
 
 			pfn.ticket = new AccessTicket(AccessType.DELETE, env);
 
-			try (DBFunctions db2 = ConfigUtils.getDB("alice_users")) {
+			try (DBFunctions db2 = h.getDB()) {
 				if (!Factory.xrootd.delete(pfn)) {
 					System.err.println("Could not delete from " + se.getName());
 
@@ -463,7 +478,7 @@ public class OrphanPFNsCleanup {
 
 				concurrentQueryies.acquireUninterruptibly();
 
-				try (DBFunctions db2 = ConfigUtils.getDB("alice_users")) {
+				try (DBFunctions db2 = h.getDB()) {
 					db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
 				} finally {
 					concurrentQueryies.release();
