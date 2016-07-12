@@ -252,7 +252,12 @@ public class JAKeyStore {
 	public static boolean loadClientKeyStorage() throws Exception {
 		//return loadClientKeyStorage(false);
 		//return loadClientKeyStorage(true);
-		return loadProxy();
+		String proxy = System.getenv().get("X509_USER_PROXY");
+		if(proxy!=null)
+			return loadProxy();
+		else
+			return loadClientKeyStorage(false);
+
 	}
 
 	// EXPERIMENTAL
@@ -288,10 +293,8 @@ public class JAKeyStore {
 								 JcaX509CertificateConverter certconv) {
 				try {
 				    if (o instanceof PEMEncryptedKeyPair) {
-					System.err.println("PEMEncryptedKeyPair");
 					o = ((PEMEncryptedKeyPair)o).decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(pphrase.toCharArray()));
 				    } else if(o instanceof PKCS8EncryptedPrivateKeyInfo) {
-					System.err.println("PKCS8EncryptedPrivateKeyInfo");
 					InputDecryptorProvider pkcs8decoder = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(pphrase.toCharArray());
 					o = converter.getPrivateKey(
 					    ((PKCS8EncryptedPrivateKeyInfo)o).decryptPrivateKeyInfo(pkcs8decoder));
@@ -302,7 +305,6 @@ public class JAKeyStore {
 
 				if (o instanceof PEMKeyPair) {
 				    try {
-					System.err.println("PEMKeyPair");
 					return converter.getKeyPair((PEMKeyPair) o);
 				    } catch (PEMException e) {
 					throw new RuntimeException("Failed to construct public/private key pair", e);
