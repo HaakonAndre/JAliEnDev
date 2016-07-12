@@ -103,7 +103,7 @@ public class OrphanPFNsCleanup {
 								if (logger.isLoggable(Level.INFO))
 									logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
 
-								final SEThread t = new SEThread(se.intValue());
+								final SEThread t = new SEThread(theSE);
 
 								t.start();
 
@@ -145,10 +145,12 @@ public class OrphanPFNsCleanup {
 	}
 
 	private static final class SEThread extends Thread {
+		final SE se;
 		final int seNumber;
 
-		public SEThread(final int seNumber) {
-			this.seNumber = seNumber;
+		public SEThread(final SE se) {
+			this.se = se;
+			seNumber = se != null ? se.seNumber : 0;
 		}
 
 		private static final int getPoolSize(final int seNumber) {
@@ -160,7 +162,7 @@ public class OrphanPFNsCleanup {
 
 		@Override
 		public void run() {
-			setName("SEThread (" + seNumber + ") - just started");
+			setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - just started");
 
 			ThreadPoolExecutor executor = EXECUTORS.get(Integer.valueOf(seNumber));
 
@@ -196,7 +198,7 @@ public class OrphanPFNsCleanup {
 								// lazy init of the thread pool
 								executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getPoolSize(seNumber), r -> {
 									final Thread t = new Thread(r);
-									t.setName("Cleanup of " + seNumber);
+									t.setName("Cleanup of " + (se != null ? se.getName() : "GUIDs") + " - " + seNumber);
 
 									return t;
 								});
@@ -230,7 +232,8 @@ public class OrphanPFNsCleanup {
 					// sometime later
 
 					if (logger.isLoggable(Level.INFO))
-						logger.log(Level.INFO, "No more PFNs to clean up for " + seNumber + ", freeing the respective thread and executor for now after executing " + tasks + " tasks");
+						logger.log(Level.INFO, "No more PFNs to clean up for " + (se != null ? se.getName() : "AliEn GUIDs") + " - " + seNumber
+								+ ", freeing the respective thread and executor for now after executing " + tasks + " tasks");
 
 					if (executor != null) {
 						executor.shutdown();
@@ -243,7 +246,7 @@ public class OrphanPFNsCleanup {
 					return;
 				}
 
-				setName("SEThread (" + seNumber + ") - " + tasks + " tasks");
+				setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - " + tasks + " tasks");
 
 				int queued;
 
@@ -256,7 +259,7 @@ public class OrphanPFNsCleanup {
 
 					queued = executor.getQueue().size() + executor.getActiveCount();
 
-					setName("SEThread (" + seNumber + ") - " + tasks + " total tasks, " + queued + " queued");
+					setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - " + tasks + " total tasks, " + queued + " queued");
 				} while (queued > 0);
 			}
 		}
