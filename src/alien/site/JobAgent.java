@@ -410,7 +410,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 			// uploading data from finished jobs
 			// can be put to thread
-			if(false!=false){
+			/* if(false!=false){
 				for(TitanJobStatus js: idleRanks){
 					if(js.status.equals("D")){
 						queueId = js.queueId;
@@ -459,10 +459,13 @@ public class JobAgent extends Thread implements MonitoringObject {
 					}
 				}
 			}
+			*/
 
 			class JobUploader extends Thread{
 				TitanJobStatus js;
 				private String dbname;
+
+				private String jobWorkdir;
 
 				public JobUploader(TitanJobStatus js){
 					this.js = js;
@@ -471,7 +474,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 				public void run(){
 						Long queueId = js.queueId;
 						System.err.println(String.format("Uploading job: %d", queueId));
-						String jobWorkdir = js.jobFolder;
+						jobWorkdir = js.jobFolder;
 						File tempDir = new File(js.jobFolder);
 
 						System.err.println(String.format("Uploading job: %d", queueId));
@@ -518,7 +521,154 @@ public class JobAgent extends Thread implements MonitoringObject {
 				public void setDbName(String dbn){
 					dbname = dbn;
 				}
+
+				private void cleanup() {
+					System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
+					// Remove sandbox, TODO: use Java builtin
+					Utils.getOutput("rm -rf " + jobWorkdir);
+					RES_WORKDIR_SIZE = ZERO;
+					RES_VMEM = ZERO;
+					RES_RMEM = ZERO;
+					RES_VMEMMAX = ZERO;
+					RES_RMEMMAX = ZERO;
+					RES_MEMUSAGE = ZERO;
+					RES_CPUTIME = ZERO;
+					RES_CPUUSAGE = ZERO;
+					RES_RESOURCEUSAGE = "";
+					RES_RUNTIME = Long.valueOf(0);
+					RES_FRUNTIME = "";
+				}
+
+				private boolean uploadOutputFiles() {
+					boolean uploadedAllOutFiles = true;
+					boolean uploadedNotAllCopies = false;
+
+					commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
+
+					// EXPERIMENTAL
+					final String outputDir = getJobOutputDir();
+					//final String outputDir = getJobOutputDir() + "/"  + queueId;
+
+					System.out.println("queueId: " + queueId);
+					System.out.println("outputDir: " + outputDir);
+
+					if (c_api.getLFN(outputDir) != null) {
+						System.err.println("OutputDir [" + outputDir + "] already exists.");
+						changeStatus(JobStatus.ERROR_SV);
+						return false;
+					}
+
+					final LFN outDir = c_api.createCatalogueDirectory(outputDir);
+
+					if (outDir == null) {
+						System.err.println("Error creating the OutputDir [" + outputDir + "].");
+						uploadedAllOutFiles = false;
+					} else {
+						String tag = "Output";
+						if (jobStatus == JobStatus.ERROR_E)
+							tag = "OutputErrorE";
+
+						final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, jobWorkdir, tag);
+
+						for (final OutputEntry entry : filesTable.getEntries()) {
+							File localFile;
+							try {
+								if (entry.isArchive())
+									entry.createZip(jobWorkdir);
+
+								localFile = new File(jobWorkdir + "/" + entry.getName());
+								System.out.println("Processing output file: " + localFile);
+
+								// EXPERIMENTAL
+								System.err.println("===================");
+								System.err.println("Filename: " + localFile.getName());
+								System.err.println(String.format("File exists: %b", localFile.exists()));
+								System.err.println(String.format("File is file: %b", localFile.isFile()));
+								System.err.println(String.format("File readable: %b", localFile.canRead()));
+								System.err.println(String.format("File length: %d", localFile.length()));
+
+								if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
+
+									final long size = localFile.length();
+									if (size <= 0)
+										System.err.println("Local file has size zero: " + localFile.getAbsolutePath());
+									String md5 = null;
+									try {
+										md5 = IOUtils.getMD5(localFile);
+									} catch (final Exception e1) {
+										// ignore
+									}
+									if (md5 == null)
+										System.err.println("Could not calculate md5 checksum of the local file: " + localFile.getAbsolutePath());
+
+									final LFN lfn = c_api.getLFN(outDir.getCanonicalName() + "/" + entry.getName(), true);
+									lfn.size = size;
+									lfn.md5 = md5;
+									lfn.jobid = queueId;
+									lfn.type = 'f';
+									final GUID guid = GUIDUtils.createGuid(localFile, commander.getUser());
+									lfn.guid = guid.guid;
+									final ArrayList<String> exses = entry.getSEsDeprioritized();
+
+									final List<PFN> pfns = c_api.getPFNsToWrite(lfn, guid, entry.getSEsPrioritized(), exses, entry.getQoS());
+
+									System.out.println("LFN :" + lfn + "\npfns: " + pfns);
+
+									commander.q_api.putJobLog(queueId, "trace", "Uploading: " + lfn.getName());
+
+									if (pfns != null && !pfns.isEmpty()) {
+										final ArrayList<String> envelopes = new ArrayList<>(pfns.size());
+										for (final PFN pfn : pfns) {
+											final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+											for (final Protocol protocol : protocols) {
+												envelopes.add(protocol.put(pfn, localFile));
+												break;
+											}
+										}
+
+										// drop the following three lines once put replies
+										// correctly
+										// with the signed envelope
+										envelopes.clear();
+										for (final PFN pfn : pfns)
+											envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
+
+										final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes);
+										if (!pfns.equals(pfnsok))
+											if (pfnsok != null && pfnsok.size() > 0) {
+												System.out.println("Only " + pfnsok.size() + " could be uploaded");
+												uploadedNotAllCopies = true;
+											} else {
+												System.err.println("Upload failed, sorry!");
+												uploadedAllOutFiles = false;
+												break;
+											}
+									} else
+										System.out.println("Couldn't get write envelopes for output file");
+								} else
+									System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
+
+							} catch (final IOException e) {
+								e.printStackTrace();
+								uploadedAllOutFiles = false;
+							}
+						}
+					}
+
+					if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V)
+						if (uploadedNotAllCopies)
+							changeStatus(JobStatus.DONE_WARN);
+						else if (uploadedAllOutFiles)
+							changeStatus(JobStatus.DONE);
+						else
+							changeStatus(JobStatus.ERROR_SV);
+
+					return uploadedAllOutFiles;
+				}
+
 			}
+			
+			// =============================
 
 			// create upload threads
 			ArrayList<Thread> upload_threads = new ArrayList<>();
@@ -544,6 +694,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			// can be put to thread
 			// while count>0 ->  produce threads
 			// threads will be able to 
+			if(false!=false){
 			while (count > 0) {
 				System.out.println(siteMap.toString());
 				TitanJobStatus js = idleRanks.pop();
@@ -581,7 +732,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 						current_rank = js.rank;
 
 						// process payload
-						handleJob();
+						//handleJob();
 
 						// cleanup();
 					} else {
@@ -617,6 +768,170 @@ public class JobAgent extends Thread implements MonitoringObject {
 				}
 				count--;
 			}
+			}
+			
+
+			// now with threads
+			class JobDownloader extends Thread{
+				TitanJobStatus js;
+				private String dbname;
+				private JDL jdl;
+				private Long queueId;
+				private String username;
+				private String jobToken;
+
+
+				public JobDownloader(TitanJobStatus js){
+					this.js = js;
+				}
+
+				public void run(){
+					try{
+						logger.log(Level.INFO, "Trying to get a match...");
+
+						monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
+						monitor.sendParameter("TTL", siteMap.get("TTL"));
+
+						final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
+						matchedJob = jobMatch.getMatchJob();
+
+						// TODELETE
+						if (matchedJob != null)
+							System.out.println(matchedJob.toString());
+
+						if (matchedJob != null && !matchedJob.containsKey("Error")) {
+							jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
+							//queueId = ((Long) matchedJob.get("queueId")).intValue();
+							queueId = ((Long) matchedJob.get("queueId"));
+							username = (String) matchedJob.get("User");
+							jobToken = (String) matchedJob.get("jobToken");
+
+							// TODO: commander.setUser(username); commander.setSite(site);
+
+							System.out.println(jdl.getExecutable());
+							System.out.println(jdl.toString());
+							System.out.println("====================");
+							System.out.println(username);
+							System.out.println(queueId);
+							System.out.println(jobToken);
+
+							// EXPERIMENTAL
+							// for ORNL Titan
+							current_rank = js.rank;
+
+							// process payload
+							handleJob();
+
+							// cleanup();
+						} else {
+							if (matchedJob != null && matchedJob.containsKey("Error")) {
+								logger.log(Level.INFO, (String) matchedJob.get("Error"));
+
+								if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
+									final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
+									monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
+									installPackages(packToInstall);
+								}
+								else if(Integer.valueOf(-2).equals(matchedJob.get("Code"))){
+									logger.log(Level.INFO, "Nothing to run for now, idling for a while");
+									//count = 1; // breaking the loop
+								}
+							} else{
+								// EXPERIMENTAL 
+								// for ORNL Titan
+								logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
+								//break;
+							}
+						}
+					} catch (final Exception e) {
+						logger.log(Level.INFO, "Error getting a matching job: " + e);
+					}
+				}
+
+				private void handleJob() {
+					totalJobs++;
+					try {
+						logger.log(Level.INFO, "Started JA with: " + jdl);
+
+						commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
+
+						changeStatus(JobStatus.STARTED);
+
+						if (!createWorkDir() || !getInputFiles()) {
+							changeStatus(JobStatus.ERROR_IB);
+							return;
+						}
+
+						getMemoryRequirements();
+
+						// EXPERIMENTAL 
+						// for ORNL Titan
+						// save jdl into file
+						try(PrintWriter out = new PrintWriter(tempDir + "/jdl")){
+								out.println(jdl);
+						}
+
+						// run payload
+						changeStatus(JobStatus.RUNNING);
+						if (execute() < 0)
+							changeStatus(JobStatus.ERROR_E);
+
+					} catch (final Exception e) {
+						System.err.println("Unable to handle job");
+						e.printStackTrace();
+					}
+				}
+
+				private int execute() {
+					commander.q_api.putJobLog(queueId, "trace", "Starting execution");
+
+					// EXPERIMENTAL
+					// for ORNL Titan
+					try{
+						Connection connection = DriverManager.getConnection(dbname);
+						Statement statement = connection.createStatement();
+						// setting variables
+						final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
+
+						// setting variables for packages
+						final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+
+						try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
+							for(Entry<String, String> e: alice_environment_packages.entrySet()){
+								out.println(String.format("export %s=%s", e.getKey(), e.getValue()));
+							}
+
+							for(Entry<String, String> e: environment_packages.entrySet()){
+								out.println(String.format(" export %s=%s", e.getKey(), e.getValue()));
+							}
+						}
+
+						String validationCommand = jdl.gets("ValidationCommand");
+						statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
+												"WHERE rank=%d", 
+												queueId, tempDir, "Q", 
+												getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
+												validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
+												"", current_rank ));
+					} catch(SQLException e){
+						System.err.println("Failed to insert job: " + e.getMessage());
+					} catch(FileNotFoundException e){
+						System.err.println("Failed to write variables file");
+					}
+
+					return 0;
+				}
+			}
+			
+			// ================ JobDownloader finished
+
+			while (count > 0) {
+				System.out.println(siteMap.toString());
+				TitanJobStatus js = idleRanks.pop();
+				JobDownloader jd = new JobDownloader(js);
+
+				count--;
+			}
 
 			try{
 				sleep(60000);
@@ -627,6 +942,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		}
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
+
 		// EXPERIMENTAL 
 		// For ORNL Titan
 		// TO DELETE: use deleteOnExit instead
@@ -640,7 +956,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		System.exit(0);
 	}
 
-	private void cleanup() {
+	/* private void cleanup() {
 		System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
 		// Remove sandbox, TODO: use Java builtin
 		Utils.getOutput("rm -rf " + jobWorkdir);
@@ -655,7 +971,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		RES_RESOURCEUSAGE = "";
 		RES_RUNTIME = Long.valueOf(0);
 		RES_FRUNTIME = "";
-	}
+	} */
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
 		Map<String, String> ok = null;
@@ -815,6 +1131,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		return ttl;
 	}
 
+	/*
 	private void handleJob() {
 		totalJobs++;
 		try {
@@ -843,21 +1160,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 			if (execute() < 0)
 				changeStatus(JobStatus.ERROR_E);
 
-			// EXPERIMENTAL
-			// for ORNL Titan
-			/*if (!validate())
-				changeStatus(JobStatus.ERROR_V);
-
-			if (jobStatus == JobStatus.RUNNING)
-				changeStatus(JobStatus.SAVING);
-
-			uploadOutputFiles(); */
-
 		} catch (final Exception e) {
 			System.err.println("Unable to handle job");
 			e.printStackTrace();
 		}
 	}
+	*/
 
 
 	// EXPERIMENTAL
@@ -1228,6 +1536,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 	}
 
+	/*
 	private int execute() {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 
@@ -1279,8 +1588,9 @@ public class JobAgent extends Thread implements MonitoringObject {
 		//return code;
 		return 0;
 	}
+	*/
 
-	private boolean validate() {
+/*	private boolean validate() {
 		int code = 0;
 
 		final String validation = jdl.gets("ValidationCommand");
@@ -1293,6 +1603,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 		return code == 0;
 	}
+*/
 
 	private boolean getInputFiles() {
 		final Set<String> filesToDownload = new HashSet<>();
@@ -1433,6 +1744,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 		return envmap;
 	}
 
+	/*
 	private boolean uploadOutputFiles() {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
@@ -1559,6 +1871,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 		return uploadedAllOutFiles;
 	}
+	*/
 
 	private boolean createWorkDir() {
 		logger.log(Level.INFO, "Creating sandbox and chdir");
