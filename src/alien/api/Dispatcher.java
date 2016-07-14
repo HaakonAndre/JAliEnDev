@@ -61,7 +61,8 @@ public class Dispatcher {
 	}
 
 	private static <T extends Request> T dispatchRequest(final T r) throws ServerException {
-		return DispatchSSLClient.dispatchRequest(r);
+		//return DispatchSSLClient.dispatchRequest(r);
+		return DispatchSSLMTClient.dispatchRequest(r);
 	}
 
 }
