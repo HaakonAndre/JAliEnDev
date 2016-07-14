@@ -423,6 +423,12 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 				public JobUploader(TitanJobStatus js){
 					this.js = js;
+					if(js.executionCode!=0)
+						jobStatus = JobStatus.ERROR_E;
+					else if(js.validationCode!=0)
+						jobStatus = JobStatus.ERROR_V;
+					else
+						jobStatus = JobStatus.DONE;
 				}
 
 				public void run(){
