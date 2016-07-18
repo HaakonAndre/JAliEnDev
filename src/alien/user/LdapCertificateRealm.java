@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.catalina.Wrapper;
 import org.apache.catalina.realm.RealmBase;
 
 /**
@@ -73,7 +74,7 @@ import org.apache.catalina.realm.RealmBase;
  * 
  * @author Alina Grigoras
  * @since 02-04-2007
- * */
+ */
 public class LdapCertificateRealm extends RealmBase {
 	private static final Logger logger = Logger.getLogger(LdapCertificateRealm.class.getCanonicalName());
 
@@ -96,7 +97,7 @@ public class LdapCertificateRealm extends RealmBase {
 	 * @return true/false if the user is in role
 	 */
 	@Override
-	public boolean hasRole(final Principal principal, final String role) {
+	public boolean hasRole(final Wrapper wrapper, final Principal principal, final String role) {
 		if (principal == null)
 			return false;
 
