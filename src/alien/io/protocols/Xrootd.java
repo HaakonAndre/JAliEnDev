@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -58,6 +59,12 @@ public class Xrootd extends Protocol {
 	protected static boolean xrootdNewerThan4 = false;
 
 	static {
+		try {
+			URL.setURLStreamHandlerFactory(new ROOTURLStreamHandlerFactory());
+		} catch (final Throwable t) {
+			logger.log(Level.SEVERE, "Cannot set the custom URL handler", t);
+		}
+
 		if (ConfigUtils.getConfig() != null) {
 			xrootd_default_path = ConfigUtils.getConfig().gets("xrootd.location", null);
 
@@ -260,7 +267,7 @@ public class Xrootd extends Protocol {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 			if (xrootdNewerThan4) {
-				final org.apache.catalina.util.URL url = new org.apache.catalina.util.URL(pfn.ticket.envelope.getTransactionURL());
+				final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
 
 				final String host = url.getHost();
 				final int port = url.getPort() > 0 ? url.getPort() : 1094;
@@ -678,7 +685,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Check if the file is online or offline, and if offline request it to be prepared (staged on disk)
-	 * 
+	 *
 	 * @param pfn
 	 * @return <code>true</code> if the request was queued, <code>false</code> if the file was already online
 	 * @throws IOException
@@ -688,12 +695,12 @@ public class Xrootd extends Protocol {
 		if (!xrootdNewerThan4)
 			throw new IOException("`prepare` command only supported by Xrootd 4+ clients");
 
-		String stat = xrdstat(pfn, false, false, false);
+		final String stat = xrdstat(pfn, false, false, false);
 
 		if (stat == null)
 			throw new IOException("No stat info on this pfn: " + pfn.getPFN());
 
-		int idx = stat.indexOf("Flags");
+		final int idx = stat.indexOf("Flags");
 
 		if (idx < 0)
 			throw new IOException("No flags info found in this output:\n" + stat);
@@ -708,7 +715,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * Stage the file on a mass storage system (TAPE SE)
-	 * 
+	 *
 	 * @param pfn
 	 * @throws IOException
 	 *             if any problem in performing the request
@@ -719,21 +726,20 @@ public class Xrootd extends Protocol {
 
 		final List<String> command = new LinkedList<>();
 
-		final org.apache.catalina.util.URL url;
+		final URL url;
 
 		String envelope = null;
 
 		if (pfn.ticket != null && pfn.ticket.envelope != null) {
-			url = new org.apache.catalina.util.URL(pfn.ticket.envelope.getTransactionURL());
+			url = new URL(pfn.ticket.envelope.getTransactionURL());
 
 			envelope = pfn.ticket.envelope.getEncryptedEnvelope();
 
 			if (envelope == null)
 				envelope = pfn.ticket.envelope.getSignedEnvelope();
 		}
-		else {
-			url = new org.apache.catalina.util.URL(pfn.getPFN());
-		}
+		else
+			url = new URL(pfn.getPFN());
 
 		final String host = url.getHost();
 		final int port = url.getPort() > 0 ? url.getPort() : 1094;
