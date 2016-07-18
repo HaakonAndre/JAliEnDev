@@ -60,9 +60,15 @@ public class Xrootd extends Protocol {
 
 	static {
 		try {
-			URL.setURLStreamHandlerFactory(new ROOTURLStreamHandlerFactory());
+			org.apache.catalina.webresources.TomcatURLStreamHandlerFactory.getInstance().addUserFactory(new ROOTURLStreamHandlerFactory());
 		} catch (final Throwable t) {
-			logger.log(Level.SEVERE, "Cannot set the custom URL handler", t);
+			logger.log(Level.WARNING, "Tomcat URL handler is not available", t);
+
+			try {
+				URL.setURLStreamHandlerFactory(new ROOTURLStreamHandlerFactory());
+			} catch (final Throwable t2) {
+				logger.log(Level.WARNING, "Cannot set ROOT URL stream handler factory", t2);
+			}
 		}
 
 		if (ConfigUtils.getConfig() != null) {
