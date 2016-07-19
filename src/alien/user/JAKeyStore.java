@@ -128,7 +128,7 @@ public class JAKeyStore {
 
 				cf = CertificateFactory.getInstance("X.509");
 
-				boolean anyFound = false;
+				int iLoaded = 0;
 
 				for (final File trust : dirContents)
 					if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
@@ -136,8 +136,6 @@ public class JAKeyStore {
 							final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
 							if (logger.isLoggable(Level.FINE))
 								logger.log(Level.FINE, "Trusting now: " + c.getSubjectDN());
-
-							anyFound = true;
 
 							trustStore.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
 
@@ -147,12 +145,15 @@ public class JAKeyStore {
 							if (clientCert != null)
 								clientCert.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
 
+							iLoaded++;
 						} catch (final Exception e) {
 							e.printStackTrace();
 						}
 
-				if (!anyFound)
+				if (iLoaded == 0)
 					logger.log(Level.SEVERE, "No CA files found in " + trustsDir);
+				else
+					logger.log(Level.INFO, "Loaded " + iLoaded + " certificates from " + trustsDir);
 			}
 			else {
 				if (logger.isLoggable(Level.SEVERE))
@@ -162,7 +163,6 @@ public class JAKeyStore {
 
 			tmf.init(trustStore);
 			trusts = tmf.getTrustManagers();
-
 		} catch (final IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
 			logger.log(Level.WARNING, "Exception loading trust stores", e);
 		}
