@@ -102,6 +102,7 @@ public class JAKeyStore {
 
 	static {
 		Security.addProvider(new BouncyCastleProvider());
+		loadTrusts();
 	}
 
 	private static void loadTrusts() {
@@ -117,6 +118,9 @@ public class JAKeyStore {
 			final File trustsDir = new File(ConfigUtils.getConfig().gets("trusted.certificates.location",
 					System.getProperty("user.home") + System.getProperty("file.separator") + ".j" + System.getProperty("file.separator") + "trusts"));
 
+			if (logger.isLoggable(Level.INFO))
+				logger.log(Level.INFO, "Loading trusts from " + trustsDir);
+
 			final File[] dirContents;
 
 			if (trustsDir.exists() && trustsDir.isDirectory() && (dirContents = trustsDir.listFiles()) != null) {
@@ -124,12 +128,16 @@ public class JAKeyStore {
 
 				cf = CertificateFactory.getInstance("X.509");
 
+				boolean anyFound = false;
+
 				for (final File trust : dirContents)
 					if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
 						try (FileInputStream fis = new FileInputStream(trust)) {
 							final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
-							if (logger.isLoggable(Level.INFO))
-								logger.log(Level.INFO, "Trusting now: " + c.getSubjectDN());
+							if (logger.isLoggable(Level.FINE))
+								logger.log(Level.FINE, "Trusting now: " + c.getSubjectDN());
+
+							anyFound = true;
 
 							trustStore.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
 
@@ -142,11 +150,14 @@ public class JAKeyStore {
 						} catch (final Exception e) {
 							e.printStackTrace();
 						}
-			} else {
+
+				if (!anyFound)
+					logger.log(Level.SEVERE, "No CA files found in " + trustsDir);
+			}
+			else {
 				if (logger.isLoggable(Level.SEVERE))
 					logger.log(Level.SEVERE, "Found no trusts to load in: " + trustsDir);
 				System.err.println("Found no trusts to load in: " + trustsDir);
-
 			}
 
 			tmf.init(trustStore);
@@ -176,7 +187,8 @@ public class JAKeyStore {
 					if (!co.stdout.startsWith("-r--------"))
 						return false;
 				}
-			} else
+			}
+			else
 				return false;
 		} catch (final IOException e) {
 			System.err.println("Error reading key file [" + user_key + "] : " + e.getMessage());
@@ -374,7 +386,7 @@ public class JAKeyStore {
 			if (line != null && line.length() > 0)
 				return new JPasswordFinder(line.toCharArray());
 		} catch (final IOException e) {
-			logger.log(Level.INFO, "Could not read passwd from System.in .", e);
+			logger.log(Level.WARNING, "Could not read passwd from System.in .", e);
 		}
 
 		return new JPasswordFinder("".toCharArray());
@@ -497,18 +509,20 @@ public class JAKeyStore {
 			while ((obj = reader.readObject()) != null)
 				if (obj instanceof X509Certificate)
 					chain.add((X509Certificate) obj);
-				else if (obj instanceof X509CertificateHolder) {
-					final X509CertificateHolder ch = (X509CertificateHolder) obj;
+				else
+					if (obj instanceof X509CertificateHolder) {
+						final X509CertificateHolder ch = (X509CertificateHolder) obj;
 
-					try {
-						final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
+						try {
+							final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
 
-						chain.add(c);
-					} catch (final CertificateException ce) {
-						logger.log(Level.SEVERE, "Exception loading certificate", ce);
+							chain.add(c);
+						} catch (final CertificateException ce) {
+							logger.log(Level.SEVERE, "Exception loading certificate", ce);
+						}
 					}
-				} else
-					System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
+					else
+						System.err.println("Unknown object type: " + obj + "\n" + obj.getClass().getCanonicalName());
 
 			if (chain.size() > 0)
 				return chain.toArray(new X509Certificate[0]);
