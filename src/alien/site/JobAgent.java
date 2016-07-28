@@ -177,7 +177,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	private String dblink;
 	private int numCores;
 	// maybe can be dropped later when we introduce threads
-	private int current_rank;
+	//private int current_rank;
 	
 
 	/**
@@ -327,6 +327,9 @@ public class JobAgent extends Thread implements MonitoringObject {
 			}
 
 			public void run() {
+				// here create a pool of 16 sending processes
+				
+
 				while(true){
 					try{
 						Thread.sleep(5*60*1000);
@@ -462,7 +465,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 								else
 									changeStatus(queueId, JobStatus.SAVING);
 								uploadOutputFiles();	// upload data
-								cleanup();
+								//cleanup();
 								System.err.println(String.format("Upload job %d finished", queueId));
 
 								try{
@@ -690,8 +693,9 @@ public class JobAgent extends Thread implements MonitoringObject {
 			}
 
 			System.out.println("Everything joined");
-			SE se = c_api.getSE("ALICE::SaoPaulo::SE");
-			System.out.println(se);
+			System.out.println("================================================");
+			//SE se = c_api.getSE("ALICE::SaoPaulo::SE");
+			//System.out.println(se);
 
 			// can be put to thread
 			// while count>0 ->  produce threads
@@ -790,6 +794,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 				private int jobMaxMemoryMB;
 				private HashMap<String, Object> matchedJob = null;
 				private JobStatus jobStatus;
+				private int current_rank;
 
 				public JobDownloader(TitanJobStatus js){
 					this.js = js;
@@ -798,8 +803,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 				public void run(){
 					try{
 						logger.log(Level.INFO, "Trying to get a match...");
-
-
 
 						final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 						matchedJob = jobMatch.getMatchJob();
@@ -1274,6 +1277,10 @@ public class JobAgent extends Thread implements MonitoringObject {
 					return;
 				}
 
+				public void setDbName(String dbn){
+					dbname = dbn;
+				}
+
 			}
 			// =========================================================================================================
 			// ================ JobDownloader finished
@@ -1283,13 +1290,29 @@ public class JobAgent extends Thread implements MonitoringObject {
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 			}
 
+			upload_threads.clear();
+			System.out.println("========= Starting download threads ==========");
 			while (count > 0) {
 				System.out.println(siteMap.toString());
 				TitanJobStatus js = idleRanks.pop();
 				JobDownloader jd = new JobDownloader(js);
-
+				jd.setDbName(dbname);
+				upload_threads.add(jd);
+				jd.start();
 				count--;
 			}
+
+			// join all threads
+			for(Thread t: upload_threads){
+				try{
+					t.join();
+				}
+				catch(InterruptedException e){
+					System.err.println("Join for upload thread has been interrupted");
+				}
+			}
+
+			System.out.println("=========== Round finished =========");
 
 			try{
 				sleep(60000);
@@ -1608,7 +1631,10 @@ public class JobAgent extends Thread implements MonitoringObject {
 				//RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
 		//System.out.println("+++++ Sending resources info +++++");
 		//System.out.println(procinfo);
+
+		// create pool of 16 thread
 		for(ProcInfoPair pi: job_resources){
+			// notify to all processes waiting
 			commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
 		}
 	}
