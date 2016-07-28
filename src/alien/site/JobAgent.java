@@ -1449,10 +1449,14 @@ public class JobAgent extends Thread implements MonitoringObject {
 			return false;
 		}
 
+		// EXPERIMENTAL
+		// for ORNL Titan
+		/*
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
 			return false;
 		}
+		*/
 
 		siteMap.put("Disk", Long.valueOf(space));
 		//siteMap.put("TTL", Integer.valueOf(timeleft));
