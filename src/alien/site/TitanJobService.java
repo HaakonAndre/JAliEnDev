@@ -83,7 +83,7 @@ import java.io.FileNotFoundException;
  * @author mmmartin, ron, pavlo
  * @since Apr 1, 2015
  */
-public class TitanjobService extends Thread implements MonitoringObject {
+public class TitanJobService extends Thread implements MonitoringObject {
 
 	// Folders and files
 	private File tempDir = null;
@@ -176,6 +176,15 @@ public class TitanjobService extends Thread implements MonitoringObject {
 	private String monitoring_dbname;
 	private String dblink;
 	private int numCores;
+
+
+	class TitanBunchInfo{
+		String dbname;
+		Integer ttl;
+		Integer cores;
+		Long startTimestamp;
+	}
+	private static LinkedList<TitanBunchInfo> bunchInfo = new LinkedList();
 	// maybe can be dropped later when we introduce threads
 	//private int current_rank;
 	
@@ -380,6 +389,8 @@ public class TitanjobService extends Thread implements MonitoringObject {
 		while(true){ 
 			System.out.println("========================");
 			System.out.println("Entering round");
+			System.out.println("Updating bunches information");
+
 			if (!updateDynamicParameters()){
 				System.err.println("update for dynamic parameters failed. Stopping the agent.");
 				break;
