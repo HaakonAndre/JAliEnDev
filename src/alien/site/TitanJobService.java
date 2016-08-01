@@ -1084,14 +1084,69 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	}
 
 	class TitanBatchController {
-		private LinkedList<TitanBatchInfo> batchesInfo = new LinkedList<>();
+		//private LinkedList<TitanBatchInfo> batchesInfo = new LinkedList<>();
+		private HashMap<String, TitanBatchInfo> batchesInfo = new HashMap<>();
 		private String globalWorkdir;
+
+		private static final int minTtl = 300;
 
 		public TitanBatchController(String global_work_dir){
 			if(global_work_dir == null)
 				throw new IllegalArgumentException("No global workdir specified");
 			globalWorkdir = global_work_dir;
 		}
+
+		public void updateDatabaseList(){
+			//ls -d */ -1 | sed -e 's#/$##' | grep -E '^[0-9]+$' | sort -g	
+			//ProcessBuilder pb = newProcessBuilder(System.getProperty("user.dir")+"/src/generate_list.sh",filename);
+			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "for i in $(ls -d " + globalWorkdir + "/*/ | egrep \"/[0-9]+/\"); do basename $i; done");
+			HashMap<String, TitanBatchInfo> tmpBatchesInfo = new HashMap<>();
+			try{
+				Process p = pb.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				String line = null;
+				while ( (line = reader.readLine()) != null) {
+					if(batchesInfo.get(line) ==  null)
+						try{
+							TitanBatchInfo bi = batchesInfo.get(line);
+							if(bi==null)
+								tmpBatchesInfo.put(line, new TitanBatchInfo(Long.parseLong(line), globalWorkdir + "/" + line));
+							else
+								tmpBatchesInfo.put(line, bi);
+						}
+						catch(Exception e){
+							System.err.println(e.getMessage());
+							System.err.println("Unable to initialize batch folder at " + globalWorkdir + "/" + line + " , skipping....");
+						}
+				}
+				batchesInfo = tmpBatchesInfo;
+			}
+			catch(IOException e){
+				System.err.println("Error running batch info reader process: " + e.getMessage());
+			}
+		}
+
+		public List<Thread> queryDatabases(){
+			Long current_timestamp = System.currentTimeMillis() / 1000L;
+			for(Object o : batchesInfo.values()){
+				TitanBatchInfo bi = (TitanBatchInfo) o;
+				if(checkBatchTtlValid(bi, current_timestamp))
+					continue;
+				List<TitanJobStatus> jStatus;
+				try{
+					jStatus = bi.getIdleRanks();
+				}
+				catch(Exception e){
+					continue;
+				}
+			}
+			return null;
+		}
+
+		private boolean checkBatchTtlValid(TitanBatchInfo bi, Long current_timestamp){
+			return bi.getTtlLeft(current_timestamp) > minTtl;
+		}
+
 	}
 	
 	/**
