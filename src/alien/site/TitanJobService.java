@@ -178,13 +178,92 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private int numCores;
 
 
-	class TitanBunchInfo{
-		String dbname;
-		Integer ttl;
-		Integer cores;
-		Long startTimestamp;
+	class TitanBatchInfo{
+		public final Long pbsJobId;
+		private final String dbName;
+		private final String monitoringDbName;
+		private final String jobWorkdir;
+		private Integer origTtl;
+		private Integer numCores;
+		private Long startTimestamp;
+
+		private static final String dbFilename = "jobagent.db";
+		private static final String dbProtocol = "jdbc:sqlite:";
+		private static final String monitoringDbSuffix = ".monitoring";
+
+		public TitanBatchInfo(Long jobid, String workdir){
+			pbsJobId = jobid;
+			jobWorkdir = workdir;
+			dbName = dbProtocol + jobWorkdir + "/" + dbFilename;
+			monitoringDbName = dbName + monitoringDbSuffix;
+
+			readBatchInfo();
+			initializeDb();
+		}
+
+		private void readBatchInfo(){
+			origTtl = 0;
+			numCores = 0;
+			startTimestamp = 0L;
+		}
+
+		private void initializeDb(){
+			try{
+				Connection connection = DriverManager.getConnection(dbName);
+				Statement statement = connection.createStatement();
+				statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
+				statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
+								"environment TEXT," +
+								"exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
+				statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
+				statement.executeUpdate("INSERT INTO numbers " +
+					"select 1 " +
+					"from (" +
+					   "select 0 union select 1 union select 2 " +
+					") a, (" +
+					   "select 0 union select 1 union select 2 union select 3 " +
+					   "union select 4 union select 5 union select 6 " +
+					   "union select 7 union select 8 union select 9" +
+					") b, (" +
+					   "select 0 union select 1 union select 2 union select 3 " +
+					   "union select 4 union select 5 union select 6 " +
+					   "union select 7 union select 8 union select 9" +
+					") c, (" +
+					   "select 0 union select 1 union select 2 union select 3 " +
+					   "union select 4 union select 5 union select 6 " +
+					   "union select 7 union select 8 union select 9" +
+					") d, (" +
+					   "select 0 union select 1 union select 2 union select 3 " +
+					   "union select 4 union select 5 union select 6 " +
+					   "union select 7 union select 8 union select 9" +
+					") e, (" +
+					   "select 0 union select 1 union select 2 union select 3 " +
+					   "union select 4 union select 5 union select 6 " +
+					   "union select 7 union select 8 union select 9" +
+					") f");
+				statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+				statement.executeUpdate("DROP TABLE numbers");
+				connection.close();
+
+				// creating monitoring db
+				monitoring_dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db.monitoring", pid);
+				connection = DriverManager.getConnection(monitoring_dbname);
+				statement = connection.createStatement();
+				statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs_monitoring");
+				statement.executeUpdate("CREATE TABLE alien_jobs_monitoring (queue_id VARCHAR(20), resources VARCHAR(100))");
+				connection.close();
+			} 
+			catch(SQLException e){
+				System.err.println(e);
+			}
+		}
+
+		public Long getTtlLeft(Long currentTimestamp){
+			return currentTimestamp - startTimestamp;
+		}
 	}
-	private static LinkedList<TitanBunchInfo> bunchInfo = new LinkedList();
+
+	private static LinkedList<TitanBatchInfo> bunchInfo = new LinkedList();
 	// maybe can be dropped later when we introduce threads
 	//private int current_rank;
 	
