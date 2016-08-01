@@ -318,7 +318,16 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 	}
 
-	private static LinkedList<TitanBatchInfo> batchesInfo = new LinkedList();
+	class TitanBatchController {
+		private LinkedList<TitanBatchInfo> batchesInfo = new LinkedList<>();
+		private String globalWorkdir;
+
+		public TitanBatchController(String global_work_dir){
+			if(global_work_dir == null)
+				throw new IllegalArgumentException("No global workdir specified");
+			globalWorkdir = global_work_dir;
+		}
+	}
 	// maybe can be dropped later when we introduce threads
 	//private int current_rank;
 	
