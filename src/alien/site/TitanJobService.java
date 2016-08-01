@@ -1312,8 +1312,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				continue;
 			}
 
-
-
 			// create upload threads
 			ArrayList<Thread> upload_threads = new ArrayList<>();
 			for(TitanJobStatus js: idleRanks){
@@ -1419,8 +1417,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 			}*/
 			
-
-
 			// =========================================================================================================
 			// now with threads
 
@@ -1466,12 +1462,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		// EXPERIMENTAL 
 		// For ORNL Titan
 		// TO DELETE: use deleteOnExit instead
-		File f = new File(dbname);
+		/* File f = new File(dbname);
 		if(f!=null)
 			f.delete();
 		f = new File(dblink);
 		if(f!=null)
 			f.delete();
+		*/
 
 		System.exit(0);
 	}
