@@ -1338,6 +1338,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				break;
 			}
 
+			/*
 			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
 			try{
 				Connection connection = DriverManager.getConnection(dbname);
@@ -1353,6 +1354,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				System.err.println("Getting free slots failed: " + e.getMessage());
 				continue;
 			}
+			*/
 			int count = idleRanks.size();
 			System.out.println(String.format("We can start %d jobs", count));
 			
