@@ -1161,7 +1161,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		// EXPERIMENTAL
 		// ========= for ORNL Titan
-		
+		/*
 		try{
 			String titan_cores_str = null;
 			if(env.containsKey("TITAN_CORES_CLAIMED"))
@@ -1230,7 +1230,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 		catch(Exception e){
 			System.err.println("Failed to open dblink file");
-		}
+		} */
 
 		// here create monitor thread
 		class TitanMonitorThread extends Thread {
