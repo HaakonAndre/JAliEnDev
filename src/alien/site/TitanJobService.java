@@ -1132,9 +1132,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				TitanBatchInfo bi = (TitanBatchInfo) o;
 				if(checkBatchTtlValid(bi, current_timestamp))
 					continue;
-				List<TitanJobStatus> jStatus;
+				List<TitanJobStatus> idleRanks;
 				try{
-					jStatus = bi.getIdleRanks();
+					idleRanks = bi.getIdleRanks();
 				}
 				catch(Exception e){
 					continue;
@@ -1392,7 +1392,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			System.out.println("Everything joined");
 			System.out.println("================================================");
-
 
 			if(count>0) {
 				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
