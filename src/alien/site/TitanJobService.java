@@ -177,6 +177,22 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private String dblink;
 	private int numCores;
 
+	class TitanJobStatus{
+		public int rank;
+		public Long queueId;
+		public String  jobFolder;
+		public String status;
+		public int executionCode;
+		public int validationCode;
+		public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code){
+			rank = r;
+			queueId = qid;
+			jobFolder = job_folder;
+			status = st;
+			executionCode = exec_code;
+			validationCode = val_code;
+		}
+	};
 
 	class TitanBatchInfo{
 		public final Long pbsJobId;
@@ -191,7 +207,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private static final String dbProtocol = "jdbc:sqlite:";
 		private static final String monitoringDbSuffix = ".monitoring";
 
-		public TitanBatchInfo(Long jobid, String workdir){
+		public TitanBatchInfo(Long jobid, String workdir) throws Exception{
 			pbsJobId = jobid;
 			jobWorkdir = workdir;
 			dbName = dbProtocol + jobWorkdir + "/" + dbFilename;
@@ -199,12 +215,25 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			readBatchInfo();
 			initializeDb();
+			initializeMonitoringDb();
 		}
 
-		private void readBatchInfo(){
-			origTtl = 0;
-			numCores = 0;
-			startTimestamp = 0L;
+		private void readBatchInfo() throws Exception{
+			try{
+				Connection connection = DriverManager.getConnection(dbName);
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery("SELECT ttl, cores, started FROM jobagent_info");
+				if(rs.next()){
+					origTtl = rs.getInt("ttl");
+					numCores = rs.getInt("cores");
+					startTimestamp = rs.getLong("started");
+				}
+				
+				connection.close();
+			} catch(SQLException e){
+				System.err.println("Reading wrapper info failed: " + e.getMessage());
+				throw e;
+			}
 		}
 
 		private void initializeDb(){
@@ -244,11 +273,16 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
 				statement.executeUpdate("DROP TABLE numbers");
 				connection.close();
+			} 
+			catch(SQLException e){
+				System.err.println(e);
+			}
+		}
 
-				// creating monitoring db
-				monitoring_dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db.monitoring", pid);
-				connection = DriverManager.getConnection(monitoring_dbname);
-				statement = connection.createStatement();
+		private void initializeMonitoringDb(){
+			try{	
+				Connection connection = DriverManager.getConnection(monitoringDbName);
+				Statement statement = connection.createStatement();
 				statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs_monitoring");
 				statement.executeUpdate("CREATE TABLE alien_jobs_monitoring (queue_id VARCHAR(20), resources VARCHAR(100))");
 				connection.close();
@@ -258,12 +292,33 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 		}
 
+
+		public List<TitanJobStatus> getIdleRanks() throws Exception{
+			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
+			try{
+				Connection connection = DriverManager.getConnection(dbName);
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
+				while(rs.next()){
+					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), 
+										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+				}
+				
+				connection.close();
+			} catch(SQLException e){
+				System.err.println("Getting free slots failed: " + e.getMessage());
+				throw e;
+			}
+
+			return idleRanks;
+		}
+
 		public Long getTtlLeft(Long currentTimestamp){
 			return currentTimestamp - startTimestamp;
 		}
 	}
 
-	private static LinkedList<TitanBatchInfo> bunchInfo = new LinkedList();
+	private static LinkedList<TitanBatchInfo> batchesInfo = new LinkedList();
 	// maybe can be dropped later when we introduce threads
 	//private int current_rank;
 	
@@ -447,23 +502,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
-
-		class TitanJobStatus{
-			public int rank;
-			public Long queueId;
-			public String  jobFolder;
-			public String status;
-			public int executionCode;
-			public int validationCode;
-			public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code){
-				rank = r;
-				queueId = qid;
-				jobFolder = job_folder;
-				status = st;
-				executionCode = exec_code;
-				validationCode = val_code;
-			}
-		};
 
 		while(true){ 
 			System.out.println("========================");
