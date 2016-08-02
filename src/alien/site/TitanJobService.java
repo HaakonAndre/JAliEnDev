@@ -102,7 +102,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private String jobToken;
 	private String username;
 	private String jobAgentId = "";
-	private String workdir = null;
+	private String globalWorkdir = null;
 	//private HashMap<String, Object> matchedJob = null;
 	private String partition;
 	private String ceRequirements = "";
@@ -190,6 +190,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private String jobToken;
 		private String jobWorkdir;
 		private File tempDir;
+		private String workdir = null;
+
 
 		private int workdirMaxSizeMB;
 		private int jobMaxMemoryMB;
@@ -199,6 +201,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		public JobDownloader(TitanJobStatus js){
 			this.js = js;
+			workdir = js.batch.jobWorkdir;
 		}
 
 		public void run(){
@@ -967,7 +970,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		public final Long pbsJobId;
 		private final String dbName;
 		private final String monitoringDbName;
-		private final String jobWorkdir;
+		public final String jobWorkdir;
 		private Integer origTtl;
 		private Integer numCores;
 		private Long startTimestamp;
@@ -1281,11 +1284,11 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
-		workdir = env.get("HOME");
+		globalWorkdir = env.get("HOME");
 		if (env.containsKey("WORKDIR"))
-			workdir = env.get("WORKDIR");
+			globalWorkdir = env.get("WORKDIR");
 		if (env.containsKey("TMPBATCH"))
-			workdir = env.get("TMPBATCH");
+			globalWorkdir = env.get("TMPBATCH");
 
 		siteMap = getSiteParameters();
 
@@ -1598,7 +1601,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		if (extrasites != null && extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
-		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
+		siteMap.put("Disk", Long.valueOf(new File(globalWorkdir).getFreeSpace() / 1024));
 
 		if (!partition.equals(""))
 			siteMap.put("Partition", partition);
@@ -1626,7 +1629,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		logger.log(Level.INFO, "Updating dynamic parameters of jobAgent map");
 
 		// free disk recalculation
-		final long space = new File(workdir).getFreeSpace() / 1024;
+		final long space = new File(globalWorkdir).getFreeSpace() / 1024;
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
