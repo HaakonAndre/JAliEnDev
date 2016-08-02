@@ -181,6 +181,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	// for ORNL Titan
 	// Titan-specific classes
 
+	TitanBatchController batchController; 
+
 	class JobDownloader extends Thread{
 		TitanJobStatus js;
 		private String dbname;
@@ -1408,6 +1410,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		new TitanMonitorThread(this).start();
 		// END EXPERIMENTAL
+
+		TitanBatchController batchController = new TitanBatchController(globalWorkdir);
 	}
 
 	@Override
