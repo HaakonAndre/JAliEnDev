@@ -939,24 +939,28 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 	}
 		
-		// =============================
-
-
+	// =============================
 	class TitanJobStatus{
-		public int rank;
+		public final int rank;
 		public Long queueId;
 		public String  jobFolder;
 		public String status;
 		public int executionCode;
 		public int validationCode;
-		public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code){
+		final TitanBatchInfo batch;
+		public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code, TitanBatchInfo bi){
 			rank = r;
 			queueId = qid;
 			jobFolder = job_folder;
 			status = st;
 			executionCode = exec_code;
 			validationCode = val_code;
+			batch = bi;
 		}
+
+		/*boolean saveStatus(){
+			batch.save(this);
+		}*/
 	};
 
 	class TitanBatchInfo{
@@ -1066,7 +1070,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
 				while(rs.next()){
 					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), 
-										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code"), this));
 				}
 				
 				connection.close();
@@ -1081,6 +1085,28 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		public Long getTtlLeft(Long currentTimestamp){
 			return currentTimestamp - startTimestamp;
 		}
+
+		/* public boolean save(final TitanJobStatus js){
+			try{
+				Connection connection = DriverManager.getConnection(dbName);
+				Statement statement = connection.createStatement();
+				//ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
+				ResultSet rs = statement.executeUpdate(String.format("UPDATE alien_jobs SET status='%s', job_folder='%s', exec_code=0, val_code=0, queue_id=", ));
+
+				statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
+										"WHERE rank=%d", 
+										queueId, tempDir, "Q", 
+										getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
+										validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
+										"", current_rank ));
+				connection.close();
+			} catch(SQLException e){
+				System.err.println("Job status update failed: " + e.getMessage());
+				return false;
+			}
+			
+			return true;
+		} */
 	}
 
 	class TitanBatchController {
@@ -1126,27 +1152,29 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 		}
 
-		public List<Thread> queryDatabases(){
+		public List<TitanjobStatus> queryDatabases(){
 			Long current_timestamp = System.currentTimeMillis() / 1000L;
+			List<TitanJobStatus> idleRanks = new List<>();
 			for(Object o : batchesInfo.values()){
 				TitanBatchInfo bi = (TitanBatchInfo) o;
 				if(checkBatchTtlValid(bi, current_timestamp))
 					continue;
-				List<TitanJobStatus> idleRanks;
 				try{
-					idleRanks = bi.getIdleRanks();
+					idleRanks.addAll(bi.getIdleRanks());
 				}
 				catch(Exception e){
 					continue;
 				}
 			}
-			return null;
+			return idleRanks;
 		}
 
 		private boolean checkBatchTtlValid(TitanBatchInfo bi, Long current_timestamp){
 			return bi.getTtlLeft(current_timestamp) > minTtl;
 		}
 
+		public void runDataExchange(){
+		}
 	}
 	
 	/**
