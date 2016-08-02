@@ -1113,6 +1113,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		//private LinkedList<TitanBatchInfo> batchesInfo = new LinkedList<>();
 		private HashMap<String, TitanBatchInfo> batchesInfo = new HashMap<>();
 		private String globalWorkdir;
+		private List<TitanJobStatus> idleRanks;
 
 		private static final int minTtl = 300;
 
@@ -1120,6 +1121,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			if(global_work_dir == null)
 				throw new IllegalArgumentException("No global workdir specified");
 			globalWorkdir = global_work_dir;
+			idleRanks = new LinkedList<>();
 		}
 
 		public void updateDatabaseList(){
@@ -1153,8 +1155,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		public List<TitanJobStatus> queryDatabases(){
+			idleRanks.clear();
 			Long current_timestamp = System.currentTimeMillis() / 1000L;
-			List<TitanJobStatus> idleRanks = new LinkedList<>();
 			for(Object o : batchesInfo.values()){
 				TitanBatchInfo bi = (TitanBatchInfo) o;
 				if(checkBatchTtlValid(bi, current_timestamp))
@@ -1234,6 +1236,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					System.err.println("Join for upload thread has been interrupted");
 				}
 			}
+		}
+
+		public boolean isReadyForJobRequest(){
+			return !idleRanks.isEmpty();
 		}
 	}
 	
