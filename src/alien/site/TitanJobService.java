@@ -1442,8 +1442,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("========================");
 			System.out.println("Entering round");
 			System.out.println("Updating bunches information");
-			if(!batchController.updateDatabaseList())
+			if(!batchController.updateDatabaseList()){
 				continue;
+			}
 			
 			batchController.runDataExchange();
 
@@ -1547,18 +1548,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
-
-		// EXPERIMENTAL 
-		// For ORNL Titan
-		// TO DELETE: use deleteOnExit instead
-		/* File f = new File(dbname);
-		if(f!=null)
-			f.delete();
-		f = new File(dblink);
-		if(f!=null)
-			f.delete();
-		*/
-
 		System.exit(0);
 	}
 
