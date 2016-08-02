@@ -1152,9 +1152,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 		}
 
-		public List<TitanjobStatus> queryDatabases(){
+		public List<TitanJobStatus> queryDatabases(){
 			Long current_timestamp = System.currentTimeMillis() / 1000L;
-			List<TitanJobStatus> idleRanks = new List<>();
+			List<TitanJobStatus> idleRanks = new LinkedList<>();
 			for(Object o : batchesInfo.values()){
 				TitanBatchInfo bi = (TitanBatchInfo) o;
 				if(checkBatchTtlValid(bi, current_timestamp))
@@ -1174,6 +1174,66 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		public void runDataExchange(){
+			List<TitanJobStatus> idleRanks = queryDatabases();
+			//for(TitanJobStatus)
+			int count = idleRanks.size();
+			System.out.println(String.format("We can start %d jobs", count));
+			
+			if(count==0){
+				return;
+			}
+
+			// create upload threads
+			ArrayList<Thread> upload_threads = new ArrayList<>();
+			for(TitanJobStatus js: idleRanks){
+				if(js.status.equals("D")){
+					JobUploader ju = new JobUploader(js);
+					ju.setDbName(dbname);
+					upload_threads.add(ju);
+					ju.start();
+				}
+			}
+			
+			// join all threads
+			for(Thread t: upload_threads){
+				try{
+					t.join();
+				}
+				catch(InterruptedException e){
+					System.err.println("Join for upload thread has been interrupted");
+				}
+			}
+
+			System.out.println("Everything joined");
+			System.out.println("================================================");
+
+			//if(count>0) {
+			//	monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
+			//	monitor.sendParameter("TTL", siteMap.get("TTL"));
+			//}
+
+			upload_threads.clear();
+			System.out.println("========= Starting download threads ==========");
+			//while (count > 0) {
+			for(TitanJobStatus js: idleRanks){
+				System.out.println(siteMap.toString());
+				//TitanJobStatus js = idleRanks.pop();
+				JobDownloader jd = new JobDownloader(js);
+				jd.setDbName(dbname);
+				upload_threads.add(jd);
+				jd.start();
+				count--;
+			}
+
+			// join all threads
+			for(Thread t: upload_threads){
+				try{
+					t.join();
+				}
+				catch(InterruptedException e){
+					System.err.println("Join for upload thread has been interrupted");
+				}
+			}
 		}
 	}
 	
@@ -1383,6 +1443,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				continue;
 			}
 			*/
+			/*
 			int count = idleRanks.size();
 			System.out.println(String.format("We can start %d jobs", count));
 			
@@ -1420,7 +1481,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			System.out.println("Everything joined");
 			System.out.println("================================================");
-
+			
 			if(count>0) {
 				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
@@ -1447,7 +1508,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					System.err.println("Join for upload thread has been interrupted");
 				}
 			}
-
+			*/
 			System.out.println("=========== Round finished =========");
 
 			try{
