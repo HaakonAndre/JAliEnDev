@@ -1148,6 +1148,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 							else
 								tmpBatchesInfo.put(line, bi);
 							dbcount++;
+							System.out.println("Now controlling batch: " + line);
 						}
 						catch(Exception e){
 							System.err.println(e.getMessage());
