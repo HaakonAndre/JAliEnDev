@@ -1168,7 +1168,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			return !batchesInfo.isEmpty();
 		}
 
-		public List<TitanJobStatus> queryDatabases(){
+		public boolean queryDatabases(){
 			idleRanks.clear();
 			Long current_timestamp = System.currentTimeMillis() / 1000L;
 			for(Object o : batchesInfo.values()){
@@ -1182,7 +1182,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					continue;
 				}
 			}
-			return idleRanks;
+			return idleRanks.isEmpty();
 		}
 
 		private boolean checkBatchTtlValid(TitanBatchInfo bi, Long current_timestamp){
@@ -1190,7 +1190,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		public void runDataExchange(){
-			List<TitanJobStatus> idleRanks = queryDatabases();
+			//List<TitanJobStatus> idleRanks = queryDatabases();
 			//for(TitanJobStatus)
 			int count = idleRanks.size();
 			System.out.println(String.format("We can start %d jobs", count));
@@ -1250,6 +1250,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					System.err.println("Join for upload thread has been interrupted");
 				}
 			}
+			idleRanks.clear();
 		}
 
 		public boolean isReadyForJobRequest(){
