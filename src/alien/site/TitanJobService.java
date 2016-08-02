@@ -193,7 +193,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private String jobWorkdir;
 		private File tempDir;
 		private String workdir = null;
-
+		private HashMap<String, Object> siteMap = new HashMap<>();
 
 		private int workdirMaxSizeMB;
 		private int jobMaxMemoryMB;
@@ -201,15 +201,17 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private JobStatus jobStatus;
 		private int current_rank;
 
-		public JobDownloader(TitanJobStatus js){
+		public JobDownloader(TitanJobStatus js, HashMap<String,Object> smap){
 			this.js = js;
 			workdir = js.batch.jobWorkdir;
+			siteMap = (HashMap)smap.clone();
 		}
 
 		public void run(){
 			try{
 				logger.log(Level.INFO, "Trying to get a match...");
-
+				Long current_timestamp = System.currentTimeMillis() / 1000L;
+				siteMap.put("TTL", js.batch.getTtlLeft(current_timestamp) );
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 				matchedJob = jobMatch.getMatchJob();
 
@@ -1234,7 +1236,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			for(TitanJobStatus js: idleRanks){
 				System.out.println(siteMap.toString());
 				//TitanJobStatus js = idleRanks.pop();
-				JobDownloader jd = new JobDownloader(js);
+				JobDownloader jd = new JobDownloader(js, siteMap);
 				jd.setDbName(dbname);
 				upload_threads.add(jd);
 				jd.start();
