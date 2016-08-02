@@ -1182,7 +1182,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					continue;
 				}
 			}
-			return idleRanks.isEmpty();
+			return !idleRanks.isEmpty();
 		}
 
 		private boolean checkBatchTtlValid(TitanBatchInfo bi, Long current_timestamp){
@@ -1253,9 +1253,11 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			idleRanks.clear();
 		}
 
+		/*
 		public boolean isReadyForJobRequest(){
 			return !idleRanks.isEmpty();
 		}
+		*/
 	}
 	
 	/**
@@ -1447,8 +1449,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				roundSleep();
 				continue;
 			}
-			
-			batchController.runDataExchange();
+
+			if(batchController.queryDatabases()){
+				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
+				monitor.sendParameter("TTL", siteMap.get("TTL"));
+				batchController.runDataExchange();
+			}
 
 			if (!updateDynamicParameters()){
 				System.err.println("update for dynamic parameters failed. Stopping the agent.");
