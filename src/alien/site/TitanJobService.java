@@ -1129,7 +1129,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			idleRanks = new LinkedList<>();
 		}
 
-		public void updateDatabaseList(){
+		public boolean updateDatabaseList(){
 			//ls -d */ -1 | sed -e 's#/$##' | grep -E '^[0-9]+$' | sort -g	
 			//ProcessBuilder pb = newProcessBuilder(System.getProperty("user.dir")+"/src/generate_list.sh",filename);
 			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "for i in $(ls -d " + globalWorkdir + "/*/ | egrep \"/[0-9]+/\"); do basename $i; done");
@@ -1163,6 +1163,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				System.err.println("Exception at database list update: " + e.getMessage());
 			}
 			System.out.println(String.format("Now controlling %d batches", dbcount));
+
+			return !batchesInfo.isEmpty();
 		}
 
 		public List<TitanJobStatus> queryDatabases(){
@@ -1439,12 +1441,16 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("========================");
 			System.out.println("Entering round");
 			System.out.println("Updating bunches information");
-			batchController.updateDatabaseList();
+			if(!batchController.updateDatabaseList())
+				continue;
+			
+			batchController.runDataExchange();
 
 			if (!updateDynamicParameters()){
 				System.err.println("update for dynamic parameters failed. Stopping the agent.");
 				break;
 			}
+
 
 			/*
 			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
