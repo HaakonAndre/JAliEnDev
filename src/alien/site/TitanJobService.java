@@ -1443,6 +1443,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("Entering round");
 			System.out.println("Updating bunches information");
 			if(!batchController.updateDatabaseList()){
+				roundSleep();
 				continue;
 			}
 			
@@ -1538,13 +1539,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 			*/
 			System.out.println("=========== Round finished =========");
+			roundSleep();
 
-			try{
-				sleep(60000);
-			}
-			catch(InterruptedException e){
-				System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
-			}
 		}
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
@@ -1553,6 +1549,15 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 	// =========================================================================================================
 	// ================ run finished
+
+	private void roundSleep(){
+		try{
+			sleep(60000);
+		}
+		catch(InterruptedException e){
+			System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
+		}
+	}
 
 
 	private static Integer getJaStatusForML(final String status) {
