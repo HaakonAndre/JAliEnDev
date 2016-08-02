@@ -1134,6 +1134,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			//ProcessBuilder pb = newProcessBuilder(System.getProperty("user.dir")+"/src/generate_list.sh",filename);
 			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "for i in $(ls -d " + globalWorkdir + "/*/ | egrep \"/[0-9]+/\"); do basename $i; done");
 			HashMap<String, TitanBatchInfo> tmpBatchesInfo = new HashMap<>();
+			int dbcount = 0;
 			try{
 				Process p = pb.start();
 				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -1146,6 +1147,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 								tmpBatchesInfo.put(line, new TitanBatchInfo(Long.parseLong(line), globalWorkdir + "/" + line));
 							else
 								tmpBatchesInfo.put(line, bi);
+							dbcount++;
 						}
 						catch(Exception e){
 							System.err.println(e.getMessage());
@@ -1157,6 +1159,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			catch(IOException e){
 				System.err.println("Error running batch info reader process: " + e.getMessage());
 			}
+			catch(Exception e){
+				System.err.println("Exception at database list update: " + e.getMessage());
+			}
+			System.out.println(String.format("Now controlling %d batches", dbcount));
 		}
 
 		public List<TitanJobStatus> queryDatabases(){
@@ -1411,7 +1417,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		new TitanMonitorThread(this).start();
 		// END EXPERIMENTAL
 
-		TitanBatchController batchController = new TitanBatchController(globalWorkdir);
+		batchController = new TitanBatchController(globalWorkdir);
 	}
 
 	@Override
@@ -1433,6 +1439,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("========================");
 			System.out.println("Entering round");
 			System.out.println("Updating bunches information");
+			batchController.updateDatabaseList();
 
 			if (!updateDynamicParameters()){
 				System.err.println("update for dynamic parameters failed. Stopping the agent.");
