@@ -1452,7 +1452,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				continue;
 			}
 
-			if(batchController.queryDatabases()){
+			if(!batchController.queryDatabases()){
 				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 				batchController.runDataExchange();
