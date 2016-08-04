@@ -205,6 +205,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			this.js = js;
 			workdir = js.batch.jobWorkdir;
 			siteMap = (HashMap)smap.clone();
+			dbname = js.batch.dbName;
+			System.out.println("dbname: " + dbname);
 		}
 
 		public void run(){
@@ -212,6 +214,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				logger.log(Level.INFO, "Trying to get a match...");
 				Long current_timestamp = System.currentTimeMillis() / 1000L;
 				siteMap.put("TTL", js.batch.getTtlLeft(current_timestamp) );
+				System.out.println(js.batch.getTtlLeft(current_timestamp));
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 				matchedJob = jobMatch.getMatchJob();
 
@@ -306,7 +309,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			// EXPERIMENTAL
 			// for ORNL Titan
 			try{
-				Connection connection = DriverManager.getConnection(dbname);
+				//Connection connection = DriverManager.getConnection(dbname);
+				Connection connection = DriverManager.getConnection(js.batch.dbName);
 				Statement statement = connection.createStatement();
 				// setting variables
 				final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
@@ -314,6 +318,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				// setting variables for packages
 				final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 
+				//try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
 				try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
 					for(Entry<String, String> e: alice_environment_packages.entrySet()){
 						out.println(String.format("export %s=%s", e.getKey(), e.getValue()));
@@ -333,6 +338,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 										"", current_rank ));
 			} catch(SQLException e){
 				System.err.println("Failed to insert job: " + e.getMessage());
+				System.out.println("DBname: " + dbname);
+				System.out.println("DBname: " + js.batch.dbName);
 			} catch(FileNotFoundException e){
 				System.err.println("Failed to write variables file");
 			}
@@ -972,12 +979,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 	class TitanBatchInfo{
 		public final Long pbsJobId;
-		private final String dbName;
+		public final String dbName;
 		private final String monitoringDbName;
 		public final String jobWorkdir;
-		private Integer origTtl;
-		private Integer numCores;
-		private Long startTimestamp;
+		public Integer origTtl;
+		public Integer numCores;
+		public Long startTimestamp;
 
 		private static final String dbFilename = "jobagent.db";
 		private static final String dbProtocol = "jdbc:sqlite:";
@@ -1090,7 +1097,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		public Long getTtlLeft(Long currentTimestamp){
-			return currentTimestamp - startTimestamp;
+			return origTtl - (currentTimestamp - startTimestamp);
 		}
 
 		/* public boolean save(final TitanJobStatus js){
@@ -1142,7 +1149,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
 				String line = null;
 				while ( (line = reader.readLine()) != null) {
-					if(batchesInfo.get(line) ==  null)
+					//if(batchesInfo.get(line) ==  null)
 						try{
 							TitanBatchInfo bi = batchesInfo.get(line);
 							if(bi==null)
@@ -1175,7 +1182,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			Long current_timestamp = System.currentTimeMillis() / 1000L;
 			for(Object o : batchesInfo.values()){
 				TitanBatchInfo bi = (TitanBatchInfo) o;
-				if(checkBatchTtlValid(bi, current_timestamp))
+				if(!checkBatchTtlValid(bi, current_timestamp))
 					continue;
 				try{
 					idleRanks.addAll(bi.getIdleRanks());
@@ -1234,14 +1241,20 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("========= Starting download threads ==========");
 			//while (count > 0) {
 			for(TitanJobStatus js: idleRanks){
-				System.out.println(siteMap.toString());
+				//System.out.println(siteMap.toString());
 				//TitanJobStatus js = idleRanks.pop();
+
 				JobDownloader jd = new JobDownloader(js, siteMap);
 				jd.setDbName(dbname);
 				upload_threads.add(jd);
 				jd.start();
-				count--;
+				//count--;
+				System.out.println("Wants to start Downloader thread");
+				System.out.println(js.batch.origTtl);
+				System.out.println(js.batch.numCores);
 			}
+
+			System.out.println(String.format("Count: %d", count));
 
 			// join all threads
 			for(Thread t: upload_threads){
@@ -1452,7 +1465,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				continue;
 			}
 
-			if(!batchController.queryDatabases()){
+			if(batchController.queryDatabases()){
+				System.out.println("Now running jobs exchange");
 				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 				batchController.runDataExchange();
