@@ -690,14 +690,14 @@ public class Xrootd extends Protocol {
 	}
 
 	/**
-	 * Check if the file is online or offline, and if offline request it to be prepared (staged on disk)
+	 * Check if a file is online or on tape / MSS
 	 *
 	 * @param pfn
-	 * @return <code>true</code> if the request was queued, <code>false</code> if the file was already online
+	 * @return <code>true</code> if the file is online, <code>false</code> if offline
 	 * @throws IOException
-	 *             if any problem in performing the request
+	 *             in case a problem executing this request
 	 */
-	public boolean prepareCond(final PFN pfn) throws IOException {
+	public boolean isOnline(final PFN pfn) throws IOException {
 		if (!xrootdNewerThan4)
 			throw new IOException("`prepare` command only supported by Xrootd 4+ clients");
 
@@ -711,7 +711,22 @@ public class Xrootd extends Protocol {
 		if (idx < 0)
 			throw new IOException("No flags info found in this output:\n" + stat);
 
-		if (stat.indexOf("Offline", idx) > 0) {
+		if (stat.indexOf("Offline", idx) > 0)
+			return false;
+
+		return true;
+	}
+
+	/**
+	 * Check if the file is online or offline, and if offline request it to be prepared (staged on disk)
+	 *
+	 * @param pfn
+	 * @return <code>true</code> if the request was queued, <code>false</code> if the file was already online
+	 * @throws IOException
+	 *             if any problem in performing the request
+	 */
+	public boolean prepareCond(final PFN pfn) throws IOException {
+		if (!isOnline(pfn)) {
 			prepare(pfn);
 			return true;
 		}
