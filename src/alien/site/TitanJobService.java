@@ -749,7 +749,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 						else
 							changeStatus(queueId, JobStatus.SAVING);
 						uploadOutputFiles();	// upload data
-						//cleanup();
+						cleanup();
 						System.err.println(String.format("Upload job %d finished", queueId));
 
 						try{
