@@ -1249,9 +1249,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				upload_threads.add(jd);
 				jd.start();
 				//count--;
-				System.out.println("Wants to start Downloader thread");
-				System.out.println(js.batch.origTtl);
-				System.out.println(js.batch.numCores);
+				//System.out.println("Wants to start Downloader thread");
+				//System.out.println(js.batch.origTtl);
+				//System.out.println(js.batch.numCores);
 			}
 
 			System.out.println(String.format("Count: %d", count));
