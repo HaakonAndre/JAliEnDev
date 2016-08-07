@@ -214,7 +214,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				logger.log(Level.INFO, "Trying to get a match...");
 				Long current_timestamp = System.currentTimeMillis() / 1000L;
 				siteMap.put("TTL", js.batch.getTtlLeft(current_timestamp) );
-				System.out.println(js.batch.getTtlLeft(current_timestamp));
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
 				matchedJob = jobMatch.getMatchJob();
 
@@ -529,6 +528,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			for (final LFN l : iFiles) {
 				File localFile = new File(tempDir, l.getFileName());
+				System.out.println("Getting file: " + localFile.getAbsolutePath());
 
 				final int i = 0;
 
@@ -1413,6 +1413,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.err.println("Failed to open dblink file");
 		} */
 
+		batchController = new TitanBatchController(globalWorkdir);
+
 		// here create monitor thread
 		class TitanMonitorThread extends Thread {
 			private TitanJobService ja;
@@ -1437,8 +1439,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		new TitanMonitorThread(this).start();
 		// END EXPERIMENTAL
-
-		batchController = new TitanBatchController(globalWorkdir);
 	}
 
 	@Override
