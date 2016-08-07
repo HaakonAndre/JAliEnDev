@@ -206,7 +206,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			workdir = js.batch.jobWorkdir;
 			siteMap = (HashMap)smap.clone();
 			dbname = js.batch.dbName;
-			System.out.println("dbname: " + dbname);
+			//System.out.println("dbname: " + dbname);
 		}
 
 		public void run(){
