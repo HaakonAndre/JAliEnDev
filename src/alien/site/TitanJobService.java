@@ -953,6 +953,15 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	}
 		
 	// =============================
+	class ProcInfoPair{
+		public final long queue_id;
+		public final String procinfo;
+		public ProcInfoPair(String queue_id, String procinfo){
+			this.queue_id = Long.parseLong(queue_id);
+			this.procinfo = procinfo;
+		}
+	}
+
 	class TitanJobStatus{
 		public final int rank;
 		public Long queueId;
@@ -1099,6 +1108,28 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			return origTtl - (currentTimestamp - startTimestamp);
 		}
 
+		public final List<ProcInfoPair> getMonitoringData(){
+			List<ProcInfoPair> l = new LinkedList<>();
+			try{
+				// open db
+				Connection connection = DriverManager.getConnection(monitoringDbName);
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
+				// read all
+				while(rs.next()){
+					l.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
+				}
+				// delete all
+				statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
+				// close database
+				connection.close();
+			}
+			catch(SQLException e){
+				System.err.println("Unable to get monitoring data: " + e.getMessage());
+			}
+			return l;
+		}
+
 		/* public boolean save(final TitanJobStatus js){
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
@@ -1191,6 +1222,15 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				}
 			}
 			return !idleRanks.isEmpty();
+		}
+
+		public final List<ProcInfoPair> getBatchesMonitoringData(){
+			List<ProcInfoPair> l = new LinkedList<>();
+			for(Object o : batchesInfo.values()){
+				TitanBatchInfo bi = (TitanBatchInfo) o;
+				l.addAll(bi.getMonitoringData());
+			}
+			return l;
 		}
 
 		private boolean checkBatchTtlValid(TitanBatchInfo bi, Long current_timestamp){
@@ -1343,10 +1383,50 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		// here create monitor thread
 		class TitanMonitorThread extends Thread {
-			private TitanJobService ja;
+			private TitanBatchController tbc;
 
-			public TitanMonitorThread(TitanJobService ja){
-				this.ja = ja;
+			public TitanMonitorThread(TitanBatchController tbc){
+				this.tbc = tbc;
+			}
+
+			private void sendProcessResources() {
+				//List<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
+				List<ProcInfoPair> job_resources = tbc.getBatchesMonitoringData();
+
+				/*
+				try{
+					// open db
+					Connection connection = DriverManager.getConnection(monitoring_dbname);
+					Statement statement = connection.createStatement();
+					ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
+					// read all
+					while(rs.next()){
+						job_resources.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
+						//idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
+						//		rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+					}
+					// delete all
+					statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
+					// close database
+					connection.close();
+				}
+				catch(SQLException e){
+					System.err.println("Unable to get monitoring data: " + e.getMessage());
+				}
+				*/
+				// foreach send
+
+				// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
+				//final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
+						//RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
+				//System.out.println("+++++ Sending resources info +++++");
+				//System.out.println(procinfo);
+
+				// create pool of 16 thread
+				for(ProcInfoPair pi: job_resources){
+					// notify to all processes waiting
+					commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
+				}
 			}
 
 			public void run() {
@@ -1357,13 +1437,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 						Thread.sleep(5*60*1000);
 					}
 					catch(InterruptedException e){}
-					ja.checkProcessResources();
-					ja.sendProcessResources();
+					sendProcessResources();
 				}
 			}
 		}
 
-		new TitanMonitorThread(this).start();
+		new TitanMonitorThread(batchController).start();
 		// END EXPERIMENTAL
 	}
 
@@ -1764,58 +1843,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 	}   */
 
-	private void sendProcessResources() {
-		// EXPERIMENTAL
-		// for ORNL Titan
-		class ProcInfoPair{
-			public final long queue_id;
-			public final String procinfo;
-			public ProcInfoPair(String queue_id, String procinfo){
-				this.queue_id = Long.parseLong(queue_id);
-				this.procinfo = procinfo;
-			}
-		}
-		LinkedList<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
-		
-		try{
-			// open db
-			Connection connection = DriverManager.getConnection(monitoring_dbname);
-			Statement statement = connection.createStatement();
-			ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
-			// read all
-			while(rs.next()){
-				job_resources.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
-				//idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
-				//		rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
-			}
-			// delete all
-			statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
-			// close database
-			connection.close();
-		}
-		catch(SQLException e){
-			System.err.println("Unable to get monitoring data: " + e.getMessage());
-		}
-		// foreach send
 
-		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
-		//final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
-				//RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
-		//System.out.println("+++++ Sending resources info +++++");
-		//System.out.println(procinfo);
-
-		// create pool of 16 thread
-		for(ProcInfoPair pi: job_resources){
-			// notify to all processes waiting
-			commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
-		}
-	}
-
+	/*
 	private String checkProcessResources() {
 		String error = null;
 		// EXPERIMENTAL
 		// for ORNL Titan
-		/*
 		System.out.println("Checking resources usage");
 
 		try {
@@ -1884,10 +1917,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		} catch (final IOException e) {
 			System.out.println("Problem with the monitoring objects: " + e.toString());
 		}
-		*/
 
 		return error;
 	}
+	*/
 
 
 	/**
