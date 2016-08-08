@@ -724,7 +724,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				jobWorkdir = js.jobFolder;
 				File tempDir = new File(js.jobFolder);
 
-				System.err.println(String.format("Uploading job: %d", queueId));
 				String jdl_content = null;
 				try{
 					byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
