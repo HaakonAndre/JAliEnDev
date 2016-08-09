@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.catalogue.LFN_CVMFS;
 import alien.catalogue.LFN_JSON;
 
 /**
@@ -64,8 +65,8 @@ public class CatalogueTests {
 		final int nargs = args.length;
 
 		if (nargs < 1) {
-			System.err.println("Usage: ./run.sh alien/src/test/CatalogueTests <type> <alien_path> [<pool_size>] [<logs_suffix>] [<limit>]");
-			System.err.println("E.g. <type> 0-FS 1-DB");
+			System.err.println("Usage: ./run.sh alien/src/test/CatalogueTests <alien_path> <type> [<pool_size>] [<logs_suffix>] [<limit>]");
+			System.err.println("E.g. <type> 0-FS 1-DB 2-CVMFS");
 			System.err.println("E.g. <alien_path> -> /catalogue/jalien/alice/data/2016/");
 			System.err.println("E.g. <pool_size> -> 8");
 			System.err.println("E.g. <logs-suffix> -> alice-data-2016");
@@ -124,11 +125,13 @@ public class CatalogueTests {
 			System.out.println("Running as LFN_JSON");
 			tPool.submit(new RecurseLFNJSON(new LFN_JSON(args[0])));
 		}
-		else
-			if (type == 1) {
-				System.out.println("Running as DB LFN");
-				tPool.submit(new RecurseLFN(LFNUtils.getLFN(args[0])));
-			}
+		else if (type == 1) {
+			System.out.println("Running as DB LFN");
+			tPool.submit(new RecurseLFN(LFNUtils.getLFN(args[0])));
+		} else {
+			System.out.println("Running as CVMFS LFN");
+			tPool.submit(new RecurseLFNCVMFS(new LFN_CVMFS(args[0])));
+		}
 
 		try {
 			while (!tPool.awaitTermination(10, TimeUnit.SECONDS)) {
@@ -281,6 +284,67 @@ public class CatalogueTests {
 					try {
 						if (!limit_reached)
 							tPool.submit(new RecurseLFNJSON(l));
+					} catch (final RejectedExecutionException ree) {
+						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
+						System.err.println(msg);
+						failed_folders.println(msg);
+						failed_folders.flush();
+						return;
+					}
+		}
+	}
+	
+	private static class RecurseLFNCVMFS implements Runnable {
+		final LFN_CVMFS dir;
+
+		public RecurseLFNCVMFS(final LFN_CVMFS folder) {
+			this.dir = folder;
+		}
+
+		@Override
+		public String toString() {
+			return this.dir.getCanonicalName();
+		}
+
+		@Override
+		public void run() {
+			if (dir == null) {
+				final String msg = "LFN DIR is null!";
+				failed_folders.println(msg);
+				failed_folders.flush();
+				return;
+			}
+
+			final int counter = global_count.incrementAndGet();
+			if (counter >= limit) {
+				limit_reached = true;
+				return;
+			}
+
+			if (counter % 2000 == 0) {
+				out.println("LFN: " + dir.getCanonicalName() + " - Count: " + counter + " Time: " + new Date());
+				out.flush();
+			}
+
+			pw.println(dir.getCanonicalName());
+			pw.flush();
+
+			// DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+			final long start = System.nanoTime();
+			final List<LFN_CVMFS> list = dir.list();
+			final long duration_ms = (long) ((System.nanoTime() - start) / 1000000d);
+
+			ms_count.addAndGet(duration_ms);
+
+			if (list.isEmpty())
+				return;
+
+			for (final LFN_CVMFS l : list)
+				if (l.isDirectory())
+					try {
+						if (!limit_reached)
+							tPool.submit(new RecurseLFNCVMFS(l));
 					} catch (final RejectedExecutionException ree) {
 						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 						System.err.println(msg);
