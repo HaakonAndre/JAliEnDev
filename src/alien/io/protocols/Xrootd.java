@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,6 +27,11 @@ import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
 import utils.ExternalCalls;
+
+import java.util.concurrent.atomic.AtomicInteger;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.channels.FileChannel;
 
 /**
  * @author costing
@@ -50,6 +56,10 @@ public class Xrootd extends Protocol {
 	private static String xrdcpPath = null;
 
 	protected static boolean xrootdNewerThan4 = false;
+
+	// EXPERIMENTAL
+	// for ORNL Titan
+	private static HashMap<GUID, AtomicInteger> registeredCalls = new HashMap<>();
 
 	static {
 		if (ConfigUtils.getConfig() != null) {
@@ -351,23 +361,106 @@ public class Xrootd extends Protocol {
 
 		final GUID guid = pfn.getGuid();
 
+		System.out.println("Target is: " + target);
+		System.out.println("Local file is: " + localFile);
+		AtomicInteger waitGUID = null;
+
 		if (target == null) {
 			// we are free to use any cached value
 			target = TempFileManager.getAny(guid);
+			System.out.println("TempFileManaged returned: " + target);
 
 			if (target != null) {
 				logger.log(Level.FINE, "Reusing cached file: " + target.getCanonicalPath());
-
+				System.out.println("Reusing cached file: " + target.getCanonicalPath());
 				return target;
 			}
+
+			// EXPERIMENTAL 
+			// for ORNL Titan
+			/*waitGUID = registerCall(guid);
+			System.out.println("waitGUID = "+ waitGUID);
+			if(waitGUID==2){
+				try{
+					System.out.println("Entering wait state ....");
+					synchronized(waitGUID){
+						waitGUID.wait(60*5*1000);
+						System.out.println("Wait call in get finished");
+					}
+				}
+				catch(InterruptedException e){
+					System.err.println("Wait for Xrootd get completion interrupted");
+				}
+				if(waitGUID == 1)
+					return TempFileManager.getAny(guid);
+				if(waitGUID == -1)
+					return null;
+			}
+			*/
 
 			target = File.createTempFile("xrootd-get", null, IOUtils.getTemporaryDirectory());
 
 			if (!target.delete()) {
 				logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
+
+				// EXPERIMENTAL
+				// for ORNL Titan
+			/*	if(waitGUID!=null){
+					waitGUID = -1;
+					unregisterCall(guid);
+					waitGUID.notifyAll();
+				}*/
+
 				return null;
 			}
 		}
+
+		int guid_dl_status = 0;
+		synchronized (this){
+			waitGUID = registerCall(guid);
+			System.out.println("waitGUID = "+ waitGUID);
+			guid_dl_status = waitGUID.intValue();
+		}
+		//if(waitGUID.intValue()==2){
+		if(guid_dl_status!=0){
+			if(guid_dl_status==2){
+				try{
+					System.out.println("Entering wait state ....");
+					synchronized(waitGUID){
+						waitGUID.wait(60*5*1000);
+						System.out.println("Wait call in get finished");
+					}
+				}
+				catch(InterruptedException e){
+					System.err.println("Wait for Xrootd get completion interrupted");
+				}
+			}
+			if(waitGUID.intValue() == 1){
+				System.out.println("Already downloaded file is in: " + TempFileManager.getAny(guid));
+				// here copy file to local folder
+				FileChannel source = null;
+				FileChannel destination = null;
+
+				try {
+					source = new FileInputStream(TempFileManager.getAny(guid)).getChannel();
+					destination = new FileOutputStream(target).getChannel();
+					destination.transferFrom(source, 0, source.size());
+				}
+				finally {
+					if(source != null) {
+						source.close();
+					}
+					if(destination != null) {
+						destination.close();
+					}
+				}
+				return TempFileManager.getAny(guid);
+			}
+			else if(waitGUID.intValue() == -1)
+				return null;
+		}
+
+		System.out.println(" ================ Starting download with XROOTD ============= ");
 
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ)
 			if (logger.isLoggable(Level.FINE))
@@ -378,6 +471,16 @@ public class Xrootd extends Protocol {
 
 			if (xrdcpPath == null) {
 				logger.log(Level.SEVERE, "Could not find xrdcp in path.");
+
+				// EXPERIMENTAL
+				// for ORNL Titan
+				if(waitGUID!=null){
+					waitGUID.set(-1);
+					unregisterCall(guid);
+					waitGUID.notifyAll();
+				}
+
+				unregisterCall(guid);
 				throw new SourceException("Could not find xrdcp in path.");
 			}
 
@@ -438,6 +541,15 @@ public class Xrootd extends Protocol {
 
 				p.destroy();
 
+				// EXPERIMENTAL
+				// for ORNL Titan
+				if(waitGUID!=null){
+					waitGUID.set(-1);
+					unregisterCall(guid);
+					waitGUID.notifyAll();
+				}
+
+
 				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
 
@@ -450,6 +562,15 @@ public class Xrootd extends Protocol {
 					sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				else
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+
+				// EXPERIMENTAL
+				// for ORNL Titan
+				if(waitGUID!=null){
+					waitGUID.set(-1);
+					unregisterCall(guid);
+					waitGUID.notifyAll();
+				}
+
 
 				throw new SourceException(sMessage);
 			}
@@ -477,6 +598,15 @@ public class Xrootd extends Protocol {
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
+			// EXPERIMENTAL
+			// for ORNL Titan
+			if(waitGUID!=null){
+				waitGUID.set(-1);
+				unregisterCall(guid);
+				waitGUID.notifyAll();
+			}
+
+
 			throw new SourceException("Get aborted because " + t);
 		}
 
@@ -484,6 +614,16 @@ public class Xrootd extends Protocol {
 			TempFileManager.putTemp(guid, target);
 		else
 			TempFileManager.putPersistent(guid, target);
+
+		// EXPERIMENTAL
+		// for ORNL Titan
+		if(waitGUID!=null){
+			synchronized(waitGUID){
+				waitGUID.set(1);
+				waitGUID.notifyAll();
+			}
+		}
+		unregisterCall(guid);
 
 		return target;
 	}
@@ -1019,5 +1159,31 @@ public class Xrootd extends Protocol {
 	 */
 	public static String getXrootdDefaultPath() {
 		return xrootd_default_path;
+	}
+
+	// EXPERIMENTAL
+	// for ORNL Titan
+	AtomicInteger registerCall(final GUID guid){
+		AtomicInteger waitGuidStatus; 
+		synchronized(registeredCalls){
+			 waitGuidStatus = registeredCalls.get(guid);
+			if(waitGuidStatus == null){
+				waitGuidStatus = new AtomicInteger(0);
+				registeredCalls.put(guid, waitGuidStatus);
+			}
+			else
+				waitGuidStatus.set(2);
+		}
+		System.out.println("Leaving register call");
+		return waitGuidStatus;
+	}
+
+	// EXPERIMENTAL
+	// for ORNL Titan
+	void unregisterCall(final GUID guid){
+		synchronized(registeredCalls){
+			registeredCalls.remove(guid);
+		}
+		System.out.println("Leaving unregister call");
 	}
 }
