@@ -794,7 +794,7 @@ public class TaskQueueUtils {
 				v.add(Integer.valueOf((int) job));
 				
 				p.add("statusID");
-				v.add(Integer.valueOf(newStatus.level()));
+				v.add(Integer.valueOf(newStatus.getAliEnLevel()));
 				
 				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), p.size(), p, v);
 			} catch (final Exception e) {
