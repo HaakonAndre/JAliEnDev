@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,6 +42,7 @@ import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
 import alien.user.UsersHelper;
+import apmon.ApMon;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
@@ -78,6 +80,8 @@ public class TaskQueueUtils {
 		fieldMap.put("spyurl_field", "spyurl");
 		fieldMap.put("node_table", "QUEUE");
 		fieldMap.put("node_field", "nodeId");
+		fieldMap.put("exechost_table", "QUEUE");
+		fieldMap.put("exechost_field", "execHostId");
 	}
 
 	static {
@@ -749,14 +753,17 @@ public class TaskQueueUtils {
 			if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED)
 				deleteJobToken(job);
 
+			
+			String execHost = "NO_SITE";
+			
 			if (extrafields != null) {
 				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
-				for (final String key : extrafields.keySet())
+				for (final String key : extrafields.keySet()){
 					if (fieldMap.containsKey(key + "_table")) {
 						final HashMap<String, Object> map = new HashMap<>();
 
 						int hostId;
-						if (key.contains("node")) {
+						if (key.contains("node") || key.contains("exechost")) {
 							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", extrafields.get(key).toString());
 							map.put(fieldMap.get(key + "_field"), Integer.valueOf(hostId));
 						}
@@ -767,7 +774,32 @@ public class TaskQueueUtils {
 						query += " where queueId = ?";
 						db.query(query, false, Long.valueOf(job));
 					}
+				}
+				if(extrafields.containsKey("exechost") )
+					execHost = (String) extrafields.get("exechost");
 			}
+			
+			// send status change to ML
+			final ApMon apmon;
+
+			try {
+				final Vector<String> targets = new Vector<>();
+				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
+				apmon = new ApMon(targets);
+				
+				final Vector<String> p = new Vector<>();
+				final Vector<Object> v = new Vector<>();
+								
+				p.add("jobId");
+				v.add(Long.valueOf(job));
+				
+				p.add("statusID");
+				v.add(Integer.valueOf(newStatus.level()));
+				
+				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), p.size(), p, v);
+			} catch (final Exception e) {
+				logger.log(Level.WARNING, "Could not initialize apmon", e);
+			}	
 
 			return updated;
 		}
@@ -2030,26 +2062,6 @@ public class TaskQueueUtils {
 			if (!deleteJobAgent(j.jobagentId))
 				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.jobagentId + "].");
 
-		// $self->info("THE UPDATE WORKED!! Let's see if we have to delete an agent $status");
-		// if ($dboldstatus =~ /WAITING/ and $oldjobinfo->{agentid}) {
-		// $self->deleteJobAgent($oldjobinfo->{agentid});
-		// }
-
-		// TODO:
-		// # send a job's status to MonaLisa
-		// sub sendJobStatus {
-		// my $self = shift;
-		// my ($jobID, $newStatus, $execHost, $submitHost) = @_;
-		//
-		// if ($self->{MONITOR}) {
-		// my $statusID = AliEn::Util::statusForML($newStatus);
-		// $execHost = $execHost || "NO_SITE";
-		// my @params = ("jobID", $jobID, "statusID", $statusID);
-		// push(@params, "submitHost", "$jobID/$submitHost") if $submitHost;
-		// $self->{MONITOR}->sendParameters("TaskQueue_Jobs_" .
-		// $self->{CONFIG}->{ORG_NAME}, $execHost, @params);
-		// }
-		// }
 
 		if (j.notify != null && !j.notify.equals(""))
 			sendNotificationMail(j);
@@ -2072,10 +2084,6 @@ public class TaskQueueUtils {
 
 		if (newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.STAGING)
 			setAction(newStatus);
-
-		// if ($status =~ /^DONE_WARN$/) {
-		// $self->sendJobStatus($id, "DONE", $execHost, "");
-		// }
 
 		return true;
 	}
