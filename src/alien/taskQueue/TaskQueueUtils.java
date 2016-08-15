@@ -784,21 +784,21 @@ public class TaskQueueUtils {
 
 			try {
 				final Vector<String> targets = new Vector<>();
-				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
+				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));				
 				apmon = new ApMon(targets);
 				
 				final Vector<String> p = new Vector<>();
 				final Vector<Object> v = new Vector<>();
 								
 				p.add("jobId");
-				v.add(Long.valueOf(job));
+				v.add(Integer.valueOf((int) job));
 				
 				p.add("statusID");
 				v.add(Integer.valueOf(newStatus.level()));
 				
 				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), p.size(), p, v);
 			} catch (final Exception e) {
-				logger.log(Level.WARNING, "Could not initialize apmon", e);
+				logger.log(Level.WARNING, "Could not initialize apmon ("+execHost+")", e);
 			}	
 
 			return updated;
