@@ -21,7 +21,7 @@ public class LTables extends Optimizer {
 	int count;
 
 	public void run() {
-		this.setSleepPeriod(3600 * 1000); // 1h
+		this.setSleepPeriod(24* 3600 * 1000); // 24h
 
 		logger.log(Level.INFO, "LTables optimizer starts");
 
