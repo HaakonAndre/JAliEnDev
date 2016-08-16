@@ -119,13 +119,13 @@ public class DispatchSSLMTClient extends Thread {
 	 * @throws IOException
 	 */
 	public static DispatchSSLMTClient getInstance(final String address, final int p) throws IOException {
-		int numRetries=10;
+		int numRetries=100;
 		DispatchSSLMTClient sc = null;
 		while(numRetries>0){
 			try{
 				synchronized(instances){
-					System.out.println("Trying to get a client");
-					System.out.println(instances.empty());
+					//System.out.println("Trying to get a client");
+					//System.out.println(instances.empty());
 					sc = instances.pop();
 					return sc;
 				}
@@ -355,9 +355,7 @@ public class DispatchSSLMTClient extends Thread {
 
 		// here to return c back to connections stack
 		synchronized(instances){
-			System.out.println("Pushing socket back to stack");
 			instances.push(c);
-			System.out.println(instances.empty());
 		}
 
 		return reply;
