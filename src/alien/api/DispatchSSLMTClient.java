@@ -103,7 +103,7 @@ public class DispatchSSLMTClient extends Thread {
 	//private static HashMap<Integer, DispatchSSLMTClient> instance = new HashMap<>(20);
 	//HashMap<Integer, DispatchSSLMTClient> instance; // = new HashMap<>(20);
 
-	private static final int MAX_INSTANCES = 100;
+	private static final int MAX_INSTANCES = 300;
 
 	private static Stack<DispatchSSLMTClient> instances = new Stack<>();
 	private static int numInstances = 0;
