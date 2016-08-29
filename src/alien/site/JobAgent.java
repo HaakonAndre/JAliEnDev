@@ -374,6 +374,16 @@ public class JobAgent extends Thread implements MonitoringObject {
 			while (m.find())
 				users.add(m.group(1));
 		}
+		
+		// get nousers from cerequirements field
+		final ArrayList<String> nousers = new ArrayList<>();
+		if (!ceRequirements.equals("")) {
+			final Pattern p = Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\"");
+			final Matcher m = p.matcher(ceRequirements);
+			while (m.find())
+				nousers.add(m.group(1));
+		}
+		
 		// setting entries for the map object
 		siteMap.put("TTL", Integer.valueOf(origTtl));
 
@@ -399,6 +409,8 @@ public class JobAgent extends Thread implements MonitoringObject {
 		siteMap.put("Site", site);
 		if (users.size() > 0)
 			siteMap.put("Users", users);
+		if (nousers.size() > 0)
+			siteMap.put("NoUsers", nousers);
 		if (extrasites != null && extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);

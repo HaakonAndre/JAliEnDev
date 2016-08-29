@@ -157,7 +157,6 @@ public class JobBroker {
 					db.setReadOnly(true);
 					if (db.query("select * from QUEUE where queueId=?", false, queueId))
 						TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
-					// TODO: putlog($queueid, "state", "Job state transition from ASSIGNED to ERRROR_A");
 					matchAnswer.put("Code", Integer.valueOf(-1));
 					matchAnswer.put("Error", "Error getting the token of the job " + queueId);
 				}
@@ -371,12 +370,24 @@ public class JobBroker {
 					final Integer userId = TaskQueueUtils.getUserId(user);
 
 					if (userId != null) {
-						where += orconcat + "userId like ?";
+						where += orconcat + "userId = ?";
 						orconcat = " or ";
 						bindValues.add(userId);
 					}
 				}
 				where += ")";
+			}
+			
+			if (matchRequest.containsKey("NoUsers")) {
+				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("NoUsers");
+				for (final String user : users) {
+					final Integer userId = TaskQueueUtils.getUserId(user);
+
+					if (userId != null) {
+						where += " and userId != ? ";
+						bindValues.add(userId);
+					}
+				}
 			}
 
 			db.setReadOnly(true);
