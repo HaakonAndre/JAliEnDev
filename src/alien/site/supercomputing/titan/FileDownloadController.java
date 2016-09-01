@@ -29,12 +29,9 @@ public class FileDownloadController extends Thread{
 	}
 
 	synchronized public void applyForDownload(List<LFN> inputFiles, Thread t){
-		//for()
-		// here the files are added to the list
-		// IOUtils are called
-
-		// if LFN present -> add t to the list
-		// else create a new item
+		for(LFN l: inputFiles){
+			lfnQueue.add(new Pair<LFN, Thread>(l, t));
+		}
 	}
 
 	public void run(){
