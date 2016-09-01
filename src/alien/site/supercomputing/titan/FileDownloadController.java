@@ -13,20 +13,23 @@ import alien.catalogue.LFN;
 import alien.io.IOUtils;
 
 public class FileDownloadController extends Thread{
-	private BlockingQueue<HashMap<LFN, LinkedList<Thread>>> lfnQueue;
+	private BlockingQueue<Pair<LFN, Thread>> lfnQueue;
 	private HashMap<LFN, LinkedList<Thread>> lfnQueueInProcess;
 	private String cacheFolder;
 	private final int maxQueueCapacity = 1000;
+	private final int maxDownloaderSleep = 10000;
+
 
 	public FileDownloadController(String cacheFolder) throws IOException, FileNotFoundException{
 		if(cacheFolder==null || cacheFolder.equals(""))
 			throw new IOException("Cache folder name can not be null");
 
-		lfnQueue = new ArrayBlockingQueue<HashMap<LFN, LinkedList<Thread>>>(maxQueueCapacity);
+		lfnQueue = new ArrayBlockingQueue<Pair<LFN, Thread>>(maxQueueCapacity);
 		lfnQueueInProcess = new HashMap<>();
 	}
 
 	synchronized public void applyForDownload(List<LFN> inputFiles, Thread t){
+		//for()
 		// here the files are added to the list
 		// IOUtils are called
 
@@ -43,15 +46,17 @@ public class FileDownloadController extends Thread{
 			}
 			if(emptyQueue){
 				try{
-					Thread.sleep(10000);
+					Thread.sleep(maxDownloaderSleep);
 				}
 				catch(InterruptedException e){}
 				continue;
 			}
 			//for(LFN l: lfnQueue){
+			//}
 
 			// else foreach:
-			// if file in the cache -> notify all waiting threads with existing path, continue
+			// if file in the cache -> notify all waiting threads with existing path, continue, 
+			//  ...... check size, md5
 			// else run IOUtils.get, notify about the result
 			;
 			// what if download fails?
@@ -68,7 +73,20 @@ public class FileDownloadController extends Thread{
 		}
 	}
 
+	private boolean fileIsInCache(LFN l){
+		return false;
+	}
+
 	public String getCachedFile(LFN l){
 		return cacheFolder + l.getName();
+	}
+
+
+	private boolean checkMd5(){
+		return true;
+	}
+
+	private boolean checkSize(){
+		return true;
 	}
 }
