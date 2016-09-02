@@ -77,12 +77,16 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.util.Map.Entry;
 import java.io.FileNotFoundException;
+import java.net.SocketException;
+import java.io.IOException;
 
 
 /**
  * @author mmmartin, ron, pavlo
  * @since Apr 1, 2015
  */
+
+
 public class TitanJobService extends Thread implements MonitoringObject {
 
 	// Folders and files
@@ -277,8 +281,23 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 				changeStatus(queueId, JobStatus.STARTED);
 
+				Vector<String> varnames = new Vector<>();
+				varnames.add("host");
+				varnames.add("status");
+				Vector<Object> varvalues = new Vector<>();
+				varvalues.add(hostName);
+				varvalues.add("7");
+				apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+
 				if (!createWorkDir() || !getInputFiles()) {
 					changeStatus(queueId, JobStatus.ERROR_IB);
+					varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("status");
+					varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("-4");
+					apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 					return;
 				}
 
@@ -293,8 +312,34 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 				// run payload
 				changeStatus(queueId, JobStatus.RUNNING);
-				if (execute() < 0)
+				// also send Apmon message to alimonitor
+				System.out.println("============== now running apmon call =========");
+				try{
+				//apmon.addJobToMonitor((int)(long)queueId, "" /*jobWorkdir*/, ce, hostName);
+				varnames = new Vector<>();
+				varnames.add("host");
+				varnames.add("status");
+				varnames.add("exechost");
+				varvalues = new Vector<>();
+				varvalues.add(hostName);
+				varvalues.add("10");
+				varvalues.add(ce);
+				apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+				}
+				catch(Exception e){
+					System.err.println("Error running ApMon call: " + e.getMessage());
+				}
+
+				if (execute() < 0){
 					changeStatus(queueId, JobStatus.ERROR_E);
+					varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("status");
+					varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("-3");
+					apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+				}
 
 			} catch (final Exception e) {
 				System.err.println("Unable to handle job");
@@ -536,7 +581,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					localFile = new File(tempDir, l.getFileName() + "." + i);
 
 				if (localFile.exists()) {
-					System.out.println("Too many occurences of " + l.getFileName() + " in " + tempDir.getAbsolutePath());
+					System.out.println("Too many occurences of " + l.getFileName() + " in " 
+											+ tempDir.getAbsolutePath());
 					return false;
 				}
 
@@ -547,18 +593,19 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				final List<PFN> pfns = c_api.getPFNsToRead(entry.getKey(), null, null);
 
 				if (pfns == null || pfns.size() == 0) {
-					System.out.println("No replicas of " + entry.getKey().getCanonicalName() + " to read from");
+					System.out.println("No replicas of " + entry.getKey().getCanonicalName() + 
+											" to read from");
 					return false;
 				}
 
 				final GUID g = pfns.iterator().next().getGuid();
-
-				commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
-
+				commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " +
+										entry.getKey().getCanonicalName());
 				final File f = IOUtils.get(g, entry.getValue());
 
 				if (f == null) {
-					System.out.println("Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
+					System.out.println("Could not download " + entry.getKey().getCanonicalName() + 
+									" to " + entry.getValue().getAbsolutePath());
 					return false;
 				}
 			}
@@ -670,7 +717,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		/**
 		 * @param newStatus
 		 */
-		public void changeStatus(final Long queueId, final JobStatus newStatus) {
+		/*public void changeStatus(final Long queueId, final JobStatus newStatus) {
 			// if final status with saved files, we set the path
 			//if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
 			//	final HashMap<String, Object> extrafields = new HashMap<>();
@@ -680,6 +727,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			//} else 
 			if (newStatus == JobStatus.RUNNING) {
 				final HashMap<String, Object> extrafields = new HashMap<>();
+					
 				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
 				extrafields.put("node", hostName);
 
@@ -688,6 +736,58 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				TaskQueueApiUtils.setJobStatus(queueId, newStatus);
 
 			jobStatus = newStatus;
+
+			return;
+		}
+		*/
+
+		/* public void changeStatus(final Long queueId, final JobStatus newStatus) {
+			// if final status with saved files, we set the path
+			if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
+				final HashMap<String, Object> extrafields = new HashMap<>();
+				//extrafields.put("path", getJobOutputDir());
+				extrafields.put("path","/tmp");
+
+				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+			}
+			else
+				if (newStatus == JobStatus.RUNNING) {
+					final HashMap<String, Object> extrafields = new HashMap<>();
+					extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+					extrafields.put("node", hostName);
+
+					TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+				}
+				else
+					TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+
+			jobStatus = newStatus;
+
+			return;
+		} */
+
+		public void changeStatus(final Long queueId, final JobStatus newStatus) {
+			final HashMap<String, Object> extrafields = new HashMap<>();
+			System.out.println("Exechost for changeStatus: " + ce);
+			extrafields.put("exechost", ce);
+			// if final status with saved files, we set the path
+			if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
+				//extrafields.put("path", getJobOutputDir());
+				extrafields.put("path", "/tmp");
+
+				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+			}
+			else
+				if (newStatus == JobStatus.RUNNING) {
+					extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+					extrafields.put("node", hostName);
+
+					TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+				}
+				else
+					TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+
+			//jobStatus = newStatus;
 
 			return;
 		}
@@ -741,12 +841,54 @@ public class TitanJobService extends Thread implements MonitoringObject {
 						System.err.println("Unable to parse JDL: " + e.getMessage());
 					}
 					if(jdl!=null){
-						if(js.executionCode!=0) 
+						if(js.executionCode!=0) {
 							changeStatus(queueId, JobStatus.ERROR_E);
-						else if(js.validationCode!=0)
+							Vector<String> varnames = new Vector<>();
+							varnames.add("host");
+							varnames.add("status");
+							Vector<Object> varvalues = new Vector<>();
+							varvalues.add(hostName);
+							varvalues.add("-3");
+							try{
+								apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+							}
+							catch(ApMonException e){}
+							catch(UnknownHostException e){}
+							catch(SocketException e){}
+							catch(IOException e){}
+						}
+						else if(js.validationCode!=0){
 							changeStatus(queueId, JobStatus.ERROR_V);
-						else
+							Vector<String> varnames = new Vector<>();
+							varnames.add("host");
+							varnames.add("status");
+							Vector<Object> varvalues = new Vector<>();
+							varvalues.add(hostName);
+							varvalues.add("-10");
+							try{
+								apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+							}
+							catch(ApMonException e){}
+							catch(UnknownHostException e){}
+							catch(SocketException e){}
+							catch(IOException e){}
+						}
+						else{
 							changeStatus(queueId, JobStatus.SAVING);
+							Vector<String> varnames = new Vector<>();
+							varnames.add("host");
+							varnames.add("status");
+							Vector<Object> varvalues = new Vector<>();
+							varvalues.add(hostName);
+							varvalues.add("11");
+							try{
+								apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+							}
+							catch(ApMonException e){}
+							catch(UnknownHostException e){}
+							catch(SocketException e){}
+							catch(IOException e){}
+						}
 						uploadOutputFiles();	// upload data
 						cleanup();
 						System.err.println(String.format("Upload job %d finished", queueId));
@@ -801,6 +943,20 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			if (c_api.getLFN(outputDir) != null) {
 				System.err.println("OutputDir [" + outputDir + "] already exists.");
 				changeStatus(queueId, JobStatus.ERROR_SV);
+
+				Vector<String> varnames = new Vector<>();
+				varnames.add("host");
+				varnames.add("status");
+				Vector<Object> varvalues = new Vector<>();
+				varvalues.add(hostName);
+				varvalues.add("-9");
+				try{
+					apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+				}
+				catch(ApMonException e){}
+				catch(UnknownHostException e){}
+				catch(SocketException e){}
+				catch(IOException e){}
 				return false;
 			}
 
@@ -902,12 +1058,54 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 
 			if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V)
-				if (uploadedNotAllCopies)
+				if (uploadedNotAllCopies){
 					changeStatus(queueId, JobStatus.DONE_WARN);
-				else if (uploadedAllOutFiles)
+					Vector<String> varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("status");
+					Vector<Object> varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("16");
+					try{
+						apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+					}
+					catch(ApMonException e){}
+					catch(UnknownHostException e){}
+					catch(SocketException e){}
+					catch(IOException e){}
+				}
+				else if (uploadedAllOutFiles){
 					changeStatus(queueId, JobStatus.DONE);
-				else
+					Vector<String> varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("status");
+					Vector<Object> varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("15");
+					try{
+						apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+					}
+					catch(ApMonException e){}
+					catch(UnknownHostException e){}
+					catch(SocketException e){}
+					catch(IOException e){}
+				}
+				else{
 					changeStatus(queueId, JobStatus.ERROR_SV);
+					Vector<String> varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("status");
+					Vector<Object> varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("-9");
+					try{
+						apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+					}
+					catch(ApMonException e){}
+					catch(UnknownHostException e){}
+					catch(SocketException e){}
+					catch(IOException e){}
+				}
 
 			return uploadedAllOutFiles;
 		}
@@ -1004,12 +1202,17 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			dbName = dbProtocol + jobWorkdir + "/" + dbFilename;
 			monitoringDbName = dbName + monitoringDbSuffix;
 
-			readBatchInfo();
+			if(!readBatchInfo()){
+				System.out.println("No need to reinitialize batch " + pbsJobId);
+				return;
+			}
 			initializeDb();
 			initializeMonitoringDb();
 		}
 
-		private void readBatchInfo() throws Exception{
+
+		/* indicates whether it is necessary to reinitialize db according to data read */
+		private boolean readBatchInfo() throws Exception{
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
@@ -1019,19 +1222,50 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					numCores = rs.getInt("cores");
 					startTimestamp = rs.getLong("started");
 				}
-				
+				rs.close();
+				rs = statement.executeQuery("SELECT name FROM sqlite_master WHERE type='table' AND name='alien_jobs'");
+				if(rs.next()){
+					rs.close();
+					return false;
+				}
+
 				connection.close();
 			} catch(SQLException e){
 				System.err.println("Reading wrapper info failed: " + e.getMessage());
 				throw e;
 			}
+
+			return true;
+		}
+
+		public boolean isRunning(){
+			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "qstat " + pbsJobId + " 2>/dev/null | tail -n 1 | awk '{print $5}'");
+			try{
+				Process p = pb.start();
+				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+				String line = null;
+				while ( (line = reader.readLine()) != null) {
+							System.out.println("Qstat line: '" + line + "'");
+							if(line.equals("R"))
+								return true;
+				}
+			}
+			catch(Exception e){
+				System.err.println("Exception checking whether batch is running: " + e.getMessage());
+				return false;
+			}
+			return false;
+		}
+
+		public void cleanup(){
+			Utils.getOutput("rm -rf " + jobWorkdir);
 		}
 
 		private void initializeDb(){
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
-				statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
+				//statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
 				statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
 								"environment TEXT," +
 								"exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
@@ -1102,6 +1336,26 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 
 			return idleRanks;
+		}
+
+		public List<TitanJobStatus> getRunningRanks() throws Exception{
+			LinkedList<TitanJobStatus> runningRanks = new LinkedList<TitanJobStatus>();
+			try{
+				Connection connection = DriverManager.getConnection(dbName);
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='R'");
+				while(rs.next()){
+					runningRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), 
+										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code"), this));
+				}
+				
+				connection.close();
+			} catch(SQLException e){
+				System.err.println("Getting free slots failed: " + e.getMessage());
+				throw e;
+			}
+
+			return runningRanks;
 		}
 
 		public Long getTtlLeft(Long currentTimestamp){
@@ -1214,6 +1468,11 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				TitanBatchInfo bi = (TitanBatchInfo) o;
 				if(!checkBatchTtlValid(bi, current_timestamp))
 					continue;
+				if(!bi.isRunning()){
+					System.out.println("Batch " + bi.pbsJobId + " not running, cleaning up.");
+					bi.cleanup();
+					continue;
+				}
 				try{
 					idleRanks.addAll(bi.getIdleRanks());
 				}
@@ -1222,6 +1481,24 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				}
 			}
 			return !idleRanks.isEmpty();
+		}
+
+
+		public List<TitanJobStatus> queryRunningDatabases(){
+			List<TitanJobStatus> runningRanks = new LinkedList<>();
+			Long current_timestamp = System.currentTimeMillis() / 1000L;
+			for(Object o : batchesInfo.values()){
+				TitanBatchInfo bi = (TitanBatchInfo) o;
+				if(!checkBatchTtlValid(bi, current_timestamp))
+					continue;
+				try{
+					runningRanks.addAll(bi.getRunningRanks());
+				}
+				catch(Exception e){
+					continue;
+				}
+			}
+			return runningRanks;
 		}
 
 		public final List<ProcInfoPair> getBatchesMonitoringData(){
@@ -1234,7 +1511,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		private boolean checkBatchTtlValid(TitanBatchInfo bi, Long current_timestamp){
-			return bi.getTtlLeft(current_timestamp) > minTtl;
+			// EXPERIMENTAL
+			//return bi.getTtlLeft(current_timestamp) > minTtl;
+			return bi.getTtlLeft(current_timestamp) > minTtl*8;
 		}
 
 		public void runDataExchange(){
@@ -1427,6 +1706,53 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					// notify to all processes waiting
 					commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
 				}
+
+				// ApMon calls
+				System.out.println("Running periodic Apmon update on running jobs");
+				List<TitanJobStatus> runningJobs = tbc.queryRunningDatabases();
+				for(TitanJobStatus pi: runningJobs){
+					/*final HashMap<String, Object> extrafields = new HashMap<>();
+					extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+					extrafields.put("node", hostName);
+					TaskQueueApiUtils.setJobStatus(pi.queueId, JobStatus.RUNNING, extrafields);*/
+
+					System.out.println("Running ApMon update for PID: " + pi.queueId);
+					Vector<String> varnames = new Vector<>();
+					varnames.add("host");
+					varnames.add("status");
+					varnames.add("job_user");
+					varnames.add("masterjob_id");
+					varnames.add("host_pid");
+					varnames.add("exechost");
+					Vector<Object> varvalues = new Vector<>();
+					varvalues.add(hostName);
+					varvalues.add("10");
+					varvalues.add("psvirin");
+					varvalues.add("0");
+					varvalues.add("10000");
+					varvalues.add(ce);
+					try{
+						//apmon.sendParameters(ce+"_Jobs", String.format("%d",pi.queueId), 6, varnames, varvalues);
+						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d",pi.queueId), 6, varnames, varvalues);
+					}
+					catch(ApMonException e){
+						System.out.println("Apmon exception");
+					}
+					catch(UnknownHostException e){
+						System.out.println("Unknown host exception");
+					}
+
+					catch(SocketException e){
+						System.out.println("Socket exception");
+					}
+
+					catch(IOException e){
+						System.out.println("IO exception");
+					}
+
+					// notify to all processes waiting
+					//commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
+				}
 			}
 
 			public void run() {
@@ -1434,7 +1760,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				
 				while(true){
 					try{
-						Thread.sleep(5*60*1000);
+						Thread.sleep(1*60*1000);
 					}
 					catch(InterruptedException e){}
 					sendProcessResources();
