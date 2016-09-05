@@ -3,12 +3,15 @@ package alien.site.supercomputing.titan;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.GUID;
@@ -36,8 +39,10 @@ class FileDownloadApplication{
 }
 
 public class FileDownloadController extends Thread{
-	private HashMap<LFN, LinkedList<FileDownloadApplication>> lfnQueue;
-	private Set<LFN> lfnQueueInProcess;
+	private HashMap<LFN, LinkedList<FileDownloadApplication>> lfnRequested;
+	//private Set<LFN> lfnQueueInProcess;
+
+	private BlockingQueue<LFN> lfnToServe;
 
 	private String cacheFolder;
 	private final int maxQueueCapacity = 1000;
@@ -49,6 +54,7 @@ public class FileDownloadController extends Thread{
 
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
+	private ArrayList<Thread> dlPool;
 
 	/**
 	 * The class which does actual download of LFNs
@@ -58,11 +64,19 @@ public class FileDownloadController extends Thread{
 			while(true){
 				try{
 					synchronized(poolSyncObject){
-						poolSyncObject.wait();
-						// if something is present in the 
+						poolSyncObject.wait(60000);
+					}
+					// if something is present in the 
+					LFN l = lfnToServe.take();
+					String dlFilename;
+					if(l!=null){
+						dlFilename = runDownload(l);
+						// notify download finished
 					}
 				}
-				catch(InterruptedException e){}
+				catch(InterruptedException e){
+					continue;
+				}
 
 			//	synchronized
 			}
@@ -101,24 +115,31 @@ public class FileDownloadController extends Thread{
 		if(cacheFolder==null || cacheFolder.equals(""))
 			throw new IOException("Cache folder name can not be null");
 
-		//lfnQueue = new LinkedListBlockingQueue<Pair<LFN, Thread>>();
-		lfnQueue = new HashMap();
-		//lfnQueueInProcess = new HashMap<>();
+		lfnRequested = new HashMap();
+		lfnToServe = new LinkedBlockingQueue<>();
 
 		// here to start a pool of threads
+		dlPool = new ArrayList<>(maxParallelDownloads);
+		for(int i=maxParallelDownloads; i>0; i--){
+			FileDownloadThread fdt = new FileDownloadThread();
+			dlPool.add(fdt);
+			fdt.start();
+		}
 		
 	}
 
 	synchronized public FileDownloadApplication applyForDownload(List<LFN> inputFiles){
 		FileDownloadApplication fda = new FileDownloadApplication(inputFiles);
 		for(LFN l: inputFiles){
-			if(lfnQueue.get(l)==null){
+			if(lfnRequested.get(l)==null){
 				LinkedList<FileDownloadApplication> dlAppList = new LinkedList<>();
 				dlAppList.add(fda);
-				lfnQueue.put(l, dlAppList);
+				lfnRequested.put(l, dlAppList);
+				lfnToServe.add(l);
 			}
-			else
-				lfnQueue.get(l).add(fda);
+			else{
+				lfnRequested.get(l).add(fda);
+			}
 		}
 
 		return fda;
@@ -129,7 +150,7 @@ public class FileDownloadController extends Thread{
 			// if nothing in the lfnQueue -> sleep, continue
 			boolean emptyQueue;
 			synchronized(this){
-				emptyQueue = lfnQueue.isEmpty();
+				emptyQueue = lfnToServe.isEmpty();
 			}
 			if(emptyQueue){
 				try{
@@ -139,30 +160,35 @@ public class FileDownloadController extends Thread{
 				continue;
 			}
 			// tell the pool we got something
-			
-			
-
-			//for(LFN l: lfnQueue){
-			//}
-
-			// else foreach:
-			// if file in the cache -> notify all waiting threads with existing path, continue, 
-			//  ...... check size, md5
-			// else run IOUtils.get, notify about the result
-			;
-			// what if download fails?
-			// report the result?
+			synchronized(poolSyncObject ){
+				poolSyncObject.notifyAll(); 
+			}
 		}
 	}
 
-	private void notifyCompleted(FileDownloadApplication fda){
+	synchronized private void notifyCompleted(LFN l, String filename){
+		for(FileDownloadApplication fda: lfnRequested.get(l)){
+			fda.putResult(l, filename);
+			if(filename==null){
+				for(LFN lr: fda.fileList){
+					lfnRequested.get(lr).remove(fda);
+				}
+			}
+			if(fda.isCompleted() || filename==null){
+				notifyCompletedFDA(fda);
+			}
+			lfnRequested.remove(l); 
+		}
+	}
+
+	private void notifyCompletedFDA(FileDownloadApplication fda){
 		synchronized(fda){
 			fda.notify();
 		}
 	}
 
 	private boolean fileIsInCache(LFN l){
-		return false;
+		return new File(getCachedFilename(l)).exists();
 	}
 
 	public String getCachedFilename(LFN l){
@@ -174,7 +200,9 @@ public class FileDownloadController extends Thread{
 		return true;
 	}
 
-	private boolean checkSize(){
-		return true;
+
+	private boolean checkSize(LFN l) throws IOException {
+		File f = new File(getCachedFilename(l));
+		return l.size==f.length();
 	}
 }
