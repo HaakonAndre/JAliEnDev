@@ -119,7 +119,7 @@ public class FileDownloadController extends Thread{
 		}
 	}
 
-	public FileDownloadController getInstance(){
+	public static FileDownloadController getInstance(){
 		try{
 			if(instance==null){
 				instance = new FileDownloadController();
