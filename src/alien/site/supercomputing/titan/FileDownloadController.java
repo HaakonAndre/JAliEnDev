@@ -44,7 +44,7 @@ public class FileDownloadController extends Thread{
 
 	private BlockingQueue<LFN> lfnToServe;
 
-	private String cacheFolder;
+	private static String cacheFolder;
 	private final int maxQueueCapacity = 1000;
 	private final int maxDownloaderSleep = 10000;
 	private final int maxParallelDownloads = 10;
@@ -55,6 +55,14 @@ public class FileDownloadController extends Thread{
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
 	private ArrayList<Thread> dlPool;
+
+	static private FileDownloadController instance = null;
+
+	public static void setCacheFolder(String path){
+		if(path!=null && path!=""){
+			cacheFolder = path;
+		}
+	}
 
 	/**
 	 * The class which does actual download of LFNs
@@ -111,7 +119,21 @@ public class FileDownloadController extends Thread{
 		}
 	}
 
-	public FileDownloadController(String cacheFolder) throws IOException, FileNotFoundException{
+	public FileDownloadController getInstance(){
+		try{
+			if(instance==null){
+				instance = new FileDownloadController();
+			}
+		}
+		catch(Exception e){
+			System.err.println("Exception caught on starting FileDownloadController: " + e.getMessage());
+			return null;
+		}
+		return instance;
+	}
+
+	//private FileDownloadController(String cacheFolder) throws IOException, FileNotFoundException{
+	private FileDownloadController() throws IOException, FileNotFoundException{
 		if(cacheFolder==null || cacheFolder.equals(""))
 			throw new IOException("Cache folder name can not be null");
 
