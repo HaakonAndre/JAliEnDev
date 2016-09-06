@@ -80,6 +80,7 @@ public class FileDownloadController extends Thread{
 					if(l!=null){
 						dlFilename = runDownload(l);
 						// notify download finished
+						notifyCompleted(l, dlFilename);
 					}
 				}
 				catch(InterruptedException e){
