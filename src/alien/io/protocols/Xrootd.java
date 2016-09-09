@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -1166,5 +1167,170 @@ public class Xrootd extends Protocol {
 	 */
 	public static String getXrootdDefaultPath() {
 		return xrootd_default_path;
+	}
+
+	/**
+	 * @param pfn
+	 *            Some path + read access token to get the space information for
+	 * @return space information
+	 * @throws IOException
+	 */
+	public SpaceInfo getSpaceInfo(final PFN pfn) throws IOException {
+		final List<String> command = new LinkedList<>();
+
+		final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
+
+		final String host = url.getHost();
+		final int port = url.getPort() > 0 ? url.getPort() : 1094;
+
+		String path = url.getPath();
+
+		if (path.startsWith("//"))
+			path = path.substring(1);
+
+		String envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+		if (envelope == null)
+			envelope = pfn.ticket.envelope.getSignedEnvelope();
+
+		final SpaceInfo ret = new SpaceInfo();
+
+		ExitStatus exitStatus;
+
+		ExternalProcessBuilder pBuilder;
+
+		for (int attempt = 0; !ret.spaceInfoSet && attempt <= 1; attempt++) {
+			command.clear();
+
+			command.add(xrootd_default_path + "/bin/xrdfs");
+			command.add(host + ":" + port);
+			command.add("spaceinfo");
+
+			if (attempt == 1)
+				command.add(path + "?authz=" + envelope);
+			else
+				command.add(path);
+
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Executing spaceinfo command: " + command);
+
+			setLastCommand(command);
+
+			pBuilder = new ExternalProcessBuilder(command);
+
+			checkLibraryPath(pBuilder);
+
+			pBuilder.returnOutputOnExit(true);
+
+			pBuilder.timeout(5, TimeUnit.MINUTES);
+
+			pBuilder.redirectErrorStream(true);
+
+			try {
+				exitStatus = pBuilder.start().waitFor();
+				setLastExitStatus(exitStatus);
+				
+				try (BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()))) {
+					String line;
+
+					long total = 0;
+					long free = 0;
+					long used = 0;
+					long largest = 0;
+
+					while ((line = br.readLine()) != null) {
+						final StringTokenizer st = new StringTokenizer(line);
+
+						if (!st.hasMoreTokens())
+							continue;
+
+						final String firstToken = st.nextToken();
+
+						if (!st.hasMoreTokens())
+							continue;
+
+						String lastToken = st.nextToken();
+
+						while (st.hasMoreTokens())
+							lastToken = st.nextToken();
+
+						switch (firstToken) {
+						case "Total:":
+							total = Long.parseLong(lastToken);
+							break;
+						case "Free:":
+							free = Long.parseLong(lastToken);
+							break;
+						case "Used:":
+							used = Long.parseLong(lastToken);
+							break;
+						case "Largest":
+							largest = Long.parseLong(lastToken);
+							break;
+						default:
+							break;
+						}
+					}
+
+					if (total > 0)
+						ret.setSpaceInfo(path, total, free, used, largest);
+				}
+			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
+			}
+		}
+
+		// Now get the server software version
+
+		command.clear();
+
+		command.add(xrootd_default_path + "/bin/xrdfs");
+		command.add(host + ":" + port);
+		command.add("query");
+		command.add("config");
+		command.add("version");
+
+		if (logger.isLoggable(Level.FINEST))
+			logger.log(Level.FINEST, "Executing spaceinfo command: " + command);
+
+		setLastCommand(command);
+
+		pBuilder = new ExternalProcessBuilder(command);
+
+		checkLibraryPath(pBuilder);
+
+		pBuilder.returnOutputOnExit(true);
+
+		pBuilder.timeout(15, TimeUnit.SECONDS);
+
+		pBuilder.redirectErrorStream(true);
+
+		try {
+			exitStatus = pBuilder.start().waitFor();
+			setLastExitStatus(exitStatus);
+
+			try (BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()))) {
+				String line = br.readLine();
+
+				if (line != null) {
+					line = line.trim();
+					if (!line.equals("version") && !line.startsWith("[")) {
+						if (line.startsWith("v"))
+							ret.setVersion("Xrootd", line);
+						else
+							if (line.startsWith("dCache "))
+								ret.setVersion("dCache", line.substring(line.indexOf(' ') + 1).trim());
+							else
+								ret.setVersion(null, line);
+					}
+				}
+			}
+		} catch (final InterruptedException ie) {
+			setLastExitStatus(null);
+			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
+		}
+
+		return ret;
 	}
 }
