@@ -1,5 +1,6 @@
 package alien.io.xrootd.envelopes;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -23,6 +24,7 @@ import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.user.JAKeyStore;
+import jline.internal.InputStreamReader;
 
 /**
  * @author ron
@@ -267,8 +269,10 @@ public class XrootDEnvelopeSigner {
 
 		String sLine;
 
-		while ((sLine = System.console().readLine()) != null)
-			sb.append(sLine).append("\n");
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
+			while ((sLine = br.readLine()) != null)
+				sb.append(sLine).append("\n");
+		}
 
 		System.out.println(decrypt(sb.toString()));
 	}
