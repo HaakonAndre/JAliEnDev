@@ -1,5 +1,6 @@
 package alien.se;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -10,7 +11,13 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.PFN;
+import alien.catalogue.access.AccessType;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
+import alien.io.protocols.Factory;
+import alien.io.protocols.SpaceInfo;
 import alien.user.AliEnPrincipal;
 import alien.user.LDAPHelper;
 import lazyj.DBFunctions;
@@ -396,6 +403,23 @@ public class SE implements Serializable, Comparable<SE> {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * @return space information
+	 * @throws IOException
+	 */
+	public SpaceInfo getSpaceInfo() throws IOException {
+		final PFN pfn = new PFN(GUIDUtils.createGuid(), this);
+
+		pfn.pfn = generateProtocol();
+
+		String reason = AuthorizationFactory.fillAccess(AuthorizationFactory.getDefaultUser(), pfn, AccessType.READ, true);
+
+		if (reason != null)
+			System.err.println("Reason: " + reason);
+
+		return Factory.xrootd.getSpaceInfo(pfn);
 	}
 
 	/**
