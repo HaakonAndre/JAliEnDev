@@ -2,6 +2,7 @@ package alien.io.xrootd.envelopes;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -24,7 +25,6 @@ import alien.catalogue.access.XrootDEnvelope;
 import alien.config.ConfigUtils;
 import alien.config.JAliEnIAm;
 import alien.user.JAKeyStore;
-import jline.internal.InputStreamReader;
 
 /**
  * @author ron
