@@ -1,13 +1,34 @@
 package alien.site;
 
+import apmon.ApMon;
+import apmon.ApMonException;
+import apmon.ApMonMonitoringConstants;
+import apmon.BkThread;
+import apmon.MonitoredJob;
+
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,7 +40,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.Stack;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -29,6 +52,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import lazyj.Format;
+
+import lia.util.Utils;
 
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -47,40 +74,16 @@ import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
+import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
+import alien.site.supercomputing.titan.FileDownloadApplication;
+import alien.site.supercomputing.titan.FileDownloadController;
+import alien.site.supercomputing.titan.Pair;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-import alien.se.SE;
-import apmon.ApMon;
-import apmon.ApMonException;
-import apmon.ApMonMonitoringConstants;
-import apmon.BkThread;
-import apmon.MonitoredJob;
-import lazyj.Format;
-import lia.util.Utils;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
-// EXPERIMENTAL
-// ========== imports for ORNL Titan
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Stack;
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
-import java.util.Map.Entry;
-import java.io.FileNotFoundException;
-import java.net.SocketException;
-import java.io.IOException;
-
-import alien.site.supercomputing.titan.FileDownloadController;
 
 
 /**
@@ -663,6 +666,56 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			final Map<LFN, File> localFiles = new HashMap<>();
 
+			FileDownloadController fdc =FileDownloadController.getInstance();
+			FileDownloadApplication fda = fdc.applyForDownload(iFiles);
+
+			try{
+				fda.wait();
+			}
+			catch(InterruptedException e){
+				;
+			}
+			dumpInputDataList();
+			System.out.println("Finalizing download.");
+
+			List<Pair<LFN, String>> fList = fda.getResults();
+			if(fda.isCompleted()){
+				for(Pair<LFN, String> p: fList){
+					System.out.println(p.getFirst() + " : " + p.getSecond());
+					// copy files to local folder
+					FileChannel source = null;
+					FileChannel destination = null;
+
+					try{
+						try {
+							//source = new FileInputStream(TempFileManager.getAny(guid)).getChannel();
+							source = new FileInputStream(p.getSecond()).getChannel();
+							destination = new FileOutputStream(tempDir.getAbsolutePath() + "/" +
+									p.getFirst().getFileName()).getChannel();
+							destination.transferFrom(source, 
+									0, source.size());
+						}
+						finally {
+							if(source != null) {
+								source.close();
+							}
+							if(destination != null) {
+								destination.close();
+							}
+						}
+					}
+					catch(Exception e){
+						System.err.println("Exception happened on file copy: " + 
+										e.getMessage());
+					}
+				}
+				return true;
+			}
+
+
+			return false;
+
+			/*
 			for (final LFN l : iFiles) {
 				File localFile = new File(tempDir, l.getFileName());
 				System.out.println("Getting file: " + localFile.getAbsolutePath());
@@ -680,7 +733,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 				localFiles.put(l, localFile);
 			}
+			*/
 
+			/*
 			for (final Map.Entry<LFN, File> entry : localFiles.entrySet()) {
 				final List<PFN> pfns = c_api.getPFNsToRead(entry.getKey(), null, null);
 
@@ -700,13 +755,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 									" to " + entry.getValue().getAbsolutePath());
 					return false;
 				}
-			}
+			}*/
 
-			dumpInputDataList();
 
-			System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
 
-			return true;
+			//System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
+
+			//return true;
 		}
 
 
