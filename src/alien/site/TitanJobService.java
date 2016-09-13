@@ -80,6 +80,8 @@ import java.io.FileNotFoundException;
 import java.net.SocketException;
 import java.io.IOException;
 
+import alien.site.supercomputing.titan.FileDownloadController;
+
 
 /**
  * @author mmmartin, ron, pavlo
@@ -349,43 +351,54 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		private int execute() {
 			commander.q_api.putJobLog(queueId, "trace", "Starting execution");
-
+			int numRetries = 20;
 			// EXPERIMENTAL
 			// for ORNL Titan
-			try{
-				//Connection connection = DriverManager.getConnection(dbname);
-				Connection connection = DriverManager.getConnection(js.batch.dbName);
-				Statement statement = connection.createStatement();
-				// setting variables
-				final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
 
-				// setting variables for packages
-				final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+			while(numRetries-- > 0){
+				try{
+					//Connection connection = DriverManager.getConnection(dbname);
+					Connection connection = DriverManager.getConnection(js.batch.dbName);
+					Statement statement = connection.createStatement();
+					// setting variables
+					final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
 
-				//try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
-				try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
-					for(Entry<String, String> e: alice_environment_packages.entrySet()){
-						out.println(String.format("export %s=%s", e.getKey(), e.getValue()));
+					// setting variables for packages
+					final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+
+					//try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
+					try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
+						for(Entry<String, String> e: alice_environment_packages.entrySet()){
+							out.println(String.format("export %s=%s", e.getKey(), e.getValue()));
+						}
+
+						for(Entry<String, String> e: environment_packages.entrySet()){
+							out.println(String.format(" export %s=%s", e.getKey(), e.getValue()));
+						}
 					}
 
-					for(Entry<String, String> e: environment_packages.entrySet()){
-						out.println(String.format(" export %s=%s", e.getKey(), e.getValue()));
+					String validationCommand = jdl.gets("ValidationCommand");
+					statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
+											"WHERE rank=%d", 
+											queueId, tempDir, "Q", 
+											getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
+											validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
+											"", current_rank ));
+					break;
+				} catch(SQLException e){
+					System.err.println("Failed to insert job: " + e.getMessage());
+					System.out.println("DBname: " + dbname);
+					System.out.println("DBname: " + js.batch.dbName);
+					System.out.println("Retrying...");
+					try{
+						Thread.sleep(2000);
 					}
+					catch(InterruptedException ei){
+						System.err.println("Sleep in DispatchSSLMTClient.getInstance has been interrupted");
+					}
+				} catch(FileNotFoundException e){
+					System.err.println("Failed to write variables file");
 				}
-
-				String validationCommand = jdl.gets("ValidationCommand");
-				statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
-										"WHERE rank=%d", 
-										queueId, tempDir, "Q", 
-										getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
-										validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
-										"", current_rank ));
-			} catch(SQLException e){
-				System.err.println("Failed to insert job: " + e.getMessage());
-				System.out.println("DBname: " + dbname);
-				System.out.println("DBname: " + js.batch.dbName);
-			} catch(FileNotFoundException e){
-				System.err.println("Failed to write variables file");
 			}
 
 			return 0;
@@ -807,8 +820,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		private String jobWorkdir;
 		private JobStatus jobStatus;
+		FileDownloadController fdc;
 
 		public JobUploader(TitanJobStatus js){
+			fdc = FileDownloadController.getInstance();
 			this.js = js;
 			if(js.executionCode!=0)
 				jobStatus = JobStatus.ERROR_E;
@@ -1659,6 +1674,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		monitor.addMonitoring("jobAgent-TODO", this);
 
 		batchController = new TitanBatchController(globalWorkdir);
+		FileDownloadController.setCacheFolder("/lustre/atlas/proj-shared/csc108/psvirin/cayalog_cache");
 
 		// here create monitor thread
 		class TitanMonitorThread extends Thread {
@@ -2254,6 +2270,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
+		apmon.setLogLevel("DEBUG");
 		final TitanJobService ja = new TitanJobService();
 		ja.run();
 	}
