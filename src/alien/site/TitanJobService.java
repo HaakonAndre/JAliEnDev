@@ -288,20 +288,24 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 				Vector<String> varnames = new Vector<>();
 				varnames.add("host");
-				varnames.add("status");
+				varnames.add("statusID");
+				varnames.add("jobID");
 				Vector<Object> varvalues = new Vector<>();
 				varvalues.add(hostName);
 				varvalues.add("7");
+				varvalues.add(queueId);
 				apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 
 				if (!createWorkDir() || !getInputFiles()) {
 					changeStatus(queueId, JobStatus.ERROR_IB);
 					varnames = new Vector<>();
 					varnames.add("host");
-					varnames.add("status");
+					varnames.add("statusID");
+					varnames.add("jobID");
 					varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("-4");
+					varvalues.add(queueId);
 					apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 					return;
 				}
@@ -323,11 +327,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				//apmon.addJobToMonitor((int)(long)queueId, "" /*jobWorkdir*/, ce, hostName);
 				varnames = new Vector<>();
 				varnames.add("host");
-				varnames.add("status");
+				varnames.add("statusID");
+				varnames.add("jobID");
 				varnames.add("exechost");
 				varvalues = new Vector<>();
 				varvalues.add(hostName);
 				varvalues.add("10");
+				varvalues.add(queueId);
 				varvalues.add(ce);
 				apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 				}
@@ -339,10 +345,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					changeStatus(queueId, JobStatus.ERROR_E);
 					varnames = new Vector<>();
 					varnames.add("host");
-					varnames.add("status");
+					varnames.add("statusID");
+					varnames.add("jobID");
 					varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("-3");
+					varvalues.add(queueId);
 					apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 				}
 
@@ -668,9 +676,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			FileDownloadController fdc =FileDownloadController.getInstance();
 			FileDownloadApplication fda = fdc.applyForDownload(iFiles);
+			System.out.println("We've applied for downloads: " + fda);
+			fda.print();
 
 			try{
-				fda.wait();
+				synchronized(fda){
+					fda.wait();
+				}
 			}
 			catch(InterruptedException e){
 				;
@@ -681,10 +693,18 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			List<Pair<LFN, String>> fList = fda.getResults();
 			if(fda.isCompleted()){
 				for(Pair<LFN, String> p: fList){
-					System.out.println(p.getFirst() + " : " + p.getSecond());
+					if(p.getSecond()==null){
+						System.out.println(p.getFirst().getCanonicalName() + " is null");
+						return false;
+					}
+					System.out.println(p.getFirst().getFileName() + " : " + p.getSecond());
 					// copy files to local folder
 					FileChannel source = null;
 					FileChannel destination = null;
+
+					System.out.println("Now copying: " + p.getSecond() + " to " +
+							tempDir.getAbsolutePath() + "/" +
+									p.getFirst().getFileName());
 
 					try{
 						try {
@@ -707,8 +727,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					catch(Exception e){
 						System.err.println("Exception happened on file copy: " + 
 										e.getMessage());
+						e.printStackTrace();
 					}
 				}
+				System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
 				return true;
 			}
 
@@ -994,10 +1016,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 							changeStatus(queueId, JobStatus.ERROR_E);
 							Vector<String> varnames = new Vector<>();
 							varnames.add("host");
-							varnames.add("status");
+							varnames.add("statusID");
+							varnames.add("jobID");
 							Vector<Object> varvalues = new Vector<>();
 							varvalues.add(hostName);
 							varvalues.add("-3");
+							varvalues.add(queueId);
 							try{
 								apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 							}
@@ -1010,10 +1034,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 							changeStatus(queueId, JobStatus.ERROR_V);
 							Vector<String> varnames = new Vector<>();
 							varnames.add("host");
-							varnames.add("status");
+							varnames.add("statusID");
+							varnames.add("jobID");
 							Vector<Object> varvalues = new Vector<>();
 							varvalues.add(hostName);
 							varvalues.add("-10");
+							varvalues.add(queueId);
 							try{
 								apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 							}
@@ -1026,10 +1052,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 							changeStatus(queueId, JobStatus.SAVING);
 							Vector<String> varnames = new Vector<>();
 							varnames.add("host");
-							varnames.add("status");
+							varnames.add("statusID");
+							varnames.add("jobID");
 							Vector<Object> varvalues = new Vector<>();
 							varvalues.add(hostName);
 							varvalues.add("11");
+							varvalues.add(queueId);
 							try{
 								apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 							}
@@ -1062,7 +1090,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private void cleanup() {
 			System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
 			// Remove sandbox, TODO: use Java builtin
-			Utils.getOutput("rm -rf " + jobWorkdir);
+			//Utils.getOutput("rm -rf " + jobWorkdir);
+			Utils.getOutput("cp -r " + jobWorkdir + " /lustre/atlas/scratch/psvirin/csc108/cleanup_folder");
 			RES_WORKDIR_SIZE = ZERO;
 			RES_VMEM = ZERO;
 			RES_RMEM = ZERO;
@@ -1095,10 +1124,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 				Vector<String> varnames = new Vector<>();
 				varnames.add("host");
-				varnames.add("status");
+				varnames.add("statusID");
+				varnames.add("jobID");
 				Vector<Object> varvalues = new Vector<>();
 				varvalues.add(hostName);
 				varvalues.add("-9");
+				varvalues.add(queueId);
 				try{
 					apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 				}
@@ -1211,10 +1242,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					changeStatus(queueId, JobStatus.DONE_WARN);
 					Vector<String> varnames = new Vector<>();
 					varnames.add("host");
-					varnames.add("status");
+					varnames.add("statusID");
+					varnames.add("jobID");
 					Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("16");
+					varvalues.add(queueId);
 					try{
 						apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 					}
@@ -1227,10 +1260,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					changeStatus(queueId, JobStatus.DONE);
 					Vector<String> varnames = new Vector<>();
 					varnames.add("host");
-					varnames.add("status");
+					varnames.add("statusID");
+					varnames.add("jobID");
 					Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("15");
+					varvalues.add(queueId);
 					try{
 						apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 					}
@@ -1243,10 +1278,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					changeStatus(queueId, JobStatus.ERROR_SV);
 					Vector<String> varnames = new Vector<>();
 					varnames.add("host");
-					varnames.add("status");
+					varnames.add("statusID");
+					varnames.add("jobID");
 					Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("-9");
+					varvalues.add(queueId);
 					try{
 						apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 					}
@@ -1466,9 +1503,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 		}
 
-
 		public List<TitanJobStatus> getIdleRanks() throws Exception{
 			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
+			if( !(new File(dbName).isFile()))
+				return idleRanks;
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
@@ -1489,6 +1527,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		public List<TitanJobStatus> getRunningRanks() throws Exception{
 			LinkedList<TitanJobStatus> runningRanks = new LinkedList<TitanJobStatus>();
+			if( !(new File(dbName).isFile()) )
+				return runningRanks;
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
@@ -1808,7 +1848,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		monitor.addMonitoring("jobAgent-TODO", this);
 
 		batchController = new TitanBatchController(globalWorkdir);
-		FileDownloadController.setCacheFolder("/lustre/atlas/proj-shared/csc108/psvirin/cayalog_cache");
+		FileDownloadController.setCacheFolder("/lustre/atlas/proj-shared/csc108/psvirin/catalog_cache");
 
 		// here create monitor thread
 		class TitanMonitorThread extends Thread {
@@ -1869,7 +1909,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					System.out.println("Running ApMon update for PID: " + pi.queueId);
 					Vector<String> varnames = new Vector<>();
 					varnames.add("host");
-					varnames.add("status");
+					varnames.add("statusID");
+					varnames.add("jobID");
 					varnames.add("job_user");
 					varnames.add("masterjob_id");
 					varnames.add("host_pid");
@@ -1877,6 +1918,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("10");
+					varvalues.add(pi.queueId);
 					varvalues.add("psvirin");
 					varvalues.add("0");
 					varvalues.add("10000");
