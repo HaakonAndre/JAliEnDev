@@ -987,6 +987,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				jobStatus = JobStatus.ERROR_V;
 			else
 				jobStatus = JobStatus.DONE;
+			dbname = js.batch.dbName;
 		}
 
 		public void run(){
@@ -1373,6 +1374,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	class TitanBatchInfo{
 		public final Long pbsJobId;
 		public final String dbName;
+		public final String clearDbName;
 		private final String monitoringDbName;
 		public final String jobWorkdir;
 		public Integer origTtl;
@@ -1387,6 +1389,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			pbsJobId = jobid;
 			jobWorkdir = workdir;
 			dbName = dbProtocol + jobWorkdir + "/" + dbFilename;
+			clearDbName = jobWorkdir + "/" + dbFilename;
 			monitoringDbName = dbName + monitoringDbSuffix;
 
 			if(!readBatchInfo()){
@@ -1426,7 +1429,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		public boolean isRunning(){
-			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "qstat " + pbsJobId + " 2>/dev/null | tail -n 1 | awk '{print $5}'");
+			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "qstat " + pbsJobId 
+								+ " 2>/dev/null | tail -n 1 | awk '{print $5}'");
 			try{
 				Process p = pb.start();
 				BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -1506,8 +1510,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		public List<TitanJobStatus> getIdleRanks() throws Exception{
 			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
-			//if( !(new File(dbName).isFile()))
-			//	return idleRanks;
+			if( !(new File(clearDbName).isFile()))
+				return idleRanks;
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
@@ -1528,8 +1532,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		public List<TitanJobStatus> getRunningRanks() throws Exception{
 			LinkedList<TitanJobStatus> runningRanks = new LinkedList<TitanJobStatus>();
-			//if( !(new File(dbName).isFile()) )
-			//	return runningRanks;
+			if( !(new File(clearDbName).isFile()) )
+				return runningRanks;
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
@@ -1723,7 +1727,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			for(TitanJobStatus js: idleRanks){
 				if(js.status.equals("D")){
 					JobUploader ju = new JobUploader(js);
-					ju.setDbName(dbname);
+					//ju.setDbName(dbname);
 					upload_threads.add(ju);
 					ju.start();
 				}
@@ -1755,7 +1759,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				//TitanJobStatus js = idleRanks.pop();
 
 				JobDownloader jd = new JobDownloader(js, siteMap);
-				jd.setDbName(dbname);
+				//jd.setDbName(dbname);
 				upload_threads.add(jd);
 				jd.start();
 				//count--;
@@ -1776,6 +1780,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				}
 			}
 			idleRanks.clear();
+			System.out.println("Everything joined");
+			System.out.println("================================================");
 		}
 
 		/*
