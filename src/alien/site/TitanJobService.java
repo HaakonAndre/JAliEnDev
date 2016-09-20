@@ -1077,7 +1077,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 							connection.close();
 						}
 						catch(SQLException e){
-							System.err.println("Update job state to I failed");
+							System.err.println("Update job state to I failed: " +
+									e.getMessage() );
 						}
 					}
 				}
@@ -1505,8 +1506,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		public List<TitanJobStatus> getIdleRanks() throws Exception{
 			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
-			if( !(new File(dbName).isFile()))
-				return idleRanks;
+			//if( !(new File(dbName).isFile()))
+			//	return idleRanks;
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
@@ -1527,8 +1528,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		public List<TitanJobStatus> getRunningRanks() throws Exception{
 			LinkedList<TitanJobStatus> runningRanks = new LinkedList<TitanJobStatus>();
-			if( !(new File(dbName).isFile()) )
-				return runningRanks;
+			//if( !(new File(dbName).isFile()) )
+			//	return runningRanks;
 			try{
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
@@ -1655,6 +1656,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			Long current_timestamp = System.currentTimeMillis() / 1000L;
 			for(Object o : batchesInfo.values()){
 				TitanBatchInfo bi = (TitanBatchInfo) o;
+				System.out.println("Querying: " + bi.pbsJobId);
 				if(!checkBatchTtlValid(bi, current_timestamp))
 					continue;
 				if(!bi.isRunning()){
@@ -1666,6 +1668,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					idleRanks.addAll(bi.getIdleRanks());
 				}
 				catch(Exception e){
+					System.err.println("Exception caught in queryDatabases: " + e.getMessage());
 					continue;
 				}
 			}
