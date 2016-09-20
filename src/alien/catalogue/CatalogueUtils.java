@@ -117,13 +117,13 @@ public final class CatalogueUtils {
 		guidIndexReadLock.lock();
 
 		try {
-			if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
+			if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null || guidIndexCache.size() == 0) {
 				guidIndexReadLock.unlock();
 
 				guidIndexWriteLock.lock();
 
 				try {
-					if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
+					if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null || guidIndexCache.size() == 0) {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating GUIDINDEX cache");
 
@@ -137,16 +137,21 @@ public final class CatalogueUtils {
 									while (db.moveNext())
 										ret.add(new GUIDIndex(db));
 
-									guidIndexCache = ret;
+									if (ret.size() > 0) {
+										guidIndexCache = ret;
 
-									guidIndexCacheUpdated = System.currentTimeMillis();
+										guidIndexCacheUpdated = System.currentTimeMillis();
+
+										logger.log(Level.FINER, "Finished updating GUIDINDEX cache");
+									}
+									else
+										logger.log(Level.WARNING, "Empty GUID index cache after query");
 								}
 								else
-									// in case of a DB connection failure, try again in
-									// 10 seconds, until then reuse the existing value
-									// (if any)
-									guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+									logger.log(Level.WARNING, "DB query failed updating GUID index cache");
 							}
+							else
+								logger.log(Level.WARNING, "Cannot get a DB connection to update GUID Index cache");
 						}
 					}
 				} finally {
@@ -209,13 +214,13 @@ public final class CatalogueUtils {
 		indextableReadLock.lock();
 
 		try {
-			if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
+			if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null || indextable.size() == 0) {
 				indextableReadLock.unlock();
 
 				indextableWriteLock.lock();
 
 				try {
-					if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
+					if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null || indextable.size() == 0) {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating INDEXTABLE cache");
 
@@ -235,17 +240,22 @@ public final class CatalogueUtils {
 										newTableentries.add(db.gets("lfn"));
 									}
 
-									indextable = newIndextable;
-									tableentries = newTableentries;
+									if (newIndextable.size() > 0) {
+										logger.log(Level.FINER, "INDEXTABLE cache updated successfully");
 
-									lastIndexTableUpdate = System.currentTimeMillis();
+										indextable = newIndextable;
+										tableentries = newTableentries;
+
+										lastIndexTableUpdate = System.currentTimeMillis();
+									}
+									else
+										logger.log(Level.WARNING, "Empty list of INDEXTABLE entries");
 								}
 								else
-									// in case of a DB connection failure, try again in
-									// 10 seconds, until then reuse the existing value
-									// (if any)
-									lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+									logger.log(Level.WARNING, "DB query error updating the INDEXTABLE entries");
 							}
+							else
+								logger.log(Level.WARNING, "Could not get a DB connection to update INDEXTABLE cache");
 						}
 					}
 				} finally {
@@ -264,6 +274,13 @@ public final class CatalogueUtils {
 	 */
 	public static void invalidateIndexTableCache() {
 		lastIndexTableUpdate = 0;
+	}
+
+	/**
+	 * When it is known that the GUID Index table was changed
+	 */
+	public static void invalidateGUIDIndexTableCache() {
+		guidIndexCacheUpdated = 0;
 	}
 
 	/**
