@@ -1619,7 +1619,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		public boolean updateDatabaseList(){
 			//ls -d */ -1 | sed -e 's#/$##' | grep -E '^[0-9]+$' | sort -g	
 			//ProcessBuilder pb = newProcessBuilder(System.getProperty("user.dir")+"/src/generate_list.sh",filename);
-			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "for i in $(ls -d " + globalWorkdir + "/*/ | egrep \"/[0-9]+/\"); do basename $i; done");
+			System.out.println("Starting database update");
+			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "for i in $(ls -d " 
+						+ globalWorkdir + "/*/ | egrep \"/[0-9]+/\"); do basename $i; done");
 			HashMap<String, TitanBatchInfo> tmpBatchesInfo = new HashMap<>();
 			int dbcount = 0;
 			try{
@@ -1993,6 +1995,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("Entering round");
 			System.out.println("Updating bunches information");
 			if(!batchController.updateDatabaseList()){
+				System.out.println("No batches, sleeping.");
 				roundSleep();
 				continue;
 			}
