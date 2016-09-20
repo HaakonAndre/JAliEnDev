@@ -1928,7 +1928,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d",pi.queueId), 6, varnames, varvalues);
 					}
 					catch(ApMonException e){
-						System.out.println("Apmon exception");
+						System.out.println("Apmon exception: " + e.getMessage());
 					}
 					catch(UnknownHostException e){
 						System.out.println("Unknown host exception");
