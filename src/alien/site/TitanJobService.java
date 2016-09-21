@@ -280,6 +280,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			} catch (final Exception e) {
 				logger.log(Level.INFO, "Error getting a matching job: " + e);
 			}
+			System.out.println("Finishing downloader thread");
 		}
 
 		private void handleJob() {
@@ -1333,6 +1334,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				final HashMap<String, Object> extrafields = new HashMap<>();
 				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
 				extrafields.put("node", hostName);
+				extrafields.put("exechost", hostName);
 
 				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 			} else
@@ -1466,9 +1468,16 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
 				//statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
-				statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
-								"environment TEXT," +
-								"exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
+				statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, " +
+						"queue_id VARCHAR(20), " + 
+						"user VARCHAR(20), " + 
+						"masterjob_id VARCHAR(20), " + 
+						"job_folder VARCHAR(256) NOT NULL, " +
+						"status CHAR(1), " +
+						"executable VARCHAR(256), " +
+						"validation VARCHAR(256),"+
+						"environment TEXT," +
+						"exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
 				statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
 				statement.executeUpdate("INSERT INTO numbers " +
 					"select 1 " +
@@ -1495,7 +1504,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					   "union select 4 union select 5 union select 6 " +
 					   "union select 7 union select 8 union select 9" +
 					") f");
-				statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+				statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', " +
+							"0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
 				statement.executeUpdate("DROP TABLE numbers");
 				connection.close();
 			} 
