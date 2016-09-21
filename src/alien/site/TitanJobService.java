@@ -199,7 +199,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private Long queueId;
 		private String username;
 		private String jobToken;
-		private String masterJob;
+		private String masterJobId;
 		private String jobWorkdir;
 		private File tempDir;
 		private String workdir = null;
@@ -237,6 +237,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					queueId = ((Long) matchedJob.get("queueId"));
 					username = (String) matchedJob.get("User");
 					jobToken = (String) matchedJob.get("jobToken");
+					masterJobId = (String) matchedJob.get("MasterJobID");
+					if(masterJobId == null)
+						masterJobId = "0";
 
 					// TODO: commander.setUser(username); commander.setSite(site);
 
@@ -246,6 +249,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					System.out.println(username);
 					System.out.println(queueId);
 					System.out.println(jobToken);
+					System.out.println(masterJobId);
 
 					// EXPERIMENTAL
 					// for ORNL Titan
@@ -1763,6 +1767,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			upload_threads.clear();
 			System.out.println("========= Starting download threads ==========");
 			//while (count > 0) {
+			int cnt = idleRanks.size();
 			for(TitanJobStatus js: idleRanks){
 				//System.out.println(siteMap.toString());
 				//TitanJobStatus js = idleRanks.pop();
@@ -1771,6 +1776,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				//jd.setDbName(dbname);
 				upload_threads.add(jd);
 				jd.start();
+				System.out.println("Starting downloader " + cnt--);
 				//count--;
 				//System.out.println("Wants to start Downloader thread");
 				//System.out.println(js.batch.origTtl);
@@ -1783,6 +1789,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			for(Thread t: upload_threads){
 				try{
 					t.join();
+					System.out.println("Joined downloader " + ++cnt);
 				}
 				catch(InterruptedException e){
 					System.err.println("Join for upload thread has been interrupted");
