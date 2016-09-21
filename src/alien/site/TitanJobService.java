@@ -199,6 +199,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private Long queueId;
 		private String username;
 		private String jobToken;
+		private String masterJob;
 		private String jobWorkdir;
 		private File tempDir;
 		private String workdir = null;
@@ -334,7 +335,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				varvalues.add(hostName);
 				varvalues.add("10");
 				varvalues.add(queueId);
-				varvalues.add(ce);
+				//varvalues.add(ce);
+				varvalues.add(hostName);
 				apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
 				}
 				catch(Exception e){
@@ -938,7 +940,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		public void changeStatus(final Long queueId, final JobStatus newStatus) {
 			final HashMap<String, Object> extrafields = new HashMap<>();
 			System.out.println("Exechost for changeStatus: " + ce);
-			extrafields.put("exechost", ce);
+			//extrafields.put("exechost", ce);
+			extrafields.put("exechost", hostName);
 			// if final status with saved files, we set the path
 			if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
 				//extrafields.put("path", getJobOutputDir());
@@ -1356,7 +1359,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		public int executionCode;
 		public int validationCode;
 		final TitanBatchInfo batch;
-		public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code, TitanBatchInfo bi){
+		public TitanJobStatus(int r, Long qid, String job_folder, 
+						String st, int exec_code, 
+						int val_code, TitanBatchInfo bi){
 			rank = r;
 			queueId = qid;
 			jobFolder = job_folder;
@@ -1517,8 +1522,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				Statement statement = connection.createStatement();
 				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
 				while(rs.next()){
-					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), 
-										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code"), this));
+					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), 
+								rs.getLong("queue_id"), rs.getString("job_folder"), 
+								rs.getString("status"), rs.getInt("exec_code"), 
+								rs.getInt("val_code"), this));
 				}
 				
 				connection.close();
@@ -1928,12 +1935,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					varnames.add("exechost");
 					Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
-					varvalues.add("10");
-					varvalues.add(pi.queueId);
+					varvalues.add(10);
+					varvalues.add(Double.valueOf(pi.queueId));
 					varvalues.add("psvirin");
-					varvalues.add("0");
-					varvalues.add("10000");
-					varvalues.add(ce);
+					varvalues.add(0);
+					varvalues.add(10000);
+					//varvalues.add(ce);
+					varvalues.add(hostName);
 					try{
 						//apmon.sendParameters(ce+"_Jobs", String.format("%d",pi.queueId), 6, varnames, varvalues);
 						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d",pi.queueId), 6, varnames, varvalues);
