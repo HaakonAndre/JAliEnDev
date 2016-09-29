@@ -13,13 +13,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.taskQueue.JDL;
+import lazyj.DBFunctions;
+import lia.util.process.ExternalProcess.ExitStatus;
+import lia.util.process.ExternalProcessBuilder;
 
 /**
  * @author ron
@@ -42,14 +42,48 @@ public class PackageUtils {
 
 	private static Set<String> cvmfsPackages = null;
 
+	private static final class BackgroundPackageRefresher extends Thread {
+		private final Object wakeupObject = new Object();
+
+		public BackgroundPackageRefresher() {
+			setName("alien.catalogue.PackageUtils.BackgroundPackageRefresher");
+			setDaemon(true);
+		}
+
+		@SuppressWarnings("synthetic-access")
+		@Override
+		public void run() {
+			while (true)
+				synchronized (wakeupObject) {
+					try {
+						wakeupObject.wait(1000 * 60 * 60);
+					} catch (@SuppressWarnings("unused") final InterruptedException e) {
+						// ignore
+					}
+
+					cacheCheck();
+				}
+		}
+
+		public void wakeup() {
+			synchronized (wakeupObject) {
+				wakeupObject.notifyAll();
+			}
+		}
+	}
+
+	private static final BackgroundPackageRefresher BACKGROUND_REFRESHER = new BackgroundPackageRefresher();
+
+	static {
+		BACKGROUND_REFRESHER.start();
+	}
+
 	private static synchronized void cacheCheck() {
 		if ((System.currentTimeMillis() - lastCacheCheck) > 1000 * 60) {
 			final Map<String, Package> newPackages = new LinkedHashMap<>();
 
 			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-				if (db == null)
-					lastCacheCheck = System.currentTimeMillis();
-				else {
+				if (db != null) {
 					if (monitor != null)
 						monitor.incrementCounter("Package_db_lookup");
 
@@ -104,8 +138,12 @@ public class PackageUtils {
 			}
 
 			lastCacheCheck = System.currentTimeMillis();
-			packages = newPackages;
-			cvmfsPackages = newCvmfsPackages;
+
+			if (newPackages.size() > 0 || packages == null)
+				packages = newPackages;
+
+			if (newCvmfsPackages.size() > 0 || cvmfsPackages == null)
+				cvmfsPackages = newCvmfsPackages;
 		}
 	}
 
@@ -114,13 +152,18 @@ public class PackageUtils {
 	 */
 	public static void refresh() {
 		lastCacheCheck = 0;
+
+		BACKGROUND_REFRESHER.wakeup();
 	}
 
 	/**
 	 * @return list of defined packages
 	 */
 	public static List<Package> getPackages() {
-		cacheCheck();
+		if (packages == null || packages.size() == 0)
+			cacheCheck();
+		else
+			BACKGROUND_REFRESHER.wakeup();
 
 		if (packages != null)
 			return new ArrayList<>(packages.values());
@@ -132,7 +175,10 @@ public class PackageUtils {
 	 * @return the set of known package names
 	 */
 	public static Set<String> getPackageNames() {
-		cacheCheck();
+		if (packages == null || packages.size() == 0)
+			cacheCheck();
+		else
+			BACKGROUND_REFRESHER.wakeup();
 
 		if (packages != null)
 			return packages.keySet();
@@ -142,13 +188,16 @@ public class PackageUtils {
 
 	/**
 	 * Get the Package object corresponding to the given textual description.
-	 * 
+	 *
 	 * @param name
 	 *            package name, eg. "VO_ALICE@AliRoot::vAN-20140917"
 	 * @return the corresponding Package object, if it exists
 	 */
 	public static Package getPackage(final String name) {
-		cacheCheck();
+		if (packages == null || packages.size() == 0)
+			cacheCheck();
+		else
+			BACKGROUND_REFRESHER.wakeup();
 
 		if (packages != null)
 			return packages.get(name);
@@ -158,11 +207,14 @@ public class PackageUtils {
 
 	/**
 	 * Get the set of packages registered in CVMFS (should be a subset of the AliEn packages)
-	 * 
+	 *
 	 * @return set of packages
 	 */
 	public static Set<String> getCvmfsPackages() {
-		cacheCheck();
+		if (cvmfsPackages == null)
+			cacheCheck();
+		else
+			BACKGROUND_REFRESHER.wakeup();
 
 		return cvmfsPackages;
 	}
@@ -176,7 +228,10 @@ public class PackageUtils {
 		if (j == null)
 			return "JDL is null";
 
-		cacheCheck();
+		if (packages == null)
+			cacheCheck();
+		else
+			BACKGROUND_REFRESHER.wakeup();
 
 		if (packages == null)
 			return "Package list could not be fetched from the database";
