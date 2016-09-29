@@ -143,7 +143,7 @@ public class OrphanPFNsCleanup {
 							final int seNumber = db.geti(1);
 
 							try (DBFunctions db2 = h.getDB()) {
-								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns;");
+								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;");
 
 								final DBConnection dbc = db2.getConnection();
 
@@ -153,11 +153,11 @@ public class OrphanPFNsCleanup {
 									final String sWhere = "WHERE se" + (seNumber > 0 ? "=" + seNumber : " is null");
 									executeQuery(dbc, "INSERT IGNORE INTO orphan_pfns_" + seNumber + " SELECT * FROM orphan_pfns " + sWhere);
 
-									logger.log(Level.INFO, "Inserted into orphan_pfns_" + seNumber + " " + updateCount + " from orphan_pfns");
+									logger.log(Level.INFO, "Inserted into " + h.db + ".orphan_pfns_" + seNumber + " " + updateCount + " from " + h.db + ".orphan_pfns");
 
 									executeQuery(dbc, "DELETE FROM orphan_pfns " + sWhere);
 
-									logger.log(Level.INFO, "Deleted " + updateCount + " from orphan_pfns " + sWhere);
+									logger.log(Level.INFO, "Deleted " + updateCount + " from " + h.db + ".orphan_pfns " + sWhere);
 								} finally {
 									executeQuery(dbc, "UNLOCK TABLES;");
 									executeClose();
