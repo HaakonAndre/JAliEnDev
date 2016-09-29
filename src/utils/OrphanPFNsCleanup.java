@@ -150,14 +150,19 @@ public class OrphanPFNsCleanup {
 								executeQuery(dbc, "LOCK TABLES orphan_pfns WRITE, orphan_pfns_" + seNumber + " WRITE;");
 
 								try {
+									long lStart = System.currentTimeMillis();
+
 									final String sWhere = "WHERE se" + (seNumber > 0 ? "=" + seNumber : " is null");
 									executeQuery(dbc, "INSERT IGNORE INTO orphan_pfns_" + seNumber + " SELECT * FROM orphan_pfns " + sWhere);
 
-									logger.log(Level.INFO, "Inserted into " + h.db + ".orphan_pfns_" + seNumber + " " + updateCount + " from " + h.db + ".orphan_pfns");
+									logger.log(Level.INFO, "Inserted into " + h.db + ".orphan_pfns_" + seNumber + " " + updateCount + " from " + h.db + ".orphan_pfns, took "
+											+ Format.toInterval(System.currentTimeMillis() - lStart));
+
+									lStart = System.currentTimeMillis();
 
 									executeQuery(dbc, "DELETE FROM orphan_pfns " + sWhere);
 
-									logger.log(Level.INFO, "Deleted " + updateCount + " from " + h.db + ".orphan_pfns " + sWhere);
+									logger.log(Level.INFO, "Deleted " + updateCount + " from " + h.db + ".orphan_pfns " + sWhere + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
 								} finally {
 									executeQuery(dbc, "UNLOCK TABLES;");
 									executeClose();
