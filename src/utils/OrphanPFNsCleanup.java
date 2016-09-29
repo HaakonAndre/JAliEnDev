@@ -2,6 +2,11 @@ package utils;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -30,6 +35,7 @@ import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import lazyj.DBFunctions;
+import lazyj.DBFunctions.DBConnection;
 import lazyj.Format;
 import lia.Monitor.monitor.AppConfig;
 
@@ -65,6 +71,59 @@ public class OrphanPFNsCleanup {
 	 */
 	volatile static boolean dirtyStats = true;
 
+	private static ResultSet resultSet = null;
+
+	private static Statement stat = null;
+
+	private static final void executeClose() {
+		if (resultSet != null) {
+			try {
+				resultSet.close();
+			} catch (@SuppressWarnings("unused") final Throwable t) {
+				// ignore
+			}
+
+			resultSet = null;
+		}
+
+		if (stat != null) {
+			try {
+				stat.close();
+			} catch (@SuppressWarnings("unused") final Throwable t) {
+				// ignore
+			}
+
+			stat = null;
+		}
+	}
+
+	private static int updateCount = -1;
+
+	private static final boolean executeQuery(final DBConnection dbc, final String query) {
+		executeClose();
+
+		try {
+			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+
+			if (stat.execute(query, Statement.NO_GENERATED_KEYS)) {
+				updateCount = -1;
+
+				resultSet = stat.getResultSet();
+			}
+			else {
+				updateCount = stat.getUpdateCount();
+
+				executeClose();
+			}
+
+			return true;
+		} catch (final SQLException e) {
+			logger.log(Level.WARNING, "Exception executing the query", e);
+
+			return false;
+		}
+	}
+
 	/**
 	 * @param args
 	 */
@@ -78,43 +137,58 @@ public class OrphanPFNsCleanup {
 				for (final Host h : CatalogueUtils.getAllHosts())
 					try (DBFunctions db = h.getDB()) {
 						db.setReadOnly(true);
-
-						db.query("SELECT distinct se FROM orphan_pfns WHERE fail_count<10;");
-
-						db.setReadOnly(false);
+						db.query("SELECT distinct se FROM orphan_pfns;");
 
 						while (db.moveNext()) {
-							final Integer se = Integer.valueOf(db.geti(1));
+							final int seNumber = db.geti(1);
 
-							final SE theSE;
+							try (DBFunctions db2 = h.getDB()) {
+								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns;");
 
-							if (se.intValue() > 0) {
-								theSE = SEUtils.getSE(se);
+								final DBConnection dbc = db2.getConnection();
 
-								if (theSE == null) {
-									System.err.println("No such SE: " + se);
-									continue;
+								executeQuery(dbc, "LOCK TABLES orphan_pfns WRITE, orphan_pfns_" + seNumber + " WRITE;");
+
+								try {
+									final String sWhere = "WHERE se" + (seNumber > 0 ? "=" + seNumber : " is null");
+									executeQuery(dbc, "INSERT IGNORE INTO orphan_pfns_" + seNumber + " SELECT * FROM orphan_pfns " + sWhere);
+
+									logger.log(Level.INFO, "Inserted into orphan_pfns_" + seNumber + " " + updateCount + " from orphan_pfns");
+
+									executeQuery(dbc, "DELETE FROM orphan_pfns " + sWhere);
+
+									logger.log(Level.INFO, "Deleted " + updateCount + " from orphan_pfns " + sWhere);
+								} finally {
+									executeQuery(dbc, "UNLOCK TABLES;");
+									executeClose();
+									dbc.free();
 								}
 							}
-							else
-								theSE = null;
-
-							if (!SE_THREADS.containsKey(se)) {
-								if (logger.isLoggable(Level.INFO))
-									logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
-
-								final SEThread t = new SEThread(theSE);
-
-								t.start();
-
-								SE_THREADS.put(se, t);
-							}
-							else
-								if (logger.isLoggable(Level.INFO))
-									logger.log(Level.INFO,
-											"Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
 						}
 					}
+
+				final List<SE> sesToCheck = new LinkedList<>();
+
+				sesToCheck.add(null);
+				sesToCheck.addAll(SEUtils.getSEs(null));
+
+				for (final SE theSE : sesToCheck) {
+					final Integer se = Integer.valueOf(theSE != null ? theSE.seNumber : 0);
+
+					if (!SE_THREADS.containsKey(se)) {
+						if (logger.isLoggable(Level.INFO))
+							logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
+
+						final SEThread t = new SEThread(theSE);
+
+						t.start();
+
+						SE_THREADS.put(se, t);
+					}
+					else
+						if (logger.isLoggable(Level.INFO))
+							logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
+				}
 
 				lastCheck = System.currentTimeMillis();
 			}
@@ -183,10 +257,10 @@ public class OrphanPFNsCleanup {
 							// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 
 							if (seNumber > 0)
-								db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns WHERE se=? AND fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;",
-										false, Integer.valueOf(seNumber));
+								db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns_" + seNumber
+										+ " WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;", false);
 							else
-								db.query("SELECT binary2string(guid) FROM orphan_pfns WHERE se IS NULL AND fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;");
+								db.query("SELECT binary2string(guid) FROM orphan_pfns_0 WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;");
 						} finally {
 							concurrentQueryies.release();
 						}
@@ -347,7 +421,7 @@ public class OrphanPFNsCleanup {
 				if (g != null)
 					g.delete(true);
 
-				db.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se is null;", false, sGUID);
+				db.query("DELETE FROM orphan_pfns_0 WHERE guid=string2binary(?);", false, sGUID);
 			} finally {
 				concurrentQueryies.release();
 			}
@@ -445,7 +519,7 @@ public class OrphanPFNsCleanup {
 
 					concurrentQueryies.acquireUninterruptibly();
 					try {
-						db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
+						db2.query("UPDATE orphan_pfns_" + seNumber + " SET fail_count=fail_count+1 WHERE guid=string2binary(?);", false, sGUID);
 
 						failOne(se);
 					} finally {
@@ -483,7 +557,7 @@ public class OrphanPFNsCleanup {
 								System.err.println("  GUID " + guid.guid + " doesn't exist in the catalogue any more");
 						}
 
-						db2.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
+						db2.query("DELETE FROM orphan_pfns_" + seNumber + " WHERE guid=string2binary(?) AND se=?;", false, sGUID);
 					} finally {
 						concurrentQueryies.release();
 					}
@@ -501,7 +575,7 @@ public class OrphanPFNsCleanup {
 				concurrentQueryies.acquireUninterruptibly();
 
 				try (DBFunctions db2 = h.getDB()) {
-					db2.query("UPDATE orphan_pfns SET fail_count=fail_count+1 WHERE guid=string2binary(?) AND se=?;", false, sGUID, Integer.valueOf(seNumber));
+					db2.query("UPDATE orphan_pfns_" + seNumber + " SET fail_count=fail_count+1 WHERE guid=string2binary(?);", false, sGUID);
 				} finally {
 					concurrentQueryies.release();
 				}
