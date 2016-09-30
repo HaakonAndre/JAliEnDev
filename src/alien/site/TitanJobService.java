@@ -24,6 +24,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.InvalidParameterException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -56,6 +58,8 @@ import java.util.regex.Pattern;
 import lazyj.Format;
 
 import lia.util.Utils;
+
+import org.sqlite.SQLiteConnection;
 
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -222,9 +226,11 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		public void run(){
 			try{
 				logger.log(Level.INFO, "Trying to get a match...");
+				System.out.println( "Trying to get a match...");
 				Long current_timestamp = System.currentTimeMillis() / 1000L;
 				siteMap.put("TTL", js.batch.getTtlLeft(current_timestamp) );
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
+				System.out.println("Matching done");
 				matchedJob = jobMatch.getMatchJob();
 
 				// TODELETE
@@ -255,6 +261,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					// for ORNL Titan
 					current_rank = js.rank;
 
+					System.out.println("Handling job");
+
 					// process payload
 					handleJob();
 				} else {
@@ -270,12 +278,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 							logger.log(Level.INFO, "Nothing to run for now, idling for a while");
 							//count = 1; // breaking the loop
 						}
-					} else{
+					} 
+					/* else{
 						// EXPERIMENTAL 
 						// for ORNL Titan
 						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
 						//break;
-					}
+					} */
 				}
 			} catch (final Exception e) {
 				logger.log(Level.INFO, "Error getting a matching job: " + e);
@@ -377,6 +386,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				try{
 					//Connection connection = DriverManager.getConnection(dbname);
 					Connection connection = DriverManager.getConnection(js.batch.dbName);
+					((SQLiteConnection)connection).setBusyTimeout(3000);
 					Statement statement = connection.createStatement();
 					// setting variables
 					final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
@@ -1142,6 +1152,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				varvalues.add(queueId);
 				try{
 					apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+					apmon.sendParameters("TaskQueue_Jobs_ALICE", 
+								String.format("%d",queueId), 
+								3, varnames, varvalues);
 				}
 				catch(ApMonException e){}
 				catch(UnknownHostException e){}
@@ -1278,6 +1291,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					varvalues.add(queueId);
 					try{
 						apmon.sendParameters(ce+"_Jobs", String.format("%d",queueId), 2, varnames, varvalues);
+						apmon.sendParameters("TaskQueue_Jobs_ALICE", 
+									String.format("%d",queueId), 
+									3, varnames, varvalues);
 					}
 					catch(ApMonException e){}
 					catch(UnknownHostException e){}
@@ -1407,6 +1423,12 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				System.out.println("No need to reinitialize batch " + pbsJobId);
 				return;
 			}
+
+			//if(!isRunning()){
+			//	cleanup();
+			//	throw new InvalidParameterException("");
+			//}
+
 			initializeDb();
 			initializeMonitoringDb();
 		}
@@ -1421,6 +1443,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				if(rs.next()){
 					origTtl = rs.getInt("ttl");
 					numCores = rs.getInt("cores");
+					numCores *= 65;
 					startTimestamp = rs.getLong("started");
 				}
 				rs.close();
@@ -1654,15 +1677,22 @@ public class TitanJobService extends Thread implements MonitoringObject {
 						try{
 							TitanBatchInfo bi = batchesInfo.get(line);
 							if(bi==null)
-								tmpBatchesInfo.put(line, new TitanBatchInfo(Long.parseLong(line), globalWorkdir + "/" + line));
+								tmpBatchesInfo.put(line, 
+										new TitanBatchInfo(Long.parseLong(line), 
+											globalWorkdir + "/" + line));
 							else
 								tmpBatchesInfo.put(line, bi);
 							dbcount++;
 							System.out.println("Now controlling batch: " + line);
 						}
+						catch(InvalidParameterException e){
+							System.err.println("Not a batch folder at " + 
+									globalWorkdir + "/" + line + " , skipping....");
+						}
 						catch(Exception e){
 							System.err.println(e.getMessage());
-							System.err.println("Unable to initialize batch folder at " + globalWorkdir + "/" + line + " , skipping....");
+							System.err.println("Unable to initialize batch folder at " + 
+									globalWorkdir + "/" + line + " , skipping....");
 						}
 				}
 				batchesInfo = tmpBatchesInfo;
@@ -1688,8 +1718,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					continue;
 				if(!bi.isRunning()){
 					System.out.println("Batch " + bi.pbsJobId + " not running, cleaning up.");
-					bi.cleanup();
-					continue;
+					//bi.cleanup();
+					//continue;
 				}
 				try{
 					idleRanks.addAll(bi.getIdleRanks());
@@ -1778,6 +1808,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("========= Starting download threads ==========");
 			//while (count > 0) {
 			int cnt = idleRanks.size();
+			Date d1 = new Date();
 			for(TitanJobStatus js: idleRanks){
 				//System.out.println(siteMap.toString());
 				//TitanJobStatus js = idleRanks.pop();
@@ -1787,6 +1818,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				upload_threads.add(jd);
 				jd.start();
 				System.out.println("Starting downloader " + cnt--);
+				if(cnt==0)
+					break;
 				//count--;
 				//System.out.println("Wants to start Downloader thread");
 				//System.out.println(js.batch.origTtl);
@@ -1794,6 +1827,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 
 			System.out.println(String.format("Count: %d", count));
+			Date d3 = new Date();
 
 			// join all threads
 			for(Thread t: upload_threads){
@@ -1806,7 +1840,11 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				}
 			}
 			idleRanks.clear();
+			Date d2 = new Date();
 			System.out.println("Everything joined");
+			System.out.println("Downloading took: " + (d2.getTime()-d1.getTime())/1000 + " seconds");
+			System.out.println("Created downloaders during: " + 
+					(d3.getTime()-d1.getTime())/1000 + " seconds");
 			System.out.println("================================================");
 		}
 
@@ -1961,7 +1999,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					varvalues.add(hostName);
 					try{
 						//apmon.sendParameters(ce+"_Jobs", String.format("%d",pi.queueId), 6, varnames, varvalues);
-						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d",pi.queueId), 6, varnames, varvalues);
+						apmon.sendParameters("TaskQueue_Jobs_ALICE", 
+									String.format("%d",pi.queueId), 
+									6, varnames, varvalues);
 					}
 					catch(ApMonException e){
 						System.out.println("Apmon exception: " + e.getMessage());
