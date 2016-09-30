@@ -139,11 +139,15 @@ public class OrphanPFNsCleanup {
 						db.setReadOnly(true);
 						db.query("SELECT distinct se FROM orphan_pfns;");
 
-						while (db.moveNext()) {
-							final int seNumber = db.geti(1);
+						final List<Integer> ses = new LinkedList<>();
 
+						while (db.moveNext()) {
+							ses.add(Integer.valueOf(db.geti(1)));
+						}
+						
+						for (final Integer seNumber: ses){
 							try (DBFunctions db2 = h.getDB()) {
-								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;");
+								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;", true);
 
 								final DBConnection dbc = db2.getConnection();
 
@@ -256,21 +260,23 @@ public class OrphanPFNsCleanup {
 					try (DBFunctions db = h.getDB()) {
 						db.setReadOnly(true);
 
+						boolean ok;
+
 						try {
 							// TODO : what to do with these PFNs ? Iterate over them
 							// and release them from the catalogue nevertheless ?
 							// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 
 							if (seNumber > 0)
-								db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns_" + seNumber
-										+ " WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;", false);
+								ok = db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns_" + seNumber
+										+ " WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;", true);
 							else
-								db.query("SELECT binary2string(guid) FROM orphan_pfns_0 WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;");
+								ok = db.query("SELECT binary2string(guid) FROM orphan_pfns_0 WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;");
 						} finally {
 							concurrentQueryies.release();
 						}
 
-						if (db.moveNext()) {
+						if (ok && db.moveNext()) {
 							nothingToDelete = false;
 
 							if (executor == null) {
@@ -562,7 +568,7 @@ public class OrphanPFNsCleanup {
 								System.err.println("  GUID " + guid.guid + " doesn't exist in the catalogue any more");
 						}
 
-						db2.query("DELETE FROM orphan_pfns_" + seNumber + " WHERE guid=string2binary(?) AND se=?;", false, sGUID);
+						db2.query("DELETE FROM orphan_pfns_" + seNumber + " WHERE guid=string2binary(?);", false, sGUID);
 					} finally {
 						concurrentQueryies.release();
 					}
