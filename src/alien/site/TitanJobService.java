@@ -1443,7 +1443,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				if(rs.next()){
 					origTtl = rs.getInt("ttl");
 					numCores = rs.getInt("cores");
-					numCores *= 65;
+					numCores *= 40;
 					startTimestamp = rs.getLong("started");
 				}
 				rs.close();
@@ -1527,8 +1527,19 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					   "union select 4 union select 5 union select 6 " +
 					   "union select 7 union select 8 union select 9" +
 					") f");
-				statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', " +
-							"0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+				//statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', " +
+				//			"0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
+				statement.executeUpdate( String.format("INSERT INTO alien_jobs "+
+							"SELECT rowid-1, " +
+							"replace(substr(quote(zeroblob((20 + 1)/2)), 3, 20),'0','X')," +
+							"replace(substr(quote(zeroblob((20 + 1)/2)), 3, 20),'0','X')," +
+							"replace(substr(quote(zeroblob((20 + 1)/2)), 3, 20),'0','X')," +
+							"replace(substr(quote(zeroblob((256 + 1)/2)), 3, 256),'0','X')," +
+							"'I', "+
+							"replace(substr(quote(zeroblob((256 + 1)/2)), 3, 256),'0','X')," +
+							"replace(substr(quote(zeroblob((256 + 1)/2)), 3, 256),'0','X')," +
+							"'', 0, 0 " + 
+							"FROM numbers LIMIT %d", numCores));
 				statement.executeUpdate("DROP TABLE numbers");
 				connection.close();
 			} 
