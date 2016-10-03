@@ -91,6 +91,8 @@ public class StagingService {
 			}
 
 			try (DBFunctions db = getDB()) {
+				db.setQueryTimeout(60);
+
 				if (delete) {
 					PREPARED_COMMANDS.incrementAndGet();
 					db.query("DELETE FROM staging_queue WHERE lfn=?;", false, lfn);
@@ -124,6 +126,8 @@ public class StagingService {
 			}
 
 		try (DBFunctions db = getDB()) {
+			db.setQueryTimeout(600);
+
 			while (true) {
 				db.query("DELETE FROM staging_queue WHERE attempts>10 OR created<adddate(now(), interval -1 month);");
 				db.query("SELECT lfn FROM staging_queue ORDER BY attempts ASC, created ASC LIMIT 100000;");

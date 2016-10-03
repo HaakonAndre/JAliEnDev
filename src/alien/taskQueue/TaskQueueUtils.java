@@ -47,6 +47,7 @@ import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
 import lazyj.Utils;
+import lazyj.cache.ExpirationCache;
 import lazyj.cache.GenericLastValuesCache;
 
 /**
@@ -88,6 +89,7 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db != null) {
 				db.setReadOnly(true);
+				db.setQueryTimeout(30);
 
 				db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 
@@ -156,6 +158,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
+
+			db.setQueryTimeout(300);
 
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
@@ -278,6 +282,7 @@ public class TaskQueueUtils {
 			final long lQueryStart = System.currentTimeMillis();
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			db.query(q);
 
@@ -362,6 +367,7 @@ public class TaskQueueUtils {
 				q = "select split,status,count(1) from QUEUE where split in (" + sb.toString() + ") AND status!='KILLED' group by split,status order by 1,2;";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			db.query(q);
 
@@ -473,6 +479,7 @@ public class TaskQueueUtils {
 			final long lQueryStart = System.currentTimeMillis();
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(300);
 
 			db.query(q, false, Long.valueOf(queueId));
 
@@ -593,6 +600,7 @@ public class TaskQueueUtils {
 				q = "SELECT queueId,status,split,execHost FROM QUEUE WHERE " + where + " ORDER BY queueId ASC limit " + lim + ";";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			if (!db.query(q))
 				return null;
@@ -693,6 +701,7 @@ public class TaskQueueUtils {
 				q = "SELECT status FROM QUEUE where queueId=?;";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(30);
 
 			if (!db.query(q, false, Long.valueOf(job))) {
 				logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
@@ -743,6 +752,8 @@ public class TaskQueueUtils {
 				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
 			}
 
+			db.setQueryTimeout(120);
+
 			if (!db.query(q, false, newstatus, Long.valueOf(job)))
 				return false;
 
@@ -753,12 +764,11 @@ public class TaskQueueUtils {
 			if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED)
 				deleteJobToken(job);
 
-			
 			String execHost = "NO_SITE";
-			
+
 			if (extrafields != null) {
 				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
-				for (final String key : extrafields.keySet()){
+				for (final String key : extrafields.keySet())
 					if (fieldMap.containsKey(key + "_table")) {
 						final HashMap<String, Object> map = new HashMap<>();
 
@@ -774,32 +784,31 @@ public class TaskQueueUtils {
 						query += " where queueId = ?";
 						db.query(query, false, Long.valueOf(job));
 					}
-				}
-				if(extrafields.containsKey("exechost") )
+				if (extrafields.containsKey("exechost"))
 					execHost = (String) extrafields.get("exechost");
 			}
-			
+
 			// send status change to ML
 			final ApMon apmon;
 
 			try {
 				final Vector<String> targets = new Vector<>();
-				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));				
+				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
 				apmon = new ApMon(targets);
-				
-				final Vector<String> p = new Vector<>();
-				final Vector<Object> v = new Vector<>();
-								
-				p.add("jobId");
-				v.add(Integer.valueOf((int) job));
-				
-				p.add("statusID");
-				v.add(Integer.valueOf(newStatus.getAliEnLevel()));
-				
-				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), p.size(), p, v);
+
+				final Vector<String> parameters = new Vector<>();
+				final Vector<Object> values = new Vector<>();
+
+				parameters.add("jobId");
+				values.add(Integer.valueOf((int) job));
+
+				parameters.add("statusID");
+				values.add(Integer.valueOf(newStatus.getAliEnLevel()));
+
+				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), parameters.size(), parameters, values);
 			} catch (final Exception e) {
-				logger.log(Level.WARNING, "Could not initialize apmon ("+execHost+")", e);
-			}	
+				logger.log(Level.WARNING, "Could not initialize apmon (" + execHost + ")", e);
+			}
 
 			return updated;
 		}
@@ -824,6 +833,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
+
+			db.setQueryTimeout(120);
 
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
@@ -1083,6 +1094,7 @@ public class TaskQueueUtils {
 			// System.out.println("SQL: " + q);
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			if (!db.query(q))
 				return null;
@@ -1114,6 +1126,7 @@ public class TaskQueueUtils {
 			}
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(60);
 
 			db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site");
 
@@ -1162,6 +1175,7 @@ public class TaskQueueUtils {
 				return ret;
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(60);
 
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
@@ -1294,7 +1308,7 @@ public class TaskQueueUtils {
 	/**
 	 * Check the Executable and ValidationCommand paths in the catalogue and expand the relative ones to the first file found in user's own folders, including the same directory from where the JDL was
 	 * submitted
-	 * 
+	 *
 	 * @param jdl
 	 *            JDL to check
 	 * @param account
@@ -1336,10 +1350,9 @@ public class TaskQueueUtils {
 			try {
 				final List<String> options = new LinkedList<>();
 
-				if (!executable.startsWith("/")) {
+				if (!executable.startsWith("/"))
 					for (final String path : pathsToCheck)
 						options.add(path + executable);
-				}
 				else
 					options.add(executable);
 
@@ -1578,6 +1591,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				throw new IOException("This service has no direct database connection");
+
+			db.setQueryTimeout(300);
 
 			final Map<String, Object> values = new HashMap<>();
 
@@ -1983,6 +1998,7 @@ public class TaskQueueUtils {
 					return null;
 
 				db.setReadOnly(true);
+				db.setQueryTimeout(30);
 
 				db.query("SELECT command FROM QUEUE_COMMAND where commandId=?", false, key);
 
@@ -2061,7 +2077,6 @@ public class TaskQueueUtils {
 		if (j.status() == JobStatus.WAITING && j.jobagentId > 0)
 			if (!deleteJobAgent(j.jobagentId))
 				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.jobagentId + "].");
-
 
 		if (j.notify != null && !j.notify.equals(""))
 			sendNotificationMail(j);
@@ -2219,6 +2234,8 @@ public class TaskQueueUtils {
 			final String q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('" + Format.escSQL(target) + "','" + Format.escSQL(service) + "','" + Format.escSQL(message)
 					+ "','" + Format.escSQL(messageArgs) + "'," + Format.escSQL(expires + "") + ");";
 
+			db.setQueryTimeout(60);
+
 			if (db.query(q)) {
 				if (monitor != null)
 					monitor.incrementCounter("Message_db_insert");
@@ -2249,6 +2266,8 @@ public class TaskQueueUtils {
 			if (jb == null)
 				jb = new JobToken(jobId, username);
 
+			db.setQueryTimeout(60);
+
 			jb.emptyToken(db);
 
 			// System.out.println("forceUpdate token: " + jb.toString());
@@ -2274,6 +2293,7 @@ public class TaskQueueUtils {
 			final String q = "SELECT * FROM JOBTOKEN WHERE jobId=?;";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(30);
 
 			if (!db.query(q, false, Long.valueOf(jobId)))
 				return null;
@@ -2291,6 +2311,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(60);
 
 			if (monitor != null)
 				monitor.incrementCounter("QUEUE_db_lookup");
@@ -2321,6 +2343,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return false;
 
+			db.setQueryTimeout(60);
+
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
 				monitor.incrementCounter("TQ_JOBMESSAGES_insert");
@@ -2341,6 +2365,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(60);
 
 			logger.log(Level.INFO, "We would be asked to kill jobAgent: [" + jobagentId + "].");
 
@@ -2384,6 +2410,8 @@ public class TaskQueueUtils {
 				monitor.incrementCounter("TQ_JOBSTOMERGE_lookup");
 			}
 
+			db.setQueryTimeout(60);
+
 			final String q = "INSERT INTO JOBSTOMERGE (masterId) SELECT " + j.split + " FROM DUAL WHERE NOT EXISTS (SELECT masterid FROM JOBSTOMERGE WHERE masterid = " + j.split + ");";
 
 			if (!db.query(q))
@@ -2398,6 +2426,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(30);
 
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_update");
@@ -2451,6 +2481,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
+			db.setQueryTimeout(600);
+
 			final StringBuilder sb = new StringBuilder();
 
 			if (monitor != null)
@@ -2499,6 +2531,8 @@ public class TaskQueueUtils {
 
 			logger.log(Level.INFO, "Setting site with ce " + ce + " to " + status);
 
+			db.setQueryTimeout(30);
+
 			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", false, status, ce);
 
 			if (db.getUpdateCount() == 0) {
@@ -2515,6 +2549,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
+
+			db.setQueryTimeout(60);
 
 			if (!db.query("insert into SITEQUEUES (siteid, site) select ifnull(max(siteid)+1,1), ? from SITEQUEUES", false, ce)) {
 				logger.log(Level.INFO, "Couldn't insert queue " + ce);
@@ -2533,7 +2569,9 @@ public class TaskQueueUtils {
 			if (db == null)
 				return;
 
-			final HashMap<String, Integer> status = getJobStatusFromDB();
+			db.setQueryTimeout(600);
+
+			final Map<String, Integer> status = getJobStatusFromDB();
 
 			String sql = " update SITEQUEUES left join (select siteid, sum(cost) REALCOST, ";
 			String set = " Group by statusId, siteid) dd group by siteid) bb using (siteid) set cost=REALCOST, ";
@@ -2554,23 +2592,33 @@ public class TaskQueueUtils {
 		}
 	}
 
+	private static Map<String, Integer> jobStatuses = new HashMap<>();
+	private static long jobStatusesLastUpdated = 0;
+
 	/**
 	 * @return dictionary of job statuses
 	 */
-	public static HashMap<String, Integer> getJobStatusFromDB() {
-		// FIXME cache the result
-		try (DBFunctions db = getQueueDB()) {
-			if (db == null)
-				return null;
+	public static Map<String, Integer> getJobStatusFromDB() {
+		if ((System.currentTimeMillis() - jobStatusesLastUpdated) > 1000 * 60)
+			try (DBFunctions db = getQueueDB()) {
+				if (db == null)
+					return null;
 
-			db.query("select status, statusId from QUEUE_STATUS", false);
-			final HashMap<String, Integer> status = new HashMap<>();
+				db.setQueryTimeout(60);
 
-			while (db.moveNext())
-				status.put(db.gets(1), Integer.valueOf(db.geti(2)));
+				final HashMap<String, Integer> status = new HashMap<>();
 
-			return status;
-		}
+				if (db.query("select status, statusId from QUEUE_STATUS", false))
+					while (db.moveNext())
+						status.put(db.gets(1), Integer.valueOf(db.geti(2)));
+
+				if (status.size() > 0) {
+					jobStatusesLastUpdated = System.currentTimeMillis();
+					jobStatuses = status;
+				}
+			}
+
+		return jobStatuses;
 	}
 
 	/**
@@ -2582,6 +2630,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(60);
 
 			if (host == null || host.equals("") || status == null || status.equals("")) {
 				logger.log(Level.INFO, "Host or status parameters are empty");
@@ -2609,6 +2659,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
+
+			db.setQueryTimeout(60);
 
 			final String table = "QUEUE_" + key.toUpperCase();
 			final String id = key + "id";
@@ -2646,12 +2698,18 @@ public class TaskQueueUtils {
 		}
 	}
 
+	private static final ExpirationCache<String, Integer> siteIdCache = new ExpirationCache<>();
+
 	/**
 	 * @param ceName
 	 * @return site ID
 	 */
 	public static int getSiteId(final String ceName) {
-		// FIXME cache the values
+		final Integer cachedValue = siteIdCache.get(ceName);
+
+		if (cachedValue != null)
+			return cachedValue.intValue();
+
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
@@ -2659,10 +2717,14 @@ public class TaskQueueUtils {
 			logger.log(Level.INFO, "Going to select siteId: select siteid from SITEQUEUES where site=? " + ceName);
 
 			db.setReadOnly(true);
-			db.query("select siteid from SITEQUEUES where site=?", false, ceName);
+			db.setQueryTimeout(60);
 
-			if (db.moveNext())
-				return db.geti(1);
+			if (db.query("select siteid from SITEQUEUES where site=?", false, ceName) && db.moveNext()) {
+				final int value = db.geti(1);
+
+				siteIdCache.put(ceName, Integer.valueOf(value), 1000 * 60 * 60);
+				return value;
+			}
 		}
 		return 0;
 	}
@@ -2676,6 +2738,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
+
+			db.setQueryTimeout(60);
 
 			final ArrayList<Object> bindValues = new ArrayList<>();
 			String oldestQueueIdQ = "";
@@ -2691,6 +2755,7 @@ public class TaskQueueUtils {
 
 			db.query("delete from JOBAGENT where counter<1", false);
 		}
+
 		return 1;
 	}
 

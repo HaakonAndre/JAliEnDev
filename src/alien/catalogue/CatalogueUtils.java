@@ -59,6 +59,7 @@ public final class CatalogueUtils {
 			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 				if (db != null) {
 					db.setReadOnly(true);
+					db.setQueryTimeout(15);
 
 					if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
 						return null;
@@ -91,6 +92,7 @@ public final class CatalogueUtils {
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			if (db != null) {
 				db.setReadOnly(true);
+				db.setQueryTimeout(15);
 				db.query("SELECT hostIndex FROM HOSTS;");
 
 				while (db.moveNext())
@@ -130,6 +132,7 @@ public final class CatalogueUtils {
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							if (db != null) {
 								db.setReadOnly(true);
+								db.setQueryTimeout(60);
 
 								if (db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
 									final LinkedList<GUIDIndex> ret = new LinkedList<>();
@@ -227,6 +230,7 @@ public final class CatalogueUtils {
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							if (db != null) {
 								db.setReadOnly(true);
+								db.setQueryTimeout(60);
 
 								if (db.query("SELECT * FROM INDEXTABLE;")) {
 									final Set<IndexTableEntry> newIndextable = new HashSet<>();

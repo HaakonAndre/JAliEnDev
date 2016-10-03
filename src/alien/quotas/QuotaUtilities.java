@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.quotas;
 
@@ -14,11 +14,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.Format;
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 import alien.taskQueue.TaskQueueUtils;
+import lazyj.DBFunctions;
+import lazyj.Format;
 
 /**
  * @author costing
@@ -55,6 +55,8 @@ public final class QuotaUtilities {
 						try (DBFunctions db = ConfigUtils.getDB("processes")) {
 							db.setReadOnly(true);
 
+							db.setQueryTimeout(300);
+
 							String q = "SELECT * FROM PRIORITY";
 
 							if (TaskQueueUtils.dbStructure2_20)
@@ -72,7 +74,8 @@ public final class QuotaUtilities {
 
 								jobQuotas = Collections.unmodifiableMap(newQuotas);
 								jobQuotasLastUpdated = System.currentTimeMillis();
-							} else
+							}
+							else
 								jobQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
@@ -111,6 +114,8 @@ public final class QuotaUtilities {
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							db.setReadOnly(true);
 
+							db.setQueryTimeout(300);
+
 							if (db.query("SELECT * FROM FQUOTAS;")) {
 								final Map<String, FileQuota> newQuotas = new HashMap<>();
 
@@ -123,7 +128,8 @@ public final class QuotaUtilities {
 
 								fileQuotas = Collections.unmodifiableMap(newQuotas);
 								fileQuotasLastUpdated = System.currentTimeMillis();
-							} else
+							}
+							else
 								fileQuotasLastUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
@@ -140,7 +146,7 @@ public final class QuotaUtilities {
 
 	/**
 	 * Get the job quota for a particular account
-	 * 
+	 *
 	 * @param account
 	 * @return job quota
 	 */
@@ -158,7 +164,7 @@ public final class QuotaUtilities {
 
 	/**
 	 * Sets job quota field value for a username
-	 * 
+	 *
 	 * @param username
 	 * @param fld
 	 * @param val
@@ -170,9 +176,15 @@ public final class QuotaUtilities {
 		try (DBFunctions db = ConfigUtils.getDB("processes")) {
 			final String query = "UPDATE PRIORITY p LEFT JOIN QUEUE_USER qu " + "ON qu.user='" + Format.escSQL(username) + "' SET p." + Format.escSQL(fld) + "=" + Format.escSQL(val)
 					+ " WHERE qu.userid=p.userid";
-			db.query(query);
-			jobQuotasLastUpdated = 0;
-			updateJobQuotasCache();
+
+			db.setQueryTimeout(120);
+
+			if (db.query(query)) {
+				jobQuotasLastUpdated = 0;
+				updateJobQuotasCache();
+			}
+			else
+				return false;
 		}
 
 		return true;
@@ -180,7 +192,7 @@ public final class QuotaUtilities {
 
 	/**
 	 * Get the file quota for a particular account
-	 * 
+	 *
 	 * @param account
 	 * @return file quota
 	 */
@@ -198,7 +210,7 @@ public final class QuotaUtilities {
 
 	/**
 	 * Sets file quota field value for a username
-	 * 
+	 *
 	 * @param username
 	 * @param fld
 	 * @param val
@@ -210,9 +222,15 @@ public final class QuotaUtilities {
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			final String query = "UPDATE FQUOTAS SET " + Format.escSQL(fld) + "='" + Format.escSQL(val) + "'" + " WHERE user='" + Format.escSQL(username) + "'";
-			db.query(query);
-			fileQuotasLastUpdated = 0;
-			updateFileQuotasCache();
+
+			db.setQueryTimeout(120);
+
+			if (db.query(query)) {
+				fileQuotasLastUpdated = 0;
+				updateFileQuotasCache();
+			}
+			else
+				return false;
 		}
 
 		return true;
@@ -220,7 +238,7 @@ public final class QuotaUtilities {
 
 	/**
 	 * Get the list of quotas for all accounts
-	 * 
+	 *
 	 * @return file quota for all accounts, sorted by username
 	 */
 	public static final List<Quota> getJobQuotas() {
@@ -238,7 +256,7 @@ public final class QuotaUtilities {
 
 	/**
 	 * Get the list of quotas for all accounts
-	 * 
+	 *
 	 * @return file quota for all accounts, sorted by username
 	 */
 	public static final List<FileQuota> getFileQuotas() {

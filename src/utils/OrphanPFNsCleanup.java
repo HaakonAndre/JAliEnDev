@@ -208,6 +208,8 @@ public class OrphanPFNsCleanup {
 			final long size = reclaimedSize.getAndSet(0);
 
 			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				db.setQueryTimeout(30);
+
 				if (count > 0)
 					db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + count + " WHERE status_key='reclaimedc';");
 
@@ -248,13 +250,13 @@ public class OrphanPFNsCleanup {
 			int tasks = 0;
 
 			while (true) {
-				concurrentQueryies.acquireUninterruptibly();
-
 				boolean nothingToDelete = true;
 
 				for (final Host h : CatalogueUtils.getAllHosts())
 					try (DBFunctions db = h.getDB()) {
 						db.setReadOnly(true);
+
+						concurrentQueryies.acquireUninterruptibly();
 
 						try {
 							// TODO : what to do with these PFNs ? Iterate over them

@@ -90,6 +90,7 @@ public class PackageUtils {
 					final String q = "SELECT DISTINCT packageVersion, packageName, username, platform, lfn FROM PACKAGES ORDER BY 3,2,1,4,5;";
 
 					db.setReadOnly(true);
+					db.setQueryTimeout(60);
 
 					if (!db.query(q))
 						return;

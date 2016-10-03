@@ -8,10 +8,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
+import alien.config.ConfigUtils;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
-import alien.config.ConfigUtils;
 
 /**
  * @author ron
@@ -19,7 +19,7 @@ import alien.config.ConfigUtils;
  */
 public class Package implements Comparable<Package>, Serializable {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1858434456566977987L;
 
@@ -139,7 +139,7 @@ public class Package implements Comparable<Package>, Serializable {
 
 	/**
 	 * Set the known package locations
-	 * 
+	 *
 	 * @param platform
 	 * @param lfn
 	 */
@@ -167,7 +167,7 @@ public class Package implements Comparable<Package>, Serializable {
 
 	/**
 	 * Get the package names that are required by this package.
-	 * 
+	 *
 	 * @return the set of packages
 	 */
 	public Set<String> getDependencies() {
@@ -178,18 +178,18 @@ public class Package implements Comparable<Package>, Serializable {
 
 		final Set<String> dirs = new HashSet<>();
 
-		for (final String lfn : platforms.values()) {
+		for (final String lfn : platforms.values())
 			if (lfn.indexOf('/') >= 0)
 				dirs.add(lfn.substring(0, lfn.lastIndexOf('/') + 1));
-		}
 
 		if (dirs.size() == 0)
 			return deps;
 
 		try (DBFunctions dbDeps = ConfigUtils.getDB("alice_data")) {
 			dbDeps.setReadOnly(true);
+			dbDeps.setQueryTimeout(60);
 
-			for (final String dir : dirs) {
+			for (final String dir : dirs)
 				for (final String tableName : LFNUtils.getTagTableNames(dir, "PackageDef")) {
 					dbDeps.query("SELECT dependencies FROM " + tableName + " WHERE file='" + Format.escSQL(dir) + "';");
 
@@ -203,7 +203,6 @@ public class Package implements Comparable<Package>, Serializable {
 					if (deps.size() > 0)
 						return deps;
 				}
-			}
 		}
 
 		return deps;

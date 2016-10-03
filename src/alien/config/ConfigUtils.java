@@ -100,13 +100,16 @@ public class ConfigUtils {
 										// instantiates correctly
 										AppConfig.lastReloaded();
 									}
-								} else if (prop.gets("driver").length() > 0) {
-									dbconfig.put(sName, prop);
+								}
+								else
+									if (prop.gets("driver").length() > 0) {
+										dbconfig.put(sName, prop);
 
-									if (prop.gets("password").length() > 0)
-										hasDirectDBConnection = true;
-								} else
-									otherconfig.put(sName, prop);
+										if (prop.gets("password").length() > 0)
+											hasDirectDBConnection = true;
+									}
+									else
+										otherconfig.put(sName, prop);
 							}
 						}
 			}
@@ -135,10 +138,11 @@ public class ConfigUtils {
 
 		if (applicationConfig != null)
 			appConfig = applicationConfig;
-		else if (System.getProperty("lia.Monitor.ConfigURL") != null)
-			appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
 		else
-			appConfig = new ExtProperties();
+			if (System.getProperty("lia.Monitor.ConfigURL") != null)
+				appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
+			else
+				appConfig = new ExtProperties();
 
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
 			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
@@ -183,7 +187,11 @@ public class ConfigUtils {
 		if (p == null)
 			return null;
 
-		return new DBFunctions(p);
+		final DBFunctions db = new DBFunctions(p);
+
+		db.setQueryTimeout(p.geti("queryTimeout", 0));
+
+		return db;
 	}
 
 	/**

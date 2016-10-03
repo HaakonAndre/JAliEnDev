@@ -101,12 +101,14 @@ public class TransferBroker {
 
 		try {
 			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			stat.setQueryTimeout(600);
 
 			if (stat.execute(query, Statement.NO_GENERATED_KEYS)) {
 				updateCount = -1;
 
 				resultSet = stat.getResultSet();
-			} else {
+			}
+			else {
 				updateCount = stat.getUpdateCount();
 
 				executeClose();
@@ -138,6 +140,7 @@ public class TransferBroker {
 
 		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 			db.setReadOnly(true);
+			db.setQueryTimeout(60);
 
 			db.query("SELECT max(max_transfers) FROM PROTOCOLS WHERE sename='" + Format.escSQL(seName) + "';");
 
@@ -173,6 +176,7 @@ public class TransferBroker {
 			}
 
 			dbCached.setReadOnly(true);
+			dbCached.setQueryTimeout(300);
 		}
 
 		cleanup();
@@ -222,6 +226,7 @@ public class TransferBroker {
 					}
 
 					db.setReadOnly(true);
+					db.setQueryTimeout(60);
 
 					db.query("SELECT count(1) FROM active_transfers WHERE se_name='" + Format.escSQL(targetSE) + "';");
 
@@ -291,7 +296,8 @@ public class TransferBroker {
 			guid.lfnCache.add(lfn);
 
 			runningOnGUID = true;
-		} else {
+		}
+		else {
 			lfn = LFNUtils.getLFN(sLFN);
 
 			if (!lfn.exists) {
@@ -340,7 +346,8 @@ public class TransferBroker {
 						break;
 					}
 				}
-		} else {
+		}
+		else {
 			final Set<GUID> realGUIDs = guid.getRealGUIDs();
 
 			pfns = new LinkedHashSet<>();
@@ -629,6 +636,8 @@ public class TransferBroker {
 			if (db == null)
 				return false;
 
+			db.setQueryTimeout(600);
+
 			if (t == null) {
 				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(ta.getPID()),
 						ta.getHostName());
@@ -682,7 +691,8 @@ public class TransferBroker {
 					values.put("active_source", se.seName);
 				else
 					values.put("active_source", "unknown");
-			} else
+			}
+			else
 				values.put("active_source", "");
 
 			if (t.lastTriedProtocol != null)
@@ -720,6 +730,8 @@ public class TransferBroker {
 		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(600);
 
 			String formattedReason = reason;
 
@@ -880,7 +892,8 @@ public class TransferBroker {
 			if (g != null) {
 				if (g.removePFN(SEUtils.getSE(t.onCompleteRemoveReplica), true) == null)
 					logger.log(Level.WARNING, "Was asked to remove the replica on " + t.onCompleteRemoveReplica + " of transfer ID " + t.getTransferId() + " but the removal didn't work");
-			} else
+			}
+			else
 				logger.log(Level.WARNING,
 						"Was asked to remove the replica on " + t.onCompleteRemoveReplica + " of transfer ID " + t.getTransferId() + " but I cannot do that since the GUID is unknown");
 		}

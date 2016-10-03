@@ -586,6 +586,7 @@ public class LFNUtils {
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);
+			db.setQueryTimeout(30);
 
 			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
@@ -617,14 +618,15 @@ public class LFNUtils {
 				return ret;
 			}
 
+			db.setQueryTimeout(600);
+			db.setReadOnly(true);
+
 			for (final String tableName : getTagTableNames(path, tag)) {
 				String q = "SELECT distinct file FROM " + Format.escSQL(tableName) + " " + Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
 						+ Format.escSQL(query.replace(":", "."));
 
 				if ((flags & FIND_BIGGEST_VERSION) != 0)
 					q += " ORDER BY version DESC, entryId DESC LIMIT 1";
-
-				db.setReadOnly(true);
 
 				if (!db.query(q))
 					continue;
@@ -703,6 +705,8 @@ public class LFNUtils {
 		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary(?));";
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setQueryTimeout(60);
+
 			if (!db.query(q, false, lfn.guid.toString()))
 				return null;
 		}
@@ -723,6 +727,8 @@ public class LFNUtils {
 			monitor.incrementCounter("LFN_removeFromCollection");
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setQueryTimeout(60);
+
 			db.setReadOnly(true);
 
 			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
@@ -853,6 +859,8 @@ public class LFNUtils {
 			monitor.incrementCounter("LFN_addToCollection");
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setQueryTimeout(300);
+
 			final Set<String> currentLFNs = collection.listCollection();
 
 			db.setReadOnly(true);
@@ -1048,8 +1056,7 @@ public class LFNUtils {
 								ret.add(file);
 								continue;
 							}
-						} catch (@SuppressWarnings("unused")
-						final Exception e) {
+						} catch (@SuppressWarnings("unused") final Exception e) {
 							return null;
 						}
 
@@ -1076,8 +1083,7 @@ public class LFNUtils {
 			if (p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					return null;
 				}
 
@@ -1088,8 +1094,7 @@ public class LFNUtils {
 			for (final LFN otherFile : file.getParentDir().list())
 				if (otherFile.isFile() && otherFile.guid.equals(guid))
 					return otherFile;
-		} catch (@SuppressWarnings("unused")
-		final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 

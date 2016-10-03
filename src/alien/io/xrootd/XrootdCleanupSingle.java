@@ -119,8 +119,7 @@ public class XrootdCleanupSingle {
 
 			try {
 				uuid = UUID.fromString(file.getName());
-			} catch (@SuppressWarnings("unused")
-			final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// not an alien file name, ignore
 				return;
 			}
@@ -187,6 +186,7 @@ public class XrootdCleanupSingle {
 		System.err.println("RM " + uuid + " FROM " + se.seName + ", " + file.size + " (" + Format.size(file.size) + "), " + file.date);
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			db.setQueryTimeout(600);
 			if (sUUID.equals(uuid.toString()))
 				db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
 			else

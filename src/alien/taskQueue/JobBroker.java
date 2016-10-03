@@ -36,6 +36,8 @@ public class JobBroker {
 			if (db == null)
 				return null;
 
+			db.setQueryTimeout(300);
+
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
 				monitor.incrementCounter("TQ_get_match_job");
@@ -182,6 +184,8 @@ public class JobBroker {
 			if (db == null)
 				return null;
 
+			db.setQueryTimeout(60);
+
 			final String agentId = (String) waiting.get("entryId");
 			final String host = (String) waiting.get("Host");
 			final String ceName = (String) waiting.get("CE");
@@ -283,10 +287,9 @@ public class JobBroker {
 			}
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(30);
 
-			db.query("select count(1) from SITEQUEUES where blocked='open' and site='" + ce + "'");
-
-			if (db.moveNext() && db.geti(1) > 0)
+			if (db.query("select count(1) from SITEQUEUES where blocked='open' and site='" + ce + "'") && db.moveNext() && db.geti(1) > 0)
 				return 1;
 			// TODO: use TaskQueueUtils.setSiteQueueStatus(ce, "closed-blocked");
 
@@ -302,6 +305,8 @@ public class JobBroker {
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
 			if (db == null)
 				return null;
+
+			db.setQueryTimeout(60);
 
 			final HashMap<String, Object> matchAnswer = new HashMap<>();
 			matchAnswer.put("Code", Integer.valueOf(0));
@@ -377,7 +382,7 @@ public class JobBroker {
 				}
 				where += ")";
 			}
-			
+
 			if (matchRequest.containsKey("NoUsers")) {
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("NoUsers");
 				for (final String user : users) {

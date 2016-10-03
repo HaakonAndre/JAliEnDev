@@ -78,6 +78,7 @@ public final class SEUtils {
 
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							db.setReadOnly(true);
+							db.setQueryTimeout(30);
 
 							if (db.query("SELECT * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
 								final Map<Integer, SE> ses = new HashMap<>();
@@ -92,14 +93,16 @@ public final class SEUtils {
 								if (ses.size() > 0) {
 									seCache = ses;
 									seCacheUpdated = System.currentTimeMillis();
-								} else {
+								}
+								else {
 									if (seCache == null)
 										seCache = ses;
 
 									// try again soon
 									seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
 								}
-							} else
+							}
+							else
 								seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
@@ -231,7 +234,8 @@ public final class SEUtils {
 
 			updateSECache();
 			updateSEDistanceCache();
-		} else
+		}
+		else
 			SEDISTANCE_QUERY = null;
 	}
 
@@ -254,6 +258,7 @@ public final class SEUtils {
 
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							db.setReadOnly(true);
+							db.setQueryTimeout(60);
 
 							if (db.query(SEDISTANCE_QUERY)) {
 								final Map<String, Map<Integer, Double>> newDistance = new HashMap<>();
@@ -283,14 +288,16 @@ public final class SEUtils {
 								if (newDistance.size() > 0) {
 									seDistance = newDistance;
 									seDistanceUpdated = System.currentTimeMillis();
-								} else {
+								}
+								else {
 									if (seDistance == null)
 										seDistance = newDistance;
 
 									// try again soon
 									seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
 								}
-							} else
+							}
+							else
 								seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
@@ -451,7 +458,7 @@ public final class SEUtils {
 		}
 
 		final List<SE> SEs;
-		
+
 		if (ses != null)
 			SEs = SEUtils.getSEs(ses);
 		else
@@ -560,8 +567,9 @@ public final class SEUtils {
 		for (final PFN pfn : spfns)
 			if (SEs != null && SEs.contains(pfn.getSE()))
 				ret.add(pfn);
-			else if (exSEs == null || !exSEs.contains(pfn.getSE()))
-				tail.add(pfn);
+			else
+				if (exSEs == null || !exSEs.contains(pfn.getSE()))
+					tail.add(pfn);
 
 		ret.addAll(tail);
 		return ret;
@@ -687,12 +695,14 @@ public final class SEUtils {
 
 		if (toSE instanceof SE)
 			se = (SE) toSE;
-		else if (toSE instanceof String)
-			se = getSE((String) toSE);
-		else if (toSE instanceof Integer)
-			se = getSE((Integer) toSE);
 		else
-			throw new IllegalArgumentException("Invalid object type for the toSE parameter: " + toSE.getClass().getCanonicalName());
+			if (toSE instanceof String)
+				se = getSE((String) toSE);
+			else
+				if (toSE instanceof Integer)
+					se = getSE((Integer) toSE);
+				else
+					throw new IllegalArgumentException("Invalid object type for the toSE parameter: " + toSE.getClass().getCanonicalName());
 
 		if (se == null)
 			return null;
@@ -725,6 +735,7 @@ public final class SEUtils {
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			db.setReadOnly(false);
+			db.setQueryTimeout(60);
 
 			for (final Map.Entry<Integer, SEUsageStats> entry : m.entrySet()) {
 				db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
@@ -901,8 +912,9 @@ public final class SEUtils {
 				if (!source.seStoragePath.equals(dest.seStoragePath))
 					q1 += ", pfn=replace(replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "'), '"
 							+ Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath)) + "', '" + Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath)) + "')";
-				else if (!source.seioDaemons.equals(dest.seioDaemons))
-					q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
+				else
+					if (!source.seioDaemons.equals(dest.seioDaemons))
+						q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
 
 				q1 += " WHERE seNumber=" + source.seNumber;
 
@@ -912,7 +924,8 @@ public final class SEUtils {
 				if (debug) {
 					System.err.println(q1);
 					System.err.println(q2);
-				} else {
+				}
+				else {
 					boolean ok = db.query(q1);
 					System.err.println(q1 + " : " + ok + " : " + db.getUpdateCount());
 
@@ -955,7 +968,8 @@ public final class SEUtils {
 
 							while (gdb.moveNext())
 								pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
-						} else {
+						}
+						else {
 							gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
 
 							while (gdb.moveNext()) {
