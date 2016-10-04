@@ -1464,12 +1464,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					(d3.getTime()-d1.getTime())/1000 + " seconds");
 			System.out.println("================================================");
 		}
-
-		/*
-		public boolean isReadyForJobRequest(){
-			return !idleRanks.isEmpty();
-		}
-		*/
 	}
 	
 	/**
