@@ -33,7 +33,9 @@ public class BookingTable {
 	static transient final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
 
 	private static final DBFunctions getDB() {
-		return ConfigUtils.getDB("alice_users");
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		db.setQueryTimeout(600);
+		return db;
 	}
 
 	/**
@@ -90,8 +92,9 @@ public class BookingTable {
 
 			if (check == null)
 				message += ": no such folder " + lfn.getParentName();
-			else if (!check.equals(lfn))
-				message += ": not enough rights on " + check.getCanonicalName();
+			else
+				if (!check.equals(lfn))
+					message += ": not enough rights on " + check.getCanonicalName();
 
 			throw new IOException(message);
 		}
@@ -112,7 +115,8 @@ public class BookingTable {
 					for (final PFN pfn : pfns)
 						if (se.equals(pfn.getSE()))
 							throw new IOException("This GUID already has a replica in the requested SE");
-			} else {
+			}
+			else {
 				// check the file quota only for new files, extra replicas don't count towards the quota limit
 
 				final FileQuota quota = QuotaUtilities.getFileQuota(requestedGUID.owner);
@@ -148,11 +152,14 @@ public class BookingTable {
 					// that's fine, it's the same user, we can recycle the entry
 					db.query("UPDATE LFN_BOOKED SET expiretime=unix_timestamp(now())+86400 WHERE guid=string2binary(?) AND se=? AND pfn=?;", false, requestedGUID.guid.toString(), se.getName(),
 							pfn.getPFN());
-				} else
+				}
+				else
 					throw new IOException("You are not allowed to do this");
-			} else {
+			}
+			else {
 				// make sure a previously queued deletion request for this file is wiped before giving out a new token
 				db.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, requestedGUID.guid.toString(), Integer.valueOf(se.seNumber));
+				db.query("DELETE FROM orphan_pfns_" + se.seNumber + " WHERE guid=string2binary(?);", true, requestedGUID.guid.toString());
 
 				final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
 
