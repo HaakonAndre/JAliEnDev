@@ -193,14 +193,9 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private String dblink;
 	private int numCores;
 
-	// EXPERIMENTAL
-	// for ORNL Titan
-	// Titan-specific classes
-
 	TitanBatchController batchController; 
 
 	class TitanBatchController {
-		//private LinkedList<TitanBatchInfo> batchesInfo = new LinkedList<>();
 		private HashMap<String, TitanBatchInfo> batchesInfo = new HashMap<>();
 		private String globalWorkdir;
 		private List<TitanJobStatus> idleRanks;
