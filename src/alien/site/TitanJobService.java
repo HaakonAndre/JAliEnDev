@@ -698,54 +698,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 
 			return false;
-
-			/*
-			for (final LFN l : iFiles) {
-				File localFile = new File(tempDir, l.getFileName());
-				System.out.println("Getting file: " + localFile.getAbsolutePath());
-
-				final int i = 0;
-
-				while (localFile.exists() && i < 100000)
-					localFile = new File(tempDir, l.getFileName() + "." + i);
-
-				if (localFile.exists()) {
-					System.out.println("Too many occurences of " + l.getFileName() + " in " 
-											+ tempDir.getAbsolutePath());
-					return false;
-				}
-
-				localFiles.put(l, localFile);
-			}
-			*/
-
-			/*
-			for (final Map.Entry<LFN, File> entry : localFiles.entrySet()) {
-				final List<PFN> pfns = c_api.getPFNsToRead(entry.getKey(), null, null);
-
-				if (pfns == null || pfns.size() == 0) {
-					System.out.println("No replicas of " + entry.getKey().getCanonicalName() + 
-											" to read from");
-					return false;
-				}
-
-				final GUID g = pfns.iterator().next().getGuid();
-				commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " +
-										entry.getKey().getCanonicalName());
-				final File f = IOUtils.get(g, entry.getValue());
-
-				if (f == null) {
-					System.out.println("Could not download " + entry.getKey().getCanonicalName() + 
-									" to " + entry.getValue().getAbsolutePath());
-					return false;
-				}
-			}*/
-
-
-
-			//System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
-
-			//return true;
 		}
 
 
