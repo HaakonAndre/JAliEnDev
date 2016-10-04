@@ -88,7 +88,7 @@ import alien.site.supercomputing.titan.Pair;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-
+import alien.site.supercomputing.titan.TitanJobStatus;
 
 /**
  * @author mmmartin, ron, pavlo
@@ -215,6 +215,11 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		private JobStatus jobStatus;
 		private int current_rank;
 
+		//private static boolean noMoreJobs = false;
+		//private static List<String> fetchedJobs = new List<>();
+		//private static List<Long> idleRanksToMark = new List<>();
+
+
 		public JobDownloader(TitanJobStatus js, HashMap<String,Object> smap){
 			this.js = js;
 			workdir = js.batch.jobWorkdir;
@@ -222,6 +227,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			dbname = js.batch.dbName;
 			//System.out.println("dbname: " + dbname);
 		}
+
+		//public static void initialize(){
+	//		nothingToFetch = false;
+		//}
 
 		public void run(){
 			try{
@@ -251,6 +260,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 					System.out.println(jdl.getExecutable());
 					System.out.println(jdl.toString());
+					logger.log(Level.INFO, jdl.toString());
 					System.out.println("====================");
 					System.out.println(username);
 					System.out.println(queueId);
@@ -412,9 +422,22 @@ public class TitanJobService extends Thread implements MonitoringObject {
 											getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
 											validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
 											"", current_rank ));
+					String.format("%d, %d, '%s', '%s', '%s', '%s', '%s','%s', '%s', %d, %d",
+						current_rank, queueId, "", "", tempDir, "Q", 
+						getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
+						validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
+						"",
+						-1, -1);
+
+							//queueId, tempDir, "Q", 
+							//getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
+							//validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
+							//"", current_rank )
+
 					break;
 				} catch(SQLException e){
 					System.err.println("Failed to insert job: " + e.getMessage());
+					logger.log(Level.INFO, "Failed to insert job: " + e.getMessage());
 					System.out.println("DBname: " + dbname);
 					System.out.println("DBname: " + js.batch.dbName);
 					System.out.println("Retrying...");
@@ -1373,7 +1396,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 	}
 
-	class TitanJobStatus{
+	/*class TitanJobStatus{
 		public final int rank;
 		public Long queueId;
 		public String  jobFolder;
@@ -1393,10 +1416,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			batch = bi;
 		}
 
-		/*boolean saveStatus(){
-			batch.save(this);
-		}*/
-	};
+	}; */
 
 	class TitanBatchInfo{
 		public final Long pbsJobId;
@@ -1491,6 +1511,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				Connection connection = DriverManager.getConnection(dbName);
 				Statement statement = connection.createStatement();
 				//statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
+				statement.executeUpdate("PRAGMA journal_mode = TRUNCATE");
 				statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, " +
 						"queue_id VARCHAR(20), " + 
 						"user VARCHAR(20), " + 
