@@ -705,7 +705,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			if (ok && purge && guid != null)
 				try (DBFunctions db2 = ConfigUtils.getDB("alice_users")) {
 					db2.setQueryTimeout(120);
-					db2.query("INSERT IGNORE INTO orphan_pfns (guid,size) VALUES (string2binary(?), ?);", false, guid.toString(), Long.valueOf(size));
+					db2.query("INSERT IGNORE INTO orphan_pfns_0 (guid,size) VALUES (string2binary(?), ?);", false, guid.toString(), Long.valueOf(size));
 				}
 		}
 
