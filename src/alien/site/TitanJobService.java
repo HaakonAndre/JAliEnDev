@@ -1631,28 +1631,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			}
 			return l;
 		}
-
-		/* public boolean save(final TitanJobStatus js){
-			try{
-				Connection connection = DriverManager.getConnection(dbName);
-				Statement statement = connection.createStatement();
-				//ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
-				ResultSet rs = statement.executeUpdate(String.format("UPDATE alien_jobs SET status='%s', job_folder='%s', exec_code=0, val_code=0, queue_id=", ));
-
-				statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
-										"WHERE rank=%d", 
-										queueId, tempDir, "Q", 
-										getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
-										validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
-										"", current_rank ));
-				connection.close();
-			} catch(SQLException e){
-				System.err.println("Job status update failed: " + e.getMessage());
-				return false;
-			}
-			
-			return true;
-		} */
 	}
 
 	class TitanBatchController {
