@@ -187,11 +187,7 @@ public class ConfigUtils {
 		if (p == null)
 			return null;
 
-		final DBFunctions db = new DBFunctions(p);
-
-		db.setQueryTimeout(p.geti("queryTimeout", 0));
-
-		return db;
+		return new DBFunctions(p);
 	}
 
 	/**
