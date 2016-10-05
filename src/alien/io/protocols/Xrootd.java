@@ -24,10 +24,9 @@ import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
-import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import utils.ExternalCalls;
+import utils.ProcessWithTimeout;
 
 /**
  * @author costing
@@ -105,28 +104,22 @@ public class Xrootd extends Protocol {
 			}
 
 		if (xrdcpPath != null) {
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(Arrays.asList(xrdcpPath, "--version"));
+			final ProcessBuilder pBuilder = new ProcessBuilder(Arrays.asList(xrdcpPath, "--version"));
 
 			checkLibraryPath(pBuilder);
 
-			pBuilder.returnOutputOnExit(true);
-
-			pBuilder.timeout(15, TimeUnit.SECONDS);
-
 			pBuilder.redirectErrorStream(true);
 
-			final ExitStatus exitStatus;
-
-			ExternalProcess p = null;
+			Process p = null;
 
 			try {
 				p = pBuilder.start();
 
 				if (p != null) {
-					exitStatus = p.waitFor();
+					final ProcessWithTimeout timeout = new ProcessWithTimeout(p, pBuilder.command().toString());
 
-					if (exitStatus.getExtProcExitStatus() == 0) {
-						final String version = exitStatus.getStdOut();
+					if (timeout.waitFor(15, TimeUnit.SECONDS) && timeout.exitValue() == 0) {
+						final String version = timeout.getStdout().toString();
 
 						logger.log(Level.FINE, "Local Xrootd version is " + version);
 
@@ -165,7 +158,7 @@ public class Xrootd extends Protocol {
 	 *
 	 * @param p
 	 */
-	public static void checkLibraryPath(final ExternalProcessBuilder p) {
+	public static void checkLibraryPath(final ProcessBuilder p) {
 		checkLibraryPath(p, xrootd_default_path);
 	}
 
@@ -175,7 +168,7 @@ public class Xrootd extends Protocol {
 	 * @param p
 	 * @param path
 	 */
-	public static void checkLibraryPath(final ExternalProcessBuilder p, final String path) {
+	public static void checkLibraryPath(final ProcessBuilder p, final String path) {
 		if (path != null)
 			p.environment().put("LD_LIBRARY_PATH", path + "/lib");
 	}
@@ -312,20 +305,21 @@ public class Xrootd extends Protocol {
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
-
-			pBuilder.returnOutputOnExit(true);
-
-			pBuilder.timeout(1, TimeUnit.MINUTES);
 
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
+				final Process p = pBuilder.start();
+				final ProcessWithTimeout ptimeout = new ProcessWithTimeout(p, command.toString());
+				ptimeout.waitFor(1, TimeUnit.MINUTES);
+
+				exitStatus = ptimeout.getExitStatus();
+
 				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
@@ -429,30 +423,28 @@ public class Xrootd extends Protocol {
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
-
-			pBuilder.returnOutputOnExit(true);
 
 			// 20KB/s should be available to anybody
 			long maxTime = guid.size / 20000;
 
 			maxTime += timeout;
 
-			pBuilder.timeout(maxTime, TimeUnit.SECONDS);
-
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
-			ExternalProcess p = null;
+			Process p = null;
 
 			try {
 				p = pBuilder.start();
 
 				if (p != null) {
-					exitStatus = p.waitFor();
+					final ProcessWithTimeout ptimeout = new ProcessWithTimeout(p, command.toString());
+					ptimeout.waitFor(maxTime, TimeUnit.SECONDS);
+					exitStatus = ptimeout.getExitStatus();
 					setLastExitStatus(exitStatus);
 				}
 				else
@@ -578,25 +570,28 @@ public class Xrootd extends Protocol {
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
 
-			pBuilder.returnOutputOnExit(true);
-
 			// 20KB/s should be available to anybody
 			final long maxTime = timeout + guid.size / 20000;
-
-			pBuilder.timeout(maxTime, TimeUnit.SECONDS);
 
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
+				final Process p = pBuilder.start();
 
-				setLastExitStatus(exitStatus);
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+					pTimeout.waitFor(maxTime, TimeUnit.SECONDS);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new TargetException("Cannot start the process");
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new TargetException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
@@ -782,21 +777,25 @@ public class Xrootd extends Protocol {
 
 		setLastCommand(command);
 
-		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+		final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 		checkLibraryPath(pBuilder);
-
-		pBuilder.returnOutputOnExit(true);
-
-		pBuilder.timeout(15, TimeUnit.SECONDS);
 
 		pBuilder.redirectErrorStream(true);
 
 		ExitStatus exitStatus;
 
 		try {
-			exitStatus = pBuilder.start().waitFor();
-			setLastExitStatus(exitStatus);
+			final Process p = pBuilder.start();
+
+			if (p != null) {
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+				pTimeout.waitFor(15, TimeUnit.SECONDS);
+				exitStatus = pTimeout.getExitStatus();
+				setLastExitStatus(exitStatus);
+			}
+			else
+				throw new IOException("Cannot start process " + command.toString());
 		} catch (final InterruptedException ie) {
 			setLastExitStatus(null);
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
@@ -862,21 +861,25 @@ public class Xrootd extends Protocol {
 
 				setLastCommand(command);
 
-				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+				final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 				checkLibraryPath(pBuilder);
-
-				pBuilder.returnOutputOnExit(true);
-
-				pBuilder.timeout(15, TimeUnit.SECONDS);
 
 				pBuilder.redirectErrorStream(true);
 
 				ExitStatus exitStatus;
 
 				try {
-					exitStatus = pBuilder.start().waitFor();
-					setLastExitStatus(exitStatus);
+					final Process p = pBuilder.start();
+
+					if (p != null) {
+						final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+						pTimeout.waitFor(15, TimeUnit.SECONDS);
+						exitStatus = pTimeout.getExitStatus();
+						setLastExitStatus(exitStatus);
+					}
+					else
+						throw new IOException("Cannot execute command: " + command);
 				} catch (final InterruptedException ie) {
 					setLastExitStatus(null);
 					throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
@@ -1033,26 +1036,30 @@ public class Xrootd extends Protocol {
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
-
-			pBuilder.returnOutputOnExit(true);
 
 			long seconds = source.getGuid().size / 200000; // average target
 															// speed: 200KB/s
 
 			seconds += 5 * 60; // 5 minutes extra time, handshakes and such
 
-			pBuilder.timeout(seconds, TimeUnit.SECONDS);
-
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
-				setLastExitStatus(exitStatus);
+				final Process p = pBuilder.start();
+
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+					pTimeout.waitFor(seconds, TimeUnit.SECONDS);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new IOException("Cannot execute command: " + command);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
@@ -1163,7 +1170,7 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * @return the path for the default Xrootd version (base directory, append /bin or /lib to it)
-	 * @see Xrootd#checkLibraryPath(ExternalProcessBuilder)
+	 * @see Xrootd#checkLibraryPath(ProcessBuilder)
 	 */
 	public static String getXrootdDefaultPath() {
 		return xrootd_default_path;
@@ -1197,7 +1204,7 @@ public class Xrootd extends Protocol {
 
 		ExitStatus exitStatus;
 
-		ExternalProcessBuilder pBuilder;
+		ProcessBuilder pBuilder;
 
 		for (int attempt = 0; !ret.spaceInfoSet && attempt <= 1; attempt++) {
 			command.clear();
@@ -1216,20 +1223,24 @@ public class Xrootd extends Protocol {
 
 			setLastCommand(command);
 
-			pBuilder = new ExternalProcessBuilder(command);
+			pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
-
-			pBuilder.returnOutputOnExit(true);
-
-			pBuilder.timeout(5, TimeUnit.MINUTES);
 
 			pBuilder.redirectErrorStream(true);
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
-				setLastExitStatus(exitStatus);
-				
+				final Process p = pBuilder.start();
+
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+					pTimeout.waitFor(5, TimeUnit.MINUTES);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new IOException("Cannot execute command: " + command);
+
 				try (BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()))) {
 					String line;
 
@@ -1296,26 +1307,30 @@ public class Xrootd extends Protocol {
 
 		setLastCommand(command);
 
-		pBuilder = new ExternalProcessBuilder(command);
+		pBuilder = new ProcessBuilder(command);
 
 		checkLibraryPath(pBuilder);
-
-		pBuilder.returnOutputOnExit(true);
-
-		pBuilder.timeout(15, TimeUnit.SECONDS);
 
 		pBuilder.redirectErrorStream(true);
 
 		try {
-			exitStatus = pBuilder.start().waitFor();
-			setLastExitStatus(exitStatus);
+			final Process p = pBuilder.start();
+
+			if (p != null) {
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+				pTimeout.waitFor(15, TimeUnit.SECONDS);
+				exitStatus = pTimeout.getExitStatus();
+				setLastExitStatus(exitStatus);
+			}
+			else
+				throw new IOException("Cannot execute command: " + command);
 
 			try (BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()))) {
 				String line = br.readLine();
 
 				if (line != null) {
 					line = line.trim();
-					if (!line.equals("version") && !line.startsWith("[")) {
+					if (!line.equals("version") && !line.startsWith("["))
 						if (line.startsWith("v"))
 							ret.setVersion("Xrootd", line);
 						else
@@ -1323,7 +1338,6 @@ public class Xrootd extends Protocol {
 								ret.setVersion("dCache", line.substring(line.indexOf(' ') + 1).trim());
 							else
 								ret.setVersion(null, line);
-					}
 				}
 			}
 		} catch (final InterruptedException ie) {

@@ -24,7 +24,7 @@ import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 import lazyj.Format;
 import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
+import utils.ProcessWithTimeout;
 
 /**
  * @author costing
@@ -128,20 +128,24 @@ public class XrootdListing {
 
 		// System.err.println(command);
 
-		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+		final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 		Xrootd.checkLibraryPath(pBuilder);
-
-		pBuilder.returnOutputOnExit(true);
-
-		pBuilder.timeout(1, TimeUnit.HOURS);
 
 		pBuilder.redirectErrorStream(true);
 
 		final ExitStatus exitStatus;
 
 		try {
-			exitStatus = pBuilder.start().waitFor();
+			final Process p = pBuilder.start();
+
+			if (p != null) {
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+				pTimeout.waitFor(1, TimeUnit.HOURS);
+				exitStatus = pTimeout.getExitStatus();
+			}
+			else
+				throw new IOException("Cannot execute command: " + command);
 		} catch (final InterruptedException ie) {
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
