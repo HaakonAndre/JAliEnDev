@@ -1081,32 +1081,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	}
 
 
-	/**
-	 * @param newStatus
-	 */
-	/* public void changeStatus(final Long queueId, final JobStatus newStatus) {
-		// if final status with saved files, we set the path
-		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
-			final HashMap<String, Object> extrafields = new HashMap<>();
-			extrafields.put("path", getJobOutputDir());
-
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else if (newStatus == JobStatus.RUNNING) {
-			final HashMap<String, Object> extrafields = new HashMap<>();
-			extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-			extrafields.put("node", hostName);
-
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus);
-
-		jobStatus = newStatus;
-
-		return;
-	}
-	*/
-
-
 	@Override
 	public void fillValues(final Vector<String> paramNames, final Vector<Object> paramValues) {
 		Long queueId = 0L;
