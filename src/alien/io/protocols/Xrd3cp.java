@@ -159,7 +159,7 @@ public class Xrd3cp extends Xrootd {
 				final Process p = pBuilder.start();
 
 				if (p != null) {
-					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
 					pTimeout.waitFor(seconds, TimeUnit.SECONDS);
 					exitStatus = pTimeout.getExitStatus();
 					setLastExitStatus(exitStatus);

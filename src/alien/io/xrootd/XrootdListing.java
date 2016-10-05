@@ -140,7 +140,7 @@ public class XrootdListing {
 			final Process p = pBuilder.start();
 
 			if (p != null) {
-				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, command.toString());
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
 				pTimeout.waitFor(1, TimeUnit.HOURS);
 				exitStatus = pTimeout.getExitStatus();
 			}

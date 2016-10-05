@@ -14,7 +14,53 @@ import lia.util.process.ExternalProcess.ExitStatus;
  * @author costing
  * @since 2016-10-05
  */
-public class ProcessWithTimeout extends Thread {
+public class ProcessWithTimeout {
+
+	private static final class CopyThread extends Thread {
+		private final InputStream is;
+		private final StringBuilder sb;
+
+		private boolean active = true;
+
+		public CopyThread(final InputStream is, final StringBuilder sb, final String title) {
+			this.is = is;
+			this.sb = sb;
+			setName(title);
+			setDaemon(true);
+		}
+
+		@Override
+		public void run() {
+			final byte[] buffer = new byte[1024];
+
+			while (active) {
+				int count;
+				try {
+					count = is.read(buffer);
+
+					if (count < 0)
+						active = false;
+
+					if (count > 0)
+						sb.append(new String(buffer, 0, count));
+
+				} catch (@SuppressWarnings("unused") final IOException e) {
+					active = false;
+				}
+			}
+		}
+
+		public void close() {
+			active = false;
+
+			try {
+				is.close();
+			} catch (@SuppressWarnings("unused") final IOException ioe) {
+				// ignore
+			}
+		}
+	}
+
 	static transient final Logger logger = ConfigUtils.getLogger(ProcessWithTimeout.class.getCanonicalName());
 
 	private final Process p;
@@ -24,40 +70,32 @@ public class ProcessWithTimeout extends Thread {
 
 	private final String command;
 
+	private final CopyThread stdoutThread;
+	private final CopyThread stderrThread;
+
 	/**
 	 * Wrap the process with an output reading thread and helpers for timeout operations
 	 *
 	 * @param p
-	 * @param command
-	 *            command that is executed
+	 * @param pBuilder
 	 */
-	public ProcessWithTimeout(final Process p, final String command) {
+	public ProcessWithTimeout(final Process p, final ProcessBuilder pBuilder) {
 		this.p = p;
-		this.command = command;
+		this.command = pBuilder.command().toString();
 
-		String title = "ProcessWithTimeout - " + command;
+		String title = " - " + command;
 
 		if (title.length() > 100)
 			title = title.substring(0, 100);
 
-		setName(title);
-		start();
-	}
+		stdoutThread = new CopyThread(p.getInputStream(), sbOut, "stdout" + title);
+		stdoutThread.start();
 
-	private final byte[] buff = new byte[1024];
-
-	private void drain(final InputStream is, final StringBuilder sb) {
-		try {
-			while (is.available() > 0) {
-				final int count = is.read(buff);
-
-				if (count > 0)
-					sb.append(new String(buff, 0, count));
-				else
-					break;
-			}
-		} catch (@SuppressWarnings("unused") final IOException e) {
-			// ignore
+		if (pBuilder.redirectErrorStream())
+			stderrThread = null;
+		else {
+			stderrThread = new CopyThread(p.getErrorStream(), sbErr, "stderr" + title);
+			stderrThread.start();
 		}
 	}
 
@@ -73,18 +111,6 @@ public class ProcessWithTimeout extends Thread {
 	 */
 	public StringBuilder getStderr() {
 		return sbErr;
-	}
-
-	@Override
-	public void run() {
-		try (InputStream stdout = p.getInputStream(); InputStream stderr = p.getErrorStream()) {
-			while (!shouldTerminate) {
-				drain(stdout, sbOut);
-				drain(stderr, sbErr);
-			}
-		} catch (@SuppressWarnings("unused") final IOException e) {
-			// ignore
-		}
 	}
 
 	private boolean exitedOk = false;
@@ -113,6 +139,12 @@ public class ProcessWithTimeout extends Thread {
 			}
 		} finally {
 			shouldTerminate = true;
+
+			if (stdoutThread != null)
+				stdoutThread.close();
+
+			if (stderrThread != null)
+				stderrThread.close();
 		}
 
 		return exitedOk;
