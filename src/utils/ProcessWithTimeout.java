@@ -100,18 +100,20 @@ public class ProcessWithTimeout extends Thread {
 	 * @throws InterruptedException
 	 */
 	public boolean waitFor(final long timeout, final TimeUnit unit) throws InterruptedException {
-		exitedOk = p.waitFor(timeout, unit);
+		try {
+			exitedOk = p.waitFor(timeout, unit);
 
-		if (exitedOk)
-			exitValue = p.exitValue();
-		else {
-			if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "Forcibly terminating command: " + command);
+			if (exitedOk)
+				exitValue = p.exitValue();
+			else {
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.FINE, "Forcibly terminating command: " + command);
 
-			p.destroyForcibly();
+				p.destroyForcibly();
+			}
+		} finally {
+			shouldTerminate = true;
 		}
-
-		shouldTerminate = true;
 
 		return exitedOk;
 	}
