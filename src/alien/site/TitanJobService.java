@@ -93,6 +93,7 @@ import alien.site.supercomputing.titan.TitanBatchInfo;
 import alien.site.supercomputing.titan.ProcInfoPair;
 import alien.site.supercomputing.titan.JobUploader;
 import alien.site.supercomputing.titan.JobDownloader;
+import alien.site.supercomputing.titan.TitanBatchController;
 
 /**
  * @author mmmartin, ron, pavlo
@@ -195,7 +196,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private int numCores;
 
 	TitanBatchController batchController; 
-
+	/*
 	class TitanBatchController {
 		private HashMap<String, TitanBatchInfo> batchesInfo = new HashMap<>();
 		private String globalWorkdir;
@@ -211,11 +212,11 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		}
 
 		public boolean updateDatabaseList(){
-			//ls -d */ -1 | sed -e 's#/$##' | grep -E '^[0-9]+$' | sort -g	
+			//ls -d *\/ -1 | sed -e 's#/$##' | grep -E '^[0-9]+$' | sort -g	
 			//ProcessBuilder pb = newProcessBuilder(System.getProperty("user.dir")+"/src/generate_list.sh",filename);
 			System.out.println("Starting database update");
 			ProcessBuilder pb = new ProcessBuilder("/bin/bash", "-c", "for i in $(ls -d " 
-						+ globalWorkdir + "/*/ | egrep \"/[0-9]+/\"); do basename $i; done");
+						+ globalWorkdir + "/*\/ | egrep \"/[0-9]+/\"); do basename $i; done");
 			HashMap<String, TitanBatchInfo> tmpBatchesInfo = new HashMap<>();
 			int dbcount = 0;
 			try{
@@ -396,6 +397,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			System.out.println("================================================");
 		}
 	}
+	*/
 	
 	/**
 	 */
@@ -462,6 +464,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		monitor.addMonitoring("jobAgent-TODO", this);
 
+		TitanBatchController.siteMap = siteMap;
 		batchController = new TitanBatchController(globalWorkdir);
 		FileDownloadController.setCacheFolder("/lustre/atlas/proj-shared/csc108/psvirin/catalog_cache");
 		
@@ -807,5 +810,4 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			//paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
 		}
 	}
-
 }
