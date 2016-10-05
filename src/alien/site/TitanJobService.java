@@ -92,6 +92,7 @@ import alien.site.supercomputing.titan.TitanJobStatus;
 import alien.site.supercomputing.titan.TitanBatchInfo;
 import alien.site.supercomputing.titan.ProcInfoPair;
 import alien.site.supercomputing.titan.JobUploader;
+import alien.site.supercomputing.titan.JobDownloader;
 
 /**
  * @author mmmartin, ron, pavlo
@@ -281,7 +282,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			return !idleRanks.isEmpty();
 		}
 
-
 		public List<TitanJobStatus> queryRunningDatabases(){
 			List<TitanJobStatus> runningRanks = new LinkedList<>();
 			Long current_timestamp = System.currentTimeMillis() / 1000L;
@@ -355,7 +355,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			upload_threads.clear();
 			System.out.println("========= Starting download threads ==========");
-			//while (count > 0) {
 			int cnt = idleRanks.size();
 			Date d1 = new Date();
 			for(TitanJobStatus js: idleRanks){
@@ -471,6 +470,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		JobUploader.defaultOutputDirPrefix = defaultOutputDirPrefix;
 
 		JobDownloader.ce = ce;
+		JobDownloader.packMan = getPackman();
 		JobDownloader.hostName = hostName;
 		JobDownloader.defaultOutputDirPrefix = defaultOutputDirPrefix;
 
