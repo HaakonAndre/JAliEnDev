@@ -2258,7 +2258,7 @@ public class TaskQueueUtils {
 			JobToken jb = getJobToken(jobId);
 
 			if (jb != null)
-				System.out.println("TOKEN EXISTED");
+				logger.log(Level.WARNING, "JobToken already exists for job "+jobId);
 
 			if (jb != null && !forceUpdate)
 				return null;

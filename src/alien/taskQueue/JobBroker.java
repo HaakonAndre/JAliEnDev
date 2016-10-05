@@ -152,12 +152,17 @@ public class JobBroker {
 				// TODO:joblog, test jobtoken
 				// putlog($queueid, "state", "Job state transition from WAITING to ASSIGNED (to $queueName)");
 
-				final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"), false);
+				final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"), true);
 
 				if (jobToken == null || !jobToken.spawnToken(db)) {
-					logger.log(Level.INFO, "The job already had a jobToken (or failed creating)!");
+					logger.log(Level.INFO, "The job already had a jobToken (or failed creating");
+
+					if (jobToken != null) {
+						logger.log(Level.INFO, "JobToken not null: " + jobToken.jobId + "-" + jobToken.token + "-" + jobToken.exists());
+					}
+
 					db.setReadOnly(true);
-					if (db.query("select * from QUEUE where queueId=?", false, queueId))
+//					if (db.query("select count(1) from QUEUE where queueId=?", false, queueId))
 						TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
 					matchAnswer.put("Code", Integer.valueOf(-1));
 					matchAnswer.put("Error", "Error getting the token of the job " + queueId);
