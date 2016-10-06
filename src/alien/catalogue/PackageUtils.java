@@ -19,7 +19,7 @@ import alien.monitoring.MonitorFactory;
 import alien.taskQueue.JDL;
 import lazyj.DBFunctions;
 import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
+import utils.ProcessWithTimeout;
 
 /**
  * @author ron
@@ -115,16 +115,17 @@ public class PackageUtils {
 			final Set<String> newCvmfsPackages = new HashSet<>();
 
 			try {
-				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder("/cvmfs/alice.cern.ch/bin/alienv", "q");
-
-				pBuilder.returnOutputOnExit(true);
-				pBuilder.timeout(60, TimeUnit.SECONDS);
+				final ProcessBuilder pBuilder = new ProcessBuilder("/cvmfs/alice.cern.ch/bin/alienv", "q");
 
 				pBuilder.redirectErrorStream(false);
 
-				pBuilder.redirectErrorStream(false);
+				final Process p = pBuilder.start();
 
-				final ExitStatus exitStatus = pBuilder.start().waitFor();
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+
+				pTimeout.waitFor(60, TimeUnit.SECONDS);
+
+				final ExitStatus exitStatus = pTimeout.getExitStatus();
 
 				if (exitStatus.getExtProcExitStatus() == 0) {
 					final BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()));

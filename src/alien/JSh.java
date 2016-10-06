@@ -20,7 +20,7 @@ import alien.shell.commands.JAliEnBaseCommand;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
+import utils.ProcessWithTimeout;
 
 /**
  * @author ron
@@ -101,42 +101,46 @@ public class JSh {
 
 		if (args.length > 0 && (("-h".equals(args[0])) || ("-help".equals(args[0])) || ("--h".equals(args[0])) || ("--help".equals(args[0])) || ("help".equals(args[0]))))
 			printHelp();
-		else if (args.length > 0 && ("-k".equals(args[0])))
-			JSh.killJBox();
-		else {
+		else
+			if (args.length > 0 && ("-k".equals(args[0])))
+				JSh.killJBox();
+			else {
 
-			if (!JSh.JBoxRunning())
-				if (runJBox())
-					try {
-						int a = 10;
-						while (a < 5000) {
-							Thread.sleep(a);
-							if (JSh.JBoxRunning())
-								break;
-							a = a * 2;
+				if (!JSh.JBoxRunning())
+					if (runJBox())
+						try {
+							int a = 10;
+							while (a < 5000) {
+								Thread.sleep(a);
+								if (JSh.JBoxRunning())
+									break;
+								a = a * 2;
+							}
+						} catch (@SuppressWarnings("unused") final InterruptedException e) {
+							// ignore
 						}
-					} catch (@SuppressWarnings("unused") final InterruptedException e) {
-						// ignore
+
+				if (JSh.JBoxRunning()) {
+					if (args.length > 0 && "-e".equals(args[0])) {
+						color = false;
+						boombox = new BusyBox(addr, port, password);
+
+						if (boombox != null) {
+							final StringTokenizer st = new StringTokenizer(joinSecondArgs(args), ",");
+
+							while (st.hasMoreTokens())
+								boombox.callJBox(st.nextToken().trim());
+						}
+						else
+							printErrConnJBox();
+
 					}
-
-			if (JSh.JBoxRunning()) {
-				if (args.length > 0 && "-e".equals(args[0])) {
-					color = false;
-					boombox = new BusyBox(addr, port, password);
-
-					if (boombox != null) {
-						final StringTokenizer st = new StringTokenizer(joinSecondArgs(args), ",");
-
-						while (st.hasMoreTokens())
-							boombox.callJBox(st.nextToken().trim());
-					} else
-						printErrConnJBox();
-
-				} else
-					boombox = new BusyBox(addr, port, password, user, true);
-			} else
-				printErrNoJBox();
-		}
+					else
+						boombox = new BusyBox(addr, port, password, user, true);
+				}
+				else
+					printErrNoJBox();
+			}
 	}
 
 	/**
@@ -180,7 +184,8 @@ public class JSh {
 			if ((cons = System.console()) != null) {
 				pw.println(new String(cons.readPassword("[%s]", "Grid certificate password: ")));
 				pw.flush();
-			} else
+			}
+			else
 				System.err.println("Error getting console.");
 
 		} catch (final Exception e) {
@@ -238,12 +243,10 @@ public class JSh {
 
 			// APIServer.startJBox();
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(new String[] { "nohup", "./run.sh", "alien.JBox", "&" });
+			final ProcessBuilder pBuilder = new ProcessBuilder(new String[] { "nohup", "./run.sh", "alien.JBox", "&" });
 
-			pBuilder.returnOutputOnExit(false);
 			pBuilder.redirectErrorStream(false);
 
-			pBuilder.timeout(356, TimeUnit.DAYS);
 			// try {
 			// pBuilder.start();
 			// } catch (Exception e) {
@@ -258,14 +261,16 @@ public class JSh {
 	private static void killJBox() {
 		if (JSh.JBoxRunning()) {
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(new String[] { kill, pid + "" });
+			final ProcessBuilder pBuilder = new ProcessBuilder(new String[] { kill, String.valueOf(pid) });
 
-			pBuilder.returnOutputOnExit(true);
-			pBuilder.timeout(2, TimeUnit.SECONDS);
 			pBuilder.redirectErrorStream(true);
 			final ExitStatus exitStatus;
 			try {
-				exitStatus = pBuilder.start().waitFor();
+				final Process p = pBuilder.start();
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+				pTimeout.waitFor(2, TimeUnit.SECONDS);
+				exitStatus = pTimeout.getExitStatus();
+
 				if (exitStatus.getExtProcExitStatus() == 0)
 					System.out.println("[" + pid + "] JBox killed.");
 				else
@@ -274,7 +279,8 @@ public class JSh {
 			} catch (final Throwable e) {
 				System.err.println("Could not kill the JBox, PID:" + pid + " : " + e.getMessage());
 			}
-		} else
+		}
+		else
 			System.out.println("We didn't find any JBox running.");
 	}
 
@@ -327,22 +333,26 @@ public class JSh {
 
 				if (("Host").equals(kval[0].trim()))
 					addr = kval[1].trim();
-				else if (("Port").equals(kval[0].trim()))
-					try {
-						port = Integer.parseInt(kval[1].trim());
-					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-						port = 0;
-					}
-				else if (("PID").equals(kval[0].trim()))
-					try {
-						pid = Integer.parseInt(kval[1].trim());
-					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-						pid = 0;
-					}
-				else if (("Passwd").equals(kval[0].trim()))
-					password = kval[1].trim();
-				else if (("User").equals(kval[0].trim()))
-					user = kval[1].trim();
+				else
+					if (("Port").equals(kval[0].trim()))
+						try {
+							port = Integer.parseInt(kval[1].trim());
+						} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+							port = 0;
+						}
+					else
+						if (("PID").equals(kval[0].trim()))
+							try {
+								pid = Integer.parseInt(kval[1].trim());
+							} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+								pid = 0;
+							}
+						else
+							if (("Passwd").equals(kval[0].trim()))
+								password = kval[1].trim();
+							else
+								if (("User").equals(kval[0].trim()))
+									user = kval[1].trim();
 			}
 			return true;
 		}
