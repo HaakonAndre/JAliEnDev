@@ -50,8 +50,29 @@ public class ProcessWithTimeout {
 			}
 		}
 
-		public void close() {
+		public void close() throws InterruptedException {
 			active = false;
+
+			while (isAlive())
+				// wait for the thread to get the point and exit
+				Thread.sleep(1);
+
+			try {
+				// drain any leftover bytes from the stream
+				if (is.available() > 0) {
+					final byte[] buffer = new byte[1024];
+
+					int count;
+					do {
+						count = is.read(buffer);
+
+						if (count > 0)
+							sb.append(new String(buffer, 0, count));
+					} while (count >= 0);
+				}
+			} catch (@SuppressWarnings("unused") final IOException ioe) {
+				// ignore
+			}
 
 			try {
 				is.close();
