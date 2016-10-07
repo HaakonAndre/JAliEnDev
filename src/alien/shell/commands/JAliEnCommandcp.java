@@ -7,12 +7,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -58,6 +60,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 */
 	private boolean bD = false;
 
+	/**
+	 * Number of concurrent operations to do
+	 */
+	private int concurrentOperations = 1;
+
 	private int referenceCount = 0;
 
 	private final List<String> ses = new ArrayList<>();
@@ -88,7 +95,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					localFile = new File(getLocalFileSpec(target));
 
-					if (!localFile.exists())
+					if (!localFile.exists() || localFile.isDirectory())
 						copyGridToLocal(source, localFile);
 					else
 						if (!isSilent())
@@ -147,7 +154,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					localFile = new File(getLocalFileSpec(target));
 
-					if (!localFile.exists())
+					if (!localFile.exists() || localFile.isDirectory())
 						copyGridToLocal(source, localFile);
 					else
 						if (!isSilent())
@@ -262,7 +269,105 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			return true;
 		}
 		return false;
+	}
 
+	private class GridToLocal implements Runnable {
+		private final String sourcelfn;
+		private final String longestMatchingPath;
+		private final File targetLocalFile;
+		private File resultFile = null;
+
+		public GridToLocal(final String sourcelfn, final String longestMatchingPath, final File targetLocalFile) {
+			this.sourcelfn = sourcelfn;
+			this.longestMatchingPath = longestMatchingPath;
+			this.targetLocalFile = targetLocalFile;
+		}
+
+		@SuppressWarnings("synthetic-access")
+		@Override
+		public void run() {
+			final LFN lfn = commander.c_api.getLFN(sourcelfn);
+
+			if (lfn == null) {
+				if (!isSilent())
+					out.printErrln("Could not get the file's LFN: " + sourcelfn);
+
+				return;
+			}
+
+			File writeToLocalFile = targetLocalFile;
+
+			if (targetLocalFile.exists() && targetLocalFile.isDirectory()) {
+				final String fileName = sourcelfn.substring(longestMatchingPath.length());
+
+				final int idx = fileName.indexOf('/');
+
+				if (idx >= 0) {
+					final String dirName = fileName.substring(0, idx);
+
+					final File fDir = new File(targetLocalFile, dirName);
+
+					if (fDir.exists()) {
+						if (!fDir.isDirectory()) {
+							out.printErrln("This file exists and I cannot create the same directory here: " + fDir.getAbsolutePath());
+							return;
+						}
+					}
+					else
+						if (!fDir.mkdirs()) {
+							out.printErrln("Could not create the directory: " + fDir.getAbsolutePath());
+							return;
+						}
+				}
+
+				writeToLocalFile = new File(targetLocalFile, fileName);
+			}
+
+			final List<PFN> pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
+
+			if (pfns != null) {
+				for (final PFN pfn : pfns) {
+					final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
+					for (final Protocol protocol : protocols) {
+						final ProtocolAction pA = new ProtocolAction(protocol, pfn, writeToLocalFile);
+						try {
+							pA.start();
+							while (pA.isAlive()) {
+								Thread.sleep(500);
+								if (!isSilent())
+									out.pending();
+							}
+
+							if (pA.getFile() != null && pA.getFile().exists() && pA.getFile().length() > 0) {
+								writeToLocalFile = pA.getFile();
+
+								if (!isSilent())
+									out.printOutln("Downloaded file to " + pA.getFile().getCanonicalPath());
+
+								break;
+							}
+						} catch (final Exception e) {
+							e.printStackTrace();
+						}
+
+					}
+					if (writeToLocalFile != null && writeToLocalFile.exists() && writeToLocalFile.length() > 0) {
+						resultFile = writeToLocalFile;
+						break;
+					}
+				}
+			}
+
+			if (resultFile == null && !isSilent())
+				out.printErrln("Could not get the file: " + sourcelfn+" to "+writeToLocalFile.getAbsolutePath());
+		}
+
+		/**
+		 * @return the local file
+		 */
+		public File getResult() {
+			return resultFile;
+		}
 	}
 
 	/**
@@ -272,68 +377,109 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            Grid filename
 	 * @param toLocalFile
 	 *            local file
-	 * @return local target file
+	 * @return local target file (one of them if multiple files were copied), or <code>null</code> if any problem
 	 */
 	public File copyGridToLocal(final String sourceLFN, final File toLocalFile) {
-		File targetLocalFile = toLocalFile;
+		final File targetLocalFile = toLocalFile;
 
 		final LFN currentDir = commander.getCurrentDir();
 
-		final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, sourceLFN));
+		final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, sourceLFN);
 
-		if (lfn == null) {
+		final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user, commander.role);
+
+		if (sources.size() == 0) {
 			if (!isSilent())
-				out.printErrln("Could not get the file's LFN: " + sourceLFN);
+				out.printErrln("No such file: " + sourceLFN);
+
 			return null;
 		}
 
-		final List<PFN> pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
+		if (sources.size() > 1) {
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Expanded path yielded multiple files: " + sources);
 
-		if (pfns != null) {
-			System.err.println(pfns);
-
-			if (referenceCount == 0)
-				referenceCount = pfns.size();
-
-			for (final PFN pfn : pfns) {
-				final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
-				for (final Protocol protocol : protocols) {
-					final ProtocolAction pA = new ProtocolAction(protocol, pfn, targetLocalFile);
-					try {
-						pA.start();
-						while (pA.isAlive()) {
-							Thread.sleep(500);
-							if (!isSilent())
-								out.pending();
-						}
-
-						if (pA.getFile() != null && pA.getFile().exists() && pA.getFile().length() > 0) {
-							targetLocalFile = pA.getFile();
-
-							if (!isSilent())
-								out.printOutln("Downloaded file to " + pA.getFile().getCanonicalPath());
-
-							break;
-						}
-					} catch (final Exception e) {
-						e.printStackTrace();
-					}
-
+			// the target cannot be a file
+			if (targetLocalFile.exists()) {
+				if (!targetLocalFile.isDirectory()) {
+					out.printErrln("Local target must be a directory when copying multiple files");
+					return null;
 				}
-				if (targetLocalFile != null && targetLocalFile.exists())
-					break;
+
+				if (!targetLocalFile.canWrite()) {
+					out.printErrln("Cannot write into " + targetLocalFile.getAbsolutePath());
+					return null;
+				}
 			}
-
-			if (targetLocalFile != null && targetLocalFile.exists() && targetLocalFile.length() > 0)
-				return targetLocalFile;
-
-			// out.printErrln("pfns not null, but error.");
-			// return null;
+			else
+				if (!targetLocalFile.mkdirs()) {
+					out.printErrln("Could not create the output target directory: " + targetLocalFile.getAbsolutePath());
+					return null;
+				}
 		}
 
-		if (!isSilent())
-			out.printErrln("Could not get the file.");
-		return null;
+		//String longestMatchingPath = currentDir != null ? currentDir.getCanonicalName() : absolutePath;
+		String longestMatchingPath = absolutePath;
+
+		for (final String sourcelfn : sources)
+			if (!sourcelfn.startsWith(longestMatchingPath)) {
+				final char[] s1 = sourcelfn.toCharArray();
+				final char[] s2 = longestMatchingPath.toCharArray();
+
+				final int minLen = Math.min(s1.length, s2.length);
+				int commonLength = 0;
+
+				for (; commonLength < minLen; commonLength++)
+					if (s1[commonLength] != s2[commonLength])
+						break;
+
+				longestMatchingPath = longestMatchingPath.substring(0, commonLength);
+			}
+
+		if (!longestMatchingPath.endsWith("/"))
+			longestMatchingPath = longestMatchingPath.substring(0, longestMatchingPath.lastIndexOf('/') + 1);
+
+		logger.log(Level.FINE, "Longest matching path: " + longestMatchingPath);
+
+		File oneFileToReturn = null;
+
+		if (sources.size() <= 1 || concurrentOperations <= 1) {
+			for (final String sourcelfn : sources) {
+				final GridToLocal oneFile = new GridToLocal(sourcelfn, longestMatchingPath, targetLocalFile);
+				oneFile.run();
+
+				if (oneFileToReturn == null)
+					oneFileToReturn = oneFile.getResult();
+			}
+		}
+		else {
+			final LinkedBlockingQueue<Runnable> jobsQueue = new LinkedBlockingQueue<>();
+			final ThreadPoolExecutor downloader = new ThreadPoolExecutor(concurrentOperations, concurrentOperations, 1, TimeUnit.SECONDS, jobsQueue);
+			downloader.allowCoreThreadTimeOut(true);
+
+			final List<Future<GridToLocal>> futures = new LinkedList<>();
+
+			for (final String sourcelfn : sources) {
+				final GridToLocal oneFile = new GridToLocal(sourcelfn, longestMatchingPath, targetLocalFile);
+				final Future<GridToLocal> future = downloader.submit(oneFile, oneFile);
+				futures.add(future);
+			}
+
+			for (final Future<GridToLocal> future : futures) {
+				final GridToLocal result;
+
+				try {
+					result = future.get();
+
+					if (oneFileToReturn == null)
+						oneFileToReturn = result.getResult();
+				} catch (InterruptedException | ExecutionException e) {
+					logger.log(Level.WARNING, "Exception waiting for a future", e);
+				}
+			}
+		}
+
+		return oneFileToReturn;
 	}
 
 	private static final ExecutorService UPLOAD_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
@@ -785,6 +931,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			out.printOutln(helpOption("-S", "[se[,se2[,!se3[,qos:count]]]]"));
 			out.printOutln(helpOption("-t", "create a local temp file"));
 			out.printOutln(helpOption("-silent", "execute command silently"));
+			out.printOutln(helpOption("-T", "Use this many concurrent threads (where possible) - default 1"));
 			out.printOutln();
 		}
 	}
@@ -834,6 +981,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("W");
 			parser.accepts("d");
 			parser.accepts("j").withRequiredArg();
+			parser.accepts("T").withRequiredArg();
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -901,6 +1049,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			source = nonOptionArguments.get(0);
 			if (!(options.nonOptionArguments().size() == 1 && options.has("t")))
 				target = nonOptionArguments.get(1);
+
+			if (options.has("T"))
+				concurrentOperations = Integer.parseInt(options.valueOf("T").toString());
+
 		} catch (final OptionException e) {
 			printHelp();
 			throw e;
