@@ -9,6 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -387,6 +389,41 @@ public class Xrootd extends Protocol {
 			if (!target.delete()) {
 				logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
 				return null;
+			}
+		}
+		else {
+			File existingFile = TempFileManager.getTemp(guid);
+
+			boolean wasTempFile = existingFile != null;
+
+			if (existingFile == null)
+				existingFile = TempFileManager.getPersistent(guid);
+
+			if (existingFile != null) {
+				if (wasTempFile) {
+					try {
+						if (existingFile.renameTo(target)) {
+							TempFileManager.putPersistent(guid, target);
+							return target;
+						}
+
+						logger.log(Level.WARNING, "Could not rename " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath());
+					} catch (final Throwable t) {
+						logger.log(Level.WARNING, "Exception renaming " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath(), t);
+					} finally {
+						TempFileManager.release(existingFile);
+					}
+				}
+
+				// if the file existed with a persistent copy, or the temporary file could not be renamed, try to simply copy it to the target
+				try {
+					if (Files.copy(Paths.get(existingFile.toURI()), Paths.get(target.toURI())) == null)
+						logger.log(Level.WARNING, "Could not copy " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath());
+					else
+						return target;
+				} catch (final Throwable t) {
+					logger.log(Level.WARNING, "Exception copying " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath(), t);
+				}
 			}
 		}
 
