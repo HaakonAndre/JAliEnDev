@@ -281,8 +281,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 									break;
 								}
 							}
-						}
-						finally{
+						} finally {
 							TempFileManager.release(tempLocalFile);
 						}
 					}
@@ -348,6 +347,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				return;
 			}
 
+			if (!lfn.isFile()) {
+				// ignoring anything else but files
+				return;
+			}
+
 			File writeToLocalFile = targetLocalFile;
 
 			if (targetLocalFile.exists() && targetLocalFile.isDirectory()) {
@@ -374,6 +378,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 
 				writeToLocalFile = new File(targetLocalFile, fileName);
+			}
+
+			if (writeToLocalFile.exists()) {
+				out.printErrln("Local copy target " + writeToLocalFile + " exists, skipping it");
+				return;
 			}
 
 			final List<PFN> pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
