@@ -1,6 +1,7 @@
 package alien.api;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -160,7 +161,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * write the configuration file that is used by gapi <br />
-	 * the filename = /tmp/gclient_token_$uid
+	 * the filename = <i>java.io.tmpdir</i>/gclient_token_$uid
 	 *
 	 * @param sHost
 	 *            hostname to connect to, by default localhost
@@ -192,9 +193,11 @@ public class JBoxServer extends Thread {
 		try {
 			final int iUserId = Integer.parseInt(sUserId.trim());
 
-			final String sFileName = "/tmp/gclient_token_" + iUserId;
+			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-			try (FileWriter fw = new FileWriter(sFileName)) {
+			final File tokenFile = new File(tmpDir, "gclient_token_" + iUserId);
+
+			try (FileWriter fw = new FileWriter(tokenFile)) {
 				fw.write("Host = " + sHost + "\n");
 				logger.fine("Host = " + sHost);
 
@@ -222,7 +225,7 @@ public class JBoxServer extends Thread {
 				return true;
 
 			} catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + sFileName + " to write", e1);
+				logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e1);
 				return false;
 			}
 		} catch (final Throwable e) {
@@ -234,7 +237,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Writes the environment file used by ROOT <br />
-	 * It needs to ne named /tmp/gclient_env_$UID and to contain:
+	 * It needs to be named gclient_env_$UID, sitting by default in <code>java.io.tmpdir</code> (eg. <code>/tmp</code>) and to contain:
 	 * <ol>
 	 * <li>alien_API_HOST</li>
 	 * <li>alien_API_PORT</li>
@@ -265,9 +268,11 @@ public class JBoxServer extends Thread {
 		try {
 			final int iUserId = Integer.parseInt(sUserId.trim());
 
-			final String sFileName = "/tmp/gclient_env_" + iUserId;
+			File tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-			try (FileWriter fw = new FileWriter(sFileName)) {
+			File envFile = new File(tmpDir, "gclient_env_" + iUserId);
+
+			try (FileWriter fw = new FileWriter(envFile)) {
 				fw.write("export alien_API_HOST=" + sHost + "\n");
 				logger.fine("export alien_API_HOST=" + sHost);
 
@@ -286,7 +291,7 @@ public class JBoxServer extends Thread {
 				return true;
 
 			} catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + sFileName + " to write", e1);
+				logger.log(Level.SEVERE, "Could not open file " + envFile.getAbsolutePath() + " to write", e1);
 				return false;
 			}
 		} catch (final Exception e) {
