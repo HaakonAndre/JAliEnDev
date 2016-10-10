@@ -1,6 +1,8 @@
 package alien.shell.commands;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
@@ -229,6 +233,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		private final PFN pfn;
 		private File output = null;
 
+		private Exception lastException = null;
+
 		/**
 		 * @param protocol
 		 * @param source
@@ -243,8 +249,48 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		@Override
 		public void run() {
 			try {
-				output = proto.get(pfn, file);
-			} catch (@SuppressWarnings("unused") final IOException e) {
+				if (pfn.ticket != null && pfn.ticket.envelope != null && pfn.ticket.envelope.getArchiveAnchor() != null) {
+					final File tempLocalFile = proto.get(pfn, null);
+
+					if (tempLocalFile != null) {
+						final LFN archiveMember = pfn.ticket.envelope.getArchiveAnchor();
+
+						final String archiveFileName = archiveMember.getFileName();
+
+						try (ZipInputStream zi = new ZipInputStream(new FileInputStream(tempLocalFile))) {
+							ZipEntry zipentry = zi.getNextEntry();
+
+							while (zipentry != null) {
+								if (zipentry.getName().equals(archiveFileName)) {
+									final FileOutputStream fos = new FileOutputStream(file);
+
+									final byte[] buf = new byte[8192];
+
+									int n;
+
+									while ((n = zi.read(buf, 0, buf.length)) > -1)
+										fos.write(buf, 0, n);
+
+									fos.close();
+									zi.closeEntry();
+
+									output = file;
+
+									TempFileManager.putPersistent(pfn.getGuid(), output);
+
+									break;
+								}
+							}
+						}
+						finally{
+							TempFileManager.release(tempLocalFile);
+						}
+					}
+				}
+				else
+					output = proto.get(pfn, file);
+			} catch (final IOException e) {
+				lastException = e;
 				output = null;
 			}
 		}
@@ -254,6 +300,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		 */
 		public File getFile() {
 			return output;
+		}
+
+		/**
+		 * @return last execution exception, if any
+		 */
+		public Exception getLastException() {
+			return lastException;
 		}
 	}
 
@@ -325,8 +378,14 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			final List<PFN> pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
 
-			if (pfns != null) {
+			File transferAttempt = null;
+
+			Exception lastException = null;
+
+			if (pfns != null && pfns.size() > 0) {
 				for (final PFN pfn : pfns) {
+					logger.log(Level.INFO, "Trying " + pfn.pfn);
+
 					final List<Protocol> protocols = Transfer.getAccessProtocols(pfn);
 					for (final Protocol protocol : protocols) {
 						final ProtocolAction pA = new ProtocolAction(protocol, pfn, writeToLocalFile);
@@ -339,27 +398,33 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							}
 
 							if (pA.getFile() != null && pA.getFile().exists() && pA.getFile().length() > 0) {
-								writeToLocalFile = pA.getFile();
+								transferAttempt = pA.getFile();
 
 								if (!isSilent())
-									out.printOutln("Downloaded file to " + pA.getFile().getCanonicalPath());
+									out.printOutln("Downloaded file to " + transferAttempt.getCanonicalPath());
 
 								break;
 							}
+
+							if ((lastException = pA.getLastException()) != null)
+								logger.log(Level.WARNING, "Attempt to fetch " + pfn + " failed", lastException);
+
 						} catch (final Exception e) {
 							e.printStackTrace();
 						}
 
 					}
-					if (writeToLocalFile != null && writeToLocalFile.exists() && writeToLocalFile.length() > 0) {
-						resultFile = writeToLocalFile;
+					if (transferAttempt != null && transferAttempt.exists() && transferAttempt.length() > 0) {
+						resultFile = transferAttempt;
 						break;
 					}
 				}
 			}
+			else
+				out.printErrln("No replicas for this LFN: " + lfn.getCanonicalName());
 
 			if (resultFile == null && !isSilent())
-				out.printErrln("Could not get the file: " + sourcelfn+" to "+writeToLocalFile.getAbsolutePath());
+				out.printErrln("Could not get the file: " + sourcelfn + " to " + writeToLocalFile.getAbsolutePath() + (lastException != null ? ", error was: " + lastException.getMessage() : ""));
 		}
 
 		/**
@@ -418,7 +483,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 		}
 
-		//String longestMatchingPath = currentDir != null ? currentDir.getCanonicalName() : absolutePath;
+		// String longestMatchingPath = currentDir != null ? currentDir.getCanonicalName() : absolutePath;
 		String longestMatchingPath = absolutePath;
 
 		for (final String sourcelfn : sources)
@@ -699,7 +764,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					} catch (@SuppressWarnings("unused") final InterruptedException e) {
+					} catch (@SuppressWarnings("unused")
+					final InterruptedException e) {
 						return false;
 					}
 				}
@@ -859,11 +925,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					try {
 						targetPFNResult = protocol.put(pfn, sourceFile);
-					} catch (@SuppressWarnings("unused") final IOException ioe) {
+					} catch (@SuppressWarnings("unused")
+					final IOException ioe) {
 						// ignore, will try next protocol or fetch another
 						// replica to replace this one
 					}
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					// e.printStackTrace();
 				}
 
