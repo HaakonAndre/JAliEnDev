@@ -10,7 +10,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import lazyj.Format;
 import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -19,10 +18,11 @@ import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
+import lazyj.Format;
 
 /**
  * @author ron
- * 
+ *
  */
 public class XrootDEnvelope implements Serializable {
 
@@ -32,7 +32,7 @@ public class XrootDEnvelope implements Serializable {
 	static transient final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 1024787790575833398L;
 
@@ -96,7 +96,7 @@ public class XrootDEnvelope implements Serializable {
 
 	/**
 	 * Create a encrypted envelope along verification only
-	 * 
+	 *
 	 * @param envelope
 	 */
 	public XrootDEnvelope(final String envelope) {
@@ -105,7 +105,7 @@ public class XrootDEnvelope implements Serializable {
 
 	/**
 	 * Create a signed only envelope in order to verify it
-	 * 
+	 *
 	 * @param xrootdenvelope
 	 * @param oldEnvelope
 	 */
@@ -138,26 +138,35 @@ public class XrootDEnvelope implements Serializable {
 					if ("access".equals(key))
 						if (value.startsWith("write"))
 							type = AccessType.WRITE;
-						else if (value.equals("read"))
-							type = AccessType.READ;
-						else if (value.equals("delete"))
-							type = AccessType.DELETE;
 						else
-							System.err.println("illegal access type!");
-					else if ("turl".equals(key))
-						turl = value;
-					else if ("pfn".equals(key))
-						spfn = value;
-					else if ("lfn".equals(key))
-						lfn = value;
-					else if ("guid".equals(key))
-						guid = value;
-					else if ("size".equals(key))
-						size = Integer.parseInt(value);
-					else if ("md5".equals(key))
-						md5 = value;
-					else if ("se".equals(key))
-						se = value;
+							if (value.equals("read"))
+								type = AccessType.READ;
+							else
+								if (value.equals("delete"))
+									type = AccessType.DELETE;
+								else
+									System.err.println("illegal access type!");
+					else
+						if ("turl".equals(key))
+							turl = value;
+						else
+							if ("pfn".equals(key))
+								spfn = value;
+							else
+								if ("lfn".equals(key))
+									lfn = value;
+								else
+									if ("guid".equals(key))
+										guid = value;
+									else
+										if ("size".equals(key))
+											size = Integer.parseInt(value);
+										else
+											if ("md5".equals(key))
+												md5 = value;
+											else
+												if ("se".equals(key))
+													se = value;
 				}
 
 				final GUID g = GUIDUtils.getGUID(UUID.fromString(guid), true);
@@ -177,10 +186,12 @@ public class XrootDEnvelope implements Serializable {
 
 				this.pfn = new PFN(spfn, g, SEUtils.getSE(se));
 
-			} else
+			}
+			else
 				this.pfn = null;
 
-		} else {
+		}
+		else {
 
 			final StringTokenizer st = new StringTokenizer(envelope, "\\&");
 			String spfn = "";
@@ -203,26 +214,35 @@ public class XrootDEnvelope implements Serializable {
 					if ("access".equals(key))
 						if (value.startsWith("write"))
 							type = AccessType.WRITE;
-						else if (value.equals("read"))
-							type = AccessType.READ;
-						else if (value.equals("delete"))
-							type = AccessType.DELETE;
 						else
-							System.err.println("illegal access type!");
-					else if ("turl".equals(key))
-						turl = value;
-					else if ("pfn".equals(key))
-						spfn = value;
-					else if ("lfn".equals(key))
-						lfn = value;
-					else if ("guid".equals(key))
-						guid = value;
-					else if ("size".equals(key))
-						size = Long.parseLong(value);
-					else if ("md5".equals(key))
-						md5 = value;
-					else if ("se".equals(key))
-						se = value;
+							if (value.equals("read"))
+								type = AccessType.READ;
+							else
+								if (value.equals("delete"))
+									type = AccessType.DELETE;
+								else
+									System.err.println("illegal access type!");
+					else
+						if ("turl".equals(key))
+							turl = value;
+						else
+							if ("pfn".equals(key))
+								spfn = value;
+							else
+								if ("lfn".equals(key))
+									lfn = value;
+								else
+									if ("guid".equals(key))
+										guid = value;
+									else
+										if ("size".equals(key))
+											size = Long.parseLong(value);
+										else
+											if ("md5".equals(key))
+												md5 = value;
+											else
+												if ("se".equals(key))
+													se = value;
 				}
 			}
 			final GUID g = GUIDUtils.getGUID(UUID.fromString(guid), true);
@@ -249,12 +269,19 @@ public class XrootDEnvelope implements Serializable {
 	/**
 	 * Set the LFN that is pointing to this envelope's GUID/PFN us as a guid://
 	 * archive link
-	 * 
+	 *
 	 * @param anchor
 	 *            Anchor LFN
 	 */
 	public void setArchiveAnchor(final LFN anchor) {
 		archiveAnchorLFN = anchor;
+	}
+
+	/**
+	 * @return the member of the archive that should be extracted, as indicated in the original access request
+	 */
+	public LFN getArchiveAnchor() {
+		return archiveAnchorLFN;
 	}
 
 	/**
@@ -296,8 +323,10 @@ public class XrootDEnvelope implements Serializable {
 		if (archiveAnchorLFN != null) {
 			refGUID = GUIDUtils.getGUID(archiveAnchorLFN);
 			refLFN = archiveAnchorLFN;
-		} else if (lfns != null && lfns.size() > 0)
-			refLFN = lfns.iterator().next();
+		}
+		else
+			if (lfns != null && lfns.size() > 0)
+				refLFN = lfns.iterator().next();
 
 		if (refLFN != null)
 			ret += "    <lfn>" + Format.escHtml(refLFN.getCanonicalName()) + "</lfn>\n";
@@ -349,7 +378,8 @@ public class XrootDEnvelope implements Serializable {
 				turl = se.seioDaemons + "/" + lfns.iterator().next().getCanonicalName();
 			else
 				turl = se.seioDaemons + "//NOLFN";
-		} else {
+		}
+		else {
 
 			final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
 
@@ -395,15 +425,17 @@ public class XrootDEnvelope implements Serializable {
 
 		if (archiveAnchorLFN != null)
 			e.put("lfn", archiveAnchorLFN.getCanonicalName());
-		else if (lfns != null && lfns.size() > 0)
-			e.put("lfn", lfns.iterator().next().getCanonicalName());
+		else
+			if (lfns != null && lfns.size() > 0)
+				e.put("lfn", lfns.iterator().next().getCanonicalName());
 
 		if (archiveAnchorLFN == null) {
 			e.put("guid", guid.getName());
 			e.put("size", String.valueOf(guid.size));
 			e.put("md5", guid.md5);
 
-		} else {
+		}
+		else {
 			final GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN);
 			e.put("zguid", guid.getName());
 			e.put("guid", archiveAnchorGUID.getName());
