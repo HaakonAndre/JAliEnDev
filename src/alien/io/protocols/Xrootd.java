@@ -76,12 +76,10 @@ public class Xrootd extends Protocol {
 
 			if (xrootd_default_path != null)
 				for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
-					final File test = new File(xrootd_default_path + "/bin/" + command);
+					xrdcpPath = ExternalCalls.programExistsInFolders(command, xrootd_default_path, xrootd_default_path + "/bin");
 
-					if (test.exists() && test.isFile() && test.canExecute()) {
-						xrdcpPath = test.getAbsolutePath();
+					if (xrdcpPath != null)
 						break;
-					}
 				}
 		}
 
@@ -89,21 +87,28 @@ public class Xrootd extends Protocol {
 			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
 				xrdcpPath = ExternalCalls.programExistsInPath(command);
 
-				if (xrdcpPath != null) {
-					int idx = xrdcpPath.lastIndexOf('/');
-
-					if (idx > 0) {
-						idx = xrdcpPath.lastIndexOf('/', idx - 1);
-
-						if (idx >= 0)
-							xrootd_default_path = xrdcpPath.substring(0, idx);
-					}
-
+				if (xrdcpPath != null)
 					break;
-				}
+			}
+
+		if (xrdcpPath == null)
+			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
+				xrdcpPath = ExternalCalls.programExistsInFolders(command, System.getProperty("user.home") + "/bin", System.getProperty("user.home") + "/xrootd/bin", "/opt/xrootd/bin");
+
+				if (xrdcpPath != null)
+					break;
 			}
 
 		if (xrdcpPath != null) {
+			int idx = xrdcpPath.lastIndexOf('/');
+
+			if (idx > 0) {
+				idx = xrdcpPath.lastIndexOf('/', idx - 1);
+
+				if (idx >= 0)
+					xrootd_default_path = xrdcpPath.substring(0, idx);
+			}
+
 			final ProcessBuilder pBuilder = new ProcessBuilder(Arrays.asList(xrdcpPath, "--version"));
 
 			checkLibraryPath(pBuilder);
@@ -678,7 +683,8 @@ public class Xrootd extends Protocol {
 			while ((line = br.readLine()) != null)
 				if (!line.startsWith("Overriding '"))
 					sb.append(line).append('\n');
-		} catch (@SuppressWarnings("unused") final IOException ioe) {
+		} catch (@SuppressWarnings("unused")
+		final IOException ioe) {
 			// ignore, cannot happen
 		}
 
