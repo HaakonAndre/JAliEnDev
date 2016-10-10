@@ -77,7 +77,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 				if (eldest.getValue().exists()) {
 					if (!eldest.getValue().delete())
 						logger.log(Level.WARNING, "Could not delete temporary file " + eldest.getValue());
-				} else
+				}
+				else
 					logger.log(Level.FINE, "Somebody has already deleted " + eldest.getValue() + " while its lock status was: " + wasLocked);
 
 				release(eldest.getValue());
@@ -103,10 +104,12 @@ public class TempFileManager extends LRUMap<GUID, File> {
 	}
 
 	/**
+	 * Get the temporary downloaded file with this name
+	 *
 	 * @param key
-	 * @return the cached file
+	 * @return the temporary file, if it exists, locked (!). Make sure to call {@link #release(File)} after you have finished working with it.
 	 */
-	public static File getAny(final GUID key) {
+	public static File getTemp(final GUID key) {
 		File f;
 
 		synchronized (tempInstance) {
@@ -115,9 +118,20 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 		if (f != null && f.exists() && f.isFile() && f.canRead()) {
 			lock(f);
-
 			return f;
 		}
+
+		return null;
+	}
+
+	/**
+	 * Get the persistent downloaded file with this name
+	 *
+	 * @param key
+	 * @return the temporary file, if it exists.
+	 */
+	public static File getPersistent(final GUID key) {
+		File f;
 
 		synchronized (persistentInstance) {
 			f = persistentInstance.get(key);
@@ -126,11 +140,25 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		try {
 			if (f != null && f.exists() && f.isFile() && f.canRead() && f.length() == key.size && IOUtils.getMD5(f).equalsIgnoreCase(key.md5))
 				return f;
-		} catch (@SuppressWarnings("unused") final IOException e) {
-			return null;
+		} catch (@SuppressWarnings("unused")
+		final IOException e) {
+			// ignore
 		}
 
 		return null;
+	}
+
+	/**
+	 * @param key
+	 * @return the cached file
+	 */
+	public static File getAny(final GUID key) {
+		final File f = getTemp(key);
+
+		if (f != null)
+			return f;
+
+		return getPersistent(key);
 	}
 
 	/**
@@ -143,14 +171,16 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 			if (old != null) {
 				if (old.exists() && old.length() == key.size) {
-					logger.log(Level.FINE, "Refusing to overwrite " + key.guid + " -> " + tempInstance.get(key) + " with " + localFile);
+					logger.log(Level.FINE, "Refusing to overwrite " + key.guid + " -> " + old + " with " + localFile);
 					tempInstance.put(GUIDUtils.createGuid(), localFile);
-				} else {
+				}
+				else {
 					release(old);
 					tempInstance.put(key, localFile);
 					lock(localFile);
 				}
-			} else {
+			}
+			else {
 				tempInstance.put(key, localFile);
 				lock(localFile);
 			}
@@ -280,7 +310,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 				try {
 					sleep(sleepTime);
-				} catch (@SuppressWarnings("unused") final InterruptedException e) {
+				} catch (@SuppressWarnings("unused")
+				final InterruptedException e) {
 					return;
 				}
 			}
