@@ -5,6 +5,10 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOError;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -412,6 +416,18 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 								if (!isSilent())
 									out.printOutln("Downloaded file to " + transferAttempt.getCanonicalPath());
 
+								try {
+									if (!transferAttempt.setLastModified(lfn.ctime.getTime())) {
+										// alternative method of setting file times:
+										final BasicFileAttributeView attributes = Files.getFileAttributeView(Paths.get(transferAttempt.getAbsolutePath()), BasicFileAttributeView.class);
+										final FileTime time = FileTime.fromMillis(lfn.ctime.getTime());
+										attributes.setTimes(time, time, time);
+									}
+								} catch (final Throwable t) {
+									// this is not worth reporting to the user
+									logger.log(Level.WARNING, "Exception setting file last modified timestamp", t);
+								}
+
 								break;
 							}
 
@@ -671,6 +687,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		lfn.size = guid.size;
 		lfn.md5 = guid.md5;
 		lfn.jobid = jobId;
+		lfn.ctime = guid.ctime;
 		guid.lfnCache = new LinkedHashSet<>(1);
 		guid.lfnCache.add(lfn);
 
