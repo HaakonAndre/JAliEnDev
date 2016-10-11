@@ -258,9 +258,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						final String archiveFileName = archiveMember.getFileName();
 
 						try (ZipInputStream zi = new ZipInputStream(new FileInputStream(tempLocalFile))) {
-							ZipEntry zipentry = zi.getNextEntry();
+							ZipEntry zipentry;
 
-							while (zipentry != null) {
+							while ((zipentry = zi.getNextEntry()) != null) {
 								if (zipentry.getName().equals(archiveFileName)) {
 									final FileOutputStream fos = new FileOutputStream(file);
 
@@ -773,8 +773,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					} catch (@SuppressWarnings("unused")
-					final InterruptedException e) {
+					} catch (@SuppressWarnings("unused") final InterruptedException e) {
 						return false;
 					}
 				}
@@ -934,13 +933,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					try {
 						targetPFNResult = protocol.put(pfn, sourceFile);
-					} catch (@SuppressWarnings("unused")
-					final IOException ioe) {
+					} catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, will try next protocol or fetch another
 						// replica to replace this one
 					}
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// e.printStackTrace();
 				}
 
