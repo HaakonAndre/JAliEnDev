@@ -84,8 +84,7 @@ public class JSh {
 						boombox.callJBoxGetString("SIGINT");
 				}
 			});
-		} catch (@SuppressWarnings("unused")
-		final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore if not on a SUN VM
 		}
 
@@ -118,8 +117,7 @@ public class JSh {
 									break;
 								a = a * 2;
 							}
-						} catch (@SuppressWarnings("unused")
-						final InterruptedException e) {
+						} catch (@SuppressWarnings("unused") final InterruptedException e) {
 							// ignore
 						}
 
@@ -215,20 +213,17 @@ public class JSh {
 		} finally {
 			try {
 				p.getOutputStream().close();
-			} catch (@SuppressWarnings("unused")
-			final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 			try {
 				p.getInputStream().close();
-			} catch (@SuppressWarnings("unused")
-			final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 			try {
 				p.getErrorStream().close();
-			} catch (@SuppressWarnings("unused")
-			final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 		}
@@ -320,8 +315,7 @@ public class JSh {
 					String buffer = "";
 					try (BufferedReader fi = new BufferedReader(new InputStreamReader(new FileInputStream(f)))) {
 						buffer = fi.readLine();
-					} catch (@SuppressWarnings("unused")
-					final IOException e) {
+					} catch (@SuppressWarnings("unused") final IOException e) {
 						return false;
 					}
 
@@ -337,14 +331,13 @@ public class JSh {
 
 	private static boolean getJBoxPID() {
 
-		final File f = new File(new File(System.getProperty("java.io.tmpdir")), "gclient_token_" + System.getProperty("userid"));
+		final File f = new File(new File(System.getProperty("java.io.tmpdir")), "jclient_token_" + System.getProperty("userid"));
 
 		if (f.exists()) {
 			final byte[] buffer = new byte[(int) f.length()];
 			try (BufferedInputStream fi = new BufferedInputStream(new FileInputStream(f))) {
 				fi.read(buffer);
-			} catch (@SuppressWarnings("unused")
-			final IOException e) {
+			} catch (@SuppressWarnings("unused") final IOException e) {
 				port = 0;
 				return false;
 			}
@@ -360,16 +353,14 @@ public class JSh {
 					if (("Port").equals(kval[0].trim()))
 						try {
 							port = Integer.parseInt(kval[1].trim());
-						} catch (@SuppressWarnings("unused")
-						final NumberFormatException e) {
+						} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 							port = 0;
 						}
 					else
 						if (("PID").equals(kval[0].trim()))
 							try {
 								pid = Integer.parseInt(kval[1].trim());
-							} catch (@SuppressWarnings("unused")
-							final NumberFormatException e) {
+							} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 								pid = 0;
 							}
 						else

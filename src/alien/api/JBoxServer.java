@@ -106,8 +106,7 @@ public class JBoxServer extends Thread {
 
 					try {
 						Thread.sleep(1000 * 60);
-					} catch (@SuppressWarnings("unused")
-					final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
 				}
@@ -161,7 +160,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * write the configuration file that is used by gapi <br />
-	 * the filename = <i>java.io.tmpdir</i>/gclient_token_$uid
+	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
 	 *
 	 * @param sHost
 	 *            hostname to connect to, by default localhost
@@ -195,7 +194,7 @@ public class JBoxServer extends Thread {
 
 			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-			final File tokenFile = new File(tmpDir, "gclient_token_" + iUserId);
+			final File tokenFile = new File(tmpDir, "jclient_token_" + iUserId);
 
 			try (FileWriter fw = new FileWriter(tokenFile)) {
 				fw.write("Host = " + sHost + "\n");
@@ -237,7 +236,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Writes the environment file used by ROOT <br />
-	 * It needs to be named gclient_env_$UID, sitting by default in <code>java.io.tmpdir</code> (eg. <code>/tmp</code>) and to contain:
+	 * It needs to be named jclient_env_$UID, sitting by default in <code>java.io.tmpdir</code> (eg. <code>/tmp</code>) and to contain:
 	 * <ol>
 	 * <li>alien_API_HOST</li>
 	 * <li>alien_API_PORT</li>
@@ -270,7 +269,7 @@ public class JBoxServer extends Thread {
 
 			File tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-			File envFile = new File(tmpDir, "gclient_env_" + iUserId);
+			File envFile = new File(tmpDir, "jclient_env_" + iUserId);
 
 			try (FileWriter fw = new FileWriter(envFile)) {
 				fw.write("export alien_API_HOST=" + sHost + "\n");
@@ -353,8 +352,7 @@ public class JBoxServer extends Thread {
 					synchronized (commander.status) {
 						commander.status.wait(1000);
 					}
-				} catch (@SuppressWarnings("unused")
-				final InterruptedException ie) {
+				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// ignore
 				}
 		}
@@ -457,8 +455,7 @@ public class JBoxServer extends Thread {
 											try {
 												commander.interrupt();
 												commander.stop();
-											} catch (@SuppressWarnings("unused")
-											final Throwable t) {
+											} catch (@SuppressWarnings("unused") final Throwable t) {
 												// ignore
 											} finally {
 												System.out.println("SIGINT reset commander");
@@ -618,8 +615,7 @@ public class JBoxServer extends Thread {
 				if (br != null)
 					try {
 						br.close();
-					} catch (@SuppressWarnings("unused")
-					final IOException ioe) {
+					} catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore
 					}
 
@@ -629,20 +625,17 @@ public class JBoxServer extends Thread {
 
 				try {
 					s.shutdownOutput();
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// nothing particular
 				}
 				try {
 					s.shutdownInput();
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// ignore
 				}
 				try {
 					s.close();
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					// ignore
 				}
 			}
@@ -663,8 +656,7 @@ public class JBoxServer extends Thread {
 
 		try {
 			ssocket.close();
-		} catch (@SuppressWarnings("unused")
-		final IOException e) {
+		} catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore, we're dead anyway
 		}
 		logger.log(Level.INFO, "JBox: We die gracefully...Bye!");
