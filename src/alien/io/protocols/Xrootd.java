@@ -261,11 +261,15 @@ public class Xrootd extends Protocol {
 
 			String envelope = null;
 
+			boolean encryptedEnvelope = true;
+
 			if (pfn.ticket.envelope != null) {
 				envelope = pfn.ticket.envelope.getEncryptedEnvelope();
 
-				if (envelope == null)
+				if (envelope == null) {
 					envelope = pfn.ticket.envelope.getSignedEnvelope();
+					encryptedEnvelope = false;
+				}
 			}
 
 			File fAuthz = null;
@@ -289,7 +293,7 @@ public class Xrootd extends Protocol {
 				command.add(xrootd_default_path + "/bin/xrdfs");
 				command.add(host + ":" + port);
 				command.add("rm");
-				command.add(path + "?authz=" + envelope);
+				command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
 			}
 			else {
 				command.add(xrootd_default_path + "/bin/xrdrm");
@@ -396,13 +400,13 @@ public class Xrootd extends Protocol {
 		else {
 			File existingFile = TempFileManager.getTemp(guid);
 
-			boolean wasTempFile = existingFile != null;
+			final boolean wasTempFile = existingFile != null;
 
 			if (existingFile == null)
 				existingFile = TempFileManager.getPersistent(guid);
 
 			if (existingFile != null) {
-				if (wasTempFile) {
+				if (wasTempFile)
 					try {
 						if (existingFile.renameTo(target)) {
 							TempFileManager.putPersistent(guid, target);
@@ -415,7 +419,6 @@ public class Xrootd extends Protocol {
 					} finally {
 						TempFileManager.release(existingFile);
 					}
-				}
 
 				// if the file existed with a persistent copy, or the temporary file could not be renamed, try to simply copy it to the target
 				try {
@@ -791,13 +794,17 @@ public class Xrootd extends Protocol {
 
 		String envelope = null;
 
+		boolean encryptedEnvelope = true;
+
 		if (pfn.ticket != null && pfn.ticket.envelope != null) {
 			url = new URL(pfn.ticket.envelope.getTransactionURL());
 
 			envelope = pfn.ticket.envelope.getEncryptedEnvelope();
 
-			if (envelope == null)
+			if (envelope == null) {
 				envelope = pfn.ticket.envelope.getSignedEnvelope();
+				encryptedEnvelope = false;
+			}
 		}
 		else
 			url = new URL(pfn.getPFN());
@@ -815,7 +822,7 @@ public class Xrootd extends Protocol {
 			path = path.substring(1);
 
 		if (envelope != null)
-			path += "?authz=" + envelope;
+			path += "?" + (encryptedEnvelope ? "authz=" : "") + envelope;
 
 		command.add(path);
 
@@ -1239,10 +1246,14 @@ public class Xrootd extends Protocol {
 		if (path.startsWith("//"))
 			path = path.substring(1);
 
+		boolean encryptedEnvelope = true;
+
 		String envelope = pfn.ticket.envelope.getEncryptedEnvelope();
 
-		if (envelope == null)
+		if (envelope == null) {
 			envelope = pfn.ticket.envelope.getSignedEnvelope();
+			encryptedEnvelope = false;
+		}
 
 		final SpaceInfo ret = new SpaceInfo();
 
@@ -1258,7 +1269,7 @@ public class Xrootd extends Protocol {
 			command.add("spaceinfo");
 
 			if (attempt == 1)
-				command.add(path + "?authz=" + envelope);
+				command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
 			else
 				command.add(path);
 

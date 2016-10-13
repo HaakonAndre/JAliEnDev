@@ -105,20 +105,24 @@ public class XrootdListing {
 
 			final XrootDEnvelope env = new XrootDEnvelope(AccessType.READ, pfn);
 
+			String envelope = null;
+
 			try {
-				if (se.needsEncryptedEnvelope)
+				if (se.needsEncryptedEnvelope) {
 					XrootDEnvelopeSigner.encryptEnvelope(env);
-				else
+					envelope = "?authz=" + env.getEncryptedEnvelope();
+				}
+				else {
 					// new xrootd implementations accept signed-only envelopes
 					XrootDEnvelopeSigner.signEnvelope(env);
+					envelope = "?" + env.getSignedEnvelope();
+				}
 			} catch (final GeneralSecurityException e) {
 				e.printStackTrace();
 				return;
 			}
 
-			final String envelope = env.getEncryptedEnvelope();
-
-			xrdcommand += "?authz=" + envelope;
+			xrdcommand += envelope;
 		}
 
 		final List<String> command = Arrays.asList(Xrootd.getXrootdDefaultPath() + "/bin/xrdfs", server, "ls", "-l", xrdcommand);
