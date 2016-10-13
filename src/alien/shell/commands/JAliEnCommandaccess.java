@@ -14,6 +14,9 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
+import alien.catalogue.access.XrootDEnvelope;
+import alien.se.SE;
+import alien.se.SEUtils;
 
 /**
  * @author ron
@@ -104,20 +107,22 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 		if (accessRequest == AccessType.WRITE)
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
-		else if (accessRequest == AccessType.READ) {
-			logger.log(Level.INFO, "Acess called for a read operation");
-			pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
-		} else {
-			logger.log(Level.SEVERE, "Unknown access type");
-			out.printErrln("Unknown access type [error in processing].");
-		}
+		else
+			if (accessRequest == AccessType.READ) {
+				logger.log(Level.INFO, "Acess called for a read operation");
+				pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
+			}
+			else {
+				logger.log(Level.SEVERE, "Unknown access type");
+				out.printErrln("Unknown access type [error in processing].");
+			}
 
 		if (pfns == null || pfns.size() < 1) {
 			logger.log(Level.SEVERE, "Error getting the LFN/GUID");
 			out.printErrln("Not able to get request LFN/GUID [error in processing].");
 		}
 
-		if (out.isRootPrinter())
+		if (out.isRootPrinter()) {
 			if (pfns != null && !pfns.isEmpty())
 				for (final PFN pfn : pfns) {
 					out.nextResult();
@@ -145,7 +150,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 							while (tpfn.hasMoreTokens())
 								ttpfn.append('/').append(tpfn.nextToken());
 							out.setField("pfn", ttpfn.toString());
-						} else
+						}
+						else
 							out.setField(key, val);
 					}
 					if (accessRequest.equals(AccessType.WRITE))
@@ -154,6 +160,31 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 						out.setField("nSEs", " " + pfns.size());
 					out.setField("user", commander.user.getName());
 				}
+		}
+		else
+			if (pfns != null && !pfns.isEmpty())
+				for (final PFN pfn : pfns) {
+					out.printOutln(pfn.pfn);
+
+					final SE se = SEUtils.getSE(pfn.seNumber);
+
+					if (se != null)
+						out.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
+
+					if (pfn.ticket != null) {
+						final XrootDEnvelope env = pfn.ticket.envelope;
+
+						if (env.getEncryptedEnvelope() != null)
+							out.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
+
+						if (env.getSignedEnvelope() != null)
+							out.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
+					}
+
+					out.printOutln();
+				}
+			else
+				out.printErrln("No PFNs for this LFN");
 	}
 
 	/**
@@ -201,11 +232,14 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			if (access.startsWith("write")) {
 				logger.log(Level.INFO, "We got write accesss");
 				accessRequest = AccessType.WRITE;
-			} else if (access.equals("read")) {
-				logger.log(Level.INFO, "We got read accesss");
-				accessRequest = AccessType.READ;
-			} else
-				logger.log(Level.INFO, "We got unknown accesss");
+			}
+			else
+				if (access.equals("read")) {
+					logger.log(Level.INFO, "We got read accesss");
+					accessRequest = AccessType.READ;
+				}
+				else
+					logger.log(Level.INFO, "We got unknown accesss");
 
 			if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext())) {
 				lfnName = arg.next();
@@ -228,28 +262,34 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 									ses.add(spec.toUpperCase());
 									referenceCount++;
 								}
-						} else if (spec.contains(":"))
-							try {
-								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-								if (c > 0) {
-									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-									referenceCount = referenceCount + c;
-								} else
-									throw new JAliEnCommandException("The number replicas has to be stricly positive");
+						}
+						else
+							if (spec.contains(":"))
+								try {
+									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+									if (c > 0) {
+										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
+										referenceCount = referenceCount + c;
+									}
+									else
+										throw new JAliEnCommandException("The number replicas has to be stricly positive");
 
-							} catch (final Exception e) {
-								throw new JAliEnCommandException("Exception parsing the QoS string", e);
-							}
-						else if (!spec.equals(""))
-							throw new JAliEnCommandException();
+								} catch (final Exception e) {
+									throw new JAliEnCommandException("Exception parsing the QoS string", e);
+								}
+							else
+								if (!spec.equals(""))
+									throw new JAliEnCommandException();
 					}
 
 				}
 
-			} else
+			}
+			else
 				out.printErrln("Illegal Request type specified [error in request].");
 
-		} else
+		}
+		else
 			out.printErrln("No Request type specified [error in request].");
 
 	}
