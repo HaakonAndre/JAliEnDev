@@ -1,8 +1,5 @@
 package alien.api.catalogue;
 
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SignatureException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +14,6 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
-import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
@@ -129,25 +125,12 @@ public class PFNforReadOrDel extends Request {
 			if (pfns != null) {
 				pfns = SEUtils.sortBySiteSpecifySEs(pfns, site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses), false);
 
-				for (final PFN pfn : pfns)
-					if (pfn.ticket.envelope == null)
-						logger.log(Level.WARNING, "Sorry ... Envelope is null!");
-					else {
-						if (setArchiveAnchor)
+				if (setArchiveAnchor)
+					for (final PFN pfn : pfns)
+						if (pfn.ticket.envelope == null)
+							logger.log(Level.WARNING, "Can't set archive anchor on " + pfn.pfn + " to " + lfn.getCanonicalName() + " since the envelope is null");
+						else
 							pfn.ticket.envelope.setArchiveAnchor(lfn);
-						try {
-							// we need to both encrypt and sign, the later is
-							// not
-							// automatic
-							XrootDEnvelopeSigner.signEnvelope(pfn.ticket.envelope);
-						} catch (final SignatureException e) {
-							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (SignatureException)", e);
-						} catch (final InvalidKeyException e) {
-							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (InvalidKeyException)", e);
-						} catch (final NoSuchAlgorithmException e) {
-							logger.log(Level.WARNING, "Sorry ... Could not sign the envelope (NoSuchAlgorithmException)", e);
-						}
-					}
 			}
 			else
 				logger.log(Level.WARNING, "Sorry ... No PFN to make an envelope for!");
