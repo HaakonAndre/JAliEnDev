@@ -16,7 +16,6 @@ java \
 	-Xms1G -Xmx1G \
 	-XX:+UseG1GC \
 	-XX:+DisableExplicitGC \
-	-XX:+UseCompressedOops \
 	-XX:+AggressiveOpts \
 	-XX:+OptimizeStringConcat \
 	-XX:MaxTrivialSize=1K \
