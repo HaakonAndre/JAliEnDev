@@ -176,8 +176,10 @@ public class Xrootd extends Protocol {
 	 * @param path
 	 */
 	public static void checkLibraryPath(final ProcessBuilder p, final String path) {
-		if (path != null)
+		if (path != null) {
 			p.environment().put("LD_LIBRARY_PATH", path + "/lib");
+			p.environment().put("DYLD_LIBRARY_PATH", path + "/lib");
+		}
 	}
 
 	/**
@@ -720,8 +722,7 @@ public class Xrootd extends Protocol {
 			while ((line = br.readLine()) != null)
 				if (!line.startsWith("Overriding '"))
 					sb.append(line).append('\n');
-		} catch (@SuppressWarnings("unused")
-		final IOException ioe) {
+		} catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, cannot happen
 		}
 
