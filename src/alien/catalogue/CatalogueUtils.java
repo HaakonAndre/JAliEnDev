@@ -134,7 +134,7 @@ public final class CatalogueUtils {
 								db.setReadOnly(true);
 								db.setQueryTimeout(60);
 
-								if (db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
+								if (db.query("SELECT SQL_NO_CACHE * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
 									final LinkedList<GUIDIndex> ret = new LinkedList<>();
 
 									while (db.moveNext())
@@ -232,7 +232,7 @@ public final class CatalogueUtils {
 								db.setReadOnly(true);
 								db.setQueryTimeout(60);
 
-								if (db.query("SELECT * FROM INDEXTABLE;")) {
+								if (db.query("SELECT SQL_NO_CACHE * FROM INDEXTABLE;")) {
 									final Set<IndexTableEntry> newIndextable = new HashSet<>();
 									final Set<String> newTableentries = new HashSet<>();
 

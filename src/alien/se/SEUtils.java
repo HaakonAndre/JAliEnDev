@@ -80,7 +80,7 @@ public final class SEUtils {
 							db.setReadOnly(true);
 							db.setQueryTimeout(30);
 
-							if (db.query("SELECT * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
+							if (db.query("SELECT SQL_NO_CACHE * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
 								final Map<Integer, SE> ses = new HashMap<>();
 
 								while (db.moveNext()) {
@@ -227,9 +227,9 @@ public final class SEUtils {
 				db.setReadOnly(true);
 
 				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
-					SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
 				else
-					SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
 			}
 
 			updateSECache();
