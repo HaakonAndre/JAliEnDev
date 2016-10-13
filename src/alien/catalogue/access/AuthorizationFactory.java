@@ -193,30 +193,36 @@ public final class AuthorizationFactory {
 
 			if (pfns != null && pfns.contains(pfn))
 				return "PFN already associated to the GUID";
-		} else if (access == AccessType.DELETE || access == AccessType.READ) {
-			// PFN must be a part of the ones registered to the GUID
+		}
+		else
+			if (access == AccessType.DELETE || access == AccessType.READ) {
+				// PFN must be a part of the ones registered to the GUID
 
-			if (access == AccessType.DELETE) {
-				if (!AuthorizationChecker.canWrite(guid, user))
-					return "User is not allowed to delete this entry";
-			} else if (!AuthorizationChecker.canRead(guid, user))
-				return "User is not allowed to read this entry";
+				if (access == AccessType.DELETE) {
+					if (!AuthorizationChecker.canWrite(guid, user))
+						return "User is not allowed to delete this entry";
+				}
+				else
+					if (!AuthorizationChecker.canRead(guid, user))
+						return "User is not allowed to read this entry";
 
-			if (!skipSanityChecks && (pfns == null || !pfns.contains(pfn)))
-				return "PFN is not registered";
-		} else
-			return "Unknown access type : " + access;
+				if (!skipSanityChecks && (pfns == null || !pfns.contains(pfn)))
+					return "PFN is not registered";
+			}
+			else
+				return "Unknown access type : " + access;
 
 		final SE referenceSE = pfn.getSE();
 
 		final XrootDEnvelope env = new XrootDEnvelope(access, pfn);
 
 		try {
-			XrootDEnvelopeSigner.signEnvelope(env);
 			if (pfn.getPFN().startsWith("root://"))
-				if (referenceSE != null && referenceSE.needsEncryptedEnvelope)
+				if (referenceSE == null || referenceSE.needsEncryptedEnvelope)
 					// System.out.println("SE needs encrypted envelope");
 					XrootDEnvelopeSigner.encryptEnvelope(env);
+				else
+					XrootDEnvelopeSigner.signEnvelope(env);
 		} catch (final GeneralSecurityException gse) {
 			logger.log(Level.SEVERE, "Cannot sign and encrypt envelope", gse);
 		}
