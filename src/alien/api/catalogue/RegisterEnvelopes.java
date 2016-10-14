@@ -19,7 +19,7 @@ import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 05, 2011
  */
@@ -31,7 +31,7 @@ public class RegisterEnvelopes extends Request {
 	static transient final Logger logger = ConfigUtils.getLogger(RegisterEnvelopes.class.getCanonicalName());
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 8844570313869928918L;
 	private List<String> signedEnvelopes = null;
@@ -56,7 +56,7 @@ public class RegisterEnvelopes extends Request {
 
 	/**
 	 * Register PFNs with envelopes
-	 * 
+	 *
 	 * @param user
 	 * @param role
 	 * @param signedEnvelopes
@@ -69,22 +69,15 @@ public class RegisterEnvelopes extends Request {
 
 	/**
 	 * Register PFNs with envelopes
-	 * 
+	 *
 	 * @param user
 	 * @param role
-	 * 
+	 *
 	 * @param encryptedEnvelope
 	 * @param size
-	 * @param lfn
-	 * @param perm
-	 * @param expire
-	 * @param pfn
-	 * @param se
-	 * @param GUID
 	 * @param md5
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String role, final String encryptedEnvelope, final int size, final String md5, final String lfn, final String perm, final String expire,
-			final String pfn, final String se, final String GUID) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final String role, final String encryptedEnvelope, final int size, final String md5) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.encryptedEnvelope = encryptedEnvelope;
@@ -112,23 +105,28 @@ public class RegisterEnvelopes extends Request {
 								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
 							pfns.add(xenv.pfn);
-						} else
+						}
+						else
 							logger.log(Level.WARNING, "Could not commit self-signed " + xenv.pfn.pfn + " to the Catalogue");
-					} else if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
-						final XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
+					}
+					else
+						if (XrootDEnvelopeSigner.verifyEnvelope(env, false)) {
+							final XrootDEnvelopeReply xenv = new XrootDEnvelopeReply(env);
 
-						if (logger.isLoggable(Level.FINER))
-							logger.log(Level.FINER, "SE Signature VERIFIED! : " + xenv.pfn.pfn);
+							if (logger.isLoggable(Level.FINER))
+								logger.log(Level.FINER, "SE Signature VERIFIED! : " + xenv.pfn.pfn);
 
-						if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
-							if (logger.isLoggable(Level.FINE))
-								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
+							if (BookingTable.commit(getEffectiveRequester(), BookingTable.getBookedPFN(xenv.pfn.pfn)) != null) {
+								if (logger.isLoggable(Level.FINE))
+									logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
 
-							pfns.add(xenv.pfn);
-						} else
-							logger.log(Level.WARNING, "Could not commit " + xenv.pfn.pfn + " to the Catalogue");
-					} else
-						logger.log(Level.WARNING, "COULD NOT VERIFY ANY SIGNATURE!");
+								pfns.add(xenv.pfn);
+							}
+							else
+								logger.log(Level.WARNING, "Could not commit " + xenv.pfn.pfn + " to the Catalogue");
+						}
+						else
+							logger.log(Level.WARNING, "COULD NOT VERIFY ANY SIGNATURE!");
 
 				} catch (final SignatureException e) {
 					logger.log(Level.WARNING, "Wrong signature", e);
@@ -139,49 +137,54 @@ public class RegisterEnvelopes extends Request {
 				} catch (final IOException e) {
 					logger.log(Level.WARNING, "IO Exception", e);
 				}
-		} else if (encryptedEnvelope != null) {
-			pfns = new ArrayList<>(1);
-			XrootDEnvelope xenv = null;
-			try {
-				xenv = XrootDEnvelopeSigner.decryptEnvelope(encryptedEnvelope);
-			} catch (final Exception e) {
-				logger.log(Level.WARNING, "Error decrypting envelope", e);
-				return;
-			}
-
-			if (xenv != null) {
-				PFN bookedpfn = null;
-
+		}
+		else
+			if (encryptedEnvelope != null) {
+				pfns = new ArrayList<>(1);
+				XrootDEnvelope xenv = null;
 				try {
-					bookedpfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
+					xenv = XrootDEnvelopeSigner.decryptEnvelope(encryptedEnvelope);
 				} catch (final Exception e) {
-					logger.log(Level.WARNING, "Error getting the PFN: ", e);
+					logger.log(Level.WARNING, "Error decrypting envelope", e);
 					return;
 				}
 
-				if (bookedpfn != null) {
-					if (size != 0)
-						bookedpfn.getGuid().size = size;
-
-					if (md5 != null && md5.length() > 0 && !md5.equals("0"))
-						bookedpfn.getGuid().md5 = md5;
+				if (xenv != null) {
+					PFN bookedpfn = null;
 
 					try {
-						if (BookingTable.commit(getEffectiveRequester(), bookedpfn) != null) {
-							if (logger.isLoggable(Level.FINE))
-								logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
-
-							pfns.add(bookedpfn);
-						} else
-							logger.log(Level.WARNING, "Unable to register " + xenv.pfn.pfn + " in the Catalogue");
+						bookedpfn = BookingTable.getBookedPFN(xenv.pfn.pfn);
 					} catch (final Exception e) {
-						logger.log(Level.WARNING, "Error registering pfn", e);
+						logger.log(Level.WARNING, "Error getting the PFN: ", e);
+						return;
 					}
-				} else
-					logger.log(Level.WARNING, "Could not find this booked pfn: " + xenv.pfn.pfn);
-			} else
-				logger.log(Level.WARNING, "Null decrypted envelope");
-		}
+
+					if (bookedpfn != null) {
+						if (size != 0)
+							bookedpfn.getGuid().size = size;
+
+						if (md5 != null && md5.length() > 0 && !md5.equals("0"))
+							bookedpfn.getGuid().md5 = md5;
+
+						try {
+							if (BookingTable.commit(getEffectiveRequester(), bookedpfn) != null) {
+								if (logger.isLoggable(Level.FINE))
+									logger.log(Level.FINE, "Successfully moved " + xenv.pfn.pfn + " to the Catalogue");
+
+								pfns.add(bookedpfn);
+							}
+							else
+								logger.log(Level.WARNING, "Unable to register " + xenv.pfn.pfn + " in the Catalogue");
+						} catch (final Exception e) {
+							logger.log(Level.WARNING, "Error registering pfn", e);
+						}
+					}
+					else
+						logger.log(Level.WARNING, "Could not find this booked pfn: " + xenv.pfn.pfn);
+				}
+				else
+					logger.log(Level.WARNING, "Null decrypted envelope");
+			}
 	}
 
 	/**
