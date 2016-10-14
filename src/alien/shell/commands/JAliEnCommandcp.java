@@ -967,11 +967,30 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				// out.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath() + " to " + pfn.getPFN()+"\n"+targetLFNResult);
 				// }
 
-				if (pfn.ticket != null && pfn.ticket.envelope != null && pfn.ticket.envelope.getSignedEnvelope() != null)
-					if (pfn.ticket.envelope.getEncryptedEnvelope() == null)
-						returnEnvelope = targetPFNResult;
-					else
-						returnEnvelope = pfn.ticket.envelope.getSignedEnvelope();
+				if (pfn.ticket != null && pfn.ticket.envelope != null)
+					if (pfn.ticket.envelope.getSignedEnvelope() != null)
+						if (pfn.ticket.envelope.getEncryptedEnvelope() == null) {
+							// signed envelopes were passed to the storage, it should have replied in kind
+							returnEnvelope = targetPFNResult;
+						}
+						else {
+							// give back to the central services the signed envelopes
+							returnEnvelope = pfn.ticket.envelope.getSignedEnvelope();
+						}
+					else {
+						// no signed envelopes, return the encrypted one, if any
+						if (pfn.ticket.envelope.getEncryptedEnvelope() != null) {
+							returnEnvelope = pfn.ticket.envelope.getEncryptedEnvelope();
+						}
+						else {
+							// what kind of ticket was this?
+							returnEnvelope = targetPFNResult;
+						}
+					}
+				else {
+					// if no ticket at all...
+					returnEnvelope = targetPFNResult;
+				}
 			}
 			else {
 				failOver = true;
