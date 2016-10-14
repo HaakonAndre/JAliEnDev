@@ -100,7 +100,7 @@ public class XrootDEnvelope implements Serializable {
 	 * @param envelope
 	 */
 	public XrootDEnvelope(final String envelope) {
-		this(envelope, false);
+		this(envelope, envelope.contains("BEGIN ENVELOPE"));
 	}
 
 	/**
@@ -110,7 +110,6 @@ public class XrootDEnvelope implements Serializable {
 	 * @param oldEnvelope
 	 */
 	public XrootDEnvelope(final String xrootdenvelope, final boolean oldEnvelope) {
-
 		String envelope = xrootdenvelope;
 
 		if (oldEnvelope) {
