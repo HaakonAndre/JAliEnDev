@@ -3,6 +3,7 @@ package alien.api.catalogue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -243,7 +244,33 @@ public class CatalogueApiUtils {
 	 */
 	public List<PFN> registerEnvelopes(final List<String> envelopes) {
 		try {
-			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelopes)).getPFNs();
+			final List<String> encryptedEnvelopes = new LinkedList<>();
+			final List<String> signedEnvelopes = new LinkedList<>();
+
+			for (final String envelope : envelopes) {
+				if (envelope.contains("&signature="))
+					signedEnvelopes.add(envelope);
+				else
+					encryptedEnvelopes.add(envelope);
+			}
+
+			final List<PFN> ret = new LinkedList<>();
+
+			if (signedEnvelopes.size() > 0) {
+				final List<PFN> signedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelopes)).getPFNs();
+
+				if (signedPFNs != null && signedPFNs.size() > 0)
+					ret.addAll(signedPFNs);
+			}
+
+			for (final String envelope : encryptedEnvelopes) {
+				final List<PFN> encryptedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelope, 0, null)).getPFNs();
+
+				if (encryptedPFNs != null && encryptedPFNs.size() > 0)
+					ret.addAll(encryptedPFNs);
+			}
+
+			return ret;
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get PFNs for: " + envelopes.toString());
 			e.getCause().printStackTrace();
@@ -258,18 +285,11 @@ public class CatalogueApiUtils {
 	 * @param encryptedEnvelope
 	 * @param size
 	 * @param md5
-	 * @param lfn
-	 * @param perm
-	 * @param expire
-	 * @param pfn
-	 * @param se
-	 * @param guid
 	 * @return PFNs that were successfully registered
 	 */
-	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5, final String lfn, final String perm, final String expire, final String pfn,
-			final String se, final String guid) {
+	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5) {
 		try {
-			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), encryptedEnvelope, size, md5, lfn, perm, expire, pfn, se, guid)).getPFNs();
+			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), encryptedEnvelope, size, md5)).getPFNs();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get PFNs for: " + encryptedEnvelope);
 			e.getCause().printStackTrace();
