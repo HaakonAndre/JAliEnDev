@@ -1282,7 +1282,9 @@ public class TaskQueueUtils {
 			if (arguments == null || arguments.length < i)
 				throw new IOException("The JDL indicates argument $" + i + " but you haven't provided it");
 
-			jdlToSubmit = jdlToSubmit.replaceAll("\\$" + i + "(?!\\d)", arguments[i - 1]);
+			final String processedArgs = Format.replace(arguments[i - 1], "$", "\\$");
+
+			jdlToSubmit = jdlToSubmit.replaceAll("\\$" + i + "(?!\\d)", processedArgs);
 
 			m = p.matcher(jdlToSubmit);
 		}
@@ -2258,7 +2260,7 @@ public class TaskQueueUtils {
 			JobToken jb = getJobToken(jobId);
 
 			if (jb != null)
-				logger.log(Level.WARNING, "JobToken already exists for job "+jobId);
+				logger.log(Level.WARNING, "JobToken already exists for job " + jobId);
 
 			if (jb != null && !forceUpdate)
 				return null;
