@@ -20,24 +20,6 @@ import alien.catalogue.PFN;
 import alien.io.IOUtils;
 import alien.shell.commands.JAliEnCOMMander;
 
-class FileDownloadApplication{
-	List<LFN> fileList;
-	List<Pair<LFN, String>> dlResult;
-	
-	FileDownloadApplication(List<LFN> inputFiles){
-		fileList = inputFiles;
-		dlResult = new LinkedList();
-	}
-
-	void putResult(LFN l, String s){
-		dlResult.add(new Pair<LFN, String>(l,s));
-	}
-
-	boolean isCompleted(){
-		return fileList.size()== dlResult.size();
-	}
-}
-
 public class FileDownloadController extends Thread{
 	private HashMap<LFN, LinkedList<FileDownloadApplication>> lfnRequested;
 	//private Set<LFN> lfnQueueInProcess;
@@ -92,11 +74,14 @@ public class FileDownloadController extends Thread{
 		}
 
 		private String runDownload(LFN l){
+			if(fileIsInCache(l)){
+				System.out.println("File is present in cache: " + getCachedFilename(l));
+				return getCachedFilename(l);
+			}
+			System.out.println("File is not present in cache: " + getCachedFilename(l));
 			final List<PFN> pfns = c_api.getPFNsToRead( l, null, null);
 
 			if (pfns == null || pfns.size() == 0) {
-				//System.out.println("No replicas of " + entry.getKey().getCanonicalName() + 
-				//						" to read from");
 				System.out.println("No replicas of " + l.getCanonicalName() + 
 										" to read from");
 				return null;
@@ -107,6 +92,8 @@ public class FileDownloadController extends Thread{
 			//							entry.getKey().getCanonicalName());
 			//final File f = IOUtils.get(g, entry.getValue());
 			String dstFilename =  getCachedFilename(l);
+			System.out.println("Downloading to " + dstFilename);
+ 			createCacheFolders(dstFilename);
 			final File f = IOUtils.get(g, new File(dstFilename));
 
 			if (f == null) {
@@ -116,7 +103,8 @@ public class FileDownloadController extends Thread{
 								" to " + dstFilename); 
 				return null;
 			}
-			return f.getName();
+			//return f.getName();
+			return dstFilename;
 		}
 	}
 
@@ -148,6 +136,7 @@ public class FileDownloadController extends Thread{
 			dlPool.add(fdt);
 			fdt.start();
 		}
+		this.start();
 		
 	}
 
@@ -191,9 +180,14 @@ public class FileDownloadController extends Thread{
 
 	synchronized private void notifyCompleted(LFN l, String filename){
 		for(FileDownloadApplication fda: lfnRequested.get(l)){
+			System.out.println("Putting " + filename + " to FDA: " + fda);
 			fda.putResult(l, filename);
+			fda.print();
 			if(filename==null){
 				for(LFN lr: fda.fileList){
+					System.out.println("Notify completed explanation: ");
+					System.out.println(lr);
+					System.out.println(lfnRequested.get(lr));
 					lfnRequested.get(lr).remove(fda);
 				}
 			}
@@ -215,7 +209,7 @@ public class FileDownloadController extends Thread{
 	}
 
 	public String getCachedFilename(LFN l){
-		return cacheFolder + l.getCanonicalName();
+		return cacheFolder + "/" + l.getCanonicalName();
 	}
 
 
@@ -227,5 +221,10 @@ public class FileDownloadController extends Thread{
 	private boolean checkSize(LFN l) throws IOException {
 		File f = new File(getCachedFilename(l));
 		return l.size==f.length();
+	}
+
+	private void createCacheFolders(String f){
+		File file = new File(f);
+		file.getParentFile().mkdirs();
 	}
 }
