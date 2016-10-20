@@ -789,7 +789,7 @@ public class TaskQueueUtils {
 			}
 
 			// send status change to ML
-			final ApMon apmon;
+			ApMon apmon = null;
 
 			try {
 				final Vector<String> targets = new Vector<>();
@@ -808,6 +808,9 @@ public class TaskQueueUtils {
 				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), parameters.size(), parameters, values);
 			} catch (final Exception e) {
 				logger.log(Level.WARNING, "Could not initialize apmon (" + execHost + ")", e);
+			} finally {
+				if (apmon != null)
+					apmon.stopIt();
 			}
 
 			return updated;

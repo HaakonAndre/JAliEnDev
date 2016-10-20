@@ -839,6 +839,8 @@ public class TransferBroker {
 				apmon.sendParameters(cluster, String.valueOf(t.getTransferId()), p.size(), p, v);
 			} catch (final Exception e) {
 				logger.log(Level.WARNING, "Could not send apmon message: " + p + " -> " + v, e);
+			} finally {
+				apmon.stopIt();
 			}
 		} catch (final Throwable ex) {
 			logger.log(Level.WARNING, "Exception reporting the monitoring", ex);
