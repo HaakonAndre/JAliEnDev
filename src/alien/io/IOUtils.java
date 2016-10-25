@@ -115,6 +115,10 @@ public class IOUtils {
 				}
 			});
 
+	static {
+		PARALLEL_DW_THREAD_POOL.allowCoreThreadTimeOut(true);
+	}
+
 	/**
 	 * Download the file in a specified location. The GUID should be filled with authorization tokens before calling this method.
 	 *
@@ -396,7 +400,8 @@ public class IOUtils {
 						logger.log(Level.FINEST, "Keeping this as the main instance:" + tempFile);
 
 					f = tempFile;
-				} else
+				}
+				else
 					TempFileManager.release(tempFile);
 		}
 
