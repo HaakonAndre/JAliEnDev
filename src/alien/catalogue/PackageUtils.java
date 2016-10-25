@@ -117,6 +117,8 @@ public class PackageUtils {
 			try {
 				final ProcessBuilder pBuilder = new ProcessBuilder("/cvmfs/alice.cern.ch/bin/alienv", "q");
 
+				pBuilder.environment().put("LD_LIBRARY_PATH", "");
+				pBuilder.environment().put("DYLD_LIBRARY_PATH", "");
 				pBuilder.redirectErrorStream(false);
 
 				final Process p = pBuilder.start();
