@@ -21,7 +21,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +44,7 @@ import alien.se.SE;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import utils.CachedThreadPool;
 
 /**
  * @author ron
@@ -544,7 +544,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		}
 		else {
 			final LinkedBlockingQueue<Runnable> jobsQueue = new LinkedBlockingQueue<>();
-			final ThreadPoolExecutor downloader = new ThreadPoolExecutor(concurrentOperations, concurrentOperations, 1, TimeUnit.SECONDS, jobsQueue);
+			final ThreadPoolExecutor downloader = new ThreadPoolExecutor(concurrentOperations, concurrentOperations, 1, TimeUnit.SECONDS, jobsQueue, (r) -> new Thread("cpGridToLocal"));
 			downloader.allowCoreThreadTimeOut(true);
 
 			final List<Future<GridToLocal>> futures = new LinkedList<>();
@@ -572,8 +572,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		return oneFileToReturn;
 	}
 
-	private static final ExecutorService UPLOAD_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+	private static final ExecutorService UPLOAD_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE,
+			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new ThreadFactory() {
 				@Override
 				public Thread newThread(Runnable r) {
 					final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");

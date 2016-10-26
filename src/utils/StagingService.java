@@ -3,8 +3,6 @@ package utils;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -25,20 +23,13 @@ import lazyj.Format;
  * @since 2016-06-21
  */
 public class StagingService {
-	private static final LinkedBlockingQueue<Runnable> executorQueue = new LinkedBlockingQueue<>();
-	private static final LinkedBlockingQueue<Runnable> bgexecutorQueue = new LinkedBlockingQueue<>();
-
 	private static final int executorThreads = ConfigUtils.getConfig().geti("utils.StagingService.executorThreads", 16);
 	private static final int bgexecutorThreads = ConfigUtils.getConfig().geti("utils.StagingService.bgexecutorThreads", 16);
 
-	private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(executorThreads, executorThreads, 5, TimeUnit.SECONDS, executorQueue);
-	static final ThreadPoolExecutor bgexecutor = new ThreadPoolExecutor(bgexecutorThreads, bgexecutorThreads, 5, TimeUnit.SECONDS, bgexecutorQueue);
+	private static final CachedThreadPool executor = new CachedThreadPool(executorThreads, 5, TimeUnit.SECONDS);
+	static final CachedThreadPool bgexecutor = new CachedThreadPool(bgexecutorThreads, 5, TimeUnit.SECONDS);
 
 	static final AtomicLong PREPARED_COMMANDS = new AtomicLong();
-
-	static {
-		executor.allowCoreThreadTimeOut(true);
-	}
 
 	static DBFunctions getDB() {
 		return ConfigUtils.getDB("alice_users");
@@ -134,9 +125,9 @@ public class StagingService {
 
 				if (!db.moveNext()) {
 					if (!lastNoWork)
-						System.err.println("No work for me, hybernating for a while more (" + bgexecutorQueue.size() + " pfns are queued for background staging)");
+						System.err.println("No work for me, hybernating for a while more (" + bgexecutor.getQueue().size() + " pfns are queued for background staging)");
 
-					lastNoWork = bgexecutorQueue.size() == 0;
+					lastNoWork = bgexecutor.getQueue().size() == 0;
 					Thread.sleep(1000 * 30);
 					continue;
 				}
@@ -147,11 +138,11 @@ public class StagingService {
 					executor.submit(new StageLFN(db));
 				while (db.moveNext());
 
-				while (executorQueue.size() > 0) {
+				while (executor.getQueue().size() > 0) {
 					final long lastValue = PREPARED_COMMANDS.get();
 					final long lastTimestamp = System.currentTimeMillis();
 
-					System.err.println("Queue is " + executorQueue.size() + " long, waiting for the current work queue to finish (bg executor queue: " + bgexecutorQueue.size() + ")");
+					System.err.println("Queue is " + executor.getQueue().size() + " long, waiting for the current work queue to finish (bg executor queue: " + bgexecutor.getQueue().size() + ")");
 					Thread.sleep(1000 * 30);
 					System.err.println("  command rate in this batch: " + Format.point((PREPARED_COMMANDS.get() - lastValue) * 1000. / (System.currentTimeMillis() - lastTimestamp)) + " Hz");
 				}

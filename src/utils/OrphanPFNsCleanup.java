@@ -10,9 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -59,7 +57,7 @@ public class OrphanPFNsCleanup {
 	/**
 	 * Thread pool per SE
 	 */
-	static final Map<Integer, ThreadPoolExecutor> EXECUTORS = new ConcurrentHashMap<>();
+	static final Map<Integer, CachedThreadPool> EXECUTORS = new ConcurrentHashMap<>();
 
 	/**
 	 * One thread per SE
@@ -144,8 +142,8 @@ public class OrphanPFNsCleanup {
 						while (db.moveNext()) {
 							ses.add(Integer.valueOf(db.geti(1)));
 						}
-						
-						for (final Integer seNumber: ses){
+
+						for (final Integer seNumber : ses) {
 							try (DBFunctions db2 = h.getDB()) {
 								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;", true);
 
@@ -156,7 +154,7 @@ public class OrphanPFNsCleanup {
 								try {
 									long lStart = System.currentTimeMillis();
 
-									final String sWhere = "WHERE se" + (seNumber > 0 ? "=" + seNumber : " is null");
+									final String sWhere = "WHERE se" + (seNumber.intValue() > 0 ? "=" + seNumber : " is null");
 									executeQuery(dbc, "INSERT IGNORE INTO orphan_pfns_" + seNumber + " SELECT * FROM orphan_pfns " + sWhere);
 
 									logger.log(Level.INFO, "Inserted into " + h.db + ".orphan_pfns_" + seNumber + " " + updateCount + " from " + h.db + ".orphan_pfns, took "
@@ -249,7 +247,7 @@ public class OrphanPFNsCleanup {
 		public void run() {
 			setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - just started");
 
-			ThreadPoolExecutor executor = EXECUTORS.get(Integer.valueOf(seNumber));
+			CachedThreadPool executor = EXECUTORS.get(Integer.valueOf(seNumber));
 
 			int tasks = 0;
 
@@ -282,16 +280,12 @@ public class OrphanPFNsCleanup {
 
 							if (executor == null) {
 								// lazy init of the thread pool
-								executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(getPoolSize(seNumber), r -> {
+								executor = new CachedThreadPool(getPoolSize(seNumber), 1, TimeUnit.MINUTES, r -> {
 									final Thread t = new Thread(r);
 									t.setName("Cleanup of " + (se != null ? se.getName() : "GUIDs") + " - " + seNumber);
 
 									return t;
 								});
-
-								// 5 minutes (in)activity timeout
-								executor.setKeepAliveTime(5, TimeUnit.MINUTES);
-								executor.allowCoreThreadTimeOut(true);
 
 								EXECUTORS.put(Integer.valueOf(seNumber), executor);
 							}
