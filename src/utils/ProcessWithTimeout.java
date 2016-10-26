@@ -72,12 +72,12 @@ public class ProcessWithTimeout {
 				}
 			} catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore
-			}
-
-			try {
-				is.close();
-			} catch (@SuppressWarnings("unused") final IOException ioe) {
-				// ignore
+			} finally {
+				try {
+					is.close();
+				} catch (@SuppressWarnings("unused") final IOException ioe) {
+					// ignore
+				}
 			}
 		}
 	}
@@ -109,11 +109,24 @@ public class ProcessWithTimeout {
 		if (title.length() > 100)
 			title = title.substring(0, 100);
 
+		try {
+			p.getOutputStream().close();
+		} catch (@SuppressWarnings("unused") final IOException e) {
+			// ignore
+		}
+
 		stdoutThread = new CopyThread(p.getInputStream(), sbOut, "stdout" + title);
 		stdoutThread.start();
 
-		if (pBuilder.redirectErrorStream())
+		if (pBuilder.redirectErrorStream()) {
 			stderrThread = null;
+
+			try {
+				p.getErrorStream().close();
+			} catch (@SuppressWarnings("unused") final IOException ioe) {
+				// ignore
+			}
+		}
 		else {
 			stderrThread = new CopyThread(p.getErrorStream(), sbErr, "stderr" + title);
 			stderrThread.start();
