@@ -197,25 +197,25 @@ public class JBoxServer extends Thread {
 			final File tokenFile = new File(tmpDir, "jclient_token_" + iUserId);
 
 			try (FileWriter fw = new FileWriter(tokenFile)) {
-				fw.write("Host = " + sHost + "\n");
+				fw.write("Host=" + sHost + "\n");
 				logger.fine("Host = " + sHost);
 
-				fw.write("Port = " + iPort + "\n");
+				fw.write("Port=" + iPort + "\n");
 				logger.fine("Port = " + iPort);
 
-				fw.write("User = " + sUser + "\n");
+				fw.write("User=" + sUser + "\n");
 				logger.fine("User = " + sUser);
 
-				fw.write("Home = " + sHomeUser + "\n");
+				fw.write("Home=" + sHomeUser + "\n");
 				logger.fine("Home = " + sHomeUser);
 
-				fw.write("Passwd = " + sPassword + "\n");
+				fw.write("Passwd=" + sPassword + "\n");
 				logger.fine("Passwd = " + sPassword);
 
-				fw.write("Debug = " + iDebug + "\n");
+				fw.write("Debug=" + iDebug + "\n");
 				logger.fine("Debug = " + iDebug);
 
-				fw.write("PID = " + MonitorFactory.getSelfProcessID() + "\n");
+				fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
 				logger.fine("PID = " + MonitorFactory.getSelfProcessID());
 
 				fw.flush();
