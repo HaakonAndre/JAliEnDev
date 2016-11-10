@@ -323,7 +323,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 					}
 
 					guidId = db.geti(1);
-				} else
+				}
+				else
 					guidId = db.getLastGeneratedKey().intValue();
 
 				exists = true;
@@ -356,7 +357,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		while (st.hasMoreTokens())
 			try {
 				ret.add(Integer.valueOf(st.nextToken()));
-			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused")
+			final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -439,7 +441,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 			if (tainted)
 				update();
-		} else
+		}
+		else
 			pfnCache = JAliEnCOMMander.getInstance().c_api.getPFNs(guid.toString());
 
 		return pfnCache;
@@ -472,6 +475,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 				update();
 				return false;
 			}
+
+			SEUtils.incrementStorageCounters(pfn.seNumber, 1, size);
 
 			if (pfnCache != null) {
 				pfn.setGUID(this);
@@ -622,7 +627,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 						synchronized (queue) {
 							try {
 								queue.wait(1000);
-							} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+							} catch (@SuppressWarnings("unused")
+							final InterruptedException ie) {
 								// ignore
 							}
 						}
@@ -685,7 +691,11 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 					if (logger.isLoggable(Level.FINE))
 						logger.log(Level.FINE, "Purged " + purged + " entries from G" + tableName + "L for " + guid);
-				} else
+
+					for (final Integer seNo : seStringList)
+						SEUtils.incrementStorageCounters(seNo.intValue(), -1, -size);
+				}
+				else
 					logger.log(Level.WARNING, "Failed query: " + purgeQuery);
 			}
 
@@ -762,14 +772,19 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 						if (g != null && g.guid != null) {
 							final SE se = SEUtils.getSE(pfn.seNumber);
 
-							if (se != null && !(se.getName().equalsIgnoreCase("no_se")))
+							if (se != null && !(se.getName().equalsIgnoreCase("no_se"))) {
 								db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size) VALUES (1,string2binary(?), ?, ?, ?);", false, g.guid.toString(), Integer.valueOf(pfn.seNumber),
 										g.md5, Long.valueOf(g.size));
+
+								SEUtils.incrementStorageCounters(se.seNumber, -1, -g.size);
+							}
 						}
 					}
-				} else
+				}
+				else
 					logger.log(Level.WARNING, "Query didn't change anything: " + q);
-			} else
+			}
+			else
 				logger.log(Level.WARNING, "Query failed: " + q);
 		}
 
@@ -1131,7 +1146,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 				if (archiveGuid != null)
 					ret.add(archiveGuid);
-			} else
+			}
+			else
 				anyNonArchive = true;
 		}
 

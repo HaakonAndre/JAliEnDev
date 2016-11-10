@@ -20,6 +20,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -39,6 +41,7 @@ import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lia.util.ShutdownManager;
 
 /**
  * @author costing
@@ -75,6 +78,8 @@ public final class SEUtils {
 					if (System.currentTimeMillis() - seCacheUpdated > CatalogueUtils.CACHE_TIMEOUT || seCache == null) {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating SE cache");
+
+						flushCounterUpdates();
 
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							db.setReadOnly(true);
@@ -136,7 +141,8 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				return Dispatcher.execute(new SEfromString(null, null, seNumber.intValue())).getSE();
-			} catch (@SuppressWarnings("unused") final ServerException se) {
+			} catch (@SuppressWarnings("unused")
+			final ServerException se) {
 				return null;
 			}
 
@@ -164,7 +170,8 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				return Dispatcher.execute(new SEfromString(null, null, seName)).getSE();
-			} catch (@SuppressWarnings("unused") final ServerException se) {
+			} catch (@SuppressWarnings("unused")
+			final ServerException se) {
 				return null;
 			}
 
@@ -237,6 +244,8 @@ public final class SEUtils {
 		}
 		else
 			SEDISTANCE_QUERY = null;
+
+		ShutdownManager.getInstance().addModule(() -> flushCounterUpdates());
 	}
 
 	private static void updateSEDistanceCache() {
@@ -934,6 +943,70 @@ public final class SEUtils {
 					System.err.println(q2 + " : " + ok + " : " + db.getUpdateCount());
 				}
 			}
+	}
+
+	private static final class SECounterUpdate {
+		public AtomicLong aiFiles = new AtomicLong(0);
+		public AtomicLong aiBytes = new AtomicLong(0);
+
+		public SECounterUpdate() {
+			// nothing to do here
+		}
+
+		public void updateCounters(final long deltaFiles, final long deltaBytes) {
+			aiFiles.addAndGet(deltaFiles);
+			aiBytes.addAndGet(deltaBytes);
+		}
+
+		public void flush(final Integer seNumber) {
+			final long deltaFiles = aiFiles.getAndSet(0);
+			final long deltaBytes = aiBytes.getAndSet(0);
+
+			if (deltaFiles != 0 || deltaBytes != 0) {
+				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+					db.setReadOnly(false);
+					db.setQueryTimeout(60);
+
+					if (!db.query("UPDATE SE SET seUsedSpace=max(seUsedSpace+?, 0), seNumFiles=max(seNumFiles+?, 0) WHERE seNumber=?;", false, Long.valueOf(deltaBytes), Long.valueOf(deltaFiles),
+							seNumber)) {
+						aiFiles.addAndGet(deltaFiles);
+						aiBytes.addAndGet(deltaBytes);
+					}
+				}
+			}
+		}
+	}
+
+	private static Map<Integer, SECounterUpdate> seCounterUpdates = new ConcurrentHashMap<>();
+
+	/**
+	 * Update the storage counters when files are added or removed from them. This does not guarantee counter consistency!
+	 * 
+	 * @param seNumber
+	 *            SE number
+	 * @param deltaFiles
+	 *            how many files were added (positive) or removed (negative)
+	 * @param deltaBytes
+	 *            how many bytes were added (positive) or removed (negative)
+	 */
+	public static void incrementStorageCounters(final int seNumber, final long deltaFiles, final long deltaBytes) {
+		final Integer seNo = Integer.valueOf(seNumber);
+		SECounterUpdate update = seCounterUpdates.get(seNo);
+
+		if (update == null) {
+			update = new SECounterUpdate();
+			seCounterUpdates.put(seNo, update);
+		}
+
+		update.updateCounters(deltaFiles, deltaBytes);
+	}
+
+	/**
+	 * Flush changes to storage usage counters to disk
+	 */
+	private static void flushCounterUpdates() {
+		for (final Map.Entry<Integer, SECounterUpdate> entry : seCounterUpdates.entrySet())
+			entry.getValue().flush(entry.getKey());
 	}
 
 	/**
