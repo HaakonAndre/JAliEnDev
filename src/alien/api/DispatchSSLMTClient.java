@@ -9,13 +9,12 @@ import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateException;
+import java.util.EmptyStackException;
 import java.util.HashMap;
+import java.util.Stack;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import java.util.Stack;
-import java.util.EmptyStackException;
-
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -103,7 +102,8 @@ public class DispatchSSLMTClient extends Thread {
 	//private static HashMap<Integer, DispatchSSLMTClient> instance = new HashMap<>(20);
 	//HashMap<Integer, DispatchSSLMTClient> instance; // = new HashMap<>(20);
 
-	private static final int MAX_INSTANCES = 300;
+	private static final int MAX_INSTANCES = 640;
+	//private static final int MAX_INSTANCES = 2000;
 
 	private static Stack<DispatchSSLMTClient> instances = new Stack<>();
 	private static int numInstances = 0;
@@ -131,25 +131,29 @@ public class DispatchSSLMTClient extends Thread {
 				}
 			}
 			catch(EmptyStackException e){
-				System.err.println("Nothing in the stack, creating new SSLClient");
+				//System.err.println("Nothing in the stack");
 				synchronized(instances){
 					if(numInstances<MAX_INSTANCES){
+						System.err.println("Creating new SSLClient");
 						sc = initializeInstance(address, p);
 						//instances.push(c);
 						numInstances++;
 						return sc;
 					}
-					else{
+				}
+				if(numInstances>=MAX_INSTANCES){
 						// for now let it sleep
 						try{
-							Thread.sleep(5000);
+							int sleepInterval = (int)(1500+
+									1000*ThreadLocalRandom.current().nextDouble(0.1, 1));
+							Thread.sleep(sleepInterval);
 						}
 						catch(InterruptedException ei){
-							System.err.println("Sleep in DispatchSSLMTClient.getInstance has been interrupted");
+							System.err.println("Sleep in DispatchSSLMTClient.getInstance" +
+										" has been interrupted");
 						}
 						numRetries--;
 					}
-				}
 			}
 		}
 		
