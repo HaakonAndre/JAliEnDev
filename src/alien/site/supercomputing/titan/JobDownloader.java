@@ -121,7 +121,7 @@ public class JobDownloader extends Thread{
 				queueId = ((Long) matchedJob.get("queueId"));
 				username = (String) matchedJob.get("User");
 				jobToken = (String) matchedJob.get("jobToken");
-				masterJobId = (String) matchedJob.get("MasterJobID");
+				masterJobId = (String) jdl.gets("MasterJobID");
 				if(masterJobId == null)
 					masterJobId = "0";
 
@@ -286,12 +286,15 @@ public class JobDownloader extends Thread{
 				}
 
 				String validationCommand = jdl.gets("ValidationCommand");
-				statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
+				statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, " + 
+							"job_folder='%s', status='%s', executable='%s', "+
+							"validation='%s', environment='%s'," + 
+							"user='%s', masterjob_id='%s'" +
 							"WHERE rank=%d", 
 							queueId, tempDir, "Q", 
 							getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
 							validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
-							"", current_rank ));
+							"", username, masterJobId, current_rank ));
 				String.format("%d, %d, '%s', '%s', '%s', '%s', '%s','%s', '%s', %d, %d",
 						current_rank, queueId, "", "", tempDir, "Q", 
 						getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),

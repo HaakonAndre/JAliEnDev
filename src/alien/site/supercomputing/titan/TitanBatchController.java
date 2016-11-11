@@ -83,8 +83,8 @@ public class TitanBatchController {
 					continue;
 				if(!bi.isRunning()){
 					System.out.println("Batch " + bi.pbsJobId + " not running, cleaning up.");
-					//bi.cleanup();
-					//continue;
+					bi.cleanup();
+					continue;
 				}
 				try{
 					idleRanks.addAll(bi.getIdleRanks());

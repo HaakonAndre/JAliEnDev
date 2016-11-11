@@ -3,6 +3,7 @@ package alien.site.supercomputing.titan;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.security.InvalidParameterException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -39,10 +40,10 @@ public class TitanBatchInfo{
 			return;
 		}
 
-		//if(!isRunning()){
-		//	cleanup();
-		//	throw new InvalidParameterException("");
-		//}
+		if(!isRunning()){
+			cleanup();
+			//throw new InvalidParameterException("");
+		}
 
 		initializeDb();
 		initializeMonitoringDb();
@@ -58,7 +59,7 @@ public class TitanBatchInfo{
 			if(rs.next()){
 				origTtl = rs.getInt("ttl");
 				numCores = rs.getInt("cores");
-				// numCores *= 40;
+				numCores /= 400;
 				startTimestamp = rs.getLong("started");
 			}
 			else{

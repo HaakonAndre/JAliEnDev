@@ -15,9 +15,9 @@ public class FileDownloadApplication{
 	}
 
 	synchronized void putResult(LFN l, String s){
-		System.out.println("Really putting: " + s);
+		//System.out.println("Really putting: " + s);
 		Pair<LFN, String> p = new Pair<>(l,s);
-		System.out.println("Really put: " + p.getSecond());
+		//System.out.println("Really put: " + p.getSecond());
 		dlResult.add(p);
 	}
 
@@ -30,15 +30,15 @@ public class FileDownloadApplication{
 	}
 
 	synchronized public void print(){
-		System.out.println("=================: " + this);
-		System.out.println("Ordered: ");
+		//System.out.println("=================: " + this);
+		//System.out.println("Ordered: ");
 		for(LFN l: fileList){
 			System.out.println(l.getCanonicalName());
 		}
-		System.out.println("Downloaded: ");
+		//System.out.println("Downloaded: ");
 		for(Pair<LFN,String> p: dlResult){
 			System.out.println(p.getFirst().getCanonicalName() + ": " + p.getSecond());
 		}
-		System.out.println("=================: ");
+		//System.out.println("=================: ");
 	}
 }
