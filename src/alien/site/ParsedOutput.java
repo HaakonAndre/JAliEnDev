@@ -17,7 +17,8 @@ import java.util.zip.ZipOutputStream;
 import alien.taskQueue.JDL;
 import lia.util.Utils;
 
-class OutputEntry {
+/*
+public class OutputEntry {
 	private final String name;
 	private final ArrayList<String> filesIncluded;
 	private final String options;
@@ -157,6 +158,7 @@ class OutputEntry {
 		return toString;
 	}
 }
+*/
 
 /**
  * @author costing
