@@ -62,6 +62,8 @@ public final class SEUtils {
 	private static final ReadLock seCacheReadLock = seCacheRWLock.readLock();
 	private static final WriteLock seCacheWriteLock = seCacheRWLock.writeLock();
 
+	private static Map<Integer, SECounterUpdate> seCounterUpdates = new ConcurrentHashMap<>();
+
 	private static final void updateSECache() {
 		if (!ConfigUtils.isCentralService())
 			return;
@@ -141,8 +143,7 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				return Dispatcher.execute(new SEfromString(null, null, seNumber.intValue())).getSE();
-			} catch (@SuppressWarnings("unused")
-			final ServerException se) {
+			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
 
@@ -170,8 +171,7 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				return Dispatcher.execute(new SEfromString(null, null, seName)).getSE();
-			} catch (@SuppressWarnings("unused")
-			final ServerException se) {
+			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
 
@@ -976,8 +976,6 @@ public final class SEUtils {
 			}
 		}
 	}
-
-	private static Map<Integer, SECounterUpdate> seCounterUpdates = new ConcurrentHashMap<>();
 
 	/**
 	 * Update the storage counters when files are added or removed from them. This does not guarantee counter consistency!
