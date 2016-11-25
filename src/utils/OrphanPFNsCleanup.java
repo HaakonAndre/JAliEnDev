@@ -139,11 +139,10 @@ public class OrphanPFNsCleanup {
 
 						final List<Integer> ses = new LinkedList<>();
 
-						while (db.moveNext()) {
+						while (db.moveNext())
 							ses.add(Integer.valueOf(db.geti(1)));
-						}
 
-						for (final Integer seNumber : ses) {
+						for (final Integer seNumber : ses)
 							try (DBFunctions db2 = h.getDB()) {
 								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;", true);
 
@@ -171,7 +170,6 @@ public class OrphanPFNsCleanup {
 									dbc.free();
 								}
 							}
-						}
 					}
 
 				final List<SE> sesToCheck = new LinkedList<>();
@@ -249,98 +247,106 @@ public class OrphanPFNsCleanup {
 
 			CachedThreadPool executor = EXECUTORS.get(Integer.valueOf(seNumber));
 
-			int tasks = 0;
+			try {
+				int tasks = 0;
 
-			while (true) {
-				boolean nothingToDelete = true;
+				while (true) {
+					boolean nothingToDelete = true;
 
-				for (final Host h : CatalogueUtils.getAllHosts())
-					try (DBFunctions db = h.getDB()) {
-						db.setReadOnly(true);
+					for (final Host h : CatalogueUtils.getAllHosts())
+						try (DBFunctions db = h.getDB()) {
+							db.setReadOnly(true);
 
-						concurrentQueryies.acquireUninterruptibly();
-						boolean ok;
+							concurrentQueryies.acquireUninterruptibly();
+							boolean ok;
 
-						try {
-							// TODO : what to do with these PFNs ? Iterate over them
-							// and release them from the catalogue nevertheless ?
-							// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
+							try {
+								// TODO : what to do with these PFNs ? Iterate over them
+								// and release them from the catalogue nevertheless ?
+								// db.query("DELETE FROM orphan_pfns WHERE se="+seNumber+" AND fail_count>10;");
 
-							if (seNumber > 0)
-								ok = db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns_" + seNumber
-										+ " WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;", true);
-							else
-								ok = db.query("SELECT binary2string(guid) FROM orphan_pfns_0 WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 10000;");
-						} finally {
-							concurrentQueryies.release();
-						}
-
-						if (ok && db.moveNext()) {
-							nothingToDelete = false;
-
-							if (executor == null) {
-								// lazy init of the thread pool
-								executor = new CachedThreadPool(getPoolSize(seNumber), 1, TimeUnit.MINUTES, r -> {
-									final Thread t = new Thread(r);
-									t.setName("Cleanup of " + (se != null ? se.getName() : "GUIDs") + " - " + seNumber);
-
-									return t;
-								});
-
-								EXECUTORS.put(Integer.valueOf(seNumber), executor);
-							}
-							else {
-								final int threads = getPoolSize(seNumber);
-
-								executor.setCorePoolSize(threads);
-								executor.setMaximumPoolSize(threads);
-							}
-
-							do {
 								if (seNumber > 0)
-									executor.submit(new CleanupTask(h, db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
+									ok = db.query("SELECT binary2string(guid),size,md5sum,pfn, flags FROM orphan_pfns_" + seNumber
+											+ " WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 100000;", true);
 								else
-									executor.submit(new NullSETask(h, db.gets(1)));
+									ok = db.query("SELECT binary2string(guid) FROM orphan_pfns_0 WHERE fail_count<10 ORDER BY size/((fail_count * 5) + 1) DESC LIMIT 100000;");
+							} finally {
+								concurrentQueryies.release();
+							}
 
-								tasks++;
-							} while (db.moveNext());
+							if (ok && db.moveNext()) {
+								nothingToDelete = false;
+
+								if (executor == null) {
+									// lazy init of the thread pool
+									executor = new CachedThreadPool(getPoolSize(seNumber), 1, TimeUnit.MINUTES, r -> {
+										final Thread t = new Thread(r);
+										t.setName("Cleanup of " + (se != null ? se.getName() : "GUIDs") + " - " + seNumber);
+
+										return t;
+									});
+
+									EXECUTORS.put(Integer.valueOf(seNumber), executor);
+								}
+								else {
+									final int threads = getPoolSize(seNumber);
+
+									executor.setCorePoolSize(threads);
+									executor.setMaximumPoolSize(threads);
+								}
+
+								do {
+									if (seNumber > 0)
+										executor.submit(new CleanupTask(h, db.gets(1), seNumber, db.getl(2), db.gets(3), db.gets(4), db.geti(5)));
+									else
+										executor.submit(new NullSETask(h, db.gets(1)));
+
+									tasks++;
+								} while (db.moveNext());
+							}
 						}
+
+					if (nothingToDelete) {
+						// there are no tasks for this SE now, check again
+						// sometime later
+
+						if (logger.isLoggable(Level.INFO))
+							logger.log(Level.INFO, "No more PFNs to clean up for " + (se != null ? se.getName() : "AliEn GUIDs") + " - " + seNumber
+									+ ", freeing the respective thread and executor for now after executing " + tasks + " tasks");
+
+						return;
 					}
 
-				if (nothingToDelete) {
-					// there are no tasks for this SE now, check again
-					// sometime later
+					setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - " + tasks + " tasks");
 
-					if (logger.isLoggable(Level.INFO))
-						logger.log(Level.INFO, "No more PFNs to clean up for " + (se != null ? se.getName() : "AliEn GUIDs") + " - " + seNumber
-								+ ", freeing the respective thread and executor for now after executing " + tasks + " tasks");
+					int queued;
 
+					do {
+						try {
+							Thread.sleep(5000);
+						} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+							// ignore
+						}
+
+						queued = executor.getQueue().size() + executor.getActiveCount();
+
+						setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - " + tasks + " total tasks, " + queued + " queued");
+					} while (queued > 0);
+				}
+			} catch (final Throwable t) {
+				logger.log(Level.SEVERE, "Caught exception in the SE thread (" + seNumber + ")", t);
+			} finally {
+				try {
 					if (executor != null) {
 						executor.shutdown();
 
 						EXECUTORS.remove(Integer.valueOf(seNumber));
 					}
-
-					SE_THREADS.remove(Integer.valueOf(seNumber));
-
-					return;
+				} catch (@SuppressWarnings("unused") final Throwable t) {
+					// ignore
 				}
 
-				setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - " + tasks + " tasks");
-
-				int queued;
-
-				do {
-					try {
-						Thread.sleep(5000);
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
-						// ignore
-					}
-
-					queued = executor.getQueue().size() + executor.getActiveCount();
-
-					setName("SEThread (" + (se != null ? (se.getName() + " - " + se.seNumber) : "AliEn GUIDs") + ") - " + tasks + " total tasks, " + queued + " queued");
-				} while (queued > 0);
+				SE_THREADS.remove(Integer.valueOf(seNumber));
 			}
 		}
 	}
