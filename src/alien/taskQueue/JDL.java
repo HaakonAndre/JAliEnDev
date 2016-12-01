@@ -157,6 +157,8 @@ public class JDL implements Serializable {
 		while ((idxEqual = content.indexOf('=', iPrevPos + 1)) > 0) {
 			final String sKey = clean(content.substring(iPrevPos, idxEqual).trim());
 
+			checkKeySyntax(sKey);
+
 			int idxEnd = idxEqual + 1;
 
 			boolean bEsc = false;
@@ -214,6 +216,18 @@ public class JDL implements Serializable {
 
 			iPrevPos = idxEnd + 1;
 		}
+	}
+
+	private static void checkKeySyntax(final String sKey) throws IOException {
+		if (sKey == null)
+			throw new IOException("Key cannot be null");
+
+		if (sKey.length() == 0)
+			throw new IOException("Key cannot be the empty string");
+
+		for (final char c : sKey.toCharArray())
+			if (!Character.isLetterOrDigit(c))
+				throw new IOException("Illegal character '" + c + "' in key '" + sKey + "'");
 	}
 
 	private static String clean(final String input) {
