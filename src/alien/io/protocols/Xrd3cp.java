@@ -91,7 +91,7 @@ public class Xrd3cp extends Xrootd {
 
 			final List<String> command = new LinkedList<>();
 			command.add(getXrd3cpPath() + "/bin/xrd3cp");
-			command.add("-m");
+			// command.add("-m");
 
 			final SE targetSE = target.getSE();
 
