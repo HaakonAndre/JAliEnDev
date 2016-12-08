@@ -100,6 +100,7 @@ public class TransferBroker {
 		executeClose();
 
 		try {
+			dbc.setReadOnly(false);
 			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			stat.setQueryTimeout(600);
 
