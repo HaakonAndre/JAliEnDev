@@ -111,7 +111,7 @@ public class GuidTable extends Optimizer {
 				+ " `aclId` int(11) DEFAULT NULL," + " `expiretime` datetime DEFAULT NULL," + " `size` bigint(20) NOT NULL DEFAULT '0',"
 				+ " `gowner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + " `guid` binary(16) DEFAULT NULL," + " `type` char(1) COLLATE latin1_general_cs DEFAULT NULL,"
 				+ " `md5` varchar(32) COLLATE latin1_general_cs DEFAULT NULL," + " `perm` char(3) COLLATE latin1_general_cs DEFAULT NULL," + " PRIMARY KEY (`guidId`)," + " UNIQUE KEY `guid` (`guid`),"
-				+ " KEY `seStringlist` (`seStringlist`)," + " KEY `ctime` (`ctime`)" + ") ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ " KEY `seStringlist` (`seStringlist`)," + " KEY `ctime` (`ctime`)" + ") ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
@@ -123,7 +123,7 @@ public class GuidTable extends Optimizer {
 		sql = "CREATE TABLE `G" + newTable + "L_PFN` (" + "  `guidId` int(11) NOT NULL," + "  `pfn` varchar(255) COLLATE latin1_general_cs DEFAULT NULL," + "  `seNumber` int(11) NOT NULL,"
 				+ "  KEY `guid_ind` (`guidId`)," + "  KEY `seNumber` (`seNumber`)," + "  CONSTRAINT `G" + newTable
 				+ "L_PFN_ibfk_1` FOREIGN KEY (`seNumber`) REFERENCES `SE` (`seNumber`) ON DELETE CASCADE," + "  CONSTRAINT `G" + newTable + "L_PFN_ibfk_2` FOREIGN KEY (`guidId`) REFERENCES `G"
-				+ newTable + "L` (`guidId`) ON DELETE CASCADE) " + " ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ newTable + "L` (`guidId`) ON DELETE CASCADE) " + " ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
@@ -134,7 +134,7 @@ public class GuidTable extends Optimizer {
 		logger.log(Level.INFO, sql);
 
 		sql = "CREATE TABLE `G" + newTable + "L_QUOTA` (" + "  `user` varchar(64) COLLATE latin1_general_cs NOT NULL," + "  `nbFiles` int(11) NOT NULL," + "  `totalSize` bigint(20) NOT NULL,"
-				+ "  KEY `user_ind` (`user`)" + ") ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ "  KEY `user_ind` (`user`)" + ") ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
@@ -146,7 +146,7 @@ public class GuidTable extends Optimizer {
 
 		sql = "CREATE TABLE `G" + newTable + "L_REF` (" + "  `guidId` int(11) NOT NULL," + "  `lfnRef` varchar(20) COLLATE latin1_general_cs NOT NULL," + "  KEY `guidId` (`guidId`),"
 				+ "  KEY `lfnRef` (`lfnRef`)," + "  CONSTRAINT `G" + newTable + "L_REF_ibfk_1` FOREIGN KEY (`guidId`) REFERENCES `G" + newTable + "L` (`guidId`) ON DELETE CASCADE"
-				+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ ") ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
