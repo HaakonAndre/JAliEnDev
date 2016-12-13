@@ -338,16 +338,6 @@ public final class TransferUtils {
 		if (guid == null || !guid.exists() || se == null)
 			return -1;
 
-		if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
-			final SE seRemove = SEUtils.getSE(onCompletionRemoveReplica);
-
-			if (seRemove == null)
-				return -1;
-
-			if (!guid.hasReplica(seRemove) || seRemove.equals(se))
-				return -1;
-		}
-
 		final Set<GUID> realGUIDs = guid.getRealGUIDs();
 
 		final Set<PFN> pfns = new LinkedHashSet<>();
@@ -365,9 +355,29 @@ public final class TransferUtils {
 		if (pfns.size() == 0)
 			return -3;
 
+		boolean hasReplicaOnTarget = false;
+
 		for (final PFN p : pfns)
-			if (se.equals(p.getSE()))
-				return 0;
+			if (se.equals(p.getSE())) {
+				hasReplicaOnTarget = true;
+				break;
+			}
+
+		if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
+			final SE seRemove = SEUtils.getSE(onCompletionRemoveReplica);
+
+			if (seRemove == null)
+				return -1;
+
+			if (!guid.hasReplica(seRemove) || seRemove.equals(se))
+				return -1;
+
+			if (hasReplicaOnTarget)
+				guid.removePFN(seRemove, false);
+		}
+
+		if (hasReplicaOnTarget)
+			return 0;
 
 		final String sGUID = guid.guid.toString();
 
