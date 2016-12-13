@@ -373,7 +373,7 @@ public final class TransferUtils {
 				return -1;
 
 			if (hasReplicaOnTarget)
-				guid.removePFN(seRemove, false);
+				guid.removePFN(seRemove, true);
 		}
 
 		if (hasReplicaOnTarget)
