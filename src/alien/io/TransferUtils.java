@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.cache.ExpirationCache;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -23,10 +21,12 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
+import lazyj.DBFunctions;
+import lazyj.cache.ExpirationCache;
 
 /**
  * @author costing
- * 
+ *
  */
 public final class TransferUtils {
 
@@ -366,14 +366,16 @@ public final class TransferUtils {
 		if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
 			final SE seRemove = SEUtils.getSE(onCompletionRemoveReplica);
 
-			if (seRemove == null)
+			if (seRemove == null || seRemove.equals(se))
 				return -1;
 
-			if (!guid.hasReplica(seRemove) || seRemove.equals(se))
-				return -1;
-
-			if (hasReplicaOnTarget)
+			if (hasReplicaOnTarget) {
 				guid.removePFN(seRemove, true);
+				return 0;
+			}
+
+			if (!guid.hasReplica(seRemove))
+				return -1;
 		}
 
 		if (hasReplicaOnTarget)
@@ -425,7 +427,7 @@ public final class TransferUtils {
 
 	/**
 	 * Log a transfer attempt
-	 * 
+	 *
 	 * @param p
 	 * @param source
 	 * @param target
@@ -528,7 +530,7 @@ public final class TransferUtils {
 
 	/**
 	 * Debug method
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {
