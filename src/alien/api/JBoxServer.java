@@ -38,6 +38,12 @@ import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
 import lia.util.Utils;
 
+import org.apache.catalina.WebResourceRoot;
+import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.startup.Tomcat;
+import org.apache.catalina.webresources.DirResourceSet;
+import org.apache.catalina.webresources.StandardRoot;
+
 /**
  * Simple UI server to be used by ROOT and command line
  *
@@ -156,6 +162,29 @@ public class JBoxServer extends Thread {
 			ssocket.close();
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
+		
+///////////////////////////////////////////////
+		
+		String webappDirLocation = "webapps/";
+        Tomcat tomcat = new Tomcat();
+
+        tomcat.setPort(8080);
+
+        StandardContext ctx = (StandardContext) tomcat.addWebapp("/jalien", new File(webappDirLocation).getAbsolutePath());
+        System.out.println("configuring app with basedir: " + new File("./" + webappDirLocation).getAbsolutePath());
+
+        // Declare an alternative location for your "WEB-INF/classes" dir
+        // Servlet 3.0 annotation will work
+        //File additionWebInfClasses = new File("target/classes");
+        //WebResourceRoot resources = new StandardRoot(ctx);
+        //resources.addPreResources(new DirResourceSet(resources, "/examples/WEB-INF/classes",
+        //        additionWebInfClasses.getAbsolutePath(), "/"));
+        //ctx.setResources(resources);
+        File configFile = new File(webappDirLocation + "examples/WEB-INF/web.xml");
+        ctx.setConfigFile(configFile.toURI().toURL());
+
+        tomcat.start();
+        tomcat.getServer().await();
 	}
 
 	/**
