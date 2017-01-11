@@ -1,0 +1,675 @@
+package alien.test;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.security.MessageDigest;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.datastax.driver.core.ConsistencyLevel;
+
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
+import alien.catalogue.LFN_CSD;
+import alien.catalogue.PFN;
+
+/**
+ *
+ */
+public class CatalogueToCassandraThreads {
+	/** Array of thread-dir */
+	static final HashMap<Long, LFN> activeThreadFolders = new HashMap<>();
+
+	/** Thread pool */
+	static ThreadPoolExecutor tPool = null;
+
+	static boolean shouldexit = false;
+
+	/**
+	 * limit
+	 */
+	static final int origlimit = 1000000;
+	/** Entries processed */
+	static AtomicInteger global_count = new AtomicInteger();
+	/**
+	 * Limit number of entries
+	 */
+	static AtomicInteger limit = new AtomicInteger(origlimit);
+
+	/**
+	 * Limit number of entries
+	 */
+	static AtomicInteger timing_count = new AtomicInteger();
+
+	/**
+	 * total milliseconds
+	 */
+	static AtomicLong ns_count = new AtomicLong();
+
+	/** File for tracking created folders */
+	static PrintWriter out = null;
+	/**
+	 * Various log files
+	 */
+	static PrintWriter pw = null;
+	/**
+	 * Log file
+	 */
+	static PrintWriter failed_folders = null;
+	/**
+	 * Log file
+	 */
+	static PrintWriter failed_files = null;
+	/**
+	 * Log file
+	 */
+	static PrintWriter failed_collections = null;
+	/**
+	 * Log files
+	 */
+	static PrintWriter failed_ses = null;
+	/**
+	 * Log file
+	 */
+	static PrintWriter used_threads = null;
+	/**
+	 * Suffix for log files
+	 */
+	static String logs_suffix = "";
+
+	static int count_thread_stuck = 0;
+
+	static final Random rdm = new Random();
+
+	static ConsistencyLevel clevel = ConsistencyLevel.QUORUM;
+
+	public static String getmd5(String str) {
+		try {
+			MessageDigest md = MessageDigest.getInstance("MD5");
+			md.update(str.getBytes());
+			byte[] digest = md.digest();
+			StringBuffer sb = new StringBuffer();
+			for (byte b : digest) {
+				sb.append(String.format("%02x", b & 0xff));
+			}
+			//
+			// System.out.println("original:" + original);
+			return sb.toString();
+		} catch (Exception e) {
+			System.err.println("Exception generating md5: " + e);
+		}
+		return null;
+	}
+
+	public static String getRandomString() {
+		char[] chars = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+		StringBuilder sb = new StringBuilder();
+		for (int i = 0; i < 20; i++) {
+			char c = chars[rdm.nextInt(chars.length)];
+			sb.append(c);
+		}
+		return sb.toString();
+	}
+
+	/**
+	 * @param args
+	 * @throws IOException
+	 */
+	public static void main(final String[] args) throws IOException {
+		final int nargs = args.length;
+
+		if (nargs < 1) {
+			System.err.println("Usage: ./run.sh alien/src/test/CatalogueToCassandraThreads <alien_path> [<pool_size>] [<logs_suffix>]");
+			System.err.println("E.g. <alien_path> -> /alice/sim/2016/");
+			System.err.println("E.g. <pool_size> -> 8");
+			System.err.println("E.g. <logs-suffix> -> alice-sim-2016");
+			System.err.println("E.g. <consistency> -> 1-one 2-quorum");
+			System.exit(-3);
+		}
+
+		int pool_size = 16;
+		if (nargs > 1)
+			pool_size = Integer.parseInt(args[1]);
+		System.out.println("Pool size: " + pool_size);
+		tPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(pool_size);
+		tPool.setKeepAliveTime(1, TimeUnit.MINUTES);
+		tPool.allowCoreThreadTimeOut(true);
+
+		if (nargs > 2)
+			logs_suffix = "-" + args[2];
+
+		int consistency = Integer.parseInt(args[3]);
+		if (consistency == 1)
+			clevel = ConsistencyLevel.ONE;
+
+		System.out.println("Printing output to: out" + logs_suffix);
+		out = new PrintWriter(new FileOutputStream("out" + logs_suffix));
+		out.println("Starting: " + new Date());
+		out.flush();
+
+		System.out.println("Printing folders to: folders" + logs_suffix);
+		pw = new PrintWriter(new FileOutputStream("folders" + logs_suffix));
+
+		System.out.println("Printing failed folders to failed_folders" + logs_suffix);
+		failed_folders = new PrintWriter(new FileOutputStream("failed_folders" + logs_suffix));
+
+		System.out.println("Printing failed collections to failed_collections" + logs_suffix);
+		failed_collections = new PrintWriter(new FileOutputStream("failed_collections" + logs_suffix));
+
+		System.out.println("Printing failed files to failed_files" + logs_suffix);
+		failed_files = new PrintWriter(new FileOutputStream("failed_files" + logs_suffix));
+
+		System.out.println("Printing failed ses to failed_ses" + logs_suffix);
+		failed_ses = new PrintWriter(new FileOutputStream("failed_ses" + logs_suffix));
+
+		System.out.println("Printing threads to used_threads" + logs_suffix);
+		used_threads = new PrintWriter(new FileOutputStream("used_threads" + logs_suffix));
+		used_threads.println(logs_suffix + " - " + pool_size);
+		used_threads.close();
+
+		System.out.println("Going to create " + args[0] + " hierarchy. Time: " + new Date());
+
+		// Control-C catch
+		Runtime.getRuntime().addShutdownHook(new Thread() {
+			@Override
+			public void run() {
+				final List<Runnable> tQueue = tPool.shutdownNow();
+
+				try {
+					while (!tPool.awaitTermination(5, TimeUnit.SECONDS))
+						System.out.println("Waiting for threads finishing..." + tPool.getActiveCount());
+				} catch (final InterruptedException e) {
+					System.err.println("Something went wrong in shutdown!: " + e);
+				}
+
+				try {
+					try (PrintWriter pendingTasks = new PrintWriter(new FileOutputStream("pendingTasks" + logs_suffix))) {
+						pendingTasks.println("Dumping tQueue\n");
+
+						for (final Runnable r : tQueue) {
+							final Object realTask = JobDiscoverer.findRealTask(r);
+							pendingTasks.println(realTask.toString());
+						}
+
+						pendingTasks.println("Dumping activeThreadFolders\n");
+
+						for (final LFN l : activeThreadFolders.values())
+							pendingTasks.println(l.lfn);
+					}
+				} catch (final Exception e) {
+					System.err.println("Something went wrong dumping tasks!: " + e.toString() + " - " + tQueue.toString());
+				}
+			}
+		});
+
+		tPool.submit(new Recurse(LFNUtils.getLFN(args[0])));
+
+		try {
+			while (!tPool.awaitTermination(20, TimeUnit.SECONDS)) {
+				final int tCount = tPool.getActiveCount();
+				final int qSize = tPool.getQueue().size();
+				System.out.println("Awaiting completion of threads..." + tCount + " - " + qSize);
+				if (tCount == 0 && qSize == 0) {
+					tPool.shutdown();
+					System.out.println("Shutdown executor");
+				}
+				if (tCount == 1 && qSize == 0) {
+					count_thread_stuck++;
+					if (count_thread_stuck == 5) {
+						tPool.shutdownNow();
+						System.out.println("Shutdown executor with 1-0: " + count_thread_stuck);
+					}
+				}
+			}
+		} catch (final InterruptedException e) {
+			System.err.println("Something went wrong!: " + e);
+		}
+
+		System.out.println("Final count: " + global_count.toString());
+
+		out.println("Final count: " + global_count.toString() + " - " + new Date());
+
+		double ms_per_i = 0;
+		int cnt = timing_count.get();
+
+		if (cnt > 0) {
+			ms_per_i = ns_count.get() / cnt;
+			System.out.println("Final ns/i: " + ms_per_i);
+			ms_per_i = ms_per_i / 1000000.;
+		}
+		else
+			System.out.println("!!!!! Zero timing count !!!!!");
+
+		System.out.println("Final timing count: " + cnt);
+		System.out.println("Final ms/i: " + ms_per_i);
+
+		out.println("Final timing count: " + cnt + " - " + new Date());
+		out.println("Final ms/i: " + ms_per_i);
+		out.close();
+
+		pw.close();
+		failed_folders.close();
+		failed_collections.close();
+		failed_files.close();
+		failed_ses.close();
+		DBCassandra.shutdown();
+	}
+
+	/**
+	 * auto-generated paths
+	 * 
+	 * @param args
+	 * @throws IOException
+	 */
+	public static void main2(final String[] args) throws IOException {
+		final int nargs = args.length;
+
+		if (nargs < 1) {
+			System.err.println("Usage: ./run.sh alien/src/test/CatalogueToCassandraThreads <alien_path> [<pool_size>] [<logs_suffix>]");
+			System.err.println("E.g. <base> -> 0");
+			System.err.println("E.g. <limit> -> 1000");
+			System.err.println("E.g. <alien_path> -> /alice/");
+			System.err.println("E.g. <pool_size> -> 8");
+			System.err.println("E.g. <logs-suffix> -> alice-md5-1B");
+			System.err.println("E.g. <consistency> -> 1-one 2-quorum");
+			System.exit(-3);
+		}
+
+		final Long base = Long.parseLong(args[0]);
+		final Long limit = Long.parseLong(args[1]);
+
+		int pool_size = 16;
+		if (nargs > 3)
+			pool_size = Integer.parseInt(args[3]);
+		System.out.println("Pool size: " + pool_size);
+		tPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(pool_size);
+		tPool.setKeepAliveTime(1, TimeUnit.MINUTES);
+		tPool.allowCoreThreadTimeOut(true);
+
+		if (nargs > 4)
+			logs_suffix = "-" + args[4];
+
+		int consistency = Integer.parseInt(args[5]);
+		if (consistency == 1)
+			clevel = ConsistencyLevel.ONE;
+
+		System.out.println("Printing output to: out" + logs_suffix);
+		out = new PrintWriter(new FileOutputStream("out" + logs_suffix));
+		out.println("Starting: " + new Date());
+		out.flush();
+
+		System.out.println("Printing threads to used_threads" + logs_suffix);
+		used_threads = new PrintWriter(new FileOutputStream("used_threads" + logs_suffix));
+		used_threads.println(logs_suffix + " - " + pool_size);
+		used_threads.close();
+
+		System.out.println("Going to insert consistency: " + clevel.toString() + " limit: " + limit + " in " + args[2] + " hierarchy. Time: " + new Date());
+		out.println("Going to insert consistency: " + clevel.toString() + " limit: " + limit + " base: " + base + " in " + args[2] + " hierarchy. Time: " + new Date());
+		out.flush();
+
+		// Create LFN paths and submit them to create LFN_CSD to insert in
+		// Cassandra
+		for (Long i = base; i < limit; i++) {
+			tPool.submit(new AddPath(i));
+		}
+
+		try {
+			while (!tPool.awaitTermination(20, TimeUnit.SECONDS)) {
+				final int tCount = tPool.getActiveCount();
+				final int qSize = tPool.getQueue().size();
+				System.out.println("Awaiting completion of threads..." + tCount + " - " + qSize);
+				if (tCount == 0 && qSize == 0) {
+					tPool.shutdown();
+					System.out.println("Shutdown executor");
+				}
+			}
+		} catch (final InterruptedException e) {
+			System.err.println("Something went wrong!: " + e);
+		}
+
+		double ms_per_i = 0;
+		int cnt = timing_count.get();
+
+		if (cnt > 0) {
+			ms_per_i = ns_count.get() / cnt;
+			System.out.println("Final ns/i: " + ms_per_i);
+			ms_per_i = ms_per_i / 1000000.;
+		}
+		else
+			System.out.println("!!!!! Zero timing count !!!!!");
+
+		System.out.println("Final timing count: " + cnt);
+		System.out.println("Final ms/i: " + ms_per_i);
+
+		out.println("Final timing count: " + cnt + " - " + new Date());
+		out.println("Final ms/i: " + ms_per_i);
+		out.close();
+		DBCassandra.shutdown();
+	}
+
+	private static class AddPath implements Runnable {
+		final Long root;
+
+		public AddPath(final Long r) {
+			this.root = r;
+		}
+
+		@Override
+		public void run() {
+			// Divide the md5 in 8 letter segments, first 3 directories, last
+			// one filename
+			// this.path = getmd5(root.toString());
+
+			// String[] strs = this.path.split("(?<=\\G.{8})");
+			// String lfn = "/alice/" + strs[0] + "/" + strs[1] + "/" + strs[2]
+			// + "/" + strs[3];
+
+			long last_part = root % 10000;
+			long left = root / 10000;
+			long medium_part = left % 100;
+			long first_part = medium_part / 100;
+			String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
+
+			LFN_CSD.createDirectory(lfnparent, "catalogue.lfns", clevel);
+
+			for (int i = 1; i <= 10; i++) {
+				String lfn = "file" + i + "_" + root; // lfnparent +
+
+				int counted = global_count.incrementAndGet();
+				if (counted % 5000 == 0) {
+					out.println("LFN: " + lfnparent + lfn + " Estimation: " + (ns_count.get() / counted) / 1000000. + " - Count: " + counted + " Time: " + new Date());
+					out.flush();
+				}
+
+				LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false);
+				lfnc.path = lfnparent;
+				lfnc.child = lfn;
+				lfnc.size = rdm.nextInt(100000);
+				lfnc.jobid = (long) rdm.nextInt(1000000);
+				lfnc.checksum = "ee31e454013aa515f0bc806aa907ba51";
+				lfnc.perm = "755";
+				lfnc.ctime = new Date();
+				lfnc.owner = "aliprod";
+				lfnc.gowner = "aliprod";
+				lfnc.guid = UUID.randomUUID();
+
+				HashMap<Integer, String> pfns = new HashMap<>();
+				if (i % 2 == 0) {
+					lfnc.type = 'f';
+					pfns.put(rdm.nextInt(30), "");
+					pfns.put(rdm.nextInt(30), "");
+				}
+				else {
+					lfnc.type = 'l';
+					pfns.put(0, "/cassandra/0/100/10000");
+				}
+				lfnc.pfns = pfns;
+
+				HashMap<String, String> metadata = new HashMap<>();
+				metadata.put("version", "v1");
+				lfnc.metadata = metadata;
+
+				// Insert into lfns_auto
+				final long start = System.nanoTime();
+				if (!lfnc.insert("catalogue.lfns", clevel)) {
+					final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
+					System.err.println(msg);
+				}
+				else {
+					final long duration_ns = (long) ((System.nanoTime() - start));
+					ns_count.addAndGet(duration_ns);
+					timing_count.incrementAndGet();
+				}
+			}
+		}
+
+	}
+
+	private static class Recurse implements Runnable {
+		final LFN dir;
+
+		public Recurse(final LFN folder) {
+			this.dir = folder;
+		}
+
+		@Override
+		public String toString() {
+			return this.dir.getCanonicalName();
+		}
+
+		static final Comparator<LFN> comparator = (o1, o2) -> {
+			if (o1.lfn.contains("archive") || o1.lfn.contains(".zip"))
+				return -1;
+
+			if (o2.lfn.contains("archive") || o2.lfn.contains(".zip"))
+				return 1;
+
+			return 0;
+		};
+
+		public static List<LFN> getZipMembers(final Map<GUID, LFN> whereis, final LFN lfn) {
+			final List<LFN> members = new ArrayList<>();
+
+			final String lfn_guid = lfn.guid.toString();
+			final String lfn_guid_start = "guid:";
+
+			for (final GUID g : whereis.keySet()) {
+				final Set<PFN> pfns = g.getPFNs();
+				for (final PFN pf : pfns)
+					if (pf.pfn.startsWith(lfn_guid_start) && pf.pfn.contains(lfn_guid))
+						members.add(whereis.get(g));
+			}
+
+			return members;
+		}
+
+		@Override
+		@SuppressWarnings("unchecked")
+		public void run() {
+			if (shouldexit)
+				return;
+
+			if (dir == null) {
+				final String msg = "LFN DIR is null!";
+				failed_folders.println(msg);
+				failed_folders.flush();
+				return;
+			}
+
+			// final DateFormat df = new
+			// SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+			final int counted = global_count.get();
+
+			if (counted >= limit.get()) {
+				// out.println("LFN: " + dir.getCanonicalName() + " - Count: " +
+				// counted + " Time: " + new Date());
+				out.println("LFN: " + dir.getCanonicalName() + " Estimation: " + (ns_count.get() / counted) / 1000000. + " - Count: " + counted + " Time: " + new Date());
+				out.flush();
+				limit.set(counted + origlimit);
+			}
+
+			// order the list
+			final List<LFN> list = dir.list();
+
+			if (list.isEmpty())
+				return;
+
+			// If folder not null or empty, we register threadId to dir
+			final long threadId = Thread.currentThread().getId();
+			activeThreadFolders.put(Long.valueOf(threadId), dir);
+			// System.out.println("Thread "+threadId+" doing "+dir.lfn);
+
+			// Sort the list by archive
+			Collections.sort(list, comparator);
+
+			// Files that will excluded since they are included in archives
+			final Set<LFN> members_of_archives = new HashSet<>();
+
+			System.out.println("Before whereis"); // TODELETE
+
+			// whereis of each file
+			final Map<GUID, LFN> whereis = new HashMap<>();
+			for (final LFN fi : list)
+				if (fi.isFile()) {
+					System.out.println("whereis file: " + fi.getCanonicalName()); // TODELETE
+
+					final GUID g = GUIDUtils.getGUID(fi);
+					if (g == null) {
+						System.out.println("g null file: " + fi.getCanonicalName()); // TODELETE
+
+						failed_files.println("LFN is orphan!: " + fi.getCanonicalName());
+						failed_files.flush();
+						members_of_archives.add(fi); // Ignore files without
+														// guid
+						continue;
+					}
+					
+					System.out.println("g not null file: " + fi.getCanonicalName()); // TODELETE
+
+					if (g.getPFNs().size() == 0) {
+						System.out.println("whereis no pfns: " + fi.getCanonicalName()); // TODELETE
+
+						failed_files.println("LFN without pfns!: " + fi.getCanonicalName());
+						failed_files.flush();
+						members_of_archives.add(fi); // Ignore files without
+														// pfns
+						continue;
+					}
+
+					System.out.println("whereis put: " + fi.getCanonicalName() + " " + g.toString()); // TODELETE
+
+					whereis.put(g, fi);
+				}
+
+			System.out.println("Before loop");
+
+			for (final LFN l : list) {
+				global_count.incrementAndGet();
+
+				System.out.println("Loop LFN: " + l.getCanonicalName());
+
+				if (l.isDirectory()) {
+					// insert the dir
+					final LFN_CSD lfnc = new LFN_CSD(l);
+					final long start = System.nanoTime();
+					if (!lfnc.insert("catalogue.lfns_real", clevel)) {
+						final String msg = "Error inserting directory: " + l.getCanonicalName() + " Time: " + new Date();
+						System.err.println(msg);
+						failed_folders.println(msg);
+						failed_folders.flush();
+						continue;
+					}
+					else {
+						final long duration_ns = (long) ((System.nanoTime() - start));
+						ns_count.addAndGet(duration_ns);
+						timing_count.incrementAndGet();
+					}
+
+					try {
+						if (!shouldexit)
+							tPool.submit(new Recurse(l));
+					} catch (final RejectedExecutionException ree) {
+						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
+						System.err.println(msg);
+						failed_folders.println(msg);
+						failed_folders.flush();
+						return;
+					}
+				}
+				else
+					if (l.isCollection()) {
+						final LFN_CSD lfnc = new LFN_CSD(l);
+						final long start = System.nanoTime();
+						if (!lfnc.insert("catalogue.lfns_real", clevel)) {
+							final String msg = "Error inserting collection: " + l.getCanonicalName() + " Time: " + new Date();
+							System.err.println(msg);
+							failed_collections.println(msg);
+							failed_collections.flush();
+						}
+						else {
+							final long duration_ns = (long) ((System.nanoTime() - start));
+							ns_count.addAndGet(duration_ns);
+							timing_count.incrementAndGet();
+						}
+					}
+					else
+						if (l.isFile()) {
+
+							if (members_of_archives.contains(l))
+								continue;
+
+							final List<LFN> zip_members = getZipMembers(whereis, l);
+							final boolean isArchive = zip_members != null && !zip_members.isEmpty();
+							final boolean isMember = zip_members.contains(l);
+
+							// create json file in the hierarchy
+							final LFN_CSD lfnc = new LFN_CSD(l);
+
+							if (isArchive)
+								lfnc.type = 'a';
+
+							Set<PFN> pfns = null;
+							// we have the pfns in the map
+							for (final GUID guidmap : whereis.keySet())
+								if (whereis.get(guidmap).equals(l))
+									pfns = guidmap.getPFNs();
+
+							if (pfns != null) {
+								HashMap<Integer, String> pfnset = new HashMap<>();
+								if (isMember) {
+									lfnc.type = 'm';
+									pfnset.put(0, l.getCanonicalName());
+								}
+								else {
+									for (final PFN p : pfns) {
+										final int se = p.getSE().seNumber;
+										if (se <= 0) {
+											failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
+											failed_ses.flush();
+											continue;
+										}
+										pfnset.put(se, p.getPFN());
+									}
+								}
+								lfnc.pfns = pfnset;
+							}
+
+							final long start = System.nanoTime();
+							if (!lfnc.insert("catalogue.lfns_real", clevel)) {
+								final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
+								System.err.println(msg);
+								failed_files.println(msg);
+								failed_files.flush();
+							}
+							else {
+								final long duration_ns = (long) ((System.nanoTime() - start));
+								ns_count.addAndGet(duration_ns);
+								timing_count.incrementAndGet();
+							}
+						}
+			}
+			// Remove from list
+			activeThreadFolders.remove(Long.valueOf(threadId));
+		}
+	}
+
+}

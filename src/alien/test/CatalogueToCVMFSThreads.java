@@ -272,7 +272,7 @@ public class CatalogueToCVMFSThreads {
 		@SuppressWarnings("unchecked")
 		public void run() {
 			if (dir == null) {
-				final String msg = "LFN DIR is null! ";
+				final String msg = "LFN DIR is null! " + dir.getCanonicalName();
 				failed_folders.println(msg);
 				failed_folders.flush();
 				return;
