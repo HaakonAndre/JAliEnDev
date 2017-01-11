@@ -100,7 +100,8 @@ public class TransferBroker {
 		executeClose();
 
 		try {
-			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+			dbc.setReadOnly(false);
+			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 			stat.setQueryTimeout(600);
 
 			if (stat.execute(query, Statement.NO_GENERATED_KEYS)) {

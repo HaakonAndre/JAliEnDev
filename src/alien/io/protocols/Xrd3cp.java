@@ -144,7 +144,12 @@ public class Xrd3cp extends Xrootd {
 
 			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
-			checkLibraryPath(pBuilder, getXrd3cpPath());
+			final String xrd3cpBasePath = getXrd3cpPath();
+
+			checkLibraryPath(pBuilder, xrd3cpBasePath);
+
+			if (xrd3cpBasePath.endsWith("/api"))
+				checkLibraryPath(pBuilder, xrd3cpBasePath.substring(0, xrd3cpBasePath.lastIndexOf('/')), true);
 
 			long seconds = source.getGuid().size / 200000; // average target
 															// speed: 200KB/s

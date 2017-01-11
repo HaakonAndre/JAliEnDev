@@ -569,8 +569,10 @@ public class LFNUtils {
 		for (final IndexTableEntry ite : matchingTables) {
 			final List<LFN> findResults = ite.find(path, processedPattern, flags);
 
-			if (findResults != null && findResults.size() > 0)
-				ret.addAll(findResults);
+			if (findResults == null)
+				return null;
+
+			ret.addAll(findResults);
 		}
 
 		return ret;

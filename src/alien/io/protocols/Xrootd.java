@@ -176,9 +176,33 @@ public class Xrootd extends Protocol {
 	 * @param path
 	 */
 	public static void checkLibraryPath(final ProcessBuilder p, final String path) {
+		checkLibraryPath(p, path, false);
+	}
+
+	/**
+	 * Set the LD_LIBRARY_PATH of this process to the lib directory of the given path
+	 *
+	 * @param p
+	 * @param path
+	 * @param append
+	 *            whether to append to the existing value (<code>true</code>) or replace it (<code>false</code>)
+	 */
+	public static void checkLibraryPath(final ProcessBuilder p, final String path, final boolean append) {
 		if (path != null) {
-			p.environment().put("LD_LIBRARY_PATH", path + "/lib");
-			p.environment().put("DYLD_LIBRARY_PATH", path + "/lib");
+			if (!append) {
+				p.environment().put("LD_LIBRARY_PATH", path + "/lib");
+				p.environment().put("DYLD_LIBRARY_PATH", path + "/lib");
+			}
+			else {
+				for (final String key : new String[] { "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH" }) {
+					final String old = p.environment().get(key);
+
+					if (old == null || old.length() == 0)
+						p.environment().put(key, path + "/lib");
+					else
+						p.environment().put(key, old + ":" + path + "/lib");
+				}
+			}
 		}
 	}
 

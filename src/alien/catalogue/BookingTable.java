@@ -284,11 +284,15 @@ public class BookingTable {
 
 			db.setReadOnly(false);
 
+			boolean allNullLFNs = true;
+
 			while (db.moveNext()) {
 				final String sLFN = db.gets(1);
 
 				if (sLFN.length() == 0)
 					continue;
+
+				allNullLFNs = false;
 
 				final LFN lfn = LFNUtils.getLFN(sLFN, true);
 
@@ -321,6 +325,12 @@ public class BookingTable {
 
 					ret = lfn;
 				}
+			}
+
+			if (allNullLFNs) {
+				// The LFN was not passed, used by transfers to create replicas of a GUID without references to an LFN
+				// But then they rely on an LFN being returned as a confirmation
+				ret = new LFN("/bogus");
 			}
 
 			// was booked, now let's move it to the catalog

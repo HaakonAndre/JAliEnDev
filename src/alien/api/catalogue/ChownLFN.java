@@ -62,6 +62,12 @@ public class ChownLFN extends Request {
 			return;
 
 		final Collection<LFN> lfns = LFNUtils.find(path, "*", LFNUtils.FIND_INCLUDE_DIRS);
+
+		if (lfns == null) {
+			success = false;
+			return;
+		}
+
 		for (final LFN l : lfns) {
 			if (!AuthorizationChecker.isOwner(l, getEffectiveRequester()))
 				success = false;
