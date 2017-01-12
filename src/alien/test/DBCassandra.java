@@ -24,7 +24,7 @@ public class DBCassandra {
         cluster = Cluster
                 .builder()
                 .addContactPoints("alientest02.cern.ch", "aliendb06f.cern.ch",
-                                "alientest05.cern.ch", "alientest06.cern.ch", "alientest07.cern.ch")
+                                "alientest05.cern.ch", "alientest06.cern.ch", "alientest07.cern.ch", "aliendb06g.cern.ch")
                 .withLoadBalancingPolicy(
                                 new TokenAwarePolicy(new RoundRobinPolicy()))
                 .withPoolingOptions(poolingOptions)

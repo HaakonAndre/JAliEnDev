@@ -124,8 +124,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param LFN
 	 */
 	public LFN_CSD(LFN l) {
-		System.out.println("LFN_CSD with: " + l.getCanonicalName());
-
 		canonicalName = l.getCanonicalName();
 
 		int remove = 0;
@@ -147,8 +145,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		gowner = l.getGroup();
 		guid = l.guid;
 		metadata = new HashMap<String, String>();
-
-		System.out.println(toString());
 	}
 
 	public LFN_CSD(String lfn, boolean getFromDB) {
@@ -508,8 +504,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			cl = level;
 		}
 
-		System.out.println("In insert with: " + this.canonicalName);
-
 		try {
 			Session session = DBCassandra.getInstance();
 			if (session == null)
@@ -543,9 +537,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (type == 'a' || type == 'f') {
 				Set<Integer> seNumbers = pfns.keySet();
 				for (Integer seNumber : seNumbers) {
-					statement = session.prepare("INSERT INTO catalogue.se_lookups_real (seNumber, guid, lfn, size)" + " VALUES (?,?,?,?)");
+					statement = session.prepare("INSERT INTO catalogue.se_lookups (seNumber, guid, lfn, size, owner)" + " VALUES (?,?,?,?,?)");
 					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(seNumber, guid, path + child, size);
+					boundStatement.bind(seNumber, guid, path + child, size, owner);
 					boundStatement.setConsistencyLevel(cl);
 					session.execute(boundStatement);
 				}

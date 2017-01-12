@@ -46,7 +46,7 @@ public class CatalogueToCassandraThreads {
 	/**
 	 * limit
 	 */
-	static final int origlimit = 1000000;
+	static final int origlimit = 50000;
 	/** Entries processed */
 	static AtomicInteger global_count = new AtomicInteger();
 	/**
@@ -321,8 +321,8 @@ public class CatalogueToCassandraThreads {
 		used_threads.println(logs_suffix + " - " + pool_size);
 		used_threads.close();
 
-		System.out.println("Going to insert consistency: " + clevel.toString() + " limit: " + limit + " in " + args[2] + " hierarchy. Time: " + new Date());
-		out.println("Going to insert consistency: " + clevel.toString() + " limit: " + limit + " base: " + base + " in " + args[2] + " hierarchy. Time: " + new Date());
+		System.out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limit + " in " + args[2] + " hierarchy. Time: " + new Date());
+		out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limit + " base: " + base + " in " + args[2] + " hierarchy. Time: " + new Date());
 		out.flush();
 
 		// Create LFN paths and submit them to create LFN_CSD to insert in
@@ -385,10 +385,10 @@ public class CatalogueToCassandraThreads {
 			long last_part = root % 10000;
 			long left = root / 10000;
 			long medium_part = left % 100;
-			long first_part = medium_part / 100;
+			long first_part = left / 100;
 			String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
-			LFN_CSD.createDirectory(lfnparent, "catalogue.lfns", clevel);
+			LFN_CSD.createDirectory(lfnparent, "catalogue.lfns_auto", clevel);
 
 			for (int i = 1; i <= 10; i++) {
 				String lfn = "file" + i + "_" + root; // lfnparent +
@@ -429,7 +429,7 @@ public class CatalogueToCassandraThreads {
 
 				// Insert into lfns_auto
 				final long start = System.nanoTime();
-				if (!lfnc.insert("catalogue.lfns", clevel)) {
+				if (!lfnc.insert("catalogue.lfns_auto", clevel)) {
 					final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
 					System.err.println(msg);
 				}
@@ -524,54 +524,36 @@ public class CatalogueToCassandraThreads {
 			// Files that will excluded since they are included in archives
 			final Set<LFN> members_of_archives = new HashSet<>();
 
-			System.out.println("Before whereis"); // TODELETE
-
 			// whereis of each file
 			final Map<GUID, LFN> whereis = new HashMap<>();
 			for (final LFN fi : list)
 				if (fi.isFile()) {
-					System.out.println("whereis file: " + fi.getCanonicalName()); // TODELETE
-
 					final GUID g = GUIDUtils.getGUID(fi);
 					if (g == null) {
-						System.out.println("g null file: " + fi.getCanonicalName()); // TODELETE
-
 						failed_files.println("LFN is orphan!: " + fi.getCanonicalName());
 						failed_files.flush();
-						members_of_archives.add(fi); // Ignore files without
-														// guid
+						members_of_archives.add(fi); // Ignore files without guid
 						continue;
 					}
-					
-					System.out.println("g not null file: " + fi.getCanonicalName()); // TODELETE
 
 					if (g.getPFNs().size() == 0) {
-						System.out.println("whereis no pfns: " + fi.getCanonicalName()); // TODELETE
-
 						failed_files.println("LFN without pfns!: " + fi.getCanonicalName());
 						failed_files.flush();
-						members_of_archives.add(fi); // Ignore files without
-														// pfns
+						members_of_archives.add(fi); // Ignore files without pfns
 						continue;
 					}
-
-					System.out.println("whereis put: " + fi.getCanonicalName() + " " + g.toString()); // TODELETE
 
 					whereis.put(g, fi);
 				}
 
-			System.out.println("Before loop");
-
 			for (final LFN l : list) {
 				global_count.incrementAndGet();
-
-				System.out.println("Loop LFN: " + l.getCanonicalName());
 
 				if (l.isDirectory()) {
 					// insert the dir
 					final LFN_CSD lfnc = new LFN_CSD(l);
 					final long start = System.nanoTime();
-					if (!lfnc.insert("catalogue.lfns_real", clevel)) {
+					if (!lfnc.insert("catalogue.lfns", clevel)) {
 						final String msg = "Error inserting directory: " + l.getCanonicalName() + " Time: " + new Date();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -599,7 +581,7 @@ public class CatalogueToCassandraThreads {
 					if (l.isCollection()) {
 						final LFN_CSD lfnc = new LFN_CSD(l);
 						final long start = System.nanoTime();
-						if (!lfnc.insert("catalogue.lfns_real", clevel)) {
+						if (!lfnc.insert("catalogue.lfns", clevel)) {
 							final String msg = "Error inserting collection: " + l.getCanonicalName() + " Time: " + new Date();
 							System.err.println(msg);
 							failed_collections.println(msg);
@@ -613,7 +595,6 @@ public class CatalogueToCassandraThreads {
 					}
 					else
 						if (l.isFile()) {
-
 							if (members_of_archives.contains(l))
 								continue;
 
@@ -641,7 +622,7 @@ public class CatalogueToCassandraThreads {
 								}
 								else {
 									for (final PFN p : pfns) {
-										final int se = p.getSE().seNumber;
+										final int se = p.seNumber;
 										if (se <= 0) {
 											failed_ses.println("SE null: " + p.seNumber + " - " + p.pfn);
 											failed_ses.flush();
@@ -654,7 +635,7 @@ public class CatalogueToCassandraThreads {
 							}
 
 							final long start = System.nanoTime();
-							if (!lfnc.insert("catalogue.lfns_real", clevel)) {
+							if (!lfnc.insert("catalogue.lfns", clevel)) {
 								final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
 								System.err.println(msg);
 								failed_files.println(msg);
