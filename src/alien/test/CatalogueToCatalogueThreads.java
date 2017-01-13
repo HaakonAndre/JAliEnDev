@@ -119,10 +119,9 @@ public class CatalogueToCatalogueThreads {
 		final int nargs = args.length;
 
 		if (nargs < 1) {
-			System.err.println("Usage: ./run.sh alien/src/test/CatalogueToCassandraThreads <alien_path> [<pool_size>] [<logs_suffix>]");
+			System.err.println("Usage: ./run.sh alien/src/test/CatalogueToCassandraThreads <...>");
 			System.err.println("E.g. <base> -> 0");
 			System.err.println("E.g. <limit> -> 1000 (it creates 1000*10)");
-			System.err.println("E.g. <alien_path> -> /cassandra/");
 			System.err.println("E.g. <pool_size> -> 12");
 			System.err.println("E.g. <logs-suffix> -> alice-md5-1M");
 			System.exit(-3);
@@ -134,14 +133,14 @@ public class CatalogueToCatalogueThreads {
 
 		int pool_size = 16;
 		if (nargs > 3)
-			pool_size = Integer.parseInt(args[3]);
+			pool_size = Integer.parseInt(args[2]);
 		System.out.println("Pool size: " + pool_size);
 		tPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(pool_size);
 		tPool.setKeepAliveTime(1, TimeUnit.MINUTES);
 		tPool.allowCoreThreadTimeOut(true);
 
 		if (nargs > 4)
-			logs_suffix = "-" + args[4];
+			logs_suffix = "-" + args[3];
 
 		System.out.println("Printing output to: out" + logs_suffix);
 		out = new PrintWriter(new FileOutputStream("out" + logs_suffix));
@@ -153,7 +152,7 @@ public class CatalogueToCatalogueThreads {
 		used_threads.println(logs_suffix + " - " + pool_size);
 		used_threads.close();
 
-		System.out.println("Going to insert " + limit + "*10 in " + args[2] + " hierarchy. Time: " + new Date());
+		System.out.println("Going to insert " + limit + "*10 in hierarchy. Time: " + new Date());
 
 		// Create LFN paths and submit them
 		for (Long i = base; i < limit; i++) {
@@ -216,7 +215,7 @@ public class CatalogueToCatalogueThreads {
 			long last_part = root % 10000;
 			long left = root / 10000;
 			long medium_part = left % 100;
-			long first_part = medium_part / 100;
+			long first_part = left / 100;
 			String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
 			for (int i = 1; i <= 10; i++) {
