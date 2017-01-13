@@ -134,6 +134,32 @@ public class CatalogueToCassandraThreads {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
+		if (args.length < 1) {
+			System.err.println("Usage: CatalogueToCassandraThreads real|auto ");
+			System.exit(-3);
+		}
+
+		ArrayList<String> newargs = new ArrayList<>();
+		for (int i = 1; i < args.length; i++) {
+			newargs.add(args[i]);
+		}
+
+		if (args[0].equals("real"))
+			main_real(newargs.toArray(new String[0]));
+		else
+			if (args[0].equals("auto"))
+				main_auto(newargs.toArray(new String[0]));
+			else {
+				System.err.println("Usage: CatalogueToCassandraThreads real|auto ");
+				System.exit(-3);
+			}
+	}
+
+	/**
+	 * @param args
+	 * @throws IOException
+	 */
+	public static void main_real(final String[] args) throws IOException {
 		final int nargs = args.length;
 
 		if (nargs < 1) {
@@ -144,7 +170,7 @@ public class CatalogueToCassandraThreads {
 			System.err.println("E.g. <consistency> -> 1-one 2-quorum");
 			System.exit(-3);
 		}
-
+				
 		int pool_size = 16;
 		if (nargs > 1)
 			pool_size = Integer.parseInt(args[1]);
@@ -279,7 +305,7 @@ public class CatalogueToCassandraThreads {
 	 * @param args
 	 * @throws IOException
 	 */
-	public static void main2(final String[] args) throws IOException {
+	public static void main_auto(final String[] args) throws IOException {
 		final int nargs = args.length;
 
 		if (nargs < 1) {
@@ -429,7 +455,7 @@ public class CatalogueToCassandraThreads {
 
 				// Insert into lfns_auto
 				final long start = System.nanoTime();
-				if (!lfnc.insert("catalogue.lfns_auto", clevel)) {
+				if (!lfnc.insert("catalogue.lfns_auto", "catalogue.se_lookups_auto", clevel)) {
 					final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
 					System.err.println(msg);
 				}
@@ -553,7 +579,7 @@ public class CatalogueToCassandraThreads {
 					// insert the dir
 					final LFN_CSD lfnc = new LFN_CSD(l);
 					final long start = System.nanoTime();
-					if (!lfnc.insert("catalogue.lfns", clevel)) {
+					if (!lfnc.insert("catalogue.lfns", "catalogue.se_lookups", clevel)) {
 						final String msg = "Error inserting directory: " + l.getCanonicalName() + " Time: " + new Date();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -581,7 +607,7 @@ public class CatalogueToCassandraThreads {
 					if (l.isCollection()) {
 						final LFN_CSD lfnc = new LFN_CSD(l);
 						final long start = System.nanoTime();
-						if (!lfnc.insert("catalogue.lfns", clevel)) {
+						if (!lfnc.insert("catalogue.lfns", "catalogue.se_lookups", clevel)) {
 							final String msg = "Error inserting collection: " + l.getCanonicalName() + " Time: " + new Date();
 							System.err.println(msg);
 							failed_collections.println(msg);
@@ -635,7 +661,7 @@ public class CatalogueToCassandraThreads {
 							}
 
 							final long start = System.nanoTime();
-							if (!lfnc.insert("catalogue.lfns", clevel)) {
+							if (!lfnc.insert("catalogue.lfns", "catalogue.se_lookups", clevel)) {
 								final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
 								System.err.println(msg);
 								failed_files.println(msg);

@@ -486,18 +486,22 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @return insertion result
 	 */
 	public boolean insert() {
-		return this.insert(null, null);
+		return this.insert(null, null, null);
 	}
 
 	/**
 	 * @return insertion result
 	 */
-	public boolean insert(String table, ConsistencyLevel level) {
+	public boolean insert(String table_lfns, String table_se_lookup, ConsistencyLevel level) {
 		// lfn | ctime | dir | gowner | jobid | link | md5 | owner | perm | pfns
 		// | size | type
 		String t = "catalogue.lfns";
-		if (table != null)
-			t = table;
+		if (table_lfns != null)
+			t = table_lfns;
+		
+		String ts = "catalogue.se_lookups";
+		if (table_se_lookup != null)
+			ts = table_se_lookup;
 
 		ConsistencyLevel cl = ConsistencyLevel.QUORUM;
 		if (level != null) {
@@ -537,7 +541,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (type == 'a' || type == 'f') {
 				Set<Integer> seNumbers = pfns.keySet();
 				for (Integer seNumber : seNumbers) {
-					statement = session.prepare("INSERT INTO catalogue.se_lookups (seNumber, guid, lfn, size, owner)" + " VALUES (?,?,?,?,?)");
+					statement = session.prepare("INSERT INTO " + ts + " (seNumber, guid, lfn, size, owner)" + " VALUES (?,?,?,?,?)");
 					boundStatement = new BoundStatement(statement);
 					boundStatement.bind(seNumber, guid, path + child, size, owner);
 					boundStatement.setConsistencyLevel(cl);
@@ -583,7 +587,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		newdir.perm = "755";
 		newdir.size = 0;
 
-		return newdir.insert();
+		return newdir.insert(table, null, level);
 	}
 
 	public static boolean existsLfn(String lfn, String table, ConsistencyLevel level) {

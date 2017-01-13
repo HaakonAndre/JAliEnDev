@@ -16,10 +16,10 @@ public class DBCassandra {
 	private DBCassandra() {
 		// Create the connection pool
 		PoolingOptions poolingOptions = new PoolingOptions();
-		poolingOptions.setConnectionsPerHost(HostDistance.LOCAL, 1, 1).setConnectionsPerHost(HostDistance.REMOTE, 1, 1);
+		poolingOptions.setConnectionsPerHost(HostDistance.LOCAL, 2, 4).setConnectionsPerHost(HostDistance.REMOTE, 1, 1);
 		
-		SocketOptions socketOptions = new SocketOptions();
-		socketOptions.setReadTimeoutMillis(12000);
+//		SocketOptions socketOptions = new SocketOptions();
+//		socketOptions.setReadTimeoutMillis(12000);
 
         cluster = Cluster
                 .builder()
@@ -28,7 +28,7 @@ public class DBCassandra {
                 .withLoadBalancingPolicy(
                                 new TokenAwarePolicy(new RoundRobinPolicy()))
                 .withPoolingOptions(poolingOptions)
-                .withSocketOptions(socketOptions)
+//                .withSocketOptions(socketOptions)
                 .withCredentials("cassandra", "cassandra").build();
 		
 		session = cluster.connect();
