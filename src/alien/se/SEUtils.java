@@ -64,6 +64,36 @@ public final class SEUtils {
 
 	private static Map<Integer, SECounterUpdate> seCounterUpdates = new ConcurrentHashMap<>();
 
+	private static Map<String, Map<Integer, Double>> seDistance = null;
+
+	private static long seDistanceUpdated = 0;
+
+	private static final ReentrantReadWriteLock seDistanceRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
+	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
+
+	private static final String SEDISTANCE_QUERY;
+
+	static {
+		if (ConfigUtils.isCentralService()) {
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				db.setReadOnly(true);
+
+				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
+				else
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+			}
+
+			updateSECache();
+			updateSEDistanceCache();
+		}
+		else
+			SEDISTANCE_QUERY = null;
+
+		ShutdownManager.getInstance().addModule(() -> flushCounterUpdates());
+	}
+
 	private static final void updateSECache() {
 		if (!ConfigUtils.isCentralService())
 			return;
@@ -143,8 +173,8 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				final SEfromString request = new SEfromString(null, null, seNumber.intValue());
-				final SEfromString response =Dispatcher.execute(request); 
-				System.err.println("Response: "+response);
+				final SEfromString response = Dispatcher.execute(request);
+				// System.err.println("Response: " + response);
 				return response.getSE();
 			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
@@ -219,36 +249,6 @@ public final class SEUtils {
 		}
 
 		return ret;
-	}
-
-	private static Map<String, Map<Integer, Double>> seDistance = null;
-
-	private static long seDistanceUpdated = 0;
-
-	private static final ReentrantReadWriteLock seDistanceRWLock = new ReentrantReadWriteLock();
-	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
-	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
-
-	private static final String SEDISTANCE_QUERY;
-
-	static {
-		if (ConfigUtils.isCentralService()) {
-			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-				db.setReadOnly(true);
-
-				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
-					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
-				else
-					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
-			}
-
-			updateSECache();
-			updateSEDistanceCache();
-		}
-		else
-			SEDISTANCE_QUERY = null;
-
-		ShutdownManager.getInstance().addModule(() -> flushCounterUpdates());
 	}
 
 	private static void updateSEDistanceCache() {
