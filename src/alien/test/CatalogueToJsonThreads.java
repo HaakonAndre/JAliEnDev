@@ -35,6 +35,7 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import lazyj.commands.SystemCommand;
 import lia.util.Utils;
 
 /**
@@ -203,8 +204,8 @@ public class CatalogueToJsonThreads {
 		used_threads.close();
 
 		System.out.println("Going to create " + args[0] + " hierarchy. Time: " + new Date());
-		System.out.println(Utils.getOutput("df -h ."));
-		System.out.println(Utils.getOutput("df -hi ."));
+		System.out.println(SystemCommand.bash("df -h .").stdout);
+		System.out.println(SystemCommand.bash("df -hi .").stdout);
 
 		try (Scanner reader = new Scanner(System.in)) {
 			// create directories

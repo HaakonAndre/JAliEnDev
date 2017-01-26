@@ -36,7 +36,7 @@ import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
-import lia.util.Utils;
+import lazyj.commands.SystemCommand;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -179,7 +179,7 @@ public class JBoxServer extends Thread {
 		String sUserId = System.getProperty("userid");
 
 		if (sUserId == null || sUserId.length() == 0) {
-			sUserId = Utils.getOutput("id -u " + System.getProperty("user.name"));
+			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
 
 			if (sUserId != null && sUserId.length() > 0)
 				System.setProperty("userid", sUserId);
@@ -267,9 +267,9 @@ public class JBoxServer extends Thread {
 		try {
 			final int iUserId = Integer.parseInt(sUserId.trim());
 
-			File tmpDir = new File(System.getProperty("java.io.tmpdir"));
+			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-			File envFile = new File(tmpDir, "jclient_env_" + iUserId);
+			final File envFile = new File(tmpDir, "jclient_env_" + iUserId);
 
 			try (FileWriter fw = new FileWriter(envFile)) {
 				fw.write("export alien_API_HOST=" + sHost + "\n");

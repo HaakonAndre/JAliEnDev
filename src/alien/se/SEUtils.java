@@ -142,7 +142,10 @@ public final class SEUtils {
 	public static SE getSE(final Integer seNumber) {
 		if (!ConfigUtils.isCentralService())
 			try {
-				return Dispatcher.execute(new SEfromString(null, null, seNumber.intValue())).getSE();
+				final SEfromString request = new SEfromString(null, null, seNumber.intValue());
+				final SEfromString response =Dispatcher.execute(request); 
+				System.err.println("Response: "+response);
+				return response.getSE();
 			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}

@@ -58,6 +58,7 @@ import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
+import lazyj.commands.SystemCommand;
 import lia.util.Utils;
 
 /**
@@ -320,7 +321,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	private void cleanup() {
 		System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
 		// Remove sandbox, TODO: use Java builtin
-		Utils.getOutput("rm -rf " + jobWorkdir);
+		SystemCommand.bash("rm -rf " + jobWorkdir);
 		RES_WORKDIR_SIZE = ZERO;
 		RES_VMEM = ZERO;
 		RES_RMEM = ZERO;
@@ -374,7 +375,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			while (m.find())
 				users.add(m.group(1));
 		}
-		
+
 		// get nousers from cerequirements field
 		final ArrayList<String> nousers = new ArrayList<>();
 		if (!ceRequirements.equals("")) {
@@ -383,7 +384,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			while (m.find())
 				nousers.add(m.group(1));
 		}
-		
+
 		// setting entries for the map object
 		siteMap.put("TTL", Integer.valueOf(origTtl));
 
@@ -1131,7 +1132,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 		}
 		else
-			if (newStatus == JobStatus.RUNNING) {	
+			if (newStatus == JobStatus.RUNNING) {
 				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
 				extrafields.put("node", hostName);
 

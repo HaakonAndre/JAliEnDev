@@ -37,6 +37,7 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import lazyj.commands.SystemCommand;
 import lia.util.Utils;
 
 
@@ -138,7 +139,7 @@ public class CatalogueToCVMFSThreads {
 
 		// CVMFS transaction start
 		System.out.println("CVMFS transaction: "+new Date());
-		System.out.println(" "+Utils.getOutput("cvmfs_server transaction"));
+		System.out.println(" "+SystemCommand.bash("cvmfs_server transaction").stdout);
 		System.out.println("CVMFS transaction done: "+new Date());
 
 		try (Scanner reader = new Scanner(System.in)) {

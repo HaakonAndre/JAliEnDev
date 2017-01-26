@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.site.JobAgent;
+import lazyj.commands.SystemCommand;
 import lia.util.Utils;
 
 /**
@@ -34,7 +35,7 @@ public class CVMFS extends PackMan {
 	 */
 	public CVMFS() {
 		try {
-			alienv_bin = Utils.getOutput("which /cvmfs/alice.cern.ch/bin/alienv").trim();
+			alienv_bin = SystemCommand.bash("which /cvmfs/alice.cern.ch/bin/alienv").stdout.trim();
 		} catch (final Exception e) {
 			System.out.println("which alienv not ok: " + e.getMessage());
 		}
@@ -60,7 +61,7 @@ public class CVMFS extends PackMan {
 		logger.log(Level.INFO, "PackMan-CVMFS: Getting list of packages ");
 
 		if (this.getHavePath()) {
-			final String listPackages = Utils.getOutput(alienv_bin + " q --packman");
+			final String listPackages = SystemCommand.bash(alienv_bin + " q --packman").stdout;
 			return Arrays.asList(listPackages.split("\n"));
 		}
 
@@ -75,7 +76,7 @@ public class CVMFS extends PackMan {
 		logger.log(Level.INFO, "PackMan-CVMFS: Getting list of packages ");
 
 		if (this.getHavePath()) {
-			final String listPackages = Utils.getOutput(alienv_bin + " q --packman");
+			final String listPackages = SystemCommand.bash(alienv_bin + " q --packman").stdout;
 			return Arrays.asList(listPackages.split("\n"));
 		}
 		return null;
@@ -94,7 +95,7 @@ public class CVMFS extends PackMan {
 		if (version != null)
 			args += "/" + version;
 
-		final String source = Utils.getOutput(alienv_bin + " printenv " + args);
+		final String source = SystemCommand.bash(alienv_bin + " printenv " + args).stdout;
 
 		final ArrayList<String> parts = new ArrayList<>(Arrays.asList(source.split(";")));
 		parts.remove(parts.size() - 1);
