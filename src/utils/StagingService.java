@@ -120,7 +120,7 @@ public class StagingService {
 			db.setQueryTimeout(600);
 
 			while (true) {
-				db.query("DELETE FROM staging_queue WHERE attempts>10 OR created<adddate(now(), interval -1 month);");
+				db.query("DELETE FROM staging_queue WHERE attempts>10 OR created<adddate(now(), interval - 1 week);");
 				db.query("SELECT lfn FROM staging_queue ORDER BY attempts ASC, created ASC LIMIT 100000;");
 
 				if (!db.moveNext()) {
