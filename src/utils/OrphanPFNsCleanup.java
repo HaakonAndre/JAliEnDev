@@ -147,6 +147,7 @@ public class OrphanPFNsCleanup {
 								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;", true);
 
 								final DBConnection dbc = db2.getConnection();
+								dbc.setReadOnly(false);
 
 								executeQuery(dbc, "LOCK TABLES orphan_pfns WRITE, orphan_pfns_" + seNumber + " WRITE;");
 
