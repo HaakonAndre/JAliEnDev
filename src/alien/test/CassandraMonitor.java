@@ -2,6 +2,7 @@ package alien.test;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,6 +32,7 @@ public class CassandraMonitor {
 	static transient final Logger logger = ConfigUtils.getLogger(CassandraMonitor.class.getCanonicalName());
 	static transient final ApMon apmon = MonitorFactory.getApMonSender();
 	static String hostName = null;
+	static boolean first = true;
 	
 	static final String[] metrics = {
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=TotalLatency",
@@ -89,7 +91,29 @@ public class CassandraMonitor {
 			"Write_Timeouts_Count",
 			"Read_Unavailables_Count",
 			"Write_Unavailables_Count"
-			};	
+			};
+	
+	static final boolean[] isRate = {
+			false,
+			false,
+			true,
+			true,
+			false,
+			false,
+			true,
+			true,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			false,
+			};
+	
+	static Object[] previousValues = new Object[metrics.length];
 
 	public static void main(String[] args) {
 		try {
@@ -101,9 +125,10 @@ public class CassandraMonitor {
 			System.exit(-1);
 		}
 		
-		if(metrics.length != attributes.length || metrics.length != names.length){
-			System.err.println("Metrics-attributes-names don't match");
-			logger.log(Level.SEVERE, "Metrics-attributes-names don't match");
+		if(metrics.length != attributes.length || metrics.length != names.length
+				|| metrics.length != isRate.length){
+			System.err.println("Metrics-attributes-names-isrates don't match");
+			logger.log(Level.SEVERE, "Metrics-attributes-names-isrates don't match");
 			System.exit(-1);		
 		}
 		
@@ -115,18 +140,45 @@ public class CassandraMonitor {
 
 				for (int i = 0; i < metrics.length; i++) {
 					Object obj = (Object) getMbeanAttributeValue(metrics[i], attributes[i]);
-					//System.out.println("Object: " + obj.toString());
+					System.out.println("Metric: "+ names[i] +" Object: " + obj.toString()); // TODO comment
 					paramNames.add(names[i]);
-					if(obj instanceof Long) 
-				        paramValues.add(((Long) obj).doubleValue());
-					else
-					    paramValues.add((Double) obj);
+					if(obj instanceof Long) {
+						Long value = ((Long) obj).longValue();
+						if(!isRate[i]){
+							previousValues[i] = value;
+							if(!first)
+								value = value - (Long) previousValues[i]; 
+						}
+						System.out.println("Value-" + names[i] + ": " + value); // TODO delete
+						paramValues.add(value); //paramValues.add(((Long) obj).doubleValue());
+					}
+					else{
+						Double value = ((Double) obj).doubleValue();
+						if(!isRate[i]){
+							previousValues[i] = value;
+							if(!first)
+								value = value - (Double) previousValues[i]; 
+						}
+						System.out.println("Value-" + names[i] + ": " + value); // TODO delete
+						paramValues.add(value); //paramValues.add((Double) obj);
+					}
 				}
-
 				try {
-					logger.log(Level.INFO, "Sending: "+paramNames.toString()+" and "+paramValues.toString());
-					apmon.sendParameters("Cassandra_Nodes", hostName, paramNames.size(), paramNames, paramValues);
-				} catch (ApMonException e) {
+					for (int i=0; i<previousValues.length; i++){
+						System.out.println("PreviousValues " + i + ": " + previousValues[i]);
+					}
+					
+					if (first){
+						System.out.println("In first"); // TODO delete
+						logger.log(Level.INFO, "First pass...waiting for next to calculate deltas");
+						first = false;
+					}
+					else{
+						logger.log(Level.INFO, "Sending: "+paramNames.toString()+" and "+paramValues.toString());
+						//apmon.sendParameters("Cassandra_Nodes", hostName, paramNames.size(), paramNames, paramValues); TODO uncomment
+					}
+//				} catch (ApMonException e) { TODO uncomment and remove bellow Exception
+				} catch (Exception e) {
 					System.err.println("Exception sending parameters: " + e);
 					logger.log(Level.SEVERE, "Exception sending parameters: " + e);
 				}
@@ -136,11 +188,12 @@ public class CassandraMonitor {
 				logger.log(Level.SEVERE, "Exception getting attribute: " + e);
 			}
 
-			//System.out.println("Sleep for 60 seconds...");
+			System.out.println("Sleep for 5 seconds..."); // TODO comment
 			logger.log(Level.INFO, "Sleep for 60 seconds...");
 
 			try {
-				Thread.sleep(60000);
+				Thread.sleep(5000);
+				//Thread.sleep(60000); // TODO uncomment
 			} catch (InterruptedException e2) {
 				System.err.println("Exception sleeping: " + e2);
 				logger.log(Level.SEVERE, "Exception sleeping: " + e2);

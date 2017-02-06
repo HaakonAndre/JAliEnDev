@@ -170,6 +170,11 @@ public class CatalogueToCassandraThreads {
 			System.err.println("E.g. <consistency> -> 1-one 2-quorum");
 			System.exit(-3);
 		}
+		
+		for (int i=0; i<nargs; i++){
+			out.println("Parameter " + i + ": " + args[i]);
+			out.flush();
+		}
 				
 		int pool_size = 16;
 		if (nargs > 1)
@@ -319,6 +324,11 @@ public class CatalogueToCassandraThreads {
 			System.exit(-3);
 		}
 
+		for (int i=0; i<nargs; i++){
+			out.println("Parameter " + i + ": " + args[i]);
+			out.flush();
+		}
+		
 		final Long base = Long.parseLong(args[0]);
 		final Long limit = Long.parseLong(args[1]);
 
