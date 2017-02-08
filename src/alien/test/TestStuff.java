@@ -3,6 +3,7 @@ package alien.test;
 import java.util.List;
 
 import alien.catalogue.LFN_CSD;
+import alien.test.cassandra.DBCassandra;
 
 public class TestStuff {
 

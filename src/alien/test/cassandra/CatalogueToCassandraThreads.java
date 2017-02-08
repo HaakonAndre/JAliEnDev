@@ -1,4 +1,4 @@
-package alien.test;
+package alien.test.cassandra;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -30,6 +30,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
+import alien.test.JobDiscoverer;
 
 /**
  *

@@ -1,4 +1,4 @@
-package alien.test;
+package alien.test.cassandra;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -21,7 +21,7 @@ import com.datastax.driver.core.Session;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
-import alien.test.DBCassandra;
+import alien.test.cassandra.DBCassandra;
 import lazyj.Format;
 
 /**

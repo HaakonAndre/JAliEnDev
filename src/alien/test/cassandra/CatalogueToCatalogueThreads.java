@@ -1,4 +1,4 @@
-package alien.test;
+package alien.test.cassandra;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -119,7 +119,7 @@ public class CatalogueToCatalogueThreads {
 		final int nargs = args.length;
 
 		if (nargs < 1) {
-			System.err.println("Usage: ./run.sh alien/src/test/CatalogueToCassandraThreads <...>");
+			System.err.println("Usage: ./run.sh alien/src/test/CatalogueToCatalogueThreads <...>");
 			System.err.println("E.g. <base> -> 0");
 			System.err.println("E.g. <limit> -> 1000 (it creates 1000*10)");
 			System.err.println("E.g. <pool_size> -> 12");

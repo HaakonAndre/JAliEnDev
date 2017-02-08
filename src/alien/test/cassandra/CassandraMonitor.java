@@ -1,4 +1,4 @@
-package alien.test;
+package alien.test.cassandra;
 
 import java.io.IOException;
 import java.net.InetAddress;

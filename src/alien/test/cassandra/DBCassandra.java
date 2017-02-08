@@ -1,4 +1,4 @@
-package alien.test;
+package alien.test.cassandra;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.HostDistance;
