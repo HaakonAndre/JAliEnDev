@@ -5,19 +5,9 @@ import java.io.IOException;
 import alien.api.DispatchSSLServer;
 import alien.user.JAKeyStore;
 
-/**
- * @author ron
- * @since Jun 05, 2011
- */
+
 public class ComputingElement extends Thread {
 
-	/**
-	 * 
-	 */
-
-	/**
-	 * 
-	 */
 	public ComputingElement() {
 		try {
 			JAKeyStore.loadClientKeyStorage();
