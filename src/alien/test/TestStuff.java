@@ -1,37 +1,29 @@
 package alien.test;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Set;
 
-import alien.catalogue.LFN_CSD;
-import alien.test.cassandra.DBCassandra;
+import javax.naming.NamingException;
+
+import alien.user.LDAPHelper;
 
 public class TestStuff {
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws NamingException {
 
 		System.out.println("Starting");
 
-//		LFN_CSD lfnc = new LFN_CSD("/cassandra/0/89/4251/file9_9894251", true);
-//		System.out.println(lfnc.toString());
-//		
-//		final List<LFN_CSD> list = lfnc.list();
-//		
-//		for (LFN_CSD l : list){
-//			System.out.println("LFN: "+l.path+" "+l.child);
-//		}
-		final List<LFN_CSD> found = LFN_CSD.find("/cassandra/0/89/4251/", "file10_2*", "", "");
+//		Set<String> defaultQos = LDAPHelper.checkLdapInformation("(objectClass=AliEnVOConfig)", "ou=Config,", "sedefaultQosandCount");
+//		System.out.println(defaultQos);
 		
-		if(found == null) {
-			System.out.println("Null found");
-			DBCassandra.shutdown();
-			return;
-		}
+		// final HashMap<String, Object> sites = LDAPHelper.checkLdapTree("(&(name=CERN-AURORA))", "ou=CE,ou=Services,ou=CERN,ou=Sites,");
+		final HashMap<String, Object> sites = LDAPHelper.checkLdapTree("(&(host=voboxalice1.cern.ch))", "ou=Config,ou=CERN,ou=Sites,");
 		
-		for (LFN_CSD l : found){
-			System.out.println(l.path+l.child);
-		}
+		if (sites != null)
+			System.out.println(sites.toString());
 
-		DBCassandra.shutdown();
+		System.out.println("Done");
+
 	}
 
 }

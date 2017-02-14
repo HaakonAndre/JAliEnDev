@@ -3,12 +3,21 @@ package alien.site;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import alien.api.DispatchSSLServer;
+import alien.config.ConfigUtils;
 import alien.user.JAKeyStore;
+import lazyj.ExtProperties;
 
 public class ComputingElement extends Thread {
 
+	// Logger object
+	static transient final Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
+	
+	// Config
+	private final ExtProperties config = ConfigUtils.getConfig();
+	
 	private final Map<String, String> env = System.getenv();
 	private HashMap<String, Object> siteMap = null;
 
