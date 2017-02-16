@@ -162,7 +162,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 		totalJobs = 0;
 
-		siteMap = (new SiteMap()).getSiteParameters();
+		siteMap = (new SiteMap()).getSiteParameters(env);
 
 		hostName = (String) siteMap.get("Host");
 		// alienCm = (String) siteMap.get("alienCm");

@@ -255,10 +255,10 @@ public class LDAPHelper {
 								while (e.hasMore()) {
 									vals.add((String) e.next());
 								}
-								result.put(attr.getID(), vals);
+								result.put(attr.getID().toLowerCase(), vals);
 							}
 							else {
-								result.put(attr.getID(), e.next());
+								result.put(attr.getID().toLowerCase(), e.next());
 							}
 						}
 					}

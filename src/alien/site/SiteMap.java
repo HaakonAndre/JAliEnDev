@@ -20,7 +20,6 @@ import alien.site.packman.PackMan;
 
 public class SiteMap {
 
-	private final Map<String, String> env = System.getenv();
 	static transient final Logger logger = ConfigUtils.getLogger(SiteMap.class.getCanonicalName());
 
 	public HashMap<String, Object> siteMap = new HashMap<>();
@@ -28,7 +27,10 @@ public class SiteMap {
 	/**
 	 * @return the site parameters to send to the job broker (packages, ttl, ce/site...)
 	 */
-	public HashMap<String, Object> getSiteParameters() {
+	public HashMap<String, Object> getSiteParameters(final Map<String, String> env) {
+		if (env == null)
+			return null;
+
 		logger.log(Level.INFO, "Getting site map");
 
 		// Local vars
@@ -46,8 +48,9 @@ public class SiteMap {
 		String hostName = "";
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
+			hostName = hostName.replace("/.$/", "");
 		} catch (final UnknownHostException e) {
-			System.err.println("Couldn't get hostname");
+			logger.severe("Couldn't get hostname");
 			e.printStackTrace();
 		}
 		siteMap.put("Host", hostName);
@@ -60,13 +63,17 @@ public class SiteMap {
 		siteMap.put("alienCm", alienCm);
 
 		// Getting PackMan instance and packages
-		packMan = getPackman();
+		String installationMethod = "CVMFS";
+		if (env.containsKey("installationMethod"))
+			installationMethod = env.get("installationMethod");
+
+		packMan = getPackman(installationMethod);
 		siteMap.put("PackMan", packMan);
 		packages = packMan.getListPackages();
 		installedPackages = packMan.getListInstalledPackages();
 
 		// Site name and CE name
-		site = env.get("site"); // or ConfigUtils.getConfig().gets("alice_close_site").trim();
+		site = env.get("site");
 		ce = env.get("CE");
 
 		// TTL
@@ -123,7 +130,7 @@ public class SiteMap {
 		instpacks = instpacks.substring(0, instpacks.length() - 1);
 
 		// Workdir
-		String workdir = env.get("HOME");
+		String workdir = System.getProperty("user.home");
 		if (env.containsKey("WORKDIR"))
 			workdir = env.get("WORKDIR");
 		if (env.containsKey("TMPBATCH"))
@@ -144,7 +151,11 @@ public class SiteMap {
 		if (extrasites != null && extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
-		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
+
+		if (env.containsKey("Disk"))
+			siteMap.put("Disk", env.get("Disk"));
+		else
+			siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
 
 		if (!partition.equals(""))
 			siteMap.put("Partition", partition);
@@ -153,8 +164,8 @@ public class SiteMap {
 	}
 
 	// Gets a PackMan instance depending on configuration (env coming from LDAP)
-	private PackMan getPackman() {
-		switch (env.get("installationMethod")) {
+	private PackMan getPackman(String installationMethod) {
+		switch (installationMethod) {
 		case "CVMFS":
 			siteMap.put("CVMFS", Integer.valueOf(1));
 			return new CVMFS();
