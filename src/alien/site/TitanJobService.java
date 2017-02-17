@@ -1,105 +1,49 @@
 package alien.site;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import alien.api.JBoxServer;
+import alien.api.catalogue.CatalogueApiUtils;
+import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
+import alien.monitoring.MonitoringObject;
+import alien.shell.commands.JAliEnCOMMander;
+import alien.site.packman.CVMFS;
+import alien.site.packman.PackMan;
+import alien.site.supercomputing.titan.FileDownloadController;
+import alien.site.supercomputing.titan.JobDownloader;
+import alien.site.supercomputing.titan.JobUploader;
+import alien.site.supercomputing.titan.ProcInfoPair;
+import alien.site.supercomputing.titan.TitanBatchController;
+import alien.site.supercomputing.titan.TitanJobStatus;
 import apmon.ApMon;
 import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.lang.ProcessBuilder.Redirect;
-import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.security.InvalidParameterException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Stack;
-import java.util.StringTokenizer;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.Vector;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import lazyj.Format;
-
-import lia.util.Utils;
-
-import org.sqlite.SQLiteConnection;
-
-import alien.api.JBoxServer;
-import alien.api.catalogue.CatalogueApiUtils;
-import alien.api.taskQueue.GetMatchJob;
-import alien.api.taskQueue.TaskQueueApiUtils;
-import alien.catalogue.FileSystemUtils;
-import alien.catalogue.GUID;
-import alien.catalogue.GUIDUtils;
-import alien.catalogue.LFN;
-import alien.catalogue.PFN;
-import alien.catalogue.XmlCollection;
-import alien.config.ConfigUtils;
-import alien.io.IOUtils;
-import alien.io.Transfer;
-import alien.io.protocols.Protocol;
-import alien.monitoring.Monitor;
-import alien.monitoring.MonitorFactory;
-import alien.monitoring.MonitoringObject;
-import alien.se.SE;
-import alien.shell.commands.JAliEnCOMMander;
-import alien.site.packman.CVMFS;
-import alien.site.packman.PackMan;
-import alien.site.supercomputing.titan.FileDownloadApplication;
-import alien.site.supercomputing.titan.FileDownloadController;
-import alien.site.supercomputing.titan.Pair;
-import alien.taskQueue.JDL;
-import alien.taskQueue.Job;
-import alien.taskQueue.JobStatus;
-import alien.site.supercomputing.titan.TitanJobStatus;
-import alien.site.supercomputing.titan.TitanBatchInfo;
-import alien.site.supercomputing.titan.ProcInfoPair;
-import alien.site.supercomputing.titan.JobUploader;
-import alien.site.supercomputing.titan.JobDownloader;
-import alien.site.supercomputing.titan.TitanBatchController;
-
 /**
  * @author mmmartin, ron, pavlo
  * @since Apr 1, 2015
  */
-
 
 public class TitanJobService extends Thread implements MonitoringObject {
 
@@ -115,26 +59,26 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private int origTtl;
 
 	// Job variables
-	//private JDL jdl = null;
-	//private long queueId;
+	// private JDL jdl = null;
+	// private long queueId;
 	private String jobToken;
 	private String username;
 	private String jobAgentId = "";
 	private String globalWorkdir = null;
-	//private HashMap<String, Object> matchedJob = null;
+	// private HashMap<String, Object> matchedJob = null;
 	private String partition;
 	private String ceRequirements = "";
 	private List<String> packages;
 	private List<String> installedPackages;
 	private ArrayList<String> extrasites;
 	private HashMap<String, Object> siteMap = new HashMap<>();
-	//private int workdirMaxSizeMB;
-	//private int jobMaxMemoryMB;
+	// private int workdirMaxSizeMB;
+	// private int jobMaxMemoryMB;
 	private int payloadPID;
 	private MonitoredJob mj;
 	private Double prevCpuTime;
 	private long prevTime = 0;
-	//private JobStatus jobStatus;
+	// private JobStatus jobStatus;
 
 	private int totalJobs;
 	private final long jobAgentStartTime = new java.util.Date().getTime();
@@ -188,14 +132,14 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private String RES_CPUMHZ = "";
 	private String RES_CPUFAMILY = "";
 
-	// EXPERIMENTAL 
+	// EXPERIMENTAL
 	// for ORNL Titan
 	private String dbname;
 	private String monitoring_dbname;
 	private String dblink;
 	private int numCores;
 
-	TitanBatchController batchController; 
+	TitanBatchController batchController;
 
 	/**
 	 */
@@ -265,7 +209,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		TitanBatchController.siteMap = siteMap;
 		batchController = new TitanBatchController(globalWorkdir);
 		FileDownloadController.setCacheFolder("/lustre/atlas/proj-shared/csc108/psvirin/catalog_cache");
-		
+
 		JobUploader.ce = ce;
 		JobUploader.hostName = hostName;
 		JobUploader.defaultOutputDirPrefix = defaultOutputDirPrefix;
@@ -279,45 +223,46 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		class TitanMonitorThread extends Thread {
 			private TitanBatchController tbc;
 
-			public TitanMonitorThread(TitanBatchController tbc){
+			public TitanMonitorThread(TitanBatchController tbc) {
 				this.tbc = tbc;
 			}
 
 			private void sendProcessResources() {
-				//List<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
+				// List<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
 				List<ProcInfoPair> job_resources = tbc.getBatchesMonitoringData();
 
 				/*
-				try{
-					// open db
-					Connection connection = DriverManager.getConnection(monitoring_dbname);
-					Statement statement = connection.createStatement();
-					ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
-					// read all
-					while(rs.next()){
-						job_resources.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
-						//idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
-						//		rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
-					}
-					// delete all
-					statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
-					// close database
-					connection.close();
-				}
-				catch(SQLException e){
-					System.err.println("Unable to get monitoring data: " + e.getMessage());
-				}
-				*/
+				 * try{
+				 * // open db
+				 * Connection connection = DriverManager.getConnection(monitoring_dbname);
+				 * Statement statement = connection.createStatement();
+				 * ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
+				 * // read all
+				 * while(rs.next()){
+				 * job_resources.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
+				 * //idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
+				 * // rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+				 * }
+				 * // delete all
+				 * statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
+				 * // close database
+				 * connection.close();
+				 * }
+				 * catch(SQLException e){
+				 * System.err.println("Unable to get monitoring data: " + e.getMessage());
+				 * }
+				 */
 				// foreach send
 
 				// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
-				//final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
-						//RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
-				//System.out.println("+++++ Sending resources info +++++");
-				//System.out.println(procinfo);
+				// final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM,
+				// RES_VMEM,
+				// RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
+				// System.out.println("+++++ Sending resources info +++++");
+				// System.out.println(procinfo);
 
 				// create pool of 16 thread
-				for(ProcInfoPair pi: job_resources){
+				for (ProcInfoPair pi : job_resources) {
 					// notify to all processes waiting
 					commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
 				}
@@ -325,11 +270,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				// ApMon calls
 				System.out.println("Running periodic Apmon update on running jobs");
 				List<TitanJobStatus> runningJobs = tbc.queryRunningDatabases();
-				for(TitanJobStatus pi: runningJobs){
-					/*final HashMap<String, Object> extrafields = new HashMap<>();
-					extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-					extrafields.put("node", hostName);
-					TaskQueueApiUtils.setJobStatus(pi.queueId, JobStatus.RUNNING, extrafields);*/
+				for (TitanJobStatus pi : runningJobs) {
+					/*
+					 * final HashMap<String, Object> extrafields = new HashMap<>();
+					 * extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+					 * extrafields.put("node", hostName);
+					 * TaskQueueApiUtils.setJobStatus(pi.queueId, JobStatus.RUNNING, extrafields);
+					 */
 
 					System.out.println("Running ApMon update for PID: " + pi.queueId);
 					Vector<String> varnames = new Vector<>();
@@ -347,42 +294,38 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					varvalues.add("psvirin");
 					varvalues.add(0);
 					varvalues.add(10000);
-					//varvalues.add(ce);
+					// varvalues.add(ce);
 					varvalues.add(hostName);
-					try{
-						//apmon.sendParameters(ce+"_Jobs", String.format("%d",pi.queueId), 6, varnames, varvalues);
-						apmon.sendParameters("TaskQueue_Jobs_ALICE", 
-									String.format("%d",pi.queueId), 
-									6, varnames, varvalues);
-					}
-					catch(ApMonException e){
+					try {
+						// apmon.sendParameters(ce+"_Jobs", String.format("%d",pi.queueId), 6, varnames, varvalues);
+						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", pi.queueId), 6, varnames, varvalues);
+					} catch (ApMonException e) {
 						System.out.println("Apmon exception: " + e.getMessage());
-					}
-					catch(UnknownHostException e){
+					} catch (UnknownHostException e) {
 						System.out.println("Unknown host exception");
 					}
 
-					catch(SocketException e){
+					catch (SocketException e) {
 						System.out.println("Socket exception");
 					}
 
-					catch(IOException e){
+					catch (IOException e) {
 						System.out.println("IO exception");
 					}
 
 					// notify to all processes waiting
-					//commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
+					// commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
 				}
 			}
 
 			public void run() {
 				// here create a pool of 16 sending processes
-				
-				while(true){
-					try{
-						Thread.sleep(1*60*1000);
+
+				while (true) {
+					try {
+						Thread.sleep(1 * 60 * 1000);
+					} catch (InterruptedException e) {
 					}
-					catch(InterruptedException e){}
 					sendProcessResources();
 				}
 			}
@@ -407,24 +350,24 @@ public class TitanJobService extends Thread implements MonitoringObject {
 			e.printStackTrace();
 		}
 
-		while(true){ 
+		while (true) {
 			System.out.println("========================");
 			System.out.println("Entering round");
 			System.out.println("Updating bunches information");
-			if(!batchController.updateDatabaseList()){
+			if (!batchController.updateDatabaseList()) {
 				System.out.println("No batches, sleeping.");
 				roundSleep();
 				continue;
 			}
 
-			if(batchController.queryDatabases()){
+			if (batchController.queryDatabases()) {
 				System.out.println("Now running jobs exchange");
 				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 				batchController.runDataExchange();
 			}
 
-			if (!updateDynamicParameters()){
+			if (!updateDynamicParameters()) {
 				System.err.println("update for dynamic parameters failed. Stopping the agent.");
 				break;
 			}
@@ -441,15 +384,13 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	// =========================================================================================================
 	// ================ run finished
 
-	private void roundSleep(){
-		try{
+	private void roundSleep() {
+		try {
 			sleep(60000);
-		}
-		catch(InterruptedException e){
+		} catch (InterruptedException e) {
 			System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
 		}
 	}
-
 
 	private static Integer getJaStatusForML(final String status) {
 		final Integer value = jaStatus.get(status);
@@ -536,19 +477,18 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
-		//final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
+		// final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
 		final long time_subs = (long) (jobAgentCurrentTime - jobAgentStartTime);
-		//int timeleft = origTtl - time_subs - 300;
-		long timeleft = origTtl*1000 - time_subs - 300*1000;
+		// int timeleft = origTtl - time_subs - 300;
+		long timeleft = origTtl * 1000 - time_subs - 300 * 1000;
 
-		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + 
-				jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
+		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
 		// we check if the proxy timeleft is smaller than the ttl itself
 		final int proxy = getRemainingProxyTime();
 		logger.log(Level.INFO, "Proxy timeleft is " + proxy);
-		//if (proxy > 0 && proxy < timeleft)
-		if (proxy > 0 && proxy*1000 < timeleft)
+		// if (proxy > 0 && proxy < timeleft)
+		if (proxy > 0 && proxy * 1000 < timeleft)
 			timeleft = proxy;
 
 		// safety time for saving, etc
@@ -563,15 +503,15 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		// EXPERIMENTAL
 		// for ORNL Titan
 		/*
-		if (timeleft <= 0) {
-			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
-			return false;
-		}
-		*/
+		 * if (timeleft <= 0) {
+		 * logger.log(Level.INFO, "There is not enough time left: " + timeleft);
+		 * return false;
+		 * }
+		 */
 
 		siteMap.put("Disk", Long.valueOf(space));
-		//siteMap.put("TTL", Integer.valueOf(timeleft));
-		siteMap.put("TTL", Long.valueOf(timeleft/1000));
+		// siteMap.put("TTL", Integer.valueOf(timeleft));
+		siteMap.put("TTL", Long.valueOf(timeleft / 1000));
 
 		return true;
 	}
@@ -594,7 +534,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		ja.run();
 	}
 
-
 	@Override
 	public void fillValues(final Vector<String> paramNames, final Vector<Object> paramValues) {
 		Long queueId = 0L;
@@ -604,8 +543,8 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 			// EXPERIMENTAL
 			// temporarily commented out
-			//paramNames.add("statusID");
-			//paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
+			// paramNames.add("statusID");
+			// paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
 		}
 	}
 }

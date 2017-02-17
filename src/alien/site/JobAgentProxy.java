@@ -1,13 +1,23 @@
 package alien.site;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+// EXPERIMENTAL
+// ========== imports for ORNL Titan
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -19,6 +29,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Timer;
@@ -58,25 +69,7 @@ import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
-import lazyj.Format;
 import lia.util.Utils;
-
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
-// EXPERIMENTAL
-// ========== imports for ORNL Titan
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.Stack;
-import java.io.PrintWriter;
-import java.nio.charset.Charset;
-import java.util.Map.Entry;
-import java.io.FileNotFoundException;
-
 
 /**
  * @author mmmartin, ron
@@ -125,10 +118,9 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	private String hostName = null;
 	private String alienCm = null;
 	private final int pid;
-	//private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
-	//private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
-	//private static final HashMap<String, Integer> jaStatus = new HashMap<>();
-
+	// private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+	// private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
+	// private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
 	private JAliEnCOMMander commander; // = JAliEnCOMMander.getInstance();
 	private CatalogueApiUtils c_api; // = new CatalogueApiUtils(commander);
@@ -174,19 +166,18 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	private String RES_CPUMHZ = "";
 	private String RES_CPUFAMILY = "";
 
-	// EXPERIMENTAL 
+	// EXPERIMENTAL
 	// for ORNL Titan
 	private String dbname;
 	private String monitoring_dbname;
 	private String dblink;
 	private int numCores;
 	private int current_rank;
-	
 
 	/**
 	 */
 	public JobAgentProxy() {
-		
+
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
 		HashMap<String, Integer> jaStatus = new HashMap<>();
@@ -255,49 +246,30 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		// EXPERIMENTAL
 		// ========= for ORNL Titan
-		
-		try{
+
+		try {
 			String titan_cores_str = null;
-			if(env.containsKey("TITAN_CORES_CLAIMED"))
+			if (env.containsKey("TITAN_CORES_CLAIMED"))
 				titan_cores_str = env.get("TITAN_CORES_CLAIMED");
-			if(titan_cores_str==null)
+			if (titan_cores_str == null)
 				throw new NumberFormatException("Titan cores number not defined");
 			numCores = Integer.parseInt(titan_cores_str);
-			if(numCores<=0)
+			if (numCores <= 0)
 				throw new NumberFormatException("Titan cores number is invalid");
 			dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db", pid);
 			Connection connection = DriverManager.getConnection(dbname);
 			Statement statement = connection.createStatement();
 			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
-			statement.executeUpdate("CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"+
-							"environment TEXT," +
-							"exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
+			statement.executeUpdate(
+					"CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"
+							+ "environment TEXT," + "exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
 			statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
-			statement.executeUpdate("INSERT INTO numbers " +
-				"select 1 " +
-				"from (" +
-				   "select 0 union select 1 union select 2 " +
-				") a, (" +
-				   "select 0 union select 1 union select 2 union select 3 " +
-				   "union select 4 union select 5 union select 6 " +
-				   "union select 7 union select 8 union select 9" +
-				") b, (" +
-				   "select 0 union select 1 union select 2 union select 3 " +
-				   "union select 4 union select 5 union select 6 " +
-				   "union select 7 union select 8 union select 9" +
-				") c, (" +
-				   "select 0 union select 1 union select 2 union select 3 " +
-				   "union select 4 union select 5 union select 6 " +
-				   "union select 7 union select 8 union select 9" +
-				") d, (" +
-				   "select 0 union select 1 union select 2 union select 3 " +
-				   "union select 4 union select 5 union select 6 " +
-				   "union select 7 union select 8 union select 9" +
-				") e, (" +
-				   "select 0 union select 1 union select 2 union select 3 " +
-				   "union select 4 union select 5 union select 6 " +
-				   "union select 7 union select 8 union select 9" +
-				") f");
+			statement.executeUpdate("INSERT INTO numbers " + "select 1 " + "from (" + "select 0 union select 1 union select 2 " + ") a, (" + "select 0 union select 1 union select 2 union select 3 "
+					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") b, (" + "select 0 union select 1 union select 2 union select 3 "
+					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") c, (" + "select 0 union select 1 union select 2 union select 3 "
+					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") d, (" + "select 0 union select 1 union select 2 union select 3 "
+					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") e, (" + "select 0 union select 1 union select 2 union select 3 "
+					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") f");
 			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
 			statement.executeUpdate("DROP TABLE numbers");
 			connection.close();
@@ -311,18 +283,16 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			connection.close();
 
 			dblink = "/lustre/atlas/scratch/psvirin/csc108/workdir/database.lnk";
-		 	try(PrintWriter out = new PrintWriter(dblink)){
-                                          out.println(dbname);
-                        };
-		}
-		catch(SQLException e){
+			try (PrintWriter out = new PrintWriter(dblink)) {
+				out.println(dbname);
+			}
+			;
+		} catch (SQLException e) {
 			System.err.println("Unable to start JobAgentProxy for Titan because of SQLite exception: " + e.getMessage());
 			System.exit(-1);
-		}
-		catch(NumberFormatException e){
+		} catch (NumberFormatException e) {
 			System.err.println("Number of Titan cores (TITAN_CORES_CLAIMED environment variable) has incorrect value: " + e.getMessage());
-		}
-		catch(Exception e){
+		} catch (Exception e) {
 			System.err.println("Failed to open dblink file");
 		}
 
@@ -330,16 +300,16 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		class TitanMonitorThread extends Thread {
 			private JobAgentProxy ja;
 
-			public TitanMonitorThread(JobAgentProxy ja){
+			public TitanMonitorThread(JobAgentProxy ja) {
 				this.ja = ja;
 			}
 
 			public void run() {
-				while(true){
-					try{
-						Thread.sleep(5*60*1000);
+				while (true) {
+					try {
+						Thread.sleep(5 * 60 * 1000);
+					} catch (InterruptedException e) {
 					}
-					catch(InterruptedException e){}
 					ja.checkProcessResources();
 					ja.sendProcessResources();
 				}
@@ -365,14 +335,15 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			e.printStackTrace();
 		}
 
-		class TitanJobStatus{
+		class TitanJobStatus {
 			public int rank;
 			public Long queueId;
-			public String  jobFolder;
+			public String jobFolder;
 			public String status;
 			public int executionCode;
 			public int validationCode;
-			public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code){
+
+			public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code) {
 				rank = r;
 				queueId = qid;
 				jobFolder = job_folder;
@@ -380,85 +351,82 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				executionCode = exec_code;
 				validationCode = val_code;
 			}
-		};
+		}
+		;
 
-		while(true){ 
-			if (!updateDynamicParameters()){
+		while (true) {
+			if (!updateDynamicParameters()) {
 				System.err.println("update for dynamic parameters failed. Stopping the agent.");
 				break;
 			}
 
 			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
-			try{
+			try {
 				Connection connection = DriverManager.getConnection(dbname);
 				Statement statement = connection.createStatement();
 				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
-				while(rs.next()){
-					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), 
-										rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+				while (rs.next()) {
+					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
 				}
-				
+
 				connection.close();
-			} catch(SQLException e){
+			} catch (SQLException e) {
 				System.err.println("Getting free slots failed: " + e.getMessage());
 				continue;
 			}
 			int count = idleRanks.size();
 			System.out.println(String.format("We can start %d jobs", count));
-			
-			if(count==0){
-				try{
+
+			if (count == 0) {
+				try {
 					Thread.sleep(30000);
-				}
-				catch(InterruptedException e){}
-				finally{
+				} catch (InterruptedException e) {
+				} finally {
 					System.out.println("Going for the next round....");
 				}
 				continue;
 			}
 
 			// uploading data from finished jobs
-			for(TitanJobStatus js: idleRanks){
-				if(js.status.equals("D")){
+			for (TitanJobStatus js : idleRanks) {
+				if (js.status.equals("D")) {
 					queueId = js.queueId;
 					System.err.println(String.format("Uploading job: %d", queueId));
 					jobWorkdir = js.jobFolder;
 					tempDir = new File(js.jobFolder);
 					// read JDL from file
 					String jdl_content = null;
-					try{
+					try {
 						byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
 						jdl_content = new String(encoded, Charset.defaultCharset());
-					}
-					catch(IOException e){
+					} catch (IOException e) {
 						System.err.println("Unable to read JDL file: " + e.getMessage());
 					}
-					if( jdl_content!=null ){
+					if (jdl_content != null) {
 						jdl = null;
-						try{
+						try {
 							jdl = new JDL(Job.sanitizeJDL(jdl_content));
-						}
-						catch(IOException e){
+						} catch (IOException e) {
 							System.err.println("Unable to parse JDL: " + e.getMessage());
 						}
-						if(jdl!=null){
-							if(js.executionCode!=0) 
+						if (jdl != null) {
+							if (js.executionCode != 0)
 								changeStatus(JobStatus.ERROR_E);
-							else if(js.validationCode!=0)
-								changeStatus(JobStatus.ERROR_V);
 							else
-								changeStatus(JobStatus.SAVING);
-							uploadOutputFiles();	// upload data
+								if (js.validationCode != 0)
+									changeStatus(JobStatus.ERROR_V);
+								else
+									changeStatus(JobStatus.SAVING);
+							uploadOutputFiles(); // upload data
 							cleanup();
 							System.err.println(String.format("Upload job %d finished", queueId));
 
-							try{
+							try {
 								Connection connection = DriverManager.getConnection(dbname);
 								Statement statement = connection.createStatement();
 								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", js.rank));
 								connection.close();
-							}
-							catch(SQLException e){
+							} catch (SQLException e) {
 								System.err.println("Update job state to I failed");
 							}
 						}
@@ -506,7 +474,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 						handleJob();
 
 						// cleanup();
-					} else {
+					}
+					else {
 						if (matchedJob != null && matchedJob.containsKey("Error")) {
 							logger.log(Level.INFO, (String) matchedJob.get("Error"));
 
@@ -515,24 +484,28 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 								monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 								installPackages(packToInstall);
 							}
-							else if(Integer.valueOf(-2).equals(matchedJob.get("Code"))){
-								logger.log(Level.INFO, "Nothing to run for now, idling for a while");
-								count = 1; // breaking the loop
-							}
-						} else{
-							// EXPERIMENTAL 
+							else
+								if (Integer.valueOf(-2).equals(matchedJob.get("Code"))) {
+									logger.log(Level.INFO, "Nothing to run for now, idling for a while");
+									count = 1; // breaking the loop
+								}
+						}
+						else {
+							// EXPERIMENTAL
 							// for ORNL Titan
 							logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
 							break;
 						}
 
-						/*try {
-							// TODO?: monitor.sendBgMonitoring
-							sleep(60000);
-							break;
-						} catch (final InterruptedException e) {
-							e.printStackTrace();
-						}*/
+						/*
+						 * try {
+						 * // TODO?: monitor.sendBgMonitoring
+						 * sleep(60000);
+						 * break;
+						 * } catch (final InterruptedException e) {
+						 * e.printStackTrace();
+						 * }
+						 */
 					}
 				} catch (final Exception e) {
 					logger.log(Level.INFO, "Error getting a matching job: " + e);
@@ -540,23 +513,22 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				count--;
 			}
 
-			try{
+			try {
 				sleep(60000);
-			}
-			catch(InterruptedException e){
+			} catch (InterruptedException e) {
 				System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
 			}
 		}
 
 		logger.log(Level.INFO, "JobAgentProxy finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
-		// EXPERIMENTAL 
+		// EXPERIMENTAL
 		// For ORNL Titan
 		// TO DELETE: use deleteOnExit instead
 		File f = new File(dbname);
-		if(f!=null)
+		if (f != null)
 			f.delete();
 		f = new File(dblink);
-		if(f!=null)
+		if (f != null)
 			f.delete();
 
 		System.exit(0);
@@ -679,18 +651,18 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
-		//final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
+		// final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
 		final long time_subs = (long) (jobAgentCurrentTime - jobAgentStartTime);
-		//int timeleft = origTtl - time_subs - 300;
-		long timeleft = origTtl*1000 - time_subs - 300*1000;
+		// int timeleft = origTtl - time_subs - 300;
+		long timeleft = origTtl * 1000 - time_subs - 300 * 1000;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
 		// we check if the proxy timeleft is smaller than the ttl itself
 		final int proxy = getRemainingProxyTime();
 		logger.log(Level.INFO, "Proxy timeleft is " + proxy);
-		//if (proxy > 0 && proxy < timeleft)
-		if (proxy > 0 && proxy*1000 < timeleft)
+		// if (proxy > 0 && proxy < timeleft)
+		if (proxy > 0 && proxy * 1000 < timeleft)
 			timeleft = proxy;
 
 		// safety time for saving, etc
@@ -708,8 +680,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		}
 
 		siteMap.put("Disk", Long.valueOf(space));
-		//siteMap.put("TTL", Integer.valueOf(timeleft));
-		siteMap.put("TTL", Long.valueOf(timeleft/1000));
+		// siteMap.put("TTL", Integer.valueOf(timeleft));
+		siteMap.put("TTL", Long.valueOf(timeleft / 1000));
 
 		return true;
 	}
@@ -753,11 +725,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 			getMemoryRequirements();
 
-			// EXPERIMENTAL 
+			// EXPERIMENTAL
 			// for ORNL Titan
 			// save jdl into file
-			try(PrintWriter out = new PrintWriter(tempDir + "/jdl")){
-					out.println(jdl);
+			try (PrintWriter out = new PrintWriter(tempDir + "/jdl")) {
+				out.println(jdl);
 			}
 
 			// run payload
@@ -767,20 +739,21 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 			// EXPERIMENTAL
 			// for ORNL Titan
-			/*if (!validate())
-				changeStatus(JobStatus.ERROR_V);
-
-			if (jobStatus == JobStatus.RUNNING)
-				changeStatus(JobStatus.SAVING);
-
-			uploadOutputFiles(); */
+			/*
+			 * if (!validate())
+			 * changeStatus(JobStatus.ERROR_V);
+			 * 
+			 * if (jobStatus == JobStatus.RUNNING)
+			 * changeStatus(JobStatus.SAVING);
+			 * 
+			 * uploadOutputFiles();
+			 */
 
 		} catch (final Exception e) {
 			System.err.println("Unable to handle job");
 			e.printStackTrace();
 		}
 	}
-
 
 	// EXPERIMENTAL
 	// for ORNL Titan
@@ -798,30 +771,31 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		fExe.setExecutable(true);
 
-		//cmd.add(fExe.getAbsolutePath());
+		// cmd.add(fExe.getAbsolutePath());
 
-		/*if (arguments != null && arguments.size() > 0){
-			for (final String argument : arguments){
-				if (argument.trim().length() > 0) {
-					final StringTokenizer st = new StringTokenizer(argument);
-
-					while (st.hasMoreTokens())
-						cmd.add(st.nextToken());
-				}
-			}
-		}
-		*/
+		/*
+		 * if (arguments != null && arguments.size() > 0){
+		 * for (final String argument : arguments){
+		 * if (argument.trim().length() > 0) {
+		 * final StringTokenizer st = new StringTokenizer(argument);
+		 * 
+		 * while (st.hasMoreTokens())
+		 * cmd.add(st.nextToken());
+		 * }
+		 * }
+		 * }
+		 */
 
 		// JAVA 8
 		String argString = "";
-		if(arguments!=null){
-			for(String s: arguments){
+		if (arguments != null) {
+			for (String s : arguments) {
 				argString += " " + s;
 			}
 		}
 
-		//System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
-		return new String( fExe.getAbsolutePath() + argString );
+		// System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
+		return new String(fExe.getAbsolutePath() + argString);
 	}
 	// end EXPERIMENTAL
 
@@ -858,36 +832,37 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				}
 
 		System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
-		
-		//final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
-		//final List<String> cmd1 = new LinkedList<>();
-		//cmd1.add("/lustre/atlas/scratch/psvirin/csc108/tmp/sq.sh");
-		//cmd1.add(tempDir.getAbsolutePath());
-		//cmd1.add(fExe.getAbsolutePath());
-		//ProcessBuilder pBuilder1 = new ProcessBuilder(cmd1);	
-		//ProcessBuilder pBuilder = new ProcessBuilder(cmd);	
-		/*try{
-			pBuilder1.start();
-			//Process p;
-			//p = Runtime.getRuntime().exec("sqlite3 /lustre/atlas/scratch/psvirin/csc108/alien.db \"INSERT INTO tasks_alien VALUES(0, '" + fExe.getAbsolutePath() + "', 'Q');\"");
-			//p = Runtime.getRuntime().exec("/lustre/atlas/scratch/psvirin/csc108/add_to_db");
-			//p.waitFor();
-			//BufferedReader reader = 
-                            //new BufferedReader(new InputStreamReader(p.getInputStream()));
 
-                        //String line = "";			
-			//while ((line = reader.readLine())!= null) {
-				//System.out.println(line);
-			//}
-			//System.out.println("SQLITE run");
-		}
-		catch(Exception e){
-			System.out.println(e.getMessage());
-		}*/
-
+		// final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+		// final List<String> cmd1 = new LinkedList<>();
+		// cmd1.add("/lustre/atlas/scratch/psvirin/csc108/tmp/sq.sh");
+		// cmd1.add(tempDir.getAbsolutePath());
+		// cmd1.add(fExe.getAbsolutePath());
+		// ProcessBuilder pBuilder1 = new ProcessBuilder(cmd1);
+		// ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+		/*
+		 * try{
+		 * pBuilder1.start();
+		 * //Process p;
+		 * //p = Runtime.getRuntime().exec("sqlite3 /lustre/atlas/scratch/psvirin/csc108/alien.db \"INSERT INTO tasks_alien VALUES(0, '" + fExe.getAbsolutePath() + "', 'Q');\"");
+		 * //p = Runtime.getRuntime().exec("/lustre/atlas/scratch/psvirin/csc108/add_to_db");
+		 * //p.waitFor();
+		 * //BufferedReader reader =
+		 * //new BufferedReader(new InputStreamReader(p.getInputStream()));
+		 * 
+		 * //String line = "";
+		 * //while ((line = reader.readLine())!= null) {
+		 * //System.out.println(line);
+		 * //}
+		 * //System.out.println("SQLITE run");
+		 * }
+		 * catch(Exception e){
+		 * System.out.println(e.getMessage());
+		 * }
+		 */
 
 		// EXPERIMENTAL
-		//pBuilder = new ProcessBuilder(cmd);
+		// pBuilder = new ProcessBuilder(cmd);
 		ProcessBuilder pBuilder = new ProcessBuilder("sleep", "200");
 
 		pBuilder.directory(tempDir);
@@ -976,43 +951,43 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	private void sendProcessResources() {
 		// EXPERIMENTAL
 		// for ORNL Titan
-		class ProcInfoPair{
+		class ProcInfoPair {
 			public final long queue_id;
 			public final String procinfo;
-			public ProcInfoPair(String queue_id, String procinfo){
+
+			public ProcInfoPair(String queue_id, String procinfo) {
 				this.queue_id = Long.parseLong(queue_id);
 				this.procinfo = procinfo;
 			}
 		}
 		LinkedList<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
-		
-		try{
+
+		try {
 			// open db
 			Connection connection = DriverManager.getConnection(monitoring_dbname);
 			Statement statement = connection.createStatement();
 			ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
 			// read all
-			while(rs.next()){
-				job_resources.add(new ProcInfoPair( rs.getString("queue_id"), rs.getString("resources")));
-				//idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
-				//		rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
-			 }
+			while (rs.next()) {
+				job_resources.add(new ProcInfoPair(rs.getString("queue_id"), rs.getString("resources")));
+				// idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"),
+				// rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+			}
 			// delete all
 			statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
 			// close database
 			connection.close();
-		}
-		catch(SQLException e){
+		} catch (SQLException e) {
 			System.err.println("Unable to get monitoring data: " + e.getMessage());
 		}
 		// foreach send
 
 		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
-		//final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
-				//RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
-		//System.out.println("+++++ Sending resources info +++++");
-		//System.out.println(procinfo);
-		for(ProcInfoPair pi: job_resources){
+		// final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
+		// RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
+		// System.out.println("+++++ Sending resources info +++++");
+		// System.out.println(procinfo);
+		for (ProcInfoPair pi : job_resources) {
 			commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
 		}
 	}
@@ -1022,75 +997,75 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		// EXPERIMENTAL
 		// for ORNL Titan
 		/*
-		System.out.println("Checking resources usage");
-
-		try {
-			final HashMap<Long, Double> jobinfo = mj.readJobInfo();
-			final HashMap<Long, Double> diskinfo = mj.readJobDiskUsage();
-
-			// gettng cpu, memory and runtime info
-			RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
-			RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
-			RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RSS).doubleValue() / 1024);
-			RES_CPUTIME = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME).doubleValue());
-			RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
-			RES_RUNTIME = Long.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue());
-			RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
-			RES_RESOURCEUSAGE = Format.showDottedDouble(RES_CPUTIME.doubleValue() * Double.parseDouble(RES_CPUMHZ) / 1000, 2);
-
-			//RES_WORKDIR_SIZE = 0;
-			//RES_VMEM = 0;
-			//RES_RMEM = 0;
-			//RES_CPUTIME = 0;
-			//RES_CPUUSAGE = 0;
-			//RES_RUNTIME = 0;
-			//RES_MEMUSAGE = 0;
-			//RES_RESOURCEUSAGE = 0;
-
-
-			// max memory consumption
-			if (RES_RMEM.doubleValue() > RES_RMEMMAX.doubleValue())
-				RES_RMEMMAX = RES_RMEM;
-
-			if (RES_VMEM.doubleValue() > RES_VMEMMAX.doubleValue())
-				RES_VMEMMAX = RES_VMEM;
-
-			// formatted runtime
-			if (RES_RUNTIME.doubleValue() < 60)
-				RES_FRUNTIME = String.format("00:00:%02d", RES_RUNTIME);
-			else if (RES_RUNTIME.doubleValue() < 3600){
-				System.out.println(RES_RUNTIME.doubleValue()/60);
-				System.out.println(Double.valueOf(RES_RUNTIME.doubleValue() % 60));
-				//RES_FRUNTIME = String.format("00:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 60), Double.valueOf(RES_RUNTIME.doubleValue() % 60));
-				RES_FRUNTIME = String.format("00:%02d:%02d", RES_RUNTIME / 60, RES_RUNTIME % 60);
-			}
-			else
-				RES_FRUNTIME = String.format("%02d:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 3600),
-						Double.valueOf((RES_RUNTIME.doubleValue() - (RES_RUNTIME.doubleValue() / 3600) * 3600) / 60),
-						Double.valueOf((RES_RUNTIME.doubleValue() - (RES_RUNTIME.doubleValue() / 3600) * 3600) % 60));
-
-			// check disk usage
-			if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
-				error = "Disk space limit is " + workdirMaxSizeMB + ", using " + RES_WORKDIR_SIZE;
-
-			// check disk usage
-			if (jobMaxMemoryMB != 0 && RES_VMEM.doubleValue() > jobMaxMemoryMB)
-				error = "Memory usage limit is " + jobMaxMemoryMB + ", using " + RES_VMEM;
-
-			// cpu
-			final long time = System.currentTimeMillis();
-
-			if (prevTime != 0 && prevTime + (20 * 60 * 1000) < time && RES_CPUTIME == prevCpuTime)
-				error = "The job hasn't used the CPU for 20 minutes";
-			else {
-				prevCpuTime = RES_CPUTIME;
-				prevTime = time;
-			}
-
-		} catch (final IOException e) {
-			System.out.println("Problem with the monitoring objects: " + e.toString());
-		}
-		*/
+		 * System.out.println("Checking resources usage");
+		 * 
+		 * try {
+		 * final HashMap<Long, Double> jobinfo = mj.readJobInfo();
+		 * final HashMap<Long, Double> diskinfo = mj.readJobDiskUsage();
+		 * 
+		 * // gettng cpu, memory and runtime info
+		 * RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
+		 * RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
+		 * RES_RMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RSS).doubleValue() / 1024);
+		 * RES_CPUTIME = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_TIME).doubleValue());
+		 * RES_CPUUSAGE = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_CPU_USAGE).doubleValue());
+		 * RES_RUNTIME = Long.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_RUN_TIME).longValue());
+		 * RES_MEMUSAGE = jobinfo.get(ApMonMonitoringConstants.LJOB_MEM_USAGE);
+		 * RES_RESOURCEUSAGE = Format.showDottedDouble(RES_CPUTIME.doubleValue() * Double.parseDouble(RES_CPUMHZ) / 1000, 2);
+		 * 
+		 * //RES_WORKDIR_SIZE = 0;
+		 * //RES_VMEM = 0;
+		 * //RES_RMEM = 0;
+		 * //RES_CPUTIME = 0;
+		 * //RES_CPUUSAGE = 0;
+		 * //RES_RUNTIME = 0;
+		 * //RES_MEMUSAGE = 0;
+		 * //RES_RESOURCEUSAGE = 0;
+		 * 
+		 * 
+		 * // max memory consumption
+		 * if (RES_RMEM.doubleValue() > RES_RMEMMAX.doubleValue())
+		 * RES_RMEMMAX = RES_RMEM;
+		 * 
+		 * if (RES_VMEM.doubleValue() > RES_VMEMMAX.doubleValue())
+		 * RES_VMEMMAX = RES_VMEM;
+		 * 
+		 * // formatted runtime
+		 * if (RES_RUNTIME.doubleValue() < 60)
+		 * RES_FRUNTIME = String.format("00:00:%02d", RES_RUNTIME);
+		 * else if (RES_RUNTIME.doubleValue() < 3600){
+		 * System.out.println(RES_RUNTIME.doubleValue()/60);
+		 * System.out.println(Double.valueOf(RES_RUNTIME.doubleValue() % 60));
+		 * //RES_FRUNTIME = String.format("00:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 60), Double.valueOf(RES_RUNTIME.doubleValue() % 60));
+		 * RES_FRUNTIME = String.format("00:%02d:%02d", RES_RUNTIME / 60, RES_RUNTIME % 60);
+		 * }
+		 * else
+		 * RES_FRUNTIME = String.format("%02d:%02d:%02d", Double.valueOf(RES_RUNTIME.doubleValue() / 3600),
+		 * Double.valueOf((RES_RUNTIME.doubleValue() - (RES_RUNTIME.doubleValue() / 3600) * 3600) / 60),
+		 * Double.valueOf((RES_RUNTIME.doubleValue() - (RES_RUNTIME.doubleValue() / 3600) * 3600) % 60));
+		 * 
+		 * // check disk usage
+		 * if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
+		 * error = "Disk space limit is " + workdirMaxSizeMB + ", using " + RES_WORKDIR_SIZE;
+		 * 
+		 * // check disk usage
+		 * if (jobMaxMemoryMB != 0 && RES_VMEM.doubleValue() > jobMaxMemoryMB)
+		 * error = "Memory usage limit is " + jobMaxMemoryMB + ", using " + RES_VMEM;
+		 * 
+		 * // cpu
+		 * final long time = System.currentTimeMillis();
+		 * 
+		 * if (prevTime != 0 && prevTime + (20 * 60 * 1000) < time && RES_CPUTIME == prevCpuTime)
+		 * error = "The job hasn't used the CPU for 20 minutes";
+		 * else {
+		 * prevCpuTime = RES_CPUTIME;
+		 * prevTime = time;
+		 * }
+		 * 
+		 * } catch (final IOException e) {
+		 * System.out.println("Problem with the monitoring objects: " + e.toString());
+		 * }
+		 */
 
 		return error;
 	}
@@ -1116,10 +1091,12 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				default: // MB
 					workdirMaxSizeMB = Integer.parseInt(number);
 				}
-			} else
+			}
+			else
 				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
 			commander.q_api.putJobLog(queueId, "trace", "Disk requested: " + workdirMaxSizeMB);
-		} else
+		}
+		else
 			workdirMaxSizeMB = 0;
 
 		// Memory use
@@ -1142,10 +1119,12 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				default: // MB
 					jobMaxMemoryMB = Integer.parseInt(number);
 				}
-			} else
+			}
+			else
 				jobMaxMemoryMB = Integer.parseInt(maxmemory);
 			commander.q_api.putJobLog(queueId, "trace", "Memory requested: " + jobMaxMemoryMB);
-		} else
+		}
+		else
 			jobMaxMemoryMB = 0;
 
 	}
@@ -1153,52 +1132,48 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	private int execute() {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 
-		//final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, true);
-		//final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, false);
+		// final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, true);
+		// final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments(), ttlForJob(), TimeUnit.SECONDS, false);
 
 		// EXPERIMENTAL
 		// for ORNL Titan
-		try{
+		try {
 			Connection connection = DriverManager.getConnection(dbname);
 			Statement statement = connection.createStatement();
-			//statement.executeUpdate(String.format("INSERT INTO alien_jobs(rank, queue_id, job_folder , status , executable, validation, environment ) " + 
-									//"VALUES(%d, %d, '%s', '%s', '%s', '%s', '%s')", 
-												//current_rank, queueId, tempDir, "Q", 
-												//jdl.gets("Executable"),
-												//jdl.gets("ValidationCommand"),
-												//"" ));
+			// statement.executeUpdate(String.format("INSERT INTO alien_jobs(rank, queue_id, job_folder , status , executable, validation, environment ) " +
+			// "VALUES(%d, %d, '%s', '%s', '%s', '%s', '%s')",
+			// current_rank, queueId, tempDir, "Q",
+			// jdl.gets("Executable"),
+			// jdl.gets("ValidationCommand"),
+			// "" ));
 			// setting variables
 			final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
 
 			// setting variables for packages
 			final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 
-			try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
-				for(Entry<String, String> e: alice_environment_packages.entrySet()){
+			try (PrintWriter out = new PrintWriter(tempDir + "/environment")) {
+				for (Entry<String, String> e : alice_environment_packages.entrySet()) {
 					out.println(String.format("export %s=%s", e.getKey(), e.getValue()));
 				}
 
-				for(Entry<String, String> e: environment_packages.entrySet()){
+				for (Entry<String, String> e : environment_packages.entrySet()) {
 					out.println(String.format(" export %s=%s", e.getKey(), e.getValue()));
 				}
 			}
 
 			String validationCommand = jdl.gets("ValidationCommand");
-			statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + 
-									"WHERE rank=%d", 
-									queueId, tempDir, "Q", 
-									getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
-									validationCommand!=null ? getLocalCommand(validationCommand, null) : "",
-									"", current_rank ));
-		} catch(SQLException e){
+			statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + "WHERE rank=%d", queueId,
+					tempDir, "Q", getLocalCommand(jdl.gets("Executable"), jdl.getArguments()), validationCommand != null ? getLocalCommand(validationCommand, null) : "", "", current_rank));
+		} catch (SQLException e) {
 			System.err.println("Failed to insert job: " + e.getMessage());
-		} catch(FileNotFoundException e){
+		} catch (FileNotFoundException e) {
 			System.err.println("Failed to write variables file");
 		}
 
-		//System.err.println("Execution code: " + code);
+		// System.err.println("Execution code: " + code);
 
-		//return code;
+		// return code;
 		return 0;
 	}
 
@@ -1363,7 +1338,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		// EXPERIMENTAL
 		final String outputDir = getJobOutputDir();
-		//final String outputDir = getJobOutputDir() + "/"  + queueId;
+		// final String outputDir = getJobOutputDir() + "/" + queueId;
 
 		System.out.println("queueId: " + queueId);
 		System.out.println("outputDir: " + outputDir);
@@ -1379,7 +1354,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		if (outDir == null) {
 			System.err.println("Error creating the OutputDir [" + outputDir + "].");
 			uploadedAllOutFiles = false;
-		} else {
+		}
+		else {
 			String tag = "Output";
 			if (jobStatus == JobStatus.ERROR_E)
 				tag = "OutputErrorE";
@@ -1454,14 +1430,17 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size() + " could be uploaded");
 									uploadedNotAllCopies = true;
-								} else {
+								}
+								else {
 									System.err.println("Upload failed, sorry!");
 									uploadedAllOutFiles = false;
 									break;
 								}
-						} else
+						}
+						else
 							System.out.println("Couldn't get write envelopes for output file");
-					} else
+					}
+					else
 						System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 
 				} catch (final IOException e) {
@@ -1474,10 +1453,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V)
 			if (uploadedNotAllCopies)
 				changeStatus(JobStatus.DONE_WARN);
-			else if (uploadedAllOutFiles)
-				changeStatus(JobStatus.DONE);
 			else
-				changeStatus(JobStatus.ERROR_SV);
+				if (uploadedAllOutFiles)
+					changeStatus(JobStatus.DONE);
+				else
+					changeStatus(JobStatus.ERROR_SV);
 
 		return uploadedAllOutFiles;
 	}
@@ -1529,7 +1509,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 							isFirst = false;
 						}
 						value = sbuff;
-					} else
+					}
+					else
 						value = val.toString();
 
 					hashret.put("ALIEN_JDL_" + s.toUpperCase(), value);
@@ -1560,14 +1541,17 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			extrafields.put("path", getJobOutputDir());
 
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else if (newStatus == JobStatus.RUNNING) {
-			final HashMap<String, Object> extrafields = new HashMap<>();
-			extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-			extrafields.put("node", hostName);
+		}
+		else
+			if (newStatus == JobStatus.RUNNING) {
+				final HashMap<String, Object> extrafields = new HashMap<>();
+				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+				extrafields.put("node", hostName);
 
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		} else
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+			}
+			else
+				TaskQueueApiUtils.setJobStatus(queueId, newStatus);
 
 		jobStatus = newStatus;
 
@@ -1582,8 +1566,9 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
 			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
-		else if (outputDir == null)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+		else
+			if (outputDir == null)
+				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
 	}
