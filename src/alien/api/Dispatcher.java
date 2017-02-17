@@ -9,6 +9,8 @@ import alien.config.ConfigUtils;
  */
 public class Dispatcher {
 
+	private static final boolean useParallelConnections = false;
+
 	private static final ExpirationCache<String, Request> cache = new ExpirationCache<>(10240);
 
 	/**
@@ -61,8 +63,9 @@ public class Dispatcher {
 	}
 
 	private static <T extends Request> T dispatchRequest(final T r) throws ServerException {
+		
 		//return DispatchSSLClient.dispatchRequest(r);
-		return DispatchSSLMTClient.dispatchRequest(r);
+		return  useParallelConnections ? DispatchSSLMTClient.dispatchRequest(r) : DispatchSSLClient.dispatchRequest(r);
 	}
 
 }
