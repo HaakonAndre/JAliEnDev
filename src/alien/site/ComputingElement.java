@@ -8,7 +8,6 @@ import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import alien.api.JBoxServer;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.user.LDAPHelper;
@@ -26,6 +25,7 @@ public class ComputingElement extends Thread {
 	private HashMap<String, Object> ceConfig = null;
 	private HashMap<String, Object> hostConfig = null;
 	private HashMap<String, Object> siteConfig = null;
+	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 
 	public ComputingElement() {
@@ -35,21 +35,21 @@ public class ComputingElement extends Thread {
 
 			getCEconfigFromLDAP();
 
-//			System.out.println("SiteConfig");
-//			for (String key : siteConfig.keySet())
-//				System.err.println(key + " - " + siteConfig.get(key));
-//
-//			System.out.println("HostConfig");
-//			for (String key : hostConfig.keySet())
-//				System.err.println(key + " - " + hostConfig.get(key));
-//
-//			System.out.println("CEConfig");
-//			for (String key : ceConfig.keySet())
-//				System.err.println(key + " - " + ceConfig.get(key));
+			// System.out.println("SiteConfig");
+			// for (String key : siteConfig.keySet())
+			// System.err.println(key + " - " + siteConfig.get(key));
+			//
+			// System.out.println("HostConfig");
+			// for (String key : hostConfig.keySet())
+			// System.err.println(key + " - " + hostConfig.get(key));
+			//
+			// System.out.println("CEConfig");
+			// for (String key : ceConfig.keySet())
+			// System.err.println(key + " - " + ceConfig.get(key));
 
 			getSiteMap();
 
-//			System.out.println(ce_environment);
+			// System.out.println(ce_environment);
 
 			logger = LogUtils.redirectToCustomHandler(logger, hostConfig.get("logdir") + "CE");
 
@@ -68,20 +68,27 @@ public class ComputingElement extends Thread {
 		// }
 		logger.log(Level.INFO, "Starting ComputingElement in " + siteMap.get("host"));
 		try {
-//			 System.out.println("Trying to start JBox"); // TODO uncomment
-//			 JBoxServer.startJBoxService(0); // TODO uncomment
-//			 port = JBoxServer.getPort(); // TODO uncomment
+			// System.out.println("Trying to start JBox"); // TODO uncomment
+			// JBoxServer.startJBoxService(0); // TODO uncomment
+			// port = JBoxServer.getPort(); // TODO uncomment
 		} catch (final Exception e) {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
 
-		// while (true) {
-		// here we would have to poll the queue info and submit jobAgents....
+		for (int i = 0; i < 5; i++) { // TODO replace for while(true)
+			boolean should_submit = true;
 
-		// }
+			if (should_submit)
+				offerAgent();
+		}
 
 		System.out.println("Exiting CE");
+	}
+
+	private void offerAgent() {
+
+		return;
 	}
 
 	// Queries LDAP to get all the config values (site,host,CE)
@@ -164,6 +171,21 @@ public class ComputingElement extends Thread {
 			if (siteConfig.containsKey("closese"))
 				smenv.put("closeSE", siteConfig.get("closese").toString());
 
+		if (hostConfig.containsKey("environment")) {
+			host_environment = new HashMap<>();
+			if (hostConfig.get("environment") instanceof TreeSet) {
+				TreeSet<String> host_env_set = (TreeSet<String>) hostConfig.get("environment");
+				for (String env_entry : host_env_set) {
+					String[] host_env_str = env_entry.split("=");
+					host_environment.put(host_env_str[0], host_env_str[1]);
+				}
+			}
+			else {
+				String[] host_env_str = ((String) hostConfig.get("environment")).split("=");
+				host_environment.put(host_env_str[0], host_env_str[1]);
+			}
+		}
+
 		if (ceConfig.containsKey("environment")) {
 			ce_environment = new HashMap<>();
 			if (ceConfig.get("environment") instanceof TreeSet) {
@@ -178,6 +200,11 @@ public class ComputingElement extends Thread {
 				ce_environment.put(ce_env_str[0], ce_env_str[1]);
 			}
 		}
+
+		if (host_environment != null)
+			smenv.putAll(host_environment);
+		if (ce_environment != null)
+			smenv.putAll(ce_environment);
 
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
 	}

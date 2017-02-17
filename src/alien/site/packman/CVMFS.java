@@ -14,7 +14,6 @@ import java.util.logging.Logger;
 import alien.config.ConfigUtils;
 import alien.site.JobAgent;
 import lazyj.commands.SystemCommand;
-import lia.util.Utils;
 
 /**
  * @author mmmartin
@@ -27,15 +26,18 @@ public class CVMFS extends PackMan {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JobAgent.class.getCanonicalName());
 
-	private String alienv_bin = "";
+	private String alienv_bin = "/cvmfs/alice.cern.ch/bin";
 	private boolean havePath = true;
 
 	/**
 	 * Constructor just checks CVMFS bin exist
 	 */
-	public CVMFS() {
+	public CVMFS(String location) {
+		if (location != null && location.length() > 0)
+			alienv_bin = location;
+
 		try {
-			alienv_bin = SystemCommand.bash("which /cvmfs/alice.cern.ch/bin/alienv").stdout.trim();
+			alienv_bin = SystemCommand.bash("which " + alienv_bin + "/alienv").stdout.trim();
 		} catch (final Exception e) {
 			System.out.println("which alienv not ok: " + e.getMessage());
 		}

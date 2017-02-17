@@ -67,7 +67,7 @@ public class SiteMap {
 		if (env.containsKey("installationMethod"))
 			installationMethod = env.get("installationMethod");
 
-		packMan = getPackman(installationMethod);
+		packMan = getPackman(installationMethod, env);
 		siteMap.put("PackMan", packMan);
 		packages = packMan.getListPackages();
 		installedPackages = packMan.getListInstalledPackages();
@@ -164,14 +164,14 @@ public class SiteMap {
 	}
 
 	// Gets a PackMan instance depending on configuration (env coming from LDAP)
-	private PackMan getPackman(String installationMethod) {
+	private PackMan getPackman(String installationMethod, Map<String, String> envi) {
 		switch (installationMethod) {
 		case "CVMFS":
 			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS();
+			return new CVMFS(envi.containsKey("CVMFS_PATH") ? envi.get("CVMFS_PATH") : "");
 		default:
 			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS();
+			return new CVMFS(envi.containsKey("CVMFS_PATH") ? envi.get("CVMFS_PATH") : "");
 		}
 	}
 
