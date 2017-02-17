@@ -21,10 +21,10 @@ public class MirrorLFN extends Request {
 	private int success;
 	private final List<String> ses;
 	private final List<String> exses;
-	HashMap<String, Integer> qos;
+	private final HashMap<String, Integer> qos;
 	private final boolean useGUID;
 	private final Integer attempts;
-	HashMap<String, Integer> results;
+	private HashMap<String, Integer> results;
 
 	/**
 	 * @param user
@@ -39,6 +39,8 @@ public class MirrorLFN extends Request {
 	 */
 	public MirrorLFN(final AliEnPrincipal user, final String role, final String lfn_name, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos,
 			final boolean useLFNasGuid, final Integer attempts_cnt) throws ServerException {
+		setRequestUser(user);
+		setRoleRequest(role);
 		this.path = lfn_name;
 		this.useGUID = useLFNasGuid;
 		this.attempts = attempts_cnt;

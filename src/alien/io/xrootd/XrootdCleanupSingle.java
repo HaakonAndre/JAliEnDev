@@ -51,7 +51,18 @@ public class XrootdCleanupSingle {
 	 */
 	final AtomicInteger processed = new AtomicInteger(0);
 
+	/**
+	 * If <code>true</code> then pass the SE for dCache and DPM SEs
+	 */
 	final boolean setSE;
+
+	private static DBFunctions getDB() {
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+
+		db.setQueryTimeout(600);
+
+		return db;
+	}
 
 	/**
 	 * Check all GUID files in this storage by listing recursively its contents.
@@ -68,6 +79,10 @@ public class XrootdCleanupSingle {
 			System.err.println("No such SE " + sSE);
 
 			return;
+		}
+
+		try (DBFunctions db = getDB()) {
+			db.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + se.seNumber + " LIKE orphan_pfns_0;", true);
 		}
 
 		setSE = se.getName().toLowerCase().contains("dcache") || se.getName().toLowerCase().contains("dpm");
@@ -150,7 +165,8 @@ public class XrootdCleanupSingle {
 					sizeRemoved.addAndGet(file.size);
 					filesRemoved.incrementAndGet();
 				}
-			} else {
+			}
+			else {
 				sizeKept.addAndGet(file.size);
 				filesKept.incrementAndGet();
 			}
@@ -175,17 +191,20 @@ public class XrootdCleanupSingle {
 		if (m.matches()) {
 			sUUID = m.group(1);
 			uuid = UUID.fromString(sUUID);
-		} else
+		}
+		else
 			return false;
 
 		System.err.println("RM " + uuid + " FROM " + se.seName + ", " + file.size + " (" + Format.size(file.size) + "), " + file.date);
 
-		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+		try (DBFunctions db = getDB()) {
+			db.setQueryTimeout(600);
 			if (sUUID.equals(uuid.toString()))
-				db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size));
+				db.query("INSERT IGNORE INTO orphan_pfns_" + se.seNumber + " (flags,guid,se,size) VALUES (1,string2binary(?), ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber),
+						Long.valueOf(file.size));
 			else
-				db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,size,pfn) VALUES (1,string2binary(?), ?, ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber), Long.valueOf(file.size),
-						SE.generateProtocol(se.seioDaemons, file.path));
+				db.query("INSERT IGNORE INTO orphan_pfns_" + se.seNumber + " (flags,guid,se,size,pfn) VALUES (1,string2binary(?), ?, ?, ?);", false, uuid.toString(), Integer.valueOf(se.seNumber),
+						Long.valueOf(file.size), SE.generateProtocol(se.seioDaemons, file.path));
 		}
 
 		return true;
@@ -221,13 +240,15 @@ public class XrootdCleanupSingle {
 		if (options.has("a"))
 			for (final SE se : SEUtils.getSEs(null))
 				ses.add(se.getName());
-		else if (options.has("d")) {
-			for (final SE se : SEUtils.getSEs(null))
-				if (se.isQosType("disk"))
-					ses.add(se.getName());
-		} else
-			for (final Object o : options.nonOptionArguments())
-				ses.add(o.toString());
+		else
+			if (options.has("d")) {
+				for (final SE se : SEUtils.getSEs(null))
+					if (se.isQosType("disk"))
+						ses.add(se.getName());
+			}
+			else
+				for (final Object o : options.nonOptionArguments())
+					ses.add(o.toString());
 
 		final long lStart = System.currentTimeMillis();
 

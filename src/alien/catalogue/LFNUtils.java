@@ -471,10 +471,12 @@ public class LFNUtils {
 			lfn.owner = user.getName();
 			lfn.gowner = user.getRoles().iterator().next();
 			lfn.perm = "755";
-		} else if (!AuthorizationChecker.canWrite(lfn, user)) {
-			logger.log(Level.SEVERE, "Cannot write to the Current Directory BUT file does not exist. Terminating");
-			return false;
 		}
+		else
+			if (!AuthorizationChecker.canWrite(lfn, user)) {
+				logger.log(Level.SEVERE, "Cannot write to the Current Directory BUT file does not exist. Terminating");
+				return false;
+			}
 
 		lfn.ctime = new Date();
 
@@ -490,7 +492,7 @@ public class LFNUtils {
 	 * @param lfn
 	 * @return true if the entry was inserted (or previously existed), false if there was an error
 	 */
-	static boolean insertLFN(final LFN lfn) {
+	public static boolean insertLFN(final LFN lfn) {
 		if (lfn.exists)
 			// nothing to be done, the entry already exists
 			return true;
@@ -567,8 +569,10 @@ public class LFNUtils {
 		for (final IndexTableEntry ite : matchingTables) {
 			final List<LFN> findResults = ite.find(path, processedPattern, flags);
 
-			if (findResults != null && findResults.size() > 0)
-				ret.addAll(findResults);
+			if (findResults == null)
+				return null;
+
+			ret.addAll(findResults);
 		}
 
 		return ret;
@@ -584,6 +588,7 @@ public class LFNUtils {
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);
+			db.setQueryTimeout(30);
 
 			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
@@ -615,14 +620,15 @@ public class LFNUtils {
 				return ret;
 			}
 
+			db.setQueryTimeout(600);
+			db.setReadOnly(true);
+
 			for (final String tableName : getTagTableNames(path, tag)) {
 				String q = "SELECT distinct file FROM " + Format.escSQL(tableName) + " " + Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
 						+ Format.escSQL(query.replace(":", "."));
 
 				if ((flags & FIND_BIGGEST_VERSION) != 0)
 					q += " ORDER BY version DESC, entryId DESC LIMIT 1";
-
-				db.setReadOnly(true);
 
 				if (!db.query(q))
 					continue;
@@ -701,6 +707,8 @@ public class LFNUtils {
 		final String q = "INSERT INTO COLLECTIONS (collGUID) VALUES (string2binary(?));";
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setQueryTimeout(60);
+
 			if (!db.query(q, false, lfn.guid.toString()))
 				return null;
 		}
@@ -721,6 +729,8 @@ public class LFNUtils {
 			monitor.incrementCounter("LFN_removeFromCollection");
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setQueryTimeout(60);
+
 			db.setReadOnly(true);
 
 			db.query("SELECT collectionId FROM COLLECTIONS where collGUID=string2binary(?);", false, collection.guid.toString());
@@ -851,6 +861,8 @@ public class LFNUtils {
 			monitor.incrementCounter("LFN_addToCollection");
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+			db.setQueryTimeout(300);
+
 			final Set<String> currentLFNs = collection.listCollection();
 
 			db.setReadOnly(true);
@@ -961,7 +973,8 @@ public class LFNUtils {
 		if (is_guid) {
 			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
 			lfn = getLFN(g);
-		} else
+		}
+		else
 			lfn = getLFN(path);
 
 		if (lfn == null)
@@ -982,7 +995,7 @@ public class LFNUtils {
 			return -253;
 
 		// run mirror
-		return (TransferUtils.mirror(lfn, se));
+		return attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, se, null, attempts.intValue()) : TransferUtils.mirror(lfn, se);
 	}
 
 	/**
@@ -1000,15 +1013,19 @@ public class LFNUtils {
 		if (is_guid) {
 			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
 			lfn = getLFN(g);
-		} else
+		}
+		else
 			lfn = getLFN(path);
 
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
 		final HashMap<String, Integer> resmap = new HashMap<>();
-		for (final SE s : found_ses)
-			resmap.put(s.getName(), Integer.valueOf(TransferUtils.mirror(lfn, s)));
+		for (final SE s : found_ses) {
+			final int transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, s, null, attempts.intValue()) : TransferUtils.mirror(lfn, s);
+			resmap.put(s.getName(), Integer.valueOf(transferID));
+		}
+
 		return resmap;
 	}
 

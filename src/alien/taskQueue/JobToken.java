@@ -1,6 +1,7 @@
 package alien.taskQueue;
 
 import java.util.Random;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
@@ -155,9 +156,12 @@ public class JobToken implements Comparable<JobToken> {
 		if (db == null)
 			return false;
 
+		logger.log(Level.INFO, "Update JobToken for: " + jobId + " and exists: " + exists);
+
 		if (!exists) {
 			// System.out.println("inserting...");
 			final boolean insertOK = insert(db);
+			logger.log(Level.INFO, "Insert JobToken for: " + jobId + " was " + insertOK);
 			return insertOK;
 		}
 
@@ -165,13 +169,17 @@ public class JobToken implements Comparable<JobToken> {
 
 		try {
 			// only the token list can change
-			if (!db.query(UPDATE_QUERY, false, token, Long.valueOf(jobId)))
+			if (!db.query(UPDATE_QUERY, false, token, Long.valueOf(jobId))) {
 				// wrong table name or what?
+				logger.log(Level.INFO, "Update JobToken for: " + jobId + " failed");
 				return false;
+			}
 
-			if (db.getUpdateCount() == 0)
+			if (db.getUpdateCount() == 0) {
 				// the entry did not exist in fact, what's going on?
+				logger.log(Level.INFO, "Update JobToken for: " + jobId + " count 0");
 				return false;
+			}
 		} finally {
 			db.close();
 		}

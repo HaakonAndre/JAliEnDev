@@ -148,7 +148,7 @@ public class PFNforWrite extends Request {
 			}
 
 			try {
-				this.pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), this.lfn, this.guid, null, 0, se));
+				this.pfns.add(BookingTable.bookForWriting(getEffectiveRequester(), this.lfn, this.guid, null, se));
 				errorMessage = null;
 			} catch (final Exception e) {
 				errorMessage = e.getMessage();

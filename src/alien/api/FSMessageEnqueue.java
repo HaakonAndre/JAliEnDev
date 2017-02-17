@@ -9,7 +9,7 @@ import java.io.ObjectOutputStream;
 
 /**
  * Enqueue messages in the output directory
- * 
+ *
  * @author costing
  * @since 2015-10-14
  */
@@ -18,6 +18,12 @@ public class FSMessageEnqueue {
 	private final File outbox;
 	private final File inbox;
 
+	/**
+	 * Check if directory exists (or try to create it if not) and can be written to
+	 *
+	 * @param dir
+	 * @throws IOException
+	 */
 	static void checkDir(final File dir) throws IOException {
 		if (!dir.exists())
 			if (!dir.mkdirs())
@@ -32,7 +38,7 @@ public class FSMessageEnqueue {
 
 	/**
 	 * Create a message queue
-	 * 
+	 *
 	 * @param outboxPath
 	 *            path where the outgoing messages will be written. If it doesn't exist, it will try to create this directory.
 	 * @param inboxPath
@@ -59,7 +65,7 @@ public class FSMessageEnqueue {
 
 	/**
 	 * Change the poll interval for the reply file to show up
-	 * 
+	 *
 	 * @param millis
 	 * @return the previous value of this field
 	 */
@@ -75,7 +81,7 @@ public class FSMessageEnqueue {
 
 	/**
 	 * Set the timeout for waiting for a reply
-	 * 
+	 *
 	 * @param millis
 	 *            new timeout value in milliseconds
 	 * @return the previous timeout value
@@ -90,7 +96,7 @@ public class FSMessageEnqueue {
 
 	/**
 	 * Send a request upstream and wait for the reply (unless the Request implements {@link OneWayMessage} in which case it quickly retuns <code>null</code>.
-	 * 
+	 *
 	 * @param r
 	 *            Request to send upstream
 	 * @return The answer to this Request, an object of the same type filled with the answer to the request, or <code>null</code> if the parameter implements {@link OneWayMessage}.

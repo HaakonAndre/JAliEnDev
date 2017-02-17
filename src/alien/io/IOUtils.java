@@ -16,9 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,6 +43,7 @@ import alien.shell.commands.UIPrintWriter;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import lazyj.Utils;
+import utils.CachedThreadPool;
 
 /**
  * Helper functions for IO
@@ -104,8 +103,8 @@ public class IOUtils {
 		return get(guid, null);
 	}
 
-	private static final ThreadPoolExecutor PARALLEL_DW_THREAD_POOL = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
-			ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new ThreadFactory() {
+	private static final CachedThreadPool PARALLEL_DW_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE, ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2),
+			TimeUnit.SECONDS, new ThreadFactory() {
 				@Override
 				public Thread newThread(final Runnable r) {
 					final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
@@ -396,7 +395,8 @@ public class IOUtils {
 						logger.log(Level.FINEST, "Keeping this as the main instance:" + tempFile);
 
 					f = tempFile;
-				} else
+				}
+				else
 					TempFileManager.release(tempFile);
 		}
 

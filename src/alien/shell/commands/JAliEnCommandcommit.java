@@ -68,14 +68,15 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 		if (rawenvelope.contains("signature="))
 			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope));
 		else
-			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5, lfn, perm, expire, pfn, se, guid);
+			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5);
 
 		if (out.isRootPrinter()) {
 			if (pfns != null && pfns.size() > 0)
 				out.setField("lfn", "1");
 			else
 				out.setField("lfn", "0");
-		} else {
+		}
+		else {
 			String ret = "";
 			if (pfns != null && pfns.size() > 0)
 				ret += lfn + padSpace(1) + "1";
@@ -165,7 +166,8 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 			if (arg.hasNext())
 				md5 = arg.next();
 
-		} else
+		}
+		else
 			out.printErrln("No envelope to register passed.");
 
 	}

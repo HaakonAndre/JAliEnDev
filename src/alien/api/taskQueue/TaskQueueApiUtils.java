@@ -86,7 +86,7 @@ public class TaskQueueApiUtils {
 	 * @param bExpunge
 	 * @return a PS listing
 	 */
-	public List<Job> getMasterJobStatus(final int jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
+	public List<Job> getMasterJobStatus(final long jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
 			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 
 		try {
@@ -215,9 +215,10 @@ public class TaskQueueApiUtils {
 	 * @return queueId
 	 * @throws ServerException
 	 */
-	public int submitJob(final JDL jdl) throws ServerException {
+	public long submitJob(final JDL jdl) throws ServerException {
 
-		// final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass, commander.getUser().getName(), ojdl);
+		// final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass,
+		// commander.getUser().getName(), ojdl);
 
 		final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), jdl);
 
@@ -234,7 +235,7 @@ public class TaskQueueApiUtils {
 	 *
 	 * @return status of the kill
 	 */
-	public boolean killJob(final int queueId) {
+	public boolean killJob(final long queueId) {
 
 		try {
 			final KillJob j = new KillJob(commander.getUser(), commander.getRole(), queueId);
@@ -283,6 +284,7 @@ public class TaskQueueApiUtils {
 	 * @param tag
 	 * @param message
 	 */
+	@SuppressWarnings("static-method")
 	public void putJobLog(final long jobid, final String tag, final String message) {
 		try {
 			final PutJobLog sq = new PutJobLog(jobid, tag, message);

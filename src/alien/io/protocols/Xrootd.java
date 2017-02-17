@@ -8,11 +8,14 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.HashMap;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,15 +26,9 @@ import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.se.SE;
-import lia.util.process.ExternalProcess;
 import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import utils.ExternalCalls;
-
-import java.util.concurrent.atomic.AtomicInteger;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.nio.channels.FileChannel;
+import utils.ProcessWithTimeout;
 
 /**
  * @author costing
@@ -51,28 +48,40 @@ public class Xrootd extends Protocol {
 	private static String xrdcpdebug = "-d";
 	private int xrdcpdebuglevel = 0;
 
+	/**
+	 * Path to the Xrootd command line binaries
+	 */
 	protected static String xrootd_default_path = null;
 
 	private static String xrdcpPath = null;
 
+	/**
+	 * Statically filled variable, <code>true</code> when
+	 */
 	protected static boolean xrootdNewerThan4 = false;
 
-	// EXPERIMENTAL
-	// for ORNL Titan
-	private static HashMap<GUID, AtomicInteger> registeredCalls = new HashMap<>();
-
 	static {
+		try {
+			org.apache.catalina.webresources.TomcatURLStreamHandlerFactory.getInstance().addUserFactory(new ROOTURLStreamHandlerFactory());
+		} catch (final Throwable t) {
+			logger.log(Level.WARNING, "Tomcat URL handler is not available", t);
+
+			try {
+				URL.setURLStreamHandlerFactory(new ROOTURLStreamHandlerFactory());
+			} catch (final Throwable t2) {
+				logger.log(Level.WARNING, "Cannot set ROOT URL stream handler factory", t2);
+			}
+		}
+
 		if (ConfigUtils.getConfig() != null) {
 			xrootd_default_path = ConfigUtils.getConfig().gets("xrootd.location", null);
 
 			if (xrootd_default_path != null)
 				for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
-					final File test = new File(xrootd_default_path + "/bin/" + command);
+					xrdcpPath = ExternalCalls.programExistsInFolders(command, xrootd_default_path, xrootd_default_path + "/bin");
 
-					if (test.exists() && test.isFile() && test.canExecute()) {
-						xrdcpPath = test.getAbsolutePath();
+					if (xrdcpPath != null)
 						break;
-					}
 				}
 		}
 
@@ -80,50 +89,52 @@ public class Xrootd extends Protocol {
 			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
 				xrdcpPath = ExternalCalls.programExistsInPath(command);
 
-				if (xrdcpPath != null) {
-					int idx = xrdcpPath.lastIndexOf('/');
-
-					if (idx > 0) {
-						idx = xrdcpPath.lastIndexOf('/', idx - 1);
-
-						if (idx >= 0)
-							xrootd_default_path = xrdcpPath.substring(0, idx);
-					}
-
+				if (xrdcpPath != null)
 					break;
-				}
+			}
+
+		if (xrdcpPath == null)
+			for (final String command : new String[] { "xrdcpapmon", "xrdcp" }) {
+				xrdcpPath = ExternalCalls.programExistsInFolders(command, System.getProperty("user.home") + "/bin", System.getProperty("user.home") + "/xrootd/bin", "/opt/xrootd/bin");
+
+				if (xrdcpPath != null)
+					break;
 			}
 
 		if (xrdcpPath != null) {
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(Arrays.asList(xrdcpPath, "--version"));
+			int idx = xrdcpPath.lastIndexOf('/');
+
+			if (idx > 0) {
+				idx = xrdcpPath.lastIndexOf('/', idx - 1);
+
+				if (idx >= 0)
+					xrootd_default_path = xrdcpPath.substring(0, idx);
+			}
+
+			final ProcessBuilder pBuilder = new ProcessBuilder(Arrays.asList(xrdcpPath, "--version"));
 
 			checkLibraryPath(pBuilder);
 
-			pBuilder.returnOutputOnExit(true);
-
-			pBuilder.timeout(15, TimeUnit.SECONDS);
-
 			pBuilder.redirectErrorStream(true);
 
-			final ExitStatus exitStatus;
-
-			ExternalProcess p = null;
+			Process p = null;
 
 			try {
 				p = pBuilder.start();
 
 				if (p != null) {
-					exitStatus = p.waitFor();
+					final ProcessWithTimeout timeout = new ProcessWithTimeout(p, pBuilder);
 
-					if (exitStatus.getExtProcExitStatus() == 0) {
-						final String version = exitStatus.getStdOut();
+					if (timeout.waitFor(15, TimeUnit.SECONDS) && timeout.exitValue() == 0) {
+						final String version = timeout.getStdout().toString();
 
 						logger.log(Level.FINE, "Local Xrootd version is " + version);
 
 						if (version.indexOf('.') > 0)
 							xrootdNewerThan4 = version.substring(0, version.indexOf('.')).compareTo("v4") >= 0;
 					}
-				} else
+				}
+				else
 					logger.log(Level.WARNING, "Cannot execute " + xrdcpPath);
 			} catch (final IOException | InterruptedException ie) {
 				if (p != null)
@@ -154,7 +165,7 @@ public class Xrootd extends Protocol {
 	 *
 	 * @param p
 	 */
-	public static void checkLibraryPath(final ExternalProcessBuilder p) {
+	public static void checkLibraryPath(final ProcessBuilder p) {
 		checkLibraryPath(p, xrootd_default_path);
 	}
 
@@ -164,9 +175,35 @@ public class Xrootd extends Protocol {
 	 * @param p
 	 * @param path
 	 */
-	public static void checkLibraryPath(final ExternalProcessBuilder p, final String path) {
-		if (path != null)
-			p.environment().put("LD_LIBRARY_PATH", path + "/lib");
+	public static void checkLibraryPath(final ProcessBuilder p, final String path) {
+		checkLibraryPath(p, path, false);
+	}
+
+	/**
+	 * Set the LD_LIBRARY_PATH of this process to the lib directory of the given path
+	 *
+	 * @param p
+	 * @param path
+	 * @param append
+	 *            whether to append to the existing value (<code>true</code>) or replace it (<code>false</code>)
+	 */
+	public static void checkLibraryPath(final ProcessBuilder p, final String path, final boolean append) {
+		if (path != null) {
+			if (!append) {
+				p.environment().put("LD_LIBRARY_PATH", path + "/lib");
+				p.environment().put("DYLD_LIBRARY_PATH", path + "/lib");
+			}
+			else {
+				for (final String key : new String[] { "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH" }) {
+					final String old = p.environment().get(key);
+
+					if (old == null || old.length() == 0)
+						p.environment().put(key, path + "/lib");
+					else
+						p.environment().put(key, old + ":" + path + "/lib");
+				}
+			}
+		}
 	}
 
 	/**
@@ -248,11 +285,15 @@ public class Xrootd extends Protocol {
 
 			String envelope = null;
 
+			boolean encryptedEnvelope = true;
+
 			if (pfn.ticket.envelope != null) {
 				envelope = pfn.ticket.envelope.getEncryptedEnvelope();
 
-				if (envelope == null)
+				if (envelope == null) {
 					envelope = pfn.ticket.envelope.getSignedEnvelope();
+					encryptedEnvelope = false;
+				}
 			}
 
 			File fAuthz = null;
@@ -263,7 +304,7 @@ public class Xrootd extends Protocol {
 				transactionURL = pfn.ticket.envelope.getTransactionURL();
 
 			if (xrootdNewerThan4) {
-				final org.apache.catalina.util.URL url = new org.apache.catalina.util.URL(pfn.ticket.envelope.getTransactionURL());
+				final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
 
 				final String host = url.getHost();
 				final int port = url.getPort() > 0 ? url.getPort() : 1094;
@@ -276,8 +317,9 @@ public class Xrootd extends Protocol {
 				command.add(xrootd_default_path + "/bin/xrdfs");
 				command.add(host + ":" + port);
 				command.add("rm");
-				command.add(path + "?authz=" + envelope);
-			} else {
+				command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
+			}
+			else {
 				command.add(xrootd_default_path + "/bin/xrdrm");
 				command.add("-v");
 
@@ -300,20 +342,21 @@ public class Xrootd extends Protocol {
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
-
-			pBuilder.returnOutputOnExit(true);
-
-			pBuilder.timeout(1, TimeUnit.MINUTES);
 
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
+				final Process p = pBuilder.start();
+				final ProcessWithTimeout ptimeout = new ProcessWithTimeout(p, pBuilder);
+				ptimeout.waitFor(1, TimeUnit.MINUTES);
+
+				exitStatus = ptimeout.getExitStatus();
+
 				setLastExitStatus(exitStatus);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
@@ -361,106 +404,57 @@ public class Xrootd extends Protocol {
 
 		final GUID guid = pfn.getGuid();
 
-		System.out.println("Target is: " + target);
-		System.out.println("Local file is: " + localFile);
-		AtomicInteger waitGUID = null;
-
 		if (target == null) {
 			// we are free to use any cached value
 			target = TempFileManager.getAny(guid);
-			System.out.println("TempFileManaged returned: " + target);
 
 			if (target != null) {
 				logger.log(Level.FINE, "Reusing cached file: " + target.getCanonicalPath());
-				System.out.println("Reusing cached file: " + target.getCanonicalPath());
+
 				return target;
 			}
-
-			// EXPERIMENTAL 
-			// for ORNL Titan
-			/*waitGUID = registerCall(guid);
-			System.out.println("waitGUID = "+ waitGUID);
-			if(waitGUID==2){
-				try{
-					System.out.println("Entering wait state ....");
-					synchronized(waitGUID){
-						waitGUID.wait(60*5*1000);
-						System.out.println("Wait call in get finished");
-					}
-				}
-				catch(InterruptedException e){
-					System.err.println("Wait for Xrootd get completion interrupted");
-				}
-				if(waitGUID == 1)
-					return TempFileManager.getAny(guid);
-				if(waitGUID == -1)
-					return null;
-			}
-			*/
 
 			target = File.createTempFile("xrootd-get", null, IOUtils.getTemporaryDirectory());
 
 			if (!target.delete()) {
 				logger.log(Level.WARNING, "Could not delete the just created temporary file: " + target);
-
-				// EXPERIMENTAL
-				// for ORNL Titan
-			/*	if(waitGUID!=null){
-					waitGUID = -1;
-					unregisterCall(guid);
-					waitGUID.notifyAll();
-				}*/
-
 				return null;
 			}
 		}
+		else {
+			File existingFile = TempFileManager.getTemp(guid);
 
-		int guid_dl_status = 0;
-		synchronized (this){
-			waitGUID = registerCall(guid);
-			System.out.println("waitGUID = "+ waitGUID);
-			guid_dl_status = waitGUID.intValue();
-		}
-		//if(waitGUID.intValue()==2){
-		if(guid_dl_status!=0){
-			if(guid_dl_status==2){
-				try{
-					System.out.println("Entering wait state ....");
-					synchronized(waitGUID){
-						waitGUID.wait(60*5*1000);
-						System.out.println("Wait call in get finished");
+			final boolean wasTempFile = existingFile != null;
+
+			if (existingFile == null)
+				existingFile = TempFileManager.getPersistent(guid);
+
+			if (existingFile != null) {
+				if (wasTempFile)
+					try {
+						if (existingFile.renameTo(target)) {
+							TempFileManager.putPersistent(guid, target);
+							return target;
+						}
+
+						logger.log(Level.WARNING, "Could not rename " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath());
+					} catch (final Throwable t) {
+						logger.log(Level.WARNING, "Exception renaming " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath(), t);
+					} finally {
+						TempFileManager.release(existingFile);
 					}
-				}
-				catch(InterruptedException e){
-					System.err.println("Wait for Xrootd get completion interrupted");
-				}
-			}
-			if(waitGUID.intValue() == 1){
-				System.out.println("Already downloaded file is in: " + TempFileManager.getAny(guid));
-				// here copy file to local folder
-				FileChannel source = null;
-				FileChannel destination = null;
 
+				// if the file existed with a persistent copy, or the temporary file could not be renamed, try to simply copy it to the target
 				try {
-					source = new FileInputStream(TempFileManager.getAny(guid)).getChannel();
-					destination = new FileOutputStream(target).getChannel();
-					destination.transferFrom(source, 0, source.size());
+					if (Files.copy(Paths.get(existingFile.toURI()), Paths.get(target.toURI())) == null)
+						logger.log(Level.WARNING, "Could not copy " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath());
+					else
+						return target;
+				} catch (final Throwable t) {
+					logger.log(Level.WARNING, "Exception copying " + existingFile.getAbsolutePath() + " to " + target.getAbsolutePath(), t);
 				}
-				finally {
-					if(source != null) {
-						source.close();
-					}
-					if(destination != null) {
-						destination.close();
-					}
-				}
-				return TempFileManager.getAny(guid);
 			}
-			else if(waitGUID.intValue() == -1)
-				return null;
 		}
-
-		System.out.println(" ================ Starting download with XROOTD ============= ");
 
 		if (pfn.ticket == null || pfn.ticket.type != AccessType.READ)
 			if (logger.isLoggable(Level.FINE))
@@ -471,16 +465,6 @@ public class Xrootd extends Protocol {
 
 			if (xrdcpPath == null) {
 				logger.log(Level.SEVERE, "Could not find xrdcp in path.");
-
-				// EXPERIMENTAL
-				// for ORNL Titan
-				if(waitGUID!=null){
-					waitGUID.set(-1);
-					unregisterCall(guid);
-					waitGUID.notifyAll();
-				}
-
-				unregisterCall(guid);
 				throw new SourceException("Could not find xrdcp in path.");
 			}
 
@@ -501,54 +485,45 @@ public class Xrootd extends Protocol {
 			if (pfn.ticket != null && pfn.ticket.envelope != null)
 				if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add("-OS&authz=" + pfn.ticket.envelope.getEncryptedEnvelope());
-				else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-					command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
+				else
+					if (pfn.ticket.envelope.getSignedEnvelope() != null)
+						command.add("-OS" + pfn.ticket.envelope.getSignedEnvelope());
 
 			command.add(transactionURL);
 			command.add(target.getCanonicalPath());
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
-
-			pBuilder.returnOutputOnExit(true);
 
 			// 20KB/s should be available to anybody
 			long maxTime = guid.size / 20000;
 
 			maxTime += timeout;
 
-			pBuilder.timeout(maxTime, TimeUnit.SECONDS);
-
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
-			ExternalProcess p = null;
+			Process p = null;
 
 			try {
 				p = pBuilder.start();
 
 				if (p != null) {
-					exitStatus = p.waitFor();
+					final ProcessWithTimeout ptimeout = new ProcessWithTimeout(p, pBuilder);
+					ptimeout.waitFor(maxTime, TimeUnit.SECONDS);
+					exitStatus = ptimeout.getExitStatus();
 					setLastExitStatus(exitStatus);
-				} else
+				}
+				else
 					throw new SourceException("Cannot start the process");
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 
 				p.destroy();
-
-				// EXPERIMENTAL
-				// for ORNL Titan
-				if(waitGUID!=null){
-					waitGUID.set(-1);
-					unregisterCall(guid);
-					waitGUID.notifyAll();
-				}
-
 
 				throw new SourceException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 			}
@@ -562,15 +537,6 @@ public class Xrootd extends Protocol {
 					sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				else
 					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
-
-				// EXPERIMENTAL
-				// for ORNL Titan
-				if(waitGUID!=null){
-					waitGUID.set(-1);
-					unregisterCall(guid);
-					waitGUID.notifyAll();
-				}
-
 
 				throw new SourceException(sMessage);
 			}
@@ -598,15 +564,6 @@ public class Xrootd extends Protocol {
 
 			logger.log(Level.WARNING, "Caught exception", t);
 
-			// EXPERIMENTAL
-			// for ORNL Titan
-			if(waitGUID!=null){
-				waitGUID.set(-1);
-				unregisterCall(guid);
-				waitGUID.notifyAll();
-			}
-
-
 			throw new SourceException("Get aborted because " + t);
 		}
 
@@ -614,16 +571,6 @@ public class Xrootd extends Protocol {
 			TempFileManager.putTemp(guid, target);
 		else
 			TempFileManager.putPersistent(guid, target);
-
-		// EXPERIMENTAL
-		// for ORNL Titan
-		if(waitGUID!=null){
-			synchronized(waitGUID){
-				waitGUID.set(1);
-				waitGUID.notifyAll();
-			}
-		}
-		unregisterCall(guid);
 
 		return target;
 	}
@@ -684,33 +631,38 @@ public class Xrootd extends Protocol {
 					opaqueParams += "authz=" + pfn.ticket.envelope.getEncryptedEnvelope();
 
 					command.add(opaqueParams);
-				} else if (pfn.ticket.envelope.getSignedEnvelope() != null)
-					command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
+				}
+				else
+					if (pfn.ticket.envelope.getSignedEnvelope() != null)
+						command.add("-OD" + pfn.ticket.envelope.getSignedEnvelope());
 			}
 
 			command.add(transactionURL);
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
 
-			pBuilder.returnOutputOnExit(true);
-
 			// 20KB/s should be available to anybody
 			final long maxTime = timeout + guid.size / 20000;
-
-			pBuilder.timeout(maxTime, TimeUnit.SECONDS);
 
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
+				final Process p = pBuilder.start();
 
-				setLastExitStatus(exitStatus);
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+					pTimeout.waitFor(maxTime, TimeUnit.SECONDS);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new TargetException("Cannot start the process");
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new TargetException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
@@ -805,6 +757,130 @@ public class Xrootd extends Protocol {
 	}
 
 	/**
+	 * Check if a file is online or on tape / MSS
+	 *
+	 * @param pfn
+	 * @return <code>true</code> if the file is online, <code>false</code> if offline
+	 * @throws IOException
+	 *             in case a problem executing this request
+	 */
+	public boolean isOnline(final PFN pfn) throws IOException {
+		if (!xrootdNewerThan4)
+			throw new IOException("`prepare` command only supported by Xrootd 4+ clients");
+
+		final String stat = xrdstat(pfn, false, false, false);
+
+		if (stat == null)
+			throw new IOException("No stat info on this pfn: " + pfn.getPFN());
+
+		final int idx = stat.indexOf("Flags");
+
+		if (idx < 0)
+			throw new IOException("No flags info found in this output:\n" + stat);
+
+		if (stat.indexOf("Offline", idx) > 0)
+			return false;
+
+		return true;
+	}
+
+	/**
+	 * Check if the file is online or offline, and if offline request it to be prepared (staged on disk)
+	 *
+	 * @param pfn
+	 * @return <code>true</code> if the request was queued, <code>false</code> if the file was already online
+	 * @throws IOException
+	 *             if any problem in performing the request
+	 */
+	public boolean prepareCond(final PFN pfn) throws IOException {
+		if (!isOnline(pfn)) {
+			prepare(pfn);
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Stage the file on a mass storage system (TAPE SE)
+	 *
+	 * @param pfn
+	 * @throws IOException
+	 *             if any problem in performing the request
+	 */
+	public void prepare(final PFN pfn) throws IOException {
+		if (!xrootdNewerThan4)
+			throw new IOException("`prepare` command only supported by Xrootd 4+ clients");
+
+		final List<String> command = new LinkedList<>();
+
+		final URL url;
+
+		String envelope = null;
+
+		boolean encryptedEnvelope = true;
+
+		if (pfn.ticket != null && pfn.ticket.envelope != null) {
+			url = new URL(pfn.ticket.envelope.getTransactionURL());
+
+			envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+			if (envelope == null) {
+				envelope = pfn.ticket.envelope.getSignedEnvelope();
+				encryptedEnvelope = false;
+			}
+		}
+		else
+			url = new URL(pfn.getPFN());
+
+		final String host = url.getHost();
+		final int port = url.getPort() > 0 ? url.getPort() : 1094;
+
+		String path = url.getPath();
+
+		command.add(xrootd_default_path + "/bin/xrdfs");
+		command.add(host + ":" + port);
+		command.add("prepare");
+
+		if (path.startsWith("//"))
+			path = path.substring(1);
+
+		if (envelope != null)
+			path += "?" + (encryptedEnvelope ? "authz=" : "") + envelope;
+
+		command.add(path);
+
+		setLastCommand(command);
+
+		final ProcessBuilder pBuilder = new ProcessBuilder(command);
+
+		checkLibraryPath(pBuilder);
+
+		pBuilder.redirectErrorStream(true);
+
+		ExitStatus exitStatus;
+
+		try {
+			final Process p = pBuilder.start();
+
+			if (p != null) {
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+				pTimeout.waitFor(15, TimeUnit.SECONDS);
+				exitStatus = pTimeout.getExitStatus();
+				setLastExitStatus(exitStatus);
+			}
+			else
+				throw new IOException("Cannot start process " + command.toString());
+		} catch (final InterruptedException ie) {
+			setLastExitStatus(null);
+			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
+		}
+
+		if (exitStatus.getExtProcExitStatus() != 0)
+			throw new IOException("Command exited with exit code: " + exitStatus.getExtProcExitStatus() + ", full command and output is below:\n" + command + "\n" + exitStatus.getStdOut());
+	}
+
+	/**
 	 * Check if the PFN has the correct properties, such as described in the access envelope
 	 *
 	 * @param pfn
@@ -816,7 +892,6 @@ public class Xrootd extends Protocol {
 	 *             if the remote file properties are not what is expected
 	 */
 	public String xrdstat(final PFN pfn, final boolean returnEnvelope, final boolean retryWithDelay, final boolean forceRecalcMd5) throws IOException {
-
 		final SE se = pfn.getSE();
 
 		if (se == null)
@@ -837,42 +912,49 @@ public class Xrootd extends Protocol {
 					command.add(host + ":" + port);
 					command.add("stat");
 					command.add(qProt.substring(qProt.indexOf('/') + 1));
-				} else if (returnEnvelope) {
-					// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
-					command.add(xrootd_default_path + "/bin/xrd");
-
-					command.add(host + ":" + port);
-					command.add("query");
-					command.add("32");
-					String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
-
-					if (forceRecalcMd5)
-						qpfn += "\\&recomputemd5=1";
-
-					command.add(qpfn);
-				} else {
-					command.add(xrootd_default_path + "/bin/xrdstat");
-					command.addAll(getCommonArguments());
-					command.add(pfn.getPFN());
 				}
+				else
+					if (returnEnvelope) {
+						// xrd pcaliense01:1095 query 32 /15/63447/e3f01fd2-23e3-11e0-9a96-001f29eb8b98?getrespenv=1\&recomputemd5=1
+						command.add(xrootd_default_path + "/bin/xrd");
+
+						command.add(host + ":" + port);
+						command.add("query");
+						command.add("32");
+						String qpfn = qProt.substring(qProt.indexOf('/') + 1) + "?getrespenv=1";
+
+						if (forceRecalcMd5)
+							qpfn += "\\&recomputemd5=1";
+
+						command.add(qpfn);
+					}
+					else {
+						command.add(xrootd_default_path + "/bin/xrdstat");
+						command.addAll(getCommonArguments());
+						command.add(pfn.getPFN());
+					}
 
 				setLastCommand(command);
 
-				final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+				final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 				checkLibraryPath(pBuilder);
-
-				pBuilder.returnOutputOnExit(true);
-
-				pBuilder.timeout(15, TimeUnit.SECONDS);
 
 				pBuilder.redirectErrorStream(true);
 
 				ExitStatus exitStatus;
 
 				try {
-					exitStatus = pBuilder.start().waitFor();
-					setLastExitStatus(exitStatus);
+					final Process p = pBuilder.start();
+
+					if (p != null) {
+						final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+						pTimeout.waitFor(15, TimeUnit.SECONDS);
+						exitStatus = pTimeout.getExitStatus();
+						setLastExitStatus(exitStatus);
+					}
+					else
+						throw new IOException("Cannot execute command: " + command);
 				} catch (final InterruptedException ie) {
 					setLastExitStatus(null);
 					throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
@@ -1010,14 +1092,16 @@ public class Xrootd extends Protocol {
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					sourcePath += "?authz=" + source.ticket.envelope.getEncryptedEnvelope();
-				else if (source.ticket.envelope.getSignedEnvelope() != null)
-					sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
+				else
+					if (source.ticket.envelope.getSignedEnvelope() != null)
+						sourcePath += "?" + source.ticket.envelope.getSignedEnvelope();
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					targetPath += "?authz=" + target.ticket.envelope.getEncryptedEnvelope();
-				else if (target.ticket.envelope.getSignedEnvelope() != null)
-					targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
+				else
+					if (target.ticket.envelope.getSignedEnvelope() != null)
+						targetPath += "?" + target.ticket.envelope.getSignedEnvelope();
 
 			command.add(sourcePath);
 			command.add(targetPath);
@@ -1027,26 +1111,30 @@ public class Xrootd extends Protocol {
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 			checkLibraryPath(pBuilder);
-
-			pBuilder.returnOutputOnExit(true);
 
 			long seconds = source.getGuid().size / 200000; // average target
 															// speed: 200KB/s
 
 			seconds += 5 * 60; // 5 minutes extra time, handshakes and such
 
-			pBuilder.timeout(seconds, TimeUnit.SECONDS);
-
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
-				setLastExitStatus(exitStatus);
+				final Process p = pBuilder.start();
+
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+					pTimeout.waitFor(seconds, TimeUnit.SECONDS);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new IOException("Cannot execute command: " + command);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
@@ -1110,17 +1198,19 @@ public class Xrootd extends Protocol {
 						size = Long.parseLong(line.substring(line.lastIndexOf(':') + 1).trim());
 						break;
 					}
-				} else if (line.startsWith("xstat:")) {
-					final int idx = line.indexOf("size=");
-
-					if (idx > 0) {
-						final int idx2 = line.indexOf(" ", idx);
-
-						size = Long.parseLong(line.substring(idx + 5, idx2));
-
-						break;
-					}
 				}
+				else
+					if (line.startsWith("xstat:")) {
+						final int idx = line.indexOf("size=");
+
+						if (idx > 0) {
+							final int idx2 = line.indexOf(" ", idx);
+
+							size = Long.parseLong(line.substring(idx + 5, idx2));
+
+							break;
+						}
+					}
 		} catch (final IOException e) {
 			e.printStackTrace();
 		}
@@ -1155,35 +1245,185 @@ public class Xrootd extends Protocol {
 
 	/**
 	 * @return the path for the default Xrootd version (base directory, append /bin or /lib to it)
-	 * @see Xrootd#checkLibraryPath(ExternalProcessBuilder)
+	 * @see Xrootd#checkLibraryPath(ProcessBuilder)
 	 */
 	public static String getXrootdDefaultPath() {
 		return xrootd_default_path;
 	}
 
-	// EXPERIMENTAL
-	// for ORNL Titan
-	AtomicInteger registerCall(final GUID guid){
-		AtomicInteger waitGuidStatus; 
-		synchronized(registeredCalls){
-			 waitGuidStatus = registeredCalls.get(guid);
-			if(waitGuidStatus == null){
-				waitGuidStatus = new AtomicInteger(0);
-				registeredCalls.put(guid, waitGuidStatus);
+	/**
+	 * @param pfn
+	 *            Some path + read access token to get the space information for
+	 * @return space information
+	 * @throws IOException
+	 */
+	public SpaceInfo getSpaceInfo(final PFN pfn) throws IOException {
+		final List<String> command = new LinkedList<>();
+
+		final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
+
+		final String host = url.getHost();
+		final int port = url.getPort() > 0 ? url.getPort() : 1094;
+
+		String path = url.getPath();
+
+		if (path.startsWith("//"))
+			path = path.substring(1);
+
+		boolean encryptedEnvelope = true;
+
+		String envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+		if (envelope == null) {
+			envelope = pfn.ticket.envelope.getSignedEnvelope();
+			encryptedEnvelope = false;
+		}
+
+		final SpaceInfo ret = new SpaceInfo();
+
+		ExitStatus exitStatus;
+
+		ProcessBuilder pBuilder;
+
+		for (int attempt = 0; !ret.spaceInfoSet && attempt <= 1; attempt++) {
+			command.clear();
+
+			command.add(xrootd_default_path + "/bin/xrdfs");
+			command.add(host + ":" + port);
+			command.add("spaceinfo");
+
+			if (attempt == 1)
+				command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
+			else
+				command.add(path);
+
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Executing spaceinfo command: " + command);
+
+			setLastCommand(command);
+
+			pBuilder = new ProcessBuilder(command);
+
+			checkLibraryPath(pBuilder);
+
+			pBuilder.redirectErrorStream(true);
+
+			try {
+				final Process p = pBuilder.start();
+
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+					pTimeout.waitFor(5, TimeUnit.MINUTES);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new IOException("Cannot execute command: " + command);
+
+				try (BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()))) {
+					String line;
+
+					long total = 0;
+					long free = 0;
+					long used = 0;
+					long largest = 0;
+
+					while ((line = br.readLine()) != null) {
+						final StringTokenizer st = new StringTokenizer(line);
+
+						if (!st.hasMoreTokens())
+							continue;
+
+						final String firstToken = st.nextToken();
+
+						if (!st.hasMoreTokens())
+							continue;
+
+						String lastToken = st.nextToken();
+
+						while (st.hasMoreTokens())
+							lastToken = st.nextToken();
+
+						switch (firstToken) {
+						case "Total:":
+							total = Long.parseLong(lastToken);
+							break;
+						case "Free:":
+							free = Long.parseLong(lastToken);
+							break;
+						case "Used:":
+							used = Long.parseLong(lastToken);
+							break;
+						case "Largest":
+							largest = Long.parseLong(lastToken);
+							break;
+						default:
+							break;
+						}
+					}
+
+					if (total > 0)
+						ret.setSpaceInfo(path, total, free, used, largest);
+				}
+			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
+			}
+		}
+
+		// Now get the server software version
+
+		command.clear();
+
+		command.add(xrootd_default_path + "/bin/xrdfs");
+		command.add(host + ":" + port);
+		command.add("query");
+		command.add("config");
+		command.add("version");
+
+		if (logger.isLoggable(Level.FINEST))
+			logger.log(Level.FINEST, "Executing spaceinfo command: " + command);
+
+		setLastCommand(command);
+
+		pBuilder = new ProcessBuilder(command);
+
+		checkLibraryPath(pBuilder);
+
+		pBuilder.redirectErrorStream(true);
+
+		try {
+			final Process p = pBuilder.start();
+
+			if (p != null) {
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+				pTimeout.waitFor(15, TimeUnit.SECONDS);
+				exitStatus = pTimeout.getExitStatus();
+				setLastExitStatus(exitStatus);
 			}
 			else
-				waitGuidStatus.set(2);
-		}
-		System.out.println("Leaving register call");
-		return waitGuidStatus;
-	}
+				throw new IOException("Cannot execute command: " + command);
 
-	// EXPERIMENTAL
-	// for ORNL Titan
-	void unregisterCall(final GUID guid){
-		synchronized(registeredCalls){
-			registeredCalls.remove(guid);
+			try (BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()))) {
+				String line = br.readLine();
+
+				if (line != null) {
+					line = line.trim();
+					if (!line.equals("version") && !line.startsWith("["))
+						if (line.startsWith("v"))
+							ret.setVersion("Xrootd", line);
+						else
+							if (line.startsWith("dCache "))
+								ret.setVersion("dCache", line.substring(line.indexOf(' ') + 1).trim());
+							else
+								ret.setVersion(null, line);
+				}
+			}
+		} catch (final InterruptedException ie) {
+			setLastExitStatus(null);
+			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
-		System.out.println("Leaving unregister call");
+
+		return ret;
 	}
 }

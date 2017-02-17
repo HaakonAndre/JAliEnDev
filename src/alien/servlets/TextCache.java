@@ -39,7 +39,6 @@ import lazyj.Format;
 import lazyj.LRUMap;
 import lazyj.Utils;
 import lazyj.cache.ExpirationCache;
-import lia.Monitor.monitor.ShutdownReceiver;
 import lia.util.ShutdownManager;
 import lia.util.StringFactory;
 
@@ -63,10 +62,12 @@ public class TextCache extends ExtendedServlet {
 		try {
 			try {
 				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl_" + namespace));
-			} catch (@SuppressWarnings("unused") final Throwable t1) {
+			} catch (@SuppressWarnings("unused")
+			final Throwable t1) {
 				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl"));
 			}
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		} catch (@SuppressWarnings("unused")
+		final Throwable t) {
 			// ignore
 		}
 
@@ -146,7 +147,8 @@ public class TextCache extends ExtendedServlet {
 									notifyEntryRemoved(namespace, entry.getKey(), entry.getValue(), true);
 
 									it.remove();
-								} else {
+								}
+								else {
 									if (soonestToExpire == 0 || expires < soonestToExpire)
 										soonestToExpire = expires;
 
@@ -167,12 +169,16 @@ public class TextCache extends ExtendedServlet {
 
 					if (monitor != null)
 						monitor.sendParameters(parameters, values);
-				} catch (@SuppressWarnings("unused") final Throwable t) {
+				} catch (@SuppressWarnings("unused")
+				final Throwable t) {
 					// ignore
 				}
 		}
 	}
 
+	/**
+	 * Close opened logger stream, if needed
+	 */
 	static final void closeStreams() {
 		if (requestLogger != null) {
 			requestLogger.flush();
@@ -186,32 +192,28 @@ public class TextCache extends ExtendedServlet {
 	 */
 	static final CleanupThread cleanup;
 
-	static {
-		cleanup = new CleanupThread();
-		cleanup.start();
-
-		ShutdownManager.getInstance().addModule(new ShutdownReceiver() {
-
-			@Override
-			public void Shutdown() {
-				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
-					final Namespace namespace = entry.getValue();
-
-					synchronized (namespace) {
-						for (final Map.Entry<String, CacheValue> entryToDelete : namespace.cache.entrySet())
-							notifyEntryRemoved(namespace, entryToDelete.getKey(), entryToDelete.getValue(), false);
-					}
-				}
-
-				closeStreams();
-			}
-		});
-	}
-
 	/**
 	 * Big cache structure
 	 */
 	final static Map<String, Namespace> namespaces = new ConcurrentHashMap<>();
+
+	static {
+		cleanup = new CleanupThread();
+		cleanup.start();
+
+		ShutdownManager.getInstance().addModule(() -> {
+			for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
+				final Namespace namespace = entry.getValue();
+
+				synchronized (namespace) {
+					for (final Map.Entry<String, CacheValue> entryToDelete : namespace.cache.entrySet())
+						notifyEntryRemoved(namespace, entryToDelete.getKey(), entryToDelete.getValue(), false);
+				}
+			}
+
+			closeStreams();
+		});
+	}
 
 	/**
 	 * Monitoring component
@@ -222,6 +224,9 @@ public class TextCache extends ExtendedServlet {
 
 	private static int logCounter = 0;
 
+	/**
+	 * Last log file name
+	 */
 	static String lastLogFile = null;
 
 	private static class MyGZIPOutputStream extends GZIPOutputStream {
@@ -258,16 +263,17 @@ public class TextCache extends ExtendedServlet {
 
 		if (requestLogger.checkError())
 			requestLogger = null;
-		else if (++logCounter > 1000) {
-			logCounter = 0;
+		else
+			if (++logCounter > 1000) {
+				logCounter = 0;
 
-			if (lastLogFile != null) {
-				final File f = new File(lastLogFile);
+				if (lastLogFile != null) {
+					final File f = new File(lastLogFile);
 
-				if (!f.exists())
-					closeStreams();
+					if (!f.exists())
+						closeStreams();
+				}
 			}
-		}
 	}
 
 	/**
@@ -314,10 +320,12 @@ public class TextCache extends ExtendedServlet {
 			try {
 				try {
 					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size_" + name));
-				} catch (@SuppressWarnings("unused") final Throwable t1) {
+				} catch (@SuppressWarnings("unused")
+				final Throwable t1) {
 					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
 				}
-			} catch (@SuppressWarnings("unused") final Throwable t) {
+			} catch (@SuppressWarnings("unused")
+			final Throwable t) {
 				size = 50000;
 			}
 
@@ -402,89 +410,91 @@ public class TextCache extends ExtendedServlet {
 						namespace.keys.clear();
 					}
 				}
-			else if (gets("ns").length() == 0) {
-				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
-					final Namespace namespace = entry.getValue();
+			else
+				if (gets("ns").length() == 0) {
+					for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
+						final Namespace namespace = entry.getValue();
 
-					int min = -1;
-					int max = 0;
-					long total = 0;
+						int min = -1;
+						int max = 0;
+						long total = 0;
 
-					long hits = 0;
+						long hits = 0;
 
-					int nssize;
+						int nssize;
 
-					synchronized (namespace) {
-						for (final CacheValue c : namespace.cache.values()) {
-							final int size = c.value.length();
+						synchronized (namespace) {
+							for (final CacheValue c : namespace.cache.values()) {
+								final int size = c.value.length();
+
+								min = (min < 0 || size < min) ? size : min;
+								max = Math.max(max, size);
+								total += size;
+
+								hits += c.accesses.intValue();
+							}
+
+							nssize = namespace.cache.size();
+						}
+
+						if (min < 0)
+							pwOut.println(entry.getKey() + " : empty");
+						else
+							pwOut.println(entry.getKey() + " : " + nssize + " / " + namespace.keys.size() + " keys (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max
+									+ ", total: " + Format.size(total) + ") : " + hits + " hits");
+					}
+
+					final Runtime r = Runtime.getRuntime();
+
+					pwOut.println("\nJava memory stats: " + Format.size(r.totalMemory()) + " total memory, " + Format.size(r.maxMemory()) + " max memory, " + Format.size(r.freeMemory()) + " free");
+					pwOut.println("Java version: " + System.getProperty("java.version"));
+					pwOut.println("Uptime: " + Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
+				}
+				else {
+					final Namespace namespace = namespaces.get(ns);
+
+					if (namespace == null)
+						pwOut.println("No such namespace: " + ns);
+					else {
+						int min = -1;
+						int max = 0;
+						long total = 0;
+						int hits = 0;
+
+						final boolean values = gets("values").length() > 0;
+
+						final ArrayList<Map.Entry<String, CacheValue>> entries;
+
+						synchronized (namespace) {
+							entries = new ArrayList<>(namespace.cache.entrySet());
+						}
+
+						Collections.sort(entries, entryComparator);
+
+						for (final Map.Entry<String, CacheValue> me : entries) {
+							final CacheValue cv = me.getValue();
+
+							final int size = cv.value.length();
 
 							min = (min < 0 || size < min) ? size : min;
 							max = Math.max(max, size);
 							total += size;
 
-							hits += c.accesses.intValue();
+							hits += cv.accesses.intValue();
+
+							pwOut.println(me.getKey() + " : size " + size + ", " + cv.accesses + " hits" + (values ? " : " + cv.value : ""));
 						}
 
-						nssize = namespace.cache.size();
-					}
+						final int nssize = namespace.cache.size();
 
-					if (min < 0)
-						pwOut.println(entry.getKey() + " : empty");
-					else
-						pwOut.println(entry.getKey() + " : " + nssize + " / " + namespace.keys.size() + " keys (min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max
-								+ ", total: " + Format.size(total) + ") : " + hits + " hits");
+						pwOut.print("\n\n----------------\n\n" + nssize + " entries");
+
+						if (nssize > 0)
+							pwOut.println("(min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits + " hits");
+						else
+							pwOut.println();
+					}
 				}
-
-				final Runtime r = Runtime.getRuntime();
-
-				pwOut.println("\nJava memory stats: " + Format.size(r.totalMemory()) + " total memory, " + Format.size(r.maxMemory()) + " max memory, " + Format.size(r.freeMemory()) + " free");
-				pwOut.println("Java version: " + System.getProperty("java.version"));
-				pwOut.println("Uptime: " + Format.toInterval(ManagementFactory.getRuntimeMXBean().getUptime()));
-			} else {
-				final Namespace namespace = namespaces.get(ns);
-
-				if (namespace == null)
-					pwOut.println("No such namespace: " + ns);
-				else {
-					int min = -1;
-					int max = 0;
-					long total = 0;
-					int hits = 0;
-
-					final boolean values = gets("values").length() > 0;
-
-					final ArrayList<Map.Entry<String, CacheValue>> entries;
-
-					synchronized (namespace) {
-						entries = new ArrayList<>(namespace.cache.entrySet());
-					}
-
-					Collections.sort(entries, entryComparator);
-
-					for (final Map.Entry<String, CacheValue> me : entries) {
-						final CacheValue cv = me.getValue();
-
-						final int size = cv.value.length();
-
-						min = (min < 0 || size < min) ? size : min;
-						max = Math.max(max, size);
-						total += size;
-
-						hits += cv.accesses.intValue();
-
-						pwOut.println(me.getKey() + " : size " + size + ", " + cv.accesses + " hits" + (values ? " : " + cv.value : ""));
-					}
-
-					final int nssize = namespace.cache.size();
-
-					pwOut.print("\n\n----------------\n\n" + nssize + " entries");
-
-					if (nssize > 0)
-						pwOut.println("(min: " + min + ", avg: " + Format.point((double) total / nssize) + ", max: " + max + ", total: " + Format.size(total) + ") : " + hits + " hits");
-					else
-						pwOut.println();
-				}
-			}
 			pwOut.flush();
 
 			return;
@@ -662,7 +672,8 @@ public class TextCache extends ExtendedServlet {
 		try {
 			invalidateCache("whereis", "(irtc|irc)_" + lfn);
 			invalidateCache("access", lfn + ".*");
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		} catch (@SuppressWarnings("unused")
+		final Throwable t) {
 			// ignore
 		}
 	}
@@ -751,7 +762,8 @@ public class TextCache extends ExtendedServlet {
 				final String sURL = request.getMethod() + " " + getCurrentPage() + " HTTP/1.1";
 
 				pw.println(sIP + " [" + sDate + "] \"" + sURL + "\"");
-			} catch (@SuppressWarnings("unused") final Throwable t) {
+			} catch (@SuppressWarnings("unused")
+			final Throwable t) {
 				// ignore
 			}
 	}

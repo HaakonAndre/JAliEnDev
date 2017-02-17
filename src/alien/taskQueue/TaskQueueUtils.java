@@ -14,12 +14,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
+import java.util.Vector;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,10 +42,12 @@ import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
 import alien.user.UsersHelper;
+import apmon.ApMon;
 import lazyj.DBFunctions;
 import lazyj.Format;
 import lazyj.StringFactory;
 import lazyj.Utils;
+import lazyj.cache.ExpirationCache;
 import lazyj.cache.GenericLastValuesCache;
 
 /**
@@ -77,17 +81,21 @@ public class TaskQueueUtils {
 		fieldMap.put("spyurl_field", "spyurl");
 		fieldMap.put("node_table", "QUEUE");
 		fieldMap.put("node_field", "nodeId");
+		fieldMap.put("exechost_table", "QUEUE");
+		fieldMap.put("exechost_field", "execHostId");
 	}
 
 	static {
 		try (DBFunctions db = getQueueDB()) {
 			if (db != null) {
 				db.setReadOnly(true);
+				db.setQueryTimeout(30);
 
 				db.query("select count(1) from information_schema.tables where table_schema='processes' and table_name='QUEUEJDL';");
 
 				dbStructure2_20 = db.geti(1) == 1;
-			} else {
+			}
+			else {
 				logger.log(Level.WARNING, "There is no direct database connection to the task queue.");
 
 				dbStructure2_20 = false;
@@ -151,6 +159,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
+			db.setQueryTimeout(300);
+
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
 				monitor.incrementCounter("TQ_jobdetails");
@@ -166,14 +176,18 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) WHERE queueId=?";
 					else
 						q = "SELECT * FROM QUEUE WHERE queueId=?";
-				} else if (loadJDL)
-					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+				}
 				else
-					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
-			} else if (archiveYear < 2000)
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE queueId=?";
+					if (loadJDL)
+						q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+					else
+						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+			}
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
+				if (archiveYear < 2000)
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE queueId=?";
+				else
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE queueId=?";
 
 			db.setReadOnly(true);
 
@@ -242,16 +256,20 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl as JDL FROM QUEUE INNER JOIN QUEUEJDL using(queueId) ";
 					else
 						q = "SELECT * FROM QUEUE ";
-				} else if (loadJDL)
-					q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " ";
+				}
 				else
-					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " ";
+					if (loadJDL)
+						q = "SELECT *,origJdl as JDL FROM QUEUEARCHIVE" + archiveYear + " ";
+					else
+						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear + " ";
 
 				q += "WHERE split=0 AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ";
-			} else if (archiveYear < 2000)
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=0 AND status!='KILLED' ";
+			}
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=0 AND status!='KILLED' ";
+				if (archiveYear < 2000)
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=0 AND status!='KILLED' ";
+				else
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=0 AND status!='KILLED' ";
 
 			if (account != null && account.length() > 0)
 				if (dbStructure2_20)
@@ -264,6 +282,7 @@ public class TaskQueueUtils {
 			final long lQueryStart = System.currentTimeMillis();
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			db.query(q);
 
@@ -322,7 +341,7 @@ public class TaskQueueUtils {
 
 			final StringBuilder sb = new StringBuilder(jobs.size() * 10);
 
-			final Map<Integer, Job> reverse = new HashMap<>();
+			final Map<Long, Job> reverse = new HashMap<>();
 
 			for (final Job j : jobs) {
 				if (sb.length() > 0)
@@ -330,7 +349,7 @@ public class TaskQueueUtils {
 
 				sb.append(j.queueId);
 
-				reverse.put(Integer.valueOf(j.queueId), j);
+				reverse.put(Long.valueOf(j.queueId), j);
 			}
 
 			if (monitor != null) {
@@ -348,6 +367,7 @@ public class TaskQueueUtils {
 				q = "select split,status,count(1) from QUEUE where split in (" + sb.toString() + ") AND status!='KILLED' group by split,status order by 1,2;";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			db.query(q);
 
@@ -355,15 +375,15 @@ public class TaskQueueUtils {
 				monitor.addMeasurement("TQ_getmasterjob_stats_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
 
 			Map<JobStatus, Integer> m = null;
-			int oldJobID = -1;
+			long oldJobID = -1;
 
 			while (db.moveNext()) {
-				final int j = db.geti(1);
+				final long j = db.getl(1);
 
 				if (j != oldJobID || m == null) {
 					m = new HashMap<>();
 
-					final Integer jobId = Integer.valueOf(j);
+					final Long jobId = Long.valueOf(j);
 					ret.put(reverse.get(jobId), m);
 					reverse.remove(jobId);
 
@@ -397,7 +417,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getSubjobs(final int queueId) {
+	public static List<Job> getSubjobs(final long queueId) {
 		return getSubjobs(queueId, false);
 	}
 
@@ -408,7 +428,7 @@ public class TaskQueueUtils {
 	 * @param loadJDL
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL) {
+	public static List<Job> getSubjobs(final long queueId, final boolean loadJDL) {
 		return getSubjobs(queueId, loadJDL, 0);
 	}
 
@@ -421,7 +441,7 @@ public class TaskQueueUtils {
 	 *            archive year to query instead of the main queue table
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getSubjobs(final int queueId, final boolean loadJDL, final int archiveYear) {
+	public static List<Job> getSubjobs(final long queueId, final boolean loadJDL, final int archiveYear) {
 		final List<Job> ret = new ArrayList<>();
 
 		try (DBFunctions db = getQueueDB()) {
@@ -441,22 +461,27 @@ public class TaskQueueUtils {
 						q = "SELECT QUEUE.*,origJdl AS jdl FROM QUEUE INNER JOIN QUEUEJDL using(queueId)";
 					else
 						q = "SELECT * FROM QUEUE";
-				} else if (loadJDL)
-					q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE" + archiveYear;
+				}
 				else
-					q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
+					if (loadJDL)
+						q = "SELECT *,origJdl AS jdl FROM QUEUEARCHIVE" + archiveYear;
+					else
+						q = "SELECT * FROM QUEUEARCHIVE" + archiveYear;
 
 				q += " WHERE split=? AND statusId!=" + JobStatus.KILLED.getAliEnLevel() + " ORDER BY queueId ASC";
-			} else if (archiveYear < 2000)
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+			}
 			else
-				q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+				if (archiveYear < 2000)
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUE WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
+				else
+					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
 
 			final long lQueryStart = System.currentTimeMillis();
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(300);
 
-			db.query(q, false, Integer.valueOf(queueId));
+			db.query(q, false, Long.valueOf(queueId));
 
 			if (monitor != null)
 				monitor.addMeasurement("TQ_getsubjobs_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
@@ -484,7 +509,7 @@ public class TaskQueueUtils {
 	 * @param limit
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final int queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
+	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
 			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge, final int limit) {
 
 		try (DBFunctions db = getQueueDB()) {
@@ -575,6 +600,7 @@ public class TaskQueueUtils {
 				q = "SELECT queueId,status,split,execHost FROM QUEUE WHERE " + where + " ORDER BY queueId ASC limit " + lim + ";";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			if (!db.query(q))
 				return null;
@@ -640,7 +666,7 @@ public class TaskQueueUtils {
 	 *            change the status only if the job is still in this state. Can be <code>null</code> to disable checking the current status.
 	 * @return <code>true</code> if the job status was changed
 	 */
-	public static boolean setJobStatus(final int job, final JobStatus newStatus, final JobStatus oldStatusConstraint) {
+	public static boolean setJobStatus(final long job, final JobStatus newStatus, final JobStatus oldStatusConstraint) {
 		return setJobStatus(job, newStatus, oldStatusConstraint, null);
 	}
 
@@ -675,6 +701,7 @@ public class TaskQueueUtils {
 				q = "SELECT status FROM QUEUE where queueId=?;";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(30);
 
 			if (!db.query(q, false, Long.valueOf(job))) {
 				logger.log(Level.SEVERE, "Error executing the select query from QUEUE");
@@ -719,10 +746,13 @@ public class TaskQueueUtils {
 
 				newstatus = Integer.valueOf(newStatus.getAliEnLevel());
 				q = "UPDATE QUEUE SET statusId=?" + extra + " WHERE queueId=?;";
-			} else {
+			}
+			else {
 				newstatus = newStatus.toSQL();
 				q = "UPDATE QUEUE SET status=? WHERE queueId=?;";
 			}
+
+			db.setQueryTimeout(120);
 
 			if (!db.query(q, false, newstatus, Long.valueOf(job)))
 				return false;
@@ -734,6 +764,8 @@ public class TaskQueueUtils {
 			if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED)
 				deleteJobToken(job);
 
+			String execHost = "NO_SITE";
+
 			if (extrafields != null) {
 				logger.log(Level.INFO, "extrafields: " + extrafields.toString());
 				for (final String key : extrafields.keySet())
@@ -741,16 +773,44 @@ public class TaskQueueUtils {
 						final HashMap<String, Object> map = new HashMap<>();
 
 						int hostId;
-						if (key.contains("node")) {
+						if (key.contains("node") || key.contains("exechost")) {
 							hostId = TaskQueueUtils.getOrInsertFromLookupTable("host", extrafields.get(key).toString());
 							map.put(fieldMap.get(key + "_field"), Integer.valueOf(hostId));
-						} else
+						}
+						else
 							map.put(fieldMap.get(key + "_field"), extrafields.get(key));
 
 						String query = DBFunctions.composeUpdate(fieldMap.get(key + "_table"), map, null);
 						query += " where queueId = ?";
 						db.query(query, false, Long.valueOf(job));
 					}
+				if (extrafields.containsKey("exechost"))
+					execHost = (String) extrafields.get("exechost");
+			}
+
+			// send status change to ML
+			ApMon apmon = null;
+
+			try {
+				final Vector<String> targets = new Vector<>();
+				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
+				apmon = new ApMon(targets);
+
+				final Vector<String> parameters = new Vector<>();
+				final Vector<Object> values = new Vector<>();
+
+				parameters.add("jobId");
+				values.add(Integer.valueOf((int) job));
+
+				parameters.add("statusID");
+				values.add(Integer.valueOf(newStatus.getAliEnLevel()));
+
+				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.valueOf(execHost), parameters.size(), parameters, values);
+			} catch (final Exception e) {
+				logger.log(Level.WARNING, "Could not initialize apmon (" + execHost + ")", e);
+			} finally {
+				if (apmon != null)
+					apmon.stopIt();
 			}
 
 			return updated;
@@ -761,7 +821,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
 	 */
-	public static String getJDL(final int queueId) {
+	public static String getJDL(final long queueId) {
 		return getJDL(queueId, true);
 	}
 
@@ -772,10 +832,12 @@ public class TaskQueueUtils {
 	 * @return the JDL of this subjobID, if known, <code>null</code> otherwise
 	 */
 	@SuppressWarnings("deprecation")
-	public static String getJDL(final int queueId, final boolean originalJDL) {
+	public static String getJDL(final long queueId, final boolean originalJDL) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
+
+			db.setQueryTimeout(120);
 
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
@@ -791,11 +853,11 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(true);
 
-			if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
+			if (!db.query(q, false, Long.valueOf(queueId)) || !db.moveNext()) {
 				final Date d = new Date();
 				q = "SELECT origJdl" + (originalJDL ? "" : ",resultsJdl") + " as JDL FROM QUEUEARCHIVE" + (1900 + d.getYear()) + " WHERE queueId=?";
 
-				if (!db.query(q, false, Integer.valueOf(queueId)) || !db.moveNext()) {
+				if (!db.query(q, false, Long.valueOf(queueId)) || !db.moveNext()) {
 					final String jdlArchiveDir = ConfigUtils.getConfig().gets("alien.taskQueue.TaskQueueUtils.jdlArchiveDir");
 
 					if (jdlArchiveDir.length() > 0) {
@@ -1035,6 +1097,7 @@ public class TaskQueueUtils {
 			// System.out.println("SQL: " + q);
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(600);
 
 			if (!db.query(q))
 				return null;
@@ -1066,6 +1129,7 @@ public class TaskQueueUtils {
 			}
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(60);
 
 			db.query("select site,sum(counter) from JOBAGENT where counter>0 group by site");
 
@@ -1114,6 +1178,7 @@ public class TaskQueueUtils {
 				return ret;
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(60);
 
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
@@ -1167,7 +1232,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return status of the kill
 	 */
-	public static boolean kill(final AliEnPrincipal user, final int queueId) {
+	public static boolean kill(final AliEnPrincipal user, final long queueId) {
 		// TODO check if the user is allowed to kill and do it
 		return false;
 	}
@@ -1177,7 +1242,7 @@ public class TaskQueueUtils {
 	/**
 	 * @param jdlArguments
 	 * @return array of arguments to apply to the JDL
-	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
+	 * @see #applyJDLArguments(String, String...)
 	 * @see #submit(LFN, AliEnPrincipal, String, String...)
 	 */
 	public static String[] splitArguments(final String jdlArguments) {
@@ -1198,15 +1263,13 @@ public class TaskQueueUtils {
 	/**
 	 * @param jdlContents
 	 *            JDL specification
-	 * @param account
-	 * @param role
 	 * @param arguments
 	 *            arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the parsed JDL, with all $N parameters replaced with the respective argument
 	 * @throws IOException
 	 *             if there is any problem parsing the JDL content
 	 */
-	public static JDL applyJDLArguments(final String jdlContents, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
+	public static JDL applyJDLArguments(final String jdlContents, final String... arguments) throws IOException {
 		if (jdlContents == null)
 			return null;
 
@@ -1222,7 +1285,9 @@ public class TaskQueueUtils {
 			if (arguments == null || arguments.length < i)
 				throw new IOException("The JDL indicates argument $" + i + " but you haven't provided it");
 
-			jdlToSubmit = jdlToSubmit.replaceAll("\\$" + i + "(?!\\d)", arguments[i - 1]);
+			final String processedArgs = Format.replace(arguments[i - 1], "$", "\\$");
+
+			jdlToSubmit = jdlToSubmit.replaceAll("\\$" + i + "(?!\\d)", processedArgs);
 
 			m = p.matcher(jdlToSubmit);
 		}
@@ -1242,46 +1307,77 @@ public class TaskQueueUtils {
 			jdl.set("JDLArguments", sb.toString());
 		}
 
-		final String executable = jdl.getExecutable();
+		return jdl;
+	}
 
-		if (executable == null)
-			throw new IOException("The JDL has to indicate an Executable");
+	/**
+	 * Check the Executable and ValidationCommand paths in the catalogue and expand the relative ones to the first file found in user's own folders, including the same directory from where the JDL was
+	 * submitted
+	 *
+	 * @param jdl
+	 *            JDL to check
+	 * @param account
+	 *            account that runs it
+	 * @param role
+	 *            the role (can be <code>null</code>)
+	 * @throws IOException
+	 *             if some file cannot be located
+	 */
+	private static final void expandExecutables(final JDL jdl, final AliEnPrincipal account, final String role) throws IOException {
+		final Set<String> pathsToCheck = new LinkedHashSet<>();
 
-		boolean found = false;
+		pathsToCheck.add("/bin/");
+		pathsToCheck.add("/alice/bin/");
+		pathsToCheck.add("/panda/bin/");
 
-		try {
-			final List<String> options = new LinkedList<>();
-			options.add(executable);
+		if (role != null && !account.getName().equals(role))
+			pathsToCheck.add(UsersHelper.getHomeDir(role) + "bin/");
 
-			if (!executable.startsWith("/")) {
-				options.add("/bin/" + executable);
-				options.add("/alice/bin/" + executable);
-				options.add("/panda/bin/" + executable);
+		pathsToCheck.add(UsersHelper.getHomeDir(account.getName()) + "bin/");
 
-				if (role != null && !account.getName().equals(role))
-					options.add(UsersHelper.getHomeDir(role) + "bin/" + executable);
+		final String jdlPath = jdl.gets("JDLPath");
 
-				options.add(UsersHelper.getHomeDir(account.getName()) + "bin/" + executable);
+		if (jdlPath != null && jdlPath.length() > 0 && jdlPath.indexOf('/') >= 0)
+			pathsToCheck.add(jdlPath.substring(0, jdlPath.lastIndexOf('/') + 1));
+
+		for (final String jdlTag : new String[] { "Executable", "ValidationCommand" }) {
+			final String executable = jdl.gets(jdlTag);
+
+			if (executable == null) {
+				if (jdlTag.equals("Executable"))
+					throw new IOException("The JDL has to indicate an Executable");
+
+				continue;
 			}
 
-			final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, true, false, options));
+			boolean found = false;
 
-			final List<LFN> lfns = answer.getLFNs();
+			try {
+				final List<String> options = new LinkedList<>();
 
-			if (lfns != null)
-				for (final LFN l : lfns)
-					if (l.isFile()) {
-						found = true;
-						jdl.set("Executable", l.getCanonicalName());
-					}
-		} catch (final ServerException se) {
-			throw new IOException(se.getMessage(), se);
+				if (!executable.startsWith("/"))
+					for (final String path : pathsToCheck)
+						options.add(path + executable);
+				else
+					options.add(executable);
+
+				final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, true, false, options));
+
+				final List<LFN> lfns = answer.getLFNs();
+
+				if (lfns != null)
+					for (final LFN l : lfns)
+						if (l.isFile()) {
+							found = true;
+							jdl.set(jdlTag, l.getCanonicalName());
+						}
+			} catch (final ServerException se) {
+				throw new IOException(se.getMessage(), se);
+			}
+
+			if (!found)
+				throw new IOException("The " + jdlTag + " name you indicated (" + executable + ") cannot be located in any standard PATH");
 		}
-
-		if (!found)
-			throw new IOException("The Executable name you indicated (" + executable + ") cannot be located in any standard PATH");
-
-		return jdl;
 	}
 
 	/**
@@ -1298,7 +1394,7 @@ public class TaskQueueUtils {
 	 * @throws IOException
 	 *             in case of problems like downloading the respective JDL or not enough arguments provided to it
 	 */
-	public static int submit(final LFN file, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
+	public static long submit(final LFN file, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
 		if (file == null || !file.exists || !file.isFile())
 			throw new IllegalArgumentException("The LFN is not a valid file");
 
@@ -1307,14 +1403,16 @@ public class TaskQueueUtils {
 		if (jdlContents == null || jdlContents.length() == 0)
 			throw new IOException("Could not download " + file.getCanonicalName());
 
-		final JDL jdl = applyJDLArguments(jdlContents, account, role, arguments);
+		final JDL jdl = applyJDLArguments(jdlContents, arguments);
 
 		jdl.set("JDLPath", file.getCanonicalName());
 
 		return submit(jdl, account, role);
 	}
 
-	private static void prepareJDLForSubmission(final JDL jdl, final String owner) throws IOException {
+	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal account, final String owner) throws IOException {
+		expandExecutables(jdl, account, owner);
+
 		Float price = jdl.getFloat("Price");
 
 		if (price == null)
@@ -1401,15 +1499,11 @@ public class TaskQueueUtils {
 
 		// sanity check of other tags
 
-		for (final String tag : Arrays.asList("Executable", "ValidationCommand", "InputDataCollection")) {
+		for (final String tag : Arrays.asList("ValidationCommand", "InputDataCollection")) {
 			final Collection<String> files = jdl.getList(tag);
 
-			if (files == null) {
-				if (tag.equals("Executable"))
-					throw new IOException("Your JDL lacks an Executable tag");
-
+			if (files == null)
 				continue;
-			}
 
 			for (final String file : files) {
 				String fileName = file;
@@ -1439,9 +1533,9 @@ public class TaskQueueUtils {
 	 * @return the job ID
 	 * @throws IOException
 	 *             in case of problems such as the number of provided arguments is not enough
-	 * @see #applyJDLArguments(String, AliEnPrincipal, String, String...)
+	 * @see #applyJDLArguments(String, String...)
 	 */
-	public static int submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
+	public static long submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
 		final String owner = prepareSubmission(j, account, role);
 
 		return insertJob(j, account, owner, null);
@@ -1470,7 +1564,7 @@ public class TaskQueueUtils {
 
 		final String owner = role != null && (account.hasRole(role) || account.canBecome(role)) ? role : account.getName();
 
-		prepareJDLForSubmission(j, owner);
+		prepareJDLForSubmission(j, account, owner);
 
 		return owner;
 	}
@@ -1489,7 +1583,7 @@ public class TaskQueueUtils {
 	 * @return the just inserted job ID
 	 * @throws IOException
 	 */
-	public static int insertJob(final JDL j, final AliEnPrincipal account, final String owner, final JobStatus targetStatus) throws IOException {
+	public static long insertJob(final JDL j, final AliEnPrincipal account, final String owner, final JobStatus targetStatus) throws IOException {
 		final String clientAddress;
 
 		final InetAddress addr = account.getRemoteEndpoint();
@@ -1502,6 +1596,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				throw new IOException("This service has no direct database connection");
+
+			db.setQueryTimeout(300);
 
 			final Map<String, Object> values = new HashMap<>();
 
@@ -1523,7 +1619,8 @@ public class TaskQueueUtils {
 
 				if (notify != null && notify.length() > 0)
 					values.put("notifyId", getNotifyId(notify));
-			} else {
+			}
+			else {
 				values.put("status", jobStatus.toSQL());
 				values.put("jdl", "\n    [\n" + j.toString() + "\n    ]");
 				values.put("submitHost", owner + "@" + clientAddress);
@@ -1540,7 +1637,8 @@ public class TaskQueueUtils {
 			if (jobStatus.equals(JobStatus.SPLIT) || j.get("Split") != null) {
 				values.put("masterjob", Integer.valueOf(1));
 				masterjobID = null;
-			} else
+			}
+			else
 				values.put("masterjob", Integer.valueOf(0));
 
 			if (masterjobID != null)
@@ -1555,7 +1653,8 @@ public class TaskQueueUtils {
 			if (!db.query(insert))
 				throw new IOException("Could not insert the job in the queue");
 
-			final Integer pid = db.getLastGeneratedKey();
+			// TODO : change this to long!
+			final Long pid = db.getLastGeneratedKeyLong();
 
 			if (pid == null)
 				throw new IOException("Last generated key is unknown");
@@ -1579,9 +1678,9 @@ public class TaskQueueUtils {
 
 			setAction(jobStatus);
 
-			putJobLog(pid.intValue(), "state", "Job state transition to " + jobStatus.toString(), null);
+			putJobLog(pid.longValue(), "state", "Job state transition to " + jobStatus.toString(), null);
 
-			return pid.intValue();
+			return pid.longValue();
 		}
 	}
 
@@ -1642,7 +1741,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 
 				return null;
@@ -1650,6 +1750,12 @@ public class TaskQueueUtils {
 		}
 	};
 
+	/**
+	 * Get the user ID for a given owner string
+	 *
+	 * @param owner
+	 * @return user ID
+	 */
 	static synchronized Integer getUserId(final String owner) {
 		if (owner == null || owner.length() == 0)
 			return null;
@@ -1684,7 +1790,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -1726,7 +1833,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -1768,7 +1876,8 @@ public class TaskQueueUtils {
 
 					if (db.moveNext())
 						return Integer.valueOf(db.geti(1));
-				} else
+				}
+				else
 					return Integer.valueOf(db.geti(1));
 			}
 
@@ -1894,6 +2003,7 @@ public class TaskQueueUtils {
 					return null;
 
 				db.setReadOnly(true);
+				db.setQueryTimeout(30);
 
 				db.query("SELECT command FROM QUEUE_COMMAND where commandId=?", false, key);
 
@@ -1922,7 +2032,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return state of the kill operation
 	 */
-	public static boolean killJob(final AliEnPrincipal user, final String role, final int queueId) {
+	public static boolean killJob(final AliEnPrincipal user, final String role, final long queueId) {
 		if (AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId), user, role)) {
 			System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
 
@@ -1973,27 +2083,6 @@ public class TaskQueueUtils {
 			if (!deleteJobAgent(j.jobagentId))
 				logger.log(Level.WARNING, "Error killing jobAgent: [" + j.jobagentId + "].");
 
-		// $self->info("THE UPDATE WORKED!! Let's see if we have to delete an agent $status");
-		// if ($dboldstatus =~ /WAITING/ and $oldjobinfo->{agentid}) {
-		// $self->deleteJobAgent($oldjobinfo->{agentid});
-		// }
-
-		// TODO:
-		// # send a job's status to MonaLisa
-		// sub sendJobStatus {
-		// my $self = shift;
-		// my ($jobID, $newStatus, $execHost, $submitHost) = @_;
-		//
-		// if ($self->{MONITOR}) {
-		// my $statusID = AliEn::Util::statusForML($newStatus);
-		// $execHost = $execHost || "NO_SITE";
-		// my @params = ("jobID", $jobID, "statusID", $statusID);
-		// push(@params, "submitHost", "$jobID/$submitHost") if $submitHost;
-		// $self->{MONITOR}->sendParameters("TaskQueue_Jobs_" .
-		// $self->{CONFIG}->{ORG_NAME}, $execHost, @params);
-		// }
-		// }
-
 		if (j.notify != null && !j.notify.equals(""))
 			sendNotificationMail(j);
 
@@ -2006,7 +2095,8 @@ public class TaskQueueUtils {
 				// {bind_values =>
 				// [$dbsite]})
 				// TODO:
-			} else {
+			}
+			else {
 				// do(
 				// "UPDATE $self->{SITEQUEUETABLE} SET $dboldstatus = $dboldstatus-1, $status=$status+1 where site=?",
 				// {bind_values => [$dbsite]}
@@ -2014,10 +2104,6 @@ public class TaskQueueUtils {
 
 		if (newStatus == JobStatus.KILLED || newStatus == JobStatus.SAVED || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.STAGING)
 			setAction(newStatus);
-
-		// if ($status =~ /^DONE_WARN$/) {
-		// $self->sendJobStatus($id, "DONE", $execHost, "");
-		// }
 
 		return true;
 	}
@@ -2046,45 +2132,53 @@ public class TaskQueueUtils {
 
 		if (newStatus == JobStatus.WAITING)
 			jdltags.put("exechost", arg);
-		else if (newStatus == JobStatus.RUNNING)
-			jdltags.put("started", time);
-		else if (newStatus == JobStatus.STARTED) {
-			jdltags.put("started", time);
-			jdltags.put("batchid", arg);
-		} else if (newStatus == JobStatus.SAVING)
-			jdltags.put("error", arg);
-		else if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
-			jdltags.put("jdl", arg);
-		else if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
-			jdltags.put("finished", time);
-			if (j.usesValidation()) {
-				final String host = j.execHost.substring(j.execHost.indexOf('@') + 1);
-				final int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
+		else
+			if (newStatus == JobStatus.RUNNING)
+				jdltags.put("started", time);
+			else
+				if (newStatus == JobStatus.STARTED) {
+					jdltags.put("started", time);
+					jdltags.put("batchid", arg);
+				}
+				else
+					if (newStatus == JobStatus.SAVING)
+						jdltags.put("error", arg);
+					else
+						if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
+							jdltags.put("jdl", arg);
+						else
+							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
+								jdltags.put("finished", time);
+								if (j.usesValidation()) {
+									final String host = j.execHost.substring(j.execHost.indexOf('@') + 1);
+									final int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
 
-				// my $executable = "";
-				// $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and
-				// $executable = $1;
-				// $executable =~ s/\"//g;
-				// my $validatejdl = "[
-				// Executable=\"$executable.validate\";
-				// Arguments=\"$queueId $data->{host} $port\";
-				// Requirements= member(other.GridPartition,\"Validation\");
-				// Type=\"Job\";
-				// ]";
-				// $DEBUG and $self->debug(1,
-				// "In changeStatusCommand sending the command to validate the result of $queueId...");
-				// $self->enterCommand("$data->{submithost}", "$validatejdl");
-				// }
+									// my $executable = "";
+									// $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and
+									// $executable = $1;
+									// $executable =~ s/\"//g;
+									// my $validatejdl = "[
+									// Executable=\"$executable.validate\";
+									// Arguments=\"$queueId $data->{host} $port\";
+									// Requirements= member(other.GridPartition,\"Validation\");
+									// Type=\"Job\";
+									// ]";
+									// $DEBUG and $self->debug(1,
+									// "In changeStatusCommand sending the command to validate the result of $queueId...");
+									// $self->enterCommand("$data->{submithost}", "$validatejdl");
+									// }
 
-			}
+								}
 
-		} else if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
+							}
+							else
+								if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
 
-			jdltags.put("spyurl", "");
-			jdltags.put("finished", time);
-			deleteJobToken(j.queueId);
+									jdltags.put("spyurl", "");
+									jdltags.put("finished", time);
+									deleteJobToken(j.queueId);
 
-		}
+								}
 		// put the JobLog message
 
 		final HashMap<String, String> joblogtags = new HashMap<>(jdltags);
@@ -2145,6 +2239,8 @@ public class TaskQueueUtils {
 			final String q = "INSERT INTO MESSAGES ( TargetService, Message, MessageArgs, Expires)  VALUES ('" + Format.escSQL(target) + "','" + Format.escSQL(service) + "','" + Format.escSQL(message)
 					+ "','" + Format.escSQL(messageArgs) + "'," + Format.escSQL(expires + "") + ");";
 
+			db.setQueryTimeout(60);
+
 			if (db.query(q)) {
 				if (monitor != null)
 					monitor.incrementCounter("Message_db_insert");
@@ -2167,13 +2263,15 @@ public class TaskQueueUtils {
 			JobToken jb = getJobToken(jobId);
 
 			if (jb != null)
-				System.out.println("TOKEN EXISTED");
+				logger.log(Level.WARNING, "JobToken already exists for job " + jobId);
 
 			if (jb != null && !forceUpdate)
 				return null;
 
 			if (jb == null)
 				jb = new JobToken(jobId, username);
+
+			db.setQueryTimeout(60);
 
 			jb.emptyToken(db);
 
@@ -2200,6 +2298,7 @@ public class TaskQueueUtils {
 			final String q = "SELECT * FROM JOBTOKEN WHERE jobId=?;";
 
 			db.setReadOnly(true);
+			db.setQueryTimeout(30);
 
 			if (!db.query(q, false, Long.valueOf(jobId)))
 				return null;
@@ -2217,6 +2316,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(60);
 
 			if (monitor != null)
 				monitor.incrementCounter("QUEUE_db_lookup");
@@ -2247,6 +2348,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return false;
 
+			db.setQueryTimeout(60);
+
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_lookup");
 				monitor.incrementCounter("TQ_JOBMESSAGES_insert");
@@ -2267,6 +2370,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(60);
 
 			logger.log(Level.INFO, "We would be asked to kill jobAgent: [" + jobagentId + "].");
 
@@ -2310,6 +2415,8 @@ public class TaskQueueUtils {
 				monitor.incrementCounter("TQ_JOBSTOMERGE_lookup");
 			}
 
+			db.setQueryTimeout(60);
+
 			final String q = "INSERT INTO JOBSTOMERGE (masterId) SELECT " + j.split + " FROM DUAL WHERE NOT EXISTS (SELECT masterid FROM JOBSTOMERGE WHERE masterid = " + j.split + ");";
 
 			if (!db.query(q))
@@ -2324,6 +2431,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(30);
 
 			if (monitor != null) {
 				monitor.incrementCounter("TQ_db_update");
@@ -2377,6 +2486,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return null;
 
+			db.setQueryTimeout(600);
+
 			final StringBuilder sb = new StringBuilder();
 
 			if (monitor != null)
@@ -2425,6 +2536,8 @@ public class TaskQueueUtils {
 
 			logger.log(Level.INFO, "Setting site with ce " + ce + " to " + status);
 
+			db.setQueryTimeout(30);
+
 			db.query("update SITEQUEUES set statustime=UNIX_TIMESTAMP(NOW()), status=? where site=?", false, status, ce);
 
 			if (db.getUpdateCount() == 0) {
@@ -2441,6 +2554,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
+
+			db.setQueryTimeout(60);
 
 			if (!db.query("insert into SITEQUEUES (siteid, site) select ifnull(max(siteid)+1,1), ? from SITEQUEUES", false, ce)) {
 				logger.log(Level.INFO, "Couldn't insert queue " + ce);
@@ -2459,7 +2574,9 @@ public class TaskQueueUtils {
 			if (db == null)
 				return;
 
-			final HashMap<String, Integer> status = getJobStatusFromDB();
+			db.setQueryTimeout(600);
+
+			final Map<String, Integer> status = getJobStatusFromDB();
 
 			String sql = " update SITEQUEUES left join (select siteid, sum(cost) REALCOST, ";
 			String set = " Group by statusId, siteid) dd group by siteid) bb using (siteid) set cost=REALCOST, ";
@@ -2480,23 +2597,33 @@ public class TaskQueueUtils {
 		}
 	}
 
+	private static Map<String, Integer> jobStatuses = new HashMap<>();
+	private static long jobStatusesLastUpdated = 0;
+
 	/**
 	 * @return dictionary of job statuses
 	 */
-	public static HashMap<String, Integer> getJobStatusFromDB() {
-		// FIXME cache the result
-		try (DBFunctions db = getQueueDB()) {
-			if (db == null)
-				return null;
+	public static Map<String, Integer> getJobStatusFromDB() {
+		if ((System.currentTimeMillis() - jobStatusesLastUpdated) > 1000 * 60)
+			try (DBFunctions db = getQueueDB()) {
+				if (db == null)
+					return null;
 
-			db.query("select status, statusId from QUEUE_STATUS", false);
-			final HashMap<String, Integer> status = new HashMap<>();
+				db.setQueryTimeout(60);
 
-			while (db.moveNext())
-				status.put(db.gets(1), Integer.valueOf(db.geti(2)));
+				final HashMap<String, Integer> status = new HashMap<>();
 
-			return status;
-		}
+				if (db.query("select status, statusId from QUEUE_STATUS", false))
+					while (db.moveNext())
+						status.put(db.gets(1), Integer.valueOf(db.geti(2)));
+
+				if (status.size() > 0) {
+					jobStatusesLastUpdated = System.currentTimeMillis();
+					jobStatuses = status;
+				}
+			}
+
+		return jobStatuses;
 	}
 
 	/**
@@ -2508,6 +2635,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
+
+			db.setQueryTimeout(60);
 
 			if (host == null || host.equals("") || status == null || status.equals("")) {
 				logger.log(Level.INFO, "Host or status parameters are empty");
@@ -2535,6 +2664,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
+
+			db.setQueryTimeout(60);
 
 			final String table = "QUEUE_" + key.toUpperCase();
 			final String id = key + "id";
@@ -2572,12 +2703,18 @@ public class TaskQueueUtils {
 		}
 	}
 
+	private static final ExpirationCache<String, Integer> siteIdCache = new ExpirationCache<>();
+
 	/**
 	 * @param ceName
 	 * @return site ID
 	 */
 	public static int getSiteId(final String ceName) {
-		// FIXME cache the values
+		final Integer cachedValue = siteIdCache.get(ceName);
+
+		if (cachedValue != null)
+			return cachedValue.intValue();
+
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
@@ -2585,10 +2722,14 @@ public class TaskQueueUtils {
 			logger.log(Level.INFO, "Going to select siteId: select siteid from SITEQUEUES where site=? " + ceName);
 
 			db.setReadOnly(true);
-			db.query("select siteid from SITEQUEUES where site=?", false, ceName);
+			db.setQueryTimeout(60);
 
-			if (db.moveNext())
-				return db.geti(1);
+			if (db.query("select siteid from SITEQUEUES where site=?", false, ceName) && db.moveNext()) {
+				final int value = db.geti(1);
+
+				siteIdCache.put(ceName, Integer.valueOf(value), 1000 * 60 * 60);
+				return value;
+			}
 		}
 		return 0;
 	}
@@ -2602,6 +2743,8 @@ public class TaskQueueUtils {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
+
+			db.setQueryTimeout(60);
 
 			final ArrayList<Object> bindValues = new ArrayList<>();
 			String oldestQueueIdQ = "";
@@ -2617,6 +2760,7 @@ public class TaskQueueUtils {
 
 			db.query("delete from JOBAGENT where counter<1", false);
 		}
+
 		return 1;
 	}
 

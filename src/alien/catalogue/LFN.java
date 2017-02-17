@@ -341,10 +341,11 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		if (bEnds && bStarts)
 			canonicalName = sLFN.substring(0, sLFN.length() - 1) + lfn;
-		else if (!bEnds && !bStarts)
-			canonicalName = sLFN + "/" + lfn;
 		else
-			canonicalName = sLFN + lfn;
+			if (!bEnds && !bStarts)
+				canonicalName = sLFN + "/" + lfn;
+			else
+				canonicalName = sLFN + lfn;
 
 		canonicalName = StringFactory.get(canonicalName);
 
@@ -585,7 +586,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (type == 'd') {
 			if (!lfnToInsert.endsWith("/"))
 				lfnToInsert += "/";
-		} else
+		}
+		else
 			while (lfnToInsert.endsWith("/"))
 				lfnToInsert = lfnToInsert.substring(0, lfnToInsert.length() - 1);
 
@@ -700,12 +702,11 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				ok = true;
 			}
 
-			if (ok && purge && guid != null) {
-				final GUID g = GUIDUtils.getGUID(guid);
-
-				if (g != null)
-					g.delete(true);
-			}
+			if (ok && purge && guid != null)
+				try (DBFunctions db2 = ConfigUtils.getDB("alice_users")) {
+					db2.setQueryTimeout(120);
+					db2.query("INSERT IGNORE INTO orphan_pfns_0 (guid,size) VALUES (string2binary(?), ?);", false, guid.toString(), Long.valueOf(size));
+				}
 		}
 
 		return ok;
@@ -790,6 +791,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);
+			db.setQueryTimeout(300);
 
 			if (!db.query("SELECT origLFN FROM COLLECTIONS_ELEM INNER JOIN COLLECTIONS USING (collectionID) WHERE collGUID=string2binary(?) ORDER BY 1;", false, guid.toString()))
 				return null;
@@ -806,19 +808,15 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	/**
 	 * Sort by file size (asc) then by file name (asc)
 	 */
-	public static final Comparator<LFN> SIZE_COMPARATOR = new Comparator<LFN>() {
-		@Override
-		public int compare(final LFN o1, final LFN o2) {
-			final long diff = o1.size - o2.size;
+	public static final Comparator<LFN> SIZE_COMPARATOR = (o1, o2) -> {
+		final long diff = o1.size - o2.size;
 
-			if (diff < 0)
-				return -1;
-			if (diff > 0)
-				return 1;
+		if (diff < 0)
+			return -1;
+		if (diff > 0)
+			return 1;
 
-			return o1.compareTo(o2);
-		}
-
+		return o1.compareTo(o2);
 	};
 
 	@Override

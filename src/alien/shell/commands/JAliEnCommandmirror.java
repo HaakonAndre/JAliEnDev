@@ -64,27 +64,32 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 								// SE
 								// spec
 								if (spec.startsWith("!"))
-								exses.add(spec.substring(1).toUpperCase());
+									exses.add(spec.substring(1).toUpperCase());
 								else {// an SE spec
-								ses.add(spec.toUpperCase());
-								referenceCount++;
+									ses.add(spec.toUpperCase());
+									referenceCount++;
 								}
-						} else if (spec.contains(":"))
-							try {
-								final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
-								if (c > 0) {
-									qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
-									referenceCount = referenceCount + c;
-								} else
-									throw new JAliEnCommandException("Number of replicas cannot be negative, in QoS string " + spec);
-							} catch (final Exception e) {
-								throw new JAliEnCommandException("Exception parsing QoS string " + spec, e);
-							}
-						else if (!spec.equals(""))
-							throw new JAliEnCommandException();
+						}
+						else
+							if (spec.contains(":"))
+								try {
+									final int c = Integer.parseInt(spec.substring(spec.indexOf(':') + 1));
+									if (c > 0) {
+										qos.put(spec.substring(0, spec.indexOf(':')), Integer.valueOf(c));
+										referenceCount = referenceCount + c;
+									}
+									else
+										throw new JAliEnCommandException("Number of replicas cannot be negative, in QoS string " + spec);
+								} catch (final Exception e) {
+									throw new JAliEnCommandException("Exception parsing QoS string " + spec, e);
+								}
+							else
+								if (!spec.equals(""))
+									throw new JAliEnCommandException();
 					}
 				}
-			} else {
+			}
+			else {
 				if (lfns.size() != 2)
 					throw new JAliEnCommandException();
 				this.dstSE = lfns.get(1);
@@ -121,7 +126,8 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 							out.printOutln(s + ": transfer scheduled");
 						else
 							out.printErrln(s + ": " + result_string);
-					} else
+					}
+					else
 						out.printErrln(s + ": unexpected error");
 				}
 			} catch (final IllegalArgumentException e) {
@@ -130,6 +136,10 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 		}
 	}
 
+	/**
+	 * @param error
+	 * @return string representation of the error code
+	 */
 	protected static String Errcode2Text(final int error) {
 		String text = null;
 		switch (error) {
@@ -174,6 +184,9 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			break;
 		case -6:
 			text = "cannot locate the archive LFN to mirror";
+			break;
+		default:
+			text = "Unknown error code: " + error;
 			break;
 		}
 		return text;

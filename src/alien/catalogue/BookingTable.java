@@ -33,21 +33,22 @@ public class BookingTable {
 	static transient final Logger logger = ConfigUtils.getLogger(BookingTable.class.getCanonicalName());
 
 	private static final DBFunctions getDB() {
-		return ConfigUtils.getDB("alice_users");
+		final DBFunctions db = ConfigUtils.getDB("alice_users");
+		db.setQueryTimeout(600);
+		return db;
 	}
 
 	/**
 	 * @param lfn
 	 * @param requestedGUID
 	 * @param requestedPFN
-	 * @param jobid
 	 * @param se
 	 * @return the PFN with the write access envelope if allowed to write or <code>null</code> if the PFN doesn't indicate a physical file but the entry was successfully booked
 	 * @throws IOException
 	 *             if not allowed to do that
 	 */
-	public static PFN bookForWriting(final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
-		return bookForWriting(AuthorizationFactory.getDefaultUser(), lfn, requestedGUID, requestedPFN, jobid, se);
+	public static PFN bookForWriting(final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final SE se) throws IOException {
+		return bookForWriting(AuthorizationFactory.getDefaultUser(), lfn, requestedGUID, requestedPFN, se);
 	}
 
 	/**
@@ -59,15 +60,13 @@ public class BookingTable {
 	 *            <code>null</code> not allowed
 	 * @param requestedPFN
 	 *            can be <code>null</code> and then a PFN specific for this SE and this GUID is generated
-	 * @param jobid
-	 *            set to 0 if this request doesn't come from a job, or to the job id if known ...
 	 * @param se
 	 *            <code>null</code> not allowed
 	 * @return the PFN with the write access envelope if allowed to write or <code>null</code> if the PFN doesn't indicate a physical file but the entry was successfully booked
 	 * @throws IOException
 	 *             if not allowed to do that
 	 */
-	public static PFN bookForWriting(final AliEnPrincipal user, final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final int jobid, final SE se) throws IOException {
+	public static PFN bookForWriting(final AliEnPrincipal user, final LFN lfn, final GUID requestedGUID, final PFN requestedPFN, final SE se) throws IOException {
 		if (lfn == null)
 			throw new IllegalArgumentException("LFN cannot be null");
 
@@ -93,8 +92,9 @@ public class BookingTable {
 
 			if (check == null)
 				message += ": no such folder " + lfn.getParentName();
-			else if (!check.equals(lfn))
-				message += ": not enough rights on " + check.getCanonicalName();
+			else
+				if (!check.equals(lfn))
+					message += ": not enough rights on " + check.getCanonicalName();
 
 			throw new IOException(message);
 		}
@@ -115,7 +115,8 @@ public class BookingTable {
 					for (final PFN pfn : pfns)
 						if (se.equals(pfn.getSE()))
 							throw new IOException("This GUID already has a replica in the requested SE");
-			} else {
+			}
+			else {
 				// check the file quota only for new files, extra replicas don't count towards the quota limit
 
 				final FileQuota quota = QuotaUtilities.getFileQuota(requestedGUID.owner);
@@ -151,11 +152,14 @@ public class BookingTable {
 					// that's fine, it's the same user, we can recycle the entry
 					db.query("UPDATE LFN_BOOKED SET expiretime=unix_timestamp(now())+86400 WHERE guid=string2binary(?) AND se=? AND pfn=?;", false, requestedGUID.guid.toString(), se.getName(),
 							pfn.getPFN());
-				} else
+				}
+				else
 					throw new IOException("You are not allowed to do this");
-			} else {
+			}
+			else {
 				// make sure a previously queued deletion request for this file is wiped before giving out a new token
 				db.query("DELETE FROM orphan_pfns WHERE guid=string2binary(?) AND se=?;", false, requestedGUID.guid.toString(), Integer.valueOf(se.seNumber));
+				db.query("DELETE FROM orphan_pfns_" + se.seNumber + " WHERE guid=string2binary(?);", true, requestedGUID.guid.toString());
 
 				final String reason = AuthorizationFactory.fillAccess(user, pfn, AccessType.WRITE);
 
@@ -189,8 +193,8 @@ public class BookingTable {
 				q.append(e(user.getName())).append(','); // user
 				q.append("string2binary('" + requestedGUID.guid.toString() + "'),"); // guid
 
-				if (jobid > 0)
-					q.append(jobid);
+				if (lfn.jobid > 0)
+					q.append(lfn.jobid);
 				else
 					q.append("null");
 
@@ -280,11 +284,15 @@ public class BookingTable {
 
 			db.setReadOnly(false);
 
+			boolean allNullLFNs = true;
+
 			while (db.moveNext()) {
 				final String sLFN = db.gets(1);
 
 				if (sLFN.length() == 0)
 					continue;
+
+				allNullLFNs = false;
 
 				final LFN lfn = LFNUtils.getLFN(sLFN, true);
 
@@ -317,6 +325,12 @@ public class BookingTable {
 
 					ret = lfn;
 				}
+			}
+
+			if (allNullLFNs) {
+				// The LFN was not passed, used by transfers to create replicas of a GUID without references to an LFN
+				// But then they rely on an LFN being returned as a confirmation
+				ret = new LFN("/bogus");
 			}
 
 			// was booked, now let's move it to the catalog

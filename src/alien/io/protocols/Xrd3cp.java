@@ -15,8 +15,8 @@ import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.se.SE;
 import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
 import utils.ExternalCalls;
+import utils.ProcessWithTimeout;
 
 /**
  * @author costing
@@ -129,37 +129,48 @@ public class Xrd3cp extends Xrootd {
 			if (sourceEnvelope)
 				if (source.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add(QUOTES + "authz=" + source.ticket.envelope.getEncryptedEnvelope() + QUOTES);
-				else if (source.ticket.envelope.getSignedEnvelope() != null)
-					command.add(source.ticket.envelope.getSignedEnvelope());
+				else
+					if (source.ticket.envelope.getSignedEnvelope() != null)
+						command.add(source.ticket.envelope.getSignedEnvelope());
 
 			if (targetEnvelope)
 				if (target.ticket.envelope.getEncryptedEnvelope() != null)
 					command.add(QUOTES + "authz=" + target.ticket.envelope.getEncryptedEnvelope() + QUOTES);
-				else if (target.ticket.envelope.getSignedEnvelope() != null)
-					command.add(target.ticket.envelope.getSignedEnvelope());
+				else
+					if (target.ticket.envelope.getSignedEnvelope() != null)
+						command.add(target.ticket.envelope.getSignedEnvelope());
 
 			setLastCommand(command);
 
-			final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+			final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
-			checkLibraryPath(pBuilder, getXrd3cpPath());
+			final String xrd3cpBasePath = getXrd3cpPath();
 
-			pBuilder.returnOutputOnExit(true);
+			checkLibraryPath(pBuilder, xrd3cpBasePath);
+
+			if (xrd3cpBasePath.endsWith("/api"))
+				checkLibraryPath(pBuilder, xrd3cpBasePath.substring(0, xrd3cpBasePath.lastIndexOf('/')), true);
 
 			long seconds = source.getGuid().size / 200000; // average target
 															// speed: 200KB/s
 
 			seconds += 5 * 60; // 5 minutes extra time, handshakes and such
 
-			pBuilder.timeout(seconds, TimeUnit.SECONDS);
-
 			pBuilder.redirectErrorStream(true);
 
 			final ExitStatus exitStatus;
 
 			try {
-				exitStatus = pBuilder.start().waitFor();
-				setLastExitStatus(exitStatus);
+				final Process p = pBuilder.start();
+
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+					pTimeout.waitFor(seconds, TimeUnit.SECONDS);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new IOException("Cannot execute command: " + command);
 			} catch (final InterruptedException ie) {
 				setLastExitStatus(null);
 				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);

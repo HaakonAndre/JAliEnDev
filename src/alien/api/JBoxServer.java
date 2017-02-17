@@ -1,6 +1,7 @@
 package alien.api;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,7 +36,7 @@ import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
-import lia.util.Utils;
+import lazyj.commands.SystemCommand;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -159,7 +160,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * write the configuration file that is used by gapi <br />
-	 * the filename = /tmp/gclient_token_$uid
+	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
 	 *
 	 * @param sHost
 	 *            hostname to connect to, by default localhost
@@ -178,7 +179,7 @@ public class JBoxServer extends Thread {
 		String sUserId = System.getProperty("userid");
 
 		if (sUserId == null || sUserId.length() == 0) {
-			sUserId = Utils.getOutput("id -u " + System.getProperty("user.name"));
+			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
 
 			if (sUserId != null && sUserId.length() > 0)
 				System.setProperty("userid", sUserId);
@@ -191,28 +192,30 @@ public class JBoxServer extends Thread {
 		try {
 			final int iUserId = Integer.parseInt(sUserId.trim());
 
-			final String sFileName = "/tmp/gclient_token_" + iUserId;
+			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-			try (FileWriter fw = new FileWriter(sFileName)) {
-				fw.write("Host = " + sHost + "\n");
+			final File tokenFile = new File(tmpDir, "jclient_token_" + iUserId);
+
+			try (FileWriter fw = new FileWriter(tokenFile)) {
+				fw.write("Host=" + sHost + "\n");
 				logger.fine("Host = " + sHost);
 
-				fw.write("Port = " + iPort + "\n");
+				fw.write("Port=" + iPort + "\n");
 				logger.fine("Port = " + iPort);
 
-				fw.write("User = " + sUser + "\n");
+				fw.write("User=" + sUser + "\n");
 				logger.fine("User = " + sUser);
 
-				fw.write("Home = " + sHomeUser + "\n");
+				fw.write("Home=" + sHomeUser + "\n");
 				logger.fine("Home = " + sHomeUser);
 
-				fw.write("Passwd = " + sPassword + "\n");
+				fw.write("Passwd=" + sPassword + "\n");
 				logger.fine("Passwd = " + sPassword);
 
-				fw.write("Debug = " + iDebug + "\n");
+				fw.write("Debug=" + iDebug + "\n");
 				logger.fine("Debug = " + iDebug);
 
-				fw.write("PID = " + MonitorFactory.getSelfProcessID() + "\n");
+				fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
 				logger.fine("PID = " + MonitorFactory.getSelfProcessID());
 
 				fw.flush();
@@ -221,7 +224,7 @@ public class JBoxServer extends Thread {
 				return true;
 
 			} catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + sFileName + " to write", e1);
+				logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e1);
 				return false;
 			}
 		} catch (final Throwable e) {
@@ -233,7 +236,7 @@ public class JBoxServer extends Thread {
 
 	/**
 	 * Writes the environment file used by ROOT <br />
-	 * It needs to ne named /tmp/gclient_env_$UID and to contain:
+	 * It needs to be named jclient_env_$UID, sitting by default in <code>java.io.tmpdir</code> (eg. <code>/tmp</code>) and to contain:
 	 * <ol>
 	 * <li>alien_API_HOST</li>
 	 * <li>alien_API_PORT</li>
@@ -264,9 +267,11 @@ public class JBoxServer extends Thread {
 		try {
 			final int iUserId = Integer.parseInt(sUserId.trim());
 
-			final String sFileName = "/tmp/gclient_env_" + iUserId;
+			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
 
-			try (FileWriter fw = new FileWriter(sFileName)) {
+			final File envFile = new File(tmpDir, "jclient_env_" + iUserId);
+
+			try (FileWriter fw = new FileWriter(envFile)) {
 				fw.write("export alien_API_HOST=" + sHost + "\n");
 				logger.fine("export alien_API_HOST=" + sHost);
 
@@ -285,7 +290,7 @@ public class JBoxServer extends Thread {
 				return true;
 
 			} catch (final Exception e1) {
-				logger.log(Level.SEVERE, "Could not open file " + sFileName + " to write", e1);
+				logger.log(Level.SEVERE, "Could not open file " + envFile.getAbsolutePath() + " to write", e1);
 				return false;
 			}
 		} catch (final Exception e) {
@@ -325,10 +330,9 @@ public class JBoxServer extends Thread {
 		 * One UI connection identified by the socket
 		 *
 		 * @param s
-		 * @param jbox
 		 * @throws IOException
 		 */
-		public UIConnection(final Socket s, final JBoxServer jbox) throws IOException {
+		public UIConnection(final Socket s) throws IOException {
 			this.s = s;
 
 			is = s.getInputStream();
@@ -389,118 +393,125 @@ public class JBoxServer extends Thread {
 				while ((sLine = br.readLine()) != null)
 					if (sLine.startsWith("<document>"))
 						sCommand = sLine;
-					else if (sLine.endsWith("</document>")) {
-						sCommand += sLine;
-						final ArrayList<String> cmdOptions = new ArrayList<>();
-						final ArrayList<String> fullCmd = new ArrayList<>();
-						try {
+					else
+						if (sLine.endsWith("</document>")) {
+							sCommand += sLine;
+							final ArrayList<String> cmdOptions = new ArrayList<>();
+							final ArrayList<String> fullCmd = new ArrayList<>();
+							try {
 
-							// <document>
-							// <ls>
-							// <o>-l</o>
-							// <o>-a</o>
-							// <o>/alice/cern.ch/user/t/ttothova</o>
-							// </ls>
-							// </document>
-							logger.info("XML =\"" + sCommand + "\"");
-							final Document document = builder.parse(new InputSource(new StringReader(sCommand)));
+								// <document>
+								// <ls>
+								// <o>-l</o>
+								// <o>-a</o>
+								// <o>/alice/cern.ch/user/t/ttothova</o>
+								// </ls>
+								// </document>
+								logger.info("XML =\"" + sCommand + "\"");
+								final Document document = builder.parse(new InputSource(new StringReader(sCommand)));
 
-							final NodeList commandNodeList = document.getElementsByTagName("command");
+								final NodeList commandNodeList = document.getElementsByTagName("command");
 
-							if (commandNodeList != null && commandNodeList.getLength() == 1) {
-								final Node commandNode = commandNodeList.item(0);
-								sCmdValue = commandNode.getTextContent();
-								fullCmd.add(sCmdValue);
-								logger.info("Received command " + sCmdValue);
+								if (commandNodeList != null && commandNodeList.getLength() == 1) {
+									final Node commandNode = commandNodeList.item(0);
+									sCmdValue = commandNode.getTextContent();
+									fullCmd.add(sCmdValue);
+									logger.info("Received command " + sCmdValue);
 
-								final NodeList optionsNodeList = document.getElementsByTagName("o");
+									final NodeList optionsNodeList = document.getElementsByTagName("o");
 
-								for (int i = 0; i < optionsNodeList.getLength(); i++) {
-									final Node optionNode = optionsNodeList.item(i);
-									cmdOptions.add(optionNode.getTextContent());
-									fullCmd.add(optionNode.getTextContent());
-									logger.info("Command options = " + optionNode.getTextContent());
-								}
-
-								if (sCmdValue != null && sCmdValue.equals("password")) {
-
-									if (cmdOptions.get(0).equals(password)) {
-										os.write(passACK.getBytes());
-										os.flush();
-									} else {
-										os.write(passNOACK.getBytes());
-										os.flush();
-										return;
-									}
-								} else {
-									logger.log(Level.INFO, "JSh connected.");
-
-									if (commander == null) {
-										commander = new JAliEnCOMMander();
-										commander.start();
+									for (int i = 0; i < optionsNodeList.getLength(); i++) {
+										final Node optionNode = optionsNodeList.item(i);
+										cmdOptions.add(optionNode.getTextContent());
+										fullCmd.add(optionNode.getTextContent());
+										logger.info("Command options = " + optionNode.getTextContent());
 									}
 
-									notifyActivity();
+									if (sCmdValue != null && sCmdValue.equals("password")) {
 
-									if ("SIGINT".equals(sLine)) {
-										logger.log(Level.INFO, "Received [SIGINT] from JSh.");
-
-										try {
-											commander.interrupt();
-											commander.stop();
-										} catch (@SuppressWarnings("unused") final Throwable t) {
-											// ignore
-										} finally {
-											System.out.println("SIGINT reset commander");
-
-											// kill the active command and start a new instance
-											final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
-											commander = comm;
-
-											commander.start();
-
-											commander.flush();
+										if (cmdOptions.get(0).equals(password)) {
+											os.write(passACK.getBytes());
+											os.flush();
 										}
-									} else if ("shutdown".equals(sLine))
-										shutdown();
+										else {
+											os.write(passNOACK.getBytes());
+											os.flush();
+											return;
+										}
+									}
 									else {
-										waitCommandFinish();
+										logger.log(Level.INFO, "JSh connected.");
 
-										synchronized (commander) {
-
-											// final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-											// final List<String> args = new ArrayList<>();
-											// while (t.hasMoreTokens())
-											// args.add(t.nextToken());
-
-											if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
-												setShellPrintWriter(os, cmdOptions.get(0));
-												logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
-
-												os.write((JShPrintWriter.streamend + "\n").getBytes());
-												os.flush();
-												continue;
-											}
-
-											if (out == null)
-												out = new XMLPrintWriter(os);
-
-											commander.setLine(out, fullCmd.toArray(new String[0]));
-
-											commander.notifyAll();
+										if (commander == null) {
+											commander = new JAliEnCOMMander();
+											commander.start();
 										}
+
+										notifyActivity();
+
+										if ("SIGINT".equals(sLine)) {
+											logger.log(Level.INFO, "Received [SIGINT] from JSh.");
+
+											try {
+												commander.interrupt();
+												commander.stop();
+											} catch (@SuppressWarnings("unused") final Throwable t) {
+												// ignore
+											} finally {
+												System.out.println("SIGINT reset commander");
+
+												// kill the active command and start a new instance
+												final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
+												commander = comm;
+
+												commander.start();
+
+												commander.flush();
+											}
+										}
+										else
+											if ("shutdown".equals(sLine))
+												shutdown();
+											else {
+												waitCommandFinish();
+
+												synchronized (commander) {
+
+													// final StringTokenizer t = new StringTokenizer(line, SpaceSep);
+													// final List<String> args = new ArrayList<>();
+													// while (t.hasMoreTokens())
+													// args.add(t.nextToken());
+
+													if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
+														setShellPrintWriter(os, cmdOptions.get(0));
+														logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
+
+														os.write((JShPrintWriter.streamend + "\n").getBytes());
+														os.flush();
+														continue;
+													}
+
+													if (out == null)
+														out = new XMLPrintWriter(os);
+
+													commander.setLine(out, fullCmd.toArray(new String[0]));
+
+													commander.notifyAll();
+												}
+											}
+										os.flush();
 									}
-									os.flush();
 								}
-							} else
-								logger.severe("Received more than one command");
-							// some error, there was more than one command
-							// attached to the document
-						} catch (final Exception e) {
-							logger.severe("Parse error " + e.getMessage());
+								else
+									logger.severe("Received more than one command");
+								// some error, there was more than one command
+								// attached to the document
+							} catch (final Exception e) {
+								logger.severe("Parse error " + e.getMessage());
+							}
 						}
-					} else
-						sCommand += "\n" + sLine;
+						else
+							sCommand += "\n" + sLine;
 
 				// br = new BufferedReader(new InputStreamReader(is));
 
@@ -660,7 +671,7 @@ public class JBoxServer extends Thread {
 				@SuppressWarnings("resource")
 				final Socket s = ssocket.accept();
 
-				connection = new UIConnection(s, this);
+				connection = new UIConnection(s);
 
 				connection.start();
 			} catch (final Exception e) {
@@ -716,7 +727,8 @@ public class JBoxServer extends Thread {
 			if (!JAKeyStore.loadClientKeyStorage()) {
 				System.err.println("Grid Certificate could not be loaded.");
 				System.err.println("Exiting...");
-			} else {
+			}
+			else {
 				System.err.println(passACK);
 				JBoxServer.startJBoxServer(iDebug);
 			}
@@ -732,7 +744,7 @@ public class JBoxServer extends Thread {
 	/**
 	 *
 	 * Get the port used by JBoxServer
-	 * 
+	 *
 	 * @return the TCP port this server is listening on. Can be negative to signal that the server is actually not listening on any port (yet?)
 	 *
 	 */

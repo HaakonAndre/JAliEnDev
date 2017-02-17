@@ -59,6 +59,7 @@ public final class CatalogueUtils {
 			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 				if (db != null) {
 					db.setReadOnly(true);
+					db.setQueryTimeout(15);
 
 					if (!db.query("SELECT * FROM HOSTS WHERE hostIndex=?;", false, key))
 						return null;
@@ -82,6 +83,26 @@ public final class CatalogueUtils {
 		return hostsCache.get(Integer.valueOf(idx <= 0 ? 1 : idx));
 	}
 
+	/**
+	 * @return all configured catalogue hosts
+	 */
+	public static Set<Host> getAllHosts() {
+		final Set<Host> ret = new HashSet<>();
+
+		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+			if (db != null) {
+				db.setReadOnly(true);
+				db.setQueryTimeout(15);
+				db.query("SELECT hostIndex FROM HOSTS;");
+
+				while (db.moveNext())
+					ret.add(getHost(db.geti(1)));
+			}
+		}
+
+		return ret;
+	}
+
 	private static List<GUIDIndex> guidIndexCache = null;
 	private static long guidIndexCacheUpdated = 0;
 
@@ -98,35 +119,42 @@ public final class CatalogueUtils {
 		guidIndexReadLock.lock();
 
 		try {
-			if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
+			if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null || guidIndexCache.size() == 0) {
 				guidIndexReadLock.unlock();
 
 				guidIndexWriteLock.lock();
 
 				try {
-					if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null) {
+					if (System.currentTimeMillis() - guidIndexCacheUpdated > CACHE_TIMEOUT || guidIndexCache == null || guidIndexCache.size() == 0) {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating GUIDINDEX cache");
 
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							if (db != null) {
 								db.setReadOnly(true);
+								db.setQueryTimeout(60);
 
-								if (db.query("SELECT * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
+								if (db.query("SELECT SQL_NO_CACHE * FROM GUIDINDEX ORDER BY guidTime ASC;")) {
 									final LinkedList<GUIDIndex> ret = new LinkedList<>();
 
 									while (db.moveNext())
 										ret.add(new GUIDIndex(db));
 
-									guidIndexCache = ret;
+									if (ret.size() > 0) {
+										guidIndexCache = ret;
 
-									guidIndexCacheUpdated = System.currentTimeMillis();
-								} else
-									// in case of a DB connection failure, try again in
-									// 10 seconds, until then reuse the existing value
-									// (if any)
-									guidIndexCacheUpdated = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+										guidIndexCacheUpdated = System.currentTimeMillis();
+
+										logger.log(Level.FINER, "Finished updating GUIDINDEX cache");
+									}
+									else
+										logger.log(Level.WARNING, "Empty GUID index cache after query");
+								}
+								else
+									logger.log(Level.WARNING, "DB query failed updating GUID index cache");
 							}
+							else
+								logger.log(Level.WARNING, "Cannot get a DB connection to update GUID Index cache");
 						}
 					}
 				} finally {
@@ -189,21 +217,22 @@ public final class CatalogueUtils {
 		indextableReadLock.lock();
 
 		try {
-			if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
+			if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null || indextable.size() == 0) {
 				indextableReadLock.unlock();
 
 				indextableWriteLock.lock();
 
 				try {
-					if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null) {
+					if (System.currentTimeMillis() - lastIndexTableUpdate > CACHE_TIMEOUT || indextable == null || indextable.size() == 0) {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating INDEXTABLE cache");
 
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							if (db != null) {
 								db.setReadOnly(true);
+								db.setQueryTimeout(60);
 
-								if (db.query("SELECT * FROM INDEXTABLE;")) {
+								if (db.query("SELECT SQL_NO_CACHE * FROM INDEXTABLE;")) {
 									final Set<IndexTableEntry> newIndextable = new HashSet<>();
 									final Set<String> newTableentries = new HashSet<>();
 
@@ -215,16 +244,22 @@ public final class CatalogueUtils {
 										newTableentries.add(db.gets("lfn"));
 									}
 
-									indextable = newIndextable;
-									tableentries = newTableentries;
+									if (newIndextable.size() > 0) {
+										logger.log(Level.FINER, "INDEXTABLE cache updated successfully");
 
-									lastIndexTableUpdate = System.currentTimeMillis();
-								} else
-									// in case of a DB connection failure, try again in
-									// 10 seconds, until then reuse the existing value
-									// (if any)
-									lastIndexTableUpdate = System.currentTimeMillis() - CACHE_TIMEOUT + 1000 * 10;
+										indextable = newIndextable;
+										tableentries = newTableentries;
+
+										lastIndexTableUpdate = System.currentTimeMillis();
+									}
+									else
+										logger.log(Level.WARNING, "Empty list of INDEXTABLE entries");
+								}
+								else
+									logger.log(Level.WARNING, "DB query error updating the INDEXTABLE entries");
 							}
+							else
+								logger.log(Level.WARNING, "Could not get a DB connection to update INDEXTABLE cache");
 						}
 					}
 				} finally {
@@ -236,6 +271,20 @@ public final class CatalogueUtils {
 		} finally {
 			indextableReadLock.unlock();
 		}
+	}
+
+	/**
+	 * When it is known that the indextable content might have changed (eg. after a moveDirectory operation), call this to be sure the correct table is used
+	 */
+	public static void invalidateIndexTableCache() {
+		lastIndexTableUpdate = 0;
+	}
+
+	/**
+	 * When it is known that the GUID Index table was changed
+	 */
+	public static void invalidateGUIDIndexTableCache() {
+		guidIndexCacheUpdated = 0;
 	}
 
 	/**
@@ -361,9 +410,13 @@ public final class CatalogueUtils {
 	 *             if the indicated local file cannot be created
 	 */
 	public static void guidCleanup(final String outputFile) throws IOException {
-		try (PrintWriter pw = new PrintWriter(new FileWriter(outputFile))) {
+		if (Runtime.getRuntime().totalMemory() < 100 * 1024 * 1024 * 1024L) {
+			System.err.println("The cleanup should run in a JVM with a _lot_ of memory, 128 at least, if not 200GB");
+			return;
+		}
 
-			final HashMap<UUID, Long> guids = new HashMap<>(1100000000);
+		try (PrintWriter pw = new PrintWriter(new FileWriter(outputFile))) {
+			final HashMap<UUID, Long> guids = new HashMap<>(1600000000);
 
 			final long started = System.currentTimeMillis();
 
@@ -378,7 +431,9 @@ public final class CatalogueUtils {
 
 			long totalSize = 0;
 
-			final long LIMIT = 1000000;
+			final long LIMIT = 10000000;
+
+			long lTotalSpaceToReclaim = 0;
 
 			for (final GUIDIndex idx : guidTables) {
 				cnt++;
@@ -417,9 +472,11 @@ public final class CatalogueUtils {
 									if (uuid != null) {
 										guids.put(uuid, Long.valueOf(gdb.getl(2)));
 										totalSize += gdb.getl(2);
-									} else
+									}
+									else
 										invalid++;
-								} else
+								}
+								else
 									invalid++;
 							} catch (@SuppressWarnings("unused") final Exception e) {
 								invalid++;
@@ -436,13 +493,12 @@ public final class CatalogueUtils {
 					} while (read == LIMIT);
 				}
 
-				if (guids.size() > 1000000000) {
+				if (guids.size() > 1300000000) {
 					System.err.println("Intermediate cleanup @ " + guids.size());
 
-					if (!lfnCleanup(guids))
-						System.err.println("Intermediate cleanup was not completely successful");
+					lTotalSpaceToReclaim += lfnCleanup(guids, pw);
 
-					System.err.println("Intermediate cleanup result: " + guids.size());
+					System.err.println("So far will reclaim: " + Format.size(lTotalSpaceToReclaim));
 				}
 			}
 
@@ -450,33 +506,18 @@ public final class CatalogueUtils {
 			System.err.println(Format.toInterval(System.currentTimeMillis() - started) + " : free " + Format.size(Runtime.getRuntime().freeMemory()) + " / total "
 					+ Format.size(Runtime.getRuntime().totalMemory()));
 
-			if (!lfnCleanup(guids)) {
-				System.err.println("Final iteration could not load all content from LFN tables, bailing out");
-				return;
-			}
+			lTotalSpaceToReclaim += lfnCleanup(guids, pw);
 
-			System.err.println("Finally we are left with " + guids.size() + " orphan UUIDs");
-
-			long totalToReclaim = 0;
-
-			for (final Map.Entry<UUID, Long> uuid : guids.entrySet()) {
-				pw.println(uuid.getKey() + " " + uuid.getValue());
-
-				totalToReclaim += uuid.getValue().longValue();
-			}
-
-			System.err.println("sum(GUID size) = " + totalToReclaim);
+			System.err.println("Total space to reclaim: " + Format.size(lTotalSpaceToReclaim));
 		}
 	}
 
-	private static boolean lfnCleanup(final Map<UUID, Long> guids) {
+	private static long lfnCleanup(final Map<UUID, Long> guids, final PrintWriter pw) {
 		final Set<IndexTableEntry> indextableCollection = CatalogueUtils.getAllIndexTables();
 
 		int cnt = 0;
 
-		final int LIMIT = 1000000;
-
-		final boolean ret = true;
+		final int LIMIT = 15000000;
 
 		for (final IndexTableEntry ite : indextableCollection) {
 			cnt++;
@@ -521,6 +562,16 @@ public final class CatalogueUtils {
 				} while (read == LIMIT);
 			}
 		}
+
+		long ret = 0;
+
+		for (final Map.Entry<UUID, Long> uuid : guids.entrySet()) {
+			pw.println(uuid.getKey() + " " + uuid.getValue());
+
+			ret += uuid.getValue().longValue();
+		}
+
+		guids.clear();
 
 		return ret;
 	}

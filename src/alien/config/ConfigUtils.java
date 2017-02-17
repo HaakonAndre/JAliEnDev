@@ -18,8 +18,8 @@ import java.util.logging.Logger;
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
 import lazyj.cache.ExpirationCache;
+import lazyj.commands.SystemCommand;
 import lia.Monitor.monitor.AppConfig;
-import lia.util.Utils;
 
 /**
  * @author costing
@@ -100,13 +100,16 @@ public class ConfigUtils {
 										// instantiates correctly
 										AppConfig.lastReloaded();
 									}
-								} else if (prop.gets("driver").length() > 0) {
-									dbconfig.put(sName, prop);
+								}
+								else
+									if (prop.gets("driver").length() > 0) {
+										dbconfig.put(sName, prop);
 
-									if (prop.gets("password").length() > 0)
-										hasDirectDBConnection = true;
-								} else
-									otherconfig.put(sName, prop);
+										if (prop.gets("password").length() > 0)
+											hasDirectDBConnection = true;
+									}
+									else
+										otherconfig.put(sName, prop);
 							}
 						}
 			}
@@ -135,10 +138,11 @@ public class ConfigUtils {
 
 		if (applicationConfig != null)
 			appConfig = applicationConfig;
-		else if (System.getProperty("lia.Monitor.ConfigURL") != null)
-			appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
 		else
-			appConfig = new ExtProperties();
+			if (System.getProperty("lia.Monitor.ConfigURL") != null)
+				appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
+			else
+				appConfig = new ExtProperties();
 
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
 			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
@@ -286,7 +290,9 @@ public class ConfigUtils {
 	 * @return machine platform
 	 */
 	public static final String getPlatform() {
-		return Utils.getOutput("uname -s").trim() + "-" + Utils.getOutput("uname -m").trim();
+		final String unameS = SystemCommand.bash("uname -s").stdout.trim();
+		final String unameM = SystemCommand.bash("uname -m").stdout.trim();
+		return unameS + "-" + unameM;
 	}
 
 	/**

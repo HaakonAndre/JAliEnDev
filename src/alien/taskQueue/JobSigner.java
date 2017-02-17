@@ -69,8 +69,8 @@ public class JobSigner {
 	 * @throws SignatureException
 	 * @return the signature of the jdl
 	 */
-	public static JDL signJob(final KeyStore ks, final String keyAlias, final char[] pass, final String alienUsername, final JDL ojdl) throws NoSuchAlgorithmException, InvalidKeyException,
-			SignatureException {
+	public static JDL signJob(final KeyStore ks, final String keyAlias, final char[] pass, final String alienUsername, final JDL ojdl)
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
 		if (ojdl == null)
 			return null;
@@ -115,8 +115,8 @@ public class JobSigner {
 	 * @throws SignatureException
 	 * @throws KeyStoreException
 	 */
-	public static boolean verifyJob(final KeyStore ks, final String keyAlias, final char[] pass, final AliEnPrincipal user, final String origjdl) throws NoSuchAlgorithmException, InvalidKeyException,
-			SignatureException, KeyStoreException {
+	public static boolean verifyJob(final KeyStore ks, final String keyAlias, final char[] pass, final AliEnPrincipal user, final String origjdl)
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, KeyStoreException {
 
 		return false; // verifyJob(ks.getCertificate(keyAlias), user, origjdl);
 	}
@@ -131,8 +131,8 @@ public class JobSigner {
 	 * @throws KeyStoreException
 	 * @throws JobSubmissionException
 	 */
-	public static boolean verifyJobToRun(final X509Certificate[] cert, final String sjdl) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, KeyStoreException,
-			JobSubmissionException {
+	public static boolean verifyJobToRun(final X509Certificate[] cert, final String sjdl)
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, KeyStoreException, JobSubmissionException {
 
 		final Certificate[] ts = JAKeyStore.clientCert.getCertificateChain("User.cert");
 		final X509Certificate[] tts = new X509Certificate[ts.length];
@@ -160,8 +160,8 @@ public class JobSigner {
 	 * @throws KeyStoreException
 	 * @throws JobSubmissionException
 	 */
-	public static boolean verifyJob(final X509Certificate[] cert, final AliEnPrincipal user, final String sjdl) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException,
-			KeyStoreException, JobSubmissionException {
+	public static boolean verifyJob(final X509Certificate[] cert, final AliEnPrincipal user, final String sjdl)
+			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, KeyStoreException, JobSubmissionException {
 
 		try {
 			// System.out.println("we are verifying as JDL...:" + sjdl);
@@ -186,7 +186,7 @@ public class JobSigner {
 					// System.out.println("user authorized.");
 
 				} catch (final IOException e) {
-					throw new JobSubmissionException("Error while validating the JDL syntax");
+					throw new JobSubmissionException("Error while validating the JDL syntax", e);
 				}
 			}
 
@@ -196,7 +196,7 @@ public class JobSigner {
 			try {
 				issued = Long.parseLong(sjdl.substring(sjdl.indexOf(issuedDelimOn) + issuedDelimOn.length(), sjdl.indexOf(issuedDelimOff)));
 			} catch (final NumberFormatException e) {
-				throw new JobSubmissionException("Invalid JDL Signature: [illegal issued tag]");
+				throw new JobSubmissionException("Invalid JDL Signature: [illegal issued tag]", e);
 			}
 			if (now < issued)
 				throw new JobSubmissionException("Invalid JDL Signature: [not valid yet]");
@@ -205,7 +205,7 @@ public class JobSigner {
 			try {
 				expires = Long.parseLong(sjdl.substring(sjdl.indexOf(expiresDelimOn) + expiresDelimOn.length(), sjdl.indexOf(expiresDelimOff)));
 			} catch (final NumberFormatException e) {
-				throw new JobSubmissionException("Invalid JDL Signature: [illegal expires tag]");
+				throw new JobSubmissionException("Invalid JDL Signature: [illegal expires tag]", e);
 			}
 			if (now > expires)
 				throw new JobSubmissionException("Invalid JDL Signature, [expired]");

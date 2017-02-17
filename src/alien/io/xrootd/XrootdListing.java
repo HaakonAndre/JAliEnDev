@@ -24,7 +24,7 @@ import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
 import alien.se.SE;
 import lazyj.Format;
 import lia.util.process.ExternalProcess.ExitStatus;
-import lia.util.process.ExternalProcessBuilder;
+import utils.ProcessWithTimeout;
 
 /**
  * @author costing
@@ -32,6 +32,9 @@ import lia.util.process.ExternalProcessBuilder;
  */
 public class XrootdListing {
 
+	/**
+	 * Logger object
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(XrootdListing.class.getCanonicalName());
 
 	/**
@@ -102,20 +105,24 @@ public class XrootdListing {
 
 			final XrootDEnvelope env = new XrootDEnvelope(AccessType.READ, pfn);
 
+			String envelope = null;
+
 			try {
-				if (se.needsEncryptedEnvelope)
+				if (se.needsEncryptedEnvelope) {
 					XrootDEnvelopeSigner.encryptEnvelope(env);
-				else
+					envelope = "?authz=" + env.getEncryptedEnvelope();
+				}
+				else {
 					// new xrootd implementations accept signed-only envelopes
 					XrootDEnvelopeSigner.signEnvelope(env);
+					envelope = "?" + env.getSignedEnvelope();
+				}
 			} catch (final GeneralSecurityException e) {
 				e.printStackTrace();
 				return;
 			}
 
-			final String envelope = env.getEncryptedEnvelope();
-
-			xrdcommand += "?authz=" + envelope;
+			xrdcommand += envelope;
 		}
 
 		final List<String> command = Arrays.asList(Xrootd.getXrootdDefaultPath() + "/bin/xrdfs", server, "ls", "-l", xrdcommand);
@@ -125,20 +132,24 @@ public class XrootdListing {
 
 		// System.err.println(command);
 
-		final ExternalProcessBuilder pBuilder = new ExternalProcessBuilder(command);
+		final ProcessBuilder pBuilder = new ProcessBuilder(command);
 
 		Xrootd.checkLibraryPath(pBuilder);
-
-		pBuilder.returnOutputOnExit(true);
-
-		pBuilder.timeout(1, TimeUnit.HOURS);
 
 		pBuilder.redirectErrorStream(true);
 
 		final ExitStatus exitStatus;
 
 		try {
-			exitStatus = pBuilder.start().waitFor();
+			final Process p = pBuilder.start();
+
+			if (p != null) {
+				final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+				pTimeout.waitFor(1, TimeUnit.HOURS);
+				exitStatus = pTimeout.getExitStatus();
+			}
+			else
+				throw new IOException("Cannot execute command: " + command);
 		} catch (final InterruptedException ie) {
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
@@ -180,8 +191,9 @@ public class XrootdListing {
 				} catch (final IllegalArgumentException iae) {
 					logger.log(Level.WARNING, "Exception parsing response of " + command, iae);
 				}
-			else if (sLine.length() > 0 && sLine.trim().length() > 0)
-				logger.log(Level.WARNING, "Unknown response line in the output of " + command + "\n\n" + sLine);
+			else
+				if (sLine.length() > 0 && sLine.trim().length() > 0)
+					logger.log(Level.WARNING, "Unknown response line in the output of " + command + "\n\n" + sLine);
 	}
 
 	/**

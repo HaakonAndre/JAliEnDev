@@ -14,7 +14,7 @@ public class KillJob extends Request {
 	
 	private static final long serialVersionUID = -3089514086638736684L;
 
-	private final int queueId;
+	private final long queueId;
 	
 	private boolean wasKilled = false;
 
@@ -23,7 +23,7 @@ public class KillJob extends Request {
 	 * @param role 
 	 * @param queueId
 	 */
-	public KillJob(final AliEnPrincipal user, final String role, final int queueId) {
+	public KillJob(final AliEnPrincipal user, final String role, final long queueId) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.queueId = queueId;

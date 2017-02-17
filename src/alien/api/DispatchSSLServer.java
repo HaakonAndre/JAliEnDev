@@ -171,9 +171,11 @@ public class DispatchSSLServer extends Thread {
 						lSerialization += System.currentTimeMillis() - lSer;
 
 						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName()); // +
-																																			// ": "+r.toString());
+																																			// ":
+																																			// "+r.toString());
 
-					} else
+					}
+					else
 						logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
 			}
 		} catch (final Throwable e) {
@@ -182,20 +184,23 @@ public class DispatchSSLServer extends Thread {
 			if (ois != null)
 				try {
 					ois.close();
-				} catch (@SuppressWarnings("unused") final IOException ioe) {
+				} catch (@SuppressWarnings("unused")
+				final IOException ioe) {
 					// ignore
 				}
 
 			if (oos != null)
 				try {
 					oos.close();
-				} catch (@SuppressWarnings("unused") final IOException ioe) {
+				} catch (@SuppressWarnings("unused")
+				final IOException ioe) {
 					// ignore
 				}
 
 			try {
 				connection.close();
-			} catch (@SuppressWarnings("unused") final IOException ioe) {
+			} catch (@SuppressWarnings("unused")
+			final IOException ioe) {
 				// ignore
 			}
 		}
@@ -204,7 +209,8 @@ public class DispatchSSLServer extends Thread {
 	private static boolean isHostCertValid() {
 		try {
 			((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).checkValidity();
-		} catch (@SuppressWarnings("unused") final CertificateException | KeyStoreException e) {
+		} catch (@SuppressWarnings("unused")
+		final CertificateException | KeyStoreException e) {
 			return false;
 		}
 
@@ -228,7 +234,8 @@ public class DispatchSSLServer extends Thread {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1).trim());
 					address = address.substring(0, idx).trim();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					port = defaultPort;
 				}
 		}
@@ -284,7 +291,6 @@ public class DispatchSSLServer extends Thread {
 				}
 
 				try {
-					@SuppressWarnings("resource")
 					// this object is passed to another thread to deal with the
 					// communication
 					final SSLSocket c = (SSLSocket) server.accept();

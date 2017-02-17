@@ -23,7 +23,7 @@ public class SubmitJob extends Request {
 	
 	
 	private final JDL jdl;
-	private int jobID = 0;
+	private long jobID = 0;
 
 	/**
 	 * @param user 
@@ -50,7 +50,7 @@ public class SubmitJob extends Request {
 	/**
 	 * @return jobID
 	 */
-	public int getJobID(){
+	public long getJobID(){
 		System.out.println("job received ID:" + this.jobID);
 
 		return this.jobID;

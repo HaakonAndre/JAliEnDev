@@ -20,6 +20,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.ReadLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock.WriteLock;
@@ -39,6 +41,7 @@ import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import lazyj.DBFunctions;
 import lazyj.Format;
+import lia.util.ShutdownManager;
 
 /**
  * @author costing
@@ -59,6 +62,38 @@ public final class SEUtils {
 	private static final ReadLock seCacheReadLock = seCacheRWLock.readLock();
 	private static final WriteLock seCacheWriteLock = seCacheRWLock.writeLock();
 
+	private static Map<Integer, SECounterUpdate> seCounterUpdates = new ConcurrentHashMap<>();
+
+	private static Map<String, Map<Integer, Double>> seDistance = null;
+
+	private static long seDistanceUpdated = 0;
+
+	private static final ReentrantReadWriteLock seDistanceRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
+	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
+
+	private static final String SEDISTANCE_QUERY;
+
+	static {
+		if (ConfigUtils.isCentralService()) {
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				db.setReadOnly(true);
+
+				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
+				else
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+			}
+
+			updateSECache();
+			updateSEDistanceCache();
+		}
+		else
+			SEDISTANCE_QUERY = null;
+
+		ShutdownManager.getInstance().addModule(() -> flushCounterUpdates());
+	}
+
 	private static final void updateSECache() {
 		if (!ConfigUtils.isCentralService())
 			return;
@@ -76,10 +111,13 @@ public final class SEUtils {
 						if (logger.isLoggable(Level.FINER))
 							logger.log(Level.FINER, "Updating SE cache");
 
+						flushCounterUpdates();
+
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							db.setReadOnly(true);
+							db.setQueryTimeout(30);
 
-							if (db.query("SELECT * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
+							if (db.query("SELECT SQL_NO_CACHE * FROM SE WHERE (seioDaemons IS NOT NULL OR seName='no_se');")) {
 								final Map<Integer, SE> ses = new HashMap<>();
 
 								while (db.moveNext()) {
@@ -92,14 +130,16 @@ public final class SEUtils {
 								if (ses.size() > 0) {
 									seCache = ses;
 									seCacheUpdated = System.currentTimeMillis();
-								} else {
+								}
+								else {
 									if (seCache == null)
 										seCache = ses;
 
 									// try again soon
 									seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
 								}
-							} else
+							}
+							else
 								seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
@@ -132,7 +172,10 @@ public final class SEUtils {
 	public static SE getSE(final Integer seNumber) {
 		if (!ConfigUtils.isCentralService())
 			try {
-				return Dispatcher.execute(new SEfromString(null, null, seNumber.intValue())).getSE();
+				final SEfromString request = new SEfromString(null, null, seNumber.intValue());
+				final SEfromString response = Dispatcher.execute(request);
+				// System.err.println("Response: " + response);
+				return response.getSE();
 			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
@@ -208,33 +251,6 @@ public final class SEUtils {
 		return ret;
 	}
 
-	private static Map<String, Map<Integer, Double>> seDistance = null;
-
-	private static long seDistanceUpdated = 0;
-
-	private static final ReentrantReadWriteLock seDistanceRWLock = new ReentrantReadWriteLock();
-	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
-	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
-
-	private static final String SEDISTANCE_QUERY;
-
-	static {
-		if (ConfigUtils.isCentralService()) {
-			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-				db.setReadOnly(true);
-
-				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
-					SEDISTANCE_QUERY = "SELECT sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
-				else
-					SEDISTANCE_QUERY = "SELECT sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
-			}
-
-			updateSECache();
-			updateSEDistanceCache();
-		} else
-			SEDISTANCE_QUERY = null;
-	}
-
 	private static void updateSEDistanceCache() {
 		if (!ConfigUtils.isCentralService())
 			return;
@@ -254,6 +270,7 @@ public final class SEUtils {
 
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							db.setReadOnly(true);
+							db.setQueryTimeout(60);
 
 							if (db.query(SEDISTANCE_QUERY)) {
 								final Map<String, Map<Integer, Double>> newDistance = new HashMap<>();
@@ -283,14 +300,16 @@ public final class SEUtils {
 								if (newDistance.size() > 0) {
 									seDistance = newDistance;
 									seDistanceUpdated = System.currentTimeMillis();
-								} else {
+								}
+								else {
 									if (seDistance == null)
 										seDistance = newDistance;
 
 									// try again soon
 									seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 30;
 								}
-							} else
+							}
+							else
 								seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
@@ -451,7 +470,7 @@ public final class SEUtils {
 		}
 
 		final List<SE> SEs;
-		
+
 		if (ses != null)
 			SEs = SEUtils.getSEs(ses);
 		else
@@ -560,8 +579,9 @@ public final class SEUtils {
 		for (final PFN pfn : spfns)
 			if (SEs != null && SEs.contains(pfn.getSE()))
 				ret.add(pfn);
-			else if (exSEs == null || !exSEs.contains(pfn.getSE()))
-				tail.add(pfn);
+			else
+				if (exSEs == null || !exSEs.contains(pfn.getSE()))
+					tail.add(pfn);
 
 		ret.addAll(tail);
 		return ret;
@@ -687,12 +707,14 @@ public final class SEUtils {
 
 		if (toSE instanceof SE)
 			se = (SE) toSE;
-		else if (toSE instanceof String)
-			se = getSE((String) toSE);
-		else if (toSE instanceof Integer)
-			se = getSE((Integer) toSE);
 		else
-			throw new IllegalArgumentException("Invalid object type for the toSE parameter: " + toSE.getClass().getCanonicalName());
+			if (toSE instanceof String)
+				se = getSE((String) toSE);
+			else
+				if (toSE instanceof Integer)
+					se = getSE((Integer) toSE);
+				else
+					throw new IllegalArgumentException("Invalid object type for the toSE parameter: " + toSE.getClass().getCanonicalName());
 
 		if (se == null)
 			return null;
@@ -725,6 +747,7 @@ public final class SEUtils {
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			db.setReadOnly(false);
+			db.setQueryTimeout(60);
 
 			for (final Map.Entry<Integer, SEUsageStats> entry : m.entrySet()) {
 				db.query("UPDATE SE SET seUsedSpace=?, seNumFiles=? WHERE seNumber=?;", false, Long.valueOf(entry.getValue().usedSpace), Long.valueOf(entry.getValue().fileCount), entry.getKey());
@@ -901,8 +924,9 @@ public final class SEUtils {
 				if (!source.seStoragePath.equals(dest.seStoragePath))
 					q1 += ", pfn=replace(replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "'), '"
 							+ Format.escSQL(SE.generateProtocol(dest.seioDaemons, source.seStoragePath)) + "', '" + Format.escSQL(SE.generateProtocol(dest.seioDaemons, dest.seStoragePath)) + "')";
-				else if (!source.seioDaemons.equals(dest.seioDaemons))
-					q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
+				else
+					if (!source.seioDaemons.equals(dest.seioDaemons))
+						q1 += ", pfn=replace(pfn, '" + Format.escSQL(source.seioDaemons) + "', '" + Format.escSQL(dest.seioDaemons) + "')";
 
 				q1 += " WHERE seNumber=" + source.seNumber;
 
@@ -912,7 +936,8 @@ public final class SEUtils {
 				if (debug) {
 					System.err.println(q1);
 					System.err.println(q2);
-				} else {
+				}
+				else {
 					boolean ok = db.query(q1);
 					System.err.println(q1 + " : " + ok + " : " + db.getUpdateCount());
 
@@ -921,6 +946,69 @@ public final class SEUtils {
 					System.err.println(q2 + " : " + ok + " : " + db.getUpdateCount());
 				}
 			}
+	}
+
+	private static final class SECounterUpdate {
+		public AtomicLong aiFiles = new AtomicLong(0);
+		public AtomicLong aiBytes = new AtomicLong(0);
+
+		public SECounterUpdate() {
+			// nothing to do here
+		}
+
+		public void updateCounters(final long deltaFiles, final long deltaBytes) {
+			aiFiles.addAndGet(deltaFiles);
+			aiBytes.addAndGet(deltaBytes);
+		}
+
+		public void flush(final Integer seNumber) {
+			final long deltaFiles = aiFiles.getAndSet(0);
+			final long deltaBytes = aiBytes.getAndSet(0);
+
+			if (deltaFiles != 0 || deltaBytes != 0) {
+				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+					db.setReadOnly(false);
+					db.setQueryTimeout(60);
+
+					if (!db.query(
+							"UPDATE SE SET seUsedSpace=greatest(seUsedSpace" + (deltaBytes >= 0 ? "+" : "") + "?, 0), seNumFiles=greatest(seNumFiles" + (deltaFiles >= 0 ? "+" : "") + "?, 0) WHERE seNumber=?;",
+							false, Long.valueOf(deltaBytes), Long.valueOf(deltaFiles), seNumber)) {
+						aiFiles.addAndGet(deltaFiles);
+						aiBytes.addAndGet(deltaBytes);
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Update the storage counters when files are added or removed from them. This does not guarantee counter consistency!
+	 * 
+	 * @param seNumber
+	 *            SE number
+	 * @param deltaFiles
+	 *            how many files were added (positive) or removed (negative)
+	 * @param deltaBytes
+	 *            how many bytes were added (positive) or removed (negative)
+	 */
+	public static void incrementStorageCounters(final int seNumber, final long deltaFiles, final long deltaBytes) {
+		final Integer seNo = Integer.valueOf(seNumber);
+		SECounterUpdate update = seCounterUpdates.get(seNo);
+
+		if (update == null) {
+			update = new SECounterUpdate();
+			seCounterUpdates.put(seNo, update);
+		}
+
+		update.updateCounters(deltaFiles, deltaBytes);
+	}
+
+	/**
+	 * Flush changes to storage usage counters to disk
+	 */
+	private static void flushCounterUpdates() {
+		for (final Map.Entry<Integer, SECounterUpdate> entry : seCounterUpdates.entrySet())
+			entry.getValue().flush(entry.getKey());
 	}
 
 	/**
@@ -932,9 +1020,9 @@ public final class SEUtils {
 	 *            any reindexing done in the database and the PFN strings still point to the old SE.
 	 * @param ses
 	 *            SEs to dump the content from
-	 * @throws Exception
+	 * @throws IOException
 	 */
-	public static void masterSE(final boolean realPFNs, final String... ses) throws Exception {
+	public static void masterSE(final boolean realPFNs, final String... ses) throws IOException {
 		final NumberFormat twoDigits = new DecimalFormat("00");
 		final NumberFormat fiveDigits = new DecimalFormat("00000");
 
@@ -955,7 +1043,8 @@ public final class SEUtils {
 
 							while (gdb.moveNext())
 								pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
-						} else {
+						}
+						else {
 							gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
 
 							while (gdb.moveNext()) {

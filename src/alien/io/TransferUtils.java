@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.cache.ExpirationCache;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -23,10 +21,12 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
+import lazyj.DBFunctions;
+import lazyj.cache.ExpirationCache;
 
 /**
  * @author costing
- * 
+ *
  */
 public final class TransferUtils {
 
@@ -338,16 +338,6 @@ public final class TransferUtils {
 		if (guid == null || !guid.exists() || se == null)
 			return -1;
 
-		if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
-			final SE seRemove = SEUtils.getSE(onCompletionRemoveReplica);
-
-			if (seRemove == null)
-				return -1;
-
-			if (!guid.hasReplica(seRemove) || seRemove.equals(se))
-				return -1;
-		}
-
 		final Set<GUID> realGUIDs = guid.getRealGUIDs();
 
 		final Set<PFN> pfns = new LinkedHashSet<>();
@@ -365,9 +355,31 @@ public final class TransferUtils {
 		if (pfns.size() == 0)
 			return -3;
 
+		boolean hasReplicaOnTarget = false;
+
 		for (final PFN p : pfns)
-			if (se.equals(p.getSE()))
+			if (se.equals(p.getSE())) {
+				hasReplicaOnTarget = true;
+				break;
+			}
+
+		if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0) {
+			final SE seRemove = SEUtils.getSE(onCompletionRemoveReplica);
+
+			if (seRemove == null || seRemove.equals(se))
+				return -1;
+
+			if (hasReplicaOnTarget) {
+				guid.removePFN(seRemove, true);
 				return 0;
+			}
+
+			if (!guid.hasReplica(seRemove))
+				return -1;
+		}
+
+		if (hasReplicaOnTarget)
+			return 0;
 
 		final String sGUID = guid.guid.toString();
 
@@ -414,18 +426,8 @@ public final class TransferUtils {
 	}
 
 	/**
-	 * @param lfn
-	 * @param se
-	 * @return ?
-	 */
-	public static int removeMirror(final LFN lfn, final SE se) {
-		// TODO
-		return 0;
-	}
-
-	/**
 	 * Log a transfer attempt
-	 * 
+	 *
 	 * @param p
 	 * @param source
 	 * @param target
@@ -528,7 +530,7 @@ public final class TransferUtils {
 
 	/**
 	 * Debug method
-	 * 
+	 *
 	 * @param args
 	 */
 	public static void main(final String[] args) {

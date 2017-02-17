@@ -3,6 +3,7 @@ package alien.api.catalogue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -21,7 +22,7 @@ import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 03, 2011
  */
@@ -43,7 +44,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get LFN from String, only if it exists
-	 * 
+	 *
 	 * @param slfn
 	 *            name of the LFN
 	 * @return the LFN object
@@ -54,19 +55,19 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get LFN from String
-	 * 
+	 *
 	 * @param slfn
 	 * @param evenIfDoesntExist
 	 * @return the LFN object, that might exist or not (if <code>evenIfDoesntExist = true</code>)
 	 */
 	public LFN getLFN(final String slfn, final boolean evenIfDoesntExist) {
-		Collection<LFN> ret = getLFNs(Arrays.asList(slfn), false, evenIfDoesntExist);
+		final Collection<LFN> ret = getLFNs(Arrays.asList(slfn), false, evenIfDoesntExist);
 		return ret != null && ret.size() > 0 ? ret.iterator().next() : null;
 	}
 
 	/**
 	 * Get LFNs from String as a directory listing, only if it exists
-	 * 
+	 *
 	 * @param slfn
 	 *            name of the LFN
 	 * @return the LFN objects
@@ -84,7 +85,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get LFN from String
-	 * 
+	 *
 	 * @param slfn
 	 *            name of the LFN
 	 * @param ignoreFolders
@@ -104,7 +105,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Remove a LFN in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
@@ -121,7 +122,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Move a LFN in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @param newpath
 	 * @return state of the LFN's deletion <code>null</code>
@@ -139,7 +140,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get GUID from String
-	 * 
+	 *
 	 * @param sguid
 	 *            GUID as String
 	 * @return the GUID object
@@ -150,7 +151,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get GUID from String
-	 * 
+	 *
 	 * @param sguid
 	 *            GUID as String
 	 * @param evenIfDoesNotExist
@@ -171,7 +172,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get PFNs from GUID as String
-	 * 
+	 *
 	 * @param sguid
 	 *            GUID as String
 	 * @return the PFNs
@@ -189,7 +190,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get PFNs for reading by LFN
-	 * 
+	 *
 	 * @param lfn
 	 *            LFN of the entry as String
 	 * @param ses
@@ -212,7 +213,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get PFNs for writing by LFN
-	 * 
+	 *
 	 * @param lfn
 	 *            LFN of the entry as String
 	 * @param guid
@@ -237,13 +238,39 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Register PFNs with envelopes
-	 * 
+	 *
 	 * @param envelopes
 	 * @return PFNs that were successfully registered
 	 */
 	public List<PFN> registerEnvelopes(final List<String> envelopes) {
 		try {
-			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelopes)).getPFNs();
+			final List<String> encryptedEnvelopes = new LinkedList<>();
+			final List<String> signedEnvelopes = new LinkedList<>();
+
+			for (final String envelope : envelopes) {
+				if (envelope.contains("&signature="))
+					signedEnvelopes.add(envelope);
+				else
+					encryptedEnvelopes.add(envelope);
+			}
+
+			final List<PFN> ret = new LinkedList<>();
+
+			if (signedEnvelopes.size() > 0) {
+				final List<PFN> signedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelopes)).getPFNs();
+
+				if (signedPFNs != null && signedPFNs.size() > 0)
+					ret.addAll(signedPFNs);
+			}
+
+			for (final String envelope : encryptedEnvelopes) {
+				final List<PFN> encryptedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), envelope, 0, null)).getPFNs();
+
+				if (encryptedPFNs != null && encryptedPFNs.size() > 0)
+					ret.addAll(encryptedPFNs);
+			}
+
+			return ret;
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get PFNs for: " + envelopes.toString());
 			e.getCause().printStackTrace();
@@ -254,22 +281,15 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Register PFNs with enveloeps
-	 * 
+	 *
 	 * @param encryptedEnvelope
 	 * @param size
 	 * @param md5
-	 * @param lfn
-	 * @param perm
-	 * @param expire
-	 * @param pfn
-	 * @param se
-	 * @param guid
 	 * @return PFNs that were successfully registered
 	 */
-	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5, final String lfn, final String perm, final String expire, final String pfn,
-			final String se, final String guid) {
+	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5) {
 		try {
-			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), encryptedEnvelope, size, md5, lfn, perm, expire, pfn, se, guid)).getPFNs();
+			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), commander.getRole(), encryptedEnvelope, size, md5)).getPFNs();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get PFNs for: " + encryptedEnvelope);
 			e.getCause().printStackTrace();
@@ -280,7 +300,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Create a directory in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @return LFN of the created directory, if successful, else <code>null</code>
 	 */
@@ -289,7 +309,7 @@ public class CatalogueApiUtils {
 	}
 
 	/**
-	 * 
+	 *
 	 * @param path
 	 * @return LFN of the created file, if successful, else <code>null</code>
 	 */
@@ -306,7 +326,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Create a directory in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @param createNonExistentParents
 	 * @return LFN of the created directory, if successful, else <code>null</code>
@@ -324,7 +344,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Remove a directory in the Catalogue
-	 * 
+	 *
 	 * @param path
 	 * @return state of directory's deletion <code>null</code>
 	 */
@@ -341,7 +361,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * find bases on pattern
-	 * 
+	 *
 	 * @param path
 	 * @param pattern
 	 * @param flags
@@ -360,7 +380,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get an SE by its name
-	 * 
+	 *
 	 * @param se
 	 *            name of the SE
 	 * @return SE object
@@ -378,7 +398,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get an SE by its number
-	 * 
+	 *
 	 * @param seno
 	 *            number of the SE
 	 * @return SE object
@@ -396,7 +416,7 @@ public class CatalogueApiUtils {
 
 	/**
 	 * Get Packages for a certain platform
-	 * 
+	 *
 	 * @param platform
 	 * @return the Packages
 	 */
@@ -486,21 +506,15 @@ public class CatalogueApiUtils {
 	 * @param toSE
 	 * @param user
 	 * @param id
-	 * @param master
 	 * @param count
 	 * @param desc
 	 * @return transfer details
 	 */
-	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Integer id, final boolean master,
-			// boolean verbose,
-			// boolean summary,
-			// boolean all_status,
-			// boolean jdl,
-			final int count, final boolean desc) {
+	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Integer id, final int count, final boolean desc) {
 
 		ListTransfer lt;
 		try {
-			lt = Dispatcher.execute(new ListTransfer(commander.getUser(), commander.getRole(), status, toSE, user, id, master, count, desc));
+			lt = Dispatcher.execute(new ListTransfer(commander.getUser(), commander.getRole(), status, toSE, user, id, count, desc));
 			return (lt != null ? lt.getTransfers() : null);
 		} catch (final ServerException e) {
 			e.printStackTrace();

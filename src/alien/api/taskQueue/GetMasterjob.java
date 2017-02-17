@@ -37,7 +37,7 @@ public class GetMasterjob extends Request {
 
 	private Job masterJob = null;
 
-	private final int jobId;
+	private final long jobId;
 
 	private final Set<JobStatus> status;
 
@@ -71,7 +71,7 @@ public class GetMasterjob extends Request {
 	 * @param bResubmit
 	 * @param bExpunge
 	 */
-	public GetMasterjob(final AliEnPrincipal user, final String role, final int jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId,
+	public GetMasterjob(final AliEnPrincipal user, final String role, final long jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId,
 			final boolean bPrintSite, final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
 		setRequestUser(user);
 		setRoleRequest(role);

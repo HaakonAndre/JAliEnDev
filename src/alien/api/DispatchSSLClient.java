@@ -125,6 +125,7 @@ public class DispatchSSLClient extends Thread {
 					((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).checkValidity();
 				} catch (final CertificateException e) {
 					logger.log(Level.SEVERE, "Your certificate has expired or is invalid!", e);
+					System.err.println("Your certificate has expired or is invalid:\n  " + e.getMessage());
 					return null;
 				}
 
@@ -168,7 +169,8 @@ public class DispatchSSLClient extends Thread {
 					System.out.println("Connection to JCentral established.");
 					instance.put(Integer.valueOf(p), sc);
 
-				} else
+				}
+				else
 					logger.log(Level.SEVERE, "We didn't get any peer/service cert. NOT GOOD!");
 
 			} catch (final ConnectException e) {
@@ -222,7 +224,8 @@ public class DispatchSSLClient extends Thread {
 		if (addr.length() == 0) {
 			addr = defaultHost;
 			port = defaultPort;
-		} else {
+		}
+		else {
 
 			final String address = addr;
 			final int idx = address.indexOf(':');
