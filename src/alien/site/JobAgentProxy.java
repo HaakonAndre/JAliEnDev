@@ -659,10 +659,10 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		switch (env.get("installationMethod")) {
 		case "CVMFS":
 			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS();
+			return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
 		default:
 			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS();
+			return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
 		}
 	}
 
