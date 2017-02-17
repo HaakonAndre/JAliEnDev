@@ -1,5 +1,7 @@
 package alien.site;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
@@ -10,6 +12,7 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
+import alien.site.batchqueue.*;
 import alien.user.LDAPHelper;
 
 public class ComputingElement extends Thread {
@@ -27,6 +30,7 @@ public class ComputingElement extends Thread {
 	private HashMap<String, Object> siteConfig = null;
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
+	private BatchQueue queue = null;
 
 	public ComputingElement() {
 		try {
@@ -51,7 +55,9 @@ public class ComputingElement extends Thread {
 
 			// System.out.println(ce_environment);
 
-			logger = LogUtils.redirectToCustomHandler(logger, hostConfig.get("logdir") + "CE");
+			logger = LogUtils.redirectToCustomHandler(logger, hostConfig.get("logdir") + "/CE");
+
+			queue = getBatchQueue((String) ceConfig.get("type"));
 
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -87,6 +93,7 @@ public class ComputingElement extends Thread {
 	}
 
 	private void offerAgent() {
+		queue.submit(); // TODO delete
 
 		return;
 	}
@@ -207,6 +214,28 @@ public class ComputingElement extends Thread {
 			smenv.putAll(ce_environment);
 
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
+	}
+
+	public BatchQueue getBatchQueue(String type) {
+		Class<?> cl = null;
+		try {
+			cl = Class.forName("alien.site.batchqueue." + type);
+		} catch (ClassNotFoundException e) {
+			logger.severe("Cannot find class for type: " + type + "\n" + e);
+		}
+		Constructor<?> con = null;
+		try {
+			con = cl.getConstructor(ceConfig.getClass(), logger.getClass());
+		} catch (NoSuchMethodException | SecurityException e) {
+			logger.severe("Cannot find class for ceConfig: " + e);
+		}
+		try {
+			queue = (BatchQueue) con.newInstance(ceConfig, logger);
+		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+			logger.severe("Cannot instantiate queue class for type: " + type + "\n" + e);
+		}
+
+		return queue;
 	}
 
 }
