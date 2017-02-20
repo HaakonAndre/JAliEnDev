@@ -745,6 +745,8 @@ public final class SEUtils {
 	public static void updateSEUsageCache() {
 		final Map<Integer, SEUsageStats> m = getSEUsage();
 
+		logger.log(Level.INFO, "Updating SE usage cache data");
+		
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
@@ -760,13 +762,15 @@ public final class SEUtils {
 				}
 			}
 		}
+		
+		logger.log(Level.INFO, "Finished updating SE usage cache data");
 	}
 
 	private static Map<Integer, SEUsageStats> getSEUsage() {
 		final Map<Integer, SEUsageStats> m = new HashMap<>();
 
 		for (final GUIDIndex index : CatalogueUtils.getAllGUIDIndexes()) {
-			System.err.println("Getting usage from " + index);
+			logger.log(Level.FINE, "Getting usage from " + index);
 
 			final Map<Integer, SEUsageStats> t = index.getSEUsageStats();
 
