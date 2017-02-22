@@ -5,23 +5,29 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
-import alien.site.batchqueue.*;
+import alien.shell.commands.JAliEnCOMMander;
+import alien.site.batchqueue.BatchQueue;
 import alien.user.LDAPHelper;
+import lazyj.ExtProperties;
 
 public class ComputingElement extends Thread {
 
 	// Logger object
 	static transient Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
 
+	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+
 	// Config, env, classad
-	// private final ExtProperties config = ConfigUtils.getConfig();
+	private final ExtProperties config = ConfigUtils.getConfig();
 	private Integer port = 10000;
 	private String site;
 	private HashMap<String, Object> siteMap = new HashMap<>();
@@ -85,11 +91,22 @@ public class ComputingElement extends Thread {
 		for (int i = 0; i < 5; i++) { // TODO replace for while(true)
 			boolean should_submit = true;
 
+			// Get free slots
+			int free_slots = getNumberFreeSlots();
+
 			if (should_submit)
 				offerAgent();
 		}
 
 		System.out.println("Exiting CE");
+	}
+
+	private int getNumberFreeSlots() {
+		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) hostConfig.get("host"), port.intValue(), (String) hostConfig.get("ce"),
+				ConfigUtils.getConfig().gets("version", "J-1.0").trim());
+		List<Integer> slots = jobSlots.getJobSlots();
+
+		return 0;
 	}
 
 	private void offerAgent() {

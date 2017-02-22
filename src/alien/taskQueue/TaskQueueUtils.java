@@ -2534,6 +2534,8 @@ public class TaskQueueUtils {
 			if (db == null)
 				return;
 
+			// TODO: jdls?
+			
 			logger.log(Level.INFO, "Setting site with ce " + ce + " to " + status);
 
 			db.setQueryTimeout(30);
@@ -2703,6 +2705,132 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * @param key
+	 * @param value
+	 * @return value for this key
+	 */
+	public static int getHostOrInsert(final String host, final Integer port, final String version) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			String q = "select hostId from HOSTS where hostName=?";
+
+			logger.log(Level.INFO, "Going to get HOST " + host + ", query: " + q);
+
+			db.setReadOnly(true);
+			db.query(q, false, host);
+
+			// the host exists
+			int hostId;
+			if (db.moveNext()) {
+				logger.log(Level.INFO, "The HOST exists");
+				hostId = db.geti(1);
+			}
+			else { // we insert the host
+				logger.log(Level.INFO, "The host doesn't exist. Inserting...");
+				hostId = insertHost(host, port, version);
+				if (hostId == 0) {
+					logger.severe("Couldn't insertHost in getFromHostsOrInsert");
+					return 0;
+				}
+			}
+
+			return hostId;
+		}
+	}
+
+	private static int insertHost(String host, Integer port, String version) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			String domain = host.substring(host.indexOf(".") + 1, host.length());
+
+			List<Integer> domains = getSitesByDomain(domain);
+
+			int siteId;
+			if (domains == null || domains.size() <= 0) {
+				siteId = insertIntoSites(domain);
+				if (siteId == 0) {
+					logger.severe("Error (insertHost): couldn't insert into sites!");
+					return 0;
+				}
+			}
+			else {
+				siteId = domains.get(0);
+			}
+
+			final String qi = "insert into HOSTS (hostId, hostName, siteId) values (?,?,?);";
+			db.setReadOnly(false);
+			db.setLastGeneratedKey(true);
+			final boolean ret = db.query(qi, false, 0, host, siteId);
+
+			logger.log(Level.INFO, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
+
+			if (ret) {
+				final int val = db.getLastGeneratedKey().intValue();
+				logger.log(Level.INFO, "Returning HOST hostId: " + val);
+				return val;
+			}
+			return 0;
+		}
+	}
+
+	private static int insertIntoSites(String domain) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			HashMap<String, Object> domainInfo = LDAPHelper.getInfoDomain(domain);
+
+			if (domainInfo == null || domainInfo.size() == 0) {
+				logger.severe("Error: cannot find site root configuration in LDAP for domain: " + domain);
+				return 0;
+			}
+
+			final String qi = "insert into SITES (siteName,siteId,masterHostId,adminName,location,domain, longitude, latitude,record,url) values (?,?,?,?,?,?,?,?,?,?);";
+			db.setReadOnly(false);
+			db.setLastGeneratedKey(true);
+
+			logger.log(Level.INFO, "insertIntoSites: " + qi + " with domain: " + domain);
+			final boolean ret = db.query(qi, false, (String) domainInfo.get("ou"), 0, 0, domainInfo.containsKey("adminsitrator") ? (String) domainInfo.get("administrator") : "",
+					domainInfo.containsKey("location") ? (String) domainInfo.get("location") : "", domain, domainInfo.containsKey("longitude") ? (Double) domainInfo.get("longitude") : 0.0,
+					domainInfo.containsKey("latitude") ? (Double) domainInfo.get("latitude") : 0.0, domainInfo.containsKey("record") ? (String) domainInfo.get("record") : "",
+					domainInfo.containsKey("url") ? (String) domainInfo.get("url") : "");
+
+			if (ret) {
+				final int val = db.getLastGeneratedKey().intValue();
+				logger.log(Level.INFO, "Returning SITES siteId: " + val);
+				return val;
+			}
+
+			return 0;
+		}
+	}
+
+	private static List<Integer> getSitesByDomain(String domain) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			ArrayList<Integer> sites = new ArrayList<>();
+
+			String q = "select siteId from SITES where domain=?";
+
+			logger.log(Level.INFO, "Going to get sites for domain: " + domain + ", query: " + q);
+
+			db.setReadOnly(true);
+			db.query(q, false, domain);
+			while (db.moveNext()) {
+				sites.add(db.geti(1));
+			}
+
+			return sites;
+		}
+	}
+
 	private static final ExpirationCache<String, Integer> siteIdCache = new ExpirationCache<>();
 
 	/**
@@ -2762,6 +2890,57 @@ public class TaskQueueUtils {
 		}
 
 		return 1;
+	}
+
+	public static boolean updateHost(final String host, final String status, final Integer connected, final Integer port, final String version, final String ceName) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return false;
+
+			db.setReadOnly(false);
+
+			db.query("update HOSTS set status=?,connected=?,port=?,version=?,cename=? where hostName=?", false, status, connected, port, version, ceName, host);
+
+			return db.getUpdateCount() > 0;
+		}
+	}
+
+	public static String getSiteQueueBlocked(final String ceName) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			logger.log(Level.INFO, "Going to select SITEQUEUES.blocked for: " + ceName);
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(60);
+
+			if (db.query("select blocked from SITEQUEUES where site=?", false, ceName) && db.moveNext()) {
+				final String value = db.gets(1);
+				return value;
+			}
+			return null;
+		}
+	}
+
+	public static ArrayList<Integer> getNumberMaxAndQueuedCE(final String host, final String ceName) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			logger.log(Level.INFO, "Going to select HOSTS.maxQueued,maxJobs for: " + host + " - " + ceName);
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(60);
+
+			ArrayList<Integer> slots = new ArrayList<>();
+
+			if (db.query("select maxJobs,maxQueued from HOSTS where hostName=? and ceName=? and maxJobs is not null and maxQueued is not null", false, host, ceName) && db.moveNext()) {
+				slots.add(db.geti(1));
+				slots.add(db.geti(2));
+			}
+			return slots;
+		}
 	}
 
 }

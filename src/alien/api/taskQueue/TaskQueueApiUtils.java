@@ -358,4 +358,21 @@ public class TaskQueueApiUtils {
 		return null;
 	}
 
+	/**
+	 * @param host,
+	 *            port, cename
+	 * @return free slots
+	 */
+	public GetNumberFreeSlots getNumberFreeSlots(final String host, final Integer port, final String ceName, final String version) {
+
+		try {
+			final GetNumberFreeSlots gmj = Dispatcher.execute(new GetNumberFreeSlots(commander.getUser(), commander.getRole(), host, port, ceName, version));
+			return gmj;
+		} catch (final ServerException e) {
+			System.out.println("Could get not free slots: " + e.getMessage());
+			e.getCause().printStackTrace();
+		}
+		return null;
+	}
+
 }

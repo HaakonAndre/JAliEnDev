@@ -249,7 +249,7 @@ public class LDAPHelper {
 							Attribute attr = (Attribute) ae.next();
 
 							NamingEnumeration<?> e = attr.getAll();
-							
+
 							if (attr.size() > 1) {
 								TreeSet<String> vals = new TreeSet<>();
 								while (e.hasMore()) {
@@ -361,5 +361,10 @@ public class LDAPHelper {
 		}
 
 		System.out.println(" 4 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));
+	}
+
+	public static HashMap<String, Object> getInfoDomain(String domain) {
+		// Get the root site config based on domain
+		return LDAPHelper.checkLdapTree("(&(domain=" + domain + ")(objectClass=AliEnSite))", "ou=Sites,");
 	}
 }

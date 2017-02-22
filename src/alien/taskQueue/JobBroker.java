@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -162,8 +163,8 @@ public class JobBroker {
 					}
 
 					db.setReadOnly(true);
-//					if (db.query("select count(1) from QUEUE where queueId=?", false, queueId))
-						TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
+					// if (db.query("select count(1) from QUEUE where queueId=?", false, queueId))
+					TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
 					matchAnswer.put("Code", Integer.valueOf(-1));
 					matchAnswer.put("Error", "Error getting the token of the job " + queueId);
 				}
@@ -449,6 +450,51 @@ public class JobBroker {
 			}
 
 			return matchAnswer;
+		}
+	}
+
+	public static List<Integer> getNumberFreeSlots(String host, Integer port, String ceName, String version) {
+		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
+			if (db == null)
+				return null;
+
+			ArrayList<Integer> code_and_slots = new ArrayList<>();
+			code_and_slots.add(0);
+
+			int hostId = TaskQueueUtils.getHostOrInsert(host, port, version);
+			if (hostId == 0) {
+				logger.severe("Error: getNumberFreeSlots, failed getHostOrInsert: " + host);
+				code_and_slots.set(0, 1);
+				return code_and_slots;
+			}
+
+			if (!TaskQueueUtils.updateHost(host, "CONNECTED", 1, port, version, ceName)) {
+				logger.severe("Error: getNumberFreeSlots, failed updateHost: " + host);
+				code_and_slots.set(0, 2);
+				return code_and_slots;
+			}
+
+			if (!ceName.equals("")) {
+				String blocking = TaskQueueUtils.getSiteQueueBlocked(ceName);
+
+				if (blocking == null || !blocking.equals("open")) {
+					logger.info("The queue " + ceName + " is blocked in the master queue!");
+					TaskQueueUtils.setSiteQueueStatus(ceName, "closed-blocked");
+					code_and_slots.set(0, -2);
+					return code_and_slots;
+				}
+			}
+
+			ArrayList<Integer> slots = TaskQueueUtils.getNumberMaxAndQueuedCE(host, ceName);
+			if (slots == null || slots.size() != 2) {
+				logger.severe("Error: getNumberFreeSlots, failed to get slots: " + host + " - " + ceName);
+				code_and_slots.set(0, 3);
+				return code_and_slots;
+			}
+
+			code_and_slots.addAll(slots);
+
+			return code_and_slots;
 		}
 	}
 
