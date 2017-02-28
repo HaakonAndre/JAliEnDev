@@ -13,8 +13,8 @@ public class LogUtils {
 	public static Logger redirectToCustomHandler(Logger logger, String location) {
 		// We close current handlers
 		Handler[] handlers = logger.getHandlers();
-		for(Handler handler : handlers) {
-		    logger.removeHandler(handler);
+		for (Handler handler : handlers) {
+			logger.removeHandler(handler);
 		}
 
 		// Read props
@@ -23,18 +23,17 @@ public class LogUtils {
 		// Create new handler
 		Handler fh = null;
 		try {
-			fh = new FileHandler(location + ".log.%g", 
-					Integer.parseInt(logManager.getProperty("alien.log.InfoFileHandler.limit")),
-					Integer.parseInt(logManager.getProperty("alien.log.InfoFileHandler.count")), 
-					Boolean.parseBoolean(logManager.getProperty("alien.log.InfoFileHandler.append")));
+			fh = new FileHandler(location + ".log.%g", Integer.parseInt(logManager.getProperty("alien.log.InfoFileHandler.limit")),
+					Integer.parseInt(logManager.getProperty("alien.log.InfoFileHandler.count")), Boolean.parseBoolean(logManager.getProperty("alien.log.InfoFileHandler.append")));
+
+			fh.setLevel(Level.INFO);
+			fh.setFormatter(new SimpleFormatter());
+
+			logger.addHandler(fh);
+			logger.setLevel(Level.FINE);
 		} catch (SecurityException | IOException e) {
 			e.printStackTrace();
 		}
-		fh.setLevel(Level.INFO);
-		fh.setFormatter(new SimpleFormatter());
-
-		logger.addHandler(fh);
-		logger.setLevel(Level.FINE);
 
 		return logger;
 	}

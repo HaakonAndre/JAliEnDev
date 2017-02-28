@@ -180,7 +180,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
-		HashMap<String, Integer> jaStatus = new HashMap<>();
 
 		site = env.get("site"); // or ConfigUtils.getConfig().gets("alice_close_site").trim();
 		ce = env.get("CE");
@@ -304,11 +303,13 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				this.ja = ja;
 			}
 
+			@Override
 			public void run() {
 				while (true) {
 					try {
 						Thread.sleep(5 * 60 * 1000);
-					} catch (InterruptedException e) {
+					} catch (@SuppressWarnings("unused") InterruptedException e) {
+						// ignore
 					}
 					ja.checkProcessResources();
 					ja.sendProcessResources();
@@ -360,16 +361,13 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				break;
 			}
 
-			LinkedList<TitanJobStatus> idleRanks = new LinkedList<TitanJobStatus>();
-			try {
-				Connection connection = DriverManager.getConnection(dbname);
-				Statement statement = connection.createStatement();
-				ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'");
+			LinkedList<TitanJobStatus> idleRanks = new LinkedList<>();
+			try (Connection connection = DriverManager.getConnection(dbname);
+					Statement statement = connection.createStatement();
+					ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'")) {
 				while (rs.next()) {
 					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
 				}
-
-				connection.close();
 			} catch (SQLException e) {
 				System.err.println("Getting free slots failed: " + e.getMessage());
 				continue;
@@ -380,7 +378,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			if (count == 0) {
 				try {
 					Thread.sleep(30000);
-				} catch (InterruptedException e) {
+				} catch (@SuppressWarnings("unused") InterruptedException e) {
 				} finally {
 					System.out.println("Going for the next round....");
 				}
@@ -390,8 +388,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			// uploading data from finished jobs
 			for (TitanJobStatus js : idleRanks) {
 				if (js.status.equals("D")) {
-					queueId = js.queueId;
-					System.err.println(String.format("Uploading job: %d", queueId));
+					queueId = js.queueId.longValue();
+					System.err.println(String.format("Uploading job: %d", js.queueId));
 					jobWorkdir = js.jobFolder;
 					tempDir = new File(js.jobFolder);
 					// read JDL from file
@@ -419,14 +417,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 									changeStatus(JobStatus.SAVING);
 							uploadOutputFiles(); // upload data
 							cleanup();
-							System.err.println(String.format("Upload job %d finished", queueId));
+							System.err.println(String.format("Upload job %d finished", js.queueId));
 
-							try {
-								Connection connection = DriverManager.getConnection(dbname);
-								Statement statement = connection.createStatement();
+							try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement();) {
 								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", js.rank));
-								connection.close();
-							} catch (SQLException e) {
+							} catch (@SuppressWarnings("unused") SQLException e) {
 								System.err.println("Update job state to I failed");
 							}
 						}
@@ -758,8 +753,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	// EXPERIMENTAL
 	// for ORNL Titan
 	private String getLocalCommand(final String command, final List<String> arguments) {
-		final List<String> cmd = new LinkedList<>();
-
 		final int idx = command.lastIndexOf('/');
 
 		final String cmdStrip = idx < 0 ? command : command.substring(idx + 1);

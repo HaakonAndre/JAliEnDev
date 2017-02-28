@@ -133,7 +133,7 @@ public class ComputingElement extends Thread {
 		Set<String> siteset = LDAPHelper.checkLdapInformation("(&(domain=" + domain + "))", "ou=Sites,", "accountName");
 
 		if (siteset == null || siteset.size() == 0 || siteset.size() > 1) {
-			logger.severe("Error: " + siteset.size() + " sites found for domain: " + domain);
+			logger.severe("Error: " + (siteset == null ? "null" : siteset.size()) + " sites found for domain: " + domain);
 			System.exit(-1);
 		}
 		site = siteset.iterator().next();
@@ -239,13 +239,17 @@ public class ComputingElement extends Thread {
 			cl = Class.forName("alien.site.batchqueue." + type);
 		} catch (ClassNotFoundException e) {
 			logger.severe("Cannot find class for type: " + type + "\n" + e);
+			return null;
 		}
+
 		Constructor<?> con = null;
 		try {
 			con = cl.getConstructor(ceConfig.getClass(), logger.getClass());
 		} catch (NoSuchMethodException | SecurityException e) {
 			logger.severe("Cannot find class for ceConfig: " + e);
+			return null;
 		}
+
 		try {
 			queue = (BatchQueue) con.newInstance(ceConfig, logger);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
