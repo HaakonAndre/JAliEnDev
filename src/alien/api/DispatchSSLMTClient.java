@@ -10,11 +10,11 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateException;
 import java.util.EmptyStackException;
-import java.util.HashMap;
 import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -99,11 +99,11 @@ public class DispatchSSLMTClient extends Thread {
 		// check
 	}
 
-	//private static HashMap<Integer, DispatchSSLMTClient> instance = new HashMap<>(20);
-	//HashMap<Integer, DispatchSSLMTClient> instance; // = new HashMap<>(20);
+	// private static HashMap<Integer, DispatchSSLMTClient> instance = new HashMap<>(20);
+	// HashMap<Integer, DispatchSSLMTClient> instance; // = new HashMap<>(20);
 
 	private static final int MAX_INSTANCES = 640;
-	//private static final int MAX_INSTANCES = 2000;
+	// private static final int MAX_INSTANCES = 2000;
 
 	private static Stack<DispatchSSLMTClient> instances = new Stack<>();
 	private static int numInstances = 0;
@@ -119,121 +119,116 @@ public class DispatchSSLMTClient extends Thread {
 	 * @throws IOException
 	 */
 	public static DispatchSSLMTClient getInstance(final String address, final int p) throws IOException {
-		int numRetries=100;
+		int numRetries = 100;
 		DispatchSSLMTClient sc = null;
-		while(numRetries>0){
-			try{
-				synchronized(instances){
-					//System.out.println("Trying to get a client");
-					//System.out.println(instances.empty());
+		while (numRetries > 0) {
+			try {
+				synchronized (instances) {
+					// System.out.println("Trying to get a client");
+					// System.out.println(instances.empty());
 					sc = instances.pop();
 					return sc;
 				}
-			}
-			catch(EmptyStackException e){
-				//System.err.println("Nothing in the stack");
-				synchronized(instances){
-					if(numInstances<MAX_INSTANCES){
+			} catch (@SuppressWarnings("unused") EmptyStackException e) {
+				// System.err.println("Nothing in the stack");
+				synchronized (instances) {
+					if (numInstances < MAX_INSTANCES) {
 						System.err.println("Creating new SSLClient");
 						sc = initializeInstance(address, p);
-						//instances.push(c);
+						// instances.push(c);
 						numInstances++;
 						return sc;
 					}
 				}
-				if(numInstances>=MAX_INSTANCES){
-						// for now let it sleep
-						try{
-							int sleepInterval = (int)(1500+
-									1000*ThreadLocalRandom.current().nextDouble(0.1, 1));
-							Thread.sleep(sleepInterval);
-						}
-						catch(InterruptedException ei){
-							System.err.println("Sleep in DispatchSSLMTClient.getInstance" +
-										" has been interrupted");
-						}
-						numRetries--;
+				if (numInstances >= MAX_INSTANCES) {
+					// for now let it sleep
+					try {
+						int sleepInterval = (int) (1500 + 1000 * ThreadLocalRandom.current().nextDouble(0.1, 1));
+						Thread.sleep(sleepInterval);
+					} catch (@SuppressWarnings("unused") InterruptedException ei) {
+						System.err.println("Sleep in DispatchSSLMTClient.getInstance" + " has been interrupted");
 					}
+					numRetries--;
+				}
 			}
 		}
-		
+
 		return sc;
 	}
 
+	static DispatchSSLMTClient initializeInstance(final String address, final int p) {
+		// if (instance.get(Integer.valueOf(p)) == null) {
+		// connect to the other end
+		logger.log(Level.INFO, "Connecting to JCentral on " + address + ":" + p);
+		System.out.println("Connecting to JCentral on " + address + ":" + p);
 
-	static DispatchSSLMTClient initializeInstance(final String address, final int p){
-		//if (instance.get(Integer.valueOf(p)) == null) {
-			// connect to the other end
-			logger.log(Level.INFO, "Connecting to JCentral on " + address + ":" + p);
-			System.out.println("Connecting to JCentral on " + address + ":" + p);
+		Security.addProvider(new BouncyCastleProvider());
 
-			Security.addProvider(new BouncyCastleProvider());
+		try {
+			// get factory
+			final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
+			logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).getSubjectDN());
 
 			try {
-				// get factory
-				final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
-				logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).getSubjectDN());
+				((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).checkValidity();
+			} catch (final CertificateException e) {
+				logger.log(Level.SEVERE, "Your certificate has expired or is invalid!", e);
+				return null;
+			}
 
-				try {
-					((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).checkValidity();
-				} catch (final CertificateException e) {
-					logger.log(Level.SEVERE, "Your certificate has expired or is invalid!", e);
-					return null;
+			// initialize factory, with clientCert(incl. priv+pub)
+			kmf.init(JAKeyStore.clientCert, JAKeyStore.pass);
+
+			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
+
+			final SSLContext ssc = SSLContext.getInstance("TLS");
+
+			// initialize SSL with certificate and the trusted CA and pub
+			// certs
+			ssc.init(kmf.getKeyManagers(), JAKeyStore.trusts, new SecureRandom());
+
+			final SSLSocketFactory f = ssc.getSocketFactory();
+
+			// this object is kept in the map, cannot be closed here
+			final SSLSocket client = (SSLSocket) f.createSocket(address, p);
+
+			// print info
+			printSocketInfo(client);
+
+			client.startHandshake();
+
+			final X509Certificate[] peerCerts = client.getSession().getPeerCertificateChain();
+
+			if (peerCerts != null) {
+
+				logger.log(Level.INFO, "Printing peer's information:");
+
+				for (final X509Certificate peerCert : peerCerts) {
+					logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + peerCert.getSubjectDN().getName() + "\n" + peerCert.getIssuerDN().getName() + "\n"
+							+ Level.INFO + "- Start Time: " + peerCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + peerCert.getNotAfter().toString());
 				}
 
-				// initialize factory, with clientCert(incl. priv+pub)
-				kmf.init(JAKeyStore.clientCert, JAKeyStore.pass);
+				final DispatchSSLMTClient sc = new DispatchSSLMTClient(client);
+				System.out.println("Connection to JCentral established.");
+				logger.log(Level.INFO, "Connection to JCentral established.");
+				
+				return sc;
+				// instance.put(Integer.valueOf(p), sc);
 
-				java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
-
-				final SSLContext ssc = SSLContext.getInstance("TLS");
-
-				// initialize SSL with certificate and the trusted CA and pub
-				// certs
-				ssc.init(kmf.getKeyManagers(), JAKeyStore.trusts, new SecureRandom());
-
-				final SSLSocketFactory f = ssc.getSocketFactory();
-
-				@SuppressWarnings("resource")
-				// this object is kept in the map, cannot be closed here
-				final SSLSocket client = (SSLSocket) f.createSocket(address, p);
-
-				// print info
-				printSocketInfo(client);
-
-				client.startHandshake();
-
-				final X509Certificate[] peerCerts = client.getSession().getPeerCertificateChain();
-
-				if (peerCerts != null) {
-
-					logger.log(Level.INFO, "Printing peer's information:");
-
-					for (final X509Certificate peerCert : peerCerts){
-						logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + peerCert.getSubjectDN().getName() + "\n" + peerCert.getIssuerDN().getName() + "\n"
-								+ Level.INFO + "- Start Time: " + peerCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + peerCert.getNotAfter().toString() );
-					}
-
-					final DispatchSSLMTClient sc = new DispatchSSLMTClient(client);
-					System.out.println("Connection to JCentral established.");
-					logger.log(Level.INFO, "Connection to JCentral established.");
-					return sc;
-					//instance.put(Integer.valueOf(p), sc);
-
-				} else
-					logger.log(Level.SEVERE, "We didn't get any peer/service cert. NOT GOOD!");
-
-			} catch (final ConnectException e) {
-				logger.log(Level.SEVERE, "Could not connect to JCentral: [" + e.getMessage() + "].");
-				System.err.println("Could not connect to JCentral: [" + e.getMessage() + "].");
-			} catch (final Throwable e) {
-				logger.log(Level.SEVERE, "Could not initiate SSL connection to the server.", e);
-				e.printStackTrace();
-				System.err.println("Could not initiate SSL connection to the server.");
 			}
-//		}
+			logger.log(Level.SEVERE, "We didn't get any peer/service cert. NOT GOOD!");
+
+		} catch (final ConnectException e) {
+			logger.log(Level.SEVERE, "Could not connect to JCentral: [" + e.getMessage() + "].");
+			System.err.println("Could not connect to JCentral: [" + e.getMessage() + "].");
+		} catch (final Throwable e) {
+			logger.log(Level.SEVERE, "Could not initiate SSL connection to the server.", e);
+			e.printStackTrace();
+			System.err.println("Could not initiate SSL connection to the server.");
+		}
+		// }
 		return null;
-		//return instance.get(Integer.valueOf(p));
+		// return instance.get(Integer.valueOf(p));
 	}
 
 	@SuppressWarnings("unused")
@@ -259,7 +254,7 @@ public class DispatchSSLMTClient extends Thread {
 				// ignore
 			}
 
-		//instance = null;
+		// instance = null;
 	}
 
 	/**
@@ -273,7 +268,8 @@ public class DispatchSSLMTClient extends Thread {
 		if (addr.length() == 0) {
 			addr = defaultHost;
 			port = defaultPort;
-		} else {
+		}
+		else {
 
 			final String address = addr;
 			final int idx = address.indexOf(':');
@@ -294,8 +290,8 @@ public class DispatchSSLMTClient extends Thread {
 	 * @return the reply, or <code>null</code> in case of connectivity problems
 	 * @throws ServerException
 	 */
-	public static  <T extends Request> T dispatchRequest(final T r) throws ServerException {
-		//initializeSocketInfo();
+	public static <T extends Request> T dispatchRequest(final T r) throws ServerException {
+		// initializeSocketInfo();
 		try {
 			return dispatchARequest(r);
 		} catch (@SuppressWarnings("unused") final IOException e) {
@@ -358,7 +354,7 @@ public class DispatchSSLMTClient extends Thread {
 			throw ex;
 
 		// here to return c back to connections stack
-		synchronized(instances){
+		synchronized (instances) {
 			instances.push(c);
 		}
 

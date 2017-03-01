@@ -18,13 +18,18 @@ import alien.config.ConfigUtils;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 
+/**
+ * @author mmmartin
+ *
+ */
 public class SiteMap {
 
 	static transient final Logger logger = ConfigUtils.getLogger(SiteMap.class.getCanonicalName());
 
-	public HashMap<String, Object> siteMap = new HashMap<>();
+	private HashMap<String, Object> siteMap = new HashMap<>();
 
 	/**
+	 * @param env
 	 * @return the site parameters to send to the job broker (packages, ttl, ce/site...)
 	 */
 	public HashMap<String, Object> getSiteParameters(final Map<String, String> env) {
@@ -148,7 +153,7 @@ public class SiteMap {
 			siteMap.put("Users", users);
 		if (nousers.size() > 0)
 			siteMap.put("NoUsers", nousers);
-		if (extrasites != null && extrasites.size() > 0)
+		if (extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 		siteMap.put("Host", alienCm);
 

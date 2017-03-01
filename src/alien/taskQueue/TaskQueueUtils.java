@@ -2535,7 +2535,7 @@ public class TaskQueueUtils {
 				return;
 
 			// TODO: jdls?
-			
+
 			logger.log(Level.INFO, "Setting site with ce " + ce + " to " + status);
 
 			db.setQueryTimeout(30);
@@ -2706,8 +2706,9 @@ public class TaskQueueUtils {
 	}
 
 	/**
-	 * @param key
-	 * @param value
+	 * @param host
+	 * @param port
+	 * @param version
 	 * @return value for this key
 	 */
 	public static int getHostOrInsert(final String host, final Integer port, final String version) {
@@ -2715,7 +2716,7 @@ public class TaskQueueUtils {
 			if (db == null)
 				return 0;
 
-			String q = "select hostId from HOSTS where hostName=?";
+			final String q = "select hostId from HOSTS where hostName=?";
 
 			logger.log(Level.INFO, "Going to get HOST " + host + ", query: " + q);
 
@@ -2741,14 +2742,14 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static int insertHost(String host, Integer port, String version) {
+	private static int insertHost(final String host, final Integer port, final String version) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
 
-			String domain = host.substring(host.indexOf(".") + 1, host.length());
+			final String domain = host.substring(host.indexOf(".") + 1, host.length());
 
-			List<Integer> domains = getSitesByDomain(domain);
+			final List<Integer> domains = getSitesByDomain(domain);
 
 			int siteId;
 			if (domains == null || domains.size() <= 0) {
@@ -2758,14 +2759,13 @@ public class TaskQueueUtils {
 					return 0;
 				}
 			}
-			else {
-				siteId = domains.get(0);
-			}
+			else
+				siteId = domains.get(0).intValue();
 
-			final String qi = "insert into HOSTS (hostId, hostName, siteId) values (?,?,?);";
+			final String qi = "insert into HOSTS (hostId, hostName, siteId, port, version) values (?,?,?,?,?);";
 			db.setReadOnly(false);
 			db.setLastGeneratedKey(true);
-			final boolean ret = db.query(qi, false, 0, host, siteId);
+			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), port, version);
 
 			logger.log(Level.INFO, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
 
@@ -2778,12 +2778,12 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static int insertIntoSites(String domain) {
+	private static int insertIntoSites(final String domain) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
 
-			HashMap<String, Object> domainInfo = LDAPHelper.getInfoDomain(domain);
+			final HashMap<String, Object> domainInfo = LDAPHelper.getInfoDomain(domain);
 
 			if (domainInfo == null || domainInfo.size() == 0) {
 				logger.severe("Error: cannot find site root configuration in LDAP for domain: " + domain);
@@ -2795,10 +2795,10 @@ public class TaskQueueUtils {
 			db.setLastGeneratedKey(true);
 
 			logger.log(Level.INFO, "insertIntoSites: " + qi + " with domain: " + domain);
-			final boolean ret = db.query(qi, false, (String) domainInfo.get("ou"), 0, 0, domainInfo.containsKey("adminsitrator") ? (String) domainInfo.get("administrator") : "",
-					domainInfo.containsKey("location") ? (String) domainInfo.get("location") : "", domain, domainInfo.containsKey("longitude") ? (Double) domainInfo.get("longitude") : 0.0,
-					domainInfo.containsKey("latitude") ? (Double) domainInfo.get("latitude") : 0.0, domainInfo.containsKey("record") ? (String) domainInfo.get("record") : "",
-					domainInfo.containsKey("url") ? (String) domainInfo.get("url") : "");
+			final boolean ret = db.query(qi, false, domainInfo.get("ou"), Integer.valueOf(0), Integer.valueOf(0), domainInfo.containsKey("adminsitrator") ? domainInfo.get("administrator") : "",
+					domainInfo.containsKey("location") ? domainInfo.get("location") : "", domain, domainInfo.containsKey("longitude") ? domainInfo.get("longitude") : Double.valueOf(0),
+					domainInfo.containsKey("latitude") ? domainInfo.get("latitude") : Double.valueOf(0.0), domainInfo.containsKey("record") ? domainInfo.get("record") : "",
+					domainInfo.containsKey("url") ? domainInfo.get("url") : "");
 
 			if (ret) {
 				final int val = db.getLastGeneratedKey().intValue();
@@ -2810,22 +2810,21 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static List<Integer> getSitesByDomain(String domain) {
+	private static List<Integer> getSitesByDomain(final String domain) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return null;
 
-			ArrayList<Integer> sites = new ArrayList<>();
+			final ArrayList<Integer> sites = new ArrayList<>();
 
-			String q = "select siteId from SITES where domain=?";
+			final String q = "select siteId from SITES where domain=?";
 
 			logger.log(Level.INFO, "Going to get sites for domain: " + domain + ", query: " + q);
 
 			db.setReadOnly(true);
 			db.query(q, false, domain);
-			while (db.moveNext()) {
-				sites.add(db.geti(1));
-			}
+			while (db.moveNext())
+				sites.add(Integer.valueOf(db.geti(1)));
 
 			return sites;
 		}
@@ -2892,6 +2891,15 @@ public class TaskQueueUtils {
 		return 1;
 	}
 
+	/**
+	 * @param host
+	 * @param status
+	 * @param connected
+	 * @param port
+	 * @param version
+	 * @param ceName
+	 * @return <code>true</code> if the host existed and was successfully updated in the database
+	 */
 	public static boolean updateHost(final String host, final String status, final Integer connected, final Integer port, final String version, final String ceName) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
@@ -2899,12 +2907,17 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(false);
 
-			db.query("update HOSTS set status=?,connected=?,port=?,version=?,cename=? where hostName=?", false, status, connected, port, version, ceName, host);
+			if (!db.query("update HOSTS set status=?,connected=?,port=?,version=?,cename=? where hostName=?", false, status, connected, port, version, ceName, host))
+				return false;
 
 			return db.getUpdateCount() > 0;
 		}
 	}
 
+	/**
+	 * @param ceName
+	 * @return the value of the "blocked" column in the database for this CE name
+	 */
 	public static String getSiteQueueBlocked(final String ceName) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
@@ -2923,6 +2936,11 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * @param host
+	 * @param ceName
+	 * @return a 2 element array with the max number of jobs as the first value and the limit of queued jobs as the second one
+	 */
 	public static ArrayList<Integer> getNumberMaxAndQueuedCE(final String host, final String ceName) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
@@ -2933,11 +2951,11 @@ public class TaskQueueUtils {
 			db.setReadOnly(true);
 			db.setQueryTimeout(60);
 
-			ArrayList<Integer> slots = new ArrayList<>();
+			final ArrayList<Integer> slots = new ArrayList<>();
 
 			if (db.query("select maxJobs,maxQueued from HOSTS where hostName=? and ceName=? and maxJobs is not null and maxQueued is not null", false, host, ceName) && db.moveNext()) {
-				slots.add(db.geti(1));
-				slots.add(db.geti(2));
+				slots.add(Integer.valueOf(db.geti(1)));
+				slots.add(Integer.valueOf(db.geti(2)));
 			}
 			return slots;
 		}

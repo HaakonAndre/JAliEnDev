@@ -31,6 +31,7 @@ public class CVMFS extends PackMan {
 
 	/**
 	 * Constructor just checks CVMFS bin exist
+	 * @param location 
 	 */
 	public CVMFS(String location) {
 		if (location != null && location.length() > 0)

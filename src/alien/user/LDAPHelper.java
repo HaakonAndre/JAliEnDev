@@ -54,6 +54,9 @@ public class LDAPHelper {
 		return cache.size();
 	}
 
+	/**
+	 * @return number of cached trees
+	 */
 	public static int getCacheTreeSize() {
 		return cacheTree.size();
 	}
@@ -245,21 +248,19 @@ public class LDAPHelper {
 						if (attribs == null)
 							continue;
 
-						for (NamingEnumeration<?> ae = attribs.getAll(); ae.hasMore();) {
-							Attribute attr = (Attribute) ae.next();
+						for (final NamingEnumeration<?> ae = attribs.getAll(); ae.hasMore();) {
+							final Attribute attr = (Attribute) ae.next();
 
-							NamingEnumeration<?> e = attr.getAll();
+							final NamingEnumeration<?> e = attr.getAll();
 
 							if (attr.size() > 1) {
-								TreeSet<String> vals = new TreeSet<>();
-								while (e.hasMore()) {
+								final TreeSet<String> vals = new TreeSet<>();
+								while (e.hasMore())
 									vals.add((String) e.next());
-								}
 								result.put(attr.getID().toLowerCase(), vals);
 							}
-							else {
+							else
 								result.put(attr.getID().toLowerCase(), e.next());
-							}
 						}
 					}
 				} finally {
@@ -283,8 +284,11 @@ public class LDAPHelper {
 		return result;
 	}
 
+	/**
+	 * @return all hosts
+	 */
 	public static LinkedList<String> getHosts() {
-		LinkedList<String> hosts = new LinkedList<>();
+		final LinkedList<String> hosts = new LinkedList<>();
 
 		for (String host : ldapServerList) {
 			final int idx = host.indexOf(':');
@@ -363,7 +367,11 @@ public class LDAPHelper {
 		System.out.println(" 4 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));
 	}
 
-	public static HashMap<String, Object> getInfoDomain(String domain) {
+	/**
+	 * @param domain
+	 * @return the tree for this domain
+	 */
+	public static HashMap<String, Object> getInfoDomain(final String domain) {
 		// Get the root site config based on domain
 		return LDAPHelper.checkLdapTree("(&(domain=" + domain + ")(objectClass=AliEnSite))", "ou=Sites,");
 	}

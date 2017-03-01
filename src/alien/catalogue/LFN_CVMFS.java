@@ -23,8 +23,6 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
-import alien.catalogue.LFN_JSON.PFN_JSON;
-import alien.catalogue.LFN_JSON.ZIPM;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -292,7 +290,7 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 				}
 				
 			}
-			catch (final Exception e) {
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// No zip members
 			}
 			
@@ -310,7 +308,7 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 					}
 				}
 			}
-			catch (final Exception e) {
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// No lfns
 			}
 			
@@ -339,20 +337,20 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 					}
 				}
 			}
-			catch (final Exception e) {
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// No pfns
 			}
 			
 			if( isFile() || isArchive() ){
 				// md5
 				try  {
-					String md5 = "md5";
-					ByteBuffer buffer = ByteBuffer.allocate(view.size(md5));
-					view.read(md5, buffer);
+					String md5String = "md5";
+					ByteBuffer buffer = ByteBuffer.allocate(view.size(md5String));
+					view.read(md5String, buffer);
 					buffer.flip();
 					this.md5 = Charset.defaultCharset().decode(buffer).toString();
 				}
-				catch (final Exception e) {
+				catch (@SuppressWarnings("unused") final Exception e) {
 					// No md5?
 				}
 			}	
@@ -520,11 +518,11 @@ public class LFN_CVMFS implements Comparable<LFN_CVMFS>, CatalogEntity {
 
 			if (listing != null) {
 				for (final File fileEntry : listing) {
-					String lfn = canonicalName + fileEntry.getName();
+					String lfnCVMFS = canonicalName + fileEntry.getName();
 					if (fileEntry.isDirectory())
-						lfn += "/";
+						lfnCVMFS += "/";
 
-					ret.add(new LFN_CVMFS(lfn));
+					ret.add(new LFN_CVMFS(lfnCVMFS));
 				}
 			}
 

@@ -13,15 +13,20 @@ public class Optimizer extends Thread {
 
 	static transient final Logger logger = ConfigUtils.getLogger(Optimizer.class.getCanonicalName());
 
-	int sleep_period = 60 * 1000; // 1min
+	private long sleep_period = 60 * 1000L; // 1min
 
-	String[] catalogue_optimizers = { "alien.optimizers.catalogue.LTables", "alien.optimizers.catalogue.GuidTable" };
+	private static String[] catalogue_optimizers = { "alien.optimizers.catalogue.LTables", "alien.optimizers.catalogue.GuidTable" };
 
+	@Override
 	public void run() {
 		this.run("all");
 	}
 
-	public void run(String type) {
+	/**
+	 * @param type
+	 *            which optimizer to start, can be one of "catalogue", "job", "transfer" or "all"
+	 */
+	public void run(final String type) {
 		logger.log(Level.INFO, "Starting optimizers: " + type);
 
 		if (!ConfigUtils.isCentralService()) {
@@ -50,29 +55,37 @@ public class Optimizer extends Thread {
 		startTransferOptimizers();
 	}
 
-	private void startCatalogueOptimizers() {
-		for (String opt : catalogue_optimizers) {
+	private static void startCatalogueOptimizers() {
+		for (final String opt : catalogue_optimizers)
 			try {
-				Optimizer optclass = (Optimizer) Class.forName(opt).newInstance();
+				final Optimizer optclass = (Optimizer) Class.forName(opt).newInstance();
 				logger.log(Level.INFO, "New catalogue optimizer: " + opt);
 				optclass.start();
 			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
 				logger.log(Level.SEVERE, "Can't instantiate optimizer " + opt + "! " + e);
 			}
-		}
 	}
 
 	private void startJobOptimizers() {
+		// TODO
 	}
 
 	private void startTransferOptimizers() {
+		// TODO
 	}
 
-	public int getSleepPeriod() {
+	/**
+	 * @return how often to check
+	 */
+	public long getSleepPeriod() {
 		return this.sleep_period;
 	}
 
-	public void setSleepPeriod(int newSleepPeriod) {
+	/**
+	 * @param newSleepPeriod
+	 *            period
+	 */
+	public void setSleepPeriod(final long newSleepPeriod) {
 		this.sleep_period = newSleepPeriod;
 	}
 }

@@ -27,7 +27,10 @@ public class GetNumberFreeSlots extends Request {
 	/**
 	 * @param user
 	 * @param role
+	 * @param host 
+	 * @param port 
 	 * @param ce
+	 * @param version 
 	 */
 	public GetNumberFreeSlots(final AliEnPrincipal user, final String role, final String host, final Integer port, final String ce, final String version) {
 		setRequestUser(user);

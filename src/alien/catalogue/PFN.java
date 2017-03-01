@@ -158,17 +158,6 @@ public class PFN implements Serializable, Comparable<PFN> {
 		this.tableNumber = guid.tableName;
 		this.hashCode = this.pfn.hashCode();
 	}
-
-	// TODELETE
-	public PFN(final GUID guid, final int seNumber, final String pfn) {
-		this.guid = guid;
-		this.guidId = guid.guidId;
-		this.pfn = pfn;
-		this.seNumber = seNumber;
-		this.host = guid.host;
-		this.tableNumber = guid.tableName;
-		this.hashCode = this.pfn.hashCode();
-	}
 	
 	/**
 	 * @param path

@@ -359,8 +359,10 @@ public class TaskQueueApiUtils {
 	}
 
 	/**
-	 * @param host,
-	 *            port, cename
+	 * @param host
+	 * @param port
+	 * @param ceName
+	 * @param version
 	 * @return free slots
 	 */
 	public GetNumberFreeSlots getNumberFreeSlots(final String host, final Integer port, final String ceName, final String version) {

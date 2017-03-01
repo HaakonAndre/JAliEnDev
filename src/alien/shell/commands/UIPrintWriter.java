@@ -108,7 +108,7 @@ public abstract class UIPrintWriter {
 	 *
 	 * @param args
 	 */
-	protected void setReturnArgs(final String args) {
+	protected void setReturnArgs(@SuppressWarnings("unused") final String args) {
 		// void
 	}
 

@@ -15,7 +15,6 @@ import joptsimple.OptionSet;
  * @author sraje (Shikhar Raje, IIIT Hyderabad)
  * @since Modified July 1, 2012
  */
-@SuppressWarnings("unused")
 public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 	private String[] sources = null;

@@ -108,7 +108,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 *
 	 * @since AliEn 2.19
 	 */
-	public Long jobid;
+	public long jobid;
 
 	/**
 	 * physical/logical locations
@@ -121,7 +121,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public HashMap<String, String> metadata = null;
 
 	/**
-	 * @param LFN
+	 * @param l
 	 */
 	public LFN_CSD(LFN l) {
 		canonicalName = l.getCanonicalName();
@@ -144,9 +144,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		owner = l.getOwner();
 		gowner = l.getGroup();
 		guid = l.guid;
-		metadata = new HashMap<String, String>();
+		metadata = new HashMap<>();
 	}
 
+	/**
+	 * @param lfn
+	 * @param getFromDB
+	 */
 	public LFN_CSD(String lfn, boolean getFromDB) {
 		canonicalName = lfn;
 
@@ -162,7 +166,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 		if (getFromDB) {
 			try {
-				Session session = DBCassandra.getInstance();
+				@SuppressWarnings("resource")
+				final Session session = DBCassandra.getInstance();
 				if (session == null)
 					return;
 
@@ -181,6 +186,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		}
 	}
 
+	/**
+	 * @param row
+	 */
 	public LFN_CSD(Row row) {
 		init(row);
 	}
@@ -345,6 +353,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		return list(null, null);
 	}
 
+	/**
+	 * @param table
+	 * @param level
+	 * @return list of LFNs from this table
+	 */
 	public List<LFN_CSD> list(String table, ConsistencyLevel level) {
 		if (!exists)
 			return null;
@@ -368,7 +381,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			cl = level;
 
 		try {
-			Session session = DBCassandra.getInstance();
+			@SuppressWarnings("resource")
+			final Session session = DBCassandra.getInstance();
 			if (session == null)
 				return null;
 
@@ -391,6 +405,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
+	 * @param base
+	 * @param pattern
+	 * @param parameters
+	 * @param metadata
 	 * @return find matching lfns by name and metadata in the hierarchy
 	 */
 
@@ -398,6 +416,15 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		return find(base, pattern, parameters, metadata, null, null);
 	}
 
+	/**
+	 * @param base
+	 * @param pattern
+	 * @param parameters
+	 * @param metadata
+	 * @param table
+	 * @param level
+	 * @return LFNs that match
+	 */
 	public static List<LFN_CSD> find(String base, String pattern, String parameters, String metadata, String table, ConsistencyLevel level) {
 		if (monitor != null)
 			monitor.incrementCounter("LFN_CSD_find");
@@ -408,8 +435,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (!baselfn.exists || baselfn.type != 'd')
 			return null;
 
-		pattern = Format.replace(pattern, "*", ".*");
-		Pattern p = Pattern.compile(pattern);
+		Pattern p = Pattern.compile(Format.replace(pattern, "*", ".*"));
 
 		List<LFN_CSD> ls = baselfn.list();
 		List<LFN_CSD> new_entries = new ArrayList<>();
@@ -444,6 +470,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
+	 * @param table
+	 * @param level
 	 * @return physical locations of the file
 	 */
 	public HashMap<Integer, String> whereis(String table, ConsistencyLevel level) {
@@ -460,6 +488,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			cl = level;
 
 		try {
+			@SuppressWarnings("resource")
 			Session session = DBCassandra.getInstance();
 			if (session == null)
 				return null;
@@ -490,6 +519,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
+	 * @param table_lfns
+	 * @param table_se_lookup
+	 * @param level
 	 * @return insertion result
 	 */
 	public boolean insert(String table_lfns, String table_se_lookup, ConsistencyLevel level) {
@@ -498,7 +530,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		String t = "catalogue.lfns";
 		if (table_lfns != null)
 			t = table_lfns;
-		
+
 		String ts = "catalogue.se_lookups";
 		if (table_se_lookup != null)
 			ts = table_se_lookup;
@@ -509,6 +541,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		}
 
 		try {
+			@SuppressWarnings("resource")
 			Session session = DBCassandra.getInstance();
 			if (session == null)
 				return false;
@@ -520,18 +553,18 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				statement = session
 						.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata, guid)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
 				boundStatement = new BoundStatement(statement);
-				boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, String.valueOf(type), metadata, guid);
+				boundStatement.bind(path, child, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata, guid);
 			}
 			else
 				if (type == 'm' || type == 'l') {
 					statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
 					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, String.valueOf(type), metadata);
+					boundStatement.bind(path, child, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata);
 				}
 				else { // 'd'
 					statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?,?)");
 					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(path, child, ctime, gowner, jobid, checksum, owner, perm, size, String.valueOf(type));
+					boundStatement.bind(path, child, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, Long.valueOf(size), String.valueOf(type));
 				}
 
 			boundStatement.setConsistencyLevel(cl);
@@ -543,7 +576,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				for (Integer seNumber : seNumbers) {
 					statement = session.prepare("INSERT INTO " + ts + " (seNumber, guid, lfn, size, owner)" + " VALUES (?,?,?,?,?)");
 					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(seNumber, guid, path + child, size, owner);
+					boundStatement.bind(seNumber, guid, path + child, Long.valueOf(size), owner);
 					boundStatement.setConsistencyLevel(cl);
 					session.execute(boundStatement);
 				}
@@ -556,6 +589,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		return true;
 	}
 
+	/**
+	 * @param folder
+	 * @param table
+	 * @param level
+	 * @return <code>true</code> if the directory exists or was successfully created now
+	 */
 	public static boolean createDirectory(String folder, String table, ConsistencyLevel level) {
 		// We want to create the whole hierarchy upstream
 		// check if is already there
@@ -589,6 +628,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 		return newdir.insert(table, null, level);
 	}
+
+	/**
+	 * @param lfn
+	 * @param table
+	 * @param level
+	 * @return <code>true</code> if the LFN exists
+	 */
 
 	public static boolean existsLfn(String lfn, String table, ConsistencyLevel level) {
 		String t = "catalogue.lfns";
