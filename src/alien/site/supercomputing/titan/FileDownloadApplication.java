@@ -5,40 +5,50 @@ import java.util.List;
 
 import alien.catalogue.LFN;
 
-public class FileDownloadApplication{
+/**
+ * @author psvirin
+ *
+ */
+public class FileDownloadApplication {
 	List<LFN> fileList;
 	List<Pair<LFN, String>> dlResult;
-	
-	FileDownloadApplication(List<LFN> inputFiles){
+
+	FileDownloadApplication(final List<LFN> inputFiles) {
 		fileList = inputFiles;
-		dlResult = new LinkedList();
+		dlResult = new LinkedList<>();
 	}
 
-	synchronized void putResult(LFN l, String s){
-		//System.out.println("Really putting: " + s);
-		Pair<LFN, String> p = new Pair<>(l,s);
-		//System.out.println("Really put: " + p.getSecond());
+	synchronized void putResult(final LFN l, final String s) {
+		// System.out.println("Really putting: " + s);
+		final Pair<LFN, String> p = new Pair<>(l, s);
+		// System.out.println("Really put: " + p.getSecond());
 		dlResult.add(p);
 	}
 
-	public boolean isCompleted(){
-		return fileList.size()== dlResult.size();
+	/**
+	 * @return <code>true</code> if all files were downloaded
+	 */
+	public boolean isCompleted() {
+		return fileList.size() == dlResult.size();
 	}
 
-	public final List<Pair<LFN, String>> getResults(){
+	/**
+	 * @return pairs of LFN to local file path
+	 */
+	public final List<Pair<LFN, String>> getResults() {
 		return dlResult;
 	}
 
-	synchronized public void print(){
-		//System.out.println("=================: " + this);
-		//System.out.println("Ordered: ");
-		for(LFN l: fileList){
+	/**
+	 *
+	 */
+	synchronized public void print() {
+		// System.out.println("=================: " + this);
+		// System.out.println("Ordered: ");
+		for (final LFN l : fileList)
 			System.out.println(l.getCanonicalName());
-		}
-		//System.out.println("Downloaded: ");
-		for(Pair<LFN,String> p: dlResult){
+		// System.out.println("Downloaded: ");
+		for (final Pair<LFN, String> p : dlResult)
 			System.out.println(p.getFirst().getCanonicalName() + ": " + p.getSecond());
-		}
-		//System.out.println("=================: ");
 	}
 }
