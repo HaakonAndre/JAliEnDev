@@ -436,7 +436,7 @@ public class CatalogueToCassandraThreads {
 					out.flush();
 				}
 
-				LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false);
+				LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false, null, null);
 				lfnc.path = lfnparent;
 				lfnc.child = lfn;
 				lfnc.size = rdm.nextInt(100000);
@@ -446,7 +446,7 @@ public class CatalogueToCassandraThreads {
 				lfnc.ctime = new Date();
 				lfnc.owner = "aliprod";
 				lfnc.gowner = "aliprod";
-				lfnc.guid = UUID.randomUUID();
+				lfnc.id = UUID.randomUUID();
 
 				HashMap<Integer, String> pfns = new HashMap<>();
 				if (i % 2 == 0) {
@@ -466,7 +466,7 @@ public class CatalogueToCassandraThreads {
 
 				// Insert into lfns_auto
 				final long start = System.nanoTime();
-				if (!lfnc.insert("catalogue.lfns_auto", "catalogue.se_lookups_auto", clevel)) {
+				if (!lfnc.insert("_auto", clevel)) {
 					final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
 					System.err.println(msg);
 				}
@@ -590,7 +590,7 @@ public class CatalogueToCassandraThreads {
 					// insert the dir
 					final LFN_CSD lfnc = new LFN_CSD(l);
 					final long start = System.nanoTime();
-					if (!lfnc.insert("catalogue.lfns", "catalogue.se_lookups", clevel)) {
+					if (!lfnc.insert(null, clevel)) {
 						final String msg = "Error inserting directory: " + l.getCanonicalName() + " Time: " + new Date();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -618,7 +618,7 @@ public class CatalogueToCassandraThreads {
 					if (l.isCollection()) {
 						final LFN_CSD lfnc = new LFN_CSD(l);
 						final long start = System.nanoTime();
-						if (!lfnc.insert("catalogue.lfns", "catalogue.se_lookups", clevel)) {
+						if (!lfnc.insert(null, clevel)) {
 							final String msg = "Error inserting collection: " + l.getCanonicalName() + " Time: " + new Date();
 							System.err.println(msg);
 							failed_collections.println(msg);
@@ -672,7 +672,7 @@ public class CatalogueToCassandraThreads {
 							}
 
 							final long start = System.nanoTime();
-							if (!lfnc.insert("catalogue.lfns", "catalogue.se_lookups", clevel)) {
+							if (!lfnc.insert(null, clevel)) {
 								final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
 								System.err.println(msg);
 								failed_files.println(msg);

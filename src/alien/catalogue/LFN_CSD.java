@@ -8,8 +8,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -22,7 +20,6 @@ import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.test.cassandra.DBCassandra;
-import lazyj.Format;
 
 /**
  * LFN implementation for Cassandra
@@ -42,6 +39,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * Monitoring component
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(LFN_CSD.class.getCanonicalName());
+
+	/**
+	 * Monitoring component
+	 */
+	public static final Integer modulo_se_lookup = 100;
 
 	/**
 	 * Owner
@@ -69,6 +71,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public char type;
 
 	/**
+	 * Flag
+	 */
+	public Integer flag = 0;
+
+	/**
 	 * Access rights
 	 */
 	public String perm;
@@ -89,19 +96,24 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public String canonicalName;
 
 	/**
-	 * Parent name
+	 * Parent path (directory)
 	 */
 	public String path;
 
 	/**
-	 * Child name
+	 * Final part of path (name)
 	 */
 	public String child;
 
 	/**
-	 * guid
+	 * id of the parent dir
 	 */
-	public UUID guid;
+	public UUID parent_id;
+
+	/**
+	 * id
+	 */
+	public UUID id;
 
 	/**
 	 * Job ID that produced this file
@@ -124,16 +136,25 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param l
 	 */
 	public LFN_CSD(LFN l) {
+		this(l, false);
+	}
+
+	/**
+	 * @param LFN
+	 * @param boolean
+	 */
+	public LFN_CSD(LFN l, boolean getParent) {
 		canonicalName = l.getCanonicalName();
 
-		int remove = 0;
-		int idx = canonicalName.lastIndexOf('/');
-		if (idx == canonicalName.length() - 1) {
-			idx = canonicalName.lastIndexOf('/', idx - 1);
-			remove = 1;
+		String[] p_c = getPathAndChildFromCanonicalName(canonicalName);
+		path = p_c[0];
+		child = p_c[1];
+
+		if (getParent) {
+			parent_id = getParentIdFromPath(path);
+			if (parent_id == null)
+				return;
 		}
-		path = canonicalName.substring(0, idx + 1); // parent dir without trailing slash
-		child = canonicalName.substring(idx + 1, canonicalName.length() - remove); // last part of path without trailing slash
 
 		size = l.getSize();
 		jobid = l.jobid;
@@ -143,37 +164,35 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		ctime = l.ctime;
 		owner = l.getOwner();
 		gowner = l.getGroup();
-		guid = l.guid;
-		metadata = new HashMap<>();
+		id = l.guid;
+		flag = 0;
+		metadata = new HashMap<String, String>();
 	}
 
-	/**
-	 * @param lfn
-	 * @param getFromDB
-	 */
-	public LFN_CSD(String lfn, boolean getFromDB) {
+	public LFN_CSD(String lfn, boolean getFromDB, UUID p_id, UUID c_id) {
 		canonicalName = lfn;
 
-		int remove = 0;
-		int idx = canonicalName.lastIndexOf('/');
-		if (idx == canonicalName.length() - 1) {
-			idx = canonicalName.lastIndexOf('/', idx - 1);
-			remove = 1;
-		}
-
-		path = canonicalName.substring(0, idx + 1); // parent dir without trailing slash
-		child = canonicalName.substring(idx + 1, canonicalName.length() - remove); // last part of path without trailing slash
+		String[] p_c = getPathAndChildFromCanonicalName(canonicalName);
+		path = p_c[0];
+		child = p_c[1];
 
 		if (getFromDB) {
 			try {
-				@SuppressWarnings("resource")
+				parent_id = (p_id != null ? p_id : getParentIdFromPath(path));
+				if (parent_id == null)
+					return;
+
+				id = (c_id != null ? c_id : getChildIdFromParentIdAndName(parent_id, child));
+				if (id == null)
+					return;
+
 				final Session session = DBCassandra.getInstance();
 				if (session == null)
 					return;
 
-				PreparedStatement statement = session.prepare("select * from catalogue.lfns where path = ? and child = ?");
+				PreparedStatement statement = session.prepare("select checksum,ctime,gowner,jobid,metadata,owner,perm,pfns,size,type" + " from catalogue.lfn_metadata where parent_id = ? and id = ?");
 				BoundStatement boundStatement = new BoundStatement(statement);
-				boundStatement.bind(this.path, this.child);
+				boundStatement.bind(this.parent_id, this.id);
 
 				boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
 
@@ -184,6 +203,19 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				return;
 			}
 		}
+	}
+
+	public static String[] getPathAndChildFromCanonicalName(String canonicalName) {
+		int remove = 0;
+		int idx = canonicalName.lastIndexOf('/');
+		if (idx == canonicalName.length() - 1) {
+			idx = canonicalName.lastIndexOf('/', idx - 1);
+			remove = 1;
+		}
+		String[] p_c = new String[2];
+		p_c[0] = canonicalName.substring(0, idx + 1); // parent dir without trailing slash
+		p_c[1] = canonicalName.substring(idx + 1, canonicalName.length() - remove); // last part of path without trailing slash
+		return p_c;
 	}
 
 	/**
@@ -203,8 +235,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		try {
 			pfns = (HashMap<Integer, String>) row.getMap("pfns", Integer.class, String.class);
 			metadata = (HashMap<String, String>) row.getMap("metadata", String.class, String.class);
-			path = row.getString("path");
-			child = row.getString("child");
 			type = row.getString("type").charAt(0);
 			checksum = row.getString("checksum");
 			perm = row.getString("perm");
@@ -213,12 +243,79 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			ctime = row.getTimestamp("ctime");
 			owner = row.getString("owner");
 			gowner = row.getString("gowner");
-			guid = row.getUUID("guid");
-			canonicalName = path + child;
+			id = row.getUUID("id");
 			if (type == 'd')
 				canonicalName += "/";
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't create LFN_CSD from row: " + e);
+		}
+	}
+
+	/*
+	 * Gets the id from the parent
+	 * 
+	 * @path_parent String representing the path/lfn of the parent
+	 */
+	public static UUID getParentIdFromPath(String path_parent) {
+		try {
+			path_parent = path_parent.replaceAll("//", "/");
+			String[] path_chunks = path_parent.split("/");
+
+			Session session = DBCassandra.getInstance();
+			if (session == null)
+				return null;
+
+			UUID path_id = UUID.nameUUIDFromBytes("root".getBytes());
+			// We loop from root until we reach our dir
+			for (int i = 0; i < path_chunks.length; i++) {
+				PreparedStatement statement = session.prepare("select child_id from catalogue.lfn_index where path_id = ? and path = ?");
+				BoundStatement boundStatement = new BoundStatement(statement);
+				boundStatement.bind(path_id, (i == 0 ? "/" : path_chunks[i - 1]));
+				boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
+				ResultSet results = session.execute(boundStatement);
+				if (results.getAvailableWithoutFetching() != 1)
+					return null;
+
+				path_id = results.one().getUUID("child_id");
+				if (path_id == null)
+					return null;
+			}
+			return path_id;
+		} catch (Exception e) {
+			System.err.println("Exception trying to getParentIdFromPath (" + path_parent + ") LFN_CSD: " + e);
+			return null;
+		}
+	}
+
+	/*
+	 * Gets the id from the parent
+	 * 
+	 * @parent_id UUID representing the id of the parent in the index
+	 * 
+	 * @name String representing the path/lfn of the parent
+	 */
+	public static UUID getChildIdFromParentIdAndName(UUID parent_id, String name) {
+		try {
+			Session session = DBCassandra.getInstance();
+			if (session == null)
+				return null;
+
+			PreparedStatement statement = session.prepare("select child_id from catalogue.lfn_index where path_id = ? and path = ?");
+			BoundStatement boundStatement = new BoundStatement(statement);
+			boundStatement.bind(parent_id, name);
+			boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
+			ResultSet results = session.execute(boundStatement);
+			if (results.getAvailableWithoutFetching() != 1)
+				return null;
+
+			UUID id = results.one().getUUID("child_id");
+			if (id == null)
+				return null;
+
+			return id;
+		} catch (Exception e) {
+			System.err.println("Exception trying to getChildIdFromParentIdAndName (" + parent_id + " ," + name + ") LFN_CSD: " + e);
+			return null;
 		}
 	}
 
@@ -227,7 +324,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		String str = "LFN (" + canonicalName + "): " + path + " " + child + "\n - Type: " + type;
 
 		// if (type != 'd') {
-		str += "\n - Size: " + size + "\n - Checksum: " + checksum + "\n - Perm: " + perm + "\n - Owner: " + owner + "\n - Gowner: " + gowner + "\n - JobId: " + jobid + "\n - Guid: " + guid
+		str += "\n - Size: " + size + "\n - Checksum: " + checksum + "\n - Perm: " + perm + "\n - Owner: " + owner + "\n - Gowner: " + gowner + "\n - JobId: " + jobid + "\n - Id: " + id
 				+ "\n - Ctime: " + ctime;
 		if (pfns != null)
 			str += "\n - pfns: " + pfns.toString();
@@ -350,15 +447,20 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 */
 
 	public List<LFN_CSD> list() {
-		return list(null, null);
+		return list(false, null, null);
+	}
+
+	public List<LFN_CSD> list(boolean get_metadata) {
+		return list(get_metadata, null, null);
 	}
 
 	/**
-	 * @param table
+	 * @param get_metadata
+	 * @param append_table
 	 * @param level
 	 * @return list of LFNs from this table
 	 */
-	public List<LFN_CSD> list(String table, ConsistencyLevel level) {
+	public List<LFN_CSD> list(boolean get_metadata, String append_table, ConsistencyLevel level) {
 		if (!exists)
 			return null;
 
@@ -371,9 +473,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return ret;
 		}
 
-		String t = "catalogue.lfns";
-		if (table != null) {
-			t = table;
+		String t = "catalogue.lfn_metadata";
+		if (append_table != null) {
+			t += append_table;
 		}
 
 		ConsistencyLevel cl = ConsistencyLevel.QUORUM;
@@ -386,15 +488,16 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (session == null)
 				return null;
 
-			PreparedStatement statement = session.prepare("select * from " + t + " where path = ?");
+			PreparedStatement statement = session.prepare("select path,child_id from " + t + " where parent_id = ?");
 			BoundStatement boundStatement = new BoundStatement(statement);
-			boundStatement.bind(this.canonicalName);
+			boundStatement.bind(this.id);
 
 			boundStatement.setConsistencyLevel(cl);
 
 			ResultSet results = session.execute(boundStatement);
 			for (Row row : results) {
-				ret.add(new LFN_CSD(row));
+				// LFN_CSD String lfn, boolean getFromDB, UUID p_id, UUID c_id
+				ret.add(new LFN_CSD(this.canonicalName + row.getString("path"), get_metadata, this.id, row.getUUID("child_id")));
 			}
 		} catch (Exception e) {
 			System.err.println("Exception trying to whereis: " + e);
@@ -404,63 +507,56 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		return ret;
 	}
 
-	/**
-	 * @param base
-	 * @param pattern
-	 * @param parameters
-	 * @param metadata
-	 * @return find matching lfns by name and metadata in the hierarchy
-	 */
-
-	public static List<LFN_CSD> find(String base, String pattern, String parameters, String metadata) {
-		return find(base, pattern, parameters, metadata, null, null);
-	}
-
-	/**
-	 * @param base
-	 * @param pattern
-	 * @param parameters
-	 * @param metadata
-	 * @param table
-	 * @param level
-	 * @return LFNs that match
-	 */
-	public static List<LFN_CSD> find(String base, String pattern, String parameters, String metadata, String table, ConsistencyLevel level) {
-		if (monitor != null)
-			monitor.incrementCounter("LFN_CSD_find");
-
-		final List<LFN_CSD> ret = new ArrayList<>();
-
-		LFN_CSD baselfn = new LFN_CSD(base, true);
-		if (!baselfn.exists || baselfn.type != 'd')
-			return null;
-
-		Pattern p = Pattern.compile(Format.replace(pattern, "*", ".*"));
-
-		List<LFN_CSD> ls = baselfn.list();
-		List<LFN_CSD> new_entries = new ArrayList<>();
-
-		boolean end_reached = ls.size() <= 0;
-		while (!end_reached) {
-			for (LFN_CSD l : ls) {
-
-				if (l.type == 'd') {
-					new_entries.add(l);
-					continue;
-				}
-
-				Matcher m = p.matcher(l.child);
-				if (m.find())
-					ret.add(l);
-			}
-			end_reached = new_entries.size() <= 0 || ret.size() >= 50;
-			ls.clear();
-			ls.addAll(new_entries);
-			new_entries.clear();
-		}
-
-		return ret;
-	}
+	// /**
+	// * @param base
+	// * @param pattern
+	// * @param parameters
+	// * @param metadata
+	// * @param table
+	// * @param level
+	// * @return LFNs that match
+	// */
+	// public static List<LFN_CSD> find(String base, String pattern, String parameters, String metadata) {
+	// return find(base, pattern, parameters, metadata, null, null);
+	// }
+	//
+	// public static List<LFN_CSD> find(String base, String pattern, String parameters, String metadata, String table, ConsistencyLevel level) {
+	// if (monitor != null)
+	// monitor.incrementCounter("LFN_CSD_find");
+	//
+	// final List<LFN_CSD> ret = new ArrayList<>();
+	//
+	// LFN_CSD baselfn = new LFN_CSD(base, true);
+	// if (!baselfn.exists || baselfn.type != 'd')
+	// return null;
+	//
+	// pattern = Format.replace(pattern, "*", ".*");
+	// Pattern p = Pattern.compile(pattern);
+	//
+	// List<LFN_CSD> ls = baselfn.list();
+	// List<LFN_CSD> new_entries = new ArrayList<>();
+	//
+	// boolean end_reached = ls.size() <= 0;
+	// while (!end_reached) {
+	// for (LFN_CSD l : ls) {
+	//
+	// if (l.type == 'd') {
+	// new_entries.add(l);
+	// continue;
+	// }
+	//
+	// Matcher m = p.matcher(l.child);
+	// if (m.find())
+	// ret.add(l);
+	// }
+	// end_reached = new_entries.size() <= 0 || ret.size() >= 50;
+	// ls.clear();
+	// ls.addAll(new_entries);
+	// new_entries.clear();
+	// }
+	//
+	// return ret;
+	// }
 
 	/**
 	 * @return physical locations of the file
@@ -474,14 +570,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param level
 	 * @return physical locations of the file
 	 */
-	public HashMap<Integer, String> whereis(String table, ConsistencyLevel level) {
-		if (!exists)
+	public HashMap<Integer, String> whereis(String append_table, ConsistencyLevel level) {
+		if (!exists || type == 'd')
 			return null;
 
-		String t = "catalogue.lfns";
-		if (table != null) {
-			t = table;
-		}
+		String t = "catalogue.lfn_metadata";
+		if (append_table != null)
+			t += append_table;
 
 		ConsistencyLevel cl = ConsistencyLevel.QUORUM;
 		if (level != null)
@@ -493,9 +588,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (session == null)
 				return null;
 
-			PreparedStatement statement = session.prepare("select pfns from " + t + " where path = ? and child = ?");
+			PreparedStatement statement = session.prepare("select pfns from " + t + " where id = ?");
 			BoundStatement boundStatement = new BoundStatement(statement);
-			boundStatement.bind(this.path, this.child);
+			boundStatement.bind(this.id);
 
 			boundStatement.setConsistencyLevel(cl);
 
@@ -515,7 +610,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @return insertion result
 	 */
 	public boolean insert() {
-		return this.insert(null, null, null);
+		return this.insert(null, null);
 	}
 
 	/**
@@ -524,65 +619,80 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param level
 	 * @return insertion result
 	 */
-	public boolean insert(String table_lfns, String table_se_lookup, ConsistencyLevel level) {
+	public boolean insert(String append_table, ConsistencyLevel level) {
 		// lfn | ctime | dir | gowner | jobid | link | md5 | owner | perm | pfns
 		// | size | type
-		String t = "catalogue.lfns";
-		if (table_lfns != null)
-			t = table_lfns;
+		String tindex = "catalogue.lfn_index";
+		if (append_table != null)
+			tindex += append_table;
 
-		String ts = "catalogue.se_lookups";
-		if (table_se_lookup != null)
-			ts = table_se_lookup;
+		String t = "catalogue.lfn_metadata";
+		if (append_table != null)
+			t += append_table;
+
+		String ts = "catalogue.se_lookup";
+		if (append_table != null)
+			ts += append_table;
 
 		ConsistencyLevel cl = ConsistencyLevel.QUORUM;
-		if (level != null) {
+		if (level != null)
 			cl = level;
-		}
+
+		if (this.parent_id == null)
+			this.parent_id = getParentIdFromPath(this.path);
+
+		if (this.parent_id == null)
+			return false;
+
+		if (this.id == null)
+			id = UUID.randomUUID();
 
 		try {
 			@SuppressWarnings("resource")
-			Session session = DBCassandra.getInstance();
+			final Session session = DBCassandra.getInstance();
 			if (session == null)
 				return false;
 
 			PreparedStatement statement;
 			BoundStatement boundStatement;
 
-			if (type == 'a' || type == 'f') {
-				statement = session
-						.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata, guid)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
+			// Insert the entry in the index
+			statement = session.prepare("INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
+			boundStatement = new BoundStatement(statement);
+			boundStatement.bind(parent_id, child, ctime, id, flag);
+			boundStatement.setConsistencyLevel(cl);
+			session.execute(boundStatement);
+
+			// Insert the entry in the metadata
+			if (type == 'a' || type == 'f' || type == 'm' || type == 'l') {
+				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
 				boundStatement = new BoundStatement(statement);
-				boundStatement.bind(path, child, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata, guid);
+				boundStatement.bind(parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, String.valueOf(type), metadata);
 			}
-			else
-				if (type == 'm' || type == 'l') {
-					statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
-					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(path, child, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata);
-				}
-				else { // 'd'
-					statement = session.prepare("INSERT INTO " + t + " (path, child, ctime, gowner, jobid, checksum, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?,?)");
-					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(path, child, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, Long.valueOf(size), String.valueOf(type));
-				}
+			else { // 'd'
+				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, checksum, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?,?)");
+				boundStatement = new BoundStatement(statement);
+				boundStatement.bind(parent_id, id, ctime, gowner, jobid, checksum, owner, perm, size, String.valueOf(type));
+			}
 
 			boundStatement.setConsistencyLevel(cl);
 			session.execute(boundStatement);
 
-			// Insert files and archives into se_lookups
+			// Insert files and archives into se_lookup
 			if (type == 'a' || type == 'f') {
 				Set<Integer> seNumbers = pfns.keySet();
 				for (Integer seNumber : seNumbers) {
-					statement = session.prepare("INSERT INTO " + ts + " (seNumber, guid, lfn, size, owner)" + " VALUES (?,?,?,?,?)");
+					Integer modulo = seNumber % modulo_se_lookup;
+					statement = session.prepare("INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
 					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(seNumber, guid, path + child, Long.valueOf(size), owner);
+					boundStatement.bind(seNumber, modulo, id, size, owner);
 					boundStatement.setConsistencyLevel(cl);
 					session.execute(boundStatement);
 				}
 			}
 		} catch (Exception e) {
 			System.err.println("Exception trying to insert: " + e);
+			// TODO: shall we try to delete here from the tables?
 			return false;
 		}
 
@@ -598,26 +708,17 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public static boolean createDirectory(String folder, String table, ConsistencyLevel level) {
 		// We want to create the whole hierarchy upstream
 		// check if is already there
-
-		if (folder.length() <= 1 || existsLfn(folder, table, level))
+		if (folder.length() <= 1 || existsLfn(folder))
 			return true;
 
 		// get parent and create it if doesn't exist
-		int remove = 0;
-		int idx = folder.lastIndexOf('/');
-		if (idx == folder.length() - 1) {
-			idx = folder.lastIndexOf('/', idx - 1);
-			remove = 1;
-		}
-		String path = folder.substring(0, idx); // parent dir without trailing slash
-		String child = folder.substring(idx + 1, folder.length() - remove); // last part of path without trailing slash
+		String[] p_c = getPathAndChildFromCanonicalName(folder);
+		String path = p_c[0];
 
 		createDirectory(path, table, level);
 
-		LFN_CSD newdir = new LFN_CSD(path + child, false); // (path, child, ctime, gowner, jobid, link, md5, owner, perm, size, type)
+		LFN_CSD newdir = new LFN_CSD(folder, false, null, null); // ctime, gowner, jobid, link, md5, owner, perm, size, type)
 		newdir.type = 'd';
-		newdir.path = path + "/";
-		newdir.child = child;
 		newdir.ctime = new Date();
 		newdir.gowner = "aliprod";
 		newdir.owner = "aliprod";
@@ -626,7 +727,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		newdir.perm = "755";
 		newdir.size = 0;
 
-		return newdir.insert(table, null, level);
+		return newdir.insert(table, level);
 	}
 
 	/**
@@ -635,34 +736,20 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param level
 	 * @return <code>true</code> if the LFN exists
 	 */
+	public static boolean existsLfn(String lfn) {
+		String[] p_c = getPathAndChildFromCanonicalName(lfn);
+		String parent_of_lfn = p_c[0];
+		String child_of_lfn = p_c[0];
 
-	public static boolean existsLfn(String lfn, String table, ConsistencyLevel level) {
-		String t = "catalogue.lfns";
-		if (table != null) {
-			t = table;
-		}
-
-		ConsistencyLevel cl = ConsistencyLevel.QUORUM;
-		if (level != null)
-			cl = level;
-
-		try {
-			Session session = DBCassandra.getInstance();
-			if (session == null)
-				return false;
-
-			PreparedStatement statement = session.prepare("select path from " + t + " where path = ?");
-			BoundStatement boundStatement = new BoundStatement(statement);
-			boundStatement.bind(lfn);
-
-			boundStatement.setConsistencyLevel(cl);
-
-			ResultSet results = session.execute(boundStatement);
-			return results.getAvailableWithoutFetching() > 0;
-		} catch (Exception e) {
-			System.err.println("Exception trying to check existsLfn: " + e);
+		UUID pid = getParentIdFromPath(parent_of_lfn);
+		if (pid == null)
 			return false;
-		}
+
+		UUID idfolder = getChildIdFromParentIdAndName(pid, child_of_lfn);
+		if (idfolder == null)
+			return false;
+
+		return true;
 	}
 
 }
