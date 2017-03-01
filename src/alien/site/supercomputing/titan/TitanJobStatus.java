@@ -1,16 +1,33 @@
 package alien.site.supercomputing.titan;
 
-public class TitanJobStatus{
-	public final int rank;
+/**
+ * @author psvirin
+ *
+ */
+public class TitanJobStatus {
+	final int rank;
+	/**
+	 * Job that is executed
+	 */
 	public Long queueId;
-	public String  jobFolder;
-	public String status;
-	public int executionCode;
-	public int validationCode;
+	String jobFolder;
+	String status;
+	int executionCode;
+	int validationCode;
 	final TitanBatchInfo batch;
-	public TitanJobStatus(int r, Long qid, String job_folder, 
-			String st, int exec_code, 
-			int val_code, TitanBatchInfo bi){
+
+	/**
+	 * Initialize all fields
+	 *
+	 * @param r
+	 * @param qid
+	 * @param job_folder
+	 * @param st
+	 * @param exec_code
+	 * @param val_code
+	 * @param bi
+	 */
+	public TitanJobStatus(final int r, final Long qid, final String job_folder, final String st, final int exec_code, final int val_code, final TitanBatchInfo bi) {
 		rank = r;
 		queueId = qid;
 		jobFolder = job_folder;
@@ -19,4 +36,4 @@ public class TitanJobStatus{
 		validationCode = val_code;
 		batch = bi;
 	}
-};
+}

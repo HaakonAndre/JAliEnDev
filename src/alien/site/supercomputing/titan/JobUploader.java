@@ -1,14 +1,7 @@
 package alien.site.supercomputing.titan;
 
-import alien.site.OutputEntry;
-
-import apmon.ApMon;
-import apmon.ApMonException;
-
 import java.io.File;
 import java.io.IOException;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,8 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
-
-import lia.util.Utils;
 
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -39,11 +30,15 @@ import alien.io.protocols.Protocol;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.site.OutputEntry;
 import alien.site.ParsedOutput;
 import alien.site.TitanJobService;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
+import apmon.ApMon;
+import apmon.ApMonException;
+import lia.util.Utils;
 
 /**
  * @author psvirin
@@ -58,10 +53,21 @@ public class JobUploader extends Thread {
 	private JobStatus jobStatus;
 	FileDownloadController fdc;
 
-	private String username;
+	private final String username;
 
+	/**
+	 * CE name
+	 */
 	public static String ce;
+
+	/**
+	 * Host name
+	 */
 	public static String hostName;
+
+	/**
+	 * Default output prefix
+	 */
 	public static String defaultOutputDirPrefix;
 
 	static transient final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
@@ -70,7 +76,10 @@ public class JobUploader extends Thread {
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
 
-	public JobUploader(TitanJobStatus js) {
+	/**
+	 * @param js
+	 */
+	public JobUploader(final TitanJobStatus js) {
 		fdc = FileDownloadController.getInstance();
 		this.js = js;
 		if (js.executionCode != 0)
@@ -93,72 +102,66 @@ public class JobUploader extends Thread {
 
 		String jdl_content = null;
 		try {
-			byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
+			final byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
 			jdl_content = new String(encoded, Charset.defaultCharset());
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.err.println("Unable to read JDL file: " + e.getMessage());
 		}
 		if (jdl_content != null) {
 			jdl = null;
 			try {
 				jdl = new JDL(Job.sanitizeJDL(jdl_content));
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				System.err.println("Unable to parse JDL: " + e.getMessage());
 			}
 			if (jdl != null) {
 				if (js.executionCode != 0) {
-					changeStatus(queueId, JobStatus.ERROR_E);
-					Vector<String> varnames = new Vector<>();
+					changeStatus(queueId.longValue(), JobStatus.ERROR_E);
+					final Vector<String> varnames = new Vector<>();
 					varnames.add("host");
 					varnames.add("statusID");
 					varnames.add("jobID");
-					Vector<Object> varvalues = new Vector<>();
+					final Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("-3");
 					varvalues.add(queueId);
 					try {
 						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-					} catch (ApMonException e) {
-					} catch (UnknownHostException e) {
-					} catch (SocketException e) {
-					} catch (IOException e) {
+					} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+						// ignore
 					}
 				}
 				else
 					if (js.validationCode != 0) {
-						changeStatus(queueId, JobStatus.ERROR_V);
-						Vector<String> varnames = new Vector<>();
+						changeStatus(queueId.longValue(), JobStatus.ERROR_V);
+						final Vector<String> varnames = new Vector<>();
 						varnames.add("host");
 						varnames.add("statusID");
 						varnames.add("jobID");
-						Vector<Object> varvalues = new Vector<>();
+						final Vector<Object> varvalues = new Vector<>();
 						varvalues.add(hostName);
 						varvalues.add("-10");
 						varvalues.add(queueId);
 						try {
 							apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-						} catch (ApMonException e) {
-						} catch (UnknownHostException e) {
-						} catch (SocketException e) {
-						} catch (IOException e) {
+						} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+							// ignore
 						}
 					}
 					else {
-						changeStatus(queueId, JobStatus.SAVING);
-						Vector<String> varnames = new Vector<>();
+						changeStatus(queueId.longValue(), JobStatus.SAVING);
+						final Vector<String> varnames = new Vector<>();
 						varnames.add("host");
 						varnames.add("statusID");
 						varnames.add("jobID");
-						Vector<Object> varvalues = new Vector<>();
+						final Vector<Object> varvalues = new Vector<>();
 						varvalues.add(hostName);
 						varvalues.add("11");
 						varvalues.add(queueId);
 						try {
 							apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-						} catch (ApMonException e) {
-						} catch (UnknownHostException e) {
-						} catch (SocketException e) {
-						} catch (IOException e) {
+						} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+							// ignore
 						}
 					}
 				uploadOutputFiles(); // upload data
@@ -169,11 +172,11 @@ public class JobUploader extends Thread {
 				while (i-- > 0) {
 					try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement()) {
 						statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", Integer.valueOf(js.rank)));
-					} catch (SQLException e) {
+					} catch (final SQLException e) {
 						System.err.println("Update job state to I failed: " + e.getMessage());
 						try {
 							Thread.sleep(2000);
-						} catch (@SuppressWarnings("unused") InterruptedException ei) {
+						} catch (@SuppressWarnings("unused") final InterruptedException ei) {
 							System.err.println("Sleep in DispatchSSLMTClient.getInstance has been interrupted");
 						}
 						continue;
@@ -184,7 +187,11 @@ public class JobUploader extends Thread {
 		}
 	}
 
-	public void setDbName(String dbn) {
+	/**
+	 * @param dbn
+	 *            database name
+	 */
+	public void setDbName(final String dbn) {
 		dbname = dbn;
 	}
 
@@ -223,23 +230,21 @@ public class JobUploader extends Thread {
 
 		if (c_api.getLFN(outputDir) != null) {
 			System.err.println("OutputDir [" + outputDir + "] already exists.");
-			changeStatus(queueId, JobStatus.ERROR_SV);
+			changeStatus(queueId.longValue(), JobStatus.ERROR_SV);
 
-			Vector<String> varnames = new Vector<>();
+			final Vector<String> varnames = new Vector<>();
 			varnames.add("host");
 			varnames.add("statusID");
 			varnames.add("jobID");
-			Vector<Object> varvalues = new Vector<>();
+			final Vector<Object> varvalues = new Vector<>();
 			varvalues.add(hostName);
 			varvalues.add("-9");
 			varvalues.add(queueId);
 			try {
 				apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
 				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", queueId), 3, varnames, varvalues);
-			} catch (ApMonException e) {
-			} catch (UnknownHostException e) {
-			} catch (SocketException e) {
-			} catch (IOException e) {
+			} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+				// ignore
 			}
 			return false;
 		}
@@ -269,10 +274,10 @@ public class JobUploader extends Thread {
 					// EXPERIMENTAL
 					System.err.println("===================");
 					System.err.println("Filename: " + localFile.getName());
-					System.err.println(String.format("File exists: %b", localFile.exists()));
-					System.err.println(String.format("File is file: %b", localFile.isFile()));
-					System.err.println(String.format("File readable: %b", localFile.canRead()));
-					System.err.println(String.format("File length: %d", localFile.length()));
+					System.err.println("File exists: " + localFile.exists());
+					System.err.println("File is file: " + localFile.isFile());
+					System.err.println("File readable: " + localFile.canRead());
+					System.err.println("File length: " + localFile.length());
 
 					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 
@@ -282,7 +287,7 @@ public class JobUploader extends Thread {
 						String md5 = null;
 						try {
 							md5 = IOUtils.getMD5(localFile);
-						} catch (final Exception e1) {
+						} catch (@SuppressWarnings("unused") final Exception e1) {
 							// ignore
 						}
 						if (md5 == null)
@@ -347,59 +352,53 @@ public class JobUploader extends Thread {
 
 		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V)
 			if (uploadedNotAllCopies) {
-				changeStatus(queueId, JobStatus.DONE_WARN);
-				Vector<String> varnames = new Vector<>();
+				changeStatus(queueId.longValue(), JobStatus.DONE_WARN);
+				final Vector<String> varnames = new Vector<>();
 				varnames.add("host");
 				varnames.add("statusID");
 				varnames.add("jobID");
-				Vector<Object> varvalues = new Vector<>();
+				final Vector<Object> varvalues = new Vector<>();
 				varvalues.add(hostName);
 				varvalues.add("16");
 				varvalues.add(queueId);
 				try {
 					apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-				} catch (ApMonException e) {
-				} catch (UnknownHostException e) {
-				} catch (SocketException e) {
-				} catch (IOException e) {
+				} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+					// ignore
 				}
 			}
 			else
 				if (uploadedAllOutFiles) {
-					changeStatus(queueId, JobStatus.DONE);
-					Vector<String> varnames = new Vector<>();
+					changeStatus(queueId.longValue(), JobStatus.DONE);
+					final Vector<String> varnames = new Vector<>();
 					varnames.add("host");
 					varnames.add("statusID");
 					varnames.add("jobID");
-					Vector<Object> varvalues = new Vector<>();
+					final Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("15");
 					varvalues.add(queueId);
 					try {
 						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
 						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", queueId), 3, varnames, varvalues);
-					} catch (ApMonException e) {
-					} catch (UnknownHostException e) {
-					} catch (SocketException e) {
-					} catch (IOException e) {
+					} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+						// ignore
 					}
 				}
 				else {
-					changeStatus(queueId, JobStatus.ERROR_SV);
-					Vector<String> varnames = new Vector<>();
+					changeStatus(queueId.longValue(), JobStatus.ERROR_SV);
+					final Vector<String> varnames = new Vector<>();
 					varnames.add("host");
 					varnames.add("statusID");
 					varnames.add("jobID");
-					Vector<Object> varvalues = new Vector<>();
+					final Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
 					varvalues.add("-9");
 					varvalues.add(queueId);
 					try {
 						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-					} catch (ApMonException e) {
-					} catch (UnknownHostException e) {
-					} catch (SocketException e) {
-					} catch (IOException e) {
+					} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+						// ignore
 					}
 				}
 
@@ -422,15 +421,16 @@ public class JobUploader extends Thread {
 	}
 
 	/**
+	 * @param jobId
 	 * @param newStatus
 	 */
-	public void changeStatus(final Long queueId, final JobStatus newStatus) {
+	public void changeStatus(final long jobId, final JobStatus newStatus) {
 		// if final status with saved files, we set the path
 		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
 			final HashMap<String, Object> extrafields = new HashMap<>();
 			extrafields.put("path", getJobOutputDir());
 
-			TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus, extrafields);
+			TaskQueueApiUtils.setJobStatus(jobId, newStatus, extrafields);
 		}
 		else
 			if (newStatus == JobStatus.RUNNING) {
@@ -439,10 +439,10 @@ public class JobUploader extends Thread {
 				extrafields.put("node", hostName);
 				extrafields.put("exechost", hostName);
 
-				TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus, extrafields);
+				TaskQueueApiUtils.setJobStatus(jobId, newStatus, extrafields);
 			}
 			else
-				TaskQueueApiUtils.setJobStatus(queueId.longValue(), newStatus);
+				TaskQueueApiUtils.setJobStatus(jobId, newStatus);
 
 		jobStatus = newStatus;
 

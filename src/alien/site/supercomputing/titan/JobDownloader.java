@@ -1,7 +1,5 @@
 package alien.site.supercomputing.titan;
 
-import apmon.ApMon;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,7 +17,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -47,6 +44,7 @@ import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
+import apmon.ApMon;
 
 /**
  * @author psvirin
@@ -67,12 +65,20 @@ public class JobDownloader extends Thread {
 	private int workdirMaxSizeMB;
 	private int jobMaxMemoryMB;
 	private HashMap<String, Object> matchedJob = null;
-	private JobStatus jobStatus;
 	private int current_rank;
 
 	private static boolean noMoreJobs = false;
+	/**
+	 * CE name
+	 */
 	public static String ce;
+	/**
+	 * Host name
+	 */
 	public static String hostName;
+	/**
+	 * Output prefix
+	 */
 	public static String defaultOutputDirPrefix;
 	// private static List<String> fetchedJobs = new List<>();
 	// private static List<Long> idleRanksToMark = new List<>();
@@ -83,9 +89,16 @@ public class JobDownloader extends Thread {
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
 
+	/**
+	 * PackMan instance
+	 */
 	public static PackMan packMan;
 
-	public JobDownloader(TitanJobStatus js, HashMap<String, Object> smap) {
+	/**
+	 * @param js
+	 * @param smap
+	 */
+	public JobDownloader(final TitanJobStatus js, final HashMap<String, Object> smap) {
 		this.js = js;
 		workdir = js.batch.jobWorkdir;
 		siteMap = new HashMap<>(smap);
@@ -93,6 +106,9 @@ public class JobDownloader extends Thread {
 		// System.out.println("dbname: " + dbname);
 	}
 
+	/**
+	 *
+	 */
 	public static void initialize() {
 		noMoreJobs = false;
 	}
@@ -102,8 +118,8 @@ public class JobDownloader extends Thread {
 		try {
 			logger.log(Level.INFO, "Trying to get a match...");
 			System.out.println("Trying to get a match...");
-			Long current_timestamp = Long.valueOf(System.currentTimeMillis() / 1000L);
-			siteMap.put("TTL", js.batch.getTtlLeft(current_timestamp));
+			final long current_timestamp = System.currentTimeMillis() / 1000L;
+			siteMap.put("TTL", Long.valueOf(js.batch.getTtlLeft(current_timestamp)));
 			if (noMoreJobs) {
 				System.out.println("no more jobs in the queue, not doing a call");
 				System.out.println("Finishing downloader thread");
@@ -148,7 +164,7 @@ public class JobDownloader extends Thread {
 				// process payload
 				handleJob();
 			}
-			else {
+			else
 				if (matchedJob != null && matchedJob.containsKey("Error")) {
 					logger.log(Level.INFO, (String) matchedJob.get("Error"));
 
@@ -164,15 +180,14 @@ public class JobDownloader extends Thread {
 							// count = 1; // breaking the loop
 						}
 				}
-				/*
-				 * else{
-				 * // EXPERIMENTAL
-				 * // for ORNL Titan
-				 * logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
-				 * //break;
-				 * }
-				 */
-			}
+			/*
+			 * else{
+			 * // EXPERIMENTAL
+			 * // for ORNL Titan
+			 * logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
+			 * //break;
+			 * }
+			 */
 		} catch (final Exception e) {
 			logger.log(Level.INFO, "Error getting a matching job: " + e);
 		}
@@ -239,7 +254,7 @@ public class JobDownloader extends Thread {
 				// varvalues.add(ce);
 				varvalues.add(hostName);
 				apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				System.err.println("Error running ApMon call: " + e.getMessage());
 			}
 
@@ -263,17 +278,17 @@ public class JobDownloader extends Thread {
 	}
 
 	private int execute() {
-		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
+		commander.q_api.putJobLog(queueId.longValue(), "trace", "Starting execution");
 		int numRetries = 20;
 		// EXPERIMENTAL
 		// for ORNL Titan
 
-		while (numRetries-- > 0) {
+		while (numRetries-- > 0)
 			try {
 				// Connection connection = DriverManager.getConnection(dbname);
-				Connection connection = DriverManager.getConnection(js.batch.dbName);
+				final Connection connection = DriverManager.getConnection(js.batch.dbName);
 				((SQLiteConnection) connection).setBusyTimeout(3000);
-				Statement statement = connection.createStatement();
+				final Statement statement = connection.createStatement();
 				// setting variables
 				final HashMap<String, String> alice_environment_packages = loadJDLEnvironmentVariables();
 
@@ -282,25 +297,23 @@ public class JobDownloader extends Thread {
 
 				// try(PrintWriter out = new PrintWriter(tempDir + "/environment")){
 				try (PrintWriter out = new PrintWriter(tempDir + "/environment")) {
-					for (Entry<String, String> e : alice_environment_packages.entrySet()) {
+					for (final Entry<String, String> e : alice_environment_packages.entrySet())
 						out.println(String.format("export %s=%s", e.getKey(), e.getValue()));
-					}
 
-					for (Entry<String, String> e : environment_packages.entrySet()) {
+					for (final Entry<String, String> e : environment_packages.entrySet())
 						out.println(String.format(" export %s=%s", e.getKey(), e.getValue()));
-					}
 				}
 
-				String validationCommand = jdl.gets("ValidationCommand");
+				final String validationCommand = jdl.gets("ValidationCommand");
 				statement.executeUpdate(String.format(
 						"UPDATE alien_jobs SET queue_id=%d, " + "job_folder='%s', status='%s', executable='%s', " + "validation='%s', environment='%s'," + "user='%s', masterjob_id='%s'"
 								+ "WHERE rank=%d",
 						queueId, tempDir, "Q", getLocalCommand(jdl.gets("Executable"), jdl.getArguments()), validationCommand != null ? getLocalCommand(validationCommand, null) : "", "", username,
-						masterJobId, current_rank));
-				
-				// TODO: the result of format() is ignored, what should it be used for?
-				String.format("%d, %d, '%s', '%s', '%s', '%s', '%s','%s', '%s', %d, %d", current_rank, queueId, "", "", tempDir, "Q", getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
-						validationCommand != null ? getLocalCommand(validationCommand, null) : "", "", -1, -1);
+						masterJobId, Integer.valueOf(current_rank)));
+
+				// String.format("%d, %d, '%s', '%s', '%s', '%s', '%s','%s', '%s', %d, %d", Integer.valueOf(current_rank), queueId, "", "", tempDir, "Q",
+				// getLocalCommand(jdl.gets("Executable"), jdl.getArguments()), validationCommand != null ? getLocalCommand(validationCommand, null) : "", "", Integer.valueOf(-1),
+				// Integer.valueOf(-1));
 
 				// queueId, tempDir, "Q",
 				// getLocalCommand(jdl.gets("Executable"), jdl.getArguments()),
@@ -308,7 +321,7 @@ public class JobDownloader extends Thread {
 				// "", current_rank )
 
 				break;
-			} catch (SQLException e) {
+			} catch (final SQLException e) {
 				System.err.println("Failed to insert job: " + e.getMessage());
 				logger.log(Level.INFO, "Failed to insert job: " + e.getMessage());
 				System.out.println("DBname: " + dbname);
@@ -316,13 +329,12 @@ public class JobDownloader extends Thread {
 				System.out.println("Retrying...");
 				try {
 					Thread.sleep(2000);
-				} catch (@SuppressWarnings("unused") InterruptedException ei) {
+				} catch (@SuppressWarnings("unused") final InterruptedException ei) {
 					System.err.println("Sleep in DispatchSSLMTClient.getInstance has been interrupted");
 				}
-			} catch (FileNotFoundException e) {
+			} catch (final FileNotFoundException e) {
 				System.err.println("Failed to write variables file: " + e.getMessage());
 			}
-		}
 
 		return 0;
 	}
@@ -330,8 +342,6 @@ public class JobDownloader extends Thread {
 	// EXPERIMENTAL
 	// for ORNL Titan
 	private String getLocalCommand(final String command, final List<String> arguments) {
-		final List<String> cmd = new LinkedList<>();
-
 		final int idx = command.lastIndexOf('/');
 
 		final String cmdStrip = idx < 0 ? command : command.substring(idx + 1);
@@ -345,11 +355,9 @@ public class JobDownloader extends Thread {
 
 		// JAVA 8
 		String argString = "";
-		if (arguments != null) {
-			for (String s : arguments) {
+		if (arguments != null)
+			for (final String s : arguments)
 				argString += " " + s;
-			}
-		}
 
 		return new String(fExe.getAbsolutePath() + argString);
 	}
@@ -402,7 +410,7 @@ public class JobDownloader extends Thread {
 			}
 			else
 				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
-			commander.q_api.putJobLog(queueId, "trace", "Disk requested: " + workdirMaxSizeMB);
+			commander.q_api.putJobLog(queueId.longValue(), "trace", "Disk requested: " + workdirMaxSizeMB);
 		}
 		else
 			workdirMaxSizeMB = 0;
@@ -431,7 +439,7 @@ public class JobDownloader extends Thread {
 			else
 				jobMaxMemoryMB = Integer.parseInt(maxmemory);
 
-			commander.q_api.putJobLog(queueId, "trace", "Memory requested: " + jobMaxMemoryMB);
+			commander.q_api.putJobLog(queueId.longValue(), "trace", "Memory requested: " + jobMaxMemoryMB);
 		}
 		else
 			jobMaxMemoryMB = 0;
@@ -478,79 +486,79 @@ public class JobDownloader extends Thread {
 	/*
 	 * private boolean getInputFiles() {
 	 * final Set<String> filesToDownload = new HashSet<>();
-	 * 
+	 *
 	 * List<String> list = jdl.getInputFiles(false);
-	 * 
+	 *
 	 * if (list != null)
 	 * filesToDownload.addAll(list);
-	 * 
+	 *
 	 * list = jdl.getInputData(false);
-	 * 
+	 *
 	 * if (list != null)
 	 * filesToDownload.addAll(list);
-	 * 
+	 *
 	 * String s = jdl.getExecutable();
-	 * 
+	 *
 	 * if (s != null)
 	 * filesToDownload.add(s);
-	 * 
+	 *
 	 * s = jdl.gets("ValidationCommand");
-	 * 
+	 *
 	 * if (s != null)
 	 * filesToDownload.add(s);
-	 * 
+	 *
 	 * final List<LFN> iFiles = c_api.getLFNs(filesToDownload, true, false);
-	 * 
+	 *
 	 * if (iFiles == null || iFiles.size() != filesToDownload.size()) {
 	 * System.out.println("Not all requested files could be located");
 	 * return false;
 	 * }
-	 * 
+	 *
 	 * final Map<LFN, File> localFiles = new HashMap<>();
-	 * 
+	 *
 	 * for (final LFN l : iFiles) {
 	 * File localFile = new File(tempDir, l.getFileName());
 	 * System.out.println("Getting file: " + localFile.getAbsolutePath());
-	 * 
+	 *
 	 * final int i = 0;
-	 * 
+	 *
 	 * while (localFile.exists() && i < 100000)
 	 * localFile = new File(tempDir, l.getFileName() + "." + i);
-	 * 
+	 *
 	 * if (localFile.exists()) {
 	 * System.out.println("Too many occurences of " + l.getFileName() + " in "
 	 * + tempDir.getAbsolutePath());
 	 * return false;
 	 * }
-	 * 
+	 *
 	 * localFiles.put(l, localFile);
 	 * }
-	 * 
+	 *
 	 * for (final Map.Entry<LFN, File> entry : localFiles.entrySet()) {
 	 * final List<PFN> pfns = c_api.getPFNsToRead(entry.getKey(), null, null);
-	 * 
+	 *
 	 * if (pfns == null || pfns.size() == 0) {
 	 * System.out.println("No replicas of " + entry.getKey().getCanonicalName() +
 	 * " to read from");
 	 * return false;
 	 * }
-	 * 
+	 *
 	 * final GUID g = pfns.iterator().next().getGuid();
 	 * commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " +
 	 * entry.getKey().getCanonicalName());
 	 * final File f = IOUtils.get(g, entry.getValue());
-	 * 
+	 *
 	 * if (f == null) {
 	 * System.out.println("Could not download " + entry.getKey().getCanonicalName() +
 	 * " to " + entry.getValue().getAbsolutePath());
 	 * return false;
 	 * }
 	 * }
-	 * 
+	 *
 	 * dumpInputDataList();
-	 * 
+	 *
 	 * System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
-	 * 
+	 *
 	 * return true;
 	 * }
 	 */
@@ -585,10 +593,8 @@ public class JobDownloader extends Thread {
 			return false;
 		}
 
-		final Map<LFN, File> localFiles = new HashMap<>();
-
-		FileDownloadController fdc = FileDownloadController.getInstance();
-		FileDownloadApplication fda = fdc.applyForDownload(iFiles);
+		final FileDownloadController fdc = FileDownloadController.getInstance();
+		final FileDownloadApplication fda = fdc.applyForDownload(iFiles);
 		System.out.println("We've applied for downloads: " + fda);
 		fda.print();
 
@@ -596,15 +602,15 @@ public class JobDownloader extends Thread {
 			synchronized (fda) {
 				fda.wait();
 			}
-		} catch (@SuppressWarnings("unused") InterruptedException e) {
+		} catch (@SuppressWarnings("unused") final InterruptedException e) {
 			// ignore
 		}
 		dumpInputDataList();
 		System.out.println("Finalizing download.");
 
-		List<Pair<LFN, String>> fList = fda.getResults();
+		final List<Pair<LFN, String>> fList = fda.getResults();
 		if (fda.isCompleted()) {
-			for (Pair<LFN, String> p : fList) {
+			for (final Pair<LFN, String> p : fList) {
 				if (p.getSecond() == null) {
 					System.out.println(p.getFirst().getCanonicalName() + " is null");
 					return false;
@@ -618,7 +624,7 @@ public class JobDownloader extends Thread {
 						FileChannel destination = new FileOutputStream(tempDir.getAbsolutePath() + "/" + p.getFirst().getFileName()).getChannel()) {
 					// source = new FileInputStream(TempFileManager.getAny(guid)).getChannel();
 					destination.transferFrom(source, 0, source.size());
-				} catch (Exception e) {
+				} catch (final Exception e) {
 					System.err.println("Exception happened on file copy: " + e.getMessage());
 					e.printStackTrace();
 				}
@@ -633,18 +639,18 @@ public class JobDownloader extends Thread {
 		 * for (final LFN l : iFiles) {
 		 * File localFile = new File(tempDir, l.getFileName());
 		 * System.out.println("Getting file: " + localFile.getAbsolutePath());
-		 * 
+		 *
 		 * final int i = 0;
-		 * 
+		 *
 		 * while (localFile.exists() && i < 100000)
 		 * localFile = new File(tempDir, l.getFileName() + "." + i);
-		 * 
+		 *
 		 * if (localFile.exists()) {
 		 * System.out.println("Too many occurences of " + l.getFileName() + " in "
 		 * + tempDir.getAbsolutePath());
 		 * return false;
 		 * }
-		 * 
+		 *
 		 * localFiles.put(l, localFile);
 		 * }
 		 */
@@ -652,18 +658,18 @@ public class JobDownloader extends Thread {
 		/*
 		 * for (final Map.Entry<LFN, File> entry : localFiles.entrySet()) {
 		 * final List<PFN> pfns = c_api.getPFNsToRead(entry.getKey(), null, null);
-		 * 
+		 *
 		 * if (pfns == null || pfns.size() == 0) {
 		 * System.out.println("No replicas of " + entry.getKey().getCanonicalName() +
 		 * " to read from");
 		 * return false;
 		 * }
-		 * 
+		 *
 		 * final GUID g = pfns.iterator().next().getGuid();
 		 * commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " +
 		 * entry.getKey().getCanonicalName());
 		 * final File f = IOUtils.get(g, entry.getValue());
-		 * 
+		 *
 		 * if (f == null) {
 		 * System.out.println("Could not download " + entry.getKey().getCanonicalName() +
 		 * " to " + entry.getValue().getAbsolutePath());
@@ -772,6 +778,7 @@ public class JobDownloader extends Thread {
 	}
 
 	/**
+	 * @param queueId
 	 * @param newStatus
 	 */
 	/*
@@ -785,16 +792,16 @@ public class JobDownloader extends Thread {
 	 * //} else
 	 * if (newStatus == JobStatus.RUNNING) {
 	 * final HashMap<String, Object> extrafields = new HashMap<>();
-	 * 
+	 *
 	 * extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
 	 * extrafields.put("node", hostName);
-	 * 
+	 *
 	 * TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 	 * } else
 	 * TaskQueueApiUtils.setJobStatus(queueId, newStatus);
-	 * 
+	 *
 	 * jobStatus = newStatus;
-	 * 
+	 *
 	 * return;
 	 * }
 	 */
@@ -806,7 +813,7 @@ public class JobDownloader extends Thread {
 	 * final HashMap<String, Object> extrafields = new HashMap<>();
 	 * //extrafields.put("path", getJobOutputDir());
 	 * extrafields.put("path","/tmp");
-	 * 
+	 *
 	 * TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 	 * }
 	 * else
@@ -814,19 +821,19 @@ public class JobDownloader extends Thread {
 	 * final HashMap<String, Object> extrafields = new HashMap<>();
 	 * extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
 	 * extrafields.put("node", hostName);
-	 * 
+	 *
 	 * TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 	 * }
 	 * else
 	 * TaskQueueApiUtils.setJobStatus(queueId, newStatus);
-	 * 
+	 *
 	 * jobStatus = newStatus;
-	 * 
+	 *
 	 * return;
 	 * }
 	 */
 
-	public void changeStatus(final Long queueId, final JobStatus newStatus) {
+	public static void changeStatus(final Long queueId, final JobStatus newStatus) {
 		final HashMap<String, Object> extrafields = new HashMap<>();
 		System.out.println("Exechost for changeStatus: " + ce);
 		// extrafields.put("exechost", ce);
@@ -853,7 +860,10 @@ public class JobDownloader extends Thread {
 		return;
 	}
 
-	public void setDbName(String dbn) {
+	/**
+	 * @param dbn
+	 */
+	public void setDbName(final String dbn) {
 		dbname = dbn;
 	}
 }
