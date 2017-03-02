@@ -177,6 +177,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public LFN_CSD(String lfn, boolean getFromDB, UUID p_id, UUID c_id) {
 		canonicalName = lfn;
 
+		if (canonicalName.endsWith("/"))
+			type = 'd';
+		else
+			type = 'u';
+
 		String[] p_c = getPathAndChildFromCanonicalName(canonicalName);
 		path = p_c[0];
 		child = p_c[1];
@@ -478,12 +483,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			monitor.incrementCounter("LFN_CSD_list");
 
 		final List<LFN_CSD> ret = new ArrayList<>();
-		if (type != 'd') {
+		if (type != 'd' && (!get_metadata || this.perm != null)) {
 			ret.add(this);
 			return ret;
 		}
 
-		String t = "catalogue.lfn_metadata";
+		String t = "catalogue.lfn_index";
 		if (append_table != null) {
 			t += append_table;
 		}
@@ -493,21 +498,36 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			cl = level;
 
 		try {
-			@SuppressWarnings("resource")
-			final Session session = DBCassandra.getInstance();
-			if (session == null)
+			if (parent_id == null)
+				parent_id = getParentIdFromPath(path);
+			if (parent_id == null)
 				return null;
 
-			PreparedStatement statement = session.prepare("select path,child_id from " + t + " where parent_id = ?");
-			BoundStatement boundStatement = new BoundStatement(statement);
-			boundStatement.bind(this.id);
+			if (id == null)
+				id = getChildIdFromParentIdAndName(parent_id, child);
+			if (id == null)
+				return null;
 
-			boundStatement.setConsistencyLevel(cl);
+			if (type == 'd') {
+				@SuppressWarnings("resource")
+				final Session session = DBCassandra.getInstance();
+				if (session == null)
+					return null;
 
-			ResultSet results = session.execute(boundStatement);
-			for (Row row : results) {
-				// LFN_CSD String lfn, boolean getFromDB, UUID p_id, UUID c_id
-				ret.add(new LFN_CSD(this.canonicalName + row.getString("path"), get_metadata, this.id, row.getUUID("child_id")));
+				PreparedStatement statement = session.prepare("select path,child_id from " + t + " where path_id = ?");
+				BoundStatement boundStatement = new BoundStatement(statement);
+				boundStatement.bind(this.id);
+
+				boundStatement.setConsistencyLevel(cl);
+
+				ResultSet results = session.execute(boundStatement);
+				for (Row row : results) {
+					// LFN_CSD String lfn, boolean getFromDB, UUID p_id, UUID c_id
+					ret.add(new LFN_CSD(this.canonicalName + row.getString("path"), get_metadata, this.id, row.getUUID("child_id")));
+				}
+			}
+			else {
+				ret.add(new LFN_CSD(this.canonicalName, get_metadata, this.parent_id, this.id));
 			}
 		} catch (Exception e) {
 			System.err.println("Exception trying to whereis: " + e);
