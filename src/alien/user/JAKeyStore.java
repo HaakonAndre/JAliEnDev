@@ -582,6 +582,7 @@ public class JAKeyStore {
 	 * @throws OperatorCreationException
 	 * @throws PKCSException
 	 */
+	@SuppressWarnings("resource")
 	public static PrivateKey loadPrivX509(final String keyFileLocation, final char[] password) throws IOException, PEMException, OperatorCreationException, PKCSException {
 
 		if (logger.isLoggable(Level.INFO))

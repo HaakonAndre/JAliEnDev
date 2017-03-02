@@ -764,20 +764,22 @@ public class JobDownloader extends Thread {
 		return ok;
 	}
 
-	private long ttlForJob() {
-		final Integer iTTL = jdl.getInteger("TTL");
-
-		int ttl = (iTTL != null ? iTTL.intValue() : 0) + 300;
-		commander.q_api.putJobLog(queueId.longValue(), "trace", "Job asks to run for " + ttl + " seconds");
-
-		final String proxyttl = jdl.gets("ProxyTTL");
-		if (proxyttl != null) {
-			ttl = ((Integer) siteMap.get("TTL")).intValue() - 600;
-			commander.q_api.putJobLog(queueId.longValue(), "trace", "ProxyTTL enabled, running for " + ttl + " seconds");
-		}
-
-		return ttl;
-	}
+	/*
+	 * private long ttlForJob() {
+	 * final Integer iTTL = jdl.getInteger("TTL");
+	 * 
+	 * int ttl = (iTTL != null ? iTTL.intValue() : 0) + 300;
+	 * commander.q_api.putJobLog(queueId.longValue(), "trace", "Job asks to run for " + ttl + " seconds");
+	 * 
+	 * final String proxyttl = jdl.gets("ProxyTTL");
+	 * if (proxyttl != null) {
+	 * ttl = ((Integer) siteMap.get("TTL")).intValue() - 600;
+	 * commander.q_api.putJobLog(queueId.longValue(), "trace", "ProxyTTL enabled, running for " + ttl + " seconds");
+	 * }
+	 * 
+	 * return ttl;
+	 * }
+	 */
 
 	/**
 	 * @param queueId

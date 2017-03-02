@@ -69,7 +69,7 @@ public class JobSigner {
 	 * @throws SignatureException
 	 * @return the signature of the jdl
 	 */
-	public static JDL signJob(final KeyStore ks, final String keyAlias, final char[] pass, final String alienUsername, final JDL ojdl)
+	public static JDL signJob(final KeyStore ks, final String keyAlias, final char[] pass, @SuppressWarnings("unused") final String alienUsername, final JDL ojdl)
 			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
 
 		if (ojdl == null)
@@ -115,6 +115,7 @@ public class JobSigner {
 	 * @throws SignatureException
 	 * @throws KeyStoreException
 	 */
+	@SuppressWarnings("unused")
 	public static boolean verifyJob(final KeyStore ks, final String keyAlias, final char[] pass, final AliEnPrincipal user, final String origjdl)
 			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, KeyStoreException {
 

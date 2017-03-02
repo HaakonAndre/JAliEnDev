@@ -8,8 +8,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
@@ -239,40 +237,42 @@ public class JSh {
 	private static int port = 0;
 	private static int pid = 0;
 
-	private static void startJBox() {
-		if (!JSh.JBoxRunning()) {
-
-			// APIServer.startJBox();
-
-			final List<String> command = new ArrayList<>();
-
-			command.add("nohup");
-			command.add("./run.sh");
-
-			command.add("-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"));
-
-			final String confDir = System.getProperty("AliEnConfig");
-
-			if (confDir != null && confDir.length() > 0)
-				command.add("-DAliEnConfig=" + confDir);
-
-			command.add("alien.JBox");
-			command.add("&");
-
-			final ProcessBuilder pBuilder = new ProcessBuilder(command);
-
-			pBuilder.redirectErrorStream(false);
-
-			// try {
-			// pBuilder.start();
-			// } catch (Exception e) {
-			// e.printStackTrace();
-			// System.err.println("Could not start JBox.");
-			// }
-			System.out.println();
-		}
-		JSh.getJBoxPID();
-	}
+	/*
+	 * private static void startJBox() {
+	 * if (!JSh.JBoxRunning()) {
+	 * 
+	 * // APIServer.startJBox();
+	 * 
+	 * final List<String> command = new ArrayList<>();
+	 * 
+	 * command.add("nohup");
+	 * command.add("./run.sh");
+	 * 
+	 * command.add("-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"));
+	 * 
+	 * final String confDir = System.getProperty("AliEnConfig");
+	 * 
+	 * if (confDir != null && confDir.length() > 0)
+	 * command.add("-DAliEnConfig=" + confDir);
+	 * 
+	 * command.add("alien.JBox");
+	 * command.add("&");
+	 * 
+	 * final ProcessBuilder pBuilder = new ProcessBuilder(command);
+	 * 
+	 * pBuilder.redirectErrorStream(false);
+	 * 
+	 * // try {
+	 * // pBuilder.start();
+	 * // } catch (Exception e) {
+	 * // e.printStackTrace();
+	 * // System.err.println("Could not start JBox.");
+	 * // }
+	 * System.out.println();
+	 * }
+	 * JSh.getJBoxPID();
+	 * }
+	 */
 
 	private static void killJBox() {
 		if (JSh.JBoxRunning()) {

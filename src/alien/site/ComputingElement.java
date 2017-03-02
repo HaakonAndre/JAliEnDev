@@ -17,8 +17,11 @@ import alien.log.LogUtils;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.batchqueue.BatchQueue;
 import alien.user.LDAPHelper;
-import lazyj.ExtProperties;
 
+/**
+ * @author mmmartin
+ *
+ */
 public class ComputingElement extends Thread {
 
 	// Logger object
@@ -27,8 +30,7 @@ public class ComputingElement extends Thread {
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
 	// Config, env, classad
-	private final ExtProperties config = ConfigUtils.getConfig();
-	private Integer port = 10000;
+	private int port = 10000;
 	private String site;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	private HashMap<String, Object> ceConfig = null;
@@ -38,6 +40,9 @@ public class ComputingElement extends Thread {
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
 
+	/**
+	 * 
+	 */
 	public ComputingElement() {
 		try {
 			// JAKeyStore.loadClientKeyStorage();
@@ -94,7 +99,7 @@ public class ComputingElement extends Thread {
 			// Get free slots
 			int free_slots = getNumberFreeSlots();
 
-			if (should_submit)
+			if (should_submit && free_slots > 0)
 				offerAgent();
 		}
 
@@ -102,9 +107,13 @@ public class ComputingElement extends Thread {
 	}
 
 	private int getNumberFreeSlots() {
-		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) hostConfig.get("host"), port.intValue(), (String) hostConfig.get("ce"),
+		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) hostConfig.get("host"), port, (String) hostConfig.get("ce"),
 				ConfigUtils.getConfig().gets("version", "J-1.0").trim());
+
 		List<Integer> slots = jobSlots.getJobSlots();
+
+		if (slots != null && slots.size() > 1 && slots.get(0).intValue() == 0)
+			return slots.get(1).intValue();
 
 		return 0;
 	}
@@ -116,7 +125,7 @@ public class ComputingElement extends Thread {
 	}
 
 	// Queries LDAP to get all the config values (site,host,CE)
-	public void getCEconfigFromLDAP() {
+	void getCEconfigFromLDAP() {
 		// Get hostname and domain
 		String hostName = "";
 		String domain = "";
@@ -133,9 +142,11 @@ public class ComputingElement extends Thread {
 		Set<String> siteset = LDAPHelper.checkLdapInformation("(&(domain=" + domain + "))", "ou=Sites,", "accountName");
 
 		if (siteset == null || siteset.size() == 0 || siteset.size() > 1) {
-			logger.severe("Error: " + (siteset == null ? "null" : siteset.size()) + " sites found for domain: " + domain);
+			logger.severe("Error: " + (siteset == null ? "null" : String.valueOf(siteset.size())) + " sites found for domain: " + domain);
 			System.exit(-1);
+			return;
 		}
+
 		site = siteset.iterator().next();
 
 		// Get the root site config based on site name
@@ -170,10 +181,10 @@ public class ComputingElement extends Thread {
 	}
 
 	// Prepares a hash to create the sitemap
-	public void getSiteMap() {
+	void getSiteMap() {
 		HashMap<String, String> smenv = new HashMap<>();
 
-		smenv.put("ALIEN_CM_AS_LDAP_PROXY", hostConfig.get("host") + ":" + port.toString());
+		smenv.put("ALIEN_CM_AS_LDAP_PROXY", hostConfig.get("host") + ":" + port);
 
 		smenv.put("site", siteConfig.get("accountname").toString());
 
@@ -198,7 +209,8 @@ public class ComputingElement extends Thread {
 		if (hostConfig.containsKey("environment")) {
 			host_environment = new HashMap<>();
 			if (hostConfig.get("environment") instanceof TreeSet) {
-				TreeSet<String> host_env_set = (TreeSet<String>) hostConfig.get("environment");
+				@SuppressWarnings("unchecked")
+				Set<String> host_env_set = (Set<String>) hostConfig.get("environment");
 				for (String env_entry : host_env_set) {
 					String[] host_env_str = env_entry.split("=");
 					host_environment.put(host_env_str[0], host_env_str[1]);
@@ -213,7 +225,8 @@ public class ComputingElement extends Thread {
 		if (ceConfig.containsKey("environment")) {
 			ce_environment = new HashMap<>();
 			if (ceConfig.get("environment") instanceof TreeSet) {
-				TreeSet<String> ce_env_set = (TreeSet<String>) ceConfig.get("environment");
+				@SuppressWarnings("unchecked")
+				Set<String> ce_env_set = (Set<String>) ceConfig.get("environment");
 				for (String env_entry : ce_env_set) {
 					String[] ce_env_str = env_entry.split("=");
 					ce_environment.put(ce_env_str[0], ce_env_str[1]);
@@ -233,7 +246,7 @@ public class ComputingElement extends Thread {
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
 	}
 
-	public BatchQueue getBatchQueue(String type) {
+	BatchQueue getBatchQueue(String type) {
 		Class<?> cl = null;
 		try {
 			cl = Class.forName("alien.site.batchqueue." + type);

@@ -2,7 +2,6 @@ package alien.site;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -37,7 +36,6 @@ import apmon.ApMon;
 import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
-import apmon.MonitoredJob;
 
 /**
  * @author mmmartin, ron, pavlo
@@ -47,9 +45,7 @@ import apmon.MonitoredJob;
 public class TitanJobService extends Thread implements MonitoringObject {
 
 	// Folders and files
-	private final File tempDir = null;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
-	private final String jobWorkdir = "";
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -60,8 +56,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	// Job variables
 	// private JDL jdl = null;
 	// private long queueId;
-	private String jobToken;
-	private String username;
 	private String jobAgentId = "";
 	private String globalWorkdir = null;
 	// private HashMap<String, Object> matchedJob = null;
@@ -73,10 +67,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	// private int workdirMaxSizeMB;
 	// private int jobMaxMemoryMB;
-	private int payloadPID;
-	private MonitoredJob mj;
-	private Double prevCpuTime;
-	private final long prevTime = 0;
 	// private JobStatus jobStatus;
 
 	private final int totalJobs;
@@ -86,7 +76,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private PackMan packMan = null;
 	String hostName = null;
 	private String alienCm = null;
-	private final int pid;
+	
 	final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
@@ -104,38 +94,17 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to start job
 	}
 
-	private final int jobagent_requests = 1; // TODO: restore to 5
-
 	static transient final Logger logger = ConfigUtils.getLogger(TitanJobService.class.getCanonicalName());
 
 	static transient final Monitor monitor = MonitorFactory.getMonitor(TitanJobService.class.getCanonicalName());
 	static transient final ApMon apmon = MonitorFactory.getApMonSender();
 
-	// Resource monitoring vars
-
-	private static final Double ZERO = Double.valueOf(0);
-
-	private final Double RES_WORKDIR_SIZE = ZERO;
-	private final Double RES_VMEM = ZERO;
-	private final Double RES_RMEM = ZERO;
-	private final Double RES_VMEMMAX = ZERO;
-	private final Double RES_RMEMMAX = ZERO;
-	private final Double RES_MEMUSAGE = ZERO;
-	private final Double RES_CPUTIME = ZERO;
-	private final Double RES_CPUUSAGE = ZERO;
-	private final String RES_RESOURCEUSAGE = "";
-	private final Long RES_RUNTIME = Long.valueOf(0);
-	private final String RES_FRUNTIME = "";
 	private Integer RES_NOCPUS = Integer.valueOf(1);
 	private String RES_CPUMHZ = "";
 	private String RES_CPUFAMILY = "";
 
 	// EXPERIMENTAL
 	// for ORNL Titan
-	private String dbname;
-	private String monitoring_dbname;
-	private String dblink;
-	private int numCores;
 
 	TitanBatchController batchController;
 
@@ -175,7 +144,6 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
-		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
 		globalWorkdir = env.get("HOME");
 		if (env.containsKey("WORKDIR"))

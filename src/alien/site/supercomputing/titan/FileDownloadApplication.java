@@ -28,7 +28,7 @@ public class FileDownloadApplication {
 	/**
 	 * @return <code>true</code> if all files were downloaded
 	 */
-	public boolean isCompleted() {
+	public synchronized boolean isCompleted() {
 		return fileList.size() == dlResult.size();
 	}
 

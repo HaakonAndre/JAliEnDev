@@ -156,6 +156,7 @@ public class DispatchSSLMTClient extends Thread {
 		return sc;
 	}
 
+	@SuppressWarnings("resource")
 	static DispatchSSLMTClient initializeInstance(final String address, final int p) {
 		// if (instance.get(Integer.valueOf(p)) == null) {
 		// connect to the other end

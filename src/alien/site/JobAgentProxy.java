@@ -63,7 +63,6 @@ import apmon.ApMon;
 import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
-import apmon.MonitoredJob;
 import lia.util.Utils;
 
 /**
@@ -99,10 +98,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	private int workdirMaxSizeMB;
 	private int jobMaxMemoryMB;
-	private int payloadPID;
-	private MonitoredJob mj;
-	private Double prevCpuTime;
-	private long prevTime = 0;
 	private JobStatus jobStatus;
 
 	private int totalJobs;
@@ -135,8 +130,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to start job
 	}
 
-	private final int jobagent_requests = 1; // TODO: restore to 5
-
 	static transient final Logger logger = ConfigUtils.getLogger(JobAgentProxy.class.getCanonicalName());
 
 	static transient final Monitor monitor = MonitorFactory.getMonitor(JobAgentProxy.class.getCanonicalName());
@@ -144,19 +137,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 	// Resource monitoring vars
 
-	private static final Double ZERO = Double.valueOf(0);
-
-	private Double RES_WORKDIR_SIZE = ZERO;
-	private Double RES_VMEM = ZERO;
-	private Double RES_RMEM = ZERO;
-	private Double RES_VMEMMAX = ZERO;
-	private Double RES_RMEMMAX = ZERO;
-	private Double RES_MEMUSAGE = ZERO;
-	private Double RES_CPUTIME = ZERO;
-	private Double RES_CPUUSAGE = ZERO;
-	private String RES_RESOURCEUSAGE = "";
-	private Long RES_RUNTIME = Long.valueOf(0);
-	private String RES_FRUNTIME = "";
 	private Integer RES_NOCPUS = Integer.valueOf(1);
 	private String RES_CPUMHZ = "";
 	private String RES_CPUFAMILY = "";
@@ -308,7 +288,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					} catch (@SuppressWarnings("unused") InterruptedException e) {
 						// ignore
 					}
-					ja.checkProcessResources();
+					checkProcessResources();
 					ja.sendProcessResources();
 				}
 			}
@@ -336,7 +316,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		class TitanJobStatus {
 			public int rank;
-			public Long queueId;
+			public Long aliEnId;
 			public String jobFolder;
 			public String status;
 			public int executionCode;
@@ -344,7 +324,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 			public TitanJobStatus(int r, Long qid, String job_folder, String st, int exec_code, int val_code) {
 				rank = r;
-				queueId = qid;
+				aliEnId = qid;
 				jobFolder = job_folder;
 				status = st;
 				executionCode = exec_code;
@@ -387,8 +367,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			// uploading data from finished jobs
 			for (TitanJobStatus js : idleRanks) {
 				if (js.status.equals("D")) {
-					queueId = js.queueId.longValue();
-					System.err.println(String.format("Uploading job: %d", js.queueId));
+					queueId = js.aliEnId.longValue();
+					System.err.println(String.format("Uploading job: %d", js.aliEnId));
 					jobWorkdir = js.jobFolder;
 					tempDir = new File(js.jobFolder);
 					// read JDL from file
@@ -416,7 +396,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 									changeStatus(JobStatus.SAVING);
 							uploadOutputFiles(); // upload data
 							cleanup();
-							System.err.println(String.format("Upload job %d finished", js.queueId));
+							System.err.println(String.format("Upload job %d finished", js.aliEnId));
 
 							try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement();) {
 								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", Integer.valueOf(js.rank)));
@@ -474,6 +454,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 							logger.log(Level.INFO, (String) matchedJob.get("Error"));
 
 							if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
+								@SuppressWarnings("unchecked")
 								final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
 								monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 								installPackages(packToInstall);
@@ -530,17 +511,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
 		// Remove sandbox, TODO: use Java builtin
 		Utils.getOutput("rm -rf " + jobWorkdir);
-		RES_WORKDIR_SIZE = ZERO;
-		RES_VMEM = ZERO;
-		RES_RMEM = ZERO;
-		RES_VMEMMAX = ZERO;
-		RES_RMEMMAX = ZERO;
-		RES_MEMUSAGE = ZERO;
-		RES_CPUTIME = ZERO;
-		RES_CPUUSAGE = ZERO;
-		RES_RESOURCEUSAGE = "";
-		RES_RUNTIME = Long.valueOf(0);
-		RES_FRUNTIME = "";
 	}
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
@@ -644,7 +614,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
 		// final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
-		final long time_subs = (long) (jobAgentCurrentTime - jobAgentStartTime);
+		final long time_subs = jobAgentCurrentTime - jobAgentStartTime;
 		// int timeleft = origTtl - time_subs - 300;
 		long timeleft = origTtl * 1000 - time_subs - 300 * 1000;
 
@@ -1379,7 +1349,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 						String md5 = null;
 						try {
 							md5 = IOUtils.getMD5(localFile);
-						} catch (final Exception e1) {
+						} catch (@SuppressWarnings("unused") final Exception e1) {
 							// ignore
 						}
 						if (md5 == null)
@@ -1489,6 +1459,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					final Object val = jdl.get(s);
 
 					if (val instanceof Collection<?>) {
+						@SuppressWarnings("unchecked")
 						final Iterator<String> it = ((Collection<String>) val).iterator();
 						String sbuff = "";
 						boolean isFirst = true;
@@ -1518,9 +1489,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	 * @param args
 	 * @throws IOException
 	 */
+	@SuppressWarnings("unused")
 	public static void main(final String[] args) throws IOException {
 		final JobAgentProxy ja = new JobAgentProxy();
 		// ja.run();
+		
 	}
 
 	/**

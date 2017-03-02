@@ -2659,7 +2659,7 @@ public class TaskQueueUtils {
 	 * @param version
 	 * @return value for this key
 	 */
-	public static int getHostOrInsert(final String host, final Integer port, final String version) {
+	public static int getHostOrInsert(final String host, final int port, final String version) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
@@ -2690,7 +2690,7 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static int insertHost(final String host, final Integer port, final String version) {
+	private static int insertHost(final String host, final int port, final String version) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
@@ -2713,7 +2713,7 @@ public class TaskQueueUtils {
 			final String qi = "insert into HOSTS (hostId, hostName, siteId, port, version) values (?,?,?,?,?);";
 			db.setReadOnly(false);
 			db.setLastGeneratedKey(true);
-			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), port, version);
+			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), Integer.valueOf(port), version);
 
 			logger.log(Level.INFO, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
 
@@ -2848,14 +2848,14 @@ public class TaskQueueUtils {
 	 * @param ceName
 	 * @return <code>true</code> if the host existed and was successfully updated in the database
 	 */
-	public static boolean updateHost(final String host, final String status, final Integer connected, final Integer port, final String version, final String ceName) {
+	public static boolean updateHost(final String host, final String status, final Integer connected, final int port, final String version, final String ceName) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
 
 			db.setReadOnly(false);
 
-			if (!db.query("update HOSTS set status=?,connected=?,port=?,version=?,cename=? where hostName=?", false, status, connected, port, version, ceName, host))
+			if (!db.query("update HOSTS set status=?,connected=?,port=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
 				return false;
 
 			return db.getUpdateCount() > 0;

@@ -476,18 +476,6 @@ public class JAliEnCOMMander extends Thread {
 				jcommand.silent();
 
 			try {
-
-				if (args.size() != 0 && args.get(args.size() - 1).startsWith("&")) {
-					int logno = 0;
-					if (args.get(args.size() - 1).length() > 1)
-						try {
-							logno = Integer.parseInt(args.get(args.size() - 1).substring(1));
-						} catch (@SuppressWarnings("unused") final NumberFormatException n) {
-							// ignore
-						}
-
-					args.remove(args.size() - 1);
-				}
 				if (jcommand == null)
 					out.setReturnCode(-6, "No such command or not implemented yet. ");
 				else

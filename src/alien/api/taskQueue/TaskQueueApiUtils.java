@@ -78,19 +78,12 @@ public class TaskQueueApiUtils {
 	 * @param id
 	 * @param jobId
 	 * @param site
-	 * @param bPrintId
-	 * @param bPrintSite
-	 * @param bMerge
-	 * @param bKill
-	 * @param bResubmit
-	 * @param bExpunge
 	 * @return a PS listing
 	 */
-	public List<Job> getMasterJobStatus(final long jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
-			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge) {
+	public List<Job> getMasterJobStatus(final long jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site) {
 
 		try {
-			final GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge));
+			final GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site));
 
 			// return mj.masterJobStatus();
 			return mj.subJobStatus();
@@ -365,7 +358,7 @@ public class TaskQueueApiUtils {
 	 * @param version
 	 * @return free slots
 	 */
-	public GetNumberFreeSlots getNumberFreeSlots(final String host, final Integer port, final String ceName, final String version) {
+	public GetNumberFreeSlots getNumberFreeSlots(final String host, final int port, final String ceName, final String version) {
 
 		try {
 			final GetNumberFreeSlots gmj = Dispatcher.execute(new GetNumberFreeSlots(commander.getUser(), commander.getRole(), host, port, ceName, version));

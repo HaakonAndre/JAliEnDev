@@ -21,7 +21,7 @@ public class GetNumberFreeSlots extends Request {
 	private List<Integer> slots;
 	private String ceName;
 	private String host;
-	private Integer port;
+	private int port;
 	private String version;
 
 	/**
@@ -32,7 +32,7 @@ public class GetNumberFreeSlots extends Request {
 	 * @param ce
 	 * @param version 
 	 */
-	public GetNumberFreeSlots(final AliEnPrincipal user, final String role, final String host, final Integer port, final String ce, final String version) {
+	public GetNumberFreeSlots(final AliEnPrincipal user, final String role, final String host, final int port, final String ce, final String version) {
 		setRequestUser(user);
 		setRoleRequest(role);
 		this.host = host;
