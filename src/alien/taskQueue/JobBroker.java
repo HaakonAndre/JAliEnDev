@@ -340,6 +340,7 @@ public class JobBroker {
 			}
 
 			if (matchRequest.containsKey("Extrasites")) {
+				@SuppressWarnings("unchecked")
 				final ArrayList<String> extrasites = (ArrayList<String>) matchRequest.get("Extrasites");
 				for (final String site : extrasites) {
 					where += " or site like concat('%,',?,',%') ";
@@ -375,6 +376,7 @@ public class JobBroker {
 			}
 
 			if (matchRequest.containsKey("Users")) {
+				@SuppressWarnings("unchecked")
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("Users");
 				String orconcat = " and (";
 				for (final String user : users) {
@@ -390,6 +392,7 @@ public class JobBroker {
 			}
 
 			if (matchRequest.containsKey("NoUsers")) {
+				@SuppressWarnings("unchecked")
 				final ArrayList<String> users = (ArrayList<String>) matchRequest.get("NoUsers");
 				for (final String user : users) {
 					final Integer userId = TaskQueueUtils.getUserId(user);
@@ -459,18 +462,18 @@ public class JobBroker {
 				return null;
 
 			ArrayList<Integer> code_and_slots = new ArrayList<>();
-			code_and_slots.add(0);
+			code_and_slots.add(Integer.valueOf(0));
 
 			int hostId = TaskQueueUtils.getHostOrInsert(host, port, version);
 			if (hostId == 0) {
 				logger.severe("Error: getNumberFreeSlots, failed getHostOrInsert: " + host);
-				code_and_slots.set(0, 1);
+				code_and_slots.set(0, Integer.valueOf(1));
 				return code_and_slots;
 			}
 
-			if (!TaskQueueUtils.updateHost(host, "CONNECTED", 1, port, version, ceName)) {
+			if (!TaskQueueUtils.updateHost(host, "CONNECTED", Integer.valueOf(1), port, version, ceName)) {
 				logger.severe("Error: getNumberFreeSlots, failed updateHost: " + host);
-				code_and_slots.set(0, 2);
+				code_and_slots.set(0, Integer.valueOf(2));
 				return code_and_slots;
 			}
 
@@ -480,7 +483,7 @@ public class JobBroker {
 				if (blocking == null || !blocking.equals("open")) {
 					logger.info("The queue " + ceName + " is blocked in the master queue!");
 					TaskQueueUtils.setSiteQueueStatus(ceName, "closed-blocked");
-					code_and_slots.set(0, -2);
+					code_and_slots.set(0, Integer.valueOf(-2));
 					return code_and_slots;
 				}
 			}
@@ -488,7 +491,7 @@ public class JobBroker {
 			ArrayList<Integer> slots = TaskQueueUtils.getNumberMaxAndQueuedCE(host, ceName);
 			if (slots == null || slots.size() != 2) {
 				logger.severe("Error: getNumberFreeSlots, failed to get slots: " + host + " - " + ceName);
-				code_and_slots.set(0, 3);
+				code_and_slots.set(0, Integer.valueOf(3));
 				return code_and_slots;
 			}
 

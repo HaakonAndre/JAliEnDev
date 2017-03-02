@@ -6,14 +6,13 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.cert.X509Certificate;
 
-import lazyj.Utils;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
+import lazyj.Utils;
 
 /**
  * @author ron
@@ -132,7 +131,7 @@ public class TaskQueueFakeUtils {
 	 * @param jobID
 	 * @return the status
 	 */
-	public static JobStatus getJobStatus(final long jobID) {
+	public static JobStatus getJobStatus(@SuppressWarnings("unused") final long jobID) {
 		// if (jobID != 0 && queue.containsKey(jobID))
 		// if (queue.get(jobID) != null)
 		// ignore

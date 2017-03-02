@@ -500,17 +500,10 @@ public class TaskQueueUtils {
 	 * @param status
 	 * @param id
 	 * @param site
-	 * @param bPrintId
-	 * @param bPrintSite
-	 * @param bMerge
-	 * @param bKill
-	 * @param bResubmit
-	 * @param bExpunge
 	 * @param limit
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
-			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge, final int limit) {
+	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final int limit) {
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
@@ -589,7 +582,7 @@ public class TaskQueueUtils {
 				where += " status!='KILLED' ";
 
 			int lim = 20000;
-			if (limit > 0 && limit < 20000)
+			if (limit > 0 && limit < 100000)
 				lim = limit;
 
 			final String q;
@@ -2074,7 +2067,7 @@ public class TaskQueueUtils {
 	}
 
 	// status and jdl
-	private static boolean updateJob(final Job j, final JobStatus newStatus, final Map<String, String> jdltags) {
+	private static boolean updateJob(final Job j, final JobStatus newStatus) {
 
 		if (newStatus.smallerThanEquals(j.status()) && (j.status() == JobStatus.ZOMBIE || j.status() == JobStatus.IDLE || j.status() == JobStatus.INTERACTIV) && j.isMaster())
 			return false;
@@ -2149,27 +2142,6 @@ public class TaskQueueUtils {
 						else
 							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
 								jdltags.put("finished", time);
-								if (j.usesValidation()) {
-									final String host = j.execHost.substring(j.execHost.indexOf('@') + 1);
-									final int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
-
-									// my $executable = "";
-									// $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and
-									// $executable = $1;
-									// $executable =~ s/\"//g;
-									// my $validatejdl = "[
-									// Executable=\"$executable.validate\";
-									// Arguments=\"$queueId $data->{host} $port\";
-									// Requirements= member(other.GridPartition,\"Validation\");
-									// Type=\"Job\";
-									// ]";
-									// $DEBUG and $self->debug(1,
-									// "In changeStatusCommand sending the command to validate the result of $queueId...");
-									// $self->enterCommand("$data->{submithost}", "$validatejdl");
-									// }
-
-								}
-
 							}
 							else
 								if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
@@ -2185,7 +2157,7 @@ public class TaskQueueUtils {
 
 		String message = "Job state transition from " + j.getStatusName() + " to " + newStatus;
 
-		final boolean success = updateJob(j, newStatus, jdltags);
+		final boolean success = updateJob(j, newStatus);
 
 		if (!success)
 			message = "FAILED: " + message;
@@ -2210,25 +2182,6 @@ public class TaskQueueUtils {
 			// }
 		}
 		return success;
-	}
-
-	private static boolean updateJDLAndProcInfo(final Job j, final Map<String, String> jdltags, final Map<String, String> procInfo) {
-
-		// my $procSet = {};
-		// foreach my $key (keys %$set) {
-		// if ($key =~
-		// /(si2k)|(cpuspeed)|(maxrsize)|(cputime)|(ncpu)|(cost)|(cpufamily)|(cpu)|(vsize)|(rsize)|(runtimes)|(procinfotime)|(maxvsize)|(runtime)|(mem)|(batchid)/
-		// ) {
-		// $procSet->{$key} = $set->{$key};
-		// delete $set->{$key};
-		// }
-		// }
-
-		// TODO: set the procinfo, is necessary
-
-		// TODO: update the jdltags
-		return true;
-
 	}
 
 	private static boolean insertMessage(final String target, final String service, final String message, final String messageArgs, final int expires) {
@@ -2362,8 +2315,21 @@ public class TaskQueueUtils {
 			insertValues.put("procinfo", message);
 			insertValues.put("tag", action);
 
-			return db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues));
+			if (!db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues)))
+				return false;
+
+			if (joblogtags != null && joblogtags.size() > 0) {
+				for (Map.Entry<String, String> entry : joblogtags.entrySet()) {
+					insertValues.put("tag", entry.getKey());
+					insertValues.put("procinfo", entry.getValue());
+
+					if (!db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues)))
+						return false;
+				}
+			}
 		}
+
+		return true;
 	}
 
 	private static boolean deleteJobAgent(final int jobagentId) {
@@ -2383,12 +2349,6 @@ public class TaskQueueUtils {
 
 			return updated > 0;
 		}
-	}
-
-	private static void checkFinalAction(final Job j) {
-		if (j.notify != null && !j.notify.equals(""))
-			sendNotificationMail(j);
-
 	}
 
 	private static void sendNotificationMail(final Job j) {

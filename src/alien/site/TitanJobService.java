@@ -20,7 +20,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import alien.api.JBoxServer;
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -48,9 +47,9 @@ import apmon.MonitoredJob;
 public class TitanJobService extends Thread implements MonitoringObject {
 
 	// Folders and files
-	private File tempDir = null;
+	private final File tempDir = null;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
-	private String jobWorkdir = "";
+	private final String jobWorkdir = "";
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -77,19 +76,18 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	private int payloadPID;
 	private MonitoredJob mj;
 	private Double prevCpuTime;
-	private long prevTime = 0;
+	private final long prevTime = 0;
 	// private JobStatus jobStatus;
 
-	private int totalJobs;
+	private final int totalJobs;
 	private final long jobAgentStartTime = new java.util.Date().getTime();
 
 	// Other
 	private PackMan packMan = null;
-	private String hostName = null;
+	String hostName = null;
 	private String alienCm = null;
 	private final int pid;
-	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
-	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
+	final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
 	static {
@@ -117,17 +115,17 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 	private static final Double ZERO = Double.valueOf(0);
 
-	private Double RES_WORKDIR_SIZE = ZERO;
-	private Double RES_VMEM = ZERO;
-	private Double RES_RMEM = ZERO;
-	private Double RES_VMEMMAX = ZERO;
-	private Double RES_RMEMMAX = ZERO;
-	private Double RES_MEMUSAGE = ZERO;
-	private Double RES_CPUTIME = ZERO;
-	private Double RES_CPUUSAGE = ZERO;
-	private String RES_RESOURCEUSAGE = "";
-	private Long RES_RUNTIME = Long.valueOf(0);
-	private String RES_FRUNTIME = "";
+	private final Double RES_WORKDIR_SIZE = ZERO;
+	private final Double RES_VMEM = ZERO;
+	private final Double RES_RMEM = ZERO;
+	private final Double RES_VMEMMAX = ZERO;
+	private final Double RES_RMEMMAX = ZERO;
+	private final Double RES_MEMUSAGE = ZERO;
+	private final Double RES_CPUTIME = ZERO;
+	private final Double RES_CPUUSAGE = ZERO;
+	private final String RES_RESOURCEUSAGE = "";
+	private final Long RES_RUNTIME = Long.valueOf(0);
+	private final String RES_FRUNTIME = "";
 	private Integer RES_NOCPUS = Integer.valueOf(1);
 	private String RES_CPUMHZ = "";
 	private String RES_CPUFAMILY = "";
@@ -221,15 +219,15 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 		// here create monitor thread
 		class TitanMonitorThread extends Thread {
-			private TitanBatchController tbc;
+			private final TitanBatchController tbc;
 
-			public TitanMonitorThread(TitanBatchController tbc) {
+			public TitanMonitorThread(final TitanBatchController tbc) {
 				this.tbc = tbc;
 			}
 
 			private void sendProcessResources() {
 				// List<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
-				List<ProcInfoPair> job_resources = tbc.getBatchesMonitoringData();
+				final List<ProcInfoPair> job_resources = tbc.getBatchesMonitoringData();
 
 				/*
 				 * try{
@@ -262,15 +260,14 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				// System.out.println(procinfo);
 
 				// create pool of 16 thread
-				for (ProcInfoPair pi : job_resources) {
+				for (final ProcInfoPair pi : job_resources)
 					// notify to all processes waiting
 					commander.q_api.putJobLog(pi.queue_id, "proc", pi.procinfo);
-				}
 
 				// ApMon calls
 				System.out.println("Running periodic Apmon update on running jobs");
-				List<TitanJobStatus> runningJobs = tbc.queryRunningDatabases();
-				for (TitanJobStatus pi : runningJobs) {
+				final List<TitanJobStatus> runningJobs = tbc.queryRunningDatabases();
+				for (final TitanJobStatus pi : runningJobs) {
 					/*
 					 * final HashMap<String, Object> extrafields = new HashMap<>();
 					 * extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
@@ -279,7 +276,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					 */
 
 					System.out.println("Running ApMon update for PID: " + pi.queueId);
-					Vector<String> varnames = new Vector<>();
+					final Vector<String> varnames = new Vector<>();
 					varnames.add("host");
 					varnames.add("statusID");
 					varnames.add("jobID");
@@ -287,30 +284,28 @@ public class TitanJobService extends Thread implements MonitoringObject {
 					varnames.add("masterjob_id");
 					varnames.add("host_pid");
 					varnames.add("exechost");
-					Vector<Object> varvalues = new Vector<>();
+					final Vector<Object> varvalues = new Vector<>();
 					varvalues.add(hostName);
-					varvalues.add(10);
-					varvalues.add(Double.valueOf(pi.queueId));
+					varvalues.add(Double.valueOf(10));
+					varvalues.add(Double.valueOf(pi.queueId.longValue()));
 					varvalues.add("psvirin");
-					varvalues.add(0);
-					varvalues.add(10000);
+					varvalues.add(Double.valueOf(0));
+					varvalues.add(Double.valueOf(10000));
 					// varvalues.add(ce);
 					varvalues.add(hostName);
 					try {
 						// apmon.sendParameters(ce+"_Jobs", String.format("%d",pi.queueId), 6, varnames, varvalues);
 						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", pi.queueId), 6, varnames, varvalues);
-					} catch (ApMonException e) {
+					} catch (final ApMonException e) {
 						System.out.println("Apmon exception: " + e.getMessage());
-					} catch (UnknownHostException e) {
-						System.out.println("Unknown host exception");
+					} catch (final UnknownHostException e) {
+						System.out.println("Unknown host exception: " + e.getMessage());
+					} catch (final SocketException e) {
+						System.out.println("Socket exception: " + e.getMessage());
 					}
 
-					catch (SocketException e) {
-						System.out.println("Socket exception");
-					}
-
-					catch (IOException e) {
-						System.out.println("IO exception");
+					catch (final IOException e) {
+						System.out.println("IO exception: " + e.getMessage());
 					}
 
 					// notify to all processes waiting
@@ -318,13 +313,15 @@ public class TitanJobService extends Thread implements MonitoringObject {
 				}
 			}
 
+			@Override
 			public void run() {
 				// here create a pool of 16 sending processes
 
 				while (true) {
 					try {
 						Thread.sleep(1 * 60 * 1000);
-					} catch (InterruptedException e) {
+					} catch (@SuppressWarnings("unused") final InterruptedException e) {
+						// ignore
 					}
 					sendProcessResources();
 				}
@@ -384,10 +381,10 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	// =========================================================================================================
 	// ================ run finished
 
-	private void roundSleep() {
+	private static void roundSleep() {
 		try {
 			sleep(60000);
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
 		}
 	}
@@ -478,7 +475,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
 		// final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
-		final long time_subs = (long) (jobAgentCurrentTime - jobAgentStartTime);
+		final long time_subs = jobAgentCurrentTime - jobAgentStartTime;
 		// int timeleft = origTtl - time_subs - 300;
 		long timeleft = origTtl * 1000 - time_subs - 300 * 1000;
 
@@ -529,17 +526,17 @@ public class TitanJobService extends Thread implements MonitoringObject {
 	 * @throws IOException
 	 */
 	public static void main(final String[] args) throws IOException {
-		apmon.setLogLevel("DEBUG");
+		ApMon.setLogLevel("DEBUG");
 		final TitanJobService ja = new TitanJobService();
 		ja.run();
 	}
 
 	@Override
 	public void fillValues(final Vector<String> paramNames, final Vector<Object> paramValues) {
-		Long queueId = 0L;
-		if (queueId > 0) {
+		final Long queueId = Long.valueOf(0L);
+		if (queueId.longValue() > 0) {
 			paramNames.add("jobID");
-			paramValues.add(Double.valueOf(queueId));
+			paramValues.add(Double.valueOf(queueId.longValue()));
 
 			// EXPERIMENTAL
 			// temporarily commented out

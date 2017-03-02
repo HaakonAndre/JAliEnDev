@@ -6,7 +6,6 @@ import java.util.Set;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
-import alien.perl.commands.AlienTime;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -58,7 +57,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 						pfns = commander.c_api.getGUID(((PFN) pfns.toArray()[0]).pfn.substring(8, 44)).getPFNs();
 			if (out.isRootPrinter()) {
 				if (!isSilent())
-					out.setField("value ", AlienTime.getStamp() + " the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in");
+					out.setField("value ", "the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in");
 				for (final PFN pfn : pfns) {
 					final String se = commander.c_api.getSE(pfn.seNumber).seName;
 					if (!isSilent())
@@ -68,7 +67,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 
 			else {
 				if (!isSilent())
-					out.printOutln(AlienTime.getStamp() + " the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in\n");
+					out.printOutln("the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in\n");
 				for (final PFN pfn : pfns) {
 
 					final String se = commander.c_api.getSE(pfn.seNumber).seName;

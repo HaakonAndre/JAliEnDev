@@ -4,9 +4,17 @@ import javax.naming.NamingException;
 
 import alien.site.ComputingElement;
 
+/**
+ * @author mmmartin
+ *
+ */
 public class TestStuff {
 
-	public static void main(String[] args) throws NamingException {
+	/**
+	 * @param args
+	 * @throws NamingException
+	 */
+	public static void main(final String[] args) throws NamingException {
 
 		System.out.println("Starting");
 
@@ -20,7 +28,7 @@ public class TestStuff {
 		// System.out.println(sites.toString());
 		//
 
-		ComputingElement CE = new ComputingElement();
+		final ComputingElement CE = new ComputingElement();
 		CE.start();
 
 		System.out.println("Done");
