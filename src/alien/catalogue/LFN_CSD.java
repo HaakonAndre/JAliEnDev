@@ -48,7 +48,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Modulo of seNumber to partition balance
 	 */
-	public static final Integer modulo_se_lookup = 100;
+	private static final int modulo_se_lookup = 100;
 
 	/**
 	 * Owner
@@ -78,7 +78,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Flag
 	 */
-	public Integer flag = 0;
+	public int flag = 0;
 
 	/**
 	 * Access rights
@@ -145,8 +145,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
-	 * @param LFN
-	 * @param boolean
+	 * @param l
+	 * @param getParent
 	 */
 	public LFN_CSD(LFN l, boolean getParent) {
 		canonicalName = l.getCanonicalName();
@@ -171,9 +171,15 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		gowner = l.getGroup();
 		id = l.guid;
 		flag = 0;
-		metadata = new HashMap<String, String>();
+		metadata = new HashMap<>();
 	}
 
+	/**
+	 * @param lfn
+	 * @param getFromDB
+	 * @param p_id
+	 * @param c_id
+	 */
 	public LFN_CSD(String lfn, boolean getFromDB, UUID p_id, UUID c_id) {
 		canonicalName = lfn;
 
@@ -196,6 +202,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				if (id == null)
 					return;
 
+				@SuppressWarnings("resource")
 				final Session session = DBCassandra.getInstance();
 				if (session == null)
 					return;
@@ -215,6 +222,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		}
 	}
 
+	/**
+	 * @param canonicalName
+	 * @return parent dir(0) and name of last chunk of a path(1)
+	 */
 	public static String[] getPathAndChildFromCanonicalName(String canonicalName) {
 		int remove = 0;
 		int idx = canonicalName.lastIndexOf('/');
@@ -261,21 +272,22 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		}
 	}
 
-	/*
-	 * Gets the id from the parent
-	 * 
-	 * @path_parent String representing the path/lfn of the parent
+	/**
+	 * @param path_parent
+	 * @return id from the parent
 	 */
+	@SuppressWarnings("resource")
 	public static UUID getParentIdFromPath(String path_parent) {
+		String parent_path = path_parent;
 		try {
 			UUID path_id = root_uuid;
 
-			path_parent = path_parent.replaceAll("//", "/");
-			if (path_parent.equals("/"))
+			parent_path = parent_path.replaceAll("//", "/");
+			if (parent_path.equals("/"))
 				return path_id;
 
-			path_parent = path_parent.replaceAll("^/", "");
-			String[] path_chunks = path_parent.split("/");
+			parent_path = parent_path.replaceAll("^/", "");
+			String[] path_chunks = parent_path.split("/");
 
 			Session session = DBCassandra.getInstance();
 			if (session == null)
@@ -297,18 +309,17 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			}
 			return path_id;
 		} catch (Exception e) {
-			System.err.println("Exception trying to getParentIdFromPath (" + path_parent + ") LFN_CSD: " + e);
+			System.err.println("Exception trying to getParentIdFromPath (" + parent_path + ") LFN_CSD: " + e);
 			return null;
 		}
 	}
 
-	/*
-	 * Gets the id from the parent
-	 * 
-	 * @parent_id UUID representing the id of the parent in the index
-	 * 
-	 * @name String representing the path/lfn of the parent
+	/**
+	 * @param parent_id
+	 * @param name
+	 * @return child id in the index
 	 */
+	@SuppressWarnings("resource")
 	public static UUID getChildIdFromParentIdAndName(UUID parent_id, String name) {
 		try {
 			Session session = DBCassandra.getInstance();
@@ -460,11 +471,14 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * @return the list of entries in this folder
 	 */
-
 	public List<LFN_CSD> list() {
 		return list(false, null, null);
 	}
 
+	/**
+	 * @param get_metadata
+	 * @return list of lfns
+	 */
 	public List<LFN_CSD> list(boolean get_metadata) {
 		return list(get_metadata, null, null);
 	}
@@ -596,6 +610,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
+	 * @param append_table
 	 * @param table
 	 * @param level
 	 * @return physical locations of the file
@@ -654,6 +669,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
+	 * @param append_table
 	 * @param table_lfns
 	 * @param table_se_lookup
 	 * @param level
@@ -699,7 +715,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			// Insert the entry in the index
 			statement = session.prepare("INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
 			boundStatement = new BoundStatement(statement);
-			boundStatement.bind(parent_id, child, ctime, id, flag);
+			boundStatement.bind(parent_id, child, ctime, id, Integer.valueOf(flag));
 			boundStatement.setConsistencyLevel(cl);
 			session.execute(boundStatement);
 
@@ -707,12 +723,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (type == 'a' || type == 'f' || type == 'm' || type == 'l') {
 				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
 				boundStatement = new BoundStatement(statement);
-				boundStatement.bind(parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, String.valueOf(type), metadata);
+				boundStatement.bind(parent_id, id, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata);
 			}
 			else { // 'd'
 				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?)");
 				boundStatement = new BoundStatement(statement);
-				boundStatement.bind(parent_id, id, ctime, gowner, jobid, owner, perm, size, String.valueOf(type));
+				boundStatement.bind(parent_id, id, ctime, gowner, Long.valueOf(jobid), owner, perm, Long.valueOf(size), String.valueOf(type));
 			}
 
 			boundStatement.setConsistencyLevel(cl);
@@ -721,11 +737,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			// Insert files and archives into se_lookup
 			if (type == 'a' || type == 'f') {
 				Set<Integer> seNumbers = pfns.keySet();
-				for (Integer seNumber : seNumbers) {
-					Integer modulo = seNumber % modulo_se_lookup;
+				for (int seNumber : seNumbers) {
+					int modulo = seNumber % modulo_se_lookup;
 					statement = session.prepare("INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
 					boundStatement = new BoundStatement(statement);
-					boundStatement.bind(seNumber, modulo, id, size, owner);
+					boundStatement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner);
 					boundStatement.setConsistencyLevel(cl);
 					session.execute(boundStatement);
 				}
