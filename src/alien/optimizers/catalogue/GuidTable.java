@@ -23,6 +23,7 @@ public class GuidTable extends Optimizer {
 	final static int warnCount = 40000000; // 40M
 	int count;
 
+	@Override
 	public void run() {
 		this.setSleepPeriod(3600 * 1000); // 1h
 
@@ -41,33 +42,31 @@ public class GuidTable extends Optimizer {
 				db.setReadOnly(true);
 				db.query("select max(tableName) from GUIDINDEX where guidTime is not null");
 				db.moveNext();
-				int tableNumber = db.geti(1);
+				final int tableNumber = db.geti(1);
 
 				db.setReadOnly(true);
 				db.query("select count(1) from G" + tableNumber + "L_PFN");
 				db.moveNext();
 				count = db.geti(1);
 
-				if (count > maxCount) {
+				if (count > maxCount)
 					// new G table
 					createNewGTable(db, tableNumber + 1);
-				}
 				else {
 					db.setReadOnly(true);
 					db.query("select count(1) from G" + tableNumber + "L");
 					db.moveNext();
 					count = db.geti(1);
 
-					if (count > maxCount) {
+					if (count > maxCount)
 						// new G table
 						createNewGTable(db, tableNumber + 1);
-					}
 				}
 
 				if (count > warnCount) {
-					String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
+					final String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
 					if (admins != null && admins.length() > 0) {
-						Mail m = new Mail();
+						final Mail m = new Mail();
 						m.sSubject = "JAliEn CS: G table filling up";
 						m.sBody = "The table G" + tableNumber + "L has passed " + warnCount + " entries and will be soon renewed!";
 						m.sFrom = "JAliEnMaster@cern.ch";
@@ -82,18 +81,18 @@ public class GuidTable extends Optimizer {
 				try {
 					logger.log(Level.INFO, "GuidTable sleeps " + this.getSleepPeriod());
 					sleep(this.getSleepPeriod());
-				} catch (InterruptedException e) {
+				} catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
 
-	private void createNewGTable(DBFunctions db, int newTable) {
+	private void createNewGTable(final DBFunctions db, final int newTable) {
 		logger.log(Level.INFO, "GuidTable: creating new table: " + newTable);
-		String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
+		final String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
 		if (admins != null && admins.length() > 0) {
-			Mail m = new Mail();
+			final Mail m = new Mail();
 			m.sSubject = "JAliEn CS: new G" + newTable + "L tables";
 			m.sBody = "The table G" + newTable + "L has been inserted now.\n\n" + "The previous table had " + count + " entries.";
 			m.sFrom = "JAliEnMaster@cern.ch";
@@ -157,8 +156,8 @@ public class GuidTable extends Optimizer {
 		logger.log(Level.INFO, sql);
 
 		// Inserting in 10min from now in the new tables
-		UUID uuid = GUIDUtils.generateTimeUUID(System.currentTimeMillis() + 10 * 60 * 1000);
-		String toInsert = GUIDUtils.getIndexTime(uuid).concat("00000000");
+		final UUID uuid = GUIDUtils.generateTimeUUID(System.currentTimeMillis() + 10 * 60 * 1000);
+		final String toInsert = GUIDUtils.getIndexTime(uuid).concat("00000000");
 
 		sql = "INSERT INTO GUIDINDEX values (0, 8, " + newTable + ", '" + toInsert + "', NULL)";
 		db.setReadOnly(false);

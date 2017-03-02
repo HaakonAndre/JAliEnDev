@@ -3,7 +3,6 @@ package alien.test.cassandra;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.MessageDigest;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Random;
@@ -91,27 +90,29 @@ public class CatalogueToCatalogueThreads {
 
 	static final SE se2 = SEUtils.getSE(320);
 
-	public static String getmd5(String str) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("MD5");
-			md.update(str.getBytes());
-			byte[] digest = md.digest();
-			StringBuffer sb = new StringBuffer();
-			for (byte b : digest) {
-				sb.append(String.format("%02x", b & 0xff));
-			}
-			//
-			// System.out.println("original:" + original);
-			return sb.toString();
-		} catch (Exception e) {
-			System.err.println("Exception generating md5: " + e);
-		}
-		return null;
-	}
+	/*
+	 * private static String getmd5(String str) {
+	 * try {
+	 * MessageDigest md = MessageDigest.getInstance("MD5");
+	 * md.update(str.getBytes());
+	 * byte[] digest = md.digest();
+	 * StringBuffer sb = new StringBuffer();
+	 * for (byte b : digest) {
+	 * sb.append(String.format("%02x", b & 0xff));
+	 * }
+	 * //
+	 * // System.out.println("original:" + original);
+	 * return sb.toString();
+	 * } catch (Exception e) {
+	 * System.err.println("Exception generating md5: " + e);
+	 * }
+	 * return null;
+	 * }
+	 */
 
 	/**
 	 * auto-generated paths
-	 * 
+	 *
 	 * @param args
 	 * @throws IOException
 	 */
@@ -127,8 +128,8 @@ public class CatalogueToCatalogueThreads {
 			System.exit(-3);
 		}
 
-		final Long base = Long.parseLong(args[0]);
-		final Long limit = Long.parseLong(args[1]);
+		final long base = Long.parseLong(args[0]);
+		final long limitArg = Long.parseLong(args[1]);
 		// final long until = limit + base;
 
 		int pool_size = 16;
@@ -152,12 +153,11 @@ public class CatalogueToCatalogueThreads {
 		used_threads.println(logs_suffix + " - " + pool_size);
 		used_threads.close();
 
-		System.out.println("Going to insert " + limit + "*10 in hierarchy. Time: " + new Date());
+		System.out.println("Going to insert " + limitArg + "*10 in hierarchy. Time: " + new Date());
 
 		// Create LFN paths and submit them
-		for (Long i = base; i < limit; i++) {
+		for (long i = base; i < limitArg; i++)
 			tPool.submit(new AddPath(i));
-		}
 
 		try {
 			while (!tPool.awaitTermination(20, TimeUnit.SECONDS)) {
@@ -174,7 +174,7 @@ public class CatalogueToCatalogueThreads {
 		}
 
 		double ms_per_i = 0;
-		int cnt = timing_count.get();
+		final int cnt = timing_count.get();
 
 		if (cnt > 0) {
 			ms_per_i = ns_count.get() / (double) cnt;
@@ -193,10 +193,10 @@ public class CatalogueToCatalogueThreads {
 	}
 
 	private static class AddPath implements Runnable {
-		final Long root;
+		final long root;
 		// String path;
 
-		public AddPath(final Long r) {
+		public AddPath(final long r) {
 			this.root = r;
 		}
 
@@ -212,33 +212,32 @@ public class CatalogueToCatalogueThreads {
 			// String lfnparent = "/cassandra/" + strs[0] + "/" + strs[1] + "/"
 			// + strs[2] + "/";
 
-			long last_part = root % 10000;
-			long left = root / 10000;
-			long medium_part = left % 100;
-			long first_part = left / 100;
-			String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
+			final long last_part = root % 10000;
+			final long left = root / 10000;
+			final long medium_part = left % 100;
+			final long first_part = left / 100;
+			final String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
 			for (int i = 1; i <= 10; i++) {
-				String lfn = lfnparent + "file" + i + "_" + root;
+				final String lfn = lfnparent + "file" + i + "_" + root;
 				// System.out.println("Processing: " + lfn);
 				// if (true)
 				// continue;
 
-				int counted = global_count.incrementAndGet();
+				final int counted = global_count.incrementAndGet();
 				if (counted % 5000 == 0) {
-					//out.println("LFN: " + lfn + " - Count: " + counted + " Time: " + new Date());
-					out.println("LFN: " + lfn + "Estimation: " + (ns_count.get() / counted) / 1000000. + 
-							" - Count: " + counted + " Time: " + new Date());
+					// out.println("LFN: " + lfn + " - Count: " + counted + " Time: " + new Date());
+					out.println("LFN: " + lfn + "Estimation: " + (ns_count.get() / counted) / 1000000. + " - Count: " + counted + " Time: " + new Date());
 					out.flush();
 				}
 
 				// Create LFN and GUID
-				LFN lfnc = LFNUtils.getLFN(lfn, true);
-				GUID guid = GUIDUtils.createGuid();
+				final LFN lfnc = LFNUtils.getLFN(lfn, true);
+				final GUID guid = GUIDUtils.createGuid();
 
 				lfnc.size = rdm.nextInt(100000);
 				lfnc.guid = guid.guid;
-				lfnc.jobid = (long) rdm.nextInt(1000000);
+				lfnc.jobid = rdm.nextInt(1000000);
 				lfnc.md5 = "ee31e454013aa515f0bc806aa907ba51";
 				lfnc.type = 'f';
 				lfnc.perm = "755";
@@ -263,21 +262,21 @@ public class CatalogueToCatalogueThreads {
 				}
 
 				// Add PFNS change constructor to guid, se using 2 ses always
-				PFN pfn1 = new PFN(guid, se1); // New constructor
+				final PFN pfn1 = new PFN(guid, se1); // New constructor
 				if (!guid.addPFN(pfn1)) {
 					final String msg = "Error inserting pfn1: " + lfnc.getCanonicalName() + " Time: " + new Date();
 					System.err.println(msg);
 					continue;
 				}
 
-				PFN pfn2 = new PFN(guid, se2);
+				final PFN pfn2 = new PFN(guid, se2);
 				if (!guid.addPFN(pfn2)) {
 					final String msg = "Error inserting pfn2: " + lfnc.getCanonicalName() + " Time: " + new Date();
 					System.err.println(msg);
 					continue;
 				}
 
-				final long duration_ns = (long) ((System.nanoTime() - start));
+				final long duration_ns = System.nanoTime() - start;
 				ns_count.addAndGet(duration_ns);
 				timing_count.incrementAndGet();
 			}

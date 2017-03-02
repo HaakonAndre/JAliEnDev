@@ -232,6 +232,7 @@ public class JobSigner {
 		throw new JobSubmissionException("Invalid JDL Signature, [not verifyable]");
 	}
 
+	@SuppressWarnings("unused")
 	private static String parseJDLToSignString(final JDL jdl) {
 
 		if (jdl.getExecutable().length() > 0) {

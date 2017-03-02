@@ -456,6 +456,13 @@ public class JobBroker {
 		}
 	}
 
+	/**
+	 * @param host
+	 * @param port
+	 * @param ceName
+	 * @param version
+	 * @return a two-element list with the status code ([0]) and the number of slots ([1])
+	 */
 	public static List<Integer> getNumberFreeSlots(String host, Integer port, String ceName, String version) {
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
 			if (db == null)

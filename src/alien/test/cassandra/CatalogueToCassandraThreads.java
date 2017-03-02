@@ -3,7 +3,6 @@ package alien.test.cassandra;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -102,33 +101,35 @@ public class CatalogueToCassandraThreads {
 
 	static ConsistencyLevel clevel = ConsistencyLevel.QUORUM;
 
-	public static String getmd5(String str) {
-		try {
-			MessageDigest md = MessageDigest.getInstance("MD5");
-			md.update(str.getBytes());
-			byte[] digest = md.digest();
-			StringBuffer sb = new StringBuffer();
-			for (byte b : digest) {
-				sb.append(String.format("%02x", b & 0xff));
-			}
-			//
-			// System.out.println("original:" + original);
-			return sb.toString();
-		} catch (Exception e) {
-			System.err.println("Exception generating md5: " + e);
-		}
-		return null;
-	}
-
-	public static String getRandomString() {
-		char[] chars = "abcdefghijklmnopqrstuvwxyz".toCharArray();
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < 20; i++) {
-			char c = chars[rdm.nextInt(chars.length)];
-			sb.append(c);
-		}
-		return sb.toString();
-	}
+	/*
+	 * private static String getmd5(String str) {
+	 * try {
+	 * MessageDigest md = MessageDigest.getInstance("MD5");
+	 * md.update(str.getBytes());
+	 * byte[] digest = md.digest();
+	 * StringBuffer sb = new StringBuffer();
+	 * for (byte b : digest) {
+	 * sb.append(String.format("%02x", b & 0xff));
+	 * }
+	 * //
+	 * // System.out.println("original:" + original);
+	 * return sb.toString();
+	 * } catch (Exception e) {
+	 * System.err.println("Exception generating md5: " + e);
+	 * }
+	 * return null;
+	 * }
+	 * 
+	 * private static String getRandomString() {
+	 * char[] chars = "abcdefghijklmnopqrstuvwxyz".toCharArray();
+	 * StringBuilder sb = new StringBuilder();
+	 * for (int i = 0; i < 20; i++) {
+	 * char c = chars[rdm.nextInt(chars.length)];
+	 * sb.append(c);
+	 * }
+	 * return sb.toString();
+	 * }
+	 */
 
 	/**
 	 * @param args
@@ -140,10 +141,9 @@ public class CatalogueToCassandraThreads {
 			System.exit(-3);
 		}
 
-		ArrayList<String> newargs = new ArrayList<>();
-		for (int i = 1; i < args.length; i++) {
+		final ArrayList<String> newargs = new ArrayList<>();
+		for (int i = 1; i < args.length; i++)
 			newargs.add(args[i]);
-		}
 
 		if (args[0].equals("real"))
 			main_real(newargs.toArray(new String[0]));
@@ -171,12 +171,12 @@ public class CatalogueToCassandraThreads {
 			System.err.println("E.g. <consistency> -> 1-one 2-quorum");
 			System.exit(-3);
 		}
-		
-		for (int i=0; i<nargs; i++){
+
+		for (int i = 0; i < nargs; i++) {
 			out.println("Parameter " + i + ": " + args[i]);
 			out.flush();
 		}
-				
+
 		int pool_size = 16;
 		if (nargs > 1)
 			pool_size = Integer.parseInt(args[1]);
@@ -188,7 +188,7 @@ public class CatalogueToCassandraThreads {
 		if (nargs > 2)
 			logs_suffix = "-" + args[2];
 
-		int consistency = Integer.parseInt(args[3]);
+		final int consistency = Integer.parseInt(args[3]);
 		if (consistency == 1)
 			clevel = ConsistencyLevel.ONE;
 
@@ -280,7 +280,7 @@ public class CatalogueToCassandraThreads {
 		out.println("Final count: " + global_count.toString() + " - " + new Date());
 
 		double ms_per_i = 0;
-		int cnt = timing_count.get();
+		final int cnt = timing_count.get();
 
 		if (cnt > 0) {
 			ms_per_i = ns_count.get() / cnt;
@@ -307,7 +307,7 @@ public class CatalogueToCassandraThreads {
 
 	/**
 	 * auto-generated paths
-	 * 
+	 *
 	 * @param args
 	 * @throws IOException
 	 */
@@ -325,13 +325,13 @@ public class CatalogueToCassandraThreads {
 			System.exit(-3);
 		}
 
-		for (int i=0; i<nargs; i++){
+		for (int i = 0; i < nargs; i++) {
 			out.println("Parameter " + i + ": " + args[i]);
 			out.flush();
 		}
-		
-		final Long base = Long.parseLong(args[0]);
-		final Long limit = Long.parseLong(args[1]);
+
+		final long base = Long.parseLong(args[0]);
+		final long limitArg = Long.parseLong(args[1]);
 
 		int pool_size = 16;
 		if (nargs > 3)
@@ -344,7 +344,7 @@ public class CatalogueToCassandraThreads {
 		if (nargs > 4)
 			logs_suffix = "-" + args[4];
 
-		int consistency = Integer.parseInt(args[5]);
+		final int consistency = Integer.parseInt(args[5]);
 		if (consistency == 1)
 			clevel = ConsistencyLevel.ONE;
 
@@ -358,15 +358,14 @@ public class CatalogueToCassandraThreads {
 		used_threads.println(logs_suffix + " - " + pool_size);
 		used_threads.close();
 
-		System.out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limit + " in " + args[2] + " hierarchy. Time: " + new Date());
-		out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limit + " base: " + base + " in " + args[2] + " hierarchy. Time: " + new Date());
+		System.out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limitArg + " in " + args[2] + " hierarchy. Time: " + new Date());
+		out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limitArg + " base: " + base + " in " + args[2] + " hierarchy. Time: " + new Date());
 		out.flush();
 
 		// Create LFN paths and submit them to create LFN_CSD to insert in
 		// Cassandra
-		for (Long i = base; i < limit; i++) {
+		for (long i = base; i < limitArg; i++)
 			tPool.submit(new AddPath(i));
-		}
 
 		try {
 			while (!tPool.awaitTermination(20, TimeUnit.SECONDS)) {
@@ -383,7 +382,7 @@ public class CatalogueToCassandraThreads {
 		}
 
 		double ms_per_i = 0;
-		int cnt = timing_count.get();
+		final int cnt = timing_count.get();
 
 		if (cnt > 0) {
 			ms_per_i = ns_count.get() / cnt;
@@ -403,9 +402,9 @@ public class CatalogueToCassandraThreads {
 	}
 
 	private static class AddPath implements Runnable {
-		final Long root;
+		final long root;
 
-		public AddPath(final Long r) {
+		public AddPath(final long r) {
 			this.root = r;
 		}
 
@@ -419,28 +418,28 @@ public class CatalogueToCassandraThreads {
 			// String lfn = "/alice/" + strs[0] + "/" + strs[1] + "/" + strs[2]
 			// + "/" + strs[3];
 
-			long last_part = root % 10000;
-			long left = root / 10000;
-			long medium_part = left % 100;
-			long first_part = left / 100;
-			String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
+			final long last_part = root % 10000;
+			final long left = root / 10000;
+			final long medium_part = left % 100;
+			final long first_part = left / 100;
+			final String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
 			LFN_CSD.createDirectory(lfnparent, "catalogue.lfns_auto", clevel);
 
 			for (int i = 1; i <= 10; i++) {
-				String lfn = "file" + i + "_" + root; // lfnparent +
+				final String lfn = "file" + i + "_" + root; // lfnparent +
 
-				int counted = global_count.incrementAndGet();
+				final int counted = global_count.incrementAndGet();
 				if (counted % 5000 == 0) {
 					out.println("LFN: " + lfnparent + lfn + " Estimation: " + (ns_count.get() / counted) / 1000000. + " - Count: " + counted + " Time: " + new Date());
 					out.flush();
 				}
 
-				LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false, null, null);
+				final LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false, null, null);
 				lfnc.path = lfnparent;
 				lfnc.child = lfn;
 				lfnc.size = rdm.nextInt(100000);
-				lfnc.jobid = (long) rdm.nextInt(1000000);
+				lfnc.jobid = rdm.nextInt(1000000);
 				lfnc.checksum = "ee31e454013aa515f0bc806aa907ba51";
 				lfnc.perm = "755";
 				lfnc.ctime = new Date();
@@ -448,19 +447,19 @@ public class CatalogueToCassandraThreads {
 				lfnc.gowner = "aliprod";
 				lfnc.id = UUID.randomUUID();
 
-				HashMap<Integer, String> pfns = new HashMap<>();
+				final HashMap<Integer, String> pfns = new HashMap<>();
 				if (i % 2 == 0) {
 					lfnc.type = 'f';
-					pfns.put(rdm.nextInt(30), "");
-					pfns.put(rdm.nextInt(30), "");
+					pfns.put(Integer.valueOf(rdm.nextInt(30)), "");
+					pfns.put(Integer.valueOf(rdm.nextInt(30)), "");
 				}
 				else {
 					lfnc.type = 'l';
-					pfns.put(0, "/cassandra/0/100/10000");
+					pfns.put(Integer.valueOf(0), "/cassandra/0/100/10000");
 				}
 				lfnc.pfns = pfns;
 
-				HashMap<String, String> metadata = new HashMap<>();
+				final HashMap<String, String> metadata = new HashMap<>();
 				metadata.put("version", "v1");
 				lfnc.metadata = metadata;
 
@@ -471,7 +470,7 @@ public class CatalogueToCassandraThreads {
 					System.err.println(msg);
 				}
 				else {
-					final long duration_ns = (long) ((System.nanoTime() - start));
+					final long duration_ns = System.nanoTime() - start;
 					ns_count.addAndGet(duration_ns);
 					timing_count.incrementAndGet();
 				}
@@ -519,7 +518,6 @@ public class CatalogueToCassandraThreads {
 		}
 
 		@Override
-		@SuppressWarnings("unchecked")
 		public void run() {
 			if (shouldexit)
 				return;
@@ -597,11 +595,9 @@ public class CatalogueToCassandraThreads {
 						failed_folders.flush();
 						continue;
 					}
-					else {
-						final long duration_ns = (long) ((System.nanoTime() - start));
-						ns_count.addAndGet(duration_ns);
-						timing_count.incrementAndGet();
-					}
+					final long duration_ns = System.nanoTime() - start;
+					ns_count.addAndGet(duration_ns);
+					timing_count.incrementAndGet();
 
 					try {
 						if (!shouldexit)
@@ -625,7 +621,7 @@ public class CatalogueToCassandraThreads {
 							failed_collections.flush();
 						}
 						else {
-							final long duration_ns = (long) ((System.nanoTime() - start));
+							final long duration_ns = System.nanoTime() - start;
 							ns_count.addAndGet(duration_ns);
 							timing_count.incrementAndGet();
 						}
@@ -637,7 +633,7 @@ public class CatalogueToCassandraThreads {
 
 							final List<LFN> zip_members = getZipMembers(whereis, l);
 							final boolean isArchive = zip_members != null && !zip_members.isEmpty();
-							final boolean isMember = zip_members.contains(l);
+							final boolean isMember = zip_members != null && zip_members.contains(l);
 
 							// create json file in the hierarchy
 							final LFN_CSD lfnc = new LFN_CSD(l);
@@ -652,12 +648,12 @@ public class CatalogueToCassandraThreads {
 									pfns = guidmap.getPFNs();
 
 							if (pfns != null) {
-								HashMap<Integer, String> pfnset = new HashMap<>();
+								final HashMap<Integer, String> pfnset = new HashMap<>();
 								if (isMember) {
 									lfnc.type = 'm';
-									pfnset.put(0, l.getCanonicalName());
+									pfnset.put(Integer.valueOf(0), l.getCanonicalName());
 								}
-								else {
+								else
 									for (final PFN p : pfns) {
 										final int se = p.seNumber;
 										if (se <= 0) {
@@ -665,9 +661,8 @@ public class CatalogueToCassandraThreads {
 											failed_ses.flush();
 											continue;
 										}
-										pfnset.put(se, p.getPFN());
+										pfnset.put(Integer.valueOf(se), p.getPFN());
 									}
-								}
 								lfnc.pfns = pfnset;
 							}
 
@@ -679,7 +674,7 @@ public class CatalogueToCassandraThreads {
 								failed_files.flush();
 							}
 							else {
-								final long duration_ns = (long) ((System.nanoTime() - start));
+								final long duration_ns = System.nanoTime() - start;
 								ns_count.addAndGet(duration_ns);
 								timing_count.incrementAndGet();
 							}

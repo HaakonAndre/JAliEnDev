@@ -9,7 +9,6 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.datastax.driver.core.ConsistencyLevel;
@@ -32,16 +31,16 @@ public class CatalogueTestWhereisGenerated {
 	static boolean shouldexit = false;
 
 	/** Entries processed */
-	static AtomicInteger global_count = new AtomicInteger();
+	static AtomicLong global_count = new AtomicLong();
 	/**
 	 * Limit number of entries
 	 */
-	static Integer limit_count;
+	static long limit_count;
 
 	/**
 	 * Limit number of entries
 	 */
-	static AtomicInteger timing_count = new AtomicInteger();
+	static AtomicLong timing_count = new AtomicLong();
 
 	/**
 	 * total milliseconds
@@ -92,7 +91,7 @@ public class CatalogueTestWhereisGenerated {
 
 	/**
 	 * auto-generated paths
-	 * 
+	 *
 	 * @param args
 	 * @throws IOException
 	 */
@@ -112,10 +111,10 @@ public class CatalogueTestWhereisGenerated {
 			System.exit(-3);
 		}
 
-		final Long base = Long.parseLong(args[0]);
-		final Long limit = Long.parseLong(args[1]);
+		final long base = Long.parseLong(args[0]);
+		final long limit = Long.parseLong(args[1]);
 		type = Integer.parseInt(args[2]);
-		limit_count = Integer.parseInt(args[3]);
+		limit_count = Long.parseLong(args[3]);
 
 		int pool_size = 16;
 		if (nargs > 2)
@@ -128,7 +127,7 @@ public class CatalogueTestWhereisGenerated {
 		if (nargs > 3)
 			logs_suffix = "-" + args[5];
 
-		int cl = Integer.parseInt(args[6]);
+		final int cl = Integer.parseInt(args[6]);
 		if (cl == 1)
 			clevel = ConsistencyLevel.ONE;
 
@@ -148,9 +147,8 @@ public class CatalogueTestWhereisGenerated {
 				+ " hierarchy. Time: " + new Date());
 
 		// Create LFN paths and submit them
-		for (Long i = base; i < limit; i++) {
+		for (long i = base; i < limit; i++)
 			tPool.submit(new AddPath(i));
-		}
 
 		try {
 			while (!tPool.awaitTermination(20, TimeUnit.SECONDS)) {
@@ -167,7 +165,7 @@ public class CatalogueTestWhereisGenerated {
 		}
 
 		double ms_per_i = 0;
-		int cnt = timing_count.get();
+		final long cnt = timing_count.get();
 
 		if (cnt > 0) {
 			ms_per_i = ns_count.get() / (double) cnt;
@@ -187,30 +185,31 @@ public class CatalogueTestWhereisGenerated {
 	}
 
 	private static class AddPath implements Runnable {
-		final Long root;
+		final long root;
 
-		public AddPath(final Long r) {
+		public AddPath(final long r) {
 			this.root = r;
 		}
 
+		@SuppressWarnings("incomplete-switch")
 		@Override
 		public void run() {
 			if (limit_reached)
 				return;
 
-			long last_part = root % 10000;
-			long left = root / 10000;
-			long medium_part = left % 100;
-			long first_part = left / 100;
-			String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
+			final long last_part = root % 10000;
+			final long left = root / 10000;
+			final long medium_part = left % 100;
+			final long first_part = left / 100;
+			final String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
 			for (int i = 1; i <= 10; i++) {
 				if (limit_reached)
 					break;
 
-				String lfn = lfnparent + "file" + i + "_" + root;
+				final String lfn = lfnparent + "file" + i + "_" + root;
 
-				int counted = global_count.incrementAndGet();
+				final long counted = global_count.incrementAndGet();
 				if (counted % 5000 == 0) {
 					out.println("LFN: " + lfn + " Estimation: " + (ns_count.get() / counted) / 1000000. + " - Count: " + counted + " Time: " + new Date());
 					out.flush();
@@ -220,7 +219,7 @@ public class CatalogueTestWhereisGenerated {
 				final long start = System.nanoTime();
 				switch (type) {
 				case 0: // LFN
-					LFN temp = LFNUtils.getLFN(lfn);
+					final LFN temp = LFNUtils.getLFN(lfn);
 					if (temp == null) {
 						final String msg = "Failed to get lfn temp: " + lfn;
 						failed_files.println(msg);
@@ -228,7 +227,7 @@ public class CatalogueTestWhereisGenerated {
 						error = true;
 						break;
 					}
-					Set<PFN> pfns = temp.whereis();
+					final Set<PFN> pfns = temp.whereis();
 					if (pfns == null || pfns.isEmpty()) {
 						final String msg = "Failed to get PFNS: " + lfn;
 						failed_files.println(msg);
@@ -238,8 +237,8 @@ public class CatalogueTestWhereisGenerated {
 					}
 					break;
 				case 1: // LFN_CSD
-					LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null);
-					HashMap<Integer, String> pfnsc = lfnc.whereis(lfntable, clevel);
+					final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null);
+					final HashMap<Integer, String> pfnsc = lfnc.whereis(lfntable, clevel);
 					if (pfnsc == null || pfnsc.isEmpty()) {
 						final String msg = "Failed to get PFNS: " + lfn;
 						failed_files.println(msg);
@@ -252,13 +251,12 @@ public class CatalogueTestWhereisGenerated {
 				if (error)
 					continue;
 
-				final long duration_ns = (long) ((System.nanoTime() - start));
+				final long duration_ns = System.nanoTime() - start;
 				ns_count.addAndGet(duration_ns);
-				int counter2 = timing_count.incrementAndGet();
+				final long counter2 = timing_count.incrementAndGet();
 
-				if (counter2 >= limit_count) {
+				if (counter2 >= limit_count)
 					limit_reached = true;
-				}
 			}
 		}
 	}

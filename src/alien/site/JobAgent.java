@@ -253,6 +253,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 						logger.log(Level.INFO, (String) matchedJob.get("Error"));
 
 						if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
+							@SuppressWarnings("unchecked")
 							final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
 							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 							installPackages(packToInstall);
@@ -967,6 +968,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 					final Object val = jdl.get(s);
 
 					if (val instanceof Collection<?>) {
+						@SuppressWarnings("unchecked")
 						final Iterator<String> it = ((Collection<String>) val).iterator();
 						String sbuff = "";
 						boolean isFirst = true;

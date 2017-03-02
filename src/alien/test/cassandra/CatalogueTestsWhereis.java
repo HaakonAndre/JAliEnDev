@@ -131,8 +131,8 @@ public class CatalogueTestsWhereis {
 
 		if (type == 0) {
 			System.out.println("Running as DB LFN");
-			String[] folders = args[0].split(",");
-			for (String s : folders) {
+			final String[] folders = args[0].split(",");
+			for (final String s : folders) {
 				System.out.println("Recursing: " + s);
 				tPool.submit(new RecurseLFN(LFNUtils.getLFN(s)));
 			}
@@ -140,8 +140,8 @@ public class CatalogueTestsWhereis {
 		else
 			if (type == 1) {
 				System.out.println("Running as Cassandra LFN");
-				String[] folders = args[0].split(",");
-				for (String s : folders) {
+				final String[] folders = args[0].split(",");
+				for (final String s : folders) {
 					System.out.println("Recursing: " + s);
 					tPool.submit(new RecurseLFNCassandra(LFNUtils.getLFN(s)));
 				}
@@ -162,7 +162,7 @@ public class CatalogueTestsWhereis {
 		}
 
 		double ms_per_ls = 0;
-		int cnt = global_count.get();
+		final int cnt = global_count.get();
 
 		if (cnt > 0) {
 			if (limit_reached)
@@ -230,28 +230,27 @@ public class CatalogueTestsWhereis {
 				if (l.isFile()) {
 					final long start = System.nanoTime();
 					// Add lfn again
-					LFN temp = LFNUtils.getLFN(l.getCanonicalName());
+					final LFN temp = LFNUtils.getLFN(l.getCanonicalName());
 					if (temp == null) {
 						final String msg = "Failed to get lfn temp: " + l.getCanonicalName();
 						failed_files.println(msg);
 						failed_files.flush();
 						continue;
 					}
-					Set<PFN> pfns = l.whereis();
+					final Set<PFN> pfns = l.whereis();
 					if (pfns == null || pfns.isEmpty()) {
 						final String msg = "Failed to get PFNS: " + l.getCanonicalName();
 						failed_files.println(msg);
 						failed_files.flush();
 						continue;
 					}
-					final long duration_ns = (long) ((System.nanoTime() - start));
+					final long duration_ns = System.nanoTime() - start;
 
 					ns_count.addAndGet(duration_ns);
 
 					final int counter2 = global_count.incrementAndGet();
-					if (counter2 >= limit) {
+					if (counter2 >= limit)
 						limit_reached = true;
-					}
 
 					if (counter2 % 5000 == 0) {
 						// out.println("LFN: " + dir.getCanonicalName() + " - Count: " + counter2 + " Time: " + new Date());
@@ -260,7 +259,7 @@ public class CatalogueTestsWhereis {
 					}
 				}
 				else
-					if (l.isDirectory()) {
+					if (l.isDirectory())
 						try {
 							if (!limit_reached)
 								tPool.submit(new RecurseLFN(l));
@@ -271,7 +270,6 @@ public class CatalogueTestsWhereis {
 							failed_folders.flush();
 							return;
 						}
-					}
 			}
 		}
 	}
@@ -317,21 +315,20 @@ public class CatalogueTestsWhereis {
 
 				if (lfnc.isFile() || lfnc.isMemberOfArchive() || lfnc.isArchive()) {
 					final long start = System.nanoTime();
-					HashMap<Integer, String> pfns = lfnc.whereis();
+					final HashMap<Integer, String> pfns = lfnc.whereis();
 					if (pfns == null || pfns.isEmpty()) {
 						final String msg = "Failed to get PFNS: " + l.getCanonicalName();
 						failed_files.println(msg);
 						failed_files.flush();
 						continue;
 					}
-					final long duration_ns = (long) ((System.nanoTime() - start));
+					final long duration_ns = System.nanoTime() - start;
 
 					ns_count.addAndGet(duration_ns);
 
 					final int counter2 = global_count.incrementAndGet();
-					if (counter2 >= limit) {
+					if (counter2 >= limit)
 						limit_reached = true;
-					}
 
 					if (counter2 % 2000 == 0) {
 						out.println("LFN: " + dir.getCanonicalName() + " - Count: " + counter2 + " Time: " + new Date());
@@ -340,7 +337,7 @@ public class CatalogueTestsWhereis {
 
 				}
 				else
-					if (lfnc.isDirectory()) {
+					if (lfnc.isDirectory())
 						try {
 							if (!limit_reached)
 								tPool.submit(new RecurseLFNCassandra(l));
@@ -351,7 +348,6 @@ public class CatalogueTestsWhereis {
 							failed_folders.flush();
 							return;
 						}
-					}
 			}
 		}
 	}

@@ -37,7 +37,6 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.test.JobDiscoverer;
 import lazyj.commands.SystemCommand;
-import lia.util.Utils;
 
 /**
  *
@@ -328,7 +327,7 @@ public class CatalogueToJsonThreads {
 		}
 
 		@Override
-		@SuppressWarnings("unchecked")
+		@SuppressWarnings({ "unchecked", "null" })
 		public void run() {
 			if (dir == null) {
 				final String msg = "LFN DIR is null!";

@@ -4,14 +4,14 @@ import java.io.BufferedReader;
 import java.io.Console;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -22,14 +22,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-//import java.util.Base64;
-import java.io.ByteArrayInputStream;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
@@ -51,8 +49,6 @@ import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.pkcs.PKCS8EncryptedPrivateKeyInfo;
 import org.bouncycastle.pkcs.PKCSException;
-
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
@@ -264,90 +260,95 @@ public class JAKeyStore {
 	 * @throws Exception
 	 */
 	public static boolean loadClientKeyStorage() throws Exception {
-		//return loadClientKeyStorage(false);
-		//return loadClientKeyStorage(true);
+		// return loadClientKeyStorage(false);
+		// return loadClientKeyStorage(true);
 		String proxy = System.getenv().get("X509_USER_PROXY");
-		if(proxy!=null){
+		if (proxy != null) {
 			System.out.println("Using proxy");
 			return loadProxy();
 		}
-		else{
-			System.out.println("Using certificates");
-			return loadClientKeyStorage(false);
-		}
+		System.out.println("Using certificates");
+		return loadClientKeyStorage(false);
 
 	}
 
-	// EXPERIMENTAL
-	public static boolean loadProxy() throws Exception{
+	/**
+	 * EXPERIMENTAL
+	 * 
+	 * @return <code>true</code> if the default proxy could be loaded.
+	 * @throws Exception
+	 */
+	public static boolean loadProxy() throws Exception {
+		// TODO: use current user ID instead of a fixed string for this to actually have a chance of working
 		final String proxyLocation = "/tmp/x509up_u12411";
 		// load pair
-		//=================
+		// =================
 		class PkiUtils {
-			    public static final int MinPassPhraseLength = 4;
+			// public static List<?> readPemObjects(InputStream is, final String pphrase)
+			public List<Object> readPemObjects(InputStream is, final String pphrase) throws IOException {
+				List<Object> list = new LinkedList<>();
+				try (PEMParser pr2 = new PEMParser(new InputStreamReader(is))) {
+					JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+					JcaX509CertificateConverter certconv = new JcaX509CertificateConverter().setProvider("BC");
 
-			    //public static List<?> readPemObjects(InputStream is, final String pphrase) 
-			    public List<Object> readPemObjects(InputStream is, final String pphrase) 
-				    throws IOException {
-				List<Object> list = new LinkedList<Object>();
-				PEMParser pr2 = new PEMParser(new InputStreamReader(is));
-				
-				JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
-				JcaX509CertificateConverter certconv = new JcaX509CertificateConverter().setProvider("BC");
-				
-				while (true) {
-				    Object o = pr2.readObject();
-				    if (null == o)
-					break; // done
-				    
-				    list.add(parsePemObject(o, pphrase, converter, certconv));
+					while (true) {
+						Object o = pr2.readObject();
+						if (null == o)
+							break; // done
+
+						list.add(parsePemObject(o, pphrase, converter, certconv));
+					}
 				}
 				return list;
-			    }
+			}
 
-			    private Object parsePemObject(Object o, 
-								 final String pphrase,
-								 JcaPEMKeyConverter converter, 
-								 JcaX509CertificateConverter certconv) {
+			private Object parsePemObject(Object param, final String pphrase, JcaPEMKeyConverter converter, JcaX509CertificateConverter certconv) {
+				Object o = param;
+
 				try {
-				    if (o instanceof PEMEncryptedKeyPair) {
-					o = ((PEMEncryptedKeyPair)o).decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(pphrase.toCharArray()));
-				    } else if(o instanceof PKCS8EncryptedPrivateKeyInfo) {
-					InputDecryptorProvider pkcs8decoder = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(pphrase.toCharArray());
-					o = converter.getPrivateKey(
-					    ((PKCS8EncryptedPrivateKeyInfo)o).decryptPrivateKeyInfo(pkcs8decoder));
-				    }
-				} catch (Throwable t) { 
-				    throw new RuntimeException("Failed to decode private key", t);
+					if (o instanceof PEMEncryptedKeyPair) {
+						o = ((PEMEncryptedKeyPair) o).decryptKeyPair(new JcePEMDecryptorProviderBuilder().build(pphrase.toCharArray()));
+					}
+					else
+						if (o instanceof PKCS8EncryptedPrivateKeyInfo) {
+							InputDecryptorProvider pkcs8decoder = new JceOpenSSLPKCS8DecryptorProviderBuilder().build(pphrase.toCharArray());
+							o = converter.getPrivateKey(((PKCS8EncryptedPrivateKeyInfo) o).decryptPrivateKeyInfo(pkcs8decoder));
+						}
+				} catch (Throwable t) {
+					throw new RuntimeException("Failed to decode private key", t);
 				}
 
 				if (o instanceof PEMKeyPair) {
-				    try {
-					return converter.getKeyPair((PEMKeyPair) o);
-				    } catch (PEMException e) {
-					throw new RuntimeException("Failed to construct public/private key pair", e);
-				    }
-				} 
-				/* else if(o instanceof RSAPrivateCrtKey){
-				    RSAPrivateCrtKey pk = (RSAPrivateCrtKey) o;
-				    System.err.println("=========== private key cert ==========");
-				    //return makeKeyPair(pk);
-				    return null;
-				} */
-				else if (o instanceof X509CertificateHolder) {
-				    try {   
-				  return certconv.getCertificate((X509CertificateHolder) o);  
-				    } catch (Exception e) {
-					throw new RuntimeException("Failed to read X509 certificate", e);
-				    }
-				} else {
-				    // catchsink, should check for certs and reject rest?
-				  System.out.println("generic case  type " + o.getClass().getName());
-				    return o;
+					try {
+						return converter.getKeyPair((PEMKeyPair) o);
+					} catch (PEMException e) {
+						throw new RuntimeException("Failed to construct public/private key pair", e);
+					}
 				}
-			    }
+				/*
+				 * else if(o instanceof RSAPrivateCrtKey){
+				 * RSAPrivateCrtKey pk = (RSAPrivateCrtKey) o;
+				 * System.err.println("=========== private key cert ==========");
+				 * //return makeKeyPair(pk);
+				 * return null;
+				 * }
+				 */
+				else
+					if (o instanceof X509CertificateHolder) {
+						try {
+							return certconv.getCertificate((X509CertificateHolder) o);
+						} catch (Exception e) {
+							throw new RuntimeException("Failed to read X509 certificate", e);
+						}
+					}
+					else {
+						// catchsink, should check for certs and reject rest?
+						System.out.println("generic case  type " + o.getClass().getName());
+						return o;
+					}
 			}
-			//=================
+		}
+		// =================
 		clientCert = KeyStore.getInstance("JKS");
 		try {
 			clientCert.load(null, pass);
@@ -355,22 +356,20 @@ public class JAKeyStore {
 			// ignore
 		}
 
-		try{
-			List<Object> l = (new PkiUtils()).readPemObjects(new FileInputStream(proxyLocation), "");
+		try (FileInputStream proxyIS = new FileInputStream(proxyLocation)) {
+			List<Object> l = (new PkiUtils()).readPemObjects(proxyIS, "");
 			KeyPair kp = (KeyPair) l.get(1);
 			ArrayList<X509Certificate> x509l = new ArrayList<>();
-			for(Object o: l){
-			//	System.out.println(o);
-				if(!(o instanceof KeyPair)){
+			for (Object o : l) {
+				// System.out.println(o);
+				if (!(o instanceof KeyPair)) {
 					x509l.add((X509Certificate) o);
 				}
 			}
 			addKeyPairToKeyStore(clientCert, "User.cert", kp, x509l);
-		}
-		catch(FileNotFoundException e){
+		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
 			System.err.println("Proxy file not found");
-		}
-		catch(IOException e){
+		} catch (IOException e) {
 			System.err.println("Error while reading proxy file: " + e);
 		}
 		// get pair
@@ -534,38 +533,25 @@ public class JAKeyStore {
 		}
 	}
 
-	private static void addKeyPairToKeyStore(final KeyStore ks, 
-						final String entryBaseName, 
-						final String privKeyLocation, 
-						final String pubKeyLocation, 
-						final PasswordFinder pFinder) throws Exception {
-		ks.setEntry(entryBaseName, 
-				new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), 
-								loadPubX509(pubKeyLocation)),
+	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final PasswordFinder pFinder) throws Exception {
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation)),
 				new KeyStore.PasswordProtection(pass));
 	}
 
+	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final KeyPair pair, ArrayList<X509Certificate> chain) throws Exception {
+		// ArrayList<X509Certificate> chain = new ArrayList<>();
 
-
-	private static void addKeyPairToKeyStore(final KeyStore ks, 
-						final String entryBaseName, 
-						final KeyPair pair, 
-						ArrayList<X509Certificate> chain) throws Exception {
-		//ArrayList<X509Certificate> chain = new ArrayList<>();
-		
-		//byte[] pkey = pair.getPublic().getEncoded();
-		//System.out.println(pair.getPublicKeyInfo().toString());
-		/*System.out.println(pkey.length);
-		X509Certificate c = (X509Certificate)CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(pkey));
-		chain.add(c);
-		*/
-		//char[] pass = {'\0'};
+		// byte[] pkey = pair.getPublic().getEncoded();
+		// System.out.println(pair.getPublicKeyInfo().toString());
+		/*
+		 * System.out.println(pkey.length);
+		 * X509Certificate c = (X509Certificate)CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(pkey));
+		 * chain.add(c);
+		 */
+		// char[] pass = {'\0'};
 		X509Certificate[] certArray = new X509Certificate[chain.size()];
 		certArray = chain.toArray(certArray);
-		ks.setEntry(entryBaseName, 
-				new KeyStore.PrivateKeyEntry(pair.getPrivate(), 
-							certArray),
-				new KeyStore.PasswordProtection(pass));
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(pair.getPrivate(), certArray), new KeyStore.PasswordProtection(pass));
 	}
 
 	@SuppressWarnings("unused")

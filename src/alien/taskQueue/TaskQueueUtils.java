@@ -1218,18 +1218,6 @@ public class TaskQueueUtils {
 		return ret;
 	}
 
-	/**
-	 * Kill a job in the queue
-	 *
-	 * @param user
-	 * @param queueId
-	 * @return status of the kill
-	 */
-	public static boolean kill(final AliEnPrincipal user, final long queueId) {
-		// TODO check if the user is allowed to kill and do it
-		return false;
-	}
-
 	private static final Pattern p = Pattern.compile("\\$(\\d+)");
 
 	/**
@@ -2351,7 +2339,7 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static void sendNotificationMail(final Job j) {
+	private static void sendNotificationMail(@SuppressWarnings("unused") final Job j) {
 		// send j.notify an info
 		// TODO:
 	}
@@ -2489,7 +2477,7 @@ public class TaskQueueUtils {
 	 * @param status
 	 * @param extraparams
 	 */
-	public static void setSiteQueueStatus(final String ce, final String status, final Object... extraparams) {
+	public static void setSiteQueueStatus(final String ce, final String status, @SuppressWarnings("unused") final Object... extraparams) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;

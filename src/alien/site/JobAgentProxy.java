@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -31,11 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.StringTokenizer;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.Vector;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -247,52 +242,54 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		// ========= for ORNL Titan
 
 		try {
-			String titan_cores_str = null;
-			if (env.containsKey("TITAN_CORES_CLAIMED"))
-				titan_cores_str = env.get("TITAN_CORES_CLAIMED");
-			if (titan_cores_str == null)
-				throw new NumberFormatException("Titan cores number not defined");
-			numCores = Integer.parseInt(titan_cores_str);
-			if (numCores <= 0)
-				throw new NumberFormatException("Titan cores number is invalid");
-			dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db", pid);
-			Connection connection = DriverManager.getConnection(dbname);
-			Statement statement = connection.createStatement();
-			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
-			statement.executeUpdate(
-					"CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"
-							+ "environment TEXT," + "exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
-			statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
-			statement.executeUpdate("INSERT INTO numbers " + "select 1 " + "from (" + "select 0 union select 1 union select 2 " + ") a, (" + "select 0 union select 1 union select 2 union select 3 "
-					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") b, (" + "select 0 union select 1 union select 2 union select 3 "
-					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") c, (" + "select 0 union select 1 union select 2 union select 3 "
-					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") d, (" + "select 0 union select 1 union select 2 union select 3 "
-					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") e, (" + "select 0 union select 1 union select 2 union select 3 "
-					+ "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") f");
-			statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", numCores));
-			statement.executeUpdate("DROP TABLE numbers");
-			connection.close();
+			try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement();) {
+				String titan_cores_str = null;
+				if (env.containsKey("TITAN_CORES_CLAIMED"))
+					titan_cores_str = env.get("TITAN_CORES_CLAIMED");
+				if (titan_cores_str == null)
+					throw new NumberFormatException("Titan cores number not defined");
+				numCores = Integer.parseInt(titan_cores_str);
+				if (numCores <= 0)
+					throw new NumberFormatException("Titan cores number is invalid");
+				dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db", Integer.valueOf(pid));
 
-			// creating monitoring db
-			monitoring_dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db.monitoring", pid);
-			connection = DriverManager.getConnection(monitoring_dbname);
-			statement = connection.createStatement();
-			statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs_monitoring");
-			statement.executeUpdate("CREATE TABLE alien_jobs_monitoring (queue_id VARCHAR(20), resources VARCHAR(100))");
-			connection.close();
-
-			dblink = "/lustre/atlas/scratch/psvirin/csc108/workdir/database.lnk";
-			try (PrintWriter out = new PrintWriter(dblink)) {
-				out.println(dbname);
+				statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs");
+				statement.executeUpdate(
+						"CREATE TABLE alien_jobs (rank INTEGER NOT NULL, queue_id VARCHAR(20), job_folder VARCHAR(256) NOT NULL, status CHAR(1), executable VARCHAR(256), validation VARCHAR(256),"
+								+ "environment TEXT," + "exec_code INTEGER DEFAULT -1, val_code INTEGER DEFAULT -1)");
+				statement.executeUpdate("CREATE TEMPORARY TABLE numbers(n INTEGER)");
+				statement.executeUpdate("INSERT INTO numbers " + "select 1 " + "from (" + "select 0 union select 1 union select 2 " + ") a, ("
+						+ "select 0 union select 1 union select 2 union select 3 " + "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") b, ("
+						+ "select 0 union select 1 union select 2 union select 3 " + "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") c, ("
+						+ "select 0 union select 1 union select 2 union select 3 " + "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") d, ("
+						+ "select 0 union select 1 union select 2 union select 3 " + "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") e, ("
+						+ "select 0 union select 1 union select 2 union select 3 " + "union select 4 union select 5 union select 6 " + "union select 7 union select 8 union select 9" + ") f");
+				statement.executeUpdate(String.format("INSERT INTO alien_jobs SELECT rowid-1, 0, '', 'I', '', '', '', 0, 0 FROM numbers LIMIT %d", Integer.valueOf(numCores)));
+				statement.executeUpdate("DROP TABLE numbers");
 			}
-			;
-		} catch (SQLException e) {
+
+			monitoring_dbname = String.format("jdbc:sqlite:" + workdir + "/jobagent_titan_%d.db.monitoring", Integer.valueOf(pid));
+
+			try (Connection connection = DriverManager.getConnection(monitoring_dbname); Statement statement = connection.createStatement();) {
+				// creating monitoring db
+				statement.executeUpdate("DROP TABLE IF EXISTS alien_jobs_monitoring");
+				statement.executeUpdate("CREATE TABLE alien_jobs_monitoring (queue_id VARCHAR(20), resources VARCHAR(100))");
+				connection.close();
+
+				dblink = "/lustre/atlas/scratch/psvirin/csc108/workdir/database.lnk";
+				try (PrintWriter out = new PrintWriter(dblink)) {
+					out.println(dbname);
+				}
+			}
+		} catch (
+
+		SQLException e) {
 			System.err.println("Unable to start JobAgentProxy for Titan because of SQLite exception: " + e.getMessage());
 			System.exit(-1);
 		} catch (NumberFormatException e) {
 			System.err.println("Number of Titan cores (TITAN_CORES_CLAIMED environment variable) has incorrect value: " + e.getMessage());
-		} catch (Exception e) {
-			System.err.println("Failed to open dblink file");
+		} catch (@SuppressWarnings("unused") Exception e) {
+			System.err.println("Failed to open dblink file " + dblink);
 		}
 
 		// here create monitor thread
@@ -318,6 +315,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		}
 
 		new TitanMonitorThread(this).start();
+
 		// END EXPERIMENTAL
 	}
 
@@ -353,7 +351,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				validationCode = val_code;
 			}
 		}
-		;
 
 		while (true) {
 			if (!updateDynamicParameters()) {
@@ -366,19 +363,21 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					Statement statement = connection.createStatement();
 					ResultSet rs = statement.executeQuery("SELECT rank, queue_id, job_folder, status, exec_code, val_code FROM alien_jobs WHERE status='D' OR status='I'")) {
 				while (rs.next()) {
-					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), rs.getLong("queue_id"), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"), rs.getInt("val_code")));
+					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), Long.valueOf(rs.getLong("queue_id")), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"),
+							rs.getInt("val_code")));
 				}
 			} catch (SQLException e) {
 				System.err.println("Getting free slots failed: " + e.getMessage());
 				continue;
 			}
 			int count = idleRanks.size();
-			System.out.println(String.format("We can start %d jobs", count));
+			System.out.println("We can start " + count + " jobs");
 
 			if (count == 0) {
 				try {
 					Thread.sleep(30000);
 				} catch (@SuppressWarnings("unused") InterruptedException e) {
+					// ignore
 				} finally {
 					System.out.println("Going for the next round....");
 				}
@@ -420,7 +419,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 							System.err.println(String.format("Upload job %d finished", js.queueId));
 
 							try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement();) {
-								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", js.rank));
+								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", Integer.valueOf(js.rank)));
 							} catch (@SuppressWarnings("unused") SQLException e) {
 								System.err.println("Update job state to I failed");
 							}
@@ -520,11 +519,9 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		// For ORNL Titan
 		// TO DELETE: use deleteOnExit instead
 		File f = new File(dbname);
-		if (f != null)
-			f.delete();
+		f.delete();
 		f = new File(dblink);
-		if (f != null)
-			f.delete();
+		f.delete();
 
 		System.exit(0);
 	}
@@ -689,20 +686,22 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		return origTtl;
 	}
 
-	private long ttlForJob() {
-		final Integer iTTL = jdl.getInteger("TTL");
-
-		int ttl = (iTTL != null ? iTTL.intValue() : 0) + 300;
-		commander.q_api.putJobLog(queueId, "trace", "Job asks to run for " + ttl + " seconds");
-
-		final String proxyttl = jdl.gets("ProxyTTL");
-		if (proxyttl != null) {
-			ttl = ((Integer) siteMap.get("TTL")).intValue() - 600;
-			commander.q_api.putJobLog(queueId, "trace", "ProxyTTL enabled, running for " + ttl + " seconds");
-		}
-
-		return ttl;
-	}
+	/*
+	 * private long ttlForJob() {
+	 * final Integer iTTL = jdl.getInteger("TTL");
+	 * 
+	 * int ttl = (iTTL != null ? iTTL.intValue() : 0) + 300;
+	 * commander.q_api.putJobLog(queueId, "trace", "Job asks to run for " + ttl + " seconds");
+	 * 
+	 * final String proxyttl = jdl.gets("ProxyTTL");
+	 * if (proxyttl != null) {
+	 * ttl = ((Integer) siteMap.get("TTL")).intValue() - 600;
+	 * commander.q_api.putJobLog(queueId, "trace", "ProxyTTL enabled, running for " + ttl + " seconds");
+	 * }
+	 * 
+	 * return ttl;
+	 * }
+	 */
 
 	private void handleJob() {
 		totalJobs++;
@@ -792,78 +791,80 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	}
 	// end EXPERIMENTAL
 
-	/**
+	/*
 	 * @param command
+	 * 
 	 * @param arguments
+	 * 
 	 * @param timeout
+	 * 
 	 * @return <cod>0</code> if everything went fine, a positive number with the process exit code (which would mean a problem) and a negative error code in case of timeout or other supervised
-	 *         execution errors
-	 */
-	private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit, final boolean monitorJob) {
-		final List<String> cmd = new LinkedList<>();
+	 * execution errors
+	 * private int executeCommand(final String command, final List<String> arguments, final long timeout, final TimeUnit unit, final boolean monitorJob) {
+	 * final List<String> cmd = new LinkedList<>();
+	 * 
+	 * final int idx = command.lastIndexOf('/');
+	 * 
+	 * final String cmdStrip = idx < 0 ? command : command.substring(idx + 1);
+	 * 
+	 * final File fExe = new File(tempDir, cmdStrip);
+	 * 
+	 * if (!fExe.exists())
+	 * return -1;
+	 * 
+	 * fExe.setExecutable(true);
+	 * 
+	 * cmd.add(fExe.getAbsolutePath());
+	 * 
+	 * if (arguments != null && arguments.size() > 0)
+	 * for (final String argument : arguments)
+	 * if (argument.trim().length() > 0) {
+	 * final StringTokenizer st = new StringTokenizer(argument);
+	 * 
+	 * while (st.hasMoreTokens())
+	 * cmd.add(st.nextToken());
+	 * }
+	 * 
+	 * System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
+	 * 
+	 * // final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+	 * // final List<String> cmd1 = new LinkedList<>();
+	 * // cmd1.add("/lustre/atlas/scratch/psvirin/csc108/tmp/sq.sh");
+	 * // cmd1.add(tempDir.getAbsolutePath());
+	 * // cmd1.add(fExe.getAbsolutePath());
+	 * // ProcessBuilder pBuilder1 = new ProcessBuilder(cmd1);
+	 * // ProcessBuilder pBuilder = new ProcessBuilder(cmd);
+	 * //////////*
+	 * try{
+	 * pBuilder1.start();
+	 * //Process p;
+	 * //p = Runtime.getRuntime().exec("sqlite3 /lustre/atlas/scratch/psvirin/csc108/alien.db \"INSERT INTO tasks_alien VALUES(0, '" + fExe.getAbsolutePath() + "', 'Q');\"");
+	 * //p = Runtime.getRuntime().exec("/lustre/atlas/scratch/psvirin/csc108/add_to_db");
+	 * //p.waitFor();
+	 * //BufferedReader reader =
+	 * //new BufferedReader(new InputStreamReader(p.getInputStream()));
+	 * 
+	 * //String line = "";
+	 * //while ((line = reader.readLine())!= null) {
+	 * //System.out.println(line);
+	 * //}
+	 * //System.out.println("SQLITE run");
+	 * }
+	 * catch(Exception e){
+	 * System.out.println(e.getMessage());
+	 * }
+	 * /////////////
 
-		final int idx = command.lastIndexOf('/');
+	// EXPERIMENTAL
+	// pBuilder = new ProcessBuilder(cmd);
+	ProcessBuilder pBuilder = new ProcessBuilder("sleep", "200");
 
-		final String cmdStrip = idx < 0 ? command : command.substring(idx + 1);
+	pBuilder.directory(tempDir);
 
-		final File fExe = new File(tempDir, cmdStrip);
+	final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+	final Map<String, String> processEnv = pBuilder.environment();processEnv.putAll(environment_packages);processEnv.putAll(
 
-		if (!fExe.exists())
-			return -1;
-
-		fExe.setExecutable(true);
-
-		cmd.add(fExe.getAbsolutePath());
-
-		if (arguments != null && arguments.size() > 0)
-			for (final String argument : arguments)
-				if (argument.trim().length() > 0) {
-					final StringTokenizer st = new StringTokenizer(argument);
-
-					while (st.hasMoreTokens())
-						cmd.add(st.nextToken());
-				}
-
-		System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
-
-		// final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
-		// final List<String> cmd1 = new LinkedList<>();
-		// cmd1.add("/lustre/atlas/scratch/psvirin/csc108/tmp/sq.sh");
-		// cmd1.add(tempDir.getAbsolutePath());
-		// cmd1.add(fExe.getAbsolutePath());
-		// ProcessBuilder pBuilder1 = new ProcessBuilder(cmd1);
-		// ProcessBuilder pBuilder = new ProcessBuilder(cmd);
-		/*
-		 * try{
-		 * pBuilder1.start();
-		 * //Process p;
-		 * //p = Runtime.getRuntime().exec("sqlite3 /lustre/atlas/scratch/psvirin/csc108/alien.db \"INSERT INTO tasks_alien VALUES(0, '" + fExe.getAbsolutePath() + "', 'Q');\"");
-		 * //p = Runtime.getRuntime().exec("/lustre/atlas/scratch/psvirin/csc108/add_to_db");
-		 * //p.waitFor();
-		 * //BufferedReader reader =
-		 * //new BufferedReader(new InputStreamReader(p.getInputStream()));
-		 * 
-		 * //String line = "";
-		 * //while ((line = reader.readLine())!= null) {
-		 * //System.out.println(line);
-		 * //}
-		 * //System.out.println("SQLITE run");
-		 * }
-		 * catch(Exception e){
-		 * System.out.println(e.getMessage());
-		 * }
-		 */
-
-		// EXPERIMENTAL
-		// pBuilder = new ProcessBuilder(cmd);
-		ProcessBuilder pBuilder = new ProcessBuilder("sleep", "200");
-
-		pBuilder.directory(tempDir);
-
-		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
-		final Map<String, String> processEnv = pBuilder.environment();
-		processEnv.putAll(environment_packages);
-		processEnv.putAll(loadJDLEnvironmentVariables());
+	loadJDLEnvironmentVariables());
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
@@ -939,9 +940,9 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		} finally {
 			t.cancel();
 		}
-	}
+	}*/
 
-	private void sendProcessResources() {
+	void sendProcessResources() {
 		// EXPERIMENTAL
 		// for ORNL Titan
 		class ProcInfoPair {
@@ -953,13 +954,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				this.procinfo = procinfo;
 			}
 		}
-		LinkedList<ProcInfoPair> job_resources = new LinkedList<ProcInfoPair>();
+		LinkedList<ProcInfoPair> job_resources = new LinkedList<>();
 
-		try {
-			// open db
-			Connection connection = DriverManager.getConnection(monitoring_dbname);
-			Statement statement = connection.createStatement();
-			ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");
+		try (Connection connection = DriverManager.getConnection(monitoring_dbname);
+				Statement statement = connection.createStatement();
+				ResultSet rs = statement.executeQuery("SELECT * FROM alien_jobs_monitoring");) {
 			// read all
 			while (rs.next()) {
 				job_resources.add(new ProcInfoPair(rs.getString("queue_id"), rs.getString("resources")));
@@ -968,8 +967,6 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			}
 			// delete all
 			statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
-			// close database
-			connection.close();
 		} catch (SQLException e) {
 			System.err.println("Unable to get monitoring data: " + e.getMessage());
 		}
@@ -985,7 +982,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		}
 	}
 
-	private String checkProcessResources() {
+	static String checkProcessResources() {
 		String error = null;
 		// EXPERIMENTAL
 		// for ORNL Titan
@@ -1130,9 +1127,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		// EXPERIMENTAL
 		// for ORNL Titan
-		try {
-			Connection connection = DriverManager.getConnection(dbname);
-			Statement statement = connection.createStatement();
+		try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement();) {
+
 			// statement.executeUpdate(String.format("INSERT INTO alien_jobs(rank, queue_id, job_folder , status , executable, validation, environment ) " +
 			// "VALUES(%d, %d, '%s', '%s', '%s', '%s', '%s')",
 			// current_rank, queueId, tempDir, "Q",
@@ -1156,11 +1152,12 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			}
 
 			String validationCommand = jdl.gets("ValidationCommand");
-			statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + "WHERE rank=%d", queueId,
-					tempDir, "Q", getLocalCommand(jdl.gets("Executable"), jdl.getArguments()), validationCommand != null ? getLocalCommand(validationCommand, null) : "", "", current_rank));
+			statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + "WHERE rank=%d",
+					Long.valueOf(queueId), tempDir, "Q", getLocalCommand(jdl.gets("Executable"), jdl.getArguments()), validationCommand != null ? getLocalCommand(validationCommand, null) : "", "",
+					Integer.valueOf(current_rank)));
 		} catch (SQLException e) {
 			System.err.println("Failed to insert job: " + e.getMessage());
-		} catch (FileNotFoundException e) {
+		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
 			System.err.println("Failed to write variables file");
 		}
 
@@ -1170,19 +1167,21 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		return 0;
 	}
 
-	private boolean validate() {
-		int code = 0;
-
-		final String validation = jdl.gets("ValidationCommand");
-
-		if (validation != null) {
-			commander.q_api.putJobLog(queueId, "trace", "Starting validation");
-			code = executeCommand(validation, null, 5, TimeUnit.MINUTES, false);
-		}
-		System.err.println("Validation code: " + code);
-
-		return code == 0;
-	}
+	/*
+	 * private boolean validate() {
+	 * int code = 0;
+	 * 
+	 * final String validation = jdl.gets("ValidationCommand");
+	 * 
+	 * if (validation != null) {
+	 * commander.q_api.putJobLog(queueId, "trace", "Starting validation");
+	 * code = executeCommand(validation, null, 5, TimeUnit.MINUTES, false);
+	 * }
+	 * System.err.println("Validation code: " + code);
+	 * 
+	 * return code == 0;
+	 * }
+	 */
 
 	private boolean getInputFiles() {
 		final Set<String> filesToDownload = new HashSet<>();
@@ -1367,10 +1366,10 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					// EXPERIMENTAL
 					System.err.println("===================");
 					System.err.println("Filename: " + localFile.getName());
-					System.err.println(String.format("File exists: %b", localFile.exists()));
-					System.err.println(String.format("File is file: %b", localFile.isFile()));
-					System.err.println(String.format("File readable: %b", localFile.canRead()));
-					System.err.println(String.format("File length: %d", localFile.length()));
+					System.err.println("File exists: " + localFile.exists());
+					System.err.println("File is file: " + localFile.isFile());
+					System.err.println("File readable: " + localFile.canRead());
+					System.err.println("File length: " + localFile.length());
 
 					if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 
