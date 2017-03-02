@@ -41,7 +41,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	static transient final Monitor monitor = MonitorFactory.getMonitor(LFN_CSD.class.getCanonicalName());
 
 	/**
-	 * Monitoring component
+	 * Root UUID
+	 */
+	public static final UUID root_uuid = UUID.nameUUIDFromBytes("root".getBytes());
+
+	/**
+	 * Modulo of seNumber to partition balance
 	 */
 	public static final Integer modulo_se_lookup = 100;
 
@@ -226,7 +231,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	private void init(Row row) {
-		if (row == null || row.isNull("path")) {
+		if (row == null) {
 			logger.log(Level.SEVERE, "Row null creating LFN_CSD ");
 			exists = false;
 			return;
@@ -258,16 +263,21 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 */
 	public static UUID getParentIdFromPath(String path_parent) {
 		try {
+			UUID path_id = root_uuid;
+
 			path_parent = path_parent.replaceAll("//", "/");
+			if (path_parent.equals("/"))
+				return path_id;
+
+			path_parent = path_parent.replaceAll("^/", "");
 			String[] path_chunks = path_parent.split("/");
 
 			Session session = DBCassandra.getInstance();
 			if (session == null)
 				return null;
 
-			UUID path_id = UUID.nameUUIDFromBytes("root".getBytes());
 			// We loop from root until we reach our dir
-			for (int i = 0; i < path_chunks.length; i++) {
+			for (int i = 0; i < path_chunks.length + 1; i++) {
 				PreparedStatement statement = session.prepare("select child_id from catalogue.lfn_index where path_id = ? and path = ?");
 				BoundStatement boundStatement = new BoundStatement(statement);
 				boundStatement.bind(path_id, (i == 0 ? "/" : path_chunks[i - 1]));
@@ -583,14 +593,24 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			cl = level;
 
 		try {
+			if (parent_id == null)
+				parent_id = getParentIdFromPath(path);
+			if (parent_id == null)
+				return null;
+
+			if (id == null)
+				id = getChildIdFromParentIdAndName(parent_id, child);
+			if (id == null)
+				return null;
+
 			@SuppressWarnings("resource")
 			Session session = DBCassandra.getInstance();
 			if (session == null)
 				return null;
 
-			PreparedStatement statement = session.prepare("select pfns from " + t + " where id = ?");
+			PreparedStatement statement = session.prepare("select pfns from " + t + " where parent_id = ? and id = ?");
 			BoundStatement boundStatement = new BoundStatement(statement);
-			boundStatement.bind(this.id);
+			boundStatement.bind(this.parent_id, this.id);
 
 			boundStatement.setConsistencyLevel(cl);
 
@@ -670,9 +690,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				boundStatement.bind(parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, String.valueOf(type), metadata);
 			}
 			else { // 'd'
-				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, checksum, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?,?)");
+				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?)");
 				boundStatement = new BoundStatement(statement);
-				boundStatement.bind(parent_id, id, ctime, gowner, jobid, checksum, owner, perm, size, String.valueOf(type));
+				boundStatement.bind(parent_id, id, ctime, gowner, jobid, owner, perm, size, String.valueOf(type));
 			}
 
 			boundStatement.setConsistencyLevel(cl);
@@ -739,7 +759,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public static boolean existsLfn(String lfn) {
 		String[] p_c = getPathAndChildFromCanonicalName(lfn);
 		String parent_of_lfn = p_c[0];
-		String child_of_lfn = p_c[0];
+		String child_of_lfn = p_c[1];
 
 		UUID pid = getParentIdFromPath(parent_of_lfn);
 		if (pid == null)
