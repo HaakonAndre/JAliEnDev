@@ -60,9 +60,19 @@ public class CatalogueToCassandraThreads {
 	static AtomicInteger timing_count = new AtomicInteger();
 
 	/**
+	 * Limit number of entries for folders
+	 */
+	static AtomicInteger timing_count_dirs = new AtomicInteger();
+
+	/**
 	 * total milliseconds
 	 */
 	static AtomicLong ns_count = new AtomicLong();
+
+	/**
+	 * total milliseconds for folders
+	 */
+	static AtomicLong ns_count_dirs = new AtomicLong();
 
 	/** File for tracking created folders */
 	static PrintWriter out = null;
@@ -141,15 +151,15 @@ public class CatalogueToCassandraThreads {
 			System.exit(-3);
 		}
 
-		final ArrayList<String> newargs = new ArrayList<>();
+		final String[] newargs = new String[args.length - 1];
 		for (int i = 1; i < args.length; i++)
-			newargs.add(args[i]);
+			newargs[i - 1] = args[i];
 
 		if (args[0].equals("real"))
-			main_real(newargs.toArray(new String[0]));
+			main_real(newargs);
 		else
 			if (args[0].equals("auto"))
-				main_auto(newargs.toArray(new String[0]));
+				main_auto(newargs);
 			else {
 				System.err.println("Usage: CatalogueToCassandraThreads real|auto ");
 				System.exit(-3);
@@ -173,8 +183,8 @@ public class CatalogueToCassandraThreads {
 		}
 
 		for (int i = 0; i < nargs; i++) {
-			out.println("Parameter " + i + ": " + args[i]);
-			out.flush();
+			System.out.println("Parameter " + i + ": " + args[i]);
+			System.out.flush();
 		}
 
 		int pool_size = 16;
@@ -290,11 +300,27 @@ public class CatalogueToCassandraThreads {
 		else
 			System.out.println("!!!!! Zero timing count !!!!!");
 
+		double ms_per_i_dirs = 0;
+		final int cnt_dirs = timing_count_dirs.get();
+
+		if (cnt_dirs > 0) {
+			ms_per_i_dirs = ns_count_dirs.get() / cnt_dirs;
+			System.out.println("Final ns/createDir: " + ms_per_i_dirs);
+			ms_per_i_dirs = ms_per_i_dirs / 1000000.;
+		}
+		else
+			System.out.println("!!!!! Zero timing count for dirs !!!!!");
+
 		System.out.println("Final timing count: " + cnt);
 		System.out.println("Final ms/i: " + ms_per_i);
 
+		System.out.println("Final timing count dirs: " + cnt_dirs);
+		System.out.println("Final ms/createDir: " + ms_per_i_dirs);
+
 		out.println("Final timing count: " + cnt + " - " + new Date());
 		out.println("Final ms/i: " + ms_per_i);
+		out.println("Final timing count dirs: " + cnt_dirs + " - " + new Date());
+		out.println("Final ms/createDir: " + ms_per_i_dirs);
 		out.close();
 
 		pw.close();
@@ -326,8 +352,8 @@ public class CatalogueToCassandraThreads {
 		}
 
 		for (int i = 0; i < nargs; i++) {
-			out.println("Parameter " + i + ": " + args[i]);
-			out.flush();
+			System.out.println("Parameter " + i + ": " + args[i]);
+			System.out.flush();
 		}
 
 		final long base = Long.parseLong(args[0]);
@@ -410,21 +436,13 @@ public class CatalogueToCassandraThreads {
 
 		@Override
 		public void run() {
-			// Divide the md5 in 8 letter segments, first 3 directories, last
-			// one filename
-			// this.path = getmd5(root.toString());
-
-			// String[] strs = this.path.split("(?<=\\G.{8})");
-			// String lfn = "/alice/" + strs[0] + "/" + strs[1] + "/" + strs[2]
-			// + "/" + strs[3];
-
 			final long last_part = root % 10000;
 			final long left = root / 10000;
 			final long medium_part = left % 100;
 			final long first_part = left / 100;
 			final String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
-			LFN_CSD.createDirectory(lfnparent, "catalogue.lfns_auto", clevel);
+			LFN_CSD.createDirectory(lfnparent, "_auto", clevel);
 
 			for (int i = 1; i <= 10; i++) {
 				final String lfn = "file" + i + "_" + root; // lfnparent +
@@ -435,9 +453,7 @@ public class CatalogueToCassandraThreads {
 					out.flush();
 				}
 
-				final LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false, null, null);
-				lfnc.path = lfnparent;
-				lfnc.child = lfn;
+				final LFN_CSD lfnc = new LFN_CSD(lfnparent + lfn, false, "_auto", null, null);
 				lfnc.size = rdm.nextInt(100000);
 				lfnc.jobid = rdm.nextInt(1000000);
 				lfnc.checksum = "ee31e454013aa515f0bc806aa907ba51";
@@ -586,9 +602,10 @@ public class CatalogueToCassandraThreads {
 
 				if (l.isDirectory()) {
 					// insert the dir
-					final LFN_CSD lfnc = new LFN_CSD(l);
+					final LFN_CSD lfnc = new LFN_CSD(l, false, true);
 					final long start = System.nanoTime();
-					if (!lfnc.insert(null, clevel)) {
+					// if (!lfnc.insert(null, clevel)) {
+					if (!LFN_CSD.createDirectory(l.getCanonicalName(), null, clevel, lfnc.owner, lfnc.gowner, lfnc.jobid, lfnc.perm, lfnc.ctime)) {
 						final String msg = "Error inserting directory: " + l.getCanonicalName() + " Time: " + new Date();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -596,8 +613,8 @@ public class CatalogueToCassandraThreads {
 						continue;
 					}
 					final long duration_ns = System.nanoTime() - start;
-					ns_count.addAndGet(duration_ns);
-					timing_count.incrementAndGet();
+					ns_count_dirs.addAndGet(duration_ns);
+					timing_count_dirs.incrementAndGet();
 
 					try {
 						if (!shouldexit)
@@ -612,7 +629,7 @@ public class CatalogueToCassandraThreads {
 				}
 				else
 					if (l.isCollection()) {
-						final LFN_CSD lfnc = new LFN_CSD(l);
+						final LFN_CSD lfnc = new LFN_CSD(l, false, true);
 						final long start = System.nanoTime();
 						if (!lfnc.insert(null, clevel)) {
 							final String msg = "Error inserting collection: " + l.getCanonicalName() + " Time: " + new Date();
@@ -636,7 +653,7 @@ public class CatalogueToCassandraThreads {
 							final boolean isMember = zip_members != null && zip_members.contains(l);
 
 							// create json file in the hierarchy
-							final LFN_CSD lfnc = new LFN_CSD(l);
+							final LFN_CSD lfnc = new LFN_CSD(l, false, true);
 
 							if (isArchive)
 								lfnc.type = 'a';
