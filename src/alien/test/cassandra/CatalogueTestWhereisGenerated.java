@@ -237,7 +237,7 @@ public class CatalogueTestWhereisGenerated {
 					}
 					break;
 				case 1: // LFN_CSD
-					final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null);
+					final LFN_CSD lfnc = new LFN_CSD(lfn, true, "_auto", null, null);
 					final HashMap<Integer, String> pfnsc = lfnc.whereis(lfntable, clevel);
 					if (pfnsc == null || pfnsc.isEmpty()) {
 						final String msg = "Failed to get PFNS: " + lfn;
