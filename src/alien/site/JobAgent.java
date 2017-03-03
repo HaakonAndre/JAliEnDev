@@ -58,7 +58,7 @@ import lazyj.commands.SystemCommand;
 /**
  * Job pilot, running an embedded JBox for in/out-bound communications
  */
-public class JobAgent extends Thread implements MonitoringObject {
+public class JobAgent implements MonitoringObject, Runnable {
 
 	// Folders and files
 	private File tempDir = null;
@@ -264,7 +264,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 					try {
 						// TODO?: monitor.sendBgMonitoring
-						sleep(20000);
+						Thread.sleep(20000);
 					} catch (final InterruptedException e) {
 						e.printStackTrace();
 					}

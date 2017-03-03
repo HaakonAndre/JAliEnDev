@@ -611,7 +611,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 	/**
 	 * @param append_table
-	 * @param table
 	 * @param level
 	 * @return physical locations of the file
 	 */
@@ -670,8 +669,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 	/**
 	 * @param append_table
-	 * @param table_lfns
-	 * @param table_se_lookup
 	 * @param level
 	 * @return insertion result
 	 */
@@ -788,8 +785,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 	/**
 	 * @param lfn
-	 * @param table
-	 * @param level
 	 * @return <code>true</code> if the LFN exists
 	 */
 	public static boolean existsLfn(String lfn) {

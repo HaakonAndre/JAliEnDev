@@ -42,7 +42,7 @@ import apmon.BkThread;
  * @since Apr 1, 2015
  */
 
-public class TitanJobService extends Thread implements MonitoringObject {
+public class TitanJobService implements MonitoringObject, Runnable {
 
 	// Folders and files
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
@@ -351,7 +351,7 @@ public class TitanJobService extends Thread implements MonitoringObject {
 
 	private static void roundSleep() {
 		try {
-			sleep(60000);
+			Thread.sleep(60000);
 		} catch (final InterruptedException e) {
 			System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
 		}

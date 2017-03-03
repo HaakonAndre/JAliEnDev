@@ -120,7 +120,6 @@ public class LFN_CSD_OLD implements Comparable<LFN_CSD_OLD>, CatalogEntity {
 
 	/**
 	 * @param l
-	 * @param LFN
 	 */
 	public LFN_CSD_OLD(LFN l) {
 		canonicalName = l.getCanonicalName();
