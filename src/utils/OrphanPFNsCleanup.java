@@ -1,10 +1,13 @@
 package utils;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.security.GeneralSecurityException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -69,69 +72,67 @@ public class OrphanPFNsCleanup {
 	 */
 	volatile static boolean dirtyStats = true;
 
-	private static ResultSet resultSet = null;
+	static final class MainOrphanMover extends Thread {
+		public MainOrphanMover() {
+			setName("MainOrphanMover");
+		}
 
-	private static Statement stat = null;
+		private int updateCount = -1;
 
-	private static final void executeClose() {
-		if (resultSet != null) {
+		private ResultSet resultSet = null;
+
+		private Statement stat = null;
+
+		private final void executeClose() {
+			if (resultSet != null) {
+				try {
+					resultSet.close();
+				} catch (@SuppressWarnings("unused") final Throwable t) {
+					// ignore
+				}
+
+				resultSet = null;
+			}
+
+			if (stat != null) {
+				try {
+					stat.close();
+				} catch (@SuppressWarnings("unused") final Throwable t) {
+					// ignore
+				}
+
+				stat = null;
+			}
+		}
+
+		private final boolean executeQuery(final DBConnection dbc, final String query) {
+			executeClose();
+
 			try {
-				resultSet.close();
-			} catch (@SuppressWarnings("unused") final Throwable t) {
-				// ignore
-			}
+				stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 
-			resultSet = null;
+				if (stat.execute(query, Statement.NO_GENERATED_KEYS)) {
+					updateCount = -1;
+
+					resultSet = stat.getResultSet();
+				}
+				else {
+					updateCount = stat.getUpdateCount();
+
+					executeClose();
+				}
+
+				return true;
+			} catch (final SQLException e) {
+				logger.log(Level.WARNING, "Exception executing the query", e);
+
+				return false;
+			}
 		}
 
-		if (stat != null) {
-			try {
-				stat.close();
-			} catch (@SuppressWarnings("unused") final Throwable t) {
-				// ignore
-			}
-
-			stat = null;
-		}
-	}
-
-	private static int updateCount = -1;
-
-	private static final boolean executeQuery(final DBConnection dbc, final String query) {
-		executeClose();
-
-		try {
-			stat = dbc.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-
-			if (stat.execute(query, Statement.NO_GENERATED_KEYS)) {
-				updateCount = -1;
-
-				resultSet = stat.getResultSet();
-			}
-			else {
-				updateCount = stat.getUpdateCount();
-
-				executeClose();
-			}
-
-			return true;
-		} catch (final SQLException e) {
-			logger.log(Level.WARNING, "Exception executing the query", e);
-
-			return false;
-		}
-	}
-
-	/**
-	 * @param args
-	 */
-	public static void main(final String[] args) {
-		AppConfig.getProperty("lia.Monitor.group"); // initialize it
-
-		long lastCheck = 0;
-
-		while (true) {
-			if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
+		@Override
+		public void run() {
+			while (true) {
 				for (final Host h : CatalogueUtils.getAllHosts())
 					try (DBFunctions db = h.getDB()) {
 						db.setReadOnly(true);
@@ -172,56 +173,85 @@ public class OrphanPFNsCleanup {
 								}
 							}
 					}
+				try {
+					sleep(1000L * 60 * 60 * 2);
+				} catch (@SuppressWarnings("unused") InterruptedException e) {
+					break;
+				}
+			}
+		}
+	}
 
-				final List<SE> sesToCheck = new LinkedList<>();
+	/**
+	 * @param args
+	 * @throws FileNotFoundException
+	 */
+	public static void main(final String[] args) throws FileNotFoundException {
+		AppConfig.getProperty("lia.Monitor.group"); // initialize it
 
-				sesToCheck.add(null);
-				sesToCheck.addAll(SEUtils.getSEs(null));
+		long lastCheck = 0;
 
-				for (final SE theSE : sesToCheck) {
-					final Integer se = Integer.valueOf(theSE != null ? theSE.seNumber : 0);
+		final MainOrphanMover mover = new MainOrphanMover();
+		mover.start();
 
-					if (!SE_THREADS.containsKey(se)) {
-						if (logger.isLoggable(Level.INFO))
-							logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
+		try (PrintWriter pw = new PrintWriter("OrphanPFNsCleanup.progress")) {
+			while (true) {
+				if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
+					final List<SE> sesToCheck = new LinkedList<>();
 
-						final SEThread t = new SEThread(theSE);
+					sesToCheck.add(null);
+					sesToCheck.addAll(SEUtils.getSEs(null));
 
-						t.start();
+					for (final SE theSE : sesToCheck) {
+						final Integer se = Integer.valueOf(theSE != null ? theSE.seNumber : 0);
 
-						SE_THREADS.put(se, t);
+						if (!SE_THREADS.containsKey(se)) {
+							if (logger.isLoggable(Level.INFO))
+								logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
+
+							final SEThread t = new SEThread(theSE);
+
+							t.start();
+
+							SE_THREADS.put(se, t);
+						}
+						else
+							if (logger.isLoggable(Level.INFO))
+								logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
 					}
-					else
-						if (logger.isLoggable(Level.INFO))
-							logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
+
+					lastCheck = System.currentTimeMillis();
 				}
 
-				lastCheck = System.currentTimeMillis();
-			}
+				try {
+					Thread.sleep(1000 * 5);
+				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					// ignore
+				}
 
-			try {
-				Thread.sleep(1000 * 5);
-			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
-				// ignore
-			}
+				final long count = reclaimedCount.getAndSet(0);
+				final long size = reclaimedSize.getAndSet(0);
 
-			final long count = reclaimedCount.getAndSet(0);
-			final long size = reclaimedSize.getAndSet(0);
+				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+					db.setQueryTimeout(30);
 
-			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-				db.setQueryTimeout(30);
+					if (count > 0)
+						db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + count + " WHERE status_key='reclaimedc';");
 
-				if (count > 0)
-					db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + count + " WHERE status_key='reclaimedc';");
+					if (size > 0)
+						db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + size + " WHERE status_key='reclaimedb';");
+				}
 
-				if (size > 0)
-					db.query("UPDATE orphan_pfns_status SET status_value=status_value+" + size + " WHERE status_key='reclaimedb';");
-			}
+				if (dirtyStats) {
+					String message = "Removed: " + removed + " (" + Format.size(reclaimedSpace.longValue()) + "), failed to remove: " + failed + " (delta: " + count + " files, " + Format.size(size)
+							+ "), sem. status: " + concurrentQueryies.availablePermits();
 
-			if (dirtyStats) {
-				System.err.println("Removed: " + removed + " (" + Format.size(reclaimedSpace.longValue()) + "), failed to remove: " + failed + " (delta: " + count + " files, " + Format.size(size)
-						+ "), sem. status: " + concurrentQueryies.availablePermits());
-				dirtyStats = false;
+					System.err.println(message);
+
+					pw.println((new Date()) + " : " + message);
+
+					dirtyStats = false;
+				}
 			}
 		}
 	}
