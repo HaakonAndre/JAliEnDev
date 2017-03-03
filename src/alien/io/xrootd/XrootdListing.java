@@ -189,7 +189,7 @@ public class XrootdListing {
 				try {
 					entries.add(new XrootdFile(sLine.trim()));
 				} catch (final IllegalArgumentException iae) {
-					logger.log(Level.WARNING, "Exception parsing response of " + command, iae);
+					logger.log(Level.WARNING, "Exception parsing response of " + command + ", line was:\n" + sLine, iae);
 				}
 			else
 				if (sLine.length() > 0 && sLine.trim().length() > 0)
