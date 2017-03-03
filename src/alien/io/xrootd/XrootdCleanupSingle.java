@@ -1,5 +1,6 @@
 package alien.io.xrootd;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -115,6 +116,8 @@ public class XrootdCleanupSingle {
 				if (idx >= 0 && dir.path.matches(".*/\\d{2}(/\\d{5})?/?$"))
 					storageCleanup(dir.path.substring(idx + actualPath.length() - path.length()));
 			}
+
+			dumpStats();
 		} catch (final IOException ioe) {
 			System.err.println(ioe.getMessage());
 			ioe.printStackTrace();
@@ -214,6 +217,20 @@ public class XrootdCleanupSingle {
 	public String toString() {
 		return "Removed " + filesRemoved + " files (" + Format.size(sizeRemoved.longValue()) + "), " + "kept " + filesKept + " files (" + Format.size(sizeKept.longValue()) + "), listed " + dirsSeen
 				+ " directories from " + se.seName;
+	}
+
+	private long lastStatsDumped = System.currentTimeMillis();
+
+	private void dumpStats() {
+		if (System.currentTimeMillis() - lastStatsDumped > 1000L * 60) {
+			try (FileWriter fw = new FileWriter(se.seName + ".progress")) {
+				fw.write(toString());
+			} catch (@SuppressWarnings("unused") final IOException ioe) {
+				// ignore
+			}
+
+			lastStatsDumped = System.currentTimeMillis();
+		}
 	}
 
 	/**
