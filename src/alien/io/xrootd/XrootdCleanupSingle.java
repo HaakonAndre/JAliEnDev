@@ -236,8 +236,9 @@ public class XrootdCleanupSingle extends Thread {
 	 * @param args
 	 *            the only argument taken by this class is the name of the storage to be cleaned
 	 * @throws IOException
+	 * @throws InterruptedException
 	 */
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException, InterruptedException {
 		final OptionParser parser = new OptionParser();
 
 		parser.accepts("?", "Print this help");
@@ -279,6 +280,8 @@ public class XrootdCleanupSingle extends Thread {
 		boolean active = true;
 
 		do {
+			Thread.sleep(1000 * 60);
+
 			active = false;
 
 			long totalSizeRemoved = 0;
@@ -308,5 +311,7 @@ public class XrootdCleanupSingle extends Thread {
 				System.err.println("Cannot dump stats, error was: " + ioe.getMessage());
 			}
 		} while (active);
+
+		System.err.println("Work finished, see you next time");
 	}
 }
