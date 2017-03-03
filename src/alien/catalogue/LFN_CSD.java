@@ -43,7 +43,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Root UUID
 	 */
-	public static final UUID root_uuid = UUID.nameUUIDFromBytes("root".getBytes());
+	public static final UUID root_uuid = UUID.nameUUIDFromBytes("root".getBytes()); // 63a9f0ea-7bb9-3050-b96b-649e85481845
+
+	/**
+	 * Unique Ctime for auto insertion
+	 */
+	public static final Date ctime_fixed = new Date();
 
 	/**
 	 * Modulo of seNumber to partition balance
@@ -723,8 +728,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (this.parent_id == null)
 			this.parent_id = getParentIdFromPath(this.path, append_table);
 
-		if (this.parent_id == null)
+		if (this.parent_id == null) {
+			System.err.println("Cannot get parent of " + this.path + " append_table: " + append_table);
 			return false;
+		}
 
 		if (this.id == null)
 			id = UUID.randomUUID();
@@ -839,7 +846,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			newdir.owner = "aliprod";
 			newdir.jobid = 0l;
 			newdir.perm = "755";
-			newdir.ctime = new Date();
+			newdir.ctime = ctime_fixed;
 		}
 		newdir.checksum = "";
 		newdir.size = 0;

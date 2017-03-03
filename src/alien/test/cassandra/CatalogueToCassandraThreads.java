@@ -442,7 +442,10 @@ public class CatalogueToCassandraThreads {
 			final long first_part = left / 100;
 			final String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
-			LFN_CSD.createDirectory(lfnparent, "_auto", clevel);
+			if (!LFN_CSD.createDirectory(lfnparent, "_auto", clevel)) {
+				out.println("Cannot create dir in AddPath: " + lfnparent);
+				return;
+			}
 
 			for (int i = 1; i <= 10; i++) {
 				final String lfn = "file" + i + "_" + root; // lfnparent +

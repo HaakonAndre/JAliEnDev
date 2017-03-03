@@ -24,7 +24,8 @@ public class DBCassandra {
 		// SocketOptions socketOptions = new SocketOptions();
 		// socketOptions.setReadTimeoutMillis(12000);
 
-		cluster = Cluster.builder().addContactPoints("alientest02.cern.ch", "aliendb06f.cern.ch", "alientest05.cern.ch", "alientest06.cern.ch", "alientest07.cern.ch", "aliendb06g.cern.ch")
+		cluster = Cluster.builder()
+				.addContactPoints("alientest03.cern.ch", "alientest02.cern.ch", "aliendb06f.cern.ch", "alientest05.cern.ch", "alientest06.cern.ch", "alientest07.cern.ch", "aliendb06g.cern.ch")
 				.withLoadBalancingPolicy(new TokenAwarePolicy(new RoundRobinPolicy())).withPoolingOptions(poolingOptions)
 				// .withSocketOptions(socketOptions)
 				.withCredentials("cassandra", "cassandra").build();
