@@ -4,7 +4,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,7 +30,7 @@ import lazyj.Format;
  * @author costing
  *
  */
-public class XrootdCleanupSingle {
+public class XrootdCleanupSingle extends Thread {
 	/**
 	 * Storage element we are working on
 	 */
@@ -116,8 +118,6 @@ public class XrootdCleanupSingle {
 				if (idx >= 0 && dir.path.matches(".*/\\d{2}(/\\d{5})?/?$"))
 					storageCleanup(dir.path.substring(idx + actualPath.length() - path.length()));
 			}
-
-			dumpStats();
 		} catch (final IOException ioe) {
 			System.err.println(ioe.getMessage());
 			ioe.printStackTrace();
@@ -219,18 +219,17 @@ public class XrootdCleanupSingle {
 				+ " directories from " + se.seName;
 	}
 
-	private long lastStatsDumped = System.currentTimeMillis();
+	@Override
+	public void run() {
+		final long lStart = System.currentTimeMillis();
 
-	private void dumpStats() {
-		if (System.currentTimeMillis() - lastStatsDumped > 1000L * 60) {
-			try (FileWriter fw = new FileWriter(se.seName + ".progress")) {
-				fw.write(toString());
-			} catch (@SuppressWarnings("unused") final IOException ioe) {
-				// ignore
-			}
+		for (int i = 0; i <= 15; i++) {
+			storageCleanup((i < 10 ? "0" : "") + i + "/");
 
-			lastStatsDumped = System.currentTimeMillis();
+			System.err.println("Progress report (" + i + "): " + toString() + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
 		}
+
+		System.err.println("Final report: " + toString() + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
 	}
 
 	/**
@@ -267,24 +266,47 @@ public class XrootdCleanupSingle {
 				for (final Object o : options.nonOptionArguments())
 					ses.add(o.toString());
 
-		final long lStart = System.currentTimeMillis();
+		final Map<String, XrootdCleanupSingle> progress = new TreeMap<>();
 
-		for (final String se : ses)
-			new Thread() {
-				@Override
-				public void run() {
-					setName(se);
+		for (final String se : ses) {
+			final XrootdCleanupSingle cleanup = new XrootdCleanupSingle(se);
 
-					final XrootdCleanupSingle cleanup = new XrootdCleanupSingle(se);
+			cleanup.start();
 
-					for (int i = 0; i <= 15; i++) {
-						cleanup.storageCleanup((i < 10 ? "0" : "") + i + "/");
+			progress.put(se.toUpperCase(), cleanup);
+		}
 
-						System.err.println("Progress report (" + i + "): " + cleanup + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
-					}
+		boolean active = true;
 
-					System.err.println("Final report: " + cleanup + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
+		do {
+			active = false;
+
+			long totalSizeRemoved = 0;
+			long totalSizeKept = 0;
+			long totalFilesRemoved = 0;
+			long totalFilesKept = 0;
+			long totalDirsSeen = 0;
+
+			try (FileWriter fw = new FileWriter("XrootdCleanupSingle.progress")) {
+				for (final Map.Entry<String, XrootdCleanupSingle> entry : progress.entrySet()) {
+					final XrootdCleanupSingle cleanup = entry.getValue();
+
+					active = active || cleanup.isAlive();
+
+					fw.write(entry.getKey() + " : " + (active ? "RUNNING" : "DONE") + " " + cleanup + "\n");
+
+					totalSizeRemoved += cleanup.sizeRemoved.longValue();
+					totalSizeKept += cleanup.sizeKept.longValue();
+					totalFilesRemoved += cleanup.filesRemoved.longValue();
+					totalFilesKept += cleanup.filesKept.longValue();
+					totalDirsSeen += cleanup.dirsSeen.longValue();
 				}
-			}.start();
+
+				fw.write("Overall progress: " + totalFilesRemoved + " files (" + Format.size(totalSizeRemoved) + " removed / " + totalFilesKept + " files (" + Format.size(totalSizeKept) + " kept, "
+						+ totalDirsSeen + " directories visited");
+			} catch (final IOException ioe) {
+				System.err.println("Cannot dump stats, error was: " + ioe.getMessage());
+			}
+		} while (active);
 	}
 }
