@@ -291,12 +291,14 @@ public class XrootdCleanupSingle extends Thread {
 			long totalDirsSeen = 0;
 
 			try (FileWriter fw = new FileWriter("XrootdCleanupSingle.progress")) {
+				int cnt = 0;
+
 				for (final Map.Entry<String, XrootdCleanupSingle> entry : progress.entrySet()) {
 					final XrootdCleanupSingle cleanup = entry.getValue();
 
 					active = active || cleanup.isAlive();
 
-					fw.write(entry.getKey() + " : " + (active ? "RUNNING" : "DONE") + " " + cleanup + "\n");
+					fw.write((++cnt) + ".\t" + entry.getKey() + ": \t" + (cleanup.isAlive() ? "RUNNING" : "DONE") + ":\t" + cleanup + "\n");
 
 					totalSizeRemoved += cleanup.sizeRemoved.longValue();
 					totalSizeKept += cleanup.sizeKept.longValue();
@@ -305,8 +307,8 @@ public class XrootdCleanupSingle extends Thread {
 					totalDirsSeen += cleanup.dirsSeen.longValue();
 				}
 
-				fw.write("Overall progress: " + totalFilesRemoved + " files (" + Format.size(totalSizeRemoved) + " removed / " + totalFilesKept + " files (" + Format.size(totalSizeKept) + " kept, "
-						+ totalDirsSeen + " directories visited");
+				fw.write("Overall progress: " + totalFilesRemoved + " : files (" + Format.size(totalSizeRemoved) + ") removed / " + totalFilesKept + " files (" + Format.size(totalSizeKept)
+						+ ") kept, " + totalDirsSeen + " directories visited");
 			} catch (final IOException ioe) {
 				System.err.println("Cannot dump stats, error was: " + ioe.getMessage());
 			}

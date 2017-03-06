@@ -175,7 +175,7 @@ public class OrphanPFNsCleanup {
 					}
 				try {
 					sleep(1000L * 60 * 60 * 2);
-				} catch (@SuppressWarnings("unused") InterruptedException e) {
+				} catch (@SuppressWarnings("unused") final InterruptedException e) {
 					break;
 				}
 			}
@@ -224,7 +224,7 @@ public class OrphanPFNsCleanup {
 				}
 
 				try {
-					Thread.sleep(1000 * 5);
+					Thread.sleep(1000 * 60);
 				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// ignore
 				}
@@ -243,12 +243,13 @@ public class OrphanPFNsCleanup {
 				}
 
 				if (dirtyStats) {
-					String message = "Removed: " + removed + " (" + Format.size(reclaimedSpace.longValue()) + "), failed to remove: " + failed + " (delta: " + count + " files, " + Format.size(size)
-							+ "), sem. status: " + concurrentQueryies.availablePermits();
+					final String message = "Removed: " + removed + " (" + Format.size(reclaimedSpace.longValue()) + "), failed to remove: " + failed + " (delta: " + count + " files, "
+							+ Format.size(size) + "), sem. status: " + concurrentQueryies.availablePermits();
 
 					System.err.println(message);
 
 					pw.println((new Date()) + " : " + message);
+					pw.flush();
 
 					dirtyStats = false;
 				}
