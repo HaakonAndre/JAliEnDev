@@ -126,8 +126,8 @@ public class XrootdCleanupSingle extends Thread {
 
 	private void fileCheck(final XrootdFile file) {
 		try {
-			if (System.currentTimeMillis() - file.date.getTime() < 1000 * 60 * 60 * 24)
-				// ignore very recent files
+			if (System.currentTimeMillis() - file.date.getTime() < 1000L * 60 * 60 * 24 * 7)
+				// ignore very recent files, if running on the slave they might not be propagated yet
 				return;
 
 			final UUID uuid;
