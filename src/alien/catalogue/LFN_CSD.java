@@ -1,5 +1,7 @@
 package alien.catalogue;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -20,6 +22,7 @@ import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.test.cassandra.DBCassandra;
+import lazyj.cache.ExpirationCache;
 
 /**
  * LFN implementation for Cassandra
@@ -48,12 +51,24 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Unique Ctime for auto insertion
 	 */
-	public static final Date ctime_fixed = new Date();
-
+	public static Date ctime_fixed = null;
+	static {
+		try {
+			ctime_fixed = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss").parse("2017-01-01 00:00:00");
+		} catch (ParseException e) {
+			System.err.println(e);
+			System.exit(-1);
+		}
+	}
 	/**
 	 * Modulo of seNumber to partition balance
 	 */
 	private static final int modulo_se_lookup = 100;
+
+	/**
+	 * Local cache to hold the hierarchy
+	 */
+	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(10000); // TODO: should change size?
 
 	/**
 	 * Owner
@@ -322,18 +337,32 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				return null;
 
 			// We loop from root until we reach our dir
-			for (int i = 0; i < path_chunks.length + 1; i++) {
-				PreparedStatement statement = session.prepare("select child_id from " + t + " where path_id = ? and path = ?");
-				BoundStatement boundStatement = new BoundStatement(statement);
-				boundStatement.bind(path_id, (i == 0 ? "/" : path_chunks[i - 1]));
-				boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
-				ResultSet results = session.execute(boundStatement);
-				if (results.getAvailableWithoutFetching() != 1)
-					return null;
+			String pathAppended = "/";
+			int chunksize = path_chunks.length;
+			for (int i = 0; i < chunksize + 1; i++) {
+				final UUID cachedUuid = dirCache.get(pathAppended);
+				if (cachedUuid == null) {
+					PreparedStatement statement = session.prepare("select child_id from " + t + " where path_id = ? and path = ?");
+					BoundStatement boundStatement = new BoundStatement(statement);
+					boundStatement.bind(path_id, (i == 0 ? "/" : path_chunks[i - 1]));
+					boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
+					ResultSet results = session.execute(boundStatement);
+					if (results.getAvailableWithoutFetching() != 1)
+						return null;
 
-				path_id = results.one().getUUID("child_id");
-				if (path_id == null)
-					return null;
+					path_id = results.one().getUUID("child_id");
+					if (path_id == null) {
+						System.err.println("Error getting parent id for path_id: " + path_id + " path: " + (i == 0 ? "/" : path_chunks[i - 1]));
+						return null;
+					}
+
+					dirCache.put(pathAppended, path_id, 5 * 60 * 1000);
+				}
+				else {
+					path_id = cachedUuid;
+				}
+				if (i < chunksize)
+					pathAppended += path_chunks[i] + "/";
 			}
 			return path_id;
 		} catch (Exception e) {

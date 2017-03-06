@@ -3,6 +3,8 @@ package alien.test.cassandra;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -30,6 +32,7 @@ import alien.catalogue.LFNUtils;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.test.JobDiscoverer;
+import lazyj.cache.ExpirationCache;
 
 /**
  *
@@ -44,9 +47,23 @@ public class CatalogueToCassandraThreads {
 	static boolean shouldexit = false;
 
 	/**
+	 * Unique Ctime for auto insertion
+	 */
+	public static Date ctime_fixed = null;
+	static {
+		try {
+			ctime_fixed = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss").parse("2017-01-01 00:00:00");
+		} catch (ParseException e) {
+			System.err.println(e);
+			System.exit(-1);
+		}
+	}
+
+	/**
 	 * limit
 	 */
 	static final int origlimit = 50000;
+	
 	/** Entries processed */
 	static AtomicInteger global_count = new AtomicInteger();
 	/**
@@ -110,36 +127,6 @@ public class CatalogueToCassandraThreads {
 	static final Random rdm = new Random();
 
 	static ConsistencyLevel clevel = ConsistencyLevel.QUORUM;
-
-	/*
-	 * private static String getmd5(String str) {
-	 * try {
-	 * MessageDigest md = MessageDigest.getInstance("MD5");
-	 * md.update(str.getBytes());
-	 * byte[] digest = md.digest();
-	 * StringBuffer sb = new StringBuffer();
-	 * for (byte b : digest) {
-	 * sb.append(String.format("%02x", b & 0xff));
-	 * }
-	 * //
-	 * // System.out.println("original:" + original);
-	 * return sb.toString();
-	 * } catch (Exception e) {
-	 * System.err.println("Exception generating md5: " + e);
-	 * }
-	 * return null;
-	 * }
-	 * 
-	 * private static String getRandomString() {
-	 * char[] chars = "abcdefghijklmnopqrstuvwxyz".toCharArray();
-	 * StringBuilder sb = new StringBuilder();
-	 * for (int i = 0; i < 20; i++) {
-	 * char c = chars[rdm.nextInt(chars.length)];
-	 * sb.append(c);
-	 * }
-	 * return sb.toString();
-	 * }
-	 */
 
 	/**
 	 * @param args
@@ -442,10 +429,22 @@ public class CatalogueToCassandraThreads {
 			final long first_part = left / 100;
 			final String lfnparent = "/cassandra/" + first_part + "/" + medium_part + "/" + last_part + "/";
 
-			if (!LFN_CSD.createDirectory(lfnparent, "_auto", clevel)) {
+			boolean created = false;
+			for (int i = 0; i < 3; i++) {
+				if (LFN_CSD.createDirectory(lfnparent, "_auto", clevel)) {
+					created = true;
+					break;
+				}
+				try {
+					Thread.sleep(500);
+				} catch (InterruptedException e) {
+					System.err.println("Error sleeping?" + e);
+				}
 				out.println("Cannot create dir in AddPath: " + lfnparent);
-				return;
 			}
+
+			if (!created)
+				out.println("Cannot create dir in AddPath after 3 tries: " + lfnparent);
 
 			for (int i = 1; i <= 10; i++) {
 				final String lfn = "file" + i + "_" + root; // lfnparent +
@@ -461,7 +460,7 @@ public class CatalogueToCassandraThreads {
 				lfnc.jobid = rdm.nextInt(1000000);
 				lfnc.checksum = "ee31e454013aa515f0bc806aa907ba51";
 				lfnc.perm = "755";
-				lfnc.ctime = new Date();
+				lfnc.ctime = ctime_fixed;
 				lfnc.owner = "aliprod";
 				lfnc.gowner = "aliprod";
 				lfnc.id = UUID.randomUUID();
