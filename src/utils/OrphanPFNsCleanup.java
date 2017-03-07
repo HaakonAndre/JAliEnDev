@@ -133,46 +133,54 @@ public class OrphanPFNsCleanup {
 		@Override
 		public void run() {
 			while (true) {
-				for (final Host h : CatalogueUtils.getAllHosts())
-					try (DBFunctions db = h.getDB()) {
-						db.setReadOnly(true);
-						db.query("SELECT distinct se FROM orphan_pfns;");
+				try {
+					for (final Host h : CatalogueUtils.getAllHosts())
+						try (DBFunctions db = h.getDB()) {
+							if (db == null)
+								continue;
 
-						final List<Integer> ses = new LinkedList<>();
+							db.setReadOnly(true);
+							db.query("SELECT distinct se FROM orphan_pfns;");
 
-						while (db.moveNext())
-							ses.add(Integer.valueOf(db.geti(1)));
+							final List<Integer> ses = new LinkedList<>();
 
-						for (final Integer seNumber : ses)
-							try (DBFunctions db2 = h.getDB()) {
-								db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;", true);
+							while (db.moveNext())
+								ses.add(Integer.valueOf(db.geti(1)));
 
-								final DBConnection dbc = db2.getConnection();
-								dbc.setReadOnly(false);
+							for (final Integer seNumber : ses)
+								try (DBFunctions db2 = h.getDB()) {
+									db2.query("CREATE TABLE IF NOT EXISTS orphan_pfns_" + seNumber + " LIKE orphan_pfns_0;", true);
 
-								executeQuery(dbc, "LOCK TABLES orphan_pfns WRITE, orphan_pfns_" + seNumber + " WRITE;");
+									final DBConnection dbc = db2.getConnection();
+									dbc.setReadOnly(false);
 
-								try {
-									long lStart = System.currentTimeMillis();
+									executeQuery(dbc, "LOCK TABLES orphan_pfns WRITE, orphan_pfns_" + seNumber + " WRITE;");
 
-									final String sWhere = "WHERE se" + (seNumber.intValue() > 0 ? "=" + seNumber : " is null");
-									executeQuery(dbc, "INSERT IGNORE INTO orphan_pfns_" + seNumber + " SELECT * FROM orphan_pfns " + sWhere);
+									try {
+										long lStart = System.currentTimeMillis();
 
-									logger.log(Level.INFO, "Inserted into " + h.db + ".orphan_pfns_" + seNumber + " " + updateCount + " from " + h.db + ".orphan_pfns, took "
-											+ Format.toInterval(System.currentTimeMillis() - lStart));
+										final String sWhere = "WHERE se" + (seNumber.intValue() > 0 ? "=" + seNumber : " is null");
+										executeQuery(dbc, "INSERT IGNORE INTO orphan_pfns_" + seNumber + " SELECT * FROM orphan_pfns " + sWhere);
 
-									lStart = System.currentTimeMillis();
+										logger.log(Level.INFO, "Inserted into " + h.db + ".orphan_pfns_" + seNumber + " " + updateCount + " from " + h.db + ".orphan_pfns, took "
+												+ Format.toInterval(System.currentTimeMillis() - lStart));
 
-									executeQuery(dbc, "DELETE FROM orphan_pfns " + sWhere);
+										lStart = System.currentTimeMillis();
 
-									logger.log(Level.INFO, "Deleted " + updateCount + " from " + h.db + ".orphan_pfns " + sWhere + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
-								} finally {
-									executeQuery(dbc, "UNLOCK TABLES;");
-									executeClose();
-									dbc.free();
+										executeQuery(dbc, "DELETE FROM orphan_pfns " + sWhere);
+
+										logger.log(Level.INFO,
+												"Deleted " + updateCount + " from " + h.db + ".orphan_pfns " + sWhere + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
+									} finally {
+										executeQuery(dbc, "UNLOCK TABLES;");
+										executeClose();
+										dbc.free();
+									}
 								}
-							}
-					}
+						}
+				} catch (Throwable t) {
+					logger.log(Level.SEVERE, "Exception in the main mover", t);
+				}
 				try {
 					sleep(1000L * 60 * 60 * 2);
 				} catch (@SuppressWarnings("unused") final InterruptedException e) {
