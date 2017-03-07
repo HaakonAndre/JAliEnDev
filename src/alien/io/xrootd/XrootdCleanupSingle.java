@@ -298,7 +298,7 @@ public class XrootdCleanupSingle extends Thread {
 
 					active = active || cleanup.isAlive();
 
-					fw.write((++cnt) + ".\t" + entry.getKey() + ": \t" + (cleanup.isAlive() ? "RUNNING" : "DONE") + ":\t" + cleanup + "\n");
+					fw.write((++cnt) + ".\t" + String.format("%1$30s", entry.getKey()) + ": \t" + (cleanup.isAlive() ? "RUNNING" : "DONE   ") + ":\t" + cleanup + "\n");
 
 					totalSizeRemoved += cleanup.sizeRemoved.longValue();
 					totalSizeKept += cleanup.sizeKept.longValue();
