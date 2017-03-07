@@ -171,6 +171,9 @@ public class OrphanPFNsCleanup {
 
 										logger.log(Level.INFO,
 												"Deleted " + updateCount + " from " + h.db + ".orphan_pfns " + sWhere + ", took " + Format.toInterval(System.currentTimeMillis() - lStart));
+
+										if (updateCount > 0)
+											startSEThread(seNumber.intValue() > 0 ? SEUtils.getSE(seNumber) : null);
 									} finally {
 										executeQuery(dbc, "UNLOCK TABLES;");
 										executeClose();
@@ -190,6 +193,24 @@ public class OrphanPFNsCleanup {
 		}
 	}
 
+	static synchronized void startSEThread(final SE theSE) {
+		final Integer se = Integer.valueOf(theSE != null ? theSE.seNumber : 0);
+
+		if (!SE_THREADS.containsKey(se)) {
+			final SEThread t = new SEThread(theSE);
+
+			SE_THREADS.put(se, t);
+
+			if (logger.isLoggable(Level.INFO))
+				logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
+
+			t.start();
+		}
+		else
+			if (logger.isLoggable(Level.INFO))
+				logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
+	}
+
 	/**
 	 * @param args
 	 * @throws FileNotFoundException
@@ -204,31 +225,17 @@ public class OrphanPFNsCleanup {
 
 		try (PrintWriter pw = new PrintWriter("OrphanPFNsCleanup.progress")) {
 			while (true) {
-				if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
-					final List<SE> sesToCheck = new LinkedList<>();
+				try {
+					if (System.currentTimeMillis() - lastCheck > ConfigUtils.getConfig().geti("utils.OrphanPFNsCleanup.SE_list_check_interval", 60 * 2) * 1000 * 60) {
+						startSEThread(null);
 
-					sesToCheck.add(null);
-					sesToCheck.addAll(SEUtils.getSEs(null));
+						for (final SE se : SEUtils.getSEs(null))
+							startSEThread(se);
 
-					for (final SE theSE : sesToCheck) {
-						final Integer se = Integer.valueOf(theSE != null ? theSE.seNumber : 0);
-
-						if (!SE_THREADS.containsKey(se)) {
-							if (logger.isLoggable(Level.INFO))
-								logger.log(Level.INFO, "Starting SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ")");
-
-							final SEThread t = new SEThread(theSE);
-
-							t.start();
-
-							SE_THREADS.put(se, t);
-						}
-						else
-							if (logger.isLoggable(Level.INFO))
-								logger.log(Level.INFO, "Not starting an SE thread for " + se + " (" + (theSE != null ? theSE.seName : "AliEn GUIDs") + ") because the key is already in SE_THREADS");
+						lastCheck = System.currentTimeMillis();
 					}
-
-					lastCheck = System.currentTimeMillis();
+				} catch (final Throwable t) {
+					logger.log(Level.SEVERE, "Exception in the SE thread check/start part", t);
 				}
 
 				try {
