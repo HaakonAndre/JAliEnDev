@@ -80,7 +80,7 @@ public class CatalogueTestWhereisGenerated {
 
 	static int type = 1;
 
-	static String lfntable = "catalogue.lfns";
+	static String lfntable = null;
 
 	/**
 	 * Signal to stop
@@ -106,8 +106,8 @@ public class CatalogueTestWhereisGenerated {
 			System.err.println("E.g. <count limit> -> limit to count");
 			System.err.println("E.g. <pool_size> -> 12");
 			System.err.println("E.g. <logs-suffix> -> auto-whereis-5M");
-			System.err.println("E.g. <consistency> -> 1-one 2-quorum");
-			System.err.println("E.g. <lfn_table> -> catalogue.lfns");
+			System.err.println("E.g. [<consistency> -> 1-one 2-quorum]");
+			System.err.println("E.g. [<lfn_table> -> _auto]");
 			System.exit(-3);
 		}
 
@@ -127,11 +127,14 @@ public class CatalogueTestWhereisGenerated {
 		if (nargs > 3)
 			logs_suffix = "-" + args[5];
 
-		final int cl = Integer.parseInt(args[6]);
-		if (cl == 1)
-			clevel = ConsistencyLevel.ONE;
+		if (nargs > 6) {
+			final int cl = Integer.parseInt(args[6]);
+			if (cl == 1)
+				clevel = ConsistencyLevel.ONE;
+		}
 
-		lfntable = args[7];
+		if (nargs > 7)
+			lfntable = args[7];
 
 		System.out.println("Printing output to: out" + logs_suffix);
 		out = new PrintWriter(new FileOutputStream("out" + logs_suffix));
@@ -237,7 +240,7 @@ public class CatalogueTestWhereisGenerated {
 					}
 					break;
 				case 1: // LFN_CSD
-					final LFN_CSD lfnc = new LFN_CSD(lfn, true, "_auto", null, null);
+					final LFN_CSD lfnc = new LFN_CSD(lfn, false, lfntable, null, null);
 					final HashMap<Integer, String> pfnsc = lfnc.whereis(lfntable, clevel);
 					if (pfnsc == null || pfnsc.isEmpty()) {
 						final String msg = "Failed to get PFNS: " + lfn;
