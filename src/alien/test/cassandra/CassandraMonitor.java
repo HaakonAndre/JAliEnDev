@@ -36,102 +36,30 @@ public class CassandraMonitor {
 	static String hostName = null;
 	static boolean first = true;
 
-	static final String[] metrics = { 
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=TotalLatency", 
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=TotalLatency",
+	static final String[] metrics = { "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=TotalLatency", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=TotalLatency",
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency", // OMR
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Latency", // OMR
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency", 
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Latency",
+			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Latency",
 			"org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Hits", // OMR
 			"org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Requests", // OMR
-			"org.apache.cassandra.metrics:type=Storage,name=Load", 
-			"org.apache.cassandra.metrics:type=Compaction,name=CompletedTasks", 
-			"org.apache.cassandra.metrics:type=Compaction,name=PendingTasks", 
-			"java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",
-			"java.lang:type=GarbageCollector,name=ConcurrentMarkSweep",
-			"org.apache.cassandra.metrics:type=Storage,name=Exceptions", 
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Timeouts",
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Timeouts", 
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Unavailables",
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Unavailables",
+			"org.apache.cassandra.metrics:type=Storage,name=Load", "org.apache.cassandra.metrics:type=Compaction,name=CompletedTasks", "org.apache.cassandra.metrics:type=Compaction,name=PendingTasks",
+			"java.lang:type=GarbageCollector,name=ConcurrentMarkSweep", "java.lang:type=GarbageCollector,name=ConcurrentMarkSweep", "org.apache.cassandra.metrics:type=Storage,name=Exceptions",
+			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Timeouts", "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Timeouts",
+			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Unavailables", "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Unavailables",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_index,name=TotalDiskSpaceUsed",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_metadata,name=TotalDiskSpaceUsed",
-			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=se_lookup,name=TotalDiskSpaceUsed"
-			};
-	static final String[] attributes = { 
-			"Count", 
-			"Count", 
-			"OneMinuteRate", 
-			"OneMinuteRate", 
-			"Count", 
-			"Count", 
-			"OneMinuteRate", 
-			"OneMinuteRate", 
-			"Count", 
-			"Value",
-			"Value",
-			"CollectionCount", 
-			"CollectionTime",
-			"Count", 
-			"Count", 
-			"Count", 
-			"Count", 
-			"Count",
-			"Count", 
-			"Count",
-			"Count" 
-			};
+			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=se_lookup,name=TotalDiskSpaceUsed" };
+	static final String[] attributes = { "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Value", "Value", "CollectionCount",
+			"CollectionTime", "Count", "Count", "Count", "Count", "Count", "Count", "Count", "Count" };
 
-	static final String[] names = { 
-			"Write_TotalLatency_Count", 
-			"Read_TotalLatency_Count", 
-			"Write_Latency_OneMinuteRate", 
-			"Read_Latency_OneMinuteRate", 
-			"Write_Latency_Count", 
-			"Read_Latency_Count",
-			"KeyCache_Hits_OneMinuteRate", 
-			"KeyCache_Requests_OneMinuteRate", 
-			"Storage_Load_Count", 
-			"Compaction_CompletedTasks_Value",
-			"Compaction_PendingTasks_Value",
-			"ConcurrentMarkSweep_CollectionCount",
-			"ConcurrentMarkSweep_CollectionTime", 
-			"Storage_Exceptions_Count", 
-			"Read_Timeouts_Count", 
-			"Write_Timeouts_Count", 
-			"Read_Unavailables_Count", 
-			"Write_Unavailables_Count",
-			"Disk_Used_lfn_index",
-			"Disk_Used_lfn_metadata",
-			"Disk_Used_se_lookup"
-			};
+	static final String[] names = { "Write_TotalLatency_Count", "Read_TotalLatency_Count", "Write_Latency_OneMinuteRate", "Read_Latency_OneMinuteRate", "Write_Latency_Count", "Read_Latency_Count",
+			"KeyCache_Hits_OneMinuteRate", "KeyCache_Requests_OneMinuteRate", "Storage_Load_Count", "Compaction_CompletedTasks_Value", "Compaction_PendingTasks_Value",
+			"ConcurrentMarkSweep_CollectionCount", "ConcurrentMarkSweep_CollectionTime", "Storage_Exceptions_Count", "Read_Timeouts_Count", "Write_Timeouts_Count", "Read_Unavailables_Count",
+			"Write_Unavailables_Count", "Disk_Used_lfn_index", "Disk_Used_lfn_metadata", "Disk_Used_se_lookup" };
 
-	static final boolean[] isRate = { 
-			false, 
-			false, 
-			true, 
-			true, 
-			false, 
-			false, 
-			true, 
-			true, 
-			false,
-			false,
-			false, 
-			false, 
-			false, 
-			false, 
-			false, 
-			false, 
-			false, 
-			false, 
-			false, 
-			false, 
-			false
-			};
+	static final boolean[] isRate = { false, false, true, true, false, false, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false };
 
-	static Number[] previousValues = new Number[metrics.length];
+	static double[] previousValues = new double[metrics.length];
 
 	/**
 	 * @param args
@@ -162,37 +90,38 @@ public class CassandraMonitor {
 					final Object obj = getMbeanAttributeValue(metrics[i], attributes[i]);
 					paramNames.add(names[i]);
 					if (obj instanceof Number) {
-						Number value = (Number) obj;
+						final Number value = (Number) obj;
+						Double valueToSet = Double.valueOf(value.doubleValue());
 						if (!isRate[i]) {
 							if (!first)
-								value = Double.valueOf(value.doubleValue() - previousValues[i].doubleValue());
-							
-							previousValues[i] = value;
+								valueToSet = Double.valueOf(value.doubleValue() - previousValues[i]);
+
+							previousValues[i] = value.doubleValue();
 						}
-						paramValues.add(value);
+						paramValues.add(valueToSet);
 					}
 				}
 				try {
-					//for (int i = 0; i < previousValues.length; i++)
-					//	logger.info("PreviousValues " + i + ": " + previousValues[i]);
+					// for (int i = 0; i < previousValues.length; i++)
+					// logger.info("PreviousValues " + i + ": " + previousValues[i]);
 
 					if (first) {
 						logger.log(Level.INFO, "First pass...waiting for next to calculate deltas");
 						first = false;
 					}
-					else{ 
+					else {
 						// Calculate latencies, e.g. for read: (ReadTotalLatency1−ReadTotalLatency0)/(ReadLatency1−ReadLatency0)
 						// 0 scope=Write,name=TotalLatency, 4 scope=Write,name=Latency
 						paramNames.addElement("Write_Latency_Calculated");
-						paramValues.addElement(Double.valueOf(previousValues[0].doubleValue() / previousValues[4].doubleValue()));
+						paramValues.addElement(Double.valueOf(((Double)paramValues.get(0)).doubleValue() / ((Double)paramValues.get(4)).doubleValue()));
 						// 1 scope=Read,name=TotalLatency, 5 scope=Read,name=Latency
 						paramNames.addElement("Read_Latency_Calculated");
-						paramValues.addElement(Double.valueOf(previousValues[1].doubleValue() / previousValues[5].doubleValue()));
-						
+						paramValues.addElement(Double.valueOf(((Double)paramValues.get(1)).doubleValue() / ((Double)paramValues.get(5)).doubleValue()));
+
 						logger.info("Sending parameters:");
-						for (int i=0; i<paramNames.size(); i++)
+						for (int i = 0; i < paramNames.size(); i++)
 							logger.info("  Parameter: " + paramNames.get(i) + " = " + paramValues.get(i));
-						
+
 						apmon.sendParameters("Cassandra_Nodes", hostName, paramNames.size(), paramNames, paramValues);
 					}
 				} catch (final Exception e) {
