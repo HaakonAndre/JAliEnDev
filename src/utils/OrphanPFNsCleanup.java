@@ -451,7 +451,7 @@ public class OrphanPFNsCleanup {
 		}
 
 		monitor.incrementCounter(se.getName() + "_success_count");
-		monitor.incrementCounter(se.getName() + "_success_size", size);
+		monitor.addMeasurement(se.getName() + "_success_size", size);
 
 		dirtyStats = true;
 	}
