@@ -279,6 +279,8 @@ public class XrootdCleanupSingle extends Thread {
 
 		boolean active = true;
 
+		final long lStartupTime = System.currentTimeMillis();
+
 		do {
 			Thread.sleep(1000 * 60);
 
@@ -290,7 +292,7 @@ public class XrootdCleanupSingle extends Thread {
 			long totalFilesKept = 0;
 			long totalDirsSeen = 0;
 
-			try (FileWriter fw = new FileWriter("XrootdCleanupSingle.progress")) {
+			try (FileWriter fw = new FileWriter("XrootdCleanupSingle.progress." + (lStartupTime / 1000))) {
 				int cnt = 0;
 
 				for (final Map.Entry<String, XrootdCleanupSingle> entry : progress.entrySet()) {
@@ -307,7 +309,7 @@ public class XrootdCleanupSingle extends Thread {
 					totalDirsSeen += cleanup.dirsSeen.longValue();
 				}
 
-				fw.write("Overall progress: " + totalFilesRemoved + " : files (" + Format.size(totalSizeRemoved) + ") removed / " + totalFilesKept + " files (" + Format.size(totalSizeKept)
+				fw.write("Overall progress: " + totalFilesRemoved + " files (" + Format.size(totalSizeRemoved) + ") removed / " + totalFilesKept + " files (" + Format.size(totalSizeKept)
 						+ ") kept, " + totalDirsSeen + " directories visited");
 			} catch (final IOException ioe) {
 				System.err.println("Cannot dump stats, error was: " + ioe.getMessage());
