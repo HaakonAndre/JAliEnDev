@@ -1,5 +1,6 @@
 package alien.site;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
@@ -8,21 +9,30 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
+import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.batchqueue.BatchQueue;
 import alien.user.LDAPHelper;
+import apmon.ApMon;
+import apmon.ApMonException;
 
 /**
  * @author mmmartin
  *
  */
 public class ComputingElement extends Thread {
+
+	/**
+	 * ApMon sender
+	 */
+	static transient final ApMon apmon = MonitorFactory.getApMonSender();
 
 	// Logger object
 	static transient Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
@@ -107,15 +117,76 @@ public class ComputingElement extends Thread {
 	}
 
 	private int getNumberFreeSlots() {
+		// First we get the maxJobs and maxQueued from the Central Services
 		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) hostConfig.get("host"), port, (String) hostConfig.get("ce"),
 				ConfigUtils.getConfig().gets("version", "J-1.0").trim());
 
 		List<Integer> slots = jobSlots.getJobSlots();
+		int max_jobs = 0;
+		int max_queued = 0;
 
-		if (slots != null && slots.size() > 1 && slots.get(0).intValue() == 0)
-			return slots.get(1).intValue();
+		if (slots != null) {
+			if (slots.get(0).intValue() == 0 && slots.size() >= 3) { // OK
+				max_jobs = slots.get(1).intValue();
+				max_queued = slots.get(2).intValue();
+			}
+			else { // Error
+				switch (slots.get(0).intValue()) {
+				case 1:
+					logger.info("Failed getting or inserting host in getNumberFreeSlots");
+					break;
+				case 2:
+					logger.info("Failed updating host in getNumberFreeSlots");
+					break;
+				case 3:
+					logger.info("Failed getting slots in getNumberFreeSlots");
+					break;
+				case -2:
+					logger.info("The queue is centrally locked!");
+					break;
+				default:
+					logger.info("Unknown error in getNumberFreeSlots");
+				}
+				return 0;
+			}
+		}
 
-		return 0;
+		// Now we get the values from the batch interface and calculate the slots available
+		int queued = queue.getNumberQueued();
+		if (queued < 0) {
+			logger.info("There was a problem getting the number of queued agents!");
+			return 0;
+		}
+		logger.info("Agents queued: " + queued);
+
+		int active = queue.getNumberActive();
+		if (active < 0) {
+			logger.info("There was a problem getting the number of active agents!");
+			return 0;
+		}
+		logger.info("Agents active: " + active);
+
+		int free = max_queued - queued;
+		if ((max_jobs - active) < free)
+			free = max_jobs - active;
+
+		// Report slot status to ML
+		final Vector<String> paramNames = new Vector<>();
+		final Vector<Object> paramValues = new Vector<>();
+		paramNames.add("jobAgents_queued");
+		paramNames.add("jobAgents_running");
+		paramNames.add("jobAgents_slots");
+		paramValues.add(Integer.valueOf(queued));
+		paramValues.add(Integer.valueOf(active - queued));
+		paramValues.add(Integer.valueOf(free < 0 ? 0 : free));
+
+		try {
+			apmon.sendParameters(site + "_CE_" + siteMap.get("CE"), hostConfig.get("host").toString(), paramNames.size(), paramNames, paramValues);
+		} catch (ApMonException | IOException e) {
+			logger.severe("Can't send parameter to ML (getNumberFreeSlots): " + e);
+		}
+
+		return free;
 	}
 
 	private void offerAgent() {
@@ -188,7 +259,7 @@ public class ComputingElement extends Thread {
 
 		smenv.put("site", siteConfig.get("accountname").toString());
 
-		smenv.put("CE", hostConfig.get("ce").toString());
+		smenv.put("CE", "ALICE::" + siteConfig.get("accountname") + "::" + hostConfig.get("ce"));
 
 		smenv.put("TTL", "86400"); // Will be recalculated in the loop depending on proxy lifetime
 
