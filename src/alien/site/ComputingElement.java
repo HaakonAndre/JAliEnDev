@@ -13,6 +13,7 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.JBoxServer;
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
@@ -57,7 +58,6 @@ public class ComputingElement extends Thread {
 		try {
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
-
 			getCEconfigFromLDAP();
 
 			// System.out.println("SiteConfig");
@@ -73,8 +73,6 @@ public class ComputingElement extends Thread {
 			// System.err.println(key + " - " + ceConfig.get(key));
 
 			getSiteMap();
-
-			// System.out.println(ce_environment);
 
 			logger = LogUtils.redirectToCustomHandler(logger, hostConfig.get("logdir") + "/CE");
 
@@ -95,14 +93,15 @@ public class ComputingElement extends Thread {
 		// }
 		logger.log(Level.INFO, "Starting ComputingElement in " + siteMap.get("host"));
 		try {
-			// System.out.println("Trying to start JBox"); // TODO uncomment
-			// JBoxServer.startJBoxService(0); // TODO uncomment
-			// port = JBoxServer.getPort(); // TODO uncomment
+			System.out.println("Trying to start JBox"); // TODO uncomment
+			JBoxServer.startJBoxService(0); // TODO uncomment
+			port = JBoxServer.getPort(); // TODO uncomment
 		} catch (final Exception e) {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
 
+		System.out.println("Looping");
 		for (int i = 0; i < 5; i++) { // TODO replace for while(true)
 			boolean should_submit = true;
 
@@ -114,6 +113,7 @@ public class ComputingElement extends Thread {
 		}
 
 		System.out.println("Exiting CE");
+		System.exit(0);
 	}
 
 	private int getNumberFreeSlots() {
@@ -125,30 +125,33 @@ public class ComputingElement extends Thread {
 		int max_jobs = 0;
 		int max_queued = 0;
 
-		if (slots != null) {
-			if (slots.get(0).intValue() == 0 && slots.size() >= 3) { // OK
-				max_jobs = slots.get(1).intValue();
-				max_queued = slots.get(2).intValue();
+		if (slots == null) {
+			logger.info("Cannot get values from getNumberFreeSlots");
+			return 0;
+		}
+
+		if (slots.get(0).intValue() == 0 && slots.size() >= 3) { // OK
+			max_jobs = slots.get(1).intValue();
+			max_queued = slots.get(2).intValue();
+		}
+		else { // Error
+			switch (slots.get(0).intValue()) {
+			case 1:
+				logger.info("Failed getting or inserting host in getNumberFreeSlots");
+				break;
+			case 2:
+				logger.info("Failed updating host in getNumberFreeSlots");
+				break;
+			case 3:
+				logger.info("Failed getting slots in getNumberFreeSlots");
+				break;
+			case -2:
+				logger.info("The queue is centrally locked!");
+				break;
+			default:
+				logger.info("Unknown error in getNumberFreeSlots");
 			}
-			else { // Error
-				switch (slots.get(0).intValue()) {
-				case 1:
-					logger.info("Failed getting or inserting host in getNumberFreeSlots");
-					break;
-				case 2:
-					logger.info("Failed updating host in getNumberFreeSlots");
-					break;
-				case 3:
-					logger.info("Failed getting slots in getNumberFreeSlots");
-					break;
-				case -2:
-					logger.info("The queue is centrally locked!");
-					break;
-				default:
-					logger.info("Unknown error in getNumberFreeSlots");
-				}
-				return 0;
-			}
+			return 0;
 		}
 
 		// Now we get the values from the batch interface and calculate the slots available
@@ -257,9 +260,9 @@ public class ComputingElement extends Thread {
 
 		smenv.put("ALIEN_CM_AS_LDAP_PROXY", hostConfig.get("host") + ":" + port);
 
-		smenv.put("site", siteConfig.get("accountname").toString());
+		smenv.put("site", site);
 
-		smenv.put("CE", "ALICE::" + siteConfig.get("accountname") + "::" + hostConfig.get("ce"));
+		smenv.put("CE", "ALICE::" + site + "::" + hostConfig.get("ce"));
 
 		smenv.put("TTL", "86400"); // Will be recalculated in the loop depending on proxy lifetime
 
@@ -317,6 +320,9 @@ public class ComputingElement extends Thread {
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
 	}
 
+	/*
+	 * Get queue clas with reflection
+	 */
 	BatchQueue getBatchQueue(String type) {
 		Class<?> cl = null;
 		try {

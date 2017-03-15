@@ -2710,7 +2710,7 @@ public class TaskQueueUtils {
 			else
 				siteId = domains.get(0).intValue();
 
-			final String qi = "insert into HOSTS (hostId, hostName, siteId, port, version) values (?,?,?,?,?);";
+			final String qi = "insert into HOSTS (hostId, hostName, siteId, hostPort, Version) values (?,?,?,?,?);";
 			db.setReadOnly(false);
 			db.setLastGeneratedKey(true);
 			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), Integer.valueOf(port), version);
@@ -2855,7 +2855,7 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(false);
 
-			if (!db.query("update HOSTS set status=?,connected=?,port=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
+			if (!db.query("update HOSTS set status=?,connected=?,hostPort=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
 				return false;
 
 			return db.getUpdateCount() > 0;
