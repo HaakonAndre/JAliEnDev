@@ -2855,6 +2855,8 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(false);
 
+			logger.log(Level.INFO, "Going to updateHost for: " + host + " status: " + status);
+
 			if (!db.query("update HOSTS set status=?,connected=?,hostPort=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
 				return false;
 

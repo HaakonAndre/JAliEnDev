@@ -118,7 +118,7 @@ public class ComputingElement extends Thread {
 
 	private int getNumberFreeSlots() {
 		// First we get the maxJobs and maxQueued from the Central Services
-		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) hostConfig.get("host"), port, (String) hostConfig.get("ce"),
+		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) hostConfig.get("host"), port, siteMap.get("CE").toString(),
 				ConfigUtils.getConfig().gets("version", "J-1.0").trim());
 
 		List<Integer> slots = jobSlots.getJobSlots();
