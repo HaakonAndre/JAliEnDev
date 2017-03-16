@@ -34,7 +34,13 @@ public class GetNumberWaitingJobs extends Request {
 
 	@Override
 	public void run() {
+		matchRequest.put("Remote", Integer.valueOf(0));
 		this.match = JobBroker.getNumberWaitingForSite(matchRequest);
+
+		if (((Integer) match.get("Code")).intValue() != 1) {
+			matchRequest.put("Remote", Integer.valueOf(1));
+			this.match = JobBroker.getNumberWaitingForSite(matchRequest);
+		}
 	}
 
 	/**
