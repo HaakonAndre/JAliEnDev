@@ -48,7 +48,12 @@ public class GetNumberWaitingJobs extends Request {
 	 */
 	public Integer getNumberJobsWaitingForSite() {
 		if (((Integer) match.get("Code")).intValue() == 1) {
-			return (match.containsKey("counter") ? (Integer) match.get("counter") : Integer.valueOf(0));
+			if (match.containsKey("counter")) {
+				String counter = (String) match.get("counter");
+				if (counter == null || counter.equals(""))
+					return Integer.valueOf(0);
+				return Integer.valueOf(counter);
+			}
 		}
 
 		return Integer.valueOf(0);
