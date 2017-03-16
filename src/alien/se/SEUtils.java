@@ -64,6 +64,36 @@ public final class SEUtils {
 
 	private static Map<Integer, SECounterUpdate> seCounterUpdates = new ConcurrentHashMap<>();
 
+	private static Map<String, Map<Integer, Double>> seDistance = null;
+
+	private static long seDistanceUpdated = 0;
+
+	private static final ReentrantReadWriteLock seDistanceRWLock = new ReentrantReadWriteLock();
+	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
+	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
+
+	private static final String SEDISTANCE_QUERY;
+
+	static {
+		if (ConfigUtils.isCentralService()) {
+			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+				db.setReadOnly(true);
+
+				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
+				else
+					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
+			}
+
+			updateSECache();
+			updateSEDistanceCache();
+		}
+		else
+			SEDISTANCE_QUERY = null;
+
+		ShutdownManager.getInstance().addModule(() -> flushCounterUpdates());
+	}
+
 	private static final void updateSECache() {
 		if (!ConfigUtils.isCentralService())
 			return;
@@ -142,7 +172,10 @@ public final class SEUtils {
 	public static SE getSE(final Integer seNumber) {
 		if (!ConfigUtils.isCentralService())
 			try {
-				return Dispatcher.execute(new SEfromString(null, null, seNumber.intValue())).getSE();
+				final SEfromString request = new SEfromString(null, null, seNumber.intValue());
+				final SEfromString response = Dispatcher.execute(request);
+				// System.err.println("Response: " + response);
+				return response.getSE();
 			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
@@ -216,36 +249,6 @@ public final class SEUtils {
 		}
 
 		return ret;
-	}
-
-	private static Map<String, Map<Integer, Double>> seDistance = null;
-
-	private static long seDistanceUpdated = 0;
-
-	private static final ReentrantReadWriteLock seDistanceRWLock = new ReentrantReadWriteLock();
-	private static final ReadLock seDistanceReadLock = seDistanceRWLock.readLock();
-	private static final WriteLock seDistanceWriteLock = seDistanceRWLock.writeLock();
-
-	private static final String SEDISTANCE_QUERY;
-
-	static {
-		if (ConfigUtils.isCentralService()) {
-			try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-				db.setReadOnly(true);
-
-				if (db.query("SELECT sitedistance FROM SEDistance LIMIT 0;", true))
-					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, sitedistance FROM SEDistance ORDER BY sitename, sitedistance;";
-				else
-					SEDISTANCE_QUERY = "SELECT SQL_NO_CACHE sitename, senumber, distance FROM SEDistance ORDER BY sitename, distance;";
-			}
-
-			updateSECache();
-			updateSEDistanceCache();
-		}
-		else
-			SEDISTANCE_QUERY = null;
-
-		ShutdownManager.getInstance().addModule(() -> flushCounterUpdates());
 	}
 
 	private static void updateSEDistanceCache() {
@@ -742,6 +745,8 @@ public final class SEUtils {
 	public static void updateSEUsageCache() {
 		final Map<Integer, SEUsageStats> m = getSEUsage();
 
+		logger.log(Level.INFO, "Updating SE usage cache data");
+		
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
@@ -757,13 +762,15 @@ public final class SEUtils {
 				}
 			}
 		}
+		
+		logger.log(Level.INFO, "Finished updating SE usage cache data");
 	}
 
 	private static Map<Integer, SEUsageStats> getSEUsage() {
 		final Map<Integer, SEUsageStats> m = new HashMap<>();
 
 		for (final GUIDIndex index : CatalogueUtils.getAllGUIDIndexes()) {
-			System.err.println("Getting usage from " + index);
+			logger.log(Level.FINE, "Getting usage from " + index);
 
 			final Map<Integer, SEUsageStats> t = index.getSEUsageStats();
 
@@ -967,8 +974,9 @@ public final class SEUtils {
 					db.setReadOnly(false);
 					db.setQueryTimeout(60);
 
-					if (!db.query("UPDATE SE SET seUsedSpace=max(seUsedSpace+?, 0), seNumFiles=max(seNumFiles+?, 0) WHERE seNumber=?;", false, Long.valueOf(deltaBytes), Long.valueOf(deltaFiles),
-							seNumber)) {
+					if (!db.query(
+							"UPDATE SE SET seUsedSpace=greatest(seUsedSpace" + (deltaBytes >= 0 ? "+" : "") + "?, 0), seNumFiles=greatest(seNumFiles" + (deltaFiles >= 0 ? "+" : "") + "?, 0) WHERE seNumber=?;",
+							false, Long.valueOf(deltaBytes), Long.valueOf(deltaFiles), seNumber)) {
 						aiFiles.addAndGet(deltaFiles);
 						aiBytes.addAndGet(deltaBytes);
 					}

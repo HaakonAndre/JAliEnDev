@@ -10,6 +10,7 @@ import java.util.concurrent.FutureTask;
  */
 public class JobDiscoverer {
 	private final static Field callableInFutureTask;
+	@SuppressWarnings("rawtypes")
 	private static final Class<? extends Callable> adapterClass;
 	private static final Field runnableInAdapter;
 

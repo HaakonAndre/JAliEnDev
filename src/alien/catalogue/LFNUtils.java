@@ -492,7 +492,7 @@ public class LFNUtils {
 	 * @param lfn
 	 * @return true if the entry was inserted (or previously existed), false if there was an error
 	 */
-	static boolean insertLFN(final LFN lfn) {
+	public static boolean insertLFN(final LFN lfn) {
 		if (lfn.exists)
 			// nothing to be done, the entry already exists
 			return true;

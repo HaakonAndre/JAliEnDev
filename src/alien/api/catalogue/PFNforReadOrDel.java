@@ -122,7 +122,7 @@ public class PFNforReadOrDel extends Request {
 				logger.log(Level.SEVERE, "WE HAVE AN Exception", e);
 			}
 
-			if (pfns != null) {
+			if (pfns.size() > 0) {
 				pfns = SEUtils.sortBySiteSpecifySEs(pfns, site, true, SEUtils.getSEs(ses), SEUtils.getSEs(exses), false);
 
 				if (setArchiveAnchor)

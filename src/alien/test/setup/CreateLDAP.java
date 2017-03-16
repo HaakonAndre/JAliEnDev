@@ -126,6 +126,7 @@ public class CreateLDAP {
 	}
 	
 	
+	@SuppressWarnings("unused")
 	private static String hashPassword(String pass){
 		TestCommand link = new TestCommand(new String[] { TestBrain.cSlappasswd, "-n", "-s",pass });
 		if(link.exec())

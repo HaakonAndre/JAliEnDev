@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.BasicAttribute;
 import javax.naming.directory.DirContext;
@@ -53,6 +54,13 @@ public class LDAPHelper {
 		return cache.size();
 	}
 
+	/**
+	 * @return number of cached trees
+	 */
+	public static int getCacheTreeSize() {
+		return cacheTree.size();
+	}
+
 	private static String ldapServers = ConfigUtils.getConfig().gets("ldap_server", "alice-ldap.cern.ch:8389");
 
 	private static int ldapPort = ConfigUtils.getConfig().geti("ldap_port", 389);
@@ -60,6 +68,8 @@ public class LDAPHelper {
 	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root", "o=alice,dc=cern,dc=ch");
 
 	private static final ExpirationCache<String, TreeSet<String>> cache = new ExpirationCache<>(1000);
+
+	private static final ExpirationCache<String, HashMap<String, Object>> cacheTree = new ExpirationCache<>(1000);
 
 	private static ArrayList<String> ldapServerList = new ArrayList<>();
 
@@ -123,36 +133,7 @@ public class LDAPHelper {
 		if (monitor != null)
 			monitor.incrementCacheMisses("querycache");
 
-		final LinkedList<String> hosts = new LinkedList<>();
-
-		for (String host : ldapServerList) {
-			final int idx = host.indexOf(':');
-
-			int thisLDAPPort = ldapPort;
-
-			if (idx >= 0 && idx == host.lastIndexOf(':')) {
-				thisLDAPPort = Integer.parseInt(host.substring(idx + 1));
-				host = host.substring(0, idx);
-			}
-
-			try {
-				final InetAddress[] addresses = InetAddress.getAllByName(host);
-
-				if (addresses == null || addresses.length == 0)
-					hosts.add(host + ":" + thisLDAPPort);
-				else
-					for (final InetAddress ia : addresses)
-						if (ia instanceof Inet6Address)
-							hosts.add(0, "[" + ia.getHostAddress() + "]:" + thisLDAPPort);
-						else
-							hosts.add(ia.getHostAddress() + ":" + thisLDAPPort);
-			} catch (@SuppressWarnings("unused") final UnknownHostException uhe) {
-				hosts.add(host + ":" + thisLDAPPort);
-			}
-		}
-
-		if (hosts.size() > 1)
-			Collections.shuffle(hosts);
+		final LinkedList<String> hosts = getHosts();
 
 		for (final String ldapServer : hosts) {
 			tsResult = new TreeSet<>();
@@ -218,6 +199,130 @@ public class LDAPHelper {
 	}
 
 	/**
+	 * @param sParam
+	 *            - search query
+	 * @param sRootExt
+	 *            - subpath
+	 * @return Map of result from the query, keys are fields-values from the LDAP tree
+	 */
+	public static final HashMap<String, Object> checkLdapTree(final String sParam, final String sRootExt) {
+		final String sCacheKey = sParam + "\n" + sRootExt;
+
+		HashMap<String, Object> result = cacheTree.get(sCacheKey);
+
+		if (result != null) {
+			if (monitor != null)
+				monitor.incrementCacheHits("querycache");
+
+			return result;
+		}
+
+		if (monitor != null)
+			monitor.incrementCacheMisses("querycache");
+
+		final LinkedList<String> hosts = getHosts();
+
+		for (final String ldapServer : hosts) {
+			result = new HashMap<>();
+
+			try {
+				final String dirRoot = sRootExt + ldapRoot;
+
+				final Hashtable<String, String> env = new Hashtable<>();
+				env.putAll(defaultEnv);
+				env.put(Context.PROVIDER_URL, "ldap://" + ldapServer + "/" + dirRoot);
+
+				final DirContext context = new InitialDirContext(env);
+
+				try {
+					final SearchControls ctrl = new SearchControls();
+					ctrl.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+					final NamingEnumeration<SearchResult> enumeration = context.search("", sParam, ctrl);
+
+					while (enumeration.hasMore()) {
+						final SearchResult entry = enumeration.next();
+
+						final Attributes attribs = entry.getAttributes();
+
+						if (attribs == null)
+							continue;
+
+						for (final NamingEnumeration<?> ae = attribs.getAll(); ae.hasMore();) {
+							final Attribute attr = (Attribute) ae.next();
+
+							final NamingEnumeration<?> e = attr.getAll();
+
+							if (attr.size() > 1) {
+								final TreeSet<String> vals = new TreeSet<>();
+								while (e.hasMore())
+									vals.add((String) e.next());
+								result.put(attr.getID().toLowerCase(), vals);
+							}
+							else
+								result.put(attr.getID().toLowerCase(), e.next());
+						}
+					}
+				} finally {
+					context.close();
+				}
+
+				cacheTree.put(sCacheKey, result, 1000 * 60 * 15);
+
+				break;
+			} catch (final NamingException ne) {
+				if (logger.isLoggable(Level.FINE))
+					logger.log(Level.WARNING, "Exception executing the LDAP query for tree ('" + sParam + "', '" + sRootExt + "')", ne);
+				else
+					logger.log(Level.WARNING, "Exception executing the LDAP query for tree('" + sParam + "', '" + sRootExt + "'): " + ne + " (" + ne.getMessage() + ")");
+			}
+		}
+
+		if (logger.isLoggable(Level.FINEST))
+			logger.fine("Tree query was:\nparam: " + sParam + "\nroot extension: " + sRootExt + "\nresult:\n" + result);
+
+		return result;
+	}
+
+	/**
+	 * @return all hosts
+	 */
+	public static LinkedList<String> getHosts() {
+		final LinkedList<String> hosts = new LinkedList<>();
+
+		for (String host : ldapServerList) {
+			final int idx = host.indexOf(':');
+
+			int thisLDAPPort = ldapPort;
+
+			if (idx >= 0 && idx == host.lastIndexOf(':')) {
+				thisLDAPPort = Integer.parseInt(host.substring(idx + 1));
+				host = host.substring(0, idx);
+			}
+
+			try {
+				final InetAddress[] addresses = InetAddress.getAllByName(host);
+
+				if (addresses == null || addresses.length == 0)
+					hosts.add(host + ":" + thisLDAPPort);
+				else
+					for (final InetAddress ia : addresses)
+						if (ia instanceof Inet6Address)
+							hosts.add(0, "[" + ia.getHostAddress() + "]:" + thisLDAPPort);
+						else
+							hosts.add(ia.getHostAddress() + ":" + thisLDAPPort);
+			} catch (@SuppressWarnings("unused") final UnknownHostException uhe) {
+				hosts.add(host + ":" + thisLDAPPort);
+			}
+		}
+
+		if (hosts.size() > 1)
+			Collections.shuffle(hosts);
+
+		return hosts;
+	}
+
+	/**
 	 * @param account
 	 * @return the set of emails associated to the given account
 	 */
@@ -260,5 +365,14 @@ public class LDAPHelper {
 		}
 
 		System.out.println(" 4 " + checkLdapInformation("users=peters", "ou=Roles,", "uid"));
+	}
+
+	/**
+	 * @param domain
+	 * @return the tree for this domain
+	 */
+	public static HashMap<String, Object> getInfoDomain(final String domain) {
+		// Get the root site config based on domain
+		return LDAPHelper.checkLdapTree("(&(domain=" + domain + ")(objectClass=AliEnSite))", "ou=Sites,");
 	}
 }

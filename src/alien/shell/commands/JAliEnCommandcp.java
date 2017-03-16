@@ -20,7 +20,6 @@ import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -543,8 +542,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 		}
 		else {
-			final LinkedBlockingQueue<Runnable> jobsQueue = new LinkedBlockingQueue<>();
-			final ThreadPoolExecutor downloader = new ThreadPoolExecutor(concurrentOperations, concurrentOperations, 1, TimeUnit.SECONDS, jobsQueue, (r) -> new Thread("cpGridToLocal"));
+			final ThreadPoolExecutor downloader = new CachedThreadPool(concurrentOperations, 1, TimeUnit.SECONDS, (r) -> new Thread(r, "cpGridToLocal"));
 			downloader.allowCoreThreadTimeOut(true);
 
 			final List<Future<GridToLocal>> futures = new LinkedList<>();

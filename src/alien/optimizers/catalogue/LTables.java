@@ -20,8 +20,9 @@ public class LTables extends Optimizer {
 	final static int maxCount = 50000000; // 50M
 	int count;
 
+	@Override
 	public void run() {
-		this.setSleepPeriod(24* 3600 * 1000); // 24h
+		this.setSleepPeriod(24 * 3600 * 1000); // 24h
 
 		logger.log(Level.INFO, "LTables optimizer starts");
 
@@ -41,7 +42,7 @@ public class LTables extends Optimizer {
 				db.query("select TABLE_NAME tn,TABLE_ROWS tr from information_schema.tables where TABLE_NAME like 'L%L%' and TABLE_SCHEMA like 'alice_users' order by tr desc");
 				while (db.moveNext()) {
 					String tableNumber = db.gets(1);
-					long tableRows = db.getl(2);
+					final long tableRows = db.getl(2);
 					tableNumber = tableNumber.replace("L", "");
 
 					if (tableRows > maxCount) {
@@ -58,7 +59,7 @@ public class LTables extends Optimizer {
 				db.query("select TABLE_NAME tn,TABLE_ROWS tr from information_schema.tables where TABLE_NAME like 'L%L%' and TABLE_SCHEMA like 'alice_data' order by tr desc");
 				while (db.moveNext()) {
 					String tableNumber = db.gets(1);
-					long tableRows = db.getl(2);
+					final long tableRows = db.getl(2);
 					tableNumber = tableNumber.replace("L", "");
 
 					if (tableRows > maxCount) {
@@ -71,9 +72,9 @@ public class LTables extends Optimizer {
 				}
 
 				if (found) {
-					String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
+					final String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
 					if (admins != null && admins.length() > 0) {
-						Mail m = new Mail();
+						final Mail m = new Mail();
 						m.sSubject = "JAliEn CS: L tables passed limits";
 						m.sBody = "There are LFN tables that passed the " + maxCount + " entries limit: \n\n" + body;
 						m.sFrom = "JAliEnMaster@cern.ch";
@@ -88,7 +89,7 @@ public class LTables extends Optimizer {
 				try {
 					logger.log(Level.INFO, "LTables sleeps " + this.getSleepPeriod());
 					sleep(this.getSleepPeriod());
-				} catch (InterruptedException e) {
+				} catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
 			}

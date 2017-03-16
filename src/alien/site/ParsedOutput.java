@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import alien.taskQueue.JDL;
-import lia.util.Utils;
+import lazyj.commands.SystemCommand;
 
 /**
  * @author costing
@@ -118,7 +118,7 @@ public class ParsedOutput {
 			for (final String file : files) {
 				System.out.println("Going to parse: " + file);
 				if (file.contains("*")) {
-					final String[] parts = Utils.getOutput("ls " + pwd + file).split("\n");
+					final String[] parts = SystemCommand.bash("ls " + pwd + file).stdout.split("\n");
 					if (parts.length > 0)
 						for (String f : parts) {
 							f = f.trim();

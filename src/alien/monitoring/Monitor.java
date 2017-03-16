@@ -10,6 +10,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.config.ConfigUtils;
+import apmon.ApMon;
 import lazyj.Format;
 import lia.Monitor.monitor.MCluster;
 import lia.Monitor.monitor.MFarm;
@@ -18,8 +20,6 @@ import lia.Monitor.monitor.MonitoringModule;
 import lia.Monitor.monitor.Result;
 import lia.Monitor.monitor.eResult;
 import lia.util.DynamicThreadPoll.SchJobInt;
-import alien.config.ConfigUtils;
-import apmon.ApMon;
 
 /**
  * @author costing
@@ -87,7 +87,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Get the ML cluster name
-	 * 
+	 *
 	 * @return cluster name
 	 */
 	String getClusterName() {
@@ -96,7 +96,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Get the ML node name
-	 * 
+	 *
 	 * @return node name
 	 */
 	String getNodeName() {
@@ -105,7 +105,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Add MonALISA monitoring module
-	 * 
+	 *
 	 * @param module
 	 */
 	void addModule(final SchJobInt module) {
@@ -126,7 +126,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Add this extra monitoring object.
-	 * 
+	 *
 	 * @param key
 	 * @param obj
 	 */
@@ -144,7 +144,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Increment an access counter
-	 * 
+	 *
 	 * @param counterKey
 	 * @return the new absolute value of the counter
 	 */
@@ -154,7 +154,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Increment an access counter
-	 * 
+	 *
 	 * @param counterKey
 	 * @param count
 	 * @return the new absolute value of the counter
@@ -171,21 +171,25 @@ public class Monitor implements Runnable {
 
 			if (old != null && (old instanceof Counter))
 				c = (Counter) old;
-		} else if (mo instanceof Counter)
-			c = (Counter) mo;
+		}
 		else
-			return -1;
+			if (mo instanceof Counter)
+				c = (Counter) mo;
+			else
+				return -1;
 
 		return c.increment(count);
 	}
 
 	/**
 	 * Add a measurement value. This can be the time (recommended in seconds) that took a command to executed, a file size (in bytes) and so on.
-	 * 
+	 *
 	 * @param key
 	 * @param quantity
+	 *            how much to add to the previous value
+	 * @return accumulated so far, or <code>-1</code> if there was any error
 	 */
-	public void addMeasurement(final String key, final double quantity) {
+	public double addMeasurement(final String key, final double quantity) {
 		final MonitoringObject mo = monitoringObjects.get(key);
 
 		Measurement t;
@@ -197,17 +201,19 @@ public class Monitor implements Runnable {
 
 			if (old != null && (old instanceof Measurement))
 				t = (Measurement) old;
-		} else if (mo instanceof Measurement)
-			t = (Measurement) mo;
+		}
 		else
-			return;
+			if (mo instanceof Measurement)
+				t = (Measurement) mo;
+			else
+				return -1;
 
-		t.addMeasurement(quantity);
+		return t.addMeasurement(quantity);
 	}
 
 	/**
 	 * Get the CacheMonitor for this key.
-	 * 
+	 *
 	 * @param key
 	 * @return the existing, or newly created, object, or <code>null</code> if a different type of object was already associated to this key
 	 */
@@ -223,10 +229,12 @@ public class Monitor implements Runnable {
 
 			if (old != null && (old instanceof CacheMonitor))
 				cm = (CacheMonitor) old;
-		} else if (mo instanceof CacheMonitor)
-			cm = (CacheMonitor) mo;
+		}
 		else
-			return null;
+			if (mo instanceof CacheMonitor)
+				cm = (CacheMonitor) mo;
+			else
+				return null;
 
 		return cm;
 
@@ -234,7 +242,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Increment the hit count for the given key
-	 * 
+	 *
 	 * @param key
 	 * @see #incrementCacheMisses(String)
 	 * @see #getCacheMonitor(String)
@@ -250,7 +258,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Increment the misses count for the given key
-	 * 
+	 *
 	 * @param key
 	 * @see #incrementCacheHits(String)
 	 * @see #getCacheMonitor(String)
@@ -313,7 +321,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Send a bunch of results
-	 * 
+	 *
 	 * @param values
 	 */
 	public void sendResults(final Collection<Object> values) {
@@ -334,25 +342,27 @@ public class Monitor implements Runnable {
 					paramNames.add(r.param_name[i]);
 					paramValues.add(Double.valueOf(r.param[i]));
 				}
-			} else if (o instanceof eResult) {
-				final eResult er = (eResult) o;
-
-				if (er.param == null)
-					continue;
-
-				for (int i = 0; i < er.param.length; i++) {
-					paramNames.add(er.param_name[i]);
-					paramValues.add(er.param[i].toString());
-				}
-
 			}
+			else
+				if (o instanceof eResult) {
+					final eResult er = (eResult) o;
+
+					if (er.param == null)
+						continue;
+
+					for (int i = 0; i < er.param.length; i++) {
+						paramNames.add(er.param_name[i]);
+						paramValues.add(er.param[i].toString());
+					}
+
+				}
 
 		sendParameters(paramNames, paramValues);
 	}
 
 	/**
 	 * Send these parameters
-	 * 
+	 *
 	 * @param paramNames
 	 *            the names
 	 * @param paramValues
@@ -386,7 +396,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Send only one parameter. This method of sending is less efficient than {@link #sendParameters(Vector, Vector)} and so it should only be used when there is exactly one parameter to be sent.
-	 * 
+	 *
 	 * @param parameterName
 	 *            parameter name
 	 * @param parameterValue

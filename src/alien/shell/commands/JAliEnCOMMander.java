@@ -343,11 +343,13 @@ public class JAliEnCOMMander extends Thread {
 							} catch (final InterruptedException e) {
 								e.printStackTrace();
 							}
-					} else {
+					}
+					else {
 						System.out.println("Giving up...");
 						break;
 					}
-				} else {
+				}
+				else {
 					waitForCommand();
 
 					try {
@@ -415,20 +417,26 @@ public class JAliEnCOMMander extends Thread {
 			if (arg[i].startsWith("-pwd=")) {
 				curDir = c_api.getLFN(arg[i].substring(arg[i].indexOf('=') + 1));
 				args.remove(arg[i]);
-			} else if (arg[i].startsWith("-debug=")) {
-				try {
-					debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
-				} catch (@SuppressWarnings("unused") final NumberFormatException n) {
-					// ignore
-				}
-				args.remove(arg[i]);
-			} else if ("-silent".equals(arg[i])) {
-				silent = true;
-				args.remove(arg[i]);
-			} else if ("-h".equals(arg[i]) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
-				help = true;
-				args.remove(arg[i]);
 			}
+			else
+				if (arg[i].startsWith("-debug=")) {
+					try {
+						debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
+					} catch (@SuppressWarnings("unused") final NumberFormatException n) {
+						// ignore
+					}
+					args.remove(arg[i]);
+				}
+				else
+					if ("-silent".equals(arg[i])) {
+						silent = true;
+						args.remove(arg[i]);
+					}
+					else
+						if ("-h".equals(arg[i]) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
+							help = true;
+							args.remove(arg[i]);
+						}
 
 		if (!Arrays.asList(jAliEnCommandList).contains(comm) &&
 		// ( AliEnPrincipal.roleIsAdmin( AliEnPrincipal.userRole()) &&
@@ -436,21 +444,27 @@ public class JAliEnCOMMander extends Thread {
 			if (Arrays.asList(hiddenCommandList).contains(comm)) {
 				if ("commandlist".equals(comm))
 					out.printOutln(getCommandList());
-				else if ("whoami".equals(comm))
-					out.printOutln(getUsername());
-				else if ("roleami".equals(comm))
-					out.printOutln(getRole());
-				else if ("blackwhite".equals(comm))
-					out.blackwhitemode();
-				else if ("color".equals(comm))
-					out.colourmode();
+				else
+					if ("whoami".equals(comm))
+						out.printOutln(getUsername());
+					else
+						if ("roleami".equals(comm))
+							out.printOutln(getRole());
+						else
+							if ("blackwhite".equals(comm))
+								out.blackwhitemode();
+							else
+								if ("color".equals(comm))
+									out.colourmode();
 				// else if ("shutdown".equals(comm))
 				// jbox.shutdown();
 				// } else if (!"setshell".equals(comm)) {
-			} else
+			}
+			else
 				out.setReturnCode(-1, "Command [" + comm + "] not found!");
 			// }
-		} else {
+		}
+		else {
 
 			final Object[] param = { this, out, args };
 
@@ -473,26 +487,15 @@ public class JAliEnCOMMander extends Thread {
 				jcommand.silent();
 
 			try {
-
-				if (args.size() != 0 && args.get(args.size() - 1).startsWith("&")) {
-					int logno = 0;
-					if (args.get(args.size() - 1).length() > 1)
-						try {
-							logno = Integer.parseInt(args.get(args.size() - 1).substring(1));
-						} catch (@SuppressWarnings("unused") final NumberFormatException n) {
-							// ignore
-						}
-					JAliEnCommandscrlog.addScreenLogLine(Integer.valueOf(logno), "we will screen to" + logno);
-					args.remove(args.size() - 1);
-				}
 				if (jcommand == null)
 					out.setReturnCode(-6, "No such command or not implemented yet. ");
-				else if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments()))
-					jcommand.run();
-				else {
-					out.setReturnCode(-4, "Command requires an argument");
-					jcommand.printHelp();
-				}
+				else
+					if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments()))
+						jcommand.run();
+					else {
+						out.setReturnCode(-4, "Command requires an argument");
+						jcommand.printHelp();
+					}
 			} catch (final Exception e) {
 				e.printStackTrace();
 
@@ -509,7 +512,8 @@ public class JAliEnCOMMander extends Thread {
 		if (degraded) {
 			out.degraded();
 			out.setenv(UsersHelper.getHomeDir(user.getName()), getUsername(), getRole());
-		} else
+		}
+		else
 			out.setenv(getCurrentDirName(), getUsername(), getRole());
 		out.flush();
 	}

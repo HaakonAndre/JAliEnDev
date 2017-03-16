@@ -18,27 +18,6 @@ import joptsimple.OptionSet;
  * @since June 9, 2011
  */
 public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
-
-	/**
-	 * marker for -M argument
-	 */
-	private boolean bMerge = false;
-
-	/**
-	 * marker for -a argument
-	 */
-	private boolean bKill = false;
-
-	/**
-	 * marker for -l argument
-	 */
-	private boolean bResubmit = false;
-
-	/**
-	 * marker for -M argument
-	 */
-	private boolean bExpunge = false;
-
 	/**
 	 * marker for -M argument
 	 */
@@ -66,7 +45,7 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 
 		// for (Job j : masterjobstatus.keySet()) {
 		if (j != null)
-			subjobstates = commander.q_api.getMasterJobStatus(j.queueId, status, id, sites, bPrintId, bPrintSite, bMerge, bKill, bResubmit, bExpunge);
+			subjobstates = commander.q_api.getMasterJobStatus(j.queueId, status, id, sites);
 		else
 			return;
 
@@ -132,7 +111,8 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				out.setField("In total, there are ", subjobstates.size() + " subjobs");
 
 			}
-		} else {
+		}
+		else {
 
 			out.printOutln("Checking the masterjob " + j.queueId);
 			out.printOutln("The job " + j.queueId + " is in status: " + j.status());
@@ -341,19 +321,8 @@ public class JAliEnCommandmasterjob extends JAliEnBaseCommand {
 				bPrintId = options.has("printid");
 				bPrintSite = options.has("printsite");
 
-				final String flag = alArguments.get(alArguments.size() - 1);
-
-				if (flag != null)
-					if (flag.equals("merge"))
-						bMerge = true;
-					else if (flag.equals("kill"))
-						bKill = true;
-					else if (flag.equals("resubmit"))
-						bResubmit = true;
-					else if (flag.equals("expunge"))
-						bExpunge = true;
-
-			} else
+			}
+			else
 				throw new JAliEnCommandException();
 		} catch (final OptionException e) {
 			printHelp();

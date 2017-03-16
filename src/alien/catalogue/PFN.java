@@ -158,7 +158,7 @@ public class PFN implements Serializable, Comparable<PFN> {
 		this.tableNumber = guid.tableName;
 		this.hashCode = this.pfn.hashCode();
 	}
-
+	
 	/**
 	 * @param path
 	 *            correct path for case-sensitive locations

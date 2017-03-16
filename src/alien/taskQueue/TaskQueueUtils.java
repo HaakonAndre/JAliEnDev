@@ -500,17 +500,10 @@ public class TaskQueueUtils {
 	 * @param status
 	 * @param id
 	 * @param site
-	 * @param bPrintId
-	 * @param bPrintSite
-	 * @param bMerge
-	 * @param bKill
-	 * @param bResubmit
-	 * @param bExpunge
 	 * @param limit
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final boolean bPrintId, final boolean bPrintSite,
-			final boolean bMerge, final boolean bKill, final boolean bResubmit, final boolean bExpunge, final int limit) {
+	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final int limit) {
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
@@ -589,7 +582,7 @@ public class TaskQueueUtils {
 				where += " status!='KILLED' ";
 
 			int lim = 20000;
-			if (limit > 0 && limit < 20000)
+			if (limit > 0 && limit < 100000)
 				lim = limit;
 
 			final String q;
@@ -1223,18 +1216,6 @@ public class TaskQueueUtils {
 		}
 
 		return ret;
-	}
-
-	/**
-	 * Kill a job in the queue
-	 *
-	 * @param user
-	 * @param queueId
-	 * @return status of the kill
-	 */
-	public static boolean kill(final AliEnPrincipal user, final long queueId) {
-		// TODO check if the user is allowed to kill and do it
-		return false;
 	}
 
 	private static final Pattern p = Pattern.compile("\\$(\\d+)");
@@ -2074,7 +2055,7 @@ public class TaskQueueUtils {
 	}
 
 	// status and jdl
-	private static boolean updateJob(final Job j, final JobStatus newStatus, final Map<String, String> jdltags) {
+	private static boolean updateJob(final Job j, final JobStatus newStatus) {
 
 		if (newStatus.smallerThanEquals(j.status()) && (j.status() == JobStatus.ZOMBIE || j.status() == JobStatus.IDLE || j.status() == JobStatus.INTERACTIV) && j.isMaster())
 			return false;
@@ -2149,27 +2130,6 @@ public class TaskQueueUtils {
 						else
 							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
 								jdltags.put("finished", time);
-								if (j.usesValidation()) {
-									final String host = j.execHost.substring(j.execHost.indexOf('@') + 1);
-									final int port = 0; // $self->{CONFIG}->{CLUSTERMONITOR_PORT};
-
-									// my $executable = "";
-									// $data->{jdl} =~ /executable\s*=\s*"?(\S+)"?\s*;/i and
-									// $executable = $1;
-									// $executable =~ s/\"//g;
-									// my $validatejdl = "[
-									// Executable=\"$executable.validate\";
-									// Arguments=\"$queueId $data->{host} $port\";
-									// Requirements= member(other.GridPartition,\"Validation\");
-									// Type=\"Job\";
-									// ]";
-									// $DEBUG and $self->debug(1,
-									// "In changeStatusCommand sending the command to validate the result of $queueId...");
-									// $self->enterCommand("$data->{submithost}", "$validatejdl");
-									// }
-
-								}
-
 							}
 							else
 								if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
@@ -2185,7 +2145,7 @@ public class TaskQueueUtils {
 
 		String message = "Job state transition from " + j.getStatusName() + " to " + newStatus;
 
-		final boolean success = updateJob(j, newStatus, jdltags);
+		final boolean success = updateJob(j, newStatus);
 
 		if (!success)
 			message = "FAILED: " + message;
@@ -2210,25 +2170,6 @@ public class TaskQueueUtils {
 			// }
 		}
 		return success;
-	}
-
-	private static boolean updateJDLAndProcInfo(final Job j, final Map<String, String> jdltags, final Map<String, String> procInfo) {
-
-		// my $procSet = {};
-		// foreach my $key (keys %$set) {
-		// if ($key =~
-		// /(si2k)|(cpuspeed)|(maxrsize)|(cputime)|(ncpu)|(cost)|(cpufamily)|(cpu)|(vsize)|(rsize)|(runtimes)|(procinfotime)|(maxvsize)|(runtime)|(mem)|(batchid)/
-		// ) {
-		// $procSet->{$key} = $set->{$key};
-		// delete $set->{$key};
-		// }
-		// }
-
-		// TODO: set the procinfo, is necessary
-
-		// TODO: update the jdltags
-		return true;
-
 	}
 
 	private static boolean insertMessage(final String target, final String service, final String message, final String messageArgs, final int expires) {
@@ -2362,8 +2303,21 @@ public class TaskQueueUtils {
 			insertValues.put("procinfo", message);
 			insertValues.put("tag", action);
 
-			return db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues));
+			if (!db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues)))
+				return false;
+
+			if (joblogtags != null && joblogtags.size() > 0) {
+				for (Map.Entry<String, String> entry : joblogtags.entrySet()) {
+					insertValues.put("tag", entry.getKey());
+					insertValues.put("procinfo", entry.getValue());
+
+					if (!db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues)))
+						return false;
+				}
+			}
 		}
+
+		return true;
 	}
 
 	private static boolean deleteJobAgent(final int jobagentId) {
@@ -2385,13 +2339,7 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static void checkFinalAction(final Job j) {
-		if (j.notify != null && !j.notify.equals(""))
-			sendNotificationMail(j);
-
-	}
-
-	private static void sendNotificationMail(final Job j) {
+	private static void sendNotificationMail(@SuppressWarnings("unused") final Job j) {
 		// send j.notify an info
 		// TODO:
 	}
@@ -2529,10 +2477,12 @@ public class TaskQueueUtils {
 	 * @param status
 	 * @param extraparams
 	 */
-	public static void setSiteQueueStatus(final String ce, final String status, final Object... extraparams) {
+	public static void setSiteQueueStatus(final String ce, final String status, @SuppressWarnings("unused") final Object... extraparams) {
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return;
+
+			// TODO: jdls?
 
 			logger.log(Level.INFO, "Setting site with ce " + ce + " to " + status);
 
@@ -2703,6 +2653,131 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * @param host
+	 * @param port
+	 * @param version
+	 * @return value for this key
+	 */
+	public static int getHostOrInsert(final String host, final int port, final String version) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			final String q = "select hostId from HOSTS where hostName=?";
+
+			logger.log(Level.INFO, "Going to get HOST " + host + ", query: " + q);
+
+			db.setReadOnly(true);
+			db.query(q, false, host);
+
+			// the host exists
+			int hostId;
+			if (db.moveNext()) {
+				logger.log(Level.INFO, "The HOST exists");
+				hostId = db.geti(1);
+			}
+			else { // we insert the host
+				logger.log(Level.INFO, "The host doesn't exist. Inserting...");
+				hostId = insertHost(host, port, version);
+				if (hostId == 0) {
+					logger.severe("Couldn't insertHost in getFromHostsOrInsert");
+					return 0;
+				}
+			}
+
+			return hostId;
+		}
+	}
+
+	private static int insertHost(final String host, final int port, final String version) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			final String domain = host.substring(host.indexOf(".") + 1, host.length());
+
+			final List<Integer> domains = getSitesByDomain(domain);
+
+			int siteId;
+			if (domains == null || domains.size() <= 0) {
+				siteId = insertIntoSites(domain);
+				if (siteId == 0) {
+					logger.severe("Error (insertHost): couldn't insert into sites!");
+					return 0;
+				}
+			}
+			else
+				siteId = domains.get(0).intValue();
+
+			final String qi = "insert into HOSTS (hostId, hostName, siteId, hostPort, Version) values (?,?,?,?,?);";
+			db.setReadOnly(false);
+			db.setLastGeneratedKey(true);
+			final boolean ret = db.query(qi, false, Integer.valueOf(0), host, Integer.valueOf(siteId), Integer.valueOf(port), version);
+
+			logger.log(Level.INFO, "insertHost with query : " + qi + " with ?=" + host + " and siteId: " + siteId);
+
+			if (ret) {
+				final int val = db.getLastGeneratedKey().intValue();
+				logger.log(Level.INFO, "Returning HOST hostId: " + val);
+				return val;
+			}
+			return 0;
+		}
+	}
+
+	private static int insertIntoSites(final String domain) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			final HashMap<String, Object> domainInfo = LDAPHelper.getInfoDomain(domain);
+
+			if (domainInfo == null || domainInfo.size() == 0) {
+				logger.severe("Error: cannot find site root configuration in LDAP for domain: " + domain);
+				return 0;
+			}
+
+			final String qi = "insert into SITES (siteName,siteId,masterHostId,adminName,location,domain, longitude, latitude,record,url) values (?,?,?,?,?,?,?,?,?,?);";
+			db.setReadOnly(false);
+			db.setLastGeneratedKey(true);
+
+			logger.log(Level.INFO, "insertIntoSites: " + qi + " with domain: " + domain);
+			final boolean ret = db.query(qi, false, domainInfo.get("ou"), Integer.valueOf(0), Integer.valueOf(0), domainInfo.containsKey("adminsitrator") ? domainInfo.get("administrator") : "",
+					domainInfo.containsKey("location") ? domainInfo.get("location") : "", domain, domainInfo.containsKey("longitude") ? domainInfo.get("longitude") : Double.valueOf(0),
+					domainInfo.containsKey("latitude") ? domainInfo.get("latitude") : Double.valueOf(0.0), domainInfo.containsKey("record") ? domainInfo.get("record") : "",
+					domainInfo.containsKey("url") ? domainInfo.get("url") : "");
+
+			if (ret) {
+				final int val = db.getLastGeneratedKey().intValue();
+				logger.log(Level.INFO, "Returning SITES siteId: " + val);
+				return val;
+			}
+
+			return 0;
+		}
+	}
+
+	private static List<Integer> getSitesByDomain(final String domain) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			final ArrayList<Integer> sites = new ArrayList<>();
+
+			final String q = "select siteId from SITES where domain=?";
+
+			logger.log(Level.INFO, "Going to get sites for domain: " + domain + ", query: " + q);
+
+			db.setReadOnly(true);
+			db.query(q, false, domain);
+			while (db.moveNext())
+				sites.add(Integer.valueOf(db.geti(1)));
+
+			return sites;
+		}
+	}
+
 	private static final ExpirationCache<String, Integer> siteIdCache = new ExpirationCache<>();
 
 	/**
@@ -2762,6 +2837,78 @@ public class TaskQueueUtils {
 		}
 
 		return 1;
+	}
+
+	/**
+	 * @param host
+	 * @param status
+	 * @param connected
+	 * @param port
+	 * @param version
+	 * @param ceName
+	 * @return <code>true</code> if the host existed and was successfully updated in the database
+	 */
+	public static boolean updateHost(final String host, final String status, final Integer connected, final int port, final String version, final String ceName) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return false;
+
+			db.setReadOnly(false);
+
+			logger.log(Level.INFO, "Going to updateHost for: " + host + " status: " + status);
+
+			if (!db.query("update HOSTS set status=?,connected=?,hostPort=?,version=?,cename=? where hostName=?", false, status, connected, Integer.valueOf(port), version, ceName, host))
+				return false;
+
+			return db.getUpdateCount() > 0;
+		}
+	}
+
+	/**
+	 * @param ceName
+	 * @return the value of the "blocked" column in the database for this CE name
+	 */
+	public static String getSiteQueueBlocked(final String ceName) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			logger.log(Level.INFO, "Going to select SITEQUEUES.blocked for: " + ceName);
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(60);
+
+			if (db.query("select blocked from SITEQUEUES where site=?", false, ceName) && db.moveNext()) {
+				final String value = db.gets(1);
+				return value;
+			}
+			return null;
+		}
+	}
+
+	/**
+	 * @param host
+	 * @param ceName
+	 * @return a 2 element array with the max number of jobs as the first value and the limit of queued jobs as the second one
+	 */
+	public static ArrayList<Integer> getNumberMaxAndQueuedCE(final String host, final String ceName) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			logger.log(Level.INFO, "Going to select HOSTS.maxQueued,maxJobs for: " + host + " - " + ceName);
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(60);
+
+			final ArrayList<Integer> slots = new ArrayList<>();
+
+			if (db.query("select maxJobs,maxQueued from HOSTS where hostName=? and ceName=? and maxJobs is not null and maxQueued is not null", false, host, ceName) && db.moveNext()) {
+				slots.add(Integer.valueOf(db.geti(1)));
+				slots.add(Integer.valueOf(db.geti(2)));
+			}
+			return slots;
+		}
 	}
 
 }

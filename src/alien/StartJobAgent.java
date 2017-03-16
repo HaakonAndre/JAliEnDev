@@ -23,7 +23,6 @@ public class StartJobAgent {
 		// DispatchSSLClient.overWriteServiceAndForward("siteProxyService");
 
 		final JobAgent jA = new JobAgent();
-		jA.start();
-
+		jA.run();
 	}
 }

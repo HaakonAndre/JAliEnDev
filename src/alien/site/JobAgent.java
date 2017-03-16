@@ -5,14 +5,10 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -47,7 +43,6 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
@@ -58,13 +53,12 @@ import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
-import lia.util.Utils;
+import lazyj.commands.SystemCommand;
 
 /**
- * @author mmmartin, ron
- * @since Apr 1, 2015
+ * Job pilot, running an embedded JBox for in/out-bound communications
  */
-public class JobAgent extends Thread implements MonitoringObject {
+public class JobAgent implements MonitoringObject, Runnable {
 
 	// Folders and files
 	private File tempDir = null;
@@ -73,7 +67,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
-	private final String site;
 	private final String ce;
 	private int origTtl;
 
@@ -85,11 +78,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 	private String jobAgentId = "";
 	private String workdir = null;
 	private HashMap<String, Object> matchedJob = null;
-	private String partition;
-	private String ceRequirements = "";
-	private List<String> packages;
-	private List<String> installedPackages;
-	private ArrayList<String> extrasites;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	private int workdirMaxSizeMB;
 	private int jobMaxMemoryMB;
@@ -105,7 +93,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 	// Other
 	private PackMan packMan = null;
 	private String hostName = null;
-	private String alienCm = null;
 	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private final CatalogueApiUtils c_api = new CatalogueApiUtils(commander);
@@ -169,49 +156,23 @@ public class JobAgent extends Thread implements MonitoringObject {
 	/**
 	 */
 	public JobAgent() {
-		site = env.get("site"); // or
-								// ConfigUtils.getConfig().gets("alice_close_site").trim();
+		// site = env.get("site"); // or
+		// ConfigUtils.getConfig().gets("alice_close_site").trim();
 		ce = env.get("CE");
 
 		totalJobs = 0;
 
-		partition = "";
-		if (env.containsKey("partition"))
-			partition = env.get("partition");
+		siteMap = (new SiteMap()).getSiteParameters(env);
 
-		if (env.containsKey("TTL"))
-			origTtl = Integer.parseInt(env.get("TTL"));
-		else
-			origTtl = 12 * 3600;
-
-		if (env.containsKey("cerequirements"))
-			ceRequirements = env.get("cerequirements");
-
-		if (env.containsKey("closeSE"))
-			extrasites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
-
-		try {
-			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-		} catch (final UnknownHostException e) {
-			System.err.println("Couldn't get hostname");
-			e.printStackTrace();
-		}
-
-		alienCm = hostName;
-		if (env.containsKey("ALIEN_CM_AS_LDAP_PROXY"))
-			alienCm = env.get("ALIEN_CM_AS_LDAP_PROXY");
+		hostName = (String) siteMap.get("Host");
+		// alienCm = (String) siteMap.get("alienCm");
+		packMan = (PackMan) siteMap.get("PackMan");
 
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
-		workdir = env.get("HOME");
-		if (env.containsKey("WORKDIR"))
-			workdir = env.get("WORKDIR");
-		if (env.containsKey("TMPBATCH"))
-			workdir = env.get("TMPBATCH");
-
-		siteMap = getSiteParameters();
+		workdir = (String) siteMap.get("workdir");
 
 		Hashtable<Long, String> cpuinfo;
 		try {
@@ -292,6 +253,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 						logger.log(Level.INFO, (String) matchedJob.get("Error"));
 
 						if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
+							@SuppressWarnings("unchecked")
 							final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
 							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
 							installPackages(packToInstall);
@@ -302,7 +264,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 
 					try {
 						// TODO?: monitor.sendBgMonitoring
-						sleep(20000);
+						Thread.sleep(20000);
 					} catch (final InterruptedException e) {
 						e.printStackTrace();
 					}
@@ -320,7 +282,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 	private void cleanup() {
 		System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
 		// Remove sandbox, TODO: use Java builtin
-		Utils.getOutput("rm -rf " + jobWorkdir);
+		SystemCommand.bash("rm -rf " + jobWorkdir);
 		RES_WORKDIR_SIZE = ZERO;
 		RES_VMEM = ZERO;
 		RES_RMEM = ZERO;
@@ -353,84 +315,6 @@ public class JobAgent extends Thread implements MonitoringObject {
 		final Integer value = jaStatus.get(status);
 
 		return value != null ? value : Integer.valueOf(0);
-	}
-
-	/**
-	 * @return the site parameters to send to the job broker (packages, ttl, ce/site...)
-	 */
-	private HashMap<String, Object> getSiteParameters() {
-		logger.log(Level.INFO, "Getting jobAgent map");
-
-		// getting packages from PackMan
-		packMan = getPackman();
-		packages = packMan.getListPackages();
-		installedPackages = packMan.getListInstalledPackages();
-
-		// get users from cerequirements field
-		final ArrayList<String> users = new ArrayList<>();
-		if (!ceRequirements.equals("")) {
-			final Pattern p = Pattern.compile("\\s*other.user\\s*==\\s*\"(\\w+)\"");
-			final Matcher m = p.matcher(ceRequirements);
-			while (m.find())
-				users.add(m.group(1));
-		}
-		
-		// get nousers from cerequirements field
-		final ArrayList<String> nousers = new ArrayList<>();
-		if (!ceRequirements.equals("")) {
-			final Pattern p = Pattern.compile("\\s*other.user\\s*!=\\s*\"(\\w+)\"");
-			final Matcher m = p.matcher(ceRequirements);
-			while (m.find())
-				nousers.add(m.group(1));
-		}
-		
-		// setting entries for the map object
-		siteMap.put("TTL", Integer.valueOf(origTtl));
-
-		// We prepare the packages for direct matching
-		String packs = ",";
-		Collections.sort(packages);
-		for (final String pack : packages)
-			packs += pack + ",,";
-
-		packs = packs.substring(0, packs.length() - 1);
-
-		String instpacks = ",";
-		Collections.sort(installedPackages);
-		for (final String pack : installedPackages)
-			instpacks += pack + ",,";
-
-		instpacks = instpacks.substring(0, instpacks.length() - 1);
-
-		siteMap.put("Platform", ConfigUtils.getPlatform());
-		siteMap.put("Packages", packs);
-		siteMap.put("InstalledPackages", instpacks);
-		siteMap.put("CE", ce);
-		siteMap.put("Site", site);
-		if (users.size() > 0)
-			siteMap.put("Users", users);
-		if (nousers.size() > 0)
-			siteMap.put("NoUsers", nousers);
-		if (extrasites != null && extrasites.size() > 0)
-			siteMap.put("Extrasites", extrasites);
-		siteMap.put("Host", alienCm);
-		siteMap.put("Disk", Long.valueOf(new File(workdir).getFreeSpace() / 1024));
-
-		if (!partition.equals(""))
-			siteMap.put("Partition", partition);
-
-		return siteMap;
-	}
-
-	private PackMan getPackman() {
-		switch (env.get("installationMethod")) {
-		case "CVMFS":
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS();
-		default:
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS();
-		}
 	}
 
 	/**
@@ -1084,6 +968,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 					final Object val = jdl.get(s);
 
 					if (val instanceof Collection<?>) {
+						@SuppressWarnings("unchecked")
 						final Iterator<String> it = ((Collection<String>) val).iterator();
 						String sbuff = "";
 						boolean isFirst = true;
@@ -1131,7 +1016,7 @@ public class JobAgent extends Thread implements MonitoringObject {
 			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 		}
 		else
-			if (newStatus == JobStatus.RUNNING) {	
+			if (newStatus == JobStatus.RUNNING) {
 				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
 				extrafields.put("node", hostName);
 

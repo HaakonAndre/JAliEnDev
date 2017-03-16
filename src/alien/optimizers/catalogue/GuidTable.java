@@ -23,6 +23,7 @@ public class GuidTable extends Optimizer {
 	final static int warnCount = 40000000; // 40M
 	int count;
 
+	@Override
 	public void run() {
 		this.setSleepPeriod(3600 * 1000); // 1h
 
@@ -41,33 +42,31 @@ public class GuidTable extends Optimizer {
 				db.setReadOnly(true);
 				db.query("select max(tableName) from GUIDINDEX where guidTime is not null");
 				db.moveNext();
-				int tableNumber = db.geti(1);
+				final int tableNumber = db.geti(1);
 
 				db.setReadOnly(true);
 				db.query("select count(1) from G" + tableNumber + "L_PFN");
 				db.moveNext();
 				count = db.geti(1);
 
-				if (count > maxCount) {
+				if (count > maxCount)
 					// new G table
 					createNewGTable(db, tableNumber + 1);
-				}
 				else {
 					db.setReadOnly(true);
 					db.query("select count(1) from G" + tableNumber + "L");
 					db.moveNext();
 					count = db.geti(1);
 
-					if (count > maxCount) {
+					if (count > maxCount)
 						// new G table
 						createNewGTable(db, tableNumber + 1);
-					}
 				}
 
 				if (count > warnCount) {
-					String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
+					final String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
 					if (admins != null && admins.length() > 0) {
-						Mail m = new Mail();
+						final Mail m = new Mail();
 						m.sSubject = "JAliEn CS: G table filling up";
 						m.sBody = "The table G" + tableNumber + "L has passed " + warnCount + " entries and will be soon renewed!";
 						m.sFrom = "JAliEnMaster@cern.ch";
@@ -82,18 +81,18 @@ public class GuidTable extends Optimizer {
 				try {
 					logger.log(Level.INFO, "GuidTable sleeps " + this.getSleepPeriod());
 					sleep(this.getSleepPeriod());
-				} catch (InterruptedException e) {
+				} catch (final InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
 		}
 	}
 
-	private void createNewGTable(DBFunctions db, int newTable) {
+	private void createNewGTable(final DBFunctions db, final int newTable) {
 		logger.log(Level.INFO, "GuidTable: creating new table: " + newTable);
-		String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
+		final String admins = ConfigUtils.getConfig().gets("mail_admins"); // comma separated list of emails in config.properties 'mail_admins'
 		if (admins != null && admins.length() > 0) {
-			Mail m = new Mail();
+			final Mail m = new Mail();
 			m.sSubject = "JAliEn CS: new G" + newTable + "L tables";
 			m.sBody = "The table G" + newTable + "L has been inserted now.\n\n" + "The previous table had " + count + " entries.";
 			m.sFrom = "JAliEnMaster@cern.ch";
@@ -111,7 +110,7 @@ public class GuidTable extends Optimizer {
 				+ " `aclId` int(11) DEFAULT NULL," + " `expiretime` datetime DEFAULT NULL," + " `size` bigint(20) NOT NULL DEFAULT '0',"
 				+ " `gowner` varchar(20) COLLATE latin1_general_cs DEFAULT NULL," + " `guid` binary(16) DEFAULT NULL," + " `type` char(1) COLLATE latin1_general_cs DEFAULT NULL,"
 				+ " `md5` varchar(32) COLLATE latin1_general_cs DEFAULT NULL," + " `perm` char(3) COLLATE latin1_general_cs DEFAULT NULL," + " PRIMARY KEY (`guidId`)," + " UNIQUE KEY `guid` (`guid`),"
-				+ " KEY `seStringlist` (`seStringlist`)," + " KEY `ctime` (`ctime`)" + ") ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ " KEY `seStringlist` (`seStringlist`)," + " KEY `ctime` (`ctime`)" + ") ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
@@ -123,7 +122,7 @@ public class GuidTable extends Optimizer {
 		sql = "CREATE TABLE `G" + newTable + "L_PFN` (" + "  `guidId` int(11) NOT NULL," + "  `pfn` varchar(255) COLLATE latin1_general_cs DEFAULT NULL," + "  `seNumber` int(11) NOT NULL,"
 				+ "  KEY `guid_ind` (`guidId`)," + "  KEY `seNumber` (`seNumber`)," + "  CONSTRAINT `G" + newTable
 				+ "L_PFN_ibfk_1` FOREIGN KEY (`seNumber`) REFERENCES `SE` (`seNumber`) ON DELETE CASCADE," + "  CONSTRAINT `G" + newTable + "L_PFN_ibfk_2` FOREIGN KEY (`guidId`) REFERENCES `G"
-				+ newTable + "L` (`guidId`) ON DELETE CASCADE) " + " ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ newTable + "L` (`guidId`) ON DELETE CASCADE) " + " ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
@@ -134,7 +133,7 @@ public class GuidTable extends Optimizer {
 		logger.log(Level.INFO, sql);
 
 		sql = "CREATE TABLE `G" + newTable + "L_QUOTA` (" + "  `user` varchar(64) COLLATE latin1_general_cs NOT NULL," + "  `nbFiles` int(11) NOT NULL," + "  `totalSize` bigint(20) NOT NULL,"
-				+ "  KEY `user_ind` (`user`)" + ") ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ "  KEY `user_ind` (`user`)" + ") ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
@@ -146,7 +145,7 @@ public class GuidTable extends Optimizer {
 
 		sql = "CREATE TABLE `G" + newTable + "L_REF` (" + "  `guidId` int(11) NOT NULL," + "  `lfnRef` varchar(20) COLLATE latin1_general_cs NOT NULL," + "  KEY `guidId` (`guidId`),"
 				+ "  KEY `lfnRef` (`lfnRef`)," + "  CONSTRAINT `G" + newTable + "L_REF_ibfk_1` FOREIGN KEY (`guidId`) REFERENCES `G" + newTable + "L` (`guidId`) ON DELETE CASCADE"
-				+ ") ENGINE=InnoDB ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=2 DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
+				+ ") ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_general_cs;";
 
 		db.setReadOnly(false);
 		if (!db.query(sql)) {
@@ -157,8 +156,8 @@ public class GuidTable extends Optimizer {
 		logger.log(Level.INFO, sql);
 
 		// Inserting in 10min from now in the new tables
-		UUID uuid = GUIDUtils.generateTimeUUID(System.currentTimeMillis() + 10 * 60 * 1000);
-		String toInsert = GUIDUtils.getIndexTime(uuid).concat("00000000");
+		final UUID uuid = GUIDUtils.generateTimeUUID(System.currentTimeMillis() + 10 * 60 * 1000);
+		final String toInsert = GUIDUtils.getIndexTime(uuid).concat("00000000");
 
 		sql = "INSERT INTO GUIDINDEX values (0, 8, " + newTable + ", '" + toInsert + "', NULL)";
 		db.setReadOnly(false);

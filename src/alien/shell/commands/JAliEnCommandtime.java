@@ -2,8 +2,6 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
-import alien.perl.commands.AlienTime;
-
 /**
  * @author ron
  * @since June 4, 2011
@@ -69,8 +67,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-
-		out.printOutln(AlienTime.getStamp() + "Usage: time <times>  <command> [command_arguments] ");
+		out.printOutln("Usage: time <times>  <command> [command_arguments] ");
 	}
 
 	/**
