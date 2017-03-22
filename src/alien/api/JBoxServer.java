@@ -734,10 +734,12 @@ public class JBoxServer extends Thread {
 			}
 		} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
 			logger.log(Level.SEVERE, "Wrong password!", e);
-			System.err.println("Wrong password!");
+			System.err.println("Wrong password! Try again");
+                        JBoxServer.startJBoxService(iDebug);
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Error loading the key", e);
 			System.err.println("Error loading the key");
+                        JBoxServer.startJBoxService(iDebug);
 		}
 	}
 
