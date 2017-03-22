@@ -39,10 +39,19 @@ import alien.user.UsersHelper;
 import lazyj.commands.SystemCommand;
 
 import org.apache.catalina.WebResourceRoot;
-import org.apache.catalina.core.StandardContext;
+//import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.Context;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.catalina.webresources.DirResourceSet;
 import org.apache.catalina.webresources.StandardRoot;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.IOException;
+import java.io.Writer;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -168,10 +177,16 @@ public class JBoxServer extends Thread {
 		String webappDirLocation = "webapps/";
         Tomcat tomcat = new Tomcat();
 
-        tomcat.setPort(8080);
+        // Define port number for the web application
+        String webPort = System.getenv("PORT");
+        if (webPort == null || webPort.isEmpty()) {
+            webPort = "8081";
+        }
+        // Bind the port to Tomcat server
+        tomcat.setPort(Integer.valueOf(webPort));
 
-        StandardContext ctx = (StandardContext) tomcat.addWebapp("/jalien", new File(webappDirLocation).getAbsolutePath());
-        System.out.println("configuring app with basedir: " + new File("./" + webappDirLocation).getAbsolutePath());
+        Context ctx = tomcat.addWebapp("/jalien", new File(webappDirLocation).getAbsolutePath());
+        System.out.println("configuring app with basedir: " + new File(webappDirLocation).getAbsolutePath());
 
         // Declare an alternative location for your "WEB-INF/classes" dir
         // Servlet 3.0 annotation will work
@@ -182,7 +197,25 @@ public class JBoxServer extends Thread {
         //ctx.setResources(resources);
         File configFile = new File(webappDirLocation + "examples/WEB-INF/web.xml");
         ctx.setConfigFile(configFile.toURI().toURL());
+        
+        // Add servlet
+        //Tomcat.addServlet(ctx, "examples-websocket-echo-servlet", "examples.websocket.echo");
+        //ctx.addServletMapping("/examples/websocket/*", "examples-websocket-echo-servlet");
 
+        /*Tomcat.addServlet(ctx, "Embedded", new HttpServlet() {
+            @Override
+            protected void service(HttpServletRequest req, HttpServletResponse resp) 
+                    throws ServletException, IOException {
+                
+                Writer w = resp.getWriter();
+                w.write("Embedded Tomcat servlet.\n");
+                w.flush();
+                w.close();
+            }
+        });
+
+        ctx.addServletMapping("/*", "Embedded");*/
+        
         tomcat.start();
         tomcat.getServer().await();
 	}
@@ -762,11 +795,13 @@ public class JBoxServer extends Thread {
 				JBoxServer.startJBoxServer(iDebug);
 			}
 		} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
-			logger.log(Level.SEVERE, "Wrong password!", e);
+			logger.log(Level.SEVERE, "Wrong password! Try again", e);
 			System.err.println("Wrong password!");
+			JBoxServer.startJBoxService(iDebug);
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Error loading the key", e);
 			System.err.println("Error loading the key");
+			JBoxServer.startJBoxService(iDebug);
 		}
 	}
 
