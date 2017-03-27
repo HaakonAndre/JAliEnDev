@@ -18,6 +18,8 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 /**
  *
@@ -78,12 +80,22 @@ public class CatalogueTestWhereisGenerated {
 	 * Suffix for log files
 	 */
 	static String logs_suffix = "";
-
+	/**
+	 * DB type: 0 MySQL 1 Cassandra
+	 */
 	static int type = 1;
-
+	/**
+	 * Suffix for column family name
+	 */
 	static String lfntable = null;
-
+	/**
+	 * Random number generator
+	 */
 	static final Random rdm = new Random();
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueTestWhereisGenerated.class.getCanonicalName());
 
 	/**
 	 * Signal to stop
@@ -263,6 +275,9 @@ public class CatalogueTestWhereisGenerated {
 				final long duration_ns = System.nanoTime() - start;
 				ns_count.addAndGet(duration_ns);
 				final long counter2 = timing_count.incrementAndGet();
+
+				if (monitor != null)
+					monitor.addMeasurement("ms_whereis_cassandra", duration_ns / 1000000.);
 
 				if (counter2 >= limit_count)
 					limit_reached = true;
