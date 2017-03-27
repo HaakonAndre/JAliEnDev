@@ -24,7 +24,7 @@ public class FORK extends BatchQueue {
 	}
 
 	@Override
-	public void submit() {
+	public void submit(final String script) {
 		logger.info("Submit FORK");
 	}
 
