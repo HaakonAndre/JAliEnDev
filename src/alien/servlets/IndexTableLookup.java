@@ -36,15 +36,14 @@ public class IndexTableLookup extends HttpServlet {
 
 		if (lfn != null && lfn.length() > 0) {
 			final IndexTableEntry entry = CatalogueUtils.getClosestMatch(lfn);
+
 			try (ServletOutputStream os = resp.getOutputStream()) {
-				os.println("$VAR1 = [");
-				os.println("  {");
-				os.println("    'hostIndex' => '" + entry.hostIndex + "',");
-				os.println("    'indexId' => '" + entry.indexId + "',");
-				os.println("    'tableName' => '" + entry.tableName + "',");
-				os.println("    'lfn' => '" + entry.lfn + "'");
-				os.println("  }");
-				os.println("];");
+				final StringBuilder sb = new StringBuilder(256);
+
+				sb.append("$VAR1=[{'hostIndex'=>'").append(entry.hostIndex).append("','indexId'=>'").append(entry.indexId).append("','tableName'=>'").append(entry.tableName).append("','lfn'=>'")
+						.append(entry.lfn).append("'}];\n");
+
+				os.print(sb.toString());
 			}
 		}
 		else {
