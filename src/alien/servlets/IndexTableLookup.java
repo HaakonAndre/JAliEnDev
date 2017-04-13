@@ -38,10 +38,10 @@ public class IndexTableLookup extends HttpServlet {
 			final IndexTableEntry entry = CatalogueUtils.getClosestMatch(lfn);
 
 			try (ServletOutputStream os = resp.getOutputStream()) {
-				final StringBuilder sb = new StringBuilder(256);
+				final StringBuilder sb = new StringBuilder(128);
 
-				sb.append("$VAR1=[{'hostIndex'=>'").append(entry.hostIndex).append("','indexId'=>'").append(entry.indexId).append("','tableName'=>'").append(entry.tableName).append("','lfn'=>'")
-						.append(entry.lfn).append("'}];\n");
+				sb.append("$VAR1={'hostIndex'=>'").append(entry.hostIndex).append("','indexId'=>'").append(entry.indexId).append("','tableName'=>'").append(entry.tableName).append("','lfn'=>'")
+						.append(entry.lfn).append("'};\n");
 
 				os.print(sb.toString());
 			}
