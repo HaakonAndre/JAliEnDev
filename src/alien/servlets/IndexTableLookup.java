@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import alien.catalogue.CatalogueUtils;
 import alien.catalogue.IndexTableEntry;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 
 /**
  * IndexTable lookups, based on cached indextable content
@@ -24,8 +26,12 @@ public class IndexTableLookup extends HttpServlet {
 	 */
 	private static final long serialVersionUID = 1599249953957590702L;
 
+	static transient final Monitor monitor = MonitorFactory.getMonitor(IndexTableLookup.class.getCanonicalName());
+
 	@Override
 	protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+		final long start = System.nanoTime();
+
 		final String lfn = req.getParameter("lfn");
 
 		if (lfn != null && lfn.length() > 0) {
@@ -46,6 +52,11 @@ public class IndexTableLookup extends HttpServlet {
 
 			if (refresh != null && refresh.length() > 0)
 				CatalogueUtils.invalidateIndexTableCache();
+		}
+
+		if (monitor != null) {
+			final long duration = System.nanoTime() - start;
+			monitor.addMeasurement("ms_to_answer", duration / 1000000d);
 		}
 	}
 }
