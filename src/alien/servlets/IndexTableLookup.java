@@ -49,8 +49,10 @@ public class IndexTableLookup extends HttpServlet {
 		else {
 			final String refresh = req.getParameter("refresh");
 
-			if (refresh != null && refresh.length() > 0)
+			if (refresh != null && refresh.length() > 0){
+				System.err.println("IndexTable cache refresh called");
 				CatalogueUtils.invalidateIndexTableCache();
+			}
 		}
 
 		if (monitor != null) {
