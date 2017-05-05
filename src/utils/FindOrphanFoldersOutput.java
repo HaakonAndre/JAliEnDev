@@ -65,6 +65,7 @@ public class FindOrphanFoldersOutput {
 
 				if (count <= 1) {
 					System.out.println("Only 1 dir found");
+					continue;
 				}
 
 				System.out.println("Found several folders: " + count);
