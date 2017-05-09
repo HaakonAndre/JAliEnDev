@@ -15,7 +15,6 @@ import java.util.logging.Logger;
 
 import alien.api.JBoxServer;
 import alien.api.taskQueue.GetNumberFreeSlots;
-import alien.api.taskQueue.GetNumberWaitingJobs;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
@@ -60,6 +59,19 @@ public class ComputingElement extends Thread {
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
 			getCEconfigFromLDAP();
+
+			// System.out.println("SiteConfig");
+			// for (String key : siteConfig.keySet())
+			// System.err.println(key + " - " + siteConfig.get(key));
+			//
+			// System.out.println("HostConfig");
+			// for (String key : hostConfig.keySet())
+			// System.err.println(key + " - " + hostConfig.get(key));
+			//
+			// System.out.println("CEConfig");
+			// for (String key : ceConfig.keySet())
+			// System.err.println(key + " - " + ceConfig.get(key));
+
 			getSiteMap();
 
 			logger = LogUtils.redirectToCustomHandler(logger, hostConfig.get("logdir") + "/CE");
@@ -81,26 +93,27 @@ public class ComputingElement extends Thread {
 		// }
 		logger.log(Level.INFO, "Starting ComputingElement in " + siteMap.get("host"));
 		try {
-			System.out.println("Trying to start JBox");
-			JBoxServer.startJBoxService(0);
-			port = JBoxServer.getPort();
+			System.out.println("Trying to start JBox"); // TODO uncomment
+			JBoxServer.startJBoxService(0); // TODO uncomment
+			port = JBoxServer.getPort(); // TODO uncomment
 		} catch (final Exception e) {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
 
 		System.out.println("Looping");
-		while (true) {
+		for (int i = 0; i < 5; i++) { // TODO replace for while(true)
+			boolean should_submit = true;
+
 			// Get free slots
 			int free_slots = getNumberFreeSlots();
 
-			if (free_slots > 0)
-				offerAgent(Integer.valueOf(free_slots));
-
-			System.out.println("Exiting CE");
-			System.exit(0); // TODO delete
+			if (should_submit && free_slots > 0)
+				offerAgent();
 		}
 
+		System.out.println("Exiting CE");
+		System.exit(0);
 	}
 
 	private int getNumberFreeSlots() {
@@ -120,7 +133,6 @@ public class ComputingElement extends Thread {
 		if (slots.get(0).intValue() == 0 && slots.size() >= 3) { // OK
 			max_jobs = slots.get(1).intValue();
 			max_queued = slots.get(2).intValue();
-			logger.info("Max jobs: " + max_jobs + " Max queued: " + max_queued);
 		}
 		else { // Error
 			switch (slots.get(0).intValue()) {
@@ -180,27 +192,8 @@ public class ComputingElement extends Thread {
 		return free;
 	}
 
-	private void offerAgent(final Integer free_slots) {
-		int slots_to_submit = free_slots.intValue();
-		logger.info("CE free slots: " + slots_to_submit);
-
-		final GetNumberWaitingJobs jobMatch = commander.q_api.getNumberWaitingForSite(siteMap);
-		int waiting_jobs = jobMatch.getNumberJobsWaitingForSite().intValue();
-
-		if (waiting_jobs <= 0) {
-			logger.info("Broker returned 0 available waiting jobs");
-			return;
-		}
-		logger.info("Waiting jobs: " + waiting_jobs);
-
-		if (waiting_jobs < slots_to_submit)
-			slots_to_submit = waiting_jobs;
-
-		logger.info("Going to submit " + slots_to_submit + " agents");
-		while (slots_to_submit > 0) {
-			queue.submit();
-			slots_to_submit--;
-		}
+	private void offerAgent() {
+		queue.submit(); // TODO delete
 
 		return;
 	}

@@ -412,7 +412,7 @@ public class JobBroker {
 				// TODO: ask cache for ns:jobbroker key:remoteagents
 				// $self->{CONFIG}->{CACHE_SERVICE_ADDRESS}?ns=jobbroker&key=remoteagents
 
-				db.query("select distinct agentId from QUEUE where agentId is not null and statusId=5 and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)");
+				db.query("select distinct agentId from QUEUE where agentId is not null and statusId=5 " + "and timestampdiff(SECOND,mtime,now())>=ifnull(remoteTimeout,43200)");
 
 				if (db.moveNext()) {
 					where += "and entryId in (";

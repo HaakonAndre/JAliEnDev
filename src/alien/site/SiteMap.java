@@ -73,7 +73,7 @@ public class SiteMap {
 			installationMethod = env.get("installationMethod");
 
 		packMan = getPackman(installationMethod, env);
-		// siteMap.put("PackMan", packMan);
+		siteMap.put("PackMan", packMan);
 		packages = packMan.getListPackages();
 		installedPackages = packMan.getListInstalledPackages();
 

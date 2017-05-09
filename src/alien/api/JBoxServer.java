@@ -38,20 +38,18 @@ import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
 import lazyj.commands.SystemCommand;
 
-import org.apache.catalina.WebResourceRoot;
-//import org.apache.catalina.core.StandardContext;
+import org.apache.catalina.connector.Connector;
 import org.apache.catalina.Context;
+import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Service;
 import org.apache.catalina.startup.Tomcat;
-import org.apache.catalina.webresources.DirResourceSet;
-import org.apache.catalina.webresources.StandardRoot;
+import org.apache.tomcat.JarScanFilter;
+import org.apache.tomcat.JarScanType;
+import org.apache.tomcat.JarScanner;
+import org.apache.tomcat.JarScannerCallback;
+import org.apache.tomcat.util.scan.StandardJarScanner;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.Writer;
+import javax.servlet.ServletContext;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -83,6 +81,8 @@ public class JBoxServer extends Thread {
 	private final ServerSocket ssocket;
 
 	private UIConnection connection;
+	
+	private Tomcat tomcat;
 
 	/**
 	 * The password
@@ -155,8 +155,9 @@ public class JBoxServer extends Thread {
 		final InetAddress localhost = InetAddress.getByName("127.0.0.1");
 
 		ssocket = new ServerSocket(port, 10, localhost);
-
-		password = UUID.randomUUID().toString();
+		StartTomcat(listeningPort+1, iDebug);
+		
+        password = UUID.randomUUID().toString();
 
 		// here we should get home directory
 		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
@@ -171,54 +172,63 @@ public class JBoxServer extends Thread {
 			ssocket.close();
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
-		
-///////////////////////////////////////////////
-		
-		String webappDirLocation = "webapps/";
-        Tomcat tomcat = new Tomcat();
+	}
+	
+	/**
+	 * Start the Tomcat server on a given port
+	 *
+	 * @param tomcatPort
+	 * @throws IOException
+	 */
+	private void StartTomcat(int tomcatPort, int iDebug) throws Exception {
+		// Starting embedded tomcat to handle websocket connections
+		String webappDirLocation = "src/alien/websockets";
+        tomcat = new Tomcat();
+        Service service = tomcat.getService();
+        tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
+        service.addConnector(createSslConnector(tomcatPort));
 
-        // Define port number for the web application
-        String webPort = System.getenv("PORT");
-        if (webPort == null || webPort.isEmpty()) {
-            webPort = "8081";
-        }
-        // Bind the port to Tomcat server
-        tomcat.setPort(Integer.valueOf(webPort));
-
-        Context ctx = tomcat.addWebapp("/jalien", new File(webappDirLocation).getAbsolutePath());
+        Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
         System.out.println("configuring app with basedir: " + new File(webappDirLocation).getAbsolutePath());
-
-        // Declare an alternative location for your "WEB-INF/classes" dir
-        // Servlet 3.0 annotation will work
-        //File additionWebInfClasses = new File("target/classes");
-        //WebResourceRoot resources = new StandardRoot(ctx);
-        //resources.addPreResources(new DirResourceSet(resources, "/examples/WEB-INF/classes",
-        //        additionWebInfClasses.getAbsolutePath(), "/"));
-        //ctx.setResources(resources);
-        File configFile = new File(webappDirLocation + "examples/WEB-INF/web.xml");
-        ctx.setConfigFile(configFile.toURI().toURL());
         
-        // Add servlet
-        //Tomcat.addServlet(ctx, "examples-websocket-echo-servlet", "examples.websocket.echo");
-        //ctx.addServletMapping("/examples/websocket/*", "examples-websocket-echo-servlet");
-
-        /*Tomcat.addServlet(ctx, "Embedded", new HttpServlet() {
-            @Override
-            protected void service(HttpServletRequest req, HttpServletResponse resp) 
-                    throws ServletException, IOException {
-                
-                Writer w = resp.getWriter();
-                w.write("Embedded Tomcat servlet.\n");
-                w.flush();
-                w.close();
-            }
-        });
-
-        ctx.addServletMapping("/*", "Embedded");*/
+        // Tell Jar Scanner not to look inside jar manifests or it will produce useless warnings
+        StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
+        jarScanner.setScanManifest(false);
         
         tomcat.start();
-        tomcat.getServer().await();
+        System.out.println("Embedded Tomcat is listening on port " + tomcatPort);
+ 		//tomcat.getServer().await();
 	}
+	
+	/**
+	 * Create connector for the Tomcat server
+	 *
+	 * @param tomcatPort
+	 * @throws IOException
+	 */
+	private static Connector createSslConnector(int tomcatPort) throws IOException {
+		String keystorePass = new String(JAKeyStore.pass);
+		JAKeyStore.saveKeyStore(JAKeyStore.clientCert, "keystore.jks", JAKeyStore.pass);
+		
+	    Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+	
+	    connector.setPort(tomcatPort);
+	    connector.setSecure(true);
+	    connector.setScheme("https");
+	    connector.setAttribute("keyAlias", "User.cert");
+	    connector.setAttribute("keystorePass", keystorePass);
+	    connector.setAttribute("keystoreType", "JKS");
+	    connector.setAttribute("keystoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "keystore.jks");
+	    connector.setAttribute("truststorePass", "castore");
+	    connector.setAttribute("truststoreType", "JKS");
+	    connector.setAttribute("truststoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "trusted_authorities.jks");
+	    connector.setAttribute("clientAuth", "want");
+	    connector.setAttribute("sslProtocol", "TLS");
+	    connector.setAttribute("SSLEnabled", "true");
+	    connector.setAttribute("maxThreads", "200");
+	    connector.setAttribute("connectionTimeout", "20000");
+	    return connector;
+	 }
 
 	/**
 	 * write the configuration file that is used by gapi <br />
@@ -264,6 +274,9 @@ public class JBoxServer extends Thread {
 
 				fw.write("Port=" + iPort + "\n");
 				logger.fine("Port = " + iPort);
+				
+				fw.write("WSPort=" + (iPort + 1) + "\n");
+				logger.fine("WSPort = " + (iPort + 1));
 
 				fw.write("User=" + sUser + "\n");
 				logger.fine("User = " + sUser);
@@ -717,9 +730,14 @@ public class JBoxServer extends Thread {
 		alive = false;
 
 		try {
-			ssocket.close();
+			ssocket.close();			
 		} catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore, we're dead anyway
+		}
+		try {
+			tomcat.stop();
+		} catch (LifecycleException e){
+			// ignore this also
 		}
 		logger.log(Level.INFO, "JBox: We die gracefully...Bye!");
 		System.exit(0);
@@ -796,7 +814,7 @@ public class JBoxServer extends Thread {
 			}
 		} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
 			logger.log(Level.SEVERE, "Wrong password! Try again", e);
-			System.err.println("Wrong password!");
+			System.err.println("Wrong password! Try again");
 			JBoxServer.startJBoxService(iDebug);
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Error loading the key", e);

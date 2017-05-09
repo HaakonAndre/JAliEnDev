@@ -345,23 +345,7 @@ public class TaskQueueApiUtils {
 			final GetMatchJob gmj = Dispatcher.execute(new GetMatchJob(commander.getUser(), commander.getRole(), matchRequest));
 			return gmj;
 		} catch (final ServerException e) {
-			System.out.println("Could not get a match Job: " + e.getMessage());
-			e.getCause().printStackTrace();
-		}
-		return null;
-	}
-
-	/**
-	 * @param matchRequest
-	 * @return number of matching jobs
-	 */
-	public GetNumberWaitingJobs getNumberWaitingForSite(final HashMap<String, Object> matchRequest) {
-
-		try {
-			final GetNumberWaitingJobs gmj = Dispatcher.execute(new GetNumberWaitingJobs(commander.getUser(), commander.getRole(), matchRequest));
-			return gmj;
-		} catch (final ServerException e) {
-			System.out.println("Could not get number of matching jobs: " + e.getMessage());
+			System.out.println("Could get not a match Job: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
 		return null;
