@@ -1,10 +1,13 @@
 package alien.site;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +18,7 @@ import java.util.logging.Logger;
 
 import alien.api.JBoxServer;
 import alien.api.taskQueue.GetNumberFreeSlots;
+import alien.api.taskQueue.GetNumberWaitingJobs;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
@@ -23,6 +27,7 @@ import alien.site.batchqueue.BatchQueue;
 import alien.user.LDAPHelper;
 import apmon.ApMon;
 import apmon.ApMonException;
+import lazyj.commands.SystemCommand;
 
 /**
  * @author mmmartin
@@ -59,19 +64,6 @@ public class ComputingElement extends Thread {
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
 			getCEconfigFromLDAP();
-
-			// System.out.println("SiteConfig");
-			// for (String key : siteConfig.keySet())
-			// System.err.println(key + " - " + siteConfig.get(key));
-			//
-			// System.out.println("HostConfig");
-			// for (String key : hostConfig.keySet())
-			// System.err.println(key + " - " + hostConfig.get(key));
-			//
-			// System.out.println("CEConfig");
-			// for (String key : ceConfig.keySet())
-			// System.err.println(key + " - " + ceConfig.get(key));
-
 			getSiteMap();
 
 			logger = LogUtils.redirectToCustomHandler(logger, hostConfig.get("logdir") + "/CE");
@@ -93,27 +85,22 @@ public class ComputingElement extends Thread {
 		// }
 		logger.log(Level.INFO, "Starting ComputingElement in " + siteMap.get("host"));
 		try {
-			System.out.println("Trying to start JBox"); // TODO uncomment
-			JBoxServer.startJBoxService(0); // TODO uncomment
-			port = JBoxServer.getPort(); // TODO uncomment
+			System.out.println("Trying to start JBox");
+			JBoxServer.startJBoxService(0);
+			port = JBoxServer.getPort();
 		} catch (final Exception e) {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
 
 		System.out.println("Looping");
-		for (int i = 0; i < 5; i++) { // TODO replace for while(true)
-			boolean should_submit = true;
+		while (true) {
+			offerAgent();
 
-			// Get free slots
-			int free_slots = getNumberFreeSlots();
-
-			if (should_submit && free_slots > 0)
-				offerAgent();
+			System.out.println("Exiting CE");
+			System.exit(0); // TODO delete
 		}
 
-		System.out.println("Exiting CE");
-		System.exit(0);
 	}
 
 	private int getNumberFreeSlots() {
@@ -133,6 +120,7 @@ public class ComputingElement extends Thread {
 		if (slots.get(0).intValue() == 0 && slots.size() >= 3) { // OK
 			max_jobs = slots.get(1).intValue();
 			max_queued = slots.get(2).intValue();
+			logger.info("Max jobs: " + max_jobs + " Max queued: " + max_queued);
 		}
 		else { // Error
 			switch (slots.get(0).intValue()) {
@@ -193,10 +181,113 @@ public class ComputingElement extends Thread {
 	}
 
 	private void offerAgent() {
-		queue.submit(); // TODO delete
+		int slots_to_submit = getNumberFreeSlots();
+
+		if (slots_to_submit <= 0) {
+			logger.info("No slots available in the CE!");
+			return;
+		}
+		logger.info("CE free slots: " + slots_to_submit);
+
+		// We ask the broker how many jobs we could run
+		final GetNumberWaitingJobs jobMatch = commander.q_api.getNumberWaitingForSite(siteMap);
+		int waiting_jobs = jobMatch.getNumberJobsWaitingForSite().intValue();
+
+		if (waiting_jobs <= 0) {
+			logger.info("Broker returned 0 available waiting jobs");
+			return;
+		}
+		logger.info("Waiting jobs: " + waiting_jobs);
+
+		if (waiting_jobs < slots_to_submit)
+			slots_to_submit = waiting_jobs;
+
+		logger.info("Going to submit " + slots_to_submit + " agents");
+
+		String script = createAgentStartup();
+		if (script == null) {
+			logger.info("Cannot create startup script");
+			return;
+		}
+
+		while (slots_to_submit > 0) {
+			queue.submit(script);
+			slots_to_submit--;
+		}
 
 		return;
 	}
+
+	/*
+	 * Creates script to execute on worker nodes
+	 */
+	private String createAgentStartup() {
+		String startup = System.getenv("JALIEN_ROOT") + "jalien ";
+		String before = "";
+		String after = "";
+
+		long time = new Timestamp(System.currentTimeMillis()).getTime();
+		String file = hostConfig.get("tmpdir")+"/proxy."+time;
+		
+		int hours = ((Integer) siteMap.get("TTL")).intValue();
+		hours = hours / 3600;
+
+		String proxyfile = System.getenv("X509_USER_PROXY");
+		if (proxyfile != null && proxyfile.length() > 0) {
+			// WLCG site: get timeleft
+		}
+		else {
+			proxyfile = "/tmp/x509_" + SystemCommand.bash("id -u").stdout;
+			// JAliEn site: renew proxy (hours), get new timeleft
+			
+			String file_content = "";
+			try (BufferedReader br = new BufferedReader(new FileReader(proxyfile))) {
+				String line;
+				while ((line = br.readLine()) != null) {
+					file_content += line;
+				}
+			} catch (IOException e) {
+				logger.info("Error reading the proxy file: "+e);
+			}
+			
+			before += 
+					"echo 'Using the proxy'\n"
+					+ "mkdir -p "+hostConfig.get("tmpdir")+"\n"
+					+ "export ALIEN_USER="+System.getenv("ALIEN_USER")+"\n"
+					+"file="+file+"\n"
+					+ "cat >"+file+" <<EOF\n"+file_content+"\n"
+					+ "EOF\n"
+					+ "chmod 0400 "+file
+					+ "export X509_USER_PROXY="+file+"\n"
+					+ "echo USING X509_USER_PROXY"
+					+ startup+" proxy-info";
+		}
+
+		// Check proxy timeleft is good
+
+		// if (ceConfig.get("installmethod").equals("CVMFS")) {
+		// startup = runFromCVMFS();
+		// } TODO: uncomment
+
+		// PrintWriter writer = new PrintWriter(hostConfig.get("tmpdir") + "/agent.startup." + time, "UTF-8");
+		// writer.println("The first line");
+		// writer.close();
+
+		return startup;
+	}
+
+	// private String runFromCVMFS() {
+	// logger.info("The worker node will install with the CVMFS method");
+	// String alien_version = System.getenv("ALIEN_VERSION");
+	// String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
+	//
+	// alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : "");
+	//
+	// if (ce_environment.containsKey("CVMFS_PATH"))
+	// cvmfs_path = ce_environment.get("CVMFS_PATH");
+	//
+	// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
+	// } // TODO: uncomment
 
 	// Queries LDAP to get all the config values (site,host,CE)
 	void getCEconfigFromLDAP() {
@@ -264,7 +355,11 @@ public class ComputingElement extends Thread {
 
 		smenv.put("CE", "ALICE::" + site + "::" + hostConfig.get("ce"));
 
-		smenv.put("TTL", "86400"); // Will be recalculated in the loop depending on proxy lifetime
+		// TTL will be recalculated in the loop depending on proxy lifetime
+		if (ceConfig.containsKey("ttl"))
+			smenv.put("TTL", (String) ceConfig.get("ttl"));
+		else
+			smenv.put("TTL", "86400");
 
 		smenv.put("Disk", "100000000");
 

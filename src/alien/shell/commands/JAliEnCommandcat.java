@@ -50,21 +50,24 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 							if (out.isRootPrinter()) {
 								if (bN)
 									out.setField("count", count + "");
-								else if (bB)
-									if (line.trim().length() > 0)
-										out.setField("count", count + "");
+								else
+									if (bB)
+										if (line.trim().length() > 0)
+											out.setField("count", count + "");
 								if (bT)
 
 									line = Format.replace(line, "\t", "^I");
 								out.setField("value", line);
 								if (bE)
 									out.setField("value", "$");
-							} else {
+							}
+							else {
 								if (bN)
 									out.printOut(++count + "  ");
-								else if (bB)
-									if (line.trim().length() > 0)
-										out.printOut(++count + "  ");
+								else
+									if (bB)
+										if (line.trim().length() > 0)
+											out.printOut(++count + "  ");
 
 								if (bT)
 									line = Format.replace(line, "\t", "^I");
@@ -84,11 +87,16 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 					}
 				}
 
-				else if (!isSilent())
-					out.printErrln("Could not read the contents of " + fout.getAbsolutePath());
-			} else if (!isSilent())
-				out.printErrln("Not able to get the file " + alArguments.get(0));
-			out.setReturnCode(1, "Not able to get the file");
+				else
+					if (!isSilent())
+						out.printErrln("Could not read the contents of " + fout.getAbsolutePath());
+			}
+			else {
+				if (!isSilent())
+					out.printErrln("Not able to get this file: " + eachFileName);
+
+				out.setReturnCode(1, "Not able to get the file");
+			}
 		}
 	}
 

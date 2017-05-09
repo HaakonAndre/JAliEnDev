@@ -39,7 +39,6 @@ public class CatalogueApiUtils {
 	 * @param commander
 	 */
 	public CatalogueApiUtils(final JAliEnCOMMander commander) {
-		System.out.println("CatalogueApiUtils creation started");
 		this.commander = commander;
 	}
 

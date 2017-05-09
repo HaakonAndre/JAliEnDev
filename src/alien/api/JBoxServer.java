@@ -191,7 +191,7 @@ public class JBoxServer extends Thread {
         Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
         System.out.println("configuring app with basedir: " + new File(webappDirLocation).getAbsolutePath());
         
-        // Tell Jar Scanner not to look inside jar manifests or it will produce useless warnings
+        // Tell Jar Scanner not to look inside jar manifests otherwise it will produce useless warnings
         StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
         jarScanner.setScanManifest(false);
         

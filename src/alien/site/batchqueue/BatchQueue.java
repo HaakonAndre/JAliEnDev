@@ -14,8 +14,9 @@ public abstract class BatchQueue {
 
 	/**
 	 * Submit a new job agent to the queue
+	 * @param script 
 	 */
-	public abstract void submit();
+	public abstract void submit(final String script);
 
 	/**
 	 * @return number of currently active jobs

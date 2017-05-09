@@ -110,7 +110,7 @@ public class CassandraMonitor {
 						first = false;
 					}
 					else {
-						// Calculate latencies, e.g. for read: (ReadTotalLatency1−ReadTotalLatency0)/(ReadLatency1−ReadLatency0)
+						// Calculate latencies, e.g. for read: (ReadTotalLatency1-ReadTotalLatency0)/(ReadLatency1-ReadLatency0)
 						// 0 scope=Write,name=TotalLatency, 4 scope=Write,name=Latency
 						paramNames.addElement("Write_Latency_Calculated");
 						paramValues.addElement(Double.valueOf(((Double)paramValues.get(0)).doubleValue() / ((Double)paramValues.get(4)).doubleValue()));

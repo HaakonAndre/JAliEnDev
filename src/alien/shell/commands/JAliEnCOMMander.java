@@ -119,28 +119,18 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 */
 	public JAliEnCOMMander() {
-		System.out.println("JAliEnCOMMander creation started");
 		c_api = new CatalogueApiUtils(this);
-		System.out.println("CatalogueApiUtils success");
 
 		q_api = new TaskQueueApiUtils(this);
-		System.out.println("TaskQueueApiUtils success");
 
 		user = AuthorizationFactory.getDefaultUser();
-		System.out.println("getDefaultUser success");
 		role = user.getDefaultRole();
-		System.out.println("getDefaultRole success");
 		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
-		System.out.println("getConfig success");
 		myHome = UsersHelper.getHomeDir(user.getName());
-		System.out.println("UsersHelper.getHomeDir( success");
 		localFileCash = new HashMap<>();
-		System.out.println("localFileCash success");
 		initializeJCentralConnection();
-		System.out.println("initializeJCentralConnection success");
 
 		setName("Commander");
-		System.out.println("setName success");
 	}
 
 	/**
@@ -151,7 +141,6 @@ public class JAliEnCOMMander extends Thread {
 	 * @param out
 	 */
 	public JAliEnCOMMander(final AliEnPrincipal user, final String role, final LFN curDir, final String site, final UIPrintWriter out) {
-		System.out.println("JAliEnCOMMander creation started");
 		c_api = new CatalogueApiUtils(this);
 
 		q_api = new TaskQueueApiUtils(this);

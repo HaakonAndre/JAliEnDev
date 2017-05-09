@@ -357,7 +357,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			File writeToLocalFile = targetLocalFile;
 
-			if (targetLocalFile.exists() && targetLocalFile.isDirectory()) {
+			if (targetLocalFile != null && targetLocalFile.exists() && targetLocalFile.isDirectory()) {
 				final String fileName = sourcelfn.substring(longestMatchingPath.length());
 
 				final int idx = fileName.indexOf('/');
@@ -383,7 +383,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				writeToLocalFile = new File(targetLocalFile, fileName);
 			}
 
-			if (writeToLocalFile.exists()) {
+			if (writeToLocalFile != null && writeToLocalFile.exists()) {
 				out.printErrln("Local copy target " + writeToLocalFile + " exists, skipping it");
 				return;
 			}
@@ -448,7 +448,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				out.printErrln("No replicas for this LFN: " + lfn.getCanonicalName());
 
 			if (resultFile == null && !isSilent())
-				out.printErrln("Could not get the file: " + sourcelfn + " to " + writeToLocalFile.getAbsolutePath() + (lastException != null ? ", error was: " + lastException.getMessage() : ""));
+				out.printErrln("Could not get the file: " + sourcelfn + " to " + (writeToLocalFile != null ? writeToLocalFile.getAbsolutePath() : " a temporary file")
+						+ (lastException != null ? ", error was: " + lastException.getMessage() : ""));
 		}
 
 		/**

@@ -31,8 +31,9 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import alien.test.JobDiscoverer;
-import lazyj.cache.ExpirationCache;
 
 /**
  *
@@ -63,7 +64,7 @@ public class CatalogueToCassandraThreads {
 	 * limit
 	 */
 	static final int origlimit = 50000;
-	
+
 	/** Entries processed */
 	static AtomicInteger global_count = new AtomicInteger();
 	/**
@@ -121,12 +122,22 @@ public class CatalogueToCassandraThreads {
 	 * Suffix for log files
 	 */
 	static String logs_suffix = "";
-
+	/**
+	 * Counter stuck threads
+	 */
 	static int count_thread_stuck = 0;
-
+	/**
+	 * Random generator
+	 */
 	static final Random rdm = new Random();
-
+	/**
+	 * Default Cassandra consistency
+	 */
 	static ConsistencyLevel clevel = ConsistencyLevel.QUORUM;
+	/**
+	 * Monitoring component
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueToCassandraThreads.class.getCanonicalName());
 
 	/**
 	 * @param args
@@ -696,6 +707,9 @@ public class CatalogueToCassandraThreads {
 								final long duration_ns = System.nanoTime() - start;
 								ns_count.addAndGet(duration_ns);
 								timing_count.incrementAndGet();
+
+								if (monitor != null)
+									monitor.addMeasurement("ms_insert_cassandra", duration_ns / 1000000.);
 							}
 						}
 			}

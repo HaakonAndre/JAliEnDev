@@ -88,11 +88,6 @@ public class JAKeyStore {
 	 *
 	 */
 	public static KeyStore trustStore;
-	
-	/**
-	 *
-	 */
-	public static KeyStore keystore = null;
 
 	/**
 	 *
@@ -387,7 +382,7 @@ public class JAKeyStore {
 	 * @return true if ok
 	 * @throws Exception
 	 */
-	public static boolean loadClientKeyStorage(boolean noUserPass) throws Exception {
+	public static boolean loadClientKeyStorage(final boolean noUserPass) throws Exception {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
@@ -409,8 +404,9 @@ public class JAKeyStore {
 		}
 
 		JPasswordFinder jpf;
+
 		System.out.println(noUserPass);
-		
+
 		if (noUserPass)
 			jpf = new JPasswordFinder(new char[] {});
 		else
@@ -418,7 +414,7 @@ public class JAKeyStore {
 
 		addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
 
-		loadTrusts();		
+		loadTrusts();
 		return true;
 
 	}
@@ -558,7 +554,8 @@ public class JAKeyStore {
 		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(pair.getPrivate(), certArray), new KeyStore.PasswordProtection(pass));
 	}
 
-	public static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
+
+	public	static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
 		try (FileOutputStream fo = new FileOutputStream(filename)) {
 			try {
 				ks.store(fo, password);

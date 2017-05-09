@@ -9,8 +9,10 @@ import java.util.logging.Logger;
 public class HTCONDOR extends BatchQueue {
 
 	/**
-	 * @param envi execution environment
-	 * @param logr logger
+	 * @param envi
+	 *            execution environment
+	 * @param logr
+	 *            logger
 	 */
 	public HTCONDOR(HashMap<String, Object> envi, Logger logr) {
 		env = envi;
@@ -18,7 +20,7 @@ public class HTCONDOR extends BatchQueue {
 	}
 
 	@Override
-	public void submit() {
+	public void submit(final String script) {
 		logger.info("Submit FORK");
 	}
 

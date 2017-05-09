@@ -340,11 +340,10 @@ public final class CatalogueUtils {
 		IndexTableEntry best = null;
 
 		for (final IndexTableEntry ite : indextable)
-			if (pattern.startsWith(ite.lfn))
-				if (ite.lfn.length() > bestLen) {
-					best = ite;
-					bestLen = ite.lfn.length();
-				}
+			if (ite.lfn.length() > bestLen && pattern.startsWith(ite.lfn)) {
+				best = ite;
+				bestLen = ite.lfn.length();
+			}
 
 		return best;
 	}
