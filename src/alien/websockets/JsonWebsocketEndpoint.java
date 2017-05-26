@@ -1,8 +1,11 @@
 package alien.websockets;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
@@ -16,7 +19,10 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
 import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JSONPrintWriter;
+import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
+import alien.shell.commands.XMLPrintWriter;
 
 public class JsonWebsocketEndpoint extends Endpoint {
 
@@ -31,18 +37,21 @@ public class JsonWebsocketEndpoint extends Endpoint {
             implements MessageHandler.Partial<String> {
 
         private final RemoteEndpoint.Basic remoteEndpointBasic;
-
-        private EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic) {
-            this.remoteEndpointBasic = remoteEndpointBasic;
-        }
-
+        
+        /**
+    	 * Timestamp of the last operation (connect / disconnect / command)
+    	 */
+    	static long lastOperation = System.currentTimeMillis();
+    	
 		static void notifyActivity() {
-			//lastOperation = System.currentTimeMillis();
+			lastOperation = System.currentTimeMillis();
 		}
+		
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
-		private void waitCommandFinish() {
+		private OutputStream os;
 		
+		private void waitCommandFinish() {		
 			// wait for the previous command to finish
 			if (commander == null)
 				return;
@@ -55,12 +64,25 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					// ignore
 				}
 		}
-	
+		
+		private void setShellPrintWriter(final OutputStream os, final String shelltype) {
+			if (shelltype.equals("jaliensh"))
+				out = new JShPrintWriter(os);
+			else if (shelltype.equals("json"))
+				out = new JSONPrintWriter(os);
+			else
+				out = new XMLPrintWriter(os);
+		}
+
+        private EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic) {        	
+            this.remoteEndpointBasic = remoteEndpointBasic;
+        }
+
 		@Override
-	    public void onMessage(String message, boolean last) {
+	    public void onMessage(String message, boolean last) {						
 	        try {
 	            if (remoteEndpointBasic != null) {
-					// try to parse incoming JSON
+					// Try to parse incoming JSON
 					Object pobj;
 					JSONObject jsonObject;
 					JSONParser parser = new JSONParser();
@@ -71,49 +93,44 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					} catch (ParseException e) {
 		                remoteEndpointBasic.sendText("Incoming JSON not ok", last);
 						return;
-					}
-					/*System.out.println("Calling AuthorizationFactory");
-					//AliEnPrincipal user = AuthorizationFactory.getDefaultUser();
-					System.out.println("Calling AuthorizationFactory success");
+					}	
+					
+					// Init Commander only once during first message
 					if (commander == null) {
-						System.out.println("Calling Commander");
 						try {
-							commander = new JAliEnCOMMander();
-						}
-						catch (Exception e)
-						{
-							System.out.println("JAliEnCOMMander creation failed: ");
+							os = remoteEndpointBasic.getSendStream();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						//commander.start();
+						
+						setShellPrintWriter(os, "json");
+						
+						commander = new JAliEnCOMMander(out);
+
+						commander.start();
+						//commander.flush();
 					}
-					String[] tosend = new String[1];
-					tosend[0] = (String) jsonObject.get("command");
-					/*synchronized (commander) {
-						commander.setLine(null, tosend);
-						commander.notifyAll();
-					}*/
-		
-					String name2 = (String) jsonObject.get("name");
-					if (name2 == null)
-						name2 = "NOTSPECIFIED";
 					
-					// build JSON
-					JSONObject obj = new JSONObject();
-					obj.put("name", "mkyong.com");
-					obj.put("name2", name2);
-					obj.put("age", new Integer(100));
-		
-					JSONArray list = new JSONArray();
-					list.add("msg 1");
-					list.add("msg 2");
-					list.add("msg 3");
-		
-					obj.put("messages", list);
-					String response = obj.toJSONString();
-		
-		            //remoteEndpointBasic.sendText(response, last);
-		            remoteEndpointBasic.sendText(obj.toJSONString(), last);
+					// Split JSONObject into strings 
+					final ArrayList<String> fullCmd = new ArrayList<>();
+					fullCmd.add(jsonObject.get("command").toString());
+									
+					JSONArray mArray = new JSONArray();
+					if (jsonObject.get("options") != null) {
+						mArray = (JSONArray) jsonObject.get("options");
+					
+						for (int i = 0; i < mArray.size(); i++) 
+		                    fullCmd.add(mArray.get(i).toString()); 
+					}
+					
+					// Send the command to executor and send the result back to client via OutputStream
+					synchronized (commander) {
+						commander.setLine(out, fullCmd.toArray(new String[0]));
+						commander.notifyAll();
+					}					
+					waitCommandFinish();
+		            notifyActivity();
 		        }
 	        } catch (IOException e) {
 	            // TODO Auto-generated catch block

@@ -132,6 +132,26 @@ public class JAliEnCOMMander extends Thread {
 
 		setName("Commander");
 	}
+	
+	/**
+	 */
+	public JAliEnCOMMander(final UIPrintWriter out) {
+		c_api = new CatalogueApiUtils(this);
+
+		q_api = new TaskQueueApiUtils(this);
+
+		user = AuthorizationFactory.getDefaultUser();
+		role = user.getDefaultRole();
+		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
+		myHome = UsersHelper.getHomeDir(user.getName());
+		localFileCash = new HashMap<>();
+		initializeJCentralConnection();
+
+		this.out = out;
+		degraded = false;
+		
+		setName("Commander");
+	}
 
 	/**
 	 * @param user
@@ -316,7 +336,7 @@ public class JAliEnCOMMander extends Thread {
 
 	@Override
 	public void run() {
-		logger.log(Level.INFO, "Starting execution");
+		logger.log(Level.INFO, "Starting Commander");
 
 		try {
 			while (true) {

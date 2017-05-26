@@ -38,19 +38,6 @@ import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
 import lazyj.commands.SystemCommand;
 
-import org.apache.catalina.connector.Connector;
-import org.apache.catalina.Context;
-import org.apache.catalina.LifecycleException;
-import org.apache.catalina.Service;
-import org.apache.catalina.startup.Tomcat;
-import org.apache.tomcat.JarScanFilter;
-import org.apache.tomcat.JarScanType;
-import org.apache.tomcat.JarScanner;
-import org.apache.tomcat.JarScannerCallback;
-import org.apache.tomcat.util.scan.StandardJarScanner;
-
-import javax.servlet.ServletContext;
-
 /**
  * Simple UI server to be used by ROOT and command line
  *
@@ -81,8 +68,6 @@ public class JBoxServer extends Thread {
 	private final ServerSocket ssocket;
 
 	private UIConnection connection;
-	
-	private Tomcat tomcat;
 
 	/**
 	 * The password
@@ -144,9 +129,6 @@ public class JBoxServer extends Thread {
 	 * @throws IOException
 	 */
 	private JBoxServer(final int listeningPort, final int iDebug) throws Exception {
-		this.port = listeningPort;
-		this.iDebugLevel = iDebug;
-
 		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
 
 		if (alUser == null || alUser.getName() == null)
@@ -154,8 +136,9 @@ public class JBoxServer extends Thread {
 
 		final InetAddress localhost = InetAddress.getByName("127.0.0.1");
 
-		ssocket = new ServerSocket(port, 10, localhost);
-		StartTomcat(listeningPort+1, iDebug);
+		ssocket = new ServerSocket(listeningPort, 10, localhost);
+		this.port = ssocket.getLocalPort();
+		this.iDebugLevel = iDebug;
 		
         password = UUID.randomUUID().toString();
 
@@ -163,72 +146,16 @@ public class JBoxServer extends Thread {
 		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
 
 		// should check if the file was written and if not then exit.
-		if (!writeTokenFile("127.0.0.1", listeningPort, password, alUser.getName(), sHomeUser, this.iDebugLevel)) {
+		if (!writeTokenFile("127.0.0.1", this.port, password, alUser.getName(), sHomeUser, this.iDebugLevel)) {
 			ssocket.close();
 			throw new Exception("Could not write the token file! No application can connect to JBox");
 		}
 
-		if (!writeEnvFile("127.0.0.1", listeningPort, alUser.getName())) {
+		if (!writeEnvFile("127.0.0.1", this.port, alUser.getName())) {
 			ssocket.close();
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
 	}
-	
-	/**
-	 * Start the Tomcat server on a given port
-	 *
-	 * @param tomcatPort
-	 * @throws IOException
-	 */
-	private void StartTomcat(int tomcatPort, int iDebug) throws Exception {
-		// Starting embedded tomcat to handle websocket connections
-		String webappDirLocation = "src/alien/websockets";
-        tomcat = new Tomcat();
-        Service service = tomcat.getService();
-        tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
-        service.addConnector(createSslConnector(tomcatPort));
-
-        Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
-        System.out.println("configuring app with basedir: " + new File(webappDirLocation).getAbsolutePath());
-        
-        // Tell Jar Scanner not to look inside jar manifests otherwise it will produce useless warnings
-        StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
-        jarScanner.setScanManifest(false);
-        
-        tomcat.start();
-        System.out.println("Embedded Tomcat is listening on port " + tomcatPort);
- 		//tomcat.getServer().await();
-	}
-	
-	/**
-	 * Create connector for the Tomcat server
-	 *
-	 * @param tomcatPort
-	 * @throws IOException
-	 */
-	private static Connector createSslConnector(int tomcatPort) throws IOException {
-		String keystorePass = new String(JAKeyStore.pass);
-		JAKeyStore.saveKeyStore(JAKeyStore.clientCert, "keystore.jks", JAKeyStore.pass);
-		
-	    Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-	
-	    connector.setPort(tomcatPort);
-	    connector.setSecure(true);
-	    connector.setScheme("https");
-	    connector.setAttribute("keyAlias", "User.cert");
-	    connector.setAttribute("keystorePass", keystorePass);
-	    connector.setAttribute("keystoreType", "JKS");
-	    connector.setAttribute("keystoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "keystore.jks");
-	    connector.setAttribute("truststorePass", "castore");
-	    connector.setAttribute("truststoreType", "JKS");
-	    connector.setAttribute("truststoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "trusted_authorities.jks");
-	    connector.setAttribute("clientAuth", "want");
-	    connector.setAttribute("sslProtocol", "TLS");
-	    connector.setAttribute("SSLEnabled", "true");
-	    connector.setAttribute("maxThreads", "200");
-	    connector.setAttribute("connectionTimeout", "20000");
-	    return connector;
-	 }
 
 	/**
 	 * write the configuration file that is used by gapi <br />
@@ -275,9 +202,6 @@ public class JBoxServer extends Thread {
 				fw.write("Port=" + iPort + "\n");
 				logger.fine("Port = " + iPort);
 				
-				fw.write("WSPort=" + (iPort + 1) + "\n");
-				logger.fine("WSPort = " + (iPort + 1));
-
 				fw.write("User=" + sUser + "\n");
 				logger.fine("User = " + sUser);
 
@@ -551,12 +475,6 @@ public class JBoxServer extends Thread {
 												waitCommandFinish();
 
 												synchronized (commander) {
-
-													// final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-													// final List<String> args = new ArrayList<>();
-													// while (t.hasMoreTokens())
-													// args.add(t.nextToken());
-
 													if ("setshell".equals(sCmdValue) && cmdOptions.size() > 0) {
 														setShellPrintWriter(os, cmdOptions.get(0));
 														logger.log(Level.INFO, "Set explicit print writer: " + cmdOptions.get(0));
@@ -588,100 +506,6 @@ public class JBoxServer extends Thread {
 						else
 							sCommand += "\n" + sLine;
 
-				// br = new BufferedReader(new InputStreamReader(is));
-
-				// while((sLine = br.readLine()) != null){
-				//
-				// Matcher m = p.matcher(sLine);
-				//
-				// if(m.matches()){
-				// sCmdValue = m.group(1);
-				// sCmdOptions = m.group(2);
-				// sCmdDebug = m.group(3);
-				//
-				// logger.log(Level.INFO, "Command received: sCmdValue=\""+sCmdValue+"\", sCmdOptions=\""+sCmdOptions+"\"");
-				// }
-				// else{
-				// logger.log(Level.SEVERE, "Command received does not match the expected format");
-				// //return;
-				// }
-				//
-				// if (sCmdValue != null && sCmdValue.equals("password")) {
-				// if(sCmdOptions.equals(password)){
-				// os.write(passACK.getBytes());
-				// os.flush();
-				// } else {
-				// os.write(passNOACK.getBytes());
-				// os.flush();
-				// return;
-				// }
-				// }
-				// else{
-				// logger.log(Level.INFO, "JSh connected.");
-				//
-				// if (commander == null) {
-				// commander = new JAliEnCOMMander();
-				// commander.start();
-				// }
-				//
-				// notifyActivity();
-				//
-				// if ("SIGINT".equals(sLine)) {
-				// logger.log(Level.INFO, "Received [SIGINT] from JSh.");
-				//
-				// try {
-				// commander.interrupt();
-				// commander.stop();
-				// } catch (final Throwable t) {
-				// // ignore
-				// } finally {
-				// System.out.println("SIGINT reset commander");
-				//
-				// // kill the active command and start a new instance
-				// final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
-				// commander = comm;
-				//
-				// commander.start();
-				//
-				// commander.flush();
-				// }
-				// } else if ("shutdown".equals(sLine))
-				// shutdown();
-				// else {
-				// waitCommandFinish();
-				//
-				// synchronized (commander) {
-				//
-				// // final StringTokenizer t = new StringTokenizer(line, SpaceSep);
-				// // final List<String> args = new ArrayList<>();
-				// // while (t.hasMoreTokens())
-				// // args.add(t.nextToken());
-				//
-				// if ("setshell".equals(sCmdValue)) {
-				// setShellPrintWriter(os, sCmdValue);
-				// logger.log(Level.INFO, "Set explicit print writer.");
-				//
-				// os.write((JShPrintWriter.streamend + "\n").getBytes());
-				// os.flush();
-				// continue;
-				// }
-				//
-				// if (out == null)
-				// out = new XMLPrintWriter(os);
-				//
-				// String tmpString = sCmdValue + " " + sCmdOptions;
-				//
-				// String[] arCmd = tmpString.split(" ");
-				//
-				// commander.setLine(out, arCmd);
-				//
-				// commander.notifyAll();
-				// }
-				// }
-				// os.flush();
-				// }
-				//
-				// }
 			} catch (final Throwable e) {
 				logger.log(Level.INFO, "Error running the commander.", e);
 			} finally {
@@ -734,11 +558,6 @@ public class JBoxServer extends Thread {
 		} catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore, we're dead anyway
 		}
-		try {
-			tomcat.stop();
-		} catch (LifecycleException e){
-			// ignore this also
-		}
 		logger.log(Level.INFO, "JBox: We die gracefully...Bye!");
 		System.exit(0);
 
@@ -764,6 +583,7 @@ public class JBoxServer extends Thread {
 	 * Singleton
 	 */
 	static JBoxServer server = null;
+	static TomcatServer tomcatServer = null;
 
 	/**
 	 * Start once the UIServer
@@ -778,20 +598,24 @@ public class JBoxServer extends Thread {
 			return;
 
 		preempt();
+		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
+		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
+		Boolean portAny = Boolean.valueOf(ConfigUtils.getConfig().gets("port.range.any", "true"));
 
-		for (int port = 10100; port < 10200; port++)
+		for (int port = portMin; port < portMax; port++)
 			try {
+				if (portAny) port = 0;
 				server = new JBoxServer(port, iDebugLevel);
 				server.start();
-
-				logger.log(Level.INFO, "JBox listening on port " + port);
-				System.out.println("JBox is listening on port " + port);
+				
+				logger.log(Level.INFO, "JBox listening on port " + server.port);
+				System.out.println("JBox is listening on port " + server.port);
 
 				break;
 			} catch (final Exception ioe) {
 				// we don't need the already in use info on the port, maybe
 				// there's another user on the machine...
-				logger.log(Level.FINE, "JBox: Could not listen on port " + port, ioe);
+				logger.log(Level.FINE, "JBox: Could not listen on port " + server.port, ioe);
 			}
 	}
 
