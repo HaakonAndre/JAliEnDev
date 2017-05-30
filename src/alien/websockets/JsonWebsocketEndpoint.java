@@ -100,17 +100,22 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						try {
 							os = remoteEndpointBasic.getSendStream();
 						} catch (IOException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 						
 						setShellPrintWriter(os, "json");
-						
+												
 						commander = new JAliEnCOMMander(out);
 
 						commander.start();
-						//commander.flush();
 					}
+					
+					// Set metadata
+					out.setMetaInfo("user", commander.getUser().getName());
+					out.setMetaInfo("role", commander.getRole());
+					out.setMetaInfo("currentdir", commander.getCurrentDir().lfn);
+					out.setMetaInfo("site", commander.getSite());
+					
 					
 					// Split JSONObject into strings 
 					final ArrayList<String> fullCmd = new ArrayList<>();

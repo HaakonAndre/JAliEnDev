@@ -162,11 +162,12 @@ public class XMLPrintWriter extends UIPrintWriter {
 	 * @param value
 	 * @return the previous meta information value for this key
 	 */
-	public String setMetaInfo(final String key, final String value) {
+	@Override
+	public void setMetaInfo(final String key, final String value) {
 		if (value != null)
-			return metaInfo.put(key, value);
+			metaInfo.put(key, value);
 
-		return metaInfo.remove(key);
+		metaInfo.remove(key);
 	}
 
 	@Override

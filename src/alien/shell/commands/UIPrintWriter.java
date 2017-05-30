@@ -1,5 +1,7 @@
 package alien.shell.commands;
 
+import alien.user.AliEnPrincipal;
+
 /**
  * @author ron
  * @since July 15, 2011
@@ -117,4 +119,7 @@ public abstract class UIPrintWriter {
 	abstract void setField(final String key, final String value);
 
 	abstract void setReturnCode(final int exitCode, final String errorMessage);
+
+	abstract public void setMetaInfo(String key, String value);
+
 }

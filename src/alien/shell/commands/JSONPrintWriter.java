@@ -25,7 +25,8 @@ public class JSONPrintWriter extends UIPrintWriter {
 	
 	private final OutputStream os;
 	
-	private JSONArray jsonArray;
+	private JSONArray resultArray;
+	private JSONObject metadataResult;
 	
 	private JSONObject currentResult;
 	
@@ -34,7 +35,8 @@ public class JSONPrintWriter extends UIPrintWriter {
 	 */
 	public JSONPrintWriter(final OutputStream os) {
 		this.os = os;
-		jsonArray = new JSONArray();		
+		resultArray = new JSONArray();	
+		metadataResult = new JSONObject();
 	}
 
 	@Override
@@ -75,21 +77,27 @@ public class JSONPrintWriter extends UIPrintWriter {
 		
 	}
 
+	/**
+	 * Write data to the client OutputStream
+	 */
 	@Override
 	protected void flush() {
-		nextResult();
+		nextResult();	// Add the last item and go
 		
 		try {
 			JSONObject replyObject = new JSONObject();
-			replyObject.put("document", jsonArray);
+			if (metadataResult != null)
+				replyObject.put("metadata", metadataResult);
+			
+			replyObject.put("results", resultArray);
 			os.write(replyObject.toJSONString().getBytes());
 			os.flush();
 		} catch (final IOException e) {
 			e.printStackTrace();
-			logger.log(Level.FINE, "Could not write JSON to client OutputStream", e);
+			logger.log(Level.FINE, "Could not write JSON to the client OutputStream", e);
 		}
 
-		jsonArray.clear();
+		resultArray.clear();
 	}
 
 	@Override
@@ -107,7 +115,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@Override
 	void nextResult() {
 		if (currentResult != null) {
-			jsonArray.add(currentResult);
+			resultArray.add(currentResult);
 			currentResult = null;
 		}
 	}
@@ -120,9 +128,24 @@ public class JSONPrintWriter extends UIPrintWriter {
 		currentResult.put(key, value);
 	}
 
+	/**
+	 * Set a result meta information
+	 *
+	 * @param key
+	 * @param value
+	 */
+	@Override
+	public void setMetaInfo(final String key, final String value) {
+		if (value != null)
+			metadataResult.put(key, value);
+
+		//metadataResult.remove(key);
+	}
+	
 	@Override
 	void setReturnCode(int exitCode, String errorMessage) {
-		printErr(errorMessage);
+		setMetaInfo("exitcode", String.valueOf(exitCode));
+		setMetaInfo("message", errorMessage);
 	}
 	
 	@Override

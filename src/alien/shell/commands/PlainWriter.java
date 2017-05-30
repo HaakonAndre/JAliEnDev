@@ -135,6 +135,11 @@ public class PlainWriter extends UIPrintWriter {
 	void setField(final String key, final String value) {
 		// ignored
 	}
+	
+	@Override
+	public void setMetaInfo(final String key, final String value) {
+		//
+	}
 
 	@Override
 	void setReturnCode(final int exitCode, final String errorMessage) {
