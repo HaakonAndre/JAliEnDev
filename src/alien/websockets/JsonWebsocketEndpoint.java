@@ -5,8 +5,6 @@ import java.io.OutputStream;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Iterator;
-
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
@@ -37,16 +35,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
             implements MessageHandler.Partial<String> {
 
         private final RemoteEndpoint.Basic remoteEndpointBasic;
-        
-        /**
-    	 * Timestamp of the last operation (connect / disconnect / command)
-    	 */
-    	static long lastOperation = System.currentTimeMillis();
-    	
-		static void notifyActivity() {
-			lastOperation = System.currentTimeMillis();
-		}
-		
+       		
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
 		private OutputStream os;
@@ -74,7 +63,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 				out = new XMLPrintWriter(os);
 		}
 
-        private EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic) {        	
+        EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic) {        	
             this.remoteEndpointBasic = remoteEndpointBasic;
         }
 
@@ -90,7 +79,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					try {
 						pobj = parser.parse(new StringReader(message));
 						jsonObject = (JSONObject) pobj;
-					} catch (ParseException e) {
+					} catch (@SuppressWarnings("unused") ParseException e) {
 		                remoteEndpointBasic.sendText("Incoming JSON not ok", last);
 						return;
 					}	
@@ -135,7 +124,6 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						commander.notifyAll();
 					}					
 					waitCommandFinish();
-		            notifyActivity();
 		        }
 	        } catch (IOException e) {
 	            // TODO Auto-generated catch block
@@ -151,7 +139,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
         private final RemoteEndpoint.Basic remoteEndpointBasic;
 
-        private EchoMessageHandlerBinary(RemoteEndpoint.Basic remoteEndpointBasic) {
+        EchoMessageHandlerBinary(RemoteEndpoint.Basic remoteEndpointBasic) {
             this.remoteEndpointBasic = remoteEndpointBasic;
         }
 

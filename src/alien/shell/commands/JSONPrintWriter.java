@@ -2,7 +2,6 @@ package alien.shell.commands;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,10 +55,6 @@ public class JSONPrintWriter extends UIPrintWriter {
 		// TODO Auto-generated method stub
 		return false;
 	}
-
-	private void print(final String line) {
-		
-	}
 	
 	@Override
 	protected void printOut(String line) {
@@ -68,7 +63,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 
 	@Override
 	protected void printErr(String line) {
-		print(errTag + line);
+		//
 	}
 
 	@Override
@@ -80,6 +75,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	/**
 	 * Write data to the client OutputStream
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void flush() {
 		nextResult();	// Add the last item and go
@@ -112,6 +108,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 		
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	void nextResult() {
 		if (currentResult != null) {
@@ -120,6 +117,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	void setField(String key, String value) {
 		if (currentResult == null)
@@ -134,12 +132,11 @@ public class JSONPrintWriter extends UIPrintWriter {
 	 * @param key
 	 * @param value
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public void setMetaInfo(final String key, final String value) {
 		if (value != null)
 			metadataResult.put(key, value);
-
-		//metadataResult.remove(key);
 	}
 	
 	@Override

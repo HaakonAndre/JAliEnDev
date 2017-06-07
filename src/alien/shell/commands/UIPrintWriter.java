@@ -1,7 +1,5 @@
 package alien.shell.commands;
 
-import alien.user.AliEnPrincipal;
-
 /**
  * @author ron
  * @since July 15, 2011

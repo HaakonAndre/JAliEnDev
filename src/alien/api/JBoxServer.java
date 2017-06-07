@@ -603,10 +603,10 @@ public class JBoxServer extends Thread {
 		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
 		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
 		Boolean portAny = Boolean.valueOf(ConfigUtils.getConfig().gets("port.range.any", "true"));
-
+		
 		for (int port = portMin; port < portMax; port++)
 			try {
-				if (portAny) port = 0;	// Start server on any available port provided by the system
+				if (portAny.booleanValue()) port = 0;	// Start server on any available port provided by the system
 				server = new JBoxServer(port, iDebugLevel);
 				server.start();
 				
