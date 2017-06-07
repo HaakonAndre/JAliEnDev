@@ -140,7 +140,7 @@ public class JBoxServer extends Thread {
 		this.port = ssocket.getLocalPort();
 		this.iDebugLevel = iDebug;
 		
-        password = UUID.randomUUID().toString();
+		password = UUID.randomUUID().toString();
 
 		// here we should get home directory
 		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
@@ -554,7 +554,7 @@ public class JBoxServer extends Thread {
 		alive = false;
 
 		try {
-			ssocket.close();			
+			ssocket.close();
 		} catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore, we're dead anyway
 		}
@@ -583,7 +583,6 @@ public class JBoxServer extends Thread {
 	 * Singleton
 	 */
 	static JBoxServer server = null;
-	static TomcatServer tomcatServer = null;
 
 	/**
 	 * Start once the UIServer
