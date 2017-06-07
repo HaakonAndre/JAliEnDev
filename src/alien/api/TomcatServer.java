@@ -159,6 +159,11 @@ public class TomcatServer {
 		// Try to launch Tomcat on default port
 		try {
 			tomcatServer = new TomcatServer(port, iDebugLevel);
+			
+			logger.log(Level.INFO, "Tomcat listening on port " + port);
+			System.out.println("Tomcat is listening on port " + port);
+			return;		// Everything's ok, exit
+			
 		} catch (final Exception ioe) {
 			// Port is already in use, maybe there's another user on the machine...
 			logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
@@ -170,6 +175,9 @@ public class TomcatServer {
 			for (port = portMin; port < portMax; port++) {
 				try {
 					tomcatServer = new TomcatServer(port, iDebugLevel);
+					
+					logger.log(Level.INFO, "Tomcat listening on port " + port);
+					System.out.println("Tomcat is listening on port " + port);
 					break;
 				} catch (final Exception ioe) {
 					// Try next one
@@ -177,9 +185,5 @@ public class TomcatServer {
 				}
 			}
 		}
-
-		logger.log(Level.INFO, "Tomcat listening on port " + port);
-		System.out.println("Tomcat is listening on port " + port);
-
 	}
 }
