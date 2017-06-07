@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -746,7 +747,7 @@ public final class SEUtils {
 		final Map<Integer, SEUsageStats> m = getSEUsage();
 
 		logger.log(Level.INFO, "Updating SE usage cache data");
-		
+
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
@@ -762,7 +763,7 @@ public final class SEUtils {
 				}
 			}
 		}
-		
+
 		logger.log(Level.INFO, "Finished updating SE usage cache data");
 	}
 
@@ -974,9 +975,8 @@ public final class SEUtils {
 					db.setReadOnly(false);
 					db.setQueryTimeout(60);
 
-					if (!db.query(
-							"UPDATE SE SET seUsedSpace=greatest(seUsedSpace" + (deltaBytes >= 0 ? "+" : "") + "?, 0), seNumFiles=greatest(seNumFiles" + (deltaFiles >= 0 ? "+" : "") + "?, 0) WHERE seNumber=?;",
-							false, Long.valueOf(deltaBytes), Long.valueOf(deltaFiles), seNumber)) {
+					if (!db.query("UPDATE SE SET seUsedSpace=greatest(seUsedSpace" + (deltaBytes >= 0 ? "+" : "") + "?, 0), seNumFiles=greatest(seNumFiles" + (deltaFiles >= 0 ? "+" : "")
+							+ "?, 0) WHERE seNumber=?;", false, Long.valueOf(deltaBytes), Long.valueOf(deltaFiles), seNumber)) {
 						aiFiles.addAndGet(deltaFiles);
 						aiBytes.addAndGet(deltaBytes);
 					}
@@ -1034,7 +1034,7 @@ public final class SEUtils {
 			final SE se = SEUtils.getSE(seName);
 
 			try (PrintWriter pw = new PrintWriter(new FileWriter(seName + ".file_list"))) {
-				pw.println("#PFN,size,MD5");
+				pw.println("#PFN,size,MD5,ctime");
 
 				for (final GUIDIndex idx : CatalogueUtils.getAllGUIDIndexes()) {
 					final Host h = CatalogueUtils.getHost(idx.hostIndex);
@@ -1043,10 +1043,19 @@ public final class SEUtils {
 						gdb.setReadOnly(true);
 
 						if (realPFNs) {
-							gdb.query("select pfn,size,md5 from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
+							gdb.query("select pfn,size,md5,binary2string(guid) from G" + idx.tableName + "L inner join G" + idx.tableName + "L_PFN using (guidId) WHERE seNumber=" + se.seNumber + ";");
 
-							while (gdb.moveNext())
-								pw.println(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3));
+							while (gdb.moveNext()) {
+								pw.print(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
+								try {
+									UUID u = UUID.fromString(gdb.gets(4));
+									pw.print(GUIDUtils.epochTime(u));
+								} catch (@SuppressWarnings("unused") Throwable t) {
+									// ignore any errors
+								}
+
+								pw.println();
+							}
 						}
 						else {
 							gdb.query("select binary2string(guid),size,md5 from G" + idx.tableName + "L INNER JOIN G" + idx.tableName + "L_PFN using(guidId) where seNumber=" + se.seNumber + ";");
@@ -1054,7 +1063,16 @@ public final class SEUtils {
 							while (gdb.moveNext()) {
 								final String guid = gdb.gets(1);
 
-								pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3));
+								pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
+
+								try {
+									UUID u = UUID.fromString(guid);
+									pw.print(GUIDUtils.epochTime(u));
+								} catch (@SuppressWarnings("unused") Throwable t) {
+									// ignore any errors
+								}
+
+								pw.println();
 							}
 						}
 					}
