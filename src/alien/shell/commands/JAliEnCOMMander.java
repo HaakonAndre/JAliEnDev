@@ -119,40 +119,9 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 */
 	public JAliEnCOMMander() {
-		c_api = new CatalogueApiUtils(this);
-
-		q_api = new TaskQueueApiUtils(this);
-
-		user = AuthorizationFactory.getDefaultUser();
-		role = user.getDefaultRole();
-		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
-		myHome = UsersHelper.getHomeDir(user.getName());
-		localFileCash = new HashMap<>();
-		initializeJCentralConnection();
-
-		setName("Commander");
+		this(null, null, null, null, null);
 	}
 	
-	/**
-	 */
-	public JAliEnCOMMander(final UIPrintWriter out) {
-		c_api = new CatalogueApiUtils(this);
-
-		q_api = new TaskQueueApiUtils(this);
-
-		user = AuthorizationFactory.getDefaultUser();
-		role = user.getDefaultRole();
-		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
-		myHome = UsersHelper.getHomeDir(user.getName());
-		localFileCash = new HashMap<>();
-		initializeJCentralConnection();
-
-		this.out = out;
-		degraded = false;
-		
-		setName("Commander");
-	}
-
 	/**
 	 * @param user
 	 * @param role
@@ -165,15 +134,21 @@ public class JAliEnCOMMander extends Thread {
 
 		q_api = new TaskQueueApiUtils(this);
 
-		this.user = user;
-		this.role = role;
-		this.site = site;
-		myHome = UsersHelper.getHomeDir(user.getName());
+		this.user = (user != null) ? user : AuthorizationFactory.getDefaultUser();
+		this.role = (role != null) ? role : this.user.getDefaultRole();
+		this.site = (site != null) ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
+		myHome = UsersHelper.getHomeDir(this.user.getName());
 		localFileCash = new HashMap<>();
 
 		this.out = out;
-		this.curDir = curDir;
 		degraded = false;
+		
+		if (curDir == null) {
+			initializeJCentralConnection();
+		}
+		else {
+			this.curDir = curDir;
+		}
 
 		setName("Commander");
 	}

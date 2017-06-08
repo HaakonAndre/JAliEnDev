@@ -94,7 +94,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						
 						setShellPrintWriter(os, "json");
 												
-						commander = new JAliEnCOMMander(out);
+						commander = new JAliEnCOMMander(null, null, null, null, out);
 
 						commander.start();
 					}
