@@ -157,7 +157,7 @@ public class JAliEnCOMMander extends Thread {
 		triedConnects++;
 
 		try {
-			curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
+			curDir = c_api.getLFN(myHome);
 			degraded = false;
 		} catch (final Exception e) {
 			logger.log(Level.WARNING, "Exception initializing connection", e);
