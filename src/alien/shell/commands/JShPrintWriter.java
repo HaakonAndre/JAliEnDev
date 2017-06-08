@@ -150,5 +150,10 @@ public class JShPrintWriter extends UIPrintWriter {
 	void setReturnCode(final int exitCode, final String errorMessage) {
 		printErr(errorMessage);
 	}
+	
+	@Override
+	public void setMetaInfo(final String key, final String value) {
+		//
+	}
 
 }

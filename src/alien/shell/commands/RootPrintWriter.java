@@ -265,6 +265,11 @@ public class RootPrintWriter extends UIPrintWriter {
 	void setReturnCode(final int exitCode, final String errorMessage) {
 		// ignored
 	}
+	
+	@Override
+	public void setMetaInfo(final String key, final String value) {
+		//
+	}
 
 	//
 	// my $calledfunction = shift @args;

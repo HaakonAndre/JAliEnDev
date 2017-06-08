@@ -117,4 +117,7 @@ public abstract class UIPrintWriter {
 	abstract void setField(final String key, final String value);
 
 	abstract void setReturnCode(final int exitCode, final String errorMessage);
+
+	abstract public void setMetaInfo(String key, String value);
+
 }

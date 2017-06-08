@@ -554,8 +554,8 @@ public class JAKeyStore {
 		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(pair.getPrivate(), certArray), new KeyStore.PasswordProtection(pass));
 	}
 
-	@SuppressWarnings("unused")
-	private static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
+
+	public	static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
 		try (FileOutputStream fo = new FileOutputStream(filename)) {
 			try {
 				ks.store(fo, password);

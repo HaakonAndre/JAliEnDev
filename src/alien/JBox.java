@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.JBoxServer;
+import alien.api.TomcatServer;
 import alien.config.ConfigUtils;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -49,8 +50,8 @@ public class JBox {
 			// nothing, we just let it 0, nothing to debug
 			e.printStackTrace();
 		}
-
+		
 		JBoxServer.startJBoxService(iDebug);
-
+		TomcatServer.startTomcatServer(iDebug);
 	}
 }

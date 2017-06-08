@@ -121,7 +121,7 @@ public class JAliEnCOMMander extends Thread {
 	public JAliEnCOMMander() {
 		this(null, null, null, null, null);
 	}
-
+	
 	/**
 	 * @param user
 	 * @param role
@@ -134,17 +134,21 @@ public class JAliEnCOMMander extends Thread {
 
 		q_api = new TaskQueueApiUtils(this);
 
-		this.user = user != null ? user : AuthorizationFactory.getDefaultUser();
-		this.role = role != null ? role : this.user.getDefaultRole();
-		this.site = site != null ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
+		this.user = (user != null) ? user : AuthorizationFactory.getDefaultUser();
+		this.role = (role != null) ? role : this.user.getDefaultRole();
+		this.site = (site != null) ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
 		myHome = UsersHelper.getHomeDir(this.user.getName());
 		localFileCash = new HashMap<>();
 
 		this.out = out;
 		degraded = false;
-
-		if (curDir == null)
+		
+		if (curDir == null) {
 			initializeJCentralConnection();
+		}
+		else {
+			this.curDir = curDir;
+		}
 
 		setName("Commander");
 	}
@@ -307,7 +311,7 @@ public class JAliEnCOMMander extends Thread {
 
 	@Override
 	public void run() {
-		logger.log(Level.INFO, "Starting execution");
+		logger.log(Level.INFO, "Starting Commander");
 
 		try {
 			while (true) {
