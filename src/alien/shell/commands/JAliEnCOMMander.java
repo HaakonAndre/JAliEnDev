@@ -119,18 +119,7 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 */
 	public JAliEnCOMMander() {
-		c_api = new CatalogueApiUtils(this);
-
-		q_api = new TaskQueueApiUtils(this);
-
-		user = AuthorizationFactory.getDefaultUser();
-		role = user.getDefaultRole();
-		site = ConfigUtils.getConfig().gets("alice_close_site").trim();
-		myHome = UsersHelper.getHomeDir(user.getName());
-		localFileCash = new HashMap<>();
-		initializeJCentralConnection();
-
-		setName("Commander");
+		this(null, null, null, null, null);
 	}
 
 	/**
@@ -145,15 +134,17 @@ public class JAliEnCOMMander extends Thread {
 
 		q_api = new TaskQueueApiUtils(this);
 
-		this.user = user;
-		this.role = role;
-		this.site = site;
-		myHome = UsersHelper.getHomeDir(user.getName());
+		this.user = user != null ? user : AuthorizationFactory.getDefaultUser();
+		this.role = role != null ? role : this.user.getDefaultRole();
+		this.site = site != null ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
+		myHome = UsersHelper.getHomeDir(this.user.getName());
 		localFileCash = new HashMap<>();
 
 		this.out = out;
-		this.curDir = curDir;
 		degraded = false;
+
+		if (curDir == null)
+			initializeJCentralConnection();
 
 		setName("Commander");
 	}
@@ -162,7 +153,7 @@ public class JAliEnCOMMander extends Thread {
 		triedConnects++;
 
 		try {
-			curDir = c_api.getLFN(UsersHelper.getHomeDir(user.getName()));
+			curDir = c_api.getLFN(myHome);
 			degraded = false;
 		} catch (final Exception e) {
 			logger.log(Level.WARNING, "Exception initializing connection", e);
