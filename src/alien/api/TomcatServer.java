@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.BindException;
+import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -154,10 +156,16 @@ public class TomcatServer {
 		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
 		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
 		boolean tryNext = false;
-		int port = 8098;
+		int port = 8097;
 		
 		// Try to launch Tomcat on default port
 		try {
+			// Fast check if port is available 
+			final InetAddress localhost = InetAddress.getByName("127.0.0.1");
+			ServerSocket ssocket = new ServerSocket(port, 10, localhost);
+			ssocket.close();
+			
+			// Actually start Tomcat
 			tomcatServer = new TomcatServer(port, iDebugLevel);
 			
 			logger.log(Level.INFO, "Tomcat listening on port " + port);
@@ -174,6 +182,12 @@ public class TomcatServer {
 		if (tryNext) {
 			for (port = portMin; port < portMax; port++) {
 				try {
+					// Fast check if port is available 
+					final InetAddress localhost = InetAddress.getByName("127.0.0.1");
+					ServerSocket ssocket = new ServerSocket(port, 10, localhost);
+					ssocket.close();
+					
+					// Actually start Tomcat
 					tomcatServer = new TomcatServer(port, iDebugLevel);
 					
 					logger.log(Level.INFO, "Tomcat listening on port " + port);
