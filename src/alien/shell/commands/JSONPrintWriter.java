@@ -94,6 +94,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 		}
 
 		resultArray.clear();
+		metadataResult.clear();
 	}
 
 	@Override
