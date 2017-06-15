@@ -529,7 +529,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (!longestMatchingPath.endsWith("/"))
 			longestMatchingPath = longestMatchingPath.substring(0, longestMatchingPath.lastIndexOf('/') + 1);
 
-		logger.log(Level.FINE, "Longest matching path: " + longestMatchingPath);
+		logger.log(Level.FINE, "Longest matching path: " + longestMatchingPath+" from "+sources.size()+" sources");
 
 		File oneFileToReturn = null;
 
