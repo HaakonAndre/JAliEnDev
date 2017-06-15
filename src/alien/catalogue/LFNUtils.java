@@ -559,12 +559,18 @@ public class LFNUtils {
 
 		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
-		final String processedPattern;
+		String processedPattern;
 
 		if ((flags & FIND_REGEXP) == 0)
 			processedPattern = Format.replace(pattern, "*", "%");
-		else
+		else {
 			processedPattern = Format.replace(Format.replace(pattern, "*", "[^/]*"), "?", ".");
+
+			if ((flags & FIND_INCLUDE_DIRS) != 0)
+				processedPattern += "(/)?";
+
+			processedPattern += "$";
+		}
 
 		for (final IndexTableEntry ite : matchingTables) {
 			final List<LFN> findResults = ite.find(path, processedPattern, flags);

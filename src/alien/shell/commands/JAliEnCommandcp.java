@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -20,7 +21,6 @@ import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -263,7 +263,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						try (ZipInputStream zi = new ZipInputStream(new FileInputStream(tempLocalFile))) {
 							ZipEntry zipentry;
 
-							while ((zipentry = zi.getNextEntry()) != null) {
+							while ((zipentry = zi.getNextEntry()) != null)
 								if (zipentry.getName().equals(archiveFileName)) {
 									final FileOutputStream fos = new FileOutputStream(file);
 
@@ -283,7 +283,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 									break;
 								}
-							}
 						} finally {
 							TempFileManager.release(tempLocalFile);
 						}
@@ -350,17 +349,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				return;
 			}
 
-			if (!lfn.isFile()) {
+			if (!lfn.isFile())
 				// ignoring anything else but files
 				return;
-			}
 
 			File writeToLocalFile = targetLocalFile;
 
 			if (targetLocalFile != null && targetLocalFile.exists() && targetLocalFile.isDirectory()) {
 				final String fileName = sourcelfn.substring(longestMatchingPath.length());
 
-				final int idx = fileName.indexOf('/');
+				final int idx = fileName.lastIndexOf('/');
 
 				if (idx >= 0) {
 					final String dirName = fileName.substring(0, idx);
@@ -394,7 +392,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			Exception lastException = null;
 
-			if (pfns != null && pfns.size() > 0) {
+			if (pfns != null && pfns.size() > 0)
 				for (final PFN pfn : pfns) {
 					logger.log(Level.INFO, "Trying " + pfn.pfn);
 
@@ -443,7 +441,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						break;
 					}
 				}
-			}
 			else
 				out.printErrln("No replicas for this LFN: " + lfn.getCanonicalName());
 
@@ -476,13 +473,35 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, sourceLFN);
 
-		final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user, commander.role);
+		final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user, commander.role);
 
-		if (sources.size() == 0) {
+		if (expandedPaths.size() == 0) {
 			if (!isSilent())
 				out.printErrln("No such file: " + sourceLFN);
 
 			return null;
+		}
+
+		final List<String> sources = new ArrayList<>(expandedPaths.size());
+
+		for (final String expandedPath : expandedPaths) {
+			final LFN l = commander.c_api.getLFN(expandedPath);
+
+			if (l.isFile())
+				sources.add(expandedPath);
+			else
+				if (l.isDirectory()) {
+					final Collection<LFN> findresult = commander.c_api.find(expandedPath, "*", 0);
+
+					logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
+
+					for (final LFN file : findresult)
+						if (file.isFile())
+							sources.add(file.getCanonicalName());
+				}
+				else
+					if (l.isCollection())
+						sources.addAll(l.listCollection());
 		}
 
 		if (sources.size() > 1) {
@@ -529,11 +548,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (!longestMatchingPath.endsWith("/"))
 			longestMatchingPath = longestMatchingPath.substring(0, longestMatchingPath.lastIndexOf('/') + 1);
 
-		logger.log(Level.FINE, "Longest matching path: " + longestMatchingPath+" from "+sources.size()+" sources");
+		logger.log(Level.FINE, "Longest matching path: " + longestMatchingPath);
 
 		File oneFileToReturn = null;
 
-		if (sources.size() <= 1 || concurrentOperations <= 1) {
+		if (sources.size() <= 1 || concurrentOperations <= 1)
 			for (final String sourcelfn : sources) {
 				final GridToLocal oneFile = new GridToLocal(sourcelfn, longestMatchingPath, targetLocalFile);
 				oneFile.run();
@@ -541,7 +560,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				if (oneFileToReturn == null)
 					oneFileToReturn = oneFile.getResult();
 			}
-		}
 		else {
 			final ThreadPoolExecutor downloader = new CachedThreadPool(concurrentOperations, 1, TimeUnit.SECONDS, (r) -> new Thread(r, "cpGridToLocal"));
 			downloader.allowCoreThreadTimeOut(true);
@@ -572,13 +590,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	}
 
 	private static final ExecutorService UPLOAD_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE,
-			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new ThreadFactory() {
-				@Override
-				public Thread newThread(Runnable r) {
-					final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
+			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, r -> {
+				final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
 
-					return t;
-				}
+				return t;
 			});
 
 	/**
@@ -968,28 +983,22 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 				if (pfn.ticket != null && pfn.ticket.envelope != null)
 					if (pfn.ticket.envelope.getSignedEnvelope() != null)
-						if (pfn.ticket.envelope.getEncryptedEnvelope() == null) {
+						if (pfn.ticket.envelope.getEncryptedEnvelope() == null)
 							// signed envelopes were passed to the storage, it should have replied in kind
 							returnEnvelope = targetPFNResult;
-						}
-						else {
+						else
 							// give back to the central services the signed envelopes
 							returnEnvelope = pfn.ticket.envelope.getSignedEnvelope();
-						}
-					else {
+					else
 						// no signed envelopes, return the encrypted one, if any
-						if (pfn.ticket.envelope.getEncryptedEnvelope() != null) {
+						if (pfn.ticket.envelope.getEncryptedEnvelope() != null)
 							returnEnvelope = pfn.ticket.envelope.getEncryptedEnvelope();
-						}
-						else {
+						else
 							// what kind of ticket was this?
 							returnEnvelope = targetPFNResult;
-						}
-					}
-				else {
+				else
 					// if no ticket at all...
 					returnEnvelope = targetPFNResult;
-				}
 			}
 			else {
 				failOver = true;
