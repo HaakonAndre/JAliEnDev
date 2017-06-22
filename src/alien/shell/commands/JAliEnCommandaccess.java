@@ -122,7 +122,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			out.printErrln("Not able to get request LFN/GUID [error in processing].");
 		}
 
-		if (out.isRootPrinter()) {
+		/*if (out.isRootPrinter()) {
 			if (pfns != null && !pfns.isEmpty())
 				for (final PFN pfn : pfns) {
 					out.nextResult();
@@ -161,7 +161,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 					out.setField("user", commander.user.getName());
 				}
 		}
-		else
+		else*/
 			if (pfns != null && !pfns.isEmpty())
 				for (final PFN pfn : pfns) {
 					out.printOutln(pfn.pfn);

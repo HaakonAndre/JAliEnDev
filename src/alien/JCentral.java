@@ -5,6 +5,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.DispatchSSLServer;
+import alien.api.TomcatServer;
 import alien.config.ConfigUtils;
 import alien.user.JAKeyStore;
 
@@ -41,7 +42,9 @@ public class JCentral {
 		try {
 			// SimpleCatalogueApiService catalogueAPIService = new SimpleCatalogueApiService();
 			// catalogueAPIService.start();
+			TomcatServer.startTomcatServer(0);
 			DispatchSSLServer.runService();
+			
 		} catch (final Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

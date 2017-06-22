@@ -157,6 +157,14 @@ public class TomcatServer {
 		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
 		boolean tryNext = false;
 		int port = 8097;
+
+		try {
+			JAKeyStore.loadClientKeyStorage();
+		} catch (Exception e) {
+			logger.log(Level.INFO, "Grid Certificate could not be loaded.");
+			logger.log(Level.INFO, "Exiting...");
+			e.printStackTrace();
+		}
 		
 		// Try to launch Tomcat on default port
 		try {
