@@ -181,7 +181,7 @@ public class OrphanPFNsCleanup {
 									}
 								}
 						}
-				} catch (Throwable t) {
+				} catch (final Throwable t) {
 					logger.log(Level.SEVERE, "Exception in the main mover", t);
 				}
 				try {
@@ -427,6 +427,8 @@ public class OrphanPFNsCleanup {
 		failed.incrementAndGet();
 
 		monitor.incrementCounter(se.getName() + "_fail_count");
+
+		monitor.incrementCounter("TOTAL_fail_count");
 
 		dirtyStats = true;
 	}
