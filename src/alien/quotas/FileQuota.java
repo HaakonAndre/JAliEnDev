@@ -36,12 +36,12 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 	/**
 	 * Max number of files allowed
 	 */
-	public final int maxNbFiles;
+	public final long maxNbFiles;
 
 	/**
 	 * Current number of files stored by this user
 	 */
-	public final int nbFiles;
+	public final long nbFiles;
 
 	/**
 	 * Temp increase
@@ -69,8 +69,8 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 	FileQuota(final DBFunctions db) {
 		this.user = StringFactory.get(db.gets("user").toLowerCase());
 		this.totalSize = db.getl("totalSize");
-		this.maxNbFiles = db.geti("maxNbFiles");
-		this.nbFiles = db.geti("nbFiles");
+		this.maxNbFiles = db.getl("maxNbFiles");
+		this.nbFiles = db.getl("nbFiles");
 		this.tmpIncreasedTotalSize = db.getl("tmpIncreasedTotalSize");
 		this.maxTotalSize = db.getl("maxTotalSize");
 		this.tmpIncreasedNbFiles = db.geti("tmpIncreasedNbFiles");
@@ -105,7 +105,7 @@ public final class FileQuota implements Serializable, Comparable<FileQuota> {
 	 * @param size
 	 * @return <code>true</code> if the user is allowed to upload this number of files with the given total size
 	 */
-	public boolean canUpload(final int noFiles, final long size) {
+	public boolean canUpload(final long noFiles, final long size) {
 		if (totalSize + size <= (maxTotalSize + tmpIncreasedTotalSize) && nbFiles + noFiles <= (maxNbFiles + tmpIncreasedNbFiles))
 			return true;
 
