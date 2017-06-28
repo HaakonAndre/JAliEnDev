@@ -38,6 +38,8 @@ import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.quotas.FileQuota;
+import alien.quotas.QuotaUtilities;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import alien.user.LDAPHelper;
@@ -1518,6 +1520,11 @@ public class TaskQueueUtils {
 	 */
 	public static long submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
 		final String owner = prepareSubmission(j, account, role);
+
+		final FileQuota quota = QuotaUtilities.getFileQuota(owner);
+
+		if (quota != null && !quota.canUpload(1, 1))
+			throw new IOException("User " + owner + " has exceeded the file quota and is not allowed to write any more files");
 
 		return insertJob(j, account, owner, null);
 	}
