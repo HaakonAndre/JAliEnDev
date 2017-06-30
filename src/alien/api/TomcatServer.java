@@ -14,10 +14,14 @@ import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Service;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
+import org.apache.tomcat.util.descriptor.web.LoginConfig;
+import org.apache.tomcat.util.descriptor.web.SecurityCollection;
+import org.apache.tomcat.util.descriptor.web.SecurityConstraint;
 import org.apache.tomcat.util.scan.StandardJarScanner;
 
 import alien.config.ConfigUtils;
 import alien.user.JAKeyStore;
+import alien.user.LdapCertificateRealm;
 import lazyj.commands.SystemCommand;
 
 public class TomcatServer {
@@ -41,11 +45,28 @@ public class TomcatServer {
 		tomcat = new Tomcat();
 		Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
-		service.addConnector(createSslConnector(tomcatPort));			
+		service.addConnector(createSslConnector(tomcatPort));
+		tomcat.getEngine().setRealm(new LdapCertificateRealm());
 
 		// Configure websocket webapplication
 		String webappDirLocation = "src/alien/websockets";
 		Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
+
+		// Set security constraints in order to use AliceUserPrincipal later
+		SecurityCollection securityCollection = new SecurityCollection();
+		securityCollection.addPattern("/*");
+		SecurityConstraint securityConstraint = new SecurityConstraint();
+		securityConstraint.addCollection(securityCollection);
+		securityConstraint.setUserConstraint("CONFIDENTIAL");
+
+		LoginConfig loginConfig = new LoginConfig();
+		loginConfig.setAuthMethod("CLIENT-CERT");
+		loginConfig.setRealmName("alien.user.LdapCertificateRealm");
+		ctx.setLoginConfig(loginConfig);
+
+		securityConstraint.addAuthRole("users");
+		ctx.addSecurityRole("users");
+		ctx.addConstraint(securityConstraint);
 
 		// Tell Jar Scanner not to look inside jar manifests 
 		// otherwise it will produce useless warnings
@@ -167,12 +188,8 @@ public class TomcatServer {
 		}
 		
 		// Try to launch Tomcat on default port
-		try {
-			// Fast check if port is available 
-			final InetAddress localhost = InetAddress.getByName("127.0.0.1");
-			ServerSocket ssocket = new ServerSocket(port, 10, localhost);
-			ssocket.close();
-			
+		try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
+		{
 			// Actually start Tomcat
 			tomcatServer = new TomcatServer(port, iDebugLevel);
 			
@@ -189,12 +206,8 @@ public class TomcatServer {
 		// Try another ports in range
 		if (tryNext) {
 			for (port = portMin; port < portMax; port++) {
-				try {
-					// Fast check if port is available 
-					final InetAddress localhost = InetAddress.getByName("127.0.0.1");
-					ServerSocket ssocket = new ServerSocket(port, 10, localhost);
-					ssocket.close();
-					
+				try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
+				{
 					// Actually start Tomcat
 					tomcatServer = new TomcatServer(port, iDebugLevel);
 					

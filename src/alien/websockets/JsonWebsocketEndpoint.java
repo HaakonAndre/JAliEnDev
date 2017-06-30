@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.nio.ByteBuffer;
+import java.security.Principal;
 import java.util.ArrayList;
+
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
@@ -21,14 +23,18 @@ import alien.shell.commands.JSONPrintWriter;
 import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
+import alien.user.AliEnPrincipal;
 
 public class JsonWebsocketEndpoint extends Endpoint {
+	private AliEnPrincipal userIdentity; 
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         RemoteEndpoint.Basic remoteEndpointBasic = session.getBasicRemote();
-        session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic));
+        session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, userIdentity));
         session.addMessageHandler(new EchoMessageHandlerBinary(remoteEndpointBasic));
+        Principal userPrincipal = session.getUserPrincipal();
+        userIdentity = (AliEnPrincipal)userPrincipal;
     }
 
     private static class EchoMessageHandlerText
@@ -39,6 +45,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
 		private OutputStream os;
+		private AliEnPrincipal userIdentity; 
 		
 		private void waitCommandFinish() {		
 			// wait for the previous command to finish
@@ -63,8 +70,9 @@ public class JsonWebsocketEndpoint extends Endpoint {
 				out = new XMLPrintWriter(os);
 		}
 
-        EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic) {        	
+        EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic, AliEnPrincipal userIdentity) {        	
             this.remoteEndpointBasic = remoteEndpointBasic;
+            this.userIdentity = userIdentity; 
         }
 
 		@Override
@@ -94,7 +102,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						
 						setShellPrintWriter(os, "json");
 												
-						commander = new JAliEnCOMMander(null, null, null, null, out);
+						commander = new JAliEnCOMMander(userIdentity, null, null, null, out);
 
 						commander.start();
 					}
@@ -104,7 +112,6 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					out.setMetaInfo("role", commander.getRole());
 					out.setMetaInfo("currentdir", commander.getCurrentDir().lfn);
 					out.setMetaInfo("site", commander.getSite());
-					
 					
 					// Split JSONObject into strings 
 					final ArrayList<String> fullCmd = new ArrayList<>();
