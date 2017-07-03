@@ -52,7 +52,7 @@ public class TomcatServer {
 		String webappDirLocation = "src/alien/websockets";
 		Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
 
-		// Set security constraints in order to use AliceUserPrincipal later
+		// Set security constraints in order to use AlienUserPrincipal later
 		SecurityCollection securityCollection = new SecurityCollection();
 		securityCollection.addPattern("/*");
 		SecurityConstraint securityConstraint = new SecurityConstraint();
@@ -190,6 +190,7 @@ public class TomcatServer {
 		// Try to launch Tomcat on default port
 		try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
 		{
+			ssocket.close();
 			// Actually start Tomcat
 			tomcatServer = new TomcatServer(port, iDebugLevel);
 			
@@ -208,6 +209,7 @@ public class TomcatServer {
 			for (port = portMin; port < portMax; port++) {
 				try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
 				{
+					ssocket.close();
 					// Actually start Tomcat
 					tomcatServer = new TomcatServer(port, iDebugLevel);
 					
