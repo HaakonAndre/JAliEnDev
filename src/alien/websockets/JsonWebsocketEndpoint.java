@@ -31,10 +31,10 @@ public class JsonWebsocketEndpoint extends Endpoint {
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         RemoteEndpoint.Basic remoteEndpointBasic = session.getBasicRemote();
-        session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, userIdentity));
-        session.addMessageHandler(new EchoMessageHandlerBinary(remoteEndpointBasic));
         Principal userPrincipal = session.getUserPrincipal();
         userIdentity = (AliEnPrincipal)userPrincipal;
+        session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, userIdentity));
+        session.addMessageHandler(new EchoMessageHandlerBinary(remoteEndpointBasic));
     }
 
     private static class EchoMessageHandlerText
