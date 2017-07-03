@@ -453,7 +453,7 @@ public class JBoxServer extends Thread {
 
 											try {
 												commander.interrupt();
-												commander.stop();
+												commander.kill = true;
 											} catch (@SuppressWarnings("unused") final Throwable t) {
 												// ignore
 											} finally {

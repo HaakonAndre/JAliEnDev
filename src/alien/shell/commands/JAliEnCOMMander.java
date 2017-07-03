@@ -297,9 +297,11 @@ public class JAliEnCOMMander extends Thread {
 	 * Current status : 0 = idle, 1 = busy executing a command
 	 */
 	public AtomicInteger status = new AtomicInteger(0);
+	
+	public volatile boolean kill = false;
 
 	private void waitForCommand() {
-		while (out == null)
+		while (!kill && out == null)
 			synchronized (this) {
 				try {
 					wait(1000);
@@ -314,8 +316,10 @@ public class JAliEnCOMMander extends Thread {
 		logger.log(Level.INFO, "Starting Commander");
 
 		try {
-			while (true) {
+			while (!kill) {
 				waitForCommand();
+				if (kill)
+					break;
 
 				if (degraded) {
 					if (triedConnects < maxTryConnect) {
@@ -335,6 +339,8 @@ public class JAliEnCOMMander extends Thread {
 				}
 				else {
 					waitForCommand();
+					if (kill)
+						break;
 
 					try {
 						status.set(1);

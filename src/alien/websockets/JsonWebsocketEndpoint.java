@@ -3,10 +3,10 @@ package alien.websockets;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.nio.ByteBuffer;
 import java.security.Principal;
 import java.util.ArrayList;
 
+import javax.websocket.CloseReason;
 import javax.websocket.Endpoint;
 import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
@@ -26,15 +26,62 @@ import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 
 public class JsonWebsocketEndpoint extends Endpoint {
-	private AliEnPrincipal userIdentity; 
+	private AliEnPrincipal userIdentity = null; 
+	private JAliEnCOMMander commander = null;
+	private UIPrintWriter out = null;
+	private OutputStream os = null;
+	
+	private void setShellPrintWriter(final OutputStream os, final String shelltype) {
+		if (shelltype.equals("jaliensh"))
+			out = new JShPrintWriter(os);
+		else if (shelltype.equals("json"))
+			out = new JSONPrintWriter(os);
+		else
+			out = new XMLPrintWriter(os);
+	}
 
     @Override
     public void onOpen(Session session, EndpointConfig endpointConfig) {
         RemoteEndpoint.Basic remoteEndpointBasic = session.getBasicRemote();
         Principal userPrincipal = session.getUserPrincipal();
-        userIdentity = (AliEnPrincipal)userPrincipal;
-        session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, userIdentity));
-        session.addMessageHandler(new EchoMessageHandlerBinary(remoteEndpointBasic));
+        userIdentity = (AliEnPrincipal) userPrincipal;
+        
+        try {
+			os = remoteEndpointBasic.getSendStream();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		setShellPrintWriter(os, "json");
+        commander = new JAliEnCOMMander(userIdentity, null, null, null, out);        
+        
+		// Set metadata
+		out.setMetaInfo("user", commander.getUser().getName());
+		out.setMetaInfo("role", commander.getRole());
+		out.setMetaInfo("currentdir", commander.getCurrentDir().lfn);
+		out.setMetaInfo("site", commander.getSite());
+        
+        session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, commander, out));
+    }
+    
+    @Override
+	public void onClose(Session session, CloseReason closeReason) {
+    	commander.kill = true;
+    	
+    	out = null;
+    	try {
+			os.close();
+    	} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    	os = null;
+    	userIdentity = null;
+	}
+    
+    @Override
+	public void onError(Session session, Throwable thr) {
+    	//
     }
 
     private static class EchoMessageHandlerText
@@ -44,8 +91,13 @@ public class JsonWebsocketEndpoint extends Endpoint {
        		
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
-		private OutputStream os;
-		private AliEnPrincipal userIdentity; 
+
+        EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic, JAliEnCOMMander commander,
+        		UIPrintWriter out) {        	
+            this.remoteEndpointBasic = remoteEndpointBasic;
+            this.commander = commander;
+            this.out = out;			
+        }
 		
 		private void waitCommandFinish() {		
 			// wait for the previous command to finish
@@ -60,20 +112,6 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					// ignore
 				}
 		}
-		
-		private void setShellPrintWriter(final OutputStream os, final String shelltype) {
-			if (shelltype.equals("jaliensh"))
-				out = new JShPrintWriter(os);
-			else if (shelltype.equals("json"))
-				out = new JSONPrintWriter(os);
-			else
-				out = new XMLPrintWriter(os);
-		}
-
-        EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic, AliEnPrincipal userIdentity) {        	
-            this.remoteEndpointBasic = remoteEndpointBasic;
-            this.userIdentity = userIdentity; 
-        }
 
 		@Override
 	    public void onMessage(String message, boolean last) {						
@@ -90,28 +128,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					} catch (@SuppressWarnings("unused") ParseException e) {
 		                remoteEndpointBasic.sendText("Incoming JSON not ok", last);
 						return;
-					}	
-					
-					// Init Commander only once during first message
-					if (commander == null) {
-						try {
-							os = remoteEndpointBasic.getSendStream();
-						} catch (IOException e) {
-							e.printStackTrace();
-						}
-						
-						setShellPrintWriter(os, "json");
-												
-						commander = new JAliEnCOMMander(userIdentity, null, null, null, out);
-
-						commander.start();
-					}
-					
-					// Set metadata
-					out.setMetaInfo("user", commander.getUser().getName());
-					out.setMetaInfo("role", commander.getRole());
-					out.setMetaInfo("currentdir", commander.getCurrentDir().lfn);
-					out.setMetaInfo("site", commander.getSite());
+					}						
 					
 					// Split JSONObject into strings 
 					final ArrayList<String> fullCmd = new ArrayList<>();
@@ -124,6 +141,9 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						for (int i = 0; i < mArray.size(); i++) 
 		                    fullCmd.add(mArray.get(i).toString()); 
 					}
+					
+					if (!commander.isAlive())
+						commander.start();
 					
 					// Send the command to executor and send the result back to client via OutputStream
 					synchronized (commander) {
@@ -140,26 +160,4 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	        }
 	    }
 	}
-
-    private static class EchoMessageHandlerBinary
-            implements MessageHandler.Partial<ByteBuffer> {
-
-        private final RemoteEndpoint.Basic remoteEndpointBasic;
-
-        EchoMessageHandlerBinary(RemoteEndpoint.Basic remoteEndpointBasic) {
-            this.remoteEndpointBasic = remoteEndpointBasic;
-        }
-
-        @Override
-        public void onMessage(ByteBuffer message, boolean last) {
-            try {
-                if (remoteEndpointBasic != null) {
-                    remoteEndpointBasic.sendBinary(message, last);
-                }
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-    }
 }
