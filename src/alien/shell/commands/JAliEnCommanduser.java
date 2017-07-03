@@ -2,8 +2,6 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
-import alien.catalogue.access.AuthorizationFactory;
-import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import joptsimple.OptionException;
 
@@ -17,14 +15,15 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-
-		if (AuthorizationFactory.getDefaultUser().canBecome(user)) {
+		if (commander.user.canBecome(user)) {
 			commander.user = UserFactory.getByUsername(user);
-			commander.role = AliEnPrincipal.userRole();
-		} else if (out.isRootPrinter())
-			out.setField("message", "Permission denied.");
+			commander.role = commander.user.getDefaultRole();
+		}
 		else
-			out.printErrln("Permission denied.");
+			if (out.isRootPrinter())
+				out.setField("message", "Permission denied.");
+			else
+				out.printErrln("Permission denied.");
 
 	}
 
