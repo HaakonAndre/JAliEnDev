@@ -365,7 +365,6 @@ public class JBoxServer extends Thread {
 				out = new XMLPrintWriter(os);
 		}
 
-		@SuppressWarnings("deprecation")
 		@Override
 		public void run() {
 			connectedClients.incrementAndGet();
