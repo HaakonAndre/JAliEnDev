@@ -1,0 +1,33 @@
+package alien.api.aaa;
+
+/**
+ * Possible token certificate types
+ *
+ * @author costing
+ * @since 2017-07-04
+ */
+public enum TokenCertificateType {
+	/**
+	 * The request is for a user token certificate
+	 */
+	USER_CERTIFICATE(31),
+	/**
+	 * The request is for a job token
+	 */
+	JOB_TOKEN(2);
+
+	private int maxValidityDays;
+
+	private TokenCertificateType(final int maxValidityDays) {
+		this.maxValidityDays = maxValidityDays;
+	}
+
+	/**
+	 * Get the max validity (in days) of the certificates that can be generated for each type
+	 *
+	 * @return max validity (in days)
+	 */
+	public int getMaxValidity() {
+		return maxValidityDays;
+	}
+}
