@@ -49,9 +49,11 @@ public class ComputingElement extends Thread {
 	private int port = 10000;
 	private String site;
 	private HashMap<String, Object> siteMap = new HashMap<>();
-	private HashMap<String, Object> ceConfig = null;
-	private HashMap<String, Object> hostConfig = null;
-	private HashMap<String, Object> siteConfig = null;
+	private HashMap<String, Object> config = null;
+//	private HashMap<String, Object> ceConfig = null;
+//	private HashMap<String, Object> hostConfig = null;
+//	private HashMap<String, Object> siteConfig = null;
+//	private HashMap<String, Object> VOConfig = null;
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
@@ -63,12 +65,12 @@ public class ComputingElement extends Thread {
 		try {
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
-			getCEconfigFromLDAP();
+			config = ConfigUtils.getConfigFromLdap();
 			getSiteMap();
 
-			logger = LogUtils.redirectToCustomHandler(logger, hostConfig.get("logdir") + "/CE");
+			logger = LogUtils.redirectToCustomHandler(logger, config.get("host_logdir") + "/CE");
 
-			queue = getBatchQueue((String) ceConfig.get("type"));
+			queue = getBatchQueue((String) config.get("ce_type"));
 
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -105,7 +107,7 @@ public class ComputingElement extends Thread {
 
 	private int getNumberFreeSlots() {
 		// First we get the maxJobs and maxQueued from the Central Services
-		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) hostConfig.get("host"), port, siteMap.get("CE").toString(),
+		final GetNumberFreeSlots jobSlots = commander.q_api.getNumberFreeSlots((String) config.get("host_host"), port, siteMap.get("CE").toString(),
 				ConfigUtils.getConfig().gets("version", "J-1.0").trim());
 
 		List<Integer> slots = jobSlots.getJobSlots();
@@ -172,7 +174,7 @@ public class ComputingElement extends Thread {
 		paramValues.add(Integer.valueOf(free < 0 ? 0 : free));
 
 		try {
-			apmon.sendParameters(site + "_CE_" + siteMap.get("CE"), hostConfig.get("host").toString(), paramNames.size(), paramNames, paramValues);
+			apmon.sendParameters(site + "_CE_" + siteMap.get("CE"), config.get("host_host").toString(), paramNames.size(), paramNames, paramValues);
 		} catch (ApMonException | IOException e) {
 			logger.severe("Can't send parameter to ML (getNumberFreeSlots): " + e);
 		}
@@ -227,8 +229,8 @@ public class ComputingElement extends Thread {
 		String after = "";
 
 		long time = new Timestamp(System.currentTimeMillis()).getTime();
-		String file = hostConfig.get("tmpdir")+"/proxy."+time;
-		
+		String file = config.get("host_tmpdir") + "/proxy." + time;
+
 		int hours = ((Integer) siteMap.get("TTL")).intValue();
 		hours = hours / 3600;
 
@@ -239,7 +241,7 @@ public class ComputingElement extends Thread {
 		else {
 			proxyfile = "/tmp/x509_" + SystemCommand.bash("id -u").stdout;
 			// JAliEn site: renew proxy (hours), get new timeleft
-			
+
 			String file_content = "";
 			try (BufferedReader br = new BufferedReader(new FileReader(proxyfile))) {
 				String line;
@@ -247,20 +249,11 @@ public class ComputingElement extends Thread {
 					file_content += line;
 				}
 			} catch (IOException e) {
-				logger.info("Error reading the proxy file: "+e);
+				logger.info("Error reading the proxy file: " + e);
 			}
-			
-			before += 
-					"echo 'Using the proxy'\n"
-					+ "mkdir -p "+hostConfig.get("tmpdir")+"\n"
-					+ "export ALIEN_USER="+System.getenv("ALIEN_USER")+"\n"
-					+"file="+file+"\n"
-					+ "cat >"+file+" <<EOF\n"+file_content+"\n"
-					+ "EOF\n"
-					+ "chmod 0400 "+file
-					+ "export X509_USER_PROXY="+file+"\n"
-					+ "echo USING X509_USER_PROXY"
-					+ startup+" proxy-info";
+
+			before += "echo 'Using the proxy'\n" + "mkdir -p " + config.get("host_tmpdir") + "\n" + "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n" + "file=" + file + "\n" + "cat >" + file
+					+ " <<EOF\n" + file_content + "\n" + "EOF\n" + "chmod 0400 " + file + "export X509_USER_PROXY=" + file + "\n" + "echo USING X509_USER_PROXY" + startup + " proxy-info";
 		}
 
 		// Check proxy timeleft is good
@@ -289,130 +282,86 @@ public class ComputingElement extends Thread {
 	// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
 	// } // TODO: uncomment
 
-	// Queries LDAP to get all the config values (site,host,CE)
-	void getCEconfigFromLDAP() {
-		// Get hostname and domain
-		String hostName = "";
-		String domain = "";
-		try {
-			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-			hostName = hostName.replace("/.$/", "");
-			domain = hostName.substring(hostName.indexOf(".") + 1, hostName.length());
-		} catch (final UnknownHostException e) {
-			logger.severe("Error: couldn't get hostname");
-			e.printStackTrace();
-		}
 
-		// We get the site name from the domain and the site root info
-		Set<String> siteset = LDAPHelper.checkLdapInformation("(&(domain=" + domain + "))", "ou=Sites,", "accountName");
-
-		if (siteset == null || siteset.size() == 0 || siteset.size() > 1) {
-			logger.severe("Error: " + (siteset == null ? "null" : String.valueOf(siteset.size())) + " sites found for domain: " + domain);
-			System.exit(-1);
-			return;
-		}
-
-		site = siteset.iterator().next();
-
-		// Get the root site config based on site name
-		siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,");
-
-		if (siteConfig == null || siteConfig.size() == 0) {
-			logger.severe("Error: cannot find site root configuration in LDAP for site: " + site);
-			System.exit(-1);
-		}
-
-		// Get the hostConfig from LDAP based on the site and hostname
-		hostConfig = LDAPHelper.checkLdapTree("(&(host=" + hostName + "))", "ou=Config,ou=" + site + ",ou=Sites,");
-
-		if (hostConfig == null || hostConfig.size() == 0) {
-			logger.severe("Error: cannot find host configuration in LDAP for host: " + hostName);
-			System.exit(-1);
-		}
-
-		if (!hostConfig.containsKey("ce")) {
-			logger.severe("Error: cannot find ce configuration in hostConfig for host: " + hostName);
-			System.exit(-1);
-		}
-
-		// Get the CE information based on the site and ce name for the host
-		ceConfig = LDAPHelper.checkLdapTree("(&(name=" + hostConfig.get("ce") + "))", "ou=CE,ou=Services,ou=" + site + ",ou=Sites,");
-
-		if (ceConfig == null || ceConfig.size() == 0) {
-			logger.severe("Error: cannot find ce configuration in LDAP for CE: " + hostConfig.get("ce"));
-			System.exit(-1);
-		}
-
-	}
 
 	// Prepares a hash to create the sitemap
 	void getSiteMap() {
 		HashMap<String, String> smenv = new HashMap<>();
 
-		smenv.put("ALIEN_CM_AS_LDAP_PROXY", hostConfig.get("host") + ":" + port);
+		smenv.put("ALIEN_CM_AS_LDAP_PROXY", config.get("host_host") + ":" + port);
+		config.put("ALIEN_CM_AS_LDAP_PROXY", config.get("host_host") + ":" + port);
 
 		smenv.put("site", site);
 
-		smenv.put("CE", "ALICE::" + site + "::" + hostConfig.get("ce"));
+		smenv.put("CE", "ALICE::" + site + "::" + config.get("host_ce"));
 
 		// TTL will be recalculated in the loop depending on proxy lifetime
-		if (ceConfig.containsKey("ttl"))
-			smenv.put("TTL", (String) ceConfig.get("ttl"));
+		if (config.containsKey("ce_ttl"))
+			smenv.put("TTL", (String) config.get("ce_ttl"));
 		else
 			smenv.put("TTL", "86400");
 
 		smenv.put("Disk", "100000000");
 
-		if (ceConfig.containsKey("cerequirements"))
-			smenv.put("cerequirements", ceConfig.get("cerequirements").toString());
+		if (config.containsKey("ce_cerequirements"))
+			smenv.put("cerequirements", config.get("ce_cerequirements").toString());
 
-		if (ceConfig.containsKey("partition"))
-			smenv.put("partition", ceConfig.get("partition").toString());
+		if (config.containsKey("ce_partition"))
+			smenv.put("partition", config.get("ce_partition").toString());
 
-		if (hostConfig.containsKey("closese"))
-			smenv.put("closeSE", hostConfig.get("closese").toString());
+		if (config.containsKey("host_closese"))
+			smenv.put("closeSE", config.get("host_closese").toString());
 		else
-			if (siteConfig.containsKey("closese"))
-				smenv.put("closeSE", siteConfig.get("closese").toString());
+			if (config.containsKey("site_closese"))
+				smenv.put("closeSE", config.get("site_closese").toString());
 
-		if (hostConfig.containsKey("environment")) {
-			host_environment = new HashMap<>();
-			if (hostConfig.get("environment") instanceof TreeSet) {
-				@SuppressWarnings("unchecked")
-				Set<String> host_env_set = (Set<String>) hostConfig.get("environment");
-				for (String env_entry : host_env_set) {
-					String[] host_env_str = env_entry.split("=");
-					host_environment.put(host_env_str[0], host_env_str[1]);
-				}
-			}
-			else {
-				String[] host_env_str = ((String) hostConfig.get("environment")).split("=");
-				host_environment.put(host_env_str[0], host_env_str[1]);
-			}
+		if (config.containsKey("host_environment")) {
+			host_environment = getValuesFromLDAPField(config.get("host_environment"));
 		}
 
-		if (ceConfig.containsKey("environment")) {
-			ce_environment = new HashMap<>();
-			if (ceConfig.get("environment") instanceof TreeSet) {
-				@SuppressWarnings("unchecked")
-				Set<String> ce_env_set = (Set<String>) ceConfig.get("environment");
-				for (String env_entry : ce_env_set) {
-					String[] ce_env_str = env_entry.split("=");
-					ce_environment.put(ce_env_str[0], ce_env_str[1]);
-				}
-			}
-			else {
-				String[] ce_env_str = ((String) ceConfig.get("environment")).split("=");
-				ce_environment.put(ce_env_str[0], ce_env_str[1]);
-			}
+		// environment field can have n values
+		if (config.containsKey("ce_environment")) {
+			ce_environment = getValuesFromLDAPField(ce_environment.get("environment"));
+		}
+
+		// submit,status and kill cmds can have n arguments
+		if (config.containsKey("ce_submitcmd") && config.containsKey("ce_submitarg")) {
+			// TODO
+		}
+		if (config.containsKey("ce_statuscmd") && config.containsKey("ce_statusarg")) {
+			// TODO
+		}
+		if (config.containsKey("ce_killcmd") && config.containsKey("ce_killarg")) {
+			// TODO
 		}
 
 		if (host_environment != null)
-			smenv.putAll(host_environment);
+			config.putAll(host_environment);
 		if (ce_environment != null)
-			smenv.putAll(ce_environment);
+			config.putAll(ce_environment);
 
 		siteMap = (new SiteMap()).getSiteParameters(smenv);
+	}
+
+	/**
+	 * @param field
+	 * @return Map with the values of the LDAP field
+	 */
+	public static HashMap<String, String> getValuesFromLDAPField(Object field) {
+		HashMap<String, String> map = new HashMap<>();
+		if (field instanceof TreeSet) {
+			@SuppressWarnings("unchecked")
+			Set<String> host_env_set = (Set<String>) field;
+			for (String env_entry : host_env_set) {
+				String[] host_env_str = env_entry.split("=");
+				map.put(host_env_str[0], host_env_str[1]);
+			}
+		}
+		else {
+			String[] host_env_str = ((String) field).split("=");
+			map.put(host_env_str[0], host_env_str[1]);
+		}
+		return map;
 	}
 
 	/*
@@ -429,14 +378,14 @@ public class ComputingElement extends Thread {
 
 		Constructor<?> con = null;
 		try {
-			con = cl.getConstructor(ceConfig.getClass(), logger.getClass());
+			con = cl.getConstructor(config.getClass(), logger.getClass());
 		} catch (NoSuchMethodException | SecurityException e) {
 			logger.severe("Cannot find class for ceConfig: " + e);
 			return null;
 		}
 
 		try {
-			queue = (BatchQueue) con.newInstance(ceConfig, logger);
+			queue = (BatchQueue) con.newInstance(config, logger);
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
 			logger.severe("Cannot instantiate queue class for type: " + type + "\n" + e);
 		}

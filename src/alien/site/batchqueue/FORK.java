@@ -12,15 +12,16 @@ import alien.log.LogUtils;
 public class FORK extends BatchQueue {
 
 	/**
-	 * @param envi
-	 *            execution environment
+	 * @param conf
 	 * @param logr
 	 *            logger
 	 */
-	public FORK(HashMap<String, Object> envi, Logger logr) {
-		env = envi;
+	public FORK(HashMap<String, Object> conf, Logger logr) {
+		this.config = conf;
 		logger = logr;
-		logger = LogUtils.redirectToCustomHandler(logger, ((String) env.get("logdir")) + "JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+		logger = LogUtils.redirectToCustomHandler(logger, ((String) config.get("host_logdir")) + "JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+
+		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 	}
 
 	@Override

@@ -7,14 +7,19 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Properties;
+import java.util.Set;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import alien.user.LDAPHelper;
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
 import lazyj.cache.ExpirationCache;
@@ -302,4 +307,99 @@ public class ConfigUtils {
 		// TODO implement this properly
 		return "CERN";
 	}
+
+	/**
+	 * @return global config map
+	 */
+	public static HashMap<String, Object> getConfigFromLdap() {
+		return getConfigFromLdap(false);
+	}
+
+	/**
+	 * @param checkContent
+	 * @return global config map
+	 */
+	public static HashMap<String, Object> getConfigFromLdap(boolean checkContent) {
+		HashMap<String, Object> configuration = new HashMap<>();
+		// Get hostname and domain
+		String hostName = "";
+		String domain = "";
+		try {
+			hostName = InetAddress.getLocalHost().getCanonicalHostName();
+			hostName = hostName.replace("/.$/", "");
+			domain = hostName.substring(hostName.indexOf(".") + 1, hostName.length());
+		} catch (final UnknownHostException e) {
+			logger.severe("Error: couldn't get hostname");
+			e.printStackTrace();
+			return null;
+		}
+
+		HashMap<String, Object> voConfig = LDAPHelper.getVOConfig();
+		if (voConfig == null || voConfig.size() == 0)
+			return null;
+
+		// We get the site name from the domain and the site root info
+		Set<String> siteset = LDAPHelper.checkLdapInformation("(&(domain=" + domain + "))", "ou=Sites,", "accountName");
+
+		if (checkContent && (siteset == null || siteset.size() == 0 || siteset.size() > 1)) {
+			logger.severe("Error: " + (siteset == null ? "null" : String.valueOf(siteset.size())) + " sites found for domain: " + domain);
+			return null;
+		}
+
+		// users won't be always in a registered domain so we can exit here
+		if (siteset.size() == 0 && !checkContent)
+			return configuration;
+
+		String site = siteset.iterator().next();
+
+		// Get the root site config based on site name
+		HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
+
+		if (checkContent && siteConfig.size() == 0) {
+			logger.severe("Error: cannot find site root configuration in LDAP for site: " + site);
+			return null;
+		}
+
+		// Get the hostConfig from LDAP based on the site and hostname
+		HashMap<String, Object> hostConfig = LDAPHelper.checkLdapTree("(&(host=" + hostName + "))", "ou=Config,ou=" + site + ",ou=Sites,", "host");
+
+		if (checkContent && hostConfig.size() == 0) {
+			logger.severe("Error: cannot find host configuration in LDAP for host: " + hostName);
+			return null;
+		}
+
+		if (checkContent && !hostConfig.containsKey("host_ce")) {
+			logger.severe("Error: cannot find ce configuration in hostConfig for host: " + hostName);
+			return null;
+		}
+
+		if (hostConfig.containsKey("host_ce")) {
+			// Get the CE information based on the site and ce name for the host
+			HashMap<String, Object> ceConfig = LDAPHelper.checkLdapTree("(&(name=" + hostConfig.get("host_ce") + "))", "ou=CE,ou=Services,ou=" + site + ",ou=Sites,", "ce");
+
+			if (checkContent && ceConfig.size() == 0) {
+				logger.severe("Error: cannot find ce configuration in LDAP for CE: " + hostConfig.get("host_ce"));
+				return null;
+			}
+
+			configuration.putAll(ceConfig);
+		}
+		// We put the config together
+		configuration.putAll(voConfig);
+		configuration.putAll(siteConfig);
+		configuration.putAll(hostConfig);
+
+		// Overwrite values
+		configuration.put("organisation", "ALICE");
+		if (appConfig != null) {
+			Properties props = appConfig.getProperties();
+			for (Object s : props.keySet()) {
+				String key = (String) s;
+				configuration.put(key, props.get(key));
+			}
+		}
+
+		return configuration;
+	}
+
 }

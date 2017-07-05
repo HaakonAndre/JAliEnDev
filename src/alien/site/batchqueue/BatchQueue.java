@@ -10,11 +10,12 @@ import java.util.logging.Logger;
  */
 public abstract class BatchQueue {
 	protected Logger logger = null;
-	protected HashMap<String, Object> env = null;
+	protected HashMap<String, Object> config = null;
 
 	/**
 	 * Submit a new job agent to the queue
-	 * @param script 
+	 * 
+	 * @param script
 	 */
 	public abstract void submit(final String script);
 

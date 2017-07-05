@@ -206,7 +206,22 @@ public class LDAPHelper {
 	 * @return Map of result from the query, keys are fields-values from the LDAP tree
 	 */
 	public static final HashMap<String, Object> checkLdapTree(final String sParam, final String sRootExt) {
+		return checkLdapTree(sParam, sRootExt, "");
+	}
+
+	/**
+	 * @param sParam
+	 *            - search query
+	 * @param sRootExt
+	 *            - subpath
+	 * @param prependKey
+	 * @return Map of result from the query, keys are fields-values from the LDAP tree
+	 */
+	public static final HashMap<String, Object> checkLdapTree(final String sParam, final String sRootExt, String prependKey) {
 		final String sCacheKey = sParam + "\n" + sRootExt;
+		String prepend = "";
+		if (!prependKey.equals(""))
+			prepend = prependKey + "_";
 
 		HashMap<String, Object> result = cacheTree.get(sCacheKey);
 
@@ -257,10 +272,10 @@ public class LDAPHelper {
 								final TreeSet<String> vals = new TreeSet<>();
 								while (e.hasMore())
 									vals.add((String) e.next());
-								result.put(attr.getID().toLowerCase(), vals);
+								result.put(prepend + attr.getID().toLowerCase(), vals);
 							}
 							else
-								result.put(attr.getID().toLowerCase(), e.next());
+								result.put(prepend + attr.getID().toLowerCase(), e.next());
 						}
 					}
 				} finally {
@@ -375,4 +390,12 @@ public class LDAPHelper {
 		// Get the root site config based on domain
 		return LDAPHelper.checkLdapTree("(&(domain=" + domain + ")(objectClass=AliEnSite))", "ou=Sites,");
 	}
+
+	/**
+	 * @return the tree for the VO
+	 */
+	public static HashMap<String, Object> getVOConfig() {
+		return LDAPHelper.checkLdapTree("(&(objectClass=AliEnVOConfig))", "ou=Config,");
+	}
+
 }

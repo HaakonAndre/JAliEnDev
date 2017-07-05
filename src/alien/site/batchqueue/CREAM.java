@@ -9,14 +9,16 @@ import alien.log.LogUtils;
 /**
  * @author mmmartin
  */
-public class HTCONDOR extends BatchQueue {
+public class CREAM extends BatchQueue {
+
+	private boolean updateClassad = false;
 
 	/**
 	 * @param conf
 	 * @param logr
 	 *            logger
 	 */
-	public HTCONDOR(HashMap<String, Object> conf, Logger logr) {
+	public CREAM(HashMap<String, Object> conf, Logger logr) {
 		this.config = conf;
 		logger = logr;
 		logger = LogUtils.redirectToCustomHandler(logger, ((String) config.get("host_logdir")) + "JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
@@ -26,7 +28,7 @@ public class HTCONDOR extends BatchQueue {
 
 	@Override
 	public void submit(final String script) {
-		logger.info("Submit HTCONDOR");
+		logger.info("Submit CREAM");
 	}
 
 	@Override
