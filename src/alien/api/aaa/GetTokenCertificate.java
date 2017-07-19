@@ -5,6 +5,7 @@ import java.io.StringWriter;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Period;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAmount;
 
@@ -57,6 +58,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	final TokenCertificateType certificateType;
 	final String extension;
 	final int validity;
+	final X509Certificate userCertificate;
 
 	// incoming fields
 
@@ -71,8 +73,11 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	 * @param certificateType
 	 * @param extension
 	 * @param validity
+	 * @param userCertificate
+	 *            the certificate the user presented to identify itself. This will restrict the validity of the issued token
 	 */
-	public GetTokenCertificate(final AliEnPrincipal user, final String role, final TokenCertificateType certificateType, final String extension, final int validity) {
+	public GetTokenCertificate(final AliEnPrincipal user, final String role, final TokenCertificateType certificateType, final String extension, final int validity,
+			final X509Certificate userCertificate) {
 		setRequestUser(user);
 		setRoleRequest(role);
 
@@ -86,6 +91,11 @@ public class GetTokenCertificate extends Request implements Cacheable {
 
 		this.extension = extension;
 		this.validity = validity;
+
+		if (certificateType == TokenCertificateType.USER_CERTIFICATE && userCertificate == null)
+			throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
+
+		this.userCertificate = userCertificate;
 	}
 
 	@Override
@@ -98,6 +108,9 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			break;
 		case JOB_TOKEN:
 			builder = builder.setCn("Jobs").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequesterRole());
+			break;
+		case JOB_AGENT_TOKEN:
+			builder = builder.setCn("JobAgent");
 			break;
 		default:
 			// there is no other type at the moment
@@ -113,7 +126,27 @@ public class GetTokenCertificate extends Request implements Cacheable {
 
 		final TemporalAmount amount = Period.ofDays(validity <= 0 || validity > certificateType.getMaxValidity() ? 2 : validity);
 
-		final Certificate cert = rootCert.signCsr(csr).setRandomSerialNumber().setNotAfter(ZonedDateTime.now().plus(amount)).sign();
+		ZonedDateTime notAfter = ZonedDateTime.now().plus(amount);
+
+		if (userCertificate != null) {
+			final ZonedDateTime userNotAfter = userCertificate.getNotAfter().toInstant().atZone(ZoneId.systemDefault());
+
+			if (notAfter.isAfter(userNotAfter))
+				notAfter = userNotAfter;
+		}
+
+		javax.security.cert.X509Certificate partnerCertificateChain[] = getPartnerCertificate();
+
+		if (partnerCertificateChain != null) {
+			for (javax.security.cert.X509Certificate partner : partnerCertificateChain) {
+				final ZonedDateTime partnerNotAfter = partner.getNotAfter().toInstant().atZone(ZoneId.systemDefault());
+
+				if (notAfter.isAfter(partnerNotAfter))
+					notAfter = partnerNotAfter;
+			}
+		}
+
+		final Certificate cert = rootCert.signCsr(csr).setRandomSerialNumber().setNotAfter(notAfter).sign();
 
 		certificate = cert.getX509Certificate();
 		privateKey = csr.getPrivateKey();

@@ -14,7 +14,11 @@ public enum TokenCertificateType {
 	/**
 	 * The request is for a job token
 	 */
-	JOB_TOKEN(2);
+	JOB_TOKEN(2),
+	/**
+	 * A generic Job Agent identity that will be able to then request an actual job and run it
+	 */
+	JOB_AGENT_TOKEN(2);
 
 	private int maxValidityDays;
 
