@@ -58,7 +58,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		// Set metadata
 		out.setMetaInfo("user", commander.getUser().getName());
 		out.setMetaInfo("role", commander.getRole());
-		out.setMetaInfo("currentdir", commander.getCurrentDir().lfn);
+		out.setMetaInfo("currentdir", commander.getCurrentDir().getCanonicalName());
 		out.setMetaInfo("site", commander.getSite());
         
         session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, commander, out));
