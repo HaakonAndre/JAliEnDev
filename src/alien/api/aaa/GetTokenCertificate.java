@@ -34,24 +34,29 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	private static final RootCertificate rootCert;
 
 	static {
-		final String caFile = ConfigUtils.getConfig().gets("ca.file",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "alien.p12");
+		if (ConfigUtils.isCentralService()) {
+			final String caFile = ConfigUtils.getConfig().gets("ca.file",
+					System.getProperty("user.home") + System.getProperty("file.separator") + ".globus"
+							+ System.getProperty("file.separator") + "alien.p12");
 
-		final String caAlias = ConfigUtils.getConfig().gets("ca.alias", "alien");
+			final String caAlias = ConfigUtils.getConfig().gets("ca.alias", "alien");
 
-		final String caPassword = ConfigUtils.getConfig().gets("ca.password");
+			final String caPassword = ConfigUtils.getConfig().gets("ca.password");
 
-		RootCertificate rootCertTemp = null;
+			RootCertificate rootCertTemp = null;
 
-		try {
-			rootCertTemp = CA.loadRootCertificate(caFile, caPassword.toCharArray(), caAlias);
-		} catch (final Throwable t) {
-			System.err.println("Exception loading root CA certificate from " + caFile + " (alias " + caAlias + "), password '" + caPassword + "'");
-			System.err.println(t.getMessage());
-			t.printStackTrace();
-		}
+			try {
+				rootCertTemp = CA.loadRootCertificate(caFile, caPassword.toCharArray(), caAlias);
+			} catch (final Throwable t) {
+				System.err.println("Exception loading root CA certificate from " + caFile + " (alias " + caAlias
+						+ "), password '" + caPassword + "'");
+				System.err.println(t.getMessage());
+				t.printStackTrace();
+			}
 
-		rootCert = rootCertTemp;
+			rootCert = rootCertTemp;
+		} else
+			rootCert = null;
 	}
 
 	// outgoing fields
@@ -66,7 +71,8 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	private PrivateKey privateKey = null;
 
 	/**
-	 * Create a token certificate request for a specific user and role plus the other required fields
+	 * Create a token certificate request for a specific user and role plus the
+	 * other required fields
 	 *
 	 * @param user
 	 * @param role
@@ -74,10 +80,11 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	 * @param extension
 	 * @param validity
 	 * @param userCertificate
-	 *            the certificate the user presented to identify itself. This will restrict the validity of the issued token
+	 *            the certificate the user presented to identify itself. This
+	 *            will restrict the validity of the issued token
 	 */
-	public GetTokenCertificate(final AliEnPrincipal user, final String role, final TokenCertificateType certificateType, final String extension, final int validity,
-			final X509Certificate userCertificate) {
+	public GetTokenCertificate(final AliEnPrincipal user, final String role, final TokenCertificateType certificateType,
+			final String extension, final int validity, final X509Certificate userCertificate) {
 		setRequestUser(user);
 		setRoleRequest(role);
 
@@ -93,7 +100,8 @@ public class GetTokenCertificate extends Request implements Cacheable {
 		this.validity = validity;
 
 		if (certificateType == TokenCertificateType.USER_CERTIFICATE && userCertificate == null)
-			throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
+			throw new IllegalArgumentException(
+					"When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
 
 		this.userCertificate = userCertificate;
 	}
@@ -104,7 +112,8 @@ public class GetTokenCertificate extends Request implements Cacheable {
 
 		switch (certificateType) {
 		case USER_CERTIFICATE:
-			builder = builder.setCn("Users").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequesterRole());
+			builder = builder.setCn("Users").setCn(getEffectiveRequester().getName())
+					.setOu(getEffectiveRequesterRole());
 			break;
 		case JOB_TOKEN:
 			builder = builder.setCn("Jobs").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequesterRole());
@@ -124,7 +133,8 @@ public class GetTokenCertificate extends Request implements Cacheable {
 
 		final CsrWithPrivateKey csr = CA.createCsr().generateRequest(userDN);
 
-		final TemporalAmount amount = Period.ofDays(validity <= 0 || validity > certificateType.getMaxValidity() ? 2 : validity);
+		final TemporalAmount amount = Period
+				.ofDays(validity <= 0 || validity > certificateType.getMaxValidity() ? 2 : validity);
 
 		ZonedDateTime notAfter = ZonedDateTime.now().plus(amount);
 
@@ -210,7 +220,8 @@ public class GetTokenCertificate extends Request implements Cacheable {
 
 	@Override
 	public String getKey() {
-		// only cache user tokens, job tokens have the job ID in them and cannot be effectively cached
+		// only cache user tokens, job tokens have the job ID in them and cannot
+		// be effectively cached
 		if (certificateType == TokenCertificateType.USER_CERTIFICATE)
 			return getEffectiveRequester().getName() + "/" + getEffectiveRequesterRole();
 
@@ -219,7 +230,8 @@ public class GetTokenCertificate extends Request implements Cacheable {
 
 	@Override
 	public long getTimeout() {
-		// for the same user don't generate another certificate for 10 minutes but return the same one
+		// for the same user don't generate another certificate for 10 minutes
+		// but return the same one
 		return 1000L * 60 * 10;
 	}
 }
