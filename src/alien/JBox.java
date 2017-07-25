@@ -51,7 +51,7 @@ public class JBox {
 			e.printStackTrace();
 		}
 		
-		JBoxServer.startJBoxService(iDebug);
+		//JBoxServer.startJBoxService(iDebug);
 		TomcatServer.startTomcatServer(iDebug);
 	}
 }
