@@ -54,13 +54,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		}
 		setShellPrintWriter(os, "json");
         commander = new JAliEnCOMMander(userIdentity, null, null, null, out);        
-        
-		// Set metadata
-		out.setMetaInfo("user", commander.getUser().getName());
-		out.setMetaInfo("role", commander.getRole());
-		out.setMetaInfo("currentdir", commander.getCurrentDir().getCanonicalName());
-		out.setMetaInfo("site", commander.getSite());
-        
+
         session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, commander, out));
     }
     
@@ -149,7 +143,14 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					synchronized (commander) {
 						commander.setLine(out, fullCmd.toArray(new String[0]));
 						commander.notifyAll();
-					}					
+					}
+
+					// Set metadata
+					out.setMetaInfo("user", commander.getUser().getName());
+					out.setMetaInfo("role", commander.getRole());
+					out.setMetaInfo("currentdir", commander.getCurrentDir().getCanonicalName());
+					out.setMetaInfo("site", commander.getSite());
+
 					waitCommandFinish();
 		        }
 	        } catch (IOException e) {
