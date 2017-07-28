@@ -5,8 +5,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +22,6 @@ import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.batchqueue.BatchQueue;
-import alien.user.LDAPHelper;
 import apmon.ApMon;
 import apmon.ApMonException;
 import lazyj.commands.SystemCommand;
@@ -50,10 +47,10 @@ public class ComputingElement extends Thread {
 	private String site;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	private HashMap<String, Object> config = null;
-//	private HashMap<String, Object> ceConfig = null;
-//	private HashMap<String, Object> hostConfig = null;
-//	private HashMap<String, Object> siteConfig = null;
-//	private HashMap<String, Object> VOConfig = null;
+	// private HashMap<String, Object> ceConfig = null;
+	// private HashMap<String, Object> hostConfig = null;
+	// private HashMap<String, Object> siteConfig = null;
+	// private HashMap<String, Object> VOConfig = null;
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
@@ -282,8 +279,6 @@ public class ComputingElement extends Thread {
 	// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
 	// } // TODO: uncomment
 
-
-
 	// Prepares a hash to create the sitemap
 	void getSiteMap() {
 		HashMap<String, String> smenv = new HashMap<>();
@@ -321,7 +316,7 @@ public class ComputingElement extends Thread {
 
 		// environment field can have n values
 		if (config.containsKey("ce_environment")) {
-			ce_environment = getValuesFromLDAPField(ce_environment.get("environment"));
+			ce_environment = getValuesFromLDAPField(config.get("ce_environment"));
 		}
 
 		// submit,status and kill cmds can have n arguments

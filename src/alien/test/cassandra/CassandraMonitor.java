@@ -98,7 +98,8 @@ public class CassandraMonitor {
 
 							previousValues[i] = value.doubleValue();
 						}
-						paramValues.add(valueToSet);
+
+						insertValue(paramValues, valueToSet);
 					}
 				}
 				try {
@@ -113,10 +114,10 @@ public class CassandraMonitor {
 						// Calculate latencies, e.g. for read: (ReadTotalLatency1-ReadTotalLatency0)/(ReadLatency1-ReadLatency0)
 						// 0 scope=Write,name=TotalLatency, 4 scope=Write,name=Latency
 						paramNames.addElement("Write_Latency_Calculated");
-						paramValues.addElement(Double.valueOf(((Double)paramValues.get(0)).doubleValue() / ((Double)paramValues.get(4)).doubleValue()));
+						insertValue(paramValues, Double.valueOf(((Double) paramValues.get(0)).doubleValue() / ((Double) paramValues.get(4)).doubleValue()));
 						// 1 scope=Read,name=TotalLatency, 5 scope=Read,name=Latency
 						paramNames.addElement("Read_Latency_Calculated");
-						paramValues.addElement(Double.valueOf(((Double)paramValues.get(1)).doubleValue() / ((Double)paramValues.get(5)).doubleValue()));
+						insertValue(paramValues, Double.valueOf(((Double) paramValues.get(1)).doubleValue() / ((Double) paramValues.get(5)).doubleValue()));
 
 						logger.info("Sending parameters:");
 						for (int i = 0; i < paramNames.size(); i++)
@@ -142,6 +143,19 @@ public class CassandraMonitor {
 		}
 	}
 
+	/*
+	 * This method avoids errors inserting very small values into ML
+	 */
+	private static void insertValue(final Vector<Object> paramValues, final Double value) {
+		if (value.doubleValue() > Float.MIN_NORMAL)
+			paramValues.add(value);
+		else
+			paramValues.add(Double.valueOf(0));
+	}
+
+	/*
+	 * Gets the value of a MBean attribute from JMX
+	 */
 	private static Object getMbeanAttributeValue(final String MbeanObjectName, final String attributeName)
 			throws IOException, AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, MalformedObjectNameException {
 		Object attributeValue = null;

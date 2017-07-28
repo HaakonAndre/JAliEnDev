@@ -3,13 +3,18 @@ package alien.catalogue;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -22,6 +27,7 @@ import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.test.cassandra.DBCassandra;
+import lazyj.Format;
 import lazyj.cache.ExpirationCache;
 
 /**
@@ -614,57 +620,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		return ret;
 	}
 
-	// /**
-	// * @param base
-	// * @param pattern
-	// * @param parameters
-	// * @param metadata
-	// * @param table
-	// * @param level
-	// * @return LFNs that match
-	// */
-	// public static List<LFN_CSD> find(String base, String pattern, String parameters, String metadata) {
-	// return find(base, pattern, parameters, metadata, null, null);
-	// }
-	//
-	// public static List<LFN_CSD> find(String base, String pattern, String parameters, String metadata, String table, ConsistencyLevel level) {
-	// if (monitor != null)
-	// monitor.incrementCounter("LFN_CSD_find");
-	//
-	// final List<LFN_CSD> ret = new ArrayList<>();
-	//
-	// LFN_CSD baselfn = new LFN_CSD(base, true);
-	// if (!baselfn.exists || baselfn.type != 'd')
-	// return null;
-	//
-	// pattern = Format.replace(pattern, "*", ".*");
-	// Pattern p = Pattern.compile(pattern);
-	//
-	// List<LFN_CSD> ls = baselfn.list();
-	// List<LFN_CSD> new_entries = new ArrayList<>();
-	//
-	// boolean end_reached = ls.size() <= 0;
-	// while (!end_reached) {
-	// for (LFN_CSD l : ls) {
-	//
-	// if (l.type == 'd') {
-	// new_entries.add(l);
-	// continue;
-	// }
-	//
-	// Matcher m = p.matcher(l.child);
-	// if (m.find())
-	// ret.add(l);
-	// }
-	// end_reached = new_entries.size() <= 0 || ret.size() >= 50;
-	// ls.clear();
-	// ls.addAll(new_entries);
-	// new_entries.clear();
-	// }
-	//
-	// return ret;
-	// }
-
 	/**
 	 * @return physical locations of the file
 	 */
@@ -803,7 +758,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			}
 
 			// Insert into se_lookup
-			if (type == 'a' || type == 'f' || type == 'd') {
+			if ((type == 'a' || type == 'f') && size > 0) {
 				Set<Integer> seNumbers = pfns.keySet();
 				int modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 				if (pfns != null) {
