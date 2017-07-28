@@ -131,7 +131,12 @@ public class TomcatServer {
 	 */
 	private static Connector createSslConnector(int tomcatPort) throws Exception {
 		String keystorePass = new String(JAKeyStore.pass);
-		JAKeyStore.saveKeyStore(JAKeyStore.clientCert, "keystore.jks", JAKeyStore.pass);
+		if (!ConfigUtils.isCentralService()) {
+			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, "keystore.jks", JAKeyStore.pass);
+		} 
+		else {
+			JAKeyStore.saveKeyStore(JAKeyStore.hostCert, "keystore.jks", JAKeyStore.pass);
+		}
 
 		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 		
@@ -139,7 +144,12 @@ public class TomcatServer {
 		connector.setPort(tomcatPort);
 		connector.setSecure(true);
 		connector.setScheme("https");
-		connector.setAttribute("keyAlias", "User.cert");
+		if (!ConfigUtils.isCentralService()) {
+			connector.setAttribute("keyAlias", "Token.cert");
+		} 
+		else {
+			connector.setAttribute("keyAlias", "Host.cert");
+		}
 		connector.setAttribute("keystorePass", keystorePass);
 		connector.setAttribute("keystoreType", "JKS");
 		connector.setAttribute("keystoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "keystore.jks");
@@ -349,7 +359,7 @@ public class TomcatServer {
 		        synchronized (commander) {
 		        	commander.status.set(1);
 					commander.setLine(out, fullCmd.toArray(new String[0]));
-					commander.notifyAll();					
+					commander.notifyAll();
 				}					
 				
 				while (commander.status.get() == 1)
@@ -427,9 +437,23 @@ public class TomcatServer {
 		}
 		
 		// Request token certificate from JCentral
-		if (!ConfigUtils.isCentralService())
-		if (!requestTokenCert()) {	
-			return;
+		if (!ConfigUtils.isCentralService()) {
+			if (!requestTokenCert()) {	
+				return;
+			}
+			// Create keystore for token certificate
+			try {
+				if (!JAKeyStore.loadTokenKeyStorage()) {
+					System.err.println("Token Certificate could not be loaded.");
+					System.err.println("Exiting...");
+					return;
+				}
+				System.err.println(passACK);
+			} catch (final Exception e) {
+				logger.log(Level.SEVERE, "Error loading token", e);
+				System.err.println("Error loading token");
+				return;
+			}
 		}
 
 		// Set dynamic port range for Tomcat server

@@ -78,6 +78,11 @@ public class JAKeyStore {
 	 *
 	 */
 	public static KeyStore clientCert = null;
+	
+	/**
+	 *
+	 */
+	public static KeyStore tokenCert = null;
 
 	/**
 	 *
@@ -413,6 +418,37 @@ public class JAKeyStore {
 			jpf = getPassword();
 
 		addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
+
+		loadTrusts();
+		return true;
+	}
+	
+	/**
+	 * @return true if ok
+	 * @throws Exception
+	 */
+	public static boolean loadTokenKeyStorage() throws Exception {
+
+		final ExtProperties config = ConfigUtils.getConfig();
+
+		final String token_key = config.gets("token.cert.priv.location",
+				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
+
+		final String token_cert = config.gets("token.cert.pub.location",
+				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
+
+		if (!checkKeyPermissions(token_key, token_cert))
+			return false;
+
+		tokenCert = KeyStore.getInstance("JKS");
+
+		try {
+			tokenCert.load(null, pass);
+		} catch (@SuppressWarnings("unused") final Exception e) {
+			// ignore
+		}
+
+		addKeyPairToKeyStore(tokenCert, "Token.cert", token_key, token_cert, null);
 
 		loadTrusts();
 		return true;
