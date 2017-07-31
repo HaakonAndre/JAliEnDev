@@ -1,5 +1,6 @@
 package alien.api;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -178,6 +179,9 @@ public class DispatchSSLServer extends Thread {
 					else
 						logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
 			}
+		} catch (@SuppressWarnings("unused") final EOFException e) {
+			logger.log(Level.WARNING, "Client disconnected");
+			logger.log(Level.WARNING, "Lasted : " + lLasted + ", serialization : " + lSerialization);
 		} catch (final Throwable e) {
 			logger.log(Level.WARNING, "Lasted : " + lLasted + ", serialization : " + lSerialization, e);
 		} finally {
