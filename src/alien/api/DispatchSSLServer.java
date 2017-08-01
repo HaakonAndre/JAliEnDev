@@ -25,6 +25,7 @@ import javax.security.cert.X509Certificate;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import alien.api.taskQueue.GetMatchJob;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
@@ -144,13 +145,26 @@ public class DispatchSSLServer extends Thread {
 						else {
 							r.authorizeUserAndRole();
 
-							try {
-								r.run();
-							} catch (final Exception e) {
-								logger.log(Level.WARNING, "Returning an exception to the client", e);
+							boolean shouldRun = true;
 
-								r.setException(new ServerException(e.getMessage(), e));
+							if (r.getEffectiveRequester().isJobAgent() && !(r instanceof GetMatchJob)) {
+								// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)
+								r.setException(new ServerException("You are not allowed to call " + r.getClass().getName() + " as job agent", null));
+								shouldRun = false;
 							}
+
+							if (r.getEffectiveRequester().isJob()) {
+								// TODO : firewall all the commands that the job can have access to (whereis, access (read only for anything but the output directory ...))
+							}
+
+							if (shouldRun)
+								try {
+									r.run();
+								} catch (final Exception e) {
+									logger.log(Level.WARNING, "Returning an exception to the client", e);
+
+									r.setException(new ServerException(e.getMessage(), e));
+								}
 						}
 
 						lLasted += (System.currentTimeMillis() - lStart);
@@ -188,23 +202,20 @@ public class DispatchSSLServer extends Thread {
 			if (ois != null)
 				try {
 					ois.close();
-				} catch (@SuppressWarnings("unused")
-				final IOException ioe) {
+				} catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
 			if (oos != null)
 				try {
 					oos.close();
-				} catch (@SuppressWarnings("unused")
-				final IOException ioe) {
+				} catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
 			try {
 				connection.close();
-			} catch (@SuppressWarnings("unused")
-			final IOException ioe) {
+			} catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore
 			}
 		}
@@ -213,8 +224,7 @@ public class DispatchSSLServer extends Thread {
 	private static boolean isHostCertValid() {
 		try {
 			((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).checkValidity();
-		} catch (@SuppressWarnings("unused")
-		final CertificateException | KeyStoreException e) {
+		} catch (@SuppressWarnings("unused") final CertificateException | KeyStoreException e) {
 			return false;
 		}
 
@@ -238,8 +248,7 @@ public class DispatchSSLServer extends Thread {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1).trim());
 					address = address.substring(0, idx).trim();
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					port = defaultPort;
 				}
 		}

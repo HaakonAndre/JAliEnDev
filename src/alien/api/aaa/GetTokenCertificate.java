@@ -36,8 +36,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	static {
 		if (ConfigUtils.isCentralService()) {
 			final String caFile = ConfigUtils.getConfig().gets("ca.file",
-					System.getProperty("user.home") + System.getProperty("file.separator") + ".globus"
-							+ System.getProperty("file.separator") + "alien.p12");
+					System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "alien.p12");
 
 			final String caAlias = ConfigUtils.getConfig().gets("ca.alias", "alien");
 
@@ -48,14 +47,14 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			try {
 				rootCertTemp = CA.loadRootCertificate(caFile, caPassword.toCharArray(), caAlias);
 			} catch (final Throwable t) {
-				System.err.println("Exception loading root CA certificate from " + caFile + " (alias " + caAlias
-						+ "), password '" + caPassword + "'");
+				System.err.println("Exception loading root CA certificate from " + caFile + " (alias " + caAlias + "), password '" + caPassword + "'");
 				System.err.println(t.getMessage());
 				t.printStackTrace();
 			}
 
 			rootCert = rootCertTemp;
-		} else
+		}
+		else
 			rootCert = null;
 	}
 
@@ -83,47 +82,51 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	 *            the certificate the user presented to identify itself. This
 	 *            will restrict the validity of the issued token
 	 */
-	public GetTokenCertificate(final AliEnPrincipal user, final String role, final TokenCertificateType certificateType,
-			final String extension, final int validity, final X509Certificate userCertificate) {
+	public GetTokenCertificate(final AliEnPrincipal user, final String role, final TokenCertificateType certificateType, final String extension, final int validity,
+			final X509Certificate userCertificate) {
 		setRequestUser(user);
 		setRoleRequest(role);
 
-		if (certificateType == null)
-			throw new IllegalArgumentException("Certificate type cannot be null");
-
 		this.certificateType = certificateType;
-
-		if (certificateType == TokenCertificateType.JOB_TOKEN && (extension == null || extension.length() == 0))
-			throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
-
 		this.extension = extension;
 		this.validity = validity;
-
-		if (certificateType == TokenCertificateType.USER_CERTIFICATE && userCertificate == null)
-			throw new IllegalArgumentException(
-					"When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
-
 		this.userCertificate = userCertificate;
 	}
 
 	@Override
 	public void run() {
+		if (certificateType == null)
+			throw new IllegalArgumentException("Certificate type cannot be null");
+
 		DnBuilder builder = CA.dn().setC("ch").setO("AliEn");
 
 		switch (certificateType) {
 		case USER_CERTIFICATE:
-			builder = builder.setCn("Users").setCn(getEffectiveRequester().getName())
-					.setOu(getEffectiveRequesterRole());
+			if (getEffectiveRequester().isJob() || getEffectiveRequester().isJobAgent())
+				throw new IllegalArgumentException("You can't request a User token as JobAgent or Job");
+
+			if (userCertificate == null)
+				throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
+
+			builder = builder.setCn("Users").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequesterRole());
 			break;
 		case JOB_TOKEN:
+			if (!getEffectiveRequester().isJobAgent())
+				throw new IllegalArgumentException("Only a JobAgent can ask for a Job token");
+
+			if (extension == null || extension.length() == 0)
+				throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
+
 			builder = builder.setCn("Jobs").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequesterRole());
 			break;
 		case JOB_AGENT_TOKEN:
+			if (!getEffectiveRequester().canBecome("vobox"))
+				throw new IllegalArgumentException("You don't have permissions to ask for a JobAgent token");
+
 			builder = builder.setCn("JobAgent");
 			break;
 		default:
-			// there is no other type at the moment
-			break;
+			throw new IllegalArgumentException("Sorry, what?");
 		}
 
 		if (extension != null && extension.length() > 0)
@@ -133,8 +136,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 
 		final CsrWithPrivateKey csr = CA.createCsr().generateRequest(userDN);
 
-		final TemporalAmount amount = Period
-				.ofDays(validity <= 0 || validity > certificateType.getMaxValidity() ? 2 : validity);
+		final TemporalAmount amount = Period.ofDays(validity <= 0 || validity > certificateType.getMaxValidity() ? 2 : validity);
 
 		ZonedDateTime notAfter = ZonedDateTime.now().plus(amount);
 
@@ -145,16 +147,15 @@ public class GetTokenCertificate extends Request implements Cacheable {
 				notAfter = userNotAfter;
 		}
 
-		javax.security.cert.X509Certificate partnerCertificateChain[] = getPartnerCertificate();
+		final javax.security.cert.X509Certificate partnerCertificateChain[] = getPartnerCertificate();
 
-		if (partnerCertificateChain != null) {
-			for (javax.security.cert.X509Certificate partner : partnerCertificateChain) {
+		if (partnerCertificateChain != null)
+			for (final javax.security.cert.X509Certificate partner : partnerCertificateChain) {
 				final ZonedDateTime partnerNotAfter = partner.getNotAfter().toInstant().atZone(ZoneId.systemDefault());
 
 				if (notAfter.isAfter(partnerNotAfter))
 					notAfter = partnerNotAfter;
 			}
-		}
 
 		final Certificate cert = rootCert.signCsr(csr).setRandomSerialNumber().setNotAfter(notAfter).sign();
 

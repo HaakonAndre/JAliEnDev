@@ -12,7 +12,7 @@ import lazyj.StringFactory;
 
 /**
  * Implements java.security.Principal
- * 
+ *
  * @author Alina Grigoras
  * @since 02-04-2007
  */
@@ -22,7 +22,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	private final static List<String> admins = Arrays.asList("admin");
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -5393260803758989309L;
 
@@ -38,6 +38,8 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 */
 	private Set<String> roles = null;
 
+	private String defaultRole = null;
+
 	/**
 	 * When were the roles generated
 	 */
@@ -47,7 +49,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * building a Principal for ALICE user
-	 * 
+	 *
 	 * @param username
 	 */
 	AliEnPrincipal(final String username) {
@@ -57,7 +59,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	/**
 	 * Get one of the accounts that match the given DN (first in the set that we
 	 * got from LDAP).
-	 * 
+	 *
 	 * @return one account name from LDAP that has the DN
 	 */
 	@Override
@@ -67,7 +69,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * If known, all usernames associated to a DN
-	 * 
+	 *
 	 * @param names
 	 */
 	void setNames(final Set<String> names) {
@@ -79,7 +81,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * Get all the accounts that match the given DN
-	 * 
+	 *
 	 * @return set of account names that have the DN
 	 */
 	public Set<String> getNames() {
@@ -98,7 +100,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * Check if two principals are the same user
-	 * 
+	 *
 	 * @param user
 	 *            to compare
 	 * @return outcome of equals
@@ -124,7 +126,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * Get all the roles associated with this principal
-	 * 
+	 *
 	 * @return all roles defined in LDAP
 	 */
 	public Set<String> getRoles() {
@@ -151,23 +153,28 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * Get default user role, normally the same name as the account
-	 * 
+	 *
 	 * @return the name of the default role of this account
 	 */
 	public String getDefaultRole() {
+		if (defaultRole != null)
+			return defaultRole;
+
 		final Set<String> allroles = getRoles();
 
 		final String name = getName();
 
 		if (allroles.size() == 0 || allroles.contains(getName()))
-			return name;
+			defaultRole = name;
 
-		return allroles.iterator().next();
+		defaultRole = allroles.iterator().next();
+
+		return defaultRole;
 	}
 
 	/**
 	 * Check if this principal has the given role
-	 * 
+	 *
 	 * @param role
 	 *            role to check
 	 * @return <code>true</code> if the user belongs to this group
@@ -183,8 +190,57 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	/**
+	 * Set the default role for this user. It can only be one of the roles declared in LDAP (or itself, or "users"). The method will silently refuse to set an invalid role and will keep the previous
+	 * value.
+	 *
+	 * @param newRole
+	 * @return the previous default role
+	 */
+	public String setRole(final String newRole) {
+		final String oldRole = getDefaultRole();
+
+		if (canBecome(newRole))
+			defaultRole = newRole;
+
+		return oldRole;
+	}
+
+	private boolean jobAgentFlag = false;
+	
+	void setJobAgent(){
+		jobAgentFlag = true;
+	}
+	
+	/**
+	 * Check if this is a JobAgent token certificate
+	 *
+	 * @return <code>true</code> if the DN indicates that this is a JobAgent identity
+	 */
+	public boolean isJobAgent() {
+		return jobAgentFlag;
+	}
+
+	/**
+	 * @return <code>true</code> if the DN indicates that this is a regular job.
+	 * @see #getJobID()
+	 */
+	public boolean isJob() {
+		return false;
+	}
+
+	/**
+	 * Get the job ID that this job is executing
+	 *
+	 * @return task queue ID of the job in progress
+	 * @see #isJob()
+	 */
+	public Long getJobID() {
+		return Long.valueOf(-1);
+	}
+
+	/**
 	 * Check if this principal can become the given user/role
-	 * 
+	 *
 	 * @param role
 	 *            the role to verify
 	 * @return <code>true</code> if the role is one of this principal's accounts
@@ -219,7 +275,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * Return the default user role
-	 * 
+	 *
 	 * @return user role
 	 */
 	public static String userRole() {
@@ -228,7 +284,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * Check if that role name authorizes admin privileges
-	 * 
+	 *
 	 * @param role
 	 * @return is admin privileged or not
 	 */
@@ -246,7 +302,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	/**
 	 * Upon accepting a request, set this address to where the connection came
 	 * from
-	 * 
+	 *
 	 * @param remoteEndpoint
 	 */
 	public void setRemoteEndpoint(final InetAddress remoteEndpoint) {
@@ -255,15 +311,15 @@ public class AliEnPrincipal implements Principal, Serializable {
 		else
 			throw new IllegalAccessError("You are not allowed to overwrite this field!");
 	}
-	
+
 	/**
 	 * Returns user list for a role
-	 * 
+	 *
 	 * @param role
 	 * @return list of users
 	 */
-	public static Set<String> getRoleMembers( String role ){
-		if( role == null || role.equals("") )
+	public static Set<String> getRoleMembers(final String role) {
+		if (role == null || role.equals(""))
 			return null;
 		final Set<String> sUsers = LDAPHelper.checkLdapInformation("uid=" + role, "ou=Roles,", "users");
 		return sUsers;
