@@ -206,11 +206,11 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	private boolean jobAgentFlag = false;
-	
-	void setJobAgent(){
+
+	void setJobAgent() {
 		jobAgentFlag = true;
 	}
-	
+
 	/**
 	 * Check if this is a JobAgent token certificate
 	 *
@@ -220,12 +220,18 @@ public class AliEnPrincipal implements Principal, Serializable {
 		return jobAgentFlag;
 	}
 
+	private Long jobID = null;
+
+	void setJob(final Long jobID) {
+		this.jobID = jobID;
+	}
+
 	/**
 	 * @return <code>true</code> if the DN indicates that this is a regular job.
 	 * @see #getJobID()
 	 */
 	public boolean isJob() {
-		return false;
+		return jobID != null;
 	}
 
 	/**
@@ -235,7 +241,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @see #isJob()
 	 */
 	public Long getJobID() {
-		return Long.valueOf(-1);
+		return jobID;
 	}
 
 	/**
