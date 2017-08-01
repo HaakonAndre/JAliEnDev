@@ -3,18 +3,13 @@ package alien.catalogue;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
@@ -27,7 +22,6 @@ import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.test.cassandra.DBCassandra;
-import lazyj.Format;
 import lazyj.cache.ExpirationCache;
 
 /**
@@ -419,12 +413,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		String str = "LFN (" + canonicalName + "): " + path + " " + child + "\n - Type: " + type;
 
 		// if (type != 'd') {
-		str += "\n - Size: " + size + "\n - Checksum: " + checksum + "\n - Perm: " + perm + "\n - Owner: " + owner + "\n - Gowner: " + gowner + "\n - JobId: " + jobid + "\n - Id: " + id
-				+ "\n - Ctime: " + ctime;
+		str += "\n - Size: " + size + "\n - Checksum: " + checksum + "\n - Perm: " + perm + "\n - Owner: " + owner + "\n - Gowner: " + gowner + "\n - JobId: " + jobid + "\n - Id: " + id + "\n - pId: "
+				+ parent_id + "\n - Ctime: " + ctime;
 		if (pfns != null)
 			str += "\n - pfns: " + pfns.toString();
 		if (metadata != null)
-			str += "\n - metadata: " + metadata.toString();
+			str += "\n - metadata: " + metadata.toString() + "\n";
 		// }
 
 		return str;

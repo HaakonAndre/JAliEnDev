@@ -3,6 +3,7 @@ package alien.catalogue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -15,6 +16,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.nfunk.jep.JEP;
 
 import com.datastax.driver.core.ConsistencyLevel;
 
@@ -42,7 +45,7 @@ public class LFNCSDUtils {
 	static transient final Monitor monitor = MonitorFactory.getMonitor(LFNCSDUtils.class.getCanonicalName());
 
 	/** Thread pool */
-	static ThreadPoolExecutor tPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(1); // TODO Runtime.getRuntime().availableProcessors()
+	static ThreadPoolExecutor tPool = (ThreadPoolExecutor) Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
 	static {
 		tPool.setKeepAliveTime(1, TimeUnit.MINUTES);
@@ -129,11 +132,13 @@ public class LFNCSDUtils {
 			index++;
 		}
 
+		Pattern pat = Pattern.compile(file_pattern);
+
 		logger.info("Going to recurseAndFilterLFNs: " + path + " - " + file_pattern + " - " + index + " - " + flags + " - " + path_parts.toString());
 
 		counter_left.incrementAndGet();
 		try {
-			tPool.submit(new RecurseLFNs(ret, counter_left, path, file_pattern, index, path_parts, flags));
+			tPool.submit(new RecurseLFNs(ret, counter_left, path, pat, index, path_parts, flags, metadata));
 		} catch (RejectedExecutionException ree) {
 			logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit: " + ree);
 			return null;
@@ -141,7 +146,7 @@ public class LFNCSDUtils {
 
 		while (counter_left.get() > 0) {
 			try {
-				Thread.sleep(1000);
+				Thread.sleep(200);
 			} catch (InterruptedException e) {
 				logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't wait?: " + e);
 			}
@@ -154,13 +159,14 @@ public class LFNCSDUtils {
 		final Collection<LFN_CSD> col;
 		final AtomicInteger counter_left;
 		final String base;
-		final String file_pattern;
+		final Pattern file_pattern;
 		final int index;
 		final ArrayList<String> parts;
 		final int flags;
+		final String metadata;
 
-		public RecurseLFNs(final Collection<LFN_CSD> col, final AtomicInteger counter_left, final String base, final String file_pattern, final int index, final ArrayList<String> parts,
-				final int flags) {
+		public RecurseLFNs(final Collection<LFN_CSD> col, final AtomicInteger counter_left, final String base, final Pattern file_pattern, final int index, final ArrayList<String> parts,
+				final int flags, final String metadata) {
 			this.col = col;
 			this.counter_left = counter_left;
 			this.base = base;
@@ -168,6 +174,7 @@ public class LFNCSDUtils {
 			this.index = index;
 			this.parts = parts;
 			this.flags = flags;
+			this.metadata = metadata;
 		}
 
 		@Override
@@ -193,9 +200,17 @@ public class LFNCSDUtils {
 
 			Pattern p;
 			if (lastpart)
-				p = Pattern.compile(file_pattern);
+				p = this.file_pattern;
 			else
 				p = Pattern.compile(parts.get(index));
+
+			JEP jep = null;
+			String expression = null;
+
+			if (metadata != null && !metadata.equals("")) {
+				jep = new JEP();
+				expression = Format.replace(Format.replace(Format.replace(metadata, "and", "&&"), "or", "||"), ":", "__");
+			}
 
 			// loop entries
 			for (LFN_CSD lfnc : list) {
@@ -206,8 +221,42 @@ public class LFNCSDUtils {
 						// Pattern p = Pattern.compile(file_pattern);
 						Matcher m = p.matcher(lfnc.child);
 						if (m.matches()) {
-							System.out.println("Matches: " + lfnc.child);
-							col.add(lfnc);
+							if (jep != null) {
+								// we check the metadata of the file against our expression
+								Set<String> keys_values = new HashSet<>();
+
+								// set the variable values from the metadata map
+								for (String s : lfnc.metadata.keySet()) {
+									Double value;
+									try {
+										value = Double.valueOf(lfnc.metadata.get(s));
+									} catch (NumberFormatException e) {
+										logger.info("Skipped: " + s + e);
+										continue;
+									}
+									keys_values.add(s);
+									jep.addVariable(s, value);
+								}
+
+								try {
+									// This should return 1.0 or 0.0
+									jep.parseExpression(expression);
+									Object result = jep.getValueAsObject();
+									if (result != null && result instanceof Double && ((Double) result).intValue() == 1.0) {
+										col.add(lfnc);
+									}
+								} catch (Exception e) {
+									logger.info("RecurseLFNs metadata - cannot get result: " + e);
+								}
+
+								// unset the variables for the next lfnc to be processed
+								for (String s : keys_values) {
+									jep.setVarValue(s, null);
+								}
+							}
+							else {
+								col.add(lfnc);
+							}
 						}
 					}
 				}
@@ -217,14 +266,12 @@ public class LFNCSDUtils {
 						// if we already passed the hierarchy introduced on the command, all dirs are valid
 						try {
 							if (includeDirs) {
-								// Pattern p = Pattern.compile(file_pattern);
 								Matcher m = p.matcher(lfnc.child);
 								if (m.matches())
 									col.add(lfnc);
 							}
 							counter_left.incrementAndGet();
-							System.out.println("Submit(l): " + base + lfnc.child + "/");
-							tPool.submit(new RecurseLFNs(col, counter_left, base + lfnc.child + "/", file_pattern, index + 1, parts, flags));
+							tPool.submit(new RecurseLFNs(col, counter_left, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata));
 						} catch (RejectedExecutionException ree) {
 							logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit dir(l) - " + base + lfnc.child + "/" + ": " + ree);
 							counter_left.decrementAndGet();
@@ -232,14 +279,12 @@ public class LFNCSDUtils {
 					}
 					else {
 						// while exploring introduced dir, need to check patterns
-						// Pattern p = Pattern.compile(parts.get(index));
 						Matcher m = p.matcher(lfnc.child);
 						if (m.matches()) {
 							// submit the dir
 							try {
 								counter_left.incrementAndGet();
-								System.out.println("Submit: " + base + lfnc.child + "/");
-								tPool.submit(new RecurseLFNs(col, counter_left, base + lfnc.child + "/", file_pattern, index + 1, parts, flags));
+								tPool.submit(new RecurseLFNs(col, counter_left, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata));
 							} catch (RejectedExecutionException ree) {
 								logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit dir - " + base + lfnc.child + "/" + ": " + ree);
 								counter_left.decrementAndGet();
