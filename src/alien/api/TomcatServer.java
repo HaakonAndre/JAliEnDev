@@ -47,9 +47,6 @@ public class TomcatServer {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
-	
-	public static final String passACK = "OKPASSACK";
-	public static final String passNOACK = "NOPASSACK";
 
 	Tomcat tomcat;
 
@@ -423,7 +420,6 @@ public class TomcatServer {
 				System.err.println("Exiting...");
 				return;
 			}
-			System.err.println(passACK);
 		} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
 			logger.log(Level.SEVERE, "Wrong password! Try again", e);
 			System.err.println("Wrong password! Try again");
@@ -448,7 +444,6 @@ public class TomcatServer {
 					System.err.println("Exiting...");
 					return;
 				}
-				System.err.println(passACK);
 			} catch (final Exception e) {
 				logger.log(Level.SEVERE, "Error loading token", e);
 				System.err.println("Error loading token");
@@ -459,7 +454,6 @@ public class TomcatServer {
 		// Set dynamic port range for Tomcat server
 		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
 		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
-		boolean tryNext = false;
 		int port = 8097;
 		
 		// Try to launch Tomcat on default port
@@ -468,7 +462,7 @@ public class TomcatServer {
 			ssocket.close();
 			// Actually start Tomcat
 			tomcatServer = new TomcatServer(port, iDebugLevel);
-			
+
 			logger.log(Level.INFO, "Tomcat listening on port " + port);
 			System.out.println("Tomcat is listening on port " + port);
 			return;		// Everything's ok, exit
@@ -476,25 +470,22 @@ public class TomcatServer {
 		} catch (final Exception ioe) {
 			// Port is already in use, maybe there's another user on the machine...
 			logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
-			tryNext = true;
 		}
 		
 		// Try another ports in range
-		if (tryNext) {
-			for (port = portMin; port < portMax; port++) {
-				try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
-				{
-					ssocket.close();
-					// Actually start Tomcat
-					tomcatServer = new TomcatServer(port, iDebugLevel);
-					
-					logger.log(Level.INFO, "Tomcat listening on port " + port);
-					System.out.println("Tomcat is listening on port " + port);
-					break;
-				} catch (final Exception ioe) {
-					// Try next one
-					logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
-				}
+		for (port = portMin; port < portMax; port++) {
+			try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
+			{
+				ssocket.close();
+				// Actually start Tomcat
+				tomcatServer = new TomcatServer(port, iDebugLevel);
+
+				logger.log(Level.INFO, "Tomcat listening on port " + port);
+				System.out.println("Tomcat is listening on port " + port);
+				break;
+			} catch (final Exception ioe) {
+				// Try next one
+				logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
 			}
 		}
 	}
