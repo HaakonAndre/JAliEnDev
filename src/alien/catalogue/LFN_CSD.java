@@ -49,6 +49,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public static final UUID root_uuid = UUID.nameUUIDFromBytes("root".getBytes()); // 63a9f0ea-7bb9-3050-b96b-649e85481845
 
 	/**
+	 * Pool of PreparedStatements
+	 */
+	private static final HashMap<String, PreparedStatement> psPool = new HashMap<>();
+
+	/**
 	 * Unique Ctime for auto insertion
 	 */
 	public static Date ctime_fixed = null;
@@ -244,7 +249,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				if (session == null)
 					return;
 
-				PreparedStatement statement = session.prepare("select checksum,ctime,gowner,jobid,metadata,owner,perm,pfns,size,type from " + tm + " where parent_id = ? and id = ?");
+				PreparedStatement statement = getOrInsertPreparedStatement(session,
+						"select checksum,ctime,gowner,jobid,metadata,owner,perm,pfns,size,type from " + tm + " where parent_id = ? and id = ?");
 				BoundStatement boundStatement = new BoundStatement(statement);
 				boundStatement.bind(this.parent_id, this.id);
 
@@ -257,6 +263,21 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				return;
 			}
 		}
+	}
+
+	/**
+	 * @param session
+	 * @param querykey
+	 * @return preparedstatement for the query
+	 */
+	public static PreparedStatement getOrInsertPreparedStatement(Session session, String querykey) {
+		if (psPool.containsKey(querykey))
+			return psPool.get(querykey);
+
+		PreparedStatement ps = session.prepare(querykey);
+		psPool.put(querykey, ps);
+
+		return ps;
 	}
 
 	/**
@@ -342,7 +363,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			for (int i = 0; i < chunksize + 1; i++) {
 				final UUID cachedUuid = dirCache.get(pathAppended);
 				if (cachedUuid == null) {
-					PreparedStatement statement = session.prepare("select child_id from " + t + " where path_id = ? and path = ?");
+					PreparedStatement statement = getOrInsertPreparedStatement(session, "select child_id from " + t + " where path_id = ? and path = ?");
 					BoundStatement boundStatement = new BoundStatement(statement);
 					boundStatement.bind(path_id, (i == 0 ? "/" : path_chunks[i - 1]));
 					boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
@@ -389,7 +410,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (session == null)
 				return null;
 
-			PreparedStatement statement = session.prepare("select child_id from " + t + " where path_id = ? and path = ?");
+			PreparedStatement statement = getOrInsertPreparedStatement(session, "select child_id from " + t + " where path_id = ? and path = ?");
 			BoundStatement boundStatement = new BoundStatement(statement);
 			boundStatement.bind(parent_id, name);
 			boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
@@ -591,7 +612,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				if (session == null)
 					return null;
 
-				PreparedStatement statement = session.prepare("select path,child_id from " + t + " where path_id = ?");
+				PreparedStatement statement = getOrInsertPreparedStatement(session, "select path,child_id from " + t + " where path_id = ?");
 				BoundStatement boundStatement = new BoundStatement(statement);
 				boundStatement.bind(this.id);
 
@@ -654,7 +675,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (session == null)
 				return null;
 
-			PreparedStatement statement = session.prepare("select pfns from " + t + " where parent_id = ? and id = ?");
+			PreparedStatement statement = getOrInsertPreparedStatement(session, "select pfns from " + t + " where parent_id = ? and id = ?");
 			BoundStatement boundStatement = new BoundStatement(statement);
 			boundStatement.bind(this.parent_id, this.id);
 
@@ -724,7 +745,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			BoundStatement boundStatement;
 
 			// Insert the entry in the index
-			statement = session.prepare("INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
+			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
 			boundStatement = new BoundStatement(statement);
 			boundStatement.bind(parent_id, child, ctime, id, Integer.valueOf(flag));
 			boundStatement.setConsistencyLevel(cl);
@@ -732,12 +753,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			// Insert the entry in the metadata
 			if (type == 'a' || type == 'f' || type == 'm' || type == 'l') {
-				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
+				statement = getOrInsertPreparedStatement(session,
+						"INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
 				boundStatement = new BoundStatement(statement);
 				boundStatement.bind(parent_id, id, ctime, gowner, Long.valueOf(jobid), checksum, owner, perm, pfns, Long.valueOf(size), String.valueOf(type), metadata);
 			}
 			else { // 'd'
-				statement = session.prepare("INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?)");
+				statement = getOrInsertPreparedStatement(session, "INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, owner, perm, size, type)" + " VALUES (?,?,?,?,?,?,?,?,?)");
 				boundStatement = new BoundStatement(statement);
 				boundStatement.bind(parent_id, id, ctime, gowner, Long.valueOf(jobid), owner, perm, Long.valueOf(size), String.valueOf(type));
 			}
@@ -757,7 +779,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				int modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 				if (pfns != null) {
 					for (int seNumber : seNumbers) {
-						statement = session.prepare("INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
+						statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
 						boundStatement = new BoundStatement(statement);
 						boundStatement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner);
 						boundStatement.setConsistencyLevel(cl);

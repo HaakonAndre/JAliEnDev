@@ -205,12 +205,11 @@ public class LFNCSDUtils {
 				p = Pattern.compile(parts.get(index));
 
 			JEP jep = null;
-			String expression = null;
 
 			if (metadata != null && !metadata.equals("")) {
 				jep = new JEP();
 				jep.setAllowUndeclared(true);
-				expression = Format.replace(Format.replace(Format.replace(metadata, "and", "&&"), "or", "||"), ":", "__");
+				String expression = Format.replace(Format.replace(Format.replace(metadata, "and", "&&"), "or", "||"), ":", "__");
 				jep.parseExpression(expression);
 			}
 
