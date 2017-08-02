@@ -209,7 +209,9 @@ public class LFNCSDUtils {
 
 			if (metadata != null && !metadata.equals("")) {
 				jep = new JEP();
+				jep.setAllowUndeclared(true);
 				expression = Format.replace(Format.replace(Format.replace(metadata, "and", "&&"), "or", "||"), ":", "__");
+				jep.parseExpression(expression);
 			}
 
 			// loop entries
@@ -240,7 +242,6 @@ public class LFNCSDUtils {
 
 								try {
 									// This should return 1.0 or 0.0
-									jep.parseExpression(expression);
 									Object result = jep.getValueAsObject();
 									if (result != null && result instanceof Double && ((Double) result).intValue() == 1.0) {
 										col.add(lfnc);
