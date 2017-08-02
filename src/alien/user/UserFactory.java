@@ -50,7 +50,8 @@ public final class UserFactory {
 	 * Get the account corresponding to this certificate chain
 	 *
 	 * @param certChain
-	 * @return account, or <code>null</code> if no account has this certificate associated to it
+	 * @return account, or <code>null</code> if no account has this certificate
+	 *         associated to it
 	 */
 	public static AliEnPrincipal getByCertificate(final javax.security.cert.X509Certificate[] certChain) {
 		final ArrayList<X509Certificate> certs = new ArrayList<>(certChain.length);
@@ -68,7 +69,8 @@ public final class UserFactory {
 	 * Get the account corresponding to this certificate chain
 	 *
 	 * @param certChain
-	 * @return account, or <code>null</code> if no account has this certificate associated to it
+	 * @return account, or <code>null</code> if no account has this certificate
+	 *         associated to it
 	 */
 	public static AliEnPrincipal getByCertificate(final X509Certificate[] certChain) {
 		for (int i = 0; i < certChain.length; i++) {
@@ -109,7 +111,8 @@ public final class UserFactory {
 	 * Get the account corresponding to this certificate DN
 	 *
 	 * @param dn
-	 * @return account, or <code>null</code> if no account has this certificate associated to it
+	 * @return account, or <code>null</code> if no account has this certificate
+	 *         associated to it
 	 */
 	public static AliEnPrincipal getByDN(final String dn) {
 		final Set<AliEnPrincipal> allPrincipal = getAllByDN(dn);
@@ -121,9 +124,13 @@ public final class UserFactory {
 	}
 
 	/**
-	 * Transform a DN from the comma notation to slash notation, in reverse order. Example:
+	 * Transform a DN from the comma notation to slash notation, in reverse
+	 * order. Example:
 	 *
-	 * Input: CN=Alina Gabriela Grigoras,CN=659434,CN=agrigora,OU=Users,OU=Organic Units,DC=cern,DC=ch Output: /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=agrigora/CN=659434/CN=Alina Gabriela Grigoras
+	 * Input: CN=Alina Gabriela
+	 * Grigoras,CN=659434,CN=agrigora,OU=Users,OU=Organic Units,DC=cern,DC=ch
+	 * Output: /DC=ch/DC=cern/OU=Organic
+	 * Units/OU=Users/CN=agrigora/CN=659434/CN=Alina Gabriela Grigoras
 	 *
 	 * @param subject
 	 * @return AliEn-style subject
@@ -153,6 +160,34 @@ public final class UserFactory {
 	 * @see #transformDN(String)
 	 */
 	public static Set<AliEnPrincipal> getAllByDN(final String dn) {
+		// If it is a token cert
+		if (dn.startsWith("/C=ch/O=AliEn")) {
+			AliEnPrincipal p = null;
+
+			if (dn.contains("/CN=JobAgent")) {
+				p = getByUsername("jobagent");
+				p.setJobAgent();
+			}
+			else
+			if (dn.contains("/CN=Job")) {
+				// Assuming we have user or job token, parse username to get identity
+				// /C=ch/O=AliEn/CN=group/CN=username/OU=role/OU=extension
+				//                           ^      ^             (jobID)
+				p = getByUsername(dn.substring(dn.lastIndexOf("/CN=") + 4, dn.indexOf("/OU=")));
+				p.setJob(Long.valueOf(dn.substring(dn.lastIndexOf("/OU=") + 4)));
+			}
+			else
+			if (dn.contains("/CN=Users")) {
+				p = getByUsername(dn.substring(dn.lastIndexOf("/CN=") + 4, dn.indexOf("/OU=")));
+			}
+
+			if (p != null) {
+				final Set<AliEnPrincipal> ret = new LinkedHashSet<>();
+				ret.add(p);
+				return ret;
+			}
+		}
+
 		final Set<String> check = LDAPHelper.checkLdapInformation("subject=" + dn, "ou=People,", "uid");
 
 		if (check != null && check.size() > 0) {
