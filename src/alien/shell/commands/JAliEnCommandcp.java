@@ -21,6 +21,7 @@ import java.util.Vector;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -590,10 +591,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	}
 
 	private static final ExecutorService UPLOAD_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE,
-			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, r -> {
-				final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
+			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new ThreadFactory() {
+				@Override
+				public Thread newThread(Runnable r) {
+					final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
 
-				return t;
+					return t;
+				}
 			});
 
 	/**
