@@ -55,7 +55,8 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] jAliEnCommandList = new String[] { "ls", "get", "cat", "whereis", "cp", "cd", "time", "mkdir", "find", "listFilesFromCollection", "scrlog", "submit", "motd",
 			"access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "role", "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime", "addFileToCollection",
 			"addMirror", "addTag", "addTagValue", "chgroup", "chown", "createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo", "jquota", "killTransfer", "listSEDistance", "listTransfer",
-			"md5sum", "mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups", "token" };
+			"md5sum", "mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups",
+			"token" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "addTrigger", "addHost", "queue", "register", "addSE", "addUser", "calculateFileQuota", "calculateJobQuota", "groupmembers" };
 
@@ -91,11 +92,6 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 *
 	 */
-	protected String role;
-
-	/**
-	 *
-	 */
 	protected String site;
 
 	private final String myHome;
@@ -119,36 +115,32 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 */
 	public JAliEnCOMMander() {
-		this(null, null, null, null, null);
+		this(null, null, null, null);
 	}
-	
+
 	/**
 	 * @param user
-	 * @param role
 	 * @param curDir
 	 * @param site
 	 * @param out
 	 */
-	public JAliEnCOMMander(final AliEnPrincipal user, final String role, final LFN curDir, final String site, final UIPrintWriter out) {
+	public JAliEnCOMMander(final AliEnPrincipal user, final LFN curDir, final String site, final UIPrintWriter out) {
 		c_api = new CatalogueApiUtils(this);
 
 		q_api = new TaskQueueApiUtils(this);
 
 		this.user = (user != null) ? user : AuthorizationFactory.getDefaultUser();
-		this.role = (role != null) ? role : this.user.getDefaultRole();
 		this.site = (site != null) ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
 		myHome = UsersHelper.getHomeDir(this.user.getName());
 		localFileCash = new HashMap<>();
 
 		this.out = out;
 		degraded = false;
-		
-		if (curDir == null) {
+
+		if (curDir == null)
 			initializeJCentralConnection();
-		}
-		else {
+		else
 			this.curDir = curDir;
-		}
 
 		setName("Commander");
 	}
@@ -248,15 +240,6 @@ public class JAliEnCOMMander extends Thread {
 	}
 
 	/**
-	 * get the user's role
-	 *
-	 * @return user role
-	 */
-	public String getRole() {
-		return role;
-	}
-
-	/**
 	 * get the current directory
 	 *
 	 * @return LFN of the current directory
@@ -297,7 +280,7 @@ public class JAliEnCOMMander extends Thread {
 	 * Current status : 0 = idle, 1 = busy executing a command
 	 */
 	public AtomicInteger status = new AtomicInteger(0);
-	
+
 	public volatile boolean kill = false;
 
 	private void waitForCommand() {
@@ -438,14 +421,11 @@ public class JAliEnCOMMander extends Thread {
 					if ("whoami".equals(comm))
 						out.printOutln(getUsername());
 					else
-						if ("roleami".equals(comm))
-							out.printOutln(getRole());
+						if ("blackwhite".equals(comm))
+							out.blackwhitemode();
 						else
-							if ("blackwhite".equals(comm))
-								out.blackwhitemode();
-							else
-								if ("color".equals(comm))
-									out.colourmode();
+							if ("color".equals(comm))
+								out.colourmode();
 				// else if ("shutdown".equals(comm))
 				// jbox.shutdown();
 				// } else if (!"setshell".equals(comm)) {
@@ -501,10 +481,10 @@ public class JAliEnCOMMander extends Thread {
 	public void flush() {
 		if (degraded) {
 			out.degraded();
-			out.setenv(UsersHelper.getHomeDir(user.getName()), getUsername(), getRole());
+			out.setenv(UsersHelper.getHomeDir(user.getName()), getUsername());
 		}
 		else
-			out.setenv(getCurrentDirName(), getUsername(), getRole());
+			out.setenv(getCurrentDirName(), getUsername());
 		out.flush();
 	}
 

@@ -80,7 +80,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		for (final String sPath : alPaths) {
 			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, sPath);
 
-			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user, commander.role);
+			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 			expandedPaths.addAll(sources);
 		}
@@ -164,7 +164,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		}
 
 		if (pathsNotFound.length() > 0)
-			out.setReturnCode(1, "No such file or directory: [" + pathsNotFound+"]");
+			out.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
 
 		// if (out.isRootPrinter())
 		// out.setReturnArgs(deserializeForRoot());

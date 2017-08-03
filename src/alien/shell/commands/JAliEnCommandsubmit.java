@@ -50,8 +50,10 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 						if (queueId > 0) {
 							if (!isSilent())
 								out.setField("Your new job ID is ", ShellColor.blue() + queueId + ShellColor.reset());
-						} else if (!isSilent())
-							out.setField("Error submitting ", alArguments.get(0));
+						}
+						else
+							if (!isSilent())
+								out.setField("Error submitting ", alArguments.get(0));
 					}
 
 					catch (final ServerException e) {
@@ -59,40 +61,46 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 							out.setField("Error submitting ", alArguments.get(0) + "," + e.getMessage());
 					}
 
-			} else if (content != null)
-				try {
-					final JDL jdl;
-					final String[] args = alArguments.size() > 1 ? alArguments.subList(1, alArguments.size() - 1).toArray(new String[0]) : null;
-
+			}
+			else
+				if (content != null)
 					try {
-						jdl = TaskQueueUtils.applyJDLArguments(content, args);
-					} catch (final IOException ioe) {
-						if (!isSilent())
-							out.printErrln("Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
-						return;
+						final JDL jdl;
+						final String[] args = alArguments.size() > 1 ? alArguments.subList(1, alArguments.size() - 1).toArray(new String[0]) : null;
+
+						try {
+							jdl = TaskQueueUtils.applyJDLArguments(content, args);
+						} catch (final IOException ioe) {
+							if (!isSilent())
+								out.printErrln("Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
+							return;
+						}
+						jdl.set("JDLPath", alArguments.get(0));
+
+						queueId = commander.q_api.submitJob(jdl);
+						if (queueId > 0) {
+							if (!isSilent())
+								out.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
+						}
+						else
+							if (!isSilent())
+								out.printErrln("Error submitting " + alArguments.get(0));
 					}
-					jdl.set("JDLPath", alArguments.get(0));
 
-					queueId = commander.q_api.submitJob(jdl);
-					if (queueId > 0) {
+					catch (final ServerException e) {
 						if (!isSilent())
-							out.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
-					} else if (!isSilent())
-						out.printErrln("Error submitting " + alArguments.get(0));
-				}
-
-				catch (final ServerException e) {
+							out.printErrln("Error submitting " + alArguments.get(0) + ", " + e.getMessage());
+					}
+				else
 					if (!isSilent())
-						out.printErrln("Error submitting " + alArguments.get(0) + ", " + e.getMessage());
-				}
-			else if (!isSilent())
-				out.printErrln("Could not read the contents of " + fout.getAbsolutePath());
+						out.printErrln("Could not read the contents of " + fout.getAbsolutePath());
 		}
 
-		else if (!isSilent()) {
-			out.printErrln("Not able to get the file " + alArguments.get(0));
-			out.setReturnCode(1, "Not able to get the file " + alArguments.get(0));
-		}
+		else
+			if (!isSilent()) {
+				out.printErrln("Not able to get the file " + alArguments.get(0));
+				out.setReturnCode(1, "Not able to get the file " + alArguments.get(0));
+			}
 	}
 
 	/**

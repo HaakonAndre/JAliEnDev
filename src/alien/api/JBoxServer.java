@@ -139,7 +139,7 @@ public class JBoxServer extends Thread {
 		ssocket = new ServerSocket(listeningPort, 10, localhost);
 		this.port = ssocket.getLocalPort();
 		this.iDebugLevel = iDebug;
-		
+
 		password = UUID.randomUUID().toString();
 
 		// here we should get home directory
@@ -201,7 +201,7 @@ public class JBoxServer extends Thread {
 
 				fw.write("Port=" + iPort + "\n");
 				logger.fine("Port = " + iPort);
-				
+
 				fw.write("User=" + sUser + "\n");
 				logger.fine("User = " + sUser);
 
@@ -459,7 +459,7 @@ public class JBoxServer extends Thread {
 												System.out.println("SIGINT reset commander");
 
 												// kill the active command and start a new instance
-												final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getRole(), commander.getCurrentDir(), commander.getSite(), out);
+												final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), out);
 												commander = comm;
 
 												commander.start();
@@ -596,18 +596,19 @@ public class JBoxServer extends Thread {
 			return;
 
 		preempt();
-		
+
 		// Get port range from config
-		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
-		boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
-		
+		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
+		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
+		final boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
+
 		for (int port = portMin; port < portMax; port++)
 			try {
-				if (portAny) port = 0;	// Start server on any available port provided by the system
+				if (portAny)
+					port = 0; // Start server on any available port provided by the system
 				server = new JBoxServer(port, iDebugLevel);
 				server.start();
-				
+
 				logger.log(Level.INFO, "JBox listening on port " + server.port);
 				System.out.println("JBox is listening on port " + server.port);
 

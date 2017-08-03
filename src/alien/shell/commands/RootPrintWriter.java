@@ -91,7 +91,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	protected void setenv(final String cDir, final String user, final String cRole) {
+	protected void setenv(final String cDir, final String user) {
 		clientenv = cDir;
 	}
 
@@ -265,7 +265,7 @@ public class RootPrintWriter extends UIPrintWriter {
 	void setReturnCode(final int exitCode, final String errorMessage) {
 		// ignored
 	}
-	
+
 	@Override
 	public void setMetaInfo(final String key, final String value) {
 		//

@@ -10,39 +10,35 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
- * 
+ *
  * @author ron
  * @since Jun 05, 2011
  */
 public class SubmitJob extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 7349968366381661013L;
-	
-	
+
 	private final JDL jdl;
 	private long jobID = 0;
 
 	/**
-	 * @param user 
-	 * @param role 
+	 * @param user
 	 * @param jdl
 	 */
-	public SubmitJob(final AliEnPrincipal user, final String role, final JDL jdl) {
+	public SubmitJob(final AliEnPrincipal user, final JDL jdl) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.jdl = jdl;
 	}
 
 	@Override
-	public void run(){
-		try{
-			jobID = TaskQueueUtils.submit(jdl, getEffectiveRequester(), getRoleRequest());
-		}
-		catch (IOException ioe){
-//			System.out.println("ex: " + ioe.getMessage());
+	public void run() {
+		try {
+			jobID = TaskQueueUtils.submit(jdl, getEffectiveRequester());
+		} catch (final IOException ioe) {
+			// System.out.println("ex: " + ioe.getMessage());
 			setException(new ServerException(ioe.getMessage(), ioe));
 		}
 	}
@@ -50,12 +46,11 @@ public class SubmitJob extends Request {
 	/**
 	 * @return jobID
 	 */
-	public long getJobID(){
+	public long getJobID() {
 		System.out.println("job received ID:" + this.jobID);
 
 		return this.jobID;
 	}
-
 
 	@Override
 	public String toString() {

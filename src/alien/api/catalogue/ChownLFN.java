@@ -27,15 +27,13 @@ public class ChownLFN extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param fpath
 	 * @param chuser
 	 * @param chgroup
 	 * @param recursive
 	 */
-	public ChownLFN(final AliEnPrincipal user, final String role, final String fpath, final String chuser, final String chgroup, final boolean recursive) {
+	public ChownLFN(final AliEnPrincipal user, final String fpath, final String chuser, final String chgroup, final boolean recursive) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		path = fpath;
 		chown_user = chuser;
 		chown_group = chgroup;

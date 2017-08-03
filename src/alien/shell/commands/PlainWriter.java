@@ -107,7 +107,7 @@ public class PlainWriter extends UIPrintWriter {
 	}
 
 	@Override
-	protected void setenv(final String cDir, final String user, final String cRole) {
+	protected void setenv(final String cDir, final String user) {
 		// ignore
 	}
 
@@ -135,7 +135,7 @@ public class PlainWriter extends UIPrintWriter {
 	void setField(final String key, final String value) {
 		// ignored
 	}
-	
+
 	@Override
 	public void setMetaInfo(final String key, final String value) {
 		//

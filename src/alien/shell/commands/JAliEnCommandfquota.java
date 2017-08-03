@@ -41,11 +41,13 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 			if (this.param_to_set == null) {
 				out.printErrln("Error in parameter name");
 				return;
-			} else if (this.value_to_set == null || this.value_to_set.longValue() == 0) {
-				out.printErrln("Error in value");
-				printHelp();
-				return;
 			}
+			else
+				if (this.value_to_set == null || this.value_to_set.longValue() == 0) {
+					out.printErrln("Error in value");
+					printHelp();
+					return;
+				}
 			// run the update
 			if (commander.q_api.setFileQuota(this.param_to_set, this.value_to_set.toString()))
 				out.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);

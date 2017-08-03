@@ -79,16 +79,6 @@ public abstract class Request implements Serializable, Runnable {
 	private AliEnPrincipal requester_ruid = requester_uid;
 
 	/**
-	 * Effective role (the role which will be considered while authorizing the execution)
-	 */
-	private String requester_erid = requester_uid.getName();
-
-	/**
-	 * Requested role (the role that is requested)
-	 */
-	private String requester_rrid = requester_uid.getName();
-
-	/**
 	 * Set on receiving a request over the network
 	 */
 	private transient AliEnPrincipal partner_identity = null;
@@ -129,13 +119,6 @@ public abstract class Request implements Serializable, Runnable {
 	 */
 	public final AliEnPrincipal getEffectiveRequester() {
 		return requester_euid;
-	}
-
-	/**
-	 * @return effective role that is considered while the request is executed
-	 */
-	public final String getEffectiveRequesterRole() {
-		return requester_erid;
 	}
 
 	/**
@@ -184,24 +167,6 @@ public abstract class Request implements Serializable, Runnable {
 	}
 
 	/**
-	 * let the request run with a different role
-	 *
-	 * @param role
-	 */
-	protected final void setRoleRequest(final String role) {
-		requester_rrid = role;
-	}
-
-	/**
-	 * get the requester role
-	 *
-	 * @return selected role
-	 */
-	protected final String getRoleRequest() {
-		return requester_rrid;
-	}
-
-	/**
 	 * Authorize a role change
 	 *
 	 * @return permission for role change
@@ -222,19 +187,10 @@ public abstract class Request implements Serializable, Runnable {
 
 						requester_euid = requester_ruid;
 
-						// now the role
-						if (requester_rrid != null && requester_euid.hasRole(requester_rrid)) {
-							if (logger.isLoggable(Level.FINE))
-								logger.log(Level.FINE, "Successfully switched role from '" + requester_erid + "' to '" + requester_rrid + "'.");
-
-							requester_erid = requester_rrid;
-
-							return true;
-						}
-
-						logger.log(Level.WARNING, "User '" + requester_euid.getName() + "' doesn't have the role '" + requester_rrid + "'.");
+						return true;
 					}
-			} else {
+			}
+			else {
 				logger.log(Level.INFO, "User '" + requester_uid + "' doesn't indicate a different role, keeping itself by default");
 				requester_euid = requester_ruid = requester_uid;
 				return true;

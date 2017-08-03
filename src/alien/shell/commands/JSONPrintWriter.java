@@ -11,43 +11,43 @@ import org.json.simple.JSONObject;
 import alien.config.ConfigUtils;
 
 public class JSONPrintWriter extends UIPrintWriter {
-	
+
 	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JSONPrintWriter.class.getCanonicalName());
-	
+
 	/**
 	 * error String tag to mark a println for stderr
 	 */
 	public static final String errTag = "ERR: ";
-	
+
 	private final OutputStream os;
-	
-	private JSONArray resultArray;
-	private JSONObject metadataResult;
-	
+
+	private final JSONArray resultArray;
+	private final JSONObject metadataResult;
+
 	private JSONObject currentResult;
-	
+
 	/**
 	 * @param os
 	 */
 	public JSONPrintWriter(final OutputStream os) {
 		this.os = os;
-		resultArray = new JSONArray();	
+		resultArray = new JSONArray();
 		metadataResult = new JSONObject();
 	}
 
 	@Override
 	protected void blackwhitemode() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	protected void colourmode() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
@@ -55,21 +55,21 @@ public class JSONPrintWriter extends UIPrintWriter {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
+
 	@Override
-	protected void printOut(String line) {
+	protected void printOut(final String line) {
 		//
 	}
 
 	@Override
-	protected void printErr(String line) {
+	protected void printErr(final String line) {
 		//
 	}
 
 	@Override
-	protected void setenv(String cDir, String user, String cRole) {
+	protected void setenv(final String cDir, final String user) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	/**
@@ -78,13 +78,13 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@SuppressWarnings("unchecked")
 	@Override
 	protected void flush() {
-		nextResult();	// Add the last item and go
-		
+		nextResult(); // Add the last item and go
+
 		try {
-			JSONObject replyObject = new JSONObject();
+			final JSONObject replyObject = new JSONObject();
 			if (metadataResult != null)
 				replyObject.put("metadata", metadataResult);
-			
+
 			replyObject.put("results", resultArray);
 			os.write(replyObject.toJSONString().getBytes());
 			os.flush();
@@ -100,13 +100,13 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@Override
 	protected void pending() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	protected void degraded() {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@SuppressWarnings("unchecked")
@@ -120,7 +120,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	void setField(String key, String value) {
+	void setField(final String key, final String value) {
 		if (currentResult == null)
 			currentResult = new JSONObject();
 
@@ -139,13 +139,13 @@ public class JSONPrintWriter extends UIPrintWriter {
 		if (value != null)
 			metadataResult.put(key, value);
 	}
-	
+
 	@Override
-	void setReturnCode(int exitCode, String errorMessage) {
+	void setReturnCode(final int exitCode, final String errorMessage) {
 		setMetaInfo("exitcode", String.valueOf(exitCode));
 		setMetaInfo("message", errorMessage);
 	}
-	
+
 	@Override
 	protected boolean isRootPrinter() {
 		return true;

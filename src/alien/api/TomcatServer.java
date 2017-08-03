@@ -86,7 +86,7 @@ public class TomcatServer {
 		ctx.addSecurityRole("users");
 		ctx.addConstraint(securityConstraint);
 
-		// Tell Jar Scanner not to look inside jar manifests 
+		// Tell Jar Scanner not to look inside jar manifests
 		// otherwise it will produce useless warnings
 		StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
 		jarScanner.setScanManifest(false);
@@ -94,24 +94,24 @@ public class TomcatServer {
 		tomcat.start();
 		if (tomcat.getService().findConnectors()[0].getState() == LifecycleState.FAILED)
 			throw new BindException();
-		
+
 		final AliEnPrincipal alUser = AuthorizationFactory.getDefaultUser();
 
 		if (alUser == null || alUser.getName() == null)
 			throw new Exception("Could not get your username. FATAL!");
-		
+
 		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
 		if (!writeTokenFile(tomcat.getHost().getName(), websocketPort, alUser.getName(), sHomeUser, iDebug)) {
 			tomcat.stop();
 			throw new Exception("Could not write the token file! No application can connect to JBox");
 		}
-		
+
 		if (!writeEnvFile(tomcat.getHost().getName(), websocketPort, alUser.getName())) {
 			tomcat.stop();
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
-		
-		// Let Tomcat run in another thread so it will keep on waiting forever 
+
+		// Let Tomcat run in another thread so it will keep on waiting forever
 		new Thread() {
 			@Override
 			public void run() {
@@ -130,20 +130,20 @@ public class TomcatServer {
 		String keystorePass = new String(JAKeyStore.pass);
 		if (!ConfigUtils.isCentralService()) {
 			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, "keystore.jks", JAKeyStore.pass);
-		} 
+		}
 		else {
 			JAKeyStore.saveKeyStore(JAKeyStore.hostCert, "keystore.jks", JAKeyStore.pass);
 		}
 
 		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-		
+
 		connector.setProtocol("org.apache.coyote.http11.Http11NioProtocol");
 		connector.setPort(tomcatPort);
 		connector.setSecure(true);
 		connector.setScheme("https");
 		if (!ConfigUtils.isCentralService()) {
 			connector.setAttribute("keyAlias", "Token.cert");
-		} 
+		}
 		else {
 			connector.setAttribute("keyAlias", "Host.cert");
 		}
@@ -203,7 +203,7 @@ public class TomcatServer {
 
 				fw.write("WSPort=" + iWSPort + "\n");
 				logger.fine("WSPort = " + iWSPort);
-				
+
 				fw.write("User=" + sUser + "\n");
 				logger.fine("User = " + sUser);
 
@@ -231,7 +231,7 @@ public class TomcatServer {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Writes the environment file used by ROOT <br />
 	 * It needs to be named jclient_env_$UID, sitting by default in <code>java.io.tmpdir</code> (eg. <code>/tmp</code>) and to contain:
@@ -289,7 +289,7 @@ public class TomcatServer {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Change permissions of the file
 	 */
@@ -297,43 +297,40 @@ public class TomcatServer {
 		if (file.exists()) {
 			try {
 				final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
-	
+
 				if (co.exitCode != 0)
 					System.err.println("Could not change permissions: " + co.stderr);
-	
+
 				return co.exitCode == 0;
-	
+
 			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
 		}
 		return false;
 	}
-	
+
 	/**
 	 * Request token certificate from JCentral
 	 */
 	private static boolean requestTokenCert() {
-		
+
 		// Two files will be the result of this command
-		File tokencertfile = new File(System.getProperty("user.home") + System.getProperty("file.separator") + 
-				".globus/tokencert.pem");
-		File tokenkeyfile = new File(System.getProperty("user.home") + System.getProperty("file.separator") + 
-				".globus/tokenkey.pem");
-		
+		File tokencertfile = new File(System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokencert.pem");
+		File tokenkeyfile = new File(System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokenkey.pem");
+
 		// Allow to modify those files if they already exist
 		changeMod(tokencertfile, 777);
 		changeMod(tokenkeyfile, 777);
 
-		try (	// Open files for writing
+		try ( // Open files for writing
 				PrintWriter pwritercert = new PrintWriter(tokencertfile);
-				PrintWriter pwriterkey  = new PrintWriter(tokenkeyfile);
-						
+				PrintWriter pwriterkey = new PrintWriter(tokenkeyfile);
+
 				// We will read all data into temp output stream and then parse it and split into 2 files
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			) {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();) {
 			UIPrintWriter out = new JSONPrintWriter(baos);
-			
+
 			// Get user certificate to connect to JCentral
 			Certificate cert = null;
 			try {
@@ -341,24 +338,24 @@ public class TomcatServer {
 			} catch (KeyStoreException e) {
 				e.printStackTrace();
 			}
-		    if (cert instanceof X509Certificate) {
-		        X509Certificate x509cert = (X509Certificate) cert;
-		        AliEnPrincipal userIdentity = UserFactory.getByCertificate(new X509Certificate[] { x509cert });
-		        
-		        // Create Commander instance just to execute one command
-		        JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, null, out); 
-		        commander.start();
-		        
-		        // Command to be sent (yes, we need it to be an array, even if it is one word)
-		        final ArrayList<String> fullCmd = new ArrayList<>();
+			if (cert instanceof X509Certificate) {
+				X509Certificate x509cert = (X509Certificate) cert;
+				AliEnPrincipal userIdentity = UserFactory.getByCertificate(new X509Certificate[] { x509cert });
+
+				// Create Commander instance just to execute one command
+				JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
+				commander.start();
+
+				// Command to be sent (yes, we need it to be an array, even if it is one word)
+				final ArrayList<String> fullCmd = new ArrayList<>();
 				fullCmd.add("token");
-						        
-		        synchronized (commander) {
-		        	commander.status.set(1);
+
+				synchronized (commander) {
+					commander.status.set(1);
 					commander.setLine(out, fullCmd.toArray(new String[0]));
 					commander.notifyAll();
-				}					
-				
+				}
+
 				while (commander.status.get() == 1)
 					try {
 						synchronized (commander.status) {
@@ -367,34 +364,34 @@ public class TomcatServer {
 					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
-				
+
 				// Now parse the reply from JCentral
-				JSONParser jsonParser = new JSONParser();			
-				JSONObject readf = (JSONObject)jsonParser.parse(baos.toString());
-				JSONArray jsonArray = (JSONArray)readf.get("results");
+				JSONParser jsonParser = new JSONParser();
+				JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
+				JSONArray jsonArray = (JSONArray) readf.get("results");
 				for (Object object : jsonArray) {
-			        JSONObject aJson = (JSONObject) object;
-			        pwritercert.print(aJson.get("tokencert"));
-			        pwriterkey.print(aJson.get("tokenkey"));
-			        pwritercert.flush();
-			        pwriterkey.flush();
+					JSONObject aJson = (JSONObject) object;
+					pwritercert.print(aJson.get("tokencert"));
+					pwriterkey.print(aJson.get("tokenkey"));
+					pwritercert.flush();
+					pwriterkey.flush();
 				}
-		    	
+
 				// Set correct permissions
-	    		changeMod(tokencertfile, 440);
-	    		changeMod(tokenkeyfile, 400);	
-				
+				changeMod(tokencertfile, 440);
+				changeMod(tokenkeyfile, 400);
+
 				// Execution finished - kill commander
 				commander.kill = true;
-		    	return true;
-		   }
+				return true;
+			}
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Token request failed", e);
 			return false;
 		}
-		return false;	
+		return false;
 	}
-	
+
 	/**
 	 * Singleton
 	 */
@@ -409,7 +406,7 @@ public class TomcatServer {
 	public static synchronized void startTomcatServer(final int iDebugLevel) {
 
 		if (tomcatServer != null)
-			return;	
+			return;
 
 		logger.log(Level.INFO, "Tomcat starting ...");
 
@@ -431,10 +428,10 @@ public class TomcatServer {
 			TomcatServer.startTomcatServer(iDebugLevel);
 			return;
 		}
-		
+
 		// Request token certificate from JCentral
 		if (!ConfigUtils.isCentralService()) {
-			if (!requestTokenCert()) {	
+			if (!requestTokenCert()) {
 				return;
 			}
 			// Create keystore for token certificate
@@ -455,7 +452,7 @@ public class TomcatServer {
 		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
 		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
 		int port = 8097;
-		
+
 		// Try to launch Tomcat on default port
 		try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
 		{
@@ -465,13 +462,13 @@ public class TomcatServer {
 
 			logger.log(Level.INFO, "Tomcat listening on port " + port);
 			System.out.println("Tomcat is listening on port " + port);
-			return;		// Everything's ok, exit
-			
+			return; // Everything's ok, exit
+
 		} catch (final Exception ioe) {
 			// Port is already in use, maybe there's another user on the machine...
 			logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
 		}
-		
+
 		// Try another ports in range
 		for (port = portMin; port < portMax; port++) {
 			try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available

@@ -10,14 +10,14 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 03, 2011
  */
 public class GUIDfromString extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -3670065132137151044L;
 	private final String sguid;
@@ -28,14 +28,12 @@ public class GUIDfromString extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param sguid
 	 * @param evenIfDoesNotExist
 	 * @param resolveLFNs
 	 */
-	public GUIDfromString(final AliEnPrincipal user, final String role, final String sguid, final boolean evenIfDoesNotExist, final boolean resolveLFNs) {
+	public GUIDfromString(final AliEnPrincipal user, final String sguid, final boolean evenIfDoesNotExist, final boolean resolveLFNs) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.sguid = sguid;
 		this.evenIfDoesNotExist = evenIfDoesNotExist;
 		this.resolveLFNs = resolveLFNs;

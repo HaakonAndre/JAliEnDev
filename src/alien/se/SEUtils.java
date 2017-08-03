@@ -173,7 +173,7 @@ public final class SEUtils {
 	public static SE getSE(final Integer seNumber) {
 		if (!ConfigUtils.isCentralService())
 			try {
-				final SEfromString request = new SEfromString(null, null, seNumber.intValue());
+				final SEfromString request = new SEfromString(null, seNumber.intValue());
 				final SEfromString response = Dispatcher.execute(request);
 				// System.err.println("Response: " + response);
 				return response.getSE();
@@ -204,7 +204,7 @@ public final class SEUtils {
 
 		if (!ConfigUtils.isCentralService())
 			try {
-				return Dispatcher.execute(new SEfromString(null, null, seName)).getSE();
+				return Dispatcher.execute(new SEfromString(null, seName)).getSE();
 			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
@@ -970,7 +970,7 @@ public final class SEUtils {
 			final long deltaFiles = aiFiles.getAndSet(0);
 			final long deltaBytes = aiBytes.getAndSet(0);
 
-			if (deltaFiles != 0 || deltaBytes != 0) {
+			if (deltaFiles != 0 || deltaBytes != 0)
 				try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 					db.setReadOnly(false);
 					db.setQueryTimeout(60);
@@ -981,13 +981,12 @@ public final class SEUtils {
 						aiBytes.addAndGet(deltaBytes);
 					}
 				}
-			}
 		}
 	}
 
 	/**
 	 * Update the storage counters when files are added or removed from them. This does not guarantee counter consistency!
-	 * 
+	 *
 	 * @param seNumber
 	 *            SE number
 	 * @param deltaFiles
@@ -1048,9 +1047,9 @@ public final class SEUtils {
 							while (gdb.moveNext()) {
 								pw.print(gdb.gets(1) + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
 								try {
-									UUID u = UUID.fromString(gdb.gets(4));
+									final UUID u = UUID.fromString(gdb.gets(4));
 									pw.print(GUIDUtils.epochTime(u));
-								} catch (@SuppressWarnings("unused") Throwable t) {
+								} catch (@SuppressWarnings("unused") final Throwable t) {
 									// ignore any errors
 								}
 
@@ -1066,9 +1065,9 @@ public final class SEUtils {
 								pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
 
 								try {
-									UUID u = UUID.fromString(guid);
+									final UUID u = UUID.fromString(guid);
 									pw.print(GUIDUtils.epochTime(u));
-								} catch (@SuppressWarnings("unused") Throwable t) {
+								} catch (@SuppressWarnings("unused") final Throwable t) {
 									// ignore any errors
 								}
 

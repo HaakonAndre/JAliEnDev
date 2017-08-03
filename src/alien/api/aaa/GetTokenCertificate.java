@@ -74,7 +74,6 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	 * other required fields
 	 *
 	 * @param user
-	 * @param role
 	 * @param certificateType
 	 * @param extension
 	 * @param validity
@@ -82,10 +81,8 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	 *            the certificate the user presented to identify itself. This
 	 *            will restrict the validity of the issued token
 	 */
-	public GetTokenCertificate(final AliEnPrincipal user, final String role, final TokenCertificateType certificateType, final String extension, final int validity,
-			final X509Certificate userCertificate) {
+	public GetTokenCertificate(final AliEnPrincipal user, final TokenCertificateType certificateType, final String extension, final int validity, final X509Certificate userCertificate) {
 		setRequestUser(user);
-		setRoleRequest(role);
 
 		this.certificateType = certificateType;
 		this.extension = extension;
@@ -108,7 +105,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			if (userCertificate == null)
 				throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
 
-			builder = builder.setCn("Users").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequesterRole());
+			builder = builder.setCn("Users").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequester().getName());
 			break;
 		case JOB_TOKEN:
 			if (!getEffectiveRequester().isJobAgent())
@@ -117,7 +114,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			if (extension == null || extension.length() == 0)
 				throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
 
-			builder = builder.setCn("Jobs").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequesterRole());
+			builder = builder.setCn("Jobs").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequester().getName());
 			break;
 		case JOB_AGENT_TOKEN:
 			if (!getEffectiveRequester().canBecome("vobox"))
@@ -224,7 +221,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 		// only cache user tokens, job tokens have the job ID in them and cannot
 		// be effectively cached
 		if (certificateType == TokenCertificateType.USER_CERTIFICATE)
-			return getEffectiveRequester().getName() + "/" + getEffectiveRequesterRole();
+			return getEffectiveRequester().getName();
 
 		return null;
 	}

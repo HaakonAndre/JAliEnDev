@@ -49,7 +49,6 @@ public class PFNforWrite extends Request {
 	 * Get PFNs to write
 	 *
 	 * @param user
-	 * @param role
 	 * @param site
 	 * @param lfn
 	 * @param guid
@@ -57,10 +56,8 @@ public class PFNforWrite extends Request {
 	 * @param exses
 	 * @param qos
 	 */
-	public PFNforWrite(final AliEnPrincipal user, final String role, final String site, final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses,
-			final HashMap<String, Integer> qos) {
+	public PFNforWrite(final AliEnPrincipal user, final String site, final LFN lfn, final GUID guid, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.site = site;
 		this.lfn = lfn;
 		this.guid = guid;

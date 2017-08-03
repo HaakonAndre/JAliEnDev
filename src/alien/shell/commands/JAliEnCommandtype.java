@@ -40,18 +40,23 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 			out.nextResult();
 			if (lfn.isFile())
 				out.setField("type", "file");
-			else if (lfn.isDirectory())
-				out.setField("type", "directory");
-			else if (lfn.isCollection())
-				out.setField("type", "collection");
-		} else {
+			else
+				if (lfn.isDirectory())
+					out.setField("type", "directory");
+				else
+					if (lfn.isCollection())
+						out.setField("type", "collection");
+		}
+		else {
 			String ret = "";
 			if (lfn.isFile())
 				ret += "file";
-			else if (lfn.isDirectory())
-				ret += "directory";
-			else if (lfn.isCollection())
-				ret += "collection";
+			else
+				if (lfn.isDirectory())
+					ret += "directory";
+				else
+					if (lfn.isCollection())
+						ret += "collection";
 			logger.info("Type line : " + ret);
 			if (!isSilent())
 				out.printOutln(ret);
@@ -91,12 +96,14 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 		if (lfn.isFile())
 			ret += "file";
-		else if (lfn.isDirectory())
-			ret += "directory";
-		else if (lfn.isCollection())
-			ret += "collection";
 		else
-			return super.deserializeForRoot(0);
+			if (lfn.isDirectory())
+				ret += "directory";
+			else
+				if (lfn.isCollection())
+					ret += "collection";
+				else
+					return super.deserializeForRoot(0);
 
 		return ret;
 

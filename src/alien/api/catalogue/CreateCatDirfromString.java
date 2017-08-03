@@ -6,14 +6,14 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 03, 2011
  */
 public class CreateCatDirfromString extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -8266256263179660234L;
 	private final String path;
@@ -23,13 +23,11 @@ public class CreateCatDirfromString extends Request {
 
 	/**
 	 * @param user
-	 * @param role 
 	 * @param path
-	 * @param createNonExistentParents 
+	 * @param createNonExistentParents
 	 */
-	public CreateCatDirfromString(final AliEnPrincipal user, final String role, final String path,boolean createNonExistentParents) {
+	public CreateCatDirfromString(final AliEnPrincipal user, final String path, final boolean createNonExistentParents) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.path = path;
 		this.createNonExistentParents = createNonExistentParents;
 	}
@@ -38,8 +36,8 @@ public class CreateCatDirfromString extends Request {
 	public void run() {
 		// if(createNonExistentParents)
 		this.lfn = LFNUtils.mkdir(getEffectiveRequester(), path, createNonExistentParents);
-		// else 
-		// 	this.lfn = FileSystemUtils.createCatalogueDirectory(user, path);
+		// else
+		// this.lfn = FileSystemUtils.createCatalogueDirectory(user, path);
 
 	}
 

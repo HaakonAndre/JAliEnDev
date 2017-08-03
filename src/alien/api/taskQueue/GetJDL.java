@@ -6,45 +6,43 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
- * 
+ *
  * @author ron
  * @since Oct 26, 2011
  */
 public class GetJDL extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 5445861914172537974L;
 
 	private final int queueId;
-	
+
 	private String jdl;
-	
+
 	/**
-	 * @param user 
-	 * @param role 
-	 * @param queueId 
+	 * @param user
+	 * @param queueId
 	 */
-	public GetJDL(final AliEnPrincipal user, final String role, final int queueId){
+	public GetJDL(final AliEnPrincipal user, final int queueId) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.queueId = queueId;
 	}
-	
+
 	@Override
 	public void run() {
 		this.jdl = TaskQueueUtils.getJDL(queueId);
 	}
-	
+
 	/**
 	 * @return a JDL
 	 */
-	public String getJDL(){
+	public String getJDL() {
 		return this.jdl;
 	}
-	
+
 	@Override
 	public String toString() {
-		return "Asked for JDL :  reply is: "+this.jdl;
+		return "Asked for JDL :  reply is: " + this.jdl;
 	}
 }

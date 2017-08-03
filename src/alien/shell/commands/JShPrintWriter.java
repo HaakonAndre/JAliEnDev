@@ -117,8 +117,8 @@ public class JShPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	protected void setenv(final String cDir, final String user, final String cRole) {
-		print(outputterminator + cDir + fieldseparator + user + fieldseparator + cRole + "\n");
+	protected void setenv(final String cDir, final String user) {
+		print(outputterminator + cDir + fieldseparator + user + "\n");
 	}
 
 	@Override
@@ -148,9 +148,9 @@ public class JShPrintWriter extends UIPrintWriter {
 
 	@Override
 	void setReturnCode(final int exitCode, final String errorMessage) {
-		printErr(errorMessage+"\n");
+		printErr(errorMessage + "\n");
 	}
-	
+
 	@Override
 	public void setMetaInfo(final String key, final String value) {
 		//

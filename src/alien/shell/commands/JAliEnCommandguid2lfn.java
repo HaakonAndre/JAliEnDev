@@ -27,16 +27,20 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 			out.nextResult();
 			if (guid == null)
 				out.setField("message", "Could not get the GUID [" + guidName + "].");
-			else if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
-				out.setField("message", padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
 			else
-				out.setField("message", "No LFNs are associated to this GUID [" + guid.guid + "].");
-		} else if (guid == null)
-			out.printErrln("Could not get the GUID [" + guidName + "].");
-		else if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
-			out.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
+				if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
+					out.setField("message", padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
+				else
+					out.setField("message", "No LFNs are associated to this GUID [" + guid.guid + "].");
+		}
 		else
-			out.printErrln("No LFNs are associated to this GUID [" + guid.guid + "].");
+			if (guid == null)
+				out.printErrln("Could not get the GUID [" + guidName + "].");
+			else
+				if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
+					out.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
+				else
+					out.printErrln("No LFNs are associated to this GUID [" + guid.guid + "].");
 	}
 
 	/**

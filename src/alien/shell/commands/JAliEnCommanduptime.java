@@ -28,7 +28,8 @@ public class JAliEnCommanduptime extends JAliEnBaseCommand {
 			out.setField(" running jobs", " " + totals.runningJobs);
 			out.setField(" waiting jobs", " " + totals.waitingJobs);
 			out.setField(" active users", " " + stats.size());
-		} else
+		}
+		else
 			out.printOutln(totals.runningJobs + " running jobs, " + totals.waitingJobs + " waiting jobs, " + stats.size() + " active users");
 	}
 

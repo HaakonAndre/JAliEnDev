@@ -26,7 +26,6 @@ public class ListTransfer extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param toSE
 	 * @param userTransfer
 	 * @param status
@@ -34,9 +33,8 @@ public class ListTransfer extends Request {
 	 * @param count
 	 * @param desc
 	 */
-	public ListTransfer(final AliEnPrincipal user, final String role, final String toSE, final String userTransfer, final String status, final Integer id, final int count, final boolean desc) {
+	public ListTransfer(final AliEnPrincipal user, final String toSE, final String userTransfer, final String status, final Integer id, final int count, final boolean desc) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.status = status;
 		this.toSE = toSE;
 		this.user = userTransfer;

@@ -145,7 +145,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 							}
 
 							out.printOutln(fileName);
-						} else
+						}
+						else
 							out.printErrln("Could not create a temporary file");
 
 					} catch (final Exception e) {
@@ -153,7 +154,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 					}
 				else
 					out.printOutln(c.toString());
-			} else
+			}
+			else
 				for (final LFN lfn : lfns)
 					if (out.isRootPrinter()) {
 
@@ -165,14 +167,17 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 							out.setField("ctime", " " + lfn.ctime);
 							out.setField("lfn", lfn.getCanonicalName());
 
-						} else
+						}
+						else
 							out.setField("lfn", lfn.getCanonicalName());
-					} else if (bL)
-						// print long
-						out.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
-								+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());
+					}
 					else
-						out.printOutln(lfn.getCanonicalName());
+						if (bL)
+							// print long
+							out.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
+									+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());
+						else
+							out.printOutln(lfn.getCanonicalName());
 
 	}
 
@@ -235,16 +240,18 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 						ret.append(desc).append("path").append(sep).append(lfn.getCanonicalName());
 						ret.append(desc).append("guid").append(sep).append(lfn.guid);
 					}
-				} else if (bC) {
-					ret.append(col);
-					ret.append(desc).append("name").append(sep).append(lfn.getCanonicalName());
 				}
+				else
+					if (bC) {
+						ret.append(col);
+						ret.append(desc).append("name").append(sep).append(lfn.getCanonicalName());
+					}
 
-				else {
-					ret.append(col);
-					ret.append(desc).append("name").append(sep).append(lfn.getFileName());
+					else {
+						ret.append(col);
+						ret.append(desc).append("name").append(sep).append(lfn.getFileName());
 
-				}
+					}
 			}
 
 			return ret.toString();

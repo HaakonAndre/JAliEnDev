@@ -19,12 +19,10 @@ public class TouchLFNfromString extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param path
 	 */
-	public TouchLFNfromString(final AliEnPrincipal user, final String role, final String path) {
+	public TouchLFNfromString(final AliEnPrincipal user, final String path) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.path = path;
 		// this.createNonExistentParents = createNonExistentParents;
 	}

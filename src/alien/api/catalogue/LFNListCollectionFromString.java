@@ -10,14 +10,14 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get the LFN object for this path
- * 
+ *
  * @author ron
  * @since Jun 08, 2011
  */
 public class LFNListCollectionFromString extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -7167353294190733455L;
 	private final String path;
@@ -26,12 +26,10 @@ public class LFNListCollectionFromString extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param path
 	 */
-	public LFNListCollectionFromString(final AliEnPrincipal user, final String role, final String path) {
+	public LFNListCollectionFromString(final AliEnPrincipal user, final String path) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.path = path;
 	}
 
@@ -47,9 +45,11 @@ public class LFNListCollectionFromString extends Request {
 
 				for (final String lfn : entries)
 					this.lfns.add(LFNUtils.getLFN(lfn));
-			} else
+			}
+			else
 				throw new IllegalArgumentException("Not a collection");
-		} else
+		}
+		else
 			throw new IllegalArgumentException("No such LFN \"" + path + "\"");
 	}
 

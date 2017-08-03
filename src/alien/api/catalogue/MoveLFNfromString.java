@@ -6,43 +6,40 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Nov 21, 2011
  */
 public class MoveLFNfromString extends Request {
 
-
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 5206724705550117952L;
 
 	private final String path;
-	
+
 	private final String newpath;
-	
+
 	private LFN newLFN = null;
 
 	/**
-	 * @param user 
-	 * @param role 
+	 * @param user
 	 * @param path
-	 * @param newpath 
+	 * @param newpath
 	 */
-	public MoveLFNfromString(final AliEnPrincipal user, final String role, final String path, final String newpath) {
+	public MoveLFNfromString(final AliEnPrincipal user, final String path, final String newpath) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.path = path;
 		this.newpath = newpath;
 	}
 
 	@Override
 	public void run() {
-		LFN lfn = LFNUtils.getLFN(path);
-		
-		if(lfn!=null)
-			newLFN = LFNUtils.mvLFN(getEffectiveRequester(), lfn, newpath);		
+		final LFN lfn = LFNUtils.getLFN(path);
+
+		if (lfn != null)
+			newLFN = LFNUtils.mvLFN(getEffectiveRequester(), lfn, newpath);
 
 	}
 
@@ -52,7 +49,6 @@ public class MoveLFNfromString extends Request {
 	public LFN newLFN() {
 		return this.newLFN;
 	}
-
 
 	@Override
 	public String toString() {

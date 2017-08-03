@@ -26,12 +26,10 @@ public class GetJobs extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param queueIds
 	 */
-	public GetJobs(final AliEnPrincipal user, final String role, final List<Long> queueIds) {
+	public GetJobs(final AliEnPrincipal user, final List<Long> queueIds) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.queueIds = queueIds;
 	}
 

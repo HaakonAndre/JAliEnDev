@@ -10,11 +10,11 @@ import alien.catalogue.PFN;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 03, 2011
  */
-public class PFNfromString extends Request implements Cacheable{
+public class PFNfromString extends Request implements Cacheable {
 
 	private static final long serialVersionUID = -3237006644358177225L;
 
@@ -24,13 +24,12 @@ public class PFNfromString extends Request implements Cacheable{
 
 	/**
 	 * Get PFNs by String
-	 * @param user 
-	 * @param role 
+	 *
+	 * @param user
 	 * @param sguid
 	 */
-	public PFNfromString(final AliEnPrincipal user, final String role, final String sguid) {
+	public PFNfromString(final AliEnPrincipal user, final String sguid) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.sguid = sguid;
 	}
 
@@ -58,6 +57,6 @@ public class PFNfromString extends Request implements Cacheable{
 
 	@Override
 	public long getTimeout() {
-		return 1000*60*5;
+		return 1000 * 60 * 5;
 	}
 }

@@ -10,14 +10,14 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get the packages
- * 
+ *
  * @author ron
  * @since Nov 23, 2011
  */
 public class PackagesfromString extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -9135907539296101201L;
 
@@ -27,12 +27,10 @@ public class PackagesfromString extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param platform
 	 */
-	public PackagesfromString(final AliEnPrincipal user, final String role, final String platform) {
+	public PackagesfromString(final AliEnPrincipal user, final String platform) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.platform = platform;
 	}
 

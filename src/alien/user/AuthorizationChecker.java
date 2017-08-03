@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.user;
 
@@ -27,7 +27,7 @@ public final class AuthorizationChecker {
 
 	/**
 	 * Check if the user owns this entity
-	 * 
+	 *
 	 * @param entity
 	 * @param user
 	 * @return true if the user owns this entity
@@ -40,7 +40,7 @@ public final class AuthorizationChecker {
 
 	/**
 	 * Check if the user is in the same group as the owner of this file
-	 * 
+	 *
 	 * @param entity
 	 * @param user
 	 * @return true if the user is in the same group
@@ -53,7 +53,7 @@ public final class AuthorizationChecker {
 
 	/**
 	 * Get the permission field that applies to the user
-	 * 
+	 *
 	 * @param entity
 	 * @param user
 	 * @return permission field
@@ -82,7 +82,7 @@ public final class AuthorizationChecker {
 
 	/**
 	 * Check if the user can read the entity
-	 * 
+	 *
 	 * @param entity
 	 * @param user
 	 * @return true if the user can read it
@@ -102,7 +102,7 @@ public final class AuthorizationChecker {
 
 	/**
 	 * Check if the user can write the entity
-	 * 
+	 *
 	 * @param entity
 	 * @param user
 	 * @return true if the user can write it
@@ -122,7 +122,7 @@ public final class AuthorizationChecker {
 
 	/**
 	 * Check if the user can execute the entity
-	 * 
+	 *
 	 * @param entity
 	 * @param user
 	 * @return true if the user can execute it
@@ -135,18 +135,19 @@ public final class AuthorizationChecker {
 
 	/**
 	 * Check if the user can modify the job
-	 * 
+	 *
 	 * @param job
-	 * 
+	 *
 	 * @param user
-	 * @param role
 	 * @return true if the user can execute it
 	 */
-	public static boolean canModifyJob(final Job job, final AliEnPrincipal user, final String role) {
-		if (job == null || user == null || role == null)
+	public static boolean canModifyJob(final Job job, final AliEnPrincipal user) {
+		if (job == null || user == null)
 			return false;
-		if (job.getOwner().equals(user.getName()) || job.getOwner().equals(role) || AliEnPrincipal.roleIsAdmin(role))
+
+		if (job.getOwner().equals(user.getName()) || user.hasRole(job.getOwner()))
 			return true;
+
 		return false;
 	}
 

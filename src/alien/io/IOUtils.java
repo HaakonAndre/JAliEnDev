@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -104,14 +103,11 @@ public class IOUtils {
 	}
 
 	private static final CachedThreadPool PARALLEL_DW_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE, ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2),
-			TimeUnit.SECONDS, new ThreadFactory() {
-				@Override
-				public Thread newThread(final Runnable r) {
-					final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
-					t.setDaemon(true);
+			TimeUnit.SECONDS, r -> {
+				final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
+				t.setDaemon(true);
 
-					return t;
-				}
+				return t;
 			});
 
 	/**
@@ -583,7 +579,7 @@ public class IOUtils {
 
 		final UIPrintWriter out = progressReport != null ? new PlainWriter(progressReport) : null;
 
-		final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, owner.getName(), null, ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim(), out);
+		final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, null, ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim(), out);
 
 		final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
 

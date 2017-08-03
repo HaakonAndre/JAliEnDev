@@ -517,8 +517,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			if (options.has("jdl") && options.hasArgument("jdl"))
 				try {
 					getJDL = Integer.parseInt((String) options.valueOf("jdl"));
-				} catch (@SuppressWarnings("unused")
-				final NumberFormatException e) {
+				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 					out.printErrln("Illegal job ID " + options.valueOf("jdl"));
 					getJDL = -1;
 				}
@@ -526,8 +525,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				if (options.has("trace") && options.hasArgument("trace"))
 					try {
 						getTrace = Integer.parseInt((String) options.valueOf("trace"));
-					} catch (@SuppressWarnings("unused")
-					final NumberFormatException e) {
+					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 						out.printErrln("Illegal job ID " + options.valueOf("trace"));
 						getTrace = -1;
 					}
@@ -562,8 +560,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 						while (st.hasMoreTokens())
 							try {
 								mjobs.add(Integer.valueOf(st.nextToken()));
-							} catch (@SuppressWarnings("unused")
-							final NumberFormatException nfe) {
+							} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 								// ignore
 							}
 
@@ -575,8 +572,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 						while (st.hasMoreTokens())
 							try {
 								jobid.add(Integer.valueOf(st.nextToken()));
-							} catch (@SuppressWarnings("unused")
-							final NumberFormatException nfe) {
+							} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 								// ignore
 							}
 						states.add(JobStatus.ANY);
@@ -588,8 +584,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 							final int lim = Integer.parseInt((String) options.valueOf("l"));
 							if (lim > 0)
 								limit = lim;
-						} catch (@SuppressWarnings("unused")
-						final NumberFormatException e) {
+						} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 							// ignore
 						}
 

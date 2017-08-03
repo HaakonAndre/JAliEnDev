@@ -8,33 +8,31 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get number of slots for a CE
- * 
+ *
  * @author mmmartin
  * @since Feb 20, 2017
  */
 public class GetNumberFreeSlots extends Request {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 5445861914172987654L;
 
 	private List<Integer> slots;
-	private String ceName;
-	private String host;
-	private int port;
-	private String version;
+	private final String ceName;
+	private final String host;
+	private final int port;
+	private final String version;
 
 	/**
 	 * @param user
-	 * @param role
-	 * @param host 
-	 * @param port 
+	 * @param host
+	 * @param port
 	 * @param ce
-	 * @param version 
+	 * @param version
 	 */
-	public GetNumberFreeSlots(final AliEnPrincipal user, final String role, final String host, final int port, final String ce, final String version) {
+	public GetNumberFreeSlots(final AliEnPrincipal user, final String host, final int port, final String ce, final String version) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.host = host;
 		this.port = port;
 		this.ceName = ce;

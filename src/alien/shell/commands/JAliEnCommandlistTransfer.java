@@ -35,7 +35,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 		for (final TransferDetails t : transfers)
 			out.printOutln(t.transferId + "\t   " + t.status + "\t   " + t.user + "\t" + t.destination + String.format("%14d", Long.valueOf(t.size)) + // t.size
 																																						// +
-			(this.jdl && t.jdl != null ? "\t\t" + t.jdl : "\t\t") + "\t" + t.attempts + (this.verbose && t.reason != null ? "\t" + t.reason : ""));
+					(this.jdl && t.jdl != null ? "\t\t" + t.jdl : "\t\t") + "\t" + t.attempts + (this.verbose && t.reason != null ? "\t" + t.reason : ""));
 		out.printOutln();
 		out.printOutln("Total: " + transfers.size() + " transfers");
 	}

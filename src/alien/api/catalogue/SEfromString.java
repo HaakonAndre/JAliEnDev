@@ -7,7 +7,7 @@ import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 03, 2011
  */
@@ -18,63 +18,61 @@ public class SEfromString extends Request implements Cacheable {
 	private final int seNo;
 
 	private SE se;
-	
+
 	/**
 	 * Get SE by name
-	 * @param user 
-	 * @param role 
+	 *
+	 * @param user
 	 * @param se
 	 */
-	public SEfromString(final AliEnPrincipal user, final String role, final String se){
+	public SEfromString(final AliEnPrincipal user, final String se) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		sSE = se;
 		seNo = 0;
 	}
-	
+
 	/**
 	 * Get SE by number
-	 * @param user 
-	 * @param role 
-	 * @param seno 
+	 *
+	 * @param user
+	 * @param seno
 	 */
-	public SEfromString(final AliEnPrincipal user, final String role, final int seno){
+	public SEfromString(final AliEnPrincipal user, final int seno) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.seNo = seno;
 		sSE = null;
 	}
-	
+
 	@Override
 	public void run() {
-		if(sSE!=null)
+		if (sSE != null)
 			this.se = SEUtils.getSE(sSE);
-		else 
+		else
 			this.se = SEUtils.getSE(seNo);
 	}
-	
+
 	/**
 	 * @return the requested SE
 	 */
-	public SE getSE(){
+	public SE getSE() {
 		return this.se;
 	}
-	
+
 	@Override
 	public String toString() {
-		if(sSE!=null)
-			return "Asked for : "+this.sSE+", reply is:\n"+this.se;
-		 
-		return "Asked for No: "+this.seNo+", reply is:\n"+this.se;
+		if (sSE != null)
+			return "Asked for : " + this.sSE + ", reply is:\n" + this.se;
+
+		return "Asked for No: " + this.seNo + ", reply is:\n" + this.se;
 	}
 
 	@Override
 	public String getKey() {
-		return this.sSE+"#"+this.seNo;
+		return this.sSE + "#" + this.seNo;
 	}
 
 	@Override
 	public long getTimeout() {
-		return 1000*60*60;
+		return 1000 * 60 * 60;
 	}
 }

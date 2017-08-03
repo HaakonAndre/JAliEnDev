@@ -76,7 +76,7 @@ public abstract class UIPrintWriter {
 	 * @param user
 	 * @param cRole
 	 */
-	abstract protected void setenv(String cDir, String user, String cRole);
+	abstract protected void setenv(String cDir, String user);
 
 	/**
 	 * Flush a set of lines as one transaction

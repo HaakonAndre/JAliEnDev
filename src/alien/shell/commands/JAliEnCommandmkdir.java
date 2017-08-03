@@ -41,22 +41,28 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 					if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path), true) == null)
 						if (!isSilent())
 							out.setReturnCode(1, "Could not create directory (or non-existing parents): " + path);
-				} else if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path)) == null)
-					if (!isSilent())
-						out.setReturnCode(2, "Could not create directory: " + path);
-			} else if (bP) {
-				if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path), true) == null) {
-					if (!isSilent())
-						out.printErrln("Could not create directory (or non-existing parents): " + path);
-					logger.log(Level.WARNING, "Could not create directory (or non-existing parents): " + path);
-					success = false;
 				}
-			} else if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path)) == null) {
-				if (!isSilent())
-					out.printErrln("Could not create directory: " + path);
-				logger.log(Level.WARNING, "Could not create directory: " + path);
-				success = false;
+				else
+					if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path)) == null)
+						if (!isSilent())
+							out.setReturnCode(2, "Could not create directory: " + path);
 			}
+			else
+				if (bP) {
+					if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path), true) == null) {
+						if (!isSilent())
+							out.printErrln("Could not create directory (or non-existing parents): " + path);
+						logger.log(Level.WARNING, "Could not create directory (or non-existing parents): " + path);
+						success = false;
+					}
+				}
+				else
+					if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path)) == null) {
+						if (!isSilent())
+							out.printErrln("Could not create directory: " + path);
+						logger.log(Level.WARNING, "Could not create directory: " + path);
+						success = false;
+					}
 	}
 
 	/**

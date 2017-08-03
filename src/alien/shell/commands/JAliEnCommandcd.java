@@ -30,19 +30,24 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 					commander.curDir = newDir;
 				else
 					out.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
-			} else
+			}
+			else
 				out.setReturnCode(1, "No such file or directory");
-		} else if (newDir != null) {
-			if (newDir.isDirectory()) // Test added by sraje (Shikhar Raje, IIIT Hyderabad)
-			{
-				commander.curDir = newDir;
-				out.setReturnArgs(deserializeForRoot(1));
-			} else
-				out.printErrln("cd: " + alArguments.get(0) + ": Not a directory");
-		} else {
-			out.printErrln("No such directory.");
-			out.setReturnArgs(deserializeForRoot(0));
 		}
+		else
+			if (newDir != null) {
+				if (newDir.isDirectory()) // Test added by sraje (Shikhar Raje, IIIT Hyderabad)
+				{
+					commander.curDir = newDir;
+					out.setReturnArgs(deserializeForRoot(1));
+				}
+				else
+					out.printErrln("cd: " + alArguments.get(0) + ": Not a directory");
+			}
+			else {
+				out.printErrln("No such directory.");
+				out.setReturnArgs(deserializeForRoot(0));
+			}
 
 	}
 

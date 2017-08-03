@@ -14,14 +14,14 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get a JDL object
- * 
+ *
  * @author ron
  * @since Jun 05, 2011
  */
 public class GetMasterjob extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -2299330738741897654L;
 
@@ -31,7 +31,7 @@ public class GetMasterjob extends Request {
 	static transient final Logger logger = ConfigUtils.getLogger(TaskQueueUtils.class.getCanonicalName());
 
 	/**
-	 * 
+	 *
 	 */
 	private List<Job> subJobs = null;
 
@@ -47,15 +47,13 @@ public class GetMasterjob extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param jobId
 	 * @param status
 	 * @param id
 	 * @param site
 	 */
-	public GetMasterjob(final AliEnPrincipal user, final String role, final long jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site) {
+	public GetMasterjob(final AliEnPrincipal user, final long jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.jobId = jobId;
 		this.status = status;
 		this.id = id;
@@ -78,7 +76,7 @@ public class GetMasterjob extends Request {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return the masterjob
 	 */
 	public List<Job> subJobStatus() {
@@ -86,7 +84,7 @@ public class GetMasterjob extends Request {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return the masterjob
 	 */
 	public HashMap<Job, List<Job>> masterJobStatus() {

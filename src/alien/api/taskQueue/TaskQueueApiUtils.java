@@ -63,7 +63,7 @@ public class TaskQueueApiUtils {
 			final Collection<Integer> jobid, final String orderByKey, final int limit) {
 
 		try {
-			final GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), commander.getRole(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit));
+			final GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit));
 
 			return ps.returnPS();
 		} catch (final ServerException e) {
@@ -83,7 +83,7 @@ public class TaskQueueApiUtils {
 	public List<Job> getMasterJobStatus(final long jobId, final Set<JobStatus> status, final List<Integer> id, final List<String> site) {
 
 		try {
-			final GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), commander.getRole(), jobId, status, id, site));
+			final GetMasterjob mj = Dispatcher.execute(new GetMasterjob(commander.getUser(), jobId, status, id, site));
 
 			// return mj.masterJobStatus();
 			return mj.subJobStatus();
@@ -103,7 +103,7 @@ public class TaskQueueApiUtils {
 	public String getTraceLog(final int queueId) {
 
 		try {
-			final GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), commander.getRole(), queueId));
+			final GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), queueId));
 
 			return trace.getTraceLog();
 		} catch (final ServerException e) {
@@ -121,7 +121,7 @@ public class TaskQueueApiUtils {
 	public String getJDL(final int queueId) {
 
 		try {
-			final GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), commander.getRole(), queueId));
+			final GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), queueId));
 
 			return jdl.getJDL();
 		} catch (final ServerException e) {
@@ -139,7 +139,7 @@ public class TaskQueueApiUtils {
 	public Job getJob(final int queueId) {
 
 		try {
-			final GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), commander.getRole(), queueId));
+			final GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), queueId));
 
 			return job.getJob();
 		} catch (final ServerException e) {
@@ -157,7 +157,7 @@ public class TaskQueueApiUtils {
 	public List<Job> getJobs(final List<Long> queueIds) {
 
 		try {
-			final GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), commander.getRole(), queueIds));
+			final GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), queueIds));
 
 			return job.getJobs();
 		} catch (final ServerException e) {
@@ -213,7 +213,7 @@ public class TaskQueueApiUtils {
 		// final JDL signedJDL = JobSigner.signJob(JAKeyStore.clientCert, "User.cert", JAKeyStore.pass,
 		// commander.getUser().getName(), ojdl);
 
-		final SubmitJob j = new SubmitJob(commander.getUser(), commander.getRole(), jdl);
+		final SubmitJob j = new SubmitJob(commander.getUser(), jdl);
 
 		final SubmitJob response = Dispatcher.execute(j);
 
@@ -231,7 +231,7 @@ public class TaskQueueApiUtils {
 	public boolean killJob(final long queueId) {
 
 		try {
-			final KillJob j = new KillJob(commander.getUser(), commander.getRole(), queueId);
+			final KillJob j = new KillJob(commander.getUser(), queueId);
 
 			Dispatcher.execute(j);
 			return j.wasKilled();
@@ -342,7 +342,7 @@ public class TaskQueueApiUtils {
 	public GetMatchJob getMatchJob(final HashMap<String, Object> matchRequest) {
 
 		try {
-			final GetMatchJob gmj = Dispatcher.execute(new GetMatchJob(commander.getUser(), commander.getRole(), matchRequest));
+			final GetMatchJob gmj = Dispatcher.execute(new GetMatchJob(commander.getUser(), matchRequest));
 			return gmj;
 		} catch (final ServerException e) {
 			System.out.println("Could not get a match Job: " + e.getMessage());
@@ -358,7 +358,7 @@ public class TaskQueueApiUtils {
 	public GetNumberWaitingJobs getNumberWaitingForSite(final HashMap<String, Object> matchRequest) {
 
 		try {
-			final GetNumberWaitingJobs gmj = Dispatcher.execute(new GetNumberWaitingJobs(commander.getUser(), commander.getRole(), matchRequest));
+			final GetNumberWaitingJobs gmj = Dispatcher.execute(new GetNumberWaitingJobs(commander.getUser(), matchRequest));
 			return gmj;
 		} catch (final ServerException e) {
 			System.out.println("Could not get number of matching jobs: " + e.getMessage());
@@ -377,7 +377,7 @@ public class TaskQueueApiUtils {
 	public GetNumberFreeSlots getNumberFreeSlots(final String host, final int port, final String ceName, final String version) {
 
 		try {
-			final GetNumberFreeSlots gmj = Dispatcher.execute(new GetNumberFreeSlots(commander.getUser(), commander.getRole(), host, port, ceName, version));
+			final GetNumberFreeSlots gmj = Dispatcher.execute(new GetNumberFreeSlots(commander.getUser(), host, port, ceName, version));
 			return gmj;
 		} catch (final ServerException e) {
 			System.out.println("Could get not free slots: " + e.getMessage());

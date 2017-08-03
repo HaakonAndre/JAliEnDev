@@ -165,7 +165,7 @@ public class FSMessageDequeue {
 				try {
 					final FSMessageEnqueue q = new FSMessageEnqueue("/tmp/qout", "/tmp/qin/" + Request.getVMID());
 
-					final Request r = new SEfromString(null, null, "ALICE::CERN::EOS");
+					final Request r = new SEfromString(null, "ALICE::CERN::EOS");
 
 					final Request reply = q.dispatchRequest(r);
 

@@ -30,15 +30,13 @@ public class LFNfromString extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param paths
 	 * @param ignoreFolders
 	 * @param evenIfDoesntExist
 	 *
 	 */
-	public LFNfromString(final AliEnPrincipal user, final String role, final boolean ignoreFolders, final boolean evenIfDoesntExist, final Collection<String> paths) {
+	public LFNfromString(final AliEnPrincipal user, final boolean ignoreFolders, final boolean evenIfDoesntExist, final Collection<String> paths) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.path = paths;
 		this.ignoreFolders = ignoreFolders;
 		this.evenIfDoesntExist = evenIfDoesntExist;

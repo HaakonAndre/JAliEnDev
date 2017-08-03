@@ -25,14 +25,12 @@ public class DeleteMirror extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param fpath
 	 * @param isGuid
 	 * @param se
 	 */
-	public DeleteMirror(final AliEnPrincipal user, final String role, final String fpath, final boolean isGuid, final String se) {
+	public DeleteMirror(final AliEnPrincipal user, final String fpath, final boolean isGuid, final String se) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		path = fpath;
 		this.isGuid = isGuid;
 		this.se = se;

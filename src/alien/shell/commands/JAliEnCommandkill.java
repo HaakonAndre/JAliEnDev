@@ -21,7 +21,7 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 		final List<Job> jobs = commander.q_api.getJobs(queueIds);
 
 		for (final Job job : jobs)
-			if (AuthorizationChecker.canModifyJob(job, commander.user, commander.role))
+			if (AuthorizationChecker.canModifyJob(job, commander.user))
 				commander.q_api.killJob(job.queueId);
 		if (out.isRootPrinter())
 			out.setReturnCode(1, "not implemented yet ");

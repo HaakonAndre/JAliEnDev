@@ -16,7 +16,7 @@ import alien.user.AliEnPrincipal;
 
 /**
  * Get the LFN object for this path
- * 
+ *
  * @author costing
  * @since 2011-03-04
  */
@@ -30,14 +30,12 @@ public class ListSEDistance extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param sitename
 	 * @param write
 	 * @param lfn_name
 	 */
-	public ListSEDistance(final AliEnPrincipal user, final String role, final String sitename, final boolean write, final String lfn_name) {
+	public ListSEDistance(final AliEnPrincipal user, final String sitename, final boolean write, final String lfn_name) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.lfn_name = lfn_name;
 		this.write = write;
 		if (sitename == null || sitename.length() == 0)

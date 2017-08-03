@@ -1226,7 +1226,7 @@ public class TaskQueueUtils {
 	 * @param jdlArguments
 	 * @return array of arguments to apply to the JDL
 	 * @see #applyJDLArguments(String, String...)
-	 * @see #submit(LFN, AliEnPrincipal, String, String...)
+	 * @see #submit(LFN, AliEnPrincipal, String...)
 	 */
 	public static String[] splitArguments(final String jdlArguments) {
 		final StringTokenizer st = new StringTokenizer(jdlArguments);
@@ -1306,15 +1306,12 @@ public class TaskQueueUtils {
 	 * @throws IOException
 	 *             if some file cannot be located
 	 */
-	private static final void expandExecutables(final JDL jdl, final AliEnPrincipal account, final String role) throws IOException {
+	private static final void expandExecutables(final JDL jdl, final AliEnPrincipal account) throws IOException {
 		final Set<String> pathsToCheck = new LinkedHashSet<>();
 
 		pathsToCheck.add("/bin/");
 		pathsToCheck.add("/alice/bin/");
 		pathsToCheck.add("/panda/bin/");
-
-		if (role != null && !account.getName().equals(role))
-			pathsToCheck.add(UsersHelper.getHomeDir(role) + "bin/");
 
 		pathsToCheck.add(UsersHelper.getHomeDir(account.getName()) + "bin/");
 
@@ -1344,7 +1341,7 @@ public class TaskQueueUtils {
 				else
 					options.add(executable);
 
-				final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, role, true, false, options));
+				final LFNfromString answer = Dispatcher.execute(new LFNfromString(account, true, false, options));
 
 				final List<LFN> lfns = answer.getLFNs();
 
@@ -1370,14 +1367,13 @@ public class TaskQueueUtils {
 	 *            the catalogue name of the JDL to be submitted
 	 * @param account
 	 *            account from where the submit command was received
-	 * @param role
 	 * @param arguments
 	 *            arguments to the JDL, should be at least as many as the largest $N that shows up in the JDL
 	 * @return the job ID
 	 * @throws IOException
 	 *             in case of problems like downloading the respective JDL or not enough arguments provided to it
 	 */
-	public static long submit(final LFN file, final AliEnPrincipal account, final String role, final String... arguments) throws IOException {
+	public static long submit(final LFN file, final AliEnPrincipal account, final String... arguments) throws IOException {
 		if (file == null || !file.exists || !file.isFile())
 			throw new IllegalArgumentException("The LFN is not a valid file");
 
@@ -1390,11 +1386,11 @@ public class TaskQueueUtils {
 
 		jdl.set("JDLPath", file.getCanonicalName());
 
-		return submit(jdl, account, role);
+		return submit(jdl, account);
 	}
 
-	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal account, final String owner) throws IOException {
-		expandExecutables(jdl, account, owner);
+	private static void prepareJDLForSubmission(final JDL jdl, final AliEnPrincipal account) throws IOException {
+		expandExecutables(jdl, account);
 
 		Float price = jdl.getFloat("Price");
 
@@ -1418,7 +1414,7 @@ public class TaskQueueUtils {
 		if (jdl.get("MemorySize") == null)
 			jdl.set("MemorySize", "8GB");
 
-		jdl.set("User", owner);
+		jdl.set("User", account.getName());
 
 		// set the requirements anew
 		jdl.delete("Requirements");
@@ -1512,14 +1508,13 @@ public class TaskQueueUtils {
 	 *            job description, in plain text
 	 * @param account
 	 *            account from where the submit command was received
-	 * @param role
 	 * @return the job ID
 	 * @throws IOException
 	 *             in case of problems such as the number of provided arguments is not enough
 	 * @see #applyJDLArguments(String, String...)
 	 */
-	public static long submit(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
-		final String owner = prepareSubmission(j, account, role);
+	public static long submit(final JDL j, final AliEnPrincipal account) throws IOException {
+		final String owner = prepareSubmission(j, account);
 
 		final FileQuota quota = QuotaUtilities.getFileQuota(owner);
 
@@ -1537,12 +1532,10 @@ public class TaskQueueUtils {
 	 *            JDL to submit
 	 * @param account
 	 *            AliEn account that requests the submission
-	 * @param role
-	 *            one of the role names to which the account has access to
 	 * @return the AliEn account name that will own the job
 	 * @throws IOException
 	 */
-	public static String prepareSubmission(final JDL j, final AliEnPrincipal account, final String role) throws IOException {
+	public static String prepareSubmission(final JDL j, final AliEnPrincipal account) throws IOException {
 		// TODO : check this account's quota before submitting
 
 		final String packageMessage = PackageUtils.checkPackageRequirements(j);
@@ -1550,11 +1543,9 @@ public class TaskQueueUtils {
 		if (packageMessage != null)
 			throw new IOException(packageMessage);
 
-		final String owner = role != null && (account.hasRole(role) || account.canBecome(role)) ? role : account.getName();
+		prepareJDLForSubmission(j, account);
 
-		prepareJDLForSubmission(j, account, owner);
-
-		return owner;
+		return account.getName();
 	}
 
 	/**
@@ -2016,13 +2007,12 @@ public class TaskQueueUtils {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param queueId
 	 * @return state of the kill operation
 	 */
-	public static boolean killJob(final AliEnPrincipal user, final String role, final long queueId) {
-		if (AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId), user, role)) {
-			System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
+	public static boolean killJob(final AliEnPrincipal user, final long queueId) {
+		if (AuthorizationChecker.canModifyJob(TaskQueueUtils.getJob(queueId), user)) {
+			System.out.println("Authorized job kill for [" + queueId + "] by user/role [" + user.getName() + "].");
 
 			final Job j = getJob(queueId, true);
 
@@ -2057,7 +2047,7 @@ public class TaskQueueUtils {
 
 		}
 
-		System.out.println("Job kill authorization failed for [" + queueId + "] by user/role [" + user.getName() + "/" + role + "].");
+		System.out.println("Job kill authorization failed for [" + queueId + "] by user/role [" + user.getName() + "].");
 		return false;
 	}
 
@@ -2135,9 +2125,8 @@ public class TaskQueueUtils {
 						if ((newStatus == JobStatus.SAVED && arg != null && !"".equals(arg)) || newStatus == JobStatus.ERROR_V || newStatus == JobStatus.STAGING)
 							jdltags.put("jdl", arg);
 						else
-							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN) {
+							if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN)
 								jdltags.put("finished", time);
-							}
 							else
 								if (JobStatus.finalStates().contains(newStatus) || newStatus == JobStatus.SAVED_WARN || newStatus == JobStatus.SAVED) {
 
@@ -2313,15 +2302,14 @@ public class TaskQueueUtils {
 			if (!db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues)))
 				return false;
 
-			if (joblogtags != null && joblogtags.size() > 0) {
-				for (Map.Entry<String, String> entry : joblogtags.entrySet()) {
+			if (joblogtags != null && joblogtags.size() > 0)
+				for (final Map.Entry<String, String> entry : joblogtags.entrySet()) {
 					insertValues.put("tag", entry.getKey());
 					insertValues.put("procinfo", entry.getValue());
 
 					if (!db.query(DBFunctions.composeInsert("JOBMESSAGES", insertValues)))
 						return false;
 				}
-			}
 		}
 
 		return true;

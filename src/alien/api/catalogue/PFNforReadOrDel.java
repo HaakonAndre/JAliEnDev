@@ -53,16 +53,14 @@ public class PFNforReadOrDel extends Request {
 	 * Get PFNs to read
 	 *
 	 * @param user
-	 * @param role
 	 * @param site
 	 * @param access
 	 * @param lfn
 	 * @param ses
 	 * @param exses
 	 */
-	public PFNforReadOrDel(final AliEnPrincipal user, final String role, final String site, final AccessType access, final LFN lfn, final List<String> ses, final List<String> exses) {
+	public PFNforReadOrDel(final AliEnPrincipal user, final String site, final AccessType access, final LFN lfn, final List<String> ses, final List<String> exses) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.site = site;
 		this.lfn = lfn;
 		this.access = access;

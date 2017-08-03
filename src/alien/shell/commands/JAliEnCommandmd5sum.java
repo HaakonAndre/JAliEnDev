@@ -21,13 +21,15 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfnName));
 			if (lfn == null)
 				out.printErrln("LFN does exist");
-			else if (lfn.md5 != null) {
-				out.printOutln("md5: " + lfn.md5);
-				System.out.println(lfn);
-			} else {
-				out.printErrln("Can not get md5 for this file");
-				System.out.println(lfn);
-			}
+			else
+				if (lfn.md5 != null) {
+					out.printOutln("md5: " + lfn.md5);
+					System.out.println(lfn);
+				}
+				else {
+					out.printErrln("Can not get md5 for this file");
+					System.out.println(lfn);
+				}
 			// GUID guid = GUIDUtils.getGUID( );
 		}
 

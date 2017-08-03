@@ -9,7 +9,9 @@ import alien.api.DispatchSSLClient;
 import alien.api.ServerException;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
+import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
+import alien.user.UserFactory;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -17,13 +19,12 @@ import joptsimple.OptionSet;
 public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 	private TokenCertificateType tokentype = TokenCertificateType.USER_CERTIFICATE;
-	private String role = null;			// This is the role user wants to have
-	private int validity = 2;			// Default validity is two days
-	private String extension = null;	// Token extension (jobID for job tokens)
+	private String role = null; // This is the role user wants to have
+	private int validity = 2; // Default validity is two days
+	private String extension = null; // Token extension (jobID for job tokens)
 
 	public JAliEnCommandtoken(JAliEnCOMMander commander, UIPrintWriter out, ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
-		role = commander.role;
 
 		try {
 
@@ -75,8 +76,9 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		}
 		X509Certificate x509cert = (X509Certificate) cert;
 
-		GetTokenCertificate tokenreq = new GetTokenCertificate(commander.user, role, tokentype, extension, validity,
-				x509cert);
+		AliEnPrincipal requestedIdentity = role != null ? UserFactory.getByUsername(role) : commander.user;
+
+		GetTokenCertificate tokenreq = new GetTokenCertificate(requestedIdentity, tokentype, extension, validity, x509cert);
 
 		try {
 			tokenreq = DispatchSSLClient.dispatchRequest(tokenreq);
@@ -87,7 +89,8 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		if (out.isRootPrinter()) {
 			out.setField("tokencert", tokenreq.getCertificateAsString());
 			out.setField("tokenkey", tokenreq.getPrivateKeyAsString());
-		} else {
+		}
+		else {
 			out.printOut(tokenreq.getCertificateAsString());
 			out.printOut(tokenreq.getPrivateKeyAsString());
 		}

@@ -107,10 +107,9 @@ public final class FileSystemUtils {
 	/**
 	 * @param sourcename
 	 * @param user
-	 * @param role
 	 * @return the matching lfns from the catalogue
 	 */
-	public static List<String> expandPathWildCards(final String sourcename, final AliEnPrincipal user, final String role) {
+	public static List<String> expandPathWildCards(final String sourcename, final AliEnPrincipal user) {
 		final List<String> result = new ArrayList<>();
 
 		final int idxStar = sourcename.indexOf('*');
@@ -138,7 +137,7 @@ public final class FileSystemUtils {
 		}
 
 		try {
-			final LFNListingfromString listing = Dispatcher.execute(new LFNListingfromString(user, role, path));
+			final LFNListingfromString listing = Dispatcher.execute(new LFNListingfromString(user, path));
 
 			final String processedPattern = Format.replace(Format.replace(pattern, "*", ".*"), "?", ".");
 

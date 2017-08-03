@@ -75,10 +75,9 @@ public class XMLPrintWriter extends UIPrintWriter {
 	}
 
 	@Override
-	protected void setenv(final String cDir, final String user, final String cRole) {
+	protected void setenv(final String cDir, final String user) {
 		metaInfo.put("pwd", cDir);
 		metaInfo.put("user", user);
-		metaInfo.put("role", cRole);
 	}
 
 	@Override
@@ -160,7 +159,6 @@ public class XMLPrintWriter extends UIPrintWriter {
 	 *
 	 * @param key
 	 * @param value
-	 * @return the previous meta information value for this key
 	 */
 	@Override
 	public void setMetaInfo(final String key, final String value) {

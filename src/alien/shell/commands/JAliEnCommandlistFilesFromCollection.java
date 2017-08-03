@@ -48,7 +48,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			collectionPath = commander.getCurrentDir().getCanonicalName() + sPath;
 
 		try {
-			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), commander.getRole(), collectionPath));
+			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath));
 
 			lfns = ret.getLFNs();
 		} catch (final ServerException e) {

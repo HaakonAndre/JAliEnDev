@@ -58,12 +58,10 @@ public class RegisterEnvelopes extends Request {
 	 * Register PFNs with envelopes
 	 *
 	 * @param user
-	 * @param role
 	 * @param signedEnvelopes
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String role, final List<String> signedEnvelopes) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final List<String> signedEnvelopes) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.signedEnvelopes = signedEnvelopes;
 	}
 
@@ -71,15 +69,13 @@ public class RegisterEnvelopes extends Request {
 	 * Register PFNs with envelopes
 	 *
 	 * @param user
-	 * @param role
 	 *
 	 * @param encryptedEnvelope
 	 * @param size
 	 * @param md5
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String role, final String encryptedEnvelope, final int size, final String md5) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final String encryptedEnvelope, final int size, final String md5) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.encryptedEnvelope = encryptedEnvelope;
 		this.size = size;
 		this.md5 = md5;

@@ -10,14 +10,14 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Jun 06, 2011
  */
 public class FindfromString extends Request {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -5938936122293608584L;
 	private final String path;
@@ -27,14 +27,12 @@ public class FindfromString extends Request {
 
 	/**
 	 * @param user
-	 * @param role
 	 * @param path
 	 * @param pattern
 	 * @param flags
 	 */
-	public FindfromString(final AliEnPrincipal user, final String role, final String path, final String pattern, final int flags) {
+	public FindfromString(final AliEnPrincipal user, final String path, final String pattern, final int flags) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.path = path;
 		this.pattern = pattern;
 		this.flags = flags;
@@ -59,7 +57,7 @@ public class FindfromString extends Request {
 
 	/**
 	 * Made by sraje (Shikhar Raje, IIIT Hyderabad) // *
-	 * 
+	 *
 	 * @return the list of file names (one level down only) that matched the
 	 *         find
 	 */

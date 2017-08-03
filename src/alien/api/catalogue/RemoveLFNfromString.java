@@ -6,37 +6,34 @@ import alien.catalogue.LFNUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * 
+ *
  * @author ron
  * @since Oct 27, 2011
  */
 public class RemoveLFNfromString extends Request {
 
-
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 8507879864667855615L;
 	private final String path;
-	
+
 	private boolean wasRemoved = false;
 
 	/**
-	 * @param user 
-	 * @param role 
+	 * @param user
 	 * @param path
 	 */
-	public RemoveLFNfromString(final AliEnPrincipal user, final String role, final String path) {
+	public RemoveLFNfromString(final AliEnPrincipal user, final String path) {
 		setRequestUser(user);
-		setRoleRequest(role);
 		this.path = path;
 	}
 
 	@Override
 	public void run() {
-		LFN lfn = LFNUtils.getLFN(path);
-		if(lfn!=null)
-			wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn);		
+		final LFN lfn = LFNUtils.getLFN(path);
+		if (lfn != null)
+			wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn);
 
 	}
 
@@ -46,7 +43,6 @@ public class RemoveLFNfromString extends Request {
 	public boolean wasRemoved() {
 		return this.wasRemoved;
 	}
-
 
 	@Override
 	public String toString() {

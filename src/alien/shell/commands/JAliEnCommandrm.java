@@ -39,7 +39,7 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 		for (final String path : alArguments) {
 			// My added code... From the Dispatcher, direct, instead of from the wrapper for in the COMMander class, like above...
 
-			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), commander.getRole(), path);
+			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), path);
 			if (out.isRootPrinter())
 				try {
 					final RemoveLFNfromString a = Dispatcher.execute(rlfn);// Remember, all checking is being done server side now.

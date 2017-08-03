@@ -34,7 +34,8 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 					if (!isSilent())
 						out.printOutln(ret);
 				}
-		} else {
+		}
+		else {
 			out.printErrln("Couldn't find any packages.");
 			out.setReturnCode(1, "Couldn't find any packages.");
 			out.setReturnArgs(deserializeForRoot(0));
@@ -49,8 +50,9 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 		if (System.getProperty("os.arch").contains("amd64"))
 			ret += "-x86_64";
 
-		else if (ret.toLowerCase().contains("mac") && System.getProperty("os.arch").contains("ppc"))
-			ret = "Darwin-PowerMacintosh";
+		else
+			if (ret.toLowerCase().contains("mac") && System.getProperty("os.arch").contains("ppc"))
+				ret = "Darwin-PowerMacintosh";
 
 		return ret;
 	}
