@@ -85,7 +85,7 @@ public class LFNCSDUtils {
 	 * @param flags
 	 * @return list of lfns that fit the patterns, if any
 	 */
-	public static Collection<LFN_CSD> recurseAndFilterLFNs(final String command, final String base, final String pattern, final String parameters, final String metadata, final int flags) {
+	public static Collection<LFN_CSD> recurseAndFilterLFNs(final String command, final String base, final String pattern, final String metadata, final int flags) {
 		final Set<LFN_CSD> ret;
 		final AtomicInteger counter_left = new AtomicInteger();
 
@@ -213,13 +213,16 @@ public class LFNCSDUtils {
 				jep.parseExpression(expression);
 			}
 
+			ArrayList<LFN_CSD> filesVersion = null;
+			if ((flags & LFNCSDUtils.FIND_BIGGEST_VERSION) == 0)
+				filesVersion = new ArrayList<>();
+
 			// loop entries
 			for (LFN_CSD lfnc : list) {
 				if (lfnc.type != 'd') {
 					// no dir
 					if (lastpart) {
 						// check pattern
-						// Pattern p = Pattern.compile(file_pattern);
 						Matcher m = p.matcher(lfnc.child);
 						if (m.matches()) {
 							if (jep != null) {
@@ -243,7 +246,10 @@ public class LFNCSDUtils {
 									// This should return 1.0 or 0.0
 									Object result = jep.getValueAsObject();
 									if (result != null && result instanceof Double && ((Double) result).intValue() == 1.0) {
-										col.add(lfnc);
+										if (filesVersion != null)
+											filesVersion.add(lfnc);
+										else
+											col.add(lfnc);
 									}
 								} catch (Exception e) {
 									logger.info("RecurseLFNs metadata - cannot get result: " + e);
@@ -293,6 +299,26 @@ public class LFNCSDUtils {
 					}
 				}
 
+			}
+
+			// we filter and add the file if -y and metadata
+			if (jep != null && filesVersion != null) {
+				Integer maxVersion = Integer.valueOf(-1);
+				LFN_CSD maxLfn = null;
+
+				for (LFN_CSD lfnc : filesVersion) {
+					// Other way: String version_str = lfnc.child.substring(lfnc.child.indexOf("_v") + 2, lfnc.child.indexOf("_s0"));
+					if (lfnc.metadata.containsKey("CDB__version")) {
+						Integer version = Integer.valueOf(lfnc.metadata.get("CDB__version"));
+						if (maxVersion.intValue() < version.intValue()) {
+							maxVersion = version;
+							maxLfn = lfnc;
+						}
+					}
+				}
+
+				if (maxLfn != null)
+					col.add(maxLfn);
 			}
 
 			counter_left.decrementAndGet();
