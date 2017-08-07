@@ -274,10 +274,16 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (psPool.containsKey(querykey))
 			return psPool.get(querykey);
 
-		PreparedStatement ps = session.prepare(querykey);
-		psPool.put(querykey, ps);
+		synchronized (psPool) { // we lock the pool only if we need to insert
+			if (psPool.containsKey(querykey)) // in case other thread past the first condition
+				return psPool.get(querykey);
 
-		return ps;
+			PreparedStatement ps = session.prepare(querykey);
+			logger.info("Adding PreparedStatement to pool: " + querykey);
+			psPool.put(querykey, ps);
+			return ps;
+		}
+
 	}
 
 	/**
