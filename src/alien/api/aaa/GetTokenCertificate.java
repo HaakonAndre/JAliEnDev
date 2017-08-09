@@ -8,11 +8,14 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAmount;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import alien.api.Cacheable;
 import alien.api.Request;
+import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
 import alien.user.AliEnPrincipal;
 import io.github.olivierlemasle.ca.CA;
@@ -32,6 +35,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	private static final long serialVersionUID = 7799371357160254760L;
 
 	private static final RootCertificate rootCert;
+	static transient final Logger logger = ConfigUtils.getLogger(AuthorizationFactory.class.getCanonicalName());
 
 	static {
 		if (ConfigUtils.isCentralService()) {
@@ -63,6 +67,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	final String extension;
 	final int validity;
 	final X509Certificate userCertificate;
+	final String requestedUser;
 
 	// incoming fields
 
@@ -81,13 +86,14 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	 *            the certificate the user presented to identify itself. This
 	 *            will restrict the validity of the issued token
 	 */
-	public GetTokenCertificate(final AliEnPrincipal user, final TokenCertificateType certificateType, final String extension, final int validity, final X509Certificate userCertificate) {
+	public GetTokenCertificate(final AliEnPrincipal user, final String requestedUser, final TokenCertificateType certificateType, final String extension, final int validity, final X509Certificate userCertificate) {
 		setRequestUser(user);
 
 		this.certificateType = certificateType;
 		this.extension = extension;
 		this.validity = validity;
 		this.userCertificate = userCertificate;
+		this.requestedUser = requestedUser;
 	}
 
 	@Override
@@ -96,6 +102,12 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			throw new IllegalArgumentException("Certificate type cannot be null");
 
 		DnBuilder builder = CA.dn().setC("ch").setO("AliEn");
+		final String requester = getEffectiveRequester().getName();
+		final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
+		if (logger.isLoggable(Level.FINER)) {
+			logger.log(Level.FINER, "getPartnerIdentity: " + getPartnerIdentity().getName());
+			logger.log(Level.FINER, "getRequesterIdentity: " + getRequesterIdentity().getName());
+		}
 
 		switch (certificateType) {
 		case USER_CERTIFICATE:
@@ -105,7 +117,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			if (userCertificate == null)
 				throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
 
-			builder = builder.setCn("Users").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequester().getName());
+			builder = builder.setCn("Users").setCn(requester).setOu(requested);
 			break;
 		case JOB_TOKEN:
 			if (!getEffectiveRequester().isJobAgent())
@@ -114,7 +126,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			if (extension == null || extension.length() == 0)
 				throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
 
-			builder = builder.setCn("Jobs").setCn(getEffectiveRequester().getName()).setOu(getEffectiveRequester().getName());
+			builder = builder.setCn("Jobs").setCn(requester).setOu(requester);
 			break;
 		case JOB_AGENT_TOKEN:
 			if (!getEffectiveRequester().canBecome("vobox"))
