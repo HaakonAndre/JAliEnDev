@@ -19,9 +19,9 @@ import joptsimple.OptionSet;
 public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 	private TokenCertificateType tokentype = TokenCertificateType.USER_CERTIFICATE;
-	private String role = null; // This is the role user wants to have
-	private int validity = 2; // Default validity is two days
-	private String extension = null; // Token extension (jobID for job tokens)
+	private String requestedUser = null; 	// user1 can ask for token for user2
+	private int validity = 2; 				// Default validity is two days
+	private String extension = null; 		// Token extension (jobID for job tokens)
 
 	public JAliEnCommandtoken(JAliEnCOMMander commander, UIPrintWriter out, ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
@@ -30,15 +30,15 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 			final OptionParser parser = new OptionParser();
 
-			parser.accepts("r").withRequiredArg();
+			parser.accepts("u").withRequiredArg();
 			parser.accepts("jobid").withRequiredArg();
 			parser.accepts("v").withRequiredArg();
 			parser.accepts("t").withRequiredArg();
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
-			if (options.has("r")) {
-				role = (String) options.valueOf("r");
+			if (options.has("u")) {
+				requestedUser = (String) options.valueOf("u");
 			}
 			if (options.has("t")) {
 				switch ((String) options.valueOf("t")) {
@@ -76,9 +76,12 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		}
 		X509Certificate x509cert = (X509Certificate) cert;
 
-		AliEnPrincipal requestedIdentity = role != null ? UserFactory.getByUsername(role) : commander.user;
+		// If user1 can become user2, let him change identity, otherwise he will get back user1 token
+		// UPD: the "canBecome" check is already done on server side
+		//String requestedIdentity = requestedUser != null && commander.user.canBecome(requestedUser) ? requestedUser : 
+		//	commander.user.getName();
 
-		GetTokenCertificate tokenreq = new GetTokenCertificate(requestedIdentity, tokentype, extension, validity, x509cert);
+		GetTokenCertificate tokenreq = new GetTokenCertificate(commander.user, requestedUser, tokentype, extension, validity, x509cert);
 
 		try {
 			tokenreq = DispatchSSLClient.dispatchRequest(tokenreq);
@@ -101,7 +104,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		out.printOutln();
 		out.printOutln(helpUsage("token", "[-options]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-r <role>"));
+		out.printOutln(helpOption("-u <user>"));
 		out.printOutln(helpOption("-v <validity (days)>"));
 		out.printOutln(helpOption("-t <tokentype>"));
 		out.printOutln(helpOption("-jobid <jobID>"));

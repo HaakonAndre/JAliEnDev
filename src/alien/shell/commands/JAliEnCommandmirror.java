@@ -114,7 +114,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			HashMap<String, Integer> results;
 			try {
 				if (!this.useLFNasGuid)
-					lfn = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfn);
+					lfn = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfn);
 				results = commander.c_api.mirrorLFN(lfn, this.ses, this.exses, this.qos, this.useLFNasGuid, this.attempts);
 				for (final String s : results.keySet()) {
 					String result_string;

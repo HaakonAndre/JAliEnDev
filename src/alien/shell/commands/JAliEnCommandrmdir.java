@@ -23,8 +23,8 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		for (final String path : alPaths) {
-
-			final LFN dir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path), false);
+			
+			final LFN dir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path), false);
 
 			if (dir != null && dir.exists) {
 				if (dir.isDirectory()) {

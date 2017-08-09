@@ -14,7 +14,7 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		for (final String path : this.filelist)
-			commander.c_api.touchLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), path));
+			commander.c_api.touchLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path));
 
 	}
 

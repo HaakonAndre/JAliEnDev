@@ -44,8 +44,9 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 		if (sPath.startsWith("/"))
 			collectionPath = sPath;
-		else
-			collectionPath = commander.getCurrentDir().getCanonicalName() + sPath;
+		else {
+			collectionPath = commander.getCurrentDirName() + sPath;
+		}
 
 		try {
 			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath));

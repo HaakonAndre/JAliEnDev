@@ -18,7 +18,7 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		for (final String lfnName : this.alPaths) {
-			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfnName));
+			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 			if (lfn == null)
 				out.printErrln("LFN does exist");
 			else

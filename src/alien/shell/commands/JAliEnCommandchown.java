@@ -35,7 +35,7 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 		}
 
 		// boolean result = false;
-		final String path = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), this.file);
+		final String path = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), this.file);
 		// run chown command
 		final HashMap<String, Boolean> results = commander.c_api.chownLFN(path, this.user, this.group, this.recursive);
 

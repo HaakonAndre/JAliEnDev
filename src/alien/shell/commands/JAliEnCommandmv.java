@@ -28,13 +28,13 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		final String fullTarget = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), target);
+		final String fullTarget = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), target);
 		LFN tLFN = commander.c_api.getLFN(fullTarget, false);
 
 		if (size > 2) {
 			if ((tLFN != null && tLFN.isDirectory()))
 				for (int i = 0; i <= size - 2; i++) {
-					final String fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sources[i]);
+					final String fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sources[i]);
 					final LFN sLFN = commander.c_api.getLFN(fullSource, false);
 
 					if (sLFN.isFile() || sLFN.isDirectory()) {
@@ -47,7 +47,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 				if (tLFN == null) {
 					tLFN = commander.c_api.createCatalogueDirectory(fullTarget, true);
 					for (int i = 0; i <= size - 2; i++) {
-						final String fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sources[i]);
+						final String fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sources[i]);
 						final LFN sLFN = commander.c_api.getLFN(fullSource, false);
 
 						if (sLFN.isFile() || sLFN.isDirectory()) {
@@ -66,7 +66,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 		else
 			if (size == 2) {
-				final String fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sources[0]);
+				final String fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sources[0]);
 				final LFN sLFN = commander.c_api.getLFN(fullSource, false);
 
 				if (tLFN != null) {
@@ -190,11 +190,11 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 // @Override
 // public void run()
 // {
-// LFN sLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), source), false);
+// LFN sLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), source), false);
 //
 // if(sLFN!=null)
 // {
-// fullTarget = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), target);
+// fullTarget = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), target);
 //
 // LFN tLFN = commander.c_api.getLFN(fullTarget, false);
 //
@@ -212,7 +212,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 // out.setReturnArgs(deserializeForRoot(0));
 // }
 //
-// fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), source)
+// fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), source)
 // }
 // else
 // {

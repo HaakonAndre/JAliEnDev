@@ -99,7 +99,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		if (bY)
 			flags = flags | LFNUtils.FIND_BIGGEST_VERSION;
 
-		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), alPaths.get(0)), alPaths.get(1), flags);
+		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), flags);
 
 		if (lfns != null && !isSilent())
 			if (bX) {

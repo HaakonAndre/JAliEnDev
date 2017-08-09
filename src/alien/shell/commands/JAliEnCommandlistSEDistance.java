@@ -26,7 +26,7 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 		}
 
 		if (lfn_name != null && lfn_name.length() != 0)
-			this.lfn_name = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), this.lfn_name);
+			this.lfn_name = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), this.lfn_name);
 		final List<HashMap<SE, Double>> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name);
 		for (final HashMap<SE, Double> smap : results) {
 			final Set<SE> selist = smap.keySet();

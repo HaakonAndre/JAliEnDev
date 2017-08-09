@@ -69,16 +69,14 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		final int iDirs = alPaths.size();
 
 		if (iDirs == 0)
-			alPaths.add(commander.getCurrentDir().getCanonicalName());
+			alPaths.add(commander.getCurrentDirName());
 
 		final StringBuilder pathsNotFound = new StringBuilder();
 
 		final List<String> expandedPaths = new ArrayList<>(alPaths.size());
 
-		final LFN currentDir = commander.getCurrentDir();
-
 		for (final String sPath : alPaths) {
-			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, sPath);
+			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath);
 
 			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 

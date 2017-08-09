@@ -42,7 +42,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 		if (bG)
 			guid = lfnOrGuid;
 		else {
-			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfnOrGuid));
+			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnOrGuid));
 			if (lfn != null && lfn.guid != null)
 				guid = lfn.guid.toString();
 		}

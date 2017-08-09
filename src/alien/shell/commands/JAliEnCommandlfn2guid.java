@@ -23,7 +23,7 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 
-		final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), lfnName));
+		final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 
 		if (lfn == null)
 			out.printErrln("Could not get the LFN [" + lfnName + "].");

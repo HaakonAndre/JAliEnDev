@@ -29,7 +29,7 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 
 		if (sPath != null)
 
-			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDir().getCanonicalName(), sPath));
+			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath));
 
 		if (lfn == null) {
 			out.printOutln("No such file or directory: [" + sPath + "]");
