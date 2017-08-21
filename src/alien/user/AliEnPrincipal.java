@@ -27,6 +27,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	private static final long serialVersionUID = -5393260803758989309L;
 
 	private final String username;
+	private String defaultUser;
 
 	/**
 	 * Set of account names from LDAP that have the given DN
@@ -54,6 +55,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 */
 	AliEnPrincipal(final String username) {
 		this.username = StringFactory.get(username);
+		this.defaultUser = StringFactory.get(username);
 	}
 
 	/**
@@ -67,6 +69,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 		return username;
 	}
 
+	public String getDefaultUser() {
+		return defaultUser;
+	}
+
 	/**
 	 * If known, all usernames associated to a DN
 	 *
@@ -77,6 +83,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 		if (!sUsernames.contains(username))
 			sUsernames.add(StringFactory.get(username));
+	}
+
+	void setDefaultUser(final String name) {
+		defaultUser = name;
 	}
 
 	/**
@@ -190,8 +200,9 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	/**
-	 * Set the default role for this user. It can only be one of the roles declared in LDAP (or itself, or "users"). The method will silently refuse to set an invalid role and will keep the previous
-	 * value.
+	 * Set the default role for this user. It can only be one of the roles
+	 * declared in LDAP (or itself, or "users"). The method will silently refuse
+	 * to set an invalid role and will keep the previous value.
 	 *
 	 * @param newRole
 	 * @return the previous default role
@@ -214,7 +225,8 @@ public class AliEnPrincipal implements Principal, Serializable {
 	/**
 	 * Check if this is a JobAgent token certificate
 	 *
-	 * @return <code>true</code> if the DN indicates that this is a JobAgent identity
+	 * @return <code>true</code> if the DN indicates that this is a JobAgent
+	 *         identity
 	 */
 	public boolean isJobAgent() {
 		return jobAgentFlag;

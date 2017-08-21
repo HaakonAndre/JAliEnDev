@@ -87,7 +87,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 	 *            will restrict the validity of the issued token
 	 */
 	public GetTokenCertificate(final AliEnPrincipal user, final String requestedUser, final TokenCertificateType certificateType, final String extension, final int validity, final X509Certificate userCertificate) {
-		setRequestUser(user);
+		setRequestUser(user);		
 
 		this.certificateType = certificateType;
 		this.extension = extension;
@@ -102,12 +102,9 @@ public class GetTokenCertificate extends Request implements Cacheable {
 			throw new IllegalArgumentException("Certificate type cannot be null");
 
 		DnBuilder builder = CA.dn().setC("ch").setO("AliEn");
-		final String requester = getEffectiveRequester().getName();
+		
+		final String requester = getEffectiveRequester().getDefaultUser();
 		final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
-		if (logger.isLoggable(Level.FINER)) {
-			logger.log(Level.FINER, "getPartnerIdentity: " + getPartnerIdentity().getName());
-			logger.log(Level.FINER, "getRequesterIdentity: " + getRequesterIdentity().getName());
-		}
 
 		switch (certificateType) {
 		case USER_CERTIFICATE:

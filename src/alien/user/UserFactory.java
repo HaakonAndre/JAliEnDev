@@ -202,6 +202,7 @@ public final class UserFactory {
 				if (p == null)
 					p = getByUsername(dn.substring(dn.lastIndexOf("/CN=") + 4, dn.indexOf("/OU=")));
 				p.setJob(Long.valueOf(dn.substring(dn.lastIndexOf("/OU=") + 4)));
+				p.setDefaultUser(dn.substring(dn.lastIndexOf("/CN=") + 4, dn.indexOf("/OU=")));
 			}
 			else
 			if (dn.contains("/CN=Users")) {
@@ -210,6 +211,7 @@ public final class UserFactory {
 				p = getByRole(dn.substring(dn.indexOf("/OU=") + 4));
 				if (p == null)
 					p = getByUsername(dn.substring(dn.lastIndexOf("/CN=") + 4, dn.indexOf("/OU=")));
+				p.setDefaultUser(dn.substring(dn.lastIndexOf("/CN=") + 4, dn.indexOf("/OU=")));
 			}
 
 			if (p != null) {

@@ -12,8 +12,8 @@ import org.apache.catalina.realm.RealmBase;
 
 /**
  * Overrides X509Certificate Authentication to check the users in LDAP<br>
- * See here for more details: <a
- * href="http://monalisa.cern.ch/blog/2007/04/02/enabling-ssl-in-tomcat/">
+ * See here for more details:
+ * <a href="http://monalisa.cern.ch/blog/2007/04/02/enabling-ssl-in-tomcat/">
  * http://monalisa.cern.ch/blog/2007/04/02/enabling-ssl-in-tomcat/</a><br>
  * <br>
  * <br>

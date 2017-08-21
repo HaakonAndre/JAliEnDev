@@ -6,12 +6,11 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 
 import alien.api.DispatchSSLClient;
+import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
-import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
-import alien.user.UserFactory;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -76,15 +75,11 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		}
 		X509Certificate x509cert = (X509Certificate) cert;
 
-		// If user1 can become user2, let him change identity, otherwise he will get back user1 token
-		// UPD: the "canBecome" check is already done on server side
-		//String requestedIdentity = requestedUser != null && commander.user.canBecome(requestedUser) ? requestedUser : 
-		//	commander.user.getName();
-
 		GetTokenCertificate tokenreq = new GetTokenCertificate(commander.user, requestedUser, tokentype, extension, validity, x509cert);
 
 		try {
-			tokenreq = DispatchSSLClient.dispatchRequest(tokenreq);
+			tokenreq = Dispatcher.execute(new GetTokenCertificate(commander.user, requestedUser, tokentype, extension, validity, x509cert));
+			
 		} catch (ServerException e1) {
 			e1.printStackTrace();
 		}
