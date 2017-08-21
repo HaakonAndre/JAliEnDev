@@ -628,24 +628,8 @@ public class JBoxServer extends Thread {
 	 */
 	public static void startJBoxService(final int iDebug) {
 		logger.log(Level.INFO, "Starting JBox");
-		try {
-			if (!JAKeyStore.loadClientKeyStorage()) {
-				System.err.println("Grid Certificate could not be loaded.");
-				System.err.println("Exiting...");
-			}
-			else {
-				System.err.println(passACK);
-				JBoxServer.startJBoxServer(iDebug);
-			}
-		} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
-			logger.log(Level.SEVERE, "Wrong password! Try again", e);
-			System.err.println("Wrong password! Try again");
-			JBoxServer.startJBoxService(iDebug);
-		} catch (final Exception e) {
-			logger.log(Level.SEVERE, "Error loading the key", e);
-			System.err.println("Error loading the key");
-			JBoxServer.startJBoxService(iDebug);
-		}
+		System.err.println(passACK);
+		JBoxServer.startJBoxServer(iDebug);
 	}
 
 	/**

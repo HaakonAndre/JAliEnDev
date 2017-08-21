@@ -42,6 +42,10 @@ import alien.user.UsersHelper;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+
 public class TomcatServer {
 	/**
 	 * Logger
@@ -409,25 +413,6 @@ public class TomcatServer {
 			return;
 
 		logger.log(Level.INFO, "Tomcat starting ...");
-
-		// First, load user certificate and create keystore
-		try {
-			if (!JAKeyStore.loadClientKeyStorage()) {
-				System.err.println("Grid Certificate could not be loaded.");
-				System.err.println("Exiting...");
-				return;
-			}
-		} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
-			logger.log(Level.SEVERE, "Wrong password! Try again", e);
-			System.err.println("Wrong password! Try again");
-			TomcatServer.startTomcatServer(iDebugLevel);
-			return;
-		} catch (final Exception e) {
-			logger.log(Level.SEVERE, "Error loading the key", e);
-			System.err.println("Error loading the key");
-			TomcatServer.startTomcatServer(iDebugLevel);
-			return;
-		}
 
 		// Request token certificate from JCentral
 		if (!ConfigUtils.isCentralService()) {
