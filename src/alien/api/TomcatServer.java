@@ -42,11 +42,28 @@ import alien.user.UsersHelper;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
 public class TomcatServer {
+	
+	public final static class SessionListener implements HttpSessionListener {
+		
+		@Override
+		public void sessionDestroyed(HttpSessionEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public void sessionCreated(HttpSessionEvent arg0) {
+			// TODO Auto-generated method stub
+			HttpSession session = arg0.getSession();
+		}
+	}
 	/**
 	 * Logger
 	 */
@@ -89,6 +106,7 @@ public class TomcatServer {
 		securityConstraint.addAuthRole("users");
 		ctx.addSecurityRole("users");
 		ctx.addConstraint(securityConstraint);
+		//ctx.addApplicationListener(SessionListener.class.getName());
 
 		// Tell Jar Scanner not to look inside jar manifests
 		// otherwise it will produce useless warnings
@@ -201,24 +219,24 @@ public class TomcatServer {
 
 			final File tokenFile = new File(tmpDir, "jclient_token_" + iUserId);
 
-			try (FileWriter fw = new FileWriter(tokenFile)) {
-				fw.write("Host=" + sHost + "\n");
-				logger.fine("Host = " + sHost);
+			try (FileWriter fw = new FileWriter(tokenFile, true)) {
+				//fw.write("Host=" + sHost + "\n");
+				//logger.fine("Host = " + sHost);
 
 				fw.write("WSPort=" + iWSPort + "\n");
 				logger.fine("WSPort = " + iWSPort);
 
-				fw.write("User=" + sUser + "\n");
-				logger.fine("User = " + sUser);
+				//fw.write("User=" + sUser + "\n");
+				//logger.fine("User = " + sUser);
 
-				fw.write("Home=" + sHomeUser + "\n");
-				logger.fine("Home = " + sHomeUser);
+				//fw.write("Home=" + sHomeUser + "\n");
+				//logger.fine("Home = " + sHomeUser);
 
-				fw.write("Debug=" + iDebug + "\n");
-				logger.fine("Debug = " + iDebug);
+				//fw.write("Debug=" + iDebug + "\n");
+				//logger.fine("Debug = " + iDebug);
 
-				fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
-				logger.fine("PID = " + MonitorFactory.getSelfProcessID());
+				//fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
+				//logger.fine("PID = " + MonitorFactory.getSelfProcessID());
 
 				fw.flush();
 				fw.close();
