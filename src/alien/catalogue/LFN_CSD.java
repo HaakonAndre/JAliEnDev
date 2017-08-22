@@ -283,7 +283,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			psPool.put(querykey, ps);
 			return ps;
 		}
-
 	}
 
 	/**

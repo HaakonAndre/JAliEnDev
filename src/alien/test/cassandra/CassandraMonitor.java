@@ -43,21 +43,20 @@ public class CassandraMonitor {
 			"org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Hits", // OMR
 			"org.apache.cassandra.metrics:type=Cache,scope=KeyCache,name=Requests", // OMR
 			"org.apache.cassandra.metrics:type=Storage,name=Load", "org.apache.cassandra.metrics:type=Compaction,name=CompletedTasks", "org.apache.cassandra.metrics:type=Compaction,name=PendingTasks",
-			"java.lang:type=GarbageCollector,name=ConcurrentMarkSweep", "java.lang:type=GarbageCollector,name=ConcurrentMarkSweep", "org.apache.cassandra.metrics:type=Storage,name=Exceptions",
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Timeouts", "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Timeouts",
-			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Unavailables", "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Unavailables",
+			"org.apache.cassandra.metrics:type=Storage,name=Exceptions", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Timeouts",
+			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Timeouts", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Unavailables",
+			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Unavailables",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_index,name=TotalDiskSpaceUsed",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_metadata,name=TotalDiskSpaceUsed",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=se_lookup,name=TotalDiskSpaceUsed" };
-	static final String[] attributes = { "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Value", "Value", "CollectionCount",
-			"CollectionTime", "Count", "Count", "Count", "Count", "Count", "Count", "Count", "Count" };
+	static final String[] attributes = { "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Value", "Value", "Count", "Count", "Count",
+			"Count", "Count", "Count", "Count", "Count" };
 
 	static final String[] names = { "Write_TotalLatency_Count", "Read_TotalLatency_Count", "Write_Latency_OneMinuteRate", "Read_Latency_OneMinuteRate", "Write_Latency_Count", "Read_Latency_Count",
-			"KeyCache_Hits_OneMinuteRate", "KeyCache_Requests_OneMinuteRate", "Storage_Load_Count", "Compaction_CompletedTasks_Value", "Compaction_PendingTasks_Value",
-			"ConcurrentMarkSweep_CollectionCount", "ConcurrentMarkSweep_CollectionTime", "Storage_Exceptions_Count", "Read_Timeouts_Count", "Write_Timeouts_Count", "Read_Unavailables_Count",
-			"Write_Unavailables_Count", "Disk_Used_lfn_index", "Disk_Used_lfn_metadata", "Disk_Used_se_lookup" };
+			"KeyCache_Hits_OneMinuteRate", "KeyCache_Requests_OneMinuteRate", "Storage_Load_Count", "Compaction_CompletedTasks_Value", "Compaction_PendingTasks_Value", "Storage_Exceptions_Count",
+			"Read_Timeouts_Count", "Write_Timeouts_Count", "Read_Unavailables_Count", "Write_Unavailables_Count", "Disk_Used_lfn_index", "Disk_Used_lfn_metadata", "Disk_Used_se_lookup" };
 
-	static final boolean[] isRate = { false, false, true, true, false, false, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false };
+	static final boolean[] isRate = { false, false, true, true, false, false, true, true, false, false, false, false, false, false, false, false, false, false, false };
 
 	static double[] previousValues = new double[metrics.length];
 
