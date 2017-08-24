@@ -108,7 +108,8 @@ public final class UserFactory {
 			if (p != null) {
 				if (logger.isLoggable(Level.FINER))
 					logger.log(Level.FINER, "Account for " + i + " (" + sDNTransformed + ") is: " + p);
-
+				
+				p.setUserCert(certChain);
 				return p;
 			}
 
@@ -207,7 +208,7 @@ public final class UserFactory {
 			else
 			if (dn.contains("/CN=Users")) {
 				// /C=ch/O=AliEn/CN=Users/CN=username/OU=role
-				//                                       ^  ^	
+				//                                       ^  ^
 				p = getByRole(dn.substring(dn.indexOf("/OU=") + 4));
 				if (p == null)
 					p = getByUsername(dn.substring(dn.lastIndexOf("/CN=") + 4, dn.indexOf("/OU=")));

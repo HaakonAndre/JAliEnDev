@@ -3,6 +3,7 @@ package alien.user;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -28,6 +29,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	private final String username;
 	private String defaultUser;
+	private X509Certificate[] usercert;
 
 	/**
 	 * Set of account names from LDAP that have the given DN
@@ -56,6 +58,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	AliEnPrincipal(final String username) {
 		this.username = StringFactory.get(username);
 		this.defaultUser = StringFactory.get(username);
+		this.usercert = null;
 	}
 
 	/**
@@ -71,6 +74,14 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	public String getDefaultUser() {
 		return defaultUser;
+	}
+
+	public X509Certificate[] getUserCert() {
+		return usercert;
+	}
+
+	public void setUserCert(X509Certificate[] cert) {
+		usercert = cert;
 	}
 
 	/**

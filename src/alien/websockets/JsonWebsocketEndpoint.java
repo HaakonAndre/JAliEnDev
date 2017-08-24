@@ -34,11 +34,10 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	private void setShellPrintWriter(final OutputStream os, final String shelltype) {
 		if (shelltype.equals("jaliensh"))
 			out = new JShPrintWriter(os);
+		else if (shelltype.equals("json"))
+			out = new JSONPrintWriter(os);
 		else
-			if (shelltype.equals("json"))
-				out = new JSONPrintWriter(os);
-			else
-				out = new XMLPrintWriter(os);
+			out = new XMLPrintWriter(os);
 	}
 
 	@Override
@@ -138,7 +137,8 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					if (!commander.isAlive())
 						commander.start();
 
-					// Send the command to executor and send the result back to client via OutputStream
+					// Send the command to executor and send the result back to
+					// client via OutputStream
 					synchronized (commander) {
 						commander.setLine(out, fullCmd.toArray(new String[0]));
 						commander.notifyAll();

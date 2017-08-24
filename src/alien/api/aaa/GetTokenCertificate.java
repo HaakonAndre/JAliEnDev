@@ -31,7 +31,7 @@ import io.github.olivierlemasle.ca.RootCertificate;
  * @author costing
  * @since 2017-07-04
  */
-public class GetTokenCertificate extends Request implements Cacheable {
+public class GetTokenCertificate extends Request {
 	private static final long serialVersionUID = 7799371357160254760L;
 
 	private static final RootCertificate rootCert;
@@ -224,7 +224,7 @@ public class GetTokenCertificate extends Request implements Cacheable {
 		}
 		return sw.toString();
 	}
-
+/*
 	@Override
 	public String getKey() {
 		// only cache user tokens, job tokens have the job ID in them and cannot
@@ -240,5 +240,5 @@ public class GetTokenCertificate extends Request implements Cacheable {
 		// for the same user don't generate another certificate for 10 minutes
 		// but return the same one
 		return 1000L * 60 * 10;
-	}
+	}*/
 }

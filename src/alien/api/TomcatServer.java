@@ -49,21 +49,7 @@ import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 
 public class TomcatServer {
-	
-	public final static class SessionListener implements HttpSessionListener {
-		
-		@Override
-		public void sessionDestroyed(HttpSessionEvent arg0) {
-			// TODO Auto-generated method stub
-			
-		}
-		
-		@Override
-		public void sessionCreated(HttpSessionEvent arg0) {
-			// TODO Auto-generated method stub
-			HttpSession session = arg0.getSession();
-		}
-	}
+
 	/**
 	 * Logger
 	 */
@@ -106,7 +92,6 @@ public class TomcatServer {
 		securityConstraint.addAuthRole("users");
 		ctx.addSecurityRole("users");
 		ctx.addConstraint(securityConstraint);
-		//ctx.addApplicationListener(SessionListener.class.getName());
 
 		// Tell Jar Scanner not to look inside jar manifests
 		// otherwise it will produce useless warnings
