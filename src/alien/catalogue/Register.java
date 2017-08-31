@@ -102,7 +102,7 @@ public class Register {
 			if (!name.guid.equals(uuid) || name.size != size || !name.md5.equals(md5))
 				throw new IOException("The details don't match the existing LFN fields");
 		} else {
-			LFN check = name.getParentDir();
+			LFN check = name.getParentDir(true);
 
 			while (check != null && !check.exists) {
 				check = check.getParentDir();
