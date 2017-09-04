@@ -229,7 +229,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				if (idx >= 0) {
 					parentDir = LFNUtils.getLFN(sParentDir.substring(0, idx + 1), evenIfNotExist);
 
-					if (!parentDir.exists) {
+					if (parentDir!=null && !parentDir.exists) {
 						parentDir.owner = this.owner;
 						parentDir.gowner = this.gowner;
 						parentDir.perm = this.perm;
