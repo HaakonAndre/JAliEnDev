@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -36,18 +35,20 @@ public class HTCONDOR extends BatchQueue {
 	private String _submit_cmd;
 	private String _submit_args;
 	private String _user_name;
+	private String _kill_cmd;
+	private String _status_cmd;
 
 	/**
 	 * @param conf
 	 * @param logr
-	 *            logger
+	 *            this.logger
 	 */
 	public HTCONDOR(HashMap<String, Object> conf, Logger logr) {
 		this.config = conf;
-		logger = logr;
-		logger = LogUtils.redirectToCustomHandler(logger, ((String) config.get("host_logdir")) + "JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+		this.logger = logr;
+		this.logger = LogUtils.redirectToCustomHandler(this.logger, ((String) config.get("host_logdir")) + "JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
 
-		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
+		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 		
 		this._environment = System.getenv();
 		this._process_list = new ArrayList<Process>();
@@ -64,16 +65,14 @@ public class HTCONDOR extends BatchQueue {
 		else {
 			this._user_name = "Unknown User"; // TODO: get process name from PID?
 		}
-		// TODO: WIP
-//		$self->{KILL_CMD} = ( $self->{CONFIG}->{CE_KILLCMD} or "condor_rm" );
-//		  $self->{STATUS_CMD} = ( $self->{CONFIG}->{CE_STATUSCMD} or "condor_q" );
-//
-//		  $self->{GET_QUEUE_STATUS} = $self->{STATUS_CMD};
+
+		this._kill_cmd = (config.get("CE_KILLCMD") != null ? (String) config.get("CE_KILLCMD") : "condor_rm");
+		this._status_cmd = (config.get("CE_STATUSCMD") != null ? (String) config.get("CE_STATUSCMD") : "condor_q");
 	}
 
 	@Override
 	public void submit(final String script) {
-		logger.info("Submit HTCONDOR");
+		this.logger.info("Submit HTCONDOR");
 		String cm = String.format("%s:%d", this.config.get("host"), this.config.get("CLUSTERMONITOR_PORT"));
 		
 		DateFormat date_format = new SimpleDateFormat("yyyy-MM-dd");
@@ -85,7 +84,7 @@ public class HTCONDOR extends BatchQueue {
 			try {
 				log_folder.mkdir();
 			} catch (SecurityException e) {
-				logger.info(String.format("[HTCONDOR] Couldn't create log folder: %s", log_folder_path));
+				this.logger.info(String.format("[HTCONDOR] Couldn't create log folder: %s", log_folder_path));
 				e.printStackTrace();
 			}
 		}
@@ -149,7 +148,7 @@ public class HTCONDOR extends BatchQueue {
 		custom_attr_str += this.readJdlFile(custom_jdl_path);
 		custom_attr_str += "\n#\n# custom attributes end\n#\n\n";
 		submit_cmd += custom_attr_str;
-		logger.info(String.format("Custom attributes added from file: %s.", custom_jdl_path));
+		this.logger.info(String.format("Custom attributes added from file: %s.", custom_jdl_path));
 		
 		// --- finally
 
@@ -184,20 +183,23 @@ public class HTCONDOR extends BatchQueue {
 		
 		String line;
 		try {
-		    InputStream fis = new FileInputStream("the_file_name");
+		    InputStream fis = new FileInputStream(path);
 		    InputStreamReader isr = new InputStreamReader(fis);
 		    BufferedReader br = new BufferedReader(isr);
 		    
 			Pattern comment_pattern = Pattern.compile("^\\s*(#.*|//.*)?$");
 			Pattern err_spaces_pattern = Pattern.compile("\\\\\\s*$");
+			Pattern endl_spaces_pattern = Pattern.compile("\\s+$");
 		    while ((line = br.readLine()) != null) {
 				Matcher comment_matcher = comment_pattern.matcher(line);
+				Matcher endl_matcher = err_spaces_pattern.matcher(line);
 		    	// skip over comment lines
 		    	if(comment_matcher.matches()) {
 		    		continue;
 		    	}
 		    	// remove erroneous spaces
-		    	line.replaceAll(err_spaces_pattern.pattern(), "\\\\\\n");
+		    	line = line.replaceAll(err_spaces_pattern.pattern(), "\\\\\n");
+		    	line = line.replaceAll(endl_spaces_pattern.pattern(), "");
 		    	if(line.lastIndexOf('\n') == -1) {
 		    		line += '\n';
 		    	}
@@ -208,11 +210,11 @@ public class HTCONDOR extends BatchQueue {
 		    isr.close();
 		    fis.close();
 		} catch (FileNotFoundException e) {
-			logger.info(String.format("Could not find file: %s.", path));
+			this.logger.info(String.format("Could not find file: %s.\n", path));
 			e.printStackTrace();
 			return "";
 		} catch (IOException e) {
-			logger.info(String.format("Error while working with file: %s.", path));
+			this.logger.info(String.format("Error while working with file: %s.\n", path));
 			e.printStackTrace();
 			return file_contents;
 		}
@@ -224,7 +226,7 @@ public class HTCONDOR extends BatchQueue {
 	public int getNumberActive() {
 		ArrayList<String> output_list = this.executeCommand("condor_status -schedd -af totalRunningJobs totalIdleJobs");
 		if(output_list == null) {
-			logger.info("Couldn't retrieve the number of active jobs.");
+			this.logger.info("Couldn't retrieve the number of active jobs.");
 			return -1;
 		}
 		for( String str : output_list) {
@@ -243,7 +245,7 @@ public class HTCONDOR extends BatchQueue {
 	public int getNumberQueued() {
 		ArrayList<String> output_list = this.executeCommand("condor_status -schedd -af totalIdleJobs");
 		if(output_list == null) {
-			logger.info("Couldn't retrieve the number of queued jobs.");
+			this.logger.info("Couldn't retrieve the number of queued jobs.");
 			return -1;
 		}
 		for( String str : output_list) {
@@ -270,7 +272,7 @@ public class HTCONDOR extends BatchQueue {
 			Process proc = proc_builder.start();
 			_process_list.add(proc);
 			if(!proc.waitFor(60, TimeUnit.SECONDS)){
-				logger.info(String.format("LCG Timeout for: %s\nKilling the process with id %i", cmd, proc));
+				this.logger.info(String.format("LCG Timeout for: %s\nKilling the process with id %i", cmd, proc));
 				proc.destroyForcibly();
 				_process_list.remove(proc);
 				throw new InterruptedException("Timeout");
@@ -281,15 +283,15 @@ public class HTCONDOR extends BatchQueue {
 				proc_output.add(output_str);
 			}
 		} catch (IOException e) {
-			logger.info(String.format("[HTCONDOR] Could not execute command: %s", cmd));
+			this.logger.info(String.format("[HTCONDOR] Could not execute command: %s", cmd));
 			e.printStackTrace();
 			return null;
 		} catch (InterruptedException e) {
-			logger.info(String.format("[HTCONDOR] Command interrupted: %s", cmd));
+			this.logger.info(String.format("[HTCONDOR] Command interrupted: %s", cmd));
 			e.printStackTrace();
 			return null;
 		}
-		logger.info(String.format("[HTCONDOR] Command output: %s", proc_output));
+		this.logger.info(String.format("[HTCONDOR] Command output: %s", proc_output));
 		return proc_output;
 	}
 
