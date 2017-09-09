@@ -7,6 +7,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -68,6 +69,17 @@ public class HTCONDOR extends BatchQueue {
 
 		this._kill_cmd = (config.get("CE_KILLCMD") != null ? (String) config.get("CE_KILLCMD") : "condor_rm");
 		this._status_cmd = (config.get("CE_STATUSCMD") != null ? (String) config.get("CE_STATUSCMD") : "condor_q");
+	}
+	
+	public String prepareForSubmission(String classad) {
+		if(classad == null) {
+			return null;
+		}
+		String vo_str = (config.get("LCGVO") != null ? (String) config.get("LCGVO") : "alice");
+		String proxy_renewal = String.format("/etc/init.d/%s-box-proxyrenewal", vo_str);
+		//TODO: WIP
+		
+		return classad;
 	}
 
 	@Override
@@ -159,23 +171,29 @@ public class HTCONDOR extends BatchQueue {
 		this._counter++;
 		long time = System.currentTimeMillis() / 1000L;
 		time = time >>> 6;
+		File jdl_file;
+		try {
+			jdl_file = File.createTempFile("htc-submit.", ".jdl");
+		} catch(IOException e) {
+			this.logger.info("Error creating temp file\n");
+			e.printStackTrace();
+			return;
+		}
 		
-		// TODO: WIP
-//		my $jdlFile = AliEn::TMPFile->new({ filename => "htc-submit.$t.jdl" })
-//			    or return $error;
-//
-//			  open(F, '>', $jdlFile) or return $error;
-//			  print F $submit;
-//			  close F or return $error;
-//
-//			  my @lines = $self->_system("$self->{SUBMIT_CMD} $self->{SUBMIT_ARGS} $jdlFile");
-//
-//			  unless ($?) {
-//			    foreach (@lines) {
-//			      chomp;
-//			      $self->info($_);
-//			    }
-//			  }
+		try(PrintWriter out = new PrintWriter( jdl_file.getAbsolutePath() )){
+		    out.println( submit_cmd );
+		    out.close();
+		} catch (FileNotFoundException e) {
+			this.logger.info("Error writing to temp file\n");
+			e.printStackTrace();
+		}
+		
+		String temp_file_cmd = String.format("%s %s %s", this._submit_cmd, this._submit_args, jdl_file.getAbsolutePath());
+		ArrayList<String> output = executeCommand(temp_file_cmd);
+		for (String line : output) {
+			String trimmed_line = line.trim();
+			this.logger.info(trimmed_line);
+		}
 	}
 	
 	private String readJdlFile(String path) {
