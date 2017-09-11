@@ -127,7 +127,8 @@ public class HTCONDOR extends BatchQueue {
 		try {
 			proxy_renewal_output = executeCommand(proxy_renewal_cmd);
 		} catch(Exception e){
-			
+			this.logger.info(String.format("[HTCONDOR] Prolem while executing command: %s", proxy_renewal_cmd));
+			e.printStackTrace();
 		}
 		finally {
 			if(proxy_renewal_output != null) {
@@ -337,6 +338,24 @@ public class HTCONDOR extends BatchQueue {
 
 	@Override
 	public int kill() {
+		this.logger.info("Checking proxy renewal service");
+		ArrayList<String> kill_cmd_output = null;
+		try {
+			kill_cmd_output = executeCommand(this._kill_cmd);
+		} catch(Exception e){
+			this.logger.info(String.format("[HTCONDOR] Prolem while executing command: %s", proxy_renewal_cmd));
+			e.printStackTrace();
+			return -1;
+		}
+		finally {
+			if(kill_cmd_output != null) {
+				this.logger.info("Kill cmd output:\n");
+				for (String line : kill_cmd_output) {
+					line.trim();
+					this.logger.info(line);
+				}
+			}
+		}
 		return 0;
 	}
 	
