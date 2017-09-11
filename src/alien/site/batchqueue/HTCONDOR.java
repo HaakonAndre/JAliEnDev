@@ -76,8 +76,68 @@ public class HTCONDOR extends BatchQueue {
 			return null;
 		}
 		String vo_str = (config.get("LCGVO") != null ? (String) config.get("LCGVO") : "alice");
-		String proxy_renewal = String.format("/etc/init.d/%s-box-proxyrenewal", vo_str);
-		//TODO: WIP
+		String proxy_renewal_str = String.format("/etc/init.d/%s-box-proxyrenewal", vo_str);
+		
+		File proxy_check_file= new File(_environment.get("HOME") + "/no-proxy-check"); 
+		File proxy_renewal_file= new File(proxy_renewal_str); 
+		if (proxy_check_file.exists() || _environment.get("X509_USER_PROXY") == null || !proxy_renewal_file.exists()) {
+			return classad;
+		}
+		
+		int threshold = (config.get("CE_PROXYTHRESHOLD") != null ? ((Integer) config.get("CE_PROXYTHRESHOLD")) : 46 * 3600);
+		this.logger.info(String.format("X509_USER_PROXY is %s", _environment.get("X509_USER_PROXY")));
+		this.logger.info("Checking remaining proxy lifetime");
+		
+		String proxy_info_cmd = "voms-proxy-info -acsubject -actimeleft 2>&1";
+		ArrayList<String> proxy_info_output = executeCommand(proxy_info_cmd);
+		
+		String dn_str = "";
+		String time_left_str = "";
+		Pattern dn_pattern = Pattern.compile("^/");
+		Pattern time_left_pattern = Pattern.compile("^\\d+$");
+		for (String line : proxy_info_output) {
+			line.trim();
+			Matcher dn_matcher = dn_pattern.matcher(line);
+	    	if(dn_matcher.matches()) {
+	    		dn_str = line;
+	    		continue;
+	    	}
+	    	Matcher time_left_matcher = time_left_pattern.matcher(line);
+	    	if(time_left_matcher.matches()) {
+	    		time_left_str = line;
+	    		continue;
+	    	}
+		}
+		if (dn_str == ""){
+			this.logger.warning("[LCG] No valid proxy found.");
+			return null;
+		}
+		this.logger.info(String.format("DN  is %s", dn_str));
+		this.logger.info(String.format("Proxy timeleft is %s (threshold is %d)", time_left_str, threshold));
+		if(Integer.parseInt(time_left_str) > threshold) {
+			return classad;
+		}
+		
+//		the proxy shall be managed by the proxy renewal service for the VO;
+//		restart it as needed...
+		
+		String proxy_renewal_cmd = String.format("%s start 2>&1", proxy_renewal_str);
+		this.logger.info("Checking proxy renewal service");
+		ArrayList<String> proxy_renewal_output = null;
+		try {
+			proxy_renewal_output = executeCommand(proxy_renewal_cmd);
+		} catch(Exception e){
+			
+		}
+		finally {
+			if(proxy_renewal_output != null) {
+				this.logger.info("Proxy renewal output:\n");
+				for (String line : proxy_renewal_output) {
+					line.trim();
+					this.logger.info(line);
+				}
+			}
+		}
 		
 		return classad;
 	}
