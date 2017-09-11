@@ -8,12 +8,10 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAmount;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
-import alien.api.Cacheable;
 import alien.api.Request;
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
@@ -79,6 +77,7 @@ public class GetTokenCertificate extends Request {
 	 * other required fields
 	 *
 	 * @param user
+	 * @param requestedUser
 	 * @param certificateType
 	 * @param extension
 	 * @param validity

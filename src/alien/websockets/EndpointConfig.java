@@ -7,6 +7,11 @@ import javax.websocket.Endpoint;
 import javax.websocket.server.ServerApplicationConfig;
 import javax.websocket.server.ServerEndpointConfig;
 
+/**
+ * @author yuw
+ *
+ * EndpointConfig is called by Tomcat to create JsonWebsocketEndpoint
+ */
 public class EndpointConfig implements ServerApplicationConfig {
 
 	@Override

@@ -10,6 +10,10 @@ import org.json.simple.JSONObject;
 
 import alien.config.ConfigUtils;
 
+/**
+ * @author yuw
+ *
+ */
 public class JSONPrintWriter extends UIPrintWriter {
 
 	/**

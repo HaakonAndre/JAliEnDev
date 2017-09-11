@@ -591,6 +591,11 @@ public class JAKeyStore {
 	}
 
 
+	/**
+	 * @param ks
+	 * @param filename
+	 * @param password
+	 */
 	public	static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
 		try (FileOutputStream fo = new FileOutputStream(filename)) {
 			try {

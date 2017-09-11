@@ -34,7 +34,6 @@ import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
-import alien.user.JAKeyStore;
 import alien.user.UsersHelper;
 import lazyj.commands.SystemCommand;
 

@@ -72,14 +72,29 @@ public class AliEnPrincipal implements Principal, Serializable {
 		return username;
 	}
 
+	/**
+	 * Get user, who initialized connection
+	 * 
+	 * @return initial user
+	 */
 	public String getDefaultUser() {
 		return defaultUser;
 	}
 
+	/**
+	 * Retrieve user certificate
+	 * 
+	 * @return user certificate
+	 */
 	public X509Certificate[] getUserCert() {
 		return usercert;
 	}
 
+	/**
+	 * Store user certificate in principal
+	 * 
+	 * @param cert
+	 */
 	public void setUserCert(X509Certificate[] cert) {
 		usercert = cert;
 	}

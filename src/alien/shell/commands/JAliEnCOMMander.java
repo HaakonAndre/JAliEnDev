@@ -281,6 +281,9 @@ public class JAliEnCOMMander extends Thread {
 	 */
 	public AtomicInteger status = new AtomicInteger(0);
 
+	/**
+	 * Set this variable to finish commander's execution
+	 */
 	public volatile boolean kill = false;
 
 	private void waitForCommand() {

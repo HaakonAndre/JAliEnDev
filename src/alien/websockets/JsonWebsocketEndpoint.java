@@ -25,6 +25,11 @@ import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 
+/**
+ * @author yuw
+ *
+ * Implementation of websocket endpoint, that parses JSON commands
+ */
 public class JsonWebsocketEndpoint extends Endpoint {
 	private AliEnPrincipal userIdentity = null;
 	private JAliEnCOMMander commander = null;

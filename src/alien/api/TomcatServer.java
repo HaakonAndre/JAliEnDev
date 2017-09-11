@@ -30,7 +30,6 @@ import org.json.simple.parser.JSONParser;
 
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
-import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JSONPrintWriter;
 import alien.shell.commands.UIPrintWriter;
@@ -42,12 +41,10 @@ import alien.user.UsersHelper;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionListener;
-
+/**
+ * @author yuw
+ *
+ */
 public class TomcatServer {
 
 	/**
@@ -408,7 +405,6 @@ public class TomcatServer {
 	 * Start Tomcat Server
 	 *
 	 * @param iDebugLevel
-	 * @throws Exception
 	 */
 	public static synchronized void startTomcatServer(final int iDebugLevel) {
 
