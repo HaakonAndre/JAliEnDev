@@ -6,10 +6,16 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
+import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
+/**
+ * @author yuw
+ *
+ */
 public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 	private TokenCertificateType tokentype = TokenCertificateType.USER_CERTIFICATE;
@@ -17,6 +23,11 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 	private int validity = 2; 				// Default validity is two days
 	private String extension = null; 		// Token extension (jobID for job tokens)
 
+	/**
+	 * @param commander
+	 * @param out
+	 * @param alArguments
+	 */
 	public JAliEnCommandtoken(JAliEnCOMMander commander, UIPrintWriter out, ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
 
@@ -65,11 +76,37 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		GetTokenCertificate tokenreq = new GetTokenCertificate(commander.user, requestedUser, tokentype, extension, validity, commander.user.getUserCert()[0]);
 
 		try {
-			tokenreq = Dispatcher.execute(new GetTokenCertificate(commander.user, requestedUser, tokentype, extension, validity, commander.user.getUserCert()[0]));
+			tokenreq = Dispatcher.execute(tokenreq);
 		} catch (ServerException e1) {
 			e1.printStackTrace();
 		}
 
+		// Try to switch user
+		java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
+		AliEnPrincipal switchUser;
+
+		if (commander.user.canBecome(requestedUser)) {
+			if ((switchUser = UserFactory.getByUsername(requestedUser)) != null)
+				commander.user = switchUser;
+			else
+				if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
+					commander.user = switchUser;
+				else {
+					if (out.isRootPrinter())
+						out.setField("message", "User " + requestedUser + " cannot be found. Abort");
+					else
+						out.printErrln("User " + requestedUser + " cannot be found. Abort");
+				}
+
+			commander.user.setUserCert(cert);
+		}
+		else
+			if (out.isRootPrinter())
+				out.setField("message", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+			else
+				out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+
+		// Return tokens
 		if (out.isRootPrinter()) {
 			out.setField("tokencert", tokenreq.getCertificateAsString());
 			out.setField("tokenkey", tokenreq.getPrivateKeyAsString());
