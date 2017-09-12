@@ -8,13 +8,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -23,6 +29,8 @@ import java.util.Date;
 import org.apache.tomcat.jni.Proc;
 
 import alien.log.LogUtils;
+import lia.util.process.ExternalProcess.ExitStatus;
+import utils.ProcessWithTimeout;
 
 /**
  * @author mmmartin
@@ -38,6 +46,7 @@ public class HTCONDOR extends BatchQueue {
 	private String _user_name;
 	private String _kill_cmd;
 	private String _status_cmd;
+	private File _temp_file;
 
 	/**
 	 * @param conf
@@ -54,6 +63,7 @@ public class HTCONDOR extends BatchQueue {
 		this._environment = System.getenv();
 		this._process_list = new ArrayList<Process>();
 		this._counter = 0;
+		this._temp_file = null;
 		this._log_dir_path = (String) config.get("LOG_DIR");
 		this._submit_cmd = (config.get("CE_SUBMITCMD") != null ? (String)config.get("CE_SUBMITCMD") : "condor_submit");
 		this._submit_args = (_environment.get("SUBMIT_ARGS") != null ? _environment.get("SUBMIT_ARGS") : "");
@@ -151,7 +161,8 @@ public class HTCONDOR extends BatchQueue {
 		DateFormat date_format = new SimpleDateFormat("yyyy-MM-dd");
 		String current_date_str = date_format.format(new Date());
 		
-		String log_folder_path = String.format("%s/%s", _environment.get("HTCONDOR_LOG_PATH"), current_date_str);
+		String host_logdir = (_environment.get("HTCONDOR_LOG_PATH") != null ? _environment.get("HTCONDOR_LOG_PATH") : (String) config.get("host_logdir"));
+		String log_folder_path = String.format("%s/%s", host_logdir, current_date_str);
 		File log_folder = new File(log_folder_path);
 		if (!(log_folder.exists()) || !(log_folder.isDirectory())) {
 			try {
@@ -180,7 +191,7 @@ public class HTCONDOR extends BatchQueue {
 		// ===========
 		
 		String submit_cmd = String.format("cmd = %s\n", script);
-		if (_environment.get("HTCONDOR_LOG_PATH") != null) {
+		if (host_logdir != null) {
 			submit_cmd += String.format("%s\n%s\n%s\n", out_cmd, err_cmd, log_cmd);
 		}
 		
@@ -230,31 +241,63 @@ public class HTCONDOR extends BatchQueue {
 		// =============
 		
 		this._counter++;
-		long time = System.currentTimeMillis() / 1000L;
-		time = time >>> 6;
+		//long time = System.currentTimeMillis() / 1000L;
+		//time = time >>> 6;
 		File jdl_file;
-		try {
-			jdl_file = File.createTempFile("htc-submit.", ".jdl");
-		} catch(IOException e) {
-			this.logger.info("Error creating temp file\n");
-			e.printStackTrace();
-			return;
+		if (this._temp_file != null) {
+			List<String> temp_file_lines = null;
+			try {
+				temp_file_lines = Files.readAllLines(Paths.get(this._temp_file.getAbsolutePath()), StandardCharsets.UTF_8);
+			} catch (IOException e1) {
+				this.logger.info("Error reading old temp file");
+				e1.printStackTrace();
+			} finally {
+				if(temp_file_lines != null) {
+					String temp_file_lines_str = "";
+					for (String line : temp_file_lines) {
+						temp_file_lines_str += line + '\n';
+					}
+					if (temp_file_lines_str != submit_cmd) {
+						if (!this._temp_file.delete()) {
+							this.logger.info("Could not delete temp file");
+						}
+						try {
+							this._temp_file = File.createTempFile("htc-submit.", ".jdl");
+						} catch(IOException e) {
+							this.logger.info("Error creating temp file");
+							e.printStackTrace();
+							return;
+						}
+					}
+				}
+			}
+		}
+		else {
+			try {
+				this._temp_file = File.createTempFile("htc-submit.", ".jdl");
+			} catch(IOException e) {
+				this.logger.info("Error creating temp file");
+				e.printStackTrace();
+				return;
+			}
 		}
 		
-		try(PrintWriter out = new PrintWriter( jdl_file.getAbsolutePath() )){
+		
+		try(PrintWriter out = new PrintWriter( this._temp_file.getAbsolutePath() )){
 		    out.println( submit_cmd );
 		    out.close();
 		} catch (FileNotFoundException e) {
-			this.logger.info("Error writing to temp file\n");
+			this.logger.info("Error writing to temp file");
 			e.printStackTrace();
 		}
 		
-		String temp_file_cmd = String.format("%s %s %s", this._submit_cmd, this._submit_args, jdl_file.getAbsolutePath());
+		String temp_file_cmd = String.format("%s %s %s", this._submit_cmd, this._submit_args, this._temp_file.getAbsolutePath());
 		ArrayList<String> output = executeCommand(temp_file_cmd);
 		for (String line : output) {
 			String trimmed_line = line.trim();
 			this.logger.info(trimmed_line);
 		}
+		
 	}
 	
 	private String readJdlFile(String path) {
@@ -343,7 +386,7 @@ public class HTCONDOR extends BatchQueue {
 		try {
 			kill_cmd_output = executeCommand(this._kill_cmd);
 		} catch(Exception e){
-			this.logger.info(String.format("[HTCONDOR] Prolem while executing command: %s", proxy_renewal_cmd));
+			this.logger.info(String.format("[HTCONDOR] Prolem while executing command: %s", this._kill_cmd));
 			e.printStackTrace();
 			return -1;
 		}
@@ -358,35 +401,34 @@ public class HTCONDOR extends BatchQueue {
 		}
 		return 0;
 	}
-	
 	// Previously named "_system" in perl
 	private ArrayList<String> executeCommand(String cmd) {
-		ProcessBuilder proc_builder = new ProcessBuilder(cmd);
-		Map<String, String> env = proc_builder.environment();
-		env.clear();
 		ArrayList<String> proc_output = new ArrayList<String>();
 		try {
-			Process proc = proc_builder.start();
-			_process_list.add(proc);
-			if(!proc.waitFor(60, TimeUnit.SECONDS)){
-				this.logger.info(String.format("LCG Timeout for: %s\nKilling the process with id %i", cmd, proc));
-				proc.destroyForcibly();
-				_process_list.remove(proc);
-				throw new InterruptedException("Timeout");
+			final ProcessBuilder proc_builder = new ProcessBuilder(cmd);
+
+			Map<String, String> env = proc_builder.environment();
+			env.clear();
+			proc_builder.redirectErrorStream(false);
+
+			final Process proc = proc_builder.start();
+
+			final ProcessWithTimeout pTimeout = new ProcessWithTimeout(proc, proc_builder);
+
+			pTimeout.waitFor(60, TimeUnit.SECONDS);
+
+			final ExitStatus exitStatus = pTimeout.getExitStatus();
+
+			if (exitStatus.getExtProcExitStatus() == 0) {
+				final BufferedReader reader = new BufferedReader(new StringReader(exitStatus.getStdOut()));
+
+				String output_str;
+
+				while ((output_str = reader.readLine()) != null)
+					proc_output.add(output_str.trim());
 			}
-			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
-			String output_str = null;
-			while ( (output_str = reader.readLine()) != null) {
-				proc_output.add(output_str);
-			}
-		} catch (IOException e) {
-			this.logger.info(String.format("[HTCONDOR] Could not execute command: %s", cmd));
-			e.printStackTrace();
-			return null;
-		} catch (InterruptedException e) {
-			this.logger.info(String.format("[HTCONDOR] Command interrupted: %s", cmd));
-			e.printStackTrace();
-			return null;
+		} catch (final Throwable t) {
+			logger.log(Level.WARNING, String.format("Exception executing command: ", cmd), t);
 		}
 		this.logger.info(String.format("[HTCONDOR] Command output: %s", proc_output));
 		return proc_output;
