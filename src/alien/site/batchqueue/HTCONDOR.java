@@ -38,14 +38,10 @@ import utils.ProcessWithTimeout;
 public class HTCONDOR extends BatchQueue {
 
 	private Map<String, String> _environment;
-	private ArrayList<Process> _process_list;
-	private int _counter;
-	private String _log_dir_path;
+	private HashMap<String, String> _env_from_config;
 	private String _submit_cmd;
 	private String _submit_args;
-	private String _user_name;
 	private String _kill_cmd;
-	private String _status_cmd;
 	private File _temp_file;
 
 	/**
@@ -60,27 +56,25 @@ public class HTCONDOR extends BatchQueue {
 
 		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 		
+		this._env_from_config = (HashMap<String, String>) this.config.get("ce_environment");
 		this._environment = System.getenv();
-		this._process_list = new ArrayList<Process>();
-		this._counter = 0;
 		this._temp_file = null;
-		this._log_dir_path = (String) config.get("LOG_DIR");
 		this._submit_cmd = (config.get("CE_SUBMITCMD") != null ? (String)config.get("CE_SUBMITCMD") : "condor_submit");
-		this._submit_args = (_environment.get("SUBMIT_ARGS") != null ? _environment.get("SUBMIT_ARGS") : "");
-		if(_environment.get("LOGNAME") != null) {
-			this._user_name = _environment.get("LOGNAME");
+		
+		if (_env_from_config.containsKey("SUBMIT_ARGS")) {
+			this._submit_args = _env_from_config.get("SUBMIT_ARGS");
 		}
-		else if(_environment.get("USER") != null) {
-			this._user_name = _environment.get("LOGNAME");
-		}
-		else {
-			this._user_name = "Unknown User"; // TODO: get process name from PID?
+		if (_environment.get("SUBMIT_ARGS") != null) {
+			this._submit_args = _environment.get("SUBMIT_ARGS");
 		}
 
 		this._kill_cmd = (config.get("CE_KILLCMD") != null ? (String) config.get("CE_KILLCMD") : "condor_rm");
-		this._status_cmd = (config.get("CE_STATUSCMD") != null ? (String) config.get("CE_STATUSCMD") : "condor_q");
 	}
 	
+	/**
+	 * @param classad
+	 * @return classad or null
+	 */
 	public String prepareForSubmission(String classad) {
 		if(classad == null) {
 			return null;
@@ -182,11 +176,11 @@ public class HTCONDOR extends BatchQueue {
 			err_cmd = String.format("error = %s.err", file_base_name);
 		}
 		
-		String per_hold = "periodic_hold = JobStatus == 1 && "
-				+ "( GridJobStatus =?= undefined && CurrentTime - EnteredCurrentStatus > 1800 ) || "
-				+ "JobStatus <= 2 && ( CurrentTime - EnteredCurrentStatus > 172800 )";
-		String per_remove = "periodic_remove = CurrentTime - QDate > 259200";
-		String osb = "+TransferOutput = \"\"";
+//		String per_hold = "periodic_hold = JobStatus == 1 && "
+//				+ "( GridJobStatus =?= undefined && CurrentTime - EnteredCurrentStatus > 1800 ) || "
+//				+ "JobStatus <= 2 && ( CurrentTime - EnteredCurrentStatus > 172800 )";
+//		String per_remove = "periodic_remove = CurrentTime - QDate > 259200";
+//		String osb = "+TransferOutput = \"\"";
 		
 		// ===========
 		
@@ -197,22 +191,38 @@ public class HTCONDOR extends BatchQueue {
 		
 		// --- via JobRouter or direct
 		
+		boolean use_job_agent = false;
+		if (_env_from_config.containsKey("USE_JOB_ROUTER")) {
+			use_job_agent = Integer.parseInt(_env_from_config.get("USE_JOB_ROUTER")) == 1;
+		}
 		if (_environment.get("USE_JOB_ROUTER") != null) {
+			use_job_agent = Integer.parseInt(_environment.get("USE_JOB_ROUTER")) == 1;
+		}
+		String grid_resource = null;
+		if (_env_from_config.containsKey("GRID_RESOURCE")) {
+			grid_resource = _env_from_config.get("GRID_RESOURCE");
+		}
+		if (_environment.get("GRID_RESOURCE") != null) {
+			grid_resource = _environment.get("GRID_RESOURCE");
+		}
+		
+		if (use_job_agent) {
 			submit_cmd += ""
 					+ "universe = vanilla\n"
 					+ "+WantJobRouter = True\n"
 					+ "job_lease_duration = 7200\n"
 					+ "ShouldTransferFiles = YES\n";
 		}
-		else if(_environment.get("GRID_RESOURCE") != null) {
-			submit_cmd += ""
-					+ "universe = grid\n"
-					+ String.format("grid_resource = %s\n", _environment.get("GRID_RESOURCE"));
+		else {
+			submit_cmd += "universe = grid\n";
+			if(grid_resource != null) {
+				submit_cmd += String.format("grid_resource = %s\n", grid_resource);
+			}
 		}
 		
 		// --- further common attributes
 		
-		if(_environment.get("GRID_RESOURCE") != null) {
+		if(grid_resource != null) {
 			submit_cmd += "+WantExternalCloud = True\n";
 		}
 		submit_cmd += ""
@@ -240,10 +250,6 @@ public class HTCONDOR extends BatchQueue {
 
 		// =============
 		
-		this._counter++;
-		//long time = System.currentTimeMillis() / 1000L;
-		//time = time >>> 6;
-		File jdl_file;
 		if (this._temp_file != null) {
 			List<String> temp_file_lines = null;
 			try {
@@ -282,7 +288,6 @@ public class HTCONDOR extends BatchQueue {
 			}
 		}
 		
-		
 		try(PrintWriter out = new PrintWriter( this._temp_file.getAbsolutePath() )){
 		    out.println( submit_cmd );
 		    out.close();
@@ -314,7 +319,6 @@ public class HTCONDOR extends BatchQueue {
 			Pattern endl_spaces_pattern = Pattern.compile("\\s+$");
 		    while ((line = br.readLine()) != null) {
 				Matcher comment_matcher = comment_pattern.matcher(line);
-				Matcher endl_matcher = err_spaces_pattern.matcher(line);
 		    	// skip over comment lines
 		    	if(comment_matcher.matches()) {
 		    		continue;
