@@ -150,7 +150,7 @@ public class HTCONDOR extends BatchQueue {
 	@Override
 	public void submit(final String script) {
 		this.logger.info("Submit HTCONDOR");
-		String cm = String.format("%s:%d", this.config.get("host"), this.config.get("CLUSTERMONITOR_PORT"));
+		String cm = String.format("%s:%s", this.config.get("host"), this.config.get("CLUSTERMONITOR_PORT"));
 		
 		DateFormat date_format = new SimpleDateFormat("yyyy-MM-dd");
 		String current_date_str = date_format.format(new Date());
@@ -242,7 +242,6 @@ public class HTCONDOR extends BatchQueue {
 		custom_attr_str += this.readJdlFile(custom_jdl_path);
 		custom_attr_str += "\n#\n# custom attributes end\n#\n\n";
 		submit_cmd += custom_attr_str;
-		this.logger.info(String.format("Custom attributes added from file: %s.", custom_jdl_path));
 		
 		// --- finally
 
@@ -335,6 +334,7 @@ public class HTCONDOR extends BatchQueue {
 		    br.close();
 		    isr.close();
 		    fis.close();
+		    this.logger.info(String.format("Custom attributes added from file: %s.", path));
 		} catch (FileNotFoundException e) {
 			this.logger.info(String.format("Could not find file: %s.\n", path));
 			e.printStackTrace();
@@ -403,6 +403,15 @@ public class HTCONDOR extends BatchQueue {
 				}
 			}
 		}
+		if (_temp_file != null && _temp_file.exists()) {
+			this.logger.info(String.format("Deleting temp file  %s after command.", this._temp_file.getAbsolutePath()));
+			if (!_temp_file.delete()) {
+				this.logger.info(String.format("Could not delete temp file: %s", this._temp_file.getAbsolutePath()));
+			}
+			else {
+				this._temp_file = null;
+			}
+		}
 		return 0;
 	}
 	// Previously named "_system" in perl
@@ -422,6 +431,7 @@ public class HTCONDOR extends BatchQueue {
 			pTimeout.waitFor(60, TimeUnit.SECONDS);
 
 			final ExitStatus exitStatus = pTimeout.getExitStatus();
+			logger.info("Process exit status: " + exitStatus.getExecutorFinishStatus());
 
 			if (exitStatus.getExtProcExitStatus() == 0) {
 				final BufferedReader reader = new BufferedReader(new StringReader(exitStatus.getStdOut()));
