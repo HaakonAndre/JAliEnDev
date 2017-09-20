@@ -22,6 +22,7 @@ import javax.management.remote.JMXServiceURL;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
 import apmon.ApMon;
+import lazyj.ExtProperties;
 
 /**
  * @author mmmartin
@@ -39,8 +40,11 @@ public class CassandraMonitor {
 	static boolean first = true;
 
 	// for passing credentials for password
+	static ExtProperties config = ConfigUtils.getConfiguration("cassandra");
+	private static String user = null;
+	private static String pass = null;
+
 	private static Map<String, String[]> envpass = new HashMap<>();
-	private static String[] credentials = { "cassandra", "cassandra" };
 
 	static final String[] metrics = { "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=TotalLatency", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=TotalLatency",
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency", // OMR
@@ -70,6 +74,19 @@ public class CassandraMonitor {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		if (config == null) {
+			logger.severe("cassandra.properties missing?");
+			return;
+		}
+		user = config.gets("cassandraUsername");
+		pass = config.gets("cassandraPassword");
+		
+		if (user.equals("") || pass.equals("")) {
+			logger.severe("cassandra.properties misses some field: cassandraUsername or cassandraPassword");
+			return;
+		}
+		
+		String[] credentials = { user, pass };
 		envpass.put(JMXConnector.CREDENTIALS, credentials);
 
 		try {
