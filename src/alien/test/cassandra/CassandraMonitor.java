@@ -2,6 +2,8 @@ package alien.test.cassandra;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,6 +38,10 @@ public class CassandraMonitor {
 	static String hostName = null;
 	static boolean first = true;
 
+	// for passing credentials for password
+	private static Map<String, String[]> envpass = new HashMap<>();
+	private static String[] credentials = { "cassandra", "cassandra" };
+
 	static final String[] metrics = { "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=TotalLatency", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=TotalLatency",
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency", // OMR
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Latency", // OMR
@@ -64,6 +70,8 @@ public class CassandraMonitor {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		envpass.put(JMXConnector.CREDENTIALS, credentials);
+
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 			url = new JMXServiceURL(serviceUrl);
@@ -159,7 +167,8 @@ public class CassandraMonitor {
 			throws IOException, AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, MalformedObjectNameException {
 		Object attributeValue = null;
 		try {
-			jmxc = JMXConnectorFactory.connect(url, null);
+			jmxc = JMXConnectorFactory.connect(url, envpass);
+
 			mbsConnection = jmxc.getMBeanServerConnection();
 
 			final ObjectName objectName = new ObjectName(MbeanObjectName);
