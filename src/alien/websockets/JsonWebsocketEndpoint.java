@@ -79,11 +79,11 @@ public class JsonWebsocketEndpoint extends Endpoint {
 			@Override
 			public void run() {
 				while (true) {
-					if (getUptime() > 172800) // 2 days
+					if (getUptime() > 172800000) // 2 days
 						onClose(session, new CloseReason(null, "Connection expired (run for more than 2 days)"));
 
 					try {
-						Thread.sleep(10800); // 3 hours
+						Thread.sleep(10800000); // 3 hours
 					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
@@ -98,13 +98,20 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 		out = null;
 		try {
-			os.close();
+			if (os != null)
+				os.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		os = null;
 		userIdentity = null;
+		try {
+			session.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override
