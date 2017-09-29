@@ -1,11 +1,18 @@
 package alien.site;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -21,6 +28,8 @@ import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JShPrintWriter;
+import alien.shell.commands.UIPrintWriter;
 import alien.site.batchqueue.BatchQueue;
 import apmon.ApMon;
 import apmon.ApMonException;
@@ -221,63 +230,148 @@ public class ComputingElement extends Thread {
 	 * Creates script to execute on worker nodes
 	 */
 	private String createAgentStartup() {
-		String startup = System.getenv("JALIEN_ROOT") + "jalien ";
+		String startup_sctipt = System.getenv("JALIEN_ROOT") + "jalien ";
 		String before = "";
 		String after = "";
 
 		long time = new Timestamp(System.currentTimeMillis()).getTime();
-		String file = config.get("host_tmpdir") + "/proxy." + time;
+		String cert_file = config.get("host_tmpdir") + "/token." + time;
 
-		int hours = ((Integer) siteMap.get("TTL")).intValue();
-		hours = hours / 3600;
+		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
+		ttl_hours = ttl_hours / 3600;
 
-		String proxyfile = System.getenv("X509_USER_PROXY");
-		if (proxyfile != null && proxyfile.length() > 0) {
-			// WLCG site: get timeleft
-		}
-		else {
-			proxyfile = "/tmp/x509_" + SystemCommand.bash("id -u").stdout;
-			// JAliEn site: renew proxy (hours), get new timeleft
+		
+		
+//		String proxyfile = System.getenv("X509_TOKEN_CERT");
+//		if (proxyfile != null && proxyfile.length() > 0) {
+//			// WLCG site: get timeleft
+//		}
+//		else {
+//		proxyfile = "/tmp/x509_" + SystemCommand.bash("id -u").stdout;
+		// JAliEn site: renew proxy (hours), get new timeleft
 
-			String file_content = "";
-			try (BufferedReader br = new BufferedReader(new FileReader(proxyfile))) {
-				String line;
-				while ((line = br.readLine()) != null) {
-					file_content += line;
-				}
-			} catch (IOException e) {
-				logger.info("Error reading the proxy file: " + e);
-			}
+//		String file_content = "";
+//		try (BufferedReader br = new BufferedReader(new FileReader(proxyfile))) {
+//			String line;
+//			while ((line = br.readLine()) != null) {
+//				file_content += line;
+//			}
+//		} catch (IOException e) {
+//			logger.info("Error reading the proxy file: " + e);
+//		}
+		String token_cert_str = getTokenCertificate(ttl_hours / 24);
 
-			before += "echo 'Using the proxy'\n" + "mkdir -p " + config.get("host_tmpdir") + "\n" + "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n" + "file=" + file + "\n" + "cat >" + file
-					+ " <<EOF\n" + file_content + "\n" + "EOF\n" + "chmod 0400 " + file + "export X509_USER_PROXY=" + file + "\n" + "echo USING X509_USER_PROXY" + startup + " proxy-info";
-		}
+		before += "echo 'Using token certificate'\n"
+				+ "mkdir -p " + config.get("host_tmpdir") + "\n"
+				+ "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n"
+				+ "file=" + cert_file + "\n"
+				+ "cat >" + cert_file
+				+ " <<EOF\n"
+				+ token_cert_str + "\n"
+				+ "EOF\n"
+				+ "chmod 0400 " + cert_file + "\n"
+				+ "export X509_TOKEN_CERT=" + cert_file + ";\n" // TODO: finish variable export
+				+ "echo USING X509_TOKEN_CERT\n"				// TODO: finish variable export
+				+ startup_sctipt + " proxy-info\n";
+		after += "rm -rf " + cert_file + "\n";
+//		}
 
 		// Check proxy timeleft is good
 
-		// if (ceConfig.get("installmethod").equals("CVMFS")) {
-		// startup = runFromCVMFS();
-		// } TODO: uncomment
+		 if (config.get("ce_installmethod").equals("CVMFS")) {
+		 startup_sctipt = runFromCVMFS();
+		 }
+		 
+		 String content_str = before + startup_sctipt + " SartJobAgent\n" + after;
 
-		// PrintWriter writer = new PrintWriter(hostConfig.get("tmpdir") + "/agent.startup." + time, "UTF-8");
-		// writer.println("The first line");
-		// writer.close();
+		 PrintWriter writer = null;
+		 String agent_startup_path = config.get("host_tmpdir") + "/agent.startup." + time;
+		 File agent_startup_file = new File(agent_startup_path);
+		 try {
+			agent_startup_file.createNewFile();
+		} catch (IOException e1) {
+			logger.info("Error creating Agent Sturtup file");
+			e1.printStackTrace();
+		}
+		 
+		try {
+			writer = new PrintWriter(agent_startup_path, "UTF-8");
+		} catch (FileNotFoundException e) {
+			logger.info("Agent Sturtup file not found");
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			logger.info("Encoding error while writing Agent Sturtup file");
+			e.printStackTrace();
+		}
+		
+		 writer.println("#!/bin/bash");
+		 writer.println(content_str);
+		 writer.close();
+		 startup_sctipt = agent_startup_path; // not sure why we do this. copied from perl
 
-		return startup;
+		return startup_sctipt;
+	}
+	
+	private String getTokenCertificate(int ttl_days)
+	{
+		String[] token_cmd = new String[5];
+		token_cmd[0] = "token";
+		token_cmd[1] = "-t";
+		token_cmd[2] = "jobagent";
+		token_cmd[3] = "-v";
+		token_cmd[4] = String.format("%d", ttl_days);
+		ByteArrayOutputStream os = new ByteArrayOutputStream(); // we must then convert it to string
+		UIPrintWriter out = new JShPrintWriter(os);
+		
+		if (!commander.isAlive())
+			commander.start();
+
+		// Send the command to executor and send the result back to
+		// client via OutputStream
+		synchronized (commander) {
+			commander.setLine(out, token_cmd);
+			commander.notifyAll();
+		}
+		waitCommandFinish();
+		String token_proxy_str = null;
+		try {
+			token_proxy_str = new String(os.toByteArray(),"UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			logger.info("Encoding error while receiving token certificate");
+			e.printStackTrace();
+		};
+		
+		return token_proxy_str;
+	}
+	
+	private void waitCommandFinish() {
+		// wait for the previous command to finish
+		if (commander == null)
+			return;
+		while (commander.status.get() == 1)
+			try {
+				synchronized (commander.status) {
+					commander.status.wait(1000);
+				}
+			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				// ignore
+			}
 	}
 
-	// private String runFromCVMFS() {
-	// logger.info("The worker node will install with the CVMFS method");
-	// String alien_version = System.getenv("ALIEN_VERSION");
-	// String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
-	//
-	// alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : "");
-	//
-	// if (ce_environment.containsKey("CVMFS_PATH"))
-	// cvmfs_path = ce_environment.get("CVMFS_PATH");
-	//
-	// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
-	// } // TODO: uncomment
+
+	 private String runFromCVMFS() {
+	 logger.info("The worker node will install with the CVMFS method");
+	 String alien_version = System.getenv("ALIEN_VERSION");
+	 String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
+	
+	 alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : "");
+	
+	 if (ce_environment.containsKey("CVMFS_PATH"))
+	 cvmfs_path = ce_environment.get("CVMFS_PATH");
+	
+	 return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
+	 }
+
 
 	// Prepares a hash to create the sitemap
 	void getSiteMap() {
