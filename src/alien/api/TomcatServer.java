@@ -323,9 +323,11 @@ public class TomcatServer {
 
 		// Check if their location is set by env variables or in config, otherwise put default location in $USER_HOME/.globus/
 		String tokencertpath = System.getenv("JALIEN_TOKEN_CERT") != null ? System.getenv("JALIEN_TOKEN_CERT")
-				: ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokencert.pem");
+				: ConfigUtils.getConfig().gets("tokencert.path",
+						System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
 		String tokenkeypath = System.getenv("JALIEN_TOKEN_KEY") != null ? System.getenv("JALIEN_TOKEN_KEY")
-				: ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokenkey.pem");
+				: ConfigUtils.getConfig().gets("tokenkey.path",
+						System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
 
 		File tokencertfile = new File(tokencertpath);
 		File tokenkeyfile = new File(tokenkeypath);

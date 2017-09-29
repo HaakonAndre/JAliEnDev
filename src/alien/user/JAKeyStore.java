@@ -78,7 +78,7 @@ public class JAKeyStore {
 	 *
 	 */
 	public static KeyStore clientCert = null;
-	
+
 	/**
 	 *
 	 */
@@ -391,11 +391,11 @@ public class JAKeyStore {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
-		final String user_key = config.gets("user.cert.priv.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "userkey.pem");
+		final String user_key = System.getenv("X509_USER_KEY") != null ? System.getenv("X509_USER_KEY")
+				: config.gets("user.cert.priv.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "userkey.pem");
 
-		final String user_cert = config.gets("user.cert.pub.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
+		final String user_cert = System.getenv("X509_USER_CERT") != null ? System.getenv("X509_USER_CERT")
+				: config.gets("user.cert.pub.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
 
 		if (!checkKeyPermissions(user_key, user_cert))
 			return false;
@@ -422,7 +422,7 @@ public class JAKeyStore {
 		loadTrusts();
 		return true;
 	}
-	
+
 	/**
 	 * @return true if ok
 	 * @throws Exception
@@ -431,11 +431,11 @@ public class JAKeyStore {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
-		final String token_key = config.gets("token.cert.priv.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
+		final String token_key = System.getenv("JALIEN_TOKEN_KEY") != null ? System.getenv("JALIEN_TOKEN_KEY")
+				: config.gets("tokenkey.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
 
-		final String token_cert = config.gets("token.cert.pub.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
+		final String token_cert = System.getenv("JALIEN_TOKEN_CERT") != null ? System.getenv("JALIEN_TOKEN_CERT")
+				: config.gets("tokencert.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
 
 		if (!checkKeyPermissions(token_key, token_cert))
 			return false;
@@ -590,13 +590,12 @@ public class JAKeyStore {
 		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(pair.getPrivate(), certArray), new KeyStore.PasswordProtection(pass));
 	}
 
-
 	/**
 	 * @param ks
 	 * @param filename
 	 * @param password
 	 */
-	public	static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
+	public static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
 		try (FileOutputStream fo = new FileOutputStream(filename)) {
 			try {
 				ks.store(fo, password);
