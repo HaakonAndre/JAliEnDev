@@ -180,7 +180,7 @@ public class TomcatServer {
 	 * @param iDebug
 	 *            the debug level received from the command line
 	 */
-	private static boolean writeTokenFile(final String sHost, final int iWSPort, final String sUser, final String sHomeUser, final int iDebug) {
+	private static boolean writeTokenFile(final String sHost, final int iWSPort, final String sUser, @SuppressWarnings("unused") final String sHomeUser, final int iDebug) {
 		String sUserId = System.getProperty("userid");
 
 		if (sUserId == null || sUserId.length() == 0) {
@@ -202,23 +202,23 @@ public class TomcatServer {
 			final File tokenFile = new File(tmpDir, "jclient_token_" + iUserId);
 
 			try (FileWriter fw = new FileWriter(tokenFile, true)) {
-				//fw.write("Host=" + sHost + "\n");
-				//logger.fine("Host = " + sHost);
+				// fw.write("Host=" + sHost + "\n");
+				// logger.fine("Host = " + sHost);
 
 				fw.write("WSPort=" + iWSPort + "\n");
 				logger.fine("WSPort = " + iWSPort);
 
-				//fw.write("User=" + sUser + "\n");
-				//logger.fine("User = " + sUser);
+				// fw.write("User=" + sUser + "\n");
+				// logger.fine("User = " + sUser);
 
-				//fw.write("Home=" + sHomeUser + "\n");
-				//logger.fine("Home = " + sHomeUser);
+				// fw.write("Home=" + sHomeUser + "\n");
+				// logger.fine("Home = " + sHomeUser);
 
-				//fw.write("Debug=" + iDebug + "\n");
-				//logger.fine("Debug = " + iDebug);
+				// fw.write("Debug=" + iDebug + "\n");
+				// logger.fine("Debug = " + iDebug);
 
-				//fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
-				//logger.fine("PID = " + MonitorFactory.getSelfProcessID());
+				// fw.write("PID=" + MonitorFactory.getSelfProcessID() + "\n");
+				// logger.fine("PID = " + MonitorFactory.getSelfProcessID());
 
 				fw.flush();
 				fw.close();
@@ -320,8 +320,15 @@ public class TomcatServer {
 	private static boolean requestTokenCert() {
 
 		// Two files will be the result of this command
-		File tokencertfile = new File(System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokencert.pem");
-		File tokenkeyfile = new File(System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokenkey.pem");
+
+		// Check if their location is set by env variables or in config, otherwise put default location in $USER_HOME/.globus/
+		String tokencertpath = System.getenv("JALIEN_TOKEN_CERT") != null ? System.getenv("JALIEN_TOKEN_CERT")
+				: ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokencert.pem");
+		String tokenkeypath = System.getenv("JALIEN_TOKEN_KEY") != null ? System.getenv("JALIEN_TOKEN_KEY")
+				: ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus/tokenkey.pem");
+
+		File tokencertfile = new File(tokencertpath);
+		File tokenkeyfile = new File(tokenkeypath);
 
 		// Allow to modify those files if they already exist
 		changeMod(tokencertfile, 777);
@@ -332,7 +339,7 @@ public class TomcatServer {
 				PrintWriter pwriterkey = new PrintWriter(tokenkeyfile);
 
 				// We will read all data into temp output stream and then parse it and split into 2 files
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();) {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			UIPrintWriter out = new JSONPrintWriter(baos);
 
 			// Get user certificate to connect to JCentral
