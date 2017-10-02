@@ -37,6 +37,9 @@ elif [ "$1" == "JobAgent" ]; then
     #./run.sh -Djavax.net.debug=ssl -DAliEnConfig=${CONFIG_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent
     #./run.sh  -DAliEnConfig=${CONFIG_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent
     $JALIEN_HOME/run.sh  -DAliEnConfig=${CONFIG_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent
+elif [ "$1" == "ComputingElement" ]; then
+    cd $JALIEN_HOME
+    $JALIEN_HOME/run.sh  -DAliEnConfig=${CONFIG_DIR} -Djava.net.preferIPv4Stack=true alien.site.ComputingElement
 elif [ "$1" == "TitanJobService" ]; then
     cd $JALIEN_HOME
     #./run.sh -Djavax.net.debug=ssl -DAliEnConfig=${CONFIG_DIR} -Djava.net.preferIPv4Stack=true alien.site.JobAgent

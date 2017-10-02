@@ -27,6 +27,7 @@ import alien.api.taskQueue.GetNumberWaitingJobs;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
+import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
@@ -39,7 +40,7 @@ import lazyj.commands.SystemCommand;
  * @author mmmartin
  *
  */
-public class ComputingElement extends Thread {
+public class ComputingElement extends Thread{
 
 	/**
 	 * ApMon sender
@@ -109,6 +110,14 @@ public class ComputingElement extends Thread {
 			System.exit(0); // TODO delete
 		}
 
+	}
+	
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args){
+		final ComputingElement CE = new ComputingElement();
+		//CE.run();
 	}
 
 	private int getNumberFreeSlots() {
@@ -235,7 +244,8 @@ public class ComputingElement extends Thread {
 		String after = "";
 
 		long time = new Timestamp(System.currentTimeMillis()).getTime();
-		String cert_file = config.get("host_tmpdir") + "/token." + time;
+		String cert_file = config.get("host_tmpdir") + "/token_cert." + time;
+		String key_file = config.get("host_tmpdir") + "/token_key." + time;
 
 		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
 		ttl_hours = ttl_hours / 3600;
@@ -259,21 +269,30 @@ public class ComputingElement extends Thread {
 //		} catch (IOException e) {
 //			logger.info("Error reading the proxy file: " + e);
 //		}
-		String token_cert_str = getTokenCertificate(ttl_hours / 24);
+		String token_full_str = getTokenCertificate(ttl_hours / 24);
+		String token_cert_str = getTokenCert(token_full_str);
+		String token_key_str = getTokenKey(token_full_str);
 
 		before += "echo 'Using token certificate'\n"
 				+ "mkdir -p " + config.get("host_tmpdir") + "\n"
 				+ "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n"
 				+ "file=" + cert_file + "\n"
-				+ "cat >" + cert_file
-				+ " <<EOF\n"
+				+ "cat >" + cert_file + " <<EOF\n"
 				+ token_cert_str + "\n"
 				+ "EOF\n"
 				+ "chmod 0400 " + cert_file + "\n"
-				+ "export X509_TOKEN_CERT=" + cert_file + ";\n" // TODO: finish variable export
-				+ "echo USING X509_TOKEN_CERT\n"				// TODO: finish variable export
+				+ "export JALIEN_TOKEN_CERT=" + cert_file + ";\n"
+				+ "echo USING JALIEN_TOKEN_CERT\n"
+				+ "file=" + key_file + "\n"
+				+ "cat >" + key_file + " <<EOF\n"
+				+ token_key_str + "\n"
+				+ "EOF\n"
+				+ "chmod 0400 " + key_file + "\n"
+				+ "export JALIEN_TOKEN_KEY=" + key_file + ";\n"
+				+ "echo USING JALIEN_TOKEN_KEY\n"
 				+ startup_sctipt + " proxy-info\n";
 		after += "rm -rf " + cert_file + "\n";
+		after += "rm -rf " + key_file + "\n";
 //		}
 
 		// Check proxy timeleft is good
@@ -289,6 +308,7 @@ public class ComputingElement extends Thread {
 		 File agent_startup_file = new File(agent_startup_path);
 		 try {
 			agent_startup_file.createNewFile();
+			agent_startup_file.setExecutable(true);
 		} catch (IOException e1) {
 			logger.info("Error creating Agent Sturtup file");
 			e1.printStackTrace();
@@ -310,6 +330,18 @@ public class ComputingElement extends Thread {
 		 startup_sctipt = agent_startup_path; // not sure why we do this. copied from perl
 
 		return startup_sctipt;
+	}
+	
+	private static String getTokenKey(String fullTokenCert) {
+		int start = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
+		String result = fullTokenCert.substring(start);
+		return result;
+	}
+	
+	private static String getTokenCert(String fullTokenCert) {
+		int end = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
+		String result = fullTokenCert.substring(0, end);
+		return result;
 	}
 	
 	private String getTokenCertificate(int ttl_days)
