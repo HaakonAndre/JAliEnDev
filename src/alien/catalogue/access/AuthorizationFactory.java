@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Set;
@@ -32,40 +34,6 @@ public final class AuthorizationFactory {
 
 	private static AliEnPrincipal defaultAccount = null;
 
-	static {
-		final String file = ConfigUtils.getConfig().gets("user.cert.pub.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
-
-		logger.log(Level.FINE, "Trying to use " + file);
-
-		final File f = new File(file);
-
-		AliEnPrincipal user = null;
-
-		if (f.exists() && f.isFile() && f.canRead())
-			if (f.getName().endsWith("der"))
-				try (InputStream is = new FileInputStream(f)) {
-
-					final CertificateFactory cf = CertificateFactory.getInstance("X.509");
-					final X509Certificate cert = (X509Certificate) cf.generateCertificate(is);
-					user = UserFactory.getByCertificate(new X509Certificate[] { cert });
-
-				} catch (final Throwable t) {
-					logger.log(Level.WARNING, "Could not read from " + file, t);
-				}
-			else
-				try {
-					final X509Certificate[] certChain = JAKeyStore.loadPubX509(file);
-
-					if (certChain != null)
-						user = UserFactory.getByCertificate(certChain);
-				} catch (final Throwable t) {
-					logger.log(Level.WARNING, "Exception reading X509 certificate from " + file, t);
-				}
-
-		setDefaultUser(user);
-	}
-
 	/**
 	 * Set the default account of this environment
 	 *
@@ -79,6 +47,21 @@ public final class AuthorizationFactory {
 	 * @return default account for
 	 */
 	public static final AliEnPrincipal getDefaultUser() {
+		if (defaultAccount == null) {
+			AliEnPrincipal user = null;
+
+			Certificate[] cert;
+			try {
+				cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
+				if (cert != null)
+					user = UserFactory.getByCertificate((X509Certificate[]) cert);
+			} catch (KeyStoreException e) {
+				e.printStackTrace();
+			}
+
+			setDefaultUser(user);
+		}
+
 		return defaultAccount;
 	}
 

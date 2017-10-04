@@ -334,7 +334,9 @@ public class JAliEnCOMMander extends Thread {
 						setName("Commander: Executing: " + Arrays.toString(arg));
 
 						execute();
-					} finally {
+					} catch (final Exception e) {
+						logger.log(Level.WARNING, "Got exception", e);
+					}finally {
 						out = null;
 
 						setName("Commander: Idle");

@@ -223,7 +223,7 @@ public class DispatchSSLServer extends Thread {
 
 	private static boolean isHostCertValid() {
 		try {
-			((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).checkValidity();
+			((java.security.cert.X509Certificate) JAKeyStore.getKeyStore().getCertificateChain("User.cert")[0]).checkValidity();
 		} catch (@SuppressWarnings("unused") final CertificateException | KeyStoreException e) {
 			return false;
 		}
@@ -263,21 +263,24 @@ public class DispatchSSLServer extends Thread {
 
 			final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
 
-			kmf.init(JAKeyStore.hostCert, JAKeyStore.pass);
+			kmf.init(JAKeyStore.getKeyStore(), JAKeyStore.pass);
 
 			if (!isHostCertValid()) {
 				logger.log(Level.SEVERE, "Host certificate is not valid!");
 				return;
 			}
 
-			logger.log(Level.INFO, "Running JCentral with host cert: " + ((java.security.cert.X509Certificate) JAKeyStore.hostCert.getCertificateChain("Host.cert")[0]).getSubjectDN());
+			logger.log(Level.INFO, "Running JCentral with host cert: " + ((java.security.cert.X509Certificate) JAKeyStore.getKeyStore().getCertificateChain("User.cert")[0]).getSubjectDN());
 
 			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
 
 			final SSLContext sc = SSLContext.getInstance("TLS");
 
 			final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-			tmf.init(JAKeyStore.hostCert);
+			tmf.init(JAKeyStore.getKeyStore());
+
+			// TODO: implement custom TrustManager[] checkClientTrusted() to be able to accept clients with proxy certs
+			// Hint: https://stackoverflow.com/questions/6011348/how-do-i-accept-a-self-signed-certificate-with-a-java-using-sslsocket
 
 			sc.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 

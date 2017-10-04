@@ -132,12 +132,7 @@ public class TomcatServer {
 	 */
 	private static Connector createSslConnector(int tomcatPort) throws Exception {
 		String keystorePass = new String(JAKeyStore.pass);
-		if (!ConfigUtils.isCentralService()) {
-			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, "keystore.jks", JAKeyStore.pass);
-		}
-		else {
-			JAKeyStore.saveKeyStore(JAKeyStore.hostCert, "keystore.jks", JAKeyStore.pass);
-		}
+		JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), "keystore.jks", JAKeyStore.pass);
 
 		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 
@@ -145,12 +140,7 @@ public class TomcatServer {
 		connector.setPort(tomcatPort);
 		connector.setSecure(true);
 		connector.setScheme("https");
-		if (!ConfigUtils.isCentralService()) {
-			connector.setAttribute("keyAlias", "Token.cert");
-		}
-		else {
-			connector.setAttribute("keyAlias", "Host.cert");
-		}
+		connector.setAttribute("keyAlias", "User.cert");
 		connector.setAttribute("keystorePass", keystorePass);
 		connector.setAttribute("keystoreType", "JKS");
 		connector.setAttribute("keystoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "keystore.jks");
@@ -318,16 +308,34 @@ public class TomcatServer {
 	 * Request token certificate from JCentral
 	 */
 	private static boolean requestTokenCert() {
+		// Get user certificate to connect to JCentral
+		Certificate[] cert = null;
+		AliEnPrincipal userIdentity = null;
+		try {
+			cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
+			if (cert == null) {
+				logger.log(Level.SEVERE, "Failed to load certificate");
+				return false;
+			}
+		} catch (KeyStoreException e) {
+			e.printStackTrace();
+		}
+
+		if (cert instanceof X509Certificate[]) {
+			X509Certificate[] x509cert = (X509Certificate[]) cert;
+			userIdentity = UserFactory.getByCertificate(x509cert);
+		}
+		if (userIdentity == null) {
+			logger.log(Level.SEVERE, "Failed to get user identity");
+			return false;
+		}
 
 		// Two files will be the result of this command
-
 		// Check if their location is set by env variables or in config, otherwise put default location in $USER_HOME/.globus/
-		String tokencertpath = System.getenv("JALIEN_TOKEN_CERT") != null ? System.getenv("JALIEN_TOKEN_CERT")
-				: ConfigUtils.getConfig().gets("tokencert.path",
-						System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
-		String tokenkeypath = System.getenv("JALIEN_TOKEN_KEY") != null ? System.getenv("JALIEN_TOKEN_KEY")
-				: ConfigUtils.getConfig().gets("tokenkey.path",
-						System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
+		String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path",
+				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
+		String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path",
+				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
 
 		File tokencertfile = new File(tokencertpath);
 		File tokenkeyfile = new File(tokenkeypath);
@@ -344,65 +352,53 @@ public class TomcatServer {
 				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 			UIPrintWriter out = new JSONPrintWriter(baos);
 
-			// Get user certificate to connect to JCentral
-			Certificate cert = null;
-			try {
-				cert = JAKeyStore.clientCert.getCertificate("User.cert");
-			} catch (KeyStoreException e) {
-				e.printStackTrace();
+			// Create Commander instance just to execute one command
+			JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
+			commander.start();
+
+			// Command to be sent (yes, we need it to be an array, even if it is one word)
+			final ArrayList<String> fullCmd = new ArrayList<>();
+			fullCmd.add("token");
+
+			synchronized (commander) {
+				commander.status.set(1);
+				commander.setLine(out, fullCmd.toArray(new String[0]));
+				commander.notifyAll();
 			}
-			if (cert instanceof X509Certificate) {
-				X509Certificate x509cert = (X509Certificate) cert;
-				AliEnPrincipal userIdentity = UserFactory.getByCertificate(new X509Certificate[] { x509cert });
 
-				// Create Commander instance just to execute one command
-				JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
-				commander.start();
-
-				// Command to be sent (yes, we need it to be an array, even if it is one word)
-				final ArrayList<String> fullCmd = new ArrayList<>();
-				fullCmd.add("token");
-
-				synchronized (commander) {
-					commander.status.set(1);
-					commander.setLine(out, fullCmd.toArray(new String[0]));
-					commander.notifyAll();
-				}
-
-				while (commander.status.get() == 1)
-					try {
-						synchronized (commander.status) {
-							commander.status.wait(1000);
-						}
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
-						// ignore
+			while (commander.status.get() == 1)
+				try {
+					synchronized (commander.status) {
+						commander.status.wait(1000);
 					}
-
-				// Now parse the reply from JCentral
-				JSONParser jsonParser = new JSONParser();
-				JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
-				JSONArray jsonArray = (JSONArray) readf.get("results");
-				for (Object object : jsonArray) {
-					JSONObject aJson = (JSONObject) object;
-					pwritercert.print(aJson.get("tokencert"));
-					pwriterkey.print(aJson.get("tokenkey"));
-					pwritercert.flush();
-					pwriterkey.flush();
+				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					// ignore
 				}
 
-				// Set correct permissions
-				changeMod(tokencertfile, 440);
-				changeMod(tokenkeyfile, 400);
-
-				// Execution finished - kill commander
-				commander.kill = true;
-				return true;
+			// Now parse the reply from JCentral
+			JSONParser jsonParser = new JSONParser();
+			JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
+			JSONArray jsonArray = (JSONArray) readf.get("results");
+			for (Object object : jsonArray) {
+				JSONObject aJson = (JSONObject) object;
+				pwritercert.print(aJson.get("tokencert"));
+				pwriterkey.print(aJson.get("tokenkey"));
+				pwritercert.flush();
+				pwriterkey.flush();
 			}
+
+			// Set correct permissions
+			changeMod(tokencertfile, 440);
+			changeMod(tokenkeyfile, 400);
+
+			// Execution finished - kill commander
+			commander.kill = true;
+			return true;
+
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Token request failed", e);
 			return false;
 		}
-		return false;
 	}
 
 	/**
