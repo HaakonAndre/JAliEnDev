@@ -32,7 +32,6 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.site.batchqueue.BatchQueue;
-import alien.user.UserFactory;
 import apmon.ApMon;
 import apmon.ApMonException;
 import lazyj.commands.SystemCommand;
@@ -51,7 +50,7 @@ public class ComputingElement extends Thread{
 	// Logger object
 	static transient Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
 
-	private JAliEnCOMMander commander = null;//JAliEnCOMMander.getInstance();
+	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
 	// Config, env, classad
 	private int port = 10000;
@@ -73,11 +72,8 @@ public class ComputingElement extends Thread{
 		try {
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
-			String username = System.getenv().get("USER");
-			commander = new JAliEnCOMMander(UserFactory.getByUsername(username), null, null, null);
-			
 			config = ConfigUtils.getConfigFromLdap();
-			//getSiteMap();  //TODO: uncomment!
+			getSiteMap();
 
 			logger = LogUtils.redirectToCustomHandler(logger, config.get("host_logdir") + "/CE");
 
