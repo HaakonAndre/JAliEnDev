@@ -52,7 +52,7 @@ public class HTCONDOR extends BatchQueue {
 	public HTCONDOR(HashMap<String, Object> conf, Logger logr) {
 		this.config = conf;
 		this.logger = logr;
-		this.logger = LogUtils.redirectToCustomHandler(this.logger, ((String) config.get("host_logdir")) + "JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+		this.logger = LogUtils.redirectToCustomHandler(this.logger, ((String) config.get("host_logdir")) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
 
 		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 		
