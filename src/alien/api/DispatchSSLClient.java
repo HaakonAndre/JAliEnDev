@@ -8,7 +8,6 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.cert.CertificateException;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
