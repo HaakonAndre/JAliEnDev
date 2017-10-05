@@ -845,7 +845,7 @@ public class JAKeyStore {
 					return true;
 				}
 				break;
-			} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
+			} catch (final org.bouncycastle.openssl.EncryptionException | org.bouncycastle.pkcs.PKCSException | javax.crypto.BadPaddingException e) {
 				logger.log(Level.SEVERE, "Wrong password! Try again", e);
 				System.err.println("Wrong password! Try again");
 			} catch (final Exception e) {
