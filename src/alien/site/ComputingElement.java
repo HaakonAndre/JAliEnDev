@@ -74,8 +74,22 @@ public class ComputingElement extends Thread{
 			// JAKeyStore.loadServerKeyStorage();
 			config = ConfigUtils.getConfigFromLdap();
 			getSiteMap();
+			
+			String host_logdir = (String) config.get("host_logdir");
+			String[] host_logdir_splitted = host_logdir.split("/");
+			String host_logdir_resolved = "";
+			for (String dir : host_logdir_splitted) {
+				host_logdir_resolved += '/';
+				if( dir.startsWith("$") ) {		//it's an env variable
+					dir = System.getenv(dir.substring(1));
+				}
+				host_logdir_resolved += dir;
+			}
+			if( host_logdir_resolved.startsWith("//") ) {
+				host_logdir_resolved = host_logdir_resolved.substring(1);
+			}
 
-			logger = LogUtils.redirectToCustomHandler(logger, config.get("host_logdir") + "/CE");
+			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 			queue = getBatchQueue((String) config.get("ce_type"));
 
