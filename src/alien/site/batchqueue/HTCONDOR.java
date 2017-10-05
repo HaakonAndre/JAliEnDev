@@ -50,14 +50,25 @@ public class HTCONDOR extends BatchQueue {
 	 *            this.logger
 	 */
 	public HTCONDOR(HashMap<String, Object> conf, Logger logr) {
+		this._environment = System.getenv();
 		this.config = conf;
 		this.logger = logr;
-		this.logger = LogUtils.redirectToCustomHandler(this.logger, ((String) config.get("host_logdir")) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+		String host_logdir = (String) config.get("host_logdir");
+		String[] host_logdir_splitted = host_logdir.split("/");
+		String host_logdir_resolved = "";
+		for (String dir : host_logdir_splitted) {
+			host_logdir_resolved += '/';
+			if( dir.startsWith("$") ) {		//it's an env variable
+				dir = _environment.get(dir.substring(1));
+			}
+			host_logdir_resolved += dir;
+		}
+		
+		this.logger = LogUtils.redirectToCustomHandler(this.logger, ( host_logdir_resolved + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
 
 		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 		
 		this._env_from_config = (HashMap<String, String>) this.config.get("ce_environment");
-		this._environment = System.getenv();
 		this._temp_file = null;
 		this._submit_cmd = (config.get("CE_SUBMITCMD") != null ? (String)config.get("CE_SUBMITCMD") : "condor_submit");
 		
