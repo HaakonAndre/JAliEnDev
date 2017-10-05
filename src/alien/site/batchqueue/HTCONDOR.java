@@ -63,8 +63,11 @@ public class HTCONDOR extends BatchQueue {
 			}
 			host_logdir_resolved += dir;
 		}
+		if( host_logdir_resolved.startsWith("//") ) {
+			host_logdir_resolved = host_logdir_resolved.substring(1);
+		}
 		
-		this.logger = LogUtils.redirectToCustomHandler(this.logger, ( host_logdir_resolved + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+		this.logger = LogUtils.redirectToCustomHandler(this.logger, ( host_logdir_resolved + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out")));
 
 		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 		
