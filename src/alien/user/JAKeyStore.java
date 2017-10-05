@@ -315,7 +315,19 @@ public class JAKeyStore {
 	 * @throws Exception
 	 */
 	public static boolean loadProxy() throws Exception {
-		final String proxyLocation = "/tmp/x509up_u" + System.getProperty("userid");
+		String sUserId = System.getProperty("userid");
+		if (sUserId == null || sUserId.length() == 0) {
+			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
+
+			if (sUserId != null && sUserId.length() > 0)
+				System.setProperty("userid", sUserId);
+			else {
+				logger.severe("User Id empty! Could not get the token file name");
+				return false;
+			}
+		}
+		final String proxyLocation = "/tmp/x509up_u" + sUserId;
+
 		// load pair
 		// =================
 		class PkiUtils {
