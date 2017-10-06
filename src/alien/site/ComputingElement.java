@@ -1,6 +1,7 @@
 package alien.site;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -11,6 +12,11 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,6 +38,7 @@ import alien.shell.commands.JAliEnCOMMander;
 import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.site.batchqueue.BatchQueue;
+import alien.user.UserFactory;
 import apmon.ApMon;
 import apmon.ApMonException;
 import lazyj.commands.SystemCommand;
@@ -50,7 +57,7 @@ public class ComputingElement extends Thread{
 	// Logger object
 	static transient Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
 
-	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+	private final JAliEnCOMMander commander = new JAliEnCOMMander(UserFactory.getByCertificate(getLocalCertChain()), null, null, null);// JAliEnCOMMander.getInstance();
 
 	// Config, env, classad
 	private int port = 10000;
@@ -97,6 +104,44 @@ public class ComputingElement extends Thread{
 			e.printStackTrace();
 		}
 	}
+	
+	private static X509Certificate createCertificateObject( String path_to_usercert ){
+		byte[] byte_cert = null;
+		try {
+			byte_cert = Files.readAllBytes(Paths.get(path_to_usercert));
+		} catch (IOException e1) {
+			System.out.println(String.format("Could not read from the specified cert file: %s", path_to_usercert));
+			e1.printStackTrace();
+			return null;
+		}
+
+		CertificateFactory fac = null;
+		try {
+			fac = CertificateFactory.getInstance("X509");
+		} catch (CertificateException e) {
+			System.out.println("Could not create CertificateFactory.");
+			e.printStackTrace();
+			return null;
+		}
+		ByteArrayInputStream in=new ByteArrayInputStream(byte_cert);//certObject.getBytes());
+		X509Certificate full_cert = null;
+		try {
+			full_cert = (X509Certificate)fac.generateCertificate(in);
+		} catch (CertificateException e) {
+			System.out.println("Certificate generation failed.");
+			e.printStackTrace();
+			return null;
+		}
+		return full_cert;
+		}
+	
+	private static X509Certificate[] getLocalCertChain() {
+		X509Certificate[] local_cert_chain = new X509Certificate[1];
+		String path_to_usercert = System.getenv("HOME") + "/.globus/usercert.pem";
+		X509Certificate usercert = createCertificateObject(path_to_usercert);
+		local_cert_chain[0] = usercert;
+		return local_cert_chain;
+	}
 
 	@Override
 	public void run() {
@@ -131,7 +176,7 @@ public class ComputingElement extends Thread{
 	 */
 	public static void main(String[] args){
 		final ComputingElement CE = new ComputingElement();
-		//CE.run();
+		CE.run();
 	}
 
 	private int getNumberFreeSlots() {
