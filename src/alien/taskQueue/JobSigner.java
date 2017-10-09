@@ -135,7 +135,7 @@ public class JobSigner {
 	public static boolean verifyJobToRun(final X509Certificate[] cert, final String sjdl)
 			throws NoSuchAlgorithmException, InvalidKeyException, SignatureException, KeyStoreException, JobSubmissionException {
 
-		final Certificate[] ts = JAKeyStore.clientCert.getCertificateChain("User.cert");
+		final Certificate[] ts = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
 		final X509Certificate[] tts = new X509Certificate[ts.length];
 		for (int a = 0; a < ts.length; a++)
 			tts[a] = UserFactory.convert((java.security.cert.X509Certificate) ts[a]);

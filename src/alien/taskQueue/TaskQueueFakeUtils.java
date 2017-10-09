@@ -87,7 +87,7 @@ public class TaskQueueFakeUtils {
 					e1.printStackTrace();
 				}
 
-				j.jdl = JobSigner.signJob(JAKeyStore.hostCert, "Host.cert", JAKeyStore.pass, user.getName(), ojdl).toString();
+				j.jdl = JobSigner.signJob(JAKeyStore.getKeyStore(), "User.cert", JAKeyStore.pass, user.getName(), ojdl).toString();
 
 				j.site = "";
 				j.started = 0;

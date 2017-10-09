@@ -2,6 +2,7 @@ package alien.shell.commands;
 
 import java.util.ArrayList;
 
+import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import joptsimple.OptionException;
 
@@ -15,13 +16,29 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		if (commander.user.canBecome(user))
-			commander.user = UserFactory.getByUsername(user);
+		java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
+		AliEnPrincipal switchUser;
+
+		if (commander.user.canBecome(user)) {
+			if ((switchUser = UserFactory.getByUsername(user)) != null)
+				commander.user = switchUser;
+			else
+				if ((switchUser = UserFactory.getByRole(user)) != null)
+					commander.user = switchUser;
+				else {
+					if (out.isRootPrinter())
+						out.setField("message", "User " + user + " cannot be found. Abort");
+					else
+						out.printErrln("User " + user + " cannot be found. Abort");
+				}
+
+			commander.user.setUserCert(cert);
+		}
 		else
 			if (out.isRootPrinter())
-				out.setField("message", "Permission denied.");
+				out.setField("message", "Switching user " + commander.user.getName() + " to [" + user + "] failed");
 			else
-				out.printErrln("Permission denied.");
+				out.printErrln("Switching user " + commander.user.getName() + " to [" + user + "] failed");
 
 	}
 

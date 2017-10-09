@@ -488,21 +488,22 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		for (final String expandedPath : expandedPaths) {
 			final LFN l = commander.c_api.getLFN(expandedPath);
 
-			if (l.isFile())
-				sources.add(expandedPath);
-			else
-				if (l.isDirectory()) {
-					final Collection<LFN> findresult = commander.c_api.find(expandedPath, "*", 0);
-
-					logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
-
-					for (final LFN file : findresult)
-						if (file.isFile())
-							sources.add(file.getCanonicalName());
-				}
+			if (l != null)
+				if (l.isFile())
+					sources.add(expandedPath);
 				else
-					if (l.isCollection())
-						sources.addAll(l.listCollection());
+					if (l.isDirectory()) {
+						final Collection<LFN> findresult = commander.c_api.find(expandedPath, "*", 0);
+
+						logger.log(Level.FINER, "`find " + expandedPath + " *` produced " + findresult.size() + " results");
+
+						for (final LFN file : findresult)
+							if (file.isFile())
+								sources.add(file.getCanonicalName());
+					}
+					else
+						if (l.isCollection())
+							sources.addAll(l.listCollection());
 		}
 
 		if (sources.size() > 1) {

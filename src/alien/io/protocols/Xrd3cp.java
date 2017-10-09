@@ -239,7 +239,8 @@ public class Xrd3cp extends Xrootd {
 
 	@Override
 	public boolean isSupported() {
-		return getXrd3cpPath() != null;
+		// return getXrd3cpPath() != null;
+		return false;
 	}
 
 	/**

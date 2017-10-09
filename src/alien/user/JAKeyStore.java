@@ -78,7 +78,7 @@ public class JAKeyStore {
 	 *
 	 */
 	public static KeyStore clientCert = null;
-	
+
 	/**
 	 *
 	 */
@@ -177,7 +177,17 @@ public class JAKeyStore {
 		}
 	}
 
-	private static boolean checkKeyPermissions(final String user_key, final String user_cert) {
+	/**
+	 * Check file permissions of certificate and key
+	 * 
+	 * @param user_key
+	 *            path to key
+	 * @param user_cert
+	 *            path to certificate
+	 * @param force
+	 *            force change permissions (set to false to ask for confirmation)
+	 */
+	private static boolean checkKeyPermissions(final String user_key, final String user_cert, final boolean force) {
 		File key = new File(user_key);
 
 		try {
@@ -189,7 +199,7 @@ public class JAKeyStore {
 
 				if (!co.stdout.startsWith("-r--------")) {
 					System.out.println("key|" + co.stdout + "|");
-					changeMod("key", key, 400);
+					changeMod("key", key, 400, force);
 
 					co = SystemCommand.bash("ls -la " + user_key, false);
 
@@ -214,7 +224,7 @@ public class JAKeyStore {
 
 				if (!co.stdout.startsWith("-r--r-----")) {
 					System.out.println("cert|" + co.stdout + "|");
-					changeMod("certificate", cert, 440);
+					changeMod("certificate", cert, 440, force);
 
 					co = SystemCommand.bash("ls -la " + user_cert, false);
 
@@ -232,27 +242,48 @@ public class JAKeyStore {
 		return false;
 	}
 
-	private static boolean changeMod(final String name, final File file, final int chmod) {
+	/**
+	 * Check file permissions of certificate and key
+	 * 
+	 * @param name
+	 *            type of file (cert|key)
+	 * @param file
+	 *            path to file
+	 * @param chmod
+	 *            numeric code for permissions
+	 * @param force
+	 *            force change permissions (set to false to ask for confirmation)
+	 */
+	private static boolean changeMod(final String name, final File file, final int chmod, final boolean force) {
 		try {
-			String ack = "";
+			if (!force) {
+				String ack = "";
+				final Console cons = System.console();
 
-			final Console cons = System.console();
+				if (cons == null)
+					return false;
 
-			if (cons == null)
-				return false;
+				System.out.println("Your Grid " + name + " file has wrong permissions.");
+				System.out.println("The file [ " + file.getCanonicalPath() + " ] should have permissions [ " + chmod + " ].");
 
-			System.out.println("Your Grid " + name + " file has wrong permissions.");
-			System.out.println("The file [ " + file.getCanonicalPath() + " ] should have permissions [ " + chmod + " ].");
+				if ((ack = cons.readLine("%s", "Would you correct this now [Yes/no]?")) != null)
+					if (Utils.stringToBool(ack, true)) {
+						final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
 
-			if ((ack = cons.readLine("%s", "Would you correct this now [Yes/no]?")) != null)
-				if (Utils.stringToBool(ack, true)) {
-					final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
+						if (co.exitCode != 0)
+							System.err.println("Could not change permissions: " + co.stderr);
 
-					if (co.exitCode != 0)
-						System.err.println("Could not change permissions: " + co.stderr);
+						return co.exitCode == 0;
+					}
+			}
+			else {
+				final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
 
-					return co.exitCode == 0;
-				}
+				if (co.exitCode != 0)
+					System.err.println("Could not change permissions: " + co.stderr);
+
+				return co.exitCode == 0;
+			}
 		} catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore
 		}
@@ -284,8 +315,19 @@ public class JAKeyStore {
 	 * @throws Exception
 	 */
 	public static boolean loadProxy() throws Exception {
-		// TODO: use current user ID instead of a fixed string for this to actually have a chance of working
-		final String proxyLocation = "/tmp/x509up_u12411";
+		String sUserId = System.getProperty("userid");
+		if (sUserId == null || sUserId.length() == 0) {
+			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
+
+			if (sUserId != null && sUserId.length() > 0)
+				System.setProperty("userid", sUserId);
+			else {
+				logger.severe("User Id empty! Could not get the token file name");
+				return false;
+			}
+		}
+		final String proxyLocation = "/tmp/x509up_u" + sUserId;
+
 		// load pair
 		// =================
 		class PkiUtils {
@@ -391,13 +433,13 @@ public class JAKeyStore {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
-		final String user_key = config.gets("user.cert.priv.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "userkey.pem");
+		final String user_key = System.getenv("X509_USER_KEY") != null ? System.getenv("X509_USER_KEY")
+				: config.gets("user.cert.priv.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "userkey.pem");
 
-		final String user_cert = config.gets("user.cert.pub.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
+		final String user_cert = System.getenv("X509_USER_CERT") != null ? System.getenv("X509_USER_CERT")
+				: config.gets("user.cert.pub.location", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "usercert.pem");
 
-		if (!checkKeyPermissions(user_key, user_cert))
+		if (!checkKeyPermissions(user_key, user_cert, false))
 			return false;
 
 		clientCert = KeyStore.getInstance("JKS");
@@ -422,7 +464,7 @@ public class JAKeyStore {
 		loadTrusts();
 		return true;
 	}
-	
+
 	/**
 	 * @return true if ok
 	 * @throws Exception
@@ -431,24 +473,23 @@ public class JAKeyStore {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
-		final String token_key = config.gets("token.cert.priv.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
+		final String token_key = System.getenv("JALIEN_TOKEN_KEY") != null ? System.getenv("JALIEN_TOKEN_KEY")
+				: config.gets("tokenkey.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
 
-		final String token_cert = config.gets("token.cert.pub.location",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
+		final String token_cert = System.getenv("JALIEN_TOKEN_CERT") != null ? System.getenv("JALIEN_TOKEN_CERT")
+				: config.gets("tokencert.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
 
-		if (!checkKeyPermissions(token_key, token_cert))
-			return false;
+		// if (!checkKeyPermissions(token_key, token_cert, true))
+		// return false;
 
 		tokenCert = KeyStore.getInstance("JKS");
 
 		try {
 			tokenCert.load(null, pass);
+			addKeyPairToKeyStore(tokenCert, "User.cert", token_key, token_cert, null);
 		} catch (@SuppressWarnings("unused") final Exception e) {
-			// ignore
+			return false;
 		}
-
-		addKeyPairToKeyStore(tokenCert, "Token.cert", token_key, token_cert, null);
 
 		loadTrusts();
 		return true;
@@ -484,9 +525,10 @@ public class JAKeyStore {
 	}
 
 	/**
+	 * @return true if keystore is loaded successfully
 	 * @throws Exception
 	 */
-	public static void loadServerKeyStorage() throws Exception {
+	public static boolean loadServerKeyStorage() throws Exception {
 
 		final ExtProperties config = ConfigUtils.getConfig();
 		// pass = getRandomString();
@@ -498,12 +540,18 @@ public class JAKeyStore {
 				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "hostcert.pem");
 
 		hostCert = KeyStore.getInstance("JKS");
-		hostCert.load(null, pass);
 
-		addKeyPairToKeyStore(hostCert, "Host.cert", hostkey, hostcert, null);
+		try {
+			hostCert.load(null, pass);
+
+			addKeyPairToKeyStore(hostCert, "User.cert", hostkey, hostcert, null);
+
+		} catch (@SuppressWarnings("unused") final Exception e) {
+			return false;
+		}
 
 		loadTrusts();
-
+		return true;
 	}
 
 	private static JPasswordFinder getPassword() {
@@ -590,8 +638,12 @@ public class JAKeyStore {
 		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(pair.getPrivate(), certArray), new KeyStore.PasswordProtection(pass));
 	}
 
-
-	public	static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
+	/**
+	 * @param ks
+	 * @param filename
+	 * @param password
+	 */
+	public static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
 		try (FileOutputStream fo = new FileOutputStream(filename)) {
 			try {
 				ks.store(fo, password);
@@ -618,13 +670,19 @@ public class JAKeyStore {
 	 * @throws OperatorCreationException
 	 * @throws PKCSException
 	 */
-	@SuppressWarnings("resource")
 	public static PrivateKey loadPrivX509(final String keyFileLocation, final char[] password) throws IOException, PEMException, OperatorCreationException, PKCSException {
 
 		if (logger.isLoggable(Level.INFO))
 			logger.log(Level.INFO, "Loading private key: " + keyFileLocation);
 
-		try (PEMParser reader = new PEMParser(new BufferedReader(new FileReader(keyFileLocation)))) {
+		Reader source = null;
+		try {
+			source = new FileReader(keyFileLocation);
+		} catch (@SuppressWarnings("unused") Exception e) {
+			source = new StringReader(keyFileLocation);
+		}
+
+		try (PEMParser reader = new PEMParser(new BufferedReader(source))) {
 			Object obj;
 			while ((obj = reader.readObject()) != null) {
 				if (obj instanceof PEMEncryptedKeyPair) {
@@ -674,20 +732,37 @@ public class JAKeyStore {
 		if (logger.isLoggable(Level.INFO))
 			logger.log(Level.INFO, "Loading public key: " + certFileLocation);
 
-		try (PEMParser reader = new PEMParser(new BufferedReader(new FileReader(certFileLocation)))) {
+		Reader source = null;
+		try {
+			source = new FileReader(certFileLocation);
+		} catch (@SuppressWarnings("unused") Exception e) {
+			source = new StringReader(certFileLocation);
+		}
+
+		try (PEMParser reader = new PEMParser(new BufferedReader(source))) {
 			Object obj;
 
 			final ArrayList<X509Certificate> chain = new ArrayList<>();
 
 			while ((obj = reader.readObject()) != null)
-				if (obj instanceof X509Certificate)
+				if (obj instanceof X509Certificate) {
+					try {
+						((X509Certificate) obj).checkValidity();
+					} catch (final CertificateException e) {
+						logger.log(Level.SEVERE, "Your certificate has expired or is invalid!", e);
+						System.err.println("Your certificate has expired or is invalid:\n  " + e.getMessage());
+						reader.close();
+						return null;
+					}
 					chain.add((X509Certificate) obj);
+				}
 				else
 					if (obj instanceof X509CertificateHolder) {
 						final X509CertificateHolder ch = (X509CertificateHolder) obj;
 
 						try {
 							final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
+							c.checkValidity();
 
 							chain.add(c);
 						} catch (final CertificateException ce) {
@@ -736,5 +811,104 @@ public class JAKeyStore {
 			s.append(charString.charAt(pos));
 		}
 		return s.toString().toCharArray();
+	}
+
+	private static boolean keystore_loaded = false;
+
+	/**
+	 * @return true if JAliEn managed to load one of keystores
+	 */
+	public static boolean loadKeyStore() {
+		keystore_loaded = false;
+
+		// If JALIEN_TOKEN_CERT env var is set, token is in highest priority
+		if (System.getenv("JALIEN_TOKEN_CERT") != null)
+			try {
+				logger.log(Level.SEVERE, "TRY TOKEN CERT");
+				if (loadTokenKeyStorage()) {
+					logger.log(Level.SEVERE, "LOADED TOKEN CERT");
+					keystore_loaded = true;
+					return true;
+				}
+			} catch (final Exception e) {
+				logger.log(Level.SEVERE, "Error loading token", e);
+				System.err.println("Error loading token");
+			}
+
+		// Try to load full user certificate
+		while (true)
+			try {
+				logger.log(Level.SEVERE, "TRY USER CERT");
+				if (loadClientKeyStorage()) {
+					logger.log(Level.SEVERE, "LOADED USER CERT");
+					keystore_loaded = true;
+					return true;
+				}
+				break;
+			} catch (final org.bouncycastle.openssl.EncryptionException | org.bouncycastle.pkcs.PKCSException | javax.crypto.BadPaddingException e) {
+				logger.log(Level.SEVERE, "Wrong password! Try again", e);
+				System.err.println("Wrong password! Try again");
+			} catch (final Exception e) {
+				logger.log(Level.SEVERE, "Error loading the key", e);
+				System.err.println("Error loading the key");
+				break;
+			}
+
+		// Try to load token cert
+		try {
+			logger.log(Level.SEVERE, "TRY TOKEN CERT");
+			if (loadTokenKeyStorage()) {
+				logger.log(Level.SEVERE, "LOADED TOKEN CERT");
+				keystore_loaded = true;
+				return true;
+			}
+		} catch (final Exception e) {
+			logger.log(Level.SEVERE, "Error loading token", e);
+			System.err.println("Error loading token");
+		}
+
+		// Try to load host cert
+		try {
+			logger.log(Level.SEVERE, "TRY HOST CERT");
+			if (loadServerKeyStorage()) {
+				logger.log(Level.SEVERE, "LOADED HOST CERT");
+				keystore_loaded = true;
+				return true;
+			}
+		} catch (final Exception e) {
+			logger.log(Level.SEVERE, "Error loading hostcert", e);
+			System.err.println("Error loading hostcert");
+		}
+
+		keystore_loaded = false;
+		return false;
+	}
+
+	/**
+	 * @return either tokenCert, clientCert or hostCert keystore
+	 */
+	public static KeyStore getKeyStore() {
+		if (!keystore_loaded)
+			loadKeyStore();
+
+		if (System.getenv("JALIEN_TOKEN_CERT") != null) {
+			if (JAKeyStore.tokenCert != null) {
+				return JAKeyStore.tokenCert;
+			}
+		}
+
+		if (JAKeyStore.clientCert != null) {
+			return JAKeyStore.clientCert;
+		}
+		else
+			if (JAKeyStore.tokenCert != null) {
+				return JAKeyStore.tokenCert;
+			}
+			else
+				if (JAKeyStore.hostCert != null) {
+					return JAKeyStore.hostCert;
+				}
+
+		return null;
 	}
 }

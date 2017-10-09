@@ -222,9 +222,11 @@ public final class MonitorFactory {
 
 				apmon.setJobMonitoring(true, selfMonitor.interval);
 				apmon.addJobToMonitor(pid, System.getProperty("user.dir"), selfMonitor.getClusterName(), selfMonitor.getNodeName());
-			} else
+			}
+			else
 				logger.log(Level.WARNING, "Could not determine self pid so external process tracking is disabled");
-		} else
+		}
+		else
 			logger.log(Level.WARNING, "ApMon is null, so self monitoring cannot run");
 	}
 
@@ -370,6 +372,12 @@ public final class MonitorFactory {
 			// on Linux
 			selfProcessID = Integer.parseInt((new File(PROC_SELF)).getCanonicalFile().getName());
 
+			return selfProcessID;
+		} catch (@SuppressWarnings("unused") final Throwable t) {
+			// ignore
+		}
+
+		try {
 			selfProcessID = Integer.parseInt(System.getProperty("pid"));
 
 			return selfProcessID;

@@ -25,19 +25,36 @@ import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
 
+/**
+ * @author yuw
+ *
+ *         Implementation of websocket endpoint, that parses JSON commands
+ */
 public class JsonWebsocketEndpoint extends Endpoint {
 	private AliEnPrincipal userIdentity = null;
-	private JAliEnCOMMander commander = null;
+	JAliEnCOMMander commander = null;
 	private UIPrintWriter out = null;
 	private OutputStream os = null;
 
 	private void setShellPrintWriter(final OutputStream os, final String shelltype) {
 		if (shelltype.equals("jaliensh"))
 			out = new JShPrintWriter(os);
-		else if (shelltype.equals("json"))
-			out = new JSONPrintWriter(os);
 		else
-			out = new XMLPrintWriter(os);
+			if (shelltype.equals("json"))
+				out = new JSONPrintWriter(os);
+			else
+				out = new XMLPrintWriter(os);
+	}
+
+	private long _startTime = 0L;
+
+	/**
+	 * Get websocket connection uptime
+	 * 
+	 * @return uptime in ms
+	 */
+	public long getUptime() {
+		return System.currentTimeMillis() - _startTime;
 	}
 
 	@Override
@@ -56,6 +73,23 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		commander = new JAliEnCOMMander(userIdentity, null, null, out);
 
 		session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, commander, out));
+		_startTime = System.currentTimeMillis();
+
+		new Thread() {
+			@Override
+			public void run() {
+				while (true) {
+					if (getUptime() > 172800000) // 2 days
+						onClose(session, new CloseReason(null, "Connection expired (run for more than 2 days)"));
+
+					try {
+						Thread.sleep(10800000); // 3 hours
+					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+						// ignore
+					}
+				}
+			}
+		}.start();
 	}
 
 	@Override
@@ -64,13 +98,20 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 		out = null;
 		try {
-			os.close();
+			if (os != null)
+				os.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		os = null;
 		userIdentity = null;
+		try {
+			session.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	@Override

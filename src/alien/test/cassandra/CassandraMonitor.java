@@ -2,6 +2,8 @@ package alien.test.cassandra;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,6 +22,7 @@ import javax.management.remote.JMXServiceURL;
 import alien.config.ConfigUtils;
 import alien.monitoring.MonitorFactory;
 import apmon.ApMon;
+import lazyj.ExtProperties;
 
 /**
  * @author mmmartin
@@ -35,6 +38,13 @@ public class CassandraMonitor {
 	static transient final ApMon apmon = MonitorFactory.getApMonSender();
 	static String hostName = null;
 	static boolean first = true;
+
+	// for passing credentials for password
+	static ExtProperties config = ConfigUtils.getConfiguration("cassandra");
+	private static String user = null;
+	private static String pass = null;
+
+	private static Map<String, String[]> envpass = new HashMap<>();
 
 	static final String[] metrics = { "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=TotalLatency", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=TotalLatency",
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency", // OMR
@@ -64,6 +74,21 @@ public class CassandraMonitor {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
+		if (config == null) {
+			logger.severe("cassandra.properties missing?");
+			return;
+		}
+		user = config.gets("cassandraUsername");
+		pass = config.gets("cassandraPassword");
+		
+		if (user.equals("") || pass.equals("")) {
+			logger.severe("cassandra.properties misses some field: cassandraUsername or cassandraPassword");
+			return;
+		}
+		
+		String[] credentials = { user, pass };
+		envpass.put(JMXConnector.CREDENTIALS, credentials);
+
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 			url = new JMXServiceURL(serviceUrl);
@@ -159,7 +184,8 @@ public class CassandraMonitor {
 			throws IOException, AttributeNotFoundException, InstanceNotFoundException, MBeanException, ReflectionException, MalformedObjectNameException {
 		Object attributeValue = null;
 		try {
-			jmxc = JMXConnectorFactory.connect(url, null);
+			jmxc = JMXConnectorFactory.connect(url, envpass);
+
 			mbsConnection = jmxc.getMBeanServerConnection();
 
 			final ObjectName objectName = new ObjectName(MbeanObjectName);

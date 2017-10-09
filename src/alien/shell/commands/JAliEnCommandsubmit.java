@@ -38,9 +38,9 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 							jdl = TaskQueueUtils.applyJDLArguments(content, args);
 						} catch (final IOException ioe) {
 							if (!isSilent()) {
-								out.setField("Error submitting ", alArguments.get(0));
+								out.setField("error", "Error submitting " + alArguments.get(0));
 
-								out.setField("JDL error: ", ioe.getMessage());
+								out.setField("error", "JDL error: " + ioe.getMessage());
 							}
 							return;
 						}
@@ -49,16 +49,16 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 						queueId = commander.q_api.submitJob(jdl);
 						if (queueId > 0) {
 							if (!isSilent())
-								out.setField("Your new job ID is ", ShellColor.blue() + queueId + ShellColor.reset());
+								out.setField("jobId", ShellColor.blue() + queueId + ShellColor.reset());
 						}
 						else
 							if (!isSilent())
-								out.setField("Error submitting ", alArguments.get(0));
+								out.setField("error", "Error submitting " + alArguments.get(0));
 					}
 
 					catch (final ServerException e) {
 						if (!isSilent())
-							out.setField("Error submitting ", alArguments.get(0) + "," + e.getMessage());
+							out.setField("error", "Error submitting " + alArguments.get(0) + "," + e.getMessage());
 					}
 
 			}

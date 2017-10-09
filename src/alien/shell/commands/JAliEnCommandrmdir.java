@@ -23,7 +23,7 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		for (final String path : alPaths) {
-			
+
 			final LFN dir = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path), false);
 
 			if (dir != null && dir.exists) {
@@ -32,16 +32,16 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 					if (AuthorizationChecker.canWrite(dir, commander.user)) {
 
 						if (out.isRootPrinter()) {
-							if (bP)
+							if (bP) {
 								out.setField("message", "Inside Parent Directory");
-							if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-								if (!isSilent())
-									out.setField("Could not remove directory (or non-existing parents): ", path);
+								if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
+									if (!isSilent())
+										out.setField("error", "Could not remove directory (or non-existing parents): " + path);
 							}
 							else
 								if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
 									if (!isSilent())
-										out.setField("Could not remove directory: ", path);
+										out.setField("error", "Could not remove directory: " + path);
 						}
 						else
 							if (bP) {

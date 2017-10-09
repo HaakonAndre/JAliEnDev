@@ -168,17 +168,10 @@ public class DispatchSSLMTClient extends Thread {
 		try {
 			// get factory
 			final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
-			logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).getSubjectDN());
-
-			try {
-				((java.security.cert.X509Certificate) JAKeyStore.clientCert.getCertificateChain("User.cert")[0]).checkValidity();
-			} catch (final CertificateException e) {
-				logger.log(Level.SEVERE, "Your certificate has expired or is invalid!", e);
-				return null;
-			}
+			logger.log(Level.INFO, "Connecting with client cert: " + ((java.security.cert.X509Certificate) JAKeyStore.getKeyStore().getCertificateChain("User.cert")[0]).getSubjectDN());
 
 			// initialize factory, with clientCert(incl. priv+pub)
-			kmf.init(JAKeyStore.clientCert, JAKeyStore.pass);
+			kmf.init(JAKeyStore.getKeyStore(), JAKeyStore.pass);
 
 			java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1,TLSv1.1,TLSv1.2");
 
@@ -212,7 +205,7 @@ public class DispatchSSLMTClient extends Thread {
 				final DispatchSSLMTClient sc = new DispatchSSLMTClient(client);
 				System.out.println("Connection to JCentral established.");
 				logger.log(Level.INFO, "Connection to JCentral established.");
-				
+
 				return sc;
 				// instance.put(Integer.valueOf(p), sc);
 
