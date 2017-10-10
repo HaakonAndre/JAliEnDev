@@ -100,19 +100,7 @@ public class ComputingElement extends Thread{
 			config = ConfigUtils.getConfigFromLdap();
 			getSiteMap();
 			
-			String host_logdir = (String) config.get("host_logdir");
-			String[] host_logdir_splitted = host_logdir.split("/");
-			String host_logdir_resolved = "";
-			for (String dir : host_logdir_splitted) {
-				host_logdir_resolved += '/';
-				if( dir.startsWith("$") ) {		//it's an env variable
-					dir = System.getenv(dir.substring(1));
-				}
-				host_logdir_resolved += dir;
-			}
-			if( host_logdir_resolved.startsWith("//") ) {
-				host_logdir_resolved = host_logdir_resolved.substring(1);
-			}
+			String host_logdir_resolved = resolvePathWithEnv((String) config.get("host_logdir"));
 
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
@@ -121,6 +109,23 @@ public class ComputingElement extends Thread{
 		} catch (final Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	
+	private String resolvePathWithEnv(String path_with_env) {
+		String[] path_splitted = path_with_env.split("/");
+		String path_resolved = "";
+		for (String dir : path_splitted) {
+			path_resolved += '/';
+			if( dir.startsWith("$") ) {		//it's an env variable
+				dir = System.getenv(dir.substring(1));
+			}
+			path_resolved += dir;
+		}
+		if( path_resolved.startsWith("//") ) {
+			path_resolved = path_resolved.substring(1);
+		}
+		return path_resolved;
 	}
 
 
@@ -284,8 +289,9 @@ public class ComputingElement extends Thread{
 		String after = "";
 
 		long time = new Timestamp(System.currentTimeMillis()).getTime();
-		String cert_file = config.get("host_tmpdir") + "/token_cert." + time;
-		String key_file = config.get("host_tmpdir") + "/token_key." + time;
+		String host_tempdir = resolvePathWithEnv((String) config.get("host_tmpdir"));
+		String cert_file = host_tempdir + "/token_cert." + time;
+		String key_file = host_tempdir + "/token_key." + time;
 
 		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
 		ttl_hours = ttl_hours / 3600;
@@ -314,7 +320,7 @@ public class ComputingElement extends Thread{
 		String token_key_str = getTokenKey(token_full_str);
 
 		before += "echo 'Using token certificate'\n"
-				+ "mkdir -p " + config.get("host_tmpdir") + "\n"
+				+ "mkdir -p " + host_tempdir + "\n"
 				+ "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n"
 				+ "file=" + cert_file + "\n"
 				+ "cat >" + cert_file + " <<EOF\n"
@@ -344,7 +350,7 @@ public class ComputingElement extends Thread{
 		 String content_str = before + startup_sctipt + " SartJobAgent\n" + after;
 
 		 PrintWriter writer = null;
-		 String agent_startup_path = config.get("host_tmpdir") + "/agent.startup." + time;
+		 String agent_startup_path = host_tempdir + "/agent.startup." + time;
 		 File agent_startup_file = new File(agent_startup_path);
 		 try {
 			agent_startup_file.createNewFile();
