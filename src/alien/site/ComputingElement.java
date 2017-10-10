@@ -42,6 +42,8 @@ import alien.user.UserFactory;
 import apmon.ApMon;
 import apmon.ApMonException;
 import lazyj.commands.SystemCommand;
+import java.security.KeyStoreException;
+import alien.user.JAKeyStore;
 
 /**
  * @author mmmartin
@@ -57,7 +59,7 @@ public class ComputingElement extends Thread{
 	// Logger object
 	static transient Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
 
-	private final JAliEnCOMMander commander = new JAliEnCOMMander(UserFactory.getByCertificate(getLocalCertChain()), null, null, null);// JAliEnCOMMander.getInstance();
+	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance(); //new JAliEnCOMMander(UserFactory.getByCertificate(getLocalCertChain()), null, null, null);// JAliEnCOMMander.getInstance();
 
 	// Config, env, classad
 	private int port = 10000;
@@ -77,6 +79,22 @@ public class ComputingElement extends Thread{
 	 */
 	public ComputingElement() {
 		try {
+			while (true)
+				try {
+					if (!JAKeyStore.loadClientKeyStorage()) {
+						System.err.println("Grid Certificate could not be loaded.");
+						System.err.println("Exiting...");
+						return;
+						}
+					break;
+					} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
+						logger.log(Level.SEVERE, "Wrong password! Try again", e);
+						System.err.println("Wrong password! Try again");
+						} catch (final Exception e) {
+							logger.log(Level.SEVERE, "Error loading the key", e);
+							System.err.println("Error loading the key");
+							}
+
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
 			config = ConfigUtils.getConfigFromLdap();
