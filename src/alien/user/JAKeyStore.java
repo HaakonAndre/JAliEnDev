@@ -854,19 +854,6 @@ public class JAKeyStore {
 				break;
 			}
 
-		// Try to load token cert
-		try {
-			logger.log(Level.SEVERE, "TRY TOKEN CERT");
-			if (loadTokenKeyStorage()) {
-				logger.log(Level.SEVERE, "LOADED TOKEN CERT");
-				keystore_loaded = true;
-				return true;
-			}
-		} catch (final Exception e) {
-			logger.log(Level.SEVERE, "Error loading token", e);
-			System.err.println("Error loading token");
-		}
-
 		// Try to load host cert
 		try {
 			logger.log(Level.SEVERE, "TRY HOST CERT");
@@ -878,6 +865,19 @@ public class JAKeyStore {
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Error loading hostcert", e);
 			System.err.println("Error loading hostcert");
+		}
+
+		// Try to load token cert
+		try {
+			logger.log(Level.SEVERE, "TRY TOKEN CERT");
+			if (loadTokenKeyStorage()) {
+				logger.log(Level.SEVERE, "LOADED TOKEN CERT");
+				keystore_loaded = true;
+				return true;
+			}
+		} catch (final Exception e) {
+			logger.log(Level.SEVERE, "Error loading token", e);
+			System.err.println("Error loading token");
 		}
 
 		keystore_loaded = false;
@@ -901,12 +901,12 @@ public class JAKeyStore {
 			return JAKeyStore.clientCert;
 		}
 		else
-			if (JAKeyStore.tokenCert != null) {
-				return JAKeyStore.tokenCert;
+			if (JAKeyStore.hostCert != null) {
+				return JAKeyStore.hostCert;
 			}
 			else
-				if (JAKeyStore.hostCert != null) {
-					return JAKeyStore.hostCert;
+				if (JAKeyStore.tokenCert != null) {
+					return JAKeyStore.tokenCert;
 				}
 
 		return null;
