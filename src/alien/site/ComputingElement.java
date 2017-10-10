@@ -59,7 +59,7 @@ public class ComputingElement extends Thread{
 	// Logger object
 	static transient Logger logger = ConfigUtils.getLogger(ComputingElement.class.getCanonicalName());
 
-	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance(); //new JAliEnCOMMander(UserFactory.getByCertificate(getLocalCertChain()), null, null, null);// JAliEnCOMMander.getInstance();
+	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
 	// Config, env, classad
 	private int port = 10000;
@@ -122,44 +122,7 @@ public class ComputingElement extends Thread{
 			e.printStackTrace();
 		}
 	}
-	
-	private static X509Certificate createCertificateObject( String path_to_usercert ){
-		byte[] byte_cert = null;
-		try {
-			byte_cert = Files.readAllBytes(Paths.get(path_to_usercert));
-		} catch (IOException e1) {
-			System.out.println(String.format("Could not read from the specified cert file: %s", path_to_usercert));
-			e1.printStackTrace();
-			return null;
-		}
 
-		CertificateFactory fac = null;
-		try {
-			fac = CertificateFactory.getInstance("X509");
-		} catch (CertificateException e) {
-			System.out.println("Could not create CertificateFactory.");
-			e.printStackTrace();
-			return null;
-		}
-		ByteArrayInputStream in=new ByteArrayInputStream(byte_cert);//certObject.getBytes());
-		X509Certificate full_cert = null;
-		try {
-			full_cert = (X509Certificate)fac.generateCertificate(in);
-		} catch (CertificateException e) {
-			System.out.println("Certificate generation failed.");
-			e.printStackTrace();
-			return null;
-		}
-		return full_cert;
-		}
-	
-	private static X509Certificate[] getLocalCertChain() {
-		X509Certificate[] local_cert_chain = new X509Certificate[1];
-		String path_to_usercert = System.getenv("HOME") + "/.globus/usercert.pem";
-		X509Certificate usercert = createCertificateObject(path_to_usercert);
-		local_cert_chain[0] = usercert;
-		return local_cert_chain;
-	}
 
 	@Override
 	public void run() {
