@@ -81,16 +81,13 @@ public class ComputingElement extends Thread{
 		try {
 			while (true)
 				try {
-					if (!JAKeyStore.loadClientKeyStorage()) {
+					if (!JAKeyStore.loadKeyStore()) {
 						System.err.println("Grid Certificate could not be loaded.");
 						System.err.println("Exiting...");
 						return;
 						}
 					break;
-					} catch (final org.bouncycastle.openssl.EncryptionException | javax.crypto.BadPaddingException e) {
-						logger.log(Level.SEVERE, "Wrong password! Try again", e);
-						System.err.println("Wrong password! Try again");
-						} catch (final Exception e) {
+					} catch (final Exception e) {
 							logger.log(Level.SEVERE, "Error loading the key", e);
 							System.err.println("Error loading the key");
 							}
