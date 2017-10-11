@@ -79,18 +79,16 @@ public class ComputingElement extends Thread{
 	 */
 	public ComputingElement() {
 		try {
-			while (true)
-				try {
-					if (!JAKeyStore.loadKeyStore()) {
-						System.err.println("Grid Certificate could not be loaded.");
-						System.err.println("Exiting...");
-						return;
+			try {
+				if (!JAKeyStore.loadKeyStore()) {
+					System.err.println("Grid Certificate could not be loaded.");
+					System.err.println("Exiting...");
+					return;
+					}
+				} catch (final Exception e) {
+						logger.log(Level.SEVERE, "Error loading the key", e);
+						System.err.println("Error loading the key");
 						}
-					break;
-					} catch (final Exception e) {
-							logger.log(Level.SEVERE, "Error loading the key", e);
-							System.err.println("Error loading the key");
-							}
 
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
@@ -244,7 +242,8 @@ public class ComputingElement extends Thread{
 
 		if (slots_to_submit <= 0) {
 			logger.info("No slots available in the CE!");
-			return;
+			System.out.println("[ishelest DEBUG] Ignored: No slots available in the CE!");		//TODO: remove
+			//return;		//TODO: uncomment
 		}
 		logger.info("CE free slots: " + slots_to_submit);
 
@@ -254,7 +253,8 @@ public class ComputingElement extends Thread{
 
 		if (waiting_jobs <= 0) {
 			logger.info("Broker returned 0 available waiting jobs");
-			return;
+			System.out.println("[ishelest DEBUG] Ignored: Broker returned 0 available waiting jobs");		//TODO: remove
+			//return;		//TODO: uncomment
 		}
 		logger.info("Waiting jobs: " + waiting_jobs);
 
@@ -264,6 +264,7 @@ public class ComputingElement extends Thread{
 		logger.info("Going to submit " + slots_to_submit + " agents");
 
 		String script = createAgentStartup();
+		System.out.println("[ishelest DEBUG] AgentStartup script:\n" + script);		//TODO: remove
 		if (script == null) {
 			logger.info("Cannot create startup script");
 			return;
@@ -377,12 +378,18 @@ public class ComputingElement extends Thread{
 	
 	private static String getTokenKey(String fullTokenCert) {
 		int start = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
+		if(start == -1) {
+			return "";
+		}
 		String result = fullTokenCert.substring(start);
 		return result;
 	}
 	
 	private static String getTokenCert(String fullTokenCert) {
 		int end = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
+		if(end == -1) {
+			return "";
+		}
 		String result = fullTokenCert.substring(0, end);
 		return result;
 	}
@@ -409,12 +416,7 @@ public class ComputingElement extends Thread{
 		}
 		waitCommandFinish();
 		String token_proxy_str = null;
-		try {
-			token_proxy_str = new String(os.toByteArray(),"UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			logger.info("Encoding error while receiving token certificate");
-			e.printStackTrace();
-		};
+		token_proxy_str = os.toString();;
 		
 		return token_proxy_str;
 	}
