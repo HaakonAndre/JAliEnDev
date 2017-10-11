@@ -378,7 +378,7 @@ public class ComputingElement extends Thread{
 	
 	private static String getTokenKey(String fullTokenCert) {
 		int start = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
-		if(start == -1) {
+		if(start == 24) {
 			return "";
 		}
 		String result = fullTokenCert.substring(start);
@@ -387,7 +387,7 @@ public class ComputingElement extends Thread{
 	
 	private static String getTokenCert(String fullTokenCert) {
 		int end = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
-		if(end == -1) {
+		if(end == 24) {
 			return "";
 		}
 		String result = fullTokenCert.substring(0, end);
