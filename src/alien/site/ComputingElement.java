@@ -416,7 +416,7 @@ public class ComputingElement extends Thread{
 		}
 		waitCommandFinish();
 		String token_proxy_str = null;
-		token_proxy_str = os.toString();;
+		token_proxy_str = os.toString();
 		
 		return token_proxy_str;
 	}
