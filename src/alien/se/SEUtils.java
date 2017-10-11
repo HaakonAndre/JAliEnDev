@@ -1062,7 +1062,7 @@ public final class SEUtils {
 							while (gdb.moveNext()) {
 								final String guid = gdb.gets(1);
 
-								pw.println(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
+								pw.print(twoDigits.format(GUID.getCHash(guid)) + "/" + fiveDigits.format(GUID.getHash(guid)) + "/" + guid + "," + gdb.getl(2) + "," + gdb.gets(3) + ",");
 
 								try {
 									final UUID u = UUID.fromString(guid);
