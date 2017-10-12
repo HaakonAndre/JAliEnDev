@@ -379,6 +379,8 @@ public class ComputingElement extends Thread{
 	private static String getTokenKey(String fullTokenCert) {
 		int start = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
 		if(start == 24) {
+			logger.warning("Couldn't find end of certificate!");
+			System.out.println("[ishelest DEBUG] Couldn't find end of certificate!");		//TODO: remove
 			return "";
 		}
 		String result = fullTokenCert.substring(start);
@@ -388,6 +390,8 @@ public class ComputingElement extends Thread{
 	private static String getTokenCert(String fullTokenCert) {
 		int end = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
 		if(end == 24) {
+			logger.warning("Couldn't find end of certificate!");
+			System.out.println("[ishelest DEBUG] Couldn't find end of certificate!");		//TODO: remove
 			return "";
 		}
 		String result = fullTokenCert.substring(0, end);
