@@ -80,12 +80,12 @@ public class CassandraMonitor {
 		}
 		user = config.gets("cassandraUsername");
 		pass = config.gets("cassandraPassword");
-		
+
 		if (user.equals("") || pass.equals("")) {
 			logger.severe("cassandra.properties misses some field: cassandraUsername or cassandraPassword");
 			return;
 		}
-		
+
 		String[] credentials = { user, pass };
 		envpass.put(JMXConnector.CREDENTIALS, credentials);
 
