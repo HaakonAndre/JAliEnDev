@@ -218,6 +218,8 @@ public class CatalogueTestWhereisGenerated {
 		int write_n = 0;
 		int counter_write = 0;
 		long limit_minus_base = limit - base;
+		String type_last_op = "read";
+		long last_value = 0;
 		while (no_termination) {
 			while (tPool.getQueue().size() > 300000) { // keep the pool queue size small
 				try {
@@ -228,22 +230,26 @@ public class CatalogueTestWhereisGenerated {
 			}
 
 			if (read_write_ratio.intValue() != 0 && counter_write == read_write_ratio.intValue()) {
-				System.out.println("Insert write: " + base_for_insert.intValue() + write_n);
 				tPool.submit(new AddPathInsert(base_for_insert.intValue() + write_n));
 				write_n++;
 				counter_write = 0;
+				type_last_op = "write";
+				last_value = base_for_insert.intValue() + write_n;
 			}
 			else {
+				type_last_op = "read";
 				long newValue = ((long) (rdm.nextGaussian() * stddev)) + (limit_minus_base / 2);
 				if (newValue < base || newValue > limit)
 					continue;
-				System.out.println("Insert read: " + newValue);
+				last_value = newValue;
 				tPool.submit(new AddPathRead(newValue));
 			}
 			counter++;
 			counter_write++;
-			if (counter % 50000 == 0)
-				System.out.println("Submitted " + counter + " tasks - queue size: " + tPool.getQueue().size());
+			if (counter % 10000 == 0)
+				System.out.println("Submitted " + counter + " tasks - Last op: " + type_last_op + " Last value: " + last_value + " - queue size: " + tPool.getQueue().size() + " dirCache size: "
+						+ LFN_CSD.dirCacheSize() + " - dirCache_get_hit: " + LFN_CSD.dirCacheGet() + " - dirCache_put: " + LFN_CSD.dirCacheGet() + " - ratio:"
+						+ (double) LFN_CSD.dirCacheGet() / (double) LFN_CSD.dirCacheGet());
 		}
 
 		try {
@@ -339,6 +345,7 @@ public class CatalogueTestWhereisGenerated {
 						final String msg = "Failed to get PFNS: " + lfn;
 						failed_files.println(msg);
 						failed_files.flush();
+						System.err.println(msg);
 						continue;
 					}
 					break;

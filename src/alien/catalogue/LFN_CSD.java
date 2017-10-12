@@ -60,6 +60,15 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	private static final ConcurrentHashMap<String, Integer> folderBookingMap = new ConcurrentHashMap<>();
 
 	/**
+	 * dirCache stats
+	 */
+	public static int dirCache_get_hit = 0;
+	/**
+	 * dirCache stats
+	 */
+	public static int dirCache_put = 0;
+
+	/**
 	 * Unique Ctime for auto insertion
 	 */
 	public static Date ctime_fixed = null;
@@ -79,7 +88,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Local cache to hold the hierarchy
 	 */
-	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(50000); // TODO: should change size?
+	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(500000); // TODO: should change size?
 
 	/**
 	 * Owner
@@ -400,9 +409,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 					}
 
 					dirCache.put(pathAppended, path_id, 5 * 60 * 1000);
+					dirCache_put++;
 				}
 				else {
 					path_id = cachedUuid;
+					dirCache_get_hit++;
 				}
 				if (i < chunksize)
 					pathAppended += path_chunks[i] + "/";
@@ -419,6 +430,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param name
 	 * @param append_table
 	 * @return child id in the index
+	 * @throws Exception
 	 */
 	@SuppressWarnings("resource")
 	public static UUID getChildIdFromParentIdAndName(UUID parent_id, String name, String append_table) throws Exception {
@@ -800,6 +812,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				// pfns = new HashMap<>();
 				// pfns.put(Integer.valueOf(-1), "");
 				dirCache.put(this.canonicalName, id, 5 * 60 * 1000);
+				dirCache_put++;
 			}
 
 			// Insert into se_lookup
@@ -871,6 +884,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		try {
 			// return if in the cache
 			if (dirCache.get(folder) != null) {
+				dirCache_get_hit++;
 				return true;
 			}
 
@@ -921,8 +935,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 *             passing through from other methods explicitely
 	 */
 	public static boolean existsLfn(String lfn, String append_table) throws Exception {
-		if (dirCache.get(lfn) != null) // If the cache has the folder, return directly
+		if (dirCache.get(lfn) != null) { // If the cache has the folder, return directly
+			dirCache_get_hit++;
 			return true;
+		}
 
 		String[] p_c = getPathAndChildFromCanonicalName(lfn);
 		String parent_of_lfn = p_c[0];
@@ -952,6 +968,27 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return false;
 
 		return true;
+	}
+
+	/**
+	 * @return dirCache get
+	 */
+	public static int dirCacheGet() {
+		return dirCache_get_hit;
+	}
+
+	/**
+	 * @return dirCache put
+	 */
+	public static int dirCachePut() {
+		return dirCache_put;
+	}
+
+	/**
+	 * @return dirCache size
+	 */
+	public static int dirCacheSize() {
+		return dirCache.size();
 	}
 
 }
