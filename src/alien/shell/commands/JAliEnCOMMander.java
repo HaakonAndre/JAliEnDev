@@ -478,6 +478,7 @@ public class JAliEnCOMMander extends Thread {
 			}
 		}
 		flush();
+		out.flush();
 	}
 
 	/**

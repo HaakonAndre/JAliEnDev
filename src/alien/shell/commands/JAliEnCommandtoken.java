@@ -85,26 +85,28 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
 		AliEnPrincipal switchUser;
 
-		if (commander.user.canBecome(requestedUser)) {
-			if ((switchUser = UserFactory.getByUsername(requestedUser)) != null)
-				commander.user = switchUser;
-			else
-				if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
+		if (requestedUser != null) {
+			if (commander.user.canBecome(requestedUser)) {
+				if ((switchUser = UserFactory.getByUsername(requestedUser)) != null)
 					commander.user = switchUser;
-				else {
-					if (out.isRootPrinter())
-						out.setField("message", "User " + requestedUser + " cannot be found. Abort");
-					else
-						out.printErrln("User " + requestedUser + " cannot be found. Abort");
-				}
-
-			commander.user.setUserCert(cert);
-		}
-		else
-			if (out.isRootPrinter())
-				out.setField("message", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				else
+					if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
+						commander.user = switchUser;
+					else {
+						if (out.isRootPrinter())
+							out.setField("message", "User " + requestedUser + " cannot be found. Abort");
+						else
+							out.printErrln("User " + requestedUser + " cannot be found. Abort");
+					}
+	
+				commander.user.setUserCert(cert);
+			}
 			else
-				out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				if (out.isRootPrinter())
+					out.setField("message", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				else
+					out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+		}
 
 		// Return tokens
 		if (out.isRootPrinter()) {

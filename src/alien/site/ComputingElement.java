@@ -27,6 +27,11 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import alien.api.JBoxServer;
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.api.taskQueue.GetNumberWaitingJobs;
@@ -35,6 +40,7 @@ import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JSONPrintWriter;
 import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.site.batchqueue.BatchQueue;
@@ -313,9 +319,9 @@ public class ComputingElement extends Thread{
 //		} catch (IOException e) {
 //			logger.info("Error reading the proxy file: " + e);
 //		}
-		String token_full_str = getTokenCertificate(ttl_hours / 24);
-		String token_cert_str = getTokenCert(token_full_str);
-		String token_key_str = getTokenKey(token_full_str);
+		String[] token_certificate_full = getTokenCertificate(ttl_hours / 24);
+		String token_cert_str = token_certificate_full[0];
+		String token_key_str = token_certificate_full[1];
 
 		before += "echo 'Using token certificate'\n"
 				+ "mkdir -p " + host_tempdir + "\n"
@@ -376,29 +382,8 @@ public class ComputingElement extends Thread{
 		return startup_sctipt;
 	}
 	
-	private static String getTokenKey(String fullTokenCert) {
-		int start = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
-		if(start == 24) {
-			logger.warning("Couldn't find end of certificate!");
-			System.out.println("[ishelest DEBUG] Couldn't find end of certificate!");		//TODO: remove
-			return "";
-		}
-		String result = fullTokenCert.substring(start);
-		return result;
-	}
 	
-	private static String getTokenCert(String fullTokenCert) {
-		int end = fullTokenCert.indexOf("-----END CERTIFICATE-----") + 25;
-		if(end == 24) {
-			logger.warning("Couldn't find end of certificate!");
-			System.out.println("[ishelest DEBUG] Couldn't find end of certificate!");		//TODO: remove
-			return "";
-		}
-		String result = fullTokenCert.substring(0, end);
-		return result;
-	}
-	
-	private String getTokenCertificate(int ttl_days)
+	private String[] getTokenCertificate(int ttl_days)
 	{
 		String[] token_cmd = new String[5];
 		token_cmd[0] = "token";
@@ -407,7 +392,7 @@ public class ComputingElement extends Thread{
 		token_cmd[3] = "-v";
 		token_cmd[4] = String.format("%d", ttl_days);
 		ByteArrayOutputStream os = new ByteArrayOutputStream(); // we must then convert it to string
-		UIPrintWriter out = new JShPrintWriter(os);
+		UIPrintWriter out = new JSONPrintWriter(os);
 		
 		if (!commander.isAlive())
 			commander.start();
@@ -415,14 +400,37 @@ public class ComputingElement extends Thread{
 		// Send the command to executor and send the result back to
 		// client via OutputStream
 		synchronized (commander) {
+			commander.status.set(1);
 			commander.setLine(out, token_cmd);
 			commander.notifyAll();
 		}
 		waitCommandFinish();
-		String token_proxy_str = null;
-		token_proxy_str = os.toString();
+		String[] token_cert_and_key = new String[2];
 		
-		return token_proxy_str;
+		String token_cert_str = "";
+		String token_key_str = "";
+		
+		// Now parse the reply from JCentral
+		JSONParser jsonParser = new JSONParser();
+		JSONObject readf = null;
+		try {
+			readf = (JSONObject) jsonParser.parse(os.toString());
+		} catch (ParseException e) {
+			logger.warning("Error parsing json.");
+			System.out.println("[ishelest DEBUG] Error parsing json.");		//TODO: remove
+			e.printStackTrace();
+		}
+		JSONArray jsonArray = (JSONArray) readf.get("results");
+		for (Object object : jsonArray) {
+			JSONObject aJson = (JSONObject) object;
+			token_cert_str = (String) aJson.get("tokencert");
+			token_key_str = (String) aJson.get("tokenkey");
+			}
+		
+		token_cert_and_key[0] = token_cert_str;
+		token_cert_and_key[1] = token_key_str;
+		
+		return token_cert_and_key;
 	}
 	
 	private void waitCommandFinish() {
