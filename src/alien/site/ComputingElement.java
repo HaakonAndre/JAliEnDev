@@ -328,14 +328,14 @@ public class ComputingElement extends Thread{
 				+ "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n"
 				+ "file=" + cert_file + "\n"
 				+ "cat >" + cert_file + " <<EOF\n"
-				+ token_cert_str + "\n"
+				+ token_cert_str
 				+ "EOF\n"
 				+ "chmod 0400 " + cert_file + "\n"
 				+ "export JALIEN_TOKEN_CERT=" + cert_file + ";\n"
 				+ "echo USING JALIEN_TOKEN_CERT\n"
 				+ "file=" + key_file + "\n"
 				+ "cat >" + key_file + " <<EOF\n"
-				+ token_key_str + "\n"
+				+ token_key_str
 				+ "EOF\n"
 				+ "chmod 0400 " + key_file + "\n"
 				+ "export JALIEN_TOKEN_KEY=" + key_file + ";\n"
@@ -391,7 +391,7 @@ public class ComputingElement extends Thread{
 		token_cmd[2] = "jobagent";
 		token_cmd[3] = "-v";
 		token_cmd[4] = String.format("%d", ttl_days);
-		ByteArrayOutputStream os = new ByteArrayOutputStream(); // we must then convert it to string
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		UIPrintWriter out = new JSONPrintWriter(os);
 		
 		if (!commander.isAlive())
