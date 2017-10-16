@@ -248,8 +248,8 @@ public class CatalogueTestWhereisGenerated {
 			counter_write++;
 			if (counter % 10000 == 0)
 				System.out.println("Submitted " + counter + " tasks - Last op: " + type_last_op + " Last value: " + last_value + " - queue size: " + tPool.getQueue().size() + " dirCache size: "
-						+ LFN_CSD.dirCacheSize() + " - dirCache_get_hit: " + LFN_CSD.dirCacheGet() + " - dirCache_put: " + LFN_CSD.dirCacheGet() + " - ratio:"
-						+ (double) LFN_CSD.dirCacheGet() / (double) LFN_CSD.dirCacheGet());
+						+ LFN_CSD.dirCacheSize() + " - dirCache_get_hit: " + LFN_CSD.dirCacheGet() + " - dirCache_put: " + LFN_CSD.dirCachePut() + " - ratio:"
+						+ (double) LFN_CSD.dirCacheGet() / (double) LFN_CSD.dirCachePut());
 		}
 
 		try {
