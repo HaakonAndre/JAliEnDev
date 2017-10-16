@@ -288,11 +288,11 @@ public class ComputingElement extends Thread{
 	 * Creates script to execute on worker nodes
 	 */
 	private String createAgentStartup() {
-		String startup_sctipt = System.getenv("JALIEN_ROOT") + "jalien ";
-		if(System.getenv("JALIEN_ROOT") == "null") {		// We don't have the env variable set
+		String startup_script = System.getenv("JALIEN_ROOT") + "jalien ";
+		if(System.getenv("JALIEN_ROOT") == null) {		// We don't have the env variable set
 			logger.warning("Environment variable JALIEN_ROOT not set. Trying default location.");
 			System.out.println("[ishelest DEBUG] Environment variable JALIEN_ROOT not set. Trying default location.");		//TODO: remove
-			startup_sctipt = System.getenv("HOME") + "jalien/jalien ";
+			startup_script = System.getenv("HOME") + "jalien/jalien ";
 		}
 		String before = "";
 		String after = "";
@@ -345,7 +345,7 @@ public class ComputingElement extends Thread{
 				+ "chmod 0400 " + key_file + "\n"
 				+ "export JALIEN_TOKEN_KEY=" + key_file + ";\n"
 				+ "echo USING JALIEN_TOKEN_KEY\n"
-				+ startup_sctipt + " proxy-info\n";
+				+ startup_script + " proxy-info\n";
 		after += "rm -rf " + cert_file + "\n";
 		after += "rm -rf " + key_file + "\n";
 //		}
@@ -353,10 +353,10 @@ public class ComputingElement extends Thread{
 		// Check proxy timeleft is good
 
 		 if (config.get("ce_installmethod").equals("CVMFS")) {
-		 startup_sctipt = runFromCVMFS();
+		 startup_script = runFromCVMFS();
 		 }
 		 
-		 String content_str = before + startup_sctipt + " SartJobAgent\n" + after;
+		 String content_str = before + startup_script + " SartJobAgent\n" + after;
 
 		 PrintWriter writer = null;
 		 String agent_startup_path = host_tempdir + "/agent.startup." + time;
@@ -382,9 +382,9 @@ public class ComputingElement extends Thread{
 		 writer.println("#!/bin/bash");
 		 writer.println(content_str);
 		 writer.close();
-		 startup_sctipt = agent_startup_path; // not sure why we do this. copied from perl
+		 startup_script = agent_startup_path; // not sure why we do this. copied from perl
 
-		return startup_sctipt;
+		return startup_script;
 	}
 	
 	
