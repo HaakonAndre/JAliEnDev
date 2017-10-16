@@ -288,11 +288,11 @@ public class ComputingElement extends Thread{
 	 * Creates script to execute on worker nodes
 	 */
 	private String createAgentStartup() {
-		String startup_script = System.getenv("JALIEN_ROOT") + "jalien ";
+		String startup_script = System.getenv("JALIEN_ROOT") + "/jalien ";
 		if(System.getenv("JALIEN_ROOT") == null) {		// We don't have the env variable set
 			logger.warning("Environment variable JALIEN_ROOT not set. Trying default location.");
 			System.out.println("[ishelest DEBUG] Environment variable JALIEN_ROOT not set. Trying default location.");		//TODO: remove
-			startup_script = System.getenv("HOME") + "jalien/jalien ";
+			startup_script = System.getenv("HOME") + "/jalien/jalien ";
 		}
 		String before = "";
 		String after = "";
