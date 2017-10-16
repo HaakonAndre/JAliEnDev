@@ -289,6 +289,11 @@ public class ComputingElement extends Thread{
 	 */
 	private String createAgentStartup() {
 		String startup_sctipt = System.getenv("JALIEN_ROOT") + "jalien ";
+		if(startup_sctipt == "null") {		// We don't have the env variable set
+			logger.warning("Environment variable JALIEN_ROOT not set. Trying default location.");
+			System.out.println("[ishelest DEBUG] Environment variable JALIEN_ROOT not set. Trying default location.");		//TODO: remove
+			startup_sctipt = System.getenv("HOME") + "/jalien/jalien ";
+		}
 		String before = "";
 		String after = "";
 
