@@ -356,7 +356,7 @@ public class ComputingElement extends Thread{
 		 startup_script = runFromCVMFS();
 		 }
 		 
-		 String content_str = before + startup_script + " SartJobAgent\n" + after;
+		 String content_str = before + startup_script + " JobAgent\n" + after;
 
 		 PrintWriter writer = null;
 		 String agent_startup_path = host_tempdir + "/agent.startup." + time;
@@ -455,15 +455,17 @@ public class ComputingElement extends Thread{
 
 	 private String runFromCVMFS() {
 	 logger.info("The worker node will install with the CVMFS method");
-	 String alien_version = System.getenv("ALIEN_VERSION");
-	 String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
-	
-	 alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : "");
-	
-	 if (ce_environment.containsKey("CVMFS_PATH"))
-	 cvmfs_path = ce_environment.get("CVMFS_PATH");
-	
-	 return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
+//	 String alien_version = System.getenv("ALIEN_VERSION");
+//	 String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
+//	
+//	 alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : "");		// TODO: uncomment
+//	
+//	 if (ce_environment.containsKey("CVMFS_PATH"))
+//	 cvmfs_path = ce_environment.get("CVMFS_PATH");
+//	
+//	 return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
+	 
+	 return System.getenv("HOME") + "/jalien/jalien";		//TODO: delete
 	 }
 
 
