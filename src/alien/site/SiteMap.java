@@ -74,8 +74,6 @@ public class SiteMap {
 
 		packMan = getPackman(installationMethod, env);
 		// siteMap.put("PackMan", packMan);
-		packages = packMan.getListPackages();
-		installedPackages = packMan.getListInstalledPackages();
 
 		// Site name and CE name
 		site = env.get("site");
@@ -119,21 +117,6 @@ public class SiteMap {
 				nousers.add(m.group(1));
 		}
 
-		// We prepare the packages for direct matching
-		String packs = ",";
-		Collections.sort(packages);
-		for (final String pack : packages)
-			packs += pack + ",,";
-
-		packs = packs.substring(0, packs.length() - 1);
-
-		String instpacks = ",";
-		Collections.sort(installedPackages);
-		for (final String pack : installedPackages)
-			instpacks += pack + ",,";
-
-		instpacks = instpacks.substring(0, instpacks.length() - 1);
-
 		// Workdir
 		String workdir = System.getProperty("user.home");
 		if (env.containsKey("WORKDIR"))
@@ -145,8 +128,30 @@ public class SiteMap {
 
 		// Setting values of the map
 		siteMap.put("Platform", ConfigUtils.getPlatform());
-		siteMap.put("Packages", packs);
-		siteMap.put("InstalledPackages", instpacks);
+		
+		// Only include packages if "CVMFS=1" is not present
+		if(!siteMap.containsKey("CVMFS") || siteMap.get("CVMFS") != Integer.valueOf(1)) {
+			packages = packMan.getListPackages();
+			installedPackages = packMan.getListInstalledPackages();
+			
+			// We prepare the packages for direct matching
+			String packs = ",";
+			Collections.sort(packages);
+			for (final String pack : packages)
+				packs += pack + ",,";
+
+			packs = packs.substring(0, packs.length() - 1);
+
+			String instpacks = ",";
+			Collections.sort(installedPackages);
+			for (final String pack : installedPackages)
+				instpacks += pack + ",,";
+
+			instpacks = instpacks.substring(0, instpacks.length() - 1);
+			
+			siteMap.put("Packages", packs);
+			siteMap.put("InstalledPackages", instpacks);
+		}
 		siteMap.put("CE", ce);
 		siteMap.put("Site", site);
 		if (users.size() > 0)
