@@ -99,6 +99,7 @@ public class ComputingElement extends Thread{
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
 			config = ConfigUtils.getConfigFromLdap();
+			site = (String)config.get("site_accountname");
 			getSiteMap();
 			
 			String host_logdir_resolved = resolvePathWithEnv((String) config.get("host_logdir"));
