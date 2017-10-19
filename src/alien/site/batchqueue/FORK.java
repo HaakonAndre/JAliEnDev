@@ -1,6 +1,7 @@
 package alien.site.batchqueue;
 
 import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ public class FORK extends BatchQueue {
 	@Override
 	public void submit(final String script) {
 		logger.info("Submit FORK");
-		System.out.println("[ishelest DEBUG] Submitting with FORK.");		//TODO: remove
+		System.out.println("[FORK] Submitting with FORK.");		//TODO: remove
 		
 		ArrayList<String> cmd = new ArrayList<String>();
 		cmd.add("/bin/bash");
@@ -48,27 +49,18 @@ public class FORK extends BatchQueue {
 			proc_builder.redirectErrorStream(false);
 
 			final Process proc = proc_builder.start();
-
-			final ProcessWithTimeout pTimeout = new ProcessWithTimeout(proc, proc_builder);
-
-			pTimeout.waitFor(60, TimeUnit.SECONDS);
-
-			final ExitStatus exitStatus = pTimeout.getExitStatus();
-			System.out.println("[ishelest DEBUG] Process exit status: " + exitStatus.getExecutorFinishStatus());
-
-			if (exitStatus.getExtProcExitStatus() == 0) {
-				final BufferedReader reader = new BufferedReader(new StringReader(exitStatus.getStdOut()));
-
-				String output_str;
-
-				while ((output_str = reader.readLine()) != null)
-					proc_output.add(output_str.trim());
+			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
+			String output_str;
+			while ((output_str = reader.readLine()) != null) 
+			{
+				proc_output.add(output_str);
 			}
 		} catch (final Throwable t) {
-			System.out.println(String.format("[ishelest DEBUG] Exception executing command: ", cmd));
+			logger.info(String.format("[FORK] Exception executing command: ", cmd));
 			t.printStackTrace();
 		}
-		System.out.println(String.format("[FORK] Command output: %s", proc_output));
+		logger.info(String.format("[FORK] Command output: %s", proc_output));
+		System.out.println(String.format("[FORK] Command output:\n %s", proc_output));		//TODO: remove
 	}
 
 	@Override
