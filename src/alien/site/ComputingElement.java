@@ -344,8 +344,8 @@ public class ComputingElement extends Thread{
 				+ "EOF\n"
 				+ "chmod 0400 " + key_file + "\n"
 				+ "export JALIEN_TOKEN_KEY=" + key_file + ";\n"
-				+ "echo USING JALIEN_TOKEN_KEY\n"
-				+ startup_script + " proxy-info\n";
+				+ "echo USING JALIEN_TOKEN_KEY\n";
+				//+ startup_script + " proxy-info\n";
 		after += "rm -rf " + cert_file + "\n";
 		after += "rm -rf " + key_file + "\n";
 //		}
