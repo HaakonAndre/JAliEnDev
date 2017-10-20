@@ -39,6 +39,7 @@ public class FORK extends BatchQueue {
 		
 		ArrayList<String> cmd = new ArrayList<String>();
 		cmd.add("/bin/bash");
+		cmd.add(script);
 		
 		ArrayList<String> proc_output = new ArrayList<String>();
 		try {

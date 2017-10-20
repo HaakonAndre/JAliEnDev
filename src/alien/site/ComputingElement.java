@@ -249,8 +249,7 @@ public class ComputingElement extends Thread{
 
 		if (slots_to_submit <= 0) {
 			logger.info("No slots available in the CE!");
-			System.out.println("[ishelest DEBUG] Ignored: No slots available in the CE!");		//TODO: remove
-			//return;		//TODO: uncomment
+			return;
 		}
 		logger.info("CE free slots: " + slots_to_submit);
 
@@ -260,8 +259,7 @@ public class ComputingElement extends Thread{
 
 		if (waiting_jobs <= 0) {
 			logger.info("Broker returned 0 available waiting jobs");
-			System.out.println("[ishelest DEBUG] Ignored: Broker returned 0 available waiting jobs");		//TODO: remove
-			//return;		//TODO: uncomment
+			return;
 		}
 		logger.info("Waiting jobs: " + waiting_jobs);
 
@@ -271,7 +269,8 @@ public class ComputingElement extends Thread{
 		logger.info("Going to submit " + slots_to_submit + " agents");
 
 		String script = createAgentStartup();
-		System.out.println("[ishelest DEBUG] AgentStartup script:\n" + script);		//TODO: remove
+		logger.info("Created AgentStartup script: " + script);
+		System.out.println("[DEBUG] AgentStartup script:\n" + script);		//TODO: remove
 		if (script == null) {
 			logger.info("Cannot create startup script");
 			return;
