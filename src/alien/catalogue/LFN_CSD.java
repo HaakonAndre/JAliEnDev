@@ -88,7 +88,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Local cache to hold the hierarchy
 	 */
-	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(500000); // TODO: should change size?
+	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(80000); // TODO: should change size?
 
 	/**
 	 * Owner
