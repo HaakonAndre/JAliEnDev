@@ -181,6 +181,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					// Send the command to executor and send the result back to
 					// client via OutputStream
 					synchronized (commander) {
+						commander.status.set(1);
 						commander.setLine(out, fullCmd.toArray(new String[0]));
 						commander.notifyAll();
 					}
