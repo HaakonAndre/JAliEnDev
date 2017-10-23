@@ -109,7 +109,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			pfns = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, qos);
 		else
 			if (accessRequest == AccessType.READ) {
-				logger.log(Level.INFO, "Acess called for a read operation");
+				logger.log(Level.INFO, "Access called for a read operation");
 				pfns = commander.c_api.getPFNsToRead(lfn, ses, exses);
 			}
 			else {
@@ -122,71 +122,53 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			out.printErrln("Not able to get request LFN/GUID [error in processing].");
 		}
 
-		/*
-		 * if (out.isRootPrinter()) {
-		 * if (pfns != null && !pfns.isEmpty())
-		 * for (final PFN pfn : pfns) {
-		 * out.nextResult();
-		 * 
-		 * String envelope = pfn.ticket.envelope.getSignedEnvelope();
-		 * 
-		 * if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber).getName().toLowerCase()))
-		 * if (commander.c_api.getSE(pfn.seNumber).needsEncryptedEnvelope)
-		 * envelope += "&envelope=" + pfn.ticket.envelope.getEncryptedEnvelope();
-		 * 
-		 * final StringTokenizer st = new StringTokenizer(envelope, "&");
-		 * 
-		 * while (st.hasMoreTokens()) {
-		 * final String t = st.nextToken();
-		 * final String key = t.substring(0, t.indexOf('='));
-		 * final String val = t.substring(t.indexOf('=') + 1);
-		 * 
-		 * if (("turl").equals(key)) {
-		 * out.setField("url", val);
-		 * final StringTokenizer tpfn = new StringTokenizer(val, "////");
-		 * tpfn.nextToken();
-		 * tpfn.nextToken();
-		 * final StringBuilder ttpfn = new StringBuilder();
-		 * 
-		 * while (tpfn.hasMoreTokens())
-		 * ttpfn.append('/').append(tpfn.nextToken());
-		 * out.setField("pfn", ttpfn.toString());
-		 * }
-		 * else
-		 * out.setField(key, val);
-		 * }
-		 * if (accessRequest.equals(AccessType.WRITE))
-		 * out.setField("nSEs", "1");
-		 * else
-		 * out.setField("nSEs", " " + pfns.size());
-		 * out.setField("user", commander.user.getName());
-		 * }
-		 * }
-		 * else
-		 */
-		if (pfns != null && !pfns.isEmpty())
-			for (final PFN pfn : pfns) {
-				out.printOutln(pfn.pfn);
+		if (out.isRootPrinter()) {
+			if (pfns != null && !pfns.isEmpty())
+				for (final PFN pfn : pfns) {
+					out.nextResult();
 
-				final SE se = SEUtils.getSE(pfn.seNumber);
+					if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber).getName().toLowerCase()))
+						if (commander.c_api.getSE(pfn.seNumber).needsEncryptedEnvelope)
+							out.setField("envelope", pfn.ticket.envelope.getEncryptedEnvelope());
+						else
+							out.setField("envelope", pfn.ticket.envelope.getSignedEnvelope());
 
-				if (se != null)
-					out.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
+					out.setField("url", pfn.ticket.envelope.getTransactionURL());
+					out.setField("pfn", pfn.toString());
+					out.setField("guid", pfn.getGuid().getName());
+					out.setField("se", pfn.getSE().getName());
 
-				if (pfn.ticket != null) {
-					final XrootDEnvelope env = pfn.ticket.envelope;
-
-					if (env.getEncryptedEnvelope() != null)
-						out.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
-
-					if (env.getSignedEnvelope() != null)
-						out.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
+					if (accessRequest.equals(AccessType.WRITE))
+						out.setField("nSEs", "1");
+					else
+						out.setField("nSEs", " " + pfns.size());
+					out.setField("user", commander.user.getName());
 				}
-
-				out.printOutln();
-			}
+		}
 		else
-			out.printErrln("No PFNs for this LFN");
+			if (pfns != null && !pfns.isEmpty())
+				for (final PFN pfn : pfns) {
+					out.printOutln(pfn.pfn);
+
+					final SE se = SEUtils.getSE(pfn.seNumber);
+
+					if (se != null)
+						out.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
+
+					if (pfn.ticket != null) {
+						final XrootDEnvelope env = pfn.ticket.envelope;
+
+						if (env.getEncryptedEnvelope() != null)
+							out.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
+
+						if (env.getSignedEnvelope() != null)
+							out.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
+					}
+
+					out.printOutln();
+				}
+			else
+				out.printErrln("No PFNs for this LFN");
 	}
 
 	/**
