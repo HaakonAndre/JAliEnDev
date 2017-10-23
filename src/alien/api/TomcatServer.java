@@ -132,7 +132,10 @@ public class TomcatServer {
 	 */
 	private static Connector createSslConnector(int tomcatPort) throws Exception {
 		String keystorePass = new String(JAKeyStore.pass);
-		JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), "keystore.jks", JAKeyStore.pass);
+		if (ConfigUtils.isCentralService())
+			JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), "keystore.jks", JAKeyStore.pass);
+		else
+			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, "keystore.jks", JAKeyStore.pass);
 
 		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 

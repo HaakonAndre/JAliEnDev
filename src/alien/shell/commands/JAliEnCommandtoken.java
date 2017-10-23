@@ -19,9 +19,9 @@ import joptsimple.OptionSet;
 public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 	private TokenCertificateType tokentype = TokenCertificateType.USER_CERTIFICATE;
-	private String requestedUser = null; 	// user1 can ask for token for user2
-	private int validity = 2; 				// Default validity is two days
-	private String extension = null; 		// Token extension (jobID for job tokens)
+	private String requestedUser = null; // user1 can ask for token for user2
+	private int validity = 2; // Default validity is two days
+	private String extension = null; // Token extension (jobID for job tokens)
 
 	/**
 	 * @param commander
@@ -98,7 +98,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 						else
 							out.printErrln("User " + requestedUser + " cannot be found. Abort");
 					}
-	
+
 				commander.user.setUserCert(cert);
 			}
 			else

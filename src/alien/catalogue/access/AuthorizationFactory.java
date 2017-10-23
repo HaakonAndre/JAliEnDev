@@ -1,12 +1,8 @@
 package alien.catalogue.access;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Set;
 import java.util.logging.Level;
