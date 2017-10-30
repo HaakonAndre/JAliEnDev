@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,7 +39,7 @@ import utils.ProcessWithTimeout;
 public class HTCONDOR extends BatchQueue {
 
 	private Map<String, String> _environment;
-	private HashMap<String, String> _env_from_config;
+	private TreeSet<String> _env_from_config;
 	private String _submit_cmd;
 	private String _submit_args;
 	private String _kill_cmd;
@@ -71,12 +72,14 @@ public class HTCONDOR extends BatchQueue {
 
 		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 		
-		this._env_from_config = (HashMap<String, String>) this.config.get("ce_environment");
+		this._env_from_config = (TreeSet<String>) this.config.get("ce_environment");
 		this._temp_file = null;
 		this._submit_cmd = (config.get("CE_SUBMITCMD") != null ? (String)config.get("CE_SUBMITCMD") : "condor_submit");
 		
-		if (_env_from_config.containsKey("SUBMIT_ARGS")) {
-			this._submit_args = _env_from_config.get("SUBMIT_ARGS");
+		for( String env_field : _env_from_config) {
+			if( env_field.contains("SUBMIT_ARGS") ){
+				this._submit_args = env_field.split("=")[1];
+			}
 		}
 		if (_environment.get("SUBMIT_ARGS") != null) {
 			this._submit_args = _environment.get("SUBMIT_ARGS");
@@ -206,15 +209,19 @@ public class HTCONDOR extends BatchQueue {
 		// --- via JobRouter or direct
 		
 		boolean use_job_agent = false;
-		if (_env_from_config.containsKey("USE_JOB_ROUTER")) {
-			use_job_agent = Integer.parseInt(_env_from_config.get("USE_JOB_ROUTER")) == 1;
+		for( String env_field : _env_from_config) {
+			if( env_field.contains("USE_JOB_ROUTER") ){
+				use_job_agent = Integer.parseInt(env_field.split("=")[1]) == 1;
+			}
 		}
 		if (_environment.get("USE_JOB_ROUTER") != null) {
 			use_job_agent = Integer.parseInt(_environment.get("USE_JOB_ROUTER")) == 1;
 		}
 		String grid_resource = null;
-		if (_env_from_config.containsKey("GRID_RESOURCE")) {
-			grid_resource = _env_from_config.get("GRID_RESOURCE");
+		for( String env_field : _env_from_config) {
+			if( env_field.contains("GRID_RESOURCE") ){
+				grid_resource = env_field.split("=")[1];
+			}
 		}
 		if (_environment.get("GRID_RESOURCE") != null) {
 			grid_resource = _environment.get("GRID_RESOURCE");
