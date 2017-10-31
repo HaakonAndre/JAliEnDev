@@ -259,10 +259,12 @@ public class HTCONDOR extends BatchQueue {
 		// --- allow preceding attributes to be overridden and others added if needed
 		
 		String custom_jdl_path = String.format("%s/custom-classad.jdl", _environment.get("HOME"));
-		String custom_attr_str = "\n#\n# custom attributes start\n#\n\n";
-		custom_attr_str += this.readJdlFile(custom_jdl_path);
-		custom_attr_str += "\n#\n# custom attributes end\n#\n\n";
-		submit_cmd += custom_attr_str;
+		if( (new File(custom_jdl_path)).exists() ) {		// Check if we should add the custom attributes
+			String custom_attr_str = "\n#\n# custom attributes start\n#\n\n";
+			custom_attr_str += this.readJdlFile(custom_jdl_path);
+			custom_attr_str += "\n#\n# custom attributes end\n#\n\n";
+			submit_cmd += custom_attr_str;
+		}
 		
 		// --- finally
 
