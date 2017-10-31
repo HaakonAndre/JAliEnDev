@@ -163,6 +163,23 @@ public class HTCONDOR extends BatchQueue {
 		
 		return classad;
 	}
+	
+	// TODO: move this method to some commonly accessible class
+	private String resolvePathWithEnv(String path_with_env) {
+		String[] path_splitted = path_with_env.split("/");
+		String path_resolved = "";
+		for (String dir : path_splitted) {
+			path_resolved += '/';
+			if( dir.startsWith("$") ) {		//it's an env variable
+				dir = System.getenv(dir.substring(1));
+			}
+			path_resolved += dir;
+		}
+		if( path_resolved.startsWith("//") ) {
+			path_resolved = path_resolved.substring(1);
+		}
+		return path_resolved;
+	}
 
 	@Override
 	public void submit(final String script) {
@@ -183,7 +200,8 @@ public class HTCONDOR extends BatchQueue {
 				e.printStackTrace();
 			}
 		}
-		String file_base_name = String.format("%s/jobagent_%s", log_folder_path, (String)this.config.get("ALIEN_JOBAGENT_ID"));
+		
+		String file_base_name = String.format("%s/jobagent_%s", this.resolvePathWithEnv(log_folder_path), (String)this.config.get("ALIEN_JOBAGENT_ID"));
 		String log_cmd = String.format("log = %s.log", file_base_name);
 		String out_cmd = "";
 		String err_cmd = "";

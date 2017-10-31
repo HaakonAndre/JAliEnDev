@@ -113,7 +113,7 @@ public class ComputingElement extends Thread{
 		}
 	}
 	
-	
+	// TODO: move this method to some commonly accessible class
 	private String resolvePathWithEnv(String path_with_env) {
 		String[] path_splitted = path_with_env.split("/");
 		String path_resolved = "";
