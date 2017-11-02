@@ -30,6 +30,7 @@ import java.util.Date;
 import org.apache.tomcat.jni.Proc;
 
 import alien.log.LogUtils;
+import alien.test.utils.Functions;
 import lia.util.process.ExternalProcess.ExitStatus;
 import utils.ProcessWithTimeout;
 
@@ -163,23 +164,6 @@ public class HTCONDOR extends BatchQueue {
 		
 		return classad;
 	}
-	
-	// TODO: move this method to some commonly accessible class
-	private String resolvePathWithEnv(String path_with_env) {
-		String[] path_splitted = path_with_env.split("/");
-		String path_resolved = "";
-		for (String dir : path_splitted) {
-			path_resolved += '/';
-			if( dir.startsWith("$") ) {		//it's an env variable
-				dir = System.getenv(dir.substring(1));
-			}
-			path_resolved += dir;
-		}
-		if( path_resolved.startsWith("//") ) {
-			path_resolved = path_resolved.substring(1);
-		}
-		return path_resolved;
-	}
 
 	@Override
 	public void submit(final String script) {
@@ -201,7 +185,8 @@ public class HTCONDOR extends BatchQueue {
 			}
 		}
 		
-		String file_base_name = String.format("%s/jobagent_%s", this.resolvePathWithEnv(log_folder_path), (String)this.config.get("ALIEN_JOBAGENT_ID"));
+		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+		String file_base_name = String.format("%s/jobagent_%s_%d_%d", Functions.resolvePathWithEnv(log_folder_path), (String)this.config.get("host"), (Integer)this.config.get("CLUSTERMONITOR_PORT"), timestamp.getTime());
 		String log_cmd = String.format("log = %s.log", file_base_name);
 		String out_cmd = "";
 		String err_cmd = "";
@@ -220,9 +205,9 @@ public class HTCONDOR extends BatchQueue {
 		// ===========
 		
 		String submit_cmd = String.format("cmd = %s\n", script);
-		if (host_logdir != null) {
-			submit_cmd += String.format("%s\n%s\n%s\n", out_cmd, err_cmd, log_cmd);
-		}
+//		if (host_logdir != null) {
+//			submit_cmd += String.format("%s\n%s\n%s\n", out_cmd, err_cmd, log_cmd);
+//		}
 		
 		// --- via JobRouter or direct
 		
@@ -270,8 +255,7 @@ public class HTCONDOR extends BatchQueue {
 				+ "$per_remove\n"
 				+ "use_x509userproxy = true\n";
 
-		String env_cmd = String.format("ALIEN_CM_AS_LDAP_PROXY=\'%s\' ", cm)
-				+ String.format("ALIEN_JOBAGENT_ID=\'%s\'", _environment.get("ALIEN_JOBAGENT_ID"));
+		String env_cmd = String.format("ALIEN_CM_AS_LDAP_PROXY=\'%s\' ", cm);
 		submit_cmd += String.format("environment = \"%s\"\n", env_cmd);
 
 		// --- allow preceding attributes to be overridden and others added if needed

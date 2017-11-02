@@ -12,6 +12,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.cert.CertificateException;
@@ -50,6 +52,7 @@ import apmon.ApMonException;
 import lazyj.commands.SystemCommand;
 import java.security.KeyStoreException;
 import alien.user.JAKeyStore;
+import alien.test.utils.Functions;
 
 /**
  * @author mmmartin
@@ -79,6 +82,7 @@ public class ComputingElement extends Thread{
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
+	private int counter = 0;
 
 	/**
 	 * 
@@ -102,7 +106,7 @@ public class ComputingElement extends Thread{
 			site = (String)config.get("site_accountname");
 			getSiteMap();
 			
-			String host_logdir_resolved = resolvePathWithEnv((String) config.get("host_logdir"));
+			String host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
 
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
@@ -112,24 +116,6 @@ public class ComputingElement extends Thread{
 			e.printStackTrace();
 		}
 	}
-	
-	// TODO: move this method to some commonly accessible class
-	private String resolvePathWithEnv(String path_with_env) {
-		String[] path_splitted = path_with_env.split("/");
-		String path_resolved = "";
-		for (String dir : path_splitted) {
-			path_resolved += '/';
-			if( dir.startsWith("$") ) {		//it's an env variable
-				dir = System.getenv(dir.substring(1));
-			}
-			path_resolved += dir;
-		}
-		if( path_resolved.startsWith("//") ) {
-			path_resolved = path_resolved.substring(1);
-		}
-		return path_resolved;
-	}
-
 
 	@Override
 	public void run() {
@@ -298,7 +284,7 @@ public class ComputingElement extends Thread{
 		String after = "";
 
 		long time = new Timestamp(System.currentTimeMillis()).getTime();
-		String host_tempdir = resolvePathWithEnv((String) config.get("host_tmpdir"));
+		String host_tempdir = Functions.resolvePathWithEnv((String) config.get("host_tmpdir"));
 		String cert_file = host_tempdir + "/token_cert." + time;
 		String key_file = host_tempdir + "/token_key." + time;
 
@@ -567,6 +553,22 @@ public class ComputingElement extends Thread{
 		} catch (NoSuchMethodException | SecurityException e) {
 			logger.severe("Cannot find class for ceConfig: " + e);
 			return null;
+		}
+		
+		// prepare some needed fields for the queue
+		if( !config.containsKey("host") || (config.get("host") == null) ){
+			InetAddress ip;
+			String hostname = "";
+			try {
+				ip = InetAddress.getLocalHost();
+				hostname = ip.getCanonicalHostName();
+			} catch (UnknownHostException e) {
+				logger.warning("Problem identifying host.");
+			}
+			config.put("host", hostname);
+			}
+		if( !config.containsKey("CLUSTERMONITOR_PORT") || (config.get("CLUSTERMONITOR_PORT") == null) ){
+			config.put("host", this.port);
 		}
 
 		try {
