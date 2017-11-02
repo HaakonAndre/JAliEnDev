@@ -568,7 +568,7 @@ public class ComputingElement extends Thread{
 			config.put("host", hostname);
 			}
 		if( !config.containsKey("CLUSTERMONITOR_PORT") || (config.get("CLUSTERMONITOR_PORT") == null) ){
-			config.put("host", this.port);
+			config.put("CLUSTERMONITOR_PORT", this.port);
 		}
 
 		try {
