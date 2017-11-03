@@ -42,7 +42,7 @@ public class HTCONDOR extends BatchQueue {
 	private Map<String, String> _environment;
 	private TreeSet<String> _env_from_config;
 	private String _submit_cmd;
-	private String _submit_args;
+	private String _submit_args = "";
 	private String _kill_cmd;
 	private File _temp_file;
 
@@ -250,12 +250,12 @@ public class HTCONDOR extends BatchQueue {
 			submit_cmd += "+WantExternalCloud = True\n";
 		}
 		submit_cmd += ""
-				+ "$osb\n"
-				+ "$per_hold\n"
-				+ "$per_remove\n"
+//				+ "$osb\n"
+//				+ "$per_hold\n"		// TODO: inspect what this does in perl
+//				+ "$per_remove\n"
 				+ "use_x509userproxy = true\n";
 
-		String env_cmd = String.format("ALIEN_CM_AS_LDAP_PROXY=\'%s\' ", cm);
+		String env_cmd = String.format("ALIEN_CM_AS_LDAP_PROXY=\'%s\'", cm);
 		submit_cmd += String.format("environment = \"%s\"\n", env_cmd);
 
 		// --- allow preceding attributes to be overridden and others added if needed
@@ -443,10 +443,14 @@ public class HTCONDOR extends BatchQueue {
 	private ArrayList<String> executeCommand(String cmd) {
 		ArrayList<String> proc_output = new ArrayList<String>();
 		try {
-			final ProcessBuilder proc_builder = new ProcessBuilder(cmd);
+			ArrayList<String> cmd_full = new ArrayList<String>();
+			cmd_full.add("/bin/bash");
+			cmd_full.add("-c");
+			cmd_full.add(cmd);
+			final ProcessBuilder proc_builder = new ProcessBuilder(cmd_full);
 
-			Map<String, String> env = proc_builder.environment();
-			env.clear();
+//			Map<String, String> env = proc_builder.environment();		// didn't work with env clear
+//			env.clear();
 			proc_builder.redirectErrorStream(false);
 
 			final Process proc = proc_builder.start();
