@@ -111,7 +111,7 @@ public class CatalogueApiUtils {
 	 */
 	public boolean removeLFN(final String path) {
 		try {
-			return Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), path)).wasRemoved();
+			return Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), path, false)).wasRemoved();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not remove the LFN: " + path);
 			e.getCause().printStackTrace();
