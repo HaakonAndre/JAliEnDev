@@ -270,7 +270,7 @@ public class LFNUtils {
 					}
 		}
 
-		if (!lfn.delete(true, false)) {
+		if (!lfn.delete(false, false)) {
 			logger.log(Level.WARNING, "Could not delete: " + lfn);
 			return null;
 		}
