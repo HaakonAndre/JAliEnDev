@@ -147,7 +147,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@Override
 	void setReturnCode(final int exitCode, final String errorMessage) {
 		setMetaInfo("exitcode", String.valueOf(exitCode));
-		setMetaInfo("message", errorMessage);
+		setMetaInfo("error", errorMessage);
 	}
 
 	@Override

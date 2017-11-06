@@ -39,7 +39,7 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 		for (final String path : alArguments) {
 			// My added code... From the Dispatcher, direct, instead of from the wrapper for in the COMMander class, like above...
 
-			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), path);
+			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), path, bR);
 			if (out.isRootPrinter())
 				try {
 					final RemoveLFNfromString a = Dispatcher.execute(rlfn);// Remember, all checking is being done server side now.
@@ -74,7 +74,9 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 		out.printOutln();
 		out.printOutln(helpUsage("rm", " <LFN> [<LFN>[,<LFN>]]"));
 		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-silent", "execute command silently"));
+		out.printOutln(helpOption("-f", "ignore nonexistent files, never prompt"));
+		out.printOutln(helpOption("-r, -R", "remove directories and their contents recursively"));
+		out.printOutln(helpOption("-i", "prompt before every removal (for JSh clients)"));
 		out.printOutln();
 	}
 
@@ -105,13 +107,14 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			parser.accepts("i");
 			parser.accepts("f");
 			parser.accepts("r");
+			parser.accepts("R");
 			parser.accepts("v");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			bIF = options.has("i");
 			bIF = !options.has("f");
-			bR = options.has("r");
+			bR = options.has("r") || options.has("R");
 			bV = options.has("v");
 		} catch (@SuppressWarnings("unused") final OptionException e) {
 			printHelp();
