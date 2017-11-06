@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -54,6 +55,20 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	private static final HashMap<String, PreparedStatement> psPool = new HashMap<>();
 
 	/**
+	 * Folder booking map
+	 */
+	private static final ConcurrentHashMap<String, Integer> folderBookingMap = new ConcurrentHashMap<>();
+
+	/**
+	 * dirCache stats
+	 */
+	public static int dirCache_get_hit = 0;
+	/**
+	 * dirCache stats
+	 */
+	public static int dirCache_put = 0;
+
+	/**
 	 * Unique Ctime for auto insertion
 	 */
 	public static Date ctime_fixed = null;
@@ -73,7 +88,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Local cache to hold the hierarchy
 	 */
-	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(10000); // TODO: should change size?
+	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(80000); // TODO: should change size?
 
 	/**
 	 * Owner
@@ -195,14 +210,24 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			metadata = new HashMap<>();
 
 		if (createParent) {
-			if (!LFN_CSD.createDirectory(path, null, null, owner, gowner, jobid, perm, ctime)) {
-				System.err.println("Exception trying to create LFN_CSD with createParent: " + l.getCanonicalName());
+			try {
+				if (!LFN_CSD.createDirectory(path, null, null, owner, gowner, jobid, perm, ctime)) {
+					System.err.println("Cannot create LFN_CSD with createParent: " + l.getCanonicalName());
+					return;
+				}
+			} catch (Exception e) {
+				System.err.println("Exception trying to create LFN_CSD with createParent: " + l.getCanonicalName() + " Exception: " + e);
 				return;
 			}
 		}
 
 		if (getParent) {
-			parent_id = getParentIdFromPath(path, null);
+			try {
+				parent_id = getParentIdFromPath(path, null);
+			} catch (Exception e) {
+				System.err.println("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName() + e);
+				return;
+			}
 			if (parent_id == null) {
 				System.err.println("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName());
 				return;
@@ -338,9 +363,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param path_parent
 	 * @param append_table
 	 * @return id from the parent
+	 * @throws Exception
+	 *             if exception from the driver
 	 */
 	@SuppressWarnings("resource")
-	public static UUID getParentIdFromPath(String path_parent, String append_table) {
+	public static UUID getParentIdFromPath(String path_parent, String append_table) throws Exception {
 		String t = "catalogue.lfn_index";
 		if (append_table != null) {
 			t += append_table;
@@ -382,9 +409,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 					}
 
 					dirCache.put(pathAppended, path_id, 5 * 60 * 1000);
+					dirCache_put++;
 				}
 				else {
 					path_id = cachedUuid;
+					dirCache_get_hit++;
 				}
 				if (i < chunksize)
 					pathAppended += path_chunks[i] + "/";
@@ -392,7 +421,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return path_id;
 		} catch (Exception e) {
 			System.err.println("Exception trying to getParentIdFromPath (" + parent_path + ") LFN_CSD: " + e);
-			return null;
+			throw (e);
 		}
 	}
 
@@ -401,9 +430,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param name
 	 * @param append_table
 	 * @return child id in the index
+	 * @throws Exception
 	 */
 	@SuppressWarnings("resource")
-	public static UUID getChildIdFromParentIdAndName(UUID parent_id, String name, String append_table) {
+	public static UUID getChildIdFromParentIdAndName(UUID parent_id, String name, String append_table) throws Exception {
 		String t = "catalogue.lfn_index";
 		if (append_table != null) {
 			t += append_table;
@@ -429,7 +459,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return id;
 		} catch (Exception e) {
 			System.err.println("Exception trying to getChildIdFromParentIdAndName (" + parent_id + " ," + name + ") LFN_CSD: " + e);
-			return null;
+			throw (e);
 		}
 	}
 
@@ -728,8 +758,14 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (level != null)
 			cl = level;
 
-		if (this.parent_id == null)
-			this.parent_id = getParentIdFromPath(this.path, append_table);
+		if (this.parent_id == null) {
+			try {
+				this.parent_id = getParentIdFromPath(this.path, append_table);
+			} catch (Exception e) {
+				System.err.println("Exception while inserting: " + this.canonicalName + " Exception: " + e);
+				return false;
+			}
+		}
 
 		if (this.parent_id == null) {
 			System.err.println("Cannot get parent of " + this.path + " append_table: " + append_table);
@@ -748,7 +784,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			PreparedStatement statement;
 			BoundStatement boundStatement;
 
-			// Insert the entry in the index
+			// Insert the entry in the index // TODO: use IF NOT EXISTS to avoid collisions when inserting paths
 			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
 			boundStatement = new BoundStatement(statement);
 			boundStatement.bind(parent_id, child, ctime, id, Integer.valueOf(flag));
@@ -773,8 +809,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			// Fake -1 seNumber for dirs in se_lookup
 			if (type == 'd') {
-				pfns = new HashMap<>();
-				pfns.put(Integer.valueOf(-1), "");
+				// pfns = new HashMap<>();
+				// pfns.put(Integer.valueOf(-1), "");
+				dirCache.put(this.canonicalName, id, 5 * 60 * 1000);
+				dirCache_put++;
 			}
 
 			// Insert into se_lookup
@@ -805,8 +843,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param table
 	 * @param level
 	 * @return <code>true</code> if the directory exists or was successfully created now
+	 * @throws Exception
+	 *             if timeouts on inner methods
 	 */
-	public static boolean createDirectory(String folder, String table, ConsistencyLevel level) {
+	public static boolean createDirectory(String folder, String table, ConsistencyLevel level) throws Exception {
 		return createDirectory(folder, table, level, null, null, 0, null, null);
 	}
 
@@ -820,65 +860,135 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 * @param perm
 	 * @param ctime
 	 * @return <code>true</code> if the directory exists or was successfully created now
+	 * @throws Exception
+	 *             if timeouts on inner methods
 	 */
 	public static boolean createDirectory(final String folder, final String table, final ConsistencyLevel level, final String owner, final String gowner, final long jobid, final String perm,
-			Date ctime) {
+			Date ctime) throws Exception {
 		// We want to create the whole hierarchy upstream
 		// check if is already there
+		int bookingTries = 0;
+
 		if (folder.length() <= 1 || existsLfn(folder, table))
 			return true;
 
-		// get parent and create it if doesn't exist
-		String[] p_c = getPathAndChildFromCanonicalName(folder);
-		String path = p_c[0];
-
-		if (!createDirectory(path, table, level, owner, gowner, jobid, perm, ctime)) {
-			System.err.println("Can't create directory: " + path);
-			return false;
+		while (folderBookingMap.putIfAbsent(folder, Integer.valueOf(1)) != null) {
+			Thread.sleep(1000);
+			bookingTries++;
+			if (bookingTries == 3) {
+				System.err.println("Can't get booking lock: " + folder);
+				return false;
+			}
 		}
 
-		LFN_CSD newdir = new LFN_CSD(folder, false, table, null, null);
-		if (owner != null && gowner != null && perm != null && ctime != null) {
-			newdir.gowner = gowner;
-			newdir.owner = owner;
-			newdir.jobid = jobid;
-			newdir.perm = perm;
-			newdir.ctime = ctime;
-		}
-		else {
-			newdir.gowner = "aliprod";
-			newdir.owner = "aliprod";
-			newdir.jobid = 0l;
-			newdir.perm = "755";
-			newdir.ctime = ctime_fixed;
-		}
-		newdir.checksum = "";
-		newdir.size = 0;
-		newdir.flag = 0;
-		newdir.type = 'd';
+		try {
+			// return if in the cache
+			if (dirCache.get(folder) != null) {
+				dirCache_get_hit++;
+				return true;
+			}
 
-		return newdir.insert(table, level);
+			// get parent and create it if doesn't exist
+			String[] p_c = getPathAndChildFromCanonicalName(folder);
+			String path = p_c[0];
+
+			if (!createDirectory(path, table, level, owner, gowner, jobid, perm, ctime)) {
+				System.err.println("Can't create directory: " + path);
+				return false;
+			}
+
+			LFN_CSD newdir = new LFN_CSD(folder, false, table, null, null);
+			if (owner != null && gowner != null && perm != null && ctime != null) {
+				newdir.gowner = gowner;
+				newdir.owner = owner;
+				newdir.jobid = jobid;
+				newdir.perm = perm;
+				newdir.ctime = ctime;
+			}
+			else {
+				newdir.gowner = "aliprod";
+				newdir.owner = "aliprod";
+				newdir.jobid = 0l;
+				newdir.perm = "755";
+				newdir.ctime = ctime_fixed;
+			}
+			newdir.checksum = "";
+			newdir.size = 0;
+			newdir.flag = 0;
+			newdir.type = 'd';
+
+			return newdir.insert(table, level);
+		} catch (Exception e) {
+			System.err.println("Freeing folderBookingMap due to failing inner createDirectory or insert for : " + folder);
+			logger.severe("Freeing folderBookingMap due to failing inner createDirectory or insert for : " + folder);
+			throw (e);
+		} finally {
+			folderBookingMap.remove(folder);
+		}
 	}
 
 	/**
 	 * @param lfn
 	 * @param append_table
 	 * @return <code>true</code> if the LFN exists
+	 * @throws Exception
+	 *             passing through from other methods explicitely
 	 */
-	public static boolean existsLfn(String lfn, String append_table) {
+	public static boolean existsLfn(String lfn, String append_table) throws Exception {
+		if (dirCache.get(lfn) != null) { // If the cache has the folder, return directly
+			dirCache_get_hit++;
+			return true;
+		}
+
 		String[] p_c = getPathAndChildFromCanonicalName(lfn);
 		String parent_of_lfn = p_c[0];
 		String child_of_lfn = p_c[1];
 
-		UUID pid = getParentIdFromPath(parent_of_lfn, append_table);
+		UUID pid = null;
+		try {
+			pid = getParentIdFromPath(parent_of_lfn, append_table);
+		} catch (Exception e) {
+			logger.severe("Exception from getParentIdFromPath in existsLfn for: " + lfn);
+			System.err.println("Exception from getParentIdFromPath in existsLfn for: " + lfn);
+			throw (e);
+		}
 		if (pid == null)
 			return false;
 
-		UUID idfolder = getChildIdFromParentIdAndName(pid, child_of_lfn, append_table);
+		UUID idfolder = null;
+
+		try {
+			idfolder = getChildIdFromParentIdAndName(pid, child_of_lfn, append_table);
+		} catch (Exception e) {
+			logger.severe("Exception from getChildIdFromParentIdAndName in existsLfn for: " + lfn);
+			System.err.println("Exception from getChildIdFromParentIdAndName in existsLfn for: " + lfn);
+			throw (e);
+		}
 		if (idfolder == null)
 			return false;
 
 		return true;
+	}
+
+	/**
+	 * @return dirCache get
+	 */
+	public static int dirCacheGet() {
+		return dirCache_get_hit;
+	}
+
+	/**
+	 * @return dirCache put
+	 */
+	public static int dirCachePut() {
+		return dirCache_put;
+	}
+
+	/**
+	 * @return dirCache size
+	 */
+	public static int dirCacheSize() {
+		return dirCache.size();
 	}
 
 }

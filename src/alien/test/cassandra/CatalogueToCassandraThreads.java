@@ -115,10 +115,6 @@ public class CatalogueToCassandraThreads {
 	 */
 	static PrintWriter failed_ses = null;
 	/**
-	 * Log file
-	 */
-	static PrintWriter used_threads = null;
-	/**
 	 * Suffix for log files
 	 */
 	static String logs_suffix = "";
@@ -219,11 +215,6 @@ public class CatalogueToCassandraThreads {
 
 		System.out.println("Printing failed ses to failed_ses" + logs_suffix);
 		failed_ses = new PrintWriter(new FileOutputStream("failed_ses" + logs_suffix));
-
-		System.out.println("Printing threads to used_threads" + logs_suffix);
-		used_threads = new PrintWriter(new FileOutputStream("used_threads" + logs_suffix));
-		used_threads.println(logs_suffix + " - " + pool_size);
-		used_threads.close();
 
 		System.out.println("Going to create " + args[0] + " hierarchy. Time: " + new Date());
 
@@ -377,19 +368,26 @@ public class CatalogueToCassandraThreads {
 		out.println("Starting: " + new Date());
 		out.flush();
 
-		System.out.println("Printing threads to used_threads" + logs_suffix);
-		used_threads = new PrintWriter(new FileOutputStream("used_threads" + logs_suffix));
-		used_threads.println(logs_suffix + " - " + pool_size);
-		used_threads.close();
-
 		System.out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limitArg + " in " + args[2] + " hierarchy. Time: " + new Date());
 		out.println("Going to insert new db consistency: " + clevel.toString() + " limit: " + limitArg + " base: " + base + " in " + args[2] + " hierarchy. Time: " + new Date());
 		out.flush();
 
 		// Create LFN paths and submit them to create LFN_CSD to insert in
 		// Cassandra
-		for (long i = base; i < limitArg; i++)
+		int counter = 0;
+		for (long i = base; i < limitArg; i++) {
+			while (tPool.getQueue().size() > 300000) { // keep the pool queue size small
+				try {
+					Thread.sleep(3000);
+				} catch (InterruptedException e) {
+					System.err.println("Cannot sleep in AddPath loop?!: " + e);
+				}
+			}
 			tPool.submit(new AddPath(i));
+			counter++;
+			if (counter % 50000 == 0)
+				System.out.println("Submitted " + counter + " tasks - queue size: " + tPool.getQueue().size());
+		}
 
 		try {
 			while (!tPool.awaitTermination(20, TimeUnit.SECONDS)) {
@@ -442,20 +440,21 @@ public class CatalogueToCassandraThreads {
 
 			boolean created = false;
 			for (int i = 0; i < 3; i++) {
-				if (LFN_CSD.createDirectory(lfnparent, "_auto", clevel)) {
-					created = true;
-					break;
-				}
 				try {
+					if (LFN_CSD.createDirectory(lfnparent, "_auto", clevel)) {
+						created = true;
+						break;
+					}
 					Thread.sleep(500);
-				} catch (InterruptedException e) {
-					System.err.println("Error sleeping?" + e);
+				} catch (Exception e) {
+					System.out.println("There was a timeout/exception on the createDirectory level: " + lfnparent + " Exception: " + e);
 				}
-				out.println("Cannot create dir in AddPath: " + lfnparent);
 			}
 
-			if (!created)
+			if (!created) {
 				out.println("Cannot create dir in AddPath after 3 tries: " + lfnparent);
+				return;
+			}
 
 			for (int i = 1; i <= 10; i++) {
 				final String lfn = "file" + i + "_" + root; // lfnparent +
@@ -618,13 +617,30 @@ public class CatalogueToCassandraThreads {
 					final LFN_CSD lfnc = new LFN_CSD(l, false, true);
 					final long start = System.nanoTime();
 					// if (!lfnc.insert(null, clevel)) {
-					if (!LFN_CSD.createDirectory(l.getCanonicalName(), null, clevel, lfnc.owner, lfnc.gowner, lfnc.jobid, lfnc.perm, lfnc.ctime)) {
-						final String msg = "Error inserting directory: " + l.getCanonicalName() + " Time: " + new Date();
-						System.err.println(msg);
-						failed_folders.println(msg);
-						failed_folders.flush();
-						continue;
+					boolean created = false;
+					for (int i = 0; i < 3; i++) {
+						try {
+							if (!LFN_CSD.createDirectory(l.getCanonicalName(), null, clevel, lfnc.owner, lfnc.gowner, lfnc.jobid, lfnc.perm, lfnc.ctime)) {
+								final String msg = "Error inserting directory: " + l.getCanonicalName() + " Time: " + new Date();
+								System.err.println(msg);
+								failed_folders.println(msg);
+								failed_folders.flush();
+								continue;
+							}
+						} catch (Exception e) {
+							final String msg = "Exception inserting directory: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
+							System.err.println(msg);
+							failed_folders.println(msg);
+							failed_folders.flush();
+							continue;
+						}
 					}
+
+					if (!created) {
+						out.println("Cannot create dir in AddPath after 3 tries: " + l.getCanonicalName());
+						return;
+					}
+
 					final long duration_ns = System.nanoTime() - start;
 					ns_count_dirs.addAndGet(duration_ns);
 					timing_count_dirs.incrementAndGet();

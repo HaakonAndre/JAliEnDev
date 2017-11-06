@@ -529,5 +529,9 @@ public class JAliEnCOMMander extends Thread {
 			// System.out.println("No such command or not implemented");
 			return null;
 		}
+		catch (final java.lang.reflect.InvocationTargetException e) {
+			logger.log(Level.SEVERE, "Exception running command", e);
+			return null;
+		}
 	}
 }

@@ -34,7 +34,7 @@ public class RemoveCatDirfromString extends Request {
 	public void run() {
 		final LFN lfn = LFNUtils.getLFN(path);
 		if (lfn != null)
-			wasRemoved = LFNUtils.rmdir(getEffectiveRequester(), lfn);
+			wasRemoved = LFNUtils.rmdir(getEffectiveRequester(), lfn, false);
 
 	}
 

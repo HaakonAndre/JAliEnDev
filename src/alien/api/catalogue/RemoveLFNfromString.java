@@ -19,21 +19,31 @@ public class RemoveLFNfromString extends Request {
 	private final String path;
 
 	private boolean wasRemoved = false;
+	private boolean recursive = false;
 
 	/**
 	 * @param user
 	 * @param path
+	 * @param recursive 
 	 */
-	public RemoveLFNfromString(final AliEnPrincipal user, final String path) {
+	public RemoveLFNfromString(final AliEnPrincipal user, final String path, final boolean recursive) {
 		setRequestUser(user);
 		this.path = path;
+		this.recursive = recursive;
 	}
 
 	@Override
 	public void run() {
 		final LFN lfn = LFNUtils.getLFN(path);
 		if (lfn != null)
-			wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn);
+			if (lfn.isDirectory()) {
+				if (recursive)
+					wasRemoved = LFNUtils.rmdir(getEffectiveRequester(), lfn, recursive);
+				else
+					wasRemoved = false;
+			}
+			else
+				wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn, recursive);
 
 	}
 

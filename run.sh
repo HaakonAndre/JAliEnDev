@@ -13,7 +13,7 @@ export CLASSPATH
 
 java \
 	-server \
-	-Xms12G -Xmx12G \
+	-Xms4G -Xmx4G \
 	-XX:+UseG1GC \
 	-XX:+DisableExplicitGC \
 	-XX:+UseCompressedOops \

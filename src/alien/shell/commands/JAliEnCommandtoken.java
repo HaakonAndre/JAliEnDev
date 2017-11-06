@@ -19,9 +19,9 @@ import joptsimple.OptionSet;
 public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 	private TokenCertificateType tokentype = TokenCertificateType.USER_CERTIFICATE;
-	private String requestedUser = null; 	// user1 can ask for token for user2
-	private int validity = 2; 				// Default validity is two days
-	private String extension = null; 		// Token extension (jobID for job tokens)
+	private String requestedUser = null; // user1 can ask for token for user2
+	private int validity = 2; // Default validity is two days
+	private String extension = null; // Token extension (jobID for job tokens)
 
 	/**
 	 * @param commander
@@ -85,26 +85,27 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
 		AliEnPrincipal switchUser;
 
-		if (commander.user.canBecome(requestedUser)) {
-			if ((switchUser = UserFactory.getByUsername(requestedUser)) != null)
-				commander.user = switchUser;
-			else
-				if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
+		if (requestedUser != null)
+			if (commander.user.canBecome(requestedUser)) {
+				if ((switchUser = UserFactory.getByUsername(requestedUser)) != null)
 					commander.user = switchUser;
-				else {
-					if (out.isRootPrinter())
-						out.setField("message", "User " + requestedUser + " cannot be found. Abort");
-					else
-						out.printErrln("User " + requestedUser + " cannot be found. Abort");
-				}
+				else
+					if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
+						commander.user = switchUser;
+					else {
+						if (out.isRootPrinter())
+							out.setField("message", "User " + requestedUser + " cannot be found. Abort");
+						else
+							out.printErrln("User " + requestedUser + " cannot be found. Abort");
+					}
 
-			commander.user.setUserCert(cert);
-		}
-		else
-			if (out.isRootPrinter())
-				out.setField("message", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				commander.user.setUserCert(cert);
+			}
 			else
-				out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				if (out.isRootPrinter())
+					out.setField("error", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				else
+					out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
 
 		// Return tokens
 		if (out.isRootPrinter()) {

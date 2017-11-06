@@ -196,14 +196,14 @@ public class LFNUtils {
 	/**
 	 * @param user
 	 * @param lfn
+	 * @param recursive
 	 * @return status of the removal
 	 */
-	public static boolean rmLFN(final AliEnPrincipal user, final LFN lfn) {
-		if (lfn != null && lfn.exists && !lfn.isDirectory()) {
+	public static boolean rmLFN(final AliEnPrincipal user, final LFN lfn, final boolean recursive) {
+		if (lfn != null && lfn.exists) {
 			if (AuthorizationChecker.canWrite(lfn, user)) {
-				System.out.println("Unimplemented request from [" + user.getName() + "], rm [" + lfn.getCanonicalName() + "]");
-				// TODO
-				return false;
+				logger.log(Level.SEVERE, "Request from [" + user.getName() + "], rmLFN [" + lfn.getCanonicalName() + "]");
+				return lfn.delete(true, recursive);
 			}
 			return false;
 
@@ -429,14 +429,14 @@ public class LFNUtils {
 	/**
 	 * @param user
 	 * @param lfn
+	 * @param recursive
 	 * @return status of the removal
 	 */
-	public static boolean rmdir(final AliEnPrincipal user, final LFN lfn) {
+	public static boolean rmdir(final AliEnPrincipal user, final LFN lfn, final boolean recursive) {
 		if (lfn != null && lfn.exists && lfn.isDirectory()) {
 			if (AuthorizationChecker.canWrite(lfn, user)) {
-				System.out.println("Unimplemented request from [" + user.getName() + "], rmdir [" + lfn.getCanonicalName() + "]");
-				// TODO
-				return false;
+				logger.log(Level.SEVERE, "Request from [" + user.getName() + "], rmdir [" + lfn.getCanonicalName() + "]");
+				return lfn.delete(true, recursive);
 			}
 			return false;
 
