@@ -1,6 +1,7 @@
 package alien.api.taskQueue;
 
 import alien.api.Request;
+import alien.taskQueue.Job;
 import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
@@ -31,7 +32,7 @@ public class GetJDL extends Request {
 
 	@Override
 	public void run() {
-		this.jdl = TaskQueueUtils.getJDL(queueId);
+		this.jdl = Job.sanitizeJDL(TaskQueueUtils.getJDL(queueId));
 	}
 
 	/**
