@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import alien.log.LogUtils;
+import alien.test.utils.Functions;
 import lia.util.process.ExternalProcess.ExitStatus;
 import utils.ProcessWithTimeout;
 
@@ -27,7 +28,8 @@ public class FORK extends BatchQueue {
 	public FORK(HashMap<String, Object> conf, Logger logr) {
 		this.config = conf;
 		logger = logr;
-		logger = LogUtils.redirectToCustomHandler(logger, ((String) config.get("host_logdir")) + "JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+		String host_logdir = (String) config.get("host_logdir");
+		logger = LogUtils.redirectToCustomHandler(logger, Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
 
 		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 	}

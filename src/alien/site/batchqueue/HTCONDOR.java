@@ -56,20 +56,8 @@ public class HTCONDOR extends BatchQueue {
 		this.config = conf;
 		this.logger = logr;
 		String host_logdir = (String) config.get("host_logdir");
-		String[] host_logdir_splitted = host_logdir.split("/");
-		String host_logdir_resolved = "";
-		for (String dir : host_logdir_splitted) {
-			host_logdir_resolved += '/';
-			if( dir.startsWith("$") ) {		//it's an env variable
-				dir = _environment.get(dir.substring(1));
-			}
-			host_logdir_resolved += dir;
-		}
-		if( host_logdir_resolved.startsWith("//") ) {
-			host_logdir_resolved = host_logdir_resolved.substring(1);
-		}
 		
-		this.logger = LogUtils.redirectToCustomHandler(this.logger, ( host_logdir_resolved + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out")));
+		this.logger = LogUtils.redirectToCustomHandler(this.logger, ( Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out")));
 
 		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
 		
