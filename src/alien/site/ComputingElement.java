@@ -111,6 +111,15 @@ public class ComputingElement extends Thread{
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 			queue = getBatchQueue((String) config.get("ce_type"));
+			
+			if(queue.needX509Proxy()) {
+				if( System.getenv("X509_USER_PROXY") == null) {
+					logger.severe("X509_USER_PROXY variable not set. Unable to work proberly!");
+					System.err.println("X509_USER_PROXY variable not set. Unable to work proberly!");
+					System.err.println("Exiting...");
+					return;
+				}
+			}
 
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -316,7 +325,6 @@ public class ComputingElement extends Thread{
 
 		before += "echo 'Using token certificate'\n"
 				+ "mkdir -p " + host_tempdir + "\n"
-				+ "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n"
 				+ "file=" + cert_file + "\n"
 				+ "cat >" + cert_file + " <<EOF\n"
 				+ token_cert_str

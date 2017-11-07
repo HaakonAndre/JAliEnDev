@@ -449,8 +449,15 @@ public class HTCONDOR extends BatchQueue {
 			cmd_full.add(cmd);
 			final ProcessBuilder proc_builder = new ProcessBuilder(cmd_full);
 
-//			Map<String, String> env = proc_builder.environment();		// didn't work with env clear
-//			env.clear();
+			Map<String, String> env = proc_builder.environment();
+			env.clear();
+			
+			final HashMap<String, String> additional_env_vars = new HashMap<String, String>();
+			additional_env_vars.put("X509_USER_PROXY", System.getenv("X509_USER_PROXY"));
+			additional_env_vars.put("LD_LIBRARY_PATH", System.getenv("LD_LIBRARY_PATH"));
+			additional_env_vars.put("PATH", System.getenv("PATH"));
+			env.putAll(additional_env_vars);
+			
 			proc_builder.redirectErrorStream(false);
 
 			final Process proc = proc_builder.start();
