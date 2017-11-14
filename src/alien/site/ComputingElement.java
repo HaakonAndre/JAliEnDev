@@ -82,7 +82,6 @@ public class ComputingElement extends Thread{
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
-	private int counter = 0;
 
 	/**
 	 * 
@@ -111,15 +110,6 @@ public class ComputingElement extends Thread{
 			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 			queue = getBatchQueue((String) config.get("ce_type"));
-			
-			if(queue.needX509Proxy()) {
-				if( System.getenv("X509_USER_PROXY") == null) {
-					logger.severe("X509_USER_PROXY variable not set. Unable to work properly!");
-					System.err.println("X509_USER_PROXY variable not set. Unable to work properly!");
-					System.err.println("Exiting...");
-					return;
-				}
-			}
 
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -134,6 +124,16 @@ public class ComputingElement extends Thread{
 		// } catch (final IOException e1) {
 		// e1.printStackTrace();
 		// }
+		
+		if(queue.needX509Proxy()) {
+			if( System.getenv("X509_USER_PROXY") == null) {
+				logger.severe("X509_USER_PROXY variable not set. Unable to work properly!");
+				System.err.println("X509_USER_PROXY variable not set. Unable to work properly!");
+				System.err.println("Exiting...");
+				return;
+			}
+		}
+
 		logger.log(Level.INFO, "Starting ComputingElement in " + siteMap.get("host"));
 		try {
 			System.out.println("Trying to start JBox");
@@ -459,7 +459,10 @@ public class ComputingElement extends Thread{
 //	
 //	 return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
 	 
-	 return System.getenv("HOME") + "/jalien/jalien";		//TODO: delete
+//	 return System.getenv("HOME") + "/jalien/jalien";		//TODO: local version
+	 return "wget -O jobagent.jar \"https://drive.google.com/uc?export=download&id=1YriohTbeoaSLx8ppglq322XqCdCA2HKd\"\n" + 
+	 		"echo [DEBUG] Downloaded the jar package\n" + 
+	 		"java -jar jobagent.jar\n";
 	 }
 
 
