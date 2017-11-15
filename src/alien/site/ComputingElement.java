@@ -342,6 +342,7 @@ public class ComputingElement extends Thread{
 				//+ startup_script + " proxy-info\n";
 		after += "rm -rf " + cert_file + "\n";
 		after += "rm -rf " + key_file + "\n";
+		after += "rm -rf jobagent.jar\n";
 //		}
 
 		// Check proxy timeleft is good
