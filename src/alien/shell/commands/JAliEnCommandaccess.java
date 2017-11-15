@@ -236,7 +236,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 						if (spec.contains("::")) {
 							if (spec.indexOf("::") != spec.lastIndexOf("::"))
 								if (spec.startsWith("!")) // an exSE spec
-									exses.add(spec.toUpperCase());
+									exses.add(spec.toUpperCase().substring(1));
 								else {// an SE spec
 									ses.add(spec.toUpperCase());
 									referenceCount++;
@@ -260,7 +260,6 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 								if (!spec.equals(""))
 									throw new JAliEnCommandException();
 					}
-
 				}
 			}
 			else
