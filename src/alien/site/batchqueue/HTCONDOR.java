@@ -299,7 +299,10 @@ public class HTCONDOR extends BatchQueue {
 				return;
 			}
 		}
-		
+
+		this._temp_file.setReadable(true);
+		this._temp_file.setExecutable(true);
+
 		try(PrintWriter out = new PrintWriter( this._temp_file.getAbsolutePath() )){
 		    out.println( submit_cmd );
 		    out.close();
