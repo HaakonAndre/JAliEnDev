@@ -350,7 +350,7 @@ public class ComputingElement extends Thread{
 		 startup_script = runFromCVMFS();
 		 }
 		 
-		 String content_str = before + startup_script + " JobAgent\n" + after;
+		 String content_str = before + startup_script + after;
 
 		 PrintWriter writer = null;
 		 String agent_startup_path = host_tempdir + "/agent.startup." + time;
