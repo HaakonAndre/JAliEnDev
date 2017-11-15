@@ -212,7 +212,7 @@ public final class UserFactory {
 							p = getByUsername(dn.substring(nameCN + 4, roleOU));
 
 						if (jobOU != dn.length()) // if second OU is present in DN
-							p.setJob(Long.valueOf(dn.substring(nameCN + 4)));
+							p.setJob(Long.valueOf(dn.substring(jobOU + 4)));
 
 						if (p != null)  // if getByUsername or getByRole found credentials
 							p.setDefaultUser(dn.substring(nameCN + 4, roleOU));
