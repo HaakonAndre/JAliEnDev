@@ -286,14 +286,17 @@ public class ComputingElement extends Thread{
 		String startup_script = System.getenv("JALIEN_ROOT") + "/jalien ";
 		if(System.getenv("JALIEN_ROOT") == null) {		// We don't have the env variable set
 			logger.warning("Environment variable JALIEN_ROOT not set. Trying default location.");
-			System.out.println("[ishelest DEBUG] Environment variable JALIEN_ROOT not set. Trying default location.");		//TODO: remove
 			startup_script = System.getenv("HOME") + "/jalien/jalien ";
 		}
 		String before = "";
 		String after = "";
 
 		long time = new Timestamp(System.currentTimeMillis()).getTime();
-		String host_tempdir = Functions.resolvePathWithEnv((String) config.get("host_tmpdir"));
+		String host_tempdir = (String) config.get("host_tmpdir");
+		String host_tempdir_resolved = Functions.resolvePathWithEnv(host_tempdir);
+		if (this.queue.getClass() == alien.site.batchqueue.FORK.class) {		// we resolve the paths only for local testing
+			host_tempdir = host_tempdir_resolved;
+		}
 		String cert_file = host_tempdir + "/token_cert." + time;
 		String key_file = host_tempdir + "/token_key." + time;
 
@@ -354,7 +357,7 @@ public class ComputingElement extends Thread{
 		 String content_str = before + startup_script + after;
 
 		 PrintWriter writer = null;
-		 String agent_startup_path = host_tempdir + "/agent.startup." + time;
+		 String agent_startup_path = host_tempdir_resolved + "/agent.startup." + time;
 		 File agent_startup_file = new File(agent_startup_path);
 		 try {
 			agent_startup_file.createNewFile();
@@ -417,7 +420,6 @@ public class ComputingElement extends Thread{
 			readf = (JSONObject) jsonParser.parse(os.toString());
 		} catch (ParseException e) {
 			logger.warning("Error parsing json.");
-			System.out.println("[ishelest DEBUG] Error parsing json.");		//TODO: remove
 			e.printStackTrace();
 		}
 		JSONArray jsonArray = (JSONArray) readf.get("results");
