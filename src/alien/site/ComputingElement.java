@@ -463,9 +463,9 @@ public class ComputingElement extends Thread{
 //	 return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
 	 
 //	 return System.getenv("HOME") + "/jalien/jalien";		//TODO: local version
-	 return "wget -O jobagent.jar \"https://drive.google.com/uc?export=download&id=1YriohTbeoaSLx8ppglq322XqCdCA2HKd\"\n" + 
+	 return "curl -o jobagent.jar \"https://doc-14-4k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/qnsc320nlbfmktguqgu83qckicc984g1/1510927200000/03129700828163697278/*/1YriohTbeoaSLx8ppglq322XqCdCA2HKd?e=download\"\n" + 
 	 		"echo [DEBUG] Downloaded the jar package\n" + 
-	 		"java -jar jobagent.jar\n";
+	 		"/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar jobagent.jar\n";
 	 }
 
 

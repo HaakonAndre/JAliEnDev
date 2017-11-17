@@ -193,9 +193,9 @@ public class HTCONDOR extends BatchQueue {
 		// ===========
 		
 		String submit_cmd = String.format("cmd = %s\n", script);
-//		if (host_logdir != null) {
-//			submit_cmd += String.format("%s\n%s\n%s\n", out_cmd, err_cmd, log_cmd);
-//		}
+		if (log_folder.exists()) {
+			submit_cmd += String.format("%s\n%s\n%s\n", out_cmd, err_cmd, log_cmd);
+		}
 		
 		// --- via JobRouter or direct
 		
