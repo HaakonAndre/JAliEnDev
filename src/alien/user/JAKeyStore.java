@@ -618,7 +618,7 @@ public class JAKeyStore {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final PasswordFinder pFinder) throws Exception {
-		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation)),
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation, true)),
 				new KeyStore.PasswordProtection(pass));
 	}
 
@@ -725,9 +725,10 @@ public class JAKeyStore {
 
 	/**
 	 * @param certFileLocation
+	 * @param checkValidity 
 	 * @return Cert chain
 	 */
-	public static X509Certificate[] loadPubX509(final String certFileLocation) {
+	public static X509Certificate[] loadPubX509(final String certFileLocation, final boolean checkValidity) {
 
 		if (logger.isLoggable(Level.INFO))
 			logger.log(Level.INFO, "Loading public key: " + certFileLocation);
@@ -762,7 +763,9 @@ public class JAKeyStore {
 
 						try {
 							final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
-							c.checkValidity();
+
+							if (checkValidity)
+								c.checkValidity();
 
 							chain.add(c);
 						} catch (final CertificateException ce) {
