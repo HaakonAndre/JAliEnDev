@@ -70,6 +70,62 @@ public class LFNUtils {
 	}
 
 	/**
+	 * Bulk guid2lfn operation
+	 * 
+	 * @param guids
+	 *            the GUIDs to look for
+	 * @return a list of LFNs for which the size and order is independent of the input collection
+	 */
+	public static List<LFN> getLFNs(final Collection<GUID> guids) {
+		if (guids == null || guids.size() == 0)
+			return null;
+
+		final Set<UUID> uuids = new HashSet<>(guids.size());
+
+		for (GUID g : guids)
+			uuids.add(g.guid);
+
+		return getLFNsFromUUIDs(uuids);
+	}
+
+	/**
+	 * Bulk guid2lfn operation
+	 * 
+	 * @param uuids
+	 *            the GUIDs to look for
+	 * @return a list of LFNs for which the size and order is independent of the input collection
+	 */
+	public static List<LFN> getLFNsFromUUIDs(final Collection<UUID> uuids) {
+		if (uuids == null || uuids.size() == 0)
+			return null;
+
+		final Set<IndexTableEntry> indextable = CatalogueUtils.getAllIndexTables();
+
+		if (indextable == null)
+			return null;
+
+		final List<LFN> ret = new ArrayList<>(uuids.size());
+
+		final Set<UUID> remainingGUIDs = new HashSet<>(uuids.size());
+
+		for (final IndexTableEntry ite : indextable) {
+			final List<LFN> chunk = ite.getLFNs(remainingGUIDs);
+
+			if (chunk != null) {
+				for (LFN l : chunk)
+					remainingGUIDs.remove(l.guid);
+
+				ret.addAll(chunk);
+
+				if (remainingGUIDs.size() == 0)
+					break;
+			}
+		}
+
+		return ret;
+	}
+
+	/**
 	 * Get the LFN entry for this catalog filename
 	 *
 	 * @param fileName
@@ -1064,7 +1120,8 @@ public class LFNUtils {
 								ret.add(file);
 								continue;
 							}
-						} catch (@SuppressWarnings("unused") final Exception e) {
+						} catch (@SuppressWarnings("unused")
+						final Exception e) {
 							return null;
 						}
 
@@ -1091,7 +1148,8 @@ public class LFNUtils {
 			if (p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					return null;
 				}
 
@@ -1102,7 +1160,8 @@ public class LFNUtils {
 			for (final LFN otherFile : file.getParentDir().list())
 				if (otherFile.isFile() && otherFile.guid.equals(guid))
 					return otherFile;
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (@SuppressWarnings("unused")
+		final Exception e) {
 			// ignore
 		}
 

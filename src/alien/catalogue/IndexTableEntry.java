@@ -189,6 +189,50 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	}
 
 	/**
+	 * Bulk operation to retrieve known LFNs for many UUIDs
+	 * 
+	 * @param uuids
+	 *            the GUIDs to search for
+	 * @return the LFNs for which the GUID was in the given set. The number of the returned objects and the order of them does not reflect the input collection.
+	 */
+	public List<LFN> getLFNs(final Collection<UUID> uuids) {
+		if (uuids == null || uuids.size() == 0)
+			return null;
+
+		try (DBFunctions db = getDB()) {
+			if (db == null)
+				return null;
+
+			if (monitor != null)
+				monitor.incrementCounter("LFN_db_lookup");
+
+			StringBuilder sb = new StringBuilder("SELECT * FROM L" + tableName + "L WHERE guid IN (");
+
+			boolean first = true;
+
+			for (UUID u : uuids) {
+				if (!first)
+					sb.append(',');
+
+				sb.append("string2binary('").append(u.toString()).append("')");
+			}
+
+			db.setReadOnly(true);
+
+			if (!db.query(sb.toString()))
+				return null;
+
+			List<LFN> ret = new ArrayList<>();
+
+			while (db.moveNext()) {
+				ret.add(new LFN(db, this));
+			}
+
+			return ret;
+		}
+	}
+
+	/**
 	 * Get the LFN from this table
 	 *
 	 * @param sPath
@@ -217,8 +261,10 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 				if (!db.query(q, false, sSearch, sSearch + "/"))
 					return null;
-			} else if (!db.query(q, false, sSearch))
-				return null;
+			}
+			else
+				if (!db.query(q, false, sSearch))
+					return null;
 
 			if (!db.moveNext()) {
 				if (logger.isLoggable(Level.FINE))
@@ -273,7 +319,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 					sSearch += "%";
 
 				q += "lfn LIKE '" + Format.escSQL(sSearch) + "' AND replicated=0";
-			} else
+			}
+			else
 				q += "lfn RLIKE '" + Format.escSQL(sSearch + sPattern) + "' AND replicated=0";
 
 			if ((flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
