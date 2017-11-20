@@ -130,7 +130,7 @@ public final class AuthorizationFactory {
 	 * @return <code>null</code> if access was granted, otherwise the reason why the access was rejected
 	 */
 	public static String fillAccess(final PFN pfn, final AccessType access) {
-		if (defaultAccount == null)
+		if (getDefaultUser() == null)
 			return "There is no default account set";
 
 		return fillAccess(defaultAccount, pfn, access);
