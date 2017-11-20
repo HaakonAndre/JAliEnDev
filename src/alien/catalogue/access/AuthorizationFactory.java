@@ -44,18 +44,23 @@ public final class AuthorizationFactory {
 	 */
 	public static final AliEnPrincipal getDefaultUser() {
 		if (defaultAccount == null) {
-			AliEnPrincipal user = null;
-
-			Certificate[] cert;
-			try {
-				cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
-				if (cert != null)
-					user = UserFactory.getByCertificate((X509Certificate[]) cert);
-			} catch (KeyStoreException e) {
-				e.printStackTrace();
+			if (ConfigUtils.isCentralService()) {
+				setDefaultUser(UserFactory.getByUsername("admin"));
 			}
+			else {
+				AliEnPrincipal user = null;
 
-			setDefaultUser(user);
+				Certificate[] cert;
+				try {
+					cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
+					if (cert != null)
+						user = UserFactory.getByCertificate((X509Certificate[]) cert);
+				} catch (KeyStoreException e) {
+					e.printStackTrace();
+				}
+
+				setDefaultUser(user);
+			}
 		}
 
 		return defaultAccount;
