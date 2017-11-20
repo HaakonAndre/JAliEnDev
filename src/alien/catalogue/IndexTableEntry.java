@@ -218,6 +218,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 				sb.append("string2binary('").append(u.toString()).append("')");
 			}
+			
+			sb.append(");");
 
 			db.setReadOnly(true);
 
