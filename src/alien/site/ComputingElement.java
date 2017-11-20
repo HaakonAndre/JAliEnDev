@@ -149,7 +149,7 @@ public class ComputingElement extends Thread{
 			offerAgent();
 
 			System.out.println("Exiting CE");
-			System.exit(0); // TODO delete
+//			System.exit(0); // TODO delete
 		}
 
 	}
@@ -265,7 +265,6 @@ public class ComputingElement extends Thread{
 
 		String script = createAgentStartup();
 		logger.info("Created AgentStartup script: " + script);
-		System.out.println("[DEBUG] AgentStartup script:\n" + script);		//TODO: remove
 		if (script == null) {
 			logger.info("Cannot create startup script");
 			return;
