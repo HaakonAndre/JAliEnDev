@@ -167,8 +167,7 @@ public class JAKeyStore {
 			}
 			else {
 				if (logger.isLoggable(Level.SEVERE))
-					logger.log(Level.SEVERE, "Found no trusts to load in: " + trustsDir);
-				System.err.println("Found no trusts to load in: " + trustsDir);
+					logger.log(Level.FINE, "Found no trusts to load in: " + trustsDir);
 			}
 
 			if (trustStore.size() == 0) {
