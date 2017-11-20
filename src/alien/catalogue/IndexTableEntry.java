@@ -211,7 +211,9 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			boolean first = true;
 
 			for (UUID u : uuids) {
-				if (!first)
+				if (first)
+					first = false;
+				else
 					sb.append(',');
 
 				sb.append("string2binary('").append(u.toString()).append("')");
