@@ -44,18 +44,23 @@ public final class AuthorizationFactory {
 	 */
 	public static final AliEnPrincipal getDefaultUser() {
 		if (defaultAccount == null) {
-			AliEnPrincipal user = null;
-
-			Certificate[] cert;
-			try {
-				cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
-				if (cert != null)
-					user = UserFactory.getByCertificate((X509Certificate[]) cert);
-			} catch (KeyStoreException e) {
-				e.printStackTrace();
+			if (ConfigUtils.isCentralService()) {
+				setDefaultUser(UserFactory.getByUsername("admin"));
 			}
+			else {
+				AliEnPrincipal user = null;
 
-			setDefaultUser(user);
+				Certificate[] cert;
+				try {
+					cert = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
+					if (cert != null)
+						user = UserFactory.getByCertificate((X509Certificate[]) cert);
+				} catch (KeyStoreException e) {
+					e.printStackTrace();
+				}
+
+				setDefaultUser(user);
+			}
 		}
 
 		return defaultAccount;
@@ -125,7 +130,7 @@ public final class AuthorizationFactory {
 	 * @return <code>null</code> if access was granted, otherwise the reason why the access was rejected
 	 */
 	public static String fillAccess(final PFN pfn, final AccessType access) {
-		if (defaultAccount == null)
+		if (getDefaultUser() == null)
 			return "There is no default account set";
 
 		return fillAccess(defaultAccount, pfn, access);

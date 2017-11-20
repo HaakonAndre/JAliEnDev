@@ -228,20 +228,15 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			if (!accessRequest.equals(AccessType.NULL) && (arg.hasNext())) {
 				lfnName = arg.next();
 
-				if (accessRequest.equals(AccessType.WRITE))
-					if (arg.hasNext())
-						localFileName = arg.next();
-					else
-						out.printErrln("Missing local file name for size and checksum consideration [error in request].");
-
 				if (arg.hasNext()) {
 					final StringTokenizer st = new StringTokenizer(arg.next(), ",");
 					while (st.hasMoreElements()) {
+
 						final String spec = st.nextToken();
 						if (spec.contains("::")) {
 							if (spec.indexOf("::") != spec.lastIndexOf("::"))
 								if (spec.startsWith("!")) // an exSE spec
-									exses.add(spec.toUpperCase());
+									exses.add(spec.toUpperCase().substring(1));
 								else {// an SE spec
 									ses.add(spec.toUpperCase());
 									referenceCount++;
@@ -265,9 +260,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 								if (!spec.equals(""))
 									throw new JAliEnCommandException();
 					}
-
 				}
-
 			}
 			else
 				out.printErrln("Illegal Request type specified [error in request].");

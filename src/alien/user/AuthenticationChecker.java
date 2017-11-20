@@ -61,12 +61,13 @@ public class AuthenticationChecker {
 	 * @param pubCert
 	 */
 	public static void loadPubCert(final String pubCert) {
-		final X509Certificate[] certChain = JAKeyStore.loadPubX509(pubCert);
+		final X509Certificate[] certChain = JAKeyStore.loadPubX509(pubCert, true);
 
 		if (certChain != null) {
 			cert = certChain[0];
 			pubKey = (RSAPublicKey) cert.getPublicKey();
-		} else
+		}
+		else
 			System.err.println("Didn't find any certificate");
 	}
 

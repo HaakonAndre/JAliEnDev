@@ -111,7 +111,11 @@ public class AliEnPrincipal implements Principal, Serializable {
 			sUsernames.add(StringFactory.get(username));
 	}
 
-	void setDefaultUser(final String name) {
+	/**
+	 * Set the initial user name
+	 * @param name
+	 */
+	public void setDefaultUser(final String name) {
 		defaultUser = name;
 	}
 

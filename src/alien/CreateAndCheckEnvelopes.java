@@ -42,7 +42,7 @@ public class CreateAndCheckEnvelopes {
 		try {
 			authenPrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(AuthenPrivLocation, null);
 
-			authenPubKey = (RSAPublicKey) JAKeyStore.loadPubX509(AuthenPubLocation)[0].getPublicKey();
+			authenPubKey = (RSAPublicKey) JAKeyStore.loadPubX509(AuthenPubLocation, false)[0].getPublicKey();
 		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
@@ -50,7 +50,7 @@ public class CreateAndCheckEnvelopes {
 		try {
 			sePrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(SEPrivLocation, null);
 
-			sePubKey = (RSAPublicKey) JAKeyStore.loadPubX509(SEPubLocation)[0].getPublicKey();
+			sePubKey = (RSAPublicKey) JAKeyStore.loadPubX509(SEPubLocation, false)[0].getPublicKey();
 		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}

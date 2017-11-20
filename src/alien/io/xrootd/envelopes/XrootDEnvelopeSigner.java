@@ -75,7 +75,7 @@ public class XrootDEnvelopeSigner {
 		try {
 			jAuthZPrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(JAuthZPrivLocation, null);
 
-			final X509Certificate[] certChain = JAKeyStore.loadPubX509(JAuthZPubLocation);
+			final X509Certificate[] certChain = JAKeyStore.loadPubX509(JAuthZPubLocation, false);
 
 			if (certChain != null)
 				jAuthZPubKey = (RSAPublicKey) certChain[0].getPublicKey();
@@ -86,7 +86,7 @@ public class XrootDEnvelopeSigner {
 		try {
 			sePrivKey = (RSAPrivateKey) JAKeyStore.loadPrivX509(SEPrivLocation, null);
 
-			final X509Certificate[] certChain = JAKeyStore.loadPubX509(SEPubLocation);
+			final X509Certificate[] certChain = JAKeyStore.loadPubX509(SEPubLocation, false);
 
 			if (certChain != null)
 				sePubKey = (RSAPublicKey) certChain[0].getPublicKey();

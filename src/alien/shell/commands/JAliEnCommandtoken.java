@@ -83,6 +83,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 		// Try to switch user
 		java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
+		String user = commander.user.getDefaultUser();
 		AliEnPrincipal switchUser;
 
 		if (requestedUser != null) {
@@ -100,6 +101,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 					}
 
 				commander.user.setUserCert(cert);
+				commander.user.setDefaultUser(user);
 			}
 			else
 				if (out.isRootPrinter())

@@ -970,10 +970,7 @@ public class Xrootd extends Protocol {
 					Thread.sleep(sleep * 1000);
 					continue;
 				}
-
-				if (returnEnvelope)
-					return cleanupXrdOutput(exitStatus.getStdOut());
-
+				
 				final long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 
 				if (pfn.getGuid().size == filesize)

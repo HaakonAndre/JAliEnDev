@@ -18,5 +18,7 @@ find . -name \*.java | xargs javac -O -g -d ../build_eclipse || exit 1
 
 cd ../build_eclipse
 
+cp ../trusted_authorities.jks .
+
 jar cf ../alien.jar *
 

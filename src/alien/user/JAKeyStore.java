@@ -159,8 +159,9 @@ public class JAKeyStore {
 							e.printStackTrace();
 						}
 
-				if (iLoaded == 0)
-					logger.log(Level.SEVERE, "No CA files found in " + trustsDir);
+				if (iLoaded == 0) {
+					logger.log(Level.WARNING, "No CA files found in " + trustsDir);
+				}
 				else
 					logger.log(Level.INFO, "Loaded " + iLoaded + " certificates from " + trustsDir);
 			}
@@ -168,6 +169,15 @@ public class JAKeyStore {
 				if (logger.isLoggable(Level.SEVERE))
 					logger.log(Level.SEVERE, "Found no trusts to load in: " + trustsDir);
 				System.err.println("Found no trusts to load in: " + trustsDir);
+			}
+
+			if (trustStore.size() == 0) {
+				try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
+					trustStore.load(classpathTrusts, "castore".toCharArray());
+					logger.log(Level.WARNING, "Found " + trustStore.size() + " trusted CAs in classpath");
+				} catch (final Throwable t) {
+					logger.log(Level.SEVERE, "Cannot load the default trust keystore from classpath", t);
+				}
 			}
 
 			tmf.init(trustStore);
@@ -284,7 +294,8 @@ public class JAKeyStore {
 
 				return co.exitCode == 0;
 			}
-		} catch (@SuppressWarnings("unused") final IOException e) {
+		} catch (@SuppressWarnings("unused")
+		final IOException e) {
 			// ignore
 		}
 
@@ -399,7 +410,8 @@ public class JAKeyStore {
 		clientCert = KeyStore.getInstance("JKS");
 		try {
 			clientCert.load(null, pass);
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (@SuppressWarnings("unused")
+		final Exception e) {
 			// ignore
 		}
 
@@ -414,7 +426,8 @@ public class JAKeyStore {
 				}
 			}
 			addKeyPairToKeyStore(clientCert, "User.cert", kp, x509l);
-		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
+		} catch (@SuppressWarnings("unused")
+		FileNotFoundException e) {
 			System.err.println("Proxy file not found");
 		} catch (IOException e) {
 			System.err.println("Error while reading proxy file: " + e);
@@ -446,7 +459,8 @@ public class JAKeyStore {
 
 		try {
 			clientCert.load(null, pass);
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (@SuppressWarnings("unused")
+		final Exception e) {
 			// ignore
 		}
 
@@ -487,7 +501,8 @@ public class JAKeyStore {
 		try {
 			tokenCert.load(null, pass);
 			addKeyPairToKeyStore(tokenCert, "User.cert", token_key, token_cert, null);
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (@SuppressWarnings("unused")
+		final Exception e) {
 			return false;
 		}
 
@@ -546,7 +561,8 @@ public class JAKeyStore {
 
 			addKeyPairToKeyStore(hostCert, "User.cert", hostkey, hostcert, null);
 
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (@SuppressWarnings("unused")
+		final Exception e) {
 			return false;
 		}
 
@@ -618,7 +634,7 @@ public class JAKeyStore {
 	}
 
 	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final PasswordFinder pFinder) throws Exception {
-		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation)),
+		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation, true)),
 				new KeyStore.PasswordProtection(pass));
 	}
 
@@ -678,7 +694,8 @@ public class JAKeyStore {
 		Reader source = null;
 		try {
 			source = new FileReader(keyFileLocation);
-		} catch (@SuppressWarnings("unused") Exception e) {
+		} catch (@SuppressWarnings("unused")
+		Exception e) {
 			source = new StringReader(keyFileLocation);
 		}
 
@@ -725,9 +742,10 @@ public class JAKeyStore {
 
 	/**
 	 * @param certFileLocation
+	 * @param checkValidity
 	 * @return Cert chain
 	 */
-	public static X509Certificate[] loadPubX509(final String certFileLocation) {
+	public static X509Certificate[] loadPubX509(final String certFileLocation, final boolean checkValidity) {
 
 		if (logger.isLoggable(Level.INFO))
 			logger.log(Level.INFO, "Loading public key: " + certFileLocation);
@@ -735,7 +753,8 @@ public class JAKeyStore {
 		Reader source = null;
 		try {
 			source = new FileReader(certFileLocation);
-		} catch (@SuppressWarnings("unused") Exception e) {
+		} catch (@SuppressWarnings("unused")
+		Exception e) {
 			source = new StringReader(certFileLocation);
 		}
 
@@ -762,7 +781,9 @@ public class JAKeyStore {
 
 						try {
 							final X509Certificate c = new JcaX509CertificateConverter().setProvider("BC").getCertificate(ch);
-							c.checkValidity();
+
+							if (checkValidity)
+								c.checkValidity();
 
 							chain.add(c);
 						} catch (final CertificateException ce) {
