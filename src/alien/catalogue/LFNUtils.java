@@ -106,7 +106,7 @@ public class LFNUtils {
 
 		final List<LFN> ret = new ArrayList<>(uuids.size());
 
-		final Set<UUID> remainingGUIDs = new HashSet<>(uuids.size());
+		final Set<UUID> remainingGUIDs = new HashSet<>(uuids);
 
 		for (final IndexTableEntry ite : indextable) {
 			final List<LFN> chunk = ite.getLFNs(remainingGUIDs);
