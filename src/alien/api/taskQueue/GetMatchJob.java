@@ -28,6 +28,7 @@ public class GetMatchJob extends Request {
 	public GetMatchJob(final AliEnPrincipal user, final HashMap<String, Object> siteMap) {
 		setRequestUser(user);
 		this.matchRequest = siteMap;
+		this.matchRequest.put("UserCertificate", this.getRequesterIdentity().getUserCert()[0]);
 	}
 
 	@Override

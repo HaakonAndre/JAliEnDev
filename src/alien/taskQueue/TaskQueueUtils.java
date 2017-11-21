@@ -2910,4 +2910,27 @@ public class TaskQueueUtils {
 		}
 	}
 
+	/**
+	 * @param queueId
+	 * @return resubmission field for the job
+	 */
+	public static int getResubmission(Long queueId) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return -1;
+
+			logger.log(Level.INFO, "Going to select resubmission for: " + queueId);
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(10);
+
+			int resubmission = -1;
+
+			if (db.query("select resubmission from QUEUE where queueId=?", false, queueId) && db.moveNext()) {
+				resubmission = db.geti(1);
+			}
+			return resubmission;
+		}
+	}
+
 }

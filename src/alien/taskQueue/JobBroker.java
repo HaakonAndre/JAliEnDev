@@ -1,5 +1,6 @@
 package alien.taskQueue;
 
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -8,9 +9,12 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.aaa.GetTokenCertificate;
+import alien.api.aaa.TokenCertificateType;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.UserFactory;
 import lazyj.DBFunctions;
 
 /**
@@ -30,7 +34,8 @@ public class JobBroker {
 
 	/**
 	 * @param matchRequest
-	 * @return the information of a matching job for the jobAgent (queueId, JDL...)
+	 * @return the information of a matching job for the jobAgent (queueId,
+	 *         JDL...)
 	 */
 	public static HashMap<String, Object> getMatchJob(final HashMap<String, Object> matchRequest) {
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
@@ -75,12 +80,15 @@ public class JobBroker {
 				matchAnswer = getWaitingJobForAgentId(waiting);
 			}
 			else {
-				// try without InstalledPackages
-				final String installedPackages = (String) matchRequest.get("InstalledPackages");
-				matchRequest.remove("InstalledPackages");
-				matchRequest.put("Return", "packages");
+				String installedPackages = null;
+				if (!matchRequest.containsKey("CVMFS")) {
+					// try without InstalledPackages
+					installedPackages = (String) matchRequest.get("InstalledPackages");
+					matchRequest.remove("InstalledPackages");
+					matchRequest.put("Return", "packages");
 
-				waiting = getNumberWaitingForSite(matchRequest);
+					waiting = getNumberWaitingForSite(matchRequest);
+				}
 
 				if (waiting.containsKey("packages")) {
 					final String packages = (String) waiting.get("packages");
@@ -100,7 +108,8 @@ public class JobBroker {
 				else {
 					// try remote access (no site)
 					logger.log(Level.INFO, "Going to try with remote execution agents");
-					matchRequest.put("InstalledPackages", installedPackages);
+					if (!matchRequest.containsKey("CVMFS"))
+						matchRequest.put("InstalledPackages", installedPackages);
 					matchRequest.put("Return", "entryId");
 					matchRequest.put("Remote", Integer.valueOf(1));
 					matchRequest.remove("Site");
@@ -113,11 +122,13 @@ public class JobBroker {
 						matchAnswer = getWaitingJobForAgentId(waiting);
 					}
 					else {
-						// last case, no site && no packages...
-						matchRequest.put("Return", "packages");
-						matchRequest.remove("InstalledPackages");
+						if (!matchRequest.containsKey("CVMFS")) {
+							// last case, no site && no packages...
+							matchRequest.put("Return", "packages");
+							matchRequest.remove("InstalledPackages");
 
-						waiting = getNumberWaitingForSite(matchRequest);
+							waiting = getNumberWaitingForSite(matchRequest);
+						}
 
 						if (waiting.containsKey("packages")) {
 							final String packages = (String) waiting.get("packages");
@@ -149,31 +160,36 @@ public class JobBroker {
 				// success!!
 				matchAnswer.put("Code", Integer.valueOf(1));
 				final Long queueId = (Long) matchAnswer.get("queueId");
+				final String username = (String) matchAnswer.get("User");
 
-				// TODO:joblog, test jobtoken
-				// putlog($queueid, "state", "Job state transition from WAITING to ASSIGNED (to $queueName)");
+				int resubmission = TaskQueueUtils.getResubmission(queueId);
+				// final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"), true);
 
-				final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"), true);
+				GetTokenCertificate gtc = new GetTokenCertificate(UserFactory.getByUsername(username), username, TokenCertificateType.JOB_TOKEN, queueId + "/" + resubmission, 1,
+						(X509Certificate) matchRequest.get("UserCertificate"));
+				try {
+					gtc.run();
+					matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
+					matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
+				} catch (Exception e) {
+					logger.info("Getting TokenCertificate for job " + queueId + " failed: " + e);
+				}
 
-				if (jobToken == null || !jobToken.spawnToken(db)) {
+				if (!matchAnswer.containsKey("TokenCertificate") || !matchAnswer.containsKey("TokenKey")) {
 					logger.log(Level.INFO, "The job already had a jobToken (or failed creating");
 
-					if (jobToken != null) {
-						logger.log(Level.INFO, "JobToken not null: " + jobToken.jobId + "-" + jobToken.token + "-" + jobToken.exists());
-					}
-
 					db.setReadOnly(true);
-					// if (db.query("select count(1) from QUEUE where queueId=?", false, queueId))
 					TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
 					matchAnswer.put("Code", Integer.valueOf(-1));
-					matchAnswer.put("Error", "Error getting the token of the job " + queueId);
+					matchAnswer.put("Error", "Error getting the TokenCertificate of the job " + queueId);
 				}
 				else {
-					logger.log(Level.INFO, "Creating a jobToken for the job...");
-					matchAnswer.put("jobToken", jobToken.token);
+					logger.log(Level.INFO, "Created a TokenCertificate for the job...");
 					TaskQueueUtils.setSiteQueueStatus((String) matchRequest.get("CE"), "jobagent-match");
+					TaskQueueUtils.putJobLog(queueId.longValue(), "state", "Job ASSIGNED to: " + (String) matchRequest.get("CE"), null);
 				}
-			} // nothing back, something went wrong while obtaining queueId from the positive cases
+			} // nothing back, something went wrong while obtaining queueId
+				// from the positive cases
 			else
 				if (!matchAnswer.containsKey("Code")) {
 					matchAnswer.put("Error", "Nothing to run :-( (no waiting jobs?) ");
@@ -183,6 +199,7 @@ public class JobBroker {
 
 			return matchAnswer;
 		}
+
 	}
 
 	private static HashMap<String, Object> getWaitingJobForAgentId(final HashMap<String, Object> waiting) {
@@ -297,7 +314,8 @@ public class JobBroker {
 
 			if (db.query("select count(1) from SITEQUEUES where blocked='open' and site='" + ce + "'") && db.moveNext() && db.geti(1) > 0)
 				return 1;
-			// TODO: use TaskQueueUtils.setSiteQueueStatus(ce, "closed-blocked");
+			// TODO: use TaskQueueUtils.setSiteQueueStatus(ce,
+			// "closed-blocked");
 
 			return -1;
 		}
@@ -305,7 +323,8 @@ public class JobBroker {
 
 	/**
 	 * @param matchRequest
-	 * @return number of jobs waiting for a site given its parameters, or an entry to JOBAGENT if asked for
+	 * @return number of jobs waiting for a site given its parameters, or an
+	 *         entry to JOBAGENT if asked for
 	 */
 	public static HashMap<String, Object> getNumberWaitingForSite(final HashMap<String, Object> matchRequest) {
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
@@ -461,7 +480,8 @@ public class JobBroker {
 	 * @param port
 	 * @param ceName
 	 * @param version
-	 * @return a two-element list with the status code ([0]) and the number of slots ([1])
+	 * @return a two-element list with the status code ([0]) and the number of
+	 *         slots ([1])
 	 */
 	public static List<Integer> getNumberFreeSlots(String host, int port, String ceName, String version) {
 		try (DBFunctions db = TaskQueueUtils.getQueueDB()) {
