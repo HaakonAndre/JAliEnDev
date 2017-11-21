@@ -270,36 +270,23 @@ public class AliEnPrincipal implements Principal, Serializable {
 		if (extensions != null)
 			extensions.put(key, value);
 	}
+	
+	public String getExtension(String key) {
+		if (extensions != null)
+			if (extensions.containsKey(key))
+				return extensions.get(key);
+		
+		return null;
+	}
 
 	/**
 	 * @return <code>true</code> if the DN indicates that this is a regular job.
-	 * @see #getJobID()
 	 */
 	public boolean isJob() {
 		if (extensions != null)
 			return extensions.containsKey("queueid");
 
 		return false;
-	}
-
-	/**
-	 * Get the job ID that this job is executing
-	 *
-	 * @return task queue ID of the job in progress
-	 * @see #isJob()
-	 */
-	public Long getJobID() {
-		if (extensions != null)
-			return Long.valueOf(extensions.get("queueid"));
-
-		return null;
-	}
-
-	public int getResubmission() {
-		if (extensions != null)
-			return Integer.parseInt(extensions.get("resubmission"));
-		
-		return 0;
 	}
 
 	/**
