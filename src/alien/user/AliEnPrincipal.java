@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -62,8 +63,8 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	/**
-	 * Get one of the accounts that match the given DN (first in the set that we
-	 * got from LDAP).
+	 * Get one of the accounts that match the given DN (first in the set that we got
+	 * from LDAP).
 	 *
 	 * @return one account name from LDAP that has the DN
 	 */
@@ -113,6 +114,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	/**
 	 * Set the initial user name
+	 * 
 	 * @param name
 	 */
 	public void setDefaultUser(final String name) {
@@ -230,9 +232,9 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	/**
-	 * Set the default role for this user. It can only be one of the roles
-	 * declared in LDAP (or itself, or "users"). The method will silently refuse
-	 * to set an invalid role and will keep the previous value.
+	 * Set the default role for this user. It can only be one of the roles declared
+	 * in LDAP (or itself, or "users"). The method will silently refuse to set an
+	 * invalid role and will keep the previous value.
 	 *
 	 * @param newRole
 	 * @return the previous default role
@@ -262,10 +264,11 @@ public class AliEnPrincipal implements Principal, Serializable {
 		return jobAgentFlag;
 	}
 
-	private Long jobID = null;
+	private HashMap<String, String> extensions;
 
-	void setJob(final Long jobID) {
-		this.jobID = jobID;
+	public void setExtension(String key, String value) {
+		if (extensions != null)
+			extensions.put(key, value);
 	}
 
 	/**
@@ -273,7 +276,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @see #getJobID()
 	 */
 	public boolean isJob() {
-		return jobID != null;
+		if (extensions != null)
+			return extensions.containsKey("queueid");
+
+		return false;
 	}
 
 	/**
@@ -283,7 +289,14 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 * @see #isJob()
 	 */
 	public Long getJobID() {
-		return jobID;
+		if (extensions != null)
+			return Long.valueOf(extensions.get("queueid"));
+
+		return null;
+	}
+
+	public int getResubmission() {
+		return Integer.parseInt(extensions.get("resubmission"));
 	}
 
 	/**
@@ -291,8 +304,8 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 *
 	 * @param role
 	 *            the role to verify
-	 * @return <code>true</code> if the role is one of this principal's accounts
-	 *         or is any of the roles assigned to any of the accounts,
+	 * @return <code>true</code> if the role is one of this principal's accounts or
+	 *         is any of the roles assigned to any of the accounts,
 	 *         <code>false</code> otherwise
 	 */
 	public boolean canBecome(final String role) {
@@ -348,8 +361,7 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	/**
-	 * Upon accepting a request, set this address to where the connection came
-	 * from
+	 * Upon accepting a request, set this address to where the connection came from
 	 *
 	 * @param remoteEndpoint
 	 */
