@@ -296,7 +296,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 	}
 
 	public int getResubmission() {
-		return Integer.parseInt(extensions.get("resubmission"));
+		if (extensions != null)
+			return Integer.parseInt(extensions.get("resubmission"));
+		
+		return 0;
 	}
 
 	/**
