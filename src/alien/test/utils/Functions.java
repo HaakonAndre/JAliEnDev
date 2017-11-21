@@ -155,6 +155,26 @@ public class Functions {
 	}
 
 	/**
+	 * @param path_with_env
+	 * @return path without env vars
+	 */
+	public static String resolvePathWithEnv(String path_with_env) {
+		String[] path_splitted = path_with_env.split("/");
+		String path_resolved = "";
+		for (String dir : path_splitted) {
+			path_resolved += '/';
+			if( dir.startsWith("$") ) {		//it's an env variable
+				dir = System.getenv(dir.substring(1));
+			}
+			path_resolved += dir;
+		}
+		if( path_resolved.startsWith("//") ) {
+			path_resolved = path_resolved.substring(1);
+		}
+		return path_resolved;
+	}
+
+	/**
 	 * @param zip
 	 * @param extractTo
 	 * @throws IOException

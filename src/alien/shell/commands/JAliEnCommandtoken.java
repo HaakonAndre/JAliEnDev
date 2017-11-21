@@ -86,7 +86,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		String user = commander.user.getDefaultUser();
 		AliEnPrincipal switchUser;
 
-		if (requestedUser != null)
+		if (requestedUser != null) {
 			if (commander.user.canBecome(requestedUser)) {
 				if ((switchUser = UserFactory.getByUsername(requestedUser)) != null)
 					commander.user = switchUser;
@@ -105,9 +105,10 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 			}
 			else
 				if (out.isRootPrinter())
-					out.setField("error", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+					out.setField("message", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
 				else
 					out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+		}
 
 		// Return tokens
 		if (out.isRootPrinter()) {

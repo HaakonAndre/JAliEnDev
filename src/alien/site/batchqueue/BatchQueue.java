@@ -33,4 +33,8 @@ public abstract class BatchQueue {
 	 * @return how many jobs were killed
 	 */
 	public abstract int kill();
+	
+	public boolean needX509Proxy() {
+		return true;
+	}
 }

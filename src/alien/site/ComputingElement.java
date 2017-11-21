@@ -1,11 +1,26 @@
 package alien.site;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -14,23 +29,36 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 import alien.api.JBoxServer;
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.api.taskQueue.GetNumberWaitingJobs;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
+import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JSONPrintWriter;
+import alien.shell.commands.JShPrintWriter;
+import alien.shell.commands.UIPrintWriter;
 import alien.site.batchqueue.BatchQueue;
+import alien.user.UserFactory;
 import apmon.ApMon;
 import apmon.ApMonException;
 import lazyj.commands.SystemCommand;
+import java.security.KeyStoreException;
+import alien.user.JAKeyStore;
+import alien.test.utils.Functions;
 
 /**
  * @author mmmartin
  *
  */
-public class ComputingElement extends Thread {
+public class ComputingElement extends Thread{
 
 	/**
 	 * ApMon sender
@@ -60,12 +88,26 @@ public class ComputingElement extends Thread {
 	 */
 	public ComputingElement() {
 		try {
+			try {
+				if (!JAKeyStore.loadKeyStore()) {
+					System.err.println("Grid Certificate could not be loaded.");
+					System.err.println("Exiting...");
+					return;
+					}
+				} catch (final Exception e) {
+						logger.log(Level.SEVERE, "Error loading the key", e);
+						System.err.println("Error loading the key");
+						}
+
 			// JAKeyStore.loadClientKeyStorage();
 			// JAKeyStore.loadServerKeyStorage();
 			config = ConfigUtils.getConfigFromLdap();
+			site = (String)config.get("site_accountname");
 			getSiteMap();
+			
+			String host_logdir_resolved = Functions.resolvePathWithEnv((String) config.get("host_logdir"));
 
-			logger = LogUtils.redirectToCustomHandler(logger, config.get("host_logdir") + "/CE");
+			logger = LogUtils.redirectToCustomHandler(logger, host_logdir_resolved + "/CE");
 
 			queue = getBatchQueue((String) config.get("ce_type"));
 
@@ -82,6 +124,16 @@ public class ComputingElement extends Thread {
 		// } catch (final IOException e1) {
 		// e1.printStackTrace();
 		// }
+		
+		if(queue.needX509Proxy()) {
+			if( System.getenv("X509_USER_PROXY") == null) {
+				logger.severe("X509_USER_PROXY variable not set. Unable to work properly!");
+				System.err.println("X509_USER_PROXY variable not set. Unable to work properly!");
+				System.err.println("Exiting...");
+				return;
+			}
+		}
+
 		logger.log(Level.INFO, "Starting ComputingElement in " + siteMap.get("host"));
 		try {
 			System.out.println("Trying to start JBox");
@@ -97,9 +149,17 @@ public class ComputingElement extends Thread {
 			offerAgent();
 
 			System.out.println("Exiting CE");
-			System.exit(0); // TODO delete
+//			System.exit(0); // TODO delete
 		}
 
+	}
+	
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args){
+		final ComputingElement CE = new ComputingElement();
+		CE.run();
 	}
 
 	private int getNumberFreeSlots() {
@@ -204,6 +264,7 @@ public class ComputingElement extends Thread {
 		logger.info("Going to submit " + slots_to_submit + " agents");
 
 		String script = createAgentStartup();
+		logger.info("Created AgentStartup script: " + script);
 		if (script == null) {
 			logger.info("Cannot create startup script");
 			return;
@@ -221,63 +282,191 @@ public class ComputingElement extends Thread {
 	 * Creates script to execute on worker nodes
 	 */
 	private String createAgentStartup() {
-		String startup = System.getenv("JALIEN_ROOT") + "jalien ";
+		String startup_script = System.getenv("JALIEN_ROOT") + "/jalien ";
+		if(System.getenv("JALIEN_ROOT") == null) {		// We don't have the env variable set
+			logger.warning("Environment variable JALIEN_ROOT not set. Trying default location.");
+			startup_script = System.getenv("HOME") + "/jalien/jalien ";
+		}
 		String before = "";
 		String after = "";
 
 		long time = new Timestamp(System.currentTimeMillis()).getTime();
-		String file = config.get("host_tmpdir") + "/proxy." + time;
-
-		int hours = ((Integer) siteMap.get("TTL")).intValue();
-		hours = hours / 3600;
-
-		String proxyfile = System.getenv("X509_USER_PROXY");
-		if (proxyfile != null && proxyfile.length() > 0) {
-			// WLCG site: get timeleft
+		String host_tempdir = (String) config.get("host_tmpdir");
+		String host_tempdir_resolved = Functions.resolvePathWithEnv(host_tempdir);
+		if (this.queue.getClass() == alien.site.batchqueue.FORK.class) {		// we resolve the paths only for local testing
+			host_tempdir = host_tempdir_resolved;
 		}
-		else {
-			proxyfile = "/tmp/x509_" + SystemCommand.bash("id -u").stdout;
-			// JAliEn site: renew proxy (hours), get new timeleft
+		String cert_file = host_tempdir + "/token_cert." + time;
+		String key_file = host_tempdir + "/token_key." + time;
 
-			String file_content = "";
-			try (BufferedReader br = new BufferedReader(new FileReader(proxyfile))) {
-				String line;
-				while ((line = br.readLine()) != null) {
-					file_content += line;
-				}
-			} catch (IOException e) {
-				logger.info("Error reading the proxy file: " + e);
-			}
+		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
+		ttl_hours = ttl_hours / 3600;
 
-			before += "echo 'Using the proxy'\n" + "mkdir -p " + config.get("host_tmpdir") + "\n" + "export ALIEN_USER=" + System.getenv("ALIEN_USER") + "\n" + "file=" + file + "\n" + "cat >" + file
-					+ " <<EOF\n" + file_content + "\n" + "EOF\n" + "chmod 0400 " + file + "export X509_USER_PROXY=" + file + "\n" + "echo USING X509_USER_PROXY" + startup + " proxy-info";
-		}
+		
+		
+//		String proxyfile = System.getenv("X509_TOKEN_CERT");
+//		if (proxyfile != null && proxyfile.length() > 0) {
+//			// WLCG site: get timeleft
+//		}
+//		else {
+//		proxyfile = "/tmp/x509_" + SystemCommand.bash("id -u").stdout;
+		// JAliEn site: renew proxy (hours), get new timeleft
+
+//		String file_content = "";
+//		try (BufferedReader br = new BufferedReader(new FileReader(proxyfile))) {
+//			String line;
+//			while ((line = br.readLine()) != null) {
+//				file_content += line;
+//			}
+//		} catch (IOException e) {
+//			logger.info("Error reading the proxy file: " + e);
+//		}
+		String[] token_certificate_full = getTokenCertificate(ttl_hours / 24);
+		String token_cert_str = token_certificate_full[0];
+		String token_key_str = token_certificate_full[1];
+
+		before += "echo 'Using token certificate'\n"
+				+ "mkdir -p " + host_tempdir + "\n"
+				+ "file=" + cert_file + "\n"
+				+ "cat >" + cert_file + " <<EOF\n"
+				+ token_cert_str
+				+ "EOF\n"
+				+ "chmod 0400 " + cert_file + "\n"
+				+ "export JALIEN_TOKEN_CERT=" + cert_file + ";\n"
+				+ "echo USING JALIEN_TOKEN_CERT\n"
+				+ "file=" + key_file + "\n"
+				+ "cat >" + key_file + " <<EOF\n"
+				+ token_key_str
+				+ "EOF\n"
+				+ "chmod 0400 " + key_file + "\n"
+				+ "export JALIEN_TOKEN_KEY=" + key_file + ";\n"
+				+ "echo USING JALIEN_TOKEN_KEY\n";
+				//+ startup_script + " proxy-info\n";
+		after += "rm -rf " + cert_file + "\n";
+		after += "rm -rf " + key_file + "\n";
+		after += "rm -rf jobagent.jar\n";
+//		}
 
 		// Check proxy timeleft is good
 
-		// if (ceConfig.get("installmethod").equals("CVMFS")) {
-		// startup = runFromCVMFS();
-		// } TODO: uncomment
+		 if (config.get("ce_installmethod").equals("CVMFS")) {
+		 startup_script = runFromCVMFS();
+		 }
+		 
+		 String content_str = before + startup_script + after;
 
-		// PrintWriter writer = new PrintWriter(hostConfig.get("tmpdir") + "/agent.startup." + time, "UTF-8");
-		// writer.println("The first line");
-		// writer.close();
+		 PrintWriter writer = null;
+		 String agent_startup_path = host_tempdir_resolved + "/agent.startup." + time;
+		 File agent_startup_file = new File(agent_startup_path);
+		 try {
+			agent_startup_file.createNewFile();
+			agent_startup_file.setExecutable(true);
+		} catch (IOException e1) {
+			logger.info("Error creating Agent Sturtup file");
+			e1.printStackTrace();
+		}
+		 
+		try {
+			writer = new PrintWriter(agent_startup_path, "UTF-8");
+		} catch (FileNotFoundException e) {
+			logger.info("Agent Sturtup file not found");
+			e.printStackTrace();
+		} catch (UnsupportedEncodingException e) {
+			logger.info("Encoding error while writing Agent Sturtup file");
+			e.printStackTrace();
+		}
+		
+		 writer.println("#!/bin/bash");
+		 writer.println(content_str);
+		 writer.close();
+		 startup_script = agent_startup_path; // not sure why we do this. copied from perl
 
-		return startup;
+		return startup_script;
+	}
+	
+	
+	private String[] getTokenCertificate(int ttl_days)
+	{
+		String[] token_cmd = new String[5];
+		token_cmd[0] = "token";
+		token_cmd[1] = "-t";
+		token_cmd[2] = "jobagent";
+		token_cmd[3] = "-v";
+		token_cmd[4] = String.format("%d", ttl_days);
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		UIPrintWriter out = new JSONPrintWriter(os);
+		
+		if (!commander.isAlive())
+			commander.start();
+
+		// Send the command to executor and send the result back to
+		// client via OutputStream
+		synchronized (commander) {
+			commander.status.set(1);
+			commander.setLine(out, token_cmd);
+			commander.notifyAll();
+		}
+		waitCommandFinish();
+		String[] token_cert_and_key = new String[2];
+		
+		String token_cert_str = "";
+		String token_key_str = "";
+		
+		// Now parse the reply from JCentral
+		JSONParser jsonParser = new JSONParser();
+		JSONObject readf = null;
+		try {
+			readf = (JSONObject) jsonParser.parse(os.toString());
+		} catch (ParseException e) {
+			logger.warning("Error parsing json.");
+			e.printStackTrace();
+		}
+		JSONArray jsonArray = (JSONArray) readf.get("results");
+		for (Object object : jsonArray) {
+			JSONObject aJson = (JSONObject) object;
+			token_cert_str = (String) aJson.get("tokencert");
+			token_key_str = (String) aJson.get("tokenkey");
+			}
+		
+		token_cert_and_key[0] = token_cert_str;
+		token_cert_and_key[1] = token_key_str;
+		
+		return token_cert_and_key;
+	}
+	
+	private void waitCommandFinish() {
+		// wait for the previous command to finish
+		if (commander == null)
+			return;
+		while (commander.status.get() == 1)
+			try {
+				synchronized (commander.status) {
+					commander.status.wait(1000);
+				}
+			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				// ignore
+			}
 	}
 
-	// private String runFromCVMFS() {
-	// logger.info("The worker node will install with the CVMFS method");
-	// String alien_version = System.getenv("ALIEN_VERSION");
-	// String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
-	//
-	// alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : "");
-	//
-	// if (ce_environment.containsKey("CVMFS_PATH"))
-	// cvmfs_path = ce_environment.get("CVMFS_PATH");
-	//
-	// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
-	// } // TODO: uncomment
+
+	 private String runFromCVMFS() {
+	 logger.info("The worker node will install with the CVMFS method");
+//	 String alien_version = System.getenv("ALIEN_VERSION");
+//	 String cvmfs_path = "/cvmfs/alice.cern.ch/bin";
+//	
+//	 alien_version = (alien_version != null ? alien_version = "--alien-version " + alien_version : "");		// TODO: uncomment
+//	
+//	 if (ce_environment.containsKey("CVMFS_PATH"))
+//	 cvmfs_path = ce_environment.get("CVMFS_PATH");
+//	
+//	 return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
+	 
+//	 return System.getenv("HOME") + "/jalien/jalien";		//TODO: local version
+	 return "curl -o jobagent.jar \"https://doc-14-4k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/qnsc320nlbfmktguqgu83qckicc984g1/1510927200000/03129700828163697278/*/1YriohTbeoaSLx8ppglq322XqCdCA2HKd?e=download\"\n" + 
+	 		"echo [DEBUG] Downloaded the jar package\n" + 
+	 		"/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar jobagent.jar\n";
+	 }
+
 
 	// Prepares a hash to create the sitemap
 	void getSiteMap() {
@@ -377,6 +566,22 @@ public class ComputingElement extends Thread {
 		} catch (NoSuchMethodException | SecurityException e) {
 			logger.severe("Cannot find class for ceConfig: " + e);
 			return null;
+		}
+		
+		// prepare some needed fields for the queue
+		if( !config.containsKey("host") || (config.get("host") == null) ){
+			InetAddress ip;
+			String hostname = "";
+			try {
+				ip = InetAddress.getLocalHost();
+				hostname = ip.getCanonicalHostName();
+			} catch (UnknownHostException e) {
+				logger.warning("Problem identifying host.");
+			}
+			config.put("host", hostname);
+			}
+		if( !config.containsKey("CLUSTERMONITOR_PORT") || (config.get("CLUSTERMONITOR_PORT") == null) ){
+			config.put("CLUSTERMONITOR_PORT", this.port);
 		}
 
 		try {

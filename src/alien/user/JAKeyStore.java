@@ -337,12 +337,12 @@ public class JAKeyStore {
 	public static boolean loadClientKeyStorage() throws Exception {
 		// return loadClientKeyStorage(false);
 		// return loadClientKeyStorage(true);
-		String proxy = System.getenv().get("X509_USER_PROXY");
-		if (proxy != null) {
-			System.out.println("Using proxy");
-			return loadProxy();
-		}
-		System.out.println("Using certificates");
+//		String proxy = System.getenv().get("X509_USER_PROXY");
+//		if (proxy != null) {
+//			System.out.println("Using proxy");
+//			return loadProxy();
+//		}
+//		System.out.println("Using certificates");
 		return loadClientKeyStorage(false);
 
 	}
