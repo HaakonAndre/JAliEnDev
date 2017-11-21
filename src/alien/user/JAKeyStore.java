@@ -501,7 +501,7 @@ public class JAKeyStore {
 			jpf = getPassword();
 
 		try {
-			tokenCert.load(null, pass);
+			clientCert.load(null, pass);
 			loadTrusts();
 
 			addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
