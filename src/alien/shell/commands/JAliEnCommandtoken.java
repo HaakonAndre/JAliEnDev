@@ -105,7 +105,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 			}
 			else
 				if (out.isRootPrinter())
-					out.setField("message", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+					out.setField("error", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
 				else
 					out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
 		}
