@@ -165,18 +165,20 @@ public class JobBroker {
 				int resubmission = TaskQueueUtils.getResubmission(queueId);
 				// final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"), true);
 
-				GetTokenCertificate gtc = new GetTokenCertificate(UserFactory.getByUsername(username), username, TokenCertificateType.JOB_TOKEN, queueId + "/" + resubmission, 1,
-						(X509Certificate) matchRequest.get("UserCertificate"));
-				try {
-					gtc.run();
-					matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
-					matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
-				} catch (Exception e) {
-					logger.info("Getting TokenCertificate for job " + queueId + " failed: " + e);
+				if (resubmission >= 0) {
+					GetTokenCertificate gtc = new GetTokenCertificate(UserFactory.getByUsername(username), username, TokenCertificateType.JOB_TOKEN,
+							"queueid=" + queueId + "/resubmission=" + resubmission, 1, (X509Certificate) matchRequest.get("UserCertificate"));
+					try {
+						gtc.run();
+						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
+						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
+					} catch (Exception e) {
+						logger.info("Getting TokenCertificate for job " + queueId + " failed: " + e);
+					}
 				}
 
 				if (!matchAnswer.containsKey("TokenCertificate") || !matchAnswer.containsKey("TokenKey")) {
-					logger.log(Level.INFO, "The job already had a jobToken (or failed creating");
+					logger.log(Level.INFO, "The job could not create token: " + queueId);
 
 					db.setReadOnly(true);
 					TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
