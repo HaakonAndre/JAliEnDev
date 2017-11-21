@@ -30,7 +30,7 @@ public class JobToken implements Comparable<JobToken> {
 	/**
 	 * jobId
 	 */
-	public long jobId;
+	public long queueId;
 
 	/**
 	 * Username
@@ -38,9 +38,9 @@ public class JobToken implements Comparable<JobToken> {
 	public String username;
 
 	/**
-	 * Token
+	 * Resubmission
 	 */
-	public String token;
+	public int resubmission;
 
 	/**
 	 * Set to <code>true</code> if the entry existed in the database, or to <code>false</code> if not. Setting the other fields will only be permitted if this field is false.
@@ -64,12 +64,12 @@ public class JobToken implements Comparable<JobToken> {
 
 	/**
 	 * Create a new JobToken object
-	 *
-	 * @param jobId
+	 * 
+	 * @param queueId
 	 * @param username
 	 */
-	JobToken(final long jobId, final String username) {
-		this.jobId = jobId;
+	JobToken(final long queueId, final String username) {
+		this.queueId = queueId;
 
 		this.username = username;
 
@@ -90,61 +90,62 @@ public class JobToken implements Comparable<JobToken> {
 		return new String(tok);
 	}
 
-	/**
-	 * Create a 32 chars long token (job token)
-	 *
-	 * @param db
-	 * @return <code>true</code> if the token was successfully generated
-	 */
-	public boolean spawnToken(final DBFunctions db) {
-		this.token = generateToken();
+	// /**
+	// * Create a 32 chars long token (job token)
+	// *
+	// * @param db
+	// * @return <code>true</code> if the token was successfully generated
+	// */
+	// public boolean spawnToken(final DBFunctions db) {
+	// this.token = generateToken();
+	//
+	// update(db);
+	//
+	// return token.length() == 32;
+	// }
 
-		update(db);
-
-		return token.length() == 32;
-	}
-
-	/**
-	 * The special value for when the job is in INSERTING and then a real value will be assigned by AliEn
-	 *
-	 * @param db
-	 */
-	public void emptyToken(final DBFunctions db) {
-		this.token = "-1";
-
-		update(db);
-	}
+	// /**
+	// * The special value for when the job is in INSERTING and then a real value will be assigned by AliEn
+	// *
+	// * @param db
+	// */
+	// public void emptyToken(final DBFunctions db) {
+	// this.token = "-1";
+	//
+	// update(db);
+	// }
 
 	private void init(final DBFunctions db) {
-		this.jobId = db.geti("jobId");
+		this.queueId = db.geti("queueid");
 
-		this.username = StringFactory.get(db.gets("userName"));
+		this.username = StringFactory.get(db.gets("username"));
 
-		this.token = db.gets("jobToken");
+		this.resubmission = db.geti("resubmission");
 
 		this.exists = true;
 	}
 
-	private static final String INSERT_QUERY = "INSERT INTO JOBTOKEN ( jobId, userName, jobToken)  VALUES (?, ?, ?);";
+	// private static final String INSERT_QUERY = "INSERT INTO QUEUE_TOKEN (queueId, username, resubmission) VALUES (?, ?, ?);";
 
-	private boolean insert(final DBFunctions db) {
-		try {
-			if (db.query(INSERT_QUERY, false, Long.valueOf(jobId), username, token)) {
-				if (monitor != null)
-					monitor.incrementCounter("jobToken_db_insert");
+	// private boolean insert(final DBFunctions db) {
+	// try {
+	// if (db.query(INSERT_QUERY, false, Long.valueOf(queueId), username, Integer.valueOf(resubmission))) {
+	// if (monitor != null)
+	// monitor.incrementCounter("jobToken_db_insert");
+	//
+	// exists = true;
+	//
+	// return true;
+	// }
+	// } finally {
+	// db.close();
+	// }
+	//
+	// return false;
+	// }
 
-				exists = true;
-
-				return true;
-			}
-		} finally {
-			db.close();
-		}
-
-		return false;
-	}
-
-	private static final String UPDATE_QUERY = "UPDATE JOBTOKEN SET jobToken=? WHERE jobId=?;";
+	// private static final String UPDATE_QUERY = "UPDATE QUEUE_TOKEN SET resubmission=? WHERE queueId=?;";
+	private static final String REPLACE_QUERY = "REPLACE INTO QUEUE_TOKEN VALUES (?,?,?)";
 
 	/**
 	 * update the entry in the database, inserting it if necessary
@@ -152,32 +153,36 @@ public class JobToken implements Comparable<JobToken> {
 	 * @param db
 	 * @return <code>true</code> if successful
 	 */
-	boolean update(final DBFunctions db) {
+	boolean updateOrInsert(final DBFunctions db) {
 		if (db == null)
 			return false;
 
-		logger.log(Level.INFO, "Update JobToken for: " + jobId + " and exists: " + exists);
+		logger.log(Level.INFO, "Replace JobToken for: " + queueId + " and exists: " + exists);
 
-		if (!exists) {
-			// System.out.println("inserting...");
-			final boolean insertOK = insert(db);
-			logger.log(Level.INFO, "Insert JobToken for: " + jobId + " was " + insertOK);
-			return insertOK;
+		int resubmission_queue = TaskQueueUtils.getResubmission(Long.valueOf(queueId));
+
+		if (resubmission_queue < 0) { // problem getting resubmission from QUEUE
+			logger.info("JobToken updateOrInsert: cannot retrieve resubmision");
+			return false;
 		}
 
-		// System.out.println("SQL "+q);
+		// if (!exists) {
+		// final boolean insertOK = insert(db);
+		// logger.log(Level.INFO, "Insert JobToken for: " + queueId + " was " + insertOK);
+		// return insertOK;
+		// }
 
 		try {
-			// only the token list can change
-			if (!db.query(UPDATE_QUERY, false, token, Long.valueOf(jobId))) {
+			// only the resubmission can change
+			if (!db.query(REPLACE_QUERY, false, Long.valueOf(queueId), username, Integer.valueOf(resubmission_queue))) {
 				// wrong table name or what?
-				logger.log(Level.INFO, "Update JobToken for: " + jobId + " failed");
+				logger.log(Level.INFO, "Replace JobToken for queueId: " + queueId + " username: " + username + " resubmission: " + resubmission + " failed");
 				return false;
 			}
 
 			if (db.getUpdateCount() == 0) {
 				// the entry did not exist in fact, what's going on?
-				logger.log(Level.INFO, "Update JobToken for: " + jobId + " count 0");
+				logger.log(Level.INFO, "Replace JobToken for: " + queueId + " count 0");
 				return false;
 			}
 		} finally {
@@ -187,17 +192,20 @@ public class JobToken implements Comparable<JobToken> {
 		if (monitor != null)
 			monitor.incrementCounter("jobToken_db_update");
 
+		resubmission = resubmission_queue;
+		exists = true;
+
 		return true;
 	}
 
 	@Override
 	public String toString() {
-		return "jobId\t\t: " + jobId + "\n" + "username\t\t: " + username + "\n" + "token\t\t: " + token + "\n";
+		return "queueId\t\t: " + queueId + "\n" + "username\t\t: " + username + "\n" + "resubmission\t\t: " + resubmission + "\n";
 	}
 
 	@Override
 	public int compareTo(final JobToken o) {
-		final long diff = jobId - o.jobId;
+		final long diff = queueId - o.queueId;
 
 		if (diff < 0)
 			return -1;
@@ -205,7 +213,7 @@ public class JobToken implements Comparable<JobToken> {
 		if (diff > 0)
 			return 1;
 
-		return token.compareTo(o.token);
+		return resubmission - o.resubmission;
 	}
 
 	@Override
@@ -218,7 +226,7 @@ public class JobToken implements Comparable<JobToken> {
 
 	@Override
 	public int hashCode() {
-		return (int) jobId;
+		return (int) queueId;
 	}
 
 	/**
@@ -228,7 +236,7 @@ public class JobToken implements Comparable<JobToken> {
 		return exists;
 	}
 
-	private static final String DESTROY_QUERY = "DELETE FROM JOBTOKEN where jobId=? and userName=? and jobToken=?;";
+	private static final String DESTROY_QUERY = "DELETE FROM QUEUE_TOKEN where queueId=?;";
 
 	/**
 	 * Delete a jobToken in the DB
@@ -238,7 +246,7 @@ public class JobToken implements Comparable<JobToken> {
 	 */
 	boolean destroy(final DBFunctions db) {
 		try {
-			if (db.query(DESTROY_QUERY, false, Long.valueOf(jobId), username, token)) {
+			if (db.query(DESTROY_QUERY, false, Long.valueOf(queueId))) {
 				if (monitor != null)
 					monitor.incrementCounter("jobToken_db_delete");
 

@@ -162,8 +162,11 @@ public class JobBroker {
 				final Long queueId = (Long) matchAnswer.get("queueId");
 				final String username = (String) matchAnswer.get("User");
 
-				int resubmission = TaskQueueUtils.getResubmission(queueId);
-				// final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"), true);
+				int resubmission = -1;
+				final JobToken jobToken = TaskQueueUtils.insertJobToken(queueId.longValue(), (String) matchAnswer.get("User"));
+				if (jobToken != null) {
+					resubmission = jobToken.resubmission;
+				}
 
 				if (resubmission >= 0) {
 					GetTokenCertificate gtc = new GetTokenCertificate(UserFactory.getByUsername(username), username, TokenCertificateType.JOB_TOKEN,
@@ -184,6 +187,8 @@ public class JobBroker {
 					TaskQueueUtils.setJobStatus(queueId.longValue(), JobStatus.ERROR_A);
 					matchAnswer.put("Code", Integer.valueOf(-1));
 					matchAnswer.put("Error", "Error getting the TokenCertificate of the job " + queueId);
+					if (jobToken != null)
+						jobToken.destroy(db);
 				}
 				else {
 					logger.log(Level.INFO, "Created a TokenCertificate for the job...");

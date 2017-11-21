@@ -1655,10 +1655,6 @@ public class TaskQueueUtils {
 				db.query(insertJDL);
 			}
 
-			// the JobBroker will insert a token when it dispatches the job to
-			// somebody, don't insert anything at this stage
-			// insertJobToken(pid.intValue(), owner, true);
-
 			setAction(jobStatus);
 
 			putJobLog(pid.longValue(), "state", "Job state transition to " + jobStatus.toString(), null);
@@ -2196,62 +2192,48 @@ public class TaskQueueUtils {
 	/**
 	 * @param jobId
 	 * @param username
-	 * @param forceUpdate
 	 * @return the new token
 	 */
-	public static JobToken insertJobToken(final long jobId, final String username, final boolean forceUpdate) {
+	public static JobToken insertJobToken(final long jobId, final String username) {
 		try (DBFunctions db = getQueueDB()) {
-			JobToken jb = getJobToken(jobId);
-
-			if (jb != null)
-				logger.log(Level.WARNING, "JobToken already exists for job " + jobId);
-
-			if (jb != null && !forceUpdate)
+			JobToken jb = new JobToken(jobId, username);
+			if (!jb.updateOrInsert(db)) {
+				logger.info("Cannot insert (or update) token for job: " + jobId);
 				return null;
-
-			if (jb == null)
-				jb = new JobToken(jobId, username);
-
-			db.setQueryTimeout(60);
-
-			jb.emptyToken(db);
-
-			// System.out.println("forceUpdate token: " + jb.toString());
+			}
 
 			if (jb.exists())
 				return jb;
-
-			// System.out.println("jb does not exist");
 
 			return null;
 		}
 	}
 
-	private static JobToken getJobToken(final long jobId) {
-		try (DBFunctions db = getQueueDB()) {
-			if (monitor != null) {
-				monitor.incrementCounter("TQ_db_lookup");
-				monitor.incrementCounter("TQ_jobtokendetails");
-			}
-
-			final long lQueryStart = System.currentTimeMillis();
-
-			final String q = "SELECT * FROM JOBTOKEN WHERE jobId=?;";
-
-			db.setReadOnly(true);
-			db.setQueryTimeout(30);
-
-			if (!db.query(q, false, Long.valueOf(jobId)))
-				return null;
-
-			monitor.addMeasurement("TQ_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
-
-			if (!db.moveNext())
-				return null;
-
-			return new JobToken(db);
-		}
-	}
+	// private static JobToken getJobToken(final long jobId) {
+	// try (DBFunctions db = getQueueDB()) {
+	// if (monitor != null) {
+	// monitor.incrementCounter("TQ_db_lookup");
+	// monitor.incrementCounter("TQ_jobtokendetails");
+	// }
+	//
+	// final long lQueryStart = System.currentTimeMillis();
+	//
+	// final String q = "SELECT * FROM QUEUE_TOKEN WHERE queueId=?;";
+	//
+	// db.setReadOnly(true);
+	// db.setQueryTimeout(30);
+	//
+	// if (!db.query(q, false, Long.valueOf(jobId)))
+	// return null;
+	//
+	// monitor.addMeasurement("TQ_jobtokendetails_time", (System.currentTimeMillis() - lQueryStart) / 1000d);
+	//
+	// if (!db.moveNext())
+	// return null;
+	//
+	// return new JobToken(db);
+	// }
+	// }
 
 	private static boolean deleteJobToken(final long queueId) {
 		try (DBFunctions db = getQueueDB()) {
@@ -2263,7 +2245,7 @@ public class TaskQueueUtils {
 			if (monitor != null)
 				monitor.incrementCounter("QUEUE_db_lookup");
 
-			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Long.valueOf(queueId))) {
+			if (!db.query("DELETE FROM QUEUE_TOKEN WHERE queueId=?;", false, Long.valueOf(queueId))) {
 				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
 
 				return false;
@@ -2271,7 +2253,7 @@ public class TaskQueueUtils {
 
 			final int cnt = db.getUpdateCount();
 
-			putJobLog(queueId, "state", "Job token deletion query affected " + cnt + " rows", null);
+			putJobLog(queueId, "state", "Job token deletion query affected " + cnt + " row(s)", null);
 
 			return cnt > 0;
 		}
@@ -2406,12 +2388,12 @@ public class TaskQueueUtils {
 
 		System.out.println("---------------------------------------------------------------------");
 
-		if (insertJobToken(12341234, "me", true) == null)
+		if (insertJobToken(12341234, "me") == null)
 			System.out.println("exists, update refused.");
 
 		System.out.println("---------------------------------------------------------------------");
 
-		if (insertJobToken(12341234, "me", true) == null)
+		if (insertJobToken(12341234, "me") == null)
 			System.out.println("exists, update refused.");
 
 		System.out.println("---------------------------------------------------------------------");
