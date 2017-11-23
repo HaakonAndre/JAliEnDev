@@ -3,23 +3,31 @@
  */
 package alien.config;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Properties;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -68,104 +76,81 @@ public class ConfigUtils {
 		ExtProperties logConfig = null;
 
 		try {
-			try (InputStream configListing = ConfigUtils.class.getClassLoader().getResourceAsStream("config/")) {
-				if (configListing != null) {
-					try (BufferedReader br = new BufferedReader(new InputStreamReader(configListing))) {
-						String line;
+			for (String name : getResourceListing(ConfigUtils.class, "config/"))
+				if (name.endsWith(".properties")) {
+					if (name.indexOf('/') > 0)
+						name = name.substring(name.lastIndexOf('/') + 1);
 
-						while ((line = br.readLine()) != null) {
-							if (line.endsWith(".properties")) {
-								String name = line;
+					final String key = name.substring(0, name.indexOf('.'));
 
-								if (name.indexOf('/') > 0)
-									name = name.substring(name.lastIndexOf('/') + 1);
-
-								name = name.substring(0, name.indexOf('.'));
-
-								try (InputStream is = ConfigUtils.class.getClassLoader().getResourceAsStream("config/" + line)) {
-									final ExtProperties prop = new ExtProperties(is);
-									foundProperties.put(name, prop);
-								}
-							}
-						}
+					try (InputStream is = ConfigUtils.class.getClassLoader().getResourceAsStream("config/" + name)) {
+						final ExtProperties prop = new ExtProperties(is);
+						foundProperties.put(key, prop);
 					}
 				}
-			}
-
-			// configuration files in the indicated config folder overwrite the defaults from classpath
-
-			final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
-
-			final String configOption = System.getProperty("AliEnConfig", "config");
-
-			final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);
-
-			for (final String path : configFolders) {
-				final File f = new File(path);
-
-				if (f.exists() && f.isDirectory() && f.canRead()) {
-					final File[] list = f.listFiles();
-
-					if (list != null)
-						for (final File sub : list)
-							if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
-								String sName = sub.getName();
-								sName = sName.substring(0, sName.lastIndexOf('.'));
-
-								System.err.println("Found configuration file: " + sName);
-
-								ExtProperties oldProperties = foundProperties.get(sName);
-
-								if (oldProperties == null)
-									oldProperties = new ExtProperties();
-
-								System.err.println("Previous content:\n" + oldProperties);
-
-								final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
-								prop.setAutoReload(1000 * 60);
-
-								System.err.println("New content:\n" + prop);
-
-								foundProperties.put(sName, prop);
-
-								// record the last path where some configuration files were loaded from
-								sConfigFolder = path;
-							}
-				}
-			}
-
-			for (final Map.Entry<String, ExtProperties> entry : foundProperties.entrySet()) {
-				final String sName = entry.getKey();
-				final ExtProperties prop = entry.getValue();
-
-				if (sName.equals("config"))
-					applicationConfig = prop;
-				else {
-					prop.makeReadOnly();
-
-					if (sName.equals("logging"))
-						logConfig = prop;
-					else
-						if (prop.gets("driver").length() > 0) {
-							dbconfig.put(sName, prop);
-
-							if (prop.gets("password").length() > 0)
-								hasDirectDBConnection = true;
-						}
-						else
-							otherconfig.put(sName, prop);
-				}
-			}
-		} catch (final Throwable t) {
-			System.err.println("ConfigUtils: static: caught: " + t + " (" + t.getMessage() + ")");
-			t.printStackTrace();
+		} catch (@SuppressWarnings("unused")
+		final Throwable t) {
+			// cannot load the default configuration files for any reason
 		}
 
-		System.setProperty("lazyj.use_java_logger", "true");
-		System.clearProperty("lazyj.config.folder");
+		// configuration files in the indicated config folder overwrite the defaults from classpath
 
-		System.clearProperty("lia.Monitor.ConfigURL");
-		System.clearProperty("MonaLisa_HOME");
+		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
+
+		final String configOption = System.getProperty("AliEnConfig", "config");
+
+		final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);
+
+		for (final String path : configFolders) {
+			final File f = new File(path);
+
+			if (f.exists() && f.isDirectory() && f.canRead()) {
+				final File[] list = f.listFiles();
+
+				if (list != null)
+					for (final File sub : list)
+						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
+							String sName = sub.getName();
+							sName = sName.substring(0, sName.lastIndexOf('.'));
+
+							ExtProperties oldProperties = foundProperties.get(sName);
+
+							if (oldProperties == null)
+								oldProperties = new ExtProperties();
+
+							final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
+							prop.setAutoReload(1000 * 60);
+
+							foundProperties.put(sName, prop);
+
+							// record the last path where some configuration files were loaded from
+							sConfigFolder = path;
+						}
+			}
+		}
+
+		for (final Map.Entry<String, ExtProperties> entry : foundProperties.entrySet()) {
+			final String sName = entry.getKey();
+			final ExtProperties prop = entry.getValue();
+
+			if (sName.equals("config"))
+				applicationConfig = prop;
+			else {
+				prop.makeReadOnly();
+
+				if (sName.equals("logging"))
+					logConfig = prop;
+				else
+					if (prop.gets("driver").length() > 0) {
+						dbconfig.put(sName, prop);
+
+						if (prop.gets("password").length() > 0)
+							hasDirectDBConnection = true;
+					}
+					else
+						otherconfig.put(sName, prop);
+			}
+		}
 
 		CONFIG_FOLDER = sConfigFolder;
 
@@ -173,11 +158,18 @@ public class ConfigUtils {
 
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 
+		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
+
+		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
+
 		if (applicationConfig != null)
 			appConfig = applicationConfig;
 		else
-			if (System.getProperty("lia.Monitor.ConfigURL") != null)
+			if (hasMLConfig) {
+				// Started from ML, didn't have its own configuration, so copy the configuration keys from ML's main config file
 				appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
+				appConfig.set("jalien.configure.logging", "false");
+			}
 			else
 				appConfig = new ExtProperties();
 
@@ -186,27 +178,79 @@ public class ConfigUtils {
 
 		appConfig.makeReadOnly();
 
-		// push all configuration keys to ML as well
-		for (final String configFile : new String[] { "config", "mlconfig" }) {
-			final ExtProperties eprop = foundProperties.get(configFile);
+		// now let's configure the logging, if allowed to
+		if (appConfig.getb("jalien.configure.logging", true) && logConfig != null) {
+			logging = new LoggingConfigurator(logConfig);
 
-			if (eprop != null) {
-				final Properties prop = eprop.getProperties();
+			// tell ML not to configure its logger
+			System.setProperty("lia.Monitor.monitor.LoggerConfigClass.preconfiguredLogging", "true");
 
-				for (final Object key : prop.keySet()) {
-					AppConfig.setProperty(key.toString(), prop.getProperty(key.toString()));
+			// same to lazyj
+			System.setProperty("lazyj.use_java_logger", "true");
+		}
+
+		if (!hasMLConfig) {
+			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
+			for (final String configFile : new String[] { "config", "mlconfig", "App" }) {
+				final ExtProperties eprop = foundProperties.get(configFile);
+
+				if (eprop != null) {
+					final Properties prop = eprop.getProperties();
+
+					for (final String key : prop.stringPropertyNames())
+						AppConfig.setProperty(key, prop.getProperty(key));
 				}
 			}
 		}
+	}
 
-		AppConfig.setProperty("lia.Monitor.monitor.LoggerConfigClass.preconfiguredLogging", "true");
-
-		// not let's configure the logging, if allowed to
-
-		if (appConfig.getb("jalien.configure.logging", true) && logConfig != null) {
-			System.err.println("Configuring the logging");
-			logging = new LoggingConfigurator(logConfig);
+	/**
+	 * @param referenceClass
+	 * @param path
+	 * @return the listing of this
+	 * @throws URISyntaxException
+	 * @throws UnsupportedEncodingException
+	 * @throws IOException
+	 */
+	public static Collection<String> getResourceListing(final Class<?> referenceClass, final String path) throws URISyntaxException, UnsupportedEncodingException, IOException {
+		URL dirURL = referenceClass.getClassLoader().getResource(path);
+		if (dirURL != null && dirURL.getProtocol().equals("file")) {
+			/* A file path: easy enough */
+			return Arrays.asList(new File(dirURL.toURI()).list());
 		}
+
+		if (dirURL == null) {
+			/*
+			 * In case of a jar file, we can't actually find a directory.
+			 * Have to assume the same jar as clazz.
+			 */
+			final String me = referenceClass.getName().replace(".", "/") + ".class";
+			dirURL = referenceClass.getClassLoader().getResource(me);
+		}
+
+		if (dirURL.getProtocol().equals("jar")) {
+			/* A JAR path */
+			final String jarPath = dirURL.getPath().substring(5, dirURL.getPath().indexOf("!")); // strip out only the JAR file
+			try (JarFile jar = new JarFile(URLDecoder.decode(jarPath, "UTF-8"))) {
+				final Enumeration<JarEntry> entries = jar.entries(); // gives ALL entries in jar
+				final Set<String> result = new HashSet<>(); // avoid duplicates in case it is a subdirectory
+				while (entries.hasMoreElements()) {
+					final String name = entries.nextElement().getName();
+					if (name.startsWith(path)) { // filter according to the path
+						String entry = name.substring(path.length());
+						final int checkSubdir = entry.indexOf("/");
+						if (checkSubdir >= 0) {
+							// if it is a subdirectory, we just return the directory name
+							entry = entry.substring(0, checkSubdir);
+						}
+						result.add(entry);
+					}
+				}
+				return result;
+			}
+		}
+
+		throw new UnsupportedOperationException("Cannot list files for URL " + dirURL);
 	}
 
 	/**
@@ -469,7 +513,9 @@ public class ConfigUtils {
 		System.out.println("Has direct db connection: " + hasDirectDBConnection);
 
 		dumpConfiguration("config", appConfig);
-		dumpConfiguration("logging", logging.prop);
+
+		if (logging != null)
+			dumpConfiguration("logging", logging.prop);
 
 		System.out.println("\nDatabase connections:");
 		for (final Map.Entry<String, ExtProperties> entry : dbConfigFiles.entrySet())
