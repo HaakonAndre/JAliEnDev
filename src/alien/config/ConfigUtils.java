@@ -3,14 +3,18 @@
  */
 package alien.config;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
@@ -59,81 +63,109 @@ public class ConfigUtils {
 
 		ExtProperties applicationConfig = null;
 
+		final Map<String, ExtProperties> foundProperties = new HashMap<>();
+
+		ExtProperties logConfig = null;
+
 		try {
-			sConfigFolder = System.getProperty("AliEnConfig", "config");
+			try (InputStream configListing = ConfigUtils.class.getClassLoader().getResourceAsStream("config/")) {
+				if (configListing != null) {
+					try (BufferedReader br = new BufferedReader(new InputStreamReader(configListing))) {
+						String line;
 
-			final File f = new File(sConfigFolder);
+						while ((line = br.readLine()) != null) {
+							if (line.endsWith(".properties")) {
+								String name = line;
 
-			// System.err.println("Config folder: "+f.getCanonicalPath());
+								if (name.indexOf('/') > 0)
+									name = name.substring(name.lastIndexOf('/') + 1);
 
-			if (f.exists() && f.isDirectory() && f.canRead()) {
-				if (System.getProperty("lazyj.config.folder") == null)
-					System.setProperty("lazyj.config.folder", sConfigFolder);
+								name = name.substring(0, name.indexOf('.'));
 
-				final File[] list = f.listFiles();
-
-				if (list != null)
-					for (final File sub : list)
-						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
-							String sName = sub.getName();
-							sName = sName.substring(0, sName.lastIndexOf('.'));
-
-							// System.err.println("Found configuration file: "+sName);
-
-							final ExtProperties prop = new ExtProperties(sConfigFolder, sName);
-							prop.setAutoReload(1000 * 60);
-
-							if (sName.equals("config"))
-								applicationConfig = prop;
-							else {
-								prop.makeReadOnly();
-
-								if (sName.equals("logging")) {
-									logging = new LoggingConfigurator(prop);
-
-									if (System.getProperty("lia.Monitor.ConfigURL") == null) {
-										// give the ML components the same logging
-										// configuration file if not explicitly set
-										try {
-											System.setProperty("lia.Monitor.ConfigURL", "file:" + sub.getCanonicalPath());
-										} catch (final IOException ioe) {
-											System.err.println("Could not resolve the canonical path of " + sub.getAbsolutePath() + " : " + ioe.getMessage());
-											// ignore
-										}
-
-										// force a call to this guy so everything
-										// instantiates correctly
-										AppConfig.lastReloaded();
-									}
+								try (InputStream is = ConfigUtils.class.getClassLoader().getResourceAsStream("config/" + line)) {
+									final ExtProperties prop = new ExtProperties(is);
+									foundProperties.put(name, prop);
 								}
-								else
-									if (prop.gets("driver").length() > 0) {
-										dbconfig.put(sName, prop);
-
-										if (prop.gets("password").length() > 0)
-											hasDirectDBConnection = true;
-									}
-									else
-										otherconfig.put(sName, prop);
 							}
 						}
+					}
+				}
 			}
 
-			// if (logging == null){
-			// final ExtProperties prop = new ExtProperties();
-			//
-			// prop.set("handlers", "java.util.logging.ConsoleHandler");
-			// prop.set("java.util.logging.ConsoleHandler.level", "FINEST");
-			// prop.set(".level", "INFO");
-			// prop.set("java.util.logging.ConsoleHandler.formatter",
-			// "java.util.logging.SimpleFormatter");
-			//
-			// logging = new LoggingConfigurator(prop);
-			// }
+			// configuration files in the indicated config folder overwrite the defaults from classpath
+
+			final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
+
+			final String configOption = System.getProperty("AliEnConfig", "config");
+
+			final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);
+
+			for (final String path : configFolders) {
+				final File f = new File(path);
+
+				if (f.exists() && f.isDirectory() && f.canRead()) {
+					final File[] list = f.listFiles();
+
+					if (list != null)
+						for (final File sub : list)
+							if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
+								String sName = sub.getName();
+								sName = sName.substring(0, sName.lastIndexOf('.'));
+
+								System.err.println("Found configuration file: " + sName);
+
+								ExtProperties oldProperties = foundProperties.get(sName);
+
+								if (oldProperties == null)
+									oldProperties = new ExtProperties();
+
+								System.err.println("Previous content:\n" + oldProperties);
+
+								final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
+								prop.setAutoReload(1000 * 60);
+
+								System.err.println("New content:\n" + prop);
+
+								foundProperties.put(sName, prop);
+
+								// record the last path where some configuration files were loaded from
+								sConfigFolder = path;
+							}
+				}
+			}
+
+			for (final Map.Entry<String, ExtProperties> entry : foundProperties.entrySet()) {
+				final String sName = entry.getKey();
+				final ExtProperties prop = entry.getValue();
+
+				if (sName.equals("config"))
+					applicationConfig = prop;
+				else {
+					prop.makeReadOnly();
+
+					if (sName.equals("logging"))
+						logConfig = prop;
+					else
+						if (prop.gets("driver").length() > 0) {
+							dbconfig.put(sName, prop);
+
+							if (prop.gets("password").length() > 0)
+								hasDirectDBConnection = true;
+						}
+						else
+							otherconfig.put(sName, prop);
+				}
+			}
 		} catch (final Throwable t) {
 			System.err.println("ConfigUtils: static: caught: " + t + " (" + t.getMessage() + ")");
 			t.printStackTrace();
 		}
+
+		System.setProperty("lazyj.use_java_logger", "true");
+		System.clearProperty("lazyj.config.folder");
+
+		System.clearProperty("lia.Monitor.ConfigURL");
+		System.clearProperty("MonaLisa_HOME");
 
 		CONFIG_FOLDER = sConfigFolder;
 
@@ -153,6 +185,28 @@ public class ConfigUtils {
 			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
 
 		appConfig.makeReadOnly();
+
+		// push all configuration keys to ML as well
+		for (final String configFile : new String[] { "config", "mlconfig" }) {
+			final ExtProperties eprop = foundProperties.get(configFile);
+
+			if (eprop != null) {
+				final Properties prop = eprop.getProperties();
+
+				for (final Object key : prop.keySet()) {
+					AppConfig.setProperty(key.toString(), prop.getProperty(key.toString()));
+				}
+			}
+		}
+
+		AppConfig.setProperty("lia.Monitor.monitor.LoggerConfigClass.preconfiguredLogging", "true");
+
+		// not let's configure the logging, if allowed to
+
+		if (appConfig.getb("jalien.configure.logging", true) && logConfig != null) {
+			System.err.println("Configuring the logging");
+			logging = new LoggingConfigurator(logConfig);
+		}
 	}
 
 	/**
@@ -221,7 +275,10 @@ public class ConfigUtils {
 	 * @since Nov 3, 2010
 	 */
 	static class LoggingConfigurator implements Observer {
-		private final ExtProperties prop;
+		/**
+		 * Logging configuration content, usually loaded from "logging.properties"
+		 */
+		final ExtProperties prop;
 
 		/**
 		 * Set the logging configuration
@@ -319,8 +376,8 @@ public class ConfigUtils {
 	 * @param checkContent
 	 * @return global config map
 	 */
-	public static HashMap<String, Object> getConfigFromLdap(boolean checkContent) {
-		HashMap<String, Object> configuration = new HashMap<>();
+	public static HashMap<String, Object> getConfigFromLdap(final boolean checkContent) {
+		final HashMap<String, Object> configuration = new HashMap<>();
 		// Get hostname and domain
 		String hostName = "";
 		String domain = "";
@@ -334,12 +391,12 @@ public class ConfigUtils {
 			return null;
 		}
 
-		HashMap<String, Object> voConfig = LDAPHelper.getVOConfig();
+		final HashMap<String, Object> voConfig = LDAPHelper.getVOConfig();
 		if (voConfig == null || voConfig.size() == 0)
 			return null;
 
 		// We get the site name from the domain and the site root info
-		Set<String> siteset = LDAPHelper.checkLdapInformation("(&(domain=" + domain + "))", "ou=Sites,", "accountName");
+		final Set<String> siteset = LDAPHelper.checkLdapInformation("(&(domain=" + domain + "))", "ou=Sites,", "accountName");
 
 		if (checkContent && (siteset == null || siteset.size() == 0 || siteset.size() > 1)) {
 			logger.severe("Error: " + (siteset == null ? "null" : String.valueOf(siteset.size())) + " sites found for domain: " + domain);
@@ -350,10 +407,10 @@ public class ConfigUtils {
 		if (siteset.size() == 0 && !checkContent)
 			return configuration;
 
-		String site = siteset.iterator().next();
+		final String site = siteset.iterator().next();
 
 		// Get the root site config based on site name
-		HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
+		final HashMap<String, Object> siteConfig = LDAPHelper.checkLdapTree("(&(ou=" + site + ")(objectClass=AliEnSite))", "ou=Sites,", "site");
 
 		if (checkContent && siteConfig.size() == 0) {
 			logger.severe("Error: cannot find site root configuration in LDAP for site: " + site);
@@ -361,7 +418,7 @@ public class ConfigUtils {
 		}
 
 		// Get the hostConfig from LDAP based on the site and hostname
-		HashMap<String, Object> hostConfig = LDAPHelper.checkLdapTree("(&(host=" + hostName + "))", "ou=Config,ou=" + site + ",ou=Sites,", "host");
+		final HashMap<String, Object> hostConfig = LDAPHelper.checkLdapTree("(&(host=" + hostName + "))", "ou=Config,ou=" + site + ",ou=Sites,", "host");
 
 		if (checkContent && hostConfig.size() == 0) {
 			logger.severe("Error: cannot find host configuration in LDAP for host: " + hostName);
@@ -375,7 +432,7 @@ public class ConfigUtils {
 
 		if (hostConfig.containsKey("host_ce")) {
 			// Get the CE information based on the site and ce name for the host
-			HashMap<String, Object> ceConfig = LDAPHelper.checkLdapTree("(&(name=" + hostConfig.get("host_ce") + "))", "ou=CE,ou=Services,ou=" + site + ",ou=Sites,", "ce");
+			final HashMap<String, Object> ceConfig = LDAPHelper.checkLdapTree("(&(name=" + hostConfig.get("host_ce") + "))", "ou=CE,ou=Services,ou=" + site + ",ou=Sites,", "ce");
 
 			if (checkContent && ceConfig.size() == 0) {
 				logger.severe("Error: cannot find ce configuration in LDAP for CE: " + hostConfig.get("host_ce"));
@@ -392,9 +449,9 @@ public class ConfigUtils {
 		// Overwrite values
 		configuration.put("organisation", "ALICE");
 		if (appConfig != null) {
-			Properties props = appConfig.getProperties();
-			for (Object s : props.keySet()) {
-				String key = (String) s;
+			final Properties props = appConfig.getProperties();
+			for (final Object s : props.keySet()) {
+				final String key = (String) s;
 				configuration.put(key, props.get(key));
 			}
 		}
@@ -402,4 +459,41 @@ public class ConfigUtils {
 		return configuration;
 	}
 
+	/**
+	 * Configuration debugging
+	 *
+	 * @param args
+	 */
+	public static void main(final String[] args) {
+		System.out.println("Config folder: " + CONFIG_FOLDER);
+		System.out.println("Has direct db connection: " + hasDirectDBConnection);
+
+		dumpConfiguration("config", appConfig);
+		dumpConfiguration("logging", logging.prop);
+
+		System.out.println("\nDatabase connections:");
+		for (final Map.Entry<String, ExtProperties> entry : dbConfigFiles.entrySet())
+			dumpConfiguration(entry.getKey(), entry.getValue());
+
+		System.out.println("\nOther configuration files:");
+
+		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet())
+			dumpConfiguration(entry.getKey(), entry.getValue());
+	}
+
+	private static void dumpConfiguration(final String configName, final ExtProperties content) {
+		System.out.println("Dumping configuration content of *" + configName + "*");
+
+		if (content == null) {
+			System.out.println("  <null content>");
+			return;
+		}
+
+		System.out.println("It was loaded from *" + content.getConfigFileName() + "*");
+
+		final Properties p = content.getProperties();
+
+		for (final String key : p.stringPropertyNames())
+			System.out.println("    " + key + " : " + p.getProperty(key));
+	}
 }
