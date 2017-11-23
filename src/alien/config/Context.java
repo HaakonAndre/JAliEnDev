@@ -23,7 +23,8 @@ public class Context {
 						Thread.sleep(1000 * 60);
 
 						context.keySet().retainAll(Thread.getAllStackTraces().keySet());
-					} catch (@SuppressWarnings("unused") final Throwable t) {
+					} catch (@SuppressWarnings("unused")
+					final Throwable t) {
 						// ignore
 					}
 			}
@@ -34,9 +35,13 @@ public class Context {
 	}
 
 	/**
+	 * Associate an object to a key in current thread's context
+	 * 
 	 * @param key
 	 * @param value
 	 * @return the previously set value for this key
+	 * 
+	 * @see #resetContext()
 	 */
 	public static Object setThreadContext(final String key, final Object value) {
 		Map<String, Object> m = context.get(Thread.currentThread());
@@ -52,8 +57,10 @@ public class Context {
 	}
 
 	/**
+	 * Get the content of a particular key from the current thread's context
+	 * 
 	 * @param key
-	 * @return the value associated with this key for the current thread
+	 * @return the value associated with this key for the current thread. Can be <code>null</code> if the key is not set
 	 */
 	public static Object getTheadContext(final String key) {
 		final Map<String, Object> m = context.get(Thread.currentThread());
@@ -64,4 +71,21 @@ public class Context {
 		return m.get(key);
 	}
 
+	/**
+	 * Get the entire current thread's context map
+	 * 
+	 * @return everything that is set in current thread's context. Can be <code>null</code>
+	 */
+	public static Map<String, Object> getThreadContext() {
+		return context.get(Thread.currentThread());
+	}
+
+	/**
+	 * Reset current thread's context so that previously set values don't leak into next call's environment
+	 * 
+	 * @return previous content, if any
+	 */
+	public static Map<String, Object> resetContext() {
+		return context.remove(Thread.currentThread());
+	}
 }
