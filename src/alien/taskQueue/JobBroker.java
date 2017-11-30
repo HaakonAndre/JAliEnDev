@@ -1,6 +1,5 @@
 package alien.taskQueue;
 
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -9,14 +8,12 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import alien.api.Dispatcher;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
-import alien.user.UserFactory;
 import lazyj.DBFunctions;
 
 /**
@@ -55,6 +52,12 @@ public class JobBroker {
 			HashMap<String, Object> waiting = new HashMap<>();
 
 			logger.log(Level.INFO, "We received parameters: " + matchRequest.toString());
+
+			if (!matchRequest.containsKey("AliEnPrincipal")) {
+				logger.log(Level.SEVERE, "getMatchJob: AliEnPrincipal field missing");
+				matchAnswer.put("Error", "AliEnPrincipal field missing");
+				matchAnswer.put("Code", Integer.valueOf(-1));
+			}
 
 			// Checking if the CE is open
 			final int openQueue = checkQueueOpen((String) matchRequest.get("CE"));
@@ -171,14 +174,10 @@ public class JobBroker {
 				}
 
 				if (resubmission >= 0) {
-					X509Certificate[] cert = (X509Certificate[]) matchRequest.get("UserCertificate");
-					AliEnPrincipal user = UserFactory.getByCertificate(cert);
-					user.setDefaultUser(username);
-
-					GetTokenCertificate gtc = new GetTokenCertificate(user, username, TokenCertificateType.JOB_TOKEN, "queueid=" + queueId + "/resubmission=" + resubmission, 1);
+					GetTokenCertificate gtc = new GetTokenCertificate((AliEnPrincipal) matchRequest.get("AliEnPrincipal"), username, TokenCertificateType.JOB_TOKEN,
+							"queueid=" + queueId + "/resubmission=" + resubmission, 1);
 					try {
-						gtc = Dispatcher.execute(gtc);
-
+						gtc.run();
 						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
 						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
 					} catch (Exception e) {

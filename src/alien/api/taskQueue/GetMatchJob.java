@@ -32,7 +32,7 @@ public class GetMatchJob extends Request {
 
 	@Override
 	public void run() {
-		this.matchRequest.put("UserCertificate", this.getEffectiveRequester().getUserCert());
+		this.matchRequest.put("AliEnPrincipal", this.getEffectiveRequester());
 		this.match = JobBroker.getMatchJob(matchRequest);
 	}
 
