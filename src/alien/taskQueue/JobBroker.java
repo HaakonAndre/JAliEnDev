@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.Dispatcher;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import lazyj.DBFunctions;
 
@@ -169,10 +171,14 @@ public class JobBroker {
 				}
 
 				if (resubmission >= 0) {
-					GetTokenCertificate gtc = new GetTokenCertificate(UserFactory.getByUsername(username), username, TokenCertificateType.JOB_TOKEN,
-							"queueid=" + queueId + "/resubmission=" + resubmission, 1, (X509Certificate) matchRequest.get("UserCertificate"));
+					X509Certificate[] cert = (X509Certificate[]) matchRequest.get("UserCertificate");
+					AliEnPrincipal user = UserFactory.getByCertificate(cert);
+					user.setDefaultUser(username);
+
+					GetTokenCertificate gtc = new GetTokenCertificate(user, username, TokenCertificateType.JOB_TOKEN, "queueid=" + queueId + "/resubmission=" + resubmission, 1);
 					try {
-						gtc.run();
+						gtc = Dispatcher.execute(gtc);
+
 						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
 						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
 					} catch (Exception e) {
@@ -206,7 +212,6 @@ public class JobBroker {
 
 			return matchAnswer;
 		}
-
 	}
 
 	private static HashMap<String, Object> getWaitingJobForAgentId(final HashMap<String, Object> waiting) {
