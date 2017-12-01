@@ -108,12 +108,6 @@ public class JSONPrintWriter extends UIPrintWriter {
 
 	}
 
-	@Override
-	protected void degraded() {
-		// TODO Auto-generated method stub
-
-	}
-
 	@SuppressWarnings("unchecked")
 	@Override
 	void nextResult() {
