@@ -191,8 +191,10 @@ public class TransferBroker {
 
 		while (transferId < 0) {
 			if (!dbCached.moveNext()) {
-				dbCached.query(
-						"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
+//				dbCached.query(
+//						"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
+				
+				dbCached.query("select /*! SQL_BUFFER_RESULT */ /*! SQL_SMALL_RESULT */  transferId, lfn, destination, remove_replica from TRANSFERS_DIRECT inner join (select sename, sum(max_transfers) mt, coalesce(max(active_cnt),0) at from PROTOCOLS left outer join (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename and max_transfers>coalesce(active_cnt,0)) group by sename) b ON destination=sename where status='WAITING' order by at/mt asc, transferId-1000*attempts asc limit 50;");
 
 				if (!dbCached.moveNext()) {
 					logger.log(Level.FINE, "There is no waiting transfer in the queue");

@@ -22,6 +22,7 @@ import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import lazyj.DBFunctions;
+import lazyj.Format;
 import lazyj.cache.ExpirationCache;
 
 /**
@@ -413,7 +414,11 @@ public final class TransferUtils {
 			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0)
 				values.put("remove_replica", onCompletionRemoveReplica);
 
-			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
+			String query = DBFunctions.composeInsert("TRANSFERS_DIRECT", values);
+
+			query = Format.replace(query, "INSERT INTO TRANSFERS_DIRECT", "INSERT /*! HIGH_PRIORITY */ INTO TRANSFERS_DIRECT");
+
+			if (!db.query(query))
 				return -4;
 
 			final Integer i = db.getLastGeneratedKey();
