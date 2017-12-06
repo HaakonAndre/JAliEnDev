@@ -112,101 +112,107 @@ public class JAKeyStore {
 
 	static {
 		Security.addProvider(new BouncyCastleProvider());
-		loadTrusts();
-	}
-
-	private static void loadTrusts() {
 		try {
 			trustStore = KeyStore.getInstance("JKS");
-
 			trustStore.load(null, pass);
+			loadTrusts(trustStore);
+		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
-			TrustManagerFactory tmf;
+	}
 
-			tmf = TrustManagerFactory.getInstance("SunX509");
+	private static void loadTrusts(KeyStore keystore) {
+		final File trustsDir = new File(ConfigUtils.getConfig().gets("trusted.certificates.location",
+				System.getProperty("user.home") + System.getProperty("file.separator") + ".j" + System.getProperty("file.separator") + "trusts"));
 
-			final File trustsDir = new File(ConfigUtils.getConfig().gets("trusted.certificates.location",
-					System.getProperty("user.home") + System.getProperty("file.separator") + ".j" + System.getProperty("file.separator") + "trusts"));
+		if (logger.isLoggable(Level.INFO))
+			logger.log(Level.INFO, "Loading trusts from " + trustsDir);
 
-			if (logger.isLoggable(Level.INFO))
-				logger.log(Level.INFO, "Loading trusts from " + trustsDir);
+		final File[] dirContents;
 
-			final File[] dirContents;
+		try {
+			if (keystore.equals(trustStore)) {
 
-			if (trustsDir.exists() && trustsDir.isDirectory() && (dirContents = trustsDir.listFiles()) != null) {
-				CertificateFactory cf;
+				TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+				if (trustsDir.exists() && trustsDir.isDirectory() && (dirContents = trustsDir.listFiles()) != null) {
+					CertificateFactory cf;
 
-				cf = CertificateFactory.getInstance("X.509");
+					cf = CertificateFactory.getInstance("X.509");
 
-				int iLoaded = 0;
+					int iLoaded = 0;
 
-				for (final File trust : dirContents)
-					if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
-						try (FileInputStream fis = new FileInputStream(trust)) {
-							final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
-							if (logger.isLoggable(Level.FINE))
-								logger.log(Level.FINE, "Trusting now: " + c.getSubjectDN());
+					for (final File trust : dirContents)
+						if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
+							try (FileInputStream fis = new FileInputStream(trust)) {
+								final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
+								if (logger.isLoggable(Level.FINE))
+									logger.log(Level.FINE, "Trusting now: " + c.getSubjectDN());
 
-							trustStore.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
+								trustStore.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
 
-							if (hostCert != null)
-								hostCert.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
+								iLoaded++;
+							} catch (final Exception e) {
+								e.printStackTrace();
+							}
 
-							if (clientCert != null)
-								clientCert.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
-
-							iLoaded++;
-						} catch (final Exception e) {
-							e.printStackTrace();
-						}
-
-				if (iLoaded == 0) {
-					logger.log(Level.WARNING, "No CA files found in " + trustsDir);
+					if (iLoaded == 0) {
+						logger.log(Level.WARNING, "No CA files found in " + trustsDir);
+					}
+					else
+						logger.log(Level.INFO, "Loaded " + iLoaded + " certificates from " + trustsDir);
 				}
-				else
-					logger.log(Level.INFO, "Loaded " + iLoaded + " certificates from " + trustsDir);
+				else {
+					try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
+						trustStore.load(classpathTrusts, "castore".toCharArray());
+						logger.log(Level.WARNING, "Found " + trustStore.size() + " trusted CAs in classpath");
+					} catch (final Throwable t) {
+						logger.log(Level.SEVERE, "Cannot load the default trust keystore from classpath", t);
+					}
+				}
+
+				tmf.init(trustStore);
+				trusts = tmf.getTrustManagers();
 			}
 			else {
-				if (logger.isLoggable(Level.SEVERE))
-					logger.log(Level.FINE, "Found no trusts to load in: " + trustsDir);
-			}
+				if (trustsDir.exists() && trustsDir.isDirectory() && (dirContents = trustsDir.listFiles()) != null) {
+					CertificateFactory cf;
 
-			if (trustStore.size() == 0) {
-				try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
-					trustStore.load(classpathTrusts, "castore".toCharArray());
-					logger.log(Level.WARNING, "Found " + trustStore.size() + " trusted CAs in classpath");
-				} catch (final Throwable t) {
-					logger.log(Level.SEVERE, "Cannot load the default trust keystore from classpath", t);
+					cf = CertificateFactory.getInstance("X.509");
+
+					int iLoaded = 0;
+
+					for (final File trust : dirContents)
+						if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
+							try (FileInputStream fis = new FileInputStream(trust)) {
+								final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
+								if (logger.isLoggable(Level.FINE))
+									logger.log(Level.FINE, "Trusting now: " + c.getSubjectDN());
+
+								keystore.setEntry(trust.getName().substring(0, trust.getName().lastIndexOf('.')), new KeyStore.TrustedCertificateEntry(c), null);
+
+								iLoaded++;
+							} catch (final Exception e) {
+								e.printStackTrace();
+							}
+
+					if (iLoaded == 0) {
+						logger.log(Level.WARNING, "No CA files found in " + trustsDir);
+					}
+					else
+						logger.log(Level.INFO, "Loaded " + iLoaded + " certificates from " + trustsDir);
 				}
-
-				if (clientCert != null)
+				else {
 					try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
-						clientCert.load(classpathTrusts, "castore".toCharArray());
-						logger.log(Level.WARNING, "Added " + trustStore.size() + " trusts to clientCert keystore");
+						keystore.load(classpathTrusts, "castore".toCharArray());
+						logger.log(Level.WARNING, "Added " + trustStore.size() + " trusts to " + keystore.getType() + " keystore");
 					} catch (final Throwable t) {
 						logger.log(Level.SEVERE, "Cannot load the default trust keystore from classpath", t);
 					}
-
-				if (hostCert != null)
-					try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
-						hostCert.load(classpathTrusts, "castore".toCharArray());
-						logger.log(Level.WARNING, "Added " + trustStore.size() + " trusts to hostCert keystore");
-					} catch (final Throwable t) {
-						logger.log(Level.SEVERE, "Cannot load the default trust keystore from classpath", t);
-					}
-
-				if (tokenCert != null)
-					try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
-						tokenCert.load(classpathTrusts, "castore".toCharArray());
-						logger.log(Level.WARNING, "Added " + trustStore.size() + " trusts to tokenCert keystore");
-					} catch (final Throwable t) {
-						logger.log(Level.SEVERE, "Cannot load the default trust keystore from classpath", t);
-					}
+				}
 			}
-
-			tmf.init(trustStore);
-			trusts = tmf.getTrustManagers();
-		} catch (final IOException | KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
+		} catch (final KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
 			logger.log(Level.WARNING, "Exception loading trust stores", e);
 		}
 	}
@@ -463,6 +469,7 @@ public class JAKeyStore {
 	 * @throws Exception
 	 */
 	private static boolean loadClientKeyStorage(final boolean noUserPass) throws Exception {
+		System.out.println("LOADING USER CERT");
 
 		final ExtProperties config = ConfigUtils.getConfig();
 
@@ -494,7 +501,7 @@ public class JAKeyStore {
 
 		try {
 			clientCert.load(null, pass);
-			loadTrusts();
+			loadTrusts(clientCert);
 
 			addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
 		} catch (@SuppressWarnings("unused") final Exception e) {
@@ -521,7 +528,6 @@ public class JAKeyStore {
 	 * @throws Exception
 	 */
 	public static boolean loadTokenKeyStorage() throws Exception {
-
 		final ExtProperties config = ConfigUtils.getConfig();
 
 		final String token_key;
@@ -546,13 +552,12 @@ public class JAKeyStore {
 
 		try {
 			tokenCert.load(null, pass);
-			loadTrusts();
+			loadTrusts(tokenCert);
 
 			addKeyPairToKeyStore(tokenCert, "User.cert", token_key, token_cert, null);
 		} catch (@SuppressWarnings("unused") final Exception e) {
 			return false;
 		}
-
 		return true;
 
 	}
@@ -606,7 +611,7 @@ public class JAKeyStore {
 
 		try {
 			hostCert.load(null, pass);
-			loadTrusts();
+			loadTrusts(hostCert);
 
 			addKeyPairToKeyStore(hostCert, "User.cert", hostkey, hostcert, null);
 		} catch (@SuppressWarnings("unused") final Exception e) {
@@ -937,14 +942,37 @@ public class JAKeyStore {
 		}
 
 		if (JAKeyStore.clientCert != null) {
+			try {
+				if (clientCert.getCertificateChain("User.cert") == null) {
+					System.out.println("----OOOOOOOOOOOOOOOOOOOOOOOOOOPS----------------");
+					loadKeyStore();
+				}
+			} catch (KeyStoreException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			return JAKeyStore.clientCert;
 		}
 		else
 			if (JAKeyStore.hostCert != null) {
+				try {
+					if (hostCert.getCertificateChain("User.cert") == null)
+						loadKeyStore();
+				} catch (KeyStoreException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 				return JAKeyStore.hostCert;
 			}
 			else
 				if (JAKeyStore.tokenCert != null) {
+					try {
+						if (tokenCert.getCertificateChain("User.cert") == null)
+							loadKeyStore();
+					} catch (KeyStoreException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return JAKeyStore.tokenCert;
 				}
 
