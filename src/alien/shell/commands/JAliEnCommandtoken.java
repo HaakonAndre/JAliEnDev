@@ -95,7 +95,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 						commander.user = switchUser;
 					else {
 						if (out.isRootPrinter())
-							out.setField("message", "User " + requestedUser + " cannot be found. Abort");
+							out.setField("error", "User " + requestedUser + " cannot be found. Abort");
 						else
 							out.printErrln("User " + requestedUser + " cannot be found. Abort");
 					}
@@ -111,13 +111,20 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		}
 
 		// Return tokens
-		if (out.isRootPrinter()) {
-			out.setField("tokencert", tokenreq.getCertificateAsString());
-			out.setField("tokenkey", tokenreq.getPrivateKeyAsString());
-		}
+		if (tokenreq != null)
+			if (out.isRootPrinter()) {
+				out.setField("tokencert", tokenreq.getCertificateAsString());
+				out.setField("tokenkey", tokenreq.getPrivateKeyAsString());
+			}
+			else {
+				out.printOut(tokenreq.getCertificateAsString());
+				out.printOut(tokenreq.getPrivateKeyAsString());
+			}
 		else {
-			out.printOut(tokenreq.getCertificateAsString());
-			out.printOut(tokenreq.getPrivateKeyAsString());
+			if (out.isRootPrinter())
+				out.setField("error", "No responce from JCentral");
+			else
+				out.printErrln("User " + requestedUser + " cannot be found. Abort");
 		}
 	}
 
