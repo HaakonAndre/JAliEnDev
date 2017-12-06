@@ -114,7 +114,6 @@ public class DispatchSSLClient extends Thread {
 			Security.addProvider(new BouncyCastleProvider());
 
 			try {
-
 				// get factory
 				final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509", "SunJSSE");
 
@@ -141,9 +140,7 @@ public class DispatchSSLClient extends Thread {
 
 				client.startHandshake();
 
-				final X509Certificate[] peerCerts =
-
-						client.getSession().getPeerCertificateChain();
+				final X509Certificate[] peerCerts = client.getSession().getPeerCertificateChain();
 
 				if (peerCerts != null) {
 
@@ -151,14 +148,11 @@ public class DispatchSSLClient extends Thread {
 
 					for (final X509Certificate peerCert : peerCerts)
 						logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + peerCert.getSubjectDN().getName() + "\n" + peerCert.getIssuerDN().getName() + "\n"
-								+ Level.INFO + "- Start Time: " + peerCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + peerCert.getNotAfter().toString()
-
-						);
+								+ Level.INFO + "- Start Time: " + peerCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + peerCert.getNotAfter().toString());
 
 					final DispatchSSLClient sc = new DispatchSSLClient(client);
 					System.out.println("Connection to JCentral established.");
 					instance.put(Integer.valueOf(p), sc);
-
 				}
 				else
 					logger.log(Level.SEVERE, "We didn't get any peer/service cert. NOT GOOD!");
