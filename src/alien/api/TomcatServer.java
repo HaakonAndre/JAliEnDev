@@ -122,6 +122,24 @@ public class TomcatServer {
 				tomcat.getServer().await();
 			}
 		}.start();
+
+		if (!ConfigUtils.isCentralService()) {
+			// Refresh token cert every two hours
+			new Thread() {
+				@Override
+				public void run() {
+					try {
+						while (true) {
+							sleep(2 * 60 * 60 * 1000);
+							requestTokenCert();
+						}
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}.start();
+		}
 	}
 
 	/**
@@ -308,8 +326,10 @@ public class TomcatServer {
 
 	/**
 	 * Request token certificate from JCentral
+	 * 
+	 * @return true if tokencert was successfully received
 	 */
-	private static boolean requestTokenCert() {
+	static boolean requestTokenCert() {
 		// Get user certificate to connect to JCentral
 		Certificate[] cert = null;
 		AliEnPrincipal userIdentity = null;
@@ -438,7 +458,6 @@ public class TomcatServer {
 				return;
 			}
 		}
-
 		// Set dynamic port range for Tomcat server
 		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
 		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
@@ -448,6 +467,7 @@ public class TomcatServer {
 		try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
 		{
 			ssocket.close();
+
 			// Actually start Tomcat
 			tomcatServer = new TomcatServer(port, iDebugLevel);
 
