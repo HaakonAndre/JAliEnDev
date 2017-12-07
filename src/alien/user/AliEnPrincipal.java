@@ -266,16 +266,31 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	private HashMap<String, String> extensions;
 
+	/**
+	 * Set extension information for job
+	 * 
+	 * @param key
+	 *            extension tag
+	 * @param value
+	 *            string value of key
+	 */
 	public void setExtension(String key, String value) {
 		if (extensions != null)
 			extensions.put(key, value);
 	}
-	
+
+	/**
+	 * Retrieve information about job extensions
+	 * 
+	 * @param key
+	 *            extension tag
+	 * @return string value of key
+	 */
 	public String getExtension(String key) {
 		if (extensions != null)
 			if (extensions.containsKey(key))
 				return extensions.get(key);
-		
+
 		return null;
 	}
 

@@ -63,7 +63,10 @@ public class JSONPrintWriter extends UIPrintWriter {
 
 	@Override
 	protected void printOut(final String line) {
-		//
+		if (currentResult == null)
+			currentResult = new LinkedHashMap<>();
+
+		currentResult.put("message", currentResult.get("message") + line);
 	}
 
 	@Override
