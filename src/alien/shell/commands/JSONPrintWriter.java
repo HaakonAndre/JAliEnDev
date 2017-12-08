@@ -22,11 +22,6 @@ public class JSONPrintWriter extends UIPrintWriter {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JSONPrintWriter.class.getCanonicalName());
 
-	/**
-	 * error String tag to mark a println for stderr
-	 */
-	public static final String errTag = "ERR: ";
-
 	private final OutputStream os;
 
 	private final JSONArray resultArray;
@@ -66,12 +61,21 @@ public class JSONPrintWriter extends UIPrintWriter {
 		if (currentResult == null)
 			currentResult = new LinkedHashMap<>();
 
-		currentResult.put("message", currentResult.get("message") + line);
+		// If there already was a message, concatenate strings
+		if (currentResult.get("message") != null)
+			currentResult.put("message", currentResult.get("message") + line);
+		else
+			currentResult.put("message", line);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected void printErr(final String line) {
-		//
+		// If there already was an error message, concatenate strings
+		if (metadataResult.get("error") != null)
+			metadataResult.put("error", metadataResult.get("error") + line);
+		else
+			metadataResult.put("error", line);
 	}
 
 	@Override
