@@ -229,7 +229,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 				if (idx >= 0) {
 					parentDir = LFNUtils.getLFN(sParentDir.substring(0, idx + 1), evenIfNotExist);
 
-					if (parentDir!=null && !parentDir.exists) {
+					if (parentDir != null && !parentDir.exists) {
 						parentDir.owner = this.owner;
 						parentDir.gowner = this.gowner;
 						parentDir.perm = this.perm;
@@ -593,8 +593,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 		final String q = "INSERT INTO L" + indexTableEntry.tableName + "L (owner, ctime, replicated, aclId, lfn, expiretime, size, "
 				+ "dir, gowner, type, perm, guid, md5, guidtime, broken, jobid) VALUES (" + e(owner) + "," + e(format(ctime)) + "," + (replicated ? "1" : "0") + "," + (aclId > 0 ? "" + aclId : "null")
-				+ "," + e(lfnToInsert) + "," + e(format(expiretime)) + "," + size + "," + dir + "," + e(gowner) + "," + (type > 0 ? e("" + type) : "null") + "," + e(perm) + ","
-				+ (guid != null ? "string2binary('" + guid + "')," : "null,") + e(md5) + "," + e(guidtime) + "," + (broken ? 1 : 0) + "," + (jobid > 0 ? "" + jobid : "null") + ");";
+				+ "," + e(lfnToInsert) + "," + e(format(expiretime)) + "," + size + "," + dir + "," + e(gowner) + "," + (type > 0 && "cdf-".indexOf(type) != -1 ? e("" + type) : "f") + "," + e(perm)
+				+ "," + (guid != null ? "string2binary('" + guid + "')," : "null,") + e(md5) + "," + e(guidtime) + "," + (broken ? 1 : 0) + "," + (jobid > 0 ? "" + jobid : "null") + ");";
 
 		if (monitor != null)
 			monitor.incrementCounter("LFN_insert");
