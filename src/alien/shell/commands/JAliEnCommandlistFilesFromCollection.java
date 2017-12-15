@@ -27,9 +27,14 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	private String errorMessage = null;
 
 	/*
-	 * The command received -v verbose argument
+	 * The command received -z argument
 	 */
 	private boolean bZ = false;
+
+	/*
+	 * The command received -x argument
+	 */
+	private boolean bX = false;
 
 	/**
 	 * execute the type
@@ -49,7 +54,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		}
 
 		try {
-			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath));
+			final LFNListCollectionFromString ret = Dispatcher.execute(new LFNListCollectionFromString(commander.getUser(), collectionPath, bX));
 
 			lfns = ret.getLFNs();
 		} catch (final ServerException e) {
@@ -65,7 +70,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			return;
 		}
 
-		if (out.isRootPrinter())
+		if (out.isRootPrinter()) {
 			for (final LFN c : lfns) {
 				out.nextResult();
 				out.setField("guid", c.guid.toString());
@@ -75,6 +80,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 					out.setField("md5", " " + c.md5);
 				}
 			}
+		}
 		else {
 			final StringBuilder sb = new StringBuilder();
 
@@ -169,6 +175,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 
 		parser.accepts("z");
 		parser.accepts("s");
+		parser.accepts("x");
 
 		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -176,6 +183,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			silent();
 
 		bZ = options.has("z");
+		bX = options.has("x");
 
 		if (options.nonOptionArguments().size() != 1)
 			throw new JAliEnCommandException();
