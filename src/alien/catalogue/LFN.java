@@ -789,7 +789,9 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (monitor != null)
 			monitor.incrementCounter("LFN_listcollection");
 
-		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
+		logger.info(CatalogueUtils.getHost(this.indexTableEntry.hostIndex).db);
+
+		try (DBFunctions db = ConfigUtils.getDB(CatalogueUtils.getHost(this.indexTableEntry.hostIndex).db)) {
 			db.setReadOnly(true);
 			db.setQueryTimeout(300);
 
