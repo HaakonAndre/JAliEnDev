@@ -6,6 +6,7 @@ import java.util.logging.Level;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.RemoveLFNfromString;
+import alien.catalogue.FileSystemUtils;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -37,31 +38,37 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		for (final String path : alArguments) {
-			// My added code... From the Dispatcher, direct, instead of from the wrapper for in the COMMander class, like above...
 
-			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), path, bR);
+			if (path == null) {
+				logger.log(Level.WARNING, "Could not get LFN: " + path);
+				return;
+			}
+
+			String fullPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
+
+			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), fullPath, bR);
 			if (out.isRootPrinter())
 				try {
-					final RemoveLFNfromString a = Dispatcher.execute(rlfn);// Remember, all checking is being done server side now.
+					final RemoveLFNfromString a = Dispatcher.execute(rlfn); // Remember, all checking is being done server side now.
 
 					if (!a.wasRemoved())
-						out.setReturnCode(1, "Failed to remove [" + path + "]");
+						out.setReturnCode(1, "Failed to remove [" + fullPath + "]");
 				} catch (final ServerException e) {
 					e.getCause().printStackTrace();
-					out.setReturnCode(1, "Failed to remove [" + path + "]");
+					out.setReturnCode(1, "Failed to remove [" + fullPath + "]");
 				}
 			else
 				try {
-					final RemoveLFNfromString a = Dispatcher.execute(rlfn);// Remember, all checking is being done server side now.
+					final RemoveLFNfromString a = Dispatcher.execute(rlfn); // Remember, all checking is being done server side now.
 
 					if (!a.wasRemoved() && bV)
-						out.printErrln("Failed to remove [" + path + "]");
+						out.printErrln("Failed to remove [" + fullPath + "]");
 				} catch (final ServerException e) {
-					logger.log(Level.WARNING, "Could not get LFN: " + path);
+					logger.log(Level.WARNING, "Could not get LFN: " + fullPath);
 					e.getCause().printStackTrace();
 
 					if (bV)
-						out.printErrln("Error removing [" + path + "]");
+						out.printErrln("Error removing [" + fullPath + "]");
 				}
 		}
 	}
