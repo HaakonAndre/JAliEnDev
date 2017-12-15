@@ -359,7 +359,7 @@ public class CatalogueApiUtils {
 	}
 
 	/**
-	 * find bases on pattern
+	 * Find an LFN based on pattern
 	 *
 	 * @param path
 	 * @param pattern
@@ -367,8 +367,21 @@ public class CatalogueApiUtils {
 	 * @return result LFNs
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final int flags) {
+		return find(path, pattern, flags, "");
+	}
+
+	/**
+	 * Find an LFN based on pattern and save to XmlCollection
+	 * 
+	 * @param path
+	 * @param pattern
+	 * @param flags
+	 * @param xmlCollectionName
+	 * @return result LFNs
+	 */
+	public Collection<LFN> find(final String path, final String pattern, final int flags, final String xmlCollectionName) {
 		try {
-			return Dispatcher.execute(new FindfromString(commander.getUser(), path, pattern, flags)).getLFNs();
+			return Dispatcher.execute(new FindfromString(commander.getUser(), path, pattern, flags, xmlCollectionName)).getLFNs();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();

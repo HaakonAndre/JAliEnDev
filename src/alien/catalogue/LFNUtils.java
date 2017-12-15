@@ -1,5 +1,8 @@
 package alien.catalogue;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -16,6 +19,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 import alien.io.TransferUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -599,6 +603,11 @@ public class LFNUtils {
 	public static final int FIND_REGEXP = 8;
 
 	/**
+	 * the "-x" flag of JAliEn `find`
+	 */
+	public static final int FIND_SAVE_XML = 16;
+
+	/**
 	 * @param path
 	 * @param pattern
 	 * @param flags
@@ -606,6 +615,19 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags) {
+		return find(path, pattern, flags, null, "");
+	}
+
+	/**
+	 * @param path
+	 * @param pattern
+	 * @param flags
+	 *            a combination of FIND_* flags
+	 * @param owner
+	 * @param xmlCollectionName
+	 * @return the list of LFNs that match
+	 */
+	public static Collection<LFN> find(final String path, final String pattern, final int flags, final AliEnPrincipal owner, final String xmlCollectionName) {
 		final Set<LFN> ret;
 
 		if ((flags & FIND_NO_SORT) != 0)
@@ -635,6 +657,44 @@ public class LFNUtils {
 				return null;
 
 			ret.addAll(findResults);
+		}
+
+		if ((flags & FIND_SAVE_XML) != 0) {
+			// Create the xml collection
+
+			final XmlCollection c = new XmlCollection();
+			c.addAll(ret);
+			c.setName(xmlCollectionName);
+			c.setOwner(owner.getName());
+
+			final StringBuilder str = new StringBuilder("find");
+
+			str.append(' ').append(path);
+			str.append(' ').append(pattern);
+			str.append(' ').append("-x");
+			str.append(' ').append(xmlCollectionName);
+
+			// Append the command, that was executed to receive this collection
+			c.setCommand(str.toString());
+			try {
+				// Create a local temp file
+				final File f = File.createTempFile("collection-" + xmlCollectionName + System.currentTimeMillis(), ".xml");
+
+				if (f != null) {
+					// Save xml collection to local file
+					final String content = c.toString();
+					try (BufferedWriter o = new BufferedWriter(new FileWriter(f))) {
+						o.write(content);
+					}
+
+					// Upload this file to grid
+					IOUtils.upload(f, xmlCollectionName, owner);
+					f.delete();
+				}
+
+			} catch (final Exception e) {
+				logger.log(Level.SEVERE, "Could not upload the XML collection because " + e.getMessage());
+			}
 		}
 
 		return ret;
@@ -1120,8 +1180,7 @@ public class LFNUtils {
 								ret.add(file);
 								continue;
 							}
-						} catch (@SuppressWarnings("unused")
-						final Exception e) {
+						} catch (@SuppressWarnings("unused") final Exception e) {
 							return null;
 						}
 
@@ -1148,8 +1207,7 @@ public class LFNUtils {
 			if (p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					return null;
 				}
 
@@ -1160,8 +1218,7 @@ public class LFNUtils {
 			for (final LFN otherFile : file.getParentDir().list())
 				if (otherFile.isFile() && otherFile.guid.equals(guid))
 					return otherFile;
-		} catch (@SuppressWarnings("unused")
-		final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 
