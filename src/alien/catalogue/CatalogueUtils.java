@@ -574,4 +574,21 @@ public final class CatalogueUtils {
 
 		return ret;
 	}
+	
+	/**
+	 * Mark LFN_BOOKED entries as delete for a job
+	 *
+	 * @param queueId
+	 */
+	public static void cleanLfnBookedForJob(long queueId) {
+		for (Host h : CatalogueUtils.getAllHosts()) {
+			try (DBFunctions db = ConfigUtils.getDB(h.db)) {
+				db.setReadOnly(false);
+				db.setQueryTimeout(60);
+
+				logger.info("cleanLfnBookedForJob: deleting for job " + queueId + " in host: " + h.db);
+				db.query("update LFN_BOOKED set expiretime=-1 where jobId=?", false, Long.valueOf(queueId));
+			}
+		}
+	}
 }

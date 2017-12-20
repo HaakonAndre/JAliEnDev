@@ -5,7 +5,7 @@ import alien.taskQueue.TaskQueueUtils;
 import alien.user.AliEnPrincipal;
 
 /**
- * Get a JDL object
+ * Kill a job
  *
  * @author ron
  * @since Jun 05, 2011

@@ -218,7 +218,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 				sb.append("string2binary('").append(u.toString()).append("')");
 			}
-			
+
 			sb.append(");");
 
 			db.setReadOnly(true);
@@ -294,6 +294,21 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * @return the LFNs from this table that match
 	 */
 	public List<LFN> find(final String sPath, final String sPattern, final int flags) {
+		return find(sPath, sPattern, flags, 0);
+	}
+
+	/**
+	 * @param sPath
+	 *            base path where to start searching, must be an absolute path ending in /
+	 * @param sPattern
+	 *            pattern to search for, in SQL wildcard format
+	 * @param flags
+	 *            a combination of {@link LFNUtils}.FIND_* fields
+	 * @param queueid
+	 *            a job id to filter for its files
+	 * @return the LFNs from this table that match
+	 */
+	public List<LFN> find(final String sPath, final String sPattern, final int flags, final long queueid) {
 		try (DBFunctions db = getDB()) {
 			if (db == null)
 				return null;
@@ -329,6 +344,9 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 			if ((flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
 				q += " AND type!='d'";
+				
+			if ((flags & LFNUtils.FIND_FILTER_JOBID) != 0 && queueid > 0)
+				q += " AND jobid = " + queueid;
 
 			if ((flags & LFNUtils.FIND_NO_SORT) != 0)
 				q += " ORDER BY lfn";

@@ -57,7 +57,7 @@ public class FindfromString extends Request {
 
 	@Override
 	public void run() {
-		lfns = LFNUtils.find(path, pattern, flags, getEffectiveRequester(), xmlCollectionName);
+		lfns = LFNUtils.find(path, pattern, flags, getEffectiveRequester(), xmlCollectionName, 0);
 	}
 
 	/**

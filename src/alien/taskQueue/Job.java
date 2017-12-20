@@ -159,6 +159,11 @@ public class Job implements Comparable<Job>, Serializable {
 	public String site;
 
 	/**
+	 * siteId
+	 */
+	public int siteid;
+	
+	/**
 	 * started
 	 */
 	public long started;
@@ -197,6 +202,11 @@ public class Job implements Comparable<Job>, Serializable {
 	 * agentid
 	 */
 	public int agentid;
+
+	/**
+	 * agentid
+	 */
+	public int resubmission;
 
 	/**
 	 * notify
@@ -259,7 +269,7 @@ public class Job implements Comparable<Job>, Serializable {
 		merging = StringFactory.get(db.gets("merging", null));
 		jdl = loadJDL ? db.gets("jdl") : null;
 		path = StringFactory.get(db.gets("path", null));
-		site = StringFactory.get(db.gets("site", null));
+		siteid = db.geti("siteId");
 		started = db.getl("started");
 		expires = db.geti("expires");
 		finalPrice = db.getf("finalPrice");
@@ -268,6 +278,7 @@ public class Job implements Comparable<Job>, Serializable {
 		si2k = db.getf("si2k");
 		jobagentId = db.geti("jobagentId");
 		agentid = db.geti("agentid");
+		resubmission = db.geti("resubmission");
 		chargeStatus = StringFactory.get(db.gets("chargeStatus", null));
 		optimized = db.getb("optimized", false);
 		mtime = db.getDate("mtime", null);
@@ -277,6 +288,7 @@ public class Job implements Comparable<Job>, Serializable {
 			submitHost = TaskQueueUtils.getHost(db.geti("submitHostId"));
 			execHost = TaskQueueUtils.getHost(db.geti("execHostId"));
 			node = TaskQueueUtils.getHost(db.geti("nodeid"));
+			site = StringFactory.get(TaskQueueUtils.getSiteName(siteid));
 			notify = TaskQueueUtils.getNotify(db.geti("notifyId"));
 			name = command = TaskQueueUtils.getCommand(db.geti("commandId"));
 			user = TaskQueueUtils.getUser(db.geti("userId"));
@@ -333,7 +345,7 @@ public class Job implements Comparable<Job>, Serializable {
 				+ " name\t\t\t: " + name + "\n" + " spyurl\t\t\t: " + spyurl + "\n" + " commandArg\t\t: " + commandArg + "\n" + " finished\t\t: " + finished + "\n" + " masterjob\t\t: " + masterjob
 				+ "\n" + " status\t\t\t: " + status + "\n" + " splitting\t\t: " + splitting + "\n" + " node\t\t\t: " + node + "\n" + " error\t\t\t: " + error + "\n" + " current\t\t: " + current + "\n"
 				+ " received\t\t: " + received + "\n" + " validate\t\t: " + validate + "\n" + " command\t\t: " + command + "\n" + " merging\t\t: " + merging + "\n" + " user\t\t\t: " + user + "\n"
-				+ " submitHost\t\t: " + submitHost + "\n" + " path\t\t\t: " + path + "\n" + " site\t\t\t: " + site + "\n" + " started\t\t: " + started + "\n" + " expires\t\t: " + expires + "\n"
+				+ " submitHost\t\t: " + submitHost + "\n" + " path\t\t\t: " + path + "\n" + " siteId\t\t\t: " + siteid + "\n" + " started\t\t: " + started + "\n" + " expires\t\t: " + expires + "\n"
 				+ " finalPrice\t\t: " + finalPrice + "\n" + " effectivePriority\t: " + effectivePriority + "\n" + " price\t\t\t: " + price + "\n" + " si2k\t\t\t: " + si2k + "\n" + " jobagentId\t\t: "
 				+ jobagentId + "\n" + " agentid\t\t: " + agentid + "\n" + " notify\t\t\t: " + notify + "\n" + " chargeStatus\t\t: " + chargeStatus + "\n" + " optimized\t\t: " + optimized + "\n"
 				+ " mtime\t\t\t: " + mtime + "\n" + " jdl\t\t\t: " + jdl;

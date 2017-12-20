@@ -30,7 +30,7 @@ import lazyj.ExtProperties;
  */
 public class CassandraMonitor {
 
-	static final String serviceUrl = "service:jmx:rmi://127.0.0.1/jndi/rmi://127.0.0.1:7199/jmxrmi";
+	static String serviceUrl = null;
 	static JMXServiceURL url;
 	static JMXConnector jmxc = null;
 	static MBeanServerConnection mbsConnection = null;
@@ -86,11 +86,29 @@ public class CassandraMonitor {
 			return;
 		}
 
+		// set serviceUrl
+		if (args.length >= 2) {
+			String jmxhost = args[0];
+			String jmxport = args[1];
+			serviceUrl = "service:jmx:rmi://" + jmxhost + "/jndi/rmi://" + jmxhost + ":" + jmxport + "/jmxrmi";
+		}
+		else
+			serviceUrl = "service:jmx:rmi://127.0.0.1/jndi/rmi://127.0.0.1:7199/jmxrmi";
+
+		logger.info("Service URL: " + serviceUrl);
+
 		String[] credentials = { user, pass };
 		envpass.put(JMXConnector.CREDENTIALS, credentials);
 
 		try {
-			hostName = InetAddress.getLocalHost().getCanonicalHostName();
+			logger.info("Going to create the JmxServiceURL");
+
+			if (args.length >= 3) {
+				hostName = args[2];
+			}
+			else
+				hostName = InetAddress.getLocalHost().getCanonicalHostName();
+
 			url = new JMXServiceURL(serviceUrl);
 		} catch (final Exception e1) {
 			System.err.println("Exception creating JMXServiceURL or JMXConnector: " + e1);
@@ -104,6 +122,7 @@ public class CassandraMonitor {
 			System.exit(-1);
 		}
 
+		logger.info("Start looping...");
 		while (true) {
 			try {
 

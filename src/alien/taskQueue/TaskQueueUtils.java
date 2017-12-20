@@ -9,15 +9,18 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -31,6 +34,7 @@ import java.util.regex.Pattern;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.LFNfromString;
+import alien.catalogue.CatalogueUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PackageUtils;
@@ -2247,15 +2251,11 @@ public class TaskQueueUtils {
 
 			if (!db.query("DELETE FROM QUEUE_TOKEN WHERE queueId=?;", false, Long.valueOf(queueId))) {
 				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
-
 				return false;
 			}
 
-			final int cnt = db.getUpdateCount();
-
-			putJobLog(queueId, "state", "Job token deletion query affected " + cnt + " row(s)", null);
-
-			return cnt > 0;
+			putJobLog(queueId, "state", "Job token deletion query done for: " + queueId, null);
+			return true;
 		}
 	}
 
@@ -2791,6 +2791,28 @@ public class TaskQueueUtils {
 	}
 
 	/**
+	 * @param siteId
+	 * @return site name
+	 */
+	public static String getSiteName(final int siteId) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return null;
+
+			logger.log(Level.INFO, "Going to select site: select site from SITEQUEUES where siteId=? " + siteId);
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(60);
+
+			if (db.query("select site from SITEQUEUES where siteId=?", false, Integer.valueOf(siteId)) && db.moveNext()) {
+				final String value = db.gets(1);
+				return value;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * @param agentId
 	 * @param queueId
 	 * @return 0 if no action was taken, 1 if the query succeeded (though this is no guarantee that anything was actually deleted)
@@ -2904,7 +2926,7 @@ public class TaskQueueUtils {
 			logger.log(Level.INFO, "Going to select resubmission for: " + queueId);
 
 			db.setReadOnly(true);
-			db.setQueryTimeout(10);
+			db.setQueryTimeout(60);
 
 			int resubmission = -1;
 
@@ -2912,6 +2934,389 @@ public class TaskQueueUtils {
 				resubmission = db.geti(1);
 			}
 			return resubmission;
+		}
+	}
+
+	/**
+	 * Resubmit a job
+	 * 
+	 * @param user
+	 * @param queueId
+	 * @return 0 if resubmitted correctly, >0 error
+	 */
+	public static Entry<Integer, String> resubmitJob(AliEnPrincipal user, long queueId) {
+		final Job j = getJob(queueId, true);
+		final JobStatus js = j.status();
+
+		if (AuthorizationChecker.canModifyJob(j, user)) {
+			logger.info("Resubmit (authorized) for  [" + queueId + "] by user/role [" + user.getName() + "]");
+
+			// check job quotas to see if we are allowed to submit
+			Entry<Integer, String> quota = QuotaUtilities.checkJobQuota(user.getName(), 1);
+			Integer code = quota.getKey();
+			if (code.intValue() != 0) {
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(1), "Resubmit: job quota problem: " + quota.getValue());
+			}
+			logger.info("Resubmit: quotas approved: " + queueId);
+
+			// cleanup active jobtoken
+			if (!deleteJobToken(queueId)) {
+				logger.info("Cannot cleanup job token: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(2), "Resubmit: cannot cleanup job token: " + queueId);
+			}
+
+			logger.info("Resubmit: token deleted for: " + queueId);
+
+			// get the Path (folder of stored files) to cleanup if necessary
+			JDL jdl = null;
+			try {
+				jdl = new JDL(j.getJDL());
+			} catch (IOException e) {
+				logger.severe("Resubmit: cannot create JDL for job: " + queueId + " Exception: " + e);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(2), "Resubmit: cannot create JDL for job: " + queueId);
+			}
+			String path = (String) jdl.get("Path");
+
+			if (!clearPathAndResultsJDL(queueId)) {
+				logger.info("Cannot cleanup path and resultsJdl: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(3), "Resubmit: cannot cleanup path and resultsJdl: " + queueId);
+			}
+			logger.info("Resubmit: cleanup of path and resultsJdl done: " + queueId);
+
+			String status = "WAITING";
+			int unassignedId = getSiteId("unassigned::site");
+
+			if (j.masterjob)
+				status = "INSERTING";
+
+			if (j.getStatusName().equals("ERROR_I"))
+				status = "INSERTING";
+
+			try (DBFunctions db = getQueueDB()) {
+				if (db == null)
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot get DB to finalise resubmission: " + queueId);
+
+				db.setReadOnly(false);
+				db.setQueryTimeout(60);
+
+				// job back to resubmitted status, restore fields
+				if (!db.query("UPDATE QUEUE SET statusId=?, resubmission=resubmission+1, started='', finished='', exechostid=null, siteid=? where queueId=?", false,
+						Integer.valueOf(JobStatus.getStatus(status).getAliEnLevel()), Integer.valueOf(unassignedId), Long.valueOf(queueId))) {
+					logger.severe("Resubmit: cannot update job to WAITING: " + queueId);
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(5), "Resubmit: cannot update job to WAITING: " + queueId);
+				}
+
+				// update queue counters
+				db.query("UPDATE SITEQUEUES set " + j.getStatusName() + "=" + j.getStatusName() + "-1 where siteid=?", false, Integer.valueOf(j.siteid));
+				db.query("UPDATE SITEQUEUES set " + status + "=" + status + "+1 where siteid=?", false, Integer.valueOf(unassignedId));
+
+				// if the job was attached to a node, we tell him to hara-kiri
+				if (j.node != null && (js == JobStatus.STARTED || js == JobStatus.RUNNING || js == JobStatus.ASSIGNED || js == JobStatus.ZOMBIE || js == JobStatus.SAVING)) {
+					final String target = j.node + "-" + queueId + "-" + j.resubmission;
+					final int expires = (int) (System.currentTimeMillis() / 1000) + 3600 * 3; // now + 3h
+
+					if (!insertMessage(target, "JobAgent", "killProcess", j.queueId + "", expires))
+						logger.severe("Resubmit: could not insert kill message: " + queueId);
+				}
+
+				// update the jobagent entry
+				if (status.equals("WAITING")) {
+					int agentId = updateOrInsertJobAgent(j, jdl);
+					if (agentId == 0) {
+						logger.severe("Resubmit: could not update jobagent: " + queueId);
+						return new AbstractMap.SimpleEntry<>(Integer.valueOf(6), "Resubmit: cannot updateOrInsert jobagent: " + queueId);
+					}
+					else
+						if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
+							db.setReadOnly(false);
+							db.setQueryTimeout(60);
+							if (!db.query("update QUEUE set agentId=?, statusId=" + JobStatus.WAITING.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
+									|| db.getUpdateCount() == 0) {
+								logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
+								return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot update status and agentId of job: " + queueId + " - " + agentId);
+							}
+						}
+
+					// if is a subjob, the master goes to SPLIT
+					if (j.split > 0) {
+						if (!db.query("UPDATE QUEUE set statusId=? where queueId=?", false, Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()), Long.valueOf(j.split))) {
+							logger.severe("Resubmit: cannot put masterjob back to SPLIT: " + queueId);
+							return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot put masterjob back to SPLIT: " + queueId);
+						}
+					}
+
+					// we need to clean up the previous output
+					if (j.path != null) {
+						Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", queueId);
+						for (LFN l : list) {
+							if (l.jobid == queueId) {
+								logger.info("Resubmit: removing output file: " + l.getCanonicalName());
+								putJobLog(queueId, "trace", "Resubmit: removing output file: " + l.getCanonicalName(), null);
+								if (!LFNUtils.rmLFN(user, l, false)) {
+									logger.severe("Resubmit: could not remove output file: " + l.getCanonicalName());
+									putJobLog(queueId, "trace", "Resubmit: could not remove output file: " + l.getCanonicalName(), null);
+									return new AbstractMap.SimpleEntry<>(Integer.valueOf(5), "Resubmit: could not remove output file: " + l.getCanonicalName() + " for " + queueId);
+								}
+							}
+						}
+					}
+
+					if (js == JobStatus.SAVING || js == JobStatus.SAVED || js == JobStatus.ERROR_E || js == JobStatus.ERROR_V || js == JobStatus.ZOMBIE) {
+						CatalogueUtils.cleanLfnBookedForJob(queueId);
+					}
+
+					putJobLog(queueId, "state", "Job resubmitted (back to WAITING", null);
+					return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: back to WAITING: " + queueId);
+				}
+
+				// TODO: masterjob
+				logger.severe("Resubmit: job is a masterJob, ignore: " + queueId);
+				return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: job is a masterJob, ignore: " + queueId);
+			}
+		}
+		return new AbstractMap.SimpleEntry<>(Integer.valueOf(-1), "Resubmit: not authorized for : " + queueId);
+
+	}
+
+	private static int updateOrInsertJobAgent(Job j, JDL jdl) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			logger.log(Level.INFO, "Going to select updateOrInsertJobAgent for: " + j.queueId);
+
+			db.setReadOnly(false);
+			db.setQueryTimeout(60);
+
+			if (!db.query("update JOBAGENT join QUEUE on (agentid=entryid) set counter=counter+1 where queueid=?", false, Long.valueOf(j.queueId)))
+				return 0;
+
+			// the jobagent doesn't exist anymore, reinsert
+			if (db.getUpdateCount() == 0) {
+				logger.info("updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : " + j.queueId);
+				HashMap<String, Object> params = extractJAParametersFromJDL(jdl);
+				int agentId = insertJobAgent(params);
+				if (agentId == 0) {
+					logger.info("updateOrInsertJobAgent: couldn't insertJobAgent : " + j.queueId);
+					return 0;
+				}
+				return agentId;
+			}
+			return -1;
+		}
+	}
+
+	private static int insertJobAgent(HashMap<String, Object> params) {
+		String reqs = "1=1 ";
+
+		ArrayList<Object> bind = new ArrayList<>();
+		for (String key : params.keySet()) {
+			if (key.equals("counter"))
+				continue;
+
+			reqs += " and " + key + " = ?";
+			bind.add(params.get(key));
+		}
+
+		logger.log(Level.INFO, "insertJobAgent with: " + params.toString());
+
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return 0;
+
+			db.setReadOnly(true);
+			db.setQueryTimeout(60);
+
+			int entryId = 0;
+			if (db.query("SELECT entryId from JOBAGENT where " + reqs, false, bind) && db.moveNext()) {
+				entryId = db.geti(1);
+			}
+
+			if (entryId == 0) {
+				logger.info("insertJobAgent: nothing matched request, inserting!");
+
+				if (params.containsKey("userid")) {
+					db.setReadOnly(true);
+					db.setQueryTimeout(60);
+
+					if (db.query("select computedPriority from PRIORITY where userid=?", false, params.get("userid")) && db.moveNext()) {
+						params.put("priority", Integer.toString(db.geti(1)));
+					}
+				}
+
+				// create INSERT query and execute
+				db.setReadOnly(false);
+				db.setQueryTimeout(60);
+
+				String insert_fields = "(";
+				String insert_values = " VALUES (";
+
+				bind.clear();
+				for (String key : params.keySet()) {
+					insert_fields += key + ",";
+					insert_values += "?,";
+					bind.add(params.get(key));
+				}
+				insert_fields = insert_fields.substring(0, insert_fields.length() - 1);
+				insert_values = insert_values.substring(0, insert_values.length() - 1);
+				insert_fields += ") ";
+				insert_values += ") ";
+
+				db.setReadOnly(false);
+				db.setQueryTimeout(60);
+				if (db.query("INSERT INTO JOBAGENT " + insert_fields + insert_values, false, bind)) {
+					logger.severe("insertJobAgent: failed to insert! fields:" + insert_fields + " values " + bind.toString());
+					return 0;
+				}
+				return db.getLastGeneratedKey().intValue();
+			}
+
+			// otherwise there is an entry that matches our reqs already, update it
+			db.setReadOnly(false);
+			db.setQueryTimeout(60);
+
+			if (!db.query("update JOBAGENT set counter=counter+1 where entryId=?", false, Integer.valueOf(entryId)))
+				return 0;
+
+			return entryId;
+		}
+	}
+
+	/**
+	 * @param jdl
+	 * @return parameters needed for jobagent
+	 */
+	public static HashMap<String, Object> extractJAParametersFromJDL(JDL jdl) {
+		if (jdl == null)
+			return null;
+
+		String reqs = jdl.gets("Requirements");
+		if (reqs == null)
+			return null;
+
+		HashMap<String, Object> params = new HashMap<>();
+		params.put("counter", Integer.valueOf(1));
+		params.put("ttl", Integer.valueOf(18000));
+		params.put("disk", Integer.valueOf(0));
+		params.put("packages", "%");
+		params.put("`partition`", "%");
+		params.put("ce", "");
+		params.put("noce", "");
+		params.put("price", Float.valueOf(1));
+		params.put("cvmfs_revision", Integer.valueOf(0));
+
+		// parse the other.CloseSE (and !)
+		final HashSet<String> noses = new HashSet<>();
+		Pattern pat = Pattern.compile("\\!member\\(other.CloseSE,\"\\w+::(\\w+)::\\w+\"\\)");
+		Matcher m = pat.matcher(reqs);
+		while (m.find())
+			noses.add(m.group(1));
+
+		String site = "";
+		pat = Pattern.compile("\\s*member\\(other.CloseSE,\"\\w+::(\\w+)::\\w+\"\\)");
+		m = pat.matcher(reqs);
+		while (m.find()) {
+			String tmpsite = m.group(1);
+			if (!noses.contains(tmpsite))
+				site += "," + tmpsite;
+		}
+		if (!site.equals(""))
+			site += ",";
+
+		params.put("site", site);
+
+		// parse the other.CE (and !)
+		String noce = "";
+		pat = Pattern.compile("\\!other.CE\\s*==\\s*\"([^\\\"]+)\"");
+		m = pat.matcher(reqs);
+		while (m.find()) {
+			noce += "," + m.group(1);
+		}
+		if (!noce.equals(""))
+			noce += ",";
+
+		params.put("noce", noce);
+
+		String ce = "";
+		pat = Pattern.compile("\\s*other.CE\\s*==\\s*\"([^\\\"]+)\"");
+		m = pat.matcher(reqs);
+		while (m.find()) {
+			ce += "," + m.group(1);
+		}
+		if (!ce.equals(""))
+			ce += ",";
+
+		params.put("ce", ce);
+
+		// parse Packages
+		final HashSet<String> packages = new HashSet<>();
+		pat = Pattern.compile("other.Packages,\"([^\"]+)\""); // member(other.Packages,\"VO_ALICE@AliPhysics::vAN-20170813-1\")
+		m = pat.matcher(reqs);
+		while (m.find())
+			packages.add(m.group(1));
+
+		if (packages.size() > 0) {
+			String packs = "%,";
+			for (String pkg : packages) {
+				packs += pkg + ",%,";
+			}
+			packs = packs.substring(0, packs.length() - 1);
+
+			params.put("packages", packs);
+		}
+
+		// parse TTL
+		pat = Pattern.compile("other.TTL\\s*>\\s*(\\d+)");
+		m = pat.matcher(reqs);
+		if (m.find())
+			params.put("ttl", Integer.valueOf(m.group(1)));
+
+		// get user
+		String user = jdl.getUser();
+		if (user != null)
+			params.put("userid", getUserId(user));
+
+		// parse LocalDiskSpace
+		pat = Pattern.compile("other.LocalDiskSpace\\s*>\\s*(\\d+)");
+		m = pat.matcher(reqs);
+		if (m.find())
+			params.put("disk", Integer.valueOf(m.group(1)));
+
+		// parse LocalDiskSpace
+		pat = Pattern.compile("other.GridPartitions,\"([^\"]+)\""); // other.GridPartitions,"ultrapower"
+		m = pat.matcher(reqs);
+		if (m.find())
+			params.put("`partition`", m.group(1));
+
+		// parse Price
+		pat = Pattern.compile("other.Price\\s*<=\\s*(\\d+)");
+		m = pat.matcher(reqs);
+		if (m.find())
+			params.put("price", Float.valueOf(m.group(1)));
+
+		// parse CVMFS_revision
+		pat = Pattern.compile("other.CVMFS_Revision\\s*>=\\s*(\\d+)");
+		m = pat.matcher(reqs);
+		if (m.find())
+			params.put("cvmfs_revision", Integer.valueOf(m.group(1)));
+
+		return params;
+	}
+
+	private static boolean clearPathAndResultsJDL(long queueId) {
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return false;
+
+			logger.log(Level.INFO, "Going to clean path and resultsjdl in resubmission for: " + queueId);
+
+			db.setReadOnly(false);
+			db.setQueryTimeout(60);
+
+			if (!db.query("update QUEUEJDL set path=null,resultsJdl=null where queueId=?", false, Long.valueOf(queueId)))
+				return false;
+
+			return db.getUpdateCount() != 0;
 		}
 	}
 
