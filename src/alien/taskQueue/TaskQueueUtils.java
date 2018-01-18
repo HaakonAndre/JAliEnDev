@@ -3000,7 +3000,7 @@ public class TaskQueueUtils {
 				db.setQueryTimeout(60);
 
 				// job back to resubmitted status, restore fields
-				if (!db.query("UPDATE QUEUE SET statusId=?, resubmission=resubmission+1, started='', finished='', exechostid=null, siteid=? where queueId=?", false,
+				if (!db.query("UPDATE QUEUE SET statusId=?, resubmission=resubmission+1, started=null, finished=null, exechostid=null, siteid=? where queueId=?", false,
 						Integer.valueOf(JobStatus.getStatus(status).getAliEnLevel()), Integer.valueOf(unassignedId), Long.valueOf(queueId))) {
 					logger.severe("Resubmit: cannot update job to WAITING: " + queueId);
 					return new AbstractMap.SimpleEntry<>(Integer.valueOf(5), "Resubmit: cannot update job to WAITING: " + queueId);
