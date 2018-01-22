@@ -2999,6 +2999,8 @@ public class TaskQueueUtils {
 				db.setReadOnly(false);
 				db.setQueryTimeout(60);
 
+				logger.info("Resubmit: updating status to WAITING and initialize fields");
+
 				// job back to resubmitted status, restore fields
 				if (!db.query("UPDATE QUEUE SET statusId=?, resubmission=resubmission+1, started=null, finished=null, exechostid=null, siteid=? where queueId=?", false,
 						Integer.valueOf(JobStatus.getStatus(status).getAliEnLevel()), Integer.valueOf(unassignedId), Long.valueOf(queueId))) {
@@ -3006,18 +3008,24 @@ public class TaskQueueUtils {
 					return new AbstractMap.SimpleEntry<>(Integer.valueOf(5), "Resubmit: cannot update job to WAITING: " + queueId);
 				}
 
+				logger.info("Resubmit: update SITEQUEUES");
+
 				// update queue counters
 				db.query("UPDATE SITEQUEUES set " + j.getStatusName() + "=" + j.getStatusName() + "-1 where siteid=?", false, Integer.valueOf(j.siteid));
 				db.query("UPDATE SITEQUEUES set " + status + "=" + status + "+1 where siteid=?", false, Integer.valueOf(unassignedId));
 
 				// if the job was attached to a node, we tell him to hara-kiri
 				if (j.node != null && (js == JobStatus.STARTED || js == JobStatus.RUNNING || js == JobStatus.ASSIGNED || js == JobStatus.ZOMBIE || js == JobStatus.SAVING)) {
+					logger.info("Resubmit: sending kill message to job");
+
 					final String target = j.node + "-" + queueId + "-" + j.resubmission;
 					final int expires = (int) (System.currentTimeMillis() / 1000) + 3600 * 3; // now + 3h
 
 					if (!insertMessage(target, "JobAgent", "killProcess", j.queueId + "", expires))
 						logger.severe("Resubmit: could not insert kill message: " + queueId);
 				}
+
+				logger.info("Resubmit: update or insert JOBAGENT");
 
 				// update the jobagent entry
 				if (status.equals("WAITING")) {
@@ -3030,6 +3038,7 @@ public class TaskQueueUtils {
 						if (agentId > 0) { // we need to update the agentId entry to reflect the new JOBAGENT entry
 							db.setReadOnly(false);
 							db.setQueryTimeout(60);
+							logger.info("Resubmit: update agentId and statusId in QUEUE");
 							if (!db.query("update QUEUE set agentId=?, statusId=" + JobStatus.WAITING.getAliEnLevel() + " where queueid=?", false, Integer.valueOf(agentId), Long.valueOf(j.queueId))
 									|| db.getUpdateCount() == 0) {
 								logger.severe("Resubmit: could not update QUEUE to update status and agentId: " + queueId + " - " + agentId);
@@ -3039,6 +3048,7 @@ public class TaskQueueUtils {
 
 					// if is a subjob, the master goes to SPLIT
 					if (j.split > 0) {
+						logger.info("Resubmit: put masterjob of the resubmited subjob to SPLIT");
 						if (!db.query("UPDATE QUEUE set statusId=? where queueId=?", false, Integer.valueOf(JobStatus.SPLIT.getAliEnLevel()), Long.valueOf(j.split))) {
 							logger.severe("Resubmit: cannot put masterjob back to SPLIT: " + queueId);
 							return new AbstractMap.SimpleEntry<>(Integer.valueOf(4), "Resubmit: cannot put masterjob back to SPLIT: " + queueId);
@@ -3065,12 +3075,13 @@ public class TaskQueueUtils {
 						CatalogueUtils.cleanLfnBookedForJob(queueId);
 					}
 
+					logger.info("Resubmit: putting joblog and returning");
 					putJobLog(queueId, "state", "Job resubmitted (back to WAITING", null);
 					return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: back to WAITING: " + queueId);
 				}
 
 				// TODO: masterjob
-				logger.severe("Resubmit: job is a masterJob, ignore: " + queueId);
+				logger.info("Resubmit: job is a masterJob, ignore: " + queueId);
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: job is a masterJob, ignore: " + queueId);
 			}
 		}
@@ -3096,6 +3107,7 @@ public class TaskQueueUtils {
 				logger.info("updateOrInsertJobAgent: the jobagent doesn't exist anymore, going to extract params for : " + j.queueId);
 				HashMap<String, Object> params = extractJAParametersFromJDL(jdl);
 				int agentId = insertJobAgent(params);
+				logger.info("updateOrInsertJobAgent: inserted agentId: " + agentId);
 				if (agentId == 0) {
 					logger.info("updateOrInsertJobAgent: couldn't insertJobAgent : " + j.queueId);
 					return 0;
@@ -3118,8 +3130,6 @@ public class TaskQueueUtils {
 			bind.add(params.get(key));
 		}
 
-		logger.log(Level.INFO, "insertJobAgent with: " + params.toString());
-
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return 0;
@@ -3128,7 +3138,12 @@ public class TaskQueueUtils {
 			db.setQueryTimeout(60);
 
 			int entryId = 0;
-			if (db.query("SELECT entryId from JOBAGENT where " + reqs, false, bind) && db.moveNext()) {
+			if (!db.query("SELECT entryId from JOBAGENT where " + reqs, false, bind.toArray())) {
+				logger.severe("insertJobAgent: failed selecting from JOBAGENT!");
+				return 0;
+			}
+
+			if (db.moveNext()) {
 				entryId = db.geti(1);
 			}
 
@@ -3136,6 +3151,7 @@ public class TaskQueueUtils {
 				logger.info("insertJobAgent: nothing matched request, inserting!");
 
 				if (params.containsKey("userid")) {
+
 					db.setReadOnly(true);
 					db.setQueryTimeout(60);
 
@@ -3145,9 +3161,6 @@ public class TaskQueueUtils {
 				}
 
 				// create INSERT query and execute
-				db.setReadOnly(false);
-				db.setQueryTimeout(60);
-
 				String insert_fields = "(";
 				String insert_values = " VALUES (";
 
@@ -3164,10 +3177,13 @@ public class TaskQueueUtils {
 
 				db.setReadOnly(false);
 				db.setQueryTimeout(60);
-				if (db.query("INSERT INTO JOBAGENT " + insert_fields + insert_values, false, bind)) {
+				db.setLastGeneratedKey(true);
+				if (!db.query("INSERT INTO JOBAGENT " + insert_fields + insert_values, false, bind.toArray())) {
 					logger.severe("insertJobAgent: failed to insert! fields:" + insert_fields + " values " + bind.toString());
 					return 0;
 				}
+
+				logger.info("insertJobAgent: insertion done: " + db.getLastGeneratedKey().intValue());
 				return db.getLastGeneratedKey().intValue();
 			}
 
@@ -3187,6 +3203,8 @@ public class TaskQueueUtils {
 	 * @return parameters needed for jobagent
 	 */
 	public static HashMap<String, Object> extractJAParametersFromJDL(JDL jdl) {
+		logger.info("Going to extractJAParamentersFromJDL");
+
 		if (jdl == null)
 			return null;
 
@@ -3200,10 +3218,8 @@ public class TaskQueueUtils {
 		params.put("disk", Integer.valueOf(0));
 		params.put("packages", "%");
 		params.put("`partition`", "%");
-		params.put("ce", "");
-		params.put("noce", "");
 		params.put("price", Float.valueOf(1));
-		params.put("cvmfs_revision", Integer.valueOf(0));
+		params.put("revision", Integer.valueOf(0));
 
 		// parse the other.CloseSE (and !)
 		final HashSet<String> noses = new HashSet<>();
@@ -3299,6 +3315,8 @@ public class TaskQueueUtils {
 		m = pat.matcher(reqs);
 		if (m.find())
 			params.put("cvmfs_revision", Integer.valueOf(m.group(1)));
+
+		logger.info("extracted params: " + params.toString());
 
 		return params;
 	}

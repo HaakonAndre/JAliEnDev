@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import alien.api.taskQueue.ResubmitJob;
 import joptsimple.OptionException;
 
 /**
@@ -17,21 +18,30 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		for (final long queueId : queueIds) {
-			Entry<Integer, String> rc = commander.q_api.resubmitJob(queueId);
+			ResubmitJob rj = commander.q_api.resubmitJob(queueId);
+			Entry<Integer, String> rc = (rj != null ? rj.resubmitEntry() : null);
 
-			switch (rc.getKey().intValue()) {
-			case 0:
+			if (rc == null) {
 				if (out.isRootPrinter())
-					out.setField("message", rc.getValue());
+					out.setField("message", "Problem with the resubmit request for: " + queueId);
 				else
-					out.printOutln(rc.getValue());
-				break;
-			default:
-				if (out.isRootPrinter())
-					out.setField("message", rc.getValue());
-				else
-					out.printErrln(rc.getValue());
-				break;
+					out.printErrln("Problem with the resubmit request" + queueId);
+			}
+			else {
+				switch (rc.getKey().intValue()) {
+				case 0:
+					if (out.isRootPrinter())
+						out.setField("message", rc.getValue());
+					else
+						out.printOutln(rc.getValue());
+					break;
+				default:
+					if (out.isRootPrinter())
+						out.setField("message", rc.getValue());
+					else
+						out.printErrln(rc.getValue());
+					break;
+				}
 			}
 		}
 	}

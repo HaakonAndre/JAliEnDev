@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import alien.api.Dispatcher;
@@ -393,13 +392,12 @@ public class TaskQueueApiUtils {
 	 * @param queueId
 	 * @return true for success, false for failure
 	 */
-	public Entry<Integer, String> resubmitJob(long queueId) {
+	public ResubmitJob resubmitJob(long queueId) {
 		try {
-			final ResubmitJob j = new ResubmitJob(commander.getUser(), queueId);
-			Dispatcher.execute(j);
-			return j.resubmitEntry();
+			final ResubmitJob j = Dispatcher.execute(new ResubmitJob(commander.getUser(), queueId));
+			return j;
 		} catch (final Exception e) {
-			System.out.println("Could not kill the job  with id: [" + queueId + "]");
+			System.out.println("Could not resubmit the job  with id: [" + queueId + "]");
 			e.printStackTrace();
 		}
 		return null;
