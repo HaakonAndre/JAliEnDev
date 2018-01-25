@@ -191,10 +191,13 @@ public class TransferBroker {
 
 		while (transferId < 0) {
 			if (!dbCached.moveNext()) {
-//				dbCached.query(
-//						"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
-				
-				dbCached.query("select /*! SQL_BUFFER_RESULT */ /*! SQL_SMALL_RESULT */  transferId, lfn, destination, remove_replica from TRANSFERS_DIRECT inner join (select sename, sum(max_transfers) mt, coalesce(max(active_cnt),0) at from PROTOCOLS left outer join (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename and max_transfers>coalesce(active_cnt,0)) group by sename) b ON destination=sename where status='WAITING' order by at/mt asc, transferId-1000*attempts asc limit 50;");
+				// dbCached.query(
+				// "select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as
+				// active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by
+				// coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
+
+				dbCached.query(
+						"select /*! SQL_BUFFER_RESULT */ /*! SQL_SMALL_RESULT */  transferId, lfn, destination, remove_replica from TRANSFERS_DIRECT inner join (select sename, sum(max_transfers) mt, coalesce(max(active_cnt),0) at from PROTOCOLS left outer join (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename and max_transfers>coalesce(active_cnt,0)) group by sename) b ON destination=sename where status='WAITING' order by at/mt asc, transferId-1000*attempts asc limit 50;");
 
 				if (!dbCached.moveNext()) {
 					logger.log(Level.FINE, "There is no waiting transfer in the queue");
@@ -559,25 +562,29 @@ public class TransferBroker {
 			if (db == null)
 				return;
 
-			final DBConnection dbc = db.getConnection();
-			executeQuery(dbc, "SET autocommit = 0;");
-			executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
+			db.query("UPDATE transfer_optimizers SET setting=" + lastCleanedUp + " WHERE activity=0 AND setting<" + (lastCleanedUp - 1000 * 60));
 
-			try {
-				executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 600));
+			if (db.getUpdateCount() > 0) {
+				final DBConnection dbc = db.getConnection();
+				executeQuery(dbc, "SET autocommit = 0;");
+				executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
 
-				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', attempts=attempts-1, finished=" + lastCleanedUp / 1000
-						+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
+				try {
+					executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 600));
 
-				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
-			} finally {
-				executeQuery(dbc, "commit;");
-				executeQuery(dbc, "unlock tables;");
-				executeQuery(dbc, "SET autocommit = 1;");
+					executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', attempts=attempts-1, finished=" + lastCleanedUp / 1000
+							+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
 
-				executeClose();
+					executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
+				} finally {
+					executeQuery(dbc, "commit;");
+					executeQuery(dbc, "unlock tables;");
+					executeQuery(dbc, "SET autocommit = 1;");
 
-				dbc.free();
+					executeClose();
+
+					dbc.free();
+				}
 			}
 		} catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
