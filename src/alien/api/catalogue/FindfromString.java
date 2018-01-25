@@ -25,6 +25,7 @@ public class FindfromString extends Request {
 	private final int flags;
 	private Collection<LFN> lfns;
 	private final String xmlCollectionName;
+	private Long queueid = Long.valueOf(0);
 
 	/**
 	 * @param user
@@ -46,6 +47,23 @@ public class FindfromString extends Request {
 	 * @param pattern
 	 * @param flags
 	 * @param xmlCollectionName
+	 * @param queueid
+	 */
+	public FindfromString(final AliEnPrincipal user, final String path, final String pattern, final int flags, final String xmlCollectionName, final Long queueid) {
+		setRequestUser(user);
+		this.path = path;
+		this.pattern = pattern;
+		this.flags = flags;
+		this.xmlCollectionName = xmlCollectionName;
+		this.queueid = queueid;
+	}
+
+	/**
+	 * @param user
+	 * @param path
+	 * @param pattern
+	 * @param flags
+	 * @param xmlCollectionName
 	 */
 	public FindfromString(final AliEnPrincipal user, final String path, final String pattern, final int flags, final String xmlCollectionName) {
 		setRequestUser(user);
@@ -57,7 +75,7 @@ public class FindfromString extends Request {
 
 	@Override
 	public void run() {
-		lfns = LFNUtils.find(path, pattern, flags, getEffectiveRequester(), xmlCollectionName, 0);
+		lfns = LFNUtils.find(path, pattern, flags, getEffectiveRequester(), xmlCollectionName, queueid);
 	}
 
 	/**

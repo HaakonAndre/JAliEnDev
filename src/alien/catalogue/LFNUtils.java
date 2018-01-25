@@ -606,8 +606,8 @@ public class LFNUtils {
 	 * the "-x" flag of JAliEn `find`
 	 */
 	public static final int FIND_SAVE_XML = 16;
-	
-    /**
+
+	/**
 	 * find only files of a given job, -j in AliEn `find`
 	 */
 	public static final int FIND_FILTER_JOBID = 3;
@@ -620,7 +620,7 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags) {
-		return find(path, pattern, flags, null, "", 0);
+		return find(path, pattern, flags, null, "", Long.valueOf(0));
 	}
 
 	/**
@@ -634,7 +634,7 @@ public class LFNUtils {
 	 *            a job id to filter for its files
 	 * @return the list of LFNs that match
 	 */
-	public static Collection<LFN> find(final String path, final String pattern, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final long queueid) {
+	public static Collection<LFN> find(final String path, final String pattern, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
 		final Set<LFN> ret;
 
 		if ((flags & FIND_NO_SORT) != 0)
