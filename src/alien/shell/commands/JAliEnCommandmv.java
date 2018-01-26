@@ -63,7 +63,6 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 						out.setReturnArgs(deserializeForRoot(0));
 				}
 		}
-
 		else
 			if (size == 2) {
 				final String fullSource = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sources[0]);
@@ -93,9 +92,8 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 								out.setReturnArgs(deserializeForRoot(0));
 						}
 				}
-
 				else {
-					if (target.contains("/") && !target.endsWith("/")) {
+					if (target.contains("/") && target.endsWith("/")) {
 						tLFN = commander.c_api.createCatalogueDirectory(fullTarget, true);
 						tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName());
 					}
@@ -140,6 +138,7 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 	 */
 	public JAliEnCommandmv(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
 		super(commander, out, alArguments);
+
 		try {
 			final OptionParser parser = new OptionParser();
 
