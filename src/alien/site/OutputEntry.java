@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -18,17 +19,34 @@ import alien.io.IOUtils;
  * @author Miguel
  * @since Apr 19, 2016
  */
-public class OutputEntry {
+@SuppressWarnings("serial")
+public class OutputEntry implements Serializable {
 	private final String name;
 	private final ArrayList<String> filesIncluded;
-	private final HashMap<String, String> md5members = new HashMap<>();
-	private final HashMap<String, Long> sizemembers = new HashMap<>();
+	private final HashMap<String, String> md5members;
+	private final HashMap<String, Long> sizemembers;
 	private final String options;
 	private final Long queueId;
 	private boolean isRootArchive;
 	private final ArrayList<String> ses;
 	private final ArrayList<String> exses;
 	private final HashMap<String, Integer> qos;
+
+	/**
+	 * 
+	 */
+	public OutputEntry() {
+		this.name = null;
+		this.filesIncluded = null;
+		this.options = null;
+		this.queueId = null;
+		this.isRootArchive = false;
+		this.ses = new ArrayList<>();
+		this.exses = new ArrayList<>();
+		this.qos = new HashMap<>();
+		this.md5members = new HashMap<>();
+		this.sizemembers = new HashMap<>();
+	}
 
 	/**
 	 * @param name
@@ -40,11 +58,14 @@ public class OutputEntry {
 		this.name = name;
 		this.filesIncluded = filesIncluded;
 		this.options = options;
+
 		this.queueId = jobid;
 		this.isRootArchive = false;
 		this.ses = new ArrayList<>();
 		this.exses = new ArrayList<>();
 		this.qos = new HashMap<>();
+		this.md5members = new HashMap<>();
+		this.sizemembers = new HashMap<>();
 
 		if (this.filesIncluded != null)
 			for (final String f : this.filesIncluded)

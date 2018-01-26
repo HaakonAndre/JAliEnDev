@@ -20,6 +20,8 @@ import alien.config.ConfigUtils;
 import alien.io.TransferDetails;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.site.OutputEntry;
+import alien.user.AliEnPrincipal;
 
 /**
  *
@@ -561,6 +563,20 @@ public class CatalogueApiUtils {
 		} catch (final ServerException e) {
 			e.printStackTrace();
 			return -100;
+		}
+	}
+
+	/**
+	 * @param entry
+	 * @param outputDir
+	 * @param user
+	 */
+	public static void registerEntry(final OutputEntry entry, final String outputDir, final AliEnPrincipal user) {
+		try {
+			Dispatcher.execute(new RegisterEntry(entry, outputDir, user));
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not register entry " + entry.getName());
+			e.getCause().printStackTrace();
 		}
 	}
 }
