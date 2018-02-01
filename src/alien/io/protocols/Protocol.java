@@ -8,7 +8,11 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 
+import alien.catalogue.GUID;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.io.IOUtils;
 import lia.util.process.ExternalProcess.ExitStatus;
 
 /**
@@ -85,10 +89,53 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 		if (f == null || !f.exists() || !f.isFile())
 			return false;
 
-		if (f.length() != pfn.getGuid().size)
+		final GUID guid = pfn.getGuid();
+
+		if (f.length() != guid.size)
 			return false;
 
+		if (isValidMD5(guid.md5)) {
+			try {
+				String fileMD5 = IOUtils.getMD5(f);
+
+				if (!fileMD5.equalsIgnoreCase(guid.md5))
+					return false;
+
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		else {
+			final LFN lfn = LFNUtils.getLFN(guid);
+			if (lfn != null && isValidMD5(lfn.md5)) {
+				try {
+					String fileMD5 = IOUtils.getMD5(f);
+
+					if (!fileMD5.equalsIgnoreCase(lfn.md5))
+						return false;
+
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+		// otherwise don't check md5 at all
+
 		return true;
+	}
+
+	/**
+	 * Check if a string is a valid md5 hash
+	 *
+	 * @param s
+	 *            string to check
+	 * @return <code>true</code> if a string is a valid md5 hash, <code>false</code> otherwise
+	 */
+	private static boolean isValidMD5(String s) {
+		if (s != null && s.length() > 0)
+			return s.matches("[a-fA-F0-9]{32}");
+
+		return false;
 	}
 
 	@Override
