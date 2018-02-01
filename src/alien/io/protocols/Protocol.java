@@ -103,6 +103,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 			} catch (IOException e) {
 				e.printStackTrace();
+				return false;
 			}
 		}
 		else {
@@ -116,6 +117,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 
 				} catch (IOException e) {
 					e.printStackTrace();
+					return false;
 				}
 			}
 		}
