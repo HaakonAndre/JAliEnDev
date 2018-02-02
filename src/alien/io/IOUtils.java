@@ -55,6 +55,7 @@ public class IOUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(IOUtils.class.getCanonicalName());
+	final static JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
 	/**
 	 * @param f
@@ -456,7 +457,7 @@ public class IOUtils {
 	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
 	 */
 	public static String getContents(final String lfn) {
-		return getContents(LFNUtils.getLFN(lfn));
+		return getContents(commander.c_api.getLFN(lfn));
 	}
 
 	/**
@@ -468,12 +469,12 @@ public class IOUtils {
 	public static boolean backupFile(final String lfn, final AliEnPrincipal owner) {
 		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, lfn);
 
-		final LFN l = LFNUtils.getLFN(absolutePath, true);
+		final LFN l = commander.c_api.getLFN(absolutePath, true);
 
 		if (!l.exists)
 			return true;
 
-		final LFN backupLFN = LFNUtils.getLFN(absolutePath + "~", true);
+		final LFN backupLFN = commander.c_api.getLFN(absolutePath + "~", true);
 
 		if (backupLFN.exists && AuthorizationChecker.canWrite(backupLFN.getParentDir(), owner))
 			if (!backupLFN.delete(true, false))
@@ -562,12 +563,16 @@ public class IOUtils {
 	 * @throws IOException
 	 */
 	public static void upload(final File localFile, final String toLFN, final AliEnPrincipal owner, final OutputStream progressReport, final String... args) throws IOException {
-		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, toLFN);
+		final UIPrintWriter out = progressReport != null ? new PlainWriter(progressReport) : null;
 
-		final LFN l = LFNUtils.getLFN(absolutePath, true);
+		final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, null, ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim(), out);
+
+		final LFN l = cmd.c_api.getLFN(toLFN, true);
 
 		if (l.exists)
 			throw new IOException("LFN already exists: " + toLFN);
+
+		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, toLFN);
 
 		final ArrayList<String> cpArgs = new ArrayList<>();
 		cpArgs.add("file:" + localFile.getAbsolutePath());
@@ -576,10 +581,6 @@ public class IOUtils {
 		if (args != null)
 			for (final String arg : args)
 				cpArgs.add(arg);
-
-		final UIPrintWriter out = progressReport != null ? new PlainWriter(progressReport) : null;
-
-		final JAliEnCOMMander cmd = new JAliEnCOMMander(owner, null, ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim(), out);
 
 		final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
 
