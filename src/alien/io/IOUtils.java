@@ -55,7 +55,6 @@ public class IOUtils {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(IOUtils.class.getCanonicalName());
-	final static JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
 	/**
 	 * @param f
@@ -457,7 +456,7 @@ public class IOUtils {
 	 * @return the contents of the file, or <code>null</code> if there was a problem getting it
 	 */
 	public static String getContents(final String lfn) {
-		return getContents(commander.c_api.getLFN(lfn));
+		return getContents(JAliEnCOMMander.getInstance().c_api.getLFN(lfn));
 	}
 
 	/**
@@ -469,12 +468,12 @@ public class IOUtils {
 	public static boolean backupFile(final String lfn, final AliEnPrincipal owner) {
 		final String absolutePath = FileSystemUtils.getAbsolutePath(owner.getName(), null, lfn);
 
-		final LFN l = commander.c_api.getLFN(absolutePath, true);
+		final LFN l = JAliEnCOMMander.getInstance().c_api.getLFN(absolutePath, true);
 
 		if (!l.exists)
 			return true;
 
-		final LFN backupLFN = commander.c_api.getLFN(absolutePath + "~", true);
+		final LFN backupLFN = JAliEnCOMMander.getInstance().c_api.getLFN(absolutePath + "~", true);
 
 		if (backupLFN.exists && AuthorizationChecker.canWrite(backupLFN.getParentDir(), owner))
 			if (!backupLFN.delete(true, false))
