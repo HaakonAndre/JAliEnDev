@@ -2790,26 +2790,42 @@ public class TaskQueueUtils {
 		return 0;
 	}
 
+	private static final GenericLastValuesCache<Integer, String> siteNameCache = new GenericLastValuesCache<Integer, String>() {
+		private static final long serialVersionUID = 1L;
+
+		@Override
+		protected int getMaximumSize() {
+			return 20000;
+		}
+
+		@Override
+		protected String resolve(final Integer key) {
+			try (DBFunctions db = getQueueDB()) {
+				if (db == null)
+					return null;
+
+				db.setReadOnly(true);
+				db.setQueryTimeout(60);
+
+				db.query("select site from SITEQUEUES where siteId=?", false, key);
+
+				if (db.moveNext())
+					return StringFactory.get(db.gets(1));
+			}
+
+			return null;
+		}
+	};
+	
 	/**
 	 * @param siteId
 	 * @return site name
 	 */
 	public static String getSiteName(final int siteId) {
-		try (DBFunctions db = getQueueDB()) {
-			if (db == null)
-				return null;
-
-			logger.log(Level.INFO, "Going to select site: select site from SITEQUEUES where siteId=? " + siteId);
-
-			db.setReadOnly(true);
-			db.setQueryTimeout(60);
-
-			if (db.query("select site from SITEQUEUES where siteId=?", false, Integer.valueOf(siteId)) && db.moveNext()) {
-				final String value = db.gets(1);
-				return value;
-			}
-		}
-		return null;
+		if (siteId<=0)
+			return null;
+		
+		return siteNameCache.get(Integer.valueOf(siteId));
 	}
 
 	/**
