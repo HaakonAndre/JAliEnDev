@@ -1187,7 +1187,8 @@ public class LFNUtils {
 								ret.add(file);
 								continue;
 							}
-						} catch (@SuppressWarnings("unused") final Exception e) {
+						} catch (@SuppressWarnings("unused")
+						final Exception e) {
 							return null;
 						}
 
@@ -1214,7 +1215,8 @@ public class LFNUtils {
 			if (p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				} catch (@SuppressWarnings("unused")
+				final Exception e) {
 					return null;
 				}
 
@@ -1225,7 +1227,8 @@ public class LFNUtils {
 			for (final LFN otherFile : file.getParentDir().list())
 				if (otherFile.isFile() && otherFile.guid.equals(guid))
 					return otherFile;
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (@SuppressWarnings("unused")
+		final Exception e) {
 			// ignore
 		}
 
