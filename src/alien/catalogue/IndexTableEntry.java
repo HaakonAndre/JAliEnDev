@@ -131,11 +131,16 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			final int queries = ((path.size() - 1) / MAX_QUERY_LENGTH) + 1;
 
 			for (int chunk = 0; chunk < queries; chunk++) {
-				final StringBuilder q = new StringBuilder("SELECT * FROM L" + tableName + "L WHERE ");
+				final List<String> sublist = path.subList(chunk * MAX_QUERY_LENGTH, Math.min((chunk + 1) * MAX_QUERY_LENGTH, path.size()));
+				
+				final StringBuilder q = new StringBuilder("SELECT ");
+				
+				if (sublist.size()>1)
+					q.append("SQL_NO_CACHE ");
+				
+				q.append("* FROM L" + tableName + "L WHERE ");
 
 				boolean first = true;
-
-				final List<String> sublist = path.subList(chunk * MAX_QUERY_LENGTH, Math.min((chunk + 1) * MAX_QUERY_LENGTH, path.size()));
 
 				for (String sSearch : sublist) {
 					if (sSearch.startsWith("/"))
@@ -227,7 +232,12 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			for (int chunk = 0; chunk < queries; chunk++) {
 				final List<UUID> sublist = uuidsAsList.subList(chunk * MAX_QUERY_LENGTH, Math.min((chunk + 1) * MAX_QUERY_LENGTH, uuidsAsList.size()));
 
-				final StringBuilder sb = new StringBuilder("SELECT * FROM L" + tableName + "L WHERE guid IN (");
+				final StringBuilder sb = new StringBuilder("SELECT ");
+				
+				if (sublist.size()>1)
+					sb.append("SQL_NO_CACHE ");
+				
+				sb.append("* FROM L" + tableName + "L WHERE guid IN (");
 
 				boolean first = true;
 
