@@ -17,9 +17,9 @@ public class JAliEnCommanddf extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		out.printOutln("Shows free disk space");
-		out.printOutln("Usage: df");
-		out.printOutln();
+		commander.printOutln("Shows free disk space");
+		commander.printOutln("Usage: df");
+		commander.printOutln();
 	}
 
 	@Override
@@ -29,11 +29,10 @@ public class JAliEnCommanddf extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommanddf(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommanddf(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 	}
 }

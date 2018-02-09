@@ -47,29 +47,16 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			String fullPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
 
 			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), fullPath, bR);
-			if (out.isRootPrinter())
-				try {
-					final RemoveLFNfromString a = Dispatcher.execute(rlfn); // Remember, all checking is being done server side now.
 
-					if (!a.wasRemoved())
-						out.setReturnCode(1, "Failed to remove [" + fullPath + "]");
-				} catch (final ServerException e) {
-					e.getCause().printStackTrace();
-					out.setReturnCode(1, "Failed to remove [" + fullPath + "]");
-				}
-			else
-				try {
-					final RemoveLFNfromString a = Dispatcher.execute(rlfn); // Remember, all checking is being done server side now.
+			try {
+				final RemoveLFNfromString a = Dispatcher.execute(rlfn); // Remember, all checking is being done server side now.
 
-					if (!a.wasRemoved() && bV)
-						out.printErrln("Failed to remove [" + fullPath + "]");
-				} catch (final ServerException e) {
-					logger.log(Level.WARNING, "Could not get LFN: " + fullPath);
-					e.getCause().printStackTrace();
-
-					if (bV)
-						out.printErrln("Error removing [" + fullPath + "]");
-				}
+				if (!a.wasRemoved())
+					JAliEnCOMMander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
+			} catch (final ServerException e) {
+				e.getCause().printStackTrace();
+				JAliEnCOMMander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
+			}
 		}
 	}
 
@@ -78,13 +65,13 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("rm", " <LFN> [<LFN>[,<LFN>]]"));
-		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-f", "ignore nonexistent files, never prompt"));
-		out.printOutln(helpOption("-r, -R", "remove directories and their contents recursively"));
-		out.printOutln(helpOption("-i", "prompt before every removal (for JSh clients)"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("rm", " <LFN> [<LFN>[,<LFN>]]"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-f", "ignore nonexistent files, never prompt"));
+		commander.printOutln(helpOption("-r, -R", "remove directories and their contents recursively"));
+		commander.printOutln(helpOption("-i", "prompt before every removal (for JSh clients)"));
+		commander.printOutln();
 	}
 
 	/**
@@ -101,14 +88,13 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandrm(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandrm(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("i");

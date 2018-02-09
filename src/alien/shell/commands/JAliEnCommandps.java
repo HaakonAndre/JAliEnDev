@@ -55,124 +55,75 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		logger.log(Level.INFO, "Starting ps");
+		logger.log(Level.INFO, "getJDL " + String.valueOf(getJDL));
 
-		if (out.isRootPrinter()) {
-			out.nextResult();
-			logger.log(Level.INFO, "getJDL " + String.valueOf(getJDL));
-
-			if (getJDL != 0) {
-				final String jdl = commander.q_api.getJDL(getJDL);
-				if (jdl != null)
-					if (bColour)
-						out.setField("value ", ShellColor.jobStateRed() + jdl + ShellColor.reset());
-					else
-						out.setField("value ", jdl);
-			}
-			else
-				if (getTrace > 0) {
-					final String tracelog = commander.q_api.getTraceLog(getTrace);
-					logger.log(Level.FINE, "tracelog " + tracelog);
-
-					if (tracelog != null)
-						if (bColour)
-							out.setField("value ", ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
-						else
-							out.setField("value ", tracelog);
-					out.setField("message: ", "not implemented yet");
-				}
-				else {
-					if (users.size() == 0)
-						users.add(commander.getUsername());
-
-					final List<Job> ps = commander.q_api.getPS(states, users, sites, nodes, mjobs, jobid, orderByKey, limit);
-					logger.log(Level.INFO, "ps " + ps);
-
-					if (ps != null)
-						for (final Job j : ps) {
-							out.nextResult();
-							final String owner = (j.getOwner() != null) ? j.getOwner() : "";
-
-							final String jId = bColour ? ShellColor.bold() + j.queueId + ShellColor.reset() : String.valueOf(j.queueId);
-
-							final String name = (j.name != null) ? j.name.substring(j.name.lastIndexOf('/') + 1) : "";
-
-							if (bL) {
-								final String site = (j.site != null) ? j.site : "";
-								final String node = (j.node != null) ? j.node : "";
-								out.setField("owner ", String.valueOf(owner));
-								out.setField("id ", jId.toString());
-								out.setField("site ", String.valueOf(site));
-								out.setField("node", String.valueOf(node));
-								out.setField("status", " " + j.status());
-								out.setField("name", String.valueOf(name));
-							}
-							else {
-								out.setField("owner ", String.valueOf(owner));
-								out.setField("id ", jId.toString());
-								out.setField("priority ", printPriority(j.status(), j.priority));
-								out.setField("status ", " " + j.status());
-								out.setField("name ", String.valueOf(name));
-							}
-						}
-				}
-
+		if (getJDL != 0) {
+			final String jdl = commander.q_api.getJDL(getJDL);
+			if (jdl != null)
+				if (commander.bColour)
+					commander.printOutln(ShellColor.jobStateRed() + jdl + ShellColor.reset());
+				else
+					commander.printOutln(jdl);
 		}
 		else
-			if (getJDL != 0) {
-				final String jdl = commander.q_api.getJDL(getJDL);
-				if (jdl != null)
-					if (bColour)
-						out.printOutln(ShellColor.jobStateRed() + jdl + ShellColor.reset());
-					else
-						out.printOutln(jdl);
+			if (getTrace > 0) {
+				final String tracelog = commander.q_api.getTraceLog(getTrace);
+				logger.log(Level.FINE, "tracelog " + tracelog);
+
+				if (tracelog != null)
+					if (commander.bColour)
+						commander.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
+
+				commander.printOutln("--- not implemented yet ---");
+
 			}
-			else
-				if (getTrace > 0) {
-					final String tracelog = commander.q_api.getTraceLog(getTrace);
-					logger.log(Level.FINE, "tracelog " + tracelog);
+			else {
+				if (users.size() == 0)
+					users.add(commander.getUsername());
 
-					if (tracelog != null)
-						if (bColour)
-							out.printOutln(ShellColor.jobStateBlue() + tracelog + ShellColor.reset());
+				final List<Job> ps = commander.q_api.getPS(states, users, sites, nodes, mjobs, jobid, orderByKey, limit);
+				logger.log(Level.INFO, "ps " + ps);
 
-					out.printOutln("--- not implemented yet ---");
+				if (ps != null)
+					for (final Job j : ps) {
+						commander.outNextResult();
+						final String owner = (j.getOwner() != null) ? j.getOwner() : "";
 
-				}
-				else {
-					if (users.size() == 0)
-						users.add(commander.getUsername());
+						final String jId = commander.bColour ? ShellColor.bold() + j.queueId + ShellColor.reset() : String.valueOf(j.queueId);
 
-					final List<Job> ps = commander.q_api.getPS(states, users, sites, nodes, mjobs, jobid, orderByKey, limit);
-					logger.log(Level.INFO, "ps " + ps);
+						final String name = (j.name != null) ? j.name.substring(j.name.lastIndexOf('/') + 1) : "";
 
-					if (ps != null)
-						for (final Job j : ps) {
-
-							final String owner = (j.getOwner() != null) ? j.getOwner() : "";
-
-							final String jId = bColour ? ShellColor.bold() + j.queueId + ShellColor.reset() : String.valueOf(j.queueId);
-
-							final String name = (j.name != null) ? j.name.substring(j.name.lastIndexOf('/') + 1) : "";
-
-							if (bL) {
-								final String site = (j.site != null) ? j.site : "";
-								final String node = (j.node != null) ? j.node : "";
-								out.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(4) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
-										+ padLeft(String.valueOf(site), 38) + padSpace(2) + padLeft(String.valueOf(node), 40) + padSpace(2) + abbrvStatus(j.status()) + padSpace(2)
-										+ padLeft(String.valueOf(name), 30));
-							}
-							else
-								out.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(1) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
-										+ abbrvStatus(j.status()) + padSpace(2) + padLeft(String.valueOf(name), 32));
-
+						if (bL) {
+							final String site = (j.site != null) ? j.site : "";
+							final String node = (j.node != null) ? j.node : "";
+							commander.printOut("owner ", String.valueOf(owner));
+							commander.printOut("id ", jId.toString());
+							commander.printOut("site ", String.valueOf(site));
+							commander.printOut("node", String.valueOf(node));
+							commander.printOut("status", " " + j.status());
+							commander.printOut("name", String.valueOf(name));
+							commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(4) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
+									+ padLeft(String.valueOf(site), 38) + padSpace(2) + padLeft(String.valueOf(node), 40) + padSpace(2) + abbrvStatus(j.status()) + padSpace(2)
+									+ padLeft(String.valueOf(name), 30));
 						}
-				}
+						else {
+
+							commander.printOut("owner ", String.valueOf(owner));
+							commander.printOut("id ", jId.toString());
+							commander.printOut("priority ", printPriority(j.status(), j.priority));
+							commander.printOut("status ", " " + j.status());
+							commander.printOut("name ", String.valueOf(name));
+							commander.printOutln(padLeft(String.valueOf(owner), 10) + padSpace(1) + padLeft(jId, 10) + padSpace(2) + printPriority(j.status(), j.priority) + padSpace(2)
+									+ abbrvStatus(j.status()) + padSpace(2) + padLeft(String.valueOf(name), 32));
+						}
+					}
+			}
 	}
 
 	private String printPriority(final JobStatus status, final int priority) {
 
 		if (JobStatus.INSERTING == status || JobStatus.WAITING == status) {
-			if (bColour) {
+			if (commander.bColour) {
 				String cTag = "";
 				if (priority <= 0)
 					cTag = ShellColor.jobStateBlueError();
@@ -194,7 +145,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 		String e = "";
 
-		if (bColour) {
+		if (commander.bColour) {
 			switch (status) {
 			case KILLED:
 				return ShellColor.jobStateRed() + padLeft("  K", 3) + ShellColor.reset();
@@ -430,32 +381,30 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
+		commander.printOutln();
+		commander.printOutln(helpUsage("ps", "[-options]"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-F l | -Fl | -L", "long output format"));
+		commander.printOutln(helpOption("-f <flags|status>"));
+		commander.printOutln(helpOption("-u <userlist>"));
+		commander.printOutln(helpOption("-s <sitelist>"));
+		commander.printOutln(helpOption("-n <nodelist>"));
+		commander.printOutln(helpOption("-m <masterjoblist>"));
+		commander.printOutln(helpOption("-o <sortkey>"));
+		commander.printOutln(helpOption("-j <jobidlist>"));
+		commander.printOutln(helpOption("-l <query-limit>"));
 
-		out.printOutln();
-		out.printOutln(helpUsage("ps", "[-options]"));
-		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-F l | -Fl | -L", "long output format"));
-		out.printOutln(helpOption("-f <flags|status>"));
-		out.printOutln(helpOption("-u <userlist>"));
-		out.printOutln(helpOption("-s <sitelist>"));
-		out.printOutln(helpOption("-n <nodelist>"));
-		out.printOutln(helpOption("-m <masterjoblist>"));
-		out.printOutln(helpOption("-o <sortkey>"));
-		out.printOutln(helpOption("-j <jobidlist>"));
-		out.printOutln(helpOption("-l <query-limit>"));
-
-		out.printOutln();
-		out.printOutln(helpOption("-M", "show only masterjobs"));
-		out.printOutln(helpOption("-X", "active jobs in extended format"));
-		out.printOutln(helpOption("-A", "select all owned jobs of you"));
-		out.printOutln(helpOption("-W", "select all jobs which are waiting for execution of you"));
-		out.printOutln(helpOption("-E", "select all jobs which are in error state of you"));
-		out.printOutln(helpOption("-a", "select jobs of all users"));
-		out.printOutln(helpOption("-b", "do only black-white output"));
-		out.printOutln(helpOption("-jdl <jobid>", "display the job jdl"));
-		out.printOutln(helpOption("-trace <jobid> <tag>*", "display the job trace information (not working yet!)")); // TODO:
-		out.printOutln();
-
+		commander.printOutln();
+		commander.printOutln(helpOption("-M", "show only masterjobs"));
+		commander.printOutln(helpOption("-X", "active jobs in extended format"));
+		commander.printOutln(helpOption("-A", "select all owned jobs of you"));
+		commander.printOutln(helpOption("-W", "select all jobs which are waiting for execution of you"));
+		commander.printOutln(helpOption("-E", "select all jobs which are in error state of you"));
+		commander.printOutln(helpOption("-a", "select jobs of all users"));
+		commander.printOutln(helpOption("-b", "do only black-white output"));
+		commander.printOutln(helpOption("-jdl <jobid>", "display the job jdl"));
+		commander.printOutln(helpOption("-trace <jobid> <tag>*", "display the job trace information (not working yet!)")); // TODO:
+		commander.printOutln();
 	}
 
 	/**
@@ -472,14 +421,13 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandps(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandps(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		try {
 
@@ -515,7 +463,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				try {
 					getJDL = Integer.parseInt((String) options.valueOf("jdl"));
 				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-					out.printErrln("Illegal job ID " + options.valueOf("jdl"));
+					commander.printErrln("Illegal job ID " + options.valueOf("jdl"));
 					getJDL = -1;
 				}
 			else
@@ -523,7 +471,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					try {
 						getTrace = Integer.parseInt((String) options.valueOf("trace"));
 					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-						out.printErrln("Illegal job ID " + options.valueOf("trace"));
+						commander.printErrln("Illegal job ID " + options.valueOf("trace"));
 						getTrace = -1;
 					}
 				else {
@@ -627,7 +575,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				}
 
 			if (options.has("b"))
-				bColour = false;
+				commander.bColour = false;
 
 		} catch (final OptionException e) {
 			printHelp();

@@ -107,31 +107,29 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), flags, xmlCollectionPath, queueid);
 
-		if (lfns != null && !isSilent()) {
+		if (lfns != null) {
 			if (bX) {
 				return;
 			}
 
-			for (final LFN lfn : lfns)
-				if (out.isRootPrinter()) {
-					out.nextResult();
-					out.setField("lfn", lfn.getCanonicalName());
+			for (final LFN lfn : lfns) {
+				commander.outNextResult();
+				commander.printOut("lfn", lfn.getCanonicalName());
 
-					if (bL) {
-						out.setField("permissions", FileSystemUtils.getFormatedTypeAndPerm(lfn));
-						out.setField("user", lfn.owner);
-						out.setField("group", lfn.gowner);
-						out.setField("size", (bH ? Format.size(lfn.size) : String.valueOf(lfn.size)));
-						out.setField("ctime", " " + lfn.ctime);
-					}
+				if (bL) {
+					commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(lfn));
+					commander.printOut("user", lfn.owner);
+					commander.printOut("group", lfn.gowner);
+					commander.printOut("size", (bH ? Format.size(lfn.size) : String.valueOf(lfn.size)));
+					commander.printOut("ctime", " " + lfn.ctime);
+					
+					// print long
+					commander.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
+							+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + padSpace(1) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());
 				}
 				else
-					if (bL)
-						// print long
-						out.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
-								+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + padSpace(1) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());
-					else
-						out.printOutln(lfn.getCanonicalName());
+					commander.printOutln(lfn.getCanonicalName());
+			}
 		}
 
 	}
@@ -147,21 +145,21 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("find", "<path>  <pattern> flags"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("find", "<path>  <pattern> flags"));
+		commander.printOutln();
 
-		out.printOutln(helpStartOptions());
+		commander.printOutln(helpStartOptions());
 
-		out.printOutln(helpOption("-a", "show hidden .* files"));
-		out.printOutln(helpOption("-s", "no sorting"));
-		out.printOutln(helpOption("-c", "collection filename (put the output in a collection)"));
-		out.printOutln(helpOption("-y", "(FOR THE OCDB) return only the biggest version of each file"));
-		out.printOutln(helpOption("-x", "xml collection name (return the LFN list through XmlCollection)"));
-		out.printOutln(helpOption("-d", "return also the directories"));
-		out.printOutln(helpOption("-l[h]", "long format, optionally human readable file sizes"));
-		out.printOutln(helpOption("-j <queueid>", "filter files created by a certain job"));
-		out.printOutln();
+		commander.printOutln(helpOption("-a", "show hidden .* files"));
+		commander.printOutln(helpOption("-s", "no sorting"));
+		commander.printOutln(helpOption("-c", "collection filename (put the output in a collection)"));
+		commander.printOutln(helpOption("-y", "(FOR THE OCDB) return only the biggest version of each file"));
+		commander.printOutln(helpOption("-x", "xml collection name (return the LFN list through XmlCollection)"));
+		commander.printOutln(helpOption("-d", "return also the directories"));
+		commander.printOutln(helpOption("-l[h]", "long format, optionally human readable file sizes"));
+		commander.printOutln(helpOption("-j <queueid>", "filter files created by a certain job"));
+		commander.printOutln();
 	}
 
 	/**
@@ -212,7 +210,6 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
@@ -220,8 +217,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	// public JAliEnCommandfind(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
 	// super(commander, out, alArguments);
-	public JAliEnCommandfind(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandfind(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 
 			final OptionParser parser = new OptionParser();

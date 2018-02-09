@@ -19,9 +19,9 @@ public class JAliEnCommandtop extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("top", ""));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("top", ""));
+		commander.printOutln();
 	}
 
 	@Override
@@ -31,11 +31,10 @@ public class JAliEnCommandtop extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandtop(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandtop(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 	}
 }

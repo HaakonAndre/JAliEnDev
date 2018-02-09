@@ -27,12 +27,12 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 		}
 		if (useLFNasGuid) {
 			if (!GUIDUtils.isValidGUID(this.lfn)) {
-				out.printErrln("This is not a valid GUID");
+				commander.printErrln("This is not a valid GUID");
 				return;
 			}
 			final GUID guid = commander.c_api.getGUID(this.lfn);
 			if (guid == null) {
-				out.printErrln("No such GUID");
+				commander.printErrln("No such GUID");
 				return;
 			}
 		}
@@ -41,7 +41,7 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 
 		final int result = commander.c_api.deleteMirror(lfn, this.useLFNasGuid, se);
 		if (result == 0)
-			out.printOutln("Mirror scheduled to be deleted from " + this.se);
+			commander.printOutln("Mirror scheduled to be deleted from " + this.se);
 		else {
 			String errline = null;
 			switch (result) {
@@ -61,21 +61,21 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 				errline = "unknown result code " + result;
 				break;
 			}
-			out.printErrln("Error deleting mirror: " + errline);
+			commander.printErrln("Error deleting mirror: " + errline);
 		}
 		// check is PFN
 	}
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("Removes a replica of a file from the catalogue");
-		out.printOutln("Usage:");
-		out.printOutln("        deleteMirror [-g] <lfn> <se> [<pfn>]");
-		out.printOutln();
-		out.printOutln("Options:");
-		out.printOutln("   -g: the lfn is a guid");
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln("Removes a replica of a file from the catalogue");
+		commander.printOutln("Usage:");
+		commander.printOutln("        deleteMirror [-g] <lfn> <se> [<pfn>]");
+		commander.printOutln();
+		commander.printOutln("Options:");
+		commander.printOutln("   -g: the lfn is a guid");
+		commander.printOutln();
 	}
 
 	@Override
@@ -85,12 +85,11 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommanddeleteMirror(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommanddeleteMirror(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("g");

@@ -23,24 +23,14 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	public void run() {
 		final GUID guid = commander.c_api.getGUID(guidName, false, true);
 
-		if (out.isRootPrinter()) {
-			out.nextResult();
-			if (guid == null)
-				out.setField("message", "Could not get the GUID [" + guidName + "].");
-			else
-				if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
-					out.setField("message", padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
-				else
-					out.setField("message", "No LFNs are associated to this GUID [" + guid.guid + "].");
-		}
+		commander.outNextResult();
+		if (guid == null)
+			commander.printOut("Could not get the GUID [" + guidName + "].");
 		else
-			if (guid == null)
-				out.printErrln("Could not get the GUID [" + guidName + "].");
+			if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
+				commander.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
 			else
-				if (guid.getLFNs() != null && guid.getLFNs().iterator().hasNext())
-					out.printOutln(padRight(guid.guid + "", 40) + guid.getLFNs().iterator().next().getCanonicalName());
-				else
-					out.printErrln("No LFNs are associated to this GUID [" + guid.guid + "].");
+				commander.printErrln("No LFNs are associated to this GUID [" + guid.guid + "].");
 	}
 
 	/**
@@ -48,10 +38,9 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-
-		out.printOutln();
-		out.printOutln(helpUsage("guid2lfn", "<GUID>"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("guid2lfn", "<GUID>"));
+		commander.printOutln();
 	}
 
 	/**
@@ -68,14 +57,13 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in JAliEnCOMMander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandguid2lfn(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandguid2lfn(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		if (alArguments.size() != 1)
 			throw new JAliEnCommandException();

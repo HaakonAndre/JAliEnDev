@@ -25,16 +25,6 @@ public abstract class JAliEnBaseCommand extends Thread {
 	protected JAliEnCOMMander commander;
 
 	/**
-	 * The UIPrintWriter to return stdout+stderr
-	 */
-	protected UIPrintWriter out;
-
-	/**
-	 * marker for -Colour argument
-	 */
-	protected boolean bColour;
-
-	/**
 	 *
 	 */
 	protected final List<String> alArguments;
@@ -47,14 +37,11 @@ public abstract class JAliEnBaseCommand extends Thread {
 	 * Constructor based on the array received from the request
 	 *
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 */
-	public JAliEnBaseCommand(final JAliEnCOMMander commander, final UIPrintWriter out, final List<String> alArguments) {
+	public JAliEnBaseCommand(final JAliEnCOMMander commander, final List<String> alArguments) {
 		this.commander = commander;
-		this.out = out;
 		this.alArguments = alArguments;
-		this.bColour = out != null ? out.colour() : false;
 	}
 
 	/**
@@ -149,7 +136,7 @@ public abstract class JAliEnBaseCommand extends Thread {
 	 * @return <code>true</code> if the command was silenced
 	 */
 	public final boolean isSilent() {
-		return silent || out == null;
+		return silent;
 	}
 
 	/**
@@ -165,7 +152,7 @@ public abstract class JAliEnBaseCommand extends Thread {
 	public final void verbose() {
 		silent = false;
 	}
-
+	
 	/**
 	 * serialize return values for gapi/root
 	 *

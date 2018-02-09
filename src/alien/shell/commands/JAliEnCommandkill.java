@@ -23,11 +23,8 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 		for (final Job job : jobs)
 			if (AuthorizationChecker.canModifyJob(job, commander.user))
 				commander.q_api.killJob(job.queueId);
-		if (out.isRootPrinter())
-			out.setReturnCode(1, "not implemented yet ");
-		else
-			out.printErrln("--- not implemented yet ---");
 
+		JAliEnCOMMander.setReturnCode(1, "not implemented yet ");
 	}
 
 	/**
@@ -35,10 +32,9 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-
-		out.printOutln();
-		out.printOutln(helpUsage("kill", "<jobId> [<jobId>[,<jobId>]]"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("kill", "<jobId> [<jobId>[,<jobId>]]"));
+		commander.printOutln();
 	}
 
 	/**
@@ -55,14 +51,13 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandkill(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandkill(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		queueIds = new ArrayList<>(alArguments.size());
 

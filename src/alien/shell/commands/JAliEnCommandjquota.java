@@ -23,7 +23,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (!this.command.equals("list") && !(isAdmin && this.command.equals("set"))) {
-			out.printErrln("Wrong command passed");
+			commander.printErrln("Wrong command passed");
 			printHelp();
 			return;
 		}
@@ -33,42 +33,42 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 		if (command.equals("list")) {
 			final Quota q = commander.q_api.getJobsQuota();
 			if (q == null) {
-				out.printErrln("No jobs quota found for user " + username);
+				commander.printErrln("No jobs quota found for user " + username);
 				return;
 			}
-			out.printOutln(q.toString());
+			commander.printOutln(q.toString());
 			return;
 		}
 
 		if (command.equals("set")) {
 			if (this.param_to_set == null) {
-				out.printErrln("Error in parameter name");
+				commander.printErrln("Error in parameter name");
 				return;
 			}
 			if (this.value_to_set == null || this.value_to_set.intValue() == 0) {
-				out.printErrln("Error in value");
+				commander.printErrln("Error in value");
 				printHelp();
 				return;
 			}
 			// run the update
 			if (commander.q_api.setJobsQuota(this.param_to_set, this.value_to_set.toString()))
-				out.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 			else
-				out.printOutln("Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.printOutln("Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 		}
 	}
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("jquota: Displays information about Job Quotas.");
-		out.printOutln("Usage:");
-		out.printOutln("  jquota list <user>                - list the user quota for job");
-		out.printOutln("                                     use just 'jquota list' for all users");
-		out.printOutln();
-		out.printOutln("  jquota set <user> <field> <value> - set the user quota for job");
-		out.printOutln("                                      (maxUnfinishedJobs, maxTotalCpuCost, maxTotalRunningTime)");
-		out.printOutln("                                      use <user>=% for all users");
+		commander.printOutln();
+		commander.printOutln("jquota: Displays information about Job Quotas.");
+		commander.printOutln("Usage:");
+		commander.printOutln("  jquota list <user>                - list the user quota for job");
+		commander.printOutln("                                     use just 'jquota list' for all users");
+		commander.printOutln();
+		commander.printOutln("  jquota set <user> <field> <value> - set the user quota for job");
+		commander.printOutln("                                      (maxUnfinishedJobs, maxTotalCpuCost, maxTotalRunningTime)");
+		commander.printOutln("                                      use <user>=% for all users");
 	}
 
 	@Override
@@ -78,12 +78,11 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandjquota(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandjquota(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		this.isAdmin = commander.getUser().canBecome("admin");
 		if (alArguments.size() == 0)
 			return;

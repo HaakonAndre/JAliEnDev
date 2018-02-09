@@ -32,35 +32,27 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 			lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath));
 
 		if (lfn == null) {
-			out.printOutln("No such file or directory: [" + sPath + "]");
+			commander.printOutln("No such file or directory: [" + sPath + "]");
 			return;
 		}
 
-		if (out.isRootPrinter()) {
-			out.nextResult();
-			if (lfn.isFile())
-				out.setField("type", "file");
-			else
-				if (lfn.isDirectory())
-					out.setField("type", "directory");
-				else
-					if (lfn.isCollection())
-						out.setField("type", "collection");
+		String ret = "";
+		if (lfn.isFile()) {
+			ret += "file";
+			commander.printOut("type", "file");
 		}
-		else {
-			String ret = "";
-			if (lfn.isFile())
-				ret += "file";
+		else
+			if (lfn.isDirectory()) {
+				ret += "directory";
+				commander.printOut("type", "directory");
+			}
 			else
-				if (lfn.isDirectory())
-					ret += "directory";
-				else
-					if (lfn.isCollection())
-						ret += "collection";
-			logger.info("Type line : " + ret);
-			if (!isSilent())
-				out.printOutln(ret);
-		}
+				if (lfn.isCollection()) {
+					ret += "collection";
+					commander.printOut("type", "collection");
+				}
+		logger.info("Type line : " + ret);
+		commander.printOutln(ret);
 	}
 
 	/**
@@ -113,14 +105,13 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandtype(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandtype(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		final OptionParser parser = new OptionParser();
 

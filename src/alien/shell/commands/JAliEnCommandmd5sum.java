@@ -20,14 +20,14 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 		for (final String lfnName : this.alPaths) {
 			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 			if (lfn == null)
-				out.printErrln("LFN does exist");
+				commander.printErrln("LFN does exist");
 			else
 				if (lfn.md5 != null) {
-					out.printOutln("md5: " + lfn.md5);
+					commander.printOutln("md5: " + lfn.md5);
 					System.out.println(lfn);
 				}
 				else {
-					out.printErrln("Can not get md5 for this file");
+					commander.printErrln("Can not get md5 for this file");
 					System.out.println(lfn);
 				}
 			// GUID guid = GUIDUtils.getGUID( );
@@ -37,10 +37,9 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("md5sum", "<filename1> [<filename2>] ..."));
-		out.printOutln();
-
+		commander.printOutln();
+		commander.printOutln(helpUsage("md5sum", "<filename1> [<filename2>] ..."));
+		commander.printOutln();
 	}
 
 	@Override
@@ -52,14 +51,13 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in JAliEnCOMMander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandmd5sum(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandmd5sum(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));

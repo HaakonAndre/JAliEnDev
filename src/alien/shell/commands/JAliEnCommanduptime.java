@@ -24,13 +24,12 @@ public class JAliEnCommanduptime extends JAliEnBaseCommand {
 
 		for (final UserStats u : stats.values())
 			totals.add(u);
-		if (out.isRootPrinter()) {
-			out.setField(" running jobs", " " + totals.runningJobs);
-			out.setField(" waiting jobs", " " + totals.waitingJobs);
-			out.setField(" active users", " " + stats.size());
-		}
-		else
-			out.printOutln(totals.runningJobs + " running jobs, " + totals.waitingJobs + " waiting jobs, " + stats.size() + " active users");
+
+		commander.printOut("running jobs", " " + totals.runningJobs);
+		commander.printOut("waiting jobs", " " + totals.waitingJobs);
+		commander.printOut("active users", " " + stats.size());
+
+		commander.printOutln(totals.runningJobs + " running jobs, " + totals.waitingJobs + " waiting jobs, " + stats.size() + " active users");
 	}
 
 	/**
@@ -38,10 +37,10 @@ public class JAliEnCommanduptime extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("uptime", ""));
-		out.printOutln(helpStartOptions());
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("uptime", ""));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln();
 	}
 
 	/**
@@ -58,14 +57,13 @@ public class JAliEnCommanduptime extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommanduptime(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommanduptime(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 	}
 }

@@ -53,10 +53,8 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 			formatter.format(formatH, "TOTAL", String.valueOf(totals.runningJobs), String.valueOf(totals.waitingJobs));
 		}
 
-		if (out.isRootPrinter())
-			out.setField("value", sb.toString());
-		else
-			out.printOut(sb.toString());
+		commander.printOut("value", sb.toString());
+		commander.printOut(sb.toString());
 	}
 
 	/**
@@ -64,10 +62,10 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("uptime", ""));
-		out.printOutln(helpStartOptions());
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("uptime", ""));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln();
 	}
 
 	/**
@@ -84,14 +82,13 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandw(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandw(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 	}
 }

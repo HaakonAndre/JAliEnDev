@@ -10,11 +10,10 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 */
-	public JAliEnCommandmotd(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandmotd(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 	}
 
 	@Override
@@ -24,7 +23,7 @@ public class JAliEnCommandmotd extends JAliEnBaseCommand {
 				+ "##############################################################\n" + "* Operational problems: Latchezar.Betev@cern.ch\n"
 				+ "* Bug reports: http://savannah.cern.ch/bugs/?group=alien&func=additem\n" + "###############################################################\n";
 
-		out.printOutln(sMotdMessage);
+		commander.printOutln(sMotdMessage);
 
 	}
 

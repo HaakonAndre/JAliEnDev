@@ -25,11 +25,10 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 */
-	public JAliEnCommandtoken(JAliEnCOMMander commander, UIPrintWriter out, ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandtoken(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 
 		try {
 
@@ -93,51 +92,37 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 				else
 					if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
 						commander.user = switchUser;
-					else {
-						if (out.isRootPrinter())
-							out.setField("error", "User " + requestedUser + " cannot be found. Abort");
-						else
-							out.printErrln("User " + requestedUser + " cannot be found. Abort");
-					}
+					else
+						commander.printErrln("User " + requestedUser + " cannot be found. Abort");
 
 				commander.user.setUserCert(cert);
 				commander.user.setDefaultUser(user);
 			}
 			else
-				if (out.isRootPrinter())
-					out.setField("error", "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
-				else
-					out.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				commander.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
 		}
 
 		// Return tokens
-		if (tokenreq != null)
-			if (out.isRootPrinter()) {
-				out.setField("tokencert", tokenreq.getCertificateAsString());
-				out.setField("tokenkey", tokenreq.getPrivateKeyAsString());
-			}
-			else {
-				out.printOut(tokenreq.getCertificateAsString());
-				out.printOut(tokenreq.getPrivateKeyAsString());
-			}
-		else {
-			if (out.isRootPrinter())
-				out.setField("error", "No responce from JCentral");
-			else
-				out.printErrln("User " + requestedUser + " cannot be found. Abort");
+		if (tokenreq != null) {
+			commander.printOut("tokencert", tokenreq.getCertificateAsString());
+			commander.printOut("tokenkey", tokenreq.getPrivateKeyAsString());
+			commander.printOut(tokenreq.getCertificateAsString());
+			commander.printOut(tokenreq.getPrivateKeyAsString());
 		}
+		else
+			commander.printErrln("User " + requestedUser + " cannot be found. Abort");
 	}
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("token", "[-options]"));
-		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-u <user>"));
-		out.printOutln(helpOption("-v <validity (days)>"));
-		out.printOutln(helpOption("-t <tokentype>"));
-		out.printOutln(helpOption("-jobid <jobID>"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("token", "[-options]"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-u <user>"));
+		commander.printOutln(helpOption("-v <validity (days)>"));
+		commander.printOutln(helpOption("-t <tokentype>"));
+		commander.printOutln(helpOption("-jobid <jobID>"));
+		commander.printOutln();
 	}
 
 	@Override

@@ -25,21 +25,13 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 			else
 				if ((switchUser = UserFactory.getByRole(user)) != null)
 					commander.user = switchUser;
-				else {
-					if (out.isRootPrinter())
-						out.setField("message", "User " + user + " cannot be found. Abort");
-					else
-						out.printErrln("User " + user + " cannot be found. Abort");
-				}
+				else
+					commander.printErrln("User " + user + " cannot be found. Abort");
 
 			commander.user.setUserCert(cert);
 		}
 		else
-			if (out.isRootPrinter())
-				out.setField("message", "Switching user " + commander.user.getName() + " to [" + user + "] failed");
-			else
-				out.printErrln("Switching user " + commander.user.getName() + " to [" + user + "] failed");
-
+			commander.printErrln("Switching user " + commander.user.getName() + " to [" + user + "] failed");
 	}
 
 	/**
@@ -47,10 +39,10 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("user", "<user name>"));
-		out.printOutln();
-		out.printOutln(helpParameter("Change effective role as specified."));
+		commander.printOutln();
+		commander.printOutln(helpUsage("user", "<user name>"));
+		commander.printOutln();
+		commander.printOutln(helpParameter("Change effective role as specified."));
 	}
 
 	/**
@@ -67,14 +59,13 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommanduser(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommanduser(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		if (alArguments.size() == 1)
 			user = alArguments.get(0);

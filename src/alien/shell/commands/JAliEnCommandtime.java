@@ -31,7 +31,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 		JAliEnBaseCommand comm = null;
 		try {
-			comm = JAliEnCOMMander.getCommand(command.toString(), new Object[] { commander, out, args });
+			comm = JAliEnCOMMander.getCommand(command.toString(), new Object[] { commander, args });
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return;
@@ -54,12 +54,8 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 
 		for (final String s : args)
 			command.append(' ').append(s);
-		if (out.isRootPrinter())
-
-			out.setField("value", "\"" + command + "\" with #" + times + " tries,\tavr/total msec:\t\t" + (total / times) + "/" + total);
-
-		else
-			out.printOutln("\"" + command + "\" with #" + times + " tries,\tavr/total msec:\t\t" + (total / times) + "/" + total);
+		
+		commander.printOutln("\"" + command + "\" with #" + times + " tries,\tavr/total msec:\t\t" + (total / times) + "/" + total);
 	}
 
 	/**
@@ -67,7 +63,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln("Usage: time <times>  <command> [command_arguments] ");
+		commander.printOutln("Usage: time <times>  <command> [command_arguments] ");
 	}
 
 	/**
@@ -84,12 +80,11 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandtime(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandtime(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 	}
 }

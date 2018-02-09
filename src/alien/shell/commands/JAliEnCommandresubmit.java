@@ -22,24 +22,15 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 			Entry<Integer, String> rc = (rj != null ? rj.resubmitEntry() : null);
 
 			if (rc == null) {
-				if (out.isRootPrinter())
-					out.setField("message", "Problem with the resubmit request for: " + queueId);
-				else
-					out.printErrln("Problem with the resubmit request" + queueId);
+				commander.printErrln("Problem with the resubmit request" + queueId);
 			}
 			else {
 				switch (rc.getKey().intValue()) {
 				case 0:
-					if (out.isRootPrinter())
-						out.setField("message", rc.getValue());
-					else
-						out.printOutln(rc.getValue());
+					commander.printOutln(rc.getValue());
 					break;
 				default:
-					if (out.isRootPrinter())
-						out.setField("message", rc.getValue());
-					else
-						out.printErrln(rc.getValue());
+					commander.printErrln(rc.getValue());
 					break;
 				}
 			}
@@ -48,12 +39,11 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("resubmit: resubmits a job or a group of jobs by IDs");
-		out.printOutln("        Usage:");
-		out.printOutln("                resubmit <jobid1> [<jobid2>....]");
-		out.printOutln();
-
+		commander.printOutln();
+		commander.printOutln("resubmit: resubmits a job or a group of jobs by IDs");
+		commander.printOutln("        Usage:");
+		commander.printOutln("                resubmit <jobid1> [<jobid2>....]");
+		commander.printOutln();
 	}
 
 	@Override
@@ -65,12 +55,11 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 * 
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandresubmit(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandresubmit(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		queueIds = new ArrayList<>(alArguments.size());
 
