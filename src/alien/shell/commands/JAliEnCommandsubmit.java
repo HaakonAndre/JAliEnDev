@@ -56,7 +56,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 		}
 
 		else
-			JAliEnCOMMander.setReturnCode(1, "Not able to get the file " + alArguments.get(0));
+			commander.setReturnCode(1, "Not able to get the file " + alArguments.get(0));
 	}
 
 	/**

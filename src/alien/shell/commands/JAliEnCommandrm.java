@@ -52,10 +52,10 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 				final RemoveLFNfromString a = Dispatcher.execute(rlfn); // Remember, all checking is being done server side now.
 
 				if (!a.wasRemoved())
-					JAliEnCOMMander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
+					commander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
 			} catch (final ServerException e) {
 				e.getCause().printStackTrace();
-				JAliEnCOMMander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
+				commander.setReturnCode(1, "Failed to remove [" + fullPath + "]");
 			}
 		}
 	}

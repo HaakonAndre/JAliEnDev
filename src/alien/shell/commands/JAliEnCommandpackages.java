@@ -26,8 +26,8 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 			}
 		}
 		else {
-			JAliEnCOMMander.setReturnCode(1, "Couldn't find any packages.");
-			JAliEnCOMMander.setReturnArgs(deserializeForRoot(0));
+			commander.setReturnCode(1, "Couldn't find any packages.");
+			commander.setReturnArgs(deserializeForRoot(0));
 		}
 
 	}

@@ -155,7 +155,7 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 		}
 
 		if (pathsNotFound.length() > 0)
-			JAliEnCOMMander.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
+			commander.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
 
 		// if (out.isRootPrinter())
 		// out.setReturnArgs(deserializeForRoot());

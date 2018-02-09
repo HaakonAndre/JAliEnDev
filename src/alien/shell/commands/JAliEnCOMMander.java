@@ -77,7 +77,7 @@ public class JAliEnCOMMander extends Thread {
 	private static final String[] hiddenCommandList = new String[] { "whoami", "roleami", "listFilesFromCollection", "cdir", "commandlist", "gfilecomplete", "cdirtiled", "blackwhite", "color",
 			"setshell", "type" };
 
-	private static UIPrintWriter out = null;
+	private UIPrintWriter out = null;
 
 	/**
 	 * marker for -Colour argument
@@ -130,7 +130,7 @@ public class JAliEnCOMMander extends Thread {
 		this.user = (user != null) ? user : AuthorizationFactory.getDefaultUser();
 		this.site = (site != null) ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
 		localFileCash = new HashMap<>();
-		JAliEnCOMMander.out = out;
+		this.out = out;
 		this.bColour = out != null ? out.colour() : false;
 
 		if (this.user.isJobAgent()) {
@@ -329,7 +329,7 @@ public class JAliEnCOMMander extends Thread {
 	 * @param arg
 	 */
 	public void setLine(final UIPrintWriter out, final String[] arg) {
-		JAliEnCOMMander.out = out;
+		this.out = out;
 		this.arg = arg;
 	}
 
@@ -528,10 +528,8 @@ public class JAliEnCOMMander extends Thread {
 	 * @param value
 	 */
 	public void printOut(String value) {
-		if (!commandIsSilent()) {
+		if (!commandIsSilent())
 			out.printOut(value);
-			out.printOut("out hash " + out.hashCode());
-		}
 	}
 
 	/**
@@ -585,7 +583,7 @@ public class JAliEnCOMMander extends Thread {
 	 * @param exitCode
 	 * @param errorMessage
 	 */
-	public static void setReturnCode(int exitCode, String errorMessage) {
+	public void setReturnCode(int exitCode, String errorMessage) {
 		if (out != null)
 			out.setReturnCode(exitCode, errorMessage);
 	}
@@ -595,7 +593,7 @@ public class JAliEnCOMMander extends Thread {
 	 * 
 	 * @param args
 	 */
-	public static void setReturnArgs(String args) {
+	public void setReturnArgs(String args) {
 		if (out != null)
 			out.setReturnArgs(args);
 	}
@@ -613,7 +611,7 @@ public class JAliEnCOMMander extends Thread {
 	 * 
 	 * @return UIPrintWriter
 	 */
-	public static UIPrintWriter getPrintWriter() {
+	public UIPrintWriter getPrintWriter() {
 		return out;
 	}
 }

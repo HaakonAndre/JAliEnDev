@@ -82,7 +82,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			else {
 				commander.printErrln("Not able to get this file: " + eachFileName);
 
-				JAliEnCOMMander.setReturnCode(1, "Not able to get the file");
+				commander.setReturnCode(1, "Not able to get the file");
 			}
 		}
 

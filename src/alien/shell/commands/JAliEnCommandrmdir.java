@@ -46,14 +46,14 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 							}
 					}
 					else
-						JAliEnCOMMander.setReturnCode(1, "Permission denied on directory: [" + path + "]");
+						commander.setReturnCode(1, "Permission denied on directory: [" + path + "]");
 
 				}
 				else
-					JAliEnCOMMander.setReturnCode(2, "Not a directory: [" + path + "]");
+					commander.setReturnCode(2, "Not a directory: [" + path + "]");
 			}
 			else
-				JAliEnCOMMander.setReturnCode(3, "No such file or directory: [" + path + "]");
+				commander.setReturnCode(3, "No such file or directory: [" + path + "]");
 		}
 	}
 

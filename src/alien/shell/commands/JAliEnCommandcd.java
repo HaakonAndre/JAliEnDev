@@ -27,13 +27,13 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		if (newDir != null) {
 			if (newDir.isDirectory()) {
 				commander.curDir = newDir;
-				JAliEnCOMMander.setReturnArgs(deserializeForRoot(1));
+				commander.setReturnArgs(deserializeForRoot(1));
 			}
 			else
-				JAliEnCOMMander.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
+				commander.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
 		}
 		else
-			JAliEnCOMMander.setReturnCode(1, "No such file or directory");
+			commander.setReturnCode(1, "No such file or directory");
 	}
 
 	/**

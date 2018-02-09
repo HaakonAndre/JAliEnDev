@@ -36,11 +36,11 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 		for (final String path : alPaths) {
 			if (bP) {
 				if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path), true) == null)
-					JAliEnCOMMander.setReturnCode(1, "Could not create directory (or non-existing parents): " + path);
+					commander.setReturnCode(1, "Could not create directory (or non-existing parents): " + path);
 			}
 			else
 				if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path)) == null)
-					JAliEnCOMMander.setReturnCode(2, "Could not create directory: " + path);
+					commander.setReturnCode(2, "Could not create directory: " + path);
 		}
 	}
 
