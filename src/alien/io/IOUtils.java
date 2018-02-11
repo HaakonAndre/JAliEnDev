@@ -581,7 +581,7 @@ public class IOUtils {
 			for (final String arg : args)
 				cpArgs.add(arg);
 
-		final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, out, cpArgs);
+		final JAliEnCommandcp cp = new JAliEnCommandcp(cmd, cpArgs);
 
 		cp.copyLocalToGrid(localFile, absolutePath);
 	}
