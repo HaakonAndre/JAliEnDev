@@ -39,16 +39,6 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * serialize return values for gapi/root
-	 *
-	 * @return serialized return
-	 */
-	@Override
-	public String deserializeForRoot() {
-		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator + "1";
-	}
-
-	/**
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander

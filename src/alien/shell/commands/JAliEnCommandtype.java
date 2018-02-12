@@ -74,34 +74,6 @@ public class JAliEnCommandtype extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * serialize return values for gapi/root
-	 *
-	 * @return serialized return
-	 */
-	@Override
-	public String deserializeForRoot() {
-
-		if (lfn == null)
-			return super.deserializeForRoot(0);
-
-		String ret = RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "type" + RootPrintWriter.fieldseparator;
-
-		if (lfn.isFile())
-			ret += "file";
-		else
-			if (lfn.isDirectory())
-				ret += "directory";
-			else
-				if (lfn.isCollection())
-					ret += "collection";
-				else
-					return super.deserializeForRoot(0);
-
-		return ret;
-
-	}
-
-	/**
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander

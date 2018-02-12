@@ -39,7 +39,6 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 					if (sLFN.isFile() || sLFN.isDirectory()) {
 						tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName());
-						commander.setReturnArgs(deserializeForRoot(1));
 					}
 				}
 			else
@@ -51,13 +50,11 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 
 						if (sLFN.isFile() || sLFN.isDirectory()) {
 							tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName());
-							commander.setReturnArgs(deserializeForRoot(1));
 						}
 					}
 				}
 				else {
 					commander.printErrln("If there are more than 2 arguments, then last one must be an existing direcetory OR a location that does not exist and can be made as new directory");
-					commander.setReturnArgs(deserializeForRoot(0));
 				}
 		}
 		else
@@ -69,17 +66,14 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 					if (sLFN.isFile() && tLFN.isFile()) {
 						// TODO File overwrite mechanism
 						tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "_backup");
-						commander.setReturnArgs(deserializeForRoot(1));
 					}
 					else
 						if ((sLFN.isDirectory() && tLFN.isDirectory()) || (sLFN.isFile() && tLFN.isDirectory())) {
 							tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName());
-							commander.setReturnArgs(deserializeForRoot(1));
 						}
 						else {
 							commander.printErrln(
 									"If there are 2 arguments then only:\n1. File to file\n2. File to directory\n3. Directory to Directory\n is supported\nMost probably a directory to file mv is being attempted");
-							commander.setReturnArgs(deserializeForRoot(0));
 						}
 				}
 				else {
@@ -89,8 +83,6 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 					}
 					else
 						tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget);
-
-					commander.setReturnArgs(deserializeForRoot(1));
 				}
 			}
 

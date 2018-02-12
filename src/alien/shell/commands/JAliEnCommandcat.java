@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -119,18 +118,6 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			return null;
 		}
 		return cp.getOutputFile();
-	}
-
-	@Override
-	public String deserializeForRoot() {
-		logger.log(Level.INFO, toString());
-
-		final StringBuilder ret = new StringBuilder();
-
-		return ret.toString();
-
-		// return super.deserializeForRoot();
-
 	}
 
 	/**

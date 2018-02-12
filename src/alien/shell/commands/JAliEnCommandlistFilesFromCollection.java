@@ -114,38 +114,6 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * serialize return values for gapi/root from root it is allways called with -v -z
-	 *
-	 * @return serialized return
-	 */
-
-	@Override
-	public String deserializeForRoot() {
-		if (lfns == null || lfns.size() == 0)
-			return "";
-
-		final StringBuilder ret = new StringBuilder();
-
-		for (final LFN c : lfns) {
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("origLFN").append(RootPrintWriter.fieldseparator);
-
-			ret.append(c.lfn);
-
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("localName").append(RootPrintWriter.fieldseparator);
-			// skipped
-
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("data").append(RootPrintWriter.fieldseparator);
-			// skipped
-
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("guid").append(RootPrintWriter.fieldseparator);
-			ret.append(c.guid);
-
-		}
-
-		return ret.toString();
-	}
-
-	/**
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander

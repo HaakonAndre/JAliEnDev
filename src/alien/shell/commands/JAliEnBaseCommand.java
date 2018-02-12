@@ -152,28 +152,6 @@ public abstract class JAliEnBaseCommand extends Thread {
 	public final void verbose() {
 		silent = false;
 	}
-	
-	/**
-	 * serialize return values for gapi/root
-	 *
-	 * @param state
-	 *
-	 * @return serialized return
-	 */
-	public String deserializeForRoot(final int state) {
-
-		return deserializeForRoot() + state;
-	}
-
-	/**
-	 * serialize return values for gapi/root
-	 *
-	 * @return serialized return
-	 */
-	@SuppressWarnings("static-method")
-	public String deserializeForRoot() {
-		return RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator;
-	}
 
 	/**
 	 * @param s

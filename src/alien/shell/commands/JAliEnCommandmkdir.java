@@ -28,8 +28,6 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 */
 	private List<String> alPaths = null;
 
-	private boolean success = true;
-
 	@Override
 	public void run() {
 
@@ -42,23 +40,6 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 				if (commander.c_api.createCatalogueDirectory(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path)) == null)
 					commander.setReturnCode(2, "Could not create directory: " + path);
 		}
-	}
-
-	/**
-	 * serialize return values for gapi/root
-	 *
-	 * @return serialized return
-	 */
-	@Override
-	public String deserializeForRoot() {
-
-		String ret = RootPrintWriter.columnseparator + RootPrintWriter.fielddescriptor + "__result__" + RootPrintWriter.fieldseparator;
-		if (success)
-			ret += "1";
-		else
-			ret += "0";
-
-		return ret;
 	}
 
 	/**

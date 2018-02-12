@@ -27,9 +27,7 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 		}
 		else {
 			commander.setReturnCode(1, "Couldn't find any packages.");
-			commander.setReturnArgs(deserializeForRoot(0));
 		}
-
 	}
 
 	private static String getPackagePlatformName() {
@@ -44,28 +42,6 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 				ret = "Darwin-PowerMacintosh";
 
 		return ret;
-	}
-
-	/**
-	 * serialize return values for gapi/root
-	 *
-	 * @return serialized return
-	 */
-	@Override
-	public String deserializeForRoot() {
-		if (packs != null) {
-
-			final StringBuilder sb = new StringBuilder();
-
-			sb.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("__result__").append(RootPrintWriter.fieldseparator).append("1\n");
-
-			for (final Package p : packs)
-				sb.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("__result__").append(RootPrintWriter.fieldseparator).append(p.getFullName()).append('\n');
-
-			return sb.toString();
-		}
-
-		return super.deserializeForRoot(0);
 	}
 
 	/**

@@ -97,64 +97,66 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (bT)
 			localFile = copyGridToLocal(source, null);
 		else {
-				commander.outNextResult();
-				if (!localFileSpec(source) && localFileSpec(target)) {
+			commander.outNextResult();
+			if (!localFileSpec(source) && localFileSpec(target)) {
 
-					localFile = new File(getLocalFileSpec(target));
+				localFile = new File(getLocalFileSpec(target));
 
-					if (!localFile.exists() || localFile.isDirectory())
-						copyGridToLocal(source, localFile);
-					else
-						commander.printErrln("A local file already exists with this name.");
-					
-						if (isSilent()) {
-							final IOException ex = new IOException("A local file already exists with this name: " + target);
+				if (!localFile.exists() || localFile.isDirectory())
+					copyGridToLocal(source, localFile);
+				else {
+					commander.printErrln("A local file already exists with this name.");
 
-							throw new IOError(ex);
+					if (isSilent()) {
+						final IOException ex = new IOException("A local file already exists with this name: " + target);
+
+						throw new IOError(ex);
+					}
+				}
+			}
+			else
+				if (localFileSpec(source) && !localFileSpec(target)) {
+
+					final File sourceFile = new File(getLocalFileSpec(source));
+					if (!targetLFNExists(target))
+						if (sourceFile.exists())
+							copyLocalToGrid(sourceFile, target);
+						else {
+							commander.printErrln("A local file with this name does not exists.");
+							if (isSilent()) {
+								final IOException ex = new IOException("Local file " + target + " doesn't exist");
+
+								throw new IOError(ex);
+							}
 						}
 				}
 				else
-					if (localFileSpec(source) && !localFileSpec(target)) {
+					if (!targetLFNExists(target)) {
 
-						final File sourceFile = new File(getLocalFileSpec(source));
-						if (!targetLFNExists(target))
-							if (sourceFile.exists())
-								copyLocalToGrid(sourceFile, target);
-							else
-								commander.printErrln("A local file with this name does not exists.");
-								if (isSilent()) {
-									final IOException ex = new IOException("Local file " + target + " doesn't exist");
-
-									throw new IOError(ex);
-								}
-					}
-					else
-						if (!targetLFNExists(target)) {
-
-							localFile = copyGridToLocal(source, null);
-							if (localFile != null && localFile.exists() && localFile.length() > 0) {
-								if (copyLocalToGrid(localFile, target)) {
-									commander.printOutln("Copy successful.");
-								}
-								else {
-									commander.printErrln("Could not copy to the target.");
-									if (isSilent()) {
-										final IOException ex = new IOException("Could not copy to the target: " + target);
-
-										throw new IOError(ex);
-									}
-								}
+						localFile = copyGridToLocal(source, null);
+						if (localFile != null && localFile.exists() && localFile.length() > 0) {
+							if (copyLocalToGrid(localFile, target)) {
+								commander.printOutln("Copy successful.");
 							}
 							else {
-								commander.printErrln("Could not get the source.");
+								commander.printErrln("Could not copy to the target.");
 								if (isSilent()) {
-									final IOException ex = new IOException("Could not get the source: " + source);
+									final IOException ex = new IOException("Could not copy to the target: " + target);
 
 									throw new IOError(ex);
 								}
 							}
 						}
-			}
+						else {
+							commander.printErrln("Could not get the source.");
+							if (isSilent()) {
+								final IOException ex = new IOException("Could not get the source: " + source);
+
+								throw new IOError(ex);
+							}
+						}
+					}
+		}
 	}
 
 	/**

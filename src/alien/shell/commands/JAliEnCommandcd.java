@@ -27,7 +27,6 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		if (newDir != null) {
 			if (newDir.isDirectory()) {
 				commander.curDir = newDir;
-				commander.setReturnArgs(deserializeForRoot(1));
 			}
 			else
 				commander.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");

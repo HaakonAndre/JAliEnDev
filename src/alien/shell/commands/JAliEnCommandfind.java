@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -63,7 +62,6 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	private List<String> alPaths = null;
 
 	private Collection<LFN> lfns = null;
-	private final List<LFN> directory = null;
 
 	private Long queueid = Long.valueOf(0);
 
@@ -170,40 +168,6 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	@Override
 	public boolean canRunWithoutArguments() {
 		return false;
-	}
-
-	@Override
-	public String deserializeForRoot() {
-		logger.log(Level.INFO, toString());
-
-		final StringBuilder ret = new StringBuilder();
-
-		if (directory != null) {
-			final String col = RootPrintWriter.columnseparator;
-			final String desc = RootPrintWriter.fielddescriptor;
-			final String sep = RootPrintWriter.fieldseparator;
-
-			for (final LFN lfn : directory) {
-				if (!bA && lfn.getFileName().startsWith("."))
-					continue;
-
-				if (bD) {
-					if (lfn.type != 'd') {
-						ret.append(col);
-						ret.append(desc).append("path").append(sep).append(lfn.getCanonicalName());
-						ret.append(desc).append("guid").append(sep).append(lfn.guid);
-					}
-				}
-				else
-					ret.append(col);
-				ret.append(desc).append("name").append(sep).append(lfn.getCanonicalName());
-			}
-
-			return ret.toString();
-
-		}
-		return super.deserializeForRoot();
-
 	}
 
 	/**
