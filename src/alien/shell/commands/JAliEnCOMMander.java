@@ -499,7 +499,7 @@ public class JAliEnCOMMander extends Thread {
 	 * @return <code>true</code> if the command was silenced
 	 */
 	public final boolean commandIsSilent() {
-		return jcommand.isSilent() || out == null;
+		return jcommand == null || jcommand.isSilent() || out == null;
 	}
 
 	/**

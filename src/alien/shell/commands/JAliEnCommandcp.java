@@ -607,15 +607,18 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 		if (lfn.exists)
 			if (lfn.isFile()) {
-				if (!commander.c_api.removeLFN(lfn.getCanonicalName()))
+				if (!commander.c_api.removeLFN(lfn.getCanonicalName())) {
 					commander.printErrln("Cannot remove the previously existing file: " + lfn.getCanonicalName());
-				if (isSilent())
-					throw new IOError(new IOException("Cannot remove the previously existing file: " + lfn.getCanonicalName()));
+					if (isSilent())
+						throw new IOError(new IOException("Cannot remove the previously existing file: " + lfn.getCanonicalName()));
+				}
 			}
-			else
+			else {
 				commander.printErrln("Target existing and is not a file: " + lfn.getCanonicalName());
-		if (isSilent())
-			throw new IOError(new IOException("Target existing and is not a file: " + lfn.getCanonicalName()));
+
+				if (isSilent())
+					throw new IOError(new IOException("Target existing and is not a file: " + lfn.getCanonicalName()));
+			}
 
 		final GUID guid;
 
@@ -858,13 +861,14 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				return true;
 			}
 			else
-				if (report)
+				if (report) {
 					commander.printOutln("Upload failed, sorry!");
-		if (isSilent()) {
-			final IOException ex = new IOException("Upload failed");
+					if (isSilent()) {
+						final IOException ex = new IOException("Upload failed");
 
-			throw new IOError(ex);
-		}
+						throw new IOError(ex);
+					}
+				}
 
 		return false;
 	}

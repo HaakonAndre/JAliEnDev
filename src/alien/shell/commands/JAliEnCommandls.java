@@ -111,7 +111,6 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 							commander.printOut("guid", localLFN.guid.toString().toUpperCase());
 							ret += localLFN.guid.toString().toUpperCase() + padSpace(3) + localLFN.getName();
 						}
-
 					}
 					else
 						if (bC)
@@ -151,14 +150,10 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 				logger.log(Level.SEVERE, "No such file or directory: [" + sPath + "]");
 				commander.printOutln("No such file or directory: [" + sPath + "]");
 			}
-
 		}
 
 		if (pathsNotFound.length() > 0)
 			commander.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
-
-		// if (out.isRootPrinter())
-		// out.setReturnArgs(deserializeForRoot());
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
