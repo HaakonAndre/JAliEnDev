@@ -1,5 +1,8 @@
 package alien.api.catalogue;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,6 +14,7 @@ import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
+import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
@@ -20,6 +24,7 @@ import alien.config.ConfigUtils;
 import alien.io.TransferDetails;
 import alien.se.SE;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.shell.commands.JAliEnCommandcp;
 import alien.site.OutputEntry;
 import alien.user.AliEnPrincipal;
 
@@ -578,5 +583,66 @@ public class CatalogueApiUtils {
 			logger.log(Level.WARNING, "Could not register entry " + entry.getName());
 			e.getCause().printStackTrace();
 		}
+	}
+
+	/**
+	 * Upload a local file to the Grid
+	 * 
+	 * @param localFile
+	 *            full path to local file
+	 * @param toLFN
+	 *            catalogue entry name
+	 * @param args
+	 *            other `cp` command parameters to pass
+	 * @throws IOException
+	 */
+	public void uploadFile(final File localFile, final String toLFN, final String... args) throws IOException {
+		final LFN l = getLFN(toLFN, true);
+
+		if (l.exists)
+			throw new IOException("LFN already exists: " + toLFN);
+
+		final String lfnAbsolutePath = FileSystemUtils.getAbsolutePath(commander.getUser().getName(), commander.getCurrentDirName(), toLFN);
+
+		final ArrayList<String> cpArgs = new ArrayList<>();
+		cpArgs.add("file:" + localFile.getAbsolutePath());
+		cpArgs.add(lfnAbsolutePath);
+
+		if (args != null)
+			for (final String arg : args)
+				cpArgs.add(arg);
+
+		final JAliEnCommandcp cp = new JAliEnCommandcp(commander, cpArgs);
+
+		cp.copyLocalToGrid(localFile, lfnAbsolutePath);
+	}
+	
+	/**
+	 * Upload a local file to the Grid
+	 * @param fromLFN 
+	 * 
+	 * @param localFile
+	 *            full path to local file
+	 * @param args
+	 *            other `cp` command parameters to pass
+	 * @throws IOException
+	 */
+	public void downloadFile(final String fromLFN, final File localFile, final String... args) throws IOException {
+		if (localFile.exists())
+			throw new IOException("localFile already exists: " + localFile.getAbsolutePath());
+
+		final String lfnAbsolutePath = FileSystemUtils.getAbsolutePath(commander.getUser().getName(), commander.getCurrentDirName(), fromLFN);
+
+		final ArrayList<String> cpArgs = new ArrayList<>();
+		cpArgs.add(lfnAbsolutePath);
+		cpArgs.add("file:" + localFile.getAbsolutePath());
+
+		if (args != null)
+			for (final String arg : args)
+				cpArgs.add(arg);
+
+		final JAliEnCommandcp cp = new JAliEnCommandcp(commander, cpArgs);
+
+		cp.copyGridToLocal(lfnAbsolutePath, localFile);
 	}
 }
