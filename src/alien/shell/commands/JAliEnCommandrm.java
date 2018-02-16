@@ -40,14 +40,22 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		for (final String path : alPaths) {
+		final List<String> expandedPaths = new ArrayList<>(alPaths.size());
 
+		for (final String path : alPaths) {
 			if (path == null) {
 				logger.log(Level.WARNING, "Could not get LFN: " + path);
 				return;
 			}
 
-			String fullPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
+			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path);
+			final List<String> sources = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
+
+			expandedPaths.addAll(sources);
+		}
+
+		for (final String sPath : expandedPaths) {
+			String fullPath = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), sPath);
 
 			final RemoveLFNfromString rlfn = new RemoveLFNfromString(commander.getUser(), fullPath, bR);
 
