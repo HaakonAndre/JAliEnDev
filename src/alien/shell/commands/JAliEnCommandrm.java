@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 
 import alien.api.Dispatcher;
@@ -35,9 +36,11 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 	 */
 	boolean bV = false;
 
+	private List<String> alPaths = null;
+
 	@Override
 	public void run() {
-		for (final String path : alArguments) {
+		for (final String path : alPaths) {
 
 			if (path == null) {
 				logger.log(Level.WARNING, "Could not get LFN: " + path);
@@ -109,6 +112,8 @@ public class JAliEnCommandrm extends JAliEnBaseCommand {
 			bIF = !options.has("f");
 			bR = options.has("r") || options.has("R");
 			bV = options.has("v");
+
+			alPaths = optionToString(options.nonOptionArguments());
 		} catch (@SuppressWarnings("unused") final OptionException e) {
 			printHelp();
 			// throw e;
