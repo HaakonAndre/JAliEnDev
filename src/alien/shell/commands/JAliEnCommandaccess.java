@@ -128,28 +128,28 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				final SE se = commander.c_api.getSE(pfn.seNumber);
 
 				if (se != null) {
-					commander.printOut("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
+					commander.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
 
 					if (pfn.ticket != null) {
 						final XrootDEnvelope env = pfn.ticket.envelope;
 
 						if (!"alice::cern::setest".equals(se.getName().toLowerCase()))
 							if (se.needsEncryptedEnvelope) {
-								commander.printOutln("envelope", env.getEncryptedEnvelope());
+								commander.printOut("envelope", env.getEncryptedEnvelope());
 								commander.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
 							}
 							else {
-								commander.printOutln("envelope", env.getSignedEnvelope());
+								commander.printOut("envelope", env.getSignedEnvelope());
 								commander.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
 							}
 
-						commander.printOutln("url", pfn.ticket.envelope.getTransactionURL());
-						commander.printOutln("pfn", pfn.toString());
-						commander.printOutln("guid", pfn.getGuid().getName());
-						commander.printOutln("se", pfn.getSE().getName());
-						commander.printOutln("tags", pfn.getSE().qos.toString());
-						commander.printOutln("nSEs", String.valueOf(pfns.size()));
-						commander.printOutln("user", commander.user.getName());
+						commander.printOut("url", pfn.ticket.envelope.getTransactionURL());
+						commander.printOut("pfn", pfn.toString());
+						commander.printOut("guid", pfn.getGuid().getName());
+						commander.printOut("se", pfn.getSE().getName());
+						commander.printOut("tags", pfn.getSE().qos.toString());
+						commander.printOut("nSEs", String.valueOf(pfns.size()));
+						commander.printOut("user", commander.user.getName());
 						commander.printOutln();
 					}
 				}
