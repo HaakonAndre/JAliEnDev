@@ -449,7 +449,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		final Set<PFN> pfns = id.getPFNs();
 
 		if (pfns == null || pfns.size() == 0)
-			return false;
+			return true;
 
 		for (final PFN pfn : pfns)
 			if (pfn.pfn.startsWith("guid://"))
