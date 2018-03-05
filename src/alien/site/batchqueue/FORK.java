@@ -2,18 +2,14 @@ package alien.site.batchqueue;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.io.StringReader;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 import alien.log.LogUtils;
 import alien.test.utils.Functions;
-import lia.util.process.ExternalProcess.ExitStatus;
-import utils.ProcessWithTimeout;
 
 /**
  * @author mmmartin
@@ -59,7 +55,7 @@ public class FORK extends BatchQueue {
 				proc_output.add(output_str);
 			}
 		} catch (final Throwable t) {
-			logger.info(String.format("[FORK] Exception executing command: ", cmd));
+			logger.info("[FORK] Exception executing command: "+ cmd);
 			t.printStackTrace();
 		}
 		logger.info(String.format("[FORK] Command output: %s", proc_output));

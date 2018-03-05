@@ -75,7 +75,7 @@ public class LFNUtils {
 
 	/**
 	 * Bulk guid2lfn operation
-	 * 
+	 *
 	 * @param guids
 	 *            the GUIDs to look for
 	 * @return a list of LFNs for which the size and order is independent of the input collection
@@ -86,7 +86,7 @@ public class LFNUtils {
 
 		final Set<UUID> uuids = new HashSet<>(guids.size());
 
-		for (GUID g : guids)
+		for (final GUID g : guids)
 			uuids.add(g.guid);
 
 		return getLFNsFromUUIDs(uuids);
@@ -94,7 +94,7 @@ public class LFNUtils {
 
 	/**
 	 * Bulk guid2lfn operation
-	 * 
+	 *
 	 * @param uuids
 	 *            the GUIDs to look for
 	 * @return a list of LFNs for which the size and order is independent of the input collection
@@ -116,7 +116,7 @@ public class LFNUtils {
 			final List<LFN> chunk = ite.getLFNs(remainingGUIDs);
 
 			if (chunk != null) {
-				for (LFN l : chunk)
+				for (final LFN l : chunk)
 					remainingGUIDs.remove(l.guid);
 
 				ret.addAll(chunk);
@@ -1177,20 +1177,23 @@ public class LFNUtils {
 		final List<LFN> ret = new ArrayList<>();
 
 		for (final LFN file : sameDirListing)
-			if (file.isFile())
-				for (final PFN p : file.whereis())
-					if (p.pfn.startsWith("guid:/"))
-						try {
-							final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+			if (file.isFile()) {
+				final Set<PFN> pfns = file.whereis();
 
-							if (guid.equals(archive.guid)) {
-								ret.add(file);
-								continue;
+				if (pfns != null)
+					for (final PFN p : pfns)
+						if (p.pfn.startsWith("guid:/"))
+							try {
+								final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+
+								if (guid.equals(archive.guid)) {
+									ret.add(file);
+									continue;
+								}
+							} catch (@SuppressWarnings("unused") final Exception e) {
+								return null;
 							}
-						} catch (@SuppressWarnings("unused")
-						final Exception e) {
-							return null;
-						}
+			}
 
 		return ret;
 	}
@@ -1215,8 +1218,7 @@ public class LFNUtils {
 			if (p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (@SuppressWarnings("unused")
-				final Exception e) {
+				} catch (@SuppressWarnings("unused") final Exception e) {
 					return null;
 				}
 
@@ -1227,8 +1229,7 @@ public class LFNUtils {
 			for (final LFN otherFile : file.getParentDir().list())
 				if (otherFile.isFile() && otherFile.guid.equals(guid))
 					return otherFile;
-		} catch (@SuppressWarnings("unused")
-		final Exception e) {
+		} catch (@SuppressWarnings("unused") final Exception e) {
 			// ignore
 		}
 

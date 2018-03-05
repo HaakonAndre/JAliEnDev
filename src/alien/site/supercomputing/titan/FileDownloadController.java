@@ -105,7 +105,7 @@ public class FileDownloadController extends Thread {
 		}
 	}
 
-	static FileDownloadController getInstance() {
+	static synchronized FileDownloadController getInstance() {
 		try {
 			if (instance == null)
 				instance = new FileDownloadController();

@@ -128,12 +128,12 @@ public class SiteMap {
 
 		// Setting values of the map
 		siteMap.put("Platform", ConfigUtils.getPlatform());
-		
+
 		// Only include packages if "CVMFS=1" is not present
-		if(!siteMap.containsKey("CVMFS") || siteMap.get("CVMFS") != Integer.valueOf(1)) {
+		if (!siteMap.containsKey("CVMFS") || siteMap.get("CVMFS").equals(Integer.valueOf(1))) {
 			packages = packMan.getListPackages();
 			installedPackages = packMan.getListInstalledPackages();
-			
+
 			// We prepare the packages for direct matching
 			String packs = ",";
 			Collections.sort(packages);
@@ -148,7 +148,7 @@ public class SiteMap {
 				instpacks += pack + ",,";
 
 			instpacks = instpacks.substring(0, instpacks.length() - 1);
-			
+
 			siteMap.put("Packages", packs);
 			siteMap.put("InstalledPackages", instpacks);
 		}

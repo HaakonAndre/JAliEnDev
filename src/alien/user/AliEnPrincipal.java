@@ -275,8 +275,10 @@ public class AliEnPrincipal implements Principal, Serializable {
 	 *            string value of key
 	 */
 	public void setExtension(String key, String value) {
-		if (extensions != null)
-			extensions.put(key, value);
+		if (extensions == null)
+			extensions = new HashMap<>();
+
+		extensions.put(key, value);
 	}
 
 	/**

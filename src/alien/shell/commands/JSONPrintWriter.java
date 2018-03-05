@@ -94,7 +94,7 @@ public class JSONPrintWriter extends UIPrintWriter {
 
 		try {
 			final JSONObject replyObject = new JSONObject();
-			if (metadataResult != null)
+			if (metadataResult.size() > 0)
 				replyObject.put("metadata", metadataResult);
 
 			replyObject.put("results", resultArray);

@@ -230,7 +230,12 @@ public class ConfigUtils {
 		URL dirURL = referenceClass.getClassLoader().getResource(path);
 		if (dirURL != null && dirURL.getProtocol().equals("file")) {
 			/* A file path: easy enough */
-			return Arrays.asList(new File(dirURL.toURI()).list());
+			final String[] listing = new File(dirURL.toURI()).list();
+			
+			if (listing!=null)
+				return Arrays.asList(listing);
+			
+			return Collections.EMPTY_LIST;
 		}
 
 		if (dirURL == null) {
