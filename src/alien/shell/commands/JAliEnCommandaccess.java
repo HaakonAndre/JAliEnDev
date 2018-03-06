@@ -1,7 +1,5 @@
 package alien.shell.commands;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -45,11 +43,6 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	private final HashMap<String, Integer> qos = new HashMap<>();
 
 	/**
-	 * name of a local File that will be written
-	 */
-	private String localFileName = null;
-
-	/**
 	 * return pfns;
 	 */
 	private List<PFN> pfns = null;
@@ -78,23 +71,8 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			return;
 		}
 
-		// is it ok here? to check, is this for a new file
-		try {
-			File f = null;
-
-			if (localFileName != null && localFileName.length() > 0)
-				f = new File(localFileName);
-
-			if (f != null && f.exists() && f.isFile() && f.canRead())
-				guid = GUIDUtils.createGuid(new File(localFileName), commander.user);
-			else
-				guid = GUIDUtils.createGuid(commander.user);
-		} catch (final IOException e) {
-			e.printStackTrace();
-
-			// TODO
-			return;
-		}
+		// create a new guid in case needed
+		guid = GUIDUtils.createGuid(commander.user);
 
 		if (lfn.guid == null) {
 			lfn.guid = guid.guid;

@@ -2244,12 +2244,19 @@ public class TaskQueueUtils {
 			if (db == null)
 				return false;
 
-			db.setQueryTimeout(60);
-
 			if (monitor != null)
 				monitor.incrementCounter("QUEUE_db_lookup");
 
+			db.setQueryTimeout(60);
+			db.setReadOnly(false);
 			if (!db.query("DELETE FROM QUEUE_TOKEN WHERE queueId=?;", false, Long.valueOf(queueId))) {
+				putJobLog(queueId, "state", "Failed to execute queue token deletion query", null);
+				return false;
+			}
+
+			db.setQueryTimeout(60);
+			db.setReadOnly(false);
+			if (!db.query("DELETE FROM JOBTOKEN WHERE queueId=?;", false, Long.valueOf(queueId))) { // TODO: delete after full migration
 				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
 				return false;
 			}
@@ -2816,15 +2823,15 @@ public class TaskQueueUtils {
 			return null;
 		}
 	};
-	
+
 	/**
 	 * @param siteId
 	 * @return site name
 	 */
 	public static String getSiteName(final int siteId) {
-		if (siteId<=0)
+		if (siteId <= 0)
 			return null;
-		
+
 		return siteNameCache.get(Integer.valueOf(siteId));
 	}
 
