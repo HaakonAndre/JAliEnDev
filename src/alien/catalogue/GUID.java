@@ -853,6 +853,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public Set<LFN> getLFNs() {
 		if (lfnCache != null)
 			return lfnCache;
+		
+		if (guidId==0)
+			return null;
 
 		try (DBFunctions db = GUIDUtils.getDBForGUID(guid)) {
 			if (db == null)
