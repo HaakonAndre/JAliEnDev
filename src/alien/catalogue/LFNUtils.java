@@ -1169,32 +1169,34 @@ public class LFNUtils {
 		if (archive == null || !archive.exists || !archive.isFile() || !archive.isReal())
 			return null;
 
-		final List<LFN> sameDirListing = archive.getParentDir().list();
-
-		if (sameDirListing == null || sameDirListing.size() == 0)
-			return null;
-
 		final List<LFN> ret = new ArrayList<>();
 
-		for (final LFN file : sameDirListing)
-			if (file.isFile()) {
-				final Set<PFN> pfns = file.whereis();
+		LFN parentDir = archive.getParentDir();
+		if (parentDir.exists) {
+			final List<LFN> sameDirListing = parentDir.list();
 
-				if (pfns != null)
-					for (final PFN p : pfns)
-						if (p.pfn.startsWith("guid:/"))
-							try {
-								final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+			if (sameDirListing == null || sameDirListing.size() == 0)
+				return null;
 
-								if (guid.equals(archive.guid)) {
-									ret.add(file);
-									continue;
+			for (final LFN file : sameDirListing)
+				if (file.isFile()) {
+					final Set<PFN> pfns = file.whereis();
+
+					if (pfns != null)
+						for (final PFN p : pfns)
+							if (p.pfn.startsWith("guid:/"))
+								try {
+									final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+
+									if (guid.equals(archive.guid)) {
+										ret.add(file);
+										continue;
+									}
+								} catch (@SuppressWarnings("unused") final Exception e) {
+									return null;
 								}
-							} catch (@SuppressWarnings("unused") final Exception e) {
-								return null;
-							}
-			}
-
+				}
+		}
 		return ret;
 	}
 
