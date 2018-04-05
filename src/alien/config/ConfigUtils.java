@@ -267,7 +267,7 @@ public class ConfigUtils {
 			if (listing != null)
 				return Arrays.asList(listing);
 
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		}
 
 		if (dirURL == null) {
