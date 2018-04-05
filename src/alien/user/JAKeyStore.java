@@ -504,7 +504,7 @@ public class JAKeyStore {
 			if (System.getenv("JALIEN_TOKEN_KEY") != null)
 				token_key = System.getenv("JALIEN_TOKEN_KEY");
 			else
-				token_key = config.gets("tokenkey.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
+				token_key = config.gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey.pem");
 
 		final String token_cert;
 		if (tokenCertString != null)
@@ -513,7 +513,7 @@ public class JAKeyStore {
 			if (System.getenv("JALIEN_TOKEN_CERT") != null)
 				token_cert = System.getenv("JALIEN_TOKEN_CERT");
 			else
-				token_cert = config.gets("tokencert.path", System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
+				token_cert = config.gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert.pem");
 
 		tokenCert = KeyStore.getInstance("JKS");
 

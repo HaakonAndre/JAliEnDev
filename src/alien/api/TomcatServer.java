@@ -68,6 +68,7 @@ public class TomcatServer {
 		Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
 		service.addConnector(createSslConnector(tomcatPort));
+		service.addConnector(createHttpConnector(tomcatPort + 1));
 		tomcat.getEngine().setRealm(new LdapCertificateRealm());
 
 		// Configure websocket webapplication
@@ -143,7 +144,7 @@ public class TomcatServer {
 	}
 
 	/**
-	 * Create connector for the Tomcat server
+	 * Create SSL connector for the Tomcat server
 	 *
 	 * @param tomcatPort
 	 * @throws Exception
@@ -170,6 +171,26 @@ public class TomcatServer {
 		connector.setAttribute("clientAuth", "true");
 		connector.setAttribute("sslProtocol", "TLS");
 		connector.setAttribute("SSLEnabled", "true");
+		connector.setAttribute("maxThreads", "200");
+		connector.setAttribute("connectionTimeout", "20000");
+		return connector;
+	}
+
+	/**
+	 * Create HTTP connector for the Tomcat server
+	 *
+	 * @param tomcatPort
+	 * @throws Exception
+	 */
+	private static Connector createHttpConnector(int tomcatPort) throws Exception {
+
+		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+
+		connector.setPort(tomcatPort);
+		connector.setSecure(false);
+		connector.setScheme("http");
+		connector.setAttribute("clientAuth", "false");
+		connector.setAttribute("SSLEnabled", "false");
 		connector.setAttribute("maxThreads", "200");
 		connector.setAttribute("connectionTimeout", "20000");
 		return connector;
@@ -353,11 +374,9 @@ public class TomcatServer {
 		}
 
 		// Two files will be the result of this command
-		// Check if their location is set by env variables or in config, otherwise put default location in $USER_HOME/.globus/
-		String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
-		String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
+		// Check if their location is set by env variables or in config, otherwise put default location in $TMPDIR/
+		String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert.pem");
+		String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey.pem");
 
 		File tokencertfile = new File(tokencertpath);
 		File tokenkeyfile = new File(tokenkeypath);
