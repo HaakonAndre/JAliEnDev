@@ -13,6 +13,7 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
+import alien.taskQueue.JobToken;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import lazyj.RequestWrapper;
@@ -67,7 +68,8 @@ public class JToken extends HttpServlet {
 				os.println("$VAR1 = [");
 				os.println("  {");
 				os.println("    'publicKey' => '" + gtc.getCertificateAsString() + "',");
-				os.println("    'privateKey' => '" + gtc.getPrivateKeyAsString() + "'");
+				os.println("    'privateKey' => '" + gtc.getPrivateKeyAsString() + "',");
+				os.println("    'token' => '" + JobToken.generateToken() + "'");
 				os.println("  }");
 				os.println("];");
 			} catch (final ServerException e) {
