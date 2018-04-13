@@ -66,7 +66,10 @@ public class GetTokenCertificate extends Request {
 	 * @return AliEn CA certificate
 	 */
 	public static X509Certificate getRootPublicKey() {
-		return rootCert.getX509Certificate();
+		if (rootCert!=null)
+			return rootCert.getX509Certificate();
+		
+		return null;
 	}
 
 	// outgoing fields
@@ -125,7 +128,7 @@ public class GetTokenCertificate extends Request {
 			if (extension == null || extension.length() == 0)
 				throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
 
-			builder = builder.setCn("Jobs").setCn(requester).setOu(requester);
+			builder = builder.setCn("Jobs").setCn(requested).setOu(requested);
 			break;
 		case JOB_AGENT_TOKEN:
 			if (!getEffectiveRequester().canBecome("vobox"))
