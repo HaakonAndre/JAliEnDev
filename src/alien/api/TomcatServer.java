@@ -68,7 +68,6 @@ public class TomcatServer {
 		Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
 		service.addConnector(createSslConnector(tomcatPort));
-		service.addConnector(createHttpConnector(tomcatPort + 1));
 		tomcat.getEngine().setRealm(new LdapCertificateRealm());
 
 		// Configure websocket webapplication
@@ -171,26 +170,6 @@ public class TomcatServer {
 		connector.setAttribute("clientAuth", "true");
 		connector.setAttribute("sslProtocol", "TLS");
 		connector.setAttribute("SSLEnabled", "true");
-		connector.setAttribute("maxThreads", "200");
-		connector.setAttribute("connectionTimeout", "20000");
-		return connector;
-	}
-
-	/**
-	 * Create HTTP connector for the Tomcat server
-	 *
-	 * @param tomcatPort
-	 * @throws Exception
-	 */
-	private static Connector createHttpConnector(int tomcatPort) throws Exception {
-
-		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
-
-		connector.setPort(tomcatPort);
-		connector.setSecure(false);
-		connector.setScheme("http");
-		connector.setAttribute("clientAuth", "false");
-		connector.setAttribute("SSLEnabled", "false");
 		connector.setAttribute("maxThreads", "200");
 		connector.setAttribute("connectionTimeout", "20000");
 		return connector;
