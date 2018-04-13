@@ -24,6 +24,8 @@ import lazyj.RequestWrapper;
  */
 public class JToken extends HttpServlet {
 
+	private static final AliEnPrincipal requester = UserFactory.getByUsername("jobagent");
+
 	/**
 	 *
 	 */
@@ -47,17 +49,10 @@ public class JToken extends HttpServlet {
 			return;
 		}
 
-		final AliEnPrincipal user = UserFactory.getByUsername(username);
-
-		if (user == null) {
-			resp.sendError(HttpServletResponse.SC_EXPECTATION_FAILED, "Unknown user " + username);
-			return;
-		}
-
 		final int resubmission = rw.geti("resubmission", 0);
 
 		try (ServletOutputStream os = resp.getOutputStream()) {
-			GetTokenCertificate gtc = new GetTokenCertificate(user, username, TokenCertificateType.JOB_TOKEN, "queueid=" + queueId + "/resubmission=" + resubmission, 1);
+			GetTokenCertificate gtc = new GetTokenCertificate(requester, username, TokenCertificateType.JOB_TOKEN, "queueid=" + queueId + "/resubmission=" + resubmission, 1);
 			try {
 				gtc = Dispatcher.execute(gtc);
 
