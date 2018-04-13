@@ -1,6 +1,7 @@
 package alien.servlets;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
@@ -25,6 +26,13 @@ import lazyj.RequestWrapper;
 public class JToken extends HttpServlet {
 
 	private static final AliEnPrincipal requester = UserFactory.getByUsername("jobagent");
+
+	static {
+		final X509Certificate cert = GetTokenCertificate.getRootPublicKey();
+
+		if (cert != null)
+			requester.setUserCert(new X509Certificate[] { cert });
+	}
 
 	/**
 	 *

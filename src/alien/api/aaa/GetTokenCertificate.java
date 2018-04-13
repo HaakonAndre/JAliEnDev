@@ -60,6 +60,15 @@ public class GetTokenCertificate extends Request {
 			rootCert = null;
 	}
 
+	/**
+	 * Get AliEn CA certificate
+	 * 
+	 * @return AliEn CA certificate
+	 */
+	public static X509Certificate getRootPublicKey() {
+		return rootCert.getX509Certificate();
+	}
+
 	// outgoing fields
 	final TokenCertificateType certificateType;
 	final String extension;
