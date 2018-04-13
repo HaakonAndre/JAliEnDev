@@ -1,0 +1,75 @@
+package alien.servlets;
+
+import java.io.IOException;
+
+import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import alien.api.Dispatcher;
+import alien.api.ServerException;
+import alien.api.aaa.GetTokenCertificate;
+import alien.api.aaa.TokenCertificateType;
+import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
+import lazyj.RequestWrapper;
+
+/**
+ * Generate job tokens for jAliEn jobs to authenticate with
+ *
+ * @author costing
+ * @since 2018-04-13
+ */
+public class JToken extends HttpServlet {
+
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 11942488126789341L;
+
+	@Override
+	protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
+		final RequestWrapper rw = new RequestWrapper(req);
+
+		final long queueId = rw.getl("queueId", -1);
+
+		if (queueId < 0) {
+			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "You need to pass a valid queueId URL parameter");
+			return;
+		}
+
+		final String username = rw.gets("username").trim();
+
+		if (username == null || username.length() == 0) {
+			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "You need to pass a valid username URL parameter");
+			return;
+		}
+
+		final AliEnPrincipal user = UserFactory.getByUsername(username);
+
+		if (user == null) {
+			resp.sendError(HttpServletResponse.SC_EXPECTATION_FAILED, "Unknown user " + username);
+			return;
+		}
+
+		final int resubmission = rw.geti("resubmission", 0);
+
+		try (ServletOutputStream os = resp.getOutputStream()) {
+			GetTokenCertificate gtc = new GetTokenCertificate(user, username, TokenCertificateType.JOB_TOKEN, "queueid=" + queueId + "/resubmission=" + resubmission, 1);
+			try {
+				gtc = Dispatcher.execute(gtc);
+
+				os.println("$VAR1 = [");
+				os.println("  {");
+				os.println("    'publicKey' => '" + gtc.getCertificateAsString() + "',");
+				os.println("    'privateKey' => '" + gtc.getPrivateKeyAsString() + "'");
+				os.println("  }");
+				os.println("];");
+			} catch (final ServerException e) {
+				resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception executing the request: " + e.getMessage());
+			}
+		}
+	}
+}
