@@ -66,9 +66,9 @@ public class GetTokenCertificate extends Request {
 	 * @return AliEn CA certificate
 	 */
 	public static X509Certificate getRootPublicKey() {
-		if (rootCert!=null)
+		if (rootCert != null)
 			return rootCert.getX509Certificate();
-		
+
 		return null;
 	}
 
@@ -112,12 +112,13 @@ public class GetTokenCertificate extends Request {
 		DnBuilder builder = CA.dn().setC("ch").setO("AliEn");
 
 		final String requester = getEffectiveRequester().getDefaultUser();
-		final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
 
 		switch (certificateType) {
 		case USER_CERTIFICATE:
 			if (getEffectiveRequester().isJob() || getEffectiveRequester().isJobAgent())
 				throw new IllegalArgumentException("You can't request a User token as JobAgent or Job");
+
+			final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
 
 			builder = builder.setCn("Users").setCn(requester).setOu(requested);
 			break;
@@ -128,7 +129,7 @@ public class GetTokenCertificate extends Request {
 			if (extension == null || extension.length() == 0)
 				throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
 
-			builder = builder.setCn("Jobs").setCn(requested).setOu(requested);
+			builder = builder.setCn("Jobs").setCn(requestedUser).setOu(requestedUser);
 			break;
 		case JOB_AGENT_TOKEN:
 			if (!getEffectiveRequester().canBecome("vobox"))
