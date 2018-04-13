@@ -13,6 +13,8 @@ import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import alien.taskQueue.JobToken;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
@@ -35,6 +37,8 @@ public class JToken extends HttpServlet {
 			requester.setUserCert(new X509Certificate[] { cert });
 	}
 
+	static transient final Monitor monitor = MonitorFactory.getMonitor(JToken.class.getCanonicalName());
+
 	/**
 	 *
 	 */
@@ -42,38 +46,48 @@ public class JToken extends HttpServlet {
 
 	@Override
 	protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-		final RequestWrapper rw = new RequestWrapper(req);
+		final long start = System.nanoTime();
 
-		final long queueId = rw.getl("queueId", -1);
+		try {
+			final RequestWrapper rw = new RequestWrapper(req);
 
-		if (queueId < 0) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "You need to pass a valid queueId URL parameter");
-			return;
-		}
+			final long queueId = rw.getl("queueId", -1);
 
-		final String username = rw.gets("username").trim();
+			if (queueId < 0) {
+				resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "You need to pass a valid queueId URL parameter");
+				return;
+			}
 
-		if (username == null || username.length() == 0) {
-			resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "You need to pass a valid username URL parameter");
-			return;
-		}
+			final String username = rw.gets("username").trim();
 
-		final int resubmission = rw.geti("resubmission", 0);
+			if (username == null || username.length() == 0) {
+				resp.sendError(HttpServletResponse.SC_BAD_REQUEST, "You need to pass a valid username URL parameter");
+				return;
+			}
 
-		try (ServletOutputStream os = resp.getOutputStream()) {
-			GetTokenCertificate gtc = new GetTokenCertificate(requester, username, TokenCertificateType.JOB_TOKEN, "queueid=" + queueId + "/resubmission=" + resubmission, 1);
-			try {
-				gtc = Dispatcher.execute(gtc);
+			final int resubmission = rw.geti("resubmission", 0);
 
-				os.println("$VAR1 = [");
-				os.println("  {");
-				os.println("    'publicKey' => '" + gtc.getCertificateAsString() + "',");
-				os.println("    'privateKey' => '" + gtc.getPrivateKeyAsString() + "',");
-				os.println("    'token' => '" + JobToken.generateToken() + "'");
-				os.println("  }");
-				os.println("];");
-			} catch (final ServerException e) {
-				resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception executing the request: " + e.getMessage());
+			try (ServletOutputStream os = resp.getOutputStream()) {
+				GetTokenCertificate gtc = new GetTokenCertificate(requester, username, TokenCertificateType.JOB_TOKEN, "queueid=" + queueId + "/resubmission=" + resubmission, 1);
+				try {
+					gtc = Dispatcher.execute(gtc);
+
+					os.println("$VAR1 = [");
+					os.println("  {");
+					os.println("    'publicKey' => '" + gtc.getCertificateAsString() + "',");
+					os.println("    'privateKey' => '" + gtc.getPrivateKeyAsString() + "',");
+					os.println("    'token' => '" + JobToken.generateToken() + "'");
+					os.println("  }");
+					os.println("];");
+				} catch (final ServerException e) {
+					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception executing the request: " + e.getMessage());
+				}
+			}
+		} finally {
+			if (monitor != null) {
+				final long duration = System.nanoTime() - start;
+
+				monitor.addMeasurement("ms_to_answer", duration / 1000000d);
 			}
 		}
 	}
