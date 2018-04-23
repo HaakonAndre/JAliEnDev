@@ -121,7 +121,14 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 								commander.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
 							}
 
-						commander.printOut("url", pfn.ticket.envelope.getTransactionURL());
+						// If archive member access requested, add it's filename as anchor
+						if (pfn.ticket.envelope.getArchiveAnchor().getFileName() != "") {
+							commander.printOut("url", pfn.ticket.envelope.getTransactionURL() + "#" + pfn.ticket.envelope.getArchiveAnchor().getFileName());
+						}
+						else {
+							commander.printOut("url", pfn.ticket.envelope.getTransactionURL());
+						}
+
 						commander.printOut("pfn", pfn.toString());
 						commander.printOut("guid", pfn.getGuid().getName());
 						commander.printOut("se", pfn.getSE().getName());
