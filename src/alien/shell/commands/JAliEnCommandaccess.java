@@ -122,7 +122,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 							}
 
 						// If archive member access requested, add it's filename as anchor
-						if (pfn.ticket.envelope.getArchiveAnchor().getFileName() != "") {
+						if (pfn.ticket.envelope.getArchiveAnchor() != null) {
 							commander.printOut("url", pfn.ticket.envelope.getTransactionURL() + "#" + pfn.ticket.envelope.getArchiveAnchor().getFileName());
 						}
 						else {
