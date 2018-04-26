@@ -86,6 +86,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		}
 
 		int flags = 0;
+		String query = "";
 		/*
 		 * try { if (alArguments.size() == 3) flags = Integer.parseInt(alArguments.get(2)); } catch (NumberFormatException e) { // ignore }
 		 */
@@ -94,8 +95,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			flags = flags | LFNUtils.FIND_INCLUDE_DIRS;
 		if (bS)
 			flags = flags | LFNUtils.FIND_NO_SORT;
-		if (bY)
+		if (bY) {
+			for (int i = 2; i < alPaths.size(); i++)
+				query += alPaths.get(i);
 			flags = flags | LFNUtils.FIND_BIGGEST_VERSION;
+		}
 		if (bX)
 			flags = flags | LFNUtils.FIND_SAVE_XML;
 		if (bJ)
@@ -103,7 +107,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
 
-		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), flags, xmlCollectionPath, queueid);
+		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid);
 
 		if (lfns != null) {
 			if (bX) {
@@ -120,7 +124,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 					commander.printOut("group", lfn.gowner);
 					commander.printOut("size", (bH ? Format.size(lfn.size) : String.valueOf(lfn.size)));
 					commander.printOut("ctime", " " + lfn.ctime);
-					
+
 					// print long
 					commander.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
 							+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + padSpace(1) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());

@@ -401,8 +401,23 @@ public class CatalogueApiUtils {
 	 * @return result LFNs
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final int flags, final String xmlCollectionName, Long queueid) {
+		return this.find(path, pattern, null, flags, xmlCollectionName, Long.valueOf(0));
+	}
+
+	/**
+	 * Find an LFN based on pattern and save to XmlCollection
+	 * 
+	 * @param path
+	 * @param pattern
+	 * @param query
+	 * @param flags
+	 * @param xmlCollectionName
+	 * @param queueid
+	 * @return result LFNs
+	 */
+	public Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, Long queueid) {
 		try {
-			return Dispatcher.execute(new FindfromString(commander.getUser(), path, pattern, flags, xmlCollectionName, queueid)).getLFNs();
+			return Dispatcher.execute(new FindfromString(commander.getUser(), path, pattern, query, flags, xmlCollectionName, queueid)).getLFNs();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();
@@ -616,10 +631,11 @@ public class CatalogueApiUtils {
 
 		cp.copyLocalToGrid(localFile, lfnAbsolutePath);
 	}
-	
+
 	/**
 	 * Upload a local file to the Grid
-	 * @param fromLFN 
+	 * 
+	 * @param fromLFN
 	 * 
 	 * @param localFile
 	 *            full path to local file

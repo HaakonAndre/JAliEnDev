@@ -635,6 +635,25 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
+		return find(path, pattern, null, flags, owner, xmlCollectionName, queueid);
+	}
+
+	/**
+	 * @param path
+	 * @param pattern
+	 * @param query
+	 * @param flags
+	 *            a combination of FIND_* flags
+	 * @param owner
+	 * @param xmlCollectionName
+	 * @param queueid
+	 *            a job id to filter for its files
+	 * @return the list of LFNs that match
+	 */
+	public static Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
+		if ((flags & FIND_BIGGEST_VERSION) != 0)
+			return findByMetadata(path, pattern, "", query, flags);
+
 		final Set<LFN> ret;
 
 		if ((flags & FIND_NO_SORT) != 0)
@@ -700,7 +719,8 @@ public class LFNUtils {
 				}
 
 			} catch (final Exception e) {
-				logger.log(Level.SEVERE, "Could not upload the XML collection because " + e.getMessage());
+				logger.log(Level.SEVERE, "Could not upload the XML collection because " + e.toString());
+				e.printStackTrace();
 			}
 		}
 

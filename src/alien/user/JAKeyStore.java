@@ -911,7 +911,6 @@ public class JAKeyStore {
 		if (JAKeyStore.clientCert != null) {
 			try {
 				if (clientCert.getCertificateChain("User.cert") == null) {
-					System.out.println("----OOOOOOOOOOOOOOOOOOOOOOOOOOPS----------------");
 					loadKeyStore();
 				}
 			} catch (KeyStoreException e) {
