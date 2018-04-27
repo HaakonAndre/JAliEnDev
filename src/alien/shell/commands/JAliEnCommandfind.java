@@ -97,7 +97,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			flags = flags | LFNUtils.FIND_NO_SORT;
 		if (bY) {
 			for (int i = 2; i < alPaths.size(); i++)
-				query += alPaths.get(i);
+				query += alPaths.get(i) + " ";
 			flags = flags | LFNUtils.FIND_BIGGEST_VERSION;
 		}
 		if (bX)
