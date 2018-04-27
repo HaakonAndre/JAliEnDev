@@ -651,18 +651,6 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
-		if ((flags & FIND_BIGGEST_VERSION) != 0)
-			return findByMetadata(path, pattern, "", query, flags);
-
-		final Set<LFN> ret;
-
-		if ((flags & FIND_NO_SORT) != 0)
-			ret = new LinkedHashSet<>();
-		else
-			ret = new TreeSet<>();
-
-		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
-
 		String processedPattern;
 
 		if ((flags & FIND_REGEXP) == 0)
@@ -675,6 +663,20 @@ public class LFNUtils {
 
 			processedPattern += "$";
 		}
+
+		if ((flags & FIND_BIGGEST_VERSION) != 0) {
+			String tag = query.substring(0, query.indexOf(":"));
+			return findByMetadata(path, processedPattern, tag, query, flags);
+		}
+
+		final Set<LFN> ret;
+
+		if ((flags & FIND_NO_SORT) != 0)
+			ret = new LinkedHashSet<>();
+		else
+			ret = new TreeSet<>();
+
+		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
 
 		for (final IndexTableEntry ite : matchingTables) {
 			final List<LFN> findResults = ite.find(path, processedPattern, flags, queueid);
@@ -739,7 +741,7 @@ public class LFNUtils {
 			db.setReadOnly(true);
 			db.setQueryTimeout(30);
 
-			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
+			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND path='" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
 			while (db.moveNext())
 				ret.add(db.gets(1));
