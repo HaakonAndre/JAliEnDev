@@ -775,11 +775,9 @@ public class LFNUtils {
 			db.setReadOnly(true);
 
 			for (final String tableName : getTagTableNames(path, tag)) {
-				String q = "SELECT distinct file FROM " + Format.escSQL(tableName) + " " + Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
-						+ Format.escSQL(query.replace(":", "."));
-
-				if ((flags & FIND_BIGGEST_VERSION) != 0)
-					q += " ORDER BY version DESC, entryId DESC LIMIT 1";
+				String q = "SELECT file from (SELECT @rn :=  CASE WHEN @prev_dir <> dir_number THEN 1 ELSE @rn+1 END AS rn, @prev_dir:=dir_number, file FROM " + Format.escSQL(tableName) + " "
+						+ Format.escSQL(tag) + ", (SELECT @rn := 0) r WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
+						+ Format.escSQL(query.replace(":", ".") + "having rn=1 order by dir_number, version desc) x");
 
 				if (!db.query(q))
 					continue;
