@@ -60,10 +60,6 @@ public class ComputingElement extends Thread {
 	private String site;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	private HashMap<String, Object> config = null;
-	// private HashMap<String, Object> ceConfig = null;
-	// private HashMap<String, Object> hostConfig = null;
-	// private HashMap<String, Object> siteConfig = null;
-	// private HashMap<String, Object> VOConfig = null;
 	private HashMap<String, String> host_environment = null;
 	private HashMap<String, String> ce_environment = null;
 	private BatchQueue queue = null;
@@ -118,7 +114,7 @@ public class ComputingElement extends Thread {
 				return;
 			}
 
-		logger.log(Level.INFO, "Starting ComputingElement in " + siteMap.get("host"));
+		logger.log(Level.INFO, "Starting ComputingElement in " + config.get("host_host"));
 		try {
 			System.out.println("Trying to start JBox");
 			JBoxServer.startJBoxService(0);
@@ -306,19 +302,11 @@ public class ComputingElement extends Thread {
 		final String token_cert_str = token_certificate_full[0];
 		final String token_key_str = token_certificate_full[1];
 
-		before += "echo 'Using token certificate'\n" + 
-				"mkdir -p " + host_tempdir + "\n" + 
-				"file=" + cert_file + "\n" + // TODO: check and remove this statement if indeed not needed
-				"cat >" + cert_file + " <<EOF\n" + token_cert_str + "EOF\n" + 
-				"chmod 0400 " + cert_file + "\n" + 
-				"export JALIEN_TOKEN_CERT=" + cert_file + ";\n" + 
-				"echo USING JALIEN_TOKEN_CERT\n" + 
-				"file=" + key_file + "\n" +  // TODO: check and remove this statement if indeed not needed
-				"cat >" + key_file + " <<EOF\n" + token_key_str + "EOF\n" + 
-				"chmod 0400 " + key_file + "\n" + 
-				"export JALIEN_TOKEN_KEY=" + key_file + ";\n" + 
-				"echo USING JALIEN_TOKEN_KEY\n";
-		
+		before += "echo 'Using token certificate'\n" + "mkdir -p " + host_tempdir + "\n" + "file=" + cert_file + "\n" + // TODO: check and remove this statement if indeed not needed
+				"cat >" + cert_file + " <<EOF\n" + token_cert_str + "EOF\n" + "chmod 0400 " + cert_file + "\n" + "export JALIEN_TOKEN_CERT=" + cert_file + ";\n" + "echo USING JALIEN_TOKEN_CERT\n"
+				+ "file=" + key_file + "\n" + // TODO: check and remove this statement if indeed not needed
+				"cat >" + key_file + " <<EOF\n" + token_key_str + "EOF\n" + "chmod 0400 " + key_file + "\n" + "export JALIEN_TOKEN_KEY=" + key_file + ";\n" + "echo USING JALIEN_TOKEN_KEY\n";
+
 		// + startup_script + " proxy-info\n";
 		after += "rm -rf " + cert_file + "\n";
 		after += "rm -rf " + key_file + "\n";
@@ -436,7 +424,7 @@ public class ComputingElement extends Thread {
 
 		// return System.getenv("HOME") + "/jalien/jalien"; //TODO: local version
 		return "curl -o jobagent.jar \"https://doc-14-4k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/qnsc320nlbfmktguqgu83qckicc984g1/1510927200000/03129700828163697278/*/1YriohTbeoaSLx8ppglq322XqCdCA2HKd?e=download\"\n"
-		+ "echo [DEBUG] Downloaded the jar package\n" + "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar jobagent.jar\n";
+				+ "echo [DEBUG] Downloaded the jar package\n" + "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar jobagent.jar\n";
 	}
 
 	// Prepares a hash to create the sitemap
@@ -504,8 +492,7 @@ public class ComputingElement extends Thread {
 		final HashMap<String, String> map = new HashMap<>();
 		if (field instanceof TreeSet) {
 			@SuppressWarnings("unchecked")
-			final
-			Set<String> host_env_set = (Set<String>) field;
+			final Set<String> host_env_set = (Set<String>) field;
 			for (final String env_entry : host_env_set) {
 				final String[] host_env_str = env_entry.split("=");
 				map.put(host_env_str[0], host_env_str[1]);
@@ -519,7 +506,7 @@ public class ComputingElement extends Thread {
 	}
 
 	/*
-	 * Get queue clas with reflection
+	 * Get queue class with reflection
 	 */
 	BatchQueue getBatchQueue(final String type) {
 		Class<?> cl = null;
@@ -539,7 +526,7 @@ public class ComputingElement extends Thread {
 		}
 
 		// prepare some needed fields for the queue
-		if (!config.containsKey("host") || (config.get("host") == null)) {
+		if (!config.containsKey("host_host") || (config.get("host_host") == null)) {
 			InetAddress ip;
 			String hostname = "";
 			try {
@@ -548,10 +535,10 @@ public class ComputingElement extends Thread {
 			} catch (final UnknownHostException e) {
 				logger.log(Level.WARNING, "Problem identifying local host", e);
 			}
-			config.put("host", hostname);
+			config.put("host_host", hostname);
 		}
-		if (!config.containsKey("CLUSTERMONITOR_PORT") || (config.get("CLUSTERMONITOR_PORT") == null))
-			config.put("CLUSTERMONITOR_PORT", Integer.valueOf(this.port));
+		if (!config.containsKey("host_port") || (config.get("host_port") == null))
+			config.put("host_port", Integer.valueOf(this.port));
 
 		try {
 			queue = (BatchQueue) con.newInstance(config, logger);
