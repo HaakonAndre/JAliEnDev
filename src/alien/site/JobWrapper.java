@@ -30,7 +30,6 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
-import alien.catalogue.Register;
 import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
@@ -603,7 +602,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 					if (filesIncluded != null) {
 						// Register lfn links to archive
-						Register.register(entry, outputDir + "/", UserFactory.getByUsername(username));
+						CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
 					}
 
 				}
