@@ -179,7 +179,7 @@ public class TextCache extends ExtendedServlet {
 	/**
 	 * Close opened logger stream, if needed
 	 */
-	static final void closeStreams() {
+	static synchronized final void closeStreams() {
 		if (requestLogger != null) {
 			requestLogger.flush();
 			requestLogger.close();

@@ -44,7 +44,7 @@ public class GUIDfromString extends Request {
 		this.guid = GUIDUtils.getGUID(UUID.fromString(sguid), evenIfDoesNotExist);
 
 		if (resolveLFNs)
-			if (this.guid.getLFNs() == null) {
+			if (this.guid != null && this.guid.getLFNs() == null) {
 				final LFN l = LFNUtils.getLFN(this.guid);
 
 				if (l != null)

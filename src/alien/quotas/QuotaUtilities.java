@@ -3,6 +3,7 @@
  */
 package alien.quotas;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -271,4 +272,35 @@ public final class QuotaUtilities {
 
 		return ret;
 	}
+
+	/**
+	 * Check job quota authorization for a user, for n jobs
+	 * 
+	 * @param account
+	 * @param numberOfJobsToSubmit
+	 * @return allowed or not
+	 */
+	public static final Map.Entry<Integer, String> checkJobQuota(String account, int numberOfJobsToSubmit) {
+		Quota q = getJobQuota(account);
+
+		if (q == null)
+			return new AbstractMap.SimpleEntry<>(Integer.valueOf(1), "Error: couldn't get quotas for user: " + account);
+
+		if (numberOfJobsToSubmit + q.unfinishedJobsLast24h > q.maxUnfinishedJobs) {
+			return new AbstractMap.SimpleEntry<>(Integer.valueOf(1),
+					"Denied: You're trying to submit " + numberOfJobsToSubmit + " jobs. That exceeds your limit (at the moment,  " + q.unfinishedJobsLast24h + "/" + q.maxUnfinishedJobs + ").");
+		}
+
+		if (q.totalRunningTimeLast24h >= q.maxTotalRunningTime) {
+			return new AbstractMap.SimpleEntry<>(Integer.valueOf(1), "Denied: You have passed your allowed job running time");
+		}
+
+		if (q.totalCpuCostLast24h >= q.maxTotalCpuCost) {
+			return new AbstractMap.SimpleEntry<>(Integer.valueOf(1), "Denied: You have passed your allowed CPU running time");
+		}
+
+		return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Allowed");
+
+	}
+
 }

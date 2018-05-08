@@ -70,24 +70,18 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 		else
 			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5);
 
-		if (out.isRootPrinter()) {
-			if (pfns != null && pfns.size() > 0)
-				out.setField("lfn", "1");
-			else
-				out.setField("lfn", "0");
+		String ret = "";
+		if (pfns != null && pfns.size() > 0) {
+			commander.printOut("lfn", "1");
+			ret += lfn + padSpace(1) + "1";
 		}
 		else {
-			String ret = "";
-			if (pfns != null && pfns.size() > 0)
-				ret += lfn + padSpace(1) + "1";
-			else
-				ret += lfn + padSpace(1) + "0";
-			logger.info("Commit line : " + ret);
-
-			if (!isSilent())
-				out.printOutln(ret);
+			commander.printOut("lfn", "0");
+			ret += lfn + padSpace(1) + "0";
 		}
+		logger.info("Commit line : " + ret);
 
+		commander.printOutln(ret);
 	}
 
 	/**
@@ -133,13 +127,12 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * /** Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcommit(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandcommit(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 
 		final java.util.ListIterator<String> arg = alArguments.listIterator();
 
@@ -168,7 +161,6 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 
 		}
 		else
-			out.printErrln("No envelope to register passed.");
-
+			commander.printErrln("No envelope to register passed.");
 	}
 }

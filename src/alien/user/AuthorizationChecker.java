@@ -145,7 +145,7 @@ public final class AuthorizationChecker {
 		if (job == null || user == null)
 			return false;
 
-		if (job.getOwner().equals(user.getName()) || user.hasRole(job.getOwner()))
+		if (job.getOwner().equals(user.getName()) || user.hasRole(job.getOwner()) || user.hasRole("admin"))
 			return true;
 
 		return false;

@@ -19,7 +19,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (!this.command.equals("list") && !(isAdmin && this.command.equals("set"))) {
-			out.printErrln("Wrong command passed");
+			commander.printErrln("Wrong command passed");
 			printHelp();
 			return;
 		}
@@ -29,47 +29,47 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 		if (command.equals("list")) {
 			final FileQuota q = commander.q_api.getFileQuota();
 			if (q == null) {
-				out.printErrln("No file quota found for user " + username);
+				commander.printErrln("No file quota found for user " + username);
 				return;
 			}
 
-			out.printOutln(q.toString());
+			commander.printOutln(q.toString());
 			return;
 		}
 
 		if (command.equals("set")) {
 			if (this.param_to_set == null) {
-				out.printErrln("Error in parameter name");
+				commander.printErrln("Error in parameter name");
 				return;
 			}
 			else
 				if (this.value_to_set == null || this.value_to_set.longValue() == 0) {
-					out.printErrln("Error in value");
+					commander.printErrln("Error in value");
 					printHelp();
 					return;
 				}
 			// run the update
 			if (commander.q_api.setFileQuota(this.param_to_set, this.value_to_set.toString()))
-				out.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 			else
-				out.printOutln("Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.printOutln("Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 		}
 	}
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("fquota: Displays information about File Quotas.");
-		out.printOutln(helpUsage("fquota", "list [-<options>]"));
-		out.printOutln("Options:");
-		out.printOutln("  -unit = B|K|M|G: unit of file size");
+		commander.printOutln();
+		commander.printOutln("fquota: Displays information about File Quotas.");
+		commander.printOutln(helpUsage("fquota", "list [-<options>]"));
+		commander.printOutln("Options:");
+		commander.printOutln("  -unit = B|K|M|G: unit of file size");
 		if (this.isAdmin) {
-			out.printOutln();
-			out.printOutln("fquota set <user> <field> <value> - set the user quota for file catalogue");
-			out.printOutln("  (maxNbFiles, maxTotalSize(Byte))");
-			out.printOutln("  use <user>=% for all users");
+			commander.printOutln();
+			commander.printOutln("fquota set <user> <field> <value> - set the user quota for file catalogue");
+			commander.printOutln("  (maxNbFiles, maxTotalSize(Byte))");
+			commander.printOutln("  use <user>=% for all users");
 		}
-		out.printOutln();
+		commander.printOutln();
 	}
 
 	@Override
@@ -79,12 +79,11 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandfquota(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandfquota(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		this.isAdmin = commander.getUser().canBecome("admin");
 		if (alArguments.size() == 0)
 			return;

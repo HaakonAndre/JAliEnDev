@@ -28,11 +28,10 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 */
-	public JAliEnCommandmirror(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandmirror(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 
 		try {
 			final OptionParser parser = new OptionParser();
@@ -103,7 +102,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.useLFNasGuid && !GUIDUtils.isValidGUID(this.lfn)) {
-			out.printErrln("Invalid GUID was specified");
+			commander.printErrln("Invalid GUID was specified");
 			return;
 		}
 
@@ -123,15 +122,15 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 					if (result != null) {
 						result_string = JAliEnCommandmirror.Errcode2Text(result.intValue());
 						if (result.intValue() > 0)
-							out.printOutln(s + ": transfer scheduled");
+							commander.printOutln(s + ": transfer scheduled");
 						else
-							out.printErrln(s + ": " + result_string);
+							commander.printErrln(s + ": " + result_string);
 					}
 					else
-						out.printErrln(s + ": unexpected error");
+						commander.printErrln(s + ": unexpected error");
 				}
 			} catch (final IllegalArgumentException e) {
-				out.printErrln(e.getMessage());
+				commander.printErrln(e.getMessage());
 			}
 		}
 	}
@@ -194,14 +193,14 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("mirror Copies a file into another SE");
-		out.printOutln(" Usage:");
-		out.printOutln("	mirror [-g] [-try <number>] [-S [se[,se2[,!se3[,qos:count]]]]] <lfn> [<SE>]");
-		out.printOutln("                 -g:      Use the lfn as a guid");
-		out.printOutln("                 -S:     specifies the destination SEs to be used");
-		out.printOutln("                 -try <NumOfAttempts>     Specifies the number of attempts to try and mirror the file");
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln("mirror Copies a file into another SE");
+		commander.printOutln(" Usage:");
+		commander.printOutln("	mirror [-g] [-try <number>] [-S [se[,se2[,!se3[,qos:count]]]]] <lfn> [<SE>]");
+		commander.printOutln("                 -g:      Use the lfn as a guid");
+		commander.printOutln("                 -S:     specifies the destination SEs to be used");
+		commander.printOutln("                 -try <NumOfAttempts>     Specifies the number of attempts to try and mirror the file");
+		commander.printOutln();
 	}
 
 	@Override

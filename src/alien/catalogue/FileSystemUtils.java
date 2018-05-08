@@ -1,6 +1,7 @@
 package alien.catalogue;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -10,6 +11,7 @@ import java.util.regex.Pattern;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
+import alien.api.catalogue.FindfromString;
 import alien.api.catalogue.LFNListingfromString;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -137,21 +139,77 @@ public final class FileSystemUtils {
 		}
 
 		try {
+			// List all files and folders in the path (e.g. /alice/cern.ch/user/v/vyurchen/)
 			final LFNListingfromString listing = Dispatcher.execute(new LFNListingfromString(user, path));
 
-			final String processedPattern = Format.replace(Format.replace(pattern, "*", ".*"), "?", ".");
-
-			final Pattern p = Pattern.compile("^" + processedPattern + "$");
-
-			for (final LFN l : listing.getLFNs()) {
-				final Matcher m = p.matcher(l.getFileName());
-				if (m.matches())
-					result.add(l.getCanonicalName());
+			// If the pattern is complex (e.g. 01*/*Trig?er*.root - contains many wildcards in different directories)
+			// then expand paths recursively
+			if (pattern.contains("/")) {
+				// Strip the pattern and forget about everything after "/" for now
+				final String processedPattern = Format.replace(Format.replace(pattern.substring(0, pattern.indexOf("/")), "*", ".*"), "?", ".");
+				final Pattern p = Pattern.compile("^" + processedPattern + "$");
+				for (final LFN l : listing.getLFNs()) {
+					// Check only directories (because we have "/" in pattern)
+					if (l.isDirectory()) {
+						final Matcher m = p.matcher(l.getFileName());
+						if (m.matches()) {
+							result.addAll(expandPathWildCards(l.getCanonicalName() + pattern.substring(pattern.indexOf("/") + 1), user));
+						}
+					}
+				}
 			}
+			else {
+				// If the pattern contains only one wildcard in the filename - just find a match for it
+				final String processedPattern = Format.replace(Format.replace(pattern, "*", ".*"), "?", ".");
+
+				final Pattern p = Pattern.compile("^" + processedPattern + "$");
+
+				for (final LFN l : listing.getLFNs()) {
+					final Matcher m = p.matcher(l.getFileName());
+
+					if (m.matches())
+						result.add(l.getCanonicalName());
+				}
+			}
+
+			// TODO: This piece of code is here to remind you, that probably FindfromString would show better performance
+			// in some cases, so you need to run benchmarks and find out what are those cases
+
+			// if (!pattern.contains("/")) {
+			// final LFNListingfromString listing = Dispatcher.execute(new LFNListingfromString(user, path));
+			//
+			// String processedPattern = Format.replace(Format.replace(pattern, "*", ".*"), "?", ".");
+			//
+			// final Pattern p = Pattern.compile("^" + processedPattern + "$");
+			// System.out.println("p " + p.toString());
+			//
+			// for (final LFN l : listing.getLFNs()) {
+			//
+			// System.out.println("l.getFileName() " + l.getFileName());
+			// final Matcher m = p.matcher(l.getFileName());
+			//
+			// if (m.matches())
+			// result.add(l.getCanonicalName());
+			// }
+			// }
+			// else {
+			// final FindfromString ret = Dispatcher.execute(new FindfromString(user, path, pattern + "$", LFNUtils.FIND_REGEXP | LFNUtils.FIND_INCLUDE_DIRS));
+			//
+			// if (ret != null) {
+			// final Collection<LFN> lfns = ret.getLFNs();
+			//
+			// if (lfns != null) {
+			// for (final LFN l : lfns) {
+			// System.out.println("l.getCanonicalName() " + l.getCanonicalName());
+			// result.add(l.getCanonicalName());
+			// }
+			// }
+			// }
+			// }
+
 		} catch (final ServerException se) {
 			return null;
 		}
-
 		return result;
 	}
 

@@ -55,30 +55,16 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				if (pfns.toArray()[0] != null)
 					if (((PFN) pfns.toArray()[0]).pfn.toLowerCase().startsWith("guid://"))
 						pfns = commander.c_api.getGUID(((PFN) pfns.toArray()[0]).pfn.substring(8, 44)).getPFNs();
-			if (out.isRootPrinter()) {
-				if (!isSilent())
-					out.setField("value ", "the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in");
-				for (final PFN pfn : pfns) {
-					final String se = commander.c_api.getSE(pfn.seNumber).seName;
-					if (!isSilent())
-						out.setField("\t\t SE => ", padRight(se, 30) + " pfn =>" + pfn.pfn + "\n");
-				}
-			}
 
-			else {
-				if (!isSilent())
-					out.printOutln("the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in\n");
-				for (final PFN pfn : pfns) {
+			commander.printOutln("the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in\n");
+			for (final PFN pfn : pfns) {
 
-					final String se = commander.c_api.getSE(pfn.seNumber).seName;
-					if (!isSilent())
-						out.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>" + pfn.pfn + "\n");
-				}
+				final String se = commander.c_api.getSE(pfn.seNumber).seName;
+				commander.printOutln("\t\t SE => " + padRight(se, 30) + " pfn =>" + pfn.pfn + "\n");
 			}
 		}
 		else
-			if (!isSilent())
-				out.printOutln("No such file: [" + lfnOrGuid + "]");
+			commander.printOutln("No such file: [" + lfnOrGuid + "]");
 	}
 
 	/**
@@ -86,13 +72,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-
-		out.printOutln();
-		out.printOutln(helpUsage("whereis", "[-options] [<filename>]"));
-		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-g", "use the lfn as guid"));
-		out.printOutln(helpOption("-r", "resolve links (do not give back pointers to zip archives)"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("whereis", "[-options] [<filename>]"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-g", "use the lfn as guid"));
+		commander.printOutln(helpOption("-r", "resolve links (do not give back pointers to zip archives)"));
+		commander.printOutln();
 	}
 
 	/**
@@ -109,14 +94,13 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in JAliEnCOMMander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandwhereis(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandwhereis(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("g");

@@ -817,9 +817,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			// Insert into se_lookup
 			if ((type == 'a' || type == 'f') && size > 0) {
-				Set<Integer> seNumbers = pfns.keySet();
 				int modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 				if (pfns != null) {
+					final Set<Integer> seNumbers = pfns.keySet();
+
 					for (int seNumber : seNumbers) {
 						statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
 						boundStatement = new BoundStatement(statement);

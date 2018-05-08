@@ -22,9 +22,11 @@ public class FindfromString extends Request {
 	private static final long serialVersionUID = -5938936122293608584L;
 	private final String path;
 	private final String pattern;
+	private final String query;
 	private final int flags;
 	private Collection<LFN> lfns;
 	private final String xmlCollectionName;
+	private Long queueid = Long.valueOf(0);
 
 	/**
 	 * @param user
@@ -36,8 +38,28 @@ public class FindfromString extends Request {
 		setRequestUser(user);
 		this.path = path;
 		this.pattern = pattern;
+		this.query = null;
 		this.flags = flags;
 		this.xmlCollectionName = "";
+	}
+
+	/**
+	 * @param user
+	 * @param path
+	 * @param pattern
+	 * @param query
+	 * @param flags
+	 * @param xmlCollectionName
+	 * @param queueid
+	 */
+	public FindfromString(final AliEnPrincipal user, final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, final Long queueid) {
+		setRequestUser(user);
+		this.path = path;
+		this.pattern = pattern;
+		this.query = query;
+		this.flags = flags;
+		this.xmlCollectionName = xmlCollectionName;
+		this.queueid = queueid;
 	}
 
 	/**
@@ -51,13 +73,14 @@ public class FindfromString extends Request {
 		setRequestUser(user);
 		this.path = path;
 		this.pattern = pattern;
+		this.query = null;
 		this.flags = flags;
 		this.xmlCollectionName = xmlCollectionName;
 	}
 
 	@Override
 	public void run() {
-		lfns = LFNUtils.find(path, pattern, flags, getEffectiveRequester(), xmlCollectionName);
+		lfns = LFNUtils.find(path, pattern, query, flags, getEffectiveRequester(), xmlCollectionName, queueid);
 	}
 
 	/**

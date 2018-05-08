@@ -57,6 +57,9 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		return System.currentTimeMillis() - _startTime;
 	}
 
+	// Object to send notifications about the state of connection
+	final Object stateObject = new Object();
+
 	@Override
 	public void onOpen(Session session, EndpointConfig endpointConfig) {
 		RemoteEndpoint.Basic remoteEndpointBasic = session.getBasicRemote();
@@ -78,15 +81,18 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		new Thread() {
 			@Override
 			public void run() {
-				while (true) {
+				while (!commander.kill) {
+					synchronized (stateObject) {
+						try {
+							stateObject.wait(3 * 60 * 60 * 1000L);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+
 					if (getUptime() > 172800000) // 2 days
 						onClose(session, new CloseReason(null, "Connection expired (run for more than 2 days)"));
-
-					try {
-						Thread.sleep(10800000); // 3 hours
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
-						// ignore
-					}
 				}
 			}
 		}.start();
@@ -107,10 +113,15 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		os = null;
 		userIdentity = null;
 		try {
-			session.close();
+			if (session != null)
+				session.close();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
+		}
+
+		synchronized (stateObject) {
+			stateObject.notifyAll();
 		}
 	}
 

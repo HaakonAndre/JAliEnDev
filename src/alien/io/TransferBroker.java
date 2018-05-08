@@ -3,7 +3,6 @@
  */
 package alien.io;
 
-import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -22,7 +21,6 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -191,10 +189,13 @@ public class TransferBroker {
 
 		while (transferId < 0) {
 			if (!dbCached.moveNext()) {
-//				dbCached.query(
-//						"select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
-				
-				dbCached.query("select /*! SQL_BUFFER_RESULT */ /*! SQL_SMALL_RESULT */  transferId, lfn, destination, remove_replica from TRANSFERS_DIRECT inner join (select sename, sum(max_transfers) mt, coalesce(max(active_cnt),0) at from PROTOCOLS left outer join (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename and max_transfers>coalesce(active_cnt,0)) group by sename) b ON destination=sename where status='WAITING' order by at/mt asc, transferId-1000*attempts asc limit 50;");
+				// dbCached.query(
+				// "select transferId,lfn,destination,remove_replica from TRANSFERS_DIRECT inner join PROTOCOLS on sename=destination and status='WAITING' LEFT OUTER JOIN (select se_name, count(1) as
+				// active_cnt from active_transfers group by se_name) a on (se_name=sename) where max_transfers>0 and (active_cnt is null or active_cnt<max_transfers) group by 1,2,3,4 order by
+				// coalesce(max(active_cnt),0)/sum(max_transfers) asc, transferId-1000*attempts asc limit 50;");
+
+				dbCached.query(
+						"select /*! SQL_BUFFER_RESULT */ /*! SQL_SMALL_RESULT */  transferId, lfn, destination, remove_replica from TRANSFERS_DIRECT inner join (select sename, sum(max_transfers) mt, coalesce(max(active_cnt),0) at from PROTOCOLS left outer join (select se_name, count(1) as active_cnt from active_transfers group by se_name) a on (se_name=sename) group by sename having at<mt) b ON destination=sename where status='WAITING' order by at/mt asc, transferId-1000*attempts asc limit 100;");
 
 				if (!dbCached.moveNext()) {
 					logger.log(Level.FINE, "There is no waiting transfer in the queue");
@@ -437,15 +438,16 @@ public class TransferBroker {
 
 			final PFN target;
 
-			try {
-				AliEnPrincipal account = AuthorizationFactory.getDefaultUser();
+			AliEnPrincipal account = AuthorizationFactory.getDefaultUser();
 
-				if (account.canBecome("admin"))
-					account = UserFactory.getByUsername("admin");
+			if (account.canBecome("admin"))
+				account = UserFactory.getByUsername("admin");
 
-				target = BookingTable.bookForWriting(account, lfn, guid, null, se);
-			} catch (final IOException ioe) {
-				final String reason = ioe.getMessage();
+			// target = BookingTable.bookForWriting(account, lfn, guid, null, se);
+			target = new PFN(guid, se);
+			final String reason = AuthorizationFactory.fillAccess(account, target, AccessType.WRITE);
+
+			if (reason != null) {
 				logger.log(Level.WARNING, "Could not obtain target authorization for transfer ID " + transferId + " : " + reason);
 				targetAuthFailed++;
 				lastReason = reason;
@@ -559,41 +561,56 @@ public class TransferBroker {
 			if (db == null)
 				return;
 
-			final DBConnection dbc = db.getConnection();
-			executeQuery(dbc, "SET autocommit = 0;");
-			executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
+			db.query("UPDATE transfer_optimizers SET setting=" + lastCleanedUp + " WHERE activity=0 AND setting<" + (lastCleanedUp - 1000 * 60));
 
-			try {
-				executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 600));
+			if (db.getUpdateCount() > 0) {
+				final DBConnection dbc = db.getConnection();
+				executeQuery(dbc, "SET autocommit = 0;");
+				executeQuery(dbc, "lock tables TRANSFERS_DIRECT write, PROTOCOLS read, active_transfers write;");
 
-				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', attempts=attempts-1, finished=" + lastCleanedUp / 1000
-						+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
+				try {
+					executeQuery(dbc, "DELETE FROM active_transfers WHERE last_active<" + (lastCleanedUp / 1000 - 600));
 
-				executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
-			} finally {
-				executeQuery(dbc, "commit;");
-				executeQuery(dbc, "unlock tables;");
-				executeQuery(dbc, "SET autocommit = 1;");
+					executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='KILLED', attempts=attempts-1, finished=" + lastCleanedUp / 1000
+							+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
 
-				executeClose();
+					executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
+				} finally {
+					executeQuery(dbc, "commit;");
+					executeQuery(dbc, "unlock tables;");
+					executeQuery(dbc, "SET autocommit = 1;");
 
-				dbc.free();
+					executeClose();
+
+					dbc.free();
+				}
 			}
 		} catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
 		}
 
-		if (System.currentTimeMillis() - lastArchived < 1000 * 60 * 60 * 6)
+		// only check once an hour. the actual execution interval is in the below query
+		if (System.currentTimeMillis() - lastArchived < 1000 * 60 * 60)
 			return;
 
 		lastArchived = System.currentTimeMillis();
 
 		final String archiveTableName = "TRANSFERSARCHIVE" + Calendar.getInstance().get(Calendar.YEAR);
-		final long limit = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 7;
-		final long limitReceived = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 30 * 2;
+
+		// keep finished transfers in the active table for one day
+		final long limit = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 1;
+
+		// transfers waiting for longer than 2 weeks are also archived, they should have been picked up in the mean time
+		final long limitReceived = System.currentTimeMillis() / 1000 - 60L * 60 * 24 * 14;
 
 		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 			if (db == null)
+				return;
+
+			// archive every 3 hours
+			db.query("UPDATE transfer_optimizers SET setting=" + lastArchived + " WHERE activity=1 AND setting<" + (lastArchived - 1000L * 60 * 60 * 3));
+
+			if (db.getUpdateCount() <= 0)
 				return;
 
 			if (!db.query("SELECT 1 FROM " + archiveTableName + " LIMIT 1;", true))
@@ -868,13 +885,14 @@ public class TransferBroker {
 		if (owner.canBecome("admin"))
 			owner = UserFactory.getByUsername("admin");
 
-		for (final PFN target : t.getSuccessfulTransfers())
-			if (BookingTable.commit(owner, target) == null) {
+		for (final PFN target : t.getSuccessfulTransfers()) {
+			if (!target.getGuid().addPFN(target)) {
 				logger.log(Level.WARNING, "Could not commit booked transfer: " + target);
 
 				markTransfer(t.getTransferId(), Transfer.FAILED_SYSTEM, "Could not commit booked transfer: " + target);
 				return;
 			}
+		}
 
 		if (t.getSuccessfulTransfers().size() > 0 && t.onCompleteRemoveReplica != null && t.onCompleteRemoveReplica.length() > 0) {
 			GUID g = null;

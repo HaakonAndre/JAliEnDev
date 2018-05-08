@@ -357,8 +357,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		while (st.hasMoreTokens())
 			try {
 				ret.add(Integer.valueOf(st.nextToken()));
-			} catch (@SuppressWarnings("unused")
-			final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -627,8 +626,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 						synchronized (queue) {
 							try {
 								queue.wait(1000);
-							} catch (@SuppressWarnings("unused")
-							final InterruptedException ie) {
+							} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 								// ignore
 							}
 						}
@@ -853,6 +851,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	public Set<LFN> getLFNs() {
 		if (lfnCache != null)
 			return lfnCache;
+
+		if (guidId == 0)
+			return null;
 
 		try (DBFunctions db = GUIDUtils.getDBForGUID(guid)) {
 			if (db == null)
@@ -1128,24 +1129,27 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			final String pfn = replica.pfn;
 
 			if (pfn.startsWith("guid://") || (pfn.startsWith("root://") && pfn.indexOf("?ZIP=") >= 0)) {
-				int idx = pfn.lastIndexOf('/') + 1;
+				final StringTokenizer st = new StringTokenizer(pfn, "/?");
 
-				String sUuid;
+				String sUuid = null;
 
-				while (pfn.charAt(idx) == '/' && idx < pfn.length() - 1)
-					idx++;
+				st.nextToken();
 
-				final int idx2 = pfn.indexOf('?', idx);
+				while (st.hasMoreTokens()) {
+					final String tok = st.nextToken();
 
-				if (idx2 < 0)
-					sUuid = pfn.substring(idx);
-				else
-					sUuid = pfn.substring(idx, idx2);
+					if (GUIDUtils.isValidGUID(tok)) {
+						sUuid = tok;
+						break;
+					}
+				}
 
-				final GUID archiveGuid = GUIDUtils.getGUID(UUID.fromString(sUuid), evenIfDoesntExist);
+				if (sUuid != null) {
+					final GUID archiveGuid = GUIDUtils.getGUID(UUID.fromString(sUuid), evenIfDoesntExist);
 
-				if (archiveGuid != null)
-					ret.add(archiveGuid);
+					if (archiveGuid != null)
+						ret.add(archiveGuid);
+				}
 			}
 			else
 				anyNonArchive = true;

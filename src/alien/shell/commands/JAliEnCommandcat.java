@@ -7,7 +7,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -47,39 +46,28 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 								try (FileWriter fstream = new FileWriter(eachFileName); BufferedWriter o = new BufferedWriter(fstream)) {
 									o.write(content);
 								}
-							if (out.isRootPrinter()) {
-								if (bN)
-									out.setField("count", count + "");
-								else
-									if (bB)
-										if (line.trim().length() > 0)
-											out.setField("count", count + "");
-								if (bT)
 
-									line = Format.replace(line, "\t", "^I");
-								out.setField("value", line);
-								if (bE)
-									out.setField("value", "$");
+							if (bN) {
+								commander.printOut("count", count + "");
+								commander.printOut(++count + "  ");
 							}
-							else {
-								if (bN)
-									out.printOut(++count + "  ");
-								else
-									if (bB)
-										if (line.trim().length() > 0)
-											out.printOut(++count + "  ");
+							else
+								if (bB)
+									if (line.trim().length() > 0) {
+										commander.printOut("count", count + "");
+										commander.printOut(++count + "  ");
+									}
+							if (bT)
+								line = Format.replace(line, "\t", "^I");
 
-								if (bT)
-									line = Format.replace(line, "\t", "^I");
-
-								out.printOut(line);
-
-								if (bE)
-									out.printOut("$");
-
-								out.printOutln();
+							commander.printOut("value", line);
+							commander.printOut(line);
+							if (bE) {
+								commander.printOut("value", "$");
+								commander.printOut("$");
 							}
 
+							commander.printOutln();
 						}
 
 					} catch (@SuppressWarnings("unused") final IOException ioe) {
@@ -88,16 +76,15 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 				}
 
 				else
-					if (!isSilent())
-						out.printErrln("Could not read the contents of " + fout.getAbsolutePath());
+					commander.printErrln("Could not read the contents of " + fout.getAbsolutePath());
 			}
 			else {
-				if (!isSilent())
-					out.printErrln("Not able to get this file: " + eachFileName);
+				commander.printErrln("Not able to get this file: " + eachFileName);
 
-				out.setReturnCode(1, "Not able to get the file");
+				commander.setReturnCode(1, "Not able to get the file");
 			}
 		}
+
 	}
 
 	/**
@@ -112,20 +99,19 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 
 		JAliEnCommandcp cp;
 		try {
-			cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand("cp", new Object[] { commander, out, args });
+			cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand("cp", new Object[] { commander, args });
 		} catch (final Exception e) {
 			e.printStackTrace();
 			return null;
 		}
-		cp.silent();
+		silent();
 
 		try {
 
 			cp.start();
 			while (cp.isAlive()) {
 				Thread.sleep(500);
-				if (!isSilent())
-					out.pending();
+				commander.pending();
 			}
 		} catch (final Exception e) {
 			e.printStackTrace();
@@ -134,32 +120,20 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 		return cp.getOutputFile();
 	}
 
-	@Override
-	public String deserializeForRoot() {
-		logger.log(Level.INFO, toString());
-
-		final StringBuilder ret = new StringBuilder();
-
-		return ret.toString();
-
-		// return super.deserializeForRoot();
-
-	}
-
 	/**
 	 * printout the help info
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("cat", "[-options] [<filename>]"));
-		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-o", "outputfilename"));
-		out.printOutln(helpOption("-n", "number all output lines"));
-		out.printOutln(helpOption("-b", "number nonblank output lines"));
-		out.printOutln(helpOption("-E", "shows ends - display $ at end of each line number"));
-		out.printOutln(helpOption("-T", "show tabs -display TAB characters as ^I"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("cat", "[-options] [<filename>]"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-o", "outputfilename"));
+		commander.printOutln(helpOption("-n", "number all output lines"));
+		commander.printOutln(helpOption("-b", "number nonblank output lines"));
+		commander.printOutln(helpOption("-E", "shows ends - display $ at end of each line number"));
+		commander.printOutln(helpOption("-T", "show tabs -display TAB characters as ^I"));
+		commander.printOutln();
 	}
 
 	/**
@@ -176,14 +150,13 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in JAliEnCOMMander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandcat(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandcat(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		try {
 

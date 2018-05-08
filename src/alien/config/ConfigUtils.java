@@ -89,8 +89,7 @@ public class ConfigUtils {
 						foundProperties.put(key, prop);
 					}
 				}
-		} catch (@SuppressWarnings("unused")
-		final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// cannot load the default configuration files for any reason
 		}
 
@@ -188,7 +187,7 @@ public class ConfigUtils {
 			System.setProperty("lazyj.use_java_logger", "true");
 		}
 
-		if (!hasMLConfig) {
+		if (!hasMLConfig)
 			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
 			for (final String configFile : new String[] { "config", "mlconfig", "App" }) {
 				final ExtProperties eprop = foundProperties.get(configFile);
@@ -200,7 +199,6 @@ public class ConfigUtils {
 						AppConfig.setProperty(key, prop.getProperty(key));
 				}
 			}
-		}
 		else {
 			// assume running as a library inside ML code, inherit the configuration keys from its main config file
 			final Properties mlConfigProperties = AppConfig.getPropertiesConfigApp();
@@ -218,6 +216,40 @@ public class ConfigUtils {
 					"Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig + ", config folder: " + CONFIG_FOLDER);
 	}
 
+	private static String userDefinedAppName = null;
+
+	/**
+	 * Get the application name, to be used for example in Xrootd transfers in order to be able to group transfers by application. Should be a simple tag, without any IDs in it (to allow grouping).
+	 * The value is taken from either the user-defined application name ({@link #setApplicationName(String)} or from the "app.name" configuration variable, or if none of them is defined then it falls
+	 * back to the user-specified default value
+	 *
+	 * @param defaultAppName
+	 *            value to return if nothing else is known about the current application
+	 * @return the application name
+	 * @see #setApplicationName(String)
+	 */
+	public static String getApplicationName(final String defaultAppName) {
+		if (userDefinedAppName != null)
+			return userDefinedAppName;
+
+		return getConfig().gets("app.name", defaultAppName);
+	}
+
+	/**
+	 * Set an explicit application name to be used for example in Xrootd transfer requests. This value will take precedence in front of the "app.config" configuration key or other default values.
+	 *
+	 * @param appName
+	 * @return the previous value of the user-defined application name
+	 * @see #getApplicationName(String)
+	 */
+	public static String setApplicationName(final String appName) {
+		final String oldValue = userDefinedAppName;
+
+		userDefinedAppName = appName;
+
+		return oldValue;
+	}
+
 	/**
 	 * @param referenceClass
 	 * @param path
@@ -230,7 +262,12 @@ public class ConfigUtils {
 		URL dirURL = referenceClass.getClassLoader().getResource(path);
 		if (dirURL != null && dirURL.getProtocol().equals("file")) {
 			/* A file path: easy enough */
-			return Arrays.asList(new File(dirURL.toURI()).list());
+			final String[] listing = new File(dirURL.toURI()).list();
+
+			if (listing != null)
+				return Arrays.asList(listing);
+
+			return Collections.emptyList();
 		}
 
 		if (dirURL == null) {
@@ -253,10 +290,9 @@ public class ConfigUtils {
 					if (name.startsWith(path)) { // filter according to the path
 						String entry = name.substring(path.length());
 						final int checkSubdir = entry.indexOf("/");
-						if (checkSubdir >= 0) {
+						if (checkSubdir >= 0)
 							// if it is a subdirectory, we just return the directory name
 							entry = entry.substring(0, checkSubdir);
-						}
 						result.add(entry);
 					}
 				}

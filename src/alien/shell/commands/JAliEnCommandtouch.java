@@ -20,9 +20,9 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("touch", " <LFN> [<LFN>[,<LFN>]]"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("touch", " <LFN> [<LFN>[,<LFN>]]"));
+		commander.printOutln();
 	}
 
 	@Override
@@ -34,13 +34,12 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandtouch(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandtouch(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 
 		filelist = alArguments;
 	}

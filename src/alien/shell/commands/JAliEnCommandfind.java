@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -51,6 +50,11 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	private boolean bY = false;
 
 	/**
+	 * marker for -j argument : filter files for jobid
+	 */
+	private boolean bJ = false;
+
+	/**
 	 * marker for -l argument : long format, optionally human readable file sizes
 	 */
 	private boolean bL = false;
@@ -58,7 +62,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	private List<String> alPaths = null;
 
 	private Collection<LFN> lfns = null;
-	private final List<LFN> directory = null;
+
+	private Long queueid = Long.valueOf(0);
 
 	/**
 	 * returns the LFNs that were the result of the find
@@ -81,6 +86,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		}
 
 		int flags = 0;
+		String query = "";
 		/*
 		 * try { if (alArguments.size() == 3) flags = Integer.parseInt(alArguments.get(2)); } catch (NumberFormatException e) { // ignore }
 		 */
@@ -89,40 +95,43 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			flags = flags | LFNUtils.FIND_INCLUDE_DIRS;
 		if (bS)
 			flags = flags | LFNUtils.FIND_NO_SORT;
-		if (bY)
+		if (bY) {
+			for (int i = 2; i < alPaths.size(); i++)
+				query += alPaths.get(i) + " ";
 			flags = flags | LFNUtils.FIND_BIGGEST_VERSION;
+		}
 		if (bX)
 			flags = flags | LFNUtils.FIND_SAVE_XML;
+		if (bJ)
+			flags = flags | LFNUtils.FIND_FILTER_JOBID;
 
 		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
 
-		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), flags, xmlCollectionPath);
+		lfns = commander.c_api.find(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath, queueid);
 
-		if (lfns != null && !isSilent()) {
+		if (lfns != null) {
 			if (bX) {
 				return;
 			}
 
-			for (final LFN lfn : lfns)
-				if (out.isRootPrinter()) {
-					out.nextResult();
-					out.setField("lfn", lfn.getCanonicalName());
+			for (final LFN lfn : lfns) {
+				commander.outNextResult();
+				commander.printOut("lfn", lfn.getCanonicalName());
 
-					if (bL) {
-						out.setField("permissions", FileSystemUtils.getFormatedTypeAndPerm(lfn));
-						out.setField("user", lfn.owner);
-						out.setField("group", lfn.gowner);
-						out.setField("size", (bH ? Format.size(lfn.size) : String.valueOf(lfn.size)));
-						out.setField("ctime", " " + lfn.ctime);
-					}
+				if (bL) {
+					commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(lfn));
+					commander.printOut("user", lfn.owner);
+					commander.printOut("group", lfn.gowner);
+					commander.printOut("size", (bH ? Format.size(lfn.size) : String.valueOf(lfn.size)));
+					commander.printOut("ctime", " " + lfn.ctime);
+
+					// print long
+					commander.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
+							+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + padSpace(1) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());
 				}
 				else
-					if (bL)
-						// print long
-						out.printOutln(FileSystemUtils.getFormatedTypeAndPerm(lfn) + padSpace(3) + padLeft(lfn.owner, 8) + padSpace(1) + padLeft(lfn.gowner, 8) + padSpace(1)
-								+ padLeft(bH ? Format.size(lfn.size) : String.valueOf(lfn.size), 12) + padSpace(1) + format(lfn.ctime) + padSpace(1) + padSpace(4) + lfn.getCanonicalName());
-					else
-						out.printOutln(lfn.getCanonicalName());
+					commander.printOutln(lfn.getCanonicalName());
+			}
 		}
 
 	}
@@ -138,20 +147,21 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("find", "<path>  <pattern> flags"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("find", "<path>  <pattern> flags"));
+		commander.printOutln();
 
-		out.printOutln(helpStartOptions());
+		commander.printOutln(helpStartOptions());
 
-		out.printOutln(helpOption("-a", "show hidden .* files"));
-		out.printOutln(helpOption("-s", "no sorting"));
-		out.printOutln(helpOption("-c", "collection filename (put the output in a collection)"));
-		out.printOutln(helpOption("-y", "(FOR THE OCDB) return only the biggest version of each file"));
-		out.printOutln(helpOption("-x", "xml collection name (return the LFN list through XmlCollection)"));
-		out.printOutln(helpOption("-d", "return also the directories"));
-		out.printOutln(helpOption("-l[h]", "long format, optionally human readable file sizes"));
-		out.printOutln();
+		commander.printOutln(helpOption("-a", "show hidden .* files"));
+		commander.printOutln(helpOption("-s", "no sorting"));
+		commander.printOutln(helpOption("-c", "collection filename (put the output in a collection)"));
+		commander.printOutln(helpOption("-y", "(FOR THE OCDB) return only the biggest version of each file"));
+		commander.printOutln(helpOption("-x", "xml collection name (return the LFN list through XmlCollection)"));
+		commander.printOutln(helpOption("-d", "return also the directories"));
+		commander.printOutln(helpOption("-l[h]", "long format, optionally human readable file sizes"));
+		commander.printOutln(helpOption("-j <queueid>", "filter files created by a certain job"));
+		commander.printOutln();
 	}
 
 	/**
@@ -164,45 +174,10 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 		return false;
 	}
 
-	@Override
-	public String deserializeForRoot() {
-		logger.log(Level.INFO, toString());
-
-		final StringBuilder ret = new StringBuilder();
-
-		if (directory != null) {
-			final String col = RootPrintWriter.columnseparator;
-			final String desc = RootPrintWriter.fielddescriptor;
-			final String sep = RootPrintWriter.fieldseparator;
-
-			for (final LFN lfn : directory) {
-				if (!bA && lfn.getFileName().startsWith("."))
-					continue;
-
-				if (bD) {
-					if (lfn.type != 'd') {
-						ret.append(col);
-						ret.append(desc).append("path").append(sep).append(lfn.getCanonicalName());
-						ret.append(desc).append("guid").append(sep).append(lfn.guid);
-					}
-				}
-				else
-					ret.append(col);
-					ret.append(desc).append("name").append(sep).append(lfn.getCanonicalName());
-			}
-
-			return ret.toString();
-
-		}
-		return super.deserializeForRoot();
-
-	}
-
 	/**
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
@@ -210,8 +185,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	// public JAliEnCommandfind(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
 	// super(commander, out, alArguments);
-	public JAliEnCommandfind(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandfind(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 
 			final OptionParser parser = new OptionParser();
@@ -223,13 +198,18 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			parser.accepts("h");
 			parser.accepts("d");
 			parser.accepts("y");
+			parser.accepts("j").withRequiredArg();
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			if (options.has("x") && options.hasArgument("x")) {
 				bX = true;
-
 				xmlCollectionName = (String) options.valueOf("x");
+			}
+
+			if (options.has("j") && options.hasArgument("j")) {
+				bJ = true;
+				queueid = Long.valueOf((String) options.valueOf("j"));
 			}
 
 			alPaths = optionToString(options.nonOptionArguments());
@@ -263,6 +243,8 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			sb.append(" -x ");
 		if (bD)
 			sb.append(" -d ");
+		if (bJ)
+			sb.append(" -j ");
 
 		sb.append("}");
 

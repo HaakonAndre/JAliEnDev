@@ -104,44 +104,41 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					if (bB && localLFN.isDirectory())
 						continue;
 
-					if (out.isRootPrinter()) {
-						out.nextResult();
-
-						out.setField("permissions", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
-						out.setField("user", localLFN.owner);
-						out.setField("group", localLFN.gowner);
-						out.setField("size", String.valueOf(localLFN.size));
-						out.setField("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
-						out.setField("name", localLFN.getFileName() + (bF && localLFN.isDirectory() ? "/" : ""));
-						out.setField("path", localLFN.getCanonicalName() + (bF && localLFN.isDirectory() ? "/" : ""));
-
-						if (localLFN.guid != null)
-							out.setField("guid", localLFN.guid.toString().toUpperCase());
-					}
-					else {
-						String ret = "";
-						if (bB)
+					commander.outNextResult();
+					String ret = "";
+					if (bB) {
+						if (localLFN.guid != null) {
+							commander.printOut("guid", localLFN.guid.toString().toUpperCase());
 							ret += localLFN.guid.toString().toUpperCase() + padSpace(3) + localLFN.getName();
-						else
-							if (bC)
-								ret += localLFN.getCanonicalName();
+						}
+					}
+					else
+						if (bC)
+							ret += localLFN.getCanonicalName();
+						else {
+							if (bL) {
+								commander.printOut("permissions", FileSystemUtils.getFormatedTypeAndPerm(localLFN));
+								commander.printOut("user", localLFN.owner);
+								commander.printOut("group", localLFN.gowner);
+								commander.printOut("size", String.valueOf(localLFN.size));
+								commander.printOut("ctime", String.valueOf(localLFN.ctime.getTime() / 1000));
+								ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
+										+ padLeft(String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getFileName();
+							}
 							else {
-								if (bL)
-									ret += FileSystemUtils.getFormatedTypeAndPerm(localLFN) + padSpace(3) + padLeft(localLFN.owner, 8) + padSpace(1) + padLeft(localLFN.gowner, 8) + padSpace(1)
-											+ padLeft(String.valueOf(localLFN.size), 12) + padSpace(1) + format(localLFN.ctime) + padSpace(4) + localLFN.getFileName();
-
-								else
-									ret += localLFN.getFileName();
-
-								if (bF && (localLFN.type == 'd'))
-									ret += "/";
+								ret += localLFN.getFileName();
 							}
 
-						logger.info("LS line : " + ret);
+							if (bF && (localLFN.type == 'd'))
+								ret += "/";
 
-						if (!isSilent())
-							out.printOutln(ret);
-					}
+							commander.printOut("name", localLFN.getFileName() + (bF && localLFN.isDirectory() ? "/" : ""));
+							commander.printOut("path", localLFN.getCanonicalName() + (bF && localLFN.isDirectory() ? "/" : ""));
+						}
+
+					logger.info("LS line : " + ret);
+
+					commander.printOutln(ret);
 				}
 			}
 			else {
@@ -151,16 +148,12 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 				pathsNotFound.append(sPath);
 
 				logger.log(Level.SEVERE, "No such file or directory: [" + sPath + "]");
-				out.printOutln("No such file or directory: [" + sPath + "]");
+				commander.printOutln("No such file or directory: [" + sPath + "]");
 			}
-
 		}
 
 		if (pathsNotFound.length() > 0)
-			out.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
-
-		// if (out.isRootPrinter())
-		// out.setReturnArgs(deserializeForRoot());
+			commander.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");
@@ -183,15 +176,15 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln(helpUsage("ls", "[-options] [<directory>]"));
-		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("-l", "long format"));
-		out.printOutln(helpOption("-a", "show hidden .* files"));
-		out.printOutln(helpOption("-F", "add trailing / to directory names"));
-		out.printOutln(helpOption("-b", "print in guid format"));
-		out.printOutln(helpOption("-c", "print canonical paths"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("ls", "[-options] [<directory>]"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-l", "long format"));
+		commander.printOutln(helpOption("-a", "show hidden .* files"));
+		commander.printOutln(helpOption("-F", "add trailing / to directory names"));
+		commander.printOutln(helpOption("-b", "print in guid format"));
+		commander.printOutln(helpOption("-c", "print canonical paths"));
+		commander.printOutln();
 	}
 
 	/**
@@ -208,14 +201,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandls(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandls(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 
 			final OptionParser parser = new OptionParser();

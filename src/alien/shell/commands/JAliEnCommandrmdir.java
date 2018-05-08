@@ -28,59 +28,32 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 
 			if (dir != null && dir.exists) {
 				if (dir.isDirectory()) {
-
 					if (AuthorizationChecker.canWrite(dir, commander.user)) {
+						if (bP) {
+							commander.printOutln("Inside Parent Directory");
+							if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
+								commander.printErrln("Could not remove directory (or non-existing parents): " + path);
 
-						if (out.isRootPrinter()) {
-							if (bP) {
-								out.setField("message", "Inside Parent Directory");
-								if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
-									if (!isSilent())
-										out.setField("error", "Could not remove directory (or non-existing parents): " + path);
+								logger.log(Level.WARNING, "Could not remove directory (or non-existing parents): " + path);
+
 							}
-							else
-								if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName()))
-									if (!isSilent())
-										out.setField("error", "Could not remove directory: " + path);
 						}
 						else
-							if (bP) {
-								out.printOutln("Inside Parent Directory");
-								if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-									if (!isSilent())
-										out.printErrln("Could not remove directory (or non-existing parents): " + path);
+							if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
+								commander.printErrln("Could not remove directory: " + path);
+								logger.log(Level.WARNING, "Could not remove directory: " + path);
 
-									logger.log(Level.WARNING, "Could not remove directory (or non-existing parents): " + path);
-
-								}
 							}
-							else
-								if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-									if (!isSilent())
-										out.printErrln("Could not remove directory: " + path);
-									logger.log(Level.WARNING, "Could not remove directory: " + path);
-
-								}
 					}
 					else
-						if (!isSilent()) {
-							out.printErrln("Permission denied on directory: [" + path + "]");
-							out.setReturnCode(1, "Permission denied on directory: [" + path + "]");
-						}
+						commander.setReturnCode(1, "Permission denied on directory: [" + path + "]");
 
 				}
 				else
-					if (!isSilent()) {
-						out.printErrln("Not a directory: [" + path + "]");
-						out.setReturnCode(2, "Not a directory: [" + path + "]");
-					}
-
+					commander.setReturnCode(2, "Not a directory: [" + path + "]");
 			}
 			else
-				if (!isSilent()) {
-					out.printErrln("No such file or directory: [" + path + "]");
-					out.setReturnCode(3, "No such file or directory: [" + path + "]");
-				}
+				commander.setReturnCode(3, "No such file or directory: [" + path + "]");
 		}
 	}
 
@@ -89,17 +62,16 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-
-		out.printOutln();
-		out.printOutln(helpUsage("rmdir", " [<option>] <directory>"));
-		out.printOutln(helpStartOptions());
-		out.printOutln(helpOption("--ignore-fail-on-non-empty", "  ignore each failure that is solely because a directory is non-empty"));
-		out.printOutln(helpOption("-p ", "--parents   Remove DIRECTORY and its ancestors.  E.g., 'rmdir -p a/b/c' is similar to 'rmdir a/b/c a/b a'."));
-		out.printOutln(helpOption("-v ", "--verbose  output a diagnostic for every directory processed"));
-		out.printOutln(helpOption(" ", "--help      display this help and exit"));
-		out.printOutln(helpOption(" ", "--version  output version information and exit"));
-		out.printOutln(helpOption("-silent", "execute command silently"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("rmdir", " [<option>] <directory>"));
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("--ignore-fail-on-non-empty", "  ignore each failure that is solely because a directory is non-empty"));
+		commander.printOutln(helpOption("-p ", "--parents   Remove DIRECTORY and its ancestors.  E.g., 'rmdir -p a/b/c' is similar to 'rmdir a/b/c a/b a'."));
+		commander.printOutln(helpOption("-v ", "--verbose  output a diagnostic for every directory processed"));
+		commander.printOutln(helpOption(" ", "--help      display this help and exit"));
+		commander.printOutln(helpOption(" ", "--version  output version information and exit"));
+		commander.printOutln(helpOption("-silent", "execute command silently"));
+		commander.printOutln();
 	}
 
 	/**
@@ -116,14 +88,13 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandrmdir(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandrmdir(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 
 			final OptionParser parser = new OptionParser();

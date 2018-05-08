@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
@@ -449,7 +450,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		final Set<PFN> pfns = id.getPFNs();
 
 		if (pfns == null || pfns.size() == 0)
-			return false;
+			return true;
 
 		for (final PFN pfn : pfns)
 			if (pfn.pfn.startsWith("guid://"))
@@ -789,7 +790,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (monitor != null)
 			monitor.incrementCounter("LFN_listcollection");
 
-		logger.info(CatalogueUtils.getHost(this.indexTableEntry.hostIndex).db);
+		if (logger.isLoggable(Level.FINE))
+			logger.fine(CatalogueUtils.getHost(this.indexTableEntry.hostIndex).db);
 
 		try (DBFunctions db = ConfigUtils.getDB(CatalogueUtils.getHost(this.indexTableEntry.hostIndex).db)) {
 			db.setReadOnly(true);

@@ -146,4 +146,8 @@ public class JShPrintWriter extends UIPrintWriter {
 		//
 	}
 
+	@Override
+	protected void setReturnArgs(final String args) {
+		// void
+	}
 }

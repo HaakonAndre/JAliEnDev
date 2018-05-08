@@ -15,19 +15,19 @@ public class JAliEnCommandgroups extends JAliEnBaseCommand {
 		final Set<String> roles = commander.getUser().getRoles();
 		final String username = commander.getUser().getName();
 		final String maingroup = commander.getUser().getDefaultRole();
-		out.printOutln("User: " + username + ", main group: " + maingroup);
-		out.printOut("Member of groups: ");
+		commander.printOutln("User: " + username + ", main group: " + maingroup);
+		commander.printOut("Member of groups: ");
 		for (final String role : roles)
-			out.printOut(role + " ");
-		out.printOutln();
+			commander.printOut(role + " ");
+		commander.printOutln();
 	}
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("groups [<username>]");
-		out.printOutln("shows the groups current user is a member of.");
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln("groups [<username>]");
+		commander.printOutln("shows the groups current user is a member of.");
+		commander.printOutln();
 	}
 
 	@Override
@@ -37,12 +37,11 @@ public class JAliEnCommandgroups extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandgroups(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandgroups(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 	}
 
 }

@@ -75,7 +75,7 @@ public class LFNUtils {
 
 	/**
 	 * Bulk guid2lfn operation
-	 * 
+	 *
 	 * @param guids
 	 *            the GUIDs to look for
 	 * @return a list of LFNs for which the size and order is independent of the input collection
@@ -86,7 +86,7 @@ public class LFNUtils {
 
 		final Set<UUID> uuids = new HashSet<>(guids.size());
 
-		for (GUID g : guids)
+		for (final GUID g : guids)
 			uuids.add(g.guid);
 
 		return getLFNsFromUUIDs(uuids);
@@ -94,7 +94,7 @@ public class LFNUtils {
 
 	/**
 	 * Bulk guid2lfn operation
-	 * 
+	 *
 	 * @param uuids
 	 *            the GUIDs to look for
 	 * @return a list of LFNs for which the size and order is independent of the input collection
@@ -116,7 +116,7 @@ public class LFNUtils {
 			final List<LFN> chunk = ite.getLFNs(remainingGUIDs);
 
 			if (chunk != null) {
-				for (LFN l : chunk)
+				for (final LFN l : chunk)
 					remainingGUIDs.remove(l.guid);
 
 				ret.addAll(chunk);
@@ -608,6 +608,11 @@ public class LFNUtils {
 	public static final int FIND_SAVE_XML = 16;
 
 	/**
+	 * find only files of a given job, -j in AliEn `find`
+	 */
+	public static final int FIND_FILTER_JOBID = 3;
+
+	/**
 	 * @param path
 	 * @param pattern
 	 * @param flags
@@ -615,7 +620,7 @@ public class LFNUtils {
 	 * @return the list of LFNs that match
 	 */
 	public static Collection<LFN> find(final String path, final String pattern, final int flags) {
-		return find(path, pattern, flags, null, "");
+		return find(path, pattern, flags, null, "", Long.valueOf(0));
 	}
 
 	/**
@@ -625,18 +630,27 @@ public class LFNUtils {
 	 *            a combination of FIND_* flags
 	 * @param owner
 	 * @param xmlCollectionName
+	 * @param queueid
+	 *            a job id to filter for its files
 	 * @return the list of LFNs that match
 	 */
-	public static Collection<LFN> find(final String path, final String pattern, final int flags, final AliEnPrincipal owner, final String xmlCollectionName) {
-		final Set<LFN> ret;
+	public static Collection<LFN> find(final String path, final String pattern, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
+		return find(path, pattern, null, flags, owner, xmlCollectionName, queueid);
+	}
 
-		if ((flags & FIND_NO_SORT) != 0)
-			ret = new LinkedHashSet<>();
-		else
-			ret = new TreeSet<>();
-
-		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
-
+	/**
+	 * @param path
+	 * @param pattern
+	 * @param query
+	 * @param flags
+	 *            a combination of FIND_* flags
+	 * @param owner
+	 * @param xmlCollectionName
+	 * @param queueid
+	 *            a job id to filter for its files
+	 * @return the list of LFNs that match
+	 */
+	public static Collection<LFN> find(final String path, final String pattern, final String query, final int flags, final AliEnPrincipal owner, final String xmlCollectionName, final Long queueid) {
 		String processedPattern;
 
 		if ((flags & FIND_REGEXP) == 0)
@@ -650,8 +664,22 @@ public class LFNUtils {
 			processedPattern += "$";
 		}
 
+		if ((flags & FIND_BIGGEST_VERSION) != 0) {
+			String tag = query.substring(0, query.indexOf(":"));
+			return findByMetadata(path, processedPattern, tag, query, flags);
+		}
+
+		final Set<LFN> ret;
+
+		if ((flags & FIND_NO_SORT) != 0)
+			ret = new LinkedHashSet<>();
+		else
+			ret = new TreeSet<>();
+
+		final Collection<IndexTableEntry> matchingTables = CatalogueUtils.getAllMatchingTables(path);
+
 		for (final IndexTableEntry ite : matchingTables) {
-			final List<LFN> findResults = ite.find(path, processedPattern, flags);
+			final List<LFN> findResults = ite.find(path, processedPattern, flags, queueid);
 
 			if (findResults == null)
 				return null;
@@ -693,7 +721,8 @@ public class LFNUtils {
 				}
 
 			} catch (final Exception e) {
-				logger.log(Level.SEVERE, "Could not upload the XML collection because " + e.getMessage());
+				logger.log(Level.SEVERE, "Could not upload the XML collection because " + e.toString());
+				e.printStackTrace();
 			}
 		}
 
@@ -712,7 +741,7 @@ public class LFNUtils {
 			db.setReadOnly(true);
 			db.setQueryTimeout(30);
 
-			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND '" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
+			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND path='" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
 
 			while (db.moveNext())
 				ret.add(db.gets(1));
@@ -746,11 +775,9 @@ public class LFNUtils {
 			db.setReadOnly(true);
 
 			for (final String tableName : getTagTableNames(path, tag)) {
-				String q = "SELECT distinct file FROM " + Format.escSQL(tableName) + " " + Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
-						+ Format.escSQL(query.replace(":", "."));
-
-				if ((flags & FIND_BIGGEST_VERSION) != 0)
-					q += " ORDER BY version DESC, entryId DESC LIMIT 1";
+				String q = "SELECT file from (SELECT @rn :=  CASE WHEN @prev_dir <> dir_number THEN 1 ELSE @rn+1 END AS rn, @prev_dir:=dir_number, file FROM " + Format.escSQL(tableName) + " "
+						+ Format.escSQL(tag) + ", (SELECT @rn := 0) r WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
+						+ Format.escSQL(query.replace(":", ".") + "having rn=1 order by dir_number, version desc) x");
 
 				if (!db.query(q))
 					continue;
@@ -1162,28 +1189,34 @@ public class LFNUtils {
 		if (archive == null || !archive.exists || !archive.isFile() || !archive.isReal())
 			return null;
 
-		final List<LFN> sameDirListing = archive.getParentDir().list();
-
-		if (sameDirListing == null || sameDirListing.size() == 0)
-			return null;
-
 		final List<LFN> ret = new ArrayList<>();
 
-		for (final LFN file : sameDirListing)
-			if (file.isFile())
-				for (final PFN p : file.whereis())
-					if (p.pfn.startsWith("guid:/"))
-						try {
-							final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+		LFN parentDir = archive.getParentDir();
+		if (parentDir.exists) {
+			final List<LFN> sameDirListing = parentDir.list();
 
-							if (guid.equals(archive.guid)) {
-								ret.add(file);
-								continue;
-							}
-						} catch (@SuppressWarnings("unused") final Exception e) {
-							return null;
-						}
+			if (sameDirListing == null || sameDirListing.size() == 0)
+				return null;
 
+			for (final LFN file : sameDirListing)
+				if (file.isFile()) {
+					final Set<PFN> pfns = file.whereis();
+
+					if (pfns != null)
+						for (final PFN p : pfns)
+							if (p.pfn.startsWith("guid:/"))
+								try {
+									final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+
+									if (guid.equals(archive.guid)) {
+										ret.add(file);
+										continue;
+									}
+								} catch (@SuppressWarnings("unused") final Exception e) {
+									return null;
+								}
+				}
+		}
 		return ret;
 	}
 

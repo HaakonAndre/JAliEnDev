@@ -143,7 +143,7 @@ public class TomcatServer {
 	}
 
 	/**
-	 * Create connector for the Tomcat server
+	 * Create SSL connector for the Tomcat server
 	 *
 	 * @param tomcatPort
 	 * @throws Exception
@@ -353,11 +353,9 @@ public class TomcatServer {
 		}
 
 		// Two files will be the result of this command
-		// Check if their location is set by env variables or in config, otherwise put default location in $USER_HOME/.globus/
-		String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokencert.pem");
-		String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path",
-				System.getProperty("user.home") + System.getProperty("file.separator") + ".globus" + System.getProperty("file.separator") + "tokenkey.pem");
+		// Check if their location is set by env variables or in config, otherwise put default location in $TMPDIR/
+		String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert.pem");
+		String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey.pem");
 
 		File tokencertfile = new File(tokencertpath);
 		File tokenkeyfile = new File(tokenkeypath);

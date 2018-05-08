@@ -103,6 +103,9 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		return getLFN(sPath, false);
 	}
 
+	// Restrict how many LFNs can be queried in a single request
+	private static final int MAX_QUERY_LENGTH = 100;
+
 	/**
 	 * Get the LFN from this table
 	 *
@@ -110,9 +113,11 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * @param path
 	 * @return the LFNs for the given paths, bulk extraction where possible
 	 */
-	public List<LFN> getLFNs(final boolean ignoreFolders, final Collection<String> path) {
+	public List<LFN> getLFNs(final boolean ignoreFolders, final List<String> path) {
 		if (path == null || path.size() == 0)
 			return null;
+
+		List<LFN> retList = null;
 
 		try (DBFunctions db = getDB()) {
 			if (db == null)
@@ -121,39 +126,51 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			if (monitor != null)
 				monitor.incrementCounter("LFN_db_lookup");
 
-			final StringBuilder q = new StringBuilder("SELECT * FROM L" + tableName + "L WHERE ");
-
 			db.setReadOnly(true);
 
-			boolean first = true;
+			final int queries = ((path.size() - 1) / MAX_QUERY_LENGTH) + 1;
 
-			for (String sSearch : path) {
-				if (sSearch.startsWith("/"))
-					sSearch = sSearch.substring(lfn.length());
+			for (int chunk = 0; chunk < queries; chunk++) {
+				final List<String> sublist = path.subList(chunk * MAX_QUERY_LENGTH, Math.min((chunk + 1) * MAX_QUERY_LENGTH, path.size()));
+				
+				final StringBuilder q = new StringBuilder("SELECT ");
+				
+				if (sublist.size()>1)
+					q.append("SQL_NO_CACHE ");
+				
+				q.append("* FROM L" + tableName + "L WHERE ");
 
-				sSearch = Format.escSQL(sSearch);
+				boolean first = true;
 
-				if (!first)
-					q.append(" OR ");
-				else
-					first = false;
+				for (String sSearch : sublist) {
+					if (sSearch.startsWith("/"))
+						sSearch = sSearch.substring(lfn.length());
 
-				q.append("lfn='").append(sSearch).append("'");
+					sSearch = Format.escSQL(sSearch);
 
-				if (!ignoreFolders && !sSearch.endsWith("/"))
-					q.append(" OR lfn='").append(sSearch).append("/'");
+					if (!first)
+						q.append(" OR ");
+					else
+						first = false;
+
+					q.append("lfn='").append(sSearch).append("'");
+
+					if (!ignoreFolders && !sSearch.endsWith("/"))
+						q.append(" OR lfn='").append(sSearch).append("/'");
+				}
+
+				if (!db.query(q.toString()))
+					return null;
+
+				if (retList == null)
+					retList = new ArrayList<>(path.size());
+
+				while (db.moveNext())
+					retList.add(new LFN(db, this));
 			}
-
-			if (!db.query(q.toString()))
-				return null;
-
-			final List<LFN> retList = new ArrayList<>(path.size());
-
-			while (db.moveNext())
-				retList.add(new LFN(db, this));
-
-			return retList;
 		}
+
+		return retList;
 	}
 
 	/**
@@ -190,7 +207,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 	/**
 	 * Bulk operation to retrieve known LFNs for many UUIDs
-	 * 
+	 *
 	 * @param uuids
 	 *            the GUIDs to search for
 	 * @return the LFNs for which the GUID was in the given set. The number of the returned objects and the order of them does not reflect the input collection.
@@ -199,6 +216,8 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		if (uuids == null || uuids.size() == 0)
 			return null;
 
+		List<LFN> ret = null;
+
 		try (DBFunctions db = getDB()) {
 			if (db == null)
 				return null;
@@ -206,34 +225,48 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 			if (monitor != null)
 				monitor.incrementCounter("LFN_db_lookup");
 
-			StringBuilder sb = new StringBuilder("SELECT * FROM L" + tableName + "L WHERE guid IN (");
+			final List<UUID> uuidsAsList = (uuids instanceof List) ? (List<UUID>) uuids : new ArrayList<>(uuids);
 
-			boolean first = true;
+			final int queries = ((uuidsAsList.size() - 1) / MAX_QUERY_LENGTH) + 1;
 
-			for (UUID u : uuids) {
-				if (first)
-					first = false;
-				else
-					sb.append(',');
+			for (int chunk = 0; chunk < queries; chunk++) {
+				final List<UUID> sublist = uuidsAsList.subList(chunk * MAX_QUERY_LENGTH, Math.min((chunk + 1) * MAX_QUERY_LENGTH, uuidsAsList.size()));
 
-				sb.append("string2binary('").append(u.toString()).append("')");
+				final StringBuilder sb = new StringBuilder("SELECT ");
+				
+				if (sublist.size()>1)
+					sb.append("SQL_NO_CACHE ");
+				
+				sb.append("* FROM L" + tableName + "L WHERE guid IN (");
+
+				boolean first = true;
+
+				for (final UUID u : sublist) {
+					if (first)
+						first = false;
+					else
+						sb.append(',');
+
+					sb.append("string2binary('").append(u.toString()).append("')");
+				}
+
+				sb.append(");");
+
+				db.setReadOnly(true);
+
+				if (!db.query(sb.toString()))
+					return null;
+
+				if (ret == null)
+					ret = new ArrayList<>();
+
+				while (db.moveNext()) {
+					ret.add(new LFN(db, this));
+				}
 			}
-			
-			sb.append(");");
-
-			db.setReadOnly(true);
-
-			if (!db.query(sb.toString()))
-				return null;
-
-			List<LFN> ret = new ArrayList<>();
-
-			while (db.moveNext()) {
-				ret.add(new LFN(db, this));
-			}
-
-			return ret;
 		}
+
+		return ret;
 	}
 
 	/**
@@ -294,6 +327,21 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 	 * @return the LFNs from this table that match
 	 */
 	public List<LFN> find(final String sPath, final String sPattern, final int flags) {
+		return find(sPath, sPattern, flags, Long.valueOf(0));
+	}
+
+	/**
+	 * @param sPath
+	 *            base path where to start searching, must be an absolute path ending in /
+	 * @param sPattern
+	 *            pattern to search for, in SQL wildcard format
+	 * @param flags
+	 *            a combination of {@link LFNUtils}.FIND_* fields
+	 * @param queueid
+	 *            a job id to filter for its files
+	 * @return the LFNs from this table that match
+	 */
+	public List<LFN> find(final String sPath, final String sPattern, final int flags, final Long queueid) {
 		try (DBFunctions db = getDB()) {
 			if (db == null)
 				return null;
@@ -329,6 +377,10 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 			if ((flags & LFNUtils.FIND_INCLUDE_DIRS) == 0)
 				q += " AND type!='d'";
+
+			if ((flags & LFNUtils.FIND_FILTER_JOBID) != 0 && queueid.longValue() > 0) {
+				q += " AND jobid = " + queueid;
+			}
 
 			if ((flags & LFNUtils.FIND_NO_SORT) != 0)
 				q += " ORDER BY lfn";

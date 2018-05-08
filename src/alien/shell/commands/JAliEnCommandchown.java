@@ -30,7 +30,7 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.user == null || this.file == null) {
-			out.printErr("No user or file entered");
+			commander.printErr("No user or file entered");
 			return;
 		}
 
@@ -40,7 +40,7 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 		final HashMap<String, Boolean> results = commander.c_api.chownLFN(path, this.user, this.group, this.recursive);
 
 		if (results == null) {
-			out.printErr("Failed to chown file(s)");
+			commander.printErr("Failed to chown file(s)");
 			return;
 		}
 
@@ -48,18 +48,18 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 			final Boolean b = results.get(filename);
 
 			if (b == null || !b.booleanValue())
-				out.printErrln(filename + ": unable to chown");
+				commander.printErrln(filename + ": unable to chown");
 		}
 	}
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("Usage: chown -R <user>[.<group>] <file>");
-		out.printOutln();
-		out.printOutln("Changes an owner or a group for a file");
-		out.printOutln("-R : do a recursive chown");
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln("Usage: chown -R <user>[.<group>] <file>");
+		commander.printOutln();
+		commander.printOutln("Changes an owner or a group for a file");
+		commander.printOutln("-R : do a recursive chown");
+		commander.printOutln();
 	}
 
 	@Override
@@ -69,12 +69,11 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandchown(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandchown(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("R");

@@ -80,6 +80,11 @@ public class JAliEnCOMMander extends Thread {
 	private UIPrintWriter out = null;
 
 	/**
+	 * marker for -Colour argument
+	 */
+	protected boolean bColour;
+
+	/**
 	 *
 	 */
 	protected AliEnPrincipal user;
@@ -126,6 +131,7 @@ public class JAliEnCOMMander extends Thread {
 		this.site = (site != null) ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
 		localFileCash = new HashMap<>();
 		this.out = out;
+		this.bColour = out != null ? out.colour() : false;
 
 		if (this.user.isJobAgent()) {
 			// For job agents we do not care about directories
@@ -336,8 +342,6 @@ public class JAliEnCOMMander extends Thread {
 	public void execute() throws Exception {
 		boolean help = false;
 
-		boolean silent = false;
-
 		if (arg == null || arg.length == 0) {
 			System.out.println("We got empty argument!");
 			// flush();
@@ -372,7 +376,7 @@ public class JAliEnCOMMander extends Thread {
 				}
 				else
 					if ("-silent".equals(arg[i])) {
-						silent = true;
+						jcommand.silent();
 						args.remove(arg[i]);
 					}
 					else
@@ -406,7 +410,7 @@ public class JAliEnCOMMander extends Thread {
 		}
 		else {
 
-			final Object[] param = { this, out, args };
+			final Object[] param = { this, args };
 
 			try {
 				jcommand = getCommand(comm, param);
@@ -422,9 +426,6 @@ public class JAliEnCOMMander extends Thread {
 				out.flush();
 				return;
 			}
-
-			if (silent)
-				jcommand.silent();
 
 			try {
 				if (jcommand == null)
@@ -483,7 +484,7 @@ public class JAliEnCOMMander extends Thread {
 			final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
 
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, UIPrintWriter.class, ArrayList.class });
+			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, ArrayList.class });
 			return (JAliEnBaseCommand) co.newInstance(objectParm);
 		} catch (@SuppressWarnings("unused") final ClassNotFoundException e) {
 			// System.out.println("No such command or not implemented");
@@ -492,5 +493,125 @@ public class JAliEnCOMMander extends Thread {
 			logger.log(Level.SEVERE, "Exception running command", e);
 			return null;
 		}
+	}
+
+	/**
+	 * @return <code>true</code> if the command was silenced
+	 */
+	public final boolean commandIsSilent() {
+		return jcommand == null || jcommand.isSilent() || out == null;
+	}
+
+	/**
+	 * Complete current message and start the next one
+	 */
+	public void outNextResult() {
+		if (!commandIsSilent())
+			out.nextResult();
+	}
+
+	/**
+	 * Print a key-value pair to the output stream
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	public void printOut(String key, String value) {
+		if (!commandIsSilent())
+			if (out.isRootPrinter())
+				out.setField(key, value);
+	}
+
+	/**
+	 * Print the string to the output stream
+	 * 
+	 * @param value
+	 */
+	public void printOut(String value) {
+		if (!commandIsSilent())
+			out.printOut(value);
+	}
+
+	/**
+	 * Print a key-value (+"\n") pair to the output stream
+	 * 
+	 * @param key
+	 * @param value
+	 */
+	public void printOutln(String key, String value) {
+		printOut(key, value + "\n");
+	}
+
+	/**
+	 * Print the line to the output stream
+	 * 
+	 * @param value
+	 */
+	public void printOutln(String value) {
+		printOut(value + "\n");
+	}
+
+	/**
+	 * Print an empty line to the output stream
+	 */
+	public void printOutln() {
+		printOut("\n");
+	}
+
+	/**
+	 * Print an error message to the output stream
+	 * 
+	 * @param value
+	 */
+	public void printErr(String value) {
+		if (!commandIsSilent())
+			out.printErr(value);
+	}
+
+	/**
+	 * Print an error message line to the output stream
+	 * 
+	 * @param value
+	 */
+	public void printErrln(String value) {
+		printErr(value + "\n");
+	}
+
+	/**
+	 * Set the command's return code and print an error message to the output stream
+	 * 
+	 * @param exitCode
+	 * @param errorMessage
+	 */
+	public void setReturnCode(int exitCode, String errorMessage) {
+		if (out != null)
+			out.setReturnCode(exitCode, errorMessage);
+	}
+
+	/**
+	 * Set the command's return arguments (for RootPrinter)
+	 * 
+	 * @param args
+	 */
+	public void setReturnArgs(String args) {
+		if (out != null)
+			out.setReturnArgs(args);
+	}
+
+	/**
+	 * 
+	 */
+	public void pending() {
+		if (!commandIsSilent())
+			out.pending();
+	}
+
+	/**
+	 * Get commander's output stream writer
+	 * 
+	 * @return UIPrintWriter
+	 */
+	public UIPrintWriter getPrintWriter() {
+		return out;
 	}
 }

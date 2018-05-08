@@ -24,31 +24,15 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 		else
 			newDir = commander.c_api.getLFN(UsersHelper.getHomeDir(commander.user.getName()));
 
-		if (out.isRootPrinter()) {
-			if (newDir != null) {
-				if (newDir.isDirectory())
-					commander.curDir = newDir;
-				else
-					out.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
+		if (newDir != null) {
+			if (newDir.isDirectory()) {
+				commander.curDir = newDir;
 			}
 			else
-				out.setReturnCode(1, "No such file or directory");
+				commander.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
 		}
 		else
-			if (newDir != null) {
-				if (newDir.isDirectory()) // Test added by sraje (Shikhar Raje, IIIT Hyderabad)
-				{
-					commander.curDir = newDir;
-					out.setReturnArgs(deserializeForRoot(1));
-				}
-				else
-					out.printErrln("cd: " + alArguments.get(0) + ": Not a directory");
-			}
-			else {
-				out.printErrln("No such directory.");
-				out.setReturnArgs(deserializeForRoot(0));
-			}
-
+			commander.setReturnCode(1, "No such file or directory");
 	}
 
 	/**
@@ -73,12 +57,11 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcd(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandcd(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 	}
 }

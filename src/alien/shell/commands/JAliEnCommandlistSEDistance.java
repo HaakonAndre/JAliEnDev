@@ -21,7 +21,7 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (!this.useWriteMetrics && (this.lfn_name == null || this.lfn_name.length() == 0)) {
-			out.printErrln("No LFN specified for read metrics");
+			commander.printErrln("No LFN specified for read metrics");
 			return;
 		}
 
@@ -31,24 +31,24 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 		for (final HashMap<SE, Double> smap : results) {
 			final Set<SE> selist = smap.keySet();
 			for (final SE s : selist)
-				out.printOutln(String.format("%1$" + 40 + "s", s.seName) + "\t(read: " + String.format("%.9f", Double.valueOf(s.demoteRead)) + ",  write: "
+				commander.printOutln(String.format("%1$" + 40 + "s", s.seName) + "\t(read: " + String.format("%.9f", Double.valueOf(s.demoteRead)) + ",  write: "
 						+ String.format("%.9f", Double.valueOf(s.demoteWrite)) + ",  distance: " + String.format("%.9f", smap.get(s)) + ")");
 		}
-		out.printOutln();
+		commander.printOutln();
 	}
 
 	@Override
 	public void printHelp() {
-		out.printOutln();
-		out.printOutln("listSEDistance: Returns the closest working SE for a particular site. Usage");
-		out.printOutln();
-		out.printOutln(" listSEDistance [<site>] [read [<lfn>]|write]");
-		out.printOutln();
-		out.printOutln();
-		out.printOutln(" Options:");
-		out.printOutln("   <site>: site name. Default: current site");
-		out.printOutln("   [read|write]: action. Default write. In the case of read, if an lfn is specified, use only SE that contain that file");
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln("listSEDistance: Returns the closest working SE for a particular site. Usage");
+		commander.printOutln();
+		commander.printOutln(" listSEDistance [<site>] [read [<lfn>]|write]");
+		commander.printOutln();
+		commander.printOutln();
+		commander.printOutln(" Options:");
+		commander.printOutln("   <site>: site name. Default: current site");
+		commander.printOutln("   [read|write]: action. Default write. In the case of read, if an lfn is specified, use only SE that contain that file");
+		commander.printOutln();
 	}
 
 	@Override
@@ -58,12 +58,11 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 
 	/**
 	 * @param commander
-	 * @param out
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandlistSEDistance(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandlistSEDistance(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		this.useWriteMetrics = true;
 		try {

@@ -1,7 +1,5 @@
 package alien.shell.commands;
 
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -16,7 +14,6 @@ import alien.catalogue.PFN;
 import alien.catalogue.access.AccessType;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.se.SE;
-import alien.se.SEUtils;
 
 /**
  * @author ron
@@ -46,11 +43,6 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	private final HashMap<String, Integer> qos = new HashMap<>();
 
 	/**
-	 * name of a local File that will be written
-	 */
-	private String localFileName = null;
-
-	/**
 	 * return pfns;
 	 */
 	private List<PFN> pfns = null;
@@ -75,27 +67,12 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 		if (lfn == null) {
 			logger.log(Level.INFO, "Not able to retrieve LFN from Catalogue ");
-			out.printErrln("Not able to retrieve LFN from Catalogue [error in processing].");
+			commander.printErrln("Not able to retrieve LFN from Catalogue [error in processing].");
 			return;
 		}
 
-		// is it ok here? to check, is this for a new file
-		try {
-			File f = null;
-
-			if (localFileName != null && localFileName.length() > 0)
-				f = new File(localFileName);
-
-			if (f != null && f.exists() && f.isFile() && f.canRead())
-				guid = GUIDUtils.createGuid(new File(localFileName), commander.user);
-			else
-				guid = GUIDUtils.createGuid(commander.user);
-		} catch (final IOException e) {
-			e.printStackTrace();
-
-			// TODO
-			return;
-		}
+		// create a new guid in case needed
+		guid = GUIDUtils.createGuid(commander.user);
 
 		if (lfn.guid == null) {
 			lfn.guid = guid.guid;
@@ -114,58 +91,56 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			}
 			else {
 				logger.log(Level.SEVERE, "Unknown access type");
-				out.printErrln("Unknown access type [error in processing].");
+				commander.printErrln("Unknown access type [error in processing].");
 			}
 
 		if (pfns == null || pfns.size() < 1) {
 			logger.log(Level.SEVERE, "Error getting the LFN/GUID");
-			out.printErrln("Not able to get request LFN/GUID [error in processing].");
+			commander.printErrln("Not able to get request LFN/GUID [error in processing].");
 		}
 
-		if (out.isRootPrinter()) {
-			if (pfns != null && !pfns.isEmpty())
-				for (final PFN pfn : pfns) {
-					out.nextResult();
+		if (pfns != null && !pfns.isEmpty())
+			for (final PFN pfn : pfns) {
+				commander.outNextResult();
+				commander.printOutln(pfn.pfn);
+				final SE se = commander.c_api.getSE(pfn.seNumber);
 
-					if (!"alice::cern::setest".equals(commander.c_api.getSE(pfn.seNumber).getName().toLowerCase()))
-						if (commander.c_api.getSE(pfn.seNumber).needsEncryptedEnvelope)
-							out.setField("envelope", pfn.ticket.envelope.getEncryptedEnvelope());
-						else
-							out.setField("envelope", pfn.ticket.envelope.getSignedEnvelope());
-
-					out.setField( "url", pfn.ticket.envelope.getTransactionURL());
-					out.setField( "pfn", pfn.toString());
-					out.setField("guid", pfn.getGuid().getName());
-					out.setField(  "se", pfn.getSE().getName());
-					out.setField("tags", pfn.getSE().qos.toString());
-					out.setField("nSEs", String.valueOf(pfns.size()));
-					out.setField("user", commander.user.getName());
-				}
-		}
-		else
-			if (pfns != null && !pfns.isEmpty())
-				for (final PFN pfn : pfns) {
-					out.printOutln(pfn.pfn);
-
-					final SE se = SEUtils.getSE(pfn.seNumber);
-
-					if (se != null)
-						out.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
+				if (se != null) {
+					commander.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
 
 					if (pfn.ticket != null) {
 						final XrootDEnvelope env = pfn.ticket.envelope;
 
-						if (env.getEncryptedEnvelope() != null)
-							out.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
+						if (!"alice::cern::setest".equals(se.getName().toLowerCase()))
+							if (se.needsEncryptedEnvelope) {
+								commander.printOut("envelope", env.getEncryptedEnvelope());
+								commander.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
+							}
+							else {
+								commander.printOut("envelope", env.getSignedEnvelope());
+								commander.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
+							}
 
-						if (env.getSignedEnvelope() != null)
-							out.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
+						// If archive member access requested, add it's filename as anchor
+						if (pfn.ticket.envelope.getArchiveAnchor() != null) {
+							commander.printOut("url", pfn.ticket.envelope.getTransactionURL() + "#" + pfn.ticket.envelope.getArchiveAnchor().getFileName());
+						}
+						else {
+							commander.printOut("url", pfn.ticket.envelope.getTransactionURL());
+						}
+
+						commander.printOut("pfn", pfn.toString());
+						commander.printOut("guid", pfn.getGuid().getName());
+						commander.printOut("se", pfn.getSE().getName());
+						commander.printOut("tags", pfn.getSE().qos.toString());
+						commander.printOut("nSEs", String.valueOf(pfns.size()));
+						commander.printOut("user", commander.user.getName());
+						commander.printOutln();
 					}
-
-					out.printOutln();
 				}
-			else
-				out.printErrln("No PFNs for this LFN");
+			}
+		else
+			commander.printErrln("No PFNs for this LFN");
 	}
 
 	/**
@@ -196,13 +171,12 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandaccess(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandaccess(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 
 		logger.log(Level.INFO, "Access arguments are " + alArguments);
 		final java.util.ListIterator<String> arg = alArguments.listIterator();
@@ -260,11 +234,11 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				}
 			}
 			else
-				out.printErrln("Illegal Request type specified [error in request].");
+				commander.printErrln("Illegal Request type specified [error in request].");
 
 		}
 		else
-			out.printErrln("No Request type specified [error in request].");
+			commander.printErrln("No Request type specified [error in request].");
 
 	}
 }

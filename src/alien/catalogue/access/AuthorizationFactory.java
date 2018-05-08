@@ -75,6 +75,9 @@ public final class AuthorizationFactory {
 	 */
 	public static String fillAccess(final GUID guid, final AccessType access) {
 		if (defaultAccount == null)
+			getDefaultUser();
+		
+		if (defaultAccount == null)
 			return "There is no default account set";
 
 		return fillAccess(defaultAccount, guid, access);

@@ -64,48 +64,35 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		}
 
 		if (errorMessage != null) {
-			if (!isSilent())
-				out.printErrln(errorMessage);
+			commander.printErrln(errorMessage);
 
 			return;
 		}
 
-		if (out.isRootPrinter()) {
-			for (final LFN c : lfns) {
-				out.nextResult();
-				out.setField("guid", c.guid.toString());
-				out.setField("lfn", c.getCanonicalName());
-				if (bZ) {
-					out.setField("size", " " + c.size);
-					out.setField("md5", " " + c.md5);
-				}
-			}
-		}
-		else {
-			final StringBuilder sb = new StringBuilder();
 
-			for (final LFN lfn : lfns) {
-				sb.append(lfn.guid);
-				sb.append(" (from the file ");
-				sb.append(lfn.getCanonicalName());
+		final StringBuilder sb = new StringBuilder();
+		for (final LFN lfn : lfns) {
+			commander.outNextResult();
+			commander.printOut("guid", lfn.guid.toString());
+			commander.printOut("lfn", lfn.getCanonicalName());
+			sb.append(lfn.guid);
+			sb.append(" (from the file ");
+			sb.append(lfn.getCanonicalName());
+			sb.append(")");
+			if (bZ) {
+				commander.printOut("size", " " + lfn.size);
+				commander.printOut("md5", " " + lfn.md5);
+				sb.append(" (size = ");
+				sb.append(lfn.size);
+				sb.append(") ");
+				sb.append("(md5 = ");
+				sb.append(lfn.md5);
 				sb.append(")");
-
-				// ( size = 1868499542)( md5 = d1f1157f09b76ed5a1cd095b009d9348)
-				if (bZ) {
-					sb.append(" (size = ");
-					sb.append(lfn.size);
-					sb.append(") ");
-					sb.append("(md5 = ");
-					sb.append(lfn.md5);
-					sb.append(")");
-				}
-
-				sb.append("\n");
 			}
-
-			out.printOutln(sb.toString());
+			sb.append("\n");
 		}
 
+		commander.printOutln(sb.toString());
 	}
 
 	/**
@@ -127,49 +114,16 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * serialize return values for gapi/root from root it is allways called with -v -z
-	 *
-	 * @return serialized return
-	 */
-
-	@Override
-	public String deserializeForRoot() {
-		if (lfns == null || lfns.size() == 0)
-			return "";
-
-		final StringBuilder ret = new StringBuilder();
-
-		for (final LFN c : lfns) {
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("origLFN").append(RootPrintWriter.fieldseparator);
-
-			ret.append(c.lfn);
-
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("localName").append(RootPrintWriter.fieldseparator);
-			// skipped
-
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("data").append(RootPrintWriter.fieldseparator);
-			// skipped
-
-			ret.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("guid").append(RootPrintWriter.fieldseparator);
-			ret.append(c.guid);
-
-		}
-
-		return ret.toString();
-	}
-
-	/**
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandlistFilesFromCollection(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandlistFilesFromCollection(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		final OptionParser parser = new OptionParser();
 
@@ -189,7 +143,5 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 			throw new JAliEnCommandException();
 
 		sPath = options.nonOptionArguments().get(0).toString();
-
 	}
-
 }

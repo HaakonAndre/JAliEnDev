@@ -26,32 +26,27 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 		final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 
 		if (lfn == null)
-			out.printErrln("Could not get the LFN [" + lfnName + "].");
+			commander.printErrln("Could not get the LFN [" + lfnName + "].");
 		else
 			if (lfn.isDirectory())
-				out.printErrln("The LFN is a directory [" + lfn.getCanonicalName() + "].");
+				commander.printErrln("The LFN is a directory [" + lfn.getCanonicalName() + "].");
 			else
 				if (lfn.guid != null)
-					out.printOutln(padRight(lfn.getCanonicalName(), 80) + lfn.guid);
+					commander.printOutln(padRight(lfn.getCanonicalName(), 80) + lfn.guid);
 				else
-					out.printErrln("Could not get the GUID for [" + lfn.getCanonicalName() + "].");
+					commander.printErrln("Could not get the GUID for [" + lfn.getCanonicalName() + "].");
 
-		if (out.isRootPrinter()) {
-			out.nextResult();
-			if (lfn == null)
-
-				out.setField("message", "Could not get the LFN [" + lfnName + "].");
-
+		commander.outNextResult();
+		if (lfn == null)
+			commander.printOutln("Could not get the LFN [" + lfnName + "].");
+		else
+			if (lfn.isDirectory())
+				commander.printOutln("The LFN is a directory [" + lfn.getCanonicalName() + "].");
 			else
-				if (lfn.isDirectory())
-					out.setField("message", "The LFN is a directory [" + lfn.getCanonicalName() + "].");
+				if (lfn.guid != null)
+					commander.printOutln(padRight(lfn.getCanonicalName(), 80) + lfn.guid);
 				else
-					if (lfn.guid != null)
-						out.setField("message", padRight(lfn.getCanonicalName(), 80) + lfn.guid);
-					else
-						out.setField("message", "Could not get the GUID for [" + lfn.getCanonicalName() + "].");
-		}
-
+					commander.printOutln("Could not get the GUID for [" + lfn.getCanonicalName() + "].");
 	}
 
 	/**
@@ -59,10 +54,9 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-
-		out.printOutln();
-		out.printOutln(helpUsage("lfn2guid", "<filename>"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("lfn2guid", "<filename>"));
+		commander.printOutln();
 	}
 
 	/**
@@ -79,14 +73,13 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in JAliEnCOMMander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandlfn2guid(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) throws OptionException {
-		super(commander, out, alArguments);
+	public JAliEnCommandlfn2guid(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+		super(commander, alArguments);
 
 		if (alArguments.size() != 1)
 			throw new JAliEnCommandException();

@@ -386,4 +386,21 @@ public class TaskQueueApiUtils {
 		return null;
 	}
 
+	/**
+	 * Resubmit a job
+	 * 
+	 * @param queueId
+	 * @return true for success, false for failure
+	 */
+	public ResubmitJob resubmitJob(long queueId) {
+		try {
+			final ResubmitJob j = Dispatcher.execute(new ResubmitJob(commander.getUser(), queueId));
+			return j;
+		} catch (final Exception e) {
+			System.out.println("Could not resubmit the job  with id: [" + queueId + "]");
+			e.printStackTrace();
+		}
+		return null;
+	}
+
 }

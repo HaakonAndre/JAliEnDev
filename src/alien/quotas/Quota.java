@@ -8,9 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
+import alien.config.ConfigUtils;
 import lazyj.DBFunctions;
 import lia.util.StringFactory;
-import alien.config.ConfigUtils;
 
 /**
  * @author costing
@@ -29,11 +29,16 @@ public class Quota implements Serializable, Comparable<Quota> {
 	static transient final Logger logger = ConfigUtils.getLogger(Quota.class.getCanonicalName());
 
 	/*
-	 * user | varchar(64) priority | float maxparallelJobs | int(11) userload | float nominalparallelJobs | int(11) computedpriority | float waiting | int(11) running | int(11) maxUnfinishedJobs |
+	 * userid | int(11) priority | float maxparallelJobs | int(11) userload | float nominalparallelJobs | int(11) computedpriority | float waiting | int(11) running | int(11) maxUnfinishedJobs |
 	 * int(11) maxTotalCpuCost | float totalRunningTimeLast24h | bigint(20) unfinishedJobsLast24h | int(11) totalSize | bigint(20) maxNbFiles | int(11) nbFiles | int(11) tmpIncreasedTotalSize |
 	 * bigint(20) totalCpuCostLast24h | float maxTotalSize | bigint(20) maxTotalRunningTime | bigint(20) tmpIncreasedNbFiles | int(11)
 	 */
 
+	/**
+	 * Account id
+	 */
+	public final int userId;
+	
 	/**
 	 * Account name
 	 */
@@ -143,8 +148,10 @@ public class Quota implements Serializable, Comparable<Quota> {
 	 * @param db
 	 */
 	public Quota(final DBFunctions db) {
+		userId = db.geti("userid");
+		
 		user = StringFactory.get(db.gets("user").toLowerCase());
-
+		
 		priority = db.getf("priority");
 
 		maxparallelJobs = db.geti("maxparallelJobs");
@@ -186,7 +193,7 @@ public class Quota implements Serializable, Comparable<Quota> {
 
 	@Override
 	public String toString() {
-		return "Quota: user: " + user + "\n" + "priority\t: " + priority + "\n" + "maxparallelJobs\t: " + maxparallelJobs + "\n" + "userload\t: " + userload + "\n" + "nominalparallelJobs\t: "
+		return "Quota: userid: " + userId + "\n" + "priority\t: " + priority + "\n" + "maxparallelJobs\t: " + maxparallelJobs + "\n" + "userload\t: " + userload + "\n" + "nominalparallelJobs\t: "
 				+ nominalparallelJobs + "\n" + "computedpriority\t: " + computedpriority + "\n" + "waiting\t: " + waiting + "\n" + "running\t: " + running + "\n" + "maxUnfinishedJobs\t: "
 				+ maxUnfinishedJobs + "\n" + "maxTotalCpuCost\t: " + maxTotalCpuCost + "\n" + "totalRunningTimeLast24h\t: " + totalRunningTimeLast24h + "\n" + "unfinishedJobsLast24h\t: "
 				+ unfinishedJobsLast24h + "\n" + "totalCpuCostLast24h\t: " + totalCpuCostLast24h + "\n" + "maxTotalRunningTime\t: " + maxTotalRunningTime;
@@ -194,7 +201,7 @@ public class Quota implements Serializable, Comparable<Quota> {
 
 	@Override
 	public int compareTo(final Quota o) {
-		return user.compareTo(o.user);
+		return userId - o.userId;
 	}
 
 	@Override
@@ -207,7 +214,7 @@ public class Quota implements Serializable, Comparable<Quota> {
 
 	@Override
 	public int hashCode() {
-		return user.hashCode();
+		return userId;
 	}
 
 	/**

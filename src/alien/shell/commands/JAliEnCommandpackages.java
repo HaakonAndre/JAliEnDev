@@ -19,28 +19,15 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 		packs = commander.c_api.getPackages(getPackagePlatformName());
 
 		if (packs != null) {
-			for (final Package p : packs)
-				if (out.isRootPrinter()) {
-					out.nextResult();
-					out.setField("packages", p.getFullName());
-
-				}
-
-				else {
-					String ret = "";
-
-					ret += "result" + padSpace(1) + p.getFullName();
-
-					if (!isSilent())
-						out.printOutln(ret);
-				}
+			for (final Package p : packs) {
+				commander.outNextResult();
+				commander.printOut("packages", p.getFullName());
+				commander.printOutln("result" + padSpace(1) + p.getFullName());
+			}
 		}
 		else {
-			out.printErrln("Couldn't find any packages.");
-			out.setReturnCode(1, "Couldn't find any packages.");
-			out.setReturnArgs(deserializeForRoot(0));
+			commander.setReturnCode(1, "Couldn't find any packages.");
 		}
-
 	}
 
 	private static String getPackagePlatformName() {
@@ -58,36 +45,13 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * serialize return values for gapi/root
-	 *
-	 * @return serialized return
-	 */
-	@Override
-	public String deserializeForRoot() {
-		if (packs != null) {
-
-			final StringBuilder sb = new StringBuilder();
-
-			sb.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("__result__").append(RootPrintWriter.fieldseparator).append("1\n");
-
-			for (final Package p : packs)
-				sb.append(RootPrintWriter.columnseparator).append(RootPrintWriter.fielddescriptor).append("__result__").append(RootPrintWriter.fieldseparator).append(p.getFullName()).append('\n');
-
-			return sb.toString();
-		}
-
-		return super.deserializeForRoot(0);
-	}
-
-	/**
 	 * printout the help info, none for this command
 	 */
 	@Override
 	public void printHelp() {
-
-		out.printOutln();
-		out.printOutln(helpUsage("packages", "  list available packages"));
-		out.printOutln();
+		commander.printOutln();
+		commander.printOutln(helpUsage("packages", "  list available packages"));
+		commander.printOutln();
 	}
 
 	/**
@@ -104,12 +68,11 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	 * Constructor needed for the command factory in commander
 	 *
 	 * @param commander
-	 * @param out
 	 *
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandpackages(final JAliEnCOMMander commander, final UIPrintWriter out, final ArrayList<String> alArguments) {
-		super(commander, out, alArguments);
+	public JAliEnCommandpackages(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+		super(commander, alArguments);
 	}
 }

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import alien.api.Dispatcher;
 import alien.api.aaa.GetTokenCertificate;
 import alien.api.aaa.TokenCertificateType;
 import alien.config.ConfigUtils;
@@ -177,7 +178,7 @@ public class JobBroker {
 					GetTokenCertificate gtc = new GetTokenCertificate((AliEnPrincipal) matchRequest.get("AliEnPrincipal"), username, TokenCertificateType.JOB_TOKEN,
 							"queueid=" + queueId + "/resubmission=" + resubmission, 1);
 					try {
-						gtc.run();
+						Dispatcher.execute(gtc);
 						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
 						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
 					} catch (Exception e) {

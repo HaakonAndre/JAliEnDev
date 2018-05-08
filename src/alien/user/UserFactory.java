@@ -40,10 +40,16 @@ public final class UserFactory {
 
 		final Set<String> check = LDAPHelper.checkLdapInformation("uid=" + username, "ou=People,", "uid");
 
-		if (check != null && check.size() >= 1)
-			return new AliEnPrincipal(username);
+		AliEnPrincipal ret = null;
 
-		return null;
+		if (check != null && check.size() >= 1) {
+			ret = new AliEnPrincipal(username);
+
+			if (username.equals("jobagent"))
+				ret.setJobAgent();
+		}
+
+		return ret;
 	}
 
 	/**
@@ -191,57 +197,58 @@ public final class UserFactory {
 
 			if (dn.contains("/CN=JobAgent")) {
 				p = getByUsername("jobagent");
-				if (p != null)
-					p.setJobAgent();
-			} else if (dn.contains("/CN=Job")) {
-				// Assuming we have user or job token, parse role to switch identity to that
-				// user
-				// /C=ch/O=AliEn/CN=Job/CN=username/OU=role/OU=extension
+			}
+			else
+				if (dn.contains("/CN=Job")) {
+					// Assuming we have user or job token, parse role to switch identity to that
+					// user
+					// /C=ch/O=AliEn/CN=Job/CN=username/OU=role/OU=extension
 
-				int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
-				int jobOU = dn.lastIndexOf("/OU=") != roleOU ? dn.lastIndexOf("/OU=") : dn.length();
-				int nameCN = dn.lastIndexOf("/CN=");
+					int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
+					int jobOU = dn.lastIndexOf("/OU=") != roleOU ? dn.lastIndexOf("/OU=") : dn.length();
+					int nameCN = dn.lastIndexOf("/CN=");
 
-				if (roleOU != dn.length()) // if OU present in DN try to extract role
-					p = getByRole(dn.substring(roleOU + 4, jobOU));
+					if (roleOU != dn.length()) // if OU present in DN try to extract role
+						p = getByRole(dn.substring(roleOU + 4, jobOU));
 
-				if (nameCN != -1) { // if CN present in DN
-					if (p == null) // if getByRole didn't find anything
-						p = getByUsername(dn.substring(nameCN + 4, roleOU));
+					if (nameCN != -1) { // if CN present in DN
+						if (p == null) // if getByRole didn't find anything
+							p = getByUsername(dn.substring(nameCN + 4, roleOU));
 
-					if (p != null) { // if getByUsername or getByRole found credentials
-						if (jobOU != dn.length()) { // if second OU is present in DN
-							String extensions = dn.substring(jobOU + 4);
-							final StringTokenizer st = new StringTokenizer(extensions, "/");
-							while (st.hasMoreElements()) {
-								final String spec = st.nextToken();
-								if (spec.contains("=")) {
-									p.setExtension(spec.substring(0, spec.indexOf('=')),
-											spec.substring(spec.indexOf('=') + 1));
+						if (p != null) { // if getByUsername or getByRole found credentials
+							if (jobOU != dn.length()) { // if second OU is present in DN
+								String extensions = dn.substring(jobOU + 4);
+								final StringTokenizer st = new StringTokenizer(extensions, "/");
+								while (st.hasMoreElements()) {
+									final String spec = st.nextToken();
+									if (spec.contains("=")) {
+										p.setExtension(spec.substring(0, spec.indexOf('=')), spec.substring(spec.indexOf('=') + 1));
+									}
 								}
 							}
-						}
 
-						p.setDefaultUser(dn.substring(nameCN + 4, roleOU));
+							p.setDefaultUser(dn.substring(nameCN + 4, roleOU));
+						}
 					}
 				}
-			} else if (dn.contains("/CN=Users")) {
-				// /C=ch/O=AliEn/CN=Users/CN=username/OU=role
+				else
+					if (dn.contains("/CN=Users")) {
+						// /C=ch/O=AliEn/CN=Users/CN=username/OU=role
 
-				int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
-				int nameCN = dn.lastIndexOf("/CN=");
+						int roleOU = dn.indexOf("/OU=") != -1 ? dn.indexOf("/OU=") : dn.length();
+						int nameCN = dn.lastIndexOf("/CN=");
 
-				if (roleOU != dn.length()) // if OU present in DN try to extract role
-					p = getByRole(dn.substring(roleOU + 4));
+						if (roleOU != dn.length()) // if OU present in DN try to extract role
+							p = getByRole(dn.substring(roleOU + 4));
 
-				if (nameCN != -1) { // if CN present in DN
-					if (p == null) // if getByRole didn't find anything
-						p = getByUsername(dn.substring(nameCN + 4, roleOU));
+						if (nameCN != -1) { // if CN present in DN
+							if (p == null) // if getByRole didn't find anything
+								p = getByUsername(dn.substring(nameCN + 4, roleOU));
 
-					if (p != null) // if getByUsername or getByRole found credentials
-						p.setDefaultUser(dn.substring(nameCN + 4, roleOU));
-				}
-			}
+							if (p != null) // if getByUsername or getByRole found credentials
+								p.setDefaultUser(dn.substring(nameCN + 4, roleOU));
+						}
+					}
 
 			if (p != null) {
 				final Set<AliEnPrincipal> ret = new LinkedHashSet<>();

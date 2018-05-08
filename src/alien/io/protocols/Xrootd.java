@@ -394,6 +394,10 @@ public class Xrootd extends Protocol {
 	 */
 	@Override
 	public File get(final PFN pfn, final File localFile) throws IOException {
+		return get(pfn, localFile, null);
+	}
+
+	private File get(final PFN pfn, final File localFile, final String applicationName) throws IOException {
 		File target = null;
 
 		if (localFile != null) {
@@ -470,7 +474,7 @@ public class Xrootd extends Protocol {
 
 			command.add(xrdcpPath);
 
-			command.addAll(getCommonArguments());
+			command.addAll(getCommonArguments(applicationName));
 
 			/*
 			 * TODO: enable when servers support checksum queries, at the moment most don't if (xrootdNewerThan4 && guid.md5 != null && guid.md5.length() > 0) { command.add("-C"); command.add("md5:" +
@@ -582,6 +586,10 @@ public class Xrootd extends Protocol {
 	 */
 	@Override
 	public String put(final PFN pfn, final File localFile) throws IOException {
+		return put(pfn, localFile, null);
+	}
+
+	private String put(final PFN pfn, final File localFile, final String applicationName) throws IOException {
 		if (localFile == null || !localFile.exists() || !localFile.isFile() || !localFile.canRead())
 			throw new TargetException("Local file " + localFile + " cannot be read");
 
@@ -603,7 +611,7 @@ public class Xrootd extends Protocol {
 
 			command.add(xrdcpPath);
 
-			command.addAll(getCommonArguments());
+			command.addAll(getCommonArguments(applicationName));
 
 			command.add("-np"); // no progress bar
 			command.add("-v"); // display summary output
@@ -696,7 +704,7 @@ public class Xrootd extends Protocol {
 		}
 	}
 
-	private final List<String> getCommonArguments() {
+	private final List<String> getCommonArguments(final String defaultApplicationName) {
 		final List<String> ret = new ArrayList<>();
 
 		ret.add("-DIFirstConnectMaxCnt");
@@ -717,6 +725,11 @@ public class Xrootd extends Protocol {
 
 		ret.add("-DIReadCacheSize");
 		ret.add("0");
+
+		final String appName = ConfigUtils.getApplicationName(defaultApplicationName);
+
+		if (appName != null)
+			ret.add("-ODeos.app=" + appName);
 
 		return ret;
 	}
@@ -930,7 +943,7 @@ public class Xrootd extends Protocol {
 					}
 					else {
 						command.add(xrootd_default_path + "/bin/xrdstat");
-						command.addAll(getCommonArguments());
+						command.addAll(getCommonArguments(null));
 						command.add(pfn.getPFN());
 					}
 
@@ -970,7 +983,7 @@ public class Xrootd extends Protocol {
 					Thread.sleep(sleep * 1000);
 					continue;
 				}
-				
+
 				final long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 
 				if (pfn.getGuid().size == filesize)
@@ -1007,10 +1020,10 @@ public class Xrootd extends Protocol {
 		if (xrootdNewerThan4)
 			return transferv4(source, target, TPC_DEFAULT);
 
-		final File temp = get(source, null);
+		final File temp = get(source, null, "transfer");
 
 		try {
-			return put(target, temp);
+			return put(target, temp, "transfer");
 		} finally {
 			TempFileManager.release(temp);
 		}
@@ -1067,6 +1080,11 @@ public class Xrootd extends Protocol {
 			command.add("--force");
 			command.add("--path");
 			command.add("--posc");
+
+			final String appName = ConfigUtils.getApplicationName("transfer-3rd");
+
+			if (appName != null)
+				command.add("-ODeos.app=" + appName);
 
 			final boolean sourceEnvelope = source.ticket != null && source.ticket.envelope != null;
 

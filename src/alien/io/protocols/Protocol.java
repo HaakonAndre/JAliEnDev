@@ -7,8 +7,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
+import alien.catalogue.GUID;
+import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.config.ConfigUtils;
+import alien.io.IOUtils;
 import lia.util.process.ExternalProcess.ExitStatus;
 
 /**
@@ -21,6 +29,8 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 	 *
 	 */
 	private static final long serialVersionUID = 6159560194424790552L;
+
+	private transient final static Logger logger = ConfigUtils.getLogger(Protocol.class.getCanonicalName());
 
 	/**
 	 * Package protected
@@ -85,10 +95,59 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 		if (f == null || !f.exists() || !f.isFile())
 			return false;
 
-		if (f.length() != pfn.getGuid().size)
+		final GUID guid = pfn.getGuid();
+
+		if (f.length() != guid.size)
 			return false;
 
+		if (isValidMD5(guid.md5)) {
+			try {
+				String fileMD5 = IOUtils.getMD5(f);
+
+				if (!fileMD5.equalsIgnoreCase(guid.md5))
+					return false;
+
+			} catch (IOException e) {
+				logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
+				logger.log(Level.SEVERE, e.getMessage());
+				return false;
+			}
+		}
+		else {
+			final LFN lfn = LFNUtils.getLFN(guid);
+			if (lfn != null && isValidMD5(lfn.md5)) {
+				try {
+					String fileMD5 = IOUtils.getMD5(f);
+
+					if (!fileMD5.equalsIgnoreCase(lfn.md5))
+						return false;
+
+				} catch (IOException e) {
+					logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
+					logger.log(Level.SEVERE, e.getMessage());
+					return false;
+				}
+			}
+		}
+		// otherwise don't check md5 at all
+
 		return true;
+	}
+
+	private final static Pattern md5pattern = Pattern.compile("[a-fA-F0-9]{32}");
+
+	/**
+	 * Check if a string is a valid md5 hash
+	 *
+	 * @param s
+	 *            string to check
+	 * @return <code>true</code> if a string is a valid md5 hash, <code>false</code> otherwise
+	 */
+	private static boolean isValidMD5(String s) {
+		if (s != null && s.length() > 0)
+			return md5pattern.matcher(s).matches();
+
+		return false;
 	}
 
 	@Override
