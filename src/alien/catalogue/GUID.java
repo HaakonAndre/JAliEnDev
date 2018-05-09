@@ -771,7 +771,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 							final SE se = SEUtils.getSE(pfn.seNumber);
 
 							if (se != null && !(se.getName().equalsIgnoreCase("no_se"))) {
-								db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size,pfn) VALUES (1,string2binary(?), ?, ?, ?);", false, g.guid.toString(),
+								db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size,pfn) VALUES (1,string2binary(?), ?, ?, ?, ?);", false, g.guid.toString(),
 										Integer.valueOf(pfn.seNumber), g.md5, Long.valueOf(g.size), pfn.pfn.equals(se.generatePFN(g)) ? null : pfn.pfn);
 
 								SEUtils.incrementStorageCounters(se.seNumber, -1, -g.size);
