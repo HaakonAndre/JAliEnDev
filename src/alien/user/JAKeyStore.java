@@ -451,12 +451,6 @@ public class JAKeyStore {
 
 		clientCert = KeyStore.getInstance("JKS");
 
-		try {
-			clientCert.load(null, pass);
-		} catch (@SuppressWarnings("unused") final Exception e) {
-			// ignore
-		}
-
 		JPasswordFinder jpf;
 
 		System.out.println(noUserPass);
@@ -471,7 +465,8 @@ public class JAKeyStore {
 			loadTrusts(clientCert);
 
 			addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (final Exception e) {
+			logger.severe("Cannot load clientCert: " + e.toString());
 			return false;
 		}
 
