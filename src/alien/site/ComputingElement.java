@@ -99,21 +99,6 @@ public class ComputingElement extends Thread {
 
 	@Override
 	public void run() {
-		// DispatchSSLServer.overWriteServiceAndForward("siteProxyService");
-		// try {
-		// DispatchSSLServer.runService();
-		// } catch (final IOException e1) {
-		// e1.printStackTrace();
-		// }
-
-		if (queue.needX509Proxy())
-			if (System.getenv("X509_USER_PROXY") == null) {
-				logger.severe("X509_USER_PROXY variable not set. Unable to work properly!");
-				System.err.println("X509_USER_PROXY variable not set. Unable to work properly!");
-				System.err.println("Exiting...");
-				return;
-			}
-
 		logger.log(Level.INFO, "Starting ComputingElement in " + config.get("host_host"));
 		try {
 			System.out.println("Trying to start JBox");
