@@ -1,11 +1,10 @@
 package alien;
 
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -22,11 +21,14 @@ import alien.api.catalogue.PFNforReadOrDel;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.catalogue.XmlCollection;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.protocols.Factory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.OutputEntry;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author yuw
@@ -36,7 +38,9 @@ public class TrackRefsDelete {
 
 	static transient final Logger logger = ConfigUtils.getLogger(TrackRefsDelete.class.getCanonicalName());
 
-	final static JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+	private final static JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+	private static String archiveName;
+	private static String memberName;
 
 	/**
 	 * @param args
@@ -44,21 +48,28 @@ public class TrackRefsDelete {
 	 */
 	public static void main(final String[] args) throws Exception {
 		if (args.length > 0) {
+			final OptionParser parser = new OptionParser();
+			parser.accepts("list").withRequiredArg();		// Like "collection.xml"
+			parser.accepts("archive").withRequiredArg(); 	// Like "root_archive.zip";
+			parser.accepts("member").withRequiredArg();  	// Like "TrackRefs.root";
+			final OptionSet options = parser.parse(args);
+
 			// Read directory names from file
-			final String collectionName = args[0];
-			if (collectionName != null && collectionName.length() > 0) {
-				File collection = new File(collectionName);
-				try (BufferedReader br = new BufferedReader(new FileReader(collection))) {
-					for (String line = br.readLine(); line != null; line = br.readLine()) {
-						// Delete TrackRefs.root from those directories
-						deleteTrackRefs(line);
-					}
-				}
+			final String collectionName = (String) options.valueOf("list");
+			archiveName = (String) options.valueOf("archive");
+			memberName = (String) options.valueOf("member");
+			
+			XmlCollection xmlCollection = new XmlCollection(new File(collectionName));
+
+			Iterator<LFN> directorys = xmlCollection.iterator();
+			while (directorys.hasNext()) {
+				deleteArchiveMember(directorys.next().getCanonicalName());
 			}
 		}
 	}
 
-	private static void deleteTrackRefs(final String directory) {
+	private static void deleteArchiveMember(final String directory) {
+		// TODO delete archive with 1 member
 		try {
 			final String jobID = directory.substring(directory.lastIndexOf("/") + 1);
 			// Use this for debugging
@@ -68,24 +79,24 @@ public class TrackRefsDelete {
 			// Create file variables
 			//
 			final String remotePath = FileSystemUtils.getAbsolutePath(commander.getUser().getName(), commander.getCurrentDirName(), directory);
-			final String remoteFile = remotePath + System.getProperty("file.separator") + "root_archive.zip";
+			final String remoteFile = remotePath + System.getProperty("file.separator") + archiveName;
 
-			File localFile = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + "root_archive.zip");
+			File localFile = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
 			if (localFile.exists()) {
 				localFile.delete();
 			}
 
 			// Check if remote zip file exists
 			//
-			if (commander.c_api.find(remotePath, "root_archive.zip", 0).isEmpty()) {
-				System.out.println("There is no root_archive.zip in " + remotePath);
+			if (commander.c_api.find(remotePath, archiveName, 0).isEmpty()) {
+				System.out.println("There is no " + archiveName + " in " + remotePath);
 				return;
 			}
 
-			// Check if TrackRefs.root file is registered in the catalog
+			// Check if member file is registered in the catalog
 			//
-			if (commander.c_api.find(remotePath, "TrackRefs.root", 0).isEmpty()) {
-				System.out.println("There is no TrackRefs.root in " + remotePath);
+			if (commander.c_api.find(remotePath, memberName, 0).isEmpty()) {
+				System.out.println("There is no " + memberName + " in " + remotePath);
 				return;
 			}
 
@@ -93,16 +104,20 @@ public class TrackRefsDelete {
 			//
 			commander.c_api.downloadFile(remoteFile, localFile, "");
 
-			// Unpack to local directory and zip again without TrackRefs.root file
+			// Unpack to local directory and zip again without member file
 			//
-			unzip(jobID);
+			if (!unzip(jobID)) {
+				System.err.println("Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
+				System.err.println("Aborting.");
+				return;
+			}
 
 			File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
 			ArrayList<String> listOfFiles = new ArrayList<>();
 			for (File file : folder.listFiles())
 				listOfFiles.add(file.getName());
 
-			OutputEntry entry = new OutputEntry("root_archive.zip", listOfFiles, "", Long.valueOf(jobID));
+			OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
 			entry.createZip(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
 
 			// Upload new file to the Grid
@@ -110,17 +125,16 @@ public class TrackRefsDelete {
 
 			// Create exactly the same number of replicas as the original archive had
 			int nreplicas = commander.c_api.getPFNsToRead(commander.c_api.getLFN(remoteFile), null, null).size();
-			File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + System.getProperty("file.separator") + "root_archive.zip");
+			File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + System.getProperty("file.separator") + archiveName);
 			commander.c_api.uploadFile(newArchive, remoteFile + ".new", "-w", "-S", "disk:" + nreplicas);
 
-			// Delete the members of old archive
+			// Delete the members links of old archive
 			//
 			for (String member : listOfFiles) {
 				commander.c_api.removeLFN(remotePath + System.getProperty("file.separator") + member);
 			}
 
-			// Also delete TrackRefs.root link
-			commander.c_api.removeLFN(remotePath + System.getProperty("file.separator") + "TrackRefs.root");
+			commander.c_api.removeLFN(remotePath + System.getProperty("file.separator") + memberName);
 
 			// Delete old remote file
 			//
@@ -179,7 +193,7 @@ public class TrackRefsDelete {
 	 * @param jobID
 	 * @throws IOException
 	 */
-	public static void unzip(final String jobID) throws IOException {
+	private static boolean unzip(final String jobID) throws IOException {
 
 		File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
 		if (!destDir.exists()) {
@@ -195,11 +209,11 @@ public class TrackRefsDelete {
 		}
 
 		// Start unpacking the archive
-		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + "root_archive.zip"))) {
+		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
-				if (entry.getName().contains("TrackRefs.root")) {
+				if (entry.getName().contains(memberName)) {
 					// Skip this file
 					zipIn.closeEntry();
 					entry = zipIn.getNextEntry();
@@ -221,6 +235,10 @@ public class TrackRefsDelete {
 			}
 
 			zipIn.close();
+			return true;
+		} catch (FileNotFoundException e) {
+			System.err.println("No such file: " + System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
+			return false;
 		}
 	}
 
