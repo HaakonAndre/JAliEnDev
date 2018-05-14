@@ -91,8 +91,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * @uml.property  name="commander"
 	 * @uml.associationEnd  
 	 */
-	private final JAliEnCOMMander commander = new JAliEnCOMMander();
-	// private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+	//private final JAliEnCOMMander commander = new JAliEnCOMMander();
+	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 
 	/**
 	 * @uml.property  name="c_api"
@@ -144,6 +144,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	/**
 	 */
 	public JobWrapper() {
+		
+		Map<String, String> env = System.getenv();
+		
+		for(Map.Entry<String,String> entry : env.entrySet())
+			System.err.println(entry.getKey() + " " + entry.getValue());
+		
 
 		// TODO: To be put back  
 		/* site = env.get("site");
@@ -152,7 +158,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
 
 		//TODO: To be put back
-		//  siteMap = (new SiteMap().);
+		siteMap = (new SiteMap()).getSiteParameters(env);
 		workdir = (String) siteMap.get("workdir");
 		hostName = (String) siteMap.get("Host");
 		packMan = (PackMan) siteMap.get("PackMan");
@@ -216,6 +222,12 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		//////////////////////////////////////////////////////
 
 		System.err.println("JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
+		
+		
+		
+		
+		
+		System.err.println(jdl.toHTML().toString());
 
 	}
 
@@ -273,6 +285,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private void runJob() {
 		try {
 			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);
+			
+			System.err.println("Attempting to create workdir");
 
 			if (!createWorkDir() || !getInputFiles()) {
 				changeStatus(JobStatus.ERROR_IB);
@@ -319,9 +333,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		final File fExe = new File(tempDir, cmdStrip);
 
+		System.err.println("Checking if file exists");
+		
 		if (!fExe.exists())
 			return -1;
 
+		System.err.println("File exists!");
+		
 		fExe.setExecutable(true);
 
 		cmd.add(fExe.getAbsolutePath());
@@ -632,6 +650,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	}
 
 	private boolean createWorkDir() {
+		
+		System.err.println("Creating workdir");
+		
 		logger.log(Level.INFO, "Creating sandbox and chdir");
 
 		jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
@@ -641,6 +662,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			final boolean created = tempDir.mkdirs();
 			if (!created) {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
+				System.err.println("Creating workdir failed");
 				return false;
 			}
 		}
@@ -651,6 +673,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);
 		// TODO: create the extra directories
 
+		System.err.println("Creating workdir succeeded");
 		return true;
 	}
 
