@@ -633,7 +633,7 @@ public class CatalogueApiUtils {
 	}
 
 	/**
-	 * Upload a local file to the Grid
+	 * Download a remote file from the Grid
 	 * 
 	 * @param fromLFN
 	 * 
