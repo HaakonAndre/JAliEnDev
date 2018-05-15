@@ -34,9 +34,9 @@ import joptsimple.OptionSet;
  * @author yuw
  *
  */
-public class TrackRefsDelete {
+public class ArchiveMemberDelete {
 
-	static transient final Logger logger = ConfigUtils.getLogger(TrackRefsDelete.class.getCanonicalName());
+	static transient final Logger logger = ConfigUtils.getLogger(ArchiveMemberDelete.class.getCanonicalName());
 
 	private final static JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private static String archiveName;
