@@ -49,16 +49,16 @@ public class TrackRefsDelete {
 	public static void main(final String[] args) throws Exception {
 		if (args.length > 0) {
 			final OptionParser parser = new OptionParser();
-			parser.accepts("list").withRequiredArg();		// Like "collection.xml"
-			parser.accepts("archive").withRequiredArg(); 	// Like "root_archive.zip";
-			parser.accepts("member").withRequiredArg();  	// Like "TrackRefs.root";
+			parser.accepts("list").withRequiredArg(); // Like "collection.xml"
+			parser.accepts("archive").withRequiredArg(); // Like "root_archive.zip";
+			parser.accepts("member").withRequiredArg(); // Like "TrackRefs.root";
 			final OptionSet options = parser.parse(args);
 
 			// Read directory names from file
 			final String collectionName = (String) options.valueOf("list");
 			archiveName = (String) options.valueOf("archive");
 			memberName = (String) options.valueOf("member");
-			
+
 			XmlCollection xmlCollection = new XmlCollection(new File(collectionName));
 
 			Iterator<LFN> directorys = xmlCollection.iterator();
@@ -71,17 +71,26 @@ public class TrackRefsDelete {
 	private static void deleteArchiveMember(final String directory) {
 		// TODO delete archive with 1 member
 		try {
-			final String jobID = directory.substring(directory.lastIndexOf("/") + 1);
+			final String jobID;
+			if (directory.endsWith("/")) {
+				String stripped = directory.substring(0, directory.lastIndexOf("/"));
+				jobID = stripped.substring(stripped.lastIndexOf("/") + 1);
+			} else {
+				jobID = directory.substring(directory.lastIndexOf("/") + 1);
+			}
+
 			// Use this for debugging
 			// final ByteArrayOutputStream out = new ByteArrayOutputStream();
 			// commander.setLine(new JSONPrintWriter(out), null);
 
 			// Create file variables
 			//
-			final String remotePath = FileSystemUtils.getAbsolutePath(commander.getUser().getName(), commander.getCurrentDirName(), directory);
+			final String remotePath = FileSystemUtils.getAbsolutePath(commander.getUser().getName(),
+					commander.getCurrentDirName(), directory);
 			final String remoteFile = remotePath + System.getProperty("file.separator") + archiveName;
 
-			File localFile = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
+			File localFile = new File(
+					System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
 			if (localFile.exists()) {
 				localFile.delete();
 			}
@@ -103,11 +112,16 @@ public class TrackRefsDelete {
 			// Download the archive from the Grid
 			//
 			commander.c_api.downloadFile(remoteFile, localFile, "");
+			if (!localFile.exists()) {
+				System.err.println("Failed to download remote file " + remoteFile);
+				return;
+			}
 
 			// Unpack to local directory and zip again without member file
 			//
 			if (!unzip(jobID)) {
-				System.err.println("Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
+				System.err.println("Failed to extract files from archive: " + System.getProperty("user.dir")
+						+ System.getProperty("file.separator") + jobID + archiveName);
 				System.err.println("Aborting.");
 				return;
 			}
@@ -125,7 +139,8 @@ public class TrackRefsDelete {
 
 			// Create exactly the same number of replicas as the original archive had
 			int nreplicas = commander.c_api.getPFNsToRead(commander.c_api.getLFN(remoteFile), null, null).size();
-			File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + System.getProperty("file.separator") + archiveName);
+			File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID
+					+ System.getProperty("file.separator") + archiveName);
 			commander.c_api.uploadFile(newArchive, remoteFile + ".new", "-w", "-S", "disk:" + nreplicas);
 
 			// Delete the members links of old archive
@@ -144,7 +159,8 @@ public class TrackRefsDelete {
 
 			if (oldRemoteLFN != null) {
 				try {
-					List<PFN> oldRemotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, oldRemoteLFN, null, null)).getPFNs();
+					List<PFN> oldRemotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(),
+							commander.getSite(), AccessType.DELETE, oldRemoteLFN, null, null)).getPFNs();
 
 					Iterator<PFN> it = oldRemotePFN.iterator();
 					while (it.hasNext()) {
@@ -174,7 +190,8 @@ public class TrackRefsDelete {
 
 			// Register files in the catalogue
 			//
-			CatalogueApiUtils.registerEntry(entry, remotePath + System.getProperty("file.separator"), commander.getUser());
+			CatalogueApiUtils.registerEntry(entry, remotePath + System.getProperty("file.separator"),
+					commander.getUser());
 
 		} catch (IOException e1) {
 			e1.printStackTrace();
@@ -198,8 +215,7 @@ public class TrackRefsDelete {
 		File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
 		if (!destDir.exists()) {
 			destDir.mkdir();
-		}
-		else {
+		} else {
 			// Clean up temp directory if there are files in it
 			String[] destDirEntries = destDir.list();
 			for (String s : destDirEntries) {
@@ -209,7 +225,8 @@ public class TrackRefsDelete {
 		}
 
 		// Start unpacking the archive
-		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName))) {
+		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(
+				System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
@@ -224,8 +241,7 @@ public class TrackRefsDelete {
 				if (!entry.isDirectory()) {
 					// if the entry is a file, extracts it
 					extractFile(zipIn, filePath);
-				}
-				else {
+				} else {
 					// if the entry is a directory, make the directory
 					File dir = new File(filePath);
 					dir.mkdir();
@@ -236,8 +252,9 @@ public class TrackRefsDelete {
 
 			zipIn.close();
 			return true;
-		} catch (FileNotFoundException e) {
-			System.err.println("No such file: " + System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
+		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
+			System.err.println("No such file: " + System.getProperty("user.dir") + System.getProperty("file.separator")
+					+ jobID + archiveName);
 			return false;
 		}
 	}
