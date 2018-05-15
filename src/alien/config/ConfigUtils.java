@@ -34,7 +34,9 @@ import java.util.logging.Logger;
 
 import alien.user.LDAPHelper;
 import lazyj.DBFunctions;
+import lazyj.DBProperties;
 import lazyj.ExtProperties;
+import lazyj.FallbackProperties;
 import lazyj.cache.ExpirationCache;
 import lazyj.commands.SystemCommand;
 import lia.Monitor.monitor.AppConfig;
@@ -89,7 +91,8 @@ public class ConfigUtils {
 						foundProperties.put(key, prop);
 					}
 				}
-		} catch (@SuppressWarnings("unused") final Throwable t) {
+		} catch (@SuppressWarnings("unused")
+		final Throwable t) {
 			// cannot load the default configuration files for any reason
 		}
 
@@ -162,22 +165,24 @@ public class ConfigUtils {
 
 		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
 
+		ExtProperties fileConfig;
+
 		if (applicationConfig != null)
-			appConfig = applicationConfig;
+			fileConfig = applicationConfig;
 		else
 			if (hasMLConfig) {
 				// Started from ML, didn't have its own configuration, so copy the configuration keys from ML's main config file
-				appConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
-				appConfig.set("jalien.configure.logging", "false");
+				fileConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
+				fileConfig.set("jalien.configure.logging", "false");
 			}
 			else
-				appConfig = new ExtProperties();
+				fileConfig = new ExtProperties();
 
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
-			appConfig.set(entry.getKey().toString(), entry.getValue().toString());
+			fileConfig.set(entry.getKey().toString(), entry.getValue().toString());
 
 		// now let's configure the logging, if allowed to
-		if (appConfig.getb("jalien.configure.logging", true) && logConfig != null) {
+		if (fileConfig.getb("jalien.configure.logging", true) && logConfig != null) {
 			logging = new LoggingConfigurator(logConfig);
 
 			// tell ML not to configure its logger
@@ -204,10 +209,21 @@ public class ConfigUtils {
 			final Properties mlConfigProperties = AppConfig.getPropertiesConfigApp();
 
 			for (final String key : mlConfigProperties.stringPropertyNames())
-				appConfig.set(key, mlConfigProperties.getProperty(key));
+				fileConfig.set(key, mlConfigProperties.getProperty(key));
 		}
 
-		appConfig.makeReadOnly();
+		fileConfig.makeReadOnly();
+
+		appConfig = new FallbackProperties(fileConfig);
+
+		@SuppressWarnings("resource")
+		final DBFunctions dbAdmin = getDB("admin");
+
+		if (dbAdmin != null) {
+			final DBProperties dbProp = new DBProperties(dbAdmin);
+			dbProp.makeReadOnly();
+			((FallbackProperties) appConfig).addProvider(dbProp);
+		}
 
 		logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
 
