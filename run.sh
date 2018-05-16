@@ -5,6 +5,8 @@ export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/alien/lib:$HOME/alien/api/lib"
 
 if [ -f alien-cs.jar ]; then
     CLASSPATH="alien-cs.jar"
+elif [ -f alien-users.jar ]; then
+    CLASSPATH="alien-users.jar"
 else
     CLASSPATH="alien.jar"
 
