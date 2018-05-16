@@ -3,8 +3,19 @@
 export PATH="$PATH:$HOME/alien/bin:$HOME/alien/api/bin"
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/alien/lib:$HOME/alien/api/lib"
 
+if [ -f alien-cs.jar ]; then
+    CLASSPATH="alien-cs.jar"
+else
+    CLASSPATH="alien.jar"
+
+    for DEP in lib/*.jar; do
+	CLASSPATH="$CLASSPATH:$DEP"
+    done
+fi
+
+export CLASSPATH
+
 java \
-	-classpath alien-cs.jar \
 	-server \
 	-Xms4G -Xmx4G \
 	-XX:+UseG1GC \
