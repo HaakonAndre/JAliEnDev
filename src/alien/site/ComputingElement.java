@@ -80,8 +80,6 @@ public class ComputingElement extends Thread {
 				System.err.println("Error loading the key");
 			}
 
-			// JAKeyStore.loadClientKeyStorage();
-			// JAKeyStore.loadServerKeyStorage();
 			config = ConfigUtils.getConfigFromLdap();
 			site = (String) config.get("site_accountname");
 			getSiteMap();
@@ -93,7 +91,7 @@ public class ComputingElement extends Thread {
 			queue = getBatchQueue((String) config.get("ce_type"));
 
 		} catch (final Exception e) {
-			e.printStackTrace();
+			logger.severe("Problem in construction of ComputingElement: " + e.toString());
 		}
 	}
 
@@ -101,20 +99,23 @@ public class ComputingElement extends Thread {
 	public void run() {
 		logger.log(Level.INFO, "Starting ComputingElement in " + config.get("host_host"));
 		try {
-			System.out.println("Trying to start JBox");
+			logger.info("Trying to start JBox");
 			JBoxServer.startJBoxService(0);
 			port = JBoxServer.getPort();
 		} catch (final Exception e) {
-			System.err.println("Unable to start JBox.");
-			e.printStackTrace();
+			logger.severe("Unable to start JBox: " + e.toString());
 		}
 
-		System.out.println("Looping");
+		logger.info("Looping");
 		while (true) {
 			offerAgent();
 
-			System.out.println("Exiting CE");
-			// System.exit(0); // TODO delete
+			try {
+				Thread.sleep(System.getenv("ce_loop_time") != null ? Long.parseLong(System.getenv("ce_loop_time")) : 60000);
+			} catch (InterruptedException e) {
+				logger.severe("Unable to sleep: " + e.toString());
+			}
+
 		}
 
 	}
@@ -229,16 +230,18 @@ public class ComputingElement extends Thread {
 		logger.info("Going to submit " + slots_to_submit + " agents");
 
 		final String script = createAgentStartup();
-		logger.info("Created AgentStartup script: " + script);
 		if (script == null) {
 			logger.info("Cannot create startup script");
 			return;
 		}
+		logger.info("Created AgentStartup script: " + script);
 
 		while (slots_to_submit > 0) {
 			queue.submit(script);
 			slots_to_submit--;
 		}
+
+		logger.info("Submitted " + slots_to_submit);
 
 		return;
 	}
