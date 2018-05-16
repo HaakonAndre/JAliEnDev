@@ -304,9 +304,8 @@ public class JobAgent implements MonitoringObject, Runnable {
    *         execution errors
    */
   private void cleanup() {
-    //    System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
+    System.out.println("Cleaning up after execution...Resetting sandbox");
     // Remove sandbox, TODO: use Java builtin
-    //    SystemCommand.bash("rm -rf " + jobWorkdir); //TODO: Remove after testing
     RES_WORKDIR_SIZE = ZERO;
     RES_VMEM = ZERO;
     RES_RMEM = ZERO;
@@ -580,7 +579,6 @@ public class JobAgent implements MonitoringObject, Runnable {
     pBuilder.environment().replace("JALIEN_TOKEN_KEY", tokenKey);
     
     final Process p;
-    
 
     // stdin from the viewpoint of the wrapper
     OutputStream stdin;
@@ -627,6 +625,7 @@ public class JobAgent implements MonitoringObject, Runnable {
       return -2;
     }
 
+    //Set sandbox dir
     jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId)); // not
     // ideal
 
@@ -639,10 +638,16 @@ public class JobAgent implements MonitoringObject, Runnable {
     }
     System.out.println("Child: " + child.get(1).toString());
 
-    //TODO: Creates an exception when JobWrapper has terminated. This is caught, but perhaps provide more info than just the exit code?  
+    //TODO: Edit me!
+    try {
+		Thread.sleep(10000);
+	} catch (InterruptedException e1) {
+		e1.printStackTrace();
+	}
+    
     if (monitorJob) {
       payloadPID = child.get(1).intValue();
-      apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); // Will also keep track of the sub-processes (payload also, not just jobwrapper)
+      apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); 
       mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
       final String fs = checkProcessResources();
       if (fs == null)
@@ -660,6 +665,8 @@ public class JobAgent implements MonitoringObject, Runnable {
     boolean processNotFinished = true;
     int code = 0;
 
+    System.out.println("About to enter monitor loop. Is the process alive?: " + p.isAlive());
+    
     int monitor_loops = 0;
     try {
       while (processNotFinished)
@@ -675,6 +682,7 @@ public class JobAgent implements MonitoringObject, Runnable {
           // process hasn't terminated
           if (monitorJob) {
             monitor_loops++;
+            System.out.println("Current monitor loop: " + monitor_loops);
             final String error = checkProcessResources();
             if (error != null) {
               p.destroy();
@@ -705,22 +713,24 @@ public class JobAgent implements MonitoringObject, Runnable {
     System.out.println("+++++ Sending resources info +++++");
     System.out.println(procinfo);
 
-    commander.q_api.putJobLog(queueId, "proc", procinfo); //Same commander - Yes! 
+    commander.q_api.putJobLog(queueId, "proc", procinfo);
   }
 
-  private String checkProcessResources() {
+  private String checkProcessResources() { //checks and maintains sandbox
     String error = null;
     System.out.println("Checking resources usage");
 
     try {
+    	
       final HashMap<Long, Double> jobinfo = mj.readJobInfo();
+      
       final HashMap<Long, Double> diskinfo = mj.readJobDiskUsage();
-
+      
       if (jobinfo == null || diskinfo == null) {
         System.err.println("JobInfo or DiskInfo monitor null");
         return "Not available";
       }
-
+      
       // getting cpu, memory and runtime info
       RES_WORKDIR_SIZE = diskinfo.get(ApMonMonitoringConstants.LJOB_WORKDIR_SIZE);
       RES_VMEM = Double.valueOf(jobinfo.get(ApMonMonitoringConstants.LJOB_VIRTUALMEM).doubleValue() / 1024);
@@ -733,7 +743,7 @@ public class JobAgent implements MonitoringObject, Runnable {
       // Format.showDottedDouble(RES_CPUTIME.doubleValue() *
       // Double.parseDouble(RES_CPUMHZ) / 1000, 2);
       RES_RESOURCEUSAGE = String.format("%.02f", Double.valueOf(RES_CPUTIME.doubleValue() * Double.parseDouble(RES_CPUMHZ) / 1000));
-
+      
       // max memory consumption
       if (RES_RMEM.doubleValue() > RES_RMEMMAX.doubleValue())
         RES_RMEMMAX = RES_RMEM;
@@ -750,7 +760,7 @@ public class JobAgent implements MonitoringObject, Runnable {
         else
           RES_FRUNTIME = String.format("%02d:%02d:%02d", Long.valueOf(RES_RUNTIME.longValue() / 3600), Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) / 60),
               Long.valueOf((RES_RUNTIME.longValue() - (RES_RUNTIME.longValue() / 3600) * 3600) % 60));
-
+      
       // check disk usage
       if (workdirMaxSizeMB != 0 && RES_WORKDIR_SIZE.doubleValue() > workdirMaxSizeMB)
         error = "Disk space limit is " + workdirMaxSizeMB + ", using " + RES_WORKDIR_SIZE;
@@ -772,7 +782,8 @@ public class JobAgent implements MonitoringObject, Runnable {
     } catch (final IOException e) {
       System.out.println("Problem with the monitoring objects: " + e.toString());
     } catch (final NoSuchElementException e){
-      System.out.println("JobWrapper has terminated. Ending monitoring");
+      System.out.println("Warning: an error occurred reading monitoring data:  ");
+      e.printStackTrace();
     }
 
     return error;

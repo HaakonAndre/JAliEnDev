@@ -43,6 +43,7 @@ import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 import apmon.ApMon;
 import apmon.MonitoredJob;
+import lazyj.commands.SystemCommand;
 
 /**
  * Job execution wrapper, running an embedded JBox for in/out-bound communications
@@ -55,7 +56,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private String jobWorkdir = "";
 
 	// Variables passed through VoBox environment
-	// private final Map<String, String> env = System.getenv();
+	//TODO: To be removed
+	private final Map<String, String> env = System.getenv();
 	private final String ce;
 
 	// Job variables
@@ -144,27 +146,18 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	/**
 	 */
 	public JobWrapper() {
-		
-		Map<String, String> env = System.getenv();
-		
-		for(Map.Entry<String,String> entry : env.entrySet())
-			System.err.println(entry.getKey() + " " + entry.getValue());
-		
 
 		// TODO: To be put back  
 		/* site = env.get("site");
-       ConfigUtils.getConfig().gets("alice_close_site").trim();
-       ce = env.get("CE"); */
+        ConfigUtils.getConfig().gets("alice_close_site").trim();
+        ce = env.get("CE"); */
 		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
 
-		//TODO: To be put back
+		//TODO: Send from JobAgent instead of reading from env? Will simplify things for containers.
 		siteMap = (new SiteMap()).getSiteParameters(env);
 		workdir = (String) siteMap.get("workdir");
 		hostName = (String) siteMap.get("Host");
 		packMan = (PackMan) siteMap.get("PackMan");
-
-		//System.err.println("The JobWrapper user is: " + commander.getUser().getName());
-		//System.err.println("With the following certificate: " + commander.getUser().getUserCert()[0]);
 
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
@@ -198,36 +191,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			e.printStackTrace();
 		}
 
-		//////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////
-
-		if((tokenCert != null) && (tokenKey != null)){
-			try {
-				JAKeyStore.createTokenFromString(tokenCert, tokenKey);
-				System.err.println("Token Created");
-				JAKeyStore.loadKeyStore();
-			} catch (Exception e) {
-				System.err.println("Error. Could not get tokenCert and/or tokenKey");
-				e.printStackTrace();
-			}
-		}
-
-		/*    commander = new JAliEnCOMMander();
-    if(commander == null)
-      System.err.println("Commander is NULL!");
-
-    c_api = new CatalogueApiUtils(commander);*/   
-
-		//////////////////////////////////////////////////////
-		//////////////////////////////////////////////////////
-
 		System.err.println("JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
-		
-		
-		
-		
-		
-		System.err.println(jdl.toHTML().toString());
 
 	}
 
@@ -261,10 +225,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	}
 
 	private void cleanup() {
-		System.out.println("Cleaning up after execution...Removing sandbox: " + jobWorkdir);
+		System.out.println("Cleaning up after execution...Removing sandbox contents: " + jobWorkdir);
 		// Remove sandbox, TODO: use Java builtin
-		//SystemCommand.bash("rm -rf " + jobWorkdir); //TODO: Put back after testing
-
+		SystemCommand.bash("rm -rf " + jobWorkdir);
 	}
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
@@ -285,15 +248,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private void runJob() {
 		try {
 			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);
-			
-			System.err.println("Attempting to create workdir");
 
 			if (!createWorkDir() || !getInputFiles()) {
 				changeStatus(JobStatus.ERROR_IB);
 				return;
 			}
-
-			System.err.println("Starting execution");
 
 			// run payload
 			if (execute() < 0)
@@ -305,11 +264,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			if (jobStatus == JobStatus.RUNNING)
 				changeStatus(JobStatus.SAVING);
 
-			System.err.println("Finished execution. Preparing to upload files ");
-
 			uploadOutputFiles();
-
-			System.err.println("File upload complete");
 
 		} catch (final Exception e) {
 			System.err.println("Unable to handle job");
@@ -333,13 +288,9 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		final File fExe = new File(tempDir, cmdStrip);
 
-		System.err.println("Checking if file exists");
-		
 		if (!fExe.exists())
 			return -1;
 
-		System.err.println("File exists!");
-		
 		fExe.setExecutable(true);
 
 		cmd.add(fExe.getAbsolutePath());
@@ -353,7 +304,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						cmd.add(st.nextToken());
 				}
 
-		System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
+		//System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
+		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
 
@@ -379,14 +331,17 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			return -2;
 		}
 
-		mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
-		final Vector<Integer> child = mj.getChildren();
-		if (child == null || child.size() <= 1) {
-			System.err
-			.println("Can't get children. Failed to execute? " + cmd.toString() + " child: " + child);
-			return -1;
+		if(!p.isAlive()){
+			System.out.println("The process for: " + cmd + " has terminated. Failed to execute?");
+			return -2;
 		}
-		System.out.println("Child: " + child.get(1).toString());
+
+		try {
+			p.waitFor();
+		} catch (InterruptedException e) {
+			System.out.println("Interrupted while waiting for process to finish execution");
+			e.printStackTrace();
+		}
 
 		return 0;
 
@@ -396,8 +351,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 
 		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments());
-
-		System.err.println("Execution code: " + code);
 
 		return code;
 	}
@@ -411,7 +364,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			commander.q_api.putJobLog(queueId, "trace", "Starting validation");
 			code = executeCommand(validation, null);
 		}
-		System.err.println("Validation code: " + code);
 
 		return code == 0;
 	}
@@ -488,7 +440,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		dumpInputDataList();
 
-		System.out.println("Sandbox prepared : " + tempDir.getAbsolutePath());
+		System.out.println("Sandbox populated: " + tempDir.getAbsolutePath());
 
 		return true;
 	}
@@ -562,6 +514,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		boolean uploadedNotAllCopies = false;
 
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
+		logger.log(Level.INFO, "Uploading output for: " + jdl);
 
 		final String outputDir = getJobOutputDir();
 
@@ -650,10 +603,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	}
 
 	private boolean createWorkDir() {
-		
-		System.err.println("Creating workdir");
-		
-		logger.log(Level.INFO, "Creating sandbox and chdir");
+
+		logger.log(Level.INFO, "Populating sandbox and setting chdir");
 
 		jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
 
@@ -662,7 +613,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			final boolean created = tempDir.mkdirs();
 			if (!created) {
 				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
-				System.err.println("Creating workdir failed");
 				return false;
 			}
 		}
@@ -673,7 +623,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);
 		// TODO: create the extra directories
 
-		System.err.println("Creating workdir succeeded");
 		return true;
 	}
 
