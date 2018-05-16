@@ -216,13 +216,15 @@ public class ConfigUtils {
 
 		appConfig = new FallbackProperties(fileConfig);
 
-		@SuppressWarnings("resource")
-		final DBFunctions dbAdmin = getDB("admin");
+		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
+			@SuppressWarnings("resource")
+			final DBFunctions dbAdmin = getDB("admin");
 
-		if (dbAdmin != null) {
-			final DBProperties dbProp = new DBProperties(dbAdmin);
-			dbProp.makeReadOnly();
-			((FallbackProperties) appConfig).addProvider(dbProp);
+			if (dbAdmin != null) {
+				final DBProperties dbProp = new DBProperties(dbAdmin);
+				dbProp.makeReadOnly();
+				((FallbackProperties) appConfig).addProvider(dbProp);
+			}
 		}
 
 		logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
