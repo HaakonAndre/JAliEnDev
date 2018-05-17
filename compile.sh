@@ -16,7 +16,7 @@ export CLASSPATH
 
 cd src
 
-find . -name \*.java | xargs javac -O -g -d ../$TARGETDIR || exit 1
+find . -name \*.java | xargs javac -source 8 -target 8 -O -g -d ../$TARGETDIR || exit 1
 
 cd ../$TARGETDIR
 
