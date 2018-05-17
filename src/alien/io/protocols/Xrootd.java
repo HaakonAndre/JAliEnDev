@@ -371,7 +371,7 @@ public class Xrootd extends Protocol {
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "Exit code " + exitStatus.getExtProcExitStatus() + " and output is:\n" + exitStatus.getStdOut() + "\n, full command was:\n" + command);
 
-				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus() + " and output is:\n" + exitStatus.getStdOut() + "\n, full command was:\n" + command);
+				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
 			}
 
 			if (logger.isLoggable(Level.FINEST))
