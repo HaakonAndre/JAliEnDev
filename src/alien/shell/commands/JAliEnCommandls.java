@@ -146,14 +146,13 @@ public class JAliEnCommandls extends JAliEnBaseCommand {
 					pathsNotFound.append(", ");
 
 				pathsNotFound.append(sPath);
-
-				logger.log(Level.SEVERE, "No such file or directory: [" + sPath + "]");
-				commander.printOutln("No such file or directory: [" + sPath + "]");
 			}
 		}
 
-		if (pathsNotFound.length() > 0)
+		if (pathsNotFound.length() > 0) {
+			logger.log(Level.SEVERE, "No such file or directory: [" + pathsNotFound + "]");
 			commander.setReturnCode(1, "No such file or directory: [" + pathsNotFound + "]");
+		}
 	}
 
 	private static final DateFormat formatter = new SimpleDateFormat("MMM dd HH:mm");

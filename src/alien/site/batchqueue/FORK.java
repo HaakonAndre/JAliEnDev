@@ -77,9 +77,4 @@ public class FORK extends BatchQueue {
 		return 0;
 	}
 
-	@Override
-	public boolean needX509Proxy() {
-		return false;
-	}
-
 }

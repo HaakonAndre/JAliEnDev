@@ -111,6 +111,24 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Get the real file to which the given LFN belongs to. It can be the same file if it exists and has a physical replica or a zip archive containing it, if such an archive can be located.
+	 *
+	 * @param slfn
+	 *            name of the LFN
+	 * @return an LFN with physical backing containing the given file, if such an entry can be found, <code>null</code> if not
+	 */
+	public LFN getRealLFN(final String slfn) {
+		try {
+			return Dispatcher.execute(new RealLFN(commander.getUser(), slfn)).getRealLFN();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
 	 * Remove a LFN in the Catalogue
 	 *
 	 * @param path
@@ -633,7 +651,7 @@ public class CatalogueApiUtils {
 	}
 
 	/**
-	 * Upload a local file to the Grid
+	 * Download a remote file from the Grid
 	 * 
 	 * @param fromLFN
 	 * 

@@ -34,7 +34,4 @@ public abstract class BatchQueue {
 	 */
 	public abstract int kill();
 	
-	public boolean needX509Proxy() {
-		return true;
-	}
 }

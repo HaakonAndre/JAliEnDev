@@ -16,7 +16,7 @@ export CLASSPATH
 
 cd src
 
-find . -name \*.java | xargs javac -O -g -d ../$TARGETDIR || exit 1
+find . -name \*.java | xargs javac -source 8 -target 8 -O -g -d ../$TARGETDIR || exit 1
 
 cd ../$TARGETDIR
 
@@ -28,25 +28,32 @@ cp ../config/config.properties ../config/monitoring.properties config/
 
 jar cf ../alien.jar *
 
-## Packaging as a single .jar file for users
+rm -f ../alien-users.jar ../alien-cs.jar
 
-for dependency in ../lib/{FarmMonitor.jar,apmon.jar,bcp*.jar,catalina.jar,javax.json-api-*.jar,jline-*.jar,jopt-simple-*.jar,json-simple-*.jar,lazyj.jar,servlet-api.jar,tomcat-*.jar,ca-api*.jar,java-ca-lib*.jar,annotations-api.jar}; do
-    jar -xf $dependency
-done
+if [ "x$1" == "xall" ]; then
+    echo "Preparing alien-users.jar"
 
-rm -rf META-INF
+    for dependency in ../lib/{FarmMonitor.jar,apmon.jar,bcp*.jar,catalina.jar,javax.json-api-*.jar,jline-*.jar,jopt-simple-*.jar,json-simple-*.jar,lazyj.jar,servlet-api.jar,tomcat-*.jar,ca-api*.jar,java-ca-lib*.jar,annotations-api.jar}; do
+	jar -xf $dependency
+    done
 
-jar cf ../alien-users.jar *
+    rm -rf META-INF
 
-## Now all the dependencies in a single file, for central services (+DB drivers, CA, everything else)
+    jar cf ../alien-users.jar *
 
-for dependency in ../lib/*.jar; do
-    jar -xf $dependency
-done
+    ## Now all the dependencies in a single file, for central services (+DB drivers, CA, everything else)
+    echo "Preparing alien-cs.jar"
 
-rm -rf META-INF
+    for dependency in ../lib/*.jar; do
+        jar -xf $dependency
+    done
 
-jar cf ../alien-cs.jar *
+    rm -rf META-INF
+
+    jar cf ../alien-cs.jar *
+else
+    echo "Have only packaged alien.jar, if you need the other ones just run './compile.sh all'"
+fi
 
 ## Cleanup
 
