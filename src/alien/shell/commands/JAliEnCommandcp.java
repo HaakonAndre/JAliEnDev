@@ -58,13 +58,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	private boolean bT = false;
 
 	/**
-	 * If <code>true</code> then wait for all uploads to finish before returning. Otherwise return after the first successful one, waiting for the remaining copies to be uploaded in background and
-	 * committed asynchronously to the catalogue.
+	 * If <code>true</code> then wait for all uploads to finish before returning.
+	 * Otherwise return after the first successful one, waiting for the remaining
+	 * copies to be uploaded in background and committed asynchronously to the
+	 * catalogue.
 	 */
 	private boolean bW = ConfigUtils.getConfig().getb("alien.shell.commands.cp.wait_for_all_uploads.default", false);
 
 	/**
-	 * If <code>true</code> then the source file is to be deleted after a successful upload (for temporary files)
+	 * If <code>true</code> then the source file is to be deleted after a successful
+	 * upload (for temporary files)
 	 */
 	private boolean bD = false;
 
@@ -400,7 +403,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 *            Grid filename
 	 * @param toLocalFile
 	 *            local file
-	 * @return local target file (one of them if multiple files were copied), or <code>null</code> if any problem
+	 * @return local target file (one of them if multiple files were copied), or
+	 *         <code>null</code> if any problem
 	 */
 	public File copyGridToLocal(final String sourceLFN, final File toLocalFile) {
 		final File targetLocalFile = toLocalFile;
@@ -463,7 +467,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				}
 		}
 
-		// String longestMatchingPath = currentDir != null ? currentDir.getCanonicalName() : absolutePath;
+		// String longestMatchingPath = currentDir != null ?
+		// currentDir.getCanonicalName() : absolutePath;
 		String longestMatchingPath = absolutePath;
 
 		for (final String sourcelfn : sources)
@@ -914,7 +919,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (targetPFNResult != null) {
 				// if (!isSilent()){
-				// out.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath() + " to " + pfn.getPFN()+"\n"+targetLFNResult);
+				// out.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath() + " to
+				// " + pfn.getPFN()+"\n"+targetLFNResult);
 				// }
 
 				if (pfn.ticket != null && pfn.ticket.envelope != null)
@@ -1032,6 +1038,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("d");
 			parser.accepts("j").withRequiredArg();
 			parser.accepts("T").withRequiredArg();
+			parser.accepts("silent");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -1051,6 +1058,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (options.has("d"))
 				bD = true;
+
+			if (options.has("silent"))
+				this.silent();
 
 			if (options.has("j"))
 				jobId = Long.parseLong((String) options.valueOf("j"));
