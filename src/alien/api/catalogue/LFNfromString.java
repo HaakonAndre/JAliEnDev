@@ -2,6 +2,7 @@ package alien.api.catalogue;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import alien.api.Request;
@@ -64,6 +65,18 @@ public class LFNfromString extends Request {
 	 */
 	public List<LFN> getLFNs() {
 		return this.lfns;
+	}
+
+	/**
+	 * @return an LFN with physical backing containing the given file, if such an entry can be found, <code>null</code> if not
+	 */
+	public List<LFN> getRealLFNs() {
+		final List<LFN> ret = new ArrayList<>();
+		Iterator<LFN> it = this.lfns.iterator();
+		while (it.hasNext())
+			ret.add(LFNUtils.getRealLFN(it.next()));
+
+		return ret;
 	}
 
 	@Override

@@ -111,6 +111,27 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Get the real file to which the given LFN belongs to. It can be the same file if it exists and has a physical replica or a zip archive containing it, if such an archive can be located.
+	 *
+	 * @param slfn
+	 *            name of the LFN
+	 * @param ignoreFolders
+	 * @param evenIfDoesntExist
+	 * @return an LFN with physical backing containing the given file, if such an entry can be found, <code>null</code> if not
+	 */
+	public LFN getRealLFN(final String slfn, final boolean ignoreFolders, final boolean evenIfDoesntExist) {
+		try {
+			final Collection<LFN> ret = Dispatcher.execute(new LFNfromString(commander.getUser(), ignoreFolders, evenIfDoesntExist, Arrays.asList(slfn))).getRealLFNs();
+			return ret != null && ret.size() > 0 ? ret.iterator().next() : null;
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
 	 * Remove a LFN in the Catalogue
 	 *
 	 * @param path
