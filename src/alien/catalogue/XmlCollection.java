@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import alien.shell.commands.JAliEnCOMMander;
 import lazyj.Format;
 import lazyj.Utils;
 
@@ -85,6 +86,10 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 	}
 
 	private void parseXML(final String content) throws IOException {
+		parseXML(content, false);
+	}
+
+	private void parseXML(final String content, final boolean getReal) throws IOException {
 		final BufferedReader br = new BufferedReader(new StringReader(content));
 
 		String sLine;
@@ -103,110 +108,120 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 			try {
 				final String fileName = sLine.substring(idx + 7, sLine.indexOf('"', idx + 8));
 
-				if (ConfigUtils.isCentralService())
-					add(LFNUtils.getLFN(fileName));
-				else {
-					final StringTokenizer st = new StringTokenizer(sLine, "\"", true);
+				if (ConfigUtils.isCentralService()) {
+					if (!this.add(LFNUtils.getLFN(fileName)))
+						logger.log(Level.WARNING,
+								"Failed to add " + fileName + " to collection " + this.collectionName);
+				} else {
+					if (getReal) {
+						JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+						if (!this.add(commander.c_api.getLFN(fileName)))
+							logger.log(Level.WARNING,
+									"Failed to add " + fileName + " to collection " + this.collectionName);
 
-					String time = null;
-					String lowner = null;
-					String group = null;
-					String lfn = null;
-					String md5 = null;
-					String size = null;
-					String guid = null;
-					String perm = null;
-					String entryId = null;
-					String dir = null;
-					String jobId = null;
-					String broken = null;
-					String expires = null;
-					String type = null;
-					String replicated = null;
-					String guidtime = null;
+					} else {
+						final StringTokenizer st = new StringTokenizer(sLine, "\"", true);
 
-					while (st.hasMoreTokens()) {
-						final String tok = st.nextToken().trim();
+						String time = null;
+						String lowner = null;
+						String group = null;
+						String lfn = null;
+						String md5 = null;
+						String size = null;
+						String guid = null;
+						String perm = null;
+						String entryId = null;
+						String dir = null;
+						String jobId = null;
+						String broken = null;
+						String expires = null;
+						String type = null;
+						String replicated = null;
+						String guidtime = null;
 
-						if (st.hasMoreTokens())
-							st.nextToken();
-						else
-							break;
+						while (st.hasMoreTokens()) {
+							final String tok = st.nextToken().trim();
 
-						if (tok.equals("ctime="))
-							time = value(st);
-						else if (tok.equals("gowner="))
-							group = value(st);
-						else if (tok.equals("owner="))
-							lowner = value(st);
-						else if (tok.equals("lfn="))
-							lfn = value(st);
-						else if (tok.equals("size="))
-							size = value(st);
-						else if (tok.equals("md5="))
-							md5 = value(st);
-						else if (tok.equals("guid="))
-							guid = value(st);
-						else if (tok.equals("perm="))
-							perm = value(st);
-						else if (tok.equals("entryId="))
-							entryId = value(st);
-						else if (tok.equals("dir="))
-							dir = value(st);
-						else if (tok.equals("jobId="))
-							jobId = value(st);
-						else if (tok.equals("broken="))
-							broken = value(st);
-						else if (tok.equals("expiretime="))
-							expires = value(st);
-						else if (tok.equals("type="))
-							type = value(st);
-						else if (tok.equals("guidtime="))
-							guidtime = value(st);
-						else if (tok.equals("replicated="))
-							replicated = value(st);
-						else
-							value(st);
+							if (st.hasMoreTokens())
+								st.nextToken();
+							else
+								break;
+
+							if (tok.equals("ctime="))
+								time = value(st);
+							else if (tok.equals("gowner="))
+								group = value(st);
+							else if (tok.equals("owner="))
+								lowner = value(st);
+							else if (tok.equals("lfn="))
+								lfn = value(st);
+							else if (tok.equals("size="))
+								size = value(st);
+							else if (tok.equals("md5="))
+								md5 = value(st);
+							else if (tok.equals("guid="))
+								guid = value(st);
+							else if (tok.equals("perm="))
+								perm = value(st);
+							else if (tok.equals("entryId="))
+								entryId = value(st);
+							else if (tok.equals("dir="))
+								dir = value(st);
+							else if (tok.equals("jobId="))
+								jobId = value(st);
+							else if (tok.equals("broken="))
+								broken = value(st);
+							else if (tok.equals("expiretime="))
+								expires = value(st);
+							else if (tok.equals("type="))
+								type = value(st);
+							else if (tok.equals("guidtime="))
+								guidtime = value(st);
+							else if (tok.equals("replicated="))
+								replicated = value(st);
+							else
+								value(st);
+						}
+
+						final LFN l = new LFN(lfn);
+
+						if (time != null)
+							l.ctime = Format.parseDate(time);
+
+						if (size != null)
+							l.size = Long.parseLong(size);
+
+						// guid is "" for directories, skip it
+						if (guid != null && guid != "")
+							l.guid = UUID.fromString(guid);
+
+						if (dir != null)
+							l.dir = Long.parseLong(dir);
+
+						if (entryId != null)
+							l.entryId = Long.parseLong(entryId);
+
+						if (jobId != null && jobId != "")
+							l.jobid = Long.parseLong(jobId);
+
+						if (expires != null)
+							l.expiretime = Format.parseDate(expires);
+
+						if (broken != null)
+							l.broken = Utils.stringToBool(broken, false);
+
+						l.lfn = lfn;
+						l.md5 = md5;
+						l.owner = lowner;
+						l.gowner = group;
+						l.perm = perm;
+						l.type = type != null && type.length() > 0 ? type.charAt(0) : 'f';
+						l.guidtime = guidtime;
+						l.replicated = Utils.stringToBool(replicated, false);
+
+						if (!this.add(l))
+							logger.log(Level.WARNING, "Failed to add " + lfn + " to collection " + this.collectionName);
 					}
-
-					final LFN l = new LFN(lfn);
-
-					if (time != null)
-						l.ctime = Format.parseDate(time);
-
-					if (size != null)
-						l.size = Long.parseLong(size);
-
-					// guid is "" for directories, skip it
-					if (guid != null && guid != "")
-						l.guid = UUID.fromString(guid);
-
-					if (dir != null)
-						l.dir = Long.parseLong(dir);
-
-					if (entryId != null)
-						l.entryId = Long.parseLong(entryId);
-
-					if (jobId != null && jobId != "")
-						l.jobid = Long.parseLong(jobId);
-
-					if (expires != null)
-						l.expiretime = Format.parseDate(expires);
-
-					if (broken != null)
-						l.broken = Utils.stringToBool(broken, false);
-
-					l.lfn = lfn;
-					l.md5 = md5;
-					l.owner = lowner;
-					l.gowner = group;
-					l.perm = perm;
-					l.type = type != null && type.length() > 0 ? type.charAt(0) : 'f';
-					l.guidtime = guidtime;
-					l.replicated = Utils.stringToBool(replicated, false);
-
-					if (!this.add(l))
-						logger.log(Level.WARNING, "Failed to add " + lfn + " to collection " + this.collectionName);
 				}
 			} catch (final Throwable t) {
 				throw new IOException("Exception parsing XML", t);
