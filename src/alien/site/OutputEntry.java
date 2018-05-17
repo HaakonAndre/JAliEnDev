@@ -79,8 +79,6 @@ public class OutputEntry implements Serializable {
 			final String[] opts = this.options.split(",");
 
 			for (final String o : opts) {
-				System.out.println("Parsing option: " + o);
-
 				if (o.contains("=")) {
 					// e.g. disk=2
 					final String[] qosparts = o.split("=");
@@ -95,11 +93,6 @@ public class OutputEntry implements Serializable {
 						ses.add(o);
 			}
 		}
-
-		System.out.println("QoS: " + qos.toString());
-		System.out.println("SEs: " + ses.toString());
-		System.out.println("ExSEs: " + exses.toString());
-
 	}
 
 	/**
