@@ -115,14 +115,11 @@ public class CatalogueApiUtils {
 	 *
 	 * @param slfn
 	 *            name of the LFN
-	 * @param ignoreFolders
-	 * @param evenIfDoesntExist
 	 * @return an LFN with physical backing containing the given file, if such an entry can be found, <code>null</code> if not
 	 */
-	public LFN getRealLFN(final String slfn, final boolean ignoreFolders, final boolean evenIfDoesntExist) {
+	public LFN getRealLFN(final String slfn) {
 		try {
-			final Collection<LFN> ret = Dispatcher.execute(new LFNfromString(commander.getUser(), ignoreFolders, evenIfDoesntExist, Arrays.asList(slfn))).getRealLFNs();
-			return ret != null && ret.size() > 0 ? ret.iterator().next() : null;
+			return Dispatcher.execute(new RealLFN(commander.getUser(), slfn)).getRealLFN();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
 			e.getCause().printStackTrace();
