@@ -9,6 +9,8 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.StringTokenizer;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
@@ -27,6 +29,7 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 	 *
 	 */
 	private static final long serialVersionUID = 3567611755762002384L;
+	private static final Logger logger = ConfigUtils.getLogger(XmlCollection.class.getCanonicalName());
 
 	/**
 	 * Empty collection to start with
@@ -174,7 +177,8 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 					if (size != null)
 						l.size = Long.parseLong(size);
 
-					if (guid != null)
+					// guid is "" for directories, skip it
+					if (guid != null && guid != "")
 						l.guid = UUID.fromString(guid);
 
 					if (dir != null)
@@ -183,7 +187,7 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 					if (entryId != null)
 						l.entryId = Long.parseLong(entryId);
 
-					if (jobId != null)
+					if (jobId != null && jobId != "")
 						l.jobid = Long.parseLong(jobId);
 
 					if (expires != null)
@@ -192,6 +196,7 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 					if (broken != null)
 						l.broken = Utils.stringToBool(broken, false);
 
+					l.lfn = lfn;
 					l.md5 = md5;
 					l.owner = lowner;
 					l.gowner = group;
@@ -200,7 +205,8 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 					l.guidtime = guidtime;
 					l.replicated = Utils.stringToBool(replicated, false);
 
-					add(l);
+					if (!this.add(l))
+						logger.log(Level.WARNING, "Failed to add " + lfn + " to collection " + this.collectionName);
 				}
 			} catch (final Throwable t) {
 				throw new IOException("Exception parsing XML", t);
@@ -286,18 +292,26 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 	}
 
 	private static String getXMLPortion(final LFN l) {
-		return "      <file name=\"" + Format.escHtml(l.getFileName()) + "\" " + "aclId=\"" + (l.aclId > 0 ? String.valueOf(l.aclId) : "") + "\" " + "broken=\"" + (l.broken ? 1 : 0) + "\" "
-				+ "ctime=\"" + formatTimestamp(l.ctime) + "\" " + "dir=\"" + l.dir + "\" " + "entryId=\"" + l.entryId + "\" " + "expiretime=\"" + formatTimestamp(l.expiretime) + "\" " + "gowner=\""
-				+ Format.escHtml(l.gowner) + "\" " + "guid=\"" + (l.isDirectory() ? "" : l.guid.toString()) + "\" " + "guidtime=\"\" " + "jobid=\"" + (l.jobid > 0 ? String.valueOf(l.jobid) : "") + "\" " + "lfn=\""
-				+ l.getCanonicalName() + "\" " + "md5=\"" + Format.escHtml(l.md5) + "\" " + "owner=\"" + Format.escHtml(l.owner) + "\" " + "perm=\"" + Format.escHtml(l.perm) + "\" " + "replicated=\""
-				+ (l.replicated ? 1 : 0) + "\" " + "size=\"" + l.size + "\" " + "turl=\"alien://" + Format.escHtml(l.getCanonicalName()) + "\" " + "type=\"" + l.type + "\" />";
+		return "      <file name=\"" + Format.escHtml(l.getFileName()) + "\" " + "aclId=\""
+				+ (l.aclId > 0 ? String.valueOf(l.aclId) : "") + "\" " + "broken=\"" + (l.broken ? 1 : 0) + "\" "
+				+ "ctime=\"" + formatTimestamp(l.ctime) + "\" " + "dir=\"" + l.dir + "\" " + "entryId=\"" + l.entryId
+				+ "\" " + "expiretime=\"" + formatTimestamp(l.expiretime) + "\" " + "gowner=\""
+				+ Format.escHtml(l.gowner) + "\" " + "guid=\"" + (l.isDirectory() ? "" : l.guid.toString()) + "\" "
+				+ "guidtime=\"\" " + "jobid=\"" + (l.jobid > 0 ? String.valueOf(l.jobid) : "") + "\" " + "lfn=\""
+				+ l.getCanonicalName() + "\" " + "md5=\"" + Format.escHtml(l.md5) + "\" " + "owner=\""
+				+ Format.escHtml(l.owner) + "\" " + "perm=\"" + Format.escHtml(l.perm) + "\" " + "replicated=\""
+				+ (l.replicated ? 1 : 0) + "\" " + "size=\"" + l.size + "\" " + "turl=\"alien://"
+				+ Format.escHtml(l.getCanonicalName()) + "\" " + "type=\"" + l.type + "\" />";
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("<?xml version=\"1.0\"?>").append('\n');
 		sb.append("<alien>\n");
-		sb.append("  <collection name=\"" + Format.escHtml(collectionName != null && collectionName.length() > 0 ? collectionName : "tempCollection") + "\">\n");
+		sb.append("  <collection name=\""
+				+ Format.escHtml(
+						collectionName != null && collectionName.length() > 0 ? collectionName : "tempCollection")
+				+ "\">\n");
 
 		int iCount = 0;
 
@@ -315,8 +329,9 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 
 		final long lNow = System.currentTimeMillis();
 
-		sb.append("    <info command=\"" + Format.escHtml(command != null ? command : "alien.catalogue.XmlCollection") + "\" creator=\"" + Format.escHtml(owner != null ? owner : "JAliEn-Central")
-				+ "\" date=\"").append(new Date(lNow)).append("\" timestamp=\"").append(lNow).append("\" />\n");
+		sb.append("    <info command=\"" + Format.escHtml(command != null ? command : "alien.catalogue.XmlCollection")
+				+ "\" creator=\"" + Format.escHtml(owner != null ? owner : "JAliEn-Central") + "\" date=\"")
+				.append(new Date(lNow)).append("\" timestamp=\"").append(lNow).append("\" />\n");
 		sb.append("  </collection>\n");
 		sb.append("</alien>");
 
