@@ -48,7 +48,12 @@ public class ArchiveMemberDelete {
 			// Read directory names from file
 			final String collectionName = (String) options.valueOf("list");
 
-			XmlCollection xmlCollection = new XmlCollection(new File(collectionName));
+			File collectionFile = new File(collectionName);
+			if (!collectionFile.exists()) {
+				System.err.println("Couldn't open the collection! File " + collectionName + " doesn't exist");
+				return;
+			}
+			XmlCollection xmlCollection = new XmlCollection(collectionFile);
 
 			Iterator<LFN> xmlEntries = xmlCollection.iterator();
 			System.out.println("We will process next files:");
@@ -111,12 +116,17 @@ public class ArchiveMemberDelete {
 		}
 
 		try {
-			final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile, true, false);
+			final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile);
+			final String remotePath = remoteArchiveLFN.getParentName();
 			final String remoteArchive = remoteArchiveLFN.getCanonicalName();
 			archiveName = remoteArchiveLFN.getFileName();
 			memberName = remoteLFN.getFileName();
 			final long jobID = remoteArchiveLFN.jobid;
-			final String remotePath = remoteArchiveLFN.getParentDir().getCanonicalName();
+
+			if (!remoteLFN.exists) {
+				System.err.println("\tThere is no " + archiveName + " in " + remotePath);
+				return;
+			}
 
 			// Use this for debugging
 			// final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -126,13 +136,6 @@ public class ArchiveMemberDelete {
 					System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
 			if (localArchive.exists()) {
 				localArchive.delete();
-			}
-
-			// Check if remote zip file exists
-			//
-			if (commander.c_api.find(remotePath, archiveName, 0).isEmpty()) {
-				System.err.println("\tThere is no " + archiveName + " in " + remotePath);
-				return;
 			}
 
 			// Download the archive from the Grid
