@@ -215,19 +215,11 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		// process payload
 		runJob();
 
-		cleanup();
-
 		// TODO: Have the JobWrapper report back if something odd happens with the execution(?)
 		// TODO: Have the JobWrapper report progress updates(?)
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
 		System.exit(0);
-	}
-
-	private void cleanup() {
-		System.out.println("Cleaning up after execution...Removing sandbox contents: " + jobWorkdir);
-		// Remove sandbox, TODO: use Java builtin
-		SystemCommand.bash("rm -rf " + jobWorkdir);
 	}
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
@@ -247,9 +239,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 	private void runJob() {
 		try {
-			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);
+			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);		
 
-			if (!createWorkDir() || !getInputFiles()) {
+            //
+			jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
+		    tempDir = new File(jobWorkdir);
+			
+			if (!getInputFiles()) {
 				changeStatus(JobStatus.ERROR_IB);
 				return;
 			}
@@ -308,9 +304,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
-
-		pBuilder.directory(tempDir);
-
+		
 		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		final Map<String, String> processEnv = pBuilder.environment();
 		processEnv.putAll(environment_packages);
@@ -600,30 +594,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		}
 
 		return uploadedAllOutFiles;
-	}
-
-	private boolean createWorkDir() {
-
-		logger.log(Level.INFO, "Populating sandbox and setting chdir");
-
-		jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
-
-		tempDir = new File(jobWorkdir);
-		if (!tempDir.exists()) {
-			final boolean created = tempDir.mkdirs();
-			if (!created) {
-				logger.log(Level.INFO, "Workdir does not exist and can't be created: " + jobWorkdir);
-				return false;
-			}
-		}
-
-		// chdir
-		System.setProperty("user.dir", jobWorkdir);
-
-		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);
-		// TODO: create the extra directories
-
-		return true;
 	}
 
 	private HashMap<String, String> loadJDLEnvironmentVariables() {
