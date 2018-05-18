@@ -1,6 +1,5 @@
 package alien.site;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -19,23 +18,18 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-
+import alien.api.Dispatcher;
 import alien.api.JBoxServer;
+import alien.api.aaa.GetTokenCertificate;
+import alien.api.aaa.TokenCertificateType;
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.api.taskQueue.GetNumberWaitingJobs;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.shell.commands.JSONPrintWriter;
-import alien.shell.commands.UIPrintWriter;
 import alien.site.batchqueue.BatchQueue;
 import alien.test.utils.Functions;
-import alien.user.JAKeyStore;
 import apmon.ApMon;
 import apmon.ApMonException;
 
@@ -69,16 +63,17 @@ public class ComputingElement extends Thread {
 	 */
 	public ComputingElement() {
 		try {
-			try {
-				if (!JAKeyStore.loadKeyStore()) {
-					System.err.println("Grid Certificate could not be loaded.");
-					System.err.println("Exiting...");
-					return;
-				}
-			} catch (final Exception e) {
-				logger.log(Level.SEVERE, "Error loading the key", e);
-				System.err.println("Error loading the key");
-			}
+			// try {
+			// if (!JAKeyStore.loadKeyStore()) {
+			// logger.severe("Grid Certificate could not be loaded.");
+			// System.err.println("Grid Certificate could not be loaded.");
+			// System.err.println("Exiting...");
+			// return;
+			// }
+			// } catch (final Exception e) {
+			// logger.log(Level.SEVERE, "Error loading the key", e);
+			// System.err.println("Error loading the key");
+			// }
 
 			config = ConfigUtils.getConfigFromLdap();
 			site = (String) config.get("site_accountname");
@@ -250,10 +245,9 @@ public class ComputingElement extends Thread {
 	 * Creates script to execute on worker nodes
 	 */
 	private String createAgentStartup() {
-		String startup_script = System.getenv("JALIEN_ROOT") + "/jalien ";
-		if (System.getenv("JALIEN_ROOT") == null) { // We don't have the env variable set
-			logger.warning("Environment variable JALIEN_ROOT not set. Trying default location.");
-			startup_script = System.getenv("HOME") + "/jalien/jalien ";
+		String startup_script = System.getenv("HOME") + "/jalien/jalien ";
+		if (System.getenv("JALIEN_ROOT") != null) {
+			startup_script = System.getenv("JALIEN_ROOT") + "/jalien ";
 		}
 		String before = "";
 		String after = "";
@@ -269,42 +263,22 @@ public class ComputingElement extends Thread {
 		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
 		ttl_hours = ttl_hours / 3600;
 
-		// String proxyfile = System.getenv("X509_TOKEN_CERT");
-		// if (proxyfile != null && proxyfile.length() > 0) {
-		// // WLCG site: get timeleft
-		// }
-		// else {
-		// proxyfile = "/tmp/x509_" + SystemCommand.bash("id -u").stdout;
-		// JAliEn site: renew proxy (hours), get new timeleft
-
-		// String file_content = "";
-		// try (BufferedReader br = new BufferedReader(new FileReader(proxyfile))) {
-		// String line;
-		// while ((line = br.readLine()) != null) {
-		// file_content += line;
-		// }
-		// } catch (IOException e) {
-		// logger.info("Error reading the proxy file: " + e);
-		// }
 		final String[] token_certificate_full = getTokenCertificate(ttl_hours / 24);
 		final String token_cert_str = token_certificate_full[0];
 		final String token_key_str = token_certificate_full[1];
 
-		before += "echo 'Using token certificate'\n" + "mkdir -p " + host_tempdir + "\n" + "file=" + cert_file + "\n" + // TODO: check and remove this statement if indeed not needed
-				"cat >" + cert_file + " <<EOF\n" + token_cert_str + "EOF\n" + "chmod 0400 " + cert_file + "\n" + "export JALIEN_TOKEN_CERT=" + cert_file + ";\n" + "echo USING JALIEN_TOKEN_CERT\n"
-				+ "file=" + key_file + "\n" + // TODO: check and remove this statement if indeed not needed
-				"cat >" + key_file + " <<EOF\n" + token_key_str + "EOF\n" + "chmod 0400 " + key_file + "\n" + "export JALIEN_TOKEN_KEY=" + key_file + ";\n" + "echo USING JALIEN_TOKEN_KEY\n";
+		before += "echo 'Using token certificate'\n" + "mkdir -p " + host_tempdir + "\n" + "file=" + cert_file + "\n" + "cat >" + cert_file + " <<EOF\n" + token_cert_str + "EOF\n" + "chmod 0400 "
+				+ cert_file + "\n" + "export JALIEN_TOKEN_CERT=" + cert_file + ";\n" + "echo USING JALIEN_TOKEN_CERT\n" + "file=" + key_file + "\n" + "cat >" + key_file + " <<EOF\n" + token_key_str
+				+ "EOF\n" + "chmod 0400 " + key_file + "\n" + "export JALIEN_TOKEN_KEY=" + key_file + ";\n" + "echo USING JALIEN_TOKEN_KEY\n";
 
-		// + startup_script + " proxy-info\n";
 		after += "rm -rf " + cert_file + "\n";
 		after += "rm -rf " + key_file + "\n";
 		after += "rm -rf jobagent.jar\n";
-		// }
 
-		// Check proxy timeleft is good
-
-		if (config.get("ce_installmethod").equals("CVMFS"))
+		if (config.containsKey("ce_installmethod") && config.get("ce_installmethod").equals("CVMFS"))
 			startup_script = runFromCVMFS();
+		else
+			startup_script = runFromDefault();
 
 		final String content_str = before + startup_script + after;
 
@@ -314,88 +288,36 @@ public class ComputingElement extends Thread {
 			agent_startup_file.createNewFile();
 			agent_startup_file.setExecutable(true);
 		} catch (final IOException e1) {
-			logger.info("Error creating Agent Sturtup file");
-			e1.printStackTrace();
+			logger.info("Error creating Agent Sturtup file: " + e1.toString());
+			return null;
 		}
 
 		try (PrintWriter writer = new PrintWriter(agent_startup_path, "UTF-8")) {
 			writer.println("#!/bin/bash");
 			writer.println(content_str);
 		} catch (final FileNotFoundException e) {
-			logger.info("Agent Sturtup file not found");
-			e.printStackTrace();
+			logger.info("Agent Sturtup file not found: " + e.toString());
 		} catch (final UnsupportedEncodingException e) {
-			logger.info("Encoding error while writing Agent Sturtup file");
-			e.printStackTrace();
+			logger.info("Encoding error while writing Agent Sturtup file: " + e.toString());
 		}
 
-		startup_script = agent_startup_path; // not sure why we do this. copied from perl
-
-		return startup_script;
+		return agent_startup_path;
 	}
 
 	private String[] getTokenCertificate(final int ttl_days) {
-		final String[] token_cmd = new String[5];
-		token_cmd[0] = "token";
-		token_cmd[1] = "-t";
-		token_cmd[2] = "jobagent";
-		token_cmd[3] = "-v";
-		token_cmd[4] = String.format("%d", Integer.valueOf(ttl_days));
-		try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-			final UIPrintWriter out = new JSONPrintWriter(os);
+		GetTokenCertificate gtc = new GetTokenCertificate(commander.getUser(), commander.getUsername(), TokenCertificateType.JOB_AGENT_TOKEN, null, ttl_days);
 
-			if (!commander.isAlive())
-				commander.start();
-
-			// Send the command to executor and send the result back to
-			// client via OutputStream
-			synchronized (commander) {
-				commander.status.set(1);
-				commander.setLine(out, token_cmd);
-				commander.notifyAll();
-			}
-			waitCommandFinish();
-
-			// Now parse the reply from JCentral
-			final JSONParser jsonParser = new JSONParser();
-			JSONObject readf = null;
-			try {
-				readf = (JSONObject) jsonParser.parse(os.toString());
-
-				final JSONArray jsonArray = (JSONArray) readf.get("results");
-				for (final Object object : jsonArray) {
-					final String[] token_cert_and_key = new String[2];
-
-					final JSONObject aJson = (JSONObject) object;
-
-					token_cert_and_key[0] = (String) aJson.get("tokencert");
-					token_cert_and_key[1] = (String) aJson.get("tokenkey");
-
-					return token_cert_and_key;
-				}
-			} catch (final ParseException e) {
-				logger.warning("Error parsing json.");
-				e.printStackTrace();
-			}
-		} catch (@SuppressWarnings("unused") final IOException e1) {
-			// cannot throw IOException on an inmemory operation
+		try {
+			Dispatcher.execute(gtc);
+			final String[] token_cert_and_key = new String[2];
+			token_cert_and_key[0] = gtc.getCertificateAsString();
+			token_cert_and_key[1] = gtc.getPrivateKeyAsString();
+			return token_cert_and_key;
+		} catch (Exception e) {
+			logger.info("Getting JobAgent TokenCertificate failed: " + e);
 		}
 
 		return null;
-	}
-
-	private void waitCommandFinish() {
-		// wait for the previous command to finish
-		if (commander == null)
-			return;
-		while (commander.status.get() == 1)
-			try {
-				synchronized (commander.status) {
-					commander.status.wait(1000);
-				}
-			} catch (@SuppressWarnings("unused") final InterruptedException ie) {
-				// ignore
-			}
 	}
 
 	private static String runFromCVMFS() {
@@ -411,8 +333,13 @@ public class ComputingElement extends Thread {
 		// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
 
 		// return System.getenv("HOME") + "/jalien/jalien"; //TODO: local version
-		return "curl -o jobagent.jar \"https://doc-14-4k-docs.googleusercontent.com/docs/securesc/ha0ro937gcuc7l7deffksulhg5h7mbp1/qnsc320nlbfmktguqgu83qckicc984g1/1510927200000/03129700828163697278/*/1YriohTbeoaSLx8ppglq322XqCdCA2HKd?e=download\"\n"
-				+ "echo [DEBUG] Downloaded the jar package\n" + "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar jobagent.jar\n";
+		return "curl -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\n" + "echo [DEBUG] Downloaded the jar package\n"
+				+ "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar alien.jar\n";
+	}
+
+	private static String runFromDefault() {
+		logger.info("The worker node will install with the no method");
+		return "java -jar alien.jar\n";
 	}
 
 	// Prepares a hash to create the sitemap
@@ -432,7 +359,7 @@ public class ComputingElement extends Thread {
 		else
 			smenv.put("TTL", "86400");
 
-		smenv.put("Disk", "100000000");
+		smenv.put("Disk", "100000000"); // TODO: df
 
 		if (config.containsKey("ce_cerequirements"))
 			smenv.put("cerequirements", config.get("ce_cerequirements").toString());

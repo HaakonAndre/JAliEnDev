@@ -2256,7 +2256,7 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(60);
 			db.setReadOnly(false);
-			if (!db.query("DELETE FROM JOBTOKEN WHERE queueId=?;", false, Long.valueOf(queueId))) { // TODO: delete after full migration
+			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Long.valueOf(queueId))) { // TODO: delete after full migration
 				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
 				return false;
 			}
