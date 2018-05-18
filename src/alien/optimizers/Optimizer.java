@@ -11,6 +11,9 @@ import alien.config.ConfigUtils;
  */
 public class Optimizer extends Thread {
 
+	/**
+	 * Logging facility
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(Optimizer.class.getCanonicalName());
 
 	private long sleep_period = 60 * 1000L; // 1min

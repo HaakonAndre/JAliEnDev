@@ -250,6 +250,9 @@ public class AliEnPrincipal implements Principal, Serializable {
 
 	private boolean jobAgentFlag = false;
 
+	/**
+	 * Set the job agent flag when the identity is detected to be of one
+	 */
 	void setJobAgent() {
 		jobAgentFlag = true;
 	}

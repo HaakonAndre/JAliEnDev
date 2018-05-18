@@ -26,6 +26,9 @@ public class IndexTableLookup extends HttpServlet {
 	 */
 	private static final long serialVersionUID = 1599249953957590702L;
 
+	/**
+	 * Monitor object to report statistics with
+	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(IndexTableLookup.class.getCanonicalName());
 
 	@Override

@@ -91,8 +91,7 @@ public class ConfigUtils {
 						foundProperties.put(key, prop);
 					}
 				}
-		} catch (@SuppressWarnings("unused")
-		final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// cannot load the default configuration files for any reason
 		}
 
@@ -496,10 +495,10 @@ public class ConfigUtils {
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 			hostName = hostName.replace("/.$/", "");
+			hostName = hostName.replace("dyndns.cern.ch", "cern.ch");
 			domain = hostName.substring(hostName.indexOf(".") + 1, hostName.length());
 		} catch (final UnknownHostException e) {
-			logger.severe("Error: couldn't get hostname");
-			e.printStackTrace();
+			logger.severe("Error: couldn't get hostname: " + e.toString());
 			return null;
 		}
 
@@ -565,6 +564,42 @@ public class ConfigUtils {
 			for (final Object s : props.keySet()) {
 				final String key = (String) s;
 				configuration.put(key, props.get(key));
+			}
+		}
+
+		// We create the folders logdir, cachedir, tmpdir, workdir
+		HashMap<String, String> folders_config = new HashMap<>();
+
+		if (configuration.containsKey("host_tmpdir"))
+			folders_config.put("tmpdir", (String) configuration.get("host_tmpdir"));
+		else
+			if (configuration.containsKey("site_tmpdir"))
+				folders_config.put("tmpdir", (String) configuration.get("site_tmpdir"));
+
+		if (configuration.containsKey("host_cachedir"))
+			folders_config.put("cachedir", (String) configuration.get("host_cachedir"));
+		else
+			if (configuration.containsKey("site_cachedir"))
+				folders_config.put("cachedir", (String) configuration.get("site_cachedir"));
+
+		if (configuration.containsKey("host_logdir"))
+			folders_config.put("logdir", (String) configuration.get("host_logdir"));
+		else
+			if (configuration.containsKey("site_logdir"))
+				folders_config.put("logdir", (String) configuration.get("site_logdir"));
+
+		for (String folder : folders_config.keySet()) {
+			String folderpath = folders_config.get(folder);
+			try {
+				File folderf = new File(folderpath);
+				if (!folderf.exists()) {
+					final boolean created = folderf.mkdirs();
+					if (!created) {
+						logger.severe("Directory for " + folder + "can't be created: " + folderpath);
+					}
+				}
+			} catch (Exception e) {
+				logger.severe("Exception on directory creation: " + e.toString());
 			}
 		}
 

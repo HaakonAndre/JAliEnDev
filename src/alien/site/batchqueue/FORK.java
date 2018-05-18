@@ -19,7 +19,6 @@ public class FORK extends BatchQueue {
 	/**
 	 * @param conf
 	 * @param logr
-	 *            logger
 	 */
 	public FORK(HashMap<String, Object> conf, Logger logr) {
 		this.config = conf;
@@ -27,19 +26,18 @@ public class FORK extends BatchQueue {
 		String host_logdir = (String) config.get("host_logdir");
 		logger = LogUtils.redirectToCustomHandler(logger, Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
 
-		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountName"));
+		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountname"));
 	}
 
 	@Override
 	public void submit(final String script) {
 		logger.info("Submit FORK");
-		System.out.println("[FORK] Submitting with FORK.");		//TODO: remove
-		
-		ArrayList<String> cmd = new ArrayList<String>();
-		cmd.add("/bin/bash");
+
+		ArrayList<String> cmd = new ArrayList<>();
+		//cmd.add("/bin/bash");
 		cmd.add(script);
-		
-		ArrayList<String> proc_output = new ArrayList<String>();
+
+		ArrayList<String> proc_output = new ArrayList<>();
 		try {
 			final ProcessBuilder proc_builder = new ProcessBuilder(cmd);
 
@@ -50,16 +48,13 @@ public class FORK extends BatchQueue {
 			final Process proc = proc_builder.start();
 			BufferedReader reader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			String output_str;
-			while ((output_str = reader.readLine()) != null) 
-			{
+			while ((output_str = reader.readLine()) != null) {
 				proc_output.add(output_str);
 			}
 		} catch (final Throwable t) {
-			logger.info("[FORK] Exception executing command: "+ cmd);
-			t.printStackTrace();
+			logger.info("[FORK] Exception executing command '" + cmd + "':" + t.toString());
 		}
 		logger.info(String.format("[FORK] Command output: %s", proc_output));
-		System.out.println(String.format("[FORK] Command output:\n %s", proc_output));		//TODO: remove
 	}
 
 	@Override

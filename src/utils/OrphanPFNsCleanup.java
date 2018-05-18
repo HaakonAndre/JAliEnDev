@@ -72,7 +72,13 @@ public class OrphanPFNsCleanup {
 	 */
 	volatile static boolean dirtyStats = true;
 
+	/**
+	 * @author costing
+	 */
 	static final class MainOrphanMover extends Thread {
+		/**
+		 * Default constructor
+		 */
 		public MainOrphanMover() {
 			setName("MainOrphanMover");
 		}
@@ -193,6 +199,11 @@ public class OrphanPFNsCleanup {
 		}
 	}
 
+	/**
+	 * Start a new thread to deal with a particular SE
+	 * 
+	 * @param theSE
+	 */
 	static synchronized void startSEThread(final SE theSE) {
 		final Integer se = Integer.valueOf(theSE != null ? theSE.seNumber : 0);
 

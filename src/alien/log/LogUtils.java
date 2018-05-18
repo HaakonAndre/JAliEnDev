@@ -41,7 +41,7 @@ public class LogUtils {
 			logger.addHandler(fh);
 			logger.setLevel(Level.FINE);
 		} catch (SecurityException | IOException e) {
-			e.printStackTrace();
+			// e.printStackTrace(); // ignore?
 		}
 
 		return logger;

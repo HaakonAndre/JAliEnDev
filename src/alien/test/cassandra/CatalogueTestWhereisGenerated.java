@@ -47,10 +47,11 @@ public class CatalogueTestWhereisGenerated {
 		}
 	}
 
-	static boolean shouldexit = false;
-
 	/** Entries processed */
 	static AtomicLong global_count = new AtomicLong();
+	/**
+	 * Inserts
+	 */
 	static AtomicLong global_count_insert = new AtomicLong();
 	/**
 	 * Limit number of entries
@@ -61,12 +62,18 @@ public class CatalogueTestWhereisGenerated {
 	 * Limit number of entries
 	 */
 	static AtomicLong timing_count = new AtomicLong();
+	/**
+	 * Insert timing
+	 */
 	static AtomicLong timing_count_insert = new AtomicLong();
 
 	/**
 	 * total milliseconds
 	 */
 	static AtomicLong ns_count = new AtomicLong();
+	/**
+	 * Insert total time
+	 */
 	static AtomicLong ns_count_insert = new AtomicLong();
 
 	/** File for tracking created folders */
@@ -117,12 +124,24 @@ public class CatalogueTestWhereisGenerated {
 	 */
 	static boolean limit_reached = false;
 
+	/**
+	 * Desired consistency level
+	 */
 	static ConsistencyLevel clevel = ConsistencyLevel.QUORUM;
 
+	/**
+	 * When to stop
+	 */
 	static boolean no_termination = true;
 
+	/**
+	 * Read to write ratio
+	 */
 	static Integer read_write_ratio = Integer.valueOf(0);
 
+	/**
+	 * Offset
+	 */
 	static Integer base_for_insert = Integer.valueOf(500000000);
 
 	/**

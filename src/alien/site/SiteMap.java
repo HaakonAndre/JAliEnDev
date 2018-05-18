@@ -55,8 +55,7 @@ public class SiteMap {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
 			hostName = hostName.replace("/.$/", "");
 		} catch (final UnknownHostException e) {
-			logger.severe("Couldn't get hostname");
-			e.printStackTrace();
+			logger.severe("Couldn't get hostname: " + e.toString());
 		}
 		siteMap.put("Host", hostName);
 
@@ -96,8 +95,13 @@ public class SiteMap {
 			partition = env.get("partition");
 
 		// Close storage
-		if (env.containsKey("closeSE"))
-			extrasites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
+		if (env.containsKey("closeSE")) {
+			ArrayList<String> temp_sites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
+			for (String st : temp_sites) {
+				st = st.split("::")[1];
+				extrasites.add(st);
+			}
+		}
 
 		// Get users from cerequirements field
 		final ArrayList<String> users = new ArrayList<>();
@@ -130,7 +134,7 @@ public class SiteMap {
 		siteMap.put("Platform", ConfigUtils.getPlatform());
 
 		// Only include packages if "CVMFS=1" is not present
-		if (!siteMap.containsKey("CVMFS") || siteMap.get("CVMFS").equals(Integer.valueOf(1))) {
+		if (!siteMap.containsKey("CVMFS") || !siteMap.get("CVMFS").equals(Integer.valueOf(1))) {
 			packages = packMan.getListPackages();
 			installedPackages = packMan.getListInstalledPackages();
 
@@ -160,6 +164,7 @@ public class SiteMap {
 			siteMap.put("NoUsers", nousers);
 		if (extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
+
 		siteMap.put("Host", alienCm);
 
 		if (env.containsKey("Disk"))

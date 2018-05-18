@@ -13,6 +13,9 @@ import java.util.concurrent.TimeUnit;
  * @since 2016-10-26
  */
 public class CachedThreadPool extends ThreadPoolExecutor {
+	/**
+	 * Reject the execution to force the caller to queue
+	 */
 	static final class RejectingQueue extends LinkedBlockingQueue<Runnable> {
 		private static final long serialVersionUID = 1L;
 
@@ -25,6 +28,11 @@ public class CachedThreadPool extends ThreadPoolExecutor {
 		}
 	}
 
+	/**
+	 * Queue rejected executions
+	 * 
+	 * @author costing
+	 */
 	static final class MyHandler implements RejectedExecutionHandler {
 		@Override
 		public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {

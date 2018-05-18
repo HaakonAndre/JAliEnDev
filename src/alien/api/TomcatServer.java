@@ -52,6 +52,9 @@ public class TomcatServer {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
 
+	/**
+	 * Web server instance
+	 */
 	Tomcat tomcat;
 
 	private final int websocketPort;

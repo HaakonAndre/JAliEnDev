@@ -82,6 +82,9 @@ public class ProcessWithTimeout {
 		}
 	}
 
+	/**
+	 * Logging facility
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(ProcessWithTimeout.class.getCanonicalName());
 
 	private final Process p;

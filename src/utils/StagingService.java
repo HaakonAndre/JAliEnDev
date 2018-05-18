@@ -27,10 +27,20 @@ public class StagingService {
 	private static final int bgexecutorThreads = ConfigUtils.getConfig().geti("utils.StagingService.bgexecutorThreads", 16);
 
 	private static final CachedThreadPool executor = new CachedThreadPool(executorThreads, 5, TimeUnit.SECONDS);
+
+	/**
+	 * Background executor
+	 */
 	static final CachedThreadPool bgexecutor = new CachedThreadPool(bgexecutorThreads, 5, TimeUnit.SECONDS);
 
+	/**
+	 * Number of executed commands (for printing progress / statistics during execution)
+	 */
 	static final AtomicLong PREPARED_COMMANDS = new AtomicLong();
 
+	/**
+	 * @return DB connection
+	 */
 	static DBFunctions getDB() {
 		return ConfigUtils.getDB("alice_users");
 	}
@@ -94,6 +104,9 @@ public class StagingService {
 		}
 	}
 
+	/**
+	 * Which SEs to run for
+	 */
 	final static Set<Integer> syncSEs = new HashSet<>();
 
 	/**
@@ -109,7 +122,8 @@ public class StagingService {
 		for (final String arg : args)
 			try {
 				syncSEs.add(Integer.valueOf(arg));
-			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			} catch (@SuppressWarnings("unused")
+			final NumberFormatException nfe) {
 				final SE se = SEUtils.getSE(arg);
 
 				if (se != null)

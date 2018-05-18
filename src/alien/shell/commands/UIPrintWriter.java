@@ -74,7 +74,6 @@ public abstract class UIPrintWriter {
 	 *
 	 * @param cDir
 	 * @param user
-	 * @param cRole
 	 */
 	abstract protected void setenv(String cDir, String user);
 
@@ -103,14 +102,29 @@ public abstract class UIPrintWriter {
 	 *
 	 * @param args
 	 */
-	protected void setReturnArgs(final String args) {
+	protected void setReturnArgs(@SuppressWarnings("unused") final String args) {
 		// void
 	}
 
+	/**
+	 * Move to the next result
+	 */
 	abstract void nextResult();
 
+	/**
+	 * Set the value for one field
+	 * 
+	 * @param key
+	 * @param value
+	 */
 	abstract void setField(final String key, final String value);
 
+	/**
+	 * Command exit code
+	 * 
+	 * @param exitCode
+	 * @param errorMessage
+	 */
 	abstract void setReturnCode(final int exitCode, final String errorMessage);
 
 	/**

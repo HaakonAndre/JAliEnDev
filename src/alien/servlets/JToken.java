@@ -37,6 +37,9 @@ public class JToken extends HttpServlet {
 			requester.setUserCert(new X509Certificate[] { cert });
 	}
 
+	/**
+	 * Monitor object to report statistics with
+	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(JToken.class.getCanonicalName());
 
 	/**

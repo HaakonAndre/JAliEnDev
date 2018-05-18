@@ -2256,7 +2256,7 @@ public class TaskQueueUtils {
 
 			db.setQueryTimeout(60);
 			db.setReadOnly(false);
-			if (!db.query("DELETE FROM JOBTOKEN WHERE queueId=?;", false, Long.valueOf(queueId))) { // TODO: delete after full migration
+			if (!db.query("DELETE FROM JOBTOKEN WHERE jobId=?;", false, Long.valueOf(queueId))) { // TODO: delete after full migration
 				putJobLog(queueId, "state", "Failed to execute job token deletion query", null);
 				return false;
 			}
@@ -3080,7 +3080,7 @@ public class TaskQueueUtils {
 
 					// we need to clean up the previous output
 					if (j.path != null) {
-						Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", queueId);
+						Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
 						for (LFN l : list) {
 							if (l.jobid == queueId) {
 								logger.info("Resubmit: removing output file: " + l.getCanonicalName());

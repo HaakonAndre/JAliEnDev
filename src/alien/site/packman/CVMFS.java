@@ -40,7 +40,7 @@ public class CVMFS extends PackMan {
 		try {
 			alienv_bin = SystemCommand.bash("which " + alienv_bin + "/alienv").stdout.trim();
 		} catch (final Exception e) {
-			System.out.println("which alienv not ok: " + e.getMessage());
+			logger.info("which alienv not ok: " + e.toString());
 		}
 
 		if (alienv_bin == null || alienv_bin.equals(""))

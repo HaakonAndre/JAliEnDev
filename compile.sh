@@ -30,7 +30,7 @@ jar cf ../alien.jar *
 
 rm -f ../alien-users.jar ../alien-cs.jar
 
-if [ "x$1" == "xall" ]; then
+if [ "x$1" == "xall" -o "x$1" == "xusers" ]; then
     echo "Preparing alien-users.jar"
 
     for dependency in ../lib/{FarmMonitor.jar,apmon.jar,bcp*.jar,catalina.jar,javax.json-api-*.jar,jline-*.jar,jopt-simple-*.jar,json-simple-*.jar,lazyj.jar,servlet-api.jar,tomcat-*.jar,ca-api*.jar,java-ca-lib*.jar,annotations-api.jar}; do
@@ -40,7 +40,9 @@ if [ "x$1" == "xall" ]; then
     rm -rf META-INF
 
     jar cf ../alien-users.jar *
+fi
 
+if [ "x$1" == "xall" -o "x$1" == "xcs" ]; then
     ## Now all the dependencies in a single file, for central services (+DB drivers, CA, everything else)
     echo "Preparing alien-cs.jar"
 
@@ -51,8 +53,6 @@ if [ "x$1" == "xall" ]; then
     rm -rf META-INF
 
     jar cf ../alien-cs.jar *
-else
-    echo "Have only packaged alien.jar, if you need the other ones just run './compile.sh all'"
 fi
 
 ## Cleanup
