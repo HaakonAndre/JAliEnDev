@@ -4,11 +4,11 @@ export PATH="$PATH:$HOME/alien/bin:$HOME/alien/api/bin"
 export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/alien/lib:$HOME/alien/api/lib"
 
 if [ -f alien-cs.jar ]; then
-    CLASSPATH="alien-cs.jar"
+    CLASSPATH="$JALIEN_HOME/alien-cs.jar"
 elif [ -f alien-users.jar ]; then
-    CLASSPATH="alien-users.jar"
+    CLASSPATH="$JALIEN_HOME/alien-users.jar"
 else
-    CLASSPATH="alien.jar"
+    CLASSPATH="$JALIEN_HOME/alien.jar"
 
     for DEP in lib/*.jar; do
 	CLASSPATH="$CLASSPATH:$DEP"

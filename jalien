@@ -21,6 +21,7 @@ fi
 
 if [ -z "$JALIEN_HOME" ]; then
     JALIEN_HOME=`pwd`
+    export JALIEN_HOME
 fi
 
 CONFIG_DIR=${JALIEN_CONFIG_DIR:-${HOME}/.j/config}
