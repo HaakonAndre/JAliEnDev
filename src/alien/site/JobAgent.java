@@ -583,9 +583,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
 		pBuilder.redirectError(Redirect.appendTo(new File("/tmp", "stderr"))); //TODO: Remove after testing
 
-		//   pBuilder.environment().clear();
-		pBuilder.environment().replace("JALIEN_TOKEN_CERT", tokenCert);
-		pBuilder.environment().replace("JALIEN_TOKEN_KEY", tokenKey);
+	//	pBuilder.environment().clear();
+	//	pBuilder.environment().replace("JALIEN_TOKEN_CERT", tokenCert);
+	//	pBuilder.environment().replace("JALIEN_TOKEN_KEY", tokenKey);
+		
+		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
+		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
 		
 		pBuilder.directory(tempDir);
 

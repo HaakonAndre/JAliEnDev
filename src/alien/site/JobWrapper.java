@@ -94,13 +94,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * @uml.associationEnd  
 	 */
 	//private final JAliEnCOMMander commander = new JAliEnCOMMander();
-	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+	private final JAliEnCOMMander commander; // = JAliEnCOMMander.getInstance();
 
 	/**
 	 * @uml.property  name="c_api"
 	 * @uml.associationEnd  
 	 */
-	private final CatalogueApiUtils c_api= new CatalogueApiUtils(commander);
+	private final CatalogueApiUtils c_api; // = new CatalogueApiUtils(commander);
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
 	static {
@@ -190,7 +190,21 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+		
+		if((tokenCert != null) && (tokenKey != null)){
+			try {
+				JAKeyStore.createTokenFromString(tokenCert, tokenKey);
+				System.err.println("Token Created");
+				JAKeyStore.loadKeyStore();
+			} catch (Exception e) {
+				System.err.println("Error. Could not load tokenCert and/or tokenKey");
+				e.printStackTrace();
+			}
+		}
 
+		commander = JAliEnCOMMander.getInstance();
+		c_api = new CatalogueApiUtils(commander);
+		
 		System.err.println("JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 
 	}
