@@ -33,6 +33,10 @@ public class GetTokenCertificate extends Request {
 	private static final long serialVersionUID = 7799371357160254760L;
 
 	private static final RootCertificate rootCert;
+
+	/**
+	 * Logging component
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(AuthorizationFactory.class.getCanonicalName());
 
 	static {
@@ -62,7 +66,7 @@ public class GetTokenCertificate extends Request {
 
 	/**
 	 * Get AliEn CA certificate
-	 * 
+	 *
 	 * @return AliEn CA certificate
 	 */
 	public static X509Certificate getRootPublicKey() {
@@ -73,9 +77,25 @@ public class GetTokenCertificate extends Request {
 	}
 
 	// outgoing fields
+	/**
+	 * Which type of certificate is requested
+	 */
 	final TokenCertificateType certificateType;
+
+	/**
+	 * Requested extension to it (job ID in particular)
+	 */
 	final String extension;
+
+	/**
+	 * Requested validity. It's just a hint, function of the certificate type the validity is limited to 2 days (job agent and jobs) or one month (user tokens). But see {@link TokenCertificateType}
+	 * for the current limits imposed to them.
+	 */
 	final int validity;
+
+	/**
+	 * User requesting this operation
+	 */
 	final String requestedUser;
 
 	// incoming fields
@@ -104,6 +124,11 @@ public class GetTokenCertificate extends Request {
 		this.requestedUser = requestedUser;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Runnable#run()
+	 */
 	@Override
 	public void run() {
 		if (certificateType == null)
@@ -172,7 +197,10 @@ public class GetTokenCertificate extends Request {
 					notAfter = partnerNotAfter;
 			}
 
-		final Certificate cert = rootCert.signCsr(csr).setRandomSerialNumber().setNotAfter(notAfter).sign();
+		// Give a grace time of 2 hours to compensate for WNs that are running behind with the clock
+		final ZonedDateTime notBefore = ZonedDateTime.now().minusHours(2);
+
+		final Certificate cert = rootCert.signCsr(csr).setRandomSerialNumber().setNotAfter(notAfter).setNotBefore(notBefore).sign();
 
 		certificate = cert.getX509Certificate();
 		privateKey = csr.getPrivateKey();
@@ -240,10 +268,10 @@ public class GetTokenCertificate extends Request {
 	 * // be effectively cached
 	 * if (certificateType == TokenCertificateType.USER_CERTIFICATE)
 	 * return getEffectiveRequester().getName();
-	 * 
+	 *
 	 * return null;
 	 * }
-	 * 
+	 *
 	 * @Override
 	 * public long getTimeout() {
 	 * // for the same user don't generate another certificate for 10 minutes
