@@ -30,22 +30,56 @@ import lazyj.ExtProperties;
  */
 public class CassandraMonitor {
 
+	/**
+	 * Full JMX url
+	 */
 	static String serviceUrl = null;
+
+	/**
+	 * Same as above but in a JMXServiceURL object
+	 */
 	static JMXServiceURL url;
+
+	/**
+	 * Connector
+	 */
 	static JMXConnector jmxc = null;
+
+	/**
+	 * MBean
+	 */
 	static MBeanServerConnection mbsConnection = null;
+
 	private static transient final Logger logger = ConfigUtils.getLogger(CassandraMonitor.class.getCanonicalName());
+
+	/**
+	 * The JVM-wide ApMon sender (jAliEn configured)
+	 */
 	static transient final ApMon apmon = MonitorFactory.getApMonSender();
+
+	/**
+	 * My host name
+	 */
 	static String hostName = null;
+
+	/**
+	 * On first iteration don't send the deltas, they will only be available from the second iteration on
+	 */
 	static boolean first = true;
 
-	// for passing credentials for password
+	/**
+	 * for passing credentials for password
+	 */
 	static ExtProperties config = ConfigUtils.getConfiguration("cassandra");
+
 	private static String user = null;
 	private static String pass = null;
 
 	private static Map<String, String[]> envpass = new HashMap<>();
 
+	/**
+	 * Metrics to export
+	 */
 	static final String[] metrics = { "org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=TotalLatency", "org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=TotalLatency",
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Write,name=Latency", // OMR
 			"org.apache.cassandra.metrics:type=ClientRequest,scope=Read,name=Latency", // OMR
@@ -59,15 +93,28 @@ public class CassandraMonitor {
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_index,name=TotalDiskSpaceUsed",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_metadata,name=TotalDiskSpaceUsed",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=se_lookup,name=TotalDiskSpaceUsed" };
+	
+	/**
+	 * Attributes to read
+	 */
 	static final String[] attributes = { "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Count", "OneMinuteRate", "OneMinuteRate", "Count", "Value", "Value", "Count", "Count", "Count",
 			"Count", "Count", "Count", "Count", "Count" };
 
+	/**
+	 * Metric names
+	 */
 	static final String[] names = { "Write_TotalLatency_Count", "Read_TotalLatency_Count", "Write_Latency_OneMinuteRate", "Read_Latency_OneMinuteRate", "Write_Latency_Count", "Read_Latency_Count",
 			"KeyCache_Hits_OneMinuteRate", "KeyCache_Requests_OneMinuteRate", "Storage_Load_Count", "Compaction_CompletedTasks_Value", "Compaction_PendingTasks_Value", "Storage_Exceptions_Count",
 			"Read_Timeouts_Count", "Write_Timeouts_Count", "Read_Unavailables_Count", "Write_Unavailables_Count", "Disk_Used_lfn_index", "Disk_Used_lfn_metadata", "Disk_Used_se_lookup" };
 
+	/**
+	 * Rate flags (counters that are only increasing)
+	 */
 	static final boolean[] isRate = { false, false, true, true, false, false, true, true, false, false, false, false, false, false, false, false, false, false, false };
 
+	/**
+	 * Previous values to compute deltas
+	 */
 	static double[] previousValues = new double[metrics.length];
 
 	/**

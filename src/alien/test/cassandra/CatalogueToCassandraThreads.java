@@ -45,6 +45,9 @@ public class CatalogueToCassandraThreads {
 	/** Thread pool */
 	static ThreadPoolExecutor tPool = null;
 
+	/**
+	 * When to exit
+	 */
 	static boolean shouldexit = false;
 
 	/**

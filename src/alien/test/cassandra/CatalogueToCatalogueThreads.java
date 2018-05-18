@@ -30,6 +30,9 @@ public class CatalogueToCatalogueThreads {
 	/** Thread pool */
 	static ThreadPoolExecutor tPool = null;
 
+	/**
+	 * When to exit
+	 */
 	static boolean shouldexit = false;
 
 	/**
@@ -84,10 +87,19 @@ public class CatalogueToCatalogueThreads {
 	 */
 	static String logs_suffix = "";
 
+	/**
+	 * Random number generator
+	 */
 	static Random rdm = new Random();
 
+	/**
+	 * One SE
+	 */
 	static final SE se1 = SEUtils.getSE(332);
 
+	/**
+	 * Another SE
+	 */
 	static final SE se2 = SEUtils.getSE(320);
 
 	/*

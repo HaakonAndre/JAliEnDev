@@ -3080,7 +3080,7 @@ public class TaskQueueUtils {
 
 					// we need to clean up the previous output
 					if (j.path != null) {
-						Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", queueId);
+						Collection<LFN> list = LFNUtils.find(path, "*", LFNUtils.FIND_FILTER_JOBID, null, "", Long.valueOf(queueId));
 						for (LFN l : list) {
 							if (l.jobid == queueId) {
 								logger.info("Resubmit: removing output file: " + l.getCanonicalName());

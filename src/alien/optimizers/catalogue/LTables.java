@@ -15,9 +15,19 @@ import lazyj.mail.Sendmail;
  */
 public class LTables extends Optimizer {
 
+	/**
+	 * Logging facility
+	 */
 	static transient final Logger logger = ConfigUtils.getLogger(LTables.class.getCanonicalName());
 
+	/**
+	 * At which point to send a warning by mail
+	 */
 	final static int maxCount = 50000000; // 50M
+	
+	/**
+	 * Number of rows in the last table
+	 */
 	int count;
 
 	@Override

@@ -80,7 +80,6 @@ public class LFNCSDUtils {
 	 * @param command
 	 * @param base
 	 * @param pattern
-	 * @param parameters
 	 * @param metadata
 	 * @param flags
 	 * @return list of lfns that fit the patterns, if any

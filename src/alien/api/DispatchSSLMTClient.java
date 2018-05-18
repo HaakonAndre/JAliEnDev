@@ -8,7 +8,6 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.security.cert.CertificateException;
 import java.util.EmptyStackException;
 import java.util.Stack;
 import java.util.concurrent.ThreadLocalRandom;
@@ -157,7 +156,7 @@ public class DispatchSSLMTClient extends Thread {
 	}
 
 	@SuppressWarnings("resource")
-	static DispatchSSLMTClient initializeInstance(final String address, final int p) {
+	private static DispatchSSLMTClient initializeInstance(final String address, final int p) {
 		// if (instance.get(Integer.valueOf(p)) == null) {
 		// connect to the other end
 		logger.log(Level.INFO, "Connecting to JCentral on " + address + ":" + p);

@@ -32,7 +32,12 @@ import alien.user.AliEnPrincipal;
  */
 public class JsonWebsocketEndpoint extends Endpoint {
 	private AliEnPrincipal userIdentity = null;
+	
+	/**
+	 * Commander
+	 */
 	JAliEnCOMMander commander = null;
+	
 	private UIPrintWriter out = null;
 	private OutputStream os = null;
 
@@ -57,7 +62,9 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		return System.currentTimeMillis() - _startTime;
 	}
 
-	// Object to send notifications about the state of connection
+	/**
+	 *  Object to send notifications about the state of connection
+	 */
 	final Object stateObject = new Object();
 
 	@Override

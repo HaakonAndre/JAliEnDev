@@ -45,27 +45,66 @@ import lia.util.Utils;
  */
 public class CatalogueToCVMFSThreads {
 
-	// Array of thread-dir
+	/** 
+	 * Array of thread-dir
+	 */
 	static final HashMap<Long, LFN> activeThreadFolders = new HashMap<>();
 
-	// Thread pool
+	/**
+	 *  Thread pool
+	 */
 	static ThreadPoolExecutor tPool = null;
 
-	// Entries processed
+	/**
+	 *  Entries processed
+	 */
 	static final int origlimit = 500000;
+	/**
+	 * Progress
+	 */
 	static AtomicInteger global_count = new AtomicInteger();
+	/**
+	 * Limit
+	 */
 	static AtomicInteger limit = new AtomicInteger(origlimit);
 
-	// File for tracking created folders
+	/**
+	 *  File for tracking created folders
+	 */
 	static PrintWriter out = null;
+	
+	/**
+	 * Writer
+	 */
 	static PrintWriter pw = null;
+	/**
+	 * Where to log failed folders
+	 */
 	static PrintWriter failed_folders = null;
+	/**
+	 * And failed files
+	 */
 	static PrintWriter failed_files = null;
+	/**
+	 * ... collections
+	 */
 	static PrintWriter failed_collections = null;
+	/**
+	 * ... ses
+	 */
 	static PrintWriter failed_ses = null;
+	/**
+	 * ... threads
+	 */
 	static PrintWriter used_threads = null;
+	/**
+	 * ?
+	 */
 	static String logs_suffix = "";
 
+	/**
+	 * ?
+	 */
 	static String suffix = "/cvmfs/alien-catalogue.cern.ch";
 
 	/*

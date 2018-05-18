@@ -419,7 +419,7 @@ public class CatalogueApiUtils {
 	 * @return result LFNs
 	 */
 	public Collection<LFN> find(final String path, final String pattern, final int flags, final String xmlCollectionName, Long queueid) {
-		return this.find(path, pattern, null, flags, xmlCollectionName, Long.valueOf(0));
+		return this.find(path, pattern, null, flags, xmlCollectionName, queueid);
 	}
 
 	/**
