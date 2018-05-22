@@ -455,19 +455,6 @@ public class JAliEnCOMMander extends Thread {
 	}
 
 	/**
-	 *
-	 */
-	public void killRunningCommand() {
-		if (jcommand != null) {
-			synchronized (jcommand) {
-				jcommand.interrupt();
-				jcommand = null;
-			}
-			out.flush();
-		}
-	}
-
-	/**
 	 * create and return a object of alien.shell.commands.JAliEnCommand.JAliEnCommand<classSuffix>
 	 *
 	 * @param classSuffix
