@@ -63,18 +63,6 @@ public class ComputingElement extends Thread {
 	 */
 	public ComputingElement() {
 		try {
-			// try {
-			// if (!JAKeyStore.loadKeyStore()) {
-			// logger.severe("Grid Certificate could not be loaded.");
-			// System.err.println("Grid Certificate could not be loaded.");
-			// System.err.println("Exiting...");
-			// return;
-			// }
-			// } catch (final Exception e) {
-			// logger.log(Level.SEVERE, "Error loading the key", e);
-			// System.err.println("Error loading the key");
-			// }
-
 			config = ConfigUtils.getConfigFromLdap();
 			site = (String) config.get("site_accountname");
 			getSiteMap();
