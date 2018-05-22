@@ -178,7 +178,7 @@ public class JobBroker {
 					GetTokenCertificate gtc = new GetTokenCertificate((AliEnPrincipal) matchRequest.get("AliEnPrincipal"), username, TokenCertificateType.JOB_TOKEN,
 							"queueid=" + queueId + "/resubmission=" + resubmission, 1);
 					try {
-						Dispatcher.execute(gtc);
+						gtc = Dispatcher.execute(gtc);
 						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
 						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
 					} catch (Exception e) {

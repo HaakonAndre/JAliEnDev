@@ -263,7 +263,7 @@ public class ComputingElement extends Thread {
 		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
 		ttl_hours = ttl_hours / 3600;
 
-		final String[] token_certificate_full = getTokenCertificate(ttl_hours / 24);
+		final String[] token_certificate_full = getTokenCertificate(ttl_hours / 24 + 1);
 		final String token_cert_str = token_certificate_full[0];
 		final String token_key_str = token_certificate_full[1];
 
@@ -308,7 +308,7 @@ public class ComputingElement extends Thread {
 		GetTokenCertificate gtc = new GetTokenCertificate(commander.getUser(), commander.getUsername(), TokenCertificateType.JOB_AGENT_TOKEN, null, ttl_days);
 
 		try {
-			Dispatcher.execute(gtc);
+			gtc = Dispatcher.execute(gtc);
 			final String[] token_cert_and_key = new String[2];
 			token_cert_and_key[0] = gtc.getCertificateAsString();
 			token_cert_and_key[1] = gtc.getPrivateKeyAsString();
