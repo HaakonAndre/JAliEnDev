@@ -158,8 +158,11 @@ public class ArchiveMemberDelete {
 
 			File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
 			ArrayList<String> listOfFiles = new ArrayList<>();
-			for (File file : folder.listFiles())
-				listOfFiles.add(file.getName());
+			
+			final File[] listing = folder.listFiles();
+			if (listing!=null)
+				for (File file : listing)
+					listOfFiles.add(file.getName());		
 
 			System.out.println("\tZipping the new archive");
 			OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
@@ -254,10 +257,12 @@ public class ArchiveMemberDelete {
 		} else {
 			// Clean up temp directory if there are files in it
 			String[] destDirEntries = destDir.list();
-			for (String s : destDirEntries) {
-				File currentFile = new File(destDir.getPath(), s);
-				currentFile.delete();
-			}
+			
+			if (destDirEntries!=null)
+				for (String s : destDirEntries) {
+					File currentFile = new File(destDir.getPath(), s);
+					currentFile.delete();
+				}
 		}
 
 		// Start unpacking the archive
