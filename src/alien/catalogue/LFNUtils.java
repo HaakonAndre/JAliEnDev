@@ -666,7 +666,7 @@ public class LFNUtils {
 
 		if ((flags & FIND_BIGGEST_VERSION) != 0) {
 			String tag = query.substring(0, query.indexOf(":"));
-			return findByMetadata(path, processedPattern, tag, query, flags);
+			return findByMetadata(path, processedPattern, tag, query);
 		}
 
 		final Set<LFN> ret;
@@ -755,10 +755,9 @@ public class LFNUtils {
 	 * @param pattern
 	 * @param tag
 	 * @param query
-	 * @param flags
 	 * @return the files that match the metadata query
 	 */
-	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags) {
+	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query) {
 		final Set<LFN> ret = new LinkedHashSet<>();
 
 		if (monitor != null)
