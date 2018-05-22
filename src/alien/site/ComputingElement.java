@@ -252,16 +252,12 @@ public class ComputingElement extends Thread {
 		ttl_hours = ttl_hours / 3600;
 
 		final String[] token_certificate_full = getTokenCertificate(ttl_hours / 24 + 1);
-		final String token_cert_str = token_certificate_full[0];
-		final String token_key_str = token_certificate_full[1];
+		final String token_cert_str = token_certificate_full[0].trim();
+		final String token_key_str = token_certificate_full[1].trim();
 
-		before += "echo 'Using token certificate'\n" + "mkdir -p " + host_tempdir + "\n" + "file=" + cert_file + "\n" + "cat >" + cert_file + " <<EOF\n" + token_cert_str + "EOF\n" + "chmod 0400 "
-				+ cert_file + "\n" + "export JALIEN_TOKEN_CERT=" + cert_file + ";\n" + "echo USING JALIEN_TOKEN_CERT\n" + "file=" + key_file + "\n" + "cat >" + key_file + " <<EOF\n" + token_key_str
-				+ "EOF\n" + "chmod 0400 " + key_file + "\n" + "export JALIEN_TOKEN_KEY=" + key_file + ";\n" + "echo USING JALIEN_TOKEN_KEY\n";
+		before += "export JALIEN_TOKEN_CERT=\"" + token_cert_str + "\";\n" + "export JALIEN_TOKEN_KEY=\"" + token_key_str + "\";\n";
 
-		after += "rm -rf " + cert_file + "\n";
-		after += "rm -rf " + key_file + "\n";
-		after += "rm -rf jobagent.jar\n";
+		after += "rm -f alien.jar\n";
 
 		if (config.containsKey("ce_installmethod") && config.get("ce_installmethod").equals("CVMFS"))
 			startup_script = runFromCVMFS();
@@ -321,13 +317,13 @@ public class ComputingElement extends Thread {
 		// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
 
 		// return System.getenv("HOME") + "/jalien/jalien"; //TODO: local version
-		return "curl -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\n" + "echo [DEBUG] Downloaded the jar package\n"
-				+ "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar alien.jar\n";
+		return "curl -k -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\n"
+				+ "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -cp alien.jar alien.site.JobAgent\n";
 	}
 
 	private static String runFromDefault() {
 		logger.info("The worker node will install with the no method");
-		return "java -jar alien.jar\n";
+		return "curl -k -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\njava -cp alien.jar alien.site.JobAgent\n";
 	}
 
 	// Prepares a hash to create the sitemap
