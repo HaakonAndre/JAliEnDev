@@ -37,7 +37,6 @@ import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.LdapCertificateRealm;
 import alien.user.UserFactory;
-import alien.user.UsersHelper;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
@@ -64,7 +63,7 @@ public class TomcatServer {
 	 *
 	 * @param tomcatPort
 	 */
-	private TomcatServer(int tomcatPort, int iDebug) throws Exception {
+	private TomcatServer(int tomcatPort) throws Exception {
 		this.websocketPort = tomcatPort;
 
 		tomcat = new Tomcat();
@@ -107,8 +106,7 @@ public class TomcatServer {
 		if (alUser == null || alUser.getName() == null)
 			throw new Exception("Could not get your username. FATAL!");
 
-		final String sHomeUser = UsersHelper.getHomeDir(alUser.getName());
-		if (!writeTokenFile(tomcat.getHost().getName(), websocketPort, alUser.getName(), sHomeUser, iDebug)) {
+		if (!writeTokenFile(websocketPort)) {
 			tomcat.stop();
 			throw new Exception("Could not write the token file! No application can connect to JBox");
 		}
@@ -193,7 +191,7 @@ public class TomcatServer {
 	 * @param iDebug
 	 *            the debug level received from the command line
 	 */
-	private static boolean writeTokenFile(final String sHost, final int iWSPort, final String sUser, @SuppressWarnings("unused") final String sHomeUser, final int iDebug) {
+	private static boolean writeTokenFile(final int iWSPort) {
 		String sUserId = System.getProperty("userid");
 
 		if (sUserId == null || sUserId.length() == 0) {
@@ -431,10 +429,8 @@ public class TomcatServer {
 
 	/**
 	 * Start Tomcat Server
-	 *
-	 * @param iDebugLevel
 	 */
-	public static synchronized void startTomcatServer(final int iDebugLevel) {
+	public static synchronized void startTomcatServer() {
 
 		if (tomcatServer != null)
 			return;
@@ -470,7 +466,7 @@ public class TomcatServer {
 			ssocket.close();
 
 			// Actually start Tomcat
-			tomcatServer = new TomcatServer(port, iDebugLevel);
+			tomcatServer = new TomcatServer(port);
 
 			logger.log(Level.INFO, "Tomcat listening on port " + port);
 			System.out.println("Tomcat is listening on port " + port);
@@ -487,7 +483,7 @@ public class TomcatServer {
 			{
 				ssocket.close();
 				// Actually start Tomcat
-				tomcatServer = new TomcatServer(port, iDebugLevel);
+				tomcatServer = new TomcatServer(port);
 
 				logger.log(Level.INFO, "Tomcat listening on port " + port);
 				System.out.println("Tomcat is listening on port " + port);
