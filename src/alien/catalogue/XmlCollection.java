@@ -192,7 +192,7 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 							l.size = Long.parseLong(size);
 
 						// guid is "" for directories, skip it
-						if (guid != null && guid != "")
+						if (guid != null && !guid.isEmpty())
 							l.guid = UUID.fromString(guid);
 
 						if (dir != null)
@@ -201,7 +201,7 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 						if (entryId != null)
 							l.entryId = Long.parseLong(entryId);
 
-						if (jobId != null && jobId != "")
+						if (jobId != null && !jobId.isEmpty())
 							l.jobid = Long.parseLong(jobId);
 
 						if (expires != null)
