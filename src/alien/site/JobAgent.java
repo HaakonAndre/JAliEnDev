@@ -203,7 +203,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		} catch (URISyntaxException e) {
 			System.err.println("Could not obtain AliEn jar path: " + e.toString());
 		}
-
+		
 	}
 
 	@Override
@@ -533,16 +533,21 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 
 		try {
-			final Scanner scanner = new Scanner(new File("/proc/" + processID + "/cmdline"));
+			
+			Process p = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
+			p.waitFor();
+			
+			final Scanner scanner = new Scanner(p.getInputStream());
+			
 			List<String> cmd = new ArrayList<String>();
 
 			String readArg;
 			while (scanner.hasNext()) {
-				readArg = (scanner.useDelimiter("\0").next());
+				readArg = (scanner.next());
 
 				switch (readArg) {
 				case "-cp":
-					scanner.useDelimiter("\0").next();
+					scanner.next();
 					break;
 				case "alien.site.JobAgent":
 					cmd.add("-cp");
