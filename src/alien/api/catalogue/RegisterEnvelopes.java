@@ -192,6 +192,6 @@ public class RegisterEnvelopes extends Request {
 
 	@Override
 	public String toString() {
-		return "Asked to register: " + signedEnvelopes.toString() + " (" + "), reply is: " + this.pfns;
+		return "Asked to register: " + (encryptedEnvelope != null ? " encrypted envelope " + encryptedEnvelope : "signed envelopes: " + signedEnvelopes) + ", reply is: " + this.pfns;
 	}
 }
