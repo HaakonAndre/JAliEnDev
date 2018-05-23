@@ -7,6 +7,9 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
+import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,6 +26,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.bouncycastle.util.test.Test;
 
 import alien.api.JBoxServer;
 import alien.api.aaa.TokenCertificateType;
@@ -93,6 +98,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 	private final String containerPlatform;
+	private Path path = null;
 
 	static {
 		jaStatus.put("REQUESTING_JOB", Integer.valueOf(1));
@@ -193,6 +199,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 
 		monitor.addMonitoring("jobAgent-TODO", this);
+		
+		try {
+			path = Paths.get(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+		} catch (URISyntaxException e) {
+			System.err.println("Could not obtain AliEn jar path. Try exporting the classpath to env: " + e.toString());
+		}
+		
 	}
 
 	@Override
@@ -525,11 +538,20 @@ public class JobAgent implements MonitoringObject, Runnable {
 			final Scanner scanner = new Scanner(new File("/proc/" + processID + "/cmdline"));
 			List<String> cmd = new ArrayList<String>();
 
+			String foundArg;
 			while (scanner.hasNext()) {
-				cmd.add(scanner.useDelimiter("\0").next());
-
-				if (cmd.get(cmd.size() - 1).contains("JobAgent"))
-					cmd.set(cmd.size() - 1, "alien.site.JobWrapper");
+				foundArg = (scanner.useDelimiter("\0").next());
+				
+				switch(foundArg) {
+				case "-cp" :
+					scanner.useDelimiter("\0").next(); 
+					break;
+				case "alien.site.JobAgent" :
+					cmd.add("alien.site.JobWrapper");
+					break;
+				default :
+					cmd.add(foundArg);
+				}
 			}
 			scanner.close();
 
@@ -582,13 +604,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
 		pBuilder.redirectError(Redirect.appendTo(new File("/tmp", "stderr"))); //TODO: Remove after testing
-
-	//	pBuilder.environment().clear();
-	//	pBuilder.environment().replace("JALIEN_TOKEN_CERT", tokenCert);
-	//	pBuilder.environment().replace("JALIEN_TOKEN_KEY", tokenKey);
 		
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
+		
+		if (!env.containsKey("CLASSPATH"))
+			pBuilder.environment().put("CLASSPATH", path.toString());
 		
 		pBuilder.directory(tempDir);
 
@@ -638,10 +659,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 			System.out.println("Exception running " + launchCommand + " : " + ioe.getMessage());
 			return -2;
 		}
-
-		//Set sandbox dir
-		jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId)); // not
-		// ideal
 
 		mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
 		final Vector<Integer> child = mj.getChildren();
