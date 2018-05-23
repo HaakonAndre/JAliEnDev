@@ -31,7 +31,7 @@ import alien.user.AliEnPrincipal;
  *         Implementation of websocket endpoint, that parses JSON commands
  */
 public class JsonWebsocketEndpoint extends Endpoint {
-	private AliEnPrincipal userIdentity = null;
+	AliEnPrincipal userIdentity = null;
 	
 	/**
 	 * Commander
@@ -52,6 +52,11 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	}
 
 	private long _startTime = 0L;
+
+	/**
+	 * Time with no activity coming from the client
+	 */
+	public static long _lastActivityTime = 0L;
 
 	/**
 	 * Get websocket connection uptime
@@ -84,6 +89,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 		session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, commander, out));
 		_startTime = System.currentTimeMillis();
+		_lastActivityTime = System.currentTimeMillis();
 
 		new Thread() {
 			@Override
@@ -98,8 +104,11 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						}
 					}
 
-					if (getUptime() > 172800000) // 2 days
+					if (getUptime() > 172800000 || userIdentity.getUserCert()[0].getNotAfter().getTime() > System.currentTimeMillis()) // 2 days
 						onClose(session, new CloseReason(null, "Connection expired (run for more than 2 days)"));
+
+					if (System.currentTimeMillis() - _lastActivityTime > 3 * 60 * 60 * 1000) // 3 hours
+						onClose(session, new CloseReason(null, "Connection idle for more than 3 hours"));
 				}
 			}
 		}.start();
@@ -193,8 +202,12 @@ public class JsonWebsocketEndpoint extends Endpoint {
 							fullCmd.add(mArray.get(i).toString());
 					}
 
-					if (!commander.isAlive())
+					if (!commander.isAlive()) {
+						final JAliEnCOMMander comm = new JAliEnCOMMander(commander.getUser(), commander.getCurrentDir(), commander.getSite(), out);
+						commander = comm;
+
 						commander.start();
+					}
 
 					// Send the command to executor and send the result back to
 					// client via OutputStream
@@ -210,6 +223,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					out.setMetaInfo("site", commander.getSite());
 
 					waitCommandFinish();
+					_lastActivityTime = System.currentTimeMillis();
 				}
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
