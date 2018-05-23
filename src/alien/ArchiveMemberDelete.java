@@ -163,9 +163,12 @@ public class ArchiveMemberDelete {
 			File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp);
 			ArrayList<String> listOfFiles = new ArrayList<>();
 			final File[] listing = folder.listFiles();
-			if (listing != null)
-				for (File file : listing)
-					listOfFiles.add(file.getName());
+			if (listing == null) {
+				System.err.println("Failed to get list of files in local folder. Break");
+				return;
+			}
+			for (File file : listing)
+				listOfFiles.add(file.getName());
 
 			System.out.println("\tZipping the new archive");
 			OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
