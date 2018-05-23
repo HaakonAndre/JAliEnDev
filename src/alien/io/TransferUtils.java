@@ -188,8 +188,17 @@ public final class TransferUtils {
 	/**
 	 * @param l
 	 * @param se
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
 	 */
 	public static int mirror(final LFN l, final SE se) {
 		return mirror(l, se, null);
@@ -200,8 +209,17 @@ public final class TransferUtils {
 	 * @param se
 	 * @param onCompletionRemoveReplica
 	 *            a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
 	 */
 	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica) {
 		return mirror(l, se, onCompletionRemoveReplica, 3);
@@ -214,8 +232,17 @@ public final class TransferUtils {
 	 *            a move mirror operation, on successful transfer remove the mirror from this SE
 	 * @param maxAttempts
 	 *            maximum number of attempts to copy this file
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
 	 */
 	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica, final int maxAttempts) {
 		if (l == null || !l.exists || !l.isFile() || se == null)
@@ -290,8 +317,17 @@ public final class TransferUtils {
 	/**
 	 * @param guid
 	 * @param se
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
 	 */
 	public static int mirror(final GUID guid, final SE se) {
 		return mirror(guid, se, true, null);
@@ -302,8 +338,17 @@ public final class TransferUtils {
 	 * @param se
 	 * @param onCompletionRemoveReplica
 	 *            a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
 	 */
 	public static int mirror(final GUID guid, final SE se, final String onCompletionRemoveReplica) {
 		return mirror(guid, se, true, onCompletionRemoveReplica);
@@ -315,8 +360,17 @@ public final class TransferUtils {
 	 * @param checkPreviousTransfers
 	 *            if <code>true</code> then the transfer queue is checked for active transfers identical to the requested one. You should always pass <code>true</code> unless you are sure no such
 	 *            transfer could previously exist (either because it was just checked or whatever)
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
 	 */
 	public static int mirror(final GUID guid, final SE se, final boolean checkPreviousTransfers) {
 		return mirror(guid, se, checkPreviousTransfers, null);
@@ -332,8 +386,17 @@ public final class TransferUtils {
 	 *            transfer could previously exist (either because it was just checked or whatever)
 	 * @param onCompletionRemoveReplica
 	 *            a move mirror operation, on successful transfer remove the mirror from this SE
-	 * @return the transfer ID, <code>0</code> in case the file is already on the target SE, or a negative number in case of problems (-1=wrong parameters, -2=database connection missing, -3=cannot
-	 *         locate real pfns -4=the insert query failed, -5=insert query didn't generate a transfer ID. -6=cannot locate the archive LFN to mirror (for a file inside a zip archive))
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
 	 */
 	public static int mirror(final GUID guid, final SE se, final boolean checkPreviousTransfers, final String onCompletionRemoveReplica) {
 		if (guid == null || !guid.exists() || se == null)
