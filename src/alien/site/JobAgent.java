@@ -27,8 +27,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.bouncycastle.util.test.Test;
-
 import alien.api.JBoxServer;
 import alien.api.aaa.TokenCertificateType;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -199,13 +197,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 
 		monitor.addMonitoring("jobAgent-TODO", this);
-		
+
 		try {
-			path = Paths.get(Test.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			path = Paths.get(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		} catch (URISyntaxException e) {
-			System.err.println("Could not obtain AliEn jar path. Try exporting the classpath to env: " + e.toString());
+			System.err.println("Could not obtain AliEn jar path: " + e.toString());
 		}
-		
+
 	}
 
 	@Override
@@ -237,7 +235,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
 					queueId = ((Long) matchedJob.get("queueId")).longValue();
 					username = (String) matchedJob.get("User");
-					jobToken = (String) matchedJob.get("jobToken"); //TokenCertificate TokenKey 
+					jobToken = (String) matchedJob.get("jobToken"); // TokenCertificate TokenKey
 					tokenCert = (String) matchedJob.get("TokenCertificate");
 					tokenKey = (String) matchedJob.get("TokenKey");
 
@@ -247,12 +245,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 					System.out.println(jdl.getExecutable());
 					System.out.println(username);
 					System.out.println(queueId);
-					System.out.println(jobToken);       
+					System.out.println(jobToken);
 
 					// process payload
 					handleJob();
 
-				    cleanup();
+					cleanup();
 				}
 				else {
 					if (matchedJob != null && matchedJob.containsKey("Error")) {
@@ -289,27 +287,27 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		totalJobs++;
 		try {
-			
+
 			if (!createWorkDir()) {
 				changeStatus(JobStatus.ERROR_IB);
 				return;
 			}
-			
+
 			logger.log(Level.INFO, "Started JA with: " + jdl);
 
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
-			changeStatus(JobStatus.STARTED);      
+			changeStatus(JobStatus.STARTED);
 
-			//Set up constraints
-			getMemoryRequirements();      
+			// Set up constraints
+			getMemoryRequirements();
 
-			final int selfProcessID = MonitorFactory.getSelfProcessID();      
+			final int selfProcessID = MonitorFactory.getSelfProcessID();
 			final List<String> launchCommand = generateLaunchCommand(selfProcessID);
 
 			commander.q_api.putJobLog(queueId, "trace", "Starting JobWrapper");
 
-			launchJobWrapper(launchCommand,true);   
+			launchJobWrapper(launchCommand, true);
 
 		} catch (final Exception e) {
 			System.err.println("Unable to handle job");
@@ -396,10 +394,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 			return false;
 		}
 
-		timeleft=87000; //TODO: Remove
+		timeleft = 87000; // TODO: Remove
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
-			return false; //TODO: Put back
+			return false; // TODO: Put back
 		}
 
 		siteMap.put("Disk", Long.valueOf(space));
@@ -481,7 +479,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 */
 	public static void main(final String[] args) throws IOException {
 		final JobAgent jao = new JobAgent();
-		jao.run();    
+		jao.run();
 
 	}
 
@@ -538,19 +536,21 @@ public class JobAgent implements MonitoringObject, Runnable {
 			final Scanner scanner = new Scanner(new File("/proc/" + processID + "/cmdline"));
 			List<String> cmd = new ArrayList<String>();
 
-			String foundArg;
+			String readArg;
 			while (scanner.hasNext()) {
-				foundArg = (scanner.useDelimiter("\0").next());
-				
-				switch(foundArg) {
-				case "-cp" :
-					scanner.useDelimiter("\0").next(); 
+				readArg = (scanner.useDelimiter("\0").next());
+
+				switch (readArg) {
+				case "-cp":
+					scanner.useDelimiter("\0").next();
 					break;
-				case "alien.site.JobAgent" :
+				case "alien.site.JobAgent":
+					cmd.add("-cp");
+					cmd.add(path.toString());
 					cmd.add("alien.site.JobWrapper");
 					break;
-				default :
-					cmd.add(foundArg);
+				default:
+					cmd.add(readArg);
 				}
 			}
 			scanner.close();
@@ -560,57 +560,57 @@ public class JobAgent implements MonitoringObject, Runnable {
 			System.err.println("Could not generate JobWrapper launch command: " + e.getStackTrace());
 			return null;
 		}
-	} 
+	}
 
-	/* 
-  /**
+	/*
+	 * /**
 	 * 
-	 * For testing purposes only. DO NOT USE. 
+	 * For testing purposes only. DO NOT USE.
 	 * 
 	 * @param processID
+	 * 
 	 * @return Command w/arguments for starting the JobWrapper, based on the command used for the JobAgent
 	 */
-	/* public List<String> generateLaunchCommand(int processID) throws InterruptedException {
+	/*
+	 * public List<String> generateLaunchCommand(int processID) throws InterruptedException {
+	 * 
+	 * List<String> cmd = new ArrayList<String>();
+	 * 
+	 * switch(containerPlatform){
+	 * case "SINGULARITY": Collections.addAll(cmd, "singularity", "exec", "/tmp/mycontainer", "java", "-cp");
+	 * case "DOCKER": Collections.addAll(cmd, "docker", "run", "mycontainer", "java", "-cp");
+	 * 
+	 * }
+	 * 
+	 * try {
+	 * final Scanner scanner = new Scanner(new File("/proc/" + processID + "/cmdline"));
+	 * 
+	 * while (scanner.hasNext()) {
+	 * cmd.add(scanner.useDelimiter("\0").next());
+	 * 
+	 * if (cmd.get(cmd.size() - 1).contains("JobAgent"))
+	 * cmd.set(cmd.size() - 1, "alien.site.JobWrapper");
+	 * }
+	 * scanner.close();
+	 * 
+	 * return cmd;
+	 * } catch (final IOException e) {
+	 * System.err.println("Could not generate JobWrapper launch command: " + e.getStackTrace());
+	 * return null;
+	 * }
+	 * }
+	 */
 
-    List<String> cmd = new ArrayList<String>();
-
-    switch(containerPlatform){
-    case "SINGULARITY": Collections.addAll(cmd, "singularity", "exec", "/tmp/mycontainer", "java", "-cp");
-    case "DOCKER": Collections.addAll(cmd, "docker", "run", "mycontainer", "java", "-cp");
-
-    }
-
-    try {
-      final Scanner scanner = new Scanner(new File("/proc/" + processID + "/cmdline"));
-
-      while (scanner.hasNext()) {
-        cmd.add(scanner.useDelimiter("\0").next());
-
-        if (cmd.get(cmd.size() - 1).contains("JobAgent"))
-          cmd.set(cmd.size() - 1, "alien.site.JobWrapper");
-      }
-      scanner.close();
-
-      return cmd;
-    } catch (final IOException e) {
-      System.err.println("Could not generate JobWrapper launch command: " + e.getStackTrace());
-      return null;
-    }
-  } */
-
-	public int launchJobWrapper(List<String> launchCommand, boolean monitorJob){
+	public int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
 
 		System.err.println("Launching jobwrapper using the command: " + launchCommand.toString());
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
-		pBuilder.redirectError(Redirect.appendTo(new File("/tmp", "stderr"))); //TODO: Remove after testing
-		
+		pBuilder.redirectError(Redirect.appendTo(new File("/tmp", "stderr"))); // TODO: Remove after testing
+
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
-		
-		if (!env.containsKey("CLASSPATH"))
-			pBuilder.environment().put("CLASSPATH", path.toString());
-		
+
 		pBuilder.directory(tempDir);
 
 		final Process p;
@@ -663,15 +663,14 @@ public class JobAgent implements MonitoringObject, Runnable {
 		mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
 		final Vector<Integer> child = mj.getChildren();
 		if (child == null || child.size() <= 1) {
-			System.err.println("Can't get children. Failed to execute? " + launchCommand.toString()
-			+ " child: " + child);
+			System.err.println("Can't get children. Failed to execute? " + launchCommand.toString() + " child: " + child);
 			return -1;
 		}
 		System.out.println("Child: " + child.get(1).toString());
 
 		if (monitorJob) {
 			payloadPID = child.get(1).intValue();
-			apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); 
+			apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName);
 			mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
 			final String fs = checkProcessResources();
 			if (fs == null)
@@ -720,13 +719,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			return code;
 		} catch (final InterruptedException ie) {
-			System.out.println(
-					"Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
+			System.out.println("Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
 			return -2;
 		} finally {
 			t.cancel();
 		}
-	}  
+	}
 
 	private void sendProcessResources() {
 		// runtime(date formatted) start cpu(%) mem cputime rsz vsize ncpu
@@ -739,7 +737,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		commander.q_api.putJobLog(queueId, "proc", procinfo);
 	}
 
-	private String checkProcessResources() { //checks and maintains sandbox
+	private String checkProcessResources() { // checks and maintains sandbox
 		String error = null;
 		System.out.println("Checking resources usage");
 
@@ -804,7 +802,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		} catch (final IOException e) {
 			System.out.println("Problem with the monitoring objects: " + e.toString());
-		} catch (final NoSuchElementException e){
+		} catch (final NoSuchElementException e) {
 			System.out.println("Warning: an error occurred reading monitoring data:  ");
 			e.printStackTrace();
 		}
@@ -855,8 +853,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 
 		commander.q_api.putJobLog(queueId, "trace", "Created workdir: " + jobWorkdir);
-		
-		//chdir
+
+		// chdir
 		System.setProperty("user.dir", jobWorkdir);
 
 		return true;
