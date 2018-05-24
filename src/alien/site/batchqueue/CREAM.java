@@ -2,7 +2,6 @@ package alien.site.batchqueue;
 
 import java.sql.Timestamp;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import alien.log.LogUtils;
@@ -12,9 +11,9 @@ import alien.log.LogUtils;
  */
 public class CREAM extends BatchQueue {
 
-	private boolean updateClassad = false;
+	// private boolean updateClassad = false;
 	private HashMap<String, String> commands = new HashMap<>();
-	private Map<String, String> environment = System.getenv();
+	// private Map<String, String> environment = System.getenv();
 
 	/**
 	 * @param conf
@@ -30,14 +29,14 @@ public class CREAM extends BatchQueue {
 
 		// Environment for submit
 
-//		String fix_env = "";
-//		if (environment.containsKey("LD_LIBRARY_PATH")) {
-//			fix_env += environment.get("LD_LIBRARY_PATH");
-//			if (environment.containsKey("JALIEN_ROOT")) {
-//				fix_env = fix_env.replaceAll(environment.get("JALIEN_ROOT") + "+[^:]+:?", "");
-//				fix_env = "unset X509_CERT_DIR; LD_LIBRARY_PATH=" + fix_env;
-//			}
-//		}
+		// String fix_env = "";
+		// if (environment.containsKey("LD_LIBRARY_PATH")) {
+		// fix_env += environment.get("LD_LIBRARY_PATH");
+		// if (environment.containsKey("JALIEN_ROOT")) {
+		// fix_env = fix_env.replaceAll(environment.get("JALIEN_ROOT") + "+[^:]+:?", "");
+		// fix_env = "unset X509_CERT_DIR; LD_LIBRARY_PATH=" + fix_env;
+		// }
+		// }
 
 		// Commands
 		commands.put("submitcmd", (config.containsKey("ce_submitcmd") ? (String) config.get("ce_submitcmd") : "glite-ce-job-submit")); // need fix_env?

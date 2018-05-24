@@ -41,7 +41,7 @@ public class LogUtils {
 			logger.addHandler(fh);
 			logger.setLevel(Level.FINE);
 		} catch (SecurityException | IOException e) {
-			// e.printStackTrace(); // ignore?
+			System.err.println("Cannot configure the logging manager: "+e.getMessage());
 		}
 
 		return logger;

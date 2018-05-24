@@ -169,7 +169,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		siteMap = (new SiteMap()).getSiteParameters(env);
 
-		hostName = (String) siteMap.get("Host");
+		hostName = (String) siteMap.get("Localhost");
 		// alienCm = (String) siteMap.get("alienCm");
 		packMan = (PackMan) siteMap.get("PackMan");
 
@@ -178,6 +178,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
 		workdir = (String) siteMap.get("workdir");
+
+		origTtl = ((Integer) siteMap.get("TTL")).intValue();
 
 		Hashtable<Long, String> cpuinfo;
 		try {

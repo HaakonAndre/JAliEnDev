@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -45,7 +46,7 @@ public class ArchiveMemberDelete {
 			parser.accepts("list").withRequiredArg(); // Like "collection.xml"
 			final OptionSet options = parser.parse(args);
 
-			// Read directory names from file
+			// Read archive members names from file
 			final String collectionName = (String) options.valueOf("list");
 
 			File collectionFile = new File(collectionName);
@@ -71,27 +72,26 @@ public class ArchiveMemberDelete {
 
 	private static void deleteArchiveMember(final String xmlEntry) {
 		// TODO delete archive with 1 member
-		// TODO create sh run script > stdout.log
-		// TODO send messages for validation script
 		LFN remoteLFN = commander.c_api.getLFN(xmlEntry);
 
-		if (!remoteLFN.exists) {
-			System.err.println("LFN doesn't exist: " + remoteLFN.getCanonicalName());
+		if (remoteLFN == null || !remoteLFN.exists) {
+			System.err.println("LFN doesn't exist: " + xmlEntry);
 			return;
 		}
 
 		final String remoteFile = remoteLFN.getCanonicalName();
+		final String remotePath = remoteLFN.getParentName();
+		final long remoteFileSize = remoteLFN.getSize();
 
 		System.out.println("Processing " + remoteFile);
 
 		// If the file is not a member of any archives, just delete it
-		if (remoteLFN.isReal()) {
-			System.out.println("\t" + remoteFile + "is a real file, we'll simply delete it");
+		if (commander.c_api.getRealLFN(remoteFile).equals(remoteLFN)) {
+			System.out.println("\t" + remoteFile + " is a real file, we'll simply delete it");
 
 			// Speed up things by calling xrootd delete directly
 			try {
-				List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(),
-						AccessType.DELETE, remoteLFN, null, null)).getPFNs();
+				List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
 
 				Iterator<PFN> it = remotePFN.iterator();
 				while (it.hasNext()) {
@@ -111,29 +111,30 @@ public class ArchiveMemberDelete {
 			}
 
 			commander.c_api.removeLFN(remoteFile);
-			System.out.println(remoteFile + " done\n");
+			System.out.println(remoteFile + " done");
+			System.out.println("Gained " + remoteFileSize + " bytes of disk space\n");
 			return;
 		}
 
-		try {
+		try (PrintWriter validation = new PrintWriter("validation_error.message")) {
 			final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile);
-			final String remotePath = remoteArchiveLFN.getParentName();
+			if (remoteArchiveLFN == null || !remoteArchiveLFN.exists) {
+				System.err.println("Archive for " + remoteFile + " not found in " + remotePath);
+				validation.print("File not found");
+				return;
+			}
+
 			final String remoteArchive = remoteArchiveLFN.getCanonicalName();
 			archiveName = remoteArchiveLFN.getFileName();
 			memberName = remoteLFN.getFileName();
 			final long jobID = remoteArchiveLFN.jobid;
-
-			if (!remoteLFN.exists) {
-				System.err.println("\tThere is no " + archiveName + " in " + remotePath);
-				return;
-			}
+			final long timestamp = System.currentTimeMillis();
 
 			// Use this for debugging
 			// final ByteArrayOutputStream out = new ByteArrayOutputStream();
 			// commander.setLine(new JSONPrintWriter(out), null);
 
-			File localArchive = new File(
-					System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName);
+			File localArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp + archiveName);
 			if (localArchive.exists()) {
 				localArchive.delete();
 			}
@@ -143,27 +144,33 @@ public class ArchiveMemberDelete {
 			System.out.println("\tDownloading the archive from the Grid");
 			commander.c_api.downloadFile(remoteArchive, localArchive, "-silent");
 			if (!localArchive.exists()) {
-				System.err.println("\tFailed to download remote archive " + remoteArchive);
+				System.err.println("Failed to download remote archive " + remoteArchive);
+				validation.print("Download failed");
 				return;
 			}
 
 			// Unpack to local directory and zip again without member file
 			//
 			System.out.println("\tUnpacking to local directory");
-			if (!unzip(jobID)) {
-				System.err.println("\tFailed to extract files from archive: " + System.getProperty("user.dir")
-						+ System.getProperty("file.separator") + jobID + archiveName);
+			if (!unzip(timestamp)) {
+				System.err.println("Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp + archiveName);
+				validation.print("Extraction failed");
 				return;
 			}
 
-			File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
+			File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp);
 			ArrayList<String> listOfFiles = new ArrayList<>();
-			for (File file : folder.listFiles())
+			final File[] listing = folder.listFiles();
+			if (listing == null) {
+				System.err.println("Failed to get list of files in local folder");
+				return;
+			}
+			for (File file : listing)
 				listOfFiles.add(file.getName());
 
 			System.out.println("\tZipping the new archive");
 			OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
-			entry.createZip(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
+			entry.createZip(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp);
 
 			// Upload the new archive to the Grid
 			//
@@ -172,9 +179,14 @@ public class ArchiveMemberDelete {
 
 			// Create exactly the same number of replicas as the original archive had
 			int nreplicas = commander.c_api.getPFNsToRead(remoteArchiveLFN, null, null).size();
-			File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID
-					+ System.getProperty("file.separator") + archiveName);
+			File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp + System.getProperty("file.separator") + archiveName);
 			commander.c_api.uploadFile(newArchive, remoteArchive + ".new", "-w", "-S", "disk:" + nreplicas);
+
+			if (commander.c_api.getLFN(remoteArchive + ".new") == null || !commander.c_api.getLFN(remoteArchive + ".new").exists) {
+				System.err.println("Failed to upload archive " + remoteArchive + ".new");
+				validation.print("Upload failed");
+				return;
+			}
 
 			// Delete the members links of old archive
 			//
@@ -189,10 +201,9 @@ public class ArchiveMemberDelete {
 			//
 			System.out.println("\tDeleting old remote archive");
 
-			// Speed up things by calling xrootd delete directly
+			// Remove physical replicas of the old archive
 			try {
-				List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(),
-						AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
+				List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
 
 				Iterator<PFN> it = remotePFN.iterator();
 				while (it.hasNext()) {
@@ -211,7 +222,7 @@ public class ArchiveMemberDelete {
 				e.getCause().printStackTrace();
 			}
 
-			// Still need to call rm to clean up possible db leftovers
+			// Remove lfn of the old archive
 			commander.c_api.removeLFN(remoteArchive);
 
 			// Rename uploaded archive
@@ -219,16 +230,34 @@ public class ArchiveMemberDelete {
 			System.out.println("\tRenaming uploaded archive");
 			commander.c_api.moveLFN(remoteArchive + ".new", remoteArchive);
 
+			if (commander.c_api.getLFN(remoteArchive) == null || !commander.c_api.getLFN(remoteArchive).exists) {
+				System.err.println("Failed to rename the archive " + remoteArchive);
+				validation.print("Rename failed");
+				return;
+			}
+
 			// Register files in the catalogue
 			//
 			System.out.println("\tRegistering files in the catalogue");
-			CatalogueApiUtils.registerEntry(entry, remotePath + System.getProperty("file.separator"),
-					commander.getUser());
+			CatalogueApiUtils.registerEntry(entry, remotePath + System.getProperty("file.separator"), commander.getUser());
+
+			for (String file : listOfFiles) {
+				if (commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file) == null
+						|| !commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file).exists) {
+					System.err.println("Failed to register entry " + remotePath + file);
+					validation.print("Register failed");
+					return;
+				}
+			}
 
 			// Set jobID for the new archive LFN
 			commander.c_api.getLFN(remoteArchive).jobid = jobID;
 
-			System.out.println(remoteFile + " done\n");
+			System.out.println(remoteFile + " done");
+			System.out.println(memberName + " was " + remoteLFN.getSize() + " bytes");
+			System.out.println("Old archive was " + localArchive.length() + " bytes");
+			System.out.println("New archive is " + newArchive.length() + " bytes");
+			System.out.println("Gained " + (localArchive.length() - newArchive.length()) + " bytes of disk space\n");
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
@@ -246,23 +275,24 @@ public class ArchiveMemberDelete {
 	 * @param jobID
 	 * @throws IOException
 	 */
-	private static boolean unzip(final long jobID) throws IOException {
+	private static boolean unzip(final long timestamp) throws IOException {
 
-		File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + jobID);
+		File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp);
 		if (!destDir.exists()) {
 			destDir.mkdir();
-		} else {
+		}
+		else {
 			// Clean up temp directory if there are files in it
 			String[] destDirEntries = destDir.list();
-			for (String s : destDirEntries) {
-				File currentFile = new File(destDir.getPath(), s);
-				currentFile.delete();
-			}
+			if (destDirEntries != null)
+				for (String s : destDirEntries) {
+					File currentFile = new File(destDir.getPath(), s);
+					currentFile.delete();
+				}
 		}
 
 		// Start unpacking the archive
-		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(
-				System.getProperty("user.dir") + System.getProperty("file.separator") + jobID + archiveName))) {
+		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
@@ -277,7 +307,8 @@ public class ArchiveMemberDelete {
 				if (!entry.isDirectory()) {
 					// if the entry is a file, extracts it
 					extractFile(zipIn, filePath);
-				} else {
+				}
+				else {
 					// if the entry is a directory, make the directory
 					File dir = new File(filePath);
 					dir.mkdir();
@@ -289,8 +320,7 @@ public class ArchiveMemberDelete {
 			zipIn.close();
 			return true;
 		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
-			System.err.println("No such file: " + System.getProperty("user.dir") + System.getProperty("file.separator")
-					+ jobID + archiveName);
+			System.err.println("No such file: " + System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp + archiveName);
 			return false;
 		}
 	}

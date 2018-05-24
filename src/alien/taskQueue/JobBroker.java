@@ -73,7 +73,7 @@ public class JobBroker {
 
 			// TODO: to fully test, print output to JobBroker/host file
 			if (!TaskQueueUtils.updateHostStatus((String) matchRequest.get("Host"), "ACTIVE")) {
-				logger.log(Level.INFO, "Updating queue failed!");
+				logger.log(Level.INFO, "Updating host failed!");
 				matchAnswer.put("Error", "Updating host failed");
 				return matchAnswer;
 			}
@@ -178,7 +178,7 @@ public class JobBroker {
 					GetTokenCertificate gtc = new GetTokenCertificate((AliEnPrincipal) matchRequest.get("AliEnPrincipal"), username, TokenCertificateType.JOB_TOKEN,
 							"queueid=" + queueId + "/resubmission=" + resubmission, 1);
 					try {
-						Dispatcher.execute(gtc);
+						gtc = Dispatcher.execute(gtc);
 						matchAnswer.put("TokenCertificate", gtc.getCertificateAsString());
 						matchAnswer.put("TokenKey", gtc.getPrivateKeyAsString());
 					} catch (Exception e) {

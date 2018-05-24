@@ -280,9 +280,17 @@ public class DispatchSSLClient extends Thread {
 		Object o;
 		try {
 			o = c.ois.readObject();
-		} catch (final ClassNotFoundException e) {
+		} catch (final ClassNotFoundException | IOException e) {
 			throw new IOException(e.getMessage());
 		}
+
+		if (o == null) {
+			logger.log(Level.WARNING, "Read a null object as reply to this request: " + r);
+			return null;
+		}
+
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, "Got back an object of type " + o.getClass().getCanonicalName() + " : " + o);
 
 		@SuppressWarnings("unchecked")
 		final T reply = (T) o;

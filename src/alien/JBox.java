@@ -56,6 +56,6 @@ public class JBox {
 		JAKeyStore.loadKeyStore();
 
 		JBoxServer.startJBoxService(iDebug);
-		TomcatServer.startTomcatServer(iDebug);
+		TomcatServer.startTomcatServer();
 	}
 }

@@ -304,7 +304,7 @@ public class TransferBroker {
 		else {
 			lfn = LFNUtils.getLFN(sLFN);
 
-			if (!lfn.exists) {
+			if (lfn==null || !lfn.exists) {
 				logger.log(Level.WARNING, "LFN '" + sLFN + "' doesn't exist in the catalogue for transfer ID " + transferId);
 				markTransfer(transferId, Transfer.FAILED_SYSTEM, "LFN doesn't exist in the catalogue");
 				return null;

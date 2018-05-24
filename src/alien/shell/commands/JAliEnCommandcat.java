@@ -107,9 +107,9 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 		silent();
 
 		try {
-
-			cp.start();
-			while (cp.isAlive()) {
+			final Thread backgroundCP = new Thread(cp);
+			backgroundCP.start();
+			while (backgroundCP.isAlive()) {
 				Thread.sleep(500);
 				commander.pending();
 			}

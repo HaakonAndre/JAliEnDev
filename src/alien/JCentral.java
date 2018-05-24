@@ -36,7 +36,7 @@ public class JCentral {
 			// SimpleCatalogueApiService catalogueAPIService = new SimpleCatalogueApiService();
 			// catalogueAPIService.start();
 			JAKeyStore.loadKeyStore();
-			TomcatServer.startTomcatServer(0);
+			TomcatServer.startTomcatServer();
 			DispatchSSLServer.runService();
 			
 		} catch (final Exception e) {

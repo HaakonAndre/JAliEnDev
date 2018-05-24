@@ -63,18 +63,6 @@ public class ComputingElement extends Thread {
 	 */
 	public ComputingElement() {
 		try {
-			// try {
-			// if (!JAKeyStore.loadKeyStore()) {
-			// logger.severe("Grid Certificate could not be loaded.");
-			// System.err.println("Grid Certificate could not be loaded.");
-			// System.err.println("Exiting...");
-			// return;
-			// }
-			// } catch (final Exception e) {
-			// logger.log(Level.SEVERE, "Error loading the key", e);
-			// System.err.println("Error loading the key");
-			// }
-
 			config = ConfigUtils.getConfigFromLdap();
 			site = (String) config.get("site_accountname");
 			getSiteMap();
@@ -263,17 +251,38 @@ public class ComputingElement extends Thread {
 		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
 		ttl_hours = ttl_hours / 3600;
 
-		final String[] token_certificate_full = getTokenCertificate(ttl_hours / 24);
-		final String token_cert_str = token_certificate_full[0];
-		final String token_key_str = token_certificate_full[1];
+		// get the jobagent token
+		final String[] token_certificate_full = getTokenCertificate(ttl_hours / 24 + 1);
+		final String token_cert_str = token_certificate_full[0].trim();
+		final String token_key_str = token_certificate_full[1].trim();
 
-		before += "echo 'Using token certificate'\n" + "mkdir -p " + host_tempdir + "\n" + "file=" + cert_file + "\n" + "cat >" + cert_file + " <<EOF\n" + token_cert_str + "EOF\n" + "chmod 0400 "
-				+ cert_file + "\n" + "export JALIEN_TOKEN_CERT=" + cert_file + ";\n" + "echo USING JALIEN_TOKEN_CERT\n" + "file=" + key_file + "\n" + "cat >" + key_file + " <<EOF\n" + token_key_str
-				+ "EOF\n" + "chmod 0400 " + key_file + "\n" + "export JALIEN_TOKEN_KEY=" + key_file + ";\n" + "echo USING JALIEN_TOKEN_KEY\n";
+		// prepare the jobagent token certificate
+		before += "export JALIEN_TOKEN_CERT=\"" + token_cert_str + "\";\n" + "export JALIEN_TOKEN_KEY=\"" + token_key_str + "\";\n";
 
-		after += "rm -rf " + cert_file + "\n";
-		after += "rm -rf " + key_file + "\n";
-		after += "rm -rf jobagent.jar\n";
+		// pass environment variables
+		if (config.containsKey("host_logdir") || config.containsKey("site_logdir"))
+			before += "export LOGDIR='" + (config.containsKey("host_logdir") ? config.get("host_logdir") : config.get("site_logdir")) + "'\n";
+		if (config.containsKey("host_cachedir") || config.containsKey("site_cachedir"))
+			before += "export CACHEDIR='" + (config.containsKey("host_cachedir") ? config.get("host_cachedir") : config.get("site_cachedir")) + "'\n";
+		if (config.containsKey("host_tmpdir") || config.containsKey("site_tmpdir"))
+			before += "export TMPDIR='" + (config.containsKey("host_tmpdir") ? config.get("host_tmpdir") : config.get("site_tmpdir")) + "'\n";
+		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
+			before += "export WORKDIR='" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "'\n";
+		before += "export ALIEN_CM_AS_LDAP_PROXY='" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "'\n";
+		before += "export site='" + site + "'\n";
+		before += "export CE='" + siteMap.get("CE") + "'\n";
+		before += "export TTL='" + siteMap.get("TTL") + "'\n";
+		if (config.containsKey("ce_installationmethod"))
+			before += "export installationMethod='" + config.get("ce_installationmethod") + "'\n";
+		if (config.containsKey("ce_cerequirements"))
+			before += "export cerequirements='" + config.get("ce_cerequirements") + "'\n";
+		if (config.containsKey("ce_partition"))
+			before += "export partition='" + config.get("ce_partition") + "'\n";
+		if (siteMap.containsKey("closeSE"))
+			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
+
+		// cleanup jar
+		after += "rm -f alien.jar\n";
 
 		if (config.containsKey("ce_installmethod") && config.get("ce_installmethod").equals("CVMFS"))
 			startup_script = runFromCVMFS();
@@ -308,7 +317,7 @@ public class ComputingElement extends Thread {
 		GetTokenCertificate gtc = new GetTokenCertificate(commander.getUser(), commander.getUsername(), TokenCertificateType.JOB_AGENT_TOKEN, null, ttl_days);
 
 		try {
-			Dispatcher.execute(gtc);
+			gtc = Dispatcher.execute(gtc);
 			final String[] token_cert_and_key = new String[2];
 			token_cert_and_key[0] = gtc.getCertificateAsString();
 			token_cert_and_key[1] = gtc.getPrivateKeyAsString();
@@ -333,13 +342,13 @@ public class ComputingElement extends Thread {
 		// return cvmfs_path + "/alienv " + alien_version + " -jalien jalien";
 
 		// return System.getenv("HOME") + "/jalien/jalien"; //TODO: local version
-		return "curl -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\n" + "echo [DEBUG] Downloaded the jar package\n"
-				+ "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -jar alien.jar\n";
+		return "curl -k -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\n"
+				+ "/cvmfs/alice.cern.ch/x86_64-2.6-gnu-4.1.2/Packages/AliEn/v2-19-395/java/MonaLisa/java/bin/java -cp alien.jar alien.site.JobAgent\n";
 	}
 
 	private static String runFromDefault() {
 		logger.info("The worker node will install with the no method");
-		return "java -jar alien.jar\n";
+		return "curl -k -o alien.jar \"https://alien.cern.ch/jalien/alien.jar\"\njava -cp alien.jar alien.site.JobAgent\n";
 	}
 
 	// Prepares a hash to create the sitemap
@@ -379,17 +388,6 @@ public class ComputingElement extends Thread {
 		// environment field can have n values
 		if (config.containsKey("ce_environment"))
 			ce_environment = getValuesFromLDAPField(config.get("ce_environment"));
-
-		// submit,status and kill cmds can have n arguments
-		if (config.containsKey("ce_submitcmd") && config.containsKey("ce_submitarg")) {
-			// TODO
-		}
-		if (config.containsKey("ce_statuscmd") && config.containsKey("ce_statusarg")) {
-			// TODO
-		}
-		if (config.containsKey("ce_killcmd") && config.containsKey("ce_killarg")) {
-			// TODO
-		}
 
 		if (host_environment != null)
 			config.putAll(host_environment);

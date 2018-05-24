@@ -665,8 +665,8 @@ public class LFNUtils {
 		}
 
 		if ((flags & FIND_BIGGEST_VERSION) != 0) {
-			String tag = query.substring(0, query.indexOf(":"));
-			return findByMetadata(path, processedPattern, tag, query, flags);
+			final String tag = query.substring(0, query.indexOf(":"));
+			return findByMetadata(path, processedPattern, tag, query);
 		}
 
 		final Set<LFN> ret;
@@ -755,10 +755,9 @@ public class LFNUtils {
 	 * @param pattern
 	 * @param tag
 	 * @param query
-	 * @param flags
 	 * @return the files that match the metadata query
 	 */
-	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query, final int flags) {
+	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query) {
 		final Set<LFN> ret = new LinkedHashSet<>();
 
 		if (monitor != null)
@@ -775,7 +774,7 @@ public class LFNUtils {
 			db.setReadOnly(true);
 
 			for (final String tableName : getTagTableNames(path, tag)) {
-				String q = "SELECT file from (SELECT @rn :=  CASE WHEN @prev_dir <> dir_number THEN 1 ELSE @rn+1 END AS rn, @prev_dir:=dir_number, file FROM " + Format.escSQL(tableName) + " "
+				final String q = "SELECT file from (SELECT @rn :=  CASE WHEN @prev_dir <> dir_number THEN 1 ELSE @rn+1 END AS rn, @prev_dir:=dir_number, file FROM " + Format.escSQL(tableName) + " "
 						+ Format.escSQL(tag) + ", (SELECT @rn := 0) r WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
 						+ Format.escSQL(query.replace(":", ".") + "having rn=1 order by dir_number, version desc) x");
 
@@ -1191,7 +1190,7 @@ public class LFNUtils {
 
 		final List<LFN> ret = new ArrayList<>();
 
-		LFN parentDir = archive.getParentDir();
+		final LFN parentDir = archive.getParentDir();
 		if (parentDir.exists) {
 			final List<LFN> sameDirListing = parentDir.list();
 
@@ -1236,13 +1235,16 @@ public class LFNUtils {
 
 		UUID guid = null;
 
-		for (final PFN p : file.whereis())
-			if (p.pfn.startsWith("guid:/"))
-				try {
-					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
-				} catch (@SuppressWarnings("unused") final Exception e) {
-					return null;
-				}
+		final Set<PFN> listing = file.whereis();
+		if (listing != null)
+			for (final PFN p : listing)
+				if (p.pfn != null && p.pfn.startsWith("guid:/"))
+					try {
+						guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+						break;
+					} catch (@SuppressWarnings("unused") final Exception e) {
+						return null;
+					}
 
 		if (guid == null)
 			return null;

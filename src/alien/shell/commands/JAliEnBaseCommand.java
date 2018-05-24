@@ -12,7 +12,7 @@ import alien.config.ConfigUtils;
  * @author ron
  * @since June 4, 2011
  */
-public abstract class JAliEnBaseCommand extends Thread {
+public abstract class JAliEnBaseCommand implements Runnable {
 
 	/**
 	 * Logger
