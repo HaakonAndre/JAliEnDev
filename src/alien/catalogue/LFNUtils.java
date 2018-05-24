@@ -1235,8 +1235,9 @@ public class LFNUtils {
 
 		UUID guid = null;
 
-		for (final PFN p : file.whereis())
-			if (p.pfn.startsWith("guid:/"))
+		Set<PFN> listing = file.whereis();
+		for (final PFN p : listing)
+			if (p.pfn != null && p.pfn.startsWith("guid:/"))
 				try {
 					guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
 				} catch (@SuppressWarnings("unused") final Exception e) {
