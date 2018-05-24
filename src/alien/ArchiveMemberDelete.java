@@ -72,12 +72,10 @@ public class ArchiveMemberDelete {
 
 	private static void deleteArchiveMember(final String xmlEntry) {
 		// TODO delete archive with 1 member
-		// TODO create sh run script > stdout.log
-		// TODO send messages for validation script
 		LFN remoteLFN = commander.c_api.getLFN(xmlEntry);
 
 		if (remoteLFN == null || !remoteLFN.exists) {
-			System.err.println("LFN doesn't exist: " + xmlEntry + ". Abort.");
+			System.err.println("LFN doesn't exist: " + xmlEntry);
 			return;
 		}
 
@@ -88,8 +86,8 @@ public class ArchiveMemberDelete {
 		System.out.println("Processing " + remoteFile);
 
 		// If the file is not a member of any archives, just delete it
-		if (remoteLFN.isReal()) {
-			System.out.println("\t" + remoteFile + "is a real file, we'll simply delete it");
+		if (commander.c_api.getRealLFN(remoteFile).equals(remoteLFN)) {
+			System.out.println("\t" + remoteFile + " is a real file, we'll simply delete it");
 
 			// Speed up things by calling xrootd delete directly
 			try {
@@ -164,7 +162,7 @@ public class ArchiveMemberDelete {
 			ArrayList<String> listOfFiles = new ArrayList<>();
 			final File[] listing = folder.listFiles();
 			if (listing == null) {
-				System.err.println("Failed to get list of files in local folder. Break");
+				System.err.println("Failed to get list of files in local folder");
 				return;
 			}
 			for (File file : listing)
