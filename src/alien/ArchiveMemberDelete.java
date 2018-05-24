@@ -67,6 +67,10 @@ public class ArchiveMemberDelete {
 			while (xmlEntries.hasNext()) {
 				deleteArchiveMember(xmlEntries.next().getCanonicalName());
 			}
+
+			File validation = new File("validation_error.message");
+			if (validation.length() == 0)
+				validation.delete();
 		}
 	}
 
