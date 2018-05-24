@@ -73,7 +73,7 @@ public class JobBroker {
 
 			// TODO: to fully test, print output to JobBroker/host file
 			if (!TaskQueueUtils.updateHostStatus((String) matchRequest.get("Host"), "ACTIVE")) {
-				logger.log(Level.INFO, "Updating queue failed!");
+				logger.log(Level.INFO, "Updating host failed!");
 				matchAnswer.put("Error", "Updating host failed");
 				return matchAnswer;
 			}

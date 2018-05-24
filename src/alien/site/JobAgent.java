@@ -163,7 +163,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		siteMap = (new SiteMap()).getSiteParameters(env);
 
-		hostName = (String) siteMap.get("Host");
+		hostName = (String) siteMap.get("Localhost");
 		// alienCm = (String) siteMap.get("alienCm");
 		packMan = (PackMan) siteMap.get("PackMan");
 

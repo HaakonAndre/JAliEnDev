@@ -57,7 +57,7 @@ public class SiteMap {
 		} catch (final UnknownHostException e) {
 			logger.severe("Couldn't get hostname: " + e.toString());
 		}
-		siteMap.put("Host", hostName);
+		siteMap.put("Localhost", hostName);
 
 		// ALIEN_CM_AS_LDAP_PROXY to send messages upstream through VoBox (no really used anymore in JAliEn?)
 		String alienCm = hostName;
@@ -165,7 +165,7 @@ public class SiteMap {
 		if (extrasites.size() > 0)
 			siteMap.put("Extrasites", extrasites);
 
-		siteMap.put("Host", alienCm);
+		siteMap.put("Host", alienCm.split(":")[0]);
 
 		if (env.containsKey("Disk"))
 			siteMap.put("Disk", env.get("Disk"));
