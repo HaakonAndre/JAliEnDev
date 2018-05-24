@@ -173,6 +173,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		workdir = (String) siteMap.get("workdir");
 
+		origTtl = ((Integer) siteMap.get("TTL")).intValue();
+
 		Hashtable<Long, String> cpuinfo;
 		try {
 			cpuinfo = BkThread.getCpuInfo();

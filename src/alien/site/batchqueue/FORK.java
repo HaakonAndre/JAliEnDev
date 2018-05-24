@@ -2,14 +2,10 @@ package alien.site.batchqueue;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
-
-import alien.log.LogUtils;
-import alien.test.utils.Functions;
 
 /**
  * @author mmmartin
@@ -23,8 +19,8 @@ public class FORK extends BatchQueue {
 	public FORK(HashMap<String, Object> conf, Logger logr) {
 		this.config = conf;
 		logger = logr;
-		String host_logdir = (String) config.get("host_logdir");
-		logger = LogUtils.redirectToCustomHandler(logger, Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
+		// String host_logdir = (String) config.get("host_logdir");
+		// logger = LogUtils.redirectToCustomHandler(logger, Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out"));
 
 		logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountname"));
 	}
@@ -34,7 +30,6 @@ public class FORK extends BatchQueue {
 		logger.info("Submit FORK");
 
 		ArrayList<String> cmd = new ArrayList<>();
-		//cmd.add("/bin/bash");
 		cmd.add(script);
 
 		ArrayList<String> proc_output = new ArrayList<>();

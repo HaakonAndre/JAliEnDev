@@ -251,12 +251,37 @@ public class ComputingElement extends Thread {
 		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
 		ttl_hours = ttl_hours / 3600;
 
+		// get the jobagent token
 		final String[] token_certificate_full = getTokenCertificate(ttl_hours / 24 + 1);
 		final String token_cert_str = token_certificate_full[0].trim();
 		final String token_key_str = token_certificate_full[1].trim();
 
+		// prepare the jobagent token certificate
 		before += "export JALIEN_TOKEN_CERT=\"" + token_cert_str + "\";\n" + "export JALIEN_TOKEN_KEY=\"" + token_key_str + "\";\n";
 
+		// pass environment variables
+		if (config.containsKey("host_logdir") || config.containsKey("site_logdir"))
+			before += "export LOGDIR='" + (config.containsKey("host_logdir") ? config.get("host_logdir") : config.get("site_logdir")) + "'\n";
+		if (config.containsKey("host_cachedir") || config.containsKey("site_cachedir"))
+			before += "export CACHEDIR='" + (config.containsKey("host_cachedir") ? config.get("host_cachedir") : config.get("site_cachedir")) + "'\n";
+		if (config.containsKey("host_tmpdir") || config.containsKey("site_tmpdir"))
+			before += "export TMPDIR='" + (config.containsKey("host_tmpdir") ? config.get("host_tmpdir") : config.get("site_tmpdir")) + "'\n";
+		if (config.containsKey("host_workdir") || config.containsKey("site_workdir"))
+			before += "export WORKDIR='" + (config.containsKey("host_workdir") ? config.get("host_workdir") : config.get("site_workdir")) + "'\n";
+		before += "export ALIEN_CM_AS_LDAP_PROXY='" + config.get("ALIEN_CM_AS_LDAP_PROXY") + "'\n";
+		before += "export site='" + site + "'\n";
+		before += "export CE='" + siteMap.get("CE") + "'\n";
+		before += "export TTL='" + siteMap.get("TTL") + "'\n";
+		if (config.containsKey("ce_installationmethod"))
+			before += "export installationMethod='" + config.get("ce_installationmethod") + "'\n";
+		if (config.containsKey("ce_cerequirements"))
+			before += "export cerequirements='" + config.get("ce_cerequirements") + "'\n";
+		if (config.containsKey("ce_partition"))
+			before += "export partition='" + config.get("ce_partition") + "'\n";
+		if (siteMap.containsKey("closeSE"))
+			before += "export closeSE='" + siteMap.get("closeSE") + "'\n";
+
+		// cleanup jar
 		after += "rm -f alien.jar\n";
 
 		if (config.containsKey("ce_installmethod") && config.get("ce_installmethod").equals("CVMFS"))
@@ -363,17 +388,6 @@ public class ComputingElement extends Thread {
 		// environment field can have n values
 		if (config.containsKey("ce_environment"))
 			ce_environment = getValuesFromLDAPField(config.get("ce_environment"));
-
-		// submit,status and kill cmds can have n arguments
-		if (config.containsKey("ce_submitcmd") && config.containsKey("ce_submitarg")) {
-			// TODO
-		}
-		if (config.containsKey("ce_statuscmd") && config.containsKey("ce_statusarg")) {
-			// TODO
-		}
-		if (config.containsKey("ce_killcmd") && config.containsKey("ce_killarg")) {
-			// TODO
-		}
 
 		if (host_environment != null)
 			config.putAll(host_environment);
