@@ -201,12 +201,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 		} catch (URISyntaxException e) {
 			System.err.println("Could not obtain AliEn jar path: " + e.toString());
 		}
-		
 	}
 
 	@Override
 	public void run() {
-
 		logger.log(Level.INFO, "Starting JobAgent in " + hostName);
 
 		int count = jobagent_requests;
@@ -321,7 +319,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 *         execution errors
 	 */
 	private void cleanup() {
-
 		System.out.println("Copying logs...");
 		copyLogs();
 		
@@ -474,7 +471,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 		else
 			jobMaxMemoryMB = 0;
-
 	}
 
 	/**
@@ -484,7 +480,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public static void main(final String[] args) throws IOException {
 		final JobAgent jao = new JobAgent();
 		jao.run();
-
 	}
 
 	/**
@@ -535,7 +530,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * @return Command w/arguments for starting the JobWrapper, based on the command used for the JobAgent
 	 */
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
-
 		try {
 			
 			Process p = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
@@ -554,7 +548,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 					scanner.next();
 					break;
 				case "alien.site.JobAgent":
-					//cmd.add("-DAliEnConfig=.");
 					cmd.add("-cp");
 					cmd.add(path.toString());
 					cmd.add("alien.site.JobWrapper");
@@ -572,47 +565,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 	}
 
-	/*
-	 * /**
-	 * 
-	 * For testing purposes only. DO NOT USE.
-	 * 
-	 * @param processID
-	 * 
-	 * @return Command w/arguments for starting the JobWrapper, based on the command used for the JobAgent
-	 */
-	/*
-	 * public List<String> generateLaunchCommand(int processID) throws InterruptedException {
-	 * 
-	 * List<String> cmd = new ArrayList<String>();
-	 * 
-	 * switch(containerPlatform){
-	 * case "SINGULARITY": Collections.addAll(cmd, "singularity", "exec", "/tmp/mycontainer", "java", "-cp");
-	 * case "DOCKER": Collections.addAll(cmd, "docker", "run", "mycontainer", "java", "-cp");
-	 * 
-	 * }
-	 * 
-	 * try {
-	 * final Scanner scanner = new Scanner(new File("/proc/" + processID + "/cmdline"));
-	 * 
-	 * while (scanner.hasNext()) {
-	 * cmd.add(scanner.useDelimiter("\0").next());
-	 * 
-	 * if (cmd.get(cmd.size() - 1).contains("JobAgent"))
-	 * cmd.set(cmd.size() - 1, "alien.site.JobWrapper");
-	 * }
-	 * scanner.close();
-	 * 
-	 * return cmd;
-	 * } catch (final IOException e) {
-	 * System.err.println("Could not generate JobWrapper launch command: " + e.getStackTrace());
-	 * return null;
-	 * }
-	 * }
-	 */
-
 	public int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
-
 		System.err.println("Launching jobwrapper using the command: " + launchCommand.toString());
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
@@ -632,35 +585,17 @@ public class JobAgent implements MonitoringObject, Runnable {
 		ObjectOutputStream stdinObj;
 		ObjectOutputStream stdoutObj;
 
-		System.out.println("We want to change the current user \"" + commander.getUsername() + "\" to: " + username);
-
-		// TODO: Cleanup after testing
 		try {
-
 			p = pBuilder.start();
 
 			stdin = p.getOutputStream();
 			stdinObj = new ObjectOutputStream(stdin);
 
-			stdinObj.writeObject(jdl);
-			stdinObj.flush();
-			stdinObj.reset();
-
-			stdinObj.writeObject(username);
-			stdinObj.flush();
-			stdinObj.reset();
-
-			stdinObj.writeObject(queueId);
-			stdinObj.flush();
-			stdinObj.reset();
-
-			stdinObj.writeObject(tokenCert);
-			stdinObj.flush();
-			stdinObj.reset();
-
-			stdinObj.writeObject(tokenKey);
-			stdinObj.flush();
-			stdinObj.reset();
+			sendObject(jdl, stdinObj);
+			sendObject(username, stdinObj);
+			sendObject(queueId, stdinObj);
+			sendObject(tokenCert, stdinObj);
+			sendObject(tokenKey, stdinObj);
 
 			stdinObj.close();
 			stdin.close();
@@ -848,7 +783,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	}
 
 	private boolean createWorkDir() {
-
 		logger.log(Level.INFO, "Creating sandbox directory");
 
 		jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
@@ -870,9 +804,20 @@ public class JobAgent implements MonitoringObject, Runnable {
 		return true;
 	}
 	
+	private boolean sendObject(Object toSend, ObjectOutputStream stream){
+		try {
+			stream.writeObject(toSend);
+			stream.flush();
+			stream.reset();
+		} catch (IOException e) {
+			System.err.println("Error sending token information to JobWrapper: " + e.toString());
+			return false;
+		}
+		return true;
+	}
+	
 	
 	private void copyLogs(){
-		
 		logpath = ("/tmp/jobwrapper-logs-" + Long.valueOf(queueId));	
 
 		File logDir = new File(logpath);

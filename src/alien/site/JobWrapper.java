@@ -42,7 +42,6 @@ import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 import apmon.ApMon;
-import apmon.MonitoredJob;
 
 /**
  * Job execution wrapper, running an embedded JBox for in/out-bound communications
@@ -66,7 +65,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 */
 	private JDL jdl = null;
 	private long queueId;
-	private String jobToken;
 	private String username;
 	private String tokenCert;
 	private String tokenKey;
