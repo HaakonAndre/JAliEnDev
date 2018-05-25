@@ -8,10 +8,10 @@ import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -28,8 +28,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import alien.api.JBoxServer;
-import alien.api.aaa.TokenCertificateType;
-import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
@@ -42,9 +40,6 @@ import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
-import alien.user.AliEnPrincipal;
-import alien.user.JAKeyStore;
-import alien.user.UserFactory;
 import apmon.ApMon;
 import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
@@ -61,6 +56,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private File tempDir = null;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
 	private String jobWorkdir = "";
+	private String logpath = "";
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -325,7 +321,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 *         execution errors
 	 */
 	private void cleanup() {
-		System.out.println("Cleaning up after execution...Removing sandbox");
+
+		System.out.println("Copying logs...");
+		copyLogs();
+		
+		System.out.println("Cleaning up after execution...");
 		// Remove sandbox, TODO: use Java builtin
 		SystemCommand.bash("rm -rf " + jobWorkdir);
 
@@ -340,6 +340,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		RES_RESOURCEUSAGE = "";
 		RES_RUNTIME = Long.valueOf(0);
 		RES_FRUNTIME = "";
+		
+		System.out.println("Done!");
 	}
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
@@ -552,6 +554,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					scanner.next();
 					break;
 				case "alien.site.JobAgent":
+					//cmd.add("-DAliEnConfig=.");
 					cmd.add("-cp");
 					cmd.add(path.toString());
 					cmd.add("alien.site.JobWrapper");
@@ -865,6 +868,34 @@ public class JobAgent implements MonitoringObject, Runnable {
 		System.setProperty("user.dir", jobWorkdir);
 
 		return true;
+	}
+	
+	
+	private void copyLogs(){
+		
+		logpath = ("/tmp/jobwrapper-logs-" + Long.valueOf(queueId));	
+
+		File logDir = new File(logpath);
+		if (!logDir.exists()) {
+			final boolean created = logDir.mkdirs();
+			if (!created) {
+				System.err.println("log directory can't be created: " + logpath);
+				return;
+			}
+		}
+
+		File[] listOfFiles = tempDir.listFiles();
+
+		try {
+			for (File file : listOfFiles) {
+				if (file.isFile() && file.getName().contains(".log")) {
+					Files.copy(file.toPath(), Paths.get(logpath + "/" + file.getName()));
+				}
+			}
+		}  catch (IOException e) {
+			System.err.println("Warning: An error occurred while copying logs to " + logpath);
+			e.printStackTrace();
+		}
 	}
 
 }

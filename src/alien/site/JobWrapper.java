@@ -43,7 +43,6 @@ import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 import apmon.ApMon;
 import apmon.MonitoredJob;
-import lazyj.commands.SystemCommand;
 
 /**
  * Job execution wrapper, running an embedded JBox for in/out-bound communications
@@ -73,8 +72,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	private String tokenKey;
 	private String workdir = null;
 	private HashMap<String, Object> siteMap = new HashMap<>();
-	private int payloadPID;
-	private MonitoredJob mj;
 	/**
 	 * @uml.property  name="jobStatus"
 	 * @uml.associationEnd  
@@ -213,7 +210,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	public void run() {
 
 		logger.log(Level.INFO, "Starting JobWrapper in " + hostName);
-
+		
 		// We start, if needed, the node JBox
 		// Does it check a previous one is already running?
 		try {
@@ -341,7 +338,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		if(!p.isAlive()){
 			System.out.println("The process for: " + cmd + " has terminated. Failed to execute?");
-			return -2;
+			return -3;
 		}
 
 		try {
