@@ -289,8 +289,12 @@ public class DispatchSSLClient extends Thread {
 			return null;
 		}
 
-		if (logger.isLoggable(Level.FINE))
+		if (logger.isLoggable(Level.FINE)) {
 			logger.log(Level.FINE, "Got back an object of type " + o.getClass().getCanonicalName() + " : " + o);
+			
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Call stack is: ", new Throwable());
+		}
 
 		@SuppressWarnings("unchecked")
 		final T reply = (T) o;

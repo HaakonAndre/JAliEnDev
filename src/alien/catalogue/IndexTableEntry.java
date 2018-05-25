@@ -308,7 +308,7 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 					logger.log(Level.FINE, "Empty result set for " + q + " and " + sSearch);
 
 				if (evenIfDoesntExist)
-					return new LFN(sSearch, this);
+					return new LFN(sPath, this);
 
 				return null;
 			}
