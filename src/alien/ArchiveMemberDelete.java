@@ -120,11 +120,11 @@ public class ArchiveMemberDelete {
 			return;
 		}
 
-		try (PrintWriter validation = new PrintWriter("validation_error.message")) {
+		try (PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
 			final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile);
 			if (remoteArchiveLFN == null || !remoteArchiveLFN.exists) {
 				System.err.println("Archive for " + remoteFile + " not found in " + remotePath);
-				validation.print("File not found");
+				validation.println("File not found");
 				return;
 			}
 
@@ -148,7 +148,7 @@ public class ArchiveMemberDelete {
 			commander.c_api.downloadFile(remoteArchive, localArchive, "-silent");
 			if (!localArchive.exists()) {
 				System.err.println("Failed to download remote archive " + remoteArchive);
-				validation.print("Download failed");
+				validation.println("Download failed");
 				return;
 			}
 
@@ -157,7 +157,7 @@ public class ArchiveMemberDelete {
 			System.out.println("\tUnpacking to local directory");
 			if (!unzip()) {
 				System.err.println("Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
-				validation.print("Extraction failed");
+				validation.println("Extraction failed");
 				return;
 			}
 			localArchive.delete();
@@ -188,7 +188,7 @@ public class ArchiveMemberDelete {
 
 			if (commander.c_api.getLFN(remoteArchive + ".new") == null || !commander.c_api.getLFN(remoteArchive + ".new").exists) {
 				System.err.println("Failed to upload archive " + remoteArchive + ".new");
-				validation.print("Upload failed");
+				validation.println("Upload failed");
 				return;
 			}
 
@@ -236,7 +236,7 @@ public class ArchiveMemberDelete {
 
 			if (commander.c_api.getLFN(remoteArchive) == null || !commander.c_api.getLFN(remoteArchive).exists) {
 				System.err.println("Failed to rename the archive " + remoteArchive);
-				validation.print("Rename failed");
+				validation.println("Rename failed");
 				return;
 			}
 
@@ -249,7 +249,7 @@ public class ArchiveMemberDelete {
 				if (commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file) == null
 						|| !commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file).exists) {
 					System.err.println("Failed to register entry " + remotePath + file);
-					validation.print("Register failed");
+					validation.println("Register failed");
 					return;
 				}
 			}
