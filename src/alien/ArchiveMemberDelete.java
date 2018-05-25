@@ -276,6 +276,7 @@ public class ArchiveMemberDelete {
 					currentFile.delete();
 				}
 			destDir.delete();
+			newArchive.delete();
 
 		} catch (IOException e1) {
 			e1.printStackTrace();
