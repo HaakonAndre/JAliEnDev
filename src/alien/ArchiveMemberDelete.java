@@ -79,7 +79,7 @@ public class ArchiveMemberDelete {
 		LFN remoteLFN = commander.c_api.getLFN(xmlEntry);
 
 		if (remoteLFN == null || !remoteLFN.exists) {
-			System.err.println("LFN doesn't exist: " + xmlEntry);
+			System.err.println("LFN doesn't exist: " + xmlEntry + ". Abort.");
 			return;
 		}
 
@@ -167,7 +167,7 @@ public class ArchiveMemberDelete {
 			ArrayList<String> listOfFiles = new ArrayList<>();
 			final File[] listing = folder.listFiles();
 			if (listing == null) {
-				System.err.println("Failed to get list of files in local folder");
+				System.err.println("Failed to get list of files in local folder. Break");
 				return;
 			}
 			for (File file : listing)
@@ -263,6 +263,20 @@ public class ArchiveMemberDelete {
 			System.out.println("Old archive was " + localArchive.length() + " bytes");
 			System.out.println("New archive is " + newArchive.length() + " bytes");
 			System.out.println("Gained " + (localArchive.length() - newArchive.length()) + " bytes of disk space\n");
+
+			// Clean up
+			File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp);
+			if (!destDir.exists()) {
+				return;
+			}
+			String[] destDirEntries = destDir.list();
+			if (destDirEntries != null)
+				for (String s : destDirEntries) {
+					File currentFile = new File(destDir.getPath(), s);
+					currentFile.delete();
+				}
+			destDir.delete();
+
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		}
