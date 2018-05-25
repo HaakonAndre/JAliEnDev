@@ -161,6 +161,7 @@ public class ArchiveMemberDelete {
 				validation.print("Extraction failed");
 				return;
 			}
+			localArchive.delete();
 
 			File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + timestamp);
 			ArrayList<String> listOfFiles = new ArrayList<>();
