@@ -166,7 +166,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 			idx = lfn.lastIndexOf('/', idx);
 
 		if (idx >= 0 && ConfigUtils.isCentralService()) {
-			final String sDir = lfn.substring(0, idx - 1);
+			final String sDir = lfn.substring(0, idx);
 
 			parentDir = LFNUtils.getLFN(sDir, true);
 
