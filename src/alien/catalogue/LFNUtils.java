@@ -1242,7 +1242,8 @@ public class LFNUtils {
 					try {
 						guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
 						break;
-					} catch (@SuppressWarnings("unused") final Exception e) {
+					} catch (final Exception e) {
+						logger.log(Level.WARNING, "Failed to parse guid ", e);
 						return null;
 					}
 
@@ -1250,11 +1251,13 @@ public class LFNUtils {
 			return null;
 
 		try {
-			for (final LFN otherFile : file.getParentDir().list())
-				if (otherFile.isFile() && otherFile.guid.equals(guid))
-					return otherFile;
-		} catch (@SuppressWarnings("unused") final Exception e) {
-			// ignore
+			LFN parentDir = file.getParentDir();
+			if (parentDir != null && parentDir.list() != null)
+				for (final LFN otherFile : parentDir.list())
+					if (otherFile.isFile() && otherFile.guid != null && otherFile.guid.equals(guid))
+						return otherFile;
+		} catch (final Exception e) {
+			logger.log(Level.WARNING, "Failed to return real LFN ", e);
 		}
 
 		return null;
