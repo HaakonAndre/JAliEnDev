@@ -169,19 +169,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			System.err.println("We received the following tokenKey: " + tokenKey);
 			System.err.println("We received the following username: " + username);
 
-			// TODO: Reply to JA?
-			/*
-			 * String reply = "Wrapper: I just received the following JDL: " + jdl.toString() + "Thanks!";
-			 * 
-			 * outputToJobAgent = new ObjectOutputStream(System.out);
-			 * 
-			 * outputToJobAgent.writeObject(reply);
-			 * outputToJobAgent.flush();
-			 * outputToJobAgent.reset();
-			 * outputToJobAgent.close();
-			 */
-			// TODO: Not needed? We already check if we have a child process from the JobAgent
-
 		} catch (IOException | ClassNotFoundException e) {
 			e.printStackTrace();
 		}
@@ -222,13 +209,10 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		System.err.println("Jbox started");
 
 		// process payload
-		runJob();
-
-		// TODO: Have the JobWrapper report back if something odd happens with the execution(?)
-		// TODO: Have the JobWrapper report progress updates(?)
+		int runCode = runJob();
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
-		System.exit(0);
+		System.exit(runCode);
 	}
 
 	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
@@ -246,34 +230,40 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		return ok;
 	}
 
-	private void runJob() {
+	private int runJob() {
 		try {
 			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);		
 
-            //
 			jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
 		    tempDir = new File(jobWorkdir);
 			
 			if (!getInputFiles()) {
 				changeStatus(JobStatus.ERROR_IB);
-				return;
+				return -1;
 			}
 
 			// run payload
-			if (execute() < 0)
+			if (execute() < 0){
 				changeStatus(JobStatus.ERROR_E);
-
-			if (!validate())
+				return -1;
+			}
+				
+			if (!validate()){
 				changeStatus(JobStatus.ERROR_V);
+				return -1;
+			}
 
 			if (jobStatus == JobStatus.RUNNING)
 				changeStatus(JobStatus.SAVING);
 
-			uploadOutputFiles();
-
+			if (!uploadOutputFiles())
+				return -1;
+			
+			return 0;
 		} catch (final Exception e) {
 			System.err.println("Unable to handle job");
 			e.printStackTrace();
+			return -1;
 		}
 	}
 
@@ -321,7 +311,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
 		pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
-		// pBuilder.redirectErrorStream(true);
 
 		final Process p;
 
@@ -336,7 +325,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		if(!p.isAlive()){
 			System.out.println("The process for: " + cmd + " has terminated. Failed to execute?");
-			return -3;
+			return -2;
 		}
 
 		try {

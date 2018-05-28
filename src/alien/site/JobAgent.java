@@ -321,7 +321,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private void cleanup() {
 		System.out.println("Copying logs...");
 		copyLogs();
-		
+
 		System.out.println("Cleaning up after execution...");
 		// Remove sandbox, TODO: use Java builtin
 		SystemCommand.bash("rm -rf " + jobWorkdir);
@@ -337,7 +337,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		RES_RESOURCEUSAGE = "";
 		RES_RUNTIME = Long.valueOf(0);
 		RES_FRUNTIME = "";
-		
+
 		System.out.println("Done!");
 	}
 
@@ -531,12 +531,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 */
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
-			
+
 			Process p = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
 			p.waitFor();
-			
+
 			final Scanner scanner = new Scanner(p.getInputStream());
-			
+
 			List<String> cmd = new ArrayList<String>();
 
 			String readArg;
@@ -803,19 +803,16 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		return true;
 	}
-	
-	private boolean sendObject(Object toSend, ObjectOutputStream stream){
+
+	private void sendObject(Object toSend, ObjectOutputStream stream){
 		try {
 			stream.writeObject(toSend);
 			stream.flush();
 			stream.reset();
 		} catch (IOException e) {
 			System.err.println("Error sending token information to JobWrapper: " + e.toString());
-			return false;
 		}
-		return true;
 	}
-	
 	
 	private void copyLogs(){
 		logpath = ("/tmp/jobwrapper-logs-" + Long.valueOf(queueId));	
