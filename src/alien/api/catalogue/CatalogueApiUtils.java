@@ -679,4 +679,21 @@ public class CatalogueApiUtils {
 
 		cp.copyGridToLocal(lfnAbsolutePath, localFile);
 	}
+
+	/**
+	 * Find files that are members of this archive
+	 * 
+	 * @param archive
+	 * 
+	 * @return list of archive members LFNs
+	 */
+	public List<LFN> getArchiveMembers(final String archive) {
+		try {
+			return Dispatcher.execute(new GetArchiveMembers(commander.getUser(), archive)).getArchiveMembers();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not return members for " + archive);
+			e.getCause().printStackTrace();
+		}
+		return null;
+	}
 }
