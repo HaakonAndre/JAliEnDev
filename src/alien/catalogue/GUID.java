@@ -1007,6 +1007,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	}
 
 	/**
+	 * Get the two digit hash (first level of folders in a storage)
+	 * 
 	 * @param guid
 	 * @return chash
 	 */
@@ -1023,7 +1025,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	/**
 	 * From AliEn/GUID.pm#GetCHash
 	 *
-	 * @return hash code
+	 * @return hash code (two digit hash code for the first level of folders)
 	 */
 	public int getCHash() {
 		return getCHash(guid.toString());
@@ -1032,7 +1034,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	/**
 	 * From AliEn/GUID.pm#GetHash
 	 *
-	 * @return hash code
+	 * @return hash code (0..65535, second level of folders)
 	 */
 	public int getHash() {
 		return getHash(guid.toString());
@@ -1044,7 +1046,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @param guidValue
 	 *            the UUID string representation
 	 *
-	 * @return hash code
+	 * @return hash code (0..65535 , second level of folders)
 	 */
 	public static int getHash(final String guidValue) {
 		int c0 = 0;
