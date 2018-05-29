@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import alien.catalogue.GUID;
 import joptsimple.OptionException;
@@ -62,7 +62,7 @@ public class JAliEnCommandguid2lfn extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandguid2lfn(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandguid2lfn(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 		if (alArguments.size() != 1)

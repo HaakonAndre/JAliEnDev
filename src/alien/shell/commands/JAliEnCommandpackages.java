@@ -1,6 +1,5 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import alien.catalogue.Package;
@@ -72,7 +71,7 @@ public class JAliEnCommandpackages extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandpackages(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandpackages(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 	}
 }

@@ -471,7 +471,7 @@ public class JAliEnCOMMander extends Thread {
 			final Class cl = Class.forName("alien.shell.commands.JAliEnCommand" + classSuffix);
 
 			@SuppressWarnings({ "rawtypes", "unchecked" })
-			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, ArrayList.class });
+			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, List.class });
 			return (JAliEnBaseCommand) co.newInstance(objectParm);
 		} catch (@SuppressWarnings("unused") final ClassNotFoundException e) {
 			// System.out.println("No such command or not implemented");

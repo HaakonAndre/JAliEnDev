@@ -2,7 +2,7 @@ package alien.shell.commands;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.List;
 
 import alien.api.ServerException;
 import alien.shell.ShellColor;
@@ -80,7 +80,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandsubmit(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandsubmit(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 	}
 }

@@ -175,7 +175,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandaccess(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandaccess(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 
 		logger.log(Level.INFO, "Access arguments are " + alArguments);

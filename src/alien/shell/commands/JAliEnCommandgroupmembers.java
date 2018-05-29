@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -37,7 +37,7 @@ public class JAliEnCommandgroupmembers extends JAliEnBaseCommand {
 	 * @param commander
 	 * @param alArguments
 	 */
-	public JAliEnCommandgroupmembers(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandgroupmembers(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 		if (alArguments.size() == 1)
 			this.group = alArguments.get(0);

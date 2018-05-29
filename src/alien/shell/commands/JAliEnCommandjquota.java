@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import alien.quotas.FileQuota;
 import alien.quotas.Quota;
@@ -81,7 +81,7 @@ public class JAliEnCommandjquota extends JAliEnBaseCommand {
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandjquota(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandjquota(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 		this.isAdmin = commander.getUser().canBecome("admin");
 		if (alArguments.size() == 0)

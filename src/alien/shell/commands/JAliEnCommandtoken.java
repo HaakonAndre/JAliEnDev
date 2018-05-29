@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
@@ -27,7 +27,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 	 * @param commander
 	 * @param alArguments
 	 */
-	public JAliEnCommandtoken(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandtoken(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 
 		try {
