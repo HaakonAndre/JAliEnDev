@@ -157,7 +157,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 	 * @param entry
 	 */
 	LFN(final String lfn, final IndexTableEntry entry) {
-		this.lfn = lfn;
+		this.lfn = lfn.substring(entry.lfn.length());
 		this.indexTableEntry = entry;
 
 		int idx = lfn.lastIndexOf('/');
