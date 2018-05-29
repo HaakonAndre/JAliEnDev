@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.List;
 
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -155,7 +156,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandcat(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandcat(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 		try {

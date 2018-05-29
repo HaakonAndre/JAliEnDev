@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import alien.api.Dispatcher;
@@ -122,7 +122,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandlistFilesFromCollection(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandlistFilesFromCollection(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 		final OptionParser parser = new OptionParser();

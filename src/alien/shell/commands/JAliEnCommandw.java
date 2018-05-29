@@ -1,7 +1,7 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
 import java.util.Formatter;
+import java.util.List;
 import java.util.Map;
 
 import alien.api.taskQueue.GetUptime.UserStats;
@@ -87,7 +87,7 @@ public class JAliEnCommandw extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandw(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandw(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 	}

@@ -1,6 +1,5 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
@@ -38,7 +37,7 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandtouch(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandtouch(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 
 		filelist = alArguments;

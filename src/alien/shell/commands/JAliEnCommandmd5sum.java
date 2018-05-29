@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
@@ -56,7 +57,7 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandmd5sum(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandmd5sum(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();

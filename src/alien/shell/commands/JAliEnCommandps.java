@@ -1,6 +1,5 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -426,7 +425,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandps(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandps(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 		try {

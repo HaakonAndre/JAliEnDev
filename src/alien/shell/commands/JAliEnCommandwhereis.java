@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import alien.catalogue.FileSystemUtils;
@@ -99,7 +99,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandwhereis(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandwhereis(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 		try {
 			final OptionParser parser = new OptionParser();

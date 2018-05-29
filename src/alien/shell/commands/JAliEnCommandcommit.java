@@ -1,6 +1,5 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -131,7 +130,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandcommit(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandcommit(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 
 		final java.util.ListIterator<String> arg = alArguments.listIterator();

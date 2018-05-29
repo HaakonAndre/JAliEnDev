@@ -58,7 +58,7 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandresubmit(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandresubmit(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 		queueIds = new ArrayList<>(alArguments.size());

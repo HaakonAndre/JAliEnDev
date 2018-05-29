@@ -30,7 +30,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 	 * @param commander
 	 * @param alArguments
 	 */
-	public JAliEnCommandmirror(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandmirror(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 
 		try {

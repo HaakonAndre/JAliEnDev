@@ -1,6 +1,5 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
@@ -74,7 +73,7 @@ public class JAliEnCommandmkdir extends JAliEnBaseCommand {
 	 *            the arguments of the command
 	 * @throws OptionException
 	 */
-	public JAliEnCommandmkdir(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandmkdir(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 		try {

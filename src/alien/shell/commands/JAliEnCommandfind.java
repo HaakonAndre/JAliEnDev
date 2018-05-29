@@ -2,7 +2,6 @@ package alien.shell.commands;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -185,7 +184,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 	 */
 	// public JAliEnCommandfind(JAliEnCOMMander commander, UIPrintWriter out, final ArrayList<String> alArguments){
 	// super(commander, out, alArguments);
-	public JAliEnCommandfind(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandfind(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 		try {
 

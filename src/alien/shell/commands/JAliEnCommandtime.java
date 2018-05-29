@@ -1,6 +1,7 @@
 package alien.shell.commands;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author ron
@@ -84,7 +85,7 @@ public class JAliEnCommandtime extends JAliEnBaseCommand {
 	 * @param alArguments
 	 *            the arguments of the command
 	 */
-	public JAliEnCommandtime(final JAliEnCOMMander commander, final ArrayList<String> alArguments) {
+	public JAliEnCommandtime(final JAliEnCOMMander commander, final List<String> alArguments) {
 		super(commander, alArguments);
 	}
 }

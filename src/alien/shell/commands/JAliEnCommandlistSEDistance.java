@@ -1,6 +1,5 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
@@ -61,7 +60,7 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandlistSEDistance(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandlistSEDistance(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
 		this.useWriteMetrics = true;

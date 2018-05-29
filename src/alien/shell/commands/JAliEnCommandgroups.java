@@ -1,6 +1,6 @@
 package alien.shell.commands;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import joptsimple.OptionException;
@@ -40,7 +40,7 @@ public class JAliEnCommandgroups extends JAliEnBaseCommand {
 	 * @param alArguments
 	 * @throws OptionException
 	 */
-	public JAliEnCommandgroups(final JAliEnCOMMander commander, final ArrayList<String> alArguments) throws OptionException {
+	public JAliEnCommandgroups(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 	}
 
