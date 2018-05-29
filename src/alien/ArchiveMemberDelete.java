@@ -49,12 +49,12 @@ public class ArchiveMemberDelete {
 			// Read archive members names from file
 			final String collectionName = (String) options.valueOf("list");
 
-			File collectionFile = new File(collectionName);
+			final File collectionFile = new File(collectionName);
 			if (!collectionFile.exists()) {
 				System.err.println("Couldn't open the collection! File " + collectionName + " doesn't exist");
 				return;
 			}
-			XmlCollection xmlCollection = new XmlCollection(collectionFile);
+			final XmlCollection xmlCollection = new XmlCollection(collectionFile);
 
 			Iterator<LFN> xmlEntries = xmlCollection.iterator();
 			System.out.println("We will process next files:");
@@ -70,7 +70,7 @@ public class ArchiveMemberDelete {
 			System.out.println();
 			System.out.println("All files processed. Exiting");
 
-			File validation = new File("validation_error.message");
+			final File validation = new File("validation_error.message");
 			if (validation.length() == 0)
 				validation.delete();
 		}
@@ -81,7 +81,13 @@ public class ArchiveMemberDelete {
 		// final ByteArrayOutputStream out = new ByteArrayOutputStream();
 		// commander.setLine(new JSONPrintWriter(out), null);
 
-		LFN remoteLFN = commander.c_api.getLFN(xmlEntry);
+		LFN remoteLFN = null;
+		try {
+			remoteLFN = commander.c_api.getLFN(xmlEntry);
+		} catch (NullPointerException e) {
+			System.err.println("Something went wrong. Abort.\n" + e);
+			return;
+		}
 
 		if (remoteLFN == null || !remoteLFN.exists) {
 			if (!commander.c_api.find(xmlEntry.substring(0, xmlEntry.lastIndexOf("/")), ".deleted", 0).isEmpty())
@@ -104,9 +110,9 @@ public class ArchiveMemberDelete {
 
 			// Speed up things by calling xrootd delete directly
 			try {
-				List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
+				final List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
 
-				Iterator<PFN> it = remotePFN.iterator();
+				final Iterator<PFN> it = remotePFN.iterator();
 				while (it.hasNext()) {
 					PFN pfn = it.next();
 
@@ -133,7 +139,7 @@ public class ArchiveMemberDelete {
 
 		// Main procedure
 		//
-		try (PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
+		try (final PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
 			// Archive variables
 			final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile);
 			if (remoteArchiveLFN == null || !remoteArchiveLFN.exists) {
@@ -147,7 +153,7 @@ public class ArchiveMemberDelete {
 			memberName = remoteLFN.getFileName();
 			final long jobID = remoteArchiveLFN.jobid;
 
-			List<LFN> remoteArchiveMembers = commander.c_api.getArchiveMembers(remoteArchive);
+			final List<LFN> remoteArchiveMembers = commander.c_api.getArchiveMembers(remoteArchive);
 			if (remoteArchiveMembers.size() == 1) {
 				// RemoteLFN is the only file in remoteArchive
 				// No point in downloading it, just remove file and archive
@@ -159,11 +165,11 @@ public class ArchiveMemberDelete {
 
 				// Remove physical replicas of the old archive
 				try {
-					List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
+					final List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
 
-					Iterator<PFN> it = remotePFN.iterator();
+					final Iterator<PFN> it = remotePFN.iterator();
 					while (it.hasNext()) {
-						PFN pfn = it.next();
+						final PFN pfn = it.next();
 
 						try {
 							if (!Factory.xrootd.delete(pfn)) {
@@ -175,7 +181,7 @@ public class ArchiveMemberDelete {
 					}
 				} catch (final ServerException e) {
 					System.err.println("[PROCESS] " + remoteFile + ": Could not get PFN for " + remoteArchive);
-					e.getCause().printStackTrace();
+					e.printStackTrace();
 				}
 
 				// Remove lfn of the old archive
@@ -192,7 +198,7 @@ public class ArchiveMemberDelete {
 				return;
 			}
 
-			File localArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
+			final File localArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
 			if (localArchive.exists()) {
 				localArchive.delete();
 			}
@@ -217,28 +223,27 @@ public class ArchiveMemberDelete {
 			}
 			localArchive.delete();
 
-			File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
-			ArrayList<String> listOfFiles = new ArrayList<>();
+			final File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+			final ArrayList<String> listOfFiles = new ArrayList<>();
 			final File[] listing = folder.listFiles();
 			if (listing == null) {
 				System.err.println("[ERROR_V] " + remoteFile + ": Failed to get list of files in local folder. Break");
 				return;
 			}
-			for (File file : listing)
+			for (final File file : listing)
 				listOfFiles.add(file.getName());
 
 			System.out.println("[PROCESS] Zipping the new archive");
-			OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
+			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
 			entry.createZip(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
 
 			// Upload the new archive to the Grid
 			//
-
 			System.out.println("[PROCESS] Uploading the new archive to the Grid");
 
 			// Create exactly the same number of replicas as the original archive had
-			int nreplicas = commander.c_api.getPFNsToRead(remoteArchiveLFN, null, null).size();
-			File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
+			final int nreplicas = commander.c_api.getPFNsToRead(remoteArchiveLFN, null, null).size();
+			final File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
 			commander.c_api.uploadFile(newArchive, remoteArchive + ".new", "-w", "-S", "disk:" + nreplicas);
 
 			if (commander.c_api.getLFN(remoteArchive + ".new") == null || !commander.c_api.getLFN(remoteArchive + ".new").exists) {
@@ -250,7 +255,7 @@ public class ArchiveMemberDelete {
 			// Delete the members links of old archive
 			//
 			System.out.println("[PROCESS] Deleting the members links of old archive");
-			for (LFN member : remoteArchiveMembers) {
+			for (final LFN member : remoteArchiveMembers) {
 				commander.c_api.removeLFN(member.getCanonicalName());
 			}
 
@@ -260,11 +265,11 @@ public class ArchiveMemberDelete {
 
 			// Remove physical replicas of the old archive
 			try {
-				List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
+				final List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
 
-				Iterator<PFN> it = remotePFN.iterator();
+				final Iterator<PFN> it = remotePFN.iterator();
 				while (it.hasNext()) {
-					PFN pfn = it.next();
+					final PFN pfn = it.next();
 
 					try {
 						if (!Factory.xrootd.delete(pfn)) {
@@ -276,7 +281,7 @@ public class ArchiveMemberDelete {
 				}
 			} catch (final ServerException e) {
 				System.err.println("[PROCESS] " + remoteFile + ": Could not get PFN for " + remoteArchive);
-				e.getCause().printStackTrace();
+				e.printStackTrace();
 			}
 
 			// Remove lfn of the old archive
@@ -298,7 +303,7 @@ public class ArchiveMemberDelete {
 			System.out.println("[PROCESS] Registering files in the catalogue");
 			CatalogueApiUtils.registerEntry(entry, remotePath + System.getProperty("file.separator"), commander.getUser());
 
-			for (String file : listOfFiles) {
+			for (final String file : listOfFiles) {
 				if (commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file) == null
 						|| !commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file).exists) {
 					System.err.println("[ERROR_V] " + remoteFile + ": Failed to register entry " + remotePath + file);
@@ -320,14 +325,14 @@ public class ArchiveMemberDelete {
 			System.out.println("[DONE] " + "Gained " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space\n");
 
 			// Clean up
-			File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+			final File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
 			if (!destDir.exists()) {
 				return;
 			}
-			String[] destDirEntries = destDir.list();
+			final String[] destDirEntries = destDir.list();
 			if (destDirEntries != null)
-				for (String s : destDirEntries) {
-					File currentFile = new File(destDir.getPath(), s);
+				for (final String s : destDirEntries) {
+					final File currentFile = new File(destDir.getPath(), s);
 					currentFile.delete();
 				}
 			destDir.delete();
@@ -352,22 +357,22 @@ public class ArchiveMemberDelete {
 	 */
 	private static boolean unzip() throws IOException {
 
-		File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+		final File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
 		if (!destDir.exists()) {
 			destDir.mkdir();
 		}
 		else {
 			// Clean up temp directory if there are files in it
-			String[] destDirEntries = destDir.list();
+			final String[] destDirEntries = destDir.list();
 			if (destDirEntries != null)
-				for (String s : destDirEntries) {
-					File currentFile = new File(destDir.getPath(), s);
+				for (final String s : destDirEntries) {
+					final File currentFile = new File(destDir.getPath(), s);
 					currentFile.delete();
 				}
 		}
 
 		// Start unpacking the archive
-		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName))) {
+		try (final ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
@@ -378,14 +383,14 @@ public class ArchiveMemberDelete {
 					continue;
 				}
 
-				String filePath = destDir.getAbsolutePath() + System.getProperty("file.separator") + entry.getName();
+				final String filePath = destDir.getAbsolutePath() + System.getProperty("file.separator") + entry.getName();
 				if (!entry.isDirectory()) {
 					// if the entry is a file, extracts it
 					extractFile(zipIn, filePath);
 				}
 				else {
 					// if the entry is a directory, make the directory
-					File dir = new File(filePath);
+					final File dir = new File(filePath);
 					dir.mkdir();
 				}
 				zipIn.closeEntry();
@@ -408,7 +413,7 @@ public class ArchiveMemberDelete {
 	 * @throws IOException
 	 */
 	private static void extractFile(ZipInputStream zipIn, final String filePath) throws IOException {
-		try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
+		try (final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
 			byte[] bytesIn = new byte[BUFFER_SIZE];
 			int read = 0;
 			while ((read = zipIn.read(bytesIn)) != -1) {
