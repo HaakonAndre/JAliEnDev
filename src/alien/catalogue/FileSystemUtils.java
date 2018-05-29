@@ -273,7 +273,10 @@ public final class FileSystemUtils {
 	 * @return absolute path, or <code>null</code> if none could be found
 	 */
 	public static String getAbsolutePath(final String user, final String currentDirectory, final String cataloguePath) {
-		final String currentDir = currentDirectory != null ? currentDirectory : UsersHelper.getHomeDir(user);
+		String currentDir = currentDirectory != null ? currentDirectory : UsersHelper.getHomeDir(user);
+		
+		if (!currentDir.endsWith("/"))
+			currentDir += "/";
 
 		String path = cataloguePath;
 
