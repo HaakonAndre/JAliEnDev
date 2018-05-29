@@ -56,7 +56,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private File tempDir = null;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
 	private String jobWorkdir = "";
-	private String logpath = "";
+	private String logpath = "/tmp/jobwrapper-logs";
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -231,7 +231,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
 					queueId = ((Long) matchedJob.get("queueId")).longValue();
 					username = (String) matchedJob.get("User");
-					jobToken = (String) matchedJob.get("jobToken"); // TokenCertificate TokenKey
+//					jobToken = (String) matchedJob.get("jobToken"); // TokenCertificate TokenKey
 					tokenCert = (String) matchedJob.get("TokenCertificate");
 					tokenKey = (String) matchedJob.get("TokenKey");
 
@@ -241,7 +241,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					System.out.println(jdl.getExecutable());
 					System.out.println(username);
 					System.out.println(queueId);
-					System.out.println(jobToken);
+//					System.out.println(jobToken);
 
 					// process payload
 					handleJob();
@@ -319,7 +319,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 *         execution errors
 	 */
 	private void cleanup() {
-		System.out.println("Copying logs...");
+		System.out.println("Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");
 		copyLogs();
 
 		System.out.println("Cleaning up after execution...");
@@ -633,7 +633,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		boolean processNotFinished = true;
 		int code = 0;
 
-		System.out.println("About to enter monitor loop. Is the process alive?: " + p.isAlive());
+		System.out.println("About to enter monitor loop. Is the JobWrapper process alive?: " + p.isAlive());
 
 		int monitor_loops = 0;
 		try {
@@ -642,7 +642,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 					Thread.sleep(5 * 1000); // TODO: Change to 60
 					code = p.exitValue();
 					processNotFinished = false;
-					System.out.println("JobWrapper exited with code: " + code);
+					System.out.println("JobWrapper has finished execution. Exit code: " + code);
+					if(code!=0)
+						System.out.println("Error encountered: see the JobWrapper logs in: " + logpath + " for more details");
 				} catch (final IllegalThreadStateException e) {
 					logger.log(Level.WARNING, "Exception waiting for the process to finish", e);
 					// TODO: check job-token exist (job not killed)
@@ -815,9 +817,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 	}
 	
 	private void copyLogs(){
-		logpath = ("/tmp/jobwrapper-logs-" + Long.valueOf(queueId));	
 
-		File logDir = new File(logpath);
+		File logDir = new File(logpath + '-' + Long.valueOf(queueId));
 		if (!logDir.exists()) {
 			final boolean created = logDir.mkdirs();
 			if (!created) {
@@ -831,7 +832,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		try {
 			for (File file : listOfFiles) {
 				if (file.isFile() && file.getName().contains(".log")) {
-					Files.copy(file.toPath(), Paths.get(logpath + "/" + file.getName()));
+					Files.copy(file.toPath(), Paths.get(logDir.getPath() + "/" + file.getName()));
 				}
 			}
 		}  catch (IOException e) {

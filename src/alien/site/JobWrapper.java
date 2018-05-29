@@ -165,18 +165,24 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			tokenKey = (String) inputFromJobAgent.readObject();
 			inputFromJobAgent.close();
 
-			System.err.println("We received the following tokenCert: " + tokenCert);
-			System.err.println("We received the following tokenKey: " + tokenKey);
-			System.err.println("We received the following username: " + username);
+			//System.err.println("We received the following tokenCert: " + tokenCert);
+			//System.err.println("We received the following tokenKey: " + tokenKey);
+			//System.err.println("We received the following username: " + username);
 
+			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
+			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
+			logger.log(Level.INFO, "We received the following username: " + username);
+			
 		} catch (IOException | ClassNotFoundException e) {
+			System.err.println("Error: Could not receive data from JobAgent");
 			e.printStackTrace();
 		}
 		
 		if((tokenCert != null) && (tokenKey != null)){
 			try {
 				JAKeyStore.createTokenFromString(tokenCert, tokenKey);
-				System.err.println("Token Created");
+				//System.err.println("Token Created");
+				logger.log(Level.INFO, "Token successfully created");
 				JAKeyStore.loadKeyStore();
 			} catch (Exception e) {
 				System.err.println("Error. Could not load tokenCert and/or tokenKey");
@@ -187,8 +193,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
 		
-		System.err.println("JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
-
+		//System.err.println("JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
+		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
 
 	@Override
@@ -206,7 +212,8 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			e.printStackTrace();
 		}
 
-		System.err.println("Jbox started");
+		//System.err.println("Jbox started");
+		logger.log(Level.INFO, "Jbox started");
 
 		// process payload
 		int runCode = runJob();
