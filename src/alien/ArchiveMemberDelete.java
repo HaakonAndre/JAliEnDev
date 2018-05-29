@@ -85,16 +85,16 @@ public class ArchiveMemberDelete {
 		try {
 			remoteLFN = commander.c_api.getLFN(xmlEntry);
 		} catch (NullPointerException e) {
-			System.err.println("Something went wrong. Abort.\n");
+			System.err.println("Something went wrong. Abort.");
 			e.printStackTrace();
 			return;
 		}
 
 		if (remoteLFN == null || !remoteLFN.exists) {
 			if (!commander.c_api.find(xmlEntry.substring(0, xmlEntry.lastIndexOf("/")), ".deleted", 0).isEmpty())
-				System.out.println("[PROCESS] " + xmlEntry + ": already deleted, continue.\n");
+				System.out.println("[PROCESS] " + xmlEntry + ": already deleted, continue.");
 			else
-				System.err.println("[ERROR_V] " + xmlEntry + ": LFN doesn't exist. Abort.\n");
+				System.err.println("[ERROR_V] " + xmlEntry + ": LFN doesn't exist. Abort.");
 
 			return;
 		}
@@ -103,6 +103,7 @@ public class ArchiveMemberDelete {
 		final String remotePath = remoteLFN.getParentName();
 		final long remoteFileSize = remoteLFN.getSize();
 
+		System.out.println();
 		System.out.println("Processing " + remoteFile);
 
 		// If the file is not a member of any archives, just delete it
@@ -134,7 +135,7 @@ public class ArchiveMemberDelete {
 			commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + remoteFileSize);
 
 			System.out.println("[DONE] " + remoteFile);
-			System.out.println("[DONE] Gained " + remoteFileSize + " bytes of disk space\n");
+			System.out.println("[DONE] Gained " + remoteFileSize + " bytes of disk space");
 			return;
 		}
 
@@ -194,7 +195,7 @@ public class ArchiveMemberDelete {
 				System.out.println("[DONE] " + remoteFile);
 				System.out.println("[DONE] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 				System.out.println("[DONE] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
-				System.out.println("[DONE] " + "Gained " + remoteArchiveLFN.getSize() + " bytes of disk space\n");
+				System.out.println("[DONE] " + "Gained " + remoteArchiveLFN.getSize() + " bytes of disk space");
 
 				return;
 			}
@@ -323,7 +324,7 @@ public class ArchiveMemberDelete {
 			System.out.println("[DONE] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 			System.out.println("[DONE] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
 			System.out.println("[DONE] " + "New archive is " + newArchive.length() + " bytes");
-			System.out.println("[DONE] " + "Gained " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space\n");
+			System.out.println("[DONE] " + "Gained " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
 
 			// Clean up
 			final File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
