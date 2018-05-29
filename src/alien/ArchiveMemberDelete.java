@@ -85,7 +85,8 @@ public class ArchiveMemberDelete {
 		try {
 			remoteLFN = commander.c_api.getLFN(xmlEntry);
 		} catch (NullPointerException e) {
-			System.err.println("Something went wrong. Abort.\n" + e);
+			System.err.println("Something went wrong. Abort.\n");
+			e.printStackTrace();
 			return;
 		}
 
