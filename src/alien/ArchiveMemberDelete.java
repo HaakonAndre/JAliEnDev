@@ -181,6 +181,14 @@ public class ArchiveMemberDelete {
 				// Remove lfn of the old archive
 				commander.c_api.removeLFN(remoteArchive);
 
+				// Create file marker to leave trace
+				commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + remoteArchiveLFN.getSize());
+
+				System.out.println("[DONE] " + remoteFile);
+				System.out.println("[DONE] " + memberName + " was " + remoteLFN.getSize() + " bytes");
+				System.out.println("[DONE] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
+				System.out.println("[DONE] " + "Gained " + remoteArchiveLFN.getSize() + " bytes of disk space\n");
+
 				return;
 			}
 
