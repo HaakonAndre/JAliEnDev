@@ -4,7 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
@@ -88,14 +87,13 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * @uml.property  name="commander"
 	 * @uml.associationEnd  
 	 */
-	//private final JAliEnCOMMander commander = new JAliEnCOMMander();
-	private final JAliEnCOMMander commander; // = JAliEnCOMMander.getInstance();
+	private final JAliEnCOMMander commander;
 
 	/**
 	 * @uml.property  name="c_api"
 	 * @uml.associationEnd  
 	 */
-	private final CatalogueApiUtils c_api; // = new CatalogueApiUtils(commander);
+	private final CatalogueApiUtils c_api;
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
 	static {
@@ -124,10 +122,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	static transient final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
 
 	/**
-	 * ML monitor object
-	 */
-	//	static transient final Monitor monitor = MonitorFactory.getMonitor(JobWrapper.class.getCanonicalName());
-	/**
 	 * ApMon sender
 	 */
 	static transient final ApMon apmon = MonitorFactory.getApMonSender();
@@ -136,7 +130,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * Streams for data transfer
 	 */
 	private ObjectInputStream inputFromJobAgent;
-	private ObjectOutputStream outputToJobAgent;
 
 	/**
 	 */
@@ -165,10 +158,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			tokenKey = (String) inputFromJobAgent.readObject();
 			inputFromJobAgent.close();
 
-			//System.err.println("We received the following tokenCert: " + tokenCert);
-			//System.err.println("We received the following tokenKey: " + tokenKey);
-			//System.err.println("We received the following username: " + username);
-
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
@@ -181,7 +170,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		if((tokenCert != null) && (tokenKey != null)){
 			try {
 				JAKeyStore.createTokenFromString(tokenCert, tokenKey);
-				//System.err.println("Token Created");
 				logger.log(Level.INFO, "Token successfully created");
 				JAKeyStore.loadKeyStore();
 			} catch (final Exception e) {
@@ -193,7 +181,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
 		
-		//System.err.println("JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
 
@@ -212,7 +199,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			e.printStackTrace();
 		}
 
-		//System.err.println("Jbox started");
 		logger.log(Level.INFO, "Jbox started");
 
 		// process payload
@@ -306,7 +292,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 						cmd.add(st.nextToken());
 				}
 
-		//System.err.println("Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
@@ -586,7 +571,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				uploadedAllOutFiles = false;
 			}
 		}
-		// }
 
 		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V) {
 			if (!uploadedAllOutFiles)

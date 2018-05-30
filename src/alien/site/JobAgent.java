@@ -2,7 +2,6 @@ package alien.site;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
@@ -68,7 +67,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	// Job variables
 	private JDL jdl = null;
 	private long queueId;
-	private String jobToken;
 	private String username;
 	private String tokenCert;
 	private String tokenKey;
@@ -93,7 +91,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
-	private final String containerPlatform;
 	private Path path = null;
 
 	static {
@@ -157,7 +154,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		// site = env.get("site"); // or
 		// ConfigUtils.getConfig().gets("alice_close_site").trim();
 		ce = env.get("CE");
-		containerPlatform = env.get("USE_CONTAINERS");
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
@@ -233,7 +229,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
 					queueId = ((Long) matchedJob.get("queueId")).longValue();
 					username = (String) matchedJob.get("User");
-//					jobToken = (String) matchedJob.get("jobToken"); // TokenCertificate TokenKey
 					tokenCert = (String) matchedJob.get("TokenCertificate");
 					tokenKey = (String) matchedJob.get("TokenKey");
 
@@ -243,7 +238,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 					System.out.println(jdl.getExecutable());
 					System.out.println(username);
 					System.out.println(queueId);
-//					System.out.println(jobToken);
 
 					// process payload
 					handleJob();
@@ -533,7 +527,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 */
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
-
 			final Process p = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
 			p.waitFor();
 
@@ -582,10 +575,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		// stdin from the viewpoint of the wrapper
 		OutputStream stdin;
-		OutputStream stdout;
 
 		ObjectOutputStream stdinObj;
-		ObjectOutputStream stdoutObj;
 
 		try {
 			p = pBuilder.start();
