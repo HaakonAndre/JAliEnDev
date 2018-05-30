@@ -173,7 +173,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
 			
-		} catch (IOException | ClassNotFoundException e) {
+		} catch (final IOException | ClassNotFoundException e) {
 			System.err.println("Error: Could not receive data from JobAgent");
 			e.printStackTrace();
 		}
@@ -184,7 +184,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				//System.err.println("Token Created");
 				logger.log(Level.INFO, "Token successfully created");
 				JAKeyStore.loadKeyStore();
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				System.err.println("Error. Could not load tokenCert and/or tokenKey");
 				e.printStackTrace();
 			}
@@ -337,7 +337,7 @@ public class JobWrapper implements MonitoringObject, Runnable {
 
 		try {
 			p.waitFor();
-		} catch (InterruptedException e) {
+		} catch (final InterruptedException e) {
 			System.out.println("Interrupted while waiting for process to finish execution");
 			e.printStackTrace();
 		}

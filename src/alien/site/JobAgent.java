@@ -8,9 +8,11 @@ import java.io.OutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -56,7 +58,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private File tempDir = null;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
 	private String jobWorkdir = "";
-	private String logpath = "/tmp/jobwrapper-logs";
+	private final String logpath = "/tmp/jobwrapper-logs";
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -198,7 +200,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		try {
 			path = Paths.get(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-		} catch (URISyntaxException e) {
+		} catch (final URISyntaxException e) {
 			System.err.println("Could not obtain AliEn jar path: " + e.toString());
 		}
 	}
@@ -532,7 +534,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
 
-			Process p = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
+			final Process p = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
 			p.waitFor();
 
 			final Scanner scanner = new Scanner(p.getInputStream());
@@ -599,7 +601,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			stdinObj.close();
 			stdin.close();
-
 		} catch (final IOException ioe) {
 			System.out.println("Exception running " + launchCommand + " : " + ioe.getMessage());
 			return -2;
@@ -811,14 +812,14 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stream.writeObject(toSend);
 			stream.flush();
 			stream.reset();
-		} catch (IOException e) {
+		} catch (final IOException e) {
 			System.err.println("Error sending token information to JobWrapper: " + e.toString());
 		}
 	}
 	
 	private void copyLogs(){
 
-		File logDir = new File(logpath + '-' + Long.valueOf(queueId));
+		final File logDir = new File(logpath + '-' + Long.valueOf(queueId));
 		if (!logDir.exists()) {
 			final boolean created = logDir.mkdirs();
 			if (!created) {
@@ -827,15 +828,23 @@ public class JobAgent implements MonitoringObject, Runnable {
 			}
 		}
 
-		File[] listOfFiles = tempDir.listFiles();
+		final File[] listOfFiles = tempDir.listFiles();
+		Path filePath;
+		Path destPath;
 
 		try {
 			for (File file : listOfFiles) {
-				if (file.isFile() && file.getName().contains(".log")) {
-					Files.copy(file.toPath(), Paths.get(logDir.getPath() + "/" + file.getName()));
+				if (file.isFile() && file.getName().endsWith(".log")) {
+					
+					filePath = Paths.get(file.getPath());
+					destPath= Paths.get(logDir.getPath() + "/" + file.getName());
+					
+					if(Files.exists(destPath))
+						Files.write(destPath, Files.readAllLines(filePath, StandardCharsets.UTF_8), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
+					else Files.copy(file.toPath(), destPath);					
 				}
 			}
-		}  catch (IOException e) {
+		}  catch (final IOException e) {
 			System.err.println("Warning: An error occurred while copying logs to " + logpath);
 			e.printStackTrace();
 		}
