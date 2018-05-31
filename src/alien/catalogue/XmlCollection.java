@@ -108,125 +108,142 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 			try {
 				final String fileName = sLine.substring(idx + 7, sLine.indexOf('"', idx + 8));
 
-				if (ConfigUtils.isCentralService()) {
-					if (!this.add(LFNUtils.getLFN(fileName)))
-						logger.log(Level.WARNING,
-								"Failed to add " + fileName + " to collection " + this.collectionName);
-				} else {
-					if (getReal) {
+				if (getReal) {
+					if (ConfigUtils.isCentralService()) {
+						if (!this.add(LFNUtils.getLFN(fileName))) {
+							logger.log(Level.WARNING, "Failed to add " + fileName + " to collection " + this.collectionName);
+						}
+					}
+					else {
 						JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 						if (!this.add(commander.c_api.getLFN(fileName)))
-							logger.log(Level.WARNING,
-									"Failed to add " + fileName + " to collection " + this.collectionName);
-
-					} else {
-						final StringTokenizer st = new StringTokenizer(sLine, "\"", true);
-
-						String time = null;
-						String lowner = null;
-						String group = null;
-						String lfn = null;
-						String md5 = null;
-						String size = null;
-						String guid = null;
-						String perm = null;
-						String entryId = null;
-						String dir = null;
-						String jobId = null;
-						String broken = null;
-						String expires = null;
-						String type = null;
-						String replicated = null;
-						String guidtime = null;
-
-						while (st.hasMoreTokens()) {
-							final String tok = st.nextToken().trim();
-
-							if (st.hasMoreTokens())
-								st.nextToken();
-							else
-								break;
-
-							if (tok.equals("ctime="))
-								time = value(st);
-							else if (tok.equals("gowner="))
-								group = value(st);
-							else if (tok.equals("owner="))
-								lowner = value(st);
-							else if (tok.equals("lfn="))
-								lfn = value(st);
-							else if (tok.equals("size="))
-								size = value(st);
-							else if (tok.equals("md5="))
-								md5 = value(st);
-							else if (tok.equals("guid="))
-								guid = value(st);
-							else if (tok.equals("perm="))
-								perm = value(st);
-							else if (tok.equals("entryId="))
-								entryId = value(st);
-							else if (tok.equals("dir="))
-								dir = value(st);
-							else if (tok.equals("jobId="))
-								jobId = value(st);
-							else if (tok.equals("broken="))
-								broken = value(st);
-							else if (tok.equals("expiretime="))
-								expires = value(st);
-							else if (tok.equals("type="))
-								type = value(st);
-							else if (tok.equals("guidtime="))
-								guidtime = value(st);
-							else if (tok.equals("replicated="))
-								replicated = value(st);
-							else
-								value(st);
-						}
-
-						final LFN l = new LFN(lfn);
-
-						if (time != null)
-							l.ctime = Format.parseDate(time);
-
-						if (size != null)
-							l.size = Long.parseLong(size);
-
-						// guid is "" for directories, skip it
-						if (guid != null && !guid.isEmpty())
-							l.guid = UUID.fromString(guid);
-
-						if (dir != null)
-							l.dir = Long.parseLong(dir);
-
-						if (entryId != null)
-							l.entryId = Long.parseLong(entryId);
-
-						if (jobId != null && !jobId.isEmpty())
-							l.jobid = Long.parseLong(jobId);
-
-						if (expires != null)
-							l.expiretime = Format.parseDate(expires);
-
-						if (broken != null)
-							l.broken = Utils.stringToBool(broken, false);
-
-						l.lfn = lfn;
-						l.md5 = md5;
-						l.owner = lowner;
-						l.gowner = group;
-						l.perm = perm;
-						l.type = type != null && type.length() > 0 ? type.charAt(0) : 'f';
-						l.guidtime = guidtime;
-						l.replicated = Utils.stringToBool(replicated, false);
-
-						if (!this.add(l))
-							logger.log(Level.WARNING, "Failed to add " + lfn + " to collection " + this.collectionName);
+							logger.log(Level.WARNING, "Failed to add " + fileName + " to collection " + this.collectionName);
 					}
 				}
+				else {
+					final StringTokenizer st = new StringTokenizer(sLine, "\"", true);
+
+					String time = null;
+					String lowner = null;
+					String group = null;
+					String lfn = null;
+					String md5 = null;
+					String size = null;
+					String guid = null;
+					String perm = null;
+					String entryId = null;
+					String dir = null;
+					String jobId = null;
+					String broken = null;
+					String expires = null;
+					String type = null;
+					String replicated = null;
+					String guidtime = null;
+
+					while (st.hasMoreTokens()) {
+						final String tok = st.nextToken().trim();
+
+						if (st.hasMoreTokens())
+							st.nextToken();
+						else
+							break;
+
+						if (tok.equals("ctime="))
+							time = value(st);
+						else
+							if (tok.equals("gowner="))
+								group = value(st);
+							else
+								if (tok.equals("owner="))
+									lowner = value(st);
+								else
+									if (tok.equals("lfn="))
+										lfn = value(st);
+									else
+										if (tok.equals("size="))
+											size = value(st);
+										else
+											if (tok.equals("md5="))
+												md5 = value(st);
+											else
+												if (tok.equals("guid="))
+													guid = value(st);
+												else
+													if (tok.equals("perm="))
+														perm = value(st);
+													else
+														if (tok.equals("entryId="))
+															entryId = value(st);
+														else
+															if (tok.equals("dir="))
+																dir = value(st);
+															else
+																if (tok.equals("jobId="))
+																	jobId = value(st);
+																else
+																	if (tok.equals("broken="))
+																		broken = value(st);
+																	else
+																		if (tok.equals("expiretime="))
+																			expires = value(st);
+																		else
+																			if (tok.equals("type="))
+																				type = value(st);
+																			else
+																				if (tok.equals("guidtime="))
+																					guidtime = value(st);
+																				else
+																					if (tok.equals("replicated="))
+																						replicated = value(st);
+																					else
+																						value(st);
+					}
+
+					final LFN l = new LFN(lfn);
+
+					if (time != null)
+						l.ctime = Format.parseDate(time);
+
+					if (size != null)
+						l.size = Long.parseLong(size);
+
+					// guid is "" for directories, skip it
+					if (guid != null && !guid.isEmpty())
+						l.guid = UUID.fromString(guid);
+
+					if (dir != null)
+						l.dir = Long.parseLong(dir);
+
+					if (entryId != null)
+						l.entryId = Long.parseLong(entryId);
+
+					if (jobId != null && !jobId.isEmpty())
+						l.jobid = Long.parseLong(jobId);
+
+					if (expires != null)
+						l.expiretime = Format.parseDate(expires);
+
+					if (broken != null)
+						l.broken = Utils.stringToBool(broken, false);
+
+					l.lfn = lfn;
+					l.md5 = md5;
+					l.owner = lowner;
+					l.gowner = group;
+					l.perm = perm;
+					l.type = type != null && type.length() > 0 ? type.charAt(0) : 'f';
+					l.guidtime = guidtime;
+					l.replicated = Utils.stringToBool(replicated, false);
+
+					if (!this.add(l))
+						logger.log(Level.WARNING, "Failed to add " + lfn + " to collection " + this.collectionName);
+				}
+
 			} catch (final Throwable t) {
 				throw new IOException("Exception parsing XML", t);
 			}
 		}
+
 	}
 
 	private static final String value(final StringTokenizer st) {
@@ -307,26 +324,18 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 	}
 
 	private static String getXMLPortion(final LFN l) {
-		return "      <file name=\"" + Format.escHtml(l.getFileName()) + "\" " + "aclId=\""
-				+ (l.aclId > 0 ? String.valueOf(l.aclId) : "") + "\" " + "broken=\"" + (l.broken ? 1 : 0) + "\" "
-				+ "ctime=\"" + formatTimestamp(l.ctime) + "\" " + "dir=\"" + l.dir + "\" " + "entryId=\"" + l.entryId
-				+ "\" " + "expiretime=\"" + formatTimestamp(l.expiretime) + "\" " + "gowner=\""
-				+ Format.escHtml(l.gowner) + "\" " + "guid=\"" + (l.isDirectory() ? "" : l.guid.toString()) + "\" "
-				+ "guidtime=\"\" " + "jobid=\"" + (l.jobid > 0 ? String.valueOf(l.jobid) : "") + "\" " + "lfn=\""
-				+ l.getCanonicalName() + "\" " + "md5=\"" + Format.escHtml(l.md5) + "\" " + "owner=\""
-				+ Format.escHtml(l.owner) + "\" " + "perm=\"" + Format.escHtml(l.perm) + "\" " + "replicated=\""
-				+ (l.replicated ? 1 : 0) + "\" " + "size=\"" + l.size + "\" " + "turl=\"alien://"
-				+ Format.escHtml(l.getCanonicalName()) + "\" " + "type=\"" + l.type + "\" />";
+		return "      <file name=\"" + Format.escHtml(l.getFileName()) + "\" " + "aclId=\"" + (l.aclId > 0 ? String.valueOf(l.aclId) : "") + "\" " + "broken=\"" + (l.broken ? 1 : 0) + "\" "
+				+ "ctime=\"" + formatTimestamp(l.ctime) + "\" " + "dir=\"" + l.dir + "\" " + "entryId=\"" + l.entryId + "\" " + "expiretime=\"" + formatTimestamp(l.expiretime) + "\" " + "gowner=\""
+				+ Format.escHtml(l.gowner) + "\" " + "guid=\"" + (l.isDirectory() ? "" : l.guid.toString()) + "\" " + "guidtime=\"\" " + "jobid=\"" + (l.jobid > 0 ? String.valueOf(l.jobid) : "")
+				+ "\" " + "lfn=\"" + l.getCanonicalName() + "\" " + "md5=\"" + Format.escHtml(l.md5) + "\" " + "owner=\"" + Format.escHtml(l.owner) + "\" " + "perm=\"" + Format.escHtml(l.perm) + "\" "
+				+ "replicated=\"" + (l.replicated ? 1 : 0) + "\" " + "size=\"" + l.size + "\" " + "turl=\"alien://" + Format.escHtml(l.getCanonicalName()) + "\" " + "type=\"" + l.type + "\" />";
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("<?xml version=\"1.0\"?>").append('\n');
 		sb.append("<alien>\n");
-		sb.append("  <collection name=\""
-				+ Format.escHtml(
-						collectionName != null && collectionName.length() > 0 ? collectionName : "tempCollection")
-				+ "\">\n");
+		sb.append("  <collection name=\"" + Format.escHtml(collectionName != null && collectionName.length() > 0 ? collectionName : "tempCollection") + "\">\n");
 
 		int iCount = 0;
 
@@ -344,9 +353,8 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 
 		final long lNow = System.currentTimeMillis();
 
-		sb.append("    <info command=\"" + Format.escHtml(command != null ? command : "alien.catalogue.XmlCollection")
-				+ "\" creator=\"" + Format.escHtml(owner != null ? owner : "JAliEn-Central") + "\" date=\"")
-				.append(new Date(lNow)).append("\" timestamp=\"").append(lNow).append("\" />\n");
+		sb.append("    <info command=\"" + Format.escHtml(command != null ? command : "alien.catalogue.XmlCollection") + "\" creator=\"" + Format.escHtml(owner != null ? owner : "JAliEn-Central")
+				+ "\" date=\"").append(new Date(lNow)).append("\" timestamp=\"").append(lNow).append("\" />\n");
 		sb.append("  </collection>\n");
 		sb.append("</alien>");
 
