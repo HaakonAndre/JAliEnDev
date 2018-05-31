@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,20 +31,17 @@ import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
-import alien.monitoring.MonitorFactory;
-import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
-import apmon.ApMon;
 
 /**
  * Job execution wrapper, running an embedded JBox for in/out-bound communications
  */
-public class JobWrapper implements MonitoringObject, Runnable {
+public class JobWrapper implements Runnable {
 
 	// Folders and files
 	private File tempDir = null;
@@ -120,11 +116,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 	 * logger object
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
-
-	/**
-	 * ApMon sender
-	 */
-	static transient final ApMon apmon = MonitorFactory.getApMonSender();
 
 	/**
 	 * Streams for data transfer
@@ -672,17 +663,6 @@ public class JobWrapper implements MonitoringObject, Runnable {
 				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
-	}
-
-	@Override
-	public void fillValues(final Vector<String> paramNames, final Vector<Object> paramValues) {
-		if (queueId > 0) {
-			paramNames.add("jobID");
-			paramValues.add(Double.valueOf(queueId));
-
-			paramNames.add("statusID");
-			paramValues.add(Double.valueOf(jobStatus.getAliEnLevel()));
-		}
 	}
 
 }

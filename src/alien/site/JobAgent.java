@@ -584,11 +584,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdin = p.getOutputStream();
 			stdinObj = new ObjectOutputStream(stdin);
 
-			sendObject(jdl, stdinObj);
-			sendObject(username, stdinObj);
-			sendObject(queueId, stdinObj);
-			sendObject(tokenCert, stdinObj);
-			sendObject(tokenKey, stdinObj);
+			stdinObj.writeObject(jdl);
+			stdinObj.writeObject(username);
+			stdinObj.writeObject(queueId);
+			stdinObj.writeObject(tokenCert);
+			stdinObj.writeObject(tokenKey);
 
 			stdinObj.close();
 			stdin.close();
@@ -796,16 +796,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		System.setProperty("user.dir", jobWorkdir);
 
 		return true;
-	}
-
-	private void sendObject(Object toSend, ObjectOutputStream stream){
-		try {
-			stream.writeObject(toSend);
-			stream.flush();
-			stream.reset();
-		} catch (final IOException e) {
-			System.err.println("Error sending token information to JobWrapper: " + e.toString());
-		}
 	}
 	
 	private void copyLogs(){
