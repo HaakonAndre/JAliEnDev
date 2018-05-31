@@ -319,9 +319,6 @@ public class ArchiveMemberDelete {
 				}
 			}
 
-			// Set jobID for the new archive LFN
-			commander.c_api.getLFN(remoteArchive).jobid = jobID;
-
 			// Create file marker to leave trace
 			commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
 
