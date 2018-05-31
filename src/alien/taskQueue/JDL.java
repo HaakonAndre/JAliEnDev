@@ -1355,7 +1355,7 @@ public class JDL implements Serializable {
 			"Output", "OutputArchive", "OutputDir", "OutputFile", "Packages", "Price", "Requirements", "SuccessfullyBookedPFNs", "TTL", "Type", "User", "ValidationCommand", "WorkDirectorySize",
 			"Split", "SplitArguments", "SplitMaxInputFileNumber", "MasterJobID", "LPMParentPID", "LPMChainID", "MaxWaitingTime", "MaxFailFraction", "MaxResubmitFraction", "LegoResubmitZombies",
 			"RunOnAODs", "LegoDataSetType", "LPMJobTypeID", "LPMAnchorRun", "LPMMetaData", "JDLArguments", "LPMRunNumber", "LPMAnchorProduction", "LPMProductionType", "LPMProductionTag",
-			"LPMAnchorYear", "LPMInteractionType", "filesToCheck", "OutputErrorE");
+			"LPMAnchorYear", "LPMInteractionType", "FilesToCheck", "OutputErrorE");
 
 	private static final List<String> preferredOrder = Arrays.asList("user", "jobtag", "packages", "executable", "arguments", "inputfile", "inputdata", "inputdatalist", "inputdatalistformat",
 			"inputdatacollection", "split", "splitmaxinputfilenumber", "splitarguments", "jdlpath", "jdlarguments", "jdlprocessor", "validationcommand", "outputdir", "output", "outputerrore",
