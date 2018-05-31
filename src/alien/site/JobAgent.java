@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
@@ -29,6 +30,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import alien.api.JBoxServer;
+import alien.api.Request;
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
@@ -46,7 +48,6 @@ import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
-import lazyj.commands.SystemCommand;
 
 /**
  * Gets matched jobs, and launches JobWrapper for executing them
@@ -164,6 +165,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
+		else jobAgentId = Request.getVMID().toString();
+					
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
 		workdir = (String) siteMap.get("workdir");
@@ -310,12 +313,26 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 *         execution errors
 	 */
 	private void cleanup() {
+		System.out.println("Sending monitoring values...");
+
+		monitor.sendParameter("job_id", 0);
+		monitor.sendParameter("statusID", Double.valueOf(jobStatus.getAliEnLevel()));
+		monitor.sendParameter("ja_status", jaStatus.DONE); //TODO: May be errors during run. Use exit code from JobWrapper to report them.
+
 		System.out.println("Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");
+
 		copyLogs();
 
 		System.out.println("Cleaning up after execution...");
-		// Remove sandbox, TODO: use Java builtin
-		SystemCommand.bash("rm -rf " + jobWorkdir);
+
+		try {
+			Files.walk(tempDir.toPath())
+			.sorted(Comparator.reverseOrder()) //or else tempdir will appear before its contents
+			.map(Path::toFile).
+			forEach(File::delete);
+		} catch (IOException e) {
+			System.out.println("Error deleting the job workdir: " + e.toString());
+		}
 
 		RES_WORKDIR_SIZE = ZERO;
 		RES_VMEM = ZERO;
