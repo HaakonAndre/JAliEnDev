@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.zip.ZipEntry;
@@ -80,21 +81,22 @@ public class ArchiveMemberDelete {
 		// Use this for debugging
 		// final ByteArrayOutputStream out = new ByteArrayOutputStream();
 		// commander.setLine(new JSONPrintWriter(out), null);
+		System.out.println();
 
 		LFN remoteLFN = null;
 		try {
 			remoteLFN = commander.c_api.getLFN(xmlEntry);
 		} catch (NullPointerException e) {
-			System.err.println("Something went wrong. Abort.");
+			System.err.println("[" + new Date() + "] Something went wrong. Abort.");
 			e.printStackTrace();
 			return;
 		}
 
 		if (remoteLFN == null || !remoteLFN.exists) {
 			if (!commander.c_api.find(xmlEntry.substring(0, xmlEntry.lastIndexOf("/")), ".deleted", 0).isEmpty())
-				System.out.println("[PROCESS] " + xmlEntry + ": already deleted, continue.");
+				System.out.println("[" + new Date() + "]  " + xmlEntry + ": already deleted, continue.");
 			else
-				System.err.println("[ERROR_V] " + xmlEntry + ": LFN doesn't exist. Abort.");
+				System.err.println("[" + new Date() + "] " + xmlEntry + ": LFN doesn't exist. Abort.");
 
 			return;
 		}
@@ -103,12 +105,11 @@ public class ArchiveMemberDelete {
 		final String remotePath = remoteLFN.getParentName();
 		final long remoteFileSize = remoteLFN.getSize();
 
-		System.out.println();
-		System.out.println("Processing " + remoteFile);
+		System.out.println("[" + new Date() + "] Processing " + remoteFile);
 
 		// If the file is not a member of any archives, just delete it
 		if (remoteLFN.equals(commander.c_api.getRealLFN(remoteFile))) {
-			System.out.println("[PROCESS] " + remoteFile + " is a real file, we'll simply delete it");
+			System.out.println("[" + new Date() + "] " + remoteFile + " is a real file, we'll simply delete it");
 
 			// Speed up things by calling xrootd delete directly
 			try {
@@ -120,22 +121,22 @@ public class ArchiveMemberDelete {
 
 					try {
 						if (!Factory.xrootd.delete(pfn)) {
-							System.err.println("[PROCESS] " + remoteFile + ": Could not delete " + pfn.pfn);
+							System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 						}
 					} catch (final IOException e) {
 						e.printStackTrace();
 					}
 				}
 			} catch (final ServerException e) {
-				System.err.println("[PROCESS] " + remoteFile + ": Could not get PFN");
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN");
 				e.printStackTrace();
 			}
 
 			commander.c_api.removeLFN(remoteFile);
 			commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + remoteFileSize);
 
-			System.out.println("[DONE] " + remoteFile);
-			System.out.println("[DONE] Gained " + remoteFileSize + " bytes of disk space");
+			System.out.println("[" + new Date() + "] " + remoteFile);
+			System.out.println("[" + new Date() + "] Reclaimed " + remoteFileSize + " bytes of disk space");
 			return;
 		}
 
@@ -145,7 +146,7 @@ public class ArchiveMemberDelete {
 			// Archive variables
 			final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile);
 			if (remoteArchiveLFN == null || !remoteArchiveLFN.exists) {
-				System.err.println("[ERROR_V] " + remoteFile + ": Archive not found in parent dir");
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Archive not found in parent dir");
 				validation.println("File not found");
 				return;
 			}
@@ -160,10 +161,10 @@ public class ArchiveMemberDelete {
 				// RemoteLFN is the only file in remoteArchive
 				// No point in downloading it, just remove file and archive
 
-				System.out.println("[PROCESS] Deleting remote file");
+				System.out.println("[" + new Date() + "] Deleting remote file");
 				commander.c_api.removeLFN(remoteFile);
 
-				System.out.println("[PROCESS] Deleting old remote archive");
+				System.out.println("[" + new Date() + "] Deleting old remote archive");
 
 				// Remove physical replicas of the old archive
 				try {
@@ -175,14 +176,14 @@ public class ArchiveMemberDelete {
 
 						try {
 							if (!Factory.xrootd.delete(pfn)) {
-								System.err.println("[PROCESS] " + remoteFile + ": Could not delete " + pfn.pfn);
+								System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 							}
 						} catch (final IOException e) {
 							e.printStackTrace();
 						}
 					}
 				} catch (final ServerException e) {
-					System.err.println("[PROCESS] " + remoteFile + ": Could not get PFN for " + remoteArchive);
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN for " + remoteArchive);
 					e.printStackTrace();
 				}
 
@@ -192,10 +193,10 @@ public class ArchiveMemberDelete {
 				// Create file marker to leave trace
 				commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + remoteArchiveLFN.getSize());
 
-				System.out.println("[DONE] " + remoteFile);
-				System.out.println("[DONE] " + memberName + " was " + remoteLFN.getSize() + " bytes");
-				System.out.println("[DONE] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
-				System.out.println("[DONE] " + "Gained " + remoteArchiveLFN.getSize() + " bytes of disk space");
+				System.out.println("[" + new Date() + "] " + remoteFile);
+				System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
+				System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
+				System.out.println("[" + new Date() + "] " + "Reclaimed " + remoteArchiveLFN.getSize() + " bytes of disk space");
 
 				return;
 			}
@@ -207,19 +208,20 @@ public class ArchiveMemberDelete {
 
 			// Download the archive from the Grid
 			//
-			System.out.println("[PROCESS] Downloading the archive from the Grid");
+			System.out.println("[" + new Date() + "] Downloading the archive from the Grid");
 			commander.c_api.downloadFile(remoteArchive, localArchive, "-silent");
 			if (!localArchive.exists()) {
-				System.err.println("[ERROR_V] " + remoteFile + ": Failed to download remote archive " + remoteArchive);
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to download remote archive " + remoteArchive);
 				validation.println("Download failed");
 				return;
 			}
 
 			// Unpack to local directory and zip again without member file
 			//
-			System.out.println("[PROCESS] Unpacking to local directory");
+			System.out.println("[" + new Date() + "] Unpacking to local directory");
 			if (!unzip()) {
-				System.err.println("[ERROR_V] " + remoteFile + ": Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
+				System.err.println(
+						"[" + new Date() + "] " + remoteFile + ": Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
 				validation.println("Extraction failed");
 				return;
 			}
@@ -229,19 +231,19 @@ public class ArchiveMemberDelete {
 			final ArrayList<String> listOfFiles = new ArrayList<>();
 			final File[] listing = folder.listFiles();
 			if (listing == null) {
-				System.err.println("[ERROR_V] " + remoteFile + ": Failed to get list of files in local folder. Break");
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to get list of files in local folder. Break");
 				return;
 			}
 			for (final File file : listing)
 				listOfFiles.add(file.getName());
 
-			System.out.println("[PROCESS] Zipping the new archive");
+			System.out.println("[" + new Date() + "] Zipping the new archive");
 			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
 			entry.createZip(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
 
 			// Upload the new archive to the Grid
 			//
-			System.out.println("[PROCESS] Uploading the new archive to the Grid");
+			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid");
 
 			// Create exactly the same number of replicas as the original archive had
 			final int nreplicas = commander.c_api.getPFNsToRead(remoteArchiveLFN, null, null).size();
@@ -249,21 +251,21 @@ public class ArchiveMemberDelete {
 			commander.c_api.uploadFile(newArchive, remoteArchive + ".new", "-w", "-S", "disk:" + nreplicas);
 
 			if (commander.c_api.getLFN(remoteArchive + ".new") == null || !commander.c_api.getLFN(remoteArchive + ".new").exists) {
-				System.err.println("[ERROR_V] " + remoteFile + ": Failed to upload archive " + remoteArchive + ".new");
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + remoteArchive + ".new");
 				validation.println("Upload failed");
 				return;
 			}
 
 			// Delete the members links of old archive
 			//
-			System.out.println("[PROCESS] Deleting the members links of old archive");
+			System.out.println("[" + new Date() + "] Deleting the members links of old archive");
 			for (final LFN member : remoteArchiveMembers) {
 				commander.c_api.removeLFN(member.getCanonicalName());
 			}
 
 			// Delete old remote archive
 			//
-			System.out.println("[PROCESS] Deleting old remote archive");
+			System.out.println("[" + new Date() + "] Deleting old remote archive");
 
 			// Remove physical replicas of the old archive
 			try {
@@ -275,14 +277,14 @@ public class ArchiveMemberDelete {
 
 					try {
 						if (!Factory.xrootd.delete(pfn)) {
-							System.err.println("[PROCESS] " + remoteFile + ": Could not delete " + pfn.pfn);
+							System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 						}
 					} catch (final IOException e) {
 						e.printStackTrace();
 					}
 				}
 			} catch (final ServerException e) {
-				System.err.println("[PROCESS] " + remoteFile + ": Could not get PFN for " + remoteArchive);
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN for " + remoteArchive);
 				e.printStackTrace();
 			}
 
@@ -291,24 +293,24 @@ public class ArchiveMemberDelete {
 
 			// Rename uploaded archive
 			//
-			System.out.println("[PROCESS] Renaming uploaded archive");
+			System.out.println("[" + new Date() + "] Renaming uploaded archive");
 			commander.c_api.moveLFN(remoteArchive + ".new", remoteArchive);
 
 			if (commander.c_api.getLFN(remoteArchive) == null || !commander.c_api.getLFN(remoteArchive).exists) {
-				System.err.println("[ERROR_V] " + remoteFile + ": Failed to rename the archive " + remoteArchive);
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive " + remoteArchive);
 				validation.println("Rename failed");
 				return;
 			}
 
 			// Register files in the catalogue
 			//
-			System.out.println("[PROCESS] Registering files in the catalogue");
+			System.out.println("[" + new Date() + "] Registering files in the catalogue");
 			CatalogueApiUtils.registerEntry(entry, remotePath + System.getProperty("file.separator"), commander.getUser());
 
 			for (final String file : listOfFiles) {
 				if (commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file) == null
 						|| !commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file).exists) {
-					System.err.println("[ERROR_V] " + remoteFile + ": Failed to register entry " + remotePath + file);
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register entry " + remotePath + file);
 					validation.println("Register failed");
 					return;
 				}
@@ -320,11 +322,11 @@ public class ArchiveMemberDelete {
 			// Create file marker to leave trace
 			commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
 
-			System.out.println("[DONE] " + remoteFile);
-			System.out.println("[DONE] " + memberName + " was " + remoteLFN.getSize() + " bytes");
-			System.out.println("[DONE] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
-			System.out.println("[DONE] " + "New archive is " + newArchive.length() + " bytes");
-			System.out.println("[DONE] " + "Gained " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
+			System.out.println("[" + new Date() + "] " + remoteFile);
+			System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
+			System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
+			System.out.println("[" + new Date() + "] " + "New archive is " + newArchive.length() + " bytes");
+			System.out.println("[" + new Date() + "] " + "Gained " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
 
 			// Clean up
 			final File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
@@ -395,6 +397,7 @@ public class ArchiveMemberDelete {
 					final File dir = new File(filePath);
 					dir.mkdir();
 				}
+				System.out.println("[" + new Date() + "] - extracted " + entry.getName());
 				zipIn.closeEntry();
 				entry = zipIn.getNextEntry();
 			}
