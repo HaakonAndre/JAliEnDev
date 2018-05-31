@@ -90,27 +90,6 @@ public class JobWrapper implements Runnable {
 	 * @uml.associationEnd  
 	 */
 	private final CatalogueApiUtils c_api;
-	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
-
-	static {
-		jaStatus.put("REQUESTING_JOB", Integer.valueOf(1));
-		jaStatus.put("INSTALLING_PKGS", Integer.valueOf(2));
-		jaStatus.put("JOB_STARTED", Integer.valueOf(3));
-		jaStatus.put("RUNNING_JOB", Integer.valueOf(4));
-		jaStatus.put("DONE", Integer.valueOf(5));
-		jaStatus.put("ERROR_HC", Integer.valueOf(-1)); // error in getting host
-		// classad
-		jaStatus.put("ERROR_IP", Integer.valueOf(-2)); // error installing
-		// packages
-		jaStatus.put("ERROR_GET_JDL", Integer.valueOf(-3)); // error getting jdl
-		jaStatus.put("ERROR_JDL", Integer.valueOf(-4)); // incorrect jdl
-		jaStatus.put("ERROR_DIRS", Integer.valueOf(-5)); // error creating
-		// directories, not
-		// enough free space
-		// in workdir
-		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to
-		// start job
-	}
 
 	/**
 	 * logger object

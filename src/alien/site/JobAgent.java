@@ -57,7 +57,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private File tempDir = null;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
 	private String jobWorkdir = "";
-	private final String logpath = "/tmp/jobwrapper-logs";
+	private String logpath = "";
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -90,29 +90,22 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private String hostName = null;
 	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
-	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 	private Path path = null;
 
-	static {
-		jaStatus.put("REQUESTING_JOB", Integer.valueOf(1));
-		jaStatus.put("INSTALLING_PKGS", Integer.valueOf(2));
-		jaStatus.put("JOB_STARTED", Integer.valueOf(3));
-		jaStatus.put("RUNNING_JOB", Integer.valueOf(4));
-		jaStatus.put("DONE", Integer.valueOf(5));
-		jaStatus.put("ERROR_HC", Integer.valueOf(-1)); // error in getting host
-		// classad
-		jaStatus.put("ERROR_IP", Integer.valueOf(-2)); // error installing
-		// packages
-		jaStatus.put("ERROR_GET_JDL", Integer.valueOf(-3)); // error getting jdl
-		jaStatus.put("ERROR_JDL", Integer.valueOf(-4)); // incorrect jdl
-		jaStatus.put("ERROR_DIRS", Integer.valueOf(-5)); // error creating
-		// directories, not
-		// enough free space
-		// in workdir
-		jaStatus.put("ERROR_START", Integer.valueOf(-6)); // error forking to
-		// start job
+	private enum jaStatus{
+		REQUESTING_JOB,
+		INSTALLING_PKGS,
+		JOB_STARTED,
+		RUNNING_JOB,
+		DONE,
+		ERROR_HC,
+		ERROR_IP,
+		ERROR_GET_JDL,
+		ERROR_JDL,
+		ERROR_DIRS,
+		ERROR_START
 	}
-
+	
 	private final int jobagent_requests = 1; // TODO: restore to 5
 
 	/**
@@ -154,6 +147,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		// site = env.get("site"); // or
 		// ConfigUtils.getConfig().gets("alice_close_site").trim();
 		ce = env.get("CE");
+		
+		logpath = env.getOrDefault("TMPDIR", "/tmp/") + "jobwrapper-logs";
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
@@ -215,7 +210,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
 
-				monitor.sendParameter("ja_status", getJaStatusForML("REQUESTING_JOB"));
+				monitor.sendParameter("ja_status", jaStatus.REQUESTING_JOB);
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
@@ -251,7 +246,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 						if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
 							@SuppressWarnings("unchecked")
 							final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
-							monitor.sendParameter("ja_status", getJaStatusForML("INSTALLING_PKGS"));
+							monitor.sendParameter("ja_status", jaStatus.INSTALLING_PKGS);
 							installPackages(packToInstall);
 						}
 					}
@@ -350,12 +345,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 			}
 		}
 		return ok;
-	}
-
-	private static Integer getJaStatusForML(final String status) {
-		final Integer value = jaStatus.get(status);
-
-		return value != null ? value : Integer.valueOf(0);
 	}
 
 	/**
