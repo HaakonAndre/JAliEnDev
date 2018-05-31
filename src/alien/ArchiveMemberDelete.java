@@ -87,6 +87,7 @@ public class ArchiveMemberDelete {
 		try {
 			remoteLFN = commander.c_api.getLFN(xmlEntry);
 		} catch (NullPointerException e) {
+			// Connection may be refused
 			System.err.println("[" + new Date() + "] Something went wrong. Abort.");
 			e.printStackTrace();
 			return;
@@ -101,6 +102,22 @@ public class ArchiveMemberDelete {
 			return;
 		}
 
+		// Check if we are able to get PFN list
+		List<PFN> remotePFN = null;
+		try {
+			remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
+		} catch (ServerException e1) {
+			System.err.println("[" + new Date() + "] " + xmlEntry + ": Could not get PFN");
+			e1.printStackTrace();
+			return;
+		}
+
+		// If not - the file is orphaned
+		if (remotePFN == null || remotePFN.size() == 0) {
+			System.err.println("[" + new Date() + "] " + xmlEntry + ": Can't get PFNs for this file. Abort");
+			return;
+		}
+
 		final String remoteFile = remoteLFN.getCanonicalName();
 		final String remotePath = remoteLFN.getParentName();
 		final long remoteFileSize = remoteLFN.getSize();
@@ -112,24 +129,17 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] " + remoteFile + " is a real file, we'll simply delete it");
 
 			// Speed up things by calling xrootd delete directly
-			try {
-				final List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
+			final Iterator<PFN> it = remotePFN.iterator();
+			while (it.hasNext()) {
+				PFN pfn = it.next();
 
-				final Iterator<PFN> it = remotePFN.iterator();
-				while (it.hasNext()) {
-					PFN pfn = it.next();
-
-					try {
-						if (!Factory.xrootd.delete(pfn)) {
-							System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
-						}
-					} catch (final IOException e) {
-						e.printStackTrace();
+				try {
+					if (!Factory.xrootd.delete(pfn)) {
+						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 					}
+				} catch (final IOException e) {
+					e.printStackTrace();
 				}
-			} catch (final ServerException e) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN");
-				e.printStackTrace();
 			}
 
 			commander.c_api.removeLFN(remoteFile);
@@ -151,6 +161,13 @@ public class ArchiveMemberDelete {
 				return;
 			}
 
+			final List<PFN> remoteArchivePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
+			if (remoteArchivePFN.size() == 0) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Archive is orphaned");
+				validation.println("Orphaned archive");
+				return;
+			}
+
 			final String remoteArchive = remoteArchiveLFN.getCanonicalName();
 			archiveName = remoteArchiveLFN.getFileName();
 			memberName = remoteLFN.getFileName();
@@ -167,24 +184,17 @@ public class ArchiveMemberDelete {
 				System.out.println("[" + new Date() + "] Deleting old remote archive");
 
 				// Remove physical replicas of the old archive
-				try {
-					final List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
+				final Iterator<PFN> it = remoteArchivePFN.iterator();
+				while (it.hasNext()) {
+					final PFN pfn = it.next();
 
-					final Iterator<PFN> it = remotePFN.iterator();
-					while (it.hasNext()) {
-						final PFN pfn = it.next();
-
-						try {
-							if (!Factory.xrootd.delete(pfn)) {
-								System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
-							}
-						} catch (final IOException e) {
-							e.printStackTrace();
+					try {
+						if (!Factory.xrootd.delete(pfn)) {
+							System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 						}
+					} catch (final IOException e) {
+						e.printStackTrace();
 					}
-				} catch (final ServerException e) {
-					System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN for " + remoteArchive);
-					e.printStackTrace();
 				}
 
 				// Remove lfn of the old archive
@@ -268,24 +278,17 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] Deleting old remote archive");
 
 			// Remove physical replicas of the old archive
-			try {
-				final List<PFN> remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
+			final Iterator<PFN> it = remoteArchivePFN.iterator();
+			while (it.hasNext()) {
+				final PFN pfn = it.next();
 
-				final Iterator<PFN> it = remotePFN.iterator();
-				while (it.hasNext()) {
-					final PFN pfn = it.next();
-
-					try {
-						if (!Factory.xrootd.delete(pfn)) {
-							System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
-						}
-					} catch (final IOException e) {
-						e.printStackTrace();
+				try {
+					if (!Factory.xrootd.delete(pfn)) {
+						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 					}
+				} catch (final IOException e) {
+					e.printStackTrace();
 				}
-			} catch (final ServerException e) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN for " + remoteArchive);
-				e.printStackTrace();
 			}
 
 			// Remove lfn of the old archive
@@ -343,6 +346,9 @@ public class ArchiveMemberDelete {
 			newArchive.delete();
 
 		} catch (IOException e1) {
+			e1.printStackTrace();
+		} catch (ServerException e1) {
+			System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN");
 			e1.printStackTrace();
 		}
 	}
