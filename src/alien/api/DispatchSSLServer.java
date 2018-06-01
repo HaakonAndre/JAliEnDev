@@ -27,9 +27,12 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.api.taskQueue.GetMatchJob;
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
+import lazyj.Format;
 
 /**
  * @author costing
@@ -46,6 +49,11 @@ public class DispatchSSLServer extends Thread {
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLServer.class.getCanonicalName());
+
+	/**
+	 * Service monitoring
+	 */
+	static transient final Monitor monitor = MonitorFactory.getMonitor(DispatchSSLServer.class.getCanonicalName());
 
 	/**
 	 * The entire connection
@@ -74,7 +82,7 @@ public class DispatchSSLServer extends Thread {
 	private int objectsSentCounter = 0;
 
 	/**
-	 * E.g. the CE proxy should act as a fowarding bridge between JA and central services
+	 * E.g. the CE proxy should act as a forwarding bridge between JA and central services
 	 *
 	 * @param servName
 	 *            name of the config parameter for the host:port settings
@@ -115,7 +123,18 @@ public class DispatchSSLServer extends Thread {
 			return;
 		}
 
+		final AliEnPrincipal remoteIdentity = UserFactory.getByCertificate(partnerCerts);
+
+		if (remoteIdentity == null) {
+			logger.log(Level.WARNING, "Could not get the identity of this certificate chain: " + Arrays.toString(partnerCerts));
+			return;
+		}
+
+		remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
+
 		long lLasted = 0;
+
+		int requestCount = 0;
 
 		try {
 			while (true) {
@@ -126,15 +145,6 @@ public class DispatchSSLServer extends Thread {
 						Request r = (Request) o;
 
 						final long lStart = System.currentTimeMillis();
-
-						final AliEnPrincipal remoteIdentity = UserFactory.getByCertificate(partnerCerts);
-
-						if (remoteIdentity == null) {
-							logger.log(Level.WARNING, "Could not get the identity of this certificate chain: " + Arrays.toString(partnerCerts));
-							return;
-						}
-
-						remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
 
 						r.setPartnerIdentity(remoteIdentity);
 
@@ -167,7 +177,9 @@ public class DispatchSSLServer extends Thread {
 								}
 						}
 
-						lLasted += (System.currentTimeMillis() - lStart);
+						final long requestProcessingDuration = System.currentTimeMillis() - lStart;
+
+						lLasted += requestProcessingDuration;
 
 						final long lSer = System.currentTimeMillis();
 
@@ -183,21 +195,28 @@ public class DispatchSSLServer extends Thread {
 						oos.flush();
 						os.flush();
 
-						lSerialization += System.currentTimeMillis() - lSer;
+						final long serializationDuration = System.currentTimeMillis() - lSer;
+
+						lSerialization += serializationDuration;
 
 						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName()); // +
 																																			// ":
 																																			// "+r.toString());
 
+						monitor.addMeasurement("request_processing", requestProcessingDuration);
+						monitor.addMeasurement("serialization", serializationDuration);
+
+						requestCount++;
 					}
 					else
 						logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
 			}
 		} catch (@SuppressWarnings("unused") final EOFException e) {
-			logger.log(Level.WARNING, "Client disconnected");
-			logger.log(Level.WARNING, "Lasted : " + lLasted + ", serialization : " + lSerialization);
+			logger.log(Level.WARNING, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval(lLasted) + " to process and "
+					+ Format.toInterval(lSerialization) + " to serialize");
 		} catch (final Throwable e) {
-			logger.log(Level.WARNING, "Lasted : " + lLasted + ", serialization : " + lSerialization, e);
+			logger.log(Level.WARNING, "Main thread for " + getName() + " threw an error after sending " + requestCount + " requests that took in total " + Format.toInterval(lLasted)
+					+ " to process and " + Format.toInterval(lSerialization) + " to serialize", e);
 		} finally {
 			if (ois != null)
 				try {
@@ -313,6 +332,9 @@ public class DispatchSSLServer extends Thread {
 
 					if (!c.getSession().isValid()) {
 						logger.log(Level.WARNING, "Invalid SSL connection from " + c.getRemoteSocketAddress());
+
+						monitor.incrementCounter("invalid_ssl_connection");
+
 						continue;
 					}
 
@@ -332,8 +354,12 @@ public class DispatchSSLServer extends Thread {
 						serv.partnerCerts = c.getSession().getPeerCertificateChain();
 
 					serv.start();
+
+					monitor.incrementCounter("accepted_connections");
 				} catch (final IOException ioe) {
 					logger.log(Level.WARNING, "Exception treating a client", ioe);
+
+					monitor.incrementCounter("exception_handling_client");
 				}
 			}
 
