@@ -42,6 +42,7 @@ public class ArchiveMemberDelete {
 	 * @throws Exception
 	 */
 	public static void main(final String[] args) throws Exception {
+
 		if (args.length > 0) {
 			final OptionParser parser = new OptionParser();
 			parser.accepts("list").withRequiredArg(); // Like "collection.xml"
@@ -253,7 +254,7 @@ public class ArchiveMemberDelete {
 
 			// Upload the new archive to the Grid
 			//
-			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid");
+			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid: " + remoteArchive + ".new");
 
 			final File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
 			commander.c_api.uploadFile(newArchive, remoteArchive + ".new", "-w", "-S", "disk:1"); // Create only one replica
@@ -281,6 +282,7 @@ public class ArchiveMemberDelete {
 				final PFN pfn = it.next();
 
 				try {
+					System.out.println("[" + new Date() + "] Deleting copy at " + pfn.getSE().getName());
 					if (!Factory.xrootd.delete(pfn)) {
 						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 					}
@@ -320,7 +322,6 @@ public class ArchiveMemberDelete {
 			// Create file marker to leave trace
 			commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
 
-			System.out.println("[" + new Date() + "] " + remoteFile);
 			System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 			System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
 			System.out.println("[" + new Date() + "] " + "New archive is " + newArchive.length() + " bytes");
