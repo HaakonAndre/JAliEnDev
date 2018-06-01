@@ -255,10 +255,8 @@ public class ArchiveMemberDelete {
 			//
 			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid");
 
-			// Create exactly the same number of replicas as the original archive had
-			final int nreplicas = commander.c_api.getPFNsToRead(remoteArchiveLFN, null, null).size();
 			final File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
-			commander.c_api.uploadFile(newArchive, remoteArchive + ".new", "-w", "-S", "disk:" + nreplicas);
+			commander.c_api.uploadFile(newArchive, remoteArchive + ".new", "-w", "-S", "disk:1"); // Create only one replica
 
 			if (commander.c_api.getLFN(remoteArchive + ".new") == null || !commander.c_api.getLFN(remoteArchive + ".new").exists) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + remoteArchive + ".new");
