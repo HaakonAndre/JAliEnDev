@@ -1235,12 +1235,17 @@ public class LFNUtils {
 
 		UUID guid = null;
 
+		String zipMember = null;
+
 		final Set<PFN> listing = file.whereis();
 		if (listing != null)
 			for (final PFN p : listing)
 				if (p.pfn != null && p.pfn.startsWith("guid:/"))
 					try {
-						guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+						guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/', p.pfn.indexOf('?')) + 1, p.pfn.indexOf('?')));
+
+						zipMember = p.pfn.substring(p.pfn.indexOf('?') + 1);
+
 						break;
 					} catch (final Exception e) {
 						logger.log(Level.WARNING, "Failed to parse guid ", e);
@@ -1252,6 +1257,10 @@ public class LFNUtils {
 
 		try {
 			LFN parentDir = file.getParentDir();
+
+			if (zipMember != null && zipMember.indexOf('/') > 0 && parentDir != null)
+				parentDir = parentDir.getParentDir();
+
 			if (parentDir != null && parentDir.list() != null)
 				for (final LFN otherFile : parentDir.list())
 					if (otherFile.isFile() && otherFile.guid != null && otherFile.guid.equals(guid))
