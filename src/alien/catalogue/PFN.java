@@ -106,19 +106,25 @@ public class PFN implements Serializable, Comparable<PFN> {
 
 		pfn = StringFactory.get(db.gets("pfn"));
 
-		seNumber = db.geti("seNumber");
+		if (pfn.startsWith("guid:///")) {
+			// don't correct old PFNs that have for some reason an associated SE number even if they are pointers to archives
+			seNumber = 0;
+		}
+		else {
+			seNumber = db.geti("seNumber");
 
-		if (seNumber > 0) {
-			final SE se = SEUtils.getSE(seNumber);
+			if (seNumber > 0) {
+				final SE se = SEUtils.getSE(seNumber);
 
-			if (se != null && se.seioDaemons != null && se.seioDaemons.length() > 0 && !pfn.startsWith(se.seioDaemons)) {
-				int idx = pfn.indexOf("://");
+				if (se != null && se.seioDaemons != null && se.seioDaemons.length() > 0 && !pfn.startsWith(se.seioDaemons)) {
+					int idx = pfn.indexOf("://");
 
-				if (idx > 0 && idx < 10) {
-					idx = pfn.indexOf('/', idx + 3);
+					if (idx > 0 && idx < 10) {
+						idx = pfn.indexOf('/', idx + 3);
 
-					if (idx > 0)
-						pfn = se.seioDaemons + pfn.substring(idx);
+						if (idx > 0)
+							pfn = se.seioDaemons + pfn.substring(idx);
+					}
 				}
 			}
 		}
@@ -158,7 +164,7 @@ public class PFN implements Serializable, Comparable<PFN> {
 		this.tableNumber = guid.tableName;
 		this.hashCode = this.pfn.hashCode();
 	}
-	
+
 	/**
 	 * @param path
 	 *            correct path for case-sensitive locations
@@ -208,7 +214,8 @@ public class PFN implements Serializable, Comparable<PFN> {
 				realPFNs = archiveGuid.getPFNs();
 			else
 				realPFNs = null;
-		} else {
+		}
+		else {
 			realPFNs = new LinkedHashSet<>(1);
 			realPFNs.add(this);
 		}
