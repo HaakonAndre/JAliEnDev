@@ -120,13 +120,18 @@ public class ArchiveMemberDelete {
 		}
 
 		final String remoteFile = remoteLFN.getCanonicalName();
-		final String remotePath = remoteLFN.getParentName();
 		final long remoteFileSize = remoteLFN.getSize();
+
+		final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile);
+		if (remoteArchiveLFN == null || !remoteArchiveLFN.exists) {
+			System.err.println("[" + new Date() + "] " + remoteFile + ": Archive not found in parent dir. Abort");
+			return;
+		}
 
 		System.out.println("[" + new Date() + "] Processing " + remoteFile);
 
 		// If the file is not a member of any archives, just delete it
-		if (remoteLFN.equals(commander.c_api.getRealLFN(remoteFile))) {
+		if (remoteLFN.equals(remoteArchiveLFN)) {
 			System.out.println("[" + new Date() + "] " + remoteFile + " is a real file, we'll simply delete it");
 
 			// Speed up things by calling xrootd delete directly
@@ -144,7 +149,7 @@ public class ArchiveMemberDelete {
 			}
 
 			commander.c_api.removeLFN(remoteFile);
-			commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + remoteFileSize);
+			commander.c_api.touchLFN(remoteLFN.getParentName() + System.getProperty("file.separator") + ".deleted" + remoteFileSize);
 
 			System.out.println("[" + new Date() + "] " + remoteFile);
 			System.out.println("[" + new Date() + "] Reclaimed " + remoteFileSize + " bytes of disk space");
@@ -154,13 +159,6 @@ public class ArchiveMemberDelete {
 		// Main procedure
 		//
 		try (final PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
-			// Archive variables
-			final LFN remoteArchiveLFN = commander.c_api.getRealLFN(remoteFile);
-			if (remoteArchiveLFN == null || !remoteArchiveLFN.exists) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Archive not found in parent dir");
-				validation.println("File not found");
-				return;
-			}
 
 			final List<PFN> remoteArchivePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
 			if (remoteArchivePFN.size() == 0) {
@@ -202,9 +200,8 @@ public class ArchiveMemberDelete {
 				commander.c_api.removeLFN(remoteArchive);
 
 				// Create file marker to leave trace
-				commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + remoteArchiveLFN.getSize());
+				commander.c_api.touchLFN(remoteLFN.getParentName() + System.getProperty("file.separator") + ".deleted" + remoteArchiveLFN.getSize());
 
-				System.out.println("[" + new Date() + "] " + remoteFile);
 				System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 				System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
 				System.out.println("[" + new Date() + "] " + "Reclaimed " + remoteArchiveLFN.getSize() + " bytes of disk space");
@@ -238,15 +235,7 @@ public class ArchiveMemberDelete {
 			}
 			localArchive.delete();
 
-			final File folder = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
-			final ArrayList<String> listOfFiles = new ArrayList<>();
-			final File[] listing = folder.listFiles();
-			if (listing == null) {
-				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to get list of files in local folder. Break");
-				return;
-			}
-			for (final File file : listing)
-				listOfFiles.add(file.getName());
+			final ArrayList<String> listOfFiles = getFileListing(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
 
 			System.out.println("[" + new Date() + "] Zipping the new archive");
 			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
@@ -269,6 +258,7 @@ public class ArchiveMemberDelete {
 			//
 			System.out.println("[" + new Date() + "] Deleting the members links of old archive");
 			for (final LFN member : remoteArchiveMembers) {
+				System.out.println("[" + new Date() + "] Deleting " + member.getCanonicalName());
 				commander.c_api.removeLFN(member.getCanonicalName());
 			}
 
@@ -307,25 +297,26 @@ public class ArchiveMemberDelete {
 
 			// Register files in the catalogue
 			//
+			final String registerPath = remoteArchiveLFN.getParentName();
 			System.out.println("[" + new Date() + "] Registering files in the catalogue");
-			CatalogueApiUtils.registerEntry(entry, remotePath + System.getProperty("file.separator"), commander.getUser());
+			CatalogueApiUtils.registerEntry(entry, registerPath + System.getProperty("file.separator"), commander.getUser());
 
 			for (final String file : listOfFiles) {
-				if (commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file) == null
-						|| !commander.c_api.getLFN(remotePath + System.getProperty("file.separator") + file).exists) {
-					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register entry " + remotePath + file);
+				if (commander.c_api.getLFN(registerPath + System.getProperty("file.separator") + file) == null
+						|| !commander.c_api.getLFN(registerPath + System.getProperty("file.separator") + file).exists) {
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register entry " + registerPath + file);
 					validation.println("Register failed");
 					return;
 				}
 			}
 
 			// Create file marker to leave trace
-			commander.c_api.touchLFN(remotePath + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
+			commander.c_api.touchLFN(remoteLFN.getParentName() + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
 
 			System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 			System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
 			System.out.println("[" + new Date() + "] " + "New archive is " + newArchive.length() + " bytes");
-			System.out.println("[" + new Date() + "] " + "Gained " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
+			System.out.println("[" + new Date() + "] " + "Reclaimed " + (remoteArchiveLFN.getSize() - newArchive.length()) + " bytes of disk space");
 
 			// Clean up
 			final File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
@@ -388,14 +379,24 @@ public class ArchiveMemberDelete {
 					entry = zipIn.getNextEntry();
 					continue;
 				}
+				if (entry.getName().contains("AliESDfriends.root")) {
+					// Also skip AliESDfriends.root
+					zipIn.closeEntry();
+					entry = zipIn.getNextEntry();
+					continue;
+				}
 
 				final String filePath = destDir.getAbsolutePath() + System.getProperty("file.separator") + entry.getName();
 				if (!entry.isDirectory()) {
-					// if the entry is a file, extracts it
+					// If the entry is a file, extract it
+					String path = filePath.substring(0, filePath.lastIndexOf("/"));
+					final File dir = new File(path);
+					dir.mkdirs();
+
 					extractFile(zipIn, filePath);
 				}
 				else {
-					// if the entry is a directory, make the directory
+					// If the entry is a directory, make the directory
 					final File dir = new File(filePath);
 					dir.mkdir();
 				}
@@ -406,8 +407,8 @@ public class ArchiveMemberDelete {
 
 			zipIn.close();
 			return true;
-		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
-			System.err.println("No such file: " + System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
 			return false;
 		}
 	}
@@ -428,5 +429,35 @@ public class ArchiveMemberDelete {
 			}
 			bos.close();
 		}
+	}
+
+	/**
+	 * Get list of files in a directory recursively while saving relative paths
+	 * 
+	 * @param folderName
+	 *            folder to look inside
+	 */
+	private static ArrayList<String> getFileListing(final String folderName) {
+		final File folder = new File(folderName);
+		final ArrayList<String> listOfFiles = new ArrayList<>();
+		final File[] listing = folder.listFiles();
+		if (listing == null) {
+			System.err.println("[" + new Date() + "] Failed to get list of files in local folder. Break");
+			return null;
+		}
+		for (final File file : listing) {
+			if (file.isDirectory()) {
+				try {
+					for (final String child : getFileListing(file.getCanonicalPath())) {
+						listOfFiles.add(file.getName() + "/" + child);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			else
+				listOfFiles.add(file.getName());
+		}
+		return listOfFiles;
 	}
 }
