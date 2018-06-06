@@ -6,7 +6,7 @@ import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
 
 import lazyj.DBFunctions;
 import lia.util.StringFactory;

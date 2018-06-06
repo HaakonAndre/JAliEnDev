@@ -1,8 +1,6 @@
 package alien.user;
 
-import java.io.ByteArrayInputStream;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
@@ -73,25 +71,6 @@ public final class UserFactory {
 			return new AliEnPrincipal(role);
 
 		return null;
-	}
-
-	/**
-	 * Get the account corresponding to this certificate chain
-	 *
-	 * @param certChain
-	 * @return account, or <code>null</code> if no account has this certificate
-	 *         associated to it
-	 */
-	public static AliEnPrincipal getByCertificate(final javax.security.cert.X509Certificate[] certChain) {
-		final ArrayList<X509Certificate> certs = new ArrayList<>(certChain.length);
-		for (final javax.security.cert.X509Certificate c : certChain)
-			certs.add(convert(c));
-		if (certs.isEmpty())
-			return null;
-
-		final X509Certificate[] c = new X509Certificate[certs.size()];
-		certs.toArray(c);
-		return getByCertificate(c);
 	}
 
 	/**
@@ -275,36 +254,4 @@ public final class UserFactory {
 
 		return null;
 	}
-
-	/**
-	 * @param cert
-	 * @return the other type of certificate
-	 */
-	public static X509Certificate convert(final javax.security.cert.X509Certificate cert) {
-		try {
-			final byte[] encoded = cert.getEncoded();
-			final ByteArrayInputStream bis = new ByteArrayInputStream(encoded);
-			final java.security.cert.CertificateFactory cf = java.security.cert.CertificateFactory.getInstance("X.509");
-			return (java.security.cert.X509Certificate) cf.generateCertificate(bis);
-		} catch (final javax.security.cert.CertificateEncodingException | java.security.cert.CertificateException e) {
-			logger.log(Level.FINE, "Cannot convert javax to java X509 Certificate", e);
-		}
-		return null;
-	}
-
-	/**
-	 * @param cert
-	 * @return the other type of certificate
-	 */
-	public static javax.security.cert.X509Certificate convert(final X509Certificate cert) {
-		try {
-			final byte[] encoded = cert.getEncoded();
-			return javax.security.cert.X509Certificate.getInstance(encoded);
-		} catch (final java.security.cert.CertificateEncodingException | javax.security.cert.CertificateException e) {
-			logger.log(Level.FINE, "Cannot convert java to javax X509 Certificate", e);
-		}
-
-		return null;
-	}
-
 }

@@ -13,7 +13,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.util.logging.Logger;
 
-import javax.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -138,7 +138,7 @@ public class JobSigner {
 		final Certificate[] ts = JAKeyStore.getKeyStore().getCertificateChain("User.cert");
 		final X509Certificate[] tts = new X509Certificate[ts.length];
 		for (int a = 0; a < ts.length; a++)
-			tts[a] = UserFactory.convert((java.security.cert.X509Certificate) ts[a]);
+			tts[a] = (java.security.cert.X509Certificate) ts[a];
 
 		System.out.println("Verifying central service signature...");
 		if (verifyJob(tts, null, sjdl)) {

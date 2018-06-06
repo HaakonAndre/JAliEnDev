@@ -10,7 +10,9 @@ import java.net.Socket;
 import java.security.KeyStoreException;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +23,6 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
-import javax.security.cert.X509Certificate;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -338,20 +339,34 @@ public class DispatchSSLServer extends Thread {
 						continue;
 					}
 
+					X509Certificate[] peerCertChain = null;
+
 					if (server.getNeedClientAuth() == true) {
 						logger.log(Level.INFO, "Printing client information:");
-						final X509Certificate[] peerCerts = c.getSession().getPeerCertificateChain();
+						final Certificate[] peerCerts = c.getSession().getPeerCertificates();
 
-						if (peerCerts != null)
-							for (final X509Certificate peerCert : peerCerts)
-								logger.log(Level.INFO, printClientInfo(peerCert));
+						if (peerCerts != null) {
+							peerCertChain = new X509Certificate[peerCerts.length];
+
+							for (int i = 0; i < peerCerts.length; i++) {
+								if (peerCerts[i] instanceof X509Certificate) {
+									X509Certificate xCert = (X509Certificate) peerCerts[i];
+									logger.log(Level.FINE, printClientInfo(xCert));
+									peerCertChain[i] = xCert;
+								}
+								else {
+									logger.log(Level.WARNING, "Peer certificate is not an X509 instance but instead a " + peerCerts[i].getType());
+								}
+							}
+
+						}
 						else
 							logger.log(Level.INFO, "Failed to get peer certificates");
 					}
 
 					final DispatchSSLServer serv = new DispatchSSLServer(c);
 					if (server.getNeedClientAuth() == true)
-						serv.partnerCerts = c.getSession().getPeerCertificateChain();
+						serv.partnerCerts = peerCertChain;
 
 					serv.start();
 
@@ -363,7 +378,9 @@ public class DispatchSSLServer extends Thread {
 				}
 			}
 
-		} catch (final Throwable e) {
+		} catch (
+
+		final Throwable e) {
 			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket.", e);
 		}
 	}
@@ -376,10 +393,10 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Print client info on SSL partner
 	 */
-	private static String printClientInfo(final X509Certificate peerCerts) {
-		return "Peer Certificate Information:\n" + "- Subject: " + peerCerts.getSubjectDN().getName() + "- Issuer: \n" + peerCerts.getIssuerDN().getName() + "- Version: \n" + peerCerts.getVersion()
-				+ "- Start Time: \n" + peerCerts.getNotBefore().toString() + "\n" + "- End Time: " + peerCerts.getNotAfter().toString() + "\n" + "- Signature Algorithm: " + peerCerts.getSigAlgName()
-				+ "\n" + "- Serial Number: " + peerCerts.getSerialNumber();
+	private static String printClientInfo(final X509Certificate cert) {
+		return "Peer Certificate Information:\n" + "- Subject: " + cert.getSubjectDN().getName() + "- Issuer: \n" + cert.getIssuerDN().getName() + "- Version: \n" + cert.getVersion()
+				+ "- Start Time: \n" + cert.getNotBefore().toString() + "\n" + "- End Time: " + cert.getNotAfter().toString() + "\n" + "- Signature Algorithm: " + cert.getSigAlgName() + "\n"
+				+ "- Serial Number: " + cert.getSerialNumber();
 	}
 
 	/**

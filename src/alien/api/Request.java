@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
 
 import alien.catalogue.access.AuthorizationFactory;
 import alien.config.ConfigUtils;
