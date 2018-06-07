@@ -1192,12 +1192,12 @@ public class LFNUtils {
 
 		final LFN parentDir = archive.getParentDir();
 		if (parentDir.exists) {
-			final List<LFN> sameDirListing = parentDir.list();
+			final Collection<LFN> allJobFiles = find(parentDir.getCanonicalName(), "*", "", 0, null, "", Long.valueOf(archive.jobid));
 
-			if (sameDirListing == null || sameDirListing.size() == 0)
+			if (allJobFiles == null || allJobFiles.size() == 0)
 				return null;
 
-			for (final LFN file : sameDirListing)
+			for (final LFN file : allJobFiles) {
 				if (file.isFile()) {
 					final Set<PFN> pfns = file.whereis();
 
@@ -1205,16 +1205,19 @@ public class LFNUtils {
 						for (final PFN p : pfns)
 							if (p.pfn.startsWith("guid:/"))
 								try {
-									final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+									// '8' is always an index of first cipher of GUID after "guid:///"
+									final UUID guid = UUID.fromString(p.pfn.substring(8, p.pfn.indexOf('?')));
 
 									if (guid.equals(archive.guid)) {
 										ret.add(file);
 										continue;
 									}
-								} catch (@SuppressWarnings("unused") final Exception e) {
+								} catch (final Exception e) {
+									logger.log(Level.WARNING, "Failed to get GUID: " + e);
 									return null;
 								}
 				}
+			}
 		}
 		return ret;
 	}
