@@ -169,7 +169,7 @@ public class JSh {
 		Process p;
 
 		try {
-			p = Runtime.getRuntime().exec(new String[] { "java", "-Duserid=" + System.getProperty("userid"), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-server",
+			p = Runtime.getRuntime().exec(new String[] { "java", "-Duserid=" + JBoxServer.getUserID(), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-server",
 					"-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"), "alien.JBox" });
 
 		} catch (final IOException ioe) {
@@ -331,7 +331,7 @@ public class JSh {
 
 	private static boolean getJBoxPID() {
 
-		final File f = new File(new File(System.getProperty("java.io.tmpdir")), "jclient_token_" + System.getProperty("userid"));
+		final File f = new File(new File(System.getProperty("java.io.tmpdir")), "jclient_token_" + JBoxServer.getUserID());
 
 		if (f.exists()) {
 			final byte[] buffer = new byte[(int) f.length()];
