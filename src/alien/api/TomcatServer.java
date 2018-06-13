@@ -15,10 +15,10 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Service;
 import org.apache.catalina.connector.Connector;
+import org.apache.catalina.core.StandardContext;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.descriptor.web.LoginConfig;
 import org.apache.tomcat.util.descriptor.web.SecurityCollection;
@@ -63,27 +63,34 @@ public class TomcatServer {
 	 *
 	 * @param tomcatPort
 	 */
-	private TomcatServer(int tomcatPort) throws Exception {
+	private TomcatServer(final int tomcatPort) throws Exception {
 		this.websocketPort = tomcatPort;
 
 		tomcat = new Tomcat();
-		Service service = tomcat.getService();
+		tomcat.setPort(tomcatPort);
+		final Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
 		service.addConnector(createSslConnector(tomcatPort));
 		tomcat.getEngine().setRealm(new LdapCertificateRealm());
 
 		// Configure websocket webapplication
-		String webappDirLocation = "src/alien/websockets";
-		Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
+		// String webappDirLocation = "src/alien/websockets";
+		// Context ctx = tomcat.addWebapp("", new File(webappDirLocation).getAbsolutePath());
+
+		// Add a dummy ROOT context
+		final StandardContext ctx = (StandardContext) tomcat.addWebapp("", new File(System.getProperty("java.io.tmpdir")).getAbsolutePath());
+
+		// disable per context work directories too
+		ctx.setWorkDir(System.getProperty("java.io.tmpdir"));
 
 		// Set security constraints in order to use AlienUserPrincipal later
-		SecurityCollection securityCollection = new SecurityCollection();
+		final SecurityCollection securityCollection = new SecurityCollection();
 		securityCollection.addPattern("/*");
-		SecurityConstraint securityConstraint = new SecurityConstraint();
+		final SecurityConstraint securityConstraint = new SecurityConstraint();
 		securityConstraint.addCollection(securityCollection);
 		securityConstraint.setUserConstraint("CONFIDENTIAL");
 
-		LoginConfig loginConfig = new LoginConfig();
+		final LoginConfig loginConfig = new LoginConfig();
 		loginConfig.setAuthMethod("CLIENT-CERT");
 		loginConfig.setRealmName("alien.user.LdapCertificateRealm");
 		ctx.setLoginConfig(loginConfig);
@@ -94,7 +101,7 @@ public class TomcatServer {
 
 		// Tell Jar Scanner not to look inside jar manifests
 		// otherwise it will produce useless warnings
-		StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
+		final StandardJarScanner jarScanner = (StandardJarScanner) ctx.getJarScanner();
 		jarScanner.setScanManifest(false);
 
 		tomcat.start();
@@ -124,7 +131,7 @@ public class TomcatServer {
 			}
 		}.start();
 
-		if (!ConfigUtils.isCentralService()) {
+		if (!ConfigUtils.isCentralService())
 			// Refresh token cert every two hours
 			new Thread() {
 				@Override
@@ -134,13 +141,12 @@ public class TomcatServer {
 							sleep(2 * 60 * 60 * 1000);
 							requestTokenCert();
 						}
-					} catch (InterruptedException e) {
+					} catch (final InterruptedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}
 			}.start();
-		}
 	}
 
 	/**
@@ -149,14 +155,21 @@ public class TomcatServer {
 	 * @param tomcatPort
 	 * @throws Exception
 	 */
-	private static Connector createSslConnector(int tomcatPort) throws Exception {
-		String keystorePass = new String(JAKeyStore.pass);
-		if (ConfigUtils.isCentralService())
-			JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), "keystore.jks", JAKeyStore.pass);
-		else
-			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, "keystore.jks", JAKeyStore.pass);
+	private static Connector createSslConnector(final int tomcatPort) throws Exception {
+		final String keystorePass = new String(JAKeyStore.pass);
 
-		Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
+		final String dirName = System.getProperty("java.io.tmpdir") + File.separator;
+		final String keystoreName = dirName + "keystore.jks_" + JBoxServer.getUserID();
+		final String truststoreName = dirName + "truststore.jks_" + JBoxServer.getUserID();
+
+		if (ConfigUtils.isCentralService())
+			JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), keystoreName, JAKeyStore.pass);
+		else
+			JAKeyStore.saveKeyStore(JAKeyStore.tokenCert, keystoreName, JAKeyStore.pass);
+
+		JAKeyStore.saveKeyStore(JAKeyStore.trustStore, truststoreName, JAKeyStore.pass);
+
+		final Connector connector = new Connector("org.apache.coyote.http11.Http11NioProtocol");
 
 		connector.setPort(tomcatPort);
 		connector.setSecure(true);
@@ -164,10 +177,10 @@ public class TomcatServer {
 		connector.setAttribute("keyAlias", "User.cert");
 		connector.setAttribute("keystorePass", keystorePass);
 		connector.setAttribute("keystoreType", "JKS");
-		connector.setAttribute("keystoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "keystore.jks");
-		connector.setAttribute("truststorePass", "castore");
+		connector.setAttribute("keystoreFile", keystoreName);
+		connector.setAttribute("truststorePass", keystorePass);
 		connector.setAttribute("truststoreType", "JKS");
-		connector.setAttribute("truststoreFile", System.getProperty("user.dir") + System.getProperty("file.separator") + "trusted_authorities.jks");
+		connector.setAttribute("truststoreFile", truststoreName);
 		connector.setAttribute("clientAuth", "true");
 		connector.setAttribute("sslProtocol", "TLS");
 		connector.setAttribute("SSLEnabled", "true");
@@ -309,7 +322,7 @@ public class TomcatServer {
 	 * Change permissions of the file
 	 */
 	private static boolean changeMod(final File file, final int chmod) {
-		if (file.exists()) {
+		if (file.exists())
 			try {
 				final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
 
@@ -321,13 +334,12 @@ public class TomcatServer {
 			} catch (@SuppressWarnings("unused") final IOException e) {
 				// ignore
 			}
-		}
 		return false;
 	}
 
 	/**
 	 * Request token certificate from JCentral
-	 * 
+	 *
 	 * @return true if tokencert was successfully received
 	 */
 	static boolean requestTokenCert() {
@@ -340,12 +352,12 @@ public class TomcatServer {
 				logger.log(Level.SEVERE, "Failed to load certificate");
 				return false;
 			}
-		} catch (KeyStoreException e) {
+		} catch (final KeyStoreException e) {
 			e.printStackTrace();
 		}
 
 		if (cert instanceof X509Certificate[]) {
-			X509Certificate[] x509cert = (X509Certificate[]) cert;
+			final X509Certificate[] x509cert = (X509Certificate[]) cert;
 			userIdentity = UserFactory.getByCertificate(x509cert);
 		}
 		if (userIdentity == null) {
@@ -355,11 +367,11 @@ public class TomcatServer {
 
 		// Two files will be the result of this command
 		// Check if their location is set by env variables or in config, otherwise put default location in $TMPDIR/
-		String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert.pem");
-		String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey.pem");
+		final String tokencertpath = ConfigUtils.getConfig().gets("tokencert.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokencert.pem");
+		final String tokenkeypath = ConfigUtils.getConfig().gets("tokenkey.path", System.getProperty("java.io.tmpdir") + System.getProperty("file.separator") + "tokenkey.pem");
 
-		File tokencertfile = new File(tokencertpath);
-		File tokenkeyfile = new File(tokenkeypath);
+		final File tokencertfile = new File(tokencertpath);
+		final File tokenkeyfile = new File(tokenkeypath);
 
 		// Allow to modify those files if they already exist
 		changeMod(tokencertfile, 777);
@@ -371,10 +383,10 @@ public class TomcatServer {
 
 				// We will read all data into temp output stream and then parse it and split into 2 files
 				ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
-			UIPrintWriter out = new JSONPrintWriter(baos);
+			final UIPrintWriter out = new JSONPrintWriter(baos);
 
 			// Create Commander instance just to execute one command
-			JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
+			final JAliEnCOMMander commander = new JAliEnCOMMander(userIdentity, null, null, out);
 			commander.start();
 
 			// Command to be sent (yes, we need it to be an array, even if it is one word)
@@ -397,11 +409,11 @@ public class TomcatServer {
 				}
 
 			// Now parse the reply from JCentral
-			JSONParser jsonParser = new JSONParser();
-			JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
-			JSONArray jsonArray = (JSONArray) readf.get("results");
-			for (Object object : jsonArray) {
-				JSONObject aJson = (JSONObject) object;
+			final JSONParser jsonParser = new JSONParser();
+			final JSONObject readf = (JSONObject) jsonParser.parse(baos.toString());
+			final JSONArray jsonArray = (JSONArray) readf.get("results");
+			for (final Object object : jsonArray) {
+				final JSONObject aJson = (JSONObject) object;
 				pwritercert.print(aJson.get("tokencert"));
 				pwriterkey.print(aJson.get("tokenkey"));
 				pwritercert.flush();
@@ -439,9 +451,8 @@ public class TomcatServer {
 
 		// Request token certificate from JCentral
 		if (!ConfigUtils.isCentralService()) {
-			if (!requestTokenCert()) {
+			if (!requestTokenCert())
 				return;
-			}
 			// Create keystore for token certificate
 			try {
 				if (!JAKeyStore.loadTokenKeyStorage()) {
@@ -456,8 +467,8 @@ public class TomcatServer {
 			}
 		}
 		// Set dynamic port range for Tomcat server
-		int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-		int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
+		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
+		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
 		int port = 8097;
 
 		// Try to launch Tomcat on default port
@@ -478,7 +489,7 @@ public class TomcatServer {
 		}
 
 		// Try another ports in range
-		for (port = portMin; port < portMax; port++) {
+		for (port = portMin; port < portMax; port++)
 			try (ServerSocket ssocket = new ServerSocket(port, 10, InetAddress.getByName("127.0.0.1"))) // Fast check if port is available
 			{
 				ssocket.close();
@@ -492,6 +503,5 @@ public class TomcatServer {
 				// Try next one
 				logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
 			}
-		}
 	}
 }
