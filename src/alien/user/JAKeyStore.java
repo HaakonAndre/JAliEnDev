@@ -99,12 +99,12 @@ public class JAKeyStore {
 	/**
 	 *
 	 */
-	private static KeyStore trustStore;
+	public static KeyStore trustStore;
 
 	/**
 	 *
 	 */
-	public static char[] pass = getRandomString();
+	public static final char[] pass = getRandomString();
 
 	/**
 	 *
