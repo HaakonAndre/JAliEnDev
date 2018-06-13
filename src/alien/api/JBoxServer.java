@@ -34,8 +34,8 @@ import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
+import alien.user.UserFactory;
 import alien.user.UsersHelper;
-import lazyj.commands.SystemCommand;
 
 /**
  * Simple UI server to be used by ROOT and command line
@@ -95,23 +95,28 @@ public class JBoxServer extends Thread {
 		lastOperation = System.currentTimeMillis();
 	}
 
-	static {
-		new Thread() {
-			@Override
-			public void run() {
-				while (true) {
-					if (connectedClients.get() == 0 && (System.currentTimeMillis() - lastOperation) > 1000 * 60 * 60 * 24 && server != null)
-						server.shutdown();
+	static final class ShutdownThread extends Thread {
+		public ShutdownThread() {
+			setName("Idle server watcher");
+		}
 
-					try {
-						Thread.sleep(1000 * 60);
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
-						// ignore
-					}
+		@Override
+		public void run() {
+			while (true) {
+				if (connectedClients.get() == 0 && (System.currentTimeMillis() - lastOperation) > 1000 * 60 * 60 * 24 && server != null)
+					server.shutdown();
+
+				try {
+					Thread.sleep(1000 * 60);
+				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					// it's interrupted when it should exit
+					break;
 				}
 			}
-		}.start();
+		}
 	}
+
+	private static ShutdownThread shutdownThread = null;
 
 	private static synchronized void preempt() {
 		if (preemptJCentralConnection) {
@@ -154,25 +159,12 @@ public class JBoxServer extends Thread {
 			ssocket.close();
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
-	}
 
-	/**
-	 * @return current user's ID, if it can be retrieved from the system
-	 */
-	public static String getUserID() {
-		String sUserId = System.getProperty("userid");
+		if (shutdownThread == null) {
+			shutdownThread = new ShutdownThread();
 
-		if (sUserId == null || sUserId.length() == 0) {
-			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
-
-			if (sUserId != null && sUserId.length() > 0)
-				System.setProperty("userid", sUserId);
+			shutdownThread.start();
 		}
-
-		if (sUserId != null && sUserId.length() > 0)
-			return sUserId;
-
-		return null;
 	}
 
 	/**
@@ -195,7 +187,7 @@ public class JBoxServer extends Thread {
 	private static boolean writeTokenFile(final String sHost, final int iPort, final String sPassword, final String sUser, final String sHomeUser, final int iDebug) {
 
 		try {
-			final String sUserId = getUserID();
+			final String sUserId = UserFactory.getUserID();
 
 			if (sUserId == null) {
 				logger.log(Level.SEVERE, "Cannot get the current user's ID");
@@ -570,6 +562,10 @@ public class JBoxServer extends Thread {
 		} catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore, we're dead anyway
 		}
+
+		if (shutdownThread != null)
+			shutdownThread.interrupt();
+
 		logger.log(Level.INFO, "JBox: We die gracefully...Bye!");
 		System.exit(0);
 
