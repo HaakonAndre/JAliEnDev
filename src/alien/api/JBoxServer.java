@@ -157,6 +157,25 @@ public class JBoxServer extends Thread {
 	}
 
 	/**
+	 * @return current user's ID, if it can be retrieved from the system
+	 */
+	public static String getUserID() {
+		String sUserId = System.getProperty("userid");
+
+		if (sUserId == null || sUserId.length() == 0) {
+			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
+
+			if (sUserId != null && sUserId.length() > 0)
+				System.setProperty("userid", sUserId);
+		}
+
+		if (sUserId != null && sUserId.length() > 0)
+			return sUserId;
+
+		return null;
+	}
+
+	/**
 	 * write the configuration file that is used by gapi <br />
 	 * the filename = <i>java.io.tmpdir</i>/jclient_token_$uid
 	 *
@@ -174,20 +193,15 @@ public class JBoxServer extends Thread {
 	 * @author Alina Grigoras
 	 */
 	private static boolean writeTokenFile(final String sHost, final int iPort, final String sPassword, final String sUser, final String sHomeUser, final int iDebug) {
-		String sUserId = System.getProperty("userid");
-
-		if (sUserId == null || sUserId.length() == 0) {
-			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
-
-			if (sUserId != null && sUserId.length() > 0)
-				System.setProperty("userid", sUserId);
-			else {
-				logger.severe("User Id empty! Could not get the token file name");
-				return false;
-			}
-		}
 
 		try {
+			final String sUserId = getUserID();
+
+			if (sUserId == null) {
+				logger.log(Level.SEVERE, "Cannot get the current user's ID");
+				return false;
+			}
+
 			final int iUserId = Integer.parseInt(sUserId.trim());
 
 			final File tmpDir = new File(System.getProperty("java.io.tmpdir"));
