@@ -8,6 +8,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
+import lazyj.commands.SystemCommand;
 
 /**
  * @author costing
@@ -251,6 +252,25 @@ public final class UserFactory {
 
 			return ret;
 		}
+
+		return null;
+	}
+	
+	/**
+	 * @return current user's ID, if it can be retrieved from the system
+	 */
+	public static String getUserID() {
+		String sUserId = System.getProperty("userid");
+
+		if (sUserId == null || sUserId.length() == 0) {
+			sUserId = SystemCommand.bash("id -u " + System.getProperty("user.name")).stdout;
+
+			if (sUserId != null && sUserId.length() > 0)
+				System.setProperty("userid", sUserId);
+		}
+
+		if (sUserId != null && sUserId.length() > 0)
+			return sUserId;
 
 		return null;
 	}

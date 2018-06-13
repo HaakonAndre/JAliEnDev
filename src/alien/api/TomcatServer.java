@@ -159,8 +159,8 @@ public class TomcatServer {
 		final String keystorePass = new String(JAKeyStore.pass);
 
 		final String dirName = System.getProperty("java.io.tmpdir") + File.separator;
-		final String keystoreName = dirName + "keystore.jks_" + JBoxServer.getUserID();
-		final String truststoreName = dirName + "truststore.jks_" + JBoxServer.getUserID();
+		final String keystoreName = dirName + "keystore.jks_" + UserFactory.getUserID();
+		final String truststoreName = dirName + "truststore.jks_" + UserFactory.getUserID();
 
 		if (ConfigUtils.isCentralService())
 			JAKeyStore.saveKeyStore(JAKeyStore.getKeyStore(), keystoreName, JAKeyStore.pass);
