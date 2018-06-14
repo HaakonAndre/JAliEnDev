@@ -146,6 +146,24 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Remove a LFN in the Catalogue
+	 *
+	 * @param path
+	 * @param recursive
+	 * @return state of the LFN's deletion <code>null</code>
+	 */
+	public boolean removeLFN(final String path, final boolean recursive) {
+		try {
+			return Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), path, recursive)).wasRemoved();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not remove the LFN: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return false;
+	}
+
+	/**
 	 * Move a LFN in the Catalogue
 	 *
 	 * @param path
