@@ -19,12 +19,18 @@ import lazyj.ExtProperties;
  *
  */
 public class DBCassandra {
-	private static DBCassandra dbc = new DBCassandra();
-	private Session session = null;
-	private Cluster cluster = null;
+	private static DBCassandra dbc = null;
+	private static Session session = null;
+	private static Cluster cluster = null;
 	private static transient final Logger logger = ConfigUtils.getLogger(DBCassandra.class.getCanonicalName());
 
 	private DBCassandra() {
+	}
+
+	private synchronized static void createInstance() {
+		if (dbc == null)
+			dbc = new DBCassandra();
+
 		// Create the connection pool
 		final PoolingOptions poolingOptions = new PoolingOptions();
 		poolingOptions.setConnectionsPerHost(HostDistance.LOCAL, 56, 56).setConnectionsPerHost(HostDistance.REMOTE, 56, 56);
@@ -57,11 +63,11 @@ public class DBCassandra {
 			}
 		}
 
-		cluster = Cluster.builder().addContactPoints(addresses).withLoadBalancingPolicy(new TokenAwarePolicy(new RoundRobinPolicy())).withPoolingOptions(poolingOptions)
+		DBCassandra.cluster = Cluster.builder().addContactPoints(addresses).withLoadBalancingPolicy(new TokenAwarePolicy(new RoundRobinPolicy())).withPoolingOptions(poolingOptions)
 				// .withSocketOptions(socketOptions)
 				.withCredentials(user, pass).build();
 
-		session = cluster.connect();
+		DBCassandra.session = cluster.connect();
 	}
 
 	/**
@@ -70,14 +76,22 @@ public class DBCassandra {
 	 * @return the instance
 	 */
 	public static Session getInstance() {
-		return dbc.session;
+		if (dbc == null)
+			createInstance();
+
+		return DBCassandra.session;
 	}
 
 	/**
 	 *
 	 */
 	public static void shutdown() {
-		dbc.session.close();
-		dbc.cluster.close();
+		DBCassandra.session.close();
+		DBCassandra.cluster.close();
+	}
+
+	@Override
+	public Object clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException();
 	}
 }
