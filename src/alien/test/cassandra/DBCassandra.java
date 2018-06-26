@@ -28,46 +28,49 @@ public class DBCassandra {
 	}
 
 	private synchronized static void createInstance() {
-		if (dbc == null)
+		if (dbc == null) {
 			dbc = new DBCassandra();
 
-		// Create the connection pool
-		final PoolingOptions poolingOptions = new PoolingOptions();
-		poolingOptions.setConnectionsPerHost(HostDistance.LOCAL, 56, 56).setConnectionsPerHost(HostDistance.REMOTE, 56, 56);
+			System.out.println("INSIDE CREATEINSTANCE: " + dbc.toString());
 
-		// SocketOptions socketOptions = new SocketOptions();
-		// socketOptions.setReadTimeoutMillis(12000);
-		ExtProperties config = ConfigUtils.getConfiguration("cassandra");
-		if (config == null) {
-			logger.severe("cassandra.properties missing?");
-			return;
-		}
+			// Create the connection pool
+			final PoolingOptions poolingOptions = new PoolingOptions();
+			poolingOptions.setConnectionsPerHost(HostDistance.LOCAL, 56, 56).setConnectionsPerHost(HostDistance.REMOTE, 56, 56);
 
-		String nodes = config.gets("cassandraNodes");
-		String user = config.gets("cassandraUsername");
-		String pass = config.gets("cassandraPassword");
-
-		if (nodes.equals("") || user.equals("") || pass.equals("")) {
-			logger.severe("cassandra.properties misses some field: cassandraNodes or cassandraUsername or cassandraPassword");
-			return;
-		}
-
-		String[] ns = nodes.split(",");
-		String[] addresses = new String[ns.length];
-		for (int i = 0; i < ns.length; i++) {
-			try {
-				addresses[i] = InetAddress.getByName(ns[i]).getHostAddress();
-				logger.info("Node address[" + i + "]: " + addresses[i]);
-			} catch (UnknownHostException e) {
-				logger.severe("Cannot create InetAddress from: " + ns[i] + " - Exception: " + e);
+			// SocketOptions socketOptions = new SocketOptions();
+			// socketOptions.setReadTimeoutMillis(12000);
+			ExtProperties config = ConfigUtils.getConfiguration("cassandra");
+			if (config == null) {
+				logger.severe("cassandra.properties missing?");
+				return;
 			}
+
+			String nodes = config.gets("cassandraNodes");
+			String user = config.gets("cassandraUsername");
+			String pass = config.gets("cassandraPassword");
+
+			if (nodes.equals("") || user.equals("") || pass.equals("")) {
+				logger.severe("cassandra.properties misses some field: cassandraNodes or cassandraUsername or cassandraPassword");
+				return;
+			}
+
+			String[] ns = nodes.split(",");
+			String[] addresses = new String[ns.length];
+			for (int i = 0; i < ns.length; i++) {
+				try {
+					addresses[i] = InetAddress.getByName(ns[i]).getHostAddress();
+					logger.info("Node address[" + i + "]: " + addresses[i]);
+				} catch (UnknownHostException e) {
+					logger.severe("Cannot create InetAddress from: " + ns[i] + " - Exception: " + e);
+				}
+			}
+
+			DBCassandra.cluster = Cluster.builder().addContactPoints(addresses).withLoadBalancingPolicy(new TokenAwarePolicy(new RoundRobinPolicy())).withPoolingOptions(poolingOptions)
+					// .withSocketOptions(socketOptions)
+					.withCredentials(user, pass).build();
+
+			DBCassandra.session = cluster.connect();
 		}
-
-		DBCassandra.cluster = Cluster.builder().addContactPoints(addresses).withLoadBalancingPolicy(new TokenAwarePolicy(new RoundRobinPolicy())).withPoolingOptions(poolingOptions)
-				// .withSocketOptions(socketOptions)
-				.withCredentials(user, pass).build();
-
-		DBCassandra.session = cluster.connect();
 	}
 
 	/**
@@ -94,4 +97,5 @@ public class DBCassandra {
 	public Object clone() throws CloneNotSupportedException {
 		throw new CloneNotSupportedException();
 	}
+
 }
