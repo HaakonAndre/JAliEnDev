@@ -2,7 +2,6 @@ package alien.test.cassandra;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import com.datastax.driver.core.Cluster;
@@ -48,12 +47,13 @@ public class DBCassandra {
 		}
 
 		String[] ns = nodes.split(",");
-		ArrayList<InetAddress> addresses = new ArrayList<>();
-		for (String node : ns) {
+		String[] addresses = new String[ns.length];
+		for (int i = 0; i < ns.length; i++) {
 			try {
-				addresses.add(InetAddress.getByName(node));
+				addresses[i] = InetAddress.getByName(ns[i]).getHostAddress();
+				logger.info("Node address[" + i + "]: " + addresses[i]);
 			} catch (UnknownHostException e) {
-				logger.severe("Cannot create InetAddress from: " + node + " - Exception: " + e);
+				logger.severe("Cannot create InetAddress from: " + ns[i] + " - Exception: " + e);
 			}
 		}
 
