@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +22,7 @@ import alien.api.ServerException;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.catalogue.PFNforReadOrDel;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.catalogue.access.AccessType;
@@ -100,6 +102,26 @@ public class ArchiveMemberDelete {
 			else
 				System.err.println("[" + new Date() + "] " + xmlEntry + ": LFN doesn't exist. Abort.");
 
+			// Check if there are any leftovers and clean up
+			// (get the archive from last modified root files in remote directory, get archive's parent dir, check if registertemp exists there, move files)
+			final Collection<LFN> membersSet = commander.c_api.find(xmlEntry.substring(0, xmlEntry.lastIndexOf("/")), "*root", 0);
+			LFN remoteArchiveLFN = null;
+			long lastModified = 0;
+			for (final LFN l : membersSet)
+				if (l.ctime.getTime() > lastModified)
+					remoteArchiveLFN = commander.c_api.getRealLFN(l.getCanonicalName());
+
+			if (remoteArchiveLFN != null) {
+				final String registerPath = remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + "registertemp";
+
+				for (final LFN file : commander.c_api.find(registerPath, "*root", 0)) {
+					System.out.println("Moving " + registerPath + System.getProperty("file.separator") + file.getFileName());
+					commander.c_api.moveLFN(registerPath + System.getProperty("file.separator") + file.getFileName(),
+							remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file.getFileName());
+				}
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
+			}
 			return;
 		}
 
@@ -328,6 +350,9 @@ public class ArchiveMemberDelete {
 			// Remove lfn of the old archive
 			commander.c_api.removeLFN(remoteArchive);
 
+			// Create file marker to leave trace
+			commander.c_api.touchLFN(remoteLFN.getParentName() + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
+
 			// Rename uploaded archive
 			//
 			System.out.println("[" + new Date() + "] Renaming uploaded archive");
@@ -335,20 +360,24 @@ public class ArchiveMemberDelete {
 
 			if (commander.c_api.getLFN(remoteArchive) == null || !commander.c_api.getLFN(remoteArchive).exists) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive " + registerPath + System.getProperty("file.separator") + archiveName);
-				validation.println("Rename failed");
+				validation.println("Renaming failed");
 				return;
 			}
 
 			// Rename new archive members
 			for (final String file : listOfFiles) {
 				commander.c_api.moveLFN(registerPath + System.getProperty("file.separator") + file, remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file);
+				if (commander.c_api.getLFN(remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file) == null
+						|| !commander.c_api.getLFN(remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file).exists) {
+					System.err
+							.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive member " + remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file);
+					validation.println("Renaming failed");
+					return;
+				}
 			}
 
 			if (registerPath.length() > 20) // Safety check
 				commander.c_api.removeLFN(registerPath, true);
-
-			// Create file marker to leave trace
-			commander.c_api.touchLFN(remoteLFN.getParentName() + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
 
 			System.out.println("[" + new Date() + "] " + memberName + " was " + remoteLFN.getSize() + " bytes");
 			System.out.println("[" + new Date() + "] " + "Old archive was " + remoteArchiveLFN.getSize() + " bytes");
