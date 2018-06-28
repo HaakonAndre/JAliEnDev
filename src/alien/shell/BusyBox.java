@@ -204,16 +204,16 @@ public class BusyBox {
 
 		if (startPrompt)
 			new Thread() {
-				@Override
-				public void run() {
-					try {
-						prompt();
-					} catch (final IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+			@Override
+			public void run() {
+				try {
+					prompt();
+				} catch (final IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
-			}.start();
+			}
+		}.start();
 	}
 
 	private static String genPromptPrefix() {
@@ -281,14 +281,15 @@ public class BusyBox {
 						signal = true;
 						if (sLine.startsWith(JShPrintWriter.outputterminator))
 							updateEnvironment(sLine);
-						else if (sLine.endsWith(JShPrintWriter.streamend))
-							break;
-						else {
-							if (ret.length() > 0)
-								ret.append('\n');
+						else
+							if (sLine.endsWith(JShPrintWriter.streamend))
+								break;
+							else {
+								if (ret.length() > 0)
+									ret.append('\n');
 
-							ret.append(sLine);
-						}
+								ret.append(sLine);
+							}
 					}
 
 					if (signal)
@@ -351,14 +352,16 @@ public class BusyBox {
 
 						if (sLine.startsWith(JShPrintWriter.errTag))
 							JSh.printErr("Error: " + sLine.substring(1));
-						else if (sLine.startsWith(JShPrintWriter.outputterminator))
-							updateEnvironment(sLine);
-						else if (sLine.endsWith(JShPrintWriter.lineTerm))
-							break;
-						else {
-							out.println(sLine);
-							out.flush();
-						}
+						else
+							if (sLine.startsWith(JShPrintWriter.outputterminator))
+								updateEnvironment(sLine);
+							else
+								if (sLine.endsWith(JShPrintWriter.lineTerm))
+									break;
+								else {
+									out.println(sLine);
+									out.flush();
+								}
 
 					}
 
@@ -408,23 +411,30 @@ public class BusyBox {
 					command.append(args[c]).append(' ');
 
 				syscall(command.toString());
-			} else if (args[0].equals("gbbox")) {
-				final StringBuilder command = new StringBuilder("alien -s -e ");
-				for (int c = 1; c < args.length; c++)
-					command.append(args[c]).append(' ');
-
-				syscall(command.toString());
-			} else if (isEditCommand(args[0])) {
-				if (args.length == 2)
-					editCatalogueFile(args[0], args[1]);
-				else
-					out.println("help for the editor is....");
-			} else if (args[0].equals("shutdown"))
-				shutdown();
-			else if (args[0].equals("help"))
-				usage();
+			}
 			else
-				callJBox(callLine);
+				if (args[0].equals("gbbox")) {
+					final StringBuilder command = new StringBuilder("alien -s -e ");
+					for (int c = 1; c < args.length; c++)
+						command.append(args[c]).append(' ');
+
+					syscall(command.toString());
+				}
+				else
+					if (isEditCommand(args[0])) {
+						if (args.length == 2)
+							editCatalogueFile(args[0], args[1]);
+						else
+							out.println("help for the editor is....");
+					}
+					else
+						if (args[0].equals("shutdown"))
+							shutdown();
+						else
+							if (args[0].equals("help"))
+								usage();
+							else
+								callJBox(callLine);
 	}
 
 	/**
@@ -474,8 +484,9 @@ public class BusyBox {
 		if ("blackwhite".equals(line))
 			JSh.blackwhite();
 
-		else if ("color".equals(line))
-			JSh.color();
+		else
+			if ("color".equals(line))
+				JSh.color();
 	}
 
 	private static boolean socketThere(final Socket s) {
@@ -547,7 +558,8 @@ public class BusyBox {
 			if (LFNName.contains("/")) {
 				parent = LFNName.substring(0, LFNName.lastIndexOf('/')) + "/";
 				fileName = LFNName.substring(LFNName.lastIndexOf('/') + 1);
-			} else {
+			}
+			else {
 				parent = "";
 				fileName = LFNName;
 			}
@@ -560,7 +572,7 @@ public class BusyBox {
 
 			callJBox("mv " + LFNName + " " + parent + fileName + "~");
 
-			callJBox("cp file:" + localFile + " " + LFNName);
+			callJBox("cp -S disk=4 file:" + localFile + " " + LFNName);
 		}
 	}
 
