@@ -31,8 +31,6 @@ public class DBCassandra {
 		if (dbc == null) {
 			dbc = new DBCassandra();
 
-			System.out.println("INSIDE CREATEINSTANCE: " + dbc.toString());
-
 			// Create the connection pool
 			final PoolingOptions poolingOptions = new PoolingOptions();
 			poolingOptions.setConnectionsPerHost(HostDistance.LOCAL, 56, 56).setConnectionsPerHost(HostDistance.REMOTE, 56, 56);
