@@ -39,7 +39,6 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.monitoring.MonitoringObject;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.Job;
 import alien.taskQueue.JobStatus;
@@ -87,7 +86,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private final long jobAgentStartTime = new java.util.Date().getTime();
 
 	// Other
-	private PackMan packMan = null;
 	private String hostName = null;
 	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
@@ -161,7 +159,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		hostName = (String) siteMap.get("Localhost");
 		// alienCm = (String) siteMap.get("alienCm");
-		packMan = (PackMan) siteMap.get("PackMan");
 
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
@@ -206,19 +203,20 @@ public class JobAgent implements MonitoringObject, Runnable {
 		int count = jobagent_requests;
 		while (count > 0) {
 			if (!updateDynamicParameters())
+				
 				break;
 
 			System.out.println(siteMap.toString());
-
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
 
 				monitor.sendParameter("ja_status", jaStatus.REQUESTING_JOB);
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
-
+				
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
+				
 				matchedJob = jobMatch.getMatchJob();
-
+				
 				// TODELETE
 				if (matchedJob != null)
 					System.out.println(matchedJob.toString());
@@ -236,24 +234,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 					System.out.println(jdl.getExecutable());
 					System.out.println(username);
 					System.out.println(queueId);
-
+								
 					// process payload
 					handleJob();
 
 					cleanup();
 				}
-				else {
-					if (matchedJob != null && matchedJob.containsKey("Error")) {
-						logger.log(Level.INFO, (String) matchedJob.get("Error"));
-
-						if (Integer.valueOf(3).equals(matchedJob.get("Code"))) {
-							@SuppressWarnings("unchecked")
-							final ArrayList<String> packToInstall = (ArrayList<String>) matchedJob.get("Packages");
-							monitor.sendParameter("ja_status", jaStatus.INSTALLING_PKGS);
-							installPackages(packToInstall);
-						}
-					}
-					else
+				else { //TODO: Handle matchedJob.containsKey("Error") after all?
 						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
 
 					try {
@@ -265,6 +252,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			} catch (final Exception e) {
 				logger.log(Level.INFO, "Error getting a matching job: " + e);
+				e.printStackTrace();
 			}
 			count--;
 		}
@@ -305,13 +293,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 	}
 
-	/**
-	 * @param command
-	 * @param arguments
-	 * @param timeout
-	 * @return <code>0</code> if everything went fine, a positive number with the process exit code (which would mean a problem) and a negative error code in case of timeout or other supervised
-	 *         execution errors
-	 */
 	private void cleanup() {
 		System.out.println("Sending monitoring values...");
 
@@ -347,21 +328,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		RES_FRUNTIME = "";
 
 		System.out.println("Done!");
-	}
-
-	private Map<String, String> installPackages(final ArrayList<String> packToInstall) {
-		Map<String, String> ok = null;
-
-		for (final String pack : packToInstall) {
-			ok = packMan.installPackage(username, pack, null);
-			if (ok == null) {
-				logger.log(Level.INFO, "Error installing the package " + pack);
-				monitor.sendParameter("ja_status", "ERROR_IP");
-				System.out.println("Error installing " + pack);
-				System.exit(1);
-			}
-		}
-		return ok;
 	}
 
 	/**
@@ -816,19 +782,19 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 
 		final File[] listOfFiles = tempDir.listFiles();
+
 		Path filePath;
 		Path destPath;
-
 		try {
 			for (File file : listOfFiles) {
 				if (file.isFile() && file.getName().endsWith(".log")) {
 					
-					filePath = Paths.get(file.getPath());
+					filePath = file.toPath();
 					destPath= Paths.get(logDir.getPath() + "/" + file.getName());
 					
 					if(Files.exists(destPath))
 						Files.write(destPath, Files.readAllLines(filePath, StandardCharsets.UTF_8), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-					else Files.copy(file.toPath(), destPath);					
+					else Files.copy(filePath, destPath);					
 				}
 			}
 		}  catch (final IOException e) {

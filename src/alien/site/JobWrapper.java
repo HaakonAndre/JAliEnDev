@@ -32,6 +32,7 @@ import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
@@ -115,7 +116,8 @@ public class JobWrapper implements Runnable {
 		siteMap = (new SiteMap()).getSiteParameters(env);
 		workdir = (String) siteMap.get("workdir");
 		hostName = (String) siteMap.get("Host");
-		packMan = (PackMan) siteMap.get("PackMan");
+//		packMan = (PackMan) siteMap.get("PackMan");
+		packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
 
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
@@ -182,11 +184,13 @@ public class JobWrapper implements Runnable {
 		Map<String, String> ok = null;
 
 		for (final String pack : packToInstall) {
+			if(packMan == null)
+				System.err.println("PACKMAN IS NULL!!");
 			ok = packMan.installPackage(username, pack, null);
 			if (ok == null) {
 				logger.log(Level.INFO, "Error installing the package " + pack);
 				//				monitor.sendParameter("ja_status", "ERROR_IP");
-				System.out.println("Error installing " + pack);
+				System.err.println("Error installing " + pack);
 				System.exit(1);
 			}
 		}
@@ -268,6 +272,12 @@ public class JobWrapper implements Runnable {
 		
 		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		final Map<String, String> processEnv = pBuilder.environment();
+		
+		System.err.println("Environment packages: ");
+		for (Map.Entry<String, String> entry : environment_packages.entrySet()) {
+		    System.err.println(entry.getKey()+" : "+entry.getValue());
+		}
+		
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
 
@@ -442,6 +452,8 @@ public class JobWrapper implements Runnable {
 		final HashMap<String, String> packs = (HashMap<String, String>) jdl.getPackages();
 		HashMap<String, String> envmap = new HashMap<>();
 
+		
+		System.err.println("Preparing to install packages");
 		if (packs != null) {
 			for (final String pack : packs.keySet())
 				packagestring += voalice + pack + "::" + packs.get(pack) + ",";
@@ -455,6 +467,10 @@ public class JobWrapper implements Runnable {
 			packagesList.add(packagestring);
 
 			logger.log(Level.INFO, packagestring);
+			
+			for (Map.Entry<String, String> entry : packs.entrySet()) {
+			    System.err.println(entry.getKey()+" : "+entry.getValue());
+			}
 
 			envmap = (HashMap<String, String>) installPackages(packagesList);
 		}
