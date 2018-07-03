@@ -299,7 +299,8 @@ public class ArchiveMemberDelete {
 						validation.println("Mkdir failed");
 
 						// Delete all newly created entries and directories
-						commander.c_api.removeLFN(registerPath, true);
+						if (registerPath.length() > 20) // Safety check
+							commander.c_api.removeLFN(registerPath, true);
 						return;
 					}
 				}
@@ -315,7 +316,8 @@ public class ArchiveMemberDelete {
 					validation.println("Register failed");
 
 					// Delete all newly created entries and directories
-					commander.c_api.removeLFN(registerPath, true);
+					if (registerPath.length() > 20) // Safety check
+						commander.c_api.removeLFN(registerPath, true);
 					return;
 				}
 			}
@@ -325,12 +327,31 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] Deleting the members links of old archive");
 			for (final LFN member : remoteArchiveMembers) {
 				System.out.println("[" + new Date() + "] Deleting " + member.getCanonicalName());
-				commander.c_api.removeLFN(member.getCanonicalName());
+				if (!commander.c_api.removeLFN(member.getCanonicalName())) {
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to delete old archive member " + member.getCanonicalName());
+					validation.println("Archive member deletion failed");
+
+					// Delete all newly created entries and directories
+					if (registerPath.length() > 20) // Safety check
+						commander.c_api.removeLFN(registerPath, true);
+					return;
+				}
 			}
 
 			// Delete old remote archive
 			//
 			System.out.println("[" + new Date() + "] Deleting old remote archive");
+
+			// Remove lfn of the old archive
+			if (!commander.c_api.removeLFN(remoteArchive)) {
+				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to delete old archive " + remoteArchive);
+				validation.println("Archive deletion failed");
+
+				// Delete all newly created entries and directories
+				if (registerPath.length() > 20) // Safety check
+					commander.c_api.removeLFN(registerPath, true);
+				return;
+			}
 
 			// Remove physical replicas of the old archive
 			final Iterator<PFN> it = remoteArchivePFN.iterator();
@@ -347,18 +368,13 @@ public class ArchiveMemberDelete {
 				}
 			}
 
-			// Remove lfn of the old archive
-			commander.c_api.removeLFN(remoteArchive);
-
 			// Create file marker to leave trace
 			commander.c_api.touchLFN(remoteLFN.getParentName() + System.getProperty("file.separator") + ".deleted" + (remoteArchiveLFN.getSize() - newArchive.length()));
 
 			// Rename uploaded archive
 			//
 			System.out.println("[" + new Date() + "] Renaming uploaded archive");
-			commander.c_api.moveLFN(registerPath + System.getProperty("file.separator") + archiveName, remoteArchive);
-
-			if (commander.c_api.getLFN(remoteArchive) == null || !commander.c_api.getLFN(remoteArchive).exists) {
+			if (commander.c_api.moveLFN(registerPath + System.getProperty("file.separator") + archiveName, remoteArchive) == null) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive " + registerPath + System.getProperty("file.separator") + archiveName);
 				validation.println("Renaming failed");
 				return;
@@ -366,11 +382,8 @@ public class ArchiveMemberDelete {
 
 			// Rename new archive members
 			for (final String file : listOfFiles) {
-				commander.c_api.moveLFN(registerPath + System.getProperty("file.separator") + file, remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file);
-				if (commander.c_api.getLFN(remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file) == null
-						|| !commander.c_api.getLFN(remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file).exists) {
-					System.err
-							.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive member " + remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file);
+				if (commander.c_api.moveLFN(registerPath + System.getProperty("file.separator") + file, remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file) == null) {
+					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename archive member " + remoteArchiveLFN.getParentName() + System.getProperty("file.separator") + file);
 					validation.println("Renaming failed");
 					return;
 				}
