@@ -3,6 +3,8 @@
  */
 package alien.config;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -22,8 +24,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Properties;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -385,7 +385,7 @@ public class ConfigUtils {
 	 * @author costing
 	 * @since Nov 3, 2010
 	 */
-	static class LoggingConfigurator implements Observer {
+	static class LoggingConfigurator implements PropertyChangeListener {
 		/**
 		 * Logging configuration content, usually loaded from "logging.properties"
 		 */
@@ -399,13 +399,13 @@ public class ConfigUtils {
 		LoggingConfigurator(final ExtProperties p) {
 			prop = p;
 
-			prop.addObserver(this);
+			prop.addPropertyChangeListener(null, this);
 
-			update(null, null);
+			propertyChange(null);
 		}
 
 		@Override
-		public void update(final Observable o, final Object arg) {
+		public void propertyChange(final PropertyChangeEvent arg0) {
 			final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 			try {
@@ -568,7 +568,7 @@ public class ConfigUtils {
 		}
 
 		// We create the folders logdir, cachedir, tmpdir, workdir
-		HashMap<String, String> folders_config = new HashMap<>();
+		final HashMap<String, String> folders_config = new HashMap<>();
 
 		if (configuration.containsKey("host_tmpdir"))
 			folders_config.put("tmpdir", (String) configuration.get("host_tmpdir"));
@@ -588,17 +588,16 @@ public class ConfigUtils {
 			if (configuration.containsKey("site_logdir"))
 				folders_config.put("logdir", (String) configuration.get("site_logdir"));
 
-		for (String folder : folders_config.keySet()) {
-			String folderpath = folders_config.get(folder);
+		for (final String folder : folders_config.keySet()) {
+			final String folderpath = folders_config.get(folder);
 			try {
-				File folderf = new File(folderpath);
+				final File folderf = new File(folderpath);
 				if (!folderf.exists()) {
 					final boolean created = folderf.mkdirs();
-					if (!created) {
+					if (!created)
 						logger.severe("Directory for " + folder + "can't be created: " + folderpath);
-					}
 				}
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				logger.severe("Exception on directory creation: " + e.toString());
 			}
 		}

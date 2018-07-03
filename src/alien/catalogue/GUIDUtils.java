@@ -325,6 +325,8 @@ public final class GUIDUtils {
 				monitor.incrementCounter("GUID_db_lookup");
 
 			db.setReadOnly(true);
+			
+			db.setQueryTimeout(600);
 
 			if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString()))
 				throw new IllegalStateException("Failed querying the G" + tableName + "L table for guid " + guid);

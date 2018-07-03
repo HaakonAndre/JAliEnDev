@@ -1069,7 +1069,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				if ((String) options.valueOf("S") != null) {
 					final StringTokenizer st = new StringTokenizer((String) options.valueOf("S"), ",");
 					while (st.hasMoreElements()) {
-						final String spec = st.nextToken();
+						final String spec = st.nextToken().replace('=', ':');
 						if (spec.contains("::")) {
 							if (spec.indexOf("::") != spec.lastIndexOf("::"))
 								if (spec.startsWith("!")) // an exSE spec

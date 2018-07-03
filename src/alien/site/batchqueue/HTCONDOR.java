@@ -25,7 +25,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import alien.log.LogUtils;
 import alien.test.utils.Functions;
 import lia.util.process.ExternalProcess.ExitStatus;
 import utils.ProcessWithTimeout;
@@ -51,14 +50,13 @@ public class HTCONDOR extends BatchQueue {
 		this.environment = System.getenv();
 		this.config = conf;
 		this.logger = logr;
-		String host_logdir = (String) config.get("host_logdir");
-
-		this.logger = LogUtils.redirectToCustomHandler(this.logger, (Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out")));
+		// String host_logdir = (String) config.get("host_logdir");
+		// this.logger = LogUtils.redirectToCustomHandler(this.logger, (Functions.resolvePathWithEnv(host_logdir) + "/JAliEn." + (new Timestamp(System.currentTimeMillis()).getTime() + ".out")));
 
 		this.logger.info("This VO-Box is " + config.get("ALIEN_CM_AS_LDAP_PROXY") + ", site is " + config.get("site_accountname"));
 
 		this.envFromConfig = (TreeSet<String>) this.config.get("ce_environment");
-		
+
 		this.temp_file = null;
 		this.submitCmd = (config.get("CE_SUBMITCMD") != null ? (String) config.get("CE_SUBMITCMD") : "condor_submit");
 

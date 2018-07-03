@@ -15,6 +15,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.servlet.ServletException;
+
+import org.apache.catalina.LifecycleException;
+
 import com.datastax.driver.core.ConsistencyLevel;
 
 import alien.catalogue.LFN;
@@ -23,6 +27,8 @@ import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.test.cassandra.tomcat.EmbeddedTomcat;
+import alien.test.cassandra.tomcat.servlet.LocalCache;
 
 /**
  *
@@ -145,6 +151,11 @@ public class CatalogueTestWhereisGenerated {
 	static Integer base_for_insert = Integer.valueOf(500000000);
 
 	/**
+	 * Tomcat server
+	 */
+	static EmbeddedTomcat tomcat = null;
+
+	/**
 	 * auto-generated paths
 	 *
 	 * @param args
@@ -199,6 +210,8 @@ public class CatalogueTestWhereisGenerated {
 
 		if (nargs > 10)
 			lfntable = args[10];
+
+		startLocalCacheTomcat();
 
 		System.out.println("Printing output to: out" + logs_suffix);
 		out = new PrintWriter(new FileOutputStream("out" + logs_suffix));
@@ -468,6 +481,29 @@ public class CatalogueTestWhereisGenerated {
 			}
 		}
 
+	}
+
+	private static void startLocalCacheTomcat() {
+		try {
+			tomcat = new EmbeddedTomcat("*");
+		} catch (final ServletException se) {
+			System.err.println("Cannot create the Tomcat server: " + se.getMessage());
+			return;
+		}
+
+		tomcat.addServlet(LocalCache.class.getName(), "/*");
+
+		// Start the server
+		try {
+			tomcat.start();
+		} catch (final LifecycleException le) {
+			System.err.println("Cannot start the Tomcat server: " + le.getMessage());
+			return;
+		}
+
+		System.out.println("Ready to accept HTTP calls on " + tomcat.getAddress() + ":" + tomcat.getPort());
+
+		return;
 	}
 
 }

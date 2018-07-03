@@ -61,10 +61,10 @@ public class Optimizer extends Thread {
 	private static void startCatalogueOptimizers() {
 		for (final String opt : catalogue_optimizers)
 			try {
-				final Optimizer optclass = (Optimizer) Class.forName(opt).newInstance();
+				final Optimizer optclass = (Optimizer) Class.forName(opt).getConstructor().newInstance();
 				logger.log(Level.INFO, "New catalogue optimizer: " + opt);
 				optclass.start();
-			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+			} catch (ReflectiveOperationException e) {
 				logger.log(Level.SEVERE, "Can't instantiate optimizer " + opt + "! " + e);
 			}
 	}

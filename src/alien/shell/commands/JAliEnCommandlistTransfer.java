@@ -89,7 +89,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			this.status = (String) options.valueOf("status");
 			this.user = (String) options.valueOf("user");
 			if (options.has("id"))
-				this.id = new Integer((String) options.valueOf("id"));
+				this.id = Integer.valueOf((String) options.valueOf("id"));
 			this.verbose = options.has("verbose");
 			this.jdl = options.has("jdl");
 			this.sort_desc = options.has("desc");

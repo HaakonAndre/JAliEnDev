@@ -408,7 +408,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 						return null;
 					}
 
-					dirCache.put(pathAppended, path_id, 5 * 60 * 1000);
+					dirCache.put(pathAppended, path_id, 5 * 60 * 1000); // 5 minutes
 					dirCache_put++;
 				}
 				else {
@@ -811,7 +811,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (type == 'd') {
 				// pfns = new HashMap<>();
 				// pfns.put(Integer.valueOf(-1), "");
-				dirCache.put(this.canonicalName, id, 5 * 60 * 1000);
+				dirCache.put(this.canonicalName, id, 5 * 60 * 1000); // 5 minutes
 				dirCache_put++;
 			}
 

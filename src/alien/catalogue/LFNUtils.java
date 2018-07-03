@@ -1192,12 +1192,12 @@ public class LFNUtils {
 
 		final LFN parentDir = archive.getParentDir();
 		if (parentDir.exists) {
-			final List<LFN> sameDirListing = parentDir.list();
+			final Collection<LFN> allJobFiles = find(parentDir.getCanonicalName(), "*", "", 0, null, "", Long.valueOf(archive.jobid));
 
-			if (sameDirListing == null || sameDirListing.size() == 0)
+			if (allJobFiles == null || allJobFiles.size() == 0)
 				return null;
 
-			for (final LFN file : sameDirListing)
+			for (final LFN file : allJobFiles) {
 				if (file.isFile()) {
 					final Set<PFN> pfns = file.whereis();
 
@@ -1205,16 +1205,19 @@ public class LFNUtils {
 						for (final PFN p : pfns)
 							if (p.pfn.startsWith("guid:/"))
 								try {
-									final UUID guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+									// '8' is always an index of first cipher of GUID after "guid:///"
+									final UUID guid = UUID.fromString(p.pfn.substring(8, p.pfn.indexOf('?')));
 
 									if (guid.equals(archive.guid)) {
 										ret.add(file);
 										continue;
 									}
-								} catch (@SuppressWarnings("unused") final Exception e) {
+								} catch (final Exception e) {
+									logger.log(Level.WARNING, "Failed to get GUID: " + e);
 									return null;
 								}
 				}
+			}
 		}
 		return ret;
 	}
@@ -1235,12 +1238,17 @@ public class LFNUtils {
 
 		UUID guid = null;
 
+		String zipMember = null;
+
 		final Set<PFN> listing = file.whereis();
 		if (listing != null)
 			for (final PFN p : listing)
 				if (p.pfn != null && p.pfn.startsWith("guid:/"))
 					try {
-						guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/') + 1, p.pfn.indexOf('?')));
+						guid = UUID.fromString(p.pfn.substring(p.pfn.lastIndexOf('/', p.pfn.indexOf('?')) + 1, p.pfn.indexOf('?')));
+
+						zipMember = p.pfn.substring(p.pfn.indexOf('?') + 1);
+
 						break;
 					} catch (final Exception e) {
 						logger.log(Level.WARNING, "Failed to parse guid ", e);
@@ -1252,6 +1260,10 @@ public class LFNUtils {
 
 		try {
 			LFN parentDir = file.getParentDir();
+
+			if (zipMember != null && zipMember.indexOf('/') > 0 && parentDir != null)
+				parentDir = parentDir.getParentDir();
+
 			if (parentDir != null && parentDir.list() != null)
 				for (final LFN otherFile : parentDir.list())
 					if (otherFile.isFile() && otherFile.guid != null && otherFile.guid.equals(guid))

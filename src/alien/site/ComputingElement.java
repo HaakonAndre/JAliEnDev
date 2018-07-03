@@ -245,8 +245,8 @@ public class ComputingElement extends Thread {
 		final String host_tempdir_resolved = Functions.resolvePathWithEnv(host_tempdir);
 		if (this.queue.getClass() == alien.site.batchqueue.FORK.class)
 			host_tempdir = host_tempdir_resolved;
-		final String cert_file = host_tempdir + "/token_cert." + time;
-		final String key_file = host_tempdir + "/token_key." + time;
+		// final String cert_file = host_tempdir + "/token_cert." + time;
+		// final String key_file = host_tempdir + "/token_key." + time;
 
 		int ttl_hours = ((Integer) siteMap.get("TTL")).intValue();
 		ttl_hours = ttl_hours / 3600;

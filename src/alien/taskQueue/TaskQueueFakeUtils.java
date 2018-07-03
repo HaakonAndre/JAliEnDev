@@ -8,7 +8,7 @@ import java.security.SignatureException;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.security.cert.X509Certificate;
+import java.security.cert.X509Certificate;
 
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;

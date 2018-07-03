@@ -71,7 +71,8 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 							commander.printOutln();
 						}
 
-					} catch (@SuppressWarnings("unused") final IOException ioe) {
+					} catch (@SuppressWarnings("unused")
+					final IOException ioe) {
 						// ignore, cannot happen
 					}
 				}
@@ -105,6 +106,7 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			e.printStackTrace();
 			return null;
 		}
+		
 		silent();
 
 		try {
@@ -118,6 +120,9 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			e.printStackTrace();
 			return null;
 		}
+		
+		verbose();
+		
 		return cp.getOutputFile();
 	}
 

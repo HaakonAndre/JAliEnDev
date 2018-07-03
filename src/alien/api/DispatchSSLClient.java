@@ -8,6 +8,8 @@ import java.net.ConnectException;
 import java.net.Socket;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -16,7 +18,6 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.security.cert.X509Certificate;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -140,15 +141,18 @@ public class DispatchSSLClient extends Thread {
 
 				client.startHandshake();
 
-				final X509Certificate[] peerCerts = client.getSession().getPeerCertificateChain();
+				final Certificate[] peerCerts = client.getSession().getPeerCertificates();
 
 				if (peerCerts != null) {
 
 					logger.log(Level.INFO, "Printing peer's information:");
 
-					for (final X509Certificate peerCert : peerCerts)
-						logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + peerCert.getSubjectDN().getName() + "\n" + peerCert.getIssuerDN().getName() + "\n"
-								+ Level.INFO + "- Start Time: " + peerCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + peerCert.getNotAfter().toString());
+					for (final Certificate peerCert : peerCerts) {
+						X509Certificate xCert = (X509Certificate) peerCert;
+
+						logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + xCert.getSubjectDN().getName() + "\n" + xCert.getIssuerDN().getName() + "\n"
+								+ Level.INFO + "- Start Time: " + xCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + xCert.getNotAfter().toString());
+					}
 
 					final DispatchSSLClient sc = new DispatchSSLClient(client);
 					System.out.println("Connection to JCentral established.");
@@ -291,7 +295,7 @@ public class DispatchSSLClient extends Thread {
 
 		if (logger.isLoggable(Level.FINE)) {
 			logger.log(Level.FINE, "Got back an object of type " + o.getClass().getCanonicalName() + " : " + o);
-			
+
 			if (logger.isLoggable(Level.FINEST))
 				logger.log(Level.FINEST, "Call stack is: ", new Throwable());
 		}

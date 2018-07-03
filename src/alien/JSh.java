@@ -17,6 +17,7 @@ import alien.config.JAliEnIAm;
 import alien.shell.BusyBox;
 import alien.shell.ShellColor;
 import alien.shell.commands.JAliEnBaseCommand;
+import alien.user.UserFactory;
 import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 import lia.util.process.ExternalProcess.ExitStatus;
@@ -169,7 +170,7 @@ public class JSh {
 		Process p;
 
 		try {
-			p = Runtime.getRuntime().exec(new String[] { "java", "-Duserid=" + System.getProperty("userid"), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-server",
+			p = Runtime.getRuntime().exec(new String[] { "java", "-Duserid=" + UserFactory.getUserID(), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-server",
 					"-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"), "alien.JBox" });
 
 		} catch (final IOException ioe) {
@@ -331,7 +332,7 @@ public class JSh {
 
 	private static boolean getJBoxPID() {
 
-		final File f = new File(new File(System.getProperty("java.io.tmpdir")), "jclient_token_" + System.getProperty("userid"));
+		final File f = new File(new File(System.getProperty("java.io.tmpdir")), "jclient_token_" + UserFactory.getUserID());
 
 		if (f.exists()) {
 			final byte[] buffer = new byte[(int) f.length()];

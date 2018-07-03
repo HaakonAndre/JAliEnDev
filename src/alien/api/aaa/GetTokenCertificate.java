@@ -187,10 +187,10 @@ public class GetTokenCertificate extends Request {
 			throw new IllegalArgumentException("When issuing a user certificate you need to pass the current one, that will limit the validity of the issued token");
 		}
 
-		final javax.security.cert.X509Certificate partnerCertificateChain[] = getPartnerCertificate();
+		final java.security.cert.X509Certificate partnerCertificateChain[] = getPartnerCertificate();
 
 		if (partnerCertificateChain != null)
-			for (final javax.security.cert.X509Certificate partner : partnerCertificateChain) {
+			for (final java.security.cert.X509Certificate partner : partnerCertificateChain) {
 				final ZonedDateTime partnerNotAfter = partner.getNotAfter().toInstant().atZone(ZoneId.systemDefault());
 
 				if (notAfter.isAfter(partnerNotAfter))

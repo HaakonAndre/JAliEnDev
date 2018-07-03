@@ -10,7 +10,6 @@ import java.util.concurrent.TimeUnit;
 
 import lia.util.process.ExternalProcess.ExitStatus;
 import lia.util.process.ExternalProcessBuilder;
-import utils.SystemProcess;
 
 /**
  * @author ron
@@ -62,10 +61,23 @@ public class FileEditor {
 	 * @return exit code from the executed application
 	 */
 	public int edit(final String filename) {
-		final SystemProcess edit = new SystemProcess(editor + " " + filename);
+		final ProcessBuilder pb = new ProcessBuilder(editor, filename);
 
-		// it only returns when the process ends
-		return edit.execute();
+		pb.redirectInput(ProcessBuilder.Redirect.INHERIT);
+		pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+		pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+
+		try {
+			final Process p = pb.start();
+
+			p.waitFor();
+
+			final int code = p.exitValue();
+
+			return code;
+		} catch (@SuppressWarnings("unused") final Throwable t) {
+			return -1;
+		}
 	}
 
 	private static String which(final String command) {
