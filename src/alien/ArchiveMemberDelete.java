@@ -22,7 +22,6 @@ import alien.api.ServerException;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.catalogue.PFNforReadOrDel;
 import alien.catalogue.LFN;
-import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.catalogue.access.AccessType;
