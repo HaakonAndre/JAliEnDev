@@ -453,8 +453,6 @@ public class JAKeyStore {
 
 		JPasswordFinder jpf;
 
-		System.out.println(noUserPass);
-
 		if (noUserPass)
 			jpf = new JPasswordFinder(new char[] {});
 		else
