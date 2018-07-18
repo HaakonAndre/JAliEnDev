@@ -311,7 +311,10 @@ public class JBoxServer extends Thread {
 	static final class PreemptJCentralConnection extends Thread {
 		@Override
 		public void run() {
-			SEUtils.getSE(0);
+			if (SEUtils.getSE(0) == null) {
+				logger.log(Level.SEVERE, "JBoxServer: Error running request, potential connection error.");
+				System.err.println("JBoxServer: Error running request, potential connection error.");
+			}
 		}
 	}
 
@@ -625,7 +628,7 @@ public class JBoxServer extends Thread {
 			} catch (final Exception ioe) {
 				// we don't need the already in use info on the port, maybe
 				// there's another user on the machine...
-				logger.log(Level.FINE, "JBox: Could not listen on port " + port, ioe);
+				logger.log(Level.FINE, "JBox: Could not listen on port " + (port != 0 ? port : "\"any\""), ioe);
 			}
 	}
 
