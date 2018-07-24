@@ -12,6 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -784,12 +785,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			PreparedStatement statement;
 			BoundStatement boundStatement;
 
+			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+			bs.setConsistencyLevel(cl);
+
 			// Insert the entry in the index // TODO: use IF NOT EXISTS to avoid collisions when inserting paths
 			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
-			boundStatement = new BoundStatement(statement);
-			boundStatement.bind(parent_id, child, ctime, id, Integer.valueOf(flag));
-			boundStatement.setConsistencyLevel(cl);
-			session.execute(boundStatement);
+			bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
 
 			// Insert the entry in the metadata
 			if (type == 'a' || type == 'f' || type == 'm' || type == 'l') {
@@ -804,8 +805,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				boundStatement.bind(parent_id, id, ctime, gowner, Long.valueOf(jobid), owner, perm, Long.valueOf(size), String.valueOf(type));
 			}
 
-			boundStatement.setConsistencyLevel(cl);
-			session.execute(boundStatement);
+			bs.add(boundStatement);
 
 			// Fake -1 seNumber for dirs in se_lookup
 			if (type == 'd') {
@@ -823,13 +823,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 					for (int seNumber : seNumbers) {
 						statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
-						boundStatement = new BoundStatement(statement);
-						boundStatement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner);
-						boundStatement.setConsistencyLevel(cl);
-						session.execute(boundStatement);
+						bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner));
 					}
 				}
 			}
+
+			session.execute(bs);
+
 		} catch (Exception e) {
 			System.err.println("Exception trying to insert: " + e);
 			// TODO: shall we try to delete here from the tables?
