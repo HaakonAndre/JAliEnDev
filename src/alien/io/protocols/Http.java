@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -18,7 +18,7 @@ import alien.io.IOUtils;
  */
 public class Http extends Protocol {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = -9087355732313314671L;
 	/**
@@ -35,7 +35,7 @@ public class Http extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
@@ -84,7 +84,7 @@ public class Http extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -94,7 +94,7 @@ public class Http extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#delete(alien.catalogue.PFN)
 	 */
 	@Override
@@ -104,7 +104,7 @@ public class Http extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, java.io.File)
 	 */
 	@Override
@@ -114,7 +114,7 @@ public class Http extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.PFN)
 	 */
 	@Override
@@ -135,5 +135,12 @@ public class Http extends Protocol {
 	@Override
 	public byte protocolID() {
 		return 1;
+	}
+
+	@Override
+	public Protocol clone() {
+		final Http ret = new Http();
+
+		return ret;
 	}
 }

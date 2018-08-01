@@ -46,7 +46,7 @@ public class Xrootd extends Protocol {
 	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
 
 	private static String xrdcpdebug = "-d";
-	private int xrdcpdebuglevel = 0;
+	protected int xrdcpdebuglevel = 0;
 
 	/**
 	 * Path to the Xrootd command line binaries
@@ -188,12 +188,12 @@ public class Xrootd extends Protocol {
 	 *            whether to append to the existing value (<code>true</code>) or replace it (<code>false</code>)
 	 */
 	public static void checkLibraryPath(final ProcessBuilder p, final String path, final boolean append) {
-		if (path != null) {
+		if (path != null)
 			if (!append) {
 				p.environment().put("LD_LIBRARY_PATH", path + "/lib");
 				p.environment().put("DYLD_LIBRARY_PATH", path + "/lib");
 			}
-			else {
+			else
 				for (final String key : new String[] { "LD_LIBRARY_PATH", "DYLD_LIBRARY_PATH" }) {
 					final String old = p.environment().get(key);
 
@@ -202,8 +202,6 @@ public class Xrootd extends Protocol {
 					else
 						p.environment().put(key, old + ":" + path + "/lib");
 				}
-			}
-		}
 	}
 
 	/**
@@ -978,7 +976,7 @@ public class Xrootd extends Protocol {
 				if (exitStatus.getExtProcExitStatus() != 0) {
 					if (sleep == 0 || !retryWithDelay)
 						throw new IOException("Exit code was " + exitStatus.getExtProcExitStatus() + ", retry #" + (statRetryCounter + 1) + ", output was " + cleanupXrdOutput(exitStatus.getStdOut())
-								+ ", " + "for command : " + command.toString());
+						+ ", " + "for command : " + command.toString());
 
 					Thread.sleep(sleep * 1000);
 					continue;
@@ -1131,7 +1129,7 @@ public class Xrootd extends Protocol {
 			checkLibraryPath(pBuilder);
 
 			long seconds = source.getGuid().size / 200000; // average target
-															// speed: 200KB/s
+			// speed: 200KB/s
 
 			seconds += 5 * 60; // 5 minutes extra time, handshakes and such
 
@@ -1438,6 +1436,15 @@ public class Xrootd extends Protocol {
 			setLastExitStatus(null);
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
+
+		return ret;
+	}
+
+	@Override
+	public Protocol clone() {
+		final Xrootd ret = new Xrootd();
+
+		ret.setDebugLevel(xrdcpdebuglevel);
 
 		return ret;
 	}

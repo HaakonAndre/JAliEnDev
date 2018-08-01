@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -9,14 +9,14 @@ import alien.catalogue.PFN;
 
 /**
  * 3rd party Xrootd transfers using the default client in Xrootd 4+
- * 
+ *
  * @author costing
  * @since Jun 16 2015
  */
 public class Xrd3cp4 extends Xrootd {
 
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 9084272684664087714L;
 
@@ -28,13 +28,13 @@ public class Xrd3cp4 extends Xrootd {
 	}
 
 	@Override
-	public String transfer(PFN source, PFN target) throws IOException {
+	public String transfer(final PFN source, final PFN target) throws IOException {
 		return transferv4(source, target, TPC_ONLY);
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -55,5 +55,14 @@ public class Xrd3cp4 extends Xrootd {
 	@Override
 	public byte protocolID() {
 		return 5;
+	}
+
+	@Override
+	public Protocol clone() {
+		final Xrd3cp4 ret = new Xrd3cp4();
+
+		ret.setDebugLevel(xrdcpdebuglevel);
+
+		return ret;
 	}
 }

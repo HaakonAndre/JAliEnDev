@@ -184,29 +184,29 @@ public class Transfer implements Serializable, Runnable {
 		if (s.equals("root")) {
 			if (!onlyAccess) {
 				if (Factory.xrd3cp.isSupported())
-					ret.add(Factory.xrd3cp);
+					ret.add(Factory.xrd3cp.clone());
 
 				if (Factory.xrd3cp4.isSupported())
-					ret.add(Factory.xrd3cp4);
+					ret.add(Factory.xrd3cp4.clone());
 			}
 
 			if (Factory.xrootd.isSupported())
-				ret.add(Factory.xrootd);
+				ret.add(Factory.xrootd.clone());
 		}
 		else
 			if (s.equals("http")) {
 				if (Factory.http.isSupported())
-					ret.add(Factory.http);
+					ret.add(Factory.http.clone());
 			}
 			else
 				if (s.equals("torrent")) {
 					if (Factory.torrent.isSupported())
-						ret.add(Factory.torrent);
+						ret.add(Factory.torrent.clone());
 				}
 				else
 					if (s.equals("file"))
 						if (Factory.cp.isSupported())
-							ret.add(Factory.cp);
+							ret.add(Factory.cp.clone());
 
 		return ret;
 	}

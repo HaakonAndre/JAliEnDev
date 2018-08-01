@@ -116,7 +116,8 @@ public class CpForTest extends Protocol {
 				throw new IOException("Local file " + localFile.getCanonicalPath() + " exists already. Cp would fail.");
 
 			target = localFile;
-		} else {
+		}
+		else {
 			target = File.createTempFile("cp-get", null, IOUtils.getTemporaryDirectory());
 
 			if (!target.delete())
@@ -287,5 +288,12 @@ public class CpForTest extends Protocol {
 	@Override
 	public byte protocolID() {
 		return 0;
+	}
+
+	@Override
+	public Protocol clone() {
+		final CpForTest ret = new CpForTest();
+
+		return ret;
 	}
 }

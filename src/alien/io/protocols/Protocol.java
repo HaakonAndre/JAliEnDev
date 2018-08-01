@@ -100,34 +100,32 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 		if (f.length() != guid.size)
 			return false;
 
-		if (isValidMD5(guid.md5)) {
+		if (isValidMD5(guid.md5))
 			try {
-				String fileMD5 = IOUtils.getMD5(f);
+				final String fileMD5 = IOUtils.getMD5(f);
 
 				if (!fileMD5.equalsIgnoreCase(guid.md5))
 					return false;
 
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
 				logger.log(Level.SEVERE, e.getMessage());
 				return false;
 			}
-		}
 		else {
 			final LFN lfn = LFNUtils.getLFN(guid);
-			if (lfn != null && isValidMD5(lfn.md5)) {
+			if (lfn != null && isValidMD5(lfn.md5))
 				try {
-					String fileMD5 = IOUtils.getMD5(f);
+					final String fileMD5 = IOUtils.getMD5(f);
 
 					if (!fileMD5.equalsIgnoreCase(lfn.md5))
 						return false;
 
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
 					logger.log(Level.SEVERE, e.getMessage());
 					return false;
 				}
-			}
 		}
 		// otherwise don't check md5 at all
 
@@ -143,7 +141,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 	 *            string to check
 	 * @return <code>true</code> if a string is a valid md5 hash, <code>false</code> otherwise
 	 */
-	private static boolean isValidMD5(String s) {
+	private static boolean isValidMD5(final String s) {
 		if (s != null && s.length() > 0)
 			return md5pattern.matcher(s).matches();
 
@@ -169,6 +167,12 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 	 * @return unique identifier of each protocol
 	 */
 	public abstract byte protocolID();
+
+	/**
+	 * Clone a protocol, returning an object of a compatible type that can be freely modified by the application
+	 */
+	@Override
+	public abstract Protocol clone();
 
 	private ExitStatus lastExitStatus = null;
 

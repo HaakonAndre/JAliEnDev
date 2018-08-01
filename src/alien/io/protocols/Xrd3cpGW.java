@@ -161,7 +161,7 @@ public class Xrd3cpGW extends Xrootd {
 			checkLibraryPath(pBuilder);
 
 			long seconds = source.getGuid().size / 200000; // average target
-															// speed: 200KB/s
+			// speed: 200KB/s
 
 			seconds += 5 * 60; // 5 minutes extra time, handshakes and such
 
@@ -254,5 +254,14 @@ public class Xrd3cpGW extends Xrootd {
 	@Override
 	public byte protocolID() {
 		return 6;
+	}
+
+	@Override
+	public Protocol clone() {
+		final Xrd3cpGW ret = new Xrd3cpGW();
+
+		ret.setDebugLevel(xrdcpdebuglevel);
+
+		return ret;
 	}
 }
