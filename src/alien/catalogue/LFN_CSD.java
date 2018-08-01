@@ -92,6 +92,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(80000); // TODO: should change size?
 
 	/**
+	 * Local cache to hold recently inserted folders
+	 */
+	public static final ExpirationCache<String, Integer> rifs = new ExpirationCache<>(5000); // TODO: should change size?
+
+	/**
 	 * Owner
 	 */
 	public String owner;
@@ -874,13 +879,16 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return true;
 
 		while (folderBookingMap.putIfAbsent(folder, Integer.valueOf(1)) != null) {
-			Thread.sleep(1000);
+			Thread.sleep(1000 * bookingTries);
 			bookingTries++;
 			if (bookingTries == 3) {
 				System.err.println("Can't get booking lock: " + folder);
 				return false;
 			}
 		}
+
+		if (rifs.get(folder) != null)
+			return true;
 
 		try {
 			// return if in the cache
@@ -925,6 +933,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			throw (e);
 		} finally {
 			folderBookingMap.remove(folder);
+			rifs.put(folder, Integer.valueOf(1), 30 * 1000); // 30 seconds
 		}
 	}
 
