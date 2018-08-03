@@ -78,26 +78,32 @@ public class LFNCSDUtils {
 
 	/**
 	 * @param command
-	 * @param base
+	 * @param start_path
 	 * @param pattern
 	 * @param metadata
 	 * @param flags
 	 * @return list of lfns that fit the patterns, if any
 	 */
-	public static Collection<LFN_CSD> recurseAndFilterLFNs(final String command, final String base, final String pattern, final String metadata, final int flags) {
+	public static Collection<LFN_CSD> recurseAndFilterLFNs(final String command, final String start_path, final String pattern, final String metadata, final int flags) {
 		final Set<LFN_CSD> ret;
 		final AtomicInteger counter_left = new AtomicInteger();
 
+		// we create a base for search and a file pattern
+		int index = 0;
+		String path = start_path;
+		String file_pattern = (pattern == null ? "*" : pattern);
+		if (!start_path.endsWith("/") && pattern == null) {
+			file_pattern = start_path.substring(start_path.lastIndexOf('/') + 1);
+			path = start_path.substring(0, start_path.lastIndexOf('/') + 1);
+		}
+
+		// choose to use sorted/unsorted type according to flag (-s)
 		if ((flags & LFNCSDUtils.FIND_NO_SORT) != 0)
 			ret = new LinkedHashSet<>();
 		else
 			ret = new TreeSet<>();
 
-		String path = base;
-		String file_pattern = pattern;
-		int index = 0;
-
-		// Split the base into directories, change asterisk and ints. to regex format
+		// Split the base into directories, change asterisk and interrogation marks to regex format
 		ArrayList<String> path_parts;
 		if (!path.endsWith("/"))
 			path += "*/";
@@ -328,6 +334,17 @@ public class LFNCSDUtils {
 	}
 
 	/**
+	 * @param base_path
+	 * @param pattern
+	 * @param flags
+	 * @param metadata
+	 * @return list of files for find command
+	 */
+	public static Collection<LFN_CSD> find(final String base_path, final String pattern, final int flags, final String metadata) {
+		return recurseAndFilterLFNs("find", base_path, pattern, metadata, flags);
+	}
+
+	/**
 	 * @param path
 	 * @param flags
 	 * @return list of files for ls command
@@ -337,13 +354,7 @@ public class LFNCSDUtils {
 
 		// if need to resolve wildcard and recurse, we call the recurse method
 		if (path.contains("*")) {
-			String pattern = "*";
-			String base = path;
-			if (!path.endsWith("/")) {
-				pattern = path.substring(path.lastIndexOf('/') + 1);
-				base = path.substring(0, path.lastIndexOf('/') + 1);
-			}
-			return recurseAndFilterLFNs("ls", base, pattern, null, flags);
+			return recurseAndFilterLFNs("ls", path, null, null, flags);
 		}
 
 		// otherwise we should be able to create the LFN_CSD from the path

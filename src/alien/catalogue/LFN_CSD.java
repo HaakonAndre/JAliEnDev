@@ -89,12 +89,12 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Local cache to hold the hierarchy
 	 */
-	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(80000); // TODO: should change size?
+	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(80000);
 
 	/**
 	 * Local cache to hold recently inserted folders
 	 */
-	public static final ExpirationCache<String, Integer> rifs = new ExpirationCache<>(5000); // TODO: should change size?
+	public static final ExpirationCache<String, Integer> rifs = new ExpirationCache<>(5000);
 
 	/**
 	 * Owner
@@ -748,6 +748,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public boolean insert(String append_table, ConsistencyLevel level) {
 		// lfn | ctime | dir | gowner | jobid | link | md5 | owner | perm | pfns
 		// | size | type
+		boolean res = false;
+
 		String tindex = "catalogue.lfn_index";
 		if (append_table != null)
 			tindex += append_table;
@@ -793,7 +795,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
 			bs.setConsistencyLevel(cl);
 
-			// Insert the entry in the index // TODO: use IF NOT EXISTS to avoid collisions when inserting paths
+			// Insert the entry in the index // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
 			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
 			bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
 
@@ -833,15 +835,14 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				}
 			}
 
-			session.execute(bs);
-
+			ResultSet rs = session.execute(bs);
+			res = rs.wasApplied();
 		} catch (Exception e) {
 			System.err.println("Exception trying to insert: " + e);
-			// TODO: shall we try to delete here from the tables?
 			return false;
 		}
 
-		return true;
+		return res;
 	}
 
 	/**
