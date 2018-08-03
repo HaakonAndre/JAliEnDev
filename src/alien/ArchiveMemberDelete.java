@@ -273,8 +273,8 @@ public class ArchiveMemberDelete {
 
 			commander.c_api.uploadFile(newArchive, newArchiveFullPath, "-w", "-S", "disk:1"); // Create only one replica
 
-			if (commander.c_api.getLFN(registerPath + System.getProperty("file.separator") + archiveName) == null
-					|| !commander.c_api.getLFN(registerPath + System.getProperty("file.separator") + archiveName).exists) {
+			final LFN newArchiveLFN = commander.c_api.getLFN(newArchiveFullPath);
+			if (newArchiveLFN == null || !newArchiveLFN.exists) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
 				validation.println("Upload failed");
 				return;
@@ -309,8 +309,8 @@ public class ArchiveMemberDelete {
 			CatalogueApiUtils.registerEntry(entry, registerPath + System.getProperty("file.separator"), commander.getUser());
 
 			for (final String file : listOfFiles) {
-				if (commander.c_api.getLFN(registerPath + System.getProperty("file.separator") + file) == null
-						|| !commander.c_api.getLFN(registerPath + System.getProperty("file.separator") + file).exists) {
+				final LFN entryLFN = commander.c_api.getLFN(registerPath + System.getProperty("file.separator") + file);
+				if (entryLFN == null || !entryLFN.exists) {
 					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to register entry " + registerPath + System.getProperty("file.separator") + file);
 					validation.println("Register failed");
 
