@@ -268,6 +268,17 @@ public class Xrootd extends Protocol {
 			return message.substring(idx + 5, idx2);
 		}
 
+		idx = message.lastIndexOf("Server responded with an error: ");
+
+		if (idx >= 0) {
+			int idx2 = message.indexOf('\n', idx);
+
+			if (idx2 < 0)
+				idx2 = message.length();
+
+			return message.substring(idx + 32, idx2);
+		}
+
 		return null;
 	}
 
