@@ -23,7 +23,7 @@ import lia.util.process.ExternalProcess.ExitStatus;
  * @author costing
  * @since Dec 8, 2010
  */
-public abstract class Protocol implements Serializable, Comparable<Protocol> {
+public abstract class Protocol implements Serializable, Comparable<Protocol>, Cloneable {
 
 	/**
 	 *
@@ -168,12 +168,6 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 	 */
 	public abstract byte protocolID();
 
-	/**
-	 * Clone a protocol, returning an object of a compatible type that can be freely modified by the application
-	 */
-	@Override
-	public abstract Protocol clone();
-
 	private ExitStatus lastExitStatus = null;
 
 	/**
@@ -222,5 +216,16 @@ public abstract class Protocol implements Serializable, Comparable<Protocol> {
 			return URL + "&" + parameter;
 
 		return URL + "?" + parameter;
+	}
+
+	@Override
+	public Object clone() {
+		try {
+			return super.clone();
+		} catch (CloneNotSupportedException e) {
+			logger.log(Level.SEVERE, "Some Protocol doesn't support cloning", e);
+		}
+
+		return null;
 	}
 }

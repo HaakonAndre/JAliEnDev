@@ -132,11 +132,4 @@ public class Torrent extends Protocol {
 	public byte protocolID() {
 		return 2;
 	}
-
-	@Override
-	public Protocol clone() {
-		final Torrent ret = new Torrent();
-
-		return ret;
-	}
 }

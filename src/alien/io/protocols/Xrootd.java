@@ -369,7 +369,7 @@ public class Xrootd extends Protocol {
 				if (logger.isLoggable(Level.FINE))
 					logger.log(Level.FINE, "Exit code " + exitStatus.getExtProcExitStatus() + " and output is:\n" + exitStatus.getStdOut() + "\n, full command was:\n" + command);
 
-				throw new IOException("Exit code " + exitStatus.getExtProcExitStatus());
+				throw new IOException(exitStatus.getExtProcExitStatus() < 0 ? "Timeout after 1 minute" : "Exit code " + exitStatus.getExtProcExitStatus());
 			}
 
 			if (logger.isLoggable(Level.FINEST))
@@ -535,10 +535,17 @@ public class Xrootd extends Protocol {
 
 				logger.log(Level.WARNING, "GET of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
-				if (sMessage != null)
-					sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				if (sMessage != null) {
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = xrdcpPath + " timed out and was killed after " + maxTime + "s: " + sMessage;
+					else
+						sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				}
 				else
-					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = "The following command has timeout and was killed after " + maxTime + "s: " + command.toString();
+					else
+						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 
 				throw new SourceException(sMessage);
 			}
@@ -677,12 +684,20 @@ public class Xrootd extends Protocol {
 			if (exitStatus.getExtProcExitStatus() != 0) {
 				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
-				logger.log(Level.WARNING, "PUT of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
+				if (logger.isLoggable(Level.WARNING))
+					logger.log(Level.WARNING, "PUT of " + pfn.pfn + " failed with " + exitStatus.getStdOut());
 
-				if (sMessage != null)
-					sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				if (sMessage != null) {
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = xrdcpPath + " timed out and was killed after " + maxTime + "s: " + sMessage;
+					else
+						sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				}
 				else
-					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = "The following command had timed out and was killed after " + maxTime + "s: " + command.toString();
+					else
+						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 
 				throw new TargetException(sMessage);
 			}
@@ -887,8 +902,11 @@ public class Xrootd extends Protocol {
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
 
-		if (exitStatus.getExtProcExitStatus() != 0)
-			throw new IOException("Command exited with exit code: " + exitStatus.getExtProcExitStatus() + ", full command and output is below:\n" + command + "\n" + exitStatus.getStdOut());
+		if (exitStatus.getExtProcExitStatus() < 0)
+			throw new IOException("Prepare command has timed out and was killed after 15s:\n" + command + "\n" + exitStatus.getStdOut());
+
+		if (exitStatus.getExtProcExitStatus() > 0)
+			throw new IOException("Prepare command exited with exit code: " + exitStatus.getExtProcExitStatus() + ", full command and output is below:\n" + command + "\n" + exitStatus.getStdOut());
 	}
 
 	/**
@@ -974,9 +992,11 @@ public class Xrootd extends Protocol {
 				final int sleep = statRetryTimes[statRetryCounter];
 
 				if (exitStatus.getExtProcExitStatus() != 0) {
-					if (sleep == 0 || !retryWithDelay)
-						throw new IOException("Exit code was " + exitStatus.getExtProcExitStatus() + ", retry #" + (statRetryCounter + 1) + ", output was " + cleanupXrdOutput(exitStatus.getStdOut())
-						+ ", " + "for command : " + command.toString());
+					if (sleep == 0 || !retryWithDelay) {
+						final String message = exitStatus.getExtProcExitStatus() > 0 ? "Exit code was " + exitStatus.getExtProcExitStatus() : "Command has timed out and was killed after 15s";
+						throw new IOException(
+								message + ", retry #" + (statRetryCounter + 1) + ", output was " + cleanupXrdOutput(exitStatus.getStdOut()) + ", " + "for command : " + command.toString());
+					}
 
 					Thread.sleep(sleep * 1000);
 					continue;
@@ -1158,10 +1178,17 @@ public class Xrootd extends Protocol {
 
 				logger.log(Level.WARNING, "TRANSFER failed with " + exitStatus.getStdOut());
 
-				if (sMessage != null)
-					sMessage = "xrdcp (TPC==" + iTPC + ") exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				if (sMessage != null) {
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = "xrdcp (TPC==" + iTPC + ") timed out and was killed after " + seconds + "s, error message was: " + sMessage;
+					else
+						sMessage = "xrdcp (TPC==" + iTPC + ") exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				}
 				else
-					sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = "The following command has timed out and was killed after " + seconds + "s: " + command.toString();
+					else
+						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 
 				if (exitStatus.getExtProcExitStatus() == 5 && exitStatus.getStdOut().indexOf("source or destination has 0 size") >= 0) {
 					logger.log(Level.WARNING, "Retrying xrdstat, maybe the file shows up with the correct size in a few seconds");
@@ -1436,15 +1463,6 @@ public class Xrootd extends Protocol {
 			setLastExitStatus(null);
 			throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
 		}
-
-		return ret;
-	}
-
-	@Override
-	public Protocol clone() {
-		final Xrootd ret = new Xrootd();
-
-		ret.setDebugLevel(xrdcpdebuglevel);
 
 		return ret;
 	}

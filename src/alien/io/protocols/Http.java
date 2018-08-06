@@ -136,11 +136,4 @@ public class Http extends Protocol {
 	public byte protocolID() {
 		return 1;
 	}
-
-	@Override
-	public Protocol clone() {
-		final Http ret = new Http();
-
-		return ret;
-	}
 }

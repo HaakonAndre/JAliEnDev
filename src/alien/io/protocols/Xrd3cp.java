@@ -256,13 +256,4 @@ public class Xrd3cp extends Xrootd {
 	public byte protocolID() {
 		return 4;
 	}
-
-	@Override
-	public Protocol clone() {
-		final Xrd3cp ret = new Xrd3cp();
-
-		ret.setDebugLevel(xrdcpdebuglevel);
-
-		return ret;
-	}
 }

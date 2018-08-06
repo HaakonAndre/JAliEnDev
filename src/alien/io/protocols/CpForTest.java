@@ -289,11 +289,4 @@ public class CpForTest extends Protocol {
 	public byte protocolID() {
 		return 0;
 	}
-
-	@Override
-	public Protocol clone() {
-		final CpForTest ret = new CpForTest();
-
-		return ret;
-	}
 }
