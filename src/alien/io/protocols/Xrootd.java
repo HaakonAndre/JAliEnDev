@@ -390,7 +390,7 @@ public class Xrootd extends Protocol {
 				}
 				else
 					if (exitStatus.getExtProcExitStatus() < 0)
-						sMessage = "The following command has timeout and was killed after 1m: " + command.toString();
+						sMessage = "The following command has timed out and was killed after 1m: " + command.toString();
 					else
 						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 
@@ -568,7 +568,7 @@ public class Xrootd extends Protocol {
 				}
 				else
 					if (exitStatus.getExtProcExitStatus() < 0)
-						sMessage = "The following command has timeout and was killed after " + maxTime + "s: " + command.toString();
+						sMessage = "The following command has timed out and was killed after " + maxTime + "s: " + command.toString();
 					else
 						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
 
