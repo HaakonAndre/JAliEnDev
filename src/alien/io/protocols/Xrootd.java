@@ -366,10 +366,24 @@ public class Xrootd extends Protocol {
 			}
 
 			if (exitStatus.getExtProcExitStatus() != 0) {
-				if (logger.isLoggable(Level.FINE))
-					logger.log(Level.FINE, "Exit code " + exitStatus.getExtProcExitStatus() + " and output is:\n" + exitStatus.getStdOut() + "\n, full command was:\n" + command);
+				String sMessage = parseXrootdError(exitStatus.getStdOut());
 
-				throw new IOException(exitStatus.getExtProcExitStatus() < 0 ? "Timeout after 1 minute" : "Exit code " + exitStatus.getExtProcExitStatus());
+				if (logger.isLoggable(Level.WARNING))
+					logger.log(Level.WARNING, "RM of " + pfn.pfn + " failed with exit code: " + exitStatus.getExtProcExitStatus() + ", stdout: " + exitStatus.getStdOut());
+
+				if (sMessage != null) {
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = "rm timed out and was killed after 1m: " + sMessage;
+					else
+						sMessage = "rm exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+				}
+				else
+					if (exitStatus.getExtProcExitStatus() < 0)
+						sMessage = "The following command has timeout and was killed after 1m: " + command.toString();
+					else
+						sMessage = "Exit code was " + exitStatus.getExtProcExitStatus() + " for command : " + command.toString();
+
+				throw new TargetException(sMessage);
 			}
 
 			if (logger.isLoggable(Level.FINEST))
