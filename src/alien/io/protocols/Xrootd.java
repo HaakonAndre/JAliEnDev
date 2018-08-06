@@ -539,7 +539,7 @@ public class Xrootd extends Protocol {
 					if (exitStatus.getExtProcExitStatus() < 0)
 						sMessage = xrdcpPath + " timed out and was killed after " + maxTime + "s: " + sMessage;
 					else
-						sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+						sMessage = xrdcpPath + " exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
 				else
 					if (exitStatus.getExtProcExitStatus() < 0)
@@ -691,7 +691,7 @@ public class Xrootd extends Protocol {
 					if (exitStatus.getExtProcExitStatus() < 0)
 						sMessage = xrdcpPath + " timed out and was killed after " + maxTime + "s: " + sMessage;
 					else
-						sMessage = xrdcpPath + " exited with " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
+						sMessage = xrdcpPath + " exited with exit code " + exitStatus.getExtProcExitStatus() + ": " + sMessage;
 				}
 				else
 					if (exitStatus.getExtProcExitStatus() < 0)
