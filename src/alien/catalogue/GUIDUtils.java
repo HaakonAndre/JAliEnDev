@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -268,24 +269,31 @@ public final class GUIDUtils {
 
 					final StringBuilder sb = new StringBuilder();
 
-					for (final UUID u : tableEntry.getValue()) {
-						if (sb.length() > 0)
-							sb.append(',');
+					final ArrayList<UUID> allGUIDs = new ArrayList<>(tableEntry.getValue());
 
-						sb.append("string2binary('").append(u.toString()).append("')");
-					}
+					for (int i = 0; i < allGUIDs.size(); i += IndexTableEntry.MAX_QUERY_LENGTH) {
+						sb.setLength(0);
+						final List<UUID> sublist = allGUIDs.subList(i, Math.min(i + IndexTableEntry.MAX_QUERY_LENGTH, allGUIDs.size()));
 
-					final String q = "SELECT * FROM G" + tableName + "L WHERE guid IN (" + sb.toString() + ");";
+						for (final UUID u : sublist) {
+							if (sb.length() > 0)
+								sb.append(',');
 
-					if (!db.query(q))
-						throw new IllegalStateException("Failed executing query: " + q);
-
-					while (db.moveNext())
-						try {
-							ret.add(new GUID(db, h.hostIndex, tableName.intValue()));
-						} catch (final Exception e) {
-							logger.log(Level.WARNING, "Exception instantiating some guid from " + tableName, e);
+							sb.append("string2binary('").append(u.toString()).append("')");
 						}
+
+						final String q = "SELECT SQL_NO_CACHE * FROM G" + tableName + "L WHERE guid IN (" + sb.toString() + ");";
+
+						if (!db.query(q))
+							throw new IllegalStateException("Failed executing query: " + q);
+
+						while (db.moveNext())
+							try {
+								ret.add(new GUID(db, h.hostIndex, tableName.intValue()));
+							} catch (final Exception e) {
+								logger.log(Level.WARNING, "Exception instantiating some guid from " + tableName, e);
+							}
+					}
 				}
 			}
 		}
@@ -325,7 +333,7 @@ public final class GUIDUtils {
 				monitor.incrementCounter("GUID_db_lookup");
 
 			db.setReadOnly(true);
-			
+
 			db.setQueryTimeout(600);
 
 			if (!db.query("SELECT * FROM G" + tableName + "L WHERE guid=string2binary(?);", false, guid.toString()))
