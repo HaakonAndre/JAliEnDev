@@ -358,8 +358,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			ctime = row.getTimestamp("ctime");
 			owner = row.getString("owner");
 			gowner = row.getString("gowner");
-//			if (type == 'd')
-//				canonicalName += "/";
+			if (type == 'd' && !canonicalName.endsWith("/"))
+				canonicalName += "/";
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't create LFN_CSD from row: " + e);
 		}
