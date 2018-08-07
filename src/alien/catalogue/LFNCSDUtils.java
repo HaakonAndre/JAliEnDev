@@ -3,6 +3,7 @@ package alien.catalogue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -115,13 +116,12 @@ public class LFNCSDUtils {
 		if (file_pattern.contains("/")) {
 			file_pattern = "*" + file_pattern;
 			file_pattern = Format.replace(Format.replace(file_pattern, "*", ".*"), "?", ".?");
-			String[] pattern_parts = file_pattern.split("/");
-			file_pattern = pattern_parts[pattern_parts.length - 1];
+			// String[] pattern_parts = file_pattern.split("/");
+			// file_pattern = pattern_parts[pattern_parts.length - 1];
 
-			for (int i = 0; i < pattern_parts.length - 1; i++) {
-				path_parts.add(pattern_parts[i]);
-			}
-
+			// for (int i = 0; i < pattern_parts.length - 1; i++) {
+			// path_parts.add(pattern_parts[i]);
+			// }
 		}
 		else {
 			file_pattern = Format.replace(Format.replace(file_pattern, "*", ".*"), "?", ".?");
@@ -191,7 +191,7 @@ public class LFNCSDUtils {
 
 		@Override
 		public void run() {
-			boolean lastpart = (index >= parts.size());
+			boolean lastpart = (!recurseInfinite && index >= parts.size());
 
 			boolean includeDirs = false;
 			if ((flags & LFNCSDUtils.FIND_INCLUDE_DIRS) != 0)
@@ -207,7 +207,7 @@ public class LFNCSDUtils {
 			List<LFN_CSD> list = dir.list(true, append_table, clevel);
 
 			Pattern p;
-			if (lastpart)
+			if (lastpart || recurseInfinite)
 				p = this.file_pattern;
 			else
 				p = Pattern.compile(parts.get(index));
@@ -229,9 +229,9 @@ public class LFNCSDUtils {
 			for (LFN_CSD lfnc : list) {
 				if (lfnc.type != 'd') {
 					// no dir
-					if (lastpart) {
+					if (lastpart || recurseInfinite) {
 						// check pattern
-						Matcher m = p.matcher(lfnc.child);
+						Matcher m = p.matcher(recurseInfinite ? lfnc.canonicalName : lfnc.child);
 						if (m.matches()) {
 							if (jep != null) {
 								// we check the metadata of the file against our expression
@@ -269,18 +269,21 @@ public class LFNCSDUtils {
 								}
 							}
 							else {
-								col.add(lfnc);
+								if (filesVersion != null)
+									filesVersion.add(lfnc);
+								else
+									col.add(lfnc);
 							}
 						}
 					}
 				}
 				else {
 					// dir
-					if (lastpart) {
+					if (lastpart || recurseInfinite) {
 						// if we already passed the hierarchy introduced on the command, all dirs are valid
 						try {
 							if (includeDirs) {
-								Matcher m = p.matcher(lfnc.child);
+								Matcher m = p.matcher(recurseInfinite ? lfnc.canonicalName : lfnc.child);
 								if (m.matches())
 									col.add(lfnc);
 							}
@@ -310,22 +313,27 @@ public class LFNCSDUtils {
 
 			// we filter and add the file if -y and metadata
 			if (jep != null && filesVersion != null) {
-				Integer maxVersion = Integer.valueOf(-1);
-				LFN_CSD maxLfn = null;
+				HashMap<String, Integer> lfn_version = new HashMap<>();
+				HashMap<String, LFN_CSD> lfn_to_csd = new HashMap<>();
 
 				for (LFN_CSD lfnc : filesVersion) {
+					String lfn_without_version = lfnc.child.substring(0, lfnc.child.lastIndexOf("_v"));
 					// Other way: String version_str = lfnc.child.substring(lfnc.child.indexOf("_v") + 2, lfnc.child.indexOf("_s0"));
 					if (lfnc.metadata.containsKey("CDB__version")) {
 						Integer version = Integer.valueOf(lfnc.metadata.get("CDB__version"));
-						if (maxVersion.intValue() < version.intValue()) {
-							maxVersion = version;
-							maxLfn = lfnc;
+
+						if (!lfn_version.containsKey(lfn_without_version))
+							lfn_version.put(lfn_without_version, version);
+
+						if (lfn_version.get(lfn_without_version).intValue() < version.intValue()) {
+							lfn_version.put(lfn_without_version, version);
+							lfn_to_csd.put(lfn_without_version, lfnc);
 						}
 					}
 				}
 
-				if (maxLfn != null)
-					col.add(maxLfn);
+				for (String lfnc_str : lfn_to_csd.keySet())
+					col.add(lfn_to_csd.get(lfnc_str));
 
 			}
 
@@ -341,7 +349,7 @@ public class LFNCSDUtils {
 	 * @return list of files for find command
 	 */
 	public static Collection<LFN_CSD> find(final String base_path, final String pattern, final int flags, final String metadata) {
-		return recurseAndFilterLFNs("find", base_path, pattern, metadata, flags);
+		return recurseAndFilterLFNs("find", base_path, "*" + pattern, metadata, flags);
 	}
 
 	/**
@@ -354,7 +362,7 @@ public class LFNCSDUtils {
 
 		// if need to resolve wildcard and recurse, we call the recurse method
 		if (path.contains("*")) {
-			return recurseAndFilterLFNs("ls", path, null, null, flags);
+			return recurseAndFilterLFNs("ls", path, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
 		}
 
 		// otherwise we should be able to create the LFN_CSD from the path
