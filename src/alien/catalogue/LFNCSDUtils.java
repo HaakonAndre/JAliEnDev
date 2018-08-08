@@ -312,24 +312,32 @@ public class LFNCSDUtils {
 			}
 
 			// we filter and add the file if -y and metadata
-			if (jep != null && filesVersion != null) {
+			if (filesVersion != null) {
 				HashMap<String, Integer> lfn_version = new HashMap<>();
 				HashMap<String, LFN_CSD> lfn_to_csd = new HashMap<>();
 
 				for (LFN_CSD lfnc : filesVersion) {
-					String lfn_without_version = lfnc.child.substring(0, lfnc.child.lastIndexOf("_v"));
-					// Other way: String version_str = lfnc.child.substring(lfnc.child.indexOf("_v") + 2, lfnc.child.indexOf("_s0"));
-					if (lfnc.metadata.containsKey("CDB__version")) {
-						Integer version = Integer.valueOf(lfnc.metadata.get("CDB__version"));
-
-						if (!lfn_version.containsKey(lfn_without_version))
-							lfn_version.put(lfn_without_version, version);
-
-						if (lfn_version.get(lfn_without_version).intValue() < version.intValue()) {
-							lfn_version.put(lfn_without_version, version);
-							lfn_to_csd.put(lfn_without_version, lfnc);
-						}
+					Integer version = Integer.valueOf(0);
+					String lfn_without_version = lfnc.child;
+					if (lfnc.child.lastIndexOf("_v") > 0) {
+						lfn_without_version = lfnc.child.substring(0, lfnc.child.lastIndexOf("_v"));
+						version = Integer.valueOf(Integer.parseInt(lfnc.child.substring(lfnc.child.indexOf("_v") + 2, lfnc.child.indexOf("_s0"))));
 					}
+					else
+						if (lfnc.metadata.containsKey("CDB__version")) {
+							version = Integer.valueOf(lfnc.metadata.get("CDB__version"));
+						}
+
+					if (!lfn_version.containsKey(lfn_without_version)) {
+						lfn_version.put(lfn_without_version, version);
+						lfn_to_csd.put(lfn_without_version, lfnc);
+					}
+
+					if (lfn_version.get(lfn_without_version).intValue() < version.intValue()) {
+						lfn_version.put(lfn_without_version, version);
+						lfn_to_csd.put(lfn_without_version, lfnc);
+					}
+
 				}
 
 				for (String lfnc_str : lfn_to_csd.keySet())
