@@ -260,6 +260,7 @@ public final class GUIDUtils {
 					continue;
 
 				db.setReadOnly(true);
+				db.setQueryTimeout(600); // in normal conditions it cannot take 10 minutes to ask for up to 100 guids from a table
 
 				for (final Map.Entry<Integer, Set<UUID>> tableEntry : hostMapping.entrySet()) {
 					final Integer tableName = tableEntry.getKey();
