@@ -435,7 +435,7 @@ public class ArchiveMemberDelete {
 		} catch (IOException e1) {
 			e1.printStackTrace();
 		} catch (ServerException e1) {
-			System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN");
+			System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN. Abort");
 			e1.printStackTrace();
 		}
 	}
