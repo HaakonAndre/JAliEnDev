@@ -7,6 +7,7 @@ import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
+import alien.se.SE;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -100,7 +101,19 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 					commander.printOutln("the file " + lfnOrGuid.substring(lfnOrGuid.lastIndexOf("/") + 1, lfnOrGuid.length()) + " is in" + (bR ? "side this archive" : "") + "\n");
 
 				for (final PFN pfn : pfns) {
-					final String se = pfn.seNumber > 0 ? "SE => " + commander.c_api.getSE(pfn.seNumber).seName : "ZIP archive member";
+					String se;
+
+					if (pfn.seNumber > 0) {
+						final SE theSE = commander.c_api.getSE(pfn.seNumber);
+
+						if (theSE != null)
+							se = "SE => " + theSE.seName;
+						else
+							se = "SE #" + pfn.seNumber + " no longer exists";
+					}
+					else
+						se = "ZIP archive member";
+
 					commander.printOutln("\t " + padRight(se, 30) + " pfn => " + pfn.pfn + "\n");
 				}
 			}
