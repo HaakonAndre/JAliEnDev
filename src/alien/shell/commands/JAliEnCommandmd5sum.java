@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import alien.catalogue.FileSystemUtils;
+import alien.catalogue.GUID;
+import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -20,20 +22,30 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 	public void run() {
 		for (final String lfnName : this.alPaths) {
 			final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
-			if (lfn == null)
-				commander.printErrln("LFN does exist");
-			else
-				if (lfn.md5 != null) {
-					commander.printOutln("md5: " + lfn.md5);
-					System.out.println(lfn);
-				}
-				else {
-					commander.printErrln("Can not get md5 for this file");
-					System.out.println(lfn);
-				}
-			// GUID guid = GUIDUtils.getGUID( );
-		}
+			if (lfn == null) {
+				if (GUIDUtils.isValidGUID(lfnName)) {
+					final GUID g = commander.c_api.getGUID(lfnName);
 
+					if (g != null)
+						if (g.md5 != null && g.md5.length() > 0)
+							commander.printOutln(g.md5 + "\t" + lfnName);
+						else
+							commander.printErrln("GUID " + lfnName + " doesn't have an associated MD5 checksum");
+					else
+						commander.printErrln("GUID " + lfnName + " does not exist in the catalogue");
+				}
+				else
+					commander.printErrln("File does not exist: " + lfnName);
+			}
+			else
+				if (lfn.md5 != null && lfn.md5.length() > 0)
+					commander.printOutln(lfn.md5 + "\t" + lfnName);
+				else
+					if (!lfn.isFile())
+						commander.printErrln("This entry is not a file: " + lfnName);
+					else
+						commander.printErrln("This file doesn't have a valid associated MD5 checksum: " + lfnName);
+		}
 	}
 
 	@Override
