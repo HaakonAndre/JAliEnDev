@@ -499,6 +499,24 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Get the SEs matching the given set of names. The argument can be null or empty, in which case all defined SEs are returned. Invalid SEs are silently skipped, so the returned list could have a
+	 * different size (and order) than the given argument.
+	 * 
+	 * @param ses
+	 * @return the SEs matching the request
+	 */
+	public List<SE> getSEs(final List<String> ses) {
+		try {
+			return Dispatcher.execute(new ListSEs(commander.getUser(), ses)).getSEs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not list SEs: " + ses);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
 	 * Get Packages for a certain platform
 	 *
 	 * @param platform
