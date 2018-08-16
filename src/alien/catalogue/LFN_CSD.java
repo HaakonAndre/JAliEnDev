@@ -191,6 +191,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public UUID id;
 
 	/**
+	 * modulo in se_lookup
+	 */
+	public int modulo;
+
+	/**
 	 * Job ID that produced this file
 	 *
 	 * @since AliEn 2.19
@@ -235,6 +240,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		owner = l.getOwner();
 		gowner = l.getGroup();
 		id = l.guid;
+		modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 		flag = 0;
 		if (type != 'd')
 			metadata = new HashMap<>();
@@ -384,6 +390,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			gowner = row.getString("gowner");
 			if (type == 'd' && !canonicalName.endsWith("/"))
 				canonicalName += "/";
+			modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't create LFN_CSD from row: " + e);
 		}
@@ -499,7 +506,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 		// if (type != 'd') {
 		str += "\n - Size: " + size + "\n - Checksum: " + checksum + "\n - Perm: " + perm + "\n - Owner: " + owner + "\n - Gowner: " + gowner + "\n - JobId: " + jobid + "\n - Id: " + id + "\n - pId: "
-				+ parent_id + "\n - Ctime: " + ctime;
+				+ parent_id + "\n - Ctime: " + ctime + "\n - Modulo: " + modulo;
 		if (pfns != null)
 			str += "\n - pfns: " + pfns.toString();
 		if (metadata != null)
@@ -1253,10 +1260,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 							for (Integer senumber : lfnc.pfns.keySet()) {
 								db.setQueryTimeout(120);
-								System.out.println("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), " + senumber + ", " + lfnc.checksum + ", "
-										+ lfnc.size + ");");
-								// db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, lfnc.id, senumber, lfnc.checksum,
-								// Long.valueOf(lfnc.size));
+								db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, lfnc.id, senumber, lfnc.checksum,
+										Long.valueOf(lfnc.size));
 							}
 						} catch (Exception e) {
 							error_entries.add(lfnc);
