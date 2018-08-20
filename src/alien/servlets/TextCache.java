@@ -31,12 +31,17 @@ import java.util.regex.PatternSyntaxException;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPOutputStream;
 
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
-import lazyj.ExtendedServlet;
 import lazyj.Format;
 import lazyj.LRUMap;
+import lazyj.RequestWrapper;
 import lazyj.Utils;
 import lazyj.cache.ExpirationCache;
 import lia.util.ShutdownManager;
@@ -46,7 +51,7 @@ import lia.util.StringFactory;
  * @author costing
  * @since Apr 28, 2011
  */
-public class TextCache extends ExtendedServlet {
+public class TextCache extends HttpServlet {
 	private static final long serialVersionUID = 6024682549531639348L;
 
 	private static final ExpirationCache<String, Integer> defaultNamespaceExpiration = new ExpirationCache<>();
@@ -62,12 +67,10 @@ public class TextCache extends ExtendedServlet {
 		try {
 			try {
 				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl_" + namespace));
-			} catch (@SuppressWarnings("unused")
-			final Throwable t1) {
+			} catch (@SuppressWarnings("unused") final Throwable t1) {
 				nsDefault = Integer.parseInt(System.getProperty("alien.servlets.TextCache.ttl"));
 			}
-		} catch (@SuppressWarnings("unused")
-		final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 
@@ -169,8 +172,7 @@ public class TextCache extends ExtendedServlet {
 
 					if (monitor != null)
 						monitor.sendParameters(parameters, values);
-				} catch (@SuppressWarnings("unused")
-				final Throwable t) {
+				} catch (@SuppressWarnings("unused") final Throwable t) {
 					// ignore
 				}
 		}
@@ -320,12 +322,10 @@ public class TextCache extends ExtendedServlet {
 			try {
 				try {
 					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size_" + name));
-				} catch (@SuppressWarnings("unused")
-				final Throwable t1) {
+				} catch (@SuppressWarnings("unused") final Throwable t1) {
 					size = Integer.parseInt(System.getProperty("alien.servlets.TextCache.size"));
 				}
-			} catch (@SuppressWarnings("unused")
-			final Throwable t) {
+			} catch (@SuppressWarnings("unused") final Throwable t) {
 				size = 50000;
 			}
 
@@ -366,16 +366,13 @@ public class TextCache extends ExtendedServlet {
 		return slowQueryThreshold;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see lazyj.ExtendedServlet#execGet()
-	 */
 	@Override
-	public void execGet() {
+	protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
 		final long start = System.nanoTime();
 
-		execRealGet();
+		try (PrintWriter pwOut = response.getWriter()) {
+			execRealGet(new RequestWrapper(request), response, pwOut);
+		}
 
 		final long duration = System.nanoTime() - start;
 
@@ -387,18 +384,18 @@ public class TextCache extends ExtendedServlet {
 		if (logSlowQueries > 0 && duration > logSlowQueries)
 			System.err.println("Slow query : " + Format.point(duration / 1000000d) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
 
-		logRequest();
+		logRequest(request);
 	}
 
-	private final void execRealGet() {
-		final String ns = gets("ns", "default");
+	private static final void execRealGet(final RequestWrapper rw, final HttpServletResponse response, final PrintWriter pwOut) {
+		final String ns = rw.gets("ns", "default");
 
-		final String key = gets("key");
+		final String key = rw.gets("key");
 
 		response.setContentType("text/plain");
 
 		if (key.length() == 0) {
-			if (gets("clean", null) != null)
+			if (rw.gets("clean", null) != null)
 				for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
 					final Namespace namespace = entry.getValue();
 
@@ -411,7 +408,7 @@ public class TextCache extends ExtendedServlet {
 					}
 				}
 			else
-				if (gets("ns").length() == 0) {
+				if (rw.gets("ns").length() == 0) {
 					for (final Map.Entry<String, Namespace> entry : namespaces.entrySet()) {
 						final Namespace namespace = entry.getValue();
 
@@ -461,7 +458,7 @@ public class TextCache extends ExtendedServlet {
 						long total = 0;
 						int hits = 0;
 
-						final boolean values = gets("values").length() > 0;
+						final boolean values = rw.gets("values").length() > 0;
 
 						final ArrayList<Map.Entry<String, CacheValue>> entries;
 
@@ -495,21 +492,20 @@ public class TextCache extends ExtendedServlet {
 							pwOut.println();
 					}
 				}
-			pwOut.flush();
 
 			return;
 		}
 
 		final Namespace namespace = getNamespace(ns);
 
-		String value = gets("value", null);
+		String value = rw.gets("value", null);
 
 		if (value != null) {
 			// a SET operation
 
 			CacheValue old;
 
-			if (getb("ifnull", false) == true) {
+			if (rw.getb("ifnull", false) == true) {
 				synchronized (namespace) {
 					old = namespace.cache.get(key);
 				}
@@ -532,7 +528,7 @@ public class TextCache extends ExtendedServlet {
 					monitor.incrementCounter("SET_EOF_" + ns);
 			}
 
-			final CacheValue cv = new CacheValue(value, System.currentTimeMillis() + getl("timeout", getDefaultExpiration(ns)) * 1000);
+			final CacheValue cv = new CacheValue(value, System.currentTimeMillis() + rw.getl("timeout", getDefaultExpiration(ns)) * 1000);
 
 			synchronized (namespace) {
 				old = namespace.cache.put(key, cv);
@@ -546,10 +542,10 @@ public class TextCache extends ExtendedServlet {
 			return;
 		}
 
-		if (getb("clear", false)) {
+		if (rw.getb("clear", false)) {
 			int removed = 0;
 
-			for (final String keyValue : getValues("key")) {
+			for (final String keyValue : rw.getValues("key")) {
 				String sLargestPart = "";
 
 				final String[] parts = keyValue.split("\\.(\\+|\\*)|\\(|\\)|\\|");
@@ -579,7 +575,6 @@ public class TextCache extends ExtendedServlet {
 					p = Pattern.compile("^" + keyValue + "$");
 				} catch (final PatternSyntaxException e) {
 					pwOut.println("ERR: invalid pattern syntax: " + keyValue + " : " + e.getMessage());
-					pwOut.flush();
 					return;
 				}
 
@@ -620,8 +615,7 @@ public class TextCache extends ExtendedServlet {
 					monitor.incrementCounter("CLEARPATTERN_" + ns);
 			}
 
-			pwOut.println("OK: removed " + removed + " values from ns '" + ns + "' matching " + Arrays.toString(getValues("key")));
-			pwOut.flush();
+			pwOut.println("OK: removed " + removed + " values from ns '" + ns + "' matching " + Arrays.toString(rw.getValues("key")));
 
 			return;
 		}
@@ -637,7 +631,6 @@ public class TextCache extends ExtendedServlet {
 				monitor.incrementCounter("NULL_" + ns);
 
 			pwOut.println("ERR: null");
-			pwOut.flush();
 			return;
 		}
 
@@ -646,7 +639,6 @@ public class TextCache extends ExtendedServlet {
 				monitor.incrementCounter("EXPIRED_" + ns);
 
 			pwOut.println("ERR: expired");
-			pwOut.flush();
 			return;
 		}
 
@@ -660,7 +652,6 @@ public class TextCache extends ExtendedServlet {
 				monitor.incrementCounter("HIT_EOF_" + ns);
 
 		pwOut.println(existing.value);
-		pwOut.flush();
 	}
 
 	/**
@@ -672,8 +663,7 @@ public class TextCache extends ExtendedServlet {
 		try {
 			invalidateCache("whereis", "(irtc|irc)_" + lfn);
 			invalidateCache("access", lfn + ".*");
-		} catch (@SuppressWarnings("unused")
-		final Throwable t) {
+		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// ignore
 		}
 	}
@@ -742,10 +732,22 @@ public class TextCache extends ExtendedServlet {
 		return pwLogOut;
 	}
 
+	private static String getCurrentPage(final HttpServletRequest request) {
+		@SuppressWarnings("deprecation")
+		final StringBuffer sb = javax.servlet.http.HttpUtils.getRequestURL(request);
+
+		if (request.getQueryString() != null)
+			sb.append('?').append(request.getQueryString());
+
+		return sb.toString();
+	}
+
 	/**
 	 * Log the request in an apache-like access log
+	 *
+	 * @param request
 	 */
-	public synchronized void logRequest() {
+	public synchronized static void logRequest(final HttpServletRequest request) {
 		@SuppressWarnings("resource")
 		final PrintWriter pw = getLogWriter();
 
@@ -759,11 +761,10 @@ public class TextCache extends ExtendedServlet {
 					sDate = apacheTimeFormat.format(new Date());
 				}
 
-				final String sURL = request.getMethod() + " " + getCurrentPage() + " HTTP/1.1";
+				final String sURL = request.getMethod() + " " + getCurrentPage(request) + " HTTP/1.1";
 
 				pw.println(sIP + " [" + sDate + "] \"" + sURL + "\"");
-			} catch (@SuppressWarnings("unused")
-			final Throwable t) {
+			} catch (@SuppressWarnings("unused") final Throwable t) {
 				// ignore
 			}
 	}
