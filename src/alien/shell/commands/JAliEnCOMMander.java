@@ -52,7 +52,7 @@ public class JAliEnCOMMander extends Thread {
 			"access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime", "addFileToCollection", "addMirror",
 			"addTag", "addTagValue", "chgroup", "chown", "createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo", "jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum",
 			"mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups", "token",
-			"uuid", "stat", "listSEs" };
+			"uuid", "stat", "listSEs", "xrdstat" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "addTrigger", "addHost", "queue", "register", "addSE", "addUser", "calculateFileQuota", "calculateJobQuota", "groupmembers" };
 

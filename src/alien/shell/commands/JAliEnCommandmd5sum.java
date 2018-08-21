@@ -51,7 +51,7 @@ public class JAliEnCommandmd5sum extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("md5sum", "<filename1> [<filename2>] ..."));
+		commander.printOutln(helpUsage("md5sum", "<filename1> [<or guid>] ..."));
 		commander.printOutln();
 	}
 

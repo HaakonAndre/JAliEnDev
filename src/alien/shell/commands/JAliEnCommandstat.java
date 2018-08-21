@@ -110,7 +110,7 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("md5sum", "<filename1> [<filename2>] ..."));
+		commander.printOutln(helpUsage("stat", "<filename1> [<or uuid>] ..."));
 		commander.printOutln();
 	}
 
