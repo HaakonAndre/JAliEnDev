@@ -29,11 +29,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import alien.api.JBoxServer;
 import alien.api.Request;
 import alien.api.taskQueue.GetMatchJob;
-import alien.api.taskQueue.TaskQueueApiUtils;
-import alien.catalogue.FileSystemUtils;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -298,7 +295,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		System.out.println("Sending monitoring values...");
 
 		monitor.sendParameter("job_id", 0);
-		monitor.sendParameter("statusID", Double.valueOf(jobStatus.getAliEnLevel()));
+//		monitor.sendParameter("statusID", Double.valueOf(jobStatus.getAliEnLevel()));  //JobStatus is now JobWrapper only
 		monitor.sendParameter("ja_status", jaStatus.DONE); //TODO: May be errors during run. Use exit code from JobWrapper to report them.
 
 		System.out.println("Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");

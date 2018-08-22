@@ -45,10 +45,8 @@ import alien.user.UserFactory;
 public class JobWrapper implements Runnable {
 
 	// Folders and files
-	private File tempDir = null;
-	private static final String defaultOutputDirPrefix = "/jalien-job-";
-	private String jobWorkdir = "";
-
+	private File currentDir = new File("");
+	
 	// Variables passed through VoBox environment
 	//TODO: To be removed
 	private final Map<String, String> env = System.getenv();
@@ -64,7 +62,6 @@ public class JobWrapper implements Runnable {
 	private String username;
 	private String tokenCert;
 	private String tokenKey;
-	private String workdir = null;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	/**
 	 * @uml.property  name="jobStatus"
@@ -114,7 +111,6 @@ public class JobWrapper implements Runnable {
 
 		//TODO: Send from JobAgent instead of reading from env? Will simplify things for containers.
 		siteMap = (new SiteMap()).getSiteParameters(env);
-		workdir = (String) siteMap.get("workdir");
 		hostName = (String) siteMap.get("Host");
 //		packMan = (PackMan) siteMap.get("PackMan");
 		packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
@@ -201,8 +197,7 @@ public class JobWrapper implements Runnable {
 		try {
 			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);		
 
-			jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
-		    tempDir = new File(jobWorkdir);
+//			jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
 		    
 		    changeStatus(JobStatus.STARTED);
 			
@@ -250,7 +245,7 @@ public class JobWrapper implements Runnable {
 
 		final String cmdStrip = idx < 0 ? command : command.substring(idx + 1);
 
-		final File fExe = new File(tempDir, cmdStrip);
+		final File fExe = new File(currentDir, cmdStrip);
 
 		if (!fExe.exists())
 			return -1;
@@ -283,8 +278,8 @@ public class JobWrapper implements Runnable {
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
 
-		pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
-		pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
+		pBuilder.redirectOutput(Redirect.appendTo(new File(currentDir, "stdout")));
+		pBuilder.redirectError(Redirect.appendTo(new File(currentDir, "stderr")));
 
 		final Process p;
 
@@ -367,15 +362,15 @@ public class JobWrapper implements Runnable {
 		final Map<LFN, File> localFiles = new HashMap<>();
 
 		for (final LFN l : iFiles) {
-			File localFile = new File(tempDir, l.getFileName());
+			File localFile = new File(currentDir, l.getFileName());
 
 			final int i = 0;
 
 			while (localFile.exists() && i < 100000)
-				localFile = new File(tempDir, l.getFileName() + "." + i);
+				localFile = new File(currentDir, l.getFileName() + "." + i);
 
 			if (localFile.exists()) {
-				System.out.println("Too many occurences of " + l.getFileName() + " in " + tempDir.getAbsolutePath());
+				System.out.println("Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
 				return false;
 			}
 
@@ -406,7 +401,7 @@ public class JobWrapper implements Runnable {
 
 		dumpInputDataList();
 
-		System.out.println("Sandbox populated: " + tempDir.getAbsolutePath());
+		System.out.println("Sandbox populated: " + currentDir.getAbsolutePath());
 
 		return true;
 	}
@@ -440,7 +435,7 @@ public class JobWrapper implements Runnable {
 
 			final String content = c.toString();
 
-			Files.write(Paths.get(jobWorkdir + "/" + list), content.getBytes());
+			Files.write(Paths.get(currentDir.getAbsolutePath() + "/" + list), content.getBytes());
 
 		} catch (final Exception e) {
 			System.out.println("Problem dumping XML: " + e.toString());
@@ -507,16 +502,16 @@ public class JobWrapper implements Runnable {
 		if (jobStatus == JobStatus.ERROR_E)
 			tag = "OutputErrorE";
 
-		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, jobWorkdir, tag);
+		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
 
 		for (final OutputEntry entry : filesTable.getEntries()) {
 			File localFile;
 			ArrayList<String> filesIncluded = null;
 			try {
 				if (entry.isArchive())
-					filesIncluded = entry.createZip(jobWorkdir);
+					filesIncluded = entry.createZip(currentDir.getAbsolutePath());
 
-				localFile = new File(jobWorkdir + "/" + entry.getName());
+				localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
 				System.out.println("Processing output file: " + localFile);
 
 				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
@@ -654,10 +649,10 @@ public class JobWrapper implements Runnable {
 		String outputDir = jdl.getOutputDir();
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + currentDir.getAbsolutePath() + queueId);
 		else
 			if (outputDir == null)
-				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
+				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + currentDir.getAbsolutePath() + queueId);
 
 		return outputDir;
 	}
