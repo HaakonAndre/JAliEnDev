@@ -189,7 +189,7 @@ public class JobWrapper implements Runnable {
 			ok = packMan.installPackage(username, pack, null);
 			if (ok == null) {
 				logger.log(Level.INFO, "Error installing the package " + pack);
-				//				monitor.sendParameter("ja_status", "ERROR_IP");
+				//monitor.sendParameter("ja_status", "ERROR_IP");
 				System.err.println("Error installing " + pack);
 				System.exit(1);
 			}
@@ -203,6 +203,8 @@ public class JobWrapper implements Runnable {
 
 			jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
 		    tempDir = new File(jobWorkdir);
+		    
+		    changeStatus(JobStatus.STARTED);
 			
 			if (!getInputFiles()) {
 				changeStatus(JobStatus.ERROR_IB);

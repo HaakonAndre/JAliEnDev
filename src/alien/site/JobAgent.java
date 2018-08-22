@@ -267,7 +267,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		try {
 
 			if (!createWorkDir()) {
-				changeStatus(JobStatus.ERROR_IB);
+				//changeStatus(JobStatus.ERROR_IB);
+				logger.log(Level.INFO, "Error. Workdir for job could not be created");
 				return;
 			}
 
@@ -275,7 +276,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
-			changeStatus(JobStatus.STARTED);
+			//changeStatus(JobStatus.STARTED);
 
 			// Set up constraints
 			getMemoryRequirements();
@@ -450,47 +451,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		jao.run();
 	}
 
-	/**
-	 * @param newStatus
-	 */
-	public void changeStatus(final JobStatus newStatus) {
-		final HashMap<String, Object> extrafields = new HashMap<>();
-		extrafields.put("exechost", this.ce);
-		// if final status with saved files, we set the path
-		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
-			extrafields.put("path", getJobOutputDir());
 
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		}
-		else
-			if (newStatus == JobStatus.RUNNING) {
-				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-				extrafields.put("node", hostName);
-
-				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-			}
-			else
-				TaskQueueApiUtils.setJobStatus(queueId, newStatus);
-
-		jobStatus = newStatus;
-
-		return;
-	}
-
-	/**
-	 * @return job output dir (as indicated in the JDL if OK, or the recycle path if not)
-	 */
-	public String getJobOutputDir() {
-		String outputDir = jdl.getOutputDir();
-
-		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
-		else
-			if (outputDir == null)
-				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
-
-		return outputDir;
-	}
 
 	/**
 	 * 
