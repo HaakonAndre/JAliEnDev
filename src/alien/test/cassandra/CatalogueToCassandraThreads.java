@@ -630,6 +630,8 @@ public class CatalogueToCassandraThreads {
 								failed_folders.flush();
 								continue;
 							}
+							created = true;
+							break;
 						} catch (Exception e) {
 							final String msg = "Exception inserting directory: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
 							System.err.println(msg);
@@ -640,7 +642,8 @@ public class CatalogueToCassandraThreads {
 					}
 
 					if (!created) {
-						out.println("Cannot create dir in AddPath after 3 tries: " + l.getCanonicalName());
+						System.err.println("Cannot create dir in Recurse after 3 tries: " + l.getCanonicalName());
+						out.println("Cannot create dir in Recurse after 3 tries: " + l.getCanonicalName());
 						return;
 					}
 

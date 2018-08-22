@@ -152,7 +152,7 @@ public class Xrd3cp extends Xrootd {
 				checkLibraryPath(pBuilder, xrd3cpBasePath.substring(0, xrd3cpBasePath.lastIndexOf('/')), true);
 
 			long seconds = source.getGuid().size / 200000; // average target
-															// speed: 200KB/s
+			// speed: 200KB/s
 
 			seconds += 5 * 60; // 5 minutes extra time, handshakes and such
 

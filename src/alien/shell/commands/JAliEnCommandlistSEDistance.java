@@ -29,9 +29,13 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 		final List<HashMap<SE, Double>> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name);
 		for (final HashMap<SE, Double> smap : results) {
 			final Set<SE> selist = smap.keySet();
-			for (final SE s : selist)
+			for (final SE s : selist) {
+				if (!s.seName.contains("::"))
+					continue;
+
 				commander.printOutln(String.format("%1$" + 40 + "s", s.seName) + "\t(read: " + String.format("%.9f", Double.valueOf(s.demoteRead)) + ",  write: "
 						+ String.format("%.9f", Double.valueOf(s.demoteWrite)) + ",  distance: " + String.format("%.9f", smap.get(s)) + ")");
+			}
 		}
 		commander.printOutln();
 	}

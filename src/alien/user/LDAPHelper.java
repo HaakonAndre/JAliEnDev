@@ -63,7 +63,7 @@ public class LDAPHelper {
 
 	private static String ldapServers = ConfigUtils.getConfig().gets("ldap_server", "alice-ldap.cern.ch:8389");
 
-	private static int ldapPort = ConfigUtils.getConfig().geti("ldap_port", 389);
+	private static int ldapPort = ConfigUtils.getConfig().geti("ldap_port", 8389);
 
 	private static String ldapRoot = ConfigUtils.getConfig().gets("ldap_root", "o=alice,dc=cern,dc=ch");
 

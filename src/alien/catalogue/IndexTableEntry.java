@@ -103,8 +103,10 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 		return getLFN(sPath, false);
 	}
 
-	// Restrict how many LFNs can be queried in a single request
-	private static final int MAX_QUERY_LENGTH = 100;
+	/**
+	 * Restrict how many LFNs can be queried in a single request
+	 */
+	static final int MAX_QUERY_LENGTH = 100;
 
 	/**
 	 * Get the LFN from this table
@@ -132,12 +134,12 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 
 			for (int chunk = 0; chunk < queries; chunk++) {
 				final List<String> sublist = path.subList(chunk * MAX_QUERY_LENGTH, Math.min((chunk + 1) * MAX_QUERY_LENGTH, path.size()));
-				
+
 				final StringBuilder q = new StringBuilder("SELECT ");
-				
-				if (sublist.size()>1)
+
+				if (sublist.size() > 1)
 					q.append("SQL_NO_CACHE ");
-				
+
 				q.append("* FROM L" + tableName + "L WHERE ");
 
 				boolean first = true;
@@ -233,10 +235,10 @@ public class IndexTableEntry implements Serializable, Comparable<IndexTableEntry
 				final List<UUID> sublist = uuidsAsList.subList(chunk * MAX_QUERY_LENGTH, Math.min((chunk + 1) * MAX_QUERY_LENGTH, uuidsAsList.size()));
 
 				final StringBuilder sb = new StringBuilder("SELECT ");
-				
-				if (sublist.size()>1)
+
+				if (sublist.size() > 1)
 					sb.append("SQL_NO_CACHE ");
-				
+
 				sb.append("* FROM L" + tableName + "L WHERE guid IN (");
 
 				boolean first = true;

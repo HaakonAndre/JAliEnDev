@@ -60,6 +60,18 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 	}
 
 	/**
+	 * Parse this XML
+	 *
+	 * @param content
+	 * @param getReal
+	 *            must be true if you want real LFN objects from a database
+	 * @throws IOException
+	 */
+	public XmlCollection(final String content, final boolean getReal) throws IOException {
+		parseXML(content, getReal);
+	}
+
+	/**
 	 * read the contents of a LFN in the catalogue
 	 *
 	 * @param lfn
@@ -70,6 +82,21 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 			throw new IOException("LFN is not readable");
 
 		parseXML(IOUtils.getContents(lfn));
+	}
+
+	/**
+	 * read the contents of a LFN in the catalogue
+	 *
+	 * @param lfn
+	 * @param getReal
+	 *            must be true if you want real LFN objects from a database
+	 * @throws IOException
+	 */
+	public XmlCollection(final LFN lfn, final boolean getReal) throws IOException {
+		if (lfn == null || !lfn.isFile())
+			throw new IOException("LFN is not readable");
+
+		parseXML(IOUtils.getContents(lfn), getReal);
 	}
 
 	/**
@@ -90,6 +117,11 @@ public class XmlCollection extends LinkedHashSet<LFN> {
 	}
 
 	private void parseXML(final String content, final boolean getReal) throws IOException {
+		if (content == null) {
+			System.err.println("Failed to read a content of XML collection: " + this.getName());
+			return;
+		}
+
 		final BufferedReader br = new BufferedReader(new StringReader(content));
 
 		String sLine;

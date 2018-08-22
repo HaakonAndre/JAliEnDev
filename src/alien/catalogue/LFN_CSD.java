@@ -7,11 +7,14 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.PreparedStatement;
@@ -22,7 +25,9 @@ import com.datastax.driver.core.Session;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.servlets.TextCache;
 import alien.test.cassandra.DBCassandra;
+import lazyj.DBFunctions;
 import lazyj.cache.ExpirationCache;
 
 /**
@@ -88,7 +93,32 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Local cache to hold the hierarchy
 	 */
-	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(80000); // TODO: should change size?
+	public static final ExpirationCache<String, UUID> dirCache = new ExpirationCache<>(80000);
+
+	/**
+	 * Local cache to hold recently inserted folders
+	 */
+	public static final ExpirationCache<String, Integer> rifs = new ExpirationCache<>(5000);
+
+	/**
+	 * lfn_index_table
+	 */
+	public static final String lfn_index_table = "catalogue.lfn_index";
+
+	/**
+	 * lfn_metadata_table
+	 */
+	public static final String lfn_metadata_table = "catalogue.lfn_metadata";
+
+	/**
+	 * lfn_ids_table
+	 */
+	public static final String lfn_ids_table = "catalogue.lfn_ids";
+
+	/**
+	 * se_lookup_table
+	 */
+	public static final String se_lookup_table = "catalogue.se_lookup";
 
 	/**
 	 * Owner
@@ -161,6 +191,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public UUID id;
 
 	/**
+	 * modulo in se_lookup
+	 */
+	public int modulo;
+
+	/**
 	 * Job ID that produced this file
 	 *
 	 * @since AliEn 2.19
@@ -205,6 +240,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		owner = l.getOwner();
 		gowner = l.getGroup();
 		id = l.guid;
+		modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 		flag = 0;
 		if (type != 'd')
 			metadata = new HashMap<>();
@@ -255,7 +291,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		child = p_c[1];
 
 		if (getFromDB) {
-			String tm = "catalogue.lfn_metadata";
+			String tm = lfn_metadata_table;
 			if (append_table != null) {
 				tm += append_table;
 			}
@@ -352,8 +388,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			ctime = row.getTimestamp("ctime");
 			owner = row.getString("owner");
 			gowner = row.getString("gowner");
-			if (type == 'd')
+			if (type == 'd' && !canonicalName.endsWith("/"))
 				canonicalName += "/";
+			modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't create LFN_CSD from row: " + e);
 		}
@@ -368,7 +405,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 */
 	@SuppressWarnings("resource")
 	public static UUID getParentIdFromPath(String path_parent, String append_table) throws Exception {
-		String t = "catalogue.lfn_index";
+		String t = lfn_index_table;
 		if (append_table != null) {
 			t += append_table;
 		}
@@ -434,7 +471,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 */
 	@SuppressWarnings("resource")
 	public static UUID getChildIdFromParentIdAndName(UUID parent_id, String name, String append_table) throws Exception {
-		String t = "catalogue.lfn_index";
+		String t = lfn_index_table;
 		if (append_table != null) {
 			t += append_table;
 		}
@@ -469,7 +506,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 		// if (type != 'd') {
 		str += "\n - Size: " + size + "\n - Checksum: " + checksum + "\n - Perm: " + perm + "\n - Owner: " + owner + "\n - Gowner: " + gowner + "\n - JobId: " + jobid + "\n - Id: " + id + "\n - pId: "
-				+ parent_id + "\n - Ctime: " + ctime;
+				+ parent_id + "\n - Ctime: " + ctime + "\n - Modulo: " + modulo;
 		if (pfns != null)
 			str += "\n - pfns: " + pfns.toString();
 		if (metadata != null)
@@ -620,7 +657,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return ret;
 		}
 
-		String t = "catalogue.lfn_index";
+		String t = lfn_index_table;
 		if (append_table != null) {
 			t += append_table;
 		}
@@ -685,7 +722,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (!exists || type == 'd')
 			return null;
 
-		String t = "catalogue.lfn_metadata";
+		String t = lfn_metadata_table;
 		if (append_table != null)
 			t += append_table;
 
@@ -742,15 +779,21 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	public boolean insert(String append_table, ConsistencyLevel level) {
 		// lfn | ctime | dir | gowner | jobid | link | md5 | owner | perm | pfns
 		// | size | type
-		String tindex = "catalogue.lfn_index";
+		boolean res = false;
+
+		String tindex = lfn_index_table;
 		if (append_table != null)
 			tindex += append_table;
 
-		String t = "catalogue.lfn_metadata";
+		String tids = lfn_ids_table;
+		if (append_table != null)
+			tids += append_table;
+
+		String t = lfn_metadata_table;
 		if (append_table != null)
 			t += append_table;
 
-		String ts = "catalogue.se_lookup";
+		String ts = se_lookup_table;
 		if (append_table != null)
 			ts += append_table;
 
@@ -784,12 +827,16 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			PreparedStatement statement;
 			BoundStatement boundStatement;
 
-			// Insert the entry in the index // TODO: use IF NOT EXISTS to avoid collisions when inserting paths
+			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+			bs.setConsistencyLevel(cl);
+
+			// Insert the entry in the index // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
 			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
-			boundStatement = new BoundStatement(statement);
-			boundStatement.bind(parent_id, child, ctime, id, Integer.valueOf(flag));
-			boundStatement.setConsistencyLevel(cl);
-			session.execute(boundStatement);
+			bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
+
+			// Insert the entry in the ids // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
+			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tids + " (child_id,path_id,path,ctime,flag)" + " VALUES (?,?,?,?,?)");
+			bs.add(statement.bind(id, parent_id, child, ctime, Integer.valueOf(flag)));
 
 			// Insert the entry in the metadata
 			if (type == 'a' || type == 'f' || type == 'm' || type == 'l') {
@@ -804,8 +851,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				boundStatement.bind(parent_id, id, ctime, gowner, Long.valueOf(jobid), owner, perm, Long.valueOf(size), String.valueOf(type));
 			}
 
-			boundStatement.setConsistencyLevel(cl);
-			session.execute(boundStatement);
+			bs.add(boundStatement);
 
 			// Fake -1 seNumber for dirs in se_lookup
 			if (type == 'd') {
@@ -823,20 +869,19 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 					for (int seNumber : seNumbers) {
 						statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
-						boundStatement = new BoundStatement(statement);
-						boundStatement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner);
-						boundStatement.setConsistencyLevel(cl);
-						session.execute(boundStatement);
+						bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner));
 					}
 				}
 			}
+
+			ResultSet rs = session.execute(bs);
+			res = rs.wasApplied();
 		} catch (Exception e) {
 			System.err.println("Exception trying to insert: " + e);
-			// TODO: shall we try to delete here from the tables?
 			return false;
 		}
 
-		return true;
+		return res;
 	}
 
 	/**
@@ -874,13 +919,16 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return true;
 
 		while (folderBookingMap.putIfAbsent(folder, Integer.valueOf(1)) != null) {
-			Thread.sleep(1000);
+			Thread.sleep(1000 * bookingTries);
 			bookingTries++;
 			if (bookingTries == 3) {
 				System.err.println("Can't get booking lock: " + folder);
 				return false;
 			}
 		}
+
+		if (rifs.get(folder) != null)
+			return true;
 
 		try {
 			// return if in the cache
@@ -925,6 +973,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			throw (e);
 		} finally {
 			folderBookingMap.remove(folder);
+			rifs.put(folder, Integer.valueOf(1), 30 * 1000); // 30 seconds
 		}
 	}
 
@@ -990,6 +1039,239 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 */
 	public static int dirCacheSize() {
 		return dirCache.size();
+	}
+
+	/**
+	 * Delete this LFN in the Catalogue and SE, subentries recursively as well, and cache cleant
+	 *
+	 * @return <code>true</code> if this LFN entry was deleted in the database
+	 */
+	public boolean delete() {
+		return delete(true, true, true);
+	}
+
+	/**
+	 * Delete this LFN in the Catalogue, subfolders recursively as well, and cache cleant
+	 *
+	 * @param purge
+	 *            physically delete the PFNs
+	 *
+	 * @return <code>true</code> if this LFN entry was deleted in the database
+	 */
+	public boolean delete(final boolean purge) {
+		return delete(purge, true, true);
+	}
+
+	/**
+	 * Delete this LFN in the Catalogue
+	 *
+	 * @param purge
+	 *            physically delete the PFNs
+	 * @param recursive
+	 *            for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
+	 *
+	 * @return <code>true</code> if this LFN entry was deleted in the database
+	 */
+	public boolean delete(final boolean purge, final boolean recursive) {
+		return delete(purge, recursive, true);
+	}
+
+	/**
+	 * Delete this LFN in the Catalogue
+	 *
+	 * @param purge
+	 *            physically delete the PFNs
+	 * @param recursive
+	 *            for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
+	 * @param notifyCache
+	 *            whether or not to notify AliEn's access and whereis caches of removed entries
+	 *
+	 * @return <code>true</code> if this LFN entry was deleted in the database
+	 */
+	public boolean delete(final boolean purge, final boolean recursive, final boolean notifyCache) {
+		if (!exists)
+			throw new IllegalAccessError("You asked to delete an LFN that doesn't exist!");
+
+		if (isDirectory() && !recursive) {
+			logger.info("LFN_CSD: asked to delete a folder non-recursively: " + getCanonicalName());
+			return false;
+		}
+
+		// control variables
+		AtomicInteger counter_left = new AtomicInteger();
+		TreeSet<LFN_CSD> dirs = new TreeSet<>();
+		TreeSet<LFN_CSD> error_entries = new TreeSet<>();
+		boolean ok = true;
+
+		counter_left.incrementAndGet();
+		LFNCSDUtils.tPool.submit(new DeleteLFNs(this, counter_left, purge, notifyCache, dirs, error_entries));
+
+		while (counter_left.get() > 0) {
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {
+				logger.severe("LFN_CSD deleteLFNs: can't wait?: " + e);
+			}
+		}
+
+		try {
+			@SuppressWarnings("resource")
+			final Session session = DBCassandra.getInstance();
+			if (session == null) {
+				logger.severe("LFN_CSD: delete: could not get an instance: " + this.getCanonicalName());
+				return false;
+			}
+
+			// delete unique file
+			if (!isDirectory()) {
+				PreparedStatement statement;
+
+				BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+				bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+
+				// Delete the entry from index and metadata
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? and path=?");
+				bs.add(statement.bind(this.parent_id, this.child));
+
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=? and id=?");
+				bs.add(statement.bind(this.parent_id, this.id));
+
+				ResultSet rs = session.execute(bs);
+				if (!rs.wasApplied()) {
+					logger.severe("LFN_CSD: delete: problem deleting file entry: " + this.getCanonicalName());
+					ok = false;
+				}
+			}
+
+			// delete entries by folders
+			for (LFN_CSD l : dirs) {
+				PreparedStatement statement;
+
+				BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+				bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+
+				// Delete the entry from index and metadata
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=?");
+				bs.add(statement.bind(l.id));
+
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=?");
+				bs.add(statement.bind(l.id));
+
+				ResultSet rs = session.execute(bs);
+				if (!rs.wasApplied()) {
+					logger.severe("LFN_CSD: delete: problem deleting folder entry: " + l.getCanonicalName());
+					ok = false;
+				}
+			}
+		} catch (Exception e) {
+			logger.severe("LFN_CSD: delete: problem deleting folders/file: " + e.toString());
+			ok = false;
+		}
+
+		// show errors
+		for (LFN_CSD l : error_entries) {
+			logger.severe("LFN_CSD: delete: problem removing: " + l.getCanonicalName());
+		}
+
+		return ok;
+	}
+
+	private static class DeleteLFNs implements Runnable {
+		final LFN_CSD lfnc;
+		final AtomicInteger counter_left;
+		final boolean purge;
+		final boolean notifyCache;
+		final TreeSet<LFN_CSD> dirs;
+		final TreeSet<LFN_CSD> error_entries;
+
+		public DeleteLFNs(final LFN_CSD lfn, final AtomicInteger counter_left, final boolean purge, final boolean notifyCache, final TreeSet<LFN_CSD> dirs, final TreeSet<LFN_CSD> error_entries) {
+			this.lfnc = lfn;
+			this.counter_left = counter_left;
+			this.purge = purge;
+			this.notifyCache = notifyCache;
+			this.dirs = dirs;
+			this.error_entries = error_entries;
+		}
+
+		@Override
+		public void run() {
+			if (monitor != null)
+				monitor.incrementCounter("LFN_CSD_delete");
+
+			if (lfnc.isDirectory()) {
+				dirs.add(lfnc);
+
+				final List<LFN_CSD> subentries = lfnc.list(true);
+
+				// do not notify the cache of every subentry but only once for the entire folder
+				for (final LFN_CSD subentry : subentries) {
+					counter_left.incrementAndGet();
+					LFNCSDUtils.tPool.submit(new DeleteLFNs(subentry, counter_left, purge, notifyCache, dirs, error_entries));
+				}
+			}
+			else
+				if (lfnc.isFile() || lfnc.isArchive()) {
+					int modulo = Math.abs(lfnc.id.hashCode() % modulo_se_lookup);
+
+					try {
+						@SuppressWarnings("resource")
+						final Session session = DBCassandra.getInstance();
+						if (session == null) {
+							error_entries.add(lfnc);
+							logger.severe("LFN_CSD: DeleteLFNs could not get an instance: " + lfnc.getCanonicalName());
+							return;
+						}
+
+						PreparedStatement statement;
+
+						BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+						bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+
+						// Delete the entry from ids and se_lookup. Will be deleted from the hierarchy (index, metadata) using the parent folder
+						statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_ids_table + " WHERE child_id=?");
+						bs.add(statement.bind(lfnc.id));
+
+						for (Integer senumber : lfnc.pfns.keySet()) {
+							statement = getOrInsertPreparedStatement(session, "DELETE FROM " + se_lookup_table + " WHERE senumber=? and modulo=? and id=?");
+							bs.add(statement.bind(senumber, Integer.valueOf(modulo), lfnc.id));
+						}
+
+						ResultSet rs = session.execute(bs);
+						if (!rs.wasApplied()) {
+							error_entries.add(lfnc);
+							logger.severe("LFN_CSD: DeleteLFNs problem deleting from ids and se_lookup?: " + lfnc.getCanonicalName());
+						}
+
+						if (notifyCache) {
+							String toWipe = lfnc.getCanonicalName();
+
+							if (lfnc.isDirectory())
+								toWipe += ".*";
+
+							TextCache.invalidateLFN(toWipe);
+						}
+
+					} catch (Exception e) {
+						error_entries.add(lfnc);
+						logger.severe("LFN_CSD: DeleteLFNs Exception deleting LFN: " + e.toString());
+					}
+
+					if (purge && lfnc.id != null) {
+						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+							for (Integer senumber : lfnc.pfns.keySet()) {
+								db.setQueryTimeout(120);
+								db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, lfnc.id, senumber, lfnc.checksum,
+										Long.valueOf(lfnc.size));
+							}
+						} catch (Exception e) {
+							error_entries.add(lfnc);
+							logger.severe("LFN_CSD: DeleteLFNs problem inserting into PFN cleanup queue: " + lfnc.getCanonicalName() + " - " + e.toString());
+						}
+					}
+				}
+
+			counter_left.decrementAndGet();
+		}
 	}
 
 }

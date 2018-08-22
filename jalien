@@ -5,13 +5,19 @@ if [ "$1" == "setup" ]; then
 
     mkdir -p ${HOME}/.j/config
 
+    #Copy the default logging and config files to user controllable versions
     cp config/logging.properties config/config.properties ${HOME}/.j/config/
 
-    mkdir -p ${HOME}/.j/trusts
+    #mkdir -p ${HOME}/.j/trusts
 
-    wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_CA.der
-    wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" -O ${HOME}/.j/trusts/CERN_ROOT_CA2.der
-    wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Grid%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_Grid_CA.der
+    #wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_CA.der
+    #wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Root%20Certification%20Authority%202.crt" -O ${HOME}/.j/trusts/CERN_ROOT_CA2.der
+    #wget -q "https://cafiles.cern.ch/cafiles/certificates/CERN%20Grid%20Certification%20Authority.crt" -O ${HOME}/.j/trusts/CERN_Grid_CA.der
+
+    if [ ! -f "$HOME/.globus/userkey.pem" -o ! -f "$HOME/.globus/usercert.pem" ]; then
+	echo "Your Grid user certificate should be stored in $HOME/.globus/{usercert,userkey}.pem"
+	exit 1
+    fi
 
     chmod 400 ${HOME}/.globus/userkey.pem
     chmod 440 ${HOME}/.globus/usercert.pem

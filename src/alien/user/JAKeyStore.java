@@ -453,22 +453,15 @@ public class JAKeyStore {
 
 		JPasswordFinder jpf;
 
-		System.out.println(noUserPass);
-
 		if (noUserPass)
 			jpf = new JPasswordFinder(new char[] {});
 		else
 			jpf = getPassword();
 
-		try {
-			clientCert.load(null, pass);
-			loadTrusts(clientCert);
+		clientCert.load(null, pass);
+		loadTrusts(clientCert);
 
-			addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
-		} catch (final Exception e) {
-			logger.severe("Cannot load clientCert: " + e.toString());
-			return false;
-		}
+		addKeyPairToKeyStore(clientCert, "User.cert", user_key, user_cert, jpf);
 
 		return true;
 	}
@@ -854,6 +847,7 @@ public class JAKeyStore {
 			} catch (final org.bouncycastle.openssl.EncryptionException | org.bouncycastle.pkcs.PKCSException | javax.crypto.BadPaddingException e) {
 				logger.log(Level.SEVERE, "Wrong password! Try again", e);
 				System.err.println("Wrong password! Try again");
+				continue;
 			} catch (final Exception e) {
 				logger.log(Level.SEVERE, "Error loading the key", e);
 				System.err.println("Error loading the key");

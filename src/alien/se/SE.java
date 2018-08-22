@@ -40,6 +40,11 @@ public class SE implements Serializable, Comparable<SE> {
 	static transient final Logger logger = ConfigUtils.getLogger(SE.class.getCanonicalName());
 
 	/**
+	 * Original name, without the capitalization, in case some app needs the nicer name
+	 */
+	public final String originalName;
+
+	/**
 	 * SE name
 	 */
 	public final String seName;
@@ -134,7 +139,8 @@ public class SE implements Serializable, Comparable<SE> {
 	 * @param seioDaemons
 	 */
 	public SE(final String seName, final int seNumber, final String qos, final String seStoragePath, final String seioDaemons) {
-		this.seName = seName;
+		this.originalName = seName;
+		this.seName = StringFactory.get(seName.toUpperCase());
 		this.seNumber = seNumber;
 		this.qos = parseArray(qos);
 
@@ -159,7 +165,9 @@ public class SE implements Serializable, Comparable<SE> {
 	 * @param db
 	 */
 	SE(final DBFunctions db) {
-		seName = StringFactory.get(db.gets("seName").toUpperCase());
+		originalName = StringFactory.get(db.gets("seName"));
+
+		seName = StringFactory.get(originalName.toUpperCase());
 
 		seNumber = db.geti("seNumber");
 
@@ -169,7 +177,7 @@ public class SE implements Serializable, Comparable<SE> {
 
 		// TODO: remove this, when the version in the DB is working and not
 		// anymore overwritten to null
-		needsEncryptedEnvelope = (seVersion < 200) && (!"alice::cern::setest".equalsIgnoreCase(seName));
+		needsEncryptedEnvelope = (seVersion < 200) && (!"ALICE::CERN::SETEST".equals(seName));
 
 		seioDaemons = StringFactory.get(db.gets("seioDaemons"));
 

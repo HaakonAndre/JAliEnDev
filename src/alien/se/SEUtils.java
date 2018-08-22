@@ -176,7 +176,7 @@ public final class SEUtils {
 				final SEfromString request = new SEfromString(null, seNumber.intValue());
 				final SEfromString response = Dispatcher.execute(request);
 				// System.err.println("Response: " + response);
-				return response.getSE();
+				return response != null ? response.getSE() : null;
 			} catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}

@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.io.protocols;
 
@@ -18,7 +18,7 @@ import alien.io.IOUtils;
  */
 public class Torrent extends Protocol {
 	/**
-	 * 
+	 *
 	 */
 	private static final long serialVersionUID = 4568694269197082489L;
 	/**
@@ -35,7 +35,7 @@ public class Torrent extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#get(alien.catalogue.PFN, alien.catalogue.access.CatalogueReadAccess, java.lang.String)
 	 */
 	@Override
@@ -80,7 +80,7 @@ public class Torrent extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -90,7 +90,7 @@ public class Torrent extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#delete(alien.catalogue.PFN)
 	 */
 	@Override
@@ -100,7 +100,7 @@ public class Torrent extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#put(alien.catalogue.PFN, java.io.File)
 	 */
 	@Override
@@ -110,7 +110,7 @@ public class Torrent extends Protocol {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see alien.io.protocols.Protocol#transfer(alien.catalogue.PFN, alien.catalogue.PFN)
 	 */
 	@Override
