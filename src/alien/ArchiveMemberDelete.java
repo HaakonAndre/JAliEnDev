@@ -136,7 +136,7 @@ public class ArchiveMemberDelete {
 					System.out.println("[" + new Date() + "] " + "registertemp is not there, all DONE");
 				}
 				else {
-					System.out.println("[" + new Date() + "] " + "registertemp is not there, but .deleted NOT FOUND. Abort.");
+					System.out.println("[" + new Date() + "] " + "registertemp is not there, but " + parentdir + "/.deleted NOT FOUND. Abort.");
 				}
 			}
 			return;
