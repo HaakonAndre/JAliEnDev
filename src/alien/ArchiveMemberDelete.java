@@ -48,8 +48,9 @@ public class ArchiveMemberDelete {
 			try {
 				commander = JAliEnCOMMander.getInstance();
 			}
-			catch (NullPointerException e) {
+			catch (ExceptionInInitializerError e) {
 				System.err.println("Failed to get a JAliEnCOMMander instance. Abort");
+				e.printStackTrace();
 				return;
 			}
 
