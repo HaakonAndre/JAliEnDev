@@ -566,6 +566,9 @@ public class TextCache extends HttpServlet {
 						removed++;
 					}
 
+					if (monitor != null)
+						monitor.incrementCounter("CLEAR_" + ns);
+
 					continue;
 				}
 
