@@ -48,7 +48,7 @@ public class ArchiveMemberDelete {
 			try {
 				commander = JAliEnCOMMander.getInstance();
 			}
-			catch (ExceptionInInitializerError e) {
+			catch (final ExceptionInInitializerError e) {
 				System.err.println("Failed to get a JAliEnCOMMander instance. Abort");
 				e.printStackTrace();
 				return;
@@ -109,7 +109,7 @@ public class ArchiveMemberDelete {
 		LFN remoteLFN = null;
 		try {
 			remoteLFN = commander.c_api.getLFN(xmlEntry);
-		} catch (NullPointerException e) {
+		} catch (final NullPointerException e) {
 			// Connection may be refused
 			System.err.println("[" + new Date() + "] Something went wrong. Abort.");
 			e.printStackTrace();
@@ -167,7 +167,7 @@ public class ArchiveMemberDelete {
 		List<PFN> remotePFN = null;
 		try {
 			remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
-		} catch (ServerException e1) {
+		} catch (final ServerException e1) {
 			System.err.println("[" + new Date() + "] " + xmlEntry + ": Could not get PFN");
 			e1.printStackTrace();
 			return;
@@ -442,9 +442,9 @@ public class ArchiveMemberDelete {
 			FileUtils.deleteDirectory(new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted"));
 			newArchive.delete();
 
-		} catch (IOException e1) {
+		} catch (final IOException e1) {
 			e1.printStackTrace();
-		} catch (ServerException e1) {
+		} catch (final ServerException e1) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN. Abort");
 			e1.printStackTrace();
 		}
@@ -517,7 +517,7 @@ public class ArchiveMemberDelete {
 
 			zipIn.close();
 			return true;
-		} catch (FileNotFoundException e) {
+		} catch (final FileNotFoundException e) {
 			e.printStackTrace();
 			return false;
 		}
@@ -561,7 +561,7 @@ public class ArchiveMemberDelete {
 					for (final String child : getFileListing(file.getCanonicalPath())) {
 						listOfFiles.add(file.getName() + "/" + child);
 					}
-				} catch (IOException e) {
+				} catch (final IOException e) {
 					e.printStackTrace();
 				}
 			}
