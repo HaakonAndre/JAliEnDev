@@ -35,7 +35,8 @@ import joptsimple.OptionSet;
  *
  */
 public class ArchiveMemberDelete {
-	private final static JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
+
+	private static JAliEnCOMMander commander = null;
 
 	/**
 	 * @param args
@@ -44,6 +45,14 @@ public class ArchiveMemberDelete {
 	public static void main(final String[] args) throws Exception {
 
 		if (args.length > 0) {
+			try {
+				commander = JAliEnCOMMander.getInstance();
+			}
+			catch (NullPointerException e) {
+				System.err.println("Failed to get a JAliEnCOMMander instance. Abort");
+				return;
+			}
+
 			final OptionParser parser = new OptionParser();
 			parser.accepts("list").withRequiredArg(); // Like "collection.xml"
 			final OptionSet options = parser.parse(args);
