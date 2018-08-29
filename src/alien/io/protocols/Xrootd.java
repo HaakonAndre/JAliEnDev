@@ -1325,8 +1325,6 @@ public class Xrootd extends Protocol {
 	public SpaceInfo getSpaceInfo(final PFN pfn) throws IOException {
 		SpaceInfo spaceInfo = null;
 
-		System.err.println(pfn.ticket);
-
 		try {
 			spaceInfo = getXrdfsSpaceInfo(pfn);
 		} catch (@SuppressWarnings("unused") final IOException ioe) {
