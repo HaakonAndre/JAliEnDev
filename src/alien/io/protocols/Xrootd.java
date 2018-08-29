@@ -1323,6 +1323,162 @@ public class Xrootd extends Protocol {
 	 * @throws IOException
 	 */
 	public SpaceInfo getSpaceInfo(final PFN pfn) throws IOException {
+		SpaceInfo spaceInfo = null;
+
+		System.err.println(pfn.ticket);
+
+		try {
+			spaceInfo = getXrdfsSpaceInfo(pfn);
+		} catch (@SuppressWarnings("unused") final IOException ioe) {
+			// ignore, we'll try the next command
+		}
+
+		if (spaceInfo == null || !spaceInfo.spaceInfoSet)
+			try {
+				final SpaceInfo querySpace = getQuerySpaceInfo(pfn);
+
+				if (spaceInfo == null)
+					return querySpace;
+
+				if (querySpace.spaceInfoSet)
+					spaceInfo.setSpaceInfo(querySpace.path, querySpace.totalSpace, querySpace.freeSpace, querySpace.usedSpace, querySpace.largestFreeChunk);
+
+				if (querySpace.versionInfoSet && !spaceInfo.versionInfoSet)
+					spaceInfo.setVersion(querySpace.vendor, querySpace.version);
+
+			} catch (final IOException ioe) {
+				if (spaceInfo != null)
+					return spaceInfo;
+
+				throw ioe;
+			}
+
+		return spaceInfo;
+	}
+
+	private SpaceInfo getQuerySpaceInfo(final PFN pfn) throws IOException {
+		final List<String> command = new LinkedList<>();
+
+		final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
+
+		final String host = url.getHost();
+		final int port = url.getPort() > 0 ? url.getPort() : 1094;
+
+		String path = url.getPath();
+
+		if (path.startsWith("//"))
+			path = path.substring(1);
+
+		boolean encryptedEnvelope = true;
+
+		String envelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+		if (envelope == null) {
+			envelope = pfn.ticket.envelope.getSignedEnvelope();
+			encryptedEnvelope = false;
+		}
+
+		final SpaceInfo ret = new SpaceInfo();
+
+		ExitStatus exitStatus;
+
+		ProcessBuilder pBuilder;
+
+		for (int attempt = 0; !ret.spaceInfoSet && attempt <= 1; attempt++) {
+			command.clear();
+
+			command.add(xrootd_default_path + "/bin/xrdfs");
+			command.add(host + ":" + port);
+			command.add("query");
+			command.add("space");
+
+			if (attempt == 1)
+				if (envelope != null)
+					command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
+				else
+					continue;
+			else
+				command.add(path);
+
+			if (logger.isLoggable(Level.FINEST))
+				logger.log(Level.FINEST, "Executing spaceinfo command: " + command);
+
+			setLastCommand(command);
+
+			pBuilder = new ProcessBuilder(command);
+
+			checkLibraryPath(pBuilder);
+
+			pBuilder.redirectErrorStream(true);
+
+			try {
+				final Process p = pBuilder.start();
+
+				if (p != null) {
+					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
+					pTimeout.waitFor(5, TimeUnit.MINUTES);
+					exitStatus = pTimeout.getExitStatus();
+					setLastExitStatus(exitStatus);
+				}
+				else
+					throw new IOException("Cannot execute command: " + command);
+
+				try (BufferedReader br = new BufferedReader(new StringReader(exitStatus.getStdOut()))) {
+					String line;
+
+					long total = 0;
+					long free = 0;
+					long used = 0;
+					long largest = 0;
+
+					while ((line = br.readLine()) != null) {
+						// oss.cgroup=default&oss.space=1279832876908544&oss.free=892794559213568&oss.maxf=68719476736&oss.used=387038317694976&oss.quota=1279832876908544
+
+						final StringTokenizer st = new StringTokenizer(line, "&");
+
+						while (st.hasMoreTokens()) {
+							final String tok = st.nextToken();
+
+							final int idx = tok.indexOf('=');
+
+							if (idx > 0) {
+								final String key = tok.substring(0, idx);
+								final String value = tok.substring(idx + 1).trim();
+
+								switch (key) {
+								case "oss.space":
+								case "oss.quota":
+									total = Long.parseLong(value);
+									break;
+								case "oss.free":
+									free = Long.parseLong(value);
+									break;
+								case "oss.maxf":
+									largest = Long.parseLong(value);
+									break;
+								case "oss.used":
+									used = Long.parseLong(value);
+									break;
+								default:
+									break;
+								}
+							}
+						}
+					}
+
+					if (total > 0)
+						ret.setSpaceInfo(path, total, free, used, largest);
+				}
+			} catch (final InterruptedException ie) {
+				setLastExitStatus(null);
+				throw new IOException("Interrupted while waiting for the following command to finish : " + command.toString(), ie);
+			}
+		}
+
+		return ret;
+	}
+
+	private SpaceInfo getXrdfsSpaceInfo(final PFN pfn) throws IOException {
 		final List<String> command = new LinkedList<>();
 
 		final URL url = new URL(pfn.ticket.envelope.getTransactionURL());
@@ -1357,8 +1513,12 @@ public class Xrootd extends Protocol {
 			command.add(host + ":" + port);
 			command.add("spaceinfo");
 
-			if (attempt == 1)
-				command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
+			if (attempt == 1) {
+				if (envelope != null)
+					command.add(path + "?" + (encryptedEnvelope ? "authz=" : "") + envelope);
+				else
+					continue;
+			}
 			else
 				command.add(path);
 
