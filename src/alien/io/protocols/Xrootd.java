@@ -1414,7 +1414,7 @@ public class Xrootd extends Protocol {
 
 				if (p != null) {
 					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
-					pTimeout.waitFor(5, TimeUnit.MINUTES);
+					pTimeout.waitFor(2, TimeUnit.MINUTES);
 					exitStatus = pTimeout.getExitStatus();
 					setLastExitStatus(exitStatus);
 				}
@@ -1536,7 +1536,7 @@ public class Xrootd extends Protocol {
 
 				if (p != null) {
 					final ProcessWithTimeout pTimeout = new ProcessWithTimeout(p, pBuilder);
-					pTimeout.waitFor(5, TimeUnit.MINUTES);
+					pTimeout.waitFor(2, TimeUnit.MINUTES);
 					exitStatus = pTimeout.getExitStatus();
 					setLastExitStatus(exitStatus);
 				}
