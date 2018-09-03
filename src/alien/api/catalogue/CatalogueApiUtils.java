@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
+import alien.catalogue.CatalogEntity;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
@@ -234,20 +235,20 @@ public class CatalogueApiUtils {
 	/**
 	 * Get PFNs for reading by LFN
 	 *
-	 * @param lfn
-	 *            LFN of the entry as String
+	 * @param entity
+	 *            LFN or GUID to get access to
 	 * @param ses
 	 *            SEs to prioritize to read from
 	 * @param exses
 	 *            SEs to deprioritize to read from
 	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized
 	 */
-	public List<PFN> getPFNsToRead(final LFN lfn, final List<String> ses, final List<String> exses) {
+	public List<PFN> getPFNsToRead(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
 		try {
 
-			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.READ, lfn, ses, exses)).getPFNs();
+			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.READ, entity, ses, exses)).getPFNs();
 		} catch (final ServerException e) {
-			logger.log(Level.WARNING, "Could not get PFN for: " + lfn);
+			logger.log(Level.WARNING, "Could not get PFN for: " + entity);
 			e.getCause().printStackTrace();
 
 		}
@@ -612,7 +613,7 @@ public class CatalogueApiUtils {
 	 * @param desc
 	 * @return transfer details
 	 */
-	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Integer id, final int count, final boolean desc) {
+	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Long id, final int count, final boolean desc) {
 
 		ListTransfer lt;
 		try {
