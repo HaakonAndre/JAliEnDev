@@ -18,13 +18,13 @@ public class GetTraceLog extends Request {
 
 	private String trace = "";
 
-	private final int queueId;
+	private final long queueId;
 
 	/**
 	 * @param user
 	 * @param queueId
 	 */
-	public GetTraceLog(final AliEnPrincipal user, final int queueId) {
+	public GetTraceLog(final AliEnPrincipal user, final long queueId) {
 		setRequestUser(user);
 		this.queueId = queueId;
 	}

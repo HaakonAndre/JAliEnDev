@@ -100,7 +100,7 @@ public class TaskQueueApiUtils {
 	 * @param queueId
 	 * @return a JDL as String
 	 */
-	public String getTraceLog(final int queueId) {
+	public String getTraceLog(final long queueId) {
 
 		try {
 			final GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), queueId));
@@ -118,7 +118,7 @@ public class TaskQueueApiUtils {
 	 * @param queueId
 	 * @return a JDL as String
 	 */
-	public String getJDL(final int queueId) {
+	public String getJDL(final long queueId) {
 
 		try {
 			final GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), queueId));

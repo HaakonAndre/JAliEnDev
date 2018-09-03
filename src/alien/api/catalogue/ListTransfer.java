@@ -20,7 +20,7 @@ public class ListTransfer extends Request {
 	private final String status;
 	private final String toSE;
 	private final String user;
-	private final Integer id;
+	private final Long id;
 	private final int count;
 	private final boolean sort_desc;
 
@@ -33,7 +33,7 @@ public class ListTransfer extends Request {
 	 * @param count
 	 * @param desc
 	 */
-	public ListTransfer(final AliEnPrincipal user, final String toSE, final String userTransfer, final String status, final Integer id, final int count, final boolean desc) {
+	public ListTransfer(final AliEnPrincipal user, final String toSE, final String userTransfer, final String status, final Long id, final int count, final boolean desc) {
 		setRequestUser(user);
 		this.status = status;
 		this.toSE = toSE;
