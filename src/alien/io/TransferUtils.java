@@ -109,7 +109,7 @@ public final class TransferUtils {
 	 * @param orderAsc
 	 * @return all active transfers
 	 */
-	public static List<TransferDetails> getAllActiveTransfers(final String targetSE, final String user, final String status, final Integer id, final Integer count, final boolean orderAsc) {
+	public static List<TransferDetails> getAllActiveTransfers(final String targetSE, final String user, final String status, final Long id, final Integer count, final boolean orderAsc) {
 		if (id != null) {
 			final List<TransferDetails> l = new ArrayList<>();
 			final TransferDetails d = getTransfer(id.intValue());
