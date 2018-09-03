@@ -28,12 +28,12 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 	/**
 	 * id of the job to get the JDL for
 	 */
-	private int getJDL = 0;
+	private long getJDL = 0;
 
 	/**
 	 * id of the job to get the trace for
 	 */
-	private int getTrace = 0;
+	private long getTrace = 0;
 
 	private final Set<JobStatus> states = new HashSet<>();
 
@@ -443,7 +443,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			parser.accepts("m").withRequiredArg();
 			parser.accepts("o").withRequiredArg();
 			parser.accepts("j").withRequiredArg();
-			parser.accepts("l").withRequiredArg();
+			parser.accepts("l").withRequiredArg().ofType(Integer.class);
 			parser.accepts("q").withRequiredArg();
 
 			parser.accepts("M");
@@ -453,14 +453,14 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			parser.accepts("E");
 			parser.accepts("a");
 			parser.accepts("b");
-			parser.accepts("jdl").withRequiredArg();
-			parser.accepts("trace").withRequiredArg();
+			parser.accepts("jdl").withRequiredArg().ofType(Long.class);
+			parser.accepts("trace").withRequiredArg().ofType(Long.class);
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
 			if (options.has("jdl") && options.hasArgument("jdl"))
 				try {
-					getJDL = Integer.parseInt((String) options.valueOf("jdl"));
+					getJDL = ((Long) options.valueOf("jdl")).longValue();
 				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 					commander.printErrln("Illegal job ID " + options.valueOf("jdl"));
 					getJDL = -1;
@@ -468,7 +468,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 			else
 				if (options.has("trace") && options.hasArgument("trace"))
 					try {
-						getTrace = Integer.parseInt((String) options.valueOf("trace"));
+						getTrace = ((Long) options.valueOf("trace")).longValue();
 					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
 						commander.printErrln("Illegal job ID " + options.valueOf("trace"));
 						getTrace = -1;
@@ -525,7 +525,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 
 					if (options.has("l") && options.hasArgument("l"))
 						try {
-							final int lim = Integer.parseInt((String) options.valueOf("l"));
+							final int lim = ((Integer) options.valueOf("l")).intValue();
 							if (lim > 0)
 								limit = lim;
 						} catch (@SuppressWarnings("unused") final NumberFormatException e) {
