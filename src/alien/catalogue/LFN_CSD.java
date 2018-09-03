@@ -240,7 +240,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		owner = l.getOwner();
 		gowner = l.getGroup();
 		id = l.guid;
-		modulo = Math.abs(id.hashCode() % modulo_se_lookup);
+		if (id != null)
+			modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 		flag = 0;
 		if (type != 'd')
 			metadata = new HashMap<>();
@@ -248,11 +249,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (createParent) {
 			try {
 				if (!LFN_CSD.createDirectory(path, null, null, owner, gowner, jobid, perm, ctime)) {
-					System.err.println("Cannot create LFN_CSD with createParent: " + l.getCanonicalName());
+					logger.severe("Cannot create LFN_CSD with createParent: " + l.getCanonicalName());
 					return;
 				}
 			} catch (Exception e) {
-				System.err.println("Exception trying to create LFN_CSD with createParent: " + l.getCanonicalName() + " Exception: " + e);
+				logger.severe("Exception trying to create LFN_CSD with createParent: " + l.getCanonicalName() + " Exception: " + e);
 				return;
 			}
 		}
@@ -261,11 +262,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			try {
 				parent_id = getParentIdFromPath(path, null);
 			} catch (Exception e) {
-				System.err.println("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName() + e);
+				logger.severe("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName() + e);
 				return;
 			}
 			if (parent_id == null) {
-				System.err.println("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName());
+				logger.severe("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName());
 				return;
 			}
 		}
@@ -320,7 +321,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				ResultSet results = session.execute(boundStatement);
 				init(results.one());
 			} catch (Exception e) {
-				System.err.println("Exception trying to create LFN_CSD: " + e);
+				logger.severe("Exception trying to create LFN_CSD: " + e);
 				return;
 			}
 		}
@@ -441,7 +442,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 					path_id = results.one().getUUID("child_id");
 					if (path_id == null) {
-						System.err.println("Error getting parent id for path_id: " + path_id + " path: " + (i == 0 ? "/" : path_chunks[i - 1]));
+						logger.severe("Error getting parent id for path_id: " + path_id + " path: " + (i == 0 ? "/" : path_chunks[i - 1]));
 						return null;
 					}
 
@@ -457,7 +458,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			}
 			return path_id;
 		} catch (Exception e) {
-			System.err.println("Exception trying to getParentIdFromPath (" + parent_path + ") LFN_CSD: " + e);
+			logger.severe("Exception trying to getParentIdFromPath (" + parent_path + ") LFN_CSD: " + e);
 			throw (e);
 		}
 	}
@@ -495,7 +496,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			return id;
 		} catch (Exception e) {
-			System.err.println("Exception trying to getChildIdFromParentIdAndName (" + parent_id + " ," + name + ") LFN_CSD: " + e);
+			logger.severe("Exception trying to getChildIdFromParentIdAndName (" + parent_id + " ," + name + ") LFN_CSD: " + e);
 			throw (e);
 		}
 	}
@@ -699,7 +700,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				ret.add(new LFN_CSD(this.canonicalName, get_metadata, append_table, this.parent_id, this.id));
 			}
 		} catch (Exception e) {
-			System.err.println("Exception trying to whereis: " + e);
+			logger.severe("Exception trying to whereis: " + e);
 			return null;
 		}
 
@@ -757,7 +758,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				pfns = (HashMap<Integer, String>) row.getMap("pfns", Integer.class, String.class);
 			}
 		} catch (Exception e) {
-			System.err.println("Exception trying to whereis: " + e);
+			logger.severe("Exception trying to whereis: " + e);
 			return null;
 		}
 
@@ -805,13 +806,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			try {
 				this.parent_id = getParentIdFromPath(this.path, append_table);
 			} catch (Exception e) {
-				System.err.println("Exception while inserting: " + this.canonicalName + " Exception: " + e);
+				logger.severe("Exception while inserting: " + this.canonicalName + " Exception: " + e);
 				return false;
 			}
 		}
 
 		if (this.parent_id == null) {
-			System.err.println("Cannot get parent of " + this.path + " append_table: " + append_table);
+			logger.severe("Cannot get parent of " + this.path + " append_table: " + append_table);
 			return false;
 		}
 
@@ -863,13 +864,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			// Insert into se_lookup
 			if ((type == 'a' || type == 'f') && size > 0) {
-				int modulo = Math.abs(id.hashCode() % modulo_se_lookup);
+				int moduloc = Math.abs(id.hashCode() % modulo_se_lookup);
 				if (pfns != null) {
 					final Set<Integer> seNumbers = pfns.keySet();
 
 					for (int seNumber : seNumbers) {
 						statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
-						bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner));
+						bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(moduloc), id, Long.valueOf(size), owner));
 					}
 				}
 			}
@@ -877,7 +878,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			ResultSet rs = session.execute(bs);
 			res = rs.wasApplied();
 		} catch (Exception e) {
-			System.err.println("Exception trying to insert: " + e);
+			logger.severe("Exception trying to insert: " + e);
 			return false;
 		}
 
@@ -922,7 +923,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			Thread.sleep(1000 * bookingTries);
 			bookingTries++;
 			if (bookingTries == 3) {
-				System.err.println("Can't get booking lock: " + folder);
+				logger.severe("Can't get booking lock: " + folder);
 				return false;
 			}
 		}
@@ -942,7 +943,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			String path = p_c[0];
 
 			if (!createDirectory(path, table, level, owner, gowner, jobid, perm, ctime)) {
-				System.err.println("Can't create directory: " + path);
+				logger.severe("Can't create directory: " + path);
 				return false;
 			}
 
@@ -968,7 +969,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			return newdir.insert(table, level);
 		} catch (Exception e) {
-			System.err.println("Freeing folderBookingMap due to failing inner createDirectory or insert for : " + folder);
 			logger.severe("Freeing folderBookingMap due to failing inner createDirectory or insert for : " + folder);
 			throw (e);
 		} finally {
@@ -999,7 +999,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			pid = getParentIdFromPath(parent_of_lfn, append_table);
 		} catch (Exception e) {
 			logger.severe("Exception from getParentIdFromPath in existsLfn for: " + lfn);
-			System.err.println("Exception from getParentIdFromPath in existsLfn for: " + lfn);
 			throw (e);
 		}
 		if (pid == null)
@@ -1011,7 +1010,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			idfolder = getChildIdFromParentIdAndName(pid, child_of_lfn, append_table);
 		} catch (Exception e) {
 			logger.severe("Exception from getChildIdFromParentIdAndName in existsLfn for: " + lfn);
-			System.err.println("Exception from getChildIdFromParentIdAndName in existsLfn for: " + lfn);
 			throw (e);
 		}
 		if (idfolder == null)
@@ -1272,6 +1270,39 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			counter_left.decrementAndGet();
 		}
+	}
+
+	/**
+	 * @param c_id
+	 * @return information of the given uuid, typically used to find the full lfn from it
+	 */
+	public static HashMap<String, Object> getInfofromChildId(UUID c_id) {
+		HashMap<String, Object> ret = null;
+		try {
+			@SuppressWarnings("resource")
+			final Session session = DBCassandra.getInstance();
+			if (session == null) {
+				logger.severe("LFN_CSD: getInfofromChildId: could not get an instance: " + c_id.toString());
+				return null;
+			}
+
+			PreparedStatement statement = getOrInsertPreparedStatement(session, "select ctime, flag, path, path_id from " + lfn_ids_table + " where child_id = ?");
+			BoundStatement boundStatement = new BoundStatement(statement);
+			boundStatement.bind(c_id);
+			boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
+			ResultSet results = session.execute(boundStatement);
+
+			Row res = results.one();
+			ret = new HashMap<>();
+			ret.put("path", res.getString("path"));
+			ret.put("path_id", res.getUUID("path_id"));
+			ret.put("flag", Integer.valueOf(res.getInt("flag")));
+			ret.put("ctime", res.getTimestamp("ctime"));
+		} catch (Exception e) {
+			logger.severe("LFN_CSD: getInfofromChildId: problem getting ids result: " + c_id.toString() + " - " + e.toString());
+		}
+
+		return ret;
 	}
 
 }

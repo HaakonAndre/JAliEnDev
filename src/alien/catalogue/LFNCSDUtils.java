@@ -9,6 +9,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -384,6 +385,45 @@ public class LFNCSDUtils {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * @param id
+	 * @return LFN_CSD that corresponds to the id
+	 */
+	public static LFN_CSD guid2lfn(final UUID id) {
+
+		String path = "";
+		String lfn = "";
+		UUID p_id = id;
+		UUID p_id_lfn = null;
+		HashMap<String, Object> p_c_ids = null;
+		boolean first = true;
+
+		while (!p_id.equals(LFN_CSD.root_uuid) && path != null) {
+			p_c_ids = LFN_CSD.getInfofromChildId(p_id);
+
+			if (p_c_ids != null) {
+				path = (String) p_c_ids.get("path");
+				p_id = (UUID) p_c_ids.get("path_id");
+
+				if (first) {
+					p_id_lfn = p_id;
+					lfn = path;
+					first = false;
+				}
+				else {
+					lfn = path + "/" + lfn;
+				}
+			}
+			else {
+				logger.severe("LFN_CSD: guid2lfn: Can't get information for id: " + p_id + " - last lfn: " + lfn);
+				return null;
+			}
+		}
+
+		lfn = "/" + lfn;
+		return new LFN_CSD(lfn, true, null, p_id_lfn, id);
 	}
 
 }
