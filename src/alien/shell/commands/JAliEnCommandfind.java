@@ -197,7 +197,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			parser.accepts("h");
 			parser.accepts("d");
 			parser.accepts("y");
-			parser.accepts("j").withRequiredArg();
+			parser.accepts("j").withRequiredArg().ofType(Long.class);
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -208,7 +208,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 			if (options.has("j") && options.hasArgument("j")) {
 				bJ = true;
-				queueid = Long.valueOf((String) options.valueOf("j"));
+				queueid = (Long) options.valueOf("j");
 			}
 
 			alPaths = optionToString(options.nonOptionArguments());

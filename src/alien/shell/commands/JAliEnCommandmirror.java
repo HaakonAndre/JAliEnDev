@@ -35,7 +35,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 		try {
 			final OptionParser parser = new OptionParser();
-			parser.accepts("try").withRequiredArg();
+			parser.accepts("try").withRequiredArg().ofType(Integer.class);
 			parser.accepts("S").withRequiredArg();
 			parser.accepts("g");
 
@@ -49,9 +49,9 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			useLFNasGuid = options.has("g");
 
 			if (options.has("try"))
-				attempts = Integer.valueOf(options.valueOf("try").toString());
+				attempts = (Integer) options.valueOf("try");
 			else
-				attempts = Integer.valueOf(1);
+				attempts = Integer.valueOf(5);
 
 			if (options.has("S") && options.hasArgument("S")) {
 				if ((String) options.valueOf("S") != null) {

@@ -36,7 +36,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 
 			parser.accepts("u").withRequiredArg();
 			parser.accepts("jobid").withRequiredArg();
-			parser.accepts("v").withRequiredArg();
+			parser.accepts("v").withRequiredArg().ofType(Integer.class);
 			parser.accepts("t").withRequiredArg();
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
@@ -58,12 +58,12 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 				}
 			}
 			if (options.has("v")) {
-				validity = Integer.parseInt((String) options.valueOf("v"));
+				validity = ((Integer) options.valueOf("v")).intValue();
 			}
+
 			if (tokentype == TokenCertificateType.JOB_TOKEN && options.has("jobid")) {
 				extension = (String) options.valueOf("jobid");
 			}
-
 		} catch (final OptionException e) {
 			printHelp();
 			throw e;

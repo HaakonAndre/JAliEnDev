@@ -1036,8 +1036,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("w");
 			parser.accepts("W");
 			parser.accepts("d");
-			parser.accepts("j").withRequiredArg();
-			parser.accepts("T").withRequiredArg();
+			parser.accepts("j").withRequiredArg().ofType(Long.class);
+			parser.accepts("T").withRequiredArg().ofType(Integer.class);
 			parser.accepts("silent");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
@@ -1063,7 +1063,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				this.silent();
 
 			if (options.has("j"))
-				jobId = Long.parseLong((String) options.valueOf("j"));
+				jobId = ((Long) options.valueOf("j")).longValue();
 
 			if (options.has("S") && options.hasArgument("S"))
 				if ((String) options.valueOf("S") != null) {
@@ -1111,7 +1111,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				target = nonOptionArguments.get(1);
 
 			if (options.has("T"))
-				concurrentOperations = Integer.parseInt(options.valueOf("T").toString());
+				concurrentOperations = ((Integer) options.valueOf("T")).intValue();
 
 		} catch (final OptionException e) {
 			printHelp();

@@ -14,7 +14,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 	private String status;
 	private String toSE;
 	private String user;
-	private Integer id;
+	private Long id;
 	private boolean verbose;
 	private boolean jdl;
 	private int count;
@@ -67,7 +67,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			parser.accepts("list").withRequiredArg();
 			parser.accepts("status").withRequiredArg();
 			parser.accepts("user").withRequiredArg();
-			parser.accepts("id").withRequiredArg();
+			parser.accepts("id").withRequiredArg().ofType(Long.class);
 			parser.accepts("verbose");
 			parser.accepts("summary");
 			parser.accepts("all_status");
@@ -89,7 +89,7 @@ public class JAliEnCommandlistTransfer extends JAliEnBaseCommand {
 			this.status = (String) options.valueOf("status");
 			this.user = (String) options.valueOf("user");
 			if (options.has("id"))
-				this.id = Integer.valueOf((String) options.valueOf("id"));
+				this.id = (Long) options.valueOf("id");
 			this.verbose = options.has("verbose");
 			this.jdl = options.has("jdl");
 			this.sort_desc = options.has("desc");
