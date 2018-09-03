@@ -18,7 +18,7 @@ public class JobTraceLog {
 	 * @param id
 	 *            job ID
 	 */
-	JobTraceLog(final int id) {
+	JobTraceLog(final long id) {
 		final String queueId = String.valueOf(id);
 		retrieve(jobTraceLogURLPrefix + (queueId.length() > 4 ? queueId.substring(0, 4) : queueId) + "/" + queueId + ".log");
 	}

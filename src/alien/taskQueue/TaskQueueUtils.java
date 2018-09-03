@@ -648,7 +648,7 @@ public class TaskQueueUtils {
 	 * @param queueId
 	 * @return trace log
 	 */
-	public static String getJobTraceLog(final int queueId) {
+	public static String getJobTraceLog(final long queueId) {
 		final JobTraceLog trace = new JobTraceLog(queueId);
 		return trace.getTraceLog();
 	}
