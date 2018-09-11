@@ -569,7 +569,7 @@ public class CatalogueApiUtils {
 	 * @param attempts
 	 * @return command result for each lfn
 	 */
-	public HashMap<String, Integer> mirrorLFN(final String lfn_name, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean useLFNasGuid,
+	public HashMap<String, Long> mirrorLFN(final String lfn_name, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean useLFNasGuid,
 			final Integer attempts) {
 
 		if (lfn_name == null || lfn_name.length() == 0)

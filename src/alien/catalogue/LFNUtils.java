@@ -1116,7 +1116,7 @@ public class LFNUtils {
 	 * @param attempts
 	 * @return transfer ID
 	 */
-	public static int mirrorLFN(final String path, final String dstSE, final boolean is_guid, final Integer attempts) {
+	public static long mirrorLFN(final String path, final String dstSE, final boolean is_guid, final Integer attempts) {
 		LFN lfn;
 		if (is_guid) {
 			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
@@ -1155,7 +1155,7 @@ public class LFNUtils {
 	 * @param attempts
 	 * @return transfer IDs to each SE
 	 */
-	public static HashMap<String, Integer> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean is_guid,
+	public static HashMap<String, Long> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean is_guid,
 			final Integer attempts) {
 		LFN lfn;
 		if (is_guid) {
@@ -1168,10 +1168,10 @@ public class LFNUtils {
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
-		final HashMap<String, Integer> resmap = new HashMap<>();
+		final HashMap<String, Long> resmap = new HashMap<>();
 		for (final SE s : found_ses) {
-			final int transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, s, null, attempts.intValue()) : TransferUtils.mirror(lfn, s);
-			resmap.put(s.getName(), Integer.valueOf(transferID));
+			final long transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, s, null, attempts.intValue()) : TransferUtils.mirror(lfn, s);
+			resmap.put(s.getName(), Long.valueOf(transferID));
 		}
 
 		return resmap;

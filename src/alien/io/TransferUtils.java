@@ -200,7 +200,7 @@ public final class TransferUtils {
 	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
 	 *         </ul>
 	 */
-	public static int mirror(final LFN l, final SE se) {
+	public static long mirror(final LFN l, final SE se) {
 		return mirror(l, se, null);
 	}
 
@@ -221,7 +221,7 @@ public final class TransferUtils {
 	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
 	 *         </ul>
 	 */
-	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica) {
+	public static long mirror(final LFN l, final SE se, final String onCompletionRemoveReplica) {
 		return mirror(l, se, onCompletionRemoveReplica, 3);
 	}
 
@@ -244,7 +244,7 @@ public final class TransferUtils {
 	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
 	 *         </ul>
 	 */
-	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica, final int maxAttempts) {
+	public static long mirror(final LFN l, final SE se, final String onCompletionRemoveReplica, final int maxAttempts) {
 		if (l == null || !l.exists || !l.isFile() || se == null)
 			return -1;
 

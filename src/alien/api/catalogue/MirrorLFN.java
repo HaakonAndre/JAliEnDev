@@ -24,7 +24,7 @@ public class MirrorLFN extends Request {
 	private final HashMap<String, Integer> qos;
 	private final boolean useGUID;
 	private final Integer attempts;
-	private HashMap<String, Integer> results;
+	private HashMap<String, Long> results;
 
 	/**
 	 * @param user
@@ -74,7 +74,7 @@ public class MirrorLFN extends Request {
 	/**
 	 * @return results
 	 */
-	public HashMap<String, Integer> getResultHashMap() {
+	public HashMap<String, Long> getResultHashMap() {
 		return this.results;
 	}
 }
