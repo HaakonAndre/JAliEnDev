@@ -14,7 +14,7 @@ import lia.util.process.ExternalProcess.ExitStatus;
  * @author costing
  * @since 2016-10-05
  */
-public class ProcessWithTimeout {
+public final class ProcessWithTimeout {
 
 	private static final class CopyThread extends Thread {
 		private final InputStream is;
