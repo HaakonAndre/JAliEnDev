@@ -279,7 +279,7 @@ public final class TransferUtils {
 			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, lfnToCopy.getCanonicalName(), se.seName);
 
 			if (db.moveNext())
-				return db.geti(1);
+				return db.getl(1);
 
 			db.setReadOnly(false);
 
@@ -305,12 +305,12 @@ public final class TransferUtils {
 			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
 				return -4;
 
-			final Integer i = db.getLastGeneratedKey();
+			final Long ret = db.getLastGeneratedKeyLong();
 
-			if (i == null)
+			if (ret == null)
 				return -5;
 
-			return i.intValue();
+			return ret.longValue();
 		}
 	}
 

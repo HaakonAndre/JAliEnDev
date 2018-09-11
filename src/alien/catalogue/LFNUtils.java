@@ -1165,6 +1165,9 @@ public class LFNUtils {
 		else
 			lfn = getLFN(path);
 
+		if (lfn==null)
+			return null;
+
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
@@ -1197,7 +1200,7 @@ public class LFNUtils {
 			if (allJobFiles == null || allJobFiles.size() == 0)
 				return null;
 
-			for (final LFN file : allJobFiles) {
+			for (final LFN file : allJobFiles)
 				if (file.isFile()) {
 					final Set<PFN> pfns = file.whereis();
 
@@ -1217,7 +1220,6 @@ public class LFNUtils {
 									return null;
 								}
 				}
-			}
 		}
 		return ret;
 	}
