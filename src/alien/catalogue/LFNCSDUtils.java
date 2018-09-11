@@ -26,6 +26,8 @@ import com.datastax.driver.core.ConsistencyLevel;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 import lazyj.Format;
 
 /**
@@ -370,7 +372,7 @@ public class LFNCSDUtils {
 		final Set<LFN_CSD> ret = new TreeSet<>();
 
 		// if need to resolve wildcard and recurse, we call the recurse method
-		if (path.contains("*")) {
+		if (path.contains("*") || path.contains("?")) {
 			return recurseAndFilterLFNs("ls", path, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
 		}
 
@@ -424,6 +426,53 @@ public class LFNCSDUtils {
 
 		lfn = "/" + lfn;
 		return new LFN_CSD(lfn, true, null, p_id_lfn, id);
+	}
+
+	/**
+	 * @param user
+	 * @param source
+	 * @param destination
+	 * @return final lfn
+	 */
+	public static LFN_CSD mv(final AliEnPrincipal user, final String source, final String destination) {
+		// Let's assume for now that the source and destination come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+		// final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
+		if (source.equals(destination)) {
+			logger.info("LFNCSDUtils: mv: the source and destination are the same: " + source + " -> " + destination);
+			return null;
+		}
+
+		LFN_CSD lfnc_final = null;
+		String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
+		LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
+		LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
+
+		if (!lfnc_target_parent.exists) {
+			logger.info("LFNCSDUtils: mv: the destination doesn't exist: " + destination);
+			return null;
+		}
+		if (!AuthorizationChecker.canWrite(lfnc_target_parent, user)) {
+			logger.info("LFNCSDUtils: mv: no permission on the destination: " + destination);
+			return null;
+		}
+
+		// expand wildcards and filter if needed
+		if (source.contains("*") || source.contains("?")) {
+			// TODO: recurseAndFilter...
+		}
+		else {
+			LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
+			// check permissions to move
+			if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
+				logger.info("LFNCSDUtils: mv: no permission on the source: " + destination);
+				return null;
+			}
+
+			lfnc_final = LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent);
+		}
+
+		return lfnc_final;
 	}
 
 }
