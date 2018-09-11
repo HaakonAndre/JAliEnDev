@@ -126,6 +126,14 @@ public class JBoxServer extends Thread {
 		}
 	}
 
+	private static synchronized void startShutdownThread() {
+		if (shutdownThread == null) {
+			shutdownThread = new ShutdownThread();
+
+			shutdownThread.start();
+		}
+	}
+
 	/**
 	 * Start the server on a given port
 	 *
@@ -160,11 +168,7 @@ public class JBoxServer extends Thread {
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
 
-		if (shutdownThread == null) {
-			shutdownThread = new ShutdownThread();
-
-			shutdownThread.start();
-		}
+		startShutdownThread();
 	}
 
 	/**
