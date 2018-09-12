@@ -434,7 +434,7 @@ public class LFNCSDUtils {
 	 * @param destination
 	 * @return final lfn
 	 */
-	public static LFN_CSD mv(final AliEnPrincipal user, final String source, final String destination) {
+	public static Set<LFN_CSD> mv(final AliEnPrincipal user, final String source, final String destination) {
 		// Let's assume for now that the source and destination come as absolute paths, otherwise:
 		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
 		// final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
@@ -443,7 +443,7 @@ public class LFNCSDUtils {
 			return null;
 		}
 
-		LFN_CSD lfnc_final = null;
+		TreeSet<LFN_CSD> lfnc_final = new TreeSet<>();
 		String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
 		LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
 		LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
@@ -459,17 +459,31 @@ public class LFNCSDUtils {
 
 		// expand wildcards and filter if needed
 		if (source.contains("*") || source.contains("?")) {
-			// TODO: recurseAndFilter...
+			Collection<LFN_CSD> lfnsToMv = recurseAndFilterLFNs("mv", source, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+
+			for (LFN_CSD l : lfnsToMv) {
+				// check permissions to move
+				if (!AuthorizationChecker.canWrite(l, user)) {
+					logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
+					return null;
+				}
+				// move and add to the final collection of lfns
+				LFN_CSD lfncf = LFN_CSD.mv(l, lfnc_target, lfnc_target_parent);
+				if (lfncf != null)
+					lfnc_final.add(lfncf);
+			}
 		}
 		else {
 			LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
 			// check permissions to move
 			if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
-				logger.info("LFNCSDUtils: mv: no permission on the source: " + destination);
+				logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
 				return null;
 			}
-
-			lfnc_final = LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent);
+			// move and add to the final collection of lfns
+			LFN_CSD lfncf = LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent);
+			if (lfncf != null)
+				lfnc_final.add(lfncf);
 		}
 
 		return lfnc_final;
