@@ -432,9 +432,9 @@ public class LFNCSDUtils {
 	 * @param user
 	 * @param source
 	 * @param destination
-	 * @return final lfn
+	 * @return final lfns moved and errors
 	 */
-	public static Set<LFN_CSD> mv(final AliEnPrincipal user, final String source, final String destination) {
+	public static ArrayList<Set<LFN_CSD>> mv(final AliEnPrincipal user, final String source, final String destination) {
 		// Let's assume for now that the source and destination come as absolute paths, otherwise:
 		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
 		// final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
@@ -443,7 +443,11 @@ public class LFNCSDUtils {
 			return null;
 		}
 
-		TreeSet<LFN_CSD> lfnc_final = new TreeSet<>();
+		TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
+		TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
+		ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
+		ret.add(lfnc_ok);
+		ret.add(lfnc_error);
 		String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
 		LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
 		LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
@@ -465,12 +469,15 @@ public class LFNCSDUtils {
 				// check permissions to move
 				if (!AuthorizationChecker.canWrite(l, user)) {
 					logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
-					return null;
+					lfnc_error.add(l);
+					continue;
 				}
 				// move and add to the final collection of lfns
 				LFN_CSD lfncf = LFN_CSD.mv(l, lfnc_target, lfnc_target_parent);
 				if (lfncf != null)
-					lfnc_final.add(lfncf);
+					lfnc_ok.add(lfncf);
+				else
+					lfnc_error.add(l);
 			}
 		}
 		else {
@@ -478,15 +485,74 @@ public class LFNCSDUtils {
 			// check permissions to move
 			if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
 				logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
-				return null;
+				lfnc_error.add(lfnc_source);
+				return ret;
 			}
 			// move and add to the final collection of lfns
 			LFN_CSD lfncf = LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent);
 			if (lfncf != null)
-				lfnc_final.add(lfncf);
+				lfnc_ok.add(lfncf);
+			else
+				lfnc_error.add(lfnc_source);
 		}
 
-		return lfnc_final;
+		return ret;
+	}
+
+	/**
+	 * @param user
+	 * @param lfn
+	 * @return final lfns deleted and errors
+	 */
+	public static ArrayList<Set<LFN_CSD>> delete(final AliEnPrincipal user, final String lfn, final boolean purge, final boolean recursive, final boolean notifyCache) {
+		// Let's assume for now that the lfn come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+		TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
+		TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
+		ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
+		ret.add(lfnc_ok);
+		ret.add(lfnc_error);
+
+		// expand wildcards and filter if needed
+		if (lfn.contains("*") || lfn.contains("?")) {
+			Collection<LFN_CSD> lfnsToRm = recurseAndFilterLFNs("rm", lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+
+			for (LFN_CSD l : lfnsToRm) {
+				// check permissions to rm
+				if (!AuthorizationChecker.canWrite(l, user)) {
+					logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
+					lfnc_error.add(l);
+					continue;
+				}
+				// rm and add to the final collection of lfns
+				if (l.delete(purge, recursive, notifyCache)) {
+					lfnc_ok.add(l);
+				}
+				else {
+					logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + l.getCanonicalName());
+					lfnc_error.add(l);
+				}
+			}
+		}
+		else {
+			LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
+			// check permissions to rm
+			if (!AuthorizationChecker.canWrite(lfnc, user)) {
+				logger.info("LFNCSDUtils: rm: no permission to delete lfn: " + lfnc);
+				lfnc_error.add(lfnc);
+				return ret;
+			}
+			// rm and add to the final collection of lfns
+			if (lfnc.delete(purge, recursive, notifyCache)) {
+				lfnc_ok.add(lfnc);
+			}
+			else {
+				logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + lfnc.getCanonicalName());
+				lfnc_error.add(lfnc);
+			}
+		}
+
+		return ret;
 	}
 
 }
