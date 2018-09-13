@@ -502,6 +502,9 @@ public class LFNCSDUtils {
 	/**
 	 * @param user
 	 * @param lfn
+	 * @param purge
+	 * @param recursive
+	 * @param notifyCache
 	 * @return final lfns deleted and errors
 	 */
 	public static ArrayList<Set<LFN_CSD>> delete(final AliEnPrincipal user, final String lfn, final boolean purge, final boolean recursive, final boolean notifyCache) {
