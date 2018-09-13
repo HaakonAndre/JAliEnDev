@@ -1359,7 +1359,8 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			final UUID final_parent_id = (lfnc_target.exists && lfnc_target.isDirectory() ? lfnc_target.id : lfnc_target_parent.id);
 			final boolean different_parent = !final_parent_id.equals(lfnc_source.parent_id);
-			final boolean different_name = !lfnc_source.isDirectory() || !lfnc_target.exists;
+			final boolean different_name = (!lfnc_source.isDirectory() && !lfnc_target.isDirectory() && !lfnc_source.child.equals(lfnc_target.child))
+					|| (lfnc_source.isDirectory() && !lfnc_target.exists && !lfnc_source.child.equals(lfnc_target.child));
 
 			statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? AND path=?");
 			bs.add(statement.bind(lfnc_source.parent_id, lfnc_source.child));
@@ -1384,7 +1385,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			lfnc_source.prepareInsertStatements(bs, session, false, different_parent, lfn_index_table, lfn_ids_table, lfn_metadata_table, se_lookup_table);
 
 			if (different_parent || different_name) {
-				lfnc_source.path = lfnc_target.path;
+				lfnc_source.path = (lfnc_target.isDirectory() && !different_name ? lfnc_target.getCanonicalName() : lfnc_target.path);
 				lfnc_source.refreshCanonicalName();
 			}
 
