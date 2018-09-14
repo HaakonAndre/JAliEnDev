@@ -838,6 +838,9 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return false;
 		}
 
+		if (res)
+			exists = true;
+
 		return res;
 	}
 
@@ -882,15 +885,14 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		}
 
 		// Insert into se_lookup
-		if (insert_se_lookup && (type == 'a' || type == 'f') && size > 0) {
+		if (insert_se_lookup && (type == 'a' || type == 'f') && size > 0 && pfns != null) {
 			int moduloc = Math.abs(id.hashCode() % modulo_se_lookup);
-			if (pfns != null) {
-				final Set<Integer> seNumbers = pfns.keySet();
 
-				for (int seNumber : seNumbers) {
-					statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
-					bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(moduloc), id, Long.valueOf(size), owner));
-				}
+			final Set<Integer> seNumbers = pfns.keySet();
+
+			for (int seNumber : seNumbers) {
+				statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
+				bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(moduloc), id, Long.valueOf(size), owner));
 			}
 		}
 		return bs;
@@ -1407,6 +1409,73 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		canonicalName = path + child;
 		if (type == 'd' && !canonicalName.endsWith("/"))
 			canonicalName += "/";
+	}
+
+	/**
+	 * @return true is LFN_CSD updated correctly, false otherwise
+	 */
+	public boolean update() {
+		return update(false, false, null);
+	}
+
+	/**
+	 * @param owner_or_size_changed
+	 * @param ctime_changed
+	 * @param old_ctime
+	 * @return true is LFN_CSD updated correctly, false otherwise. Takes into account if the owner or size changed to update se_lookup too
+	 */
+	public boolean update(final boolean owner_or_size_changed, final boolean ctime_changed, final Date old_ctime) {
+		boolean ok = true;
+		try {
+			@SuppressWarnings("resource")
+			final Session session = DBCassandra.getInstance();
+			if (session == null) {
+				logger.severe("LFN_CSD: update: could not get an instance: " + this.getCanonicalName());
+				return false;
+			}
+
+			PreparedStatement statement;
+			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+			bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+
+			if (ctime_changed) {
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? AND path=? AND ctime=?");
+				bs.add(statement.bind(parent_id, child, old_ctime));
+
+				statement = getOrInsertPreparedStatement(session, "INSERT INTO " + lfn_index_table + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
+				bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
+			}
+			else {
+				statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_index_table + " SET ctime=?,flag=? WHERE path_id=? AND path=?");
+				bs.add(statement.bind(ctime, Integer.valueOf(flag), parent_id, child));
+			}
+
+			statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_ids_table + " SET ctime=?,flag=? WHERE child_id=?");
+			bs.add(statement.bind(ctime, Integer.valueOf(flag), id));
+
+			statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_metadata_table + " SET size=?,owner=?,gowner=?,ctime=?,checksum=?,metadata=?,pfns=? WHERE parent_id=? AND id=?");
+			bs.add(statement.bind(Long.valueOf(size), owner, gowner, ctime, checksum, metadata, pfns, parent_id, id));
+
+			if (owner_or_size_changed && pfns != null) {
+				final Set<Integer> seNumbers = pfns.keySet();
+
+				for (int seNumber : seNumbers) {
+					statement = getOrInsertPreparedStatement(session, "UPDATE " + se_lookup_table + " SET owner=?,size=? where senumber=?,modulo=? AND id=?");
+					bs.add(statement.bind(owner, Long.valueOf(size), Integer.valueOf(seNumber), Integer.valueOf(modulo), id));
+				}
+			}
+
+			ResultSet rs = session.execute(bs);
+			if (!rs.wasApplied()) {
+				logger.severe("LFN_CSD: update: problem updating entry: " + getCanonicalName());
+				ok = false;
+			}
+		} catch (Exception e) {
+			logger.severe("LFN_CSD: update: problem update entry: " + e.toString());
+			ok = false;
+		}
+
+		return ok;
 	}
 
 }
