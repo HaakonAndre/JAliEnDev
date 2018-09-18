@@ -168,7 +168,7 @@ public class ArchiveMemberDelete {
 		try {
 			remotePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteLFN, null, null)).getPFNs();
 		} catch (final ServerException e1) {
-			System.err.println("[" + new Date() + "] " + xmlEntry + ": Could not get PFN");
+			System.err.println("[" + new Date() + "] " + xmlEntry + ": Could not get PFN. Abort");
 			e1.printStackTrace();
 			return;
 		}
