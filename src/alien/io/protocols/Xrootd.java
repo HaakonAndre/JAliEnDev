@@ -643,7 +643,16 @@ public class Xrootd extends Protocol {
 
 			command.addAll(getCommonArguments(applicationName));
 
-			command.add("-np"); // no progress bar
+			// no progress bar
+			if (xrootdNewerThan4)
+				command.add("-N");
+			else
+				command.add("-np");
+
+			// explicitly ask to create intermediate paths
+			if (xrootdNewerThan4)
+				command.add("-p");
+
 			command.add("-v"); // display summary output
 			command.add("-f"); // re-create a file if already present
 			command.add("-P"); // request POSC (persist-on-successful-close) processing to create a new file
@@ -1123,6 +1132,7 @@ public class Xrootd extends Protocol {
 			command.add("--force");
 			command.add("--path");
 			command.add("--posc");
+			command.add("--nopbar");
 
 			final String appName = ConfigUtils.getApplicationName("transfer-3rd");
 
