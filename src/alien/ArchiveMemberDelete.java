@@ -47,8 +47,7 @@ public class ArchiveMemberDelete {
 		if (args.length > 0) {
 			try {
 				commander = JAliEnCOMMander.getInstance();
-			}
-			catch (final ExceptionInInitializerError | NullPointerException e) {
+			} catch (final ExceptionInInitializerError | NullPointerException e) {
 				System.err.println("Failed to get a JAliEnCOMMander instance. Abort");
 				e.printStackTrace();
 				return;
@@ -130,6 +129,15 @@ public class ArchiveMemberDelete {
 						System.err.println("[" + new Date() + "] " + "Failed to get directory listing for " + registerPath + ". Abort.");
 						return;
 					}
+
+					// Check if there is another copy of the same file in parentdir
+					final LFN registerMember = commander.c_api.getLFN(registerPath + "/" + file.getFileName());
+					final LFN parentMember = commander.c_api.getLFN(parentdir + "/" + file.getFileName());
+					if (parentMember != null && parentMember.guid.equals(registerMember.guid)) {
+						commander.c_api.removeLFN(registerMember.getCanonicalName(), false, false);
+						continue;
+					}
+
 					System.out.println("[" + new Date() + "] " + "Moving " + registerPath + "/" + file.getFileName());
 					if (commander.c_api.moveLFN(registerPath + "/" + file.getFileName(), parentdir + "/" + file.getFileName()) == null) {
 						System.err.println("[" + new Date() + "] " + "Failed to move " + file.getFileName() + ". Abort.");
@@ -417,16 +425,34 @@ public class ArchiveMemberDelete {
 			System.out.println("[" + new Date() + "] Renaming uploaded archive");
 			if (commander.c_api.moveLFN(registerPath + "/" + archiveName, remoteArchive) == null) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename the archive " + registerPath + "/" + archiveName);
-				validation.println("Renaming failed " + registerPath + "/" + archiveName);
-				return;
+
+				// Check if there is another copy of the same file in parentdir
+				final LFN registerArchive = commander.c_api.getLFN(registerPath + "/" + archiveName);
+				final LFN parentArchive = commander.c_api.getLFN(remoteArchive);
+				if (parentArchive != null && parentArchive.guid.equals(registerArchive.guid)) {
+					commander.c_api.removeLFN(registerArchive.getCanonicalName(), false, false);
+				}
+				else {
+					validation.println("Renaming failed " + registerPath + "/" + archiveName);
+					return;
+				}
 			}
 
 			// Rename new archive members
 			for (final String file : listOfFiles) {
 				if (commander.c_api.moveLFN(registerPath + "/" + file, parentdir + "/" + file) == null) {
 					System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to rename archive member " + parentdir + "/" + file);
-					validation.println("Renaming failed " + registerPath + "/" + file);
-					return;
+
+					// Check if there is another copy of the same file in parentdir
+					final LFN registerMember = commander.c_api.getLFN(registerPath + "/" + file);
+					final LFN parentMember = commander.c_api.getLFN(parentdir + "/" + file);
+					if (parentMember != null && parentMember.guid.equals(registerMember.guid)) {
+						commander.c_api.removeLFN(registerMember.getCanonicalName(), false, false);
+					}
+					else {
+						validation.println("Renaming failed " + parentdir + "/" + file);
+						return;
+					}
 				}
 			}
 
