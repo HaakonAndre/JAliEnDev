@@ -275,6 +275,26 @@ public class LFNUtils {
 	/**
 	 * @param user
 	 * @param lfn
+	 * @param recursive
+	 * @param purge 
+	 * @return status of the removal
+	 */
+	public static boolean rmLFN(final AliEnPrincipal user, final LFN lfn, final boolean recursive, final boolean purge) {
+		if (lfn != null && lfn.exists) {
+			if (AuthorizationChecker.canWrite(lfn, user)) {
+				logger.log(Level.SEVERE, "Request from [" + user.getName() + "], rmLFN [" + lfn.getCanonicalName() + "]");
+				return lfn.delete(purge, recursive);
+			}
+			return false;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param user
+	 * @param lfn
 	 * @param newpath
 	 * @return status of the removal
 	 */
@@ -1165,7 +1185,7 @@ public class LFNUtils {
 		else
 			lfn = getLFN(path);
 
-		if (lfn==null)
+		if (lfn == null)
 			return null;
 
 		// find closest SE

@@ -132,7 +132,7 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path
+	 * @param path absolute path to the LFN
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path) {
@@ -149,8 +149,8 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path
-	 * @param recursive
+	 * @param path absolute path to the LFN
+	 * @param recursive <code>true</code> to delete directory's content recursively
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive) {
@@ -165,10 +165,29 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Remove a LFN in the Catalogue
+	 *
+	 * @param path absolute path to the LFN
+	 * @param recursive <code>true</code> to delete directory's content recursively
+	 * @param purge <code>true</code> to delete a physical copy
+	 * @return state of the LFN's deletion <code>null</code>
+	 */
+	public boolean removeLFN(final String path, final boolean recursive, final boolean purge) {
+		try {
+			return Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), path, recursive, purge)).wasRemoved();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not remove the LFN: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return false;
+	}
+
+	/**
 	 * Move a LFN in the Catalogue
 	 *
-	 * @param path
-	 * @param newpath
+	 * @param path absolute path to the LFN
+	 * @param newpath absolute path to the target
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public LFN moveLFN(final String path, final String newpath) {
