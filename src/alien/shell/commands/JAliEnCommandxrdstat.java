@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -50,6 +51,8 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 			final GUID referenceGUID;
 
+			PFN onePfnToCheck = null;
+
 			if (lfn == null) {
 				if (GUIDUtils.isValidGUID(lfnName)) {
 					referenceGUID = commander.c_api.getGUID(lfnName);
@@ -60,8 +63,46 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					}
 				}
 				else {
-					commander.printErrln("This LFN does not exist in the catalogue: " + lfnName);
-					continue;
+					if (lfnName.startsWith("root://")) {
+						// is it a GUID-based PFN?
+
+						int idx = lfnName.lastIndexOf('/');
+
+						String lastToken = lfnName.substring(idx + 1);
+
+						if (GUIDUtils.isValidGUID(lastToken))
+							referenceGUID = commander.c_api.getGUID(lastToken, true, false);
+						else
+							referenceGUID = GUIDUtils.createGuid();
+
+						if (referenceGUID.exists()) {
+							for (PFN p : referenceGUID.getPFNs())
+								if (p.pfn.equals(lfnName)) {
+									onePfnToCheck = p;
+									break;
+								}
+						}
+
+						if (onePfnToCheck == null) {
+							SE fallbackSE = null;
+							SE oneSE = null;
+
+							for (final SE se : SEUtils.getSEs(null)) {
+								if (lfnName.startsWith(se.seioDaemons + "/" + se.seStoragePath)) {
+									oneSE = se;
+								}
+								else
+									if (lfnName.startsWith(se.seioDaemons))
+										fallbackSE = se;
+							}
+
+							onePfnToCheck = new PFN(lfnName, referenceGUID, oneSE != null ? oneSE : fallbackSE);
+						}
+					}
+					else {
+						commander.printErrln("This LFN does not exist in the catalogue: " + lfnName);
+						continue;
+					}
 				}
 			}
 			else
@@ -74,12 +115,19 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 			Collection<PFN> pfnsToCheck;
 
-			if (bDownload)
-				pfnsToCheck = commander.c_api.getPFNsToRead(referenceGUID, null, null);
-			else
-				pfnsToCheck = referenceGUID.getPFNs();
+			if (onePfnToCheck != null) {
+				commander.printOutln("Checking this PFN: " + onePfnToCheck.pfn);
 
-			commander.printOutln("Checking the replicas of " + (lfn != null ? lfn.getCanonicalName() : referenceGUID.guid));
+				pfnsToCheck = Arrays.asList(onePfnToCheck);
+			}
+			else {
+				if (bDownload)
+					pfnsToCheck = commander.c_api.getPFNsToRead(referenceGUID, null, null);
+				else
+					pfnsToCheck = referenceGUID.getPFNs();
+
+				commander.printOutln("Checking the replicas of " + (lfn != null ? lfn.getCanonicalName() : referenceGUID));
+			}
 
 			for (final PFN p : pfnsToCheck) {
 				final SE se = p.getSE();
@@ -96,11 +144,11 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					xrootd = (Xrootd) Factory.xrootd.clone();
 
 				try {
-					final String status = (bDownload && ignoreStat) ? null : xrootd.xrdstat(p, false, false, false);
+					final String status = (bDownload && ignoreStat && (onePfnToCheck == null)) ? null : xrootd.xrdstat(p, false, false, false);
 
 					// xrdstat was ok at this point
 
-					if (bDownload) {
+					if (bDownload && onePfnToCheck == null) {
 						File f = null;
 
 						String warning = null;
