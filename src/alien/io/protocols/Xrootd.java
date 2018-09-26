@@ -775,8 +775,10 @@ public class Xrootd extends Protocol {
 
 		final String appName = ConfigUtils.getApplicationName(defaultApplicationName);
 
-		if (appName != null)
+		if (appName != null) {
 			ret.add("-ODeos.app=" + appName);
+			ret.add("-DSAppName=" + appName);
+		}
 
 		return ret;
 	}
@@ -1038,7 +1040,7 @@ public class Xrootd extends Protocol {
 
 				final long filesize = checkOldOutputOnSize(exitStatus.getStdOut());
 
-				if (pfn.getGuid().size == filesize)
+				if (pfn.getGuid().size <= 0 || pfn.getGuid().size == filesize)
 					return cleanupXrdOutput(exitStatus.getStdOut());
 
 				if (sleep == 0 || !retryWithDelay)
