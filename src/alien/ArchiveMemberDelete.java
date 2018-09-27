@@ -133,9 +133,11 @@ public class ArchiveMemberDelete {
 					// Check if there is another copy of the same file in parentdir
 					final LFN registerMember = commander.c_api.getLFN(registerPath + "/" + file.getFileName());
 					final LFN parentMember = commander.c_api.getLFN(parentdir + "/" + file.getFileName());
-					if (parentMember != null && parentMember.guid.equals(registerMember.guid)) {
-						commander.c_api.removeLFN(registerMember.getCanonicalName(), false, false);
-						continue;
+					if (parentMember != null) {
+						if (parentMember.guid.equals(registerMember.guid))
+							commander.c_api.removeLFN(parentMember.getCanonicalName(), false, false);
+						else
+							commander.c_api.removeLFN(parentMember.getCanonicalName());
 					}
 
 					System.out.println("[" + new Date() + "] " + "Moving " + registerPath + "/" + file.getFileName());
