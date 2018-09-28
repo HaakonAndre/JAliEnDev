@@ -126,7 +126,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 				else
 					pfnsToCheck = referenceGUID.getPFNs();
 
-				commander.printOutln("Checking the replicas of " + (lfn != null ? lfn.getCanonicalName() : referenceGUID));
+				commander.printOutln("Checking the replicas of " + (lfn != null ? lfn.getCanonicalName() : referenceGUID.guid));
 			}
 
 			for (final PFN p : pfnsToCheck) {
