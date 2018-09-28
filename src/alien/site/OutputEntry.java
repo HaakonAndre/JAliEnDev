@@ -250,9 +250,10 @@ public class OutputEntry implements Serializable {
 		final byte[] buff = new byte[8192];
 
 		try (FileInputStream fis = new FileInputStream(fToAdd)) {
-			final int len = fis.read(buff);
+			int len;
 
-			crc32.update(buff, 0, len);
+			while ((len = fis.read(buff)) > 0)
+				crc32.update(buff, 0, len);
 		}
 
 		return crc32.getValue();
