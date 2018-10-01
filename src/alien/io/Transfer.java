@@ -79,7 +79,7 @@ public class Transfer implements Serializable, Runnable {
 	 */
 	private static final long serialVersionUID = -4620016257875988468L;
 
-	private final int transferId;
+	private final long transferId;
 
 	/**
 	 * Source pfns, package protected
@@ -130,7 +130,7 @@ public class Transfer implements Serializable, Runnable {
 	 * @param onCompleteRemoveReplica
 	 *            replica to remove after a successful transfer
 	 */
-	public Transfer(final int transferId, final Collection<PFN> sources, final Collection<PFN> targets, final String onCompleteRemoveReplica) {
+	public Transfer(final long transferId, final Collection<PFN> sources, final Collection<PFN> targets, final String onCompleteRemoveReplica) {
 		this.sources = sources;
 
 		if (this.sources == null || this.sources.size() == 0)
@@ -528,7 +528,7 @@ public class Transfer implements Serializable, Runnable {
 	/**
 	 * @return the transfer ID
 	 */
-	public int getTransferId() {
+	public long getTransferId() {
 		return transferId;
 	}
 

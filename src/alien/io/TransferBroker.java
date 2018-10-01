@@ -182,7 +182,7 @@ public class TransferBroker {
 
 		touch(null, agent);
 
-		int transferId = -1;
+		long transferId = -1;
 		String sLFN = null;
 		String targetSE = null;
 		String onDeleteRemoveReplica = null;
@@ -210,7 +210,7 @@ public class TransferBroker {
 
 			do
 				try (DBFunctions db = ConfigUtils.getDB("transfers")) {
-					transferId = dbCached.geti(1);
+					transferId = dbCached.getl(1);
 					sLFN = dbCached.gets(2);
 					targetSE = dbCached.gets(3);
 					onDeleteRemoveReplica = dbCached.gets(4);
@@ -304,7 +304,7 @@ public class TransferBroker {
 		else {
 			lfn = LFNUtils.getLFN(sLFN);
 
-			if (lfn==null || !lfn.exists) {
+			if (lfn == null || !lfn.exists) {
 				logger.log(Level.WARNING, "LFN '" + sLFN + "' doesn't exist in the catalogue for transfer ID " + transferId);
 				markTransfer(transferId, Transfer.FAILED_SYSTEM, "LFN doesn't exist in the catalogue");
 				return null;
@@ -666,7 +666,7 @@ public class TransferBroker {
 
 			db.setReadOnly(true);
 
-			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Integer.valueOf(t.getTransferId()),
+			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Long.valueOf(t.getTransferId()),
 					Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
 
 			db.setReadOnly(false);
@@ -699,7 +699,7 @@ public class TransferBroker {
 				values.put("se_name", "unknown");
 
 			values.put("last_active", Long.valueOf(System.currentTimeMillis() / 1000));
-			values.put("transfer_id", Integer.valueOf(t.getTransferId()));
+			values.put("transfer_id", Long.valueOf(t.getTransferId()));
 			values.put("transfer_agent_id", Integer.valueOf(ta.getTransferAgentID()));
 			values.put("pid", Integer.valueOf(MonitorFactory.getSelfProcessID()));
 			values.put("host", MonitorFactory.getSelfHostname());
@@ -727,7 +727,7 @@ public class TransferBroker {
 
 			db.setReadOnly(true);
 
-			db.query("SELECT status FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(t.getTransferId()));
+			db.query("SELECT status FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Long.valueOf(t.getTransferId()));
 
 			db.setReadOnly(false);
 
@@ -746,7 +746,7 @@ public class TransferBroker {
 		return true;
 	}
 
-	private static boolean markTransfer(final int transferId, final int exitCode, final String reason) {
+	private static boolean markTransfer(final long transferId, final int exitCode, final String reason) {
 		try (DBFunctions db = ConfigUtils.getDB("transfers")) {
 			if (db == null)
 				return false;
@@ -760,9 +760,11 @@ public class TransferBroker {
 
 			int finalExitCode = exitCode;
 
+			final Long transfer = Long.valueOf(transferId);
+
 			if (exitCode > Transfer.OK && exitCode < Transfer.DELAYED) {
 				db.setReadOnly(true);
-				db.query("SELECT attempts FROM TRANSFERS_DIRECT WHERE transferId=?;", false, Integer.valueOf(transferId));
+				db.query("SELECT attempts FROM TRANSFERS_DIRECT WHERE transferId=?;", false, transfer);
 				db.setReadOnly(false);
 
 				if (db.moveNext() && db.geti(1) > 0)
@@ -770,13 +772,12 @@ public class TransferBroker {
 			}
 
 			db.query("update TRANSFERS_DIRECT set status=?, reason=?, finished=?, attempts=attempts-1 WHERE transferId=?;", false, getTransferStatus(finalExitCode), formattedReason,
-					Long.valueOf(System.currentTimeMillis() / 1000), Integer.valueOf(transferId));
+					Long.valueOf(System.currentTimeMillis() / 1000), transfer);
 
 			if (db.getUpdateCount() < 1)
 				return false;
 
-			db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId=?);", false,
-					Integer.valueOf(transferId));
+			db.query("update PROTOCOLS set current_transfers=greatest(coalesce(current_transfers,0)-1,0) WHERE sename=(SELECT destination FROM TRANSFERS_DIRECT WHERE transferId=?);", false, transfer);
 		}
 
 		return true;
