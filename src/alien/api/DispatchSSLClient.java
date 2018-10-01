@@ -107,7 +107,9 @@ public class DispatchSSLClient extends Thread {
 	 */
 	public static DispatchSSLClient getInstance(final String address, final int p) throws IOException {
 
-		if (instance.get(Integer.valueOf(p)) == null) {
+		final Integer portNo = Integer.valueOf(p);
+
+		if (instance.get(portNo) == null) {
 			// connect to the other end
 			logger.log(Level.INFO, "Connecting to JCentral on " + address + ":" + p);
 			System.out.println("Connecting to JCentral on " + address + ":" + p);
@@ -156,7 +158,7 @@ public class DispatchSSLClient extends Thread {
 
 					final DispatchSSLClient sc = new DispatchSSLClient(client);
 					System.out.println("Connection to JCentral established.");
-					instance.put(Integer.valueOf(p), sc);
+					instance.put(portNo, sc);
 				}
 				else
 					logger.log(Level.SEVERE, "We didn't get any peer/service cert. NOT GOOD!");
@@ -172,7 +174,7 @@ public class DispatchSSLClient extends Thread {
 
 		}
 
-		return instance.get(Integer.valueOf(p));
+		return instance.get(portNo);
 	}
 
 	@SuppressWarnings("unused")
