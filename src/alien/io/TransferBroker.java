@@ -659,15 +659,14 @@ public class TransferBroker {
 			db.setQueryTimeout(600);
 
 			if (t == null) {
-				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(ta.getPID()),
-						ta.getHostName());
+				db.query("DELETE FROM active_transfers WHERE transfer_agent_id=? AND pid=? AND host=?;", false, ta.getTransferAgentID(), Integer.valueOf(ta.getPID()), ta.getHostName());
 				return true;
 			}
 
 			db.setReadOnly(true);
 
 			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Long.valueOf(t.getTransferId()),
-					Integer.valueOf(ta.getTransferAgentID()), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
+					ta.getTransferAgentID(), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
 
 			db.setReadOnly(false);
 
@@ -700,7 +699,7 @@ public class TransferBroker {
 
 			values.put("last_active", Long.valueOf(System.currentTimeMillis() / 1000));
 			values.put("transfer_id", Long.valueOf(t.getTransferId()));
-			values.put("transfer_agent_id", Integer.valueOf(ta.getTransferAgentID()));
+			values.put("transfer_agent_id", ta.getTransferAgentID());
 			values.put("pid", Integer.valueOf(MonitorFactory.getSelfProcessID()));
 			values.put("host", MonitorFactory.getSelfHostname());
 

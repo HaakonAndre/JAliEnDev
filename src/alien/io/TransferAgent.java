@@ -22,7 +22,7 @@ public class TransferAgent extends Thread {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(TransferAgent.class.getCanonicalName());
 
-	private final int transferAgentID;
+	private final Integer transferAgentID;
 
 	private final int pid = MonitorFactory.getSelfProcessID();
 
@@ -38,7 +38,7 @@ public class TransferAgent extends Thread {
 	public TransferAgent(final int transferAgentID) {
 		super("TransferAgent " + transferAgentID);
 
-		this.transferAgentID = transferAgentID;
+		this.transferAgentID = Integer.valueOf(transferAgentID);
 
 		setDaemon(false);
 	}
@@ -46,7 +46,7 @@ public class TransferAgent extends Thread {
 	/**
 	 * @return this guy's ID
 	 */
-	int getTransferAgentID() {
+	Integer getTransferAgentID() {
 		return transferAgentID;
 	}
 
@@ -119,8 +119,7 @@ public class TransferAgent extends Thread {
 						Thread.sleep(1000 * 30); // try in 30 seconds again to
 													// see if there is anything
 													// for it to do
-					} catch (@SuppressWarnings("unused")
-					final InterruptedException ie) {
+					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
 			}
@@ -192,8 +191,7 @@ public class TransferAgent extends Thread {
 
 					ta.signalStop();
 				}
-			} catch (@SuppressWarnings("unused")
-			final Exception e) {
+			} catch (@SuppressWarnings("unused") final Exception e) {
 				// ignore
 			}
 

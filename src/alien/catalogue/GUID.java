@@ -209,11 +209,9 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @param seNumber
 	 * @return true if updating was ok, false if the entry was not updated
 	 */
-	private boolean addSE(final int seNumber) {
-		final Integer i = Integer.valueOf(seNumber);
-
-		if (!seStringList.contains(i)) {
-			seStringList.add(i);
+	private boolean addSE(final Integer seNumber) {
+		if (!seStringList.contains(seNumber)) {
+			seStringList.add(seNumber);
 
 			return update();
 		}
@@ -227,10 +225,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	 * @param seNumber
 	 * @return true if updating was ok, false if the entry was not updated
 	 */
-	private boolean removeSE(final int seNumber) {
-		final Integer i = Integer.valueOf(seNumber);
-
-		if (!seStringList.remove(i))
+	private boolean removeSE(final Integer seNumber) {
+		if (!seStringList.remove(seNumber))
 			return false;
 
 		return update();
@@ -429,7 +425,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 					final Integer se = Integer.valueOf(pfn.seNumber);
 
-					if (!seStringList.contains(Integer.valueOf(pfn.seNumber))) {
+					if (!seStringList.contains(se)) {
 						seStringList.add(se);
 						tainted = true;
 					}
@@ -466,11 +462,13 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			if (monitor != null)
 				monitor.incrementCounter("PFN_db_insert");
 
-			if (!addSE(pfn.seNumber))
+			final Integer se = Integer.valueOf(pfn.seNumber);
+
+			if (!addSE(se))
 				return false;
 
-			if (!db.query("INSERT INTO G" + tableName + "L_PFN (guidId, pfn, seNumber) VALUES (?, ?, ?)", false, Integer.valueOf(guidId), pfn.getPFN(), Integer.valueOf(pfn.seNumber))) {
-				seStringList.remove(Integer.valueOf(pfn.seNumber));
+			if (!db.query("INSERT INTO G" + tableName + "L_PFN (guidId, pfn, seNumber) VALUES (?, ?, ?)", false, Integer.valueOf(guidId), pfn.getPFN(), se)) {
+				seStringList.remove(se);
 				update();
 				return false;
 			}
@@ -677,11 +675,13 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			if (monitor != null)
 				monitor.incrementCounter("GUID_db_delete");
 
+			final Integer iId = Integer.valueOf(guidId);
+
 			if (purge && (pfnCache == null || pfnCache.size() > 0)) {
 				final String purgeQuery = "INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size) SELECT 1,guid,seNumber,md5,size FROM G" + tableName + "L INNER JOIN G" + tableName
 						+ "L_PFN USING (guidId) INNER JOIN SE using(seNumber) WHERE guidId=? AND seName!='no_se' AND seIoDaemons IS NOT NULL AND pfn LIKE 'root://%';";
 
-				if (db.query(purgeQuery, false, Integer.valueOf(guidId))) {
+				if (db.query(purgeQuery, false, iId)) {
 					final int purged = db.getUpdateCount();
 
 					if (monitor != null)
@@ -699,13 +699,12 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 			final String delQuery = "DELETE FROM G" + tableName + "L WHERE guidId=?;";
 
-			removed = db.query(delQuery, false, Integer.valueOf(guidId));
+			removed = db.query(delQuery, false, iId);
 
 			if (removed)
 				if (db.getUpdateCount() <= 0)
 					removed = false;
 
-			final Integer iId = Integer.valueOf(guidId);
 			final Integer tableId = Integer.valueOf(tableName);
 
 			offer(refDeleteQueue, h, tableId, iId);
@@ -742,6 +741,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 		boolean removedSENumber;
 
+		final Integer seNo = Integer.valueOf(pfn.seNumber);
+
 		try (DBFunctions db = h.getDB()) {
 			if (db == null) {
 				logger.log(Level.WARNING, "Host DB is null for: " + h);
@@ -751,13 +752,13 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 			if (monitor != null)
 				monitor.incrementCounter("PFN_db_delete");
 
-			removedSENumber = removeSE(pfn.seNumber);
+			removedSENumber = removeSE(seNo);
 
 			// final String q =
 			// "DELETE FROM G"+tableName+"L_PFN WHERE guidId="+guidId+" AND pfn='"+Format.escSQL(pfn.getPFN())+"' AND seNumber="+pfn.seNumber;
 			final String q = "DELETE FROM G" + tableName + "L_PFN WHERE guidId=? AND seNumber=?;";
 
-			if (db.query(q, false, Integer.valueOf(guidId), Integer.valueOf(pfn.seNumber))) {
+			if (db.query(q, false, Integer.valueOf(guidId), seNo)) {
 				if (db.getUpdateCount() > 0) {
 					removedSuccessfuly = true;
 
@@ -771,8 +772,8 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 							final SE se = SEUtils.getSE(pfn.seNumber);
 
 							if (se != null && !(se.getName().equalsIgnoreCase("no_se"))) {
-								db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size,pfn) VALUES (1,string2binary(?), ?, ?, ?, ?);", false, g.guid.toString(),
-										Integer.valueOf(pfn.seNumber), g.md5, Long.valueOf(g.size), pfn.pfn.equals(se.generatePFN(g)) ? null : pfn.pfn);
+								db.query("INSERT IGNORE INTO orphan_pfns (flags,guid,se,md5sum,size,pfn) VALUES (1,string2binary(?), ?, ?, ?, ?);", false, g.guid.toString(), seNo, g.md5,
+										Long.valueOf(g.size), pfn.pfn.equals(se.generatePFN(g)) ? null : pfn.pfn);
 
 								SEUtils.incrementStorageCounters(se.seNumber, -1, -g.size);
 							}
@@ -787,7 +788,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		}
 
 		if (!removedSuccessfuly && removedSENumber) {
-			seStringList.add(Integer.valueOf(pfn.seNumber));
+			seStringList.add(seNo);
 			update();
 		}
 
