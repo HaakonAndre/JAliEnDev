@@ -3,6 +3,7 @@
 CURDIR="$(pwd)"
 ARG="${1}"
 
+# detect REAL location of execution even if we are a symlink and/or in a symlinked dir
 if [[ -z "${JALIEN_HOME}" ]]; then
   ## find the location of jalien script
   SOURCE="${BASH_SOURCE[0]}"
@@ -28,24 +29,16 @@ export CLASSPATH="${CLASSPATH}:${JAR_LIST_LIB}"
 cp ${JALIEN_HOME}/trusted_authorities.jks ${BUILDDIR}/
 cp ${JALIEN_HOME}/config/config.properties ${JALIEN_HOME}/config/monitoring.properties ${BUILDDIR}/config/
 
-# compile java classes
-compile_generic () {
+# always generate alien.jar
 find ${JALIEN_HOME}/src -name "*.java" | xargs javac -source 8 -target 8 -O -g -d ${BUILDDIR} || { echo "javac of src/*.java failed" ; exit 1; }
-}
 
-generate_alien () {
-  compile_generic
-  # Clean up all previous jar generated files
-  rm -rf ${JALIEN_HOME}/alien.jar
+# Clean up all previous jar generated files
+rm -rf ${JALIEN_HOME}/alien.jar
 
-  # create general jar file
-  cd ${BUILDDIR}
-  jar cf ${JALIEN_HOME}/alien.jar *
-}
+# create general jar file
+cd ${BUILDDIR} && jar cf ${JALIEN_HOME}/alien.jar *
 
 generate_users () {
-  compile_generic
-
   echo "Preparing alien-users.jar"
   cd "${BUILDDIR}"
   # extract all specified java classes
@@ -62,8 +55,6 @@ generate_users () {
 }
 
 generate_cs () {
-  compile_generic
-
   ## Now all the dependencies in a single file, for central services (+DB drivers, CA, everything else)
   echo "Preparing alien-cs.jar"
   cd "${BUILDDIR}"
@@ -87,8 +78,6 @@ elif [[ "${ARG}" == "cs" ]]; then
   generate_cs
 elif [[ "${ARG}" == "users" ]]; then
   generate_users
-else
-  generate_alien
 fi
 
 ## Cleanup
