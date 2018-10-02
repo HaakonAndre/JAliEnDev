@@ -276,7 +276,7 @@ public class LFNUtils {
 	 * @param user
 	 * @param lfn
 	 * @param recursive
-	 * @param purge 
+	 * @param purge
 	 * @return status of the removal
 	 */
 	public static boolean rmLFN(final AliEnPrincipal user, final LFN lfn, final boolean recursive, final boolean purge) {
@@ -1119,14 +1119,34 @@ public class LFNUtils {
 	 */
 	public static boolean chownLFN(final String path, final String new_owner, final String new_group) {
 		final LFN lfn = getLFN(path);
+
 		if (lfn == null)
 			return false;
-		if (new_owner == null || new_owner.equals(""))
+
+		if (new_owner == null || new_owner.isEmpty())
 			return false;
+
+		final GUID g = GUIDUtils.getGUID(lfn);
+
 		lfn.owner = new_owner;
-		if (new_group != null && !new_group.equals(""))
+
+		if (g != null)
+			g.owner = new_owner;
+
+		if (new_group != null && !new_group.isEmpty()) {
 			lfn.gowner = new_group;
-		return lfn.update();
+
+			if (g != null)
+				g.gowner = new_group;
+		}
+
+		if (!lfn.update())
+			return false;
+
+		if (g != null)
+			g.update();
+
+		return true;
 	}
 
 	/**
