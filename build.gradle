@@ -20,6 +20,12 @@ sourceSets {
 			srcDir 'src'
 		}
 	}
+
+	test {
+		java {
+			srcDir 'src'
+		}
+	}
 }
 
 dependencies {
@@ -91,4 +97,12 @@ task cs(type: Jar, dependsOn: jar) {
 
 task all {
 	dependsOn jar, users, cs
+}
+
+test {
+	useJUnitPlatform()
+	include 'alien/test/**'
+	testLogging {
+		events "passed", "skipped", "failed"
+	}
 }
