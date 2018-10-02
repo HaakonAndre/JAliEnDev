@@ -109,9 +109,9 @@ public class FixCompression {
 		System.out.println();
 		System.out.println("[" + new Date() + "] Processing " + parentdir + "/root_archive.zip");
 
-		// Create file marker to leave trace
+		// Check if this directory has been already processed
 		if (commander.c_api.getLFN(parentdir + "/.fixed") != null) {
-			System.err.println("[" + new Date() + "] " + parentdir + "/root_archive.zip" + ": Alredy fixed");
+			System.err.println("[" + new Date() + "] " + parentdir + "/root_archive.zip" + ": Already fixed");
 			return;
 		}
 
