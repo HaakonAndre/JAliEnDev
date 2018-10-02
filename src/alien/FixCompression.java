@@ -11,11 +11,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import org.apache.tomcat.util.http.fileupload.FileUtils;
-import org.apache.tomcat.util.http.parser.Authorization;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
@@ -25,12 +26,9 @@ import alien.catalogue.LFN;
 import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.catalogue.access.AccessType;
-import alien.catalogue.access.AuthorizationFactory;
 import alien.io.protocols.Factory;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.shell.commands.JAliEnCommanduser;
 import alien.site.OutputEntry;
-import alien.user.AliEnPrincipal;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -41,6 +39,7 @@ import joptsimple.OptionSet;
 public class FixCompression {
 
 	private static JAliEnCOMMander commander = null;
+	private static Random rand = new Random(System.currentTimeMillis());
 
 	/**
 	 * @param args
@@ -78,10 +77,12 @@ public class FixCompression {
 			}
 			System.out.println();
 
-			xmlEntries = xmlCollection.iterator();
-			while (xmlEntries.hasNext()) {
-				fixArchiveCompression(xmlEntries.next().getCanonicalName());
-			}
+			xmlCollection.parallelStream().forEach((x) -> fixArchiveCompression(x.getCanonicalName()));
+
+			// xmlEntries = xmlCollection.iterator();
+			// while (xmlEntries.hasNext()) {
+			// fixArchiveCompression(xmlEntries.next().getCanonicalName());
+			// }
 			System.out.println();
 			System.out.println("All files processed. Exiting");
 
@@ -123,6 +124,15 @@ public class FixCompression {
 			return;
 		}
 
+		String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+		String basedir = new String(System.getProperty("user.dir") + System.getProperty("file.separator") + "fixcompression" + System.getProperty("file.separator")
+				+ rand.ints(10, 0, chars.length()).mapToObj(i -> "" + chars.charAt(i)).collect(Collectors.joining()));
+		final File workingdir = new File(basedir);
+		if (!workingdir.exists()) {
+			workingdir.mkdirs();
+		}
+
 		// Main procedure
 		//
 		try (final PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
@@ -145,7 +155,7 @@ public class FixCompression {
 				return;
 			}
 
-			final File localArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
+			final File localArchive = new File(basedir + System.getProperty("file.separator") + archiveName);
 			if (localArchive.exists()) {
 				localArchive.delete();
 			}
@@ -163,19 +173,18 @@ public class FixCompression {
 			// Unpack to local directory and zip again without member file
 			//
 			System.out.println("[" + new Date() + "] Unpacking to local directory");
-			if (!unzip(archiveName)) {
-				System.err.println(
-						"[" + new Date() + "] " + remoteArchive + ": Failed to extract files from archive: " + System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName);
+			if (!unzip(archiveName, basedir)) {
+				System.err.println("[" + new Date() + "] " + remoteArchive + ": Failed to extract files from archive: " + basedir + System.getProperty("file.separator") + archiveName);
 				validation.println("Extraction failed " + remoteArchive);
 				return;
 			}
 			localArchive.delete();
 
-			final ArrayList<String> listOfFiles = getFileListing(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+			final ArrayList<String> listOfFiles = getFileListing(basedir + System.getProperty("file.separator") + "extracted");
 
 			System.out.println("[" + new Date() + "] Zipping the new archive");
 			final OutputEntry entry = new OutputEntry(archiveName, listOfFiles, "", Long.valueOf(jobID));
-			entry.createZip(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+			entry.createZip(basedir + System.getProperty("file.separator") + "extracted");
 
 			final String newArchiveFullPath = registerPath + "/" + archiveName;
 
@@ -183,7 +192,7 @@ public class FixCompression {
 			//
 			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid: " + newArchiveFullPath);
 
-			final File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
+			final File newArchive = new File(basedir + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
 
 			LFN newArchiveLFN = commander.c_api.getLFN(newArchiveFullPath);
 			if (newArchiveLFN != null) {
@@ -327,7 +336,6 @@ public class FixCompression {
 			System.out.println("[" + new Date() + "] " + "Fixed " + remoteArchive);
 
 			// Clean up local files
-			FileUtils.deleteDirectory(new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted"));
 			newArchive.delete();
 
 		} catch (final IOException e1) {
@@ -335,6 +343,14 @@ public class FixCompression {
 		} catch (final ServerException e1) {
 			System.err.println("[" + new Date() + "] " + parentdir + "/root_archive.zip" + ": Could not get PFN. Abort");
 			e1.printStackTrace();
+		}
+
+		try {
+			FileUtils.deleteDirectory(workingdir);
+			System.out.println();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
@@ -350,9 +366,9 @@ public class FixCompression {
 	 * @param jobID
 	 * @throws IOException
 	 */
-	private static boolean unzip(final String archiveName) throws IOException {
+	private static boolean unzip(final String archiveName, final String basedir) throws IOException {
 
-		final File destDir = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted");
+		final File destDir = new File(basedir + System.getProperty("file.separator") + "extracted");
 		if (!destDir.exists()) {
 			destDir.mkdir();
 		}
@@ -367,7 +383,7 @@ public class FixCompression {
 		}
 
 		// Start unpacking the archive
-		try (final ZipInputStream zipIn = new ZipInputStream(new FileInputStream(System.getProperty("user.dir") + System.getProperty("file.separator") + archiveName))) {
+		try (final ZipInputStream zipIn = new ZipInputStream(new FileInputStream(basedir + System.getProperty("file.separator") + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
