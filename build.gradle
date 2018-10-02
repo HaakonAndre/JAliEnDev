@@ -7,7 +7,6 @@
 apply plugin: 'java'
 
 repositories {
-	mavenCentral()
 	flatDir(dirs: 'lib')
 }
 
@@ -22,7 +21,8 @@ dependencies {
 	compile 'io.github.olivierlemasle.ca:java-ca-lib:0.0.1-SNAPSHOT'
 	compile 'jline:jline:2.12.1'
 	compile 'joptsimple:jopt-simple:4.8'
-	compile 'org.bouncycastle:bcpkix-jdk15on:1.52'
+	compile 'org.bouncycastle:bcpkix-jdk15on:160'
+	compile 'org.bouncycastle:bcprov-jdk15on:160'
 	compile 'org.junit:junit-platform-console-standalone:1.3.1'
 	compile 'org.sqlite:sqlite-jdbc:3.9.1-SNAPSHOT'
 
