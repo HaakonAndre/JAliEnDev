@@ -8,24 +8,12 @@ apply plugin: 'java'
 
 repositories {
 	mavenCentral()
-
-	flatDir {
-		dirs 'lib'
-	}
+	flatDir(dirs: 'lib')
 }
 
 sourceSets {
-	main {
-		java {
-			srcDir 'src'
-		}
-	}
-
-	test {
-		java {
-			srcDir 'src'
-		}
-	}
+	main.java.srcDir 'src'
+	test.java.srcDir 'src'
 }
 
 dependencies {
