@@ -117,6 +117,9 @@ public final class GUIDUtils {
 	 * @return the GUID, or <code>null</code> if it cannot be located
 	 */
 	public static GUID getGUID(final LFN l, final boolean evenIfDoesntExist) {
+		if (l.guid == null)
+			return null;
+
 		final GUID g = getGUID(l.guid, evenIfDoesntExist);
 
 		if (g == null)
