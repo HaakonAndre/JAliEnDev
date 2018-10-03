@@ -12,6 +12,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -258,8 +261,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					}
 				}
 			} catch (final Exception e) {
-				logger.log(Level.INFO, "Error getting a matching job: " + e);
-				e.printStackTrace();
+				logger.log(Level.INFO, "Error getting a matching job: ",e);
 			}
 			count--;
 		}
@@ -370,8 +372,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, "There is not enough space left: " + space);
 			return false;
 		}
-
-		timeleft = 87000; // TODO: Remove
+		
+		// get time until certificate expires (-15min)
+		timeleft = (int)(commander.getUser().getUserCert()[0].getNotAfter().getTime() - jobAgentCurrentTime) - 900;
+		
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
 			return false; // TODO: Put back
