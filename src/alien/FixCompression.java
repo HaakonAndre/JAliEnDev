@@ -57,18 +57,19 @@ public class FixCompression {
 			}
 
 			final OptionParser parser = new OptionParser();
-			parser.accepts("list").withRequiredArg(); // Like "collection.xml"
+			parser.accepts("list").withRequiredArg(); // Like "/alice/sim/2017/LHC17e5/TrackRefs0.xml"
 			final OptionSet options = parser.parse(args);
 
 			// Read archive members names from file
 			final String collectionName = (String) options.valueOf("list");
 
-			final File collectionFile = new File(collectionName);
-			if (!collectionFile.exists()) {
-				System.err.println("Couldn't open the collection! File " + collectionName + " doesn't exist");
+			final LFN collectionLFN = commander.c_api.getLFN(collectionName);
+			if (collectionLFN == null || !collectionLFN.exists) {
+				System.err.println("Failed to get collection from " + collectionName);
 				return;
 			}
-			final XmlCollection xmlCollection = new XmlCollection(collectionFile);
+
+			final XmlCollection xmlCollection = new XmlCollection(collectionLFN);
 
 			Iterator<LFN> xmlEntries = xmlCollection.iterator();
 			System.out.println("We will process next files:");
