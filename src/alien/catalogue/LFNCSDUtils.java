@@ -3,17 +3,20 @@ package alien.catalogue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,6 +28,8 @@ import com.datastax.driver.core.ConsistencyLevel;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.user.AliEnPrincipal;
+import alien.user.AuthorizationChecker;
 import lazyj.Format;
 
 /**
@@ -369,7 +374,7 @@ public class LFNCSDUtils {
 		final Set<LFN_CSD> ret = new TreeSet<>();
 
 		// if need to resolve wildcard and recurse, we call the recurse method
-		if (path.contains("*")) {
+		if (path.contains("*") || path.contains("?")) {
 			return recurseAndFilterLFNs("ls", path, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
 		}
 
@@ -384,6 +389,216 @@ public class LFNCSDUtils {
 		}
 
 		return ret;
+	}
+
+	/**
+	 * @param id
+	 * @return LFN_CSD that corresponds to the id
+	 */
+	public static LFN_CSD guid2lfn(final UUID id) {
+
+		String path = "";
+		String lfn = "";
+		UUID p_id = id;
+		UUID p_id_lfn = null;
+		HashMap<String, Object> p_c_ids = null;
+		boolean first = true;
+
+		while (!p_id.equals(LFN_CSD.root_uuid) && path != null) {
+			p_c_ids = LFN_CSD.getInfofromChildId(p_id);
+
+			if (p_c_ids != null) {
+				path = (String) p_c_ids.get("path");
+				p_id = (UUID) p_c_ids.get("path_id");
+
+				if (first) {
+					p_id_lfn = p_id;
+					lfn = path;
+					first = false;
+				}
+				else {
+					lfn = path + "/" + lfn;
+				}
+			}
+			else {
+				logger.severe("LFN_CSD: guid2lfn: Can't get information for id: " + p_id + " - last lfn: " + lfn);
+				return null;
+			}
+		}
+
+		lfn = "/" + lfn;
+		return new LFN_CSD(lfn, true, null, p_id_lfn, id);
+	}
+
+	/**
+	 * @param user
+	 * @param source
+	 * @param destination
+	 * @return final lfns moved and errors
+	 */
+	public static ArrayList<Set<LFN_CSD>> mv(final AliEnPrincipal user, final String source, final String destination) {
+		// Let's assume for now that the source and destination come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+		// final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
+		if (source.equals(destination)) {
+			logger.info("LFNCSDUtils: mv: the source and destination are the same: " + source + " -> " + destination);
+			return null;
+		}
+
+		final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
+		final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
+		final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
+		ret.add(lfnc_ok);
+		ret.add(lfnc_error);
+		final String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
+		final LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
+		final LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
+
+		if (!lfnc_target_parent.exists) {
+			logger.info("LFNCSDUtils: mv: the destination doesn't exist: " + destination);
+			return null;
+		}
+		if (!AuthorizationChecker.canWrite(lfnc_target_parent, user)) {
+			logger.info("LFNCSDUtils: mv: no permission on the destination: " + destination);
+			return null;
+		}
+
+		// expand wildcards and filter if needed
+		if (source.contains("*") || source.contains("?")) {
+			final Collection<LFN_CSD> lfnsToMv = recurseAndFilterLFNs("mv", source, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+
+			for (LFN_CSD l : lfnsToMv) {
+				// check permissions to move
+				if (!AuthorizationChecker.canWrite(l, user)) {
+					logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
+					lfnc_error.add(l);
+					continue;
+				}
+				// move and add to the final collection of lfns
+				final LFN_CSD lfncf = LFN_CSD.mv(l, lfnc_target, lfnc_target_parent);
+				if (lfncf != null)
+					lfnc_ok.add(lfncf);
+				else
+					lfnc_error.add(l);
+			}
+		}
+		else {
+			LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
+			// check permissions to move
+			if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
+				logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
+				lfnc_error.add(lfnc_source);
+				return ret;
+			}
+			// move and add to the final collection of lfns
+			final LFN_CSD lfncf = LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent);
+			if (lfncf != null)
+				lfnc_ok.add(lfncf);
+			else
+				lfnc_error.add(lfnc_source);
+		}
+
+		return ret;
+	}
+
+	/**
+	 * @param user
+	 * @param lfn
+	 * @param purge
+	 * @param recursive
+	 * @param notifyCache
+	 * @return final lfns deleted and errors
+	 */
+	public static ArrayList<Set<LFN_CSD>> delete(final AliEnPrincipal user, final String lfn, final boolean purge, final boolean recursive, final boolean notifyCache) {
+		// Let's assume for now that the lfn come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+		final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
+		final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
+		final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
+		ret.add(lfnc_ok);
+		ret.add(lfnc_error);
+
+		// expand wildcards and filter if needed
+		if (lfn.contains("*") || lfn.contains("?")) {
+			final Collection<LFN_CSD> lfnsToRm = recurseAndFilterLFNs("rm", lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+
+			for (LFN_CSD l : lfnsToRm) {
+				// check permissions to rm
+				if (!AuthorizationChecker.canWrite(l, user)) {
+					logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
+					lfnc_error.add(l);
+					continue;
+				}
+				// rm and add to the final collection of lfns
+				if (l.delete(purge, recursive, notifyCache)) {
+					lfnc_ok.add(l);
+				}
+				else {
+					logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + l.getCanonicalName());
+					lfnc_error.add(l);
+				}
+			}
+		}
+		else {
+			final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
+			// check permissions to rm
+			if (!AuthorizationChecker.canWrite(lfnc, user)) {
+				logger.info("LFNCSDUtils: rm: no permission to delete lfn: " + lfnc);
+				lfnc_error.add(lfnc);
+				return ret;
+			}
+			// rm and add to the final collection of lfns
+			if (lfnc.delete(purge, recursive, notifyCache)) {
+				lfnc_ok.add(lfnc);
+			}
+			else {
+				logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + lfnc.getCanonicalName());
+				lfnc_error.add(lfnc);
+			}
+		}
+
+		return ret;
+	}
+
+	/**
+	 * Touch an LFN_CSD: if the entry exists, update its timestamp, otherwise try to create an empty file
+	 *
+	 * @param user
+	 *            who wants to do the operation
+	 * @param lfnc
+	 *            LFN_CSD to be touched
+	 * @return <code>true</code> if the LFN was touched
+	 */
+	public static boolean touch(final AliEnPrincipal user, final LFN_CSD lfnc) {
+		if (!lfnc.exists) {
+			final LFN_CSD lfnc_parent = new LFN_CSD(lfnc.path, true, null, null, null);
+
+			if (!AuthorizationChecker.canWrite(lfnc_parent, user)) {
+				logger.log(Level.SEVERE, "Cannot write to the Current Directory OR Parent Directory is null BUT file exists. Terminating");
+				return false;
+			}
+
+			lfnc.type = 'f';
+			lfnc.size = 0;
+			lfnc.checksum = "d41d8cd98f00b204e9800998ecf8427e";
+			lfnc.parent_id = lfnc_parent.id;
+			lfnc.owner = user.getName();
+			lfnc.gowner = user.getRoles().iterator().next();
+			lfnc.perm = "755";
+		}
+		else
+			if (!AuthorizationChecker.canWrite(lfnc, user)) {
+				logger.log(Level.SEVERE, "LFNCSDUtils: touch: no permission to touch existing file: " + lfnc.getCanonicalName());
+				return false;
+			}
+
+		final Date old_ctime = lfnc.ctime;
+		lfnc.ctime = new Date();
+
+		if (!lfnc.exists)
+			return lfnc.insert();
+
+		return lfnc.update(false, true, old_ctime);
 	}
 
 }

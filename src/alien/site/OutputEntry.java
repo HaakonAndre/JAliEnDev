@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -19,8 +20,9 @@ import alien.io.IOUtils;
  * @author Miguel
  * @since Apr 19, 2016
  */
-@SuppressWarnings("serial")
 public class OutputEntry implements Serializable {
+	private static final long serialVersionUID = -3731415996541086683L;
+
 	private final String name;
 	private final ArrayList<String> filesIncluded;
 	private final HashMap<String, String> md5members;
@@ -33,7 +35,7 @@ public class OutputEntry implements Serializable {
 	private final HashMap<String, Integer> qos;
 
 	/**
-	 * 
+	 *
 	 */
 	public OutputEntry() {
 		this.name = null;
@@ -78,7 +80,7 @@ public class OutputEntry implements Serializable {
 		if (this.options.length() > 0) {
 			final String[] opts = this.options.split(",");
 
-			for (final String o : opts) {
+			for (final String o : opts)
 				if (o.contains("=")) {
 					// e.g. disk=2
 					final String[] qosparts = o.split("=");
@@ -91,7 +93,6 @@ public class OutputEntry implements Serializable {
 					else
 						// prioritized se
 						ses.add(o);
-			}
 		}
 	}
 
@@ -183,7 +184,7 @@ public class OutputEntry implements Serializable {
 		try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(path + this.name))) {
 			// output file
 			if (this.isRootArchive)
-				out.setLevel(0);
+				out.setMethod(ZipOutputStream.STORED);
 
 			boolean hasPhysicalFiles = false;
 
@@ -212,7 +213,16 @@ public class OutputEntry implements Serializable {
 				// input file
 				try (FileInputStream in = new FileInputStream(path + file)) {
 					// name of the file inside the zip file
-					out.putNextEntry(new ZipEntry(file));
+					final ZipEntry entry = new ZipEntry(file);
+
+					if (this.isRootArchive) {
+						final File fToAdd = new File(path + file);
+						entry.setSize(fToAdd.length());
+						entry.setCompressedSize(fToAdd.length());
+						entry.setCrc(getCRC32(fToAdd));
+					}
+
+					out.putNextEntry(entry);
 
 					final byte[] b = new byte[1024];
 					int count;
@@ -232,6 +242,21 @@ public class OutputEntry implements Serializable {
 		}
 
 		return filesIncluded;
+	}
+
+	private static long getCRC32(final File fToAdd) throws FileNotFoundException, IOException {
+		final CRC32 crc32 = new CRC32();
+
+		final byte[] buff = new byte[8192];
+
+		try (FileInputStream fis = new FileInputStream(fToAdd)) {
+			int len;
+
+			while ((len = fis.read(buff)) > 0)
+				crc32.update(buff, 0, len);
+		}
+
+		return crc32.getValue();
 	}
 
 	@Override

@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
+import alien.catalogue.CatalogEntity;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
@@ -131,7 +132,7 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path
+	 * @param path absolute path to the LFN
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path) {
@@ -148,8 +149,8 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path
-	 * @param recursive
+	 * @param path absolute path to the LFN
+	 * @param recursive <code>true</code> to delete directory's content recursively
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive) {
@@ -164,10 +165,29 @@ public class CatalogueApiUtils {
 	}
 
 	/**
+	 * Remove a LFN in the Catalogue
+	 *
+	 * @param path absolute path to the LFN
+	 * @param recursive <code>true</code> to delete directory's content recursively
+	 * @param purge <code>true</code> to delete a physical copy
+	 * @return state of the LFN's deletion <code>null</code>
+	 */
+	public boolean removeLFN(final String path, final boolean recursive, final boolean purge) {
+		try {
+			return Dispatcher.execute(new RemoveLFNfromString(commander.getUser(), path, recursive, purge)).wasRemoved();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not remove the LFN: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return false;
+	}
+
+	/**
 	 * Move a LFN in the Catalogue
 	 *
-	 * @param path
-	 * @param newpath
+	 * @param path absolute path to the LFN
+	 * @param newpath absolute path to the target
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public LFN moveLFN(final String path, final String newpath) {
@@ -234,20 +254,20 @@ public class CatalogueApiUtils {
 	/**
 	 * Get PFNs for reading by LFN
 	 *
-	 * @param lfn
-	 *            LFN of the entry as String
+	 * @param entity
+	 *            LFN or GUID to get access to
 	 * @param ses
 	 *            SEs to prioritize to read from
 	 * @param exses
 	 *            SEs to deprioritize to read from
 	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized
 	 */
-	public List<PFN> getPFNsToRead(final LFN lfn, final List<String> ses, final List<String> exses) {
+	public List<PFN> getPFNsToRead(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
 		try {
 
-			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.READ, lfn, ses, exses)).getPFNs();
+			return Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.READ, entity, ses, exses)).getPFNs();
 		} catch (final ServerException e) {
-			logger.log(Level.WARNING, "Could not get PFN for: " + lfn);
+			logger.log(Level.WARNING, "Could not get PFN for: " + entity);
 			e.getCause().printStackTrace();
 
 		}
@@ -568,7 +588,7 @@ public class CatalogueApiUtils {
 	 * @param attempts
 	 * @return command result for each lfn
 	 */
-	public HashMap<String, Integer> mirrorLFN(final String lfn_name, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean useLFNasGuid,
+	public HashMap<String, Long> mirrorLFN(final String lfn_name, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean useLFNasGuid,
 			final Integer attempts) {
 
 		if (lfn_name == null || lfn_name.length() == 0)
@@ -612,7 +632,7 @@ public class CatalogueApiUtils {
 	 * @param desc
 	 * @return transfer details
 	 */
-	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Integer id, final int count, final boolean desc) {
+	public List<TransferDetails> listTransfer(final String status, final String toSE, final String user, final Long id, final int count, final boolean desc) {
 
 		ListTransfer lt;
 		try {

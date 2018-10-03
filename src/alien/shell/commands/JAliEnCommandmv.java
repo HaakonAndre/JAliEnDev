@@ -37,7 +37,8 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 					final LFN sLFN = commander.c_api.getLFN(fullSource, false);
 
 					if (sLFN.isFile() || sLFN.isDirectory()) {
-						tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName());
+						if (commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName()) == null)
+							commander.printErrln("Failed to move " + sources[i] + " to " + fullTarget);
 					}
 				}
 			else
@@ -48,7 +49,8 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 						final LFN sLFN = commander.c_api.getLFN(fullSource, false);
 
 						if (sLFN.isFile() || sLFN.isDirectory()) {
-							tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName());
+							if (commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget + "/" + sLFN.getFileName()) == null)
+								commander.printErrln("Failed to move " + sources[i] + " to " + fullTarget + "/" + sLFN.getFileName());
 						}
 					}
 				}
@@ -83,8 +85,10 @@ public class JAliEnCommandmv extends JAliEnBaseCommand {
 					else
 						tLFN = commander.c_api.moveLFN(sLFN.getCanonicalName(), fullTarget);
 				}
-			}
 
+				if (tLFN == null)
+					commander.printErrln("Failed to move " + sources[0] + " to " + fullTarget);
+			}
 			else
 				if (size == 0 || size == 1)
 					printHelp();

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.catalogue.GUID;
@@ -422,10 +423,14 @@ public class SE implements Serializable, Comparable<SE> {
 
 		pfn.pfn = generateProtocol();
 
-		String reason = AuthorizationFactory.fillAccess(AuthorizationFactory.getDefaultUser(), pfn, AccessType.READ, true);
+		try {
+			final String reason = AuthorizationFactory.fillAccess(AuthorizationFactory.getDefaultUser(), pfn, AccessType.READ, true);
 
-		if (reason != null)
-			System.err.println("Reason: " + reason);
+			if (reason != null)
+				logger.log(Level.WARNING, "Cannot get access tokens to read the space information of " + originalName + " : " + reason);
+		} catch (final Throwable t) {
+			logger.log(Level.WARNING, "Got exception getting access tokens to read the space information of " + originalName, t);
+		}
 
 		return Factory.xrootd.getSpaceInfo(pfn);
 	}

@@ -35,7 +35,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 
 		try {
 			final OptionParser parser = new OptionParser();
-			parser.accepts("try").withRequiredArg();
+			parser.accepts("try").withRequiredArg().ofType(Integer.class);
 			parser.accepts("S").withRequiredArg();
 			parser.accepts("g");
 
@@ -49,9 +49,9 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			useLFNasGuid = options.has("g");
 
 			if (options.has("try"))
-				attempts = Integer.valueOf(options.valueOf("try").toString());
+				attempts = (Integer) options.valueOf("try");
 			else
-				attempts = Integer.valueOf(1);
+				attempts = Integer.valueOf(5);
 
 			if (options.has("S") && options.hasArgument("S")) {
 				if ((String) options.valueOf("S") != null) {
@@ -110,24 +110,37 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 			this.ses.add(this.dstSE);
 
 		if (this.ses.size() != 0 || this.qos.size() != 0) {
-			HashMap<String, Integer> results;
+			HashMap<String, Long> results;
 			try {
-				if (!this.useLFNasGuid)
-					lfn = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfn);
-				results = commander.c_api.mirrorLFN(lfn, this.ses, this.exses, this.qos, this.useLFNasGuid, this.attempts);
-				for (final String s : results.keySet()) {
-					String result_string;
-					final Integer result = results.get(s);
+				String toMirror = this.lfn;
 
-					if (result != null) {
-						result_string = JAliEnCommandmirror.Errcode2Text(result.intValue());
-						if (result.intValue() > 0)
-							commander.printOutln(s + ": transfer scheduled");
+				if (!this.useLFNasGuid)
+					toMirror = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), this.lfn);
+
+				results = commander.c_api.mirrorLFN(toMirror, this.ses, this.exses, this.qos, this.useLFNasGuid, this.attempts);
+
+				if (results == null && !this.useLFNasGuid && GUIDUtils.isValidGUID(this.lfn))
+					results = commander.c_api.mirrorLFN(this.lfn, this.ses, this.exses, this.qos, true, this.attempts);
+
+				if (results != null) {
+					for (final String s : results.keySet()) {
+						String result_string;
+						final Long result = results.get(s);
+
+						if (result != null) {
+							if (result.longValue() > 0)
+								commander.printOutln(s + ": queued transfer ID " + result.longValue());
+							else {
+								result_string = JAliEnCommandmirror.Errcode2Text(result.intValue());
+								commander.printErrln(s + ": " + result_string);
+							}
+						}
 						else
-							commander.printErrln(s + ": " + result_string);
+							commander.printErrln(s + ": unexpected error");
 					}
-					else
-						commander.printErrln(s + ": unexpected error");
+				}
+				else {
+					commander.printErrln("Couldn't execute the mirrror command, argument not found");
 				}
 			} catch (final IllegalArgumentException e) {
 				commander.printErrln(e.getMessage());

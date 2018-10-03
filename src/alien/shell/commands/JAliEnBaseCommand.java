@@ -2,7 +2,6 @@ package alien.shell.commands;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.DispatchSSLClient;
@@ -159,7 +158,9 @@ public abstract class JAliEnBaseCommand implements Runnable {
 	 * @return left-padded string
 	 */
 	public static final String padLeft(final String s, final int n) {
-		logger.log(Level.FINEST, "Padding left \"" + s + "\" with format " + "%1$" + n + "s");
+		if (n <= 0)
+			return s;
+
 		return String.format("%1$" + n + "s", s);
 	}
 
@@ -169,7 +170,9 @@ public abstract class JAliEnBaseCommand implements Runnable {
 	 * @return right-padded string
 	 */
 	public static final String padRight(final String s, final int n) {
-		logger.log(Level.FINEST, "Padding right \"" + s + "\" with format " + "%1$-" + n + "s");
+		if (n <= 0)
+			return s;
+
 		return String.format("%1$-" + n + "s", s);
 	}
 

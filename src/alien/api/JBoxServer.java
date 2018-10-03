@@ -126,6 +126,14 @@ public class JBoxServer extends Thread {
 		}
 	}
 
+	private static synchronized void startShutdownThread() {
+		if (shutdownThread == null) {
+			shutdownThread = new ShutdownThread();
+
+			shutdownThread.start();
+		}
+	}
+
 	/**
 	 * Start the server on a given port
 	 *
@@ -160,11 +168,7 @@ public class JBoxServer extends Thread {
 			throw new Exception("Could not write the env file! JSh/JRoot will not be able to connect to JBox");
 		}
 
-		if (shutdownThread == null) {
-			shutdownThread = new ShutdownThread();
-
-			shutdownThread.start();
-		}
+		startShutdownThread();
 	}
 
 	/**
@@ -628,7 +632,7 @@ public class JBoxServer extends Thread {
 			} catch (final Exception ioe) {
 				// we don't need the already in use info on the port, maybe
 				// there's another user on the machine...
-				logger.log(Level.FINE, "JBox: Could not listen on port " + (port != 0 ? port : "\"any\""), ioe);
+				logger.log(Level.FINE, "JBox: Could not listen on port " + (port != 0 ? String.valueOf(port) : "\"any\""), ioe);
 			}
 	}
 

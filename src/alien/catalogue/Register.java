@@ -101,7 +101,7 @@ public class Register {
 		// sanity check
 		if (name.exists) {
 			if (!name.guid.equals(uuid) || name.size != size || !name.md5.equals(md5))
-				throw new IOException("The details don't match the existing LFN fields");
+				throw new IOException("The details don't match the existing LFN fields for " + name.lfn);
 		}
 		else {
 			LFN check = name.getParentDir(true);

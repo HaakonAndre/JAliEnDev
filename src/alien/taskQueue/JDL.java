@@ -203,7 +203,7 @@ public class JDL implements Serializable {
 				// throw new
 				// IOException("JDL syntax error: Tag "+sKey+" doesn't finish with a semicolumn");
 				if (logger.isLoggable(Level.FINE))
-				logger.log(Level.FINE, "JDL syntax error: Tag " + sKey + " doesn't finish with a semicolumn, full text is\n" + content);
+					logger.log(Level.FINE, "JDL syntax error: Tag " + sKey + " doesn't finish with a semicolumn, full text is\n" + content);
 
 			final String sValue = content.substring(idxEqual + 1, idxEnd).trim();
 
@@ -304,6 +304,9 @@ public class JDL implements Serializable {
 
 		if (o == null)
 			return null;
+
+		if (o instanceof Integer)
+			return (Integer) o;
 
 		if (o instanceof Number)
 			return Integer.valueOf(((Number) o).intValue());

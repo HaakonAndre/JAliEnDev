@@ -17,7 +17,7 @@ public class GetJDL extends Request {
 	 */
 	private static final long serialVersionUID = 5445861914172537974L;
 
-	private final int queueId;
+	private final long queueId;
 
 	private String jdl;
 
@@ -25,7 +25,7 @@ public class GetJDL extends Request {
 	 * @param user
 	 * @param queueId
 	 */
-	public GetJDL(final AliEnPrincipal user, final int queueId) {
+	public GetJDL(final AliEnPrincipal user, final long queueId) {
 		setRequestUser(user);
 		this.queueId = queueId;
 	}

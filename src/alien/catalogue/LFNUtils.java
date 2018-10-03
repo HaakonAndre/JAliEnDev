@@ -275,6 +275,26 @@ public class LFNUtils {
 	/**
 	 * @param user
 	 * @param lfn
+	 * @param recursive
+	 * @param purge
+	 * @return status of the removal
+	 */
+	public static boolean rmLFN(final AliEnPrincipal user, final LFN lfn, final boolean recursive, final boolean purge) {
+		if (lfn != null && lfn.exists) {
+			if (AuthorizationChecker.canWrite(lfn, user)) {
+				logger.log(Level.SEVERE, "Request from [" + user.getName() + "], rmLFN [" + lfn.getCanonicalName() + "]");
+				return lfn.delete(purge, recursive);
+			}
+			return false;
+
+		}
+
+		return false;
+	}
+
+	/**
+	 * @param user
+	 * @param lfn
 	 * @param newpath
 	 * @return status of the removal
 	 */
@@ -1099,14 +1119,34 @@ public class LFNUtils {
 	 */
 	public static boolean chownLFN(final String path, final String new_owner, final String new_group) {
 		final LFN lfn = getLFN(path);
+
 		if (lfn == null)
 			return false;
-		if (new_owner == null || new_owner.equals(""))
+
+		if (new_owner == null || new_owner.isEmpty())
 			return false;
+
+		final GUID g = GUIDUtils.getGUID(lfn);
+
 		lfn.owner = new_owner;
-		if (new_group != null && !new_group.equals(""))
+
+		if (g != null)
+			g.owner = new_owner;
+
+		if (new_group != null && !new_group.isEmpty()) {
 			lfn.gowner = new_group;
-		return lfn.update();
+
+			if (g != null)
+				g.gowner = new_group;
+		}
+
+		if (!lfn.update())
+			return false;
+
+		if (g != null)
+			g.update();
+
+		return true;
 	}
 
 	/**
@@ -1116,7 +1156,7 @@ public class LFNUtils {
 	 * @param attempts
 	 * @return transfer ID
 	 */
-	public static int mirrorLFN(final String path, final String dstSE, final boolean is_guid, final Integer attempts) {
+	public static long mirrorLFN(final String path, final String dstSE, final boolean is_guid, final Integer attempts) {
 		LFN lfn;
 		if (is_guid) {
 			final GUID g = GUIDUtils.getGUID(UUID.fromString(path), false);
@@ -1155,7 +1195,7 @@ public class LFNUtils {
 	 * @param attempts
 	 * @return transfer IDs to each SE
 	 */
-	public static HashMap<String, Integer> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean is_guid,
+	public static HashMap<String, Long> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final boolean is_guid,
 			final Integer attempts) {
 		LFN lfn;
 		if (is_guid) {
@@ -1165,13 +1205,16 @@ public class LFNUtils {
 		else
 			lfn = getLFN(path);
 
+		if (lfn == null)
+			return null;
+
 		// find closest SE
 		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
-		final HashMap<String, Integer> resmap = new HashMap<>();
+		final HashMap<String, Long> resmap = new HashMap<>();
 		for (final SE s : found_ses) {
-			final int transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, s, null, attempts.intValue()) : TransferUtils.mirror(lfn, s);
-			resmap.put(s.getName(), Integer.valueOf(transferID));
+			final long transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfn, s, null, attempts.intValue()) : TransferUtils.mirror(lfn, s);
+			resmap.put(s.getName(), Long.valueOf(transferID));
 		}
 
 		return resmap;
@@ -1197,7 +1240,7 @@ public class LFNUtils {
 			if (allJobFiles == null || allJobFiles.size() == 0)
 				return null;
 
-			for (final LFN file : allJobFiles) {
+			for (final LFN file : allJobFiles)
 				if (file.isFile()) {
 					final Set<PFN> pfns = file.whereis();
 
@@ -1217,7 +1260,6 @@ public class LFNUtils {
 									return null;
 								}
 				}
-			}
 		}
 		return ret;
 	}

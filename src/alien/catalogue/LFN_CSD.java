@@ -163,7 +163,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	/**
 	 * Whether or not this entry really exists in the catalogue
 	 */
-	public boolean exists = true;
+	public boolean exists = false;
 
 	/**
 	 * Canonical path
@@ -239,8 +239,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		ctime = l.ctime;
 		owner = l.getOwner();
 		gowner = l.getGroup();
+		exists = l.exists;
 		id = l.guid;
-		modulo = Math.abs(id.hashCode() % modulo_se_lookup);
+		if (id != null)
+			modulo = Math.abs(id.hashCode() % modulo_se_lookup);
 		flag = 0;
 		if (type != 'd')
 			metadata = new HashMap<>();
@@ -248,11 +250,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		if (createParent) {
 			try {
 				if (!LFN_CSD.createDirectory(path, null, null, owner, gowner, jobid, perm, ctime)) {
-					System.err.println("Cannot create LFN_CSD with createParent: " + l.getCanonicalName());
+					logger.severe("Cannot create LFN_CSD with createParent: " + l.getCanonicalName());
 					return;
 				}
 			} catch (Exception e) {
-				System.err.println("Exception trying to create LFN_CSD with createParent: " + l.getCanonicalName() + " Exception: " + e);
+				logger.severe("Exception trying to create LFN_CSD with createParent: " + l.getCanonicalName() + " Exception: " + e);
 				return;
 			}
 		}
@@ -261,11 +263,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			try {
 				parent_id = getParentIdFromPath(path, null);
 			} catch (Exception e) {
-				System.err.println("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName() + e);
+				logger.severe("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName() + e);
 				return;
 			}
 			if (parent_id == null) {
-				System.err.println("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName());
+				logger.severe("Exception trying to create LFN_CSD with getParent: " + l.getCanonicalName());
 				return;
 			}
 		}
@@ -320,7 +322,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				ResultSet results = session.execute(boundStatement);
 				init(results.one());
 			} catch (Exception e) {
-				System.err.println("Exception trying to create LFN_CSD: " + e);
+				logger.severe("Exception trying to create LFN_CSD: " + e);
 				return;
 			}
 		}
@@ -373,7 +375,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	private void init(Row row) {
 		if (row == null) {
 			logger.log(Level.SEVERE, "Row null creating LFN_CSD ");
-			exists = false;
 			return;
 		}
 
@@ -391,6 +392,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (type == 'd' && !canonicalName.endsWith("/"))
 				canonicalName += "/";
 			modulo = Math.abs(id.hashCode() % modulo_se_lookup);
+			exists = true;
 		} catch (Exception e) {
 			logger.log(Level.SEVERE, "Can't create LFN_CSD from row: " + e);
 		}
@@ -441,7 +443,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 					path_id = results.one().getUUID("child_id");
 					if (path_id == null) {
-						System.err.println("Error getting parent id for path_id: " + path_id + " path: " + (i == 0 ? "/" : path_chunks[i - 1]));
+						logger.severe("Error getting parent id for path_id: " + path_id + " path: " + (i == 0 ? "/" : path_chunks[i - 1]));
 						return null;
 					}
 
@@ -457,7 +459,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			}
 			return path_id;
 		} catch (Exception e) {
-			System.err.println("Exception trying to getParentIdFromPath (" + parent_path + ") LFN_CSD: " + e);
+			logger.severe("Exception trying to getParentIdFromPath (" + parent_path + ") LFN_CSD: " + e);
 			throw (e);
 		}
 	}
@@ -495,7 +497,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			return id;
 		} catch (Exception e) {
-			System.err.println("Exception trying to getChildIdFromParentIdAndName (" + parent_id + " ," + name + ") LFN_CSD: " + e);
+			logger.severe("Exception trying to getChildIdFromParentIdAndName (" + parent_id + " ," + name + ") LFN_CSD: " + e);
 			throw (e);
 		}
 	}
@@ -699,7 +701,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				ret.add(new LFN_CSD(this.canonicalName, get_metadata, append_table, this.parent_id, this.id));
 			}
 		} catch (Exception e) {
-			System.err.println("Exception trying to whereis: " + e);
+			logger.severe("Exception trying to whereis: " + e);
 			return null;
 		}
 
@@ -757,7 +759,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				pfns = (HashMap<Integer, String>) row.getMap("pfns", Integer.class, String.class);
 			}
 		} catch (Exception e) {
-			System.err.println("Exception trying to whereis: " + e);
+			logger.severe("Exception trying to whereis: " + e);
 			return null;
 		}
 
@@ -805,13 +807,13 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			try {
 				this.parent_id = getParentIdFromPath(this.path, append_table);
 			} catch (Exception e) {
-				System.err.println("Exception while inserting: " + this.canonicalName + " Exception: " + e);
+				logger.severe("Exception while inserting: " + this.canonicalName + " Exception: " + e);
 				return false;
 			}
 		}
 
 		if (this.parent_id == null) {
-			System.err.println("Cannot get parent of " + this.path + " append_table: " + append_table);
+			logger.severe("Cannot get parent of " + this.path + " append_table: " + append_table);
 			return false;
 		}
 
@@ -824,21 +826,41 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			if (session == null)
 				return false;
 
-			PreparedStatement statement;
-			BoundStatement boundStatement;
-
 			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
 			bs.setConsistencyLevel(cl);
 
-			// Insert the entry in the index // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
-			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
-			bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
+			this.prepareInsertStatements(bs, session, true, true, tindex, tids, t, ts);
 
-			// Insert the entry in the ids // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
+			ResultSet rs = session.execute(bs);
+			res = rs.wasApplied();
+		} catch (Exception e) {
+			logger.severe("Exception trying to insert: " + e);
+			return false;
+		}
+
+		if (res)
+			exists = true;
+
+		return res;
+	}
+
+	private BatchStatement prepareInsertStatements(BatchStatement bs, Session session, final boolean insert_se_lookup, final boolean insert_metadata, final String tindex, final String tids,
+			final String t, final String ts) {
+		PreparedStatement statement;
+		BoundStatement boundStatement;
+
+		// Insert the entry in the index // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
+		statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tindex + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
+		bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
+
+		// Insert the entry in the ids // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
+		if (!isDirectory()) {
 			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tids + " (child_id,path_id,path,ctime,flag)" + " VALUES (?,?,?,?,?)");
 			bs.add(statement.bind(id, parent_id, child, ctime, Integer.valueOf(flag)));
+		}
 
-			// Insert the entry in the metadata
+		// Insert the entry in the metadata
+		if (insert_metadata) {
 			if (type == 'a' || type == 'f' || type == 'm' || type == 'l') {
 				statement = getOrInsertPreparedStatement(session,
 						"INSERT INTO " + t + " (parent_id, id, ctime, gowner, jobid, checksum, owner, perm, pfns, size, type, metadata)" + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
@@ -852,36 +874,28 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			}
 
 			bs.add(boundStatement);
-
-			// Fake -1 seNumber for dirs in se_lookup
-			if (type == 'd') {
-				// pfns = new HashMap<>();
-				// pfns.put(Integer.valueOf(-1), "");
-				dirCache.put(this.canonicalName, id, 5 * 60 * 1000); // 5 minutes
-				dirCache_put++;
-			}
-
-			// Insert into se_lookup
-			if ((type == 'a' || type == 'f') && size > 0) {
-				int modulo = Math.abs(id.hashCode() % modulo_se_lookup);
-				if (pfns != null) {
-					final Set<Integer> seNumbers = pfns.keySet();
-
-					for (int seNumber : seNumbers) {
-						statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
-						bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(modulo), id, Long.valueOf(size), owner));
-					}
-				}
-			}
-
-			ResultSet rs = session.execute(bs);
-			res = rs.wasApplied();
-		} catch (Exception e) {
-			System.err.println("Exception trying to insert: " + e);
-			return false;
 		}
 
-		return res;
+		// Fake -1 seNumber for dirs in se_lookup
+		if (type == 'd') {
+			// pfns = new HashMap<>();
+			// pfns.put(Integer.valueOf(-1), "");
+			dirCache.put(this.canonicalName, id, 5 * 60 * 1000); // 5 minutes
+			dirCache_put++;
+		}
+
+		// Insert into se_lookup
+		if (insert_se_lookup && (type == 'a' || type == 'f') && size > 0 && pfns != null) {
+			int moduloc = Math.abs(id.hashCode() % modulo_se_lookup);
+
+			final Set<Integer> seNumbers = pfns.keySet();
+
+			for (int seNumber : seNumbers) {
+				statement = getOrInsertPreparedStatement(session, "INSERT INTO " + ts + " (seNumber, modulo, id, size, owner)" + " VALUES (?,?,?,?,?)");
+				bs.add(statement.bind(Integer.valueOf(seNumber), Integer.valueOf(moduloc), id, Long.valueOf(size), owner));
+			}
+		}
+		return bs;
 	}
 
 	/**
@@ -922,7 +936,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			Thread.sleep(1000 * bookingTries);
 			bookingTries++;
 			if (bookingTries == 3) {
-				System.err.println("Can't get booking lock: " + folder);
+				logger.severe("Can't get booking lock: " + folder);
 				return false;
 			}
 		}
@@ -942,7 +956,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			String path = p_c[0];
 
 			if (!createDirectory(path, table, level, owner, gowner, jobid, perm, ctime)) {
-				System.err.println("Can't create directory: " + path);
+				logger.severe("Can't create directory: " + path);
 				return false;
 			}
 
@@ -968,7 +982,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 			return newdir.insert(table, level);
 		} catch (Exception e) {
-			System.err.println("Freeing folderBookingMap due to failing inner createDirectory or insert for : " + folder);
 			logger.severe("Freeing folderBookingMap due to failing inner createDirectory or insert for : " + folder);
 			throw (e);
 		} finally {
@@ -999,7 +1012,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			pid = getParentIdFromPath(parent_of_lfn, append_table);
 		} catch (Exception e) {
 			logger.severe("Exception from getParentIdFromPath in existsLfn for: " + lfn);
-			System.err.println("Exception from getParentIdFromPath in existsLfn for: " + lfn);
 			throw (e);
 		}
 		if (pid == null)
@@ -1011,7 +1023,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			idfolder = getChildIdFromParentIdAndName(pid, child_of_lfn, append_table);
 		} catch (Exception e) {
 			logger.severe("Exception from getChildIdFromParentIdAndName in existsLfn for: " + lfn);
-			System.err.println("Exception from getChildIdFromParentIdAndName in existsLfn for: " + lfn);
 			throw (e);
 		}
 		if (idfolder == null)
@@ -1130,10 +1141,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
 
 				// Delete the entry from index and metadata
-				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? and path=?");
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? AND path=?");
 				bs.add(statement.bind(this.parent_id, this.child));
 
-				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=? and id=?");
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=? AND id=?");
 				bs.add(statement.bind(this.parent_id, this.id));
 
 				ResultSet rs = session.execute(bs);
@@ -1209,69 +1220,262 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 					LFNCSDUtils.tPool.submit(new DeleteLFNs(subentry, counter_left, purge, notifyCache, dirs, error_entries));
 				}
 			}
-			else
-				if (lfnc.isFile() || lfnc.isArchive()) {
-					int modulo = Math.abs(lfnc.id.hashCode() % modulo_se_lookup);
+			else {
+				int modulo = Math.abs(lfnc.id.hashCode() % modulo_se_lookup);
 
-					try {
-						@SuppressWarnings("resource")
-						final Session session = DBCassandra.getInstance();
-						if (session == null) {
-							error_entries.add(lfnc);
-							logger.severe("LFN_CSD: DeleteLFNs could not get an instance: " + lfnc.getCanonicalName());
-							return;
-						}
+				try {
+					@SuppressWarnings("resource")
+					final Session session = DBCassandra.getInstance();
+					if (session == null) {
+						error_entries.add(lfnc);
+						logger.severe("LFN_CSD: DeleteLFNs could not get an instance: " + lfnc.getCanonicalName());
+						return;
+					}
 
-						PreparedStatement statement;
+					PreparedStatement statement;
 
-						BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
-						bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+					BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+					bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
 
-						// Delete the entry from ids and se_lookup. Will be deleted from the hierarchy (index, metadata) using the parent folder
-						statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_ids_table + " WHERE child_id=?");
-						bs.add(statement.bind(lfnc.id));
+					// Delete the entry from ids and se_lookup. Will be deleted from the hierarchy (index, metadata) using the parent folder
+					statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_ids_table + " WHERE child_id=?");
+					bs.add(statement.bind(lfnc.id));
 
+					if (lfnc.isFile() || lfnc.isArchive()) {
 						for (Integer senumber : lfnc.pfns.keySet()) {
-							statement = getOrInsertPreparedStatement(session, "DELETE FROM " + se_lookup_table + " WHERE senumber=? and modulo=? and id=?");
+							statement = getOrInsertPreparedStatement(session, "DELETE FROM " + se_lookup_table + " WHERE senumber=? AND modulo=? AND id=?");
 							bs.add(statement.bind(senumber, Integer.valueOf(modulo), lfnc.id));
 						}
+					}
 
-						ResultSet rs = session.execute(bs);
-						if (!rs.wasApplied()) {
-							error_entries.add(lfnc);
-							logger.severe("LFN_CSD: DeleteLFNs problem deleting from ids and se_lookup?: " + lfnc.getCanonicalName());
+					ResultSet rs = session.execute(bs);
+					if (!rs.wasApplied()) {
+						error_entries.add(lfnc);
+						logger.severe("LFN_CSD: DeleteLFNs problem deleting from ids and se_lookup?: " + lfnc.getCanonicalName());
+					}
+
+					if (notifyCache) {
+						String toWipe = lfnc.getCanonicalName();
+
+						if (lfnc.isDirectory())
+							toWipe += ".*";
+
+						TextCache.invalidateLFN(toWipe);
+					}
+
+				} catch (Exception e) {
+					error_entries.add(lfnc);
+					logger.severe("LFN_CSD: DeleteLFNs Exception deleting LFN: " + e.toString());
+				}
+
+				if (purge && lfnc.id != null) {
+					try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
+						for (Integer senumber : lfnc.pfns.keySet()) {
+							db.setQueryTimeout(120);
+							db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, lfnc.id, senumber, lfnc.checksum,
+									Long.valueOf(lfnc.size));
 						}
-
-						if (notifyCache) {
-							String toWipe = lfnc.getCanonicalName();
-
-							if (lfnc.isDirectory())
-								toWipe += ".*";
-
-							TextCache.invalidateLFN(toWipe);
-						}
-
 					} catch (Exception e) {
 						error_entries.add(lfnc);
-						logger.severe("LFN_CSD: DeleteLFNs Exception deleting LFN: " + e.toString());
-					}
-
-					if (purge && lfnc.id != null) {
-						try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-							for (Integer senumber : lfnc.pfns.keySet()) {
-								db.setQueryTimeout(120);
-								db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, lfnc.id, senumber, lfnc.checksum,
-										Long.valueOf(lfnc.size));
-							}
-						} catch (Exception e) {
-							error_entries.add(lfnc);
-							logger.severe("LFN_CSD: DeleteLFNs problem inserting into PFN cleanup queue: " + lfnc.getCanonicalName() + " - " + e.toString());
-						}
+						logger.severe("LFN_CSD: DeleteLFNs problem inserting into PFN cleanup queue: " + lfnc.getCanonicalName() + " - " + e.toString());
 					}
 				}
+			}
 
 			counter_left.decrementAndGet();
 		}
+	}
+
+	/**
+	 * @param c_id
+	 * @return information of the given uuid, typically used to find the full lfn from it
+	 */
+	public static HashMap<String, Object> getInfofromChildId(UUID c_id) {
+		HashMap<String, Object> ret = null;
+		try {
+			@SuppressWarnings("resource")
+			final Session session = DBCassandra.getInstance();
+			if (session == null) {
+				logger.severe("LFN_CSD: getInfofromChildId: could not get an instance: " + c_id.toString());
+				return null;
+			}
+
+			PreparedStatement statement = getOrInsertPreparedStatement(session, "select ctime, flag, path, path_id from " + lfn_ids_table + " where child_id = ?");
+			BoundStatement boundStatement = new BoundStatement(statement);
+			boundStatement.bind(c_id);
+			boundStatement.setConsistencyLevel(ConsistencyLevel.QUORUM);
+			ResultSet results = session.execute(boundStatement);
+
+			Row res = results.one();
+			ret = new HashMap<>();
+			ret.put("path", res.getString("path"));
+			ret.put("path_id", res.getUUID("path_id"));
+			ret.put("flag", Integer.valueOf(res.getInt("flag")));
+			ret.put("ctime", res.getTimestamp("ctime"));
+		} catch (Exception e) {
+			logger.severe("LFN_CSD: getInfofromChildId: problem getting ids result: " + c_id.toString() + " - " + e.toString());
+		}
+
+		return ret;
+	}
+
+	/**
+	 * @param lfnc_source
+	 * @param lfnc_target
+	 * @param lfnc_target_parent
+	 * @return final lfn
+	 */
+	public static LFN_CSD mv(final LFN_CSD lfnc_source, final LFN_CSD lfnc_target, final LFN_CSD lfnc_target_parent) {
+		LFN_CSD lfnc_final = null;
+		// check exists
+		if (!lfnc_source.exists) {
+			logger.info("LFN_CSD: mv: the source or destination doesn't exist");
+			return null;
+		}
+		// we can't move a folder into a file
+		if (lfnc_source.isDirectory() && lfnc_target.exists && lfnc_target.isFile()) {
+			logger.info("LFN_CSD: mv: trying to move a folder into a file: " + lfnc_source.canonicalName + " -> " + lfnc_target.canonicalName);
+			return null;
+		}
+
+		// we can't overwrite entries
+		if (!lfnc_source.isDirectory() && lfnc_target.exists && !lfnc_target.isDirectory()) {
+			logger.info("LFN_CSD: mv: trying to overwrite an entry, not allowed: " + lfnc_source.canonicalName + " -> " + lfnc_target.canonicalName);
+			return null;
+		}
+
+		// lfn_index: change path_id to the id of target
+		// lfn_metadata: change parent_id to the id of the target
+		// lfn_ids: change path_id to the id of the target
+		try {
+			@SuppressWarnings("resource")
+			final Session session = DBCassandra.getInstance();
+			if (session == null) {
+				logger.severe("LFN_CSD: mv: could not get an instance: " + lfnc_source.getCanonicalName() + " -> " + lfnc_target.getCanonicalName());
+				return null;
+			}
+
+			PreparedStatement statement;
+			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+			bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+
+			final UUID final_parent_id = (lfnc_target.exists && lfnc_target.isDirectory() ? lfnc_target.id : lfnc_target_parent.id);
+			final boolean different_parent = !final_parent_id.equals(lfnc_source.parent_id);
+			final boolean different_name = (!lfnc_source.isDirectory() && !lfnc_target.isDirectory() && !lfnc_source.child.equals(lfnc_target.child))
+					|| (lfnc_source.isDirectory() && !lfnc_target.exists && !lfnc_source.child.equals(lfnc_target.child));
+
+			statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? AND path=?");
+			bs.add(statement.bind(lfnc_source.parent_id, lfnc_source.child));
+
+			if (different_parent) {
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=? AND id=?");
+				bs.add(statement.bind(lfnc_source.parent_id, lfnc_source.id));
+				// if the destination is an existing directory, it becomes the parent
+				lfnc_source.parent_id = final_parent_id;
+			}
+
+			// the final name depends on the case
+			if (different_name) {
+				lfnc_source.child = lfnc_target.child;
+			}
+
+			if (!lfnc_source.isDirectory() && (different_parent || different_name)) {
+				statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_ids_table + " SET path_id=?,path=? WHERE child_id=?");
+				bs.add(statement.bind(final_parent_id, lfnc_source.child, lfnc_source.id));
+			}
+
+			lfnc_source.prepareInsertStatements(bs, session, false, different_parent, lfn_index_table, lfn_ids_table, lfn_metadata_table, se_lookup_table);
+
+			if (different_parent || different_name) {
+				lfnc_source.path = (lfnc_target.isDirectory() && !different_name ? lfnc_target.getCanonicalName() : lfnc_target.path);
+				lfnc_source.refreshCanonicalName();
+			}
+
+			ResultSet rs = session.execute(bs);
+			if (!rs.wasApplied()) {
+				logger.severe("LFN_CSD: mv: problem moving: " + lfnc_source.getCanonicalName() + " -> " + lfnc_target.getCanonicalName());
+			}
+			else {
+				lfnc_final = lfnc_source;
+			}
+		} catch (Exception e) {
+			logger.severe("LFN_CSD: mv: problem getting ids result: " + lfnc_source.getCanonicalName() + " -> " + lfnc_target.getCanonicalName() + ": " + e.toString());
+		}
+
+		return lfnc_final;
+	}
+
+	private void refreshCanonicalName() {
+		canonicalName = path + child;
+		if (type == 'd' && !canonicalName.endsWith("/"))
+			canonicalName += "/";
+	}
+
+	/**
+	 * @return true is LFN_CSD updated correctly, false otherwise
+	 */
+	public boolean update() {
+		return update(false, false, null);
+	}
+
+	/**
+	 * @param owner_or_size_changed
+	 * @param ctime_changed
+	 * @param old_ctime
+	 * @return true is LFN_CSD updated correctly, false otherwise. Takes into account if the owner or size changed to update se_lookup too
+	 */
+	public boolean update(final boolean owner_or_size_changed, final boolean ctime_changed, final Date old_ctime) {
+		boolean ok = true;
+		try {
+			@SuppressWarnings("resource")
+			final Session session = DBCassandra.getInstance();
+			if (session == null) {
+				logger.severe("LFN_CSD: update: could not get an instance: " + this.getCanonicalName());
+				return false;
+			}
+
+			PreparedStatement statement;
+			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+			bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+
+			if (ctime_changed) {
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? AND path=? AND ctime=?");
+				bs.add(statement.bind(parent_id, child, old_ctime));
+
+				statement = getOrInsertPreparedStatement(session, "INSERT INTO " + lfn_index_table + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
+				bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
+			}
+			else {
+				statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_index_table + " SET ctime=?,flag=? WHERE path_id=? AND path=?");
+				bs.add(statement.bind(ctime, Integer.valueOf(flag), parent_id, child));
+			}
+
+			statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_ids_table + " SET ctime=?,flag=? WHERE child_id=?");
+			bs.add(statement.bind(ctime, Integer.valueOf(flag), id));
+
+			statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_metadata_table + " SET size=?,owner=?,gowner=?,ctime=?,checksum=?,metadata=?,pfns=? WHERE parent_id=? AND id=?");
+			bs.add(statement.bind(Long.valueOf(size), owner, gowner, ctime, checksum, metadata, pfns, parent_id, id));
+
+			if (owner_or_size_changed && pfns != null) {
+				final Set<Integer> seNumbers = pfns.keySet();
+
+				for (int seNumber : seNumbers) {
+					statement = getOrInsertPreparedStatement(session, "UPDATE " + se_lookup_table + " SET owner=?,size=? where senumber=?,modulo=? AND id=?");
+					bs.add(statement.bind(owner, Long.valueOf(size), Integer.valueOf(seNumber), Integer.valueOf(modulo), id));
+				}
+			}
+
+			ResultSet rs = session.execute(bs);
+			if (!rs.wasApplied()) {
+				logger.severe("LFN_CSD: update: problem updating entry: " + getCanonicalName());
+				ok = false;
+			}
+		} catch (Exception e) {
+			logger.severe("LFN_CSD: update: problem update entry: " + e.toString());
+			ok = false;
+		}
+
+		return ok;
 	}
 
 }

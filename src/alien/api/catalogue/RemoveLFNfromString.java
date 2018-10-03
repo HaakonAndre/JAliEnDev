@@ -20,16 +20,31 @@ public class RemoveLFNfromString extends Request {
 
 	private boolean wasRemoved = false;
 	private boolean recursive = false;
+	private boolean purge = true;
 
 	/**
 	 * @param user
 	 * @param path
-	 * @param recursive 
+	 * @param recursive
 	 */
 	public RemoveLFNfromString(final AliEnPrincipal user, final String path, final boolean recursive) {
 		setRequestUser(user);
 		this.path = path;
 		this.recursive = recursive;
+		this.purge = true;
+	}
+
+	/**
+	 * @param user
+	 * @param path
+	 * @param recursive
+	 * @param purge 
+	 */
+	public RemoveLFNfromString(final AliEnPrincipal user, final String path, final boolean recursive, final boolean purge) {
+		setRequestUser(user);
+		this.path = path;
+		this.recursive = recursive;
+		this.purge = purge;
 	}
 
 	@Override
@@ -43,7 +58,7 @@ public class RemoveLFNfromString extends Request {
 					wasRemoved = false;
 			}
 			else
-				wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn, recursive);
+				wasRemoved = LFNUtils.rmLFN(getEffectiveRequester(), lfn, recursive, purge);
 
 	}
 

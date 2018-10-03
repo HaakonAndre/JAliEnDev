@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -31,6 +30,37 @@ import lazyj.Format;
 public class JAliEnCOMMander extends Thread {
 
 	/**
+	 * Atomic status update of the command execution
+	 * 
+	 * @author costing
+	 * @since 2018-09-11
+	 */
+	public static class CommanderStatus {
+		private int status = 0;
+
+		/**
+		 * @return current value
+		 */
+		public synchronized int get() {
+			return status;
+		}
+
+		/**
+		 * Set the new status code
+		 * 
+		 * @param newValue
+		 * @return the old value
+		 */
+		public synchronized int set(final int newValue) {
+			final int oldValue = status;
+
+			status = newValue;
+
+			return oldValue;
+		}
+	}
+
+	/**
 	 * Logger
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(JBoxServer.class.getCanonicalName());
@@ -52,7 +82,7 @@ public class JAliEnCOMMander extends Thread {
 			"access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "mv", "masterjob", "user", "touch", "type", "kill", "lfn2guid", "guid2lfn", "w", "uptime", "addFileToCollection", "addMirror",
 			"addTag", "addTagValue", "chgroup", "chown", "createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo", "jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum",
 			"mirror", "queue", "queueinfo", "register", "registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups", "token",
-			"uuid", "stat", "listSEs", "xrdstat" };
+			"uuid", "stat", "listSEs", "xrdstat", "whois" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "addTrigger", "addHost", "queue", "register", "addSE", "addUser", "calculateFileQuota", "calculateJobQuota", "groupmembers" };
 
@@ -273,7 +303,7 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * Current status : 0 = idle, 1 = busy executing a command
 	 */
-	public AtomicInteger status = new AtomicInteger(0);
+	public CommanderStatus status = new CommanderStatus();
 
 	/**
 	 * Set this variable to finish commander's execution

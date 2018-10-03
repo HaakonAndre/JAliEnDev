@@ -109,7 +109,7 @@ public final class TransferUtils {
 	 * @param orderAsc
 	 * @return all active transfers
 	 */
-	public static List<TransferDetails> getAllActiveTransfers(final String targetSE, final String user, final String status, final Integer id, final Integer count, final boolean orderAsc) {
+	public static List<TransferDetails> getAllActiveTransfers(final String targetSE, final String user, final String status, final Long id, final Integer count, final boolean orderAsc) {
 		if (id != null) {
 			final List<TransferDetails> l = new ArrayList<>();
 			final TransferDetails d = getTransfer(id.intValue());
@@ -200,7 +200,7 @@ public final class TransferUtils {
 	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
 	 *         </ul>
 	 */
-	public static int mirror(final LFN l, final SE se) {
+	public static long mirror(final LFN l, final SE se) {
 		return mirror(l, se, null);
 	}
 
@@ -221,7 +221,7 @@ public final class TransferUtils {
 	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
 	 *         </ul>
 	 */
-	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica) {
+	public static long mirror(final LFN l, final SE se, final String onCompletionRemoveReplica) {
 		return mirror(l, se, onCompletionRemoveReplica, 3);
 	}
 
@@ -244,7 +244,7 @@ public final class TransferUtils {
 	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
 	 *         </ul>
 	 */
-	public static int mirror(final LFN l, final SE se, final String onCompletionRemoveReplica, final int maxAttempts) {
+	public static long mirror(final LFN l, final SE se, final String onCompletionRemoveReplica, final int maxAttempts) {
 		if (l == null || !l.exists || !l.isFile() || se == null)
 			return -1;
 
@@ -279,7 +279,7 @@ public final class TransferUtils {
 			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, lfnToCopy.getCanonicalName(), se.seName);
 
 			if (db.moveNext())
-				return db.geti(1);
+				return db.getl(1);
 
 			db.setReadOnly(false);
 
@@ -305,12 +305,12 @@ public final class TransferUtils {
 			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
 				return -4;
 
-			final Integer i = db.getLastGeneratedKey();
+			final Long ret = db.getLastGeneratedKeyLong();
 
-			if (i == null)
+			if (ret == null)
 				return -5;
 
-			return i.intValue();
+			return ret.longValue();
 		}
 	}
 

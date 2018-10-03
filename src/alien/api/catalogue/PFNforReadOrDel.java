@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.Request;
+import alien.catalogue.CatalogEntity;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
@@ -38,7 +39,7 @@ public class PFNforReadOrDel extends Request {
 	private final AccessType access;
 
 	private final String site;
-	private final LFN lfn;
+	private final CatalogEntity entity;
 
 	// don't remove this guid, if the guid is not send with the pfn to the
 	// client, the thing goes nuts!
@@ -55,14 +56,14 @@ public class PFNforReadOrDel extends Request {
 	 * @param user
 	 * @param site
 	 * @param access
-	 * @param lfn
+	 * @param entity
 	 * @param ses
 	 * @param exses
 	 */
-	public PFNforReadOrDel(final AliEnPrincipal user, final String site, final AccessType access, final LFN lfn, final List<String> ses, final List<String> exses) {
+	public PFNforReadOrDel(final AliEnPrincipal user, final String site, final AccessType access, final CatalogEntity entity, final List<String> ses, final List<String> exses) {
 		setRequestUser(user);
 		this.site = site;
-		this.lfn = lfn;
+		this.entity = entity;
 		this.access = access;
 		this.ses = ses;
 		this.exses = exses;
@@ -70,7 +71,7 @@ public class PFNforReadOrDel extends Request {
 
 	@Override
 	public void run() {
-		final GUID guid = GUIDUtils.getGUID(lfn.guid);
+		final GUID guid = entity instanceof GUID ? (GUID) entity : GUIDUtils.getGUID(((LFN) entity));
 
 		boolean setArchiveAnchor = false;
 
@@ -126,9 +127,10 @@ public class PFNforReadOrDel extends Request {
 				if (setArchiveAnchor)
 					for (final PFN pfn : pfns)
 						if (pfn.ticket.envelope == null)
-							logger.log(Level.WARNING, "Can't set archive anchor on " + pfn.pfn + " to " + lfn.getCanonicalName() + " since the envelope is null");
+							logger.log(Level.WARNING, "Can't set archive anchor on " + pfn.pfn + " since the envelope is null");
 						else
-							pfn.ticket.envelope.setArchiveAnchor(lfn);
+							if (entity instanceof LFN)
+								pfn.ticket.envelope.setArchiveAnchor((LFN) entity);
 			}
 			else
 				logger.log(Level.WARNING, "Sorry ... No PFN to make an envelope for!");
@@ -149,6 +151,6 @@ public class PFNforReadOrDel extends Request {
 
 	@Override
 	public String toString() {
-		return "Asked for read/delete: " + this.lfn + "\n" + "reply is: " + this.pfns;
+		return "Asked for read/delete: " + this.entity + "\n" + "reply is: " + this.pfns;
 	}
 }

@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import alien.api.Cacheable;
 import alien.api.Request;
+import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.PFN;
 import alien.user.AliEnPrincipal;
@@ -35,7 +36,14 @@ public class PFNfromString extends Request implements Cacheable {
 
 	@Override
 	public void run() {
-		this.pfns = GUIDUtils.getGUID(UUID.fromString(sguid)).getPFNs();
+		final UUID u = UUID.fromString(sguid);
+
+		final GUID g = GUIDUtils.getGUID(u);
+
+		if (g != null)
+			this.pfns = g.getPFNs();
+		else
+			this.pfns = null;
 	}
 
 	/**
