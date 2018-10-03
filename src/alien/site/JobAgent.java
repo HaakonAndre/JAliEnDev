@@ -89,17 +89,27 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private Path path = null;
 
 	private enum jaStatus{
-		REQUESTING_JOB,
-		INSTALLING_PKGS,
-		JOB_STARTED,
-		RUNNING_JOB,
-		DONE,
-		ERROR_HC,
-		ERROR_IP,
-		ERROR_GET_JDL,
-		ERROR_JDL,
-		ERROR_DIRS,
-		ERROR_START
+		REQUESTING_JOB(1),
+		INSTALLING_PKGS(2),
+		JOB_STARTED(3),
+		RUNNING_JOB(4),
+		DONE(5),
+		ERROR_HC(-1), //error in getting host
+		ERROR_IP(-2), //error installing packages
+		ERROR_GET_JDL(-3), //error getting jdl
+		ERROR_JDL(-4), //incorrect jdl
+		ERROR_DIRS(-5), //error creating directories, not enough free space in workdir
+		ERROR_START(-6); //error forking to start job
+		
+		private final int value;
+
+		private jaStatus(int value) {
+			this.value = value;
+		}
+
+		public int getValue() {
+			return value;
+		}
 	}
 	
 	private final int jobagent_requests = 1; // TODO: restore to 5
@@ -207,7 +217,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
 
-				monitor.sendParameter("ja_status", jaStatus.REQUESTING_JOB);
+				monitor.sendParameter("ja_status", jaStatus.REQUESTING_JOB.getValue());
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
 				
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
@@ -296,7 +306,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		monitor.sendParameter("job_id", 0);
 //		monitor.sendParameter("statusID", Double.valueOf(jobStatus.getAliEnLevel()));  //JobStatus is now JobWrapper only
-		monitor.sendParameter("ja_status", jaStatus.DONE); //TODO: May be errors during run. Use exit code from JobWrapper to report them.
+		monitor.sendParameter("ja_status", jaStatus.DONE.getValue()); //TODO: May be errors during run. Use exit code from JobWrapper to report them.
 
 		System.out.println("Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");
 
