@@ -373,8 +373,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 			return false;
 		}
 		
-		// get time until certificate expires (-15min)
-		timeleft = (int)(commander.getUser().getUserCert()[0].getNotAfter().getTime() - jobAgentCurrentTime) - 900;
+		// set timeleft to time until certificate expires (-15min)
+		long timeToCertExpire = TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - jobAgentCurrentTime);
+		timeleft =  (int)timeToCertExpire - 900;
 		
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
