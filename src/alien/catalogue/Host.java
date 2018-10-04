@@ -66,7 +66,7 @@ public class Host implements Comparable<Host>{
 		organization = StringFactory.get(db.gets("organization"));
 		jdbcURL = StringFactory.get(db.gets("jdbcurl"));
 		
-		final ExtProperties parent = ConfigUtils.getDBConfiguration().get("alice_users");
+		final ExtProperties parent = ConfigUtils.getConfiguration("alice_users");
 		
 		if (parent!=null)
 			dbProperties = new ExtProperties(parent.getProperties());

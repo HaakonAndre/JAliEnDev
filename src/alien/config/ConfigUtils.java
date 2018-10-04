@@ -337,15 +337,6 @@ public class ConfigUtils {
 	}
 
 	/**
-	 * Get all database-related configuration files
-	 *
-	 * @return db configurations
-	 */
-	public static final Map<String, ExtProperties> getDBConfiguration() {
-		return dbConfigFiles;
-	}
-
-	/**
 	 * Get a DB connection to a specific database key. The code relies on the <i>AlienConfig</i> system property to point to a base directory where files named <code>key</code>.properties can be
 	 * found. If a file for this key can be found it is returned to the caller, otherwise a <code>null</code> value is returned.
 	 *
@@ -378,7 +369,11 @@ public class ConfigUtils {
 	 * @return configuration contents
 	 */
 	public static final ExtProperties getConfiguration(final String key) {
-		return otherConfigFiles.get(key);
+    if(dbConfigFiles.containsKey(key)) {
+      return dbConfigFiles.get(key);
+    } else {
+      return otherConfigFiles.get(key);
+    }
 	}
 
 	/**
