@@ -161,7 +161,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
-		System.err.println("We have the following DN :" + DN);
+		logger.log(Level.INFO, "We have the following DN :" + DN);
 
 		totalJobs = 0;
 
@@ -188,13 +188,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 			RES_CPUMHZ = RES_CPUMHZ.substring(0, RES_CPUMHZ.indexOf("."));
 			RES_NOCPUS = Integer.valueOf(BkThread.getNumCPUs());
 
-			System.out.println("CPUFAMILY: " + RES_CPUFAMILY);
-			System.out.println("CPUMHZ: " + RES_CPUMHZ);
-			System.out.println("NOCPUS: " + RES_NOCPUS);
+			logger.log(Level.INFO, "CPUFAMILY: " + RES_CPUFAMILY);
+			logger.log(Level.INFO, "CPUMHZ: " + RES_CPUMHZ);
+			logger.log(Level.INFO, "NOCPUS: " + RES_NOCPUS);
 		} catch (final IOException e) {
-			System.out.println("Problem with the monitoring objects IO Exception: " + e.toString());
+			logger.log(Level.WARNING, "Problem with the monitoring objects IO Exception: " + e.toString());
 		} catch (final ApMonException e) {
-			System.out.println("Problem with the monitoring objects ApMon Exception: " + e.toString());
+			logger.log(Level.WARNING, "Problem with the monitoring objects ApMon Exception: " + e.toString());
 		}
 
 		monitor.addMonitoring("jobAgent-TODO", this);
@@ -202,7 +202,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		try {
 			path = Paths.get(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 		} catch (final URISyntaxException e) {
-			System.err.println("Could not obtain AliEn jar path: " + e.toString());
+			logger.log(Level.SEVERE, "Could not obtain AliEn jar path: " + e.toString());
 		}
 	}
 
@@ -216,7 +216,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				
 				break;
 
-			System.out.println(siteMap.toString());
+			logger.log(Level.INFO, siteMap.toString());
 			try {
 				logger.log(Level.INFO, "Trying to get a match...");
 
@@ -229,7 +229,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				
 				// TODELETE
 				if (matchedJob != null)
-					System.out.println(matchedJob.toString());
+					logger.log(Level.INFO, matchedJob.toString());
 
 				if (matchedJob != null && !matchedJob.containsKey("Error")) {
 					jdl = new JDL(Job.sanitizeJDL((String) matchedJob.get("JDL")));
@@ -241,9 +241,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 					// TODO: commander.setUser(username);
 					// commander.setSite(site);
 
-					System.out.println(jdl.getExecutable());
-					System.out.println(username);
-					System.out.println(queueId);
+					logger.log(Level.INFO, jdl.getExecutable());
+					logger.log(Level.INFO, username);
+					logger.log(Level.INFO, Long.toString(queueId));
 								
 					// process payload
 					handleJob();
@@ -257,7 +257,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 						// TODO?: monitor.sendBgMonitoring
 						Thread.sleep(20000);
 					} catch (final InterruptedException e) {
-						e.printStackTrace();
+						logger.log(Level.WARNING, "Interrupt received", e);
 					}
 				}
 			} catch (final Exception e) {
@@ -298,23 +298,22 @@ public class JobAgent implements MonitoringObject, Runnable {
 			launchJobWrapper(launchCommand, true);
 
 		} catch (final Exception e) {
-			System.err.println("Unable to handle job");
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Unable to handle job",e);
 		}
 	}
 
 	private void cleanup() {
-		System.out.println("Sending monitoring values...");
+		logger.log(Level.INFO, "Sending monitoring values...");
 
 		monitor.sendParameter("job_id", 0);
 //		monitor.sendParameter("statusID", Double.valueOf(jobStatus.getAliEnLevel()));  //JobStatus is now JobWrapper only
 		monitor.sendParameter("ja_status", jaStatus.DONE.getValue()); //TODO: May be errors during run. Use exit code from JobWrapper to report them.
 
-		System.out.println("Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");
+		logger.log(Level.INFO, "Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");
 
 		copyLogs();
 
-		System.out.println("Cleaning up after execution...");
+		logger.log(Level.INFO, "Cleaning up after execution...");
 
 		try {
 			Files.walk(tempDir.toPath())
@@ -322,7 +321,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			.map(Path::toFile).
 			forEach(File::delete);
 		} catch (IOException e) {
-			System.out.println("Error deleting the job workdir: " + e.toString());
+			logger.log(Level.WARNING, "Error deleting the job workdir: " + e.toString());
 		}
 
 		RES_WORKDIR_SIZE = ZERO;
@@ -337,7 +336,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		RES_RUNTIME = Long.valueOf(0);
 		RES_FRUNTIME = "";
 
-		System.out.println("Done!");
+		logger.log(Level.INFO, "Done!");
 	}
 
 	/**
@@ -353,7 +352,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
-		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
+		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime); //TODO: Shouldn't this be in SECONDS, and not MILLISECONDS?!
 		int timeleft = origTtl - time_subs - 300;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
@@ -375,7 +374,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		
 		// set timeleft to time until certificate expires (-15min)
 		long timeToCertExpire = TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - jobAgentCurrentTime);
-		timeleft =  (int)timeToCertExpire - 900;
+		timeleft = (int)timeToCertExpire - 900;
 		
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
@@ -500,13 +499,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			return cmd;
 		} catch (final IOException e) {
-			System.err.println("Could not generate JobWrapper launch command: " + e.getStackTrace());
+			logger.log(Level.SEVERE, "Could not generate JobWrapper launch command: " + e.getStackTrace());
 			return null;
 		}
 	}
 
 	public int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
-		System.err.println("Launching jobwrapper using the command: " + launchCommand.toString());
+		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
 		pBuilder.redirectError(Redirect.appendTo(new File("/tmp", "stderr"))); // TODO: Remove after testing
@@ -538,17 +537,17 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.close();
 			stdin.close();
 		} catch (final IOException ioe) {
-			System.out.println("Exception running " + launchCommand + " : " + ioe.getMessage());
+			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
 			return -2;
 		}
 
 		mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
 		final Vector<Integer> child = mj.getChildren();
 		if (child == null || child.size() <= 1) {
-			System.err.println("Can't get children. Failed to execute? " + launchCommand.toString() + " child: " + child);
+			logger.log(Level.WARNING, "Can't get children. Failed to execute? " + launchCommand.toString() + " child: " + child);
 			return -1;
 		}
-		System.out.println("Child: " + child.get(1).toString());
+		logger.log(Level.INFO, "Child: " + child.get(1).toString());
 
 		if (monitorJob) {
 			payloadPID = child.get(1).intValue();
@@ -570,7 +569,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		boolean processNotFinished = true;
 		int code = 0;
 
-		System.out.println("About to enter monitor loop. Is the JobWrapper process alive?: " + p.isAlive());
+		logger.log(Level.INFO, "About to enter monitor loop. Is the JobWrapper process alive?: " + p.isAlive());
 
 		int monitor_loops = 0;
 		try {
@@ -579,9 +578,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 					Thread.sleep(5 * 1000); // TODO: Change to 60
 					code = p.exitValue();
 					processNotFinished = false;
-					System.out.println("JobWrapper has finished execution. Exit code: " + code);
+					logger.log(Level.INFO, "JobWrapper has finished execution. Exit code: " + code);
 					if(code!=0)
-						System.out.println("Error encountered: see the JobWrapper logs in: " + logpath + " for more details");
+						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + logpath + " for more details");
 				} catch (final IllegalThreadStateException e) {
 					logger.log(Level.WARNING, "Exception waiting for the process to finish", e);
 					// TODO: check job-token exist (job not killed)
@@ -592,7 +591,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 						final String error = checkProcessResources();
 						if (error != null) {
 							p.destroy();
-							System.out.println("Process overusing resources: " + error);
+							logger.log(Level.SEVERE, "Process overusing resources: " + error);
 							return -2;
 						}
 						if (monitor_loops == 10) {
@@ -603,7 +602,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			return code;
 		} catch (final InterruptedException ie) {
-			System.out.println("Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
+			logger.log(Level.WARNING, "Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
 			return -2;
 		} finally {
 			t.cancel();
@@ -615,15 +614,15 @@ public class JobAgent implements MonitoringObject, Runnable {
 		// cpufamily cpuspeed resourcecost maxrss maxvss ksi2k
 		final String procinfo = String.format("%s %d %.2f %.2f %.2f %.2f %.2f %d %s %s %s %.2f %.2f 1000", RES_FRUNTIME, RES_RUNTIME, RES_CPUUSAGE, RES_MEMUSAGE, RES_CPUTIME, RES_RMEM, RES_VMEM,
 				RES_NOCPUS, RES_CPUFAMILY, RES_CPUMHZ, RES_RESOURCEUSAGE, RES_RMEMMAX, RES_VMEMMAX);
-		System.out.println("+++++ Sending resources info +++++");
-		System.out.println(procinfo);
+		logger.log(Level.INFO, "+++++ Sending resources info +++++");
+		logger.log(Level.INFO, procinfo);
 
 		commander.q_api.putJobLog(queueId, "proc", procinfo);
 	}
 
 	private String checkProcessResources() { // checks and maintains sandbox
 		String error = null;
-		System.out.println("Checking resources usage");
+		logger.log(Level.INFO, "Checking resources usage");
 
 		try {
 
@@ -632,7 +631,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			final HashMap<Long, Double> diskinfo = mj.readJobDiskUsage();
 
 			if (jobinfo == null || diskinfo == null) {
-				System.err.println("JobInfo or DiskInfo monitor null");
+				logger.log(Level.WARNING, "JobInfo or DiskInfo monitor null");
 				return "Not available";
 			}
 
@@ -685,10 +684,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 			}
 
 		} catch (final IOException e) {
-			System.out.println("Problem with the monitoring objects: " + e.toString());
+			logger.log(Level.WARNING, "Problem with the monitoring objects: " + e.toString());
 		} catch (final NoSuchElementException e) {
-			System.out.println("Warning: an error occurred reading monitoring data:  ");
-			e.printStackTrace();
+			logger.log(Level.WARNING, "Warning: an error occurred reading monitoring data:  " + e.toString());
 		}
 
 		return error;
@@ -749,7 +747,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		if (!logDir.exists()) {
 			final boolean created = logDir.mkdirs();
 			if (!created) {
-				System.err.println("log directory can't be created: " + logpath);
+				logger.log(Level.WARNING, "log directory can't be created: " + logpath);
 				return;
 			}
 		}
@@ -771,8 +769,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			}
 		}  catch (final IOException e) {
-			System.err.println("Warning: An error occurred while copying logs to " + logpath);
-			e.printStackTrace();
+			logger.log(Level.WARNING, "Warning: An error occurred while copying logs to " + logpath, e);
 		}
 	}
 
