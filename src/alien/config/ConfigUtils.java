@@ -57,11 +57,14 @@ public class ConfigUtils {
 
 	private static final Map<String, ExtProperties> otherConfigFiles;
 
+	private static final ExtProperties appConfig;
+
+  private static ExtProperties logConfig;
+
 	private static final String CONFIG_FOLDER;
 
 	private static LoggingConfigurator logging = null;
 
-	private static final ExtProperties appConfig;
 
 	private static boolean hasDirectDBConnection = false;
 
@@ -76,7 +79,6 @@ public class ConfigUtils {
 
 		final Map<String, ExtProperties> foundProperties = new HashMap<>();
 
-		ExtProperties logConfig = null;
 
 		try {
 			for (String name : getResourceListing(ConfigUtils.class, "config/"))
