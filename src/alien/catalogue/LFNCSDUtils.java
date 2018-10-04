@@ -26,8 +26,11 @@ import org.nfunk.jep.JEP;
 import com.datastax.driver.core.ConsistencyLevel;
 
 import alien.config.ConfigUtils;
+import alien.io.TransferUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.se.SE;
+import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import lazyj.Format;
@@ -648,6 +651,37 @@ public class LFNCSDUtils {
 		}
 
 		return null;
+	}
+
+	/**
+	 * @param path
+	 * @param ses
+	 * @param exses
+	 * @param qos
+	 * @param attempts
+	 * @return transfer IDs to each SE
+	 */
+	public static HashMap<String, Long> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final Integer attempts) {
+		LFN_CSD lfnc = new LFN_CSD(path, true, null, null, null);
+
+		if (!lfnc.exists || lfnc.pfns.size() <= 0)
+			return null;
+
+		// find closest SE
+		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
+
+		for (Integer seNumber : lfnc.pfns.keySet()) {
+			exses.add(SEUtils.getSE(seNumber).getName());
+		}
+
+		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
+		final HashMap<String, Long> resmap = new HashMap<>();
+		for (final SE s : found_ses) {
+			final long transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfnc, s, null, attempts.intValue()) : TransferUtils.mirror(lfnc, s);
+			resmap.put(s.getName(), Long.valueOf(transferID));
+		}
+
+		return resmap;
 	}
 
 }

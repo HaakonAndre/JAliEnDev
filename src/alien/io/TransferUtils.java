@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
+import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.protocols.Factory;
@@ -207,6 +208,25 @@ public final class TransferUtils {
 	/**
 	 * @param l
 	 * @param se
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
+	 */
+	public static long mirror(final LFN_CSD l, final SE se) {
+		return mirror(l, se, null, 1);
+	}
+
+	/**
+	 * @param l
+	 * @param se
 	 * @param onCompletionRemoveReplica
 	 *            a move mirror operation, on successful transfer remove the mirror from this SE
 	 * @return one of these possible values or exit code:
@@ -295,6 +315,85 @@ public final class TransferUtils {
 			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
 			values.put("options", "ur");
 			values.put("user", lfnToCopy.owner);
+			values.put("type", "mirror");
+			values.put("agentid", Integer.valueOf(0));
+			values.put("attempts", Integer.valueOf(maxAttempts - 1));
+
+			if (onCompletionRemoveReplica != null && onCompletionRemoveReplica.length() > 0)
+				values.put("remove_replica", onCompletionRemoveReplica);
+
+			if (!db.query(DBFunctions.composeInsert("TRANSFERS_DIRECT", values)))
+				return -4;
+
+			final Long ret = db.getLastGeneratedKeyLong();
+
+			if (ret == null)
+				return -5;
+
+			return ret.longValue();
+		}
+	}
+
+	/**
+	 * @param l
+	 * @param se
+	 * @param onCompletionRemoveReplica
+	 *            a move mirror operation, on successful transfer remove the mirror from this SE
+	 * @param maxAttempts
+	 *            maximum number of attempts to copy this file
+	 * @return one of these possible values or exit code:
+	 *         <ul>
+	 *         <li>the transfer ID (strictly positive value)</li>
+	 *         <li>0 in case the file is already on the target SE</li>
+	 *         <li>-1=wrong parameters</li>
+	 *         <li>-2=database connection missing</li>
+	 *         <li>-3=cannot locate real pfns</li>
+	 *         <li>-4=the insert query failed</li>
+	 *         <li>-5=insert query didn't generate a transfer ID</li>
+	 *         <li>-6=cannot locate the archive LFN_CSD to mirror (for a file inside a zip archive))</li>
+	 *         </ul>
+	 */
+	public static long mirror(final LFN_CSD l, final SE se, final String onCompletionRemoveReplica, final int maxAttempts) {
+		if (l == null || !l.exists || !l.isFile() || se == null)
+			return -1;
+
+		try (DBFunctions db = getDB()) {
+			if (db == null)
+				return -2;
+
+			if (monitor != null) {
+				monitor.incrementCounter("TRANSFERS_db_lookup");
+				monitor.incrementCounter("TRANSFERS_get_by_lfn_and_destination");
+			}
+
+			// for (final Integer seNumber : l.whereis().keySet())
+			// if (se.equals(SEUtils.getSE(seNumber).getName()))
+			// return 0;
+
+			if (monitor != null)
+				monitor.incrementCounter("TRANSFERS_db_insert");
+
+			db.setReadOnly(true);
+
+			db.query(PREVIOUS_TRANSFER_ID_QUERY, false, l.getCanonicalName(), se.seName);
+
+			if (db.moveNext())
+				return db.getl(1);
+
+			db.setReadOnly(false);
+
+			db.setLastGeneratedKey(true);
+
+			final Map<String, Object> values = new LinkedHashMap<>();
+
+			values.put("lfn", l.getCanonicalName());
+			values.put("destination", se.seName);
+			values.put("size", Long.valueOf(l.size));
+			values.put("status", "WAITING");
+			values.put("sent", Long.valueOf(System.currentTimeMillis() / 1000));
+			values.put("received", Long.valueOf(System.currentTimeMillis() / 1000));
+			values.put("options", "ur");
+			values.put("user", l.owner);
 			values.put("type", "mirror");
 			values.put("agentid", Integer.valueOf(0));
 			values.put("attempts", Integer.valueOf(maxAttempts - 1));
