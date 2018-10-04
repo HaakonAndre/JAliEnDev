@@ -63,9 +63,7 @@ public class ConfigUtils {
 	static {
 		ExtProperties fileConfig = null;
 
-		final Map<String, ExtProperties> foundProperties = new HashMap<>();
-
-
+    // Load the builtint properties
 		try {
 			for (String name : getResourceListing(ConfigUtils.class, "config/"))
 				if (name.endsWith(".properties")) {
@@ -76,7 +74,7 @@ public class ConfigUtils {
 
 					try (InputStream is = ConfigUtils.class.getClassLoader().getResourceAsStream("config/" + name)) {
 						final ExtProperties prop = new ExtProperties(is);
-						foundProperties.put(key, prop);
+						otherConfigFiles.put(key, prop);
 					}
 				}
 		} catch (@SuppressWarnings("unused") final Throwable t) {
@@ -84,9 +82,7 @@ public class ConfigUtils {
 		}
 
 		// configuration files in the indicated config folder overwrite the defaults from classpath
-
 		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
-
 		final String configOption = System.getProperty("AliEnConfig", "config");
 
 		final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);
@@ -103,7 +99,7 @@ public class ConfigUtils {
 							String sName = sub.getName();
 							sName = sName.substring(0, sName.lastIndexOf('.'));
 
-							ExtProperties oldProperties = foundProperties.get(sName);
+							ExtProperties oldProperties = otherConfigFiles.get(sName);
 
 							if (oldProperties == null)
 								oldProperties = new ExtProperties();
@@ -111,12 +107,13 @@ public class ConfigUtils {
 							final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
 							prop.setAutoReload(1000 * 60);
 
-							foundProperties.put(sName, prop);
+							otherConfigFiles.put(sName, prop);
 						}
 			}
 		}
 
-		for (final Map.Entry<String, ExtProperties> entry : foundProperties.entrySet()) {
+    // Load from found properties to otherConfigFiles
+		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
 			final String sName = entry.getKey();
 			final ExtProperties prop = entry.getValue();
 
@@ -129,6 +126,8 @@ public class ConfigUtils {
       if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
         hasDirectDBConnection = true;
       }
+
+      otherConfigFiles.put(sName, prop);
 		}
 
 		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
@@ -168,7 +167,7 @@ public class ConfigUtils {
 		if (!hasMLConfig)
 			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
 			for (final String configFile : new String[] { "config", "mlconfig", "App" }) {
-				final ExtProperties eprop = foundProperties.get(configFile);
+				final ExtProperties eprop = otherConfigFiles.get(configFile);
 
 				if (eprop != null) {
 					final Properties prop = eprop.getProperties();
