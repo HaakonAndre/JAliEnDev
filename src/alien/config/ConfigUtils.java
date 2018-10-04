@@ -57,8 +57,6 @@ public class ConfigUtils {
 
 	private static final ExtProperties appConfig;
 
-  private static ExtProperties logConfig;
-
 	private static final String CONFIG_FOLDER;
 
 	private static LoggingConfigurator logging = null;
@@ -137,15 +135,10 @@ public class ConfigUtils {
 				applicationConfig = prop;
 			else {
 				prop.makeReadOnly();
+        otherconfig.put(sName, prop);
 
-				if (sName.equals("logging"))
-					logConfig = prop;
-				else {
-          otherconfig.put(sName, prop);
-
-					if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-						hasDirectDBConnection = true;
-					}
+        if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
+          hasDirectDBConnection = true;
         }
 			}
 		}
@@ -175,8 +168,8 @@ public class ConfigUtils {
 			fileConfig.set(entry.getKey().toString(), entry.getValue().toString());
 
 		// now let's configure the logging, if allowed to
-		if (fileConfig.getb("jalien.configure.logging", true) && logConfig != null) {
-			logging = new LoggingConfigurator(logConfig);
+		if (fileConfig.getb("jalien.configure.logging", true) && otherConfigFiles.containsKey("logging")) {
+      logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
 
 			// tell ML not to configure its logger
 			System.setProperty("lia.Monitor.monitor.LoggerConfigClass.preconfiguredLogging", "true");
