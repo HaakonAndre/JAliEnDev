@@ -53,7 +53,7 @@ public class ConfigUtils {
 	 */
 	static transient final Logger logger;
 
-	private static final Map<String, ExtProperties> otherConfigFiles;
+	private static Map<String, ExtProperties> otherConfigFiles;
 
 	private static LoggingConfigurator logging = null;
 
@@ -61,7 +61,6 @@ public class ConfigUtils {
 	private static boolean hasDirectDBConnection = false;
 
 	static {
-		final HashMap<String, ExtProperties> otherconfig = new HashMap<>();
 		ExtProperties fileConfig = null;
 
 		final Map<String, ExtProperties> foundProperties = new HashMap<>();
@@ -132,7 +131,7 @@ public class ConfigUtils {
       }
 		}
 
-		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
+		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
 
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
 
