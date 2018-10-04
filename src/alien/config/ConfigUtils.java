@@ -55,8 +55,6 @@ public class ConfigUtils {
 
 	private static final Map<String, ExtProperties> otherConfigFiles;
 
-	private static final ExtProperties appConfig;
-
 	private static final String CONFIG_FOLDER;
 
 	private static LoggingConfigurator logging = null;
@@ -68,8 +66,7 @@ public class ConfigUtils {
 		String sConfigFolder = null;
 
 		final HashMap<String, ExtProperties> otherconfig = new HashMap<>();
-
-		ExtProperties applicationConfig = null;
+		ExtProperties fileConfig = null;
 
 		final Map<String, ExtProperties> foundProperties = new HashMap<>();
 
@@ -131,16 +128,15 @@ public class ConfigUtils {
 			final String sName = entry.getKey();
 			final ExtProperties prop = entry.getValue();
 
-			if (sName.equals("config"))
-				applicationConfig = prop;
-			else {
-				prop.makeReadOnly();
-        otherconfig.put(sName, prop);
+      if (!sName.equals("config")) {
+        	prop.makeReadOnly();
+      } else {
+        fileConfig = prop;
+      }
 
-        if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-          hasDirectDBConnection = true;
-        }
-			}
+      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
+        hasDirectDBConnection = true;
+      }
 		}
 
 		CONFIG_FOLDER = sConfigFolder;
@@ -151,19 +147,20 @@ public class ConfigUtils {
 
 		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
 
-		ExtProperties fileConfig;
-
-		if (applicationConfig != null)
-			fileConfig = applicationConfig;
-		else
+    // If the general configuration is not already loaded
+    if (fileConfig == null) {
+      // Try to load from MonaLisa
 			if (hasMLConfig) {
 				// Started from ML, didn't have its own configuration, so copy the configuration keys from ML's main config file
 				fileConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
 				fileConfig.set("jalien.configure.logging", "false");
 			}
-			else
+			else { // or just initialize to an empty ExtProperties
 				fileConfig = new ExtProperties();
+      }
+    }
 
+    // Load additional properties from cmdline
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
 			fileConfig.set(entry.getKey().toString(), entry.getValue().toString());
 
@@ -200,7 +197,7 @@ public class ConfigUtils {
 
 		fileConfig.makeReadOnly();
 
-		appConfig = new FallbackProperties(fileConfig);
+    otherConfigFiles.put("config", fileConfig);
 
 		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
 			@SuppressWarnings("resource")
@@ -209,7 +206,8 @@ public class ConfigUtils {
 			if (dbAdmin != null) {
 				final DBProperties dbProp = new DBProperties(dbAdmin);
 				dbProp.makeReadOnly();
-				((FallbackProperties) appConfig).addProvider(dbProp);
+				// ((FallbackProperties) appConfig).addProvider(dbProp);
+				((FallbackProperties) otherConfigFiles.get("config")).addProvider(dbProp);
 			}
 		}
 
@@ -344,7 +342,7 @@ public class ConfigUtils {
 	 * @return application configuration
 	 */
 	public static final ExtProperties getConfig() {
-		return appConfig;
+    return otherConfigFiles.get("config");
 	}
 
 	/**
@@ -537,8 +535,10 @@ public class ConfigUtils {
 
 		// Overwrite values
 		configuration.put("organisation", "ALICE");
-		if (appConfig != null) {
-			final Properties props = appConfig.getProperties();
+		// if (appConfig != null) {
+    if(otherConfigFiles.containsKey("config")) {
+			// final Properties props = appConfig.getProperties();
+			final Properties props = otherConfigFiles.get("config").getProperties();
 			for (final Object s : props.keySet()) {
 				final String key = (String) s;
 				configuration.put(key, props.get(key));
@@ -592,7 +592,7 @@ public class ConfigUtils {
 		System.out.println("Config folder: " + CONFIG_FOLDER);
 		System.out.println("Has direct db connection: " + hasDirectDBConnection);
 
-		dumpConfiguration("config", appConfig);
+		dumpConfiguration("config", otherConfigFiles.get("config"));
 
 		if (logging != null)
 			dumpConfiguration("logging", logging.prop);
