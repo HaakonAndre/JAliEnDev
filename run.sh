@@ -1,32 +1,28 @@
 #!/bin/bash
 
-export PATH="$PATH:$HOME/alien/bin:$HOME/alien/api/bin"
-export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$HOME/alien/lib:$HOME/alien/api/lib"
+JARFILE_CMD=$(echo "$@" | awk '{for ( x = 1; x <= NF; x++ ) { if ($x == "-jar") {print $(x+1)} }}') #'
+[[ ( -e "${JARFILE_CMD}" ) && ( -f "${JARFILE_CMD}" ) ]] && JARFILE="${JARFILE_CMD}"
 
-if [ -f alien-cs.jar ]; then
-    CLASSPATH="$JALIEN_HOME/alien-cs.jar"
-elif [ -f alien-users.jar ]; then
-    CLASSPATH="$JALIEN_HOME/alien-users.jar"
-else
-    CLASSPATH="$JALIEN_HOME/alien.jar"
-
-    for DEP in lib/*.jar; do
-	CLASSPATH="$CLASSPATH:$DEP"
+if [[ -z "${JARFILE}" ]]; then
+  if [[ -z "${JALIEN_HOME}" ]]; then
+    ## find the location of jalien script
+    SOURCE="${BASH_SOURCE[0]}"
+    while [ -h "${SOURCE}" ]; do ## resolve $SOURCE until the file is no longer a symlink
+      JALIEN_HOME="$( cd -P "$(dirname "${SOURCE}" )" && pwd )" ##"
+      SOURCE="$(readlink "${SOURCE}")" ##"
+      [[ "${SOURCE}" != /* ]] && SOURCE="${JALIEN_HOME}/${SOURCE}" ## if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
     done
+    JALIEN_HOME="$(cd -P "$( dirname "${SOURCE}" )" && pwd)" ##"
+    export JALIEN_HOME
+  fi
+
+  JAR_LIST_MAIN=$(find "${JALIEN_HOME}" -maxdepth 1 -name "*.jar" -printf "%p:" | sed 's/.$//')
+  JAR_LIST_LIB=$(find "${JALIEN_HOME}/lib/" -name "*.jar" -printf "%p:" | sed 's/.$//')
+  export CLASSPATH="${JAR_LIST_MAIN}:${JAR_LIST_LIB}"
 fi
 
-export CLASSPATH
+JALIEN_OPTS_DEFAULT="-server -Xms4G -Xmx4G -XX:+UseG1GC -XX:+DisableExplicitGC -XX:+UseCompressedOops -XX:+AggressiveOpts \
+-XX:+OptimizeStringConcat -XX:MaxTrivialSize=1K -XX:CompileThreshold=20000 -Duserid=$(id -u) -Dcom.sun.jndi.ldap.connect.pool=false -Djava.io.tmpdir=/tmp"
 
-java \
-	-server \
-	-Xms4G -Xmx4G \
-	-XX:+UseG1GC \
-	-XX:+DisableExplicitGC \
-	-XX:+UseCompressedOops \
-	-XX:+AggressiveOpts \
-	-XX:+OptimizeStringConcat \
-	-XX:MaxTrivialSize=1K \
-	-XX:CompileThreshold=20000 \
-	-Duserid=$(id -u) \
-	-Dcom.sun.jndi.ldap.connect.pool=false \
-	"$@"
+CMD="java ${JALIEN_OPTS_DEFAULT}"
+eval "${CMD}" "$@"
