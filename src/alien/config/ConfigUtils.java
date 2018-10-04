@@ -55,16 +55,12 @@ public class ConfigUtils {
 
 	private static final Map<String, ExtProperties> otherConfigFiles;
 
-	private static final String CONFIG_FOLDER;
-
 	private static LoggingConfigurator logging = null;
 
 
 	private static boolean hasDirectDBConnection = false;
 
 	static {
-		String sConfigFolder = null;
-
 		final HashMap<String, ExtProperties> otherconfig = new HashMap<>();
 		ExtProperties fileConfig = null;
 
@@ -117,9 +113,6 @@ public class ConfigUtils {
 							prop.setAutoReload(1000 * 60);
 
 							foundProperties.put(sName, prop);
-
-							// record the last path where some configuration files were loaded from
-							sConfigFolder = path;
 						}
 			}
 		}
@@ -138,8 +131,6 @@ public class ConfigUtils {
         hasDirectDBConnection = true;
       }
 		}
-
-		CONFIG_FOLDER = sConfigFolder;
 
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 
@@ -215,7 +206,7 @@ public class ConfigUtils {
 
 		if (logger.isLoggable(Level.FINE))
 			logger.log(Level.FINE,
-					"Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig + ", config folder: " + CONFIG_FOLDER);
+                 "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig);
 	}
 
 	private static String userDefinedAppName = null;
@@ -303,13 +294,6 @@ public class ConfigUtils {
 		}
 
 		throw new UnsupportedOperationException("Cannot list files for URL " + dirURL);
-	}
-
-	/**
-	 * @return the base directory where the configuration files are
-	 */
-	public static final String getConfigFolder() {
-		return CONFIG_FOLDER;
 	}
 
 	/**
@@ -589,7 +573,6 @@ public class ConfigUtils {
 	 * @param args
 	 */
 	public static void main(final String[] args) {
-		System.out.println("Config folder: " + CONFIG_FOLDER);
 		System.out.println("Has direct db connection: " + hasDirectDBConnection);
 
 		dumpConfiguration("config", otherConfigFiles.get("config"));
