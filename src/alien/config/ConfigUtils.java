@@ -53,8 +53,6 @@ public class ConfigUtils {
 	 */
 	static transient final Logger logger;
 
-	private static final Map<String, ExtProperties> dbConfigFiles;
-
 	private static final Map<String, ExtProperties> otherConfigFiles;
 
 	private static final ExtProperties appConfig;
@@ -70,8 +68,6 @@ public class ConfigUtils {
 
 	static {
 		String sConfigFolder = null;
-
-		final HashMap<String, ExtProperties> dbconfig = new HashMap<>();
 
 		final HashMap<String, ExtProperties> otherconfig = new HashMap<>();
 
@@ -144,21 +140,17 @@ public class ConfigUtils {
 
 				if (sName.equals("logging"))
 					logConfig = prop;
-				else
-					if (prop.gets("driver").length() > 0) {
-						dbconfig.put(sName, prop);
+				else {
+          otherconfig.put(sName, prop);
 
-						if (prop.gets("password").length() > 0)
-							hasDirectDBConnection = true;
+					if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
+						hasDirectDBConnection = true;
 					}
-					else
-						otherconfig.put(sName, prop);
+        }
 			}
 		}
 
 		CONFIG_FOLDER = sConfigFolder;
-
-		dbConfigFiles = Collections.unmodifiableMap(dbconfig);
 
 		otherConfigFiles = Collections.unmodifiableMap(otherconfig);
 
@@ -345,7 +337,7 @@ public class ConfigUtils {
 	 * @return the database connection, or <code>null</code> if it is not available.
 	 */
 	public static final DBFunctions getDB(final String key) {
-		final ExtProperties p = dbConfigFiles.get(key);
+		final ExtProperties p = getConfiguration(key);
 
 		if (p == null)
 			return null;
@@ -369,11 +361,7 @@ public class ConfigUtils {
 	 * @return configuration contents
 	 */
 	public static final ExtProperties getConfiguration(final String key) {
-    if(dbConfigFiles.containsKey(key)) {
-      return dbConfigFiles.get(key);
-    } else {
-      return otherConfigFiles.get(key);
-    }
+    return otherConfigFiles.get(key);
 	}
 
 	/**
@@ -615,10 +603,6 @@ public class ConfigUtils {
 
 		if (logging != null)
 			dumpConfiguration("logging", logging.prop);
-
-		System.out.println("\nDatabase connections:");
-		for (final Map.Entry<String, ExtProperties> entry : dbConfigFiles.entrySet())
-			dumpConfiguration(entry.getKey(), entry.getValue());
 
 		System.out.println("\nOther configuration files:");
 
