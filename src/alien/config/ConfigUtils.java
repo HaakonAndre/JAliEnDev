@@ -160,6 +160,7 @@ public class ConfigUtils {
 			}
 		}
 
+    // Load the application config from ML, if needed
 		ExtProperties fileConfig = otherConfigFiles.get("config");
 
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
@@ -167,67 +168,30 @@ public class ConfigUtils {
 		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
 
     // If the general configuration is not already loaded
-    if (fileConfig == null) {
-      // Try to load from MonaLisa
-			if (hasMLConfig) {
-				// Started from ML, didn't have its own configuration, so copy the configuration keys from ML's main config file
-				fileConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
-				fileConfig.set("jalien.configure.logging", "false");
-			}
-			else { // or just initialize to an empty ExtProperties
-				fileConfig = new ExtProperties();
-      }
+    // Try to load from MonaLisa
+    if (fileConfig == null && hasMLConfig) {
+      // Started from ML, didn't have its own configuration, so copy the configuration keys from ML's main config file
+      // NOTE: this is also probably redundant because we will pick up the keys from ML anyways.
+      fileConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
+      fileConfig.set("jalien.configure.logging", "false");
+    } else if (fileConfig == null) {
+      fileConfig = new ExtProperties();
     }
 
     // Load additional properties from cmdline
+    // TODO: extract, return an ExtProperties instance and then merge with the fileConfig
 		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
 			fileConfig.set(entry.getKey().toString(), entry.getValue().toString());
 
-		// now let's configure the logging, if allowed to
-		if (fileConfig.getb("jalien.configure.logging", true) && otherConfigFiles.containsKey("logging")) {
-      logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
-
-			// tell ML not to configure its logger
-			System.setProperty("lia.Monitor.monitor.LoggerConfigClass.preconfiguredLogging", "true");
-
-			// same to lazyj
-			System.setProperty("lazyj.use_java_logger", "true");
-		}
-
-		if (!hasMLConfig)
-			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
-			for (final String configFile : new String[] { "config", "mlconfig", "App" }) {
-				final ExtProperties eprop = otherConfigFiles.get(configFile);
-
-				if (eprop != null) {
-					final Properties prop = eprop.getProperties();
-
-					for (final String key : prop.stringPropertyNames())
-						AppConfig.setProperty(key, prop.getProperty(key));
-				}
-			}
-		else {
+    // Load additional configuration from MonaLisa
+    // TODO: extract, and make it return an ExtProperties instance, then merge it with fileConfig.
+		if (hasMLConfig) {
 			// assume running as a library inside ML code, inherit the configuration keys from its main config file
 			final Properties mlConfigProperties = AppConfig.getPropertiesConfigApp();
 
 			for (final String key : mlConfigProperties.stringPropertyNames())
 				fileConfig.set(key, mlConfigProperties.getProperty(key));
 		}
-
-		fileConfig.makeReadOnly();
-
-    otherConfigFiles.put("config", fileConfig);
-
-		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
-			final ExtProperties prop = entry.getValue();
-      prop.makeReadOnly();
-
-      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-        hasDirectDBConnection = true;
-      }
-		}
-
-		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
 
 		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
 			@SuppressWarnings("resource")
@@ -241,6 +205,53 @@ public class ConfigUtils {
 			}
 		}
 
+		fileConfig.makeReadOnly();
+    otherConfigFiles.put("config", fileConfig);
+    // End of loading the default configuration (appconfig, "config" file)
+
+
+
+    // Seal the configuration
+		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
+			final ExtProperties prop = entry.getValue();
+      prop.makeReadOnly();
+
+      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
+        hasDirectDBConnection = true;
+      }
+		}
+
+		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
+    // End seal
+
+    // Start configuration targets
+		// now let's configure the logging, if allowed to
+		if (fileConfig.getb("jalien.configure.logging", true) && otherConfigFiles.containsKey("logging")) {
+      logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
+
+			// tell ML not to configure its logger
+			System.setProperty("lia.Monitor.monitor.LoggerConfigClass.preconfiguredLogging", "true");
+
+			// same to lazyj
+			System.setProperty("lazyj.use_java_logger", "true");
+		}
+
+    // Configure the MonaLisa target
+		if (!hasMLConfig)
+			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
+			for (final String configFile : new String[] { "config", "mlconfig", "App" }) {
+				final ExtProperties eprop = otherConfigFiles.get(configFile);
+
+				if (eprop != null) {
+					final Properties prop = eprop.getProperties();
+
+					for (final String key : prop.stringPropertyNames())
+						AppConfig.setProperty(key, prop.getProperty(key));
+				}
+			}
+    // End configuration targets
+
+    // Create local logger
 		logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
 
 		if (logger.isLoggable(Level.FINE))
