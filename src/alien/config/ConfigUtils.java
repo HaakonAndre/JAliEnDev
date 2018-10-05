@@ -126,6 +126,15 @@ public class ConfigUtils {
     return tmp;
   }
 
+  private static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b) {
+    ExtProperties tmp = a;
+
+    for (final Map.Entry<Object, Object> entry : b.getProperties().entrySet())
+    	tmp.set(entry.getKey().toString(), entry.getValue().toString());
+
+    return tmp;
+  }
+
 	static {
     // Start configuration sources
     Map<String, ExtProperties> builtinProperties = getBuiltinProperties();
@@ -143,9 +152,8 @@ public class ConfigUtils {
     }
 
     // Load additional properties from cmdline
-    // TODO: extract, return an ExtProperties instance and then merge with the fileConfig
-		for (final Map.Entry<Object, Object> entry : System.getProperties().entrySet())
-			fileConfig.set(entry.getKey().toString(), entry.getValue().toString());
+    ExtProperties systemProperties = new ExtProperties(System.getProperties());
+    fileConfig = mergeProperties(fileConfig, systemProperties);
 
     // Load additional configuration from MonaLisa
     // TODO: extract, and make it return an ExtProperties instance, then merge it with fileConfig.
