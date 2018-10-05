@@ -9,7 +9,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
@@ -22,7 +21,6 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -35,9 +33,7 @@ import java.util.logging.Logger;
 import alien.user.LDAPHelper;
 
 import lazyj.DBFunctions;
-import lazyj.DBProperties;
 import lazyj.ExtProperties;
-import lazyj.FallbackProperties;
 import lazyj.cache.ExpirationCache;
 import lazyj.commands.SystemCommand;
 
@@ -59,161 +55,12 @@ public class ConfigUtils {
 
 	private static LoggingConfigurator logging = null;
 
-
 	private static boolean hasDirectDBConnection = false;
 
-  private static Map<String, ExtProperties> getBuiltinProperties() {
-    Map<String, ExtProperties> tmpProperties = new HashMap<String, ExtProperties>();
-
-    // Load the builtint properties
-    // TODO: extract to method, return map and merge with the otherConfigfiles
-		try {
-			for (String name : getResourceListing(ConfigUtils.class, "config/"))
-				if (name.endsWith(".properties")) {
-					if (name.indexOf('/') > 0)
-						name = name.substring(name.lastIndexOf('/') + 1);
-
-					final String key = name.substring(0, name.indexOf('.'));
-
-					try (InputStream is = ConfigUtils.class.getClassLoader().getResourceAsStream("config/" + name)) {
-						final ExtProperties prop = new ExtProperties(is);
-						tmpProperties.put(key, prop);
-					}
-				}
-		} catch (@SuppressWarnings("unused") final Throwable t) {
-			// cannot load the default configuration files for any reason
-		}
-
-    return tmpProperties;
-  }
-
-  private static Map<String, ExtProperties> getFromConfigFolders(final Map<String, ExtProperties> oldConfigFiles) {
-    Map<String, ExtProperties> tmp = new HashMap<String, ExtProperties>();
-
-		// configuration files in the indicated config folder overwrite the defaults from classpath
-    // TODO: extract into a method, return a map, merge with the otheronfigFiles
-    // NOTE: this method extends previously found properties!
-		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
-		final String configOption = System.getProperty("AliEnConfig", "config");
-
-		final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);
-
-		for (final String path : configFolders) {
-			final File f = new File(path);
-
-			if (f.exists() && f.isDirectory() && f.canRead()) {
-				final File[] list = f.listFiles();
-
-				if (list != null)
-					for (final File sub : list)
-						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
-							String sName = sub.getName();
-							sName = sName.substring(0, sName.lastIndexOf('.'));
-
-							ExtProperties oldProperties = oldConfigFiles.get(sName);
-
-							if (oldProperties == null)
-								oldProperties = new ExtProperties();
-
-							final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
-							prop.setAutoReload(1000 * 60);
-
-							tmp.put(sName, prop);
-						}
-			}
-		}
-
-    return tmp;
-  }
-
-  private static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b) {
-    ExtProperties tmp = new ExtProperties(a.getProperties());
-
-    for (final Map.Entry<Object, Object> entry : b.getProperties().entrySet())
-    	tmp.set(entry.getKey().toString(), entry.getValue().toString());
-
-    return tmp;
-  }
-
-  private static ExtProperties getConfigFromML() {
-    // TODO: duplicated code!
-		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
-		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
-
-    ExtProperties tmp = new ExtProperties();
-
-		if (hasMLConfig) {
-			// assume running as a library inside ML code, inherit the configuration keys from its main config file
-			final Properties mlConfigProperties = AppConfig.getPropertiesConfigApp();
-
-			for (final String key : mlConfigProperties.stringPropertyNames())
-				tmp.set(key, mlConfigProperties.getProperty(key));
-
-      tmp.set("jalien.configure.logging", "false");
-		}
-
-    return tmp;
-  }
-
-  private static ExtProperties getConfigFromDB(final ExtProperties fileConfig) {
-    ExtProperties tmp = new ExtProperties();
-
-		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
-			final DBFunctions dbAdmin = getDB("admin");
-
-			if (dbAdmin != null) {
-				final DBProperties dbProp = new DBProperties(dbAdmin);
-        dbProp.makeReadOnly();
-        tmp = dbProp;
-			}
-		} 
-
-    return tmp;
-  }
-
-	static {
-    // TODO: duplicated code!
-		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
-		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
-
-    Map<String, ExtProperties> builtinProperties = getBuiltinProperties();
-    otherConfigFiles.putAll(builtinProperties);
-
-    Map<String, ExtProperties> folderProperties = getFromConfigFolders(otherConfigFiles);
-    otherConfigFiles.putAll(folderProperties);
-
-		ExtProperties fileConfig = otherConfigFiles.get("config");
-    if (fileConfig == null) {
-      fileConfig = new ExtProperties();
-    }
-
-    ExtProperties systemProperties = new ExtProperties(System.getProperties());
-    fileConfig = mergeProperties(fileConfig, systemProperties);
-
-    ExtProperties mlProperties = getConfigFromML();
-    fileConfig = mergeProperties(fileConfig, mlProperties);
-
-    ExtProperties dbProperties = getConfigFromDB(fileConfig);
-    fileConfig = mergeProperties(dbProperties, fileConfig); // NOTE: fileConfig wins, db as fallback
-
-		fileConfig.makeReadOnly();
-    otherConfigFiles.put("config", fileConfig);
-
-    // Seal the configuration
-		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
-			final ExtProperties prop = entry.getValue();
-      prop.makeReadOnly();
-
-      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-        hasDirectDBConnection = true;
-      }
-		}
-
-		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
-
-    // Start configuration targets
+  private static void configureLogging(Map<String, ExtProperties> configuration) {
 		// now let's configure the logging, if allowed to
-		if (fileConfig.getb("jalien.configure.logging", true) && otherConfigFiles.containsKey("logging")) {
+    ExtProperties fileConfig = configuration.get("config");
+		if (fileConfig.getb("jalien.configure.logging", true) && configuration.containsKey("logging")) {
       logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
 
 			// tell ML not to configure its logger
@@ -222,9 +69,28 @@ public class ConfigUtils {
 			// same to lazyj
 			System.setProperty("lazyj.use_java_logger", "true");
 		}
+  }
+
+  private static void detectDirectDBConnection() {
+		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
+			final ExtProperties prop = entry.getValue();
+
+      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
+        hasDirectDBConnection = true;
+      }
+		}
+  }
+
+  public static boolean hasMLConfig() {
+		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
+		return mlConfigURL != null && mlConfigURL.trim().length() > 0;
+  }
+
+  private static void storeMlConfig() {
+    // TODO: remove duplicated code, see MLConfigurationSource!
 
     // Configure the MonaLisa target
-		if (!hasMLConfig)
+		if (!hasMLConfig())
 			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
 			for (final String configFile : new String[] { "config", "mlconfig", "App" }) {
 				final ExtProperties eprop = otherConfigFiles.get(configFile);
@@ -236,14 +102,30 @@ public class ConfigUtils {
 						AppConfig.setProperty(key, prop.getProperty(key));
 				}
 			}
-    // End configuration targets
+  }
+
+	static {
+    // TODO: change ConfigurationFolders() source to load from a single folder only!
+    ConfigManager cfgManager = new ConfigManager();
+    cfgManager.registerPrimary(new BuiltinConfiguration());
+    cfgManager.registerPrimary(new ConfigurationFolders(cfgManager.getConfiguration()));
+    cfgManager.registerPrimary(new SystemConfiguration());
+    cfgManager.registerPrimary(new MLConfigurationSource());
+    cfgManager.registerFallback(new DBConfigurationSource(cfgManager.getConfiguration()));
+    cfgManager.makeReadonly();
+
+		otherConfigFiles = cfgManager.getConfiguration();
+
+    detectDirectDBConnection();
+    configureLogging(cfgManager.getConfiguration());
+    storeMlConfig();
 
     // Create local logger
 		logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
 
 		if (logger.isLoggable(Level.FINE))
 			logger.log(Level.FINE,
-                 "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig);
+                 "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig());
 	}
 
 	private static String userDefinedAppName = null;
@@ -288,6 +170,7 @@ public class ConfigUtils {
 	 * @throws UnsupportedEncodingException
 	 * @throws IOException
 	 */
+  // TODO: move this method from ConfigUtils to BuiltinProperties
 	public static Collection<String> getResourceListing(final Class<?> referenceClass, final String path) throws URISyntaxException, UnsupportedEncodingException, IOException {
 		URL dirURL = referenceClass.getClassLoader().getResource(path);
 		if (dirURL != null && dirURL.getProtocol().equals("file")) {
