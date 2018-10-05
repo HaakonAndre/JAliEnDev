@@ -127,7 +127,7 @@ public class ConfigUtils {
   }
 
   private static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b) {
-    ExtProperties tmp = a;
+    ExtProperties tmp = new ExtProperties(a.getProperties());
 
     for (final Map.Entry<Object, Object> entry : b.getProperties().entrySet())
     	tmp.set(entry.getKey().toString(), entry.getValue().toString());
@@ -135,58 +135,69 @@ public class ConfigUtils {
     return tmp;
   }
 
-	static {
-    // Start configuration sources
-    Map<String, ExtProperties> builtinProperties = getBuiltinProperties();
-    otherConfigFiles.putAll(builtinProperties);
-
-    Map<String, ExtProperties> folderProperties = getFromConfigFolders(otherConfigFiles);
-    otherConfigFiles.putAll(builtinProperties);
-    // End configuration sources
-
-    // Start fileConfig
-    // Load the application config from ML, if needed
-		ExtProperties fileConfig = otherConfigFiles.get("config");
-    if (fileConfig == null) {
-      fileConfig = new ExtProperties();
-    }
-
-    // Load additional properties from cmdline
-    ExtProperties systemProperties = new ExtProperties(System.getProperties());
-    fileConfig = mergeProperties(fileConfig, systemProperties);
-
-    // Load additional configuration from MonaLisa
-    // TODO: extract, and make it return an ExtProperties instance, then merge it with fileConfig.
+  private static ExtProperties getConfigFromML() {
+    // TODO: duplicated code!
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
 		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
+
+    ExtProperties tmp = new ExtProperties();
+
 		if (hasMLConfig) {
 			// assume running as a library inside ML code, inherit the configuration keys from its main config file
 			final Properties mlConfigProperties = AppConfig.getPropertiesConfigApp();
 
 			for (final String key : mlConfigProperties.stringPropertyNames())
-				fileConfig.set(key, mlConfigProperties.getProperty(key));
+				tmp.set(key, mlConfigProperties.getProperty(key));
 
-      fileConfig.set("jalien.configure.logging", "false");
+      tmp.set("jalien.configure.logging", "false");
 		}
 
-    // Load additional properties from the admin database
+    return tmp;
+  }
+
+  private static ExtProperties getConfigFromDB(final ExtProperties fileConfig) {
+    ExtProperties tmp = new ExtProperties();
+
 		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
-			@SuppressWarnings("resource")
 			final DBFunctions dbAdmin = getDB("admin");
 
 			if (dbAdmin != null) {
 				final DBProperties dbProp = new DBProperties(dbAdmin);
-				dbProp.makeReadOnly();
-				// ((FallbackProperties) appConfig).addProvider(dbProp);
-				((FallbackProperties) otherConfigFiles.get("config")).addProvider(dbProp);
+        dbProp.makeReadOnly();
+        tmp = dbProp;
 			}
-		}
+		} 
+
+    return tmp;
+  }
+
+	static {
+    // TODO: duplicated code!
+		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
+		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
+
+    Map<String, ExtProperties> builtinProperties = getBuiltinProperties();
+    otherConfigFiles.putAll(builtinProperties);
+
+    Map<String, ExtProperties> folderProperties = getFromConfigFolders(otherConfigFiles);
+    otherConfigFiles.putAll(folderProperties);
+
+		ExtProperties fileConfig = otherConfigFiles.get("config");
+    if (fileConfig == null) {
+      fileConfig = new ExtProperties();
+    }
+
+    ExtProperties systemProperties = new ExtProperties(System.getProperties());
+    fileConfig = mergeProperties(fileConfig, systemProperties);
+
+    ExtProperties mlProperties = getConfigFromML();
+    fileConfig = mergeProperties(fileConfig, mlProperties);
+
+    ExtProperties dbProperties = getConfigFromDB(fileConfig);
+    fileConfig = mergeProperties(dbProperties, fileConfig); // NOTE: fileConfig wins, db as fallback
 
 		fileConfig.makeReadOnly();
     otherConfigFiles.put("config", fileConfig);
-    // End of loading the default configuration (appconfig, "config" file)
-
-
 
     // Seal the configuration
 		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
@@ -199,7 +210,6 @@ public class ConfigUtils {
 		}
 
 		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
-    // End seal
 
     // Start configuration targets
 		// now let's configure the logging, if allowed to
