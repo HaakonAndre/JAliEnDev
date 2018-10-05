@@ -60,10 +60,11 @@ public class ConfigUtils {
 
 	private static boolean hasDirectDBConnection = false;
 
-	static {
-		ExtProperties fileConfig = null;
+  private static Map<String, ExtProperties> getBuiltinProperties() {
+    Map<String, ExtProperties> tmpProperties = new HashMap<String, ExtProperties>();
 
     // Load the builtint properties
+    // TODO: extract to method, return map and merge with the otherConfigfiles
 		try {
 			for (String name : getResourceListing(ConfigUtils.class, "config/"))
 				if (name.endsWith(".properties")) {
@@ -74,14 +75,23 @@ public class ConfigUtils {
 
 					try (InputStream is = ConfigUtils.class.getClassLoader().getResourceAsStream("config/" + name)) {
 						final ExtProperties prop = new ExtProperties(is);
-						otherConfigFiles.put(key, prop);
+						tmpProperties.put(key, prop);
 					}
 				}
 		} catch (@SuppressWarnings("unused") final Throwable t) {
 			// cannot load the default configuration files for any reason
 		}
 
+    return tmpProperties;
+  }
+
+	static {
+		ExtProperties fileConfig = null;
+
+    otherConfigFiles.putAll(getBuiltinProperties());
+
 		// configuration files in the indicated config folder overwrite the defaults from classpath
+    // TODO: extract into a method, return a map, merge with the otheronfigFiles
 		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
 		final String configOption = System.getProperty("AliEnConfig", "config");
 
@@ -113,6 +123,9 @@ public class ConfigUtils {
 		}
 
     // Load from found properties to otherConfigFiles
+    // TODO: Just scan and set what needed
+    // Could be simplified by 
+    // NOTE: this will be interesting to refactor
 		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
 			final String sName = entry.getKey();
 			final ExtProperties prop = entry.getValue();
@@ -127,7 +140,8 @@ public class ConfigUtils {
         hasDirectDBConnection = true;
       }
 
-      otherConfigFiles.put(sName, prop);
+      // Not needed anymore, it's already in the otherConfigFiles!
+      // otherConfigFiles.put(sName, prop);
 		}
 
 		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
