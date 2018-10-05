@@ -352,7 +352,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
-		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime); //TODO: Shouldn't this be in SECONDS, and not MILLISECONDS?!
+		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
 		int timeleft = origTtl - time_subs - 300;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
@@ -606,6 +606,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			return -2;
 		} finally {
 			t.cancel();
+			apmon.removeJobToMonitor(payloadPID);
 		}
 	}
 
