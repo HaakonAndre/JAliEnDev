@@ -85,6 +85,45 @@ public class ConfigUtils {
     return tmpProperties;
   }
 
+  Map<String, ExtProperties> getFromConfigFiles() {
+    Map<String, ExtProperties> tmp = new HashMap<String, ExtProperties>();
+
+		// configuration files in the indicated config folder overwrite the defaults from classpath
+    // TODO: extract into a method, return a map, merge with the otheronfigFiles
+    // NOTE: this method extends previously found properties!
+		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
+		final String configOption = System.getProperty("AliEnConfig", "config");
+
+		final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);
+
+		for (final String path : configFolders) {
+			final File f = new File(path);
+
+			if (f.exists() && f.isDirectory() && f.canRead()) {
+				final File[] list = f.listFiles();
+
+				if (list != null)
+					for (final File sub : list)
+						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
+							String sName = sub.getName();
+							sName = sName.substring(0, sName.lastIndexOf('.'));
+
+							ExtProperties oldProperties = otherConfigFiles.get(sName);
+
+							if (oldProperties == null)
+								oldProperties = new ExtProperties();
+
+							final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
+							prop.setAutoReload(1000 * 60);
+
+							otherConfigFiles.put(sName, prop);
+						}
+			}
+		}
+
+    return tmp;
+  }
+
 	static {
 		ExtProperties fileConfig = null;
 
@@ -124,8 +163,9 @@ public class ConfigUtils {
 
     // Load from found properties to otherConfigFiles
     // TODO: Just scan and set what needed
-    // Could be simplified by 
     // NOTE: this will be interesting to refactor
+    // NOTE: push this block to the end of the static block and make all properties read-only.
+    // Consider splitting the read-only part and checking for the direct db connection.
 		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
 			final String sName = entry.getKey();
 			final ExtProperties prop = entry.getValue();
@@ -139,12 +179,7 @@ public class ConfigUtils {
       if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
         hasDirectDBConnection = true;
       }
-
-      // Not needed anymore, it's already in the otherConfigFiles!
-      // otherConfigFiles.put(sName, prop);
 		}
-
-		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
 
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
 
@@ -201,6 +236,7 @@ public class ConfigUtils {
 		fileConfig.makeReadOnly();
 
     otherConfigFiles.put("config", fileConfig);
+		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
 
 		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
 			@SuppressWarnings("resource")
