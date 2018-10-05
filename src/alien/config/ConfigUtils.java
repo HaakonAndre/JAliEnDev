@@ -33,12 +33,14 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import alien.user.LDAPHelper;
+
 import lazyj.DBFunctions;
 import lazyj.DBProperties;
 import lazyj.ExtProperties;
 import lazyj.FallbackProperties;
 import lazyj.cache.ExpirationCache;
 import lazyj.commands.SystemCommand;
+
 import lia.Monitor.monitor.AppConfig;
 
 /**
@@ -85,7 +87,7 @@ public class ConfigUtils {
     return tmpProperties;
   }
 
-  Map<String, ExtProperties> getFromConfigFiles() {
+  private static Map<String, ExtProperties> getFromConfigFolders(final Map<String, ExtProperties> oldConfigFiles) {
     Map<String, ExtProperties> tmp = new HashMap<String, ExtProperties>();
 
 		// configuration files in the indicated config folder overwrite the defaults from classpath
@@ -108,7 +110,7 @@ public class ConfigUtils {
 							String sName = sub.getName();
 							sName = sName.substring(0, sName.lastIndexOf('.'));
 
-							ExtProperties oldProperties = otherConfigFiles.get(sName);
+							ExtProperties oldProperties = oldConfigFiles.get(sName);
 
 							if (oldProperties == null)
 								oldProperties = new ExtProperties();
@@ -116,7 +118,7 @@ public class ConfigUtils {
 							final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
 							prop.setAutoReload(1000 * 60);
 
-							otherConfigFiles.put(sName, prop);
+							tmp.put(sName, prop);
 						}
 			}
 		}
@@ -125,56 +127,18 @@ public class ConfigUtils {
   }
 
 	static {
-    otherConfigFiles.putAll(getBuiltinProperties());
+    // Start configuration sources
+    Map<String, ExtProperties> builtinProperties = getBuiltinProperties();
+    otherConfigFiles.putAll(builtinProperties);
 
-		// configuration files in the indicated config folder overwrite the defaults from classpath
-    // TODO: extract into a method, return a map, merge with the otheronfigFiles
-    // NOTE: this piece of code is actually extending the old config and sets up reloading.
-		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
-		final String configOption = System.getProperty("AliEnConfig", "config");
+    Map<String, ExtProperties> folderProperties = getFromConfigFolders(otherConfigFiles);
+    otherConfigFiles.putAll(builtinProperties);
+    // End configuration sources
 
-		final List<String> configFolders = Arrays.asList(defaultConfigLocation, configOption);
-
-		for (final String path : configFolders) {
-			final File f = new File(path);
-
-			if (f.exists() && f.isDirectory() && f.canRead()) {
-				final File[] list = f.listFiles();
-
-				if (list != null)
-					for (final File sub : list)
-						if (sub.isFile() && sub.canRead() && sub.getName().endsWith(".properties")) {
-							String sName = sub.getName();
-							sName = sName.substring(0, sName.lastIndexOf('.'));
-
-							ExtProperties oldProperties = otherConfigFiles.get(sName);
-
-							if (oldProperties == null)
-								oldProperties = new ExtProperties();
-
-							final ExtProperties prop = new ExtProperties(path, sName, oldProperties, true);
-							prop.setAutoReload(1000 * 60);
-
-							otherConfigFiles.put(sName, prop);
-						}
-			}
-		}
-
+    // Start fileConfig
     // Load the application config from ML, if needed
 		ExtProperties fileConfig = otherConfigFiles.get("config");
-
-		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
-
-		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
-
-    // If the general configuration is not already loaded
-    // Try to load from MonaLisa
-    if (fileConfig == null && hasMLConfig) {
-      // Started from ML, didn't have its own configuration, so copy the configuration keys from ML's main config file
-      // NOTE: this is also probably redundant because we will pick up the keys from ML anyways.
-      fileConfig = new ExtProperties(AppConfig.getPropertiesConfigApp());
-      fileConfig.set("jalien.configure.logging", "false");
-    } else if (fileConfig == null) {
+    if (fileConfig == null) {
       fileConfig = new ExtProperties();
     }
 
@@ -185,14 +149,19 @@ public class ConfigUtils {
 
     // Load additional configuration from MonaLisa
     // TODO: extract, and make it return an ExtProperties instance, then merge it with fileConfig.
+		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
+		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
 		if (hasMLConfig) {
 			// assume running as a library inside ML code, inherit the configuration keys from its main config file
 			final Properties mlConfigProperties = AppConfig.getPropertiesConfigApp();
 
 			for (final String key : mlConfigProperties.stringPropertyNames())
 				fileConfig.set(key, mlConfigProperties.getProperty(key));
+
+      fileConfig.set("jalien.configure.logging", "false");
 		}
 
+    // Load additional properties from the admin database
 		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
 			@SuppressWarnings("resource")
 			final DBFunctions dbAdmin = getDB("admin");
