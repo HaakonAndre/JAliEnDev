@@ -125,12 +125,11 @@ public class ConfigUtils {
   }
 
 	static {
-		ExtProperties fileConfig = null;
-
     otherConfigFiles.putAll(getBuiltinProperties());
 
 		// configuration files in the indicated config folder overwrite the defaults from classpath
     // TODO: extract into a method, return a map, merge with the otheronfigFiles
+    // NOTE: this piece of code is actually extending the old config and sets up reloading.
 		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
 		final String configOption = System.getProperty("AliEnConfig", "config");
 
@@ -161,25 +160,7 @@ public class ConfigUtils {
 			}
 		}
 
-    // Load from found properties to otherConfigFiles
-    // TODO: Just scan and set what needed
-    // NOTE: this will be interesting to refactor
-    // NOTE: push this block to the end of the static block and make all properties read-only.
-    // Consider splitting the read-only part and checking for the direct db connection.
-		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
-			final String sName = entry.getKey();
-			final ExtProperties prop = entry.getValue();
-
-      if (!sName.equals("config")) {
-        	prop.makeReadOnly();
-      } else {
-        fileConfig = prop;
-      }
-
-      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-        hasDirectDBConnection = true;
-      }
-		}
+		ExtProperties fileConfig = otherConfigFiles.get("config");
 
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
 
@@ -236,6 +217,16 @@ public class ConfigUtils {
 		fileConfig.makeReadOnly();
 
     otherConfigFiles.put("config", fileConfig);
+
+		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
+			final ExtProperties prop = entry.getValue();
+      prop.makeReadOnly();
+
+      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
+        hasDirectDBConnection = true;
+      }
+		}
+
 		otherConfigFiles = Collections.unmodifiableMap(otherConfigFiles);
 
 		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
