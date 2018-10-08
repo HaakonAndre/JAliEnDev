@@ -744,9 +744,11 @@ public final class SEUtils {
 	 * Update the number of files and the total size for each known SE, according to the G*L and G*L_PFN tables
 	 */
 	public static void updateSEUsageCache() {
-		final Map<Integer, SEUsageStats> m = getSEUsage();
-
 		logger.log(Level.INFO, "Updating SE usage cache data");
+
+		final long lStart = System.currentTimeMillis();
+
+		final Map<Integer, SEUsageStats> m = getSEUsage();
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
 			db.setReadOnly(false);
@@ -764,7 +766,7 @@ public final class SEUtils {
 			}
 		}
 
-		logger.log(Level.INFO, "Finished updating SE usage cache data");
+		logger.log(Level.INFO, "Finished updating SE usage cache data, took " + Format.toInterval(System.currentTimeMillis() - lStart));
 	}
 
 	private static Map<Integer, SEUsageStats> getSEUsage() {
