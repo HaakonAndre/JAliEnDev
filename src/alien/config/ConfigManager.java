@@ -3,7 +3,6 @@ package alien.config;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-
 import lazyj.ExtProperties;
 import lazyj.FallbackProperties;
 
@@ -25,7 +24,7 @@ public class ConfigManager implements ConfigSource {
   private void registerSource(ConfigSource cfgSource, boolean overwrite) {
     Map<String, ExtProperties> newConfiguration = cfgSource.getConfiguration();
 
-    for(final Map.Entry<String, ExtProperties> entry: newConfiguration.entrySet()) {
+    for (final Map.Entry<String, ExtProperties> entry : newConfiguration.entrySet()) {
       String name = entry.getKey();
       ExtProperties oldProp = cfgStorage.get(name);
       ExtProperties newProp = entry.getValue();
@@ -40,17 +39,17 @@ public class ConfigManager implements ConfigSource {
   }
 
   public void makeReadonly() {
-		for (final Map.Entry<String, ExtProperties> entry : cfgStorage.entrySet()) {
-			final ExtProperties prop = entry.getValue();
+    for (final Map.Entry<String, ExtProperties> entry : cfgStorage.entrySet()) {
+      final ExtProperties prop = entry.getValue();
       prop.makeReadOnly();
-		}
+    }
 
     cfgStorage = Collections.unmodifiableMap(cfgStorage);
   }
 
   public static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b,
-                                              final boolean overwrite) {
-    if(a == null && b == null) {
+      final boolean overwrite) {
+    if (a == null && b == null) {
       return new ExtProperties();
     } else if (a != null && b == null) {
       return a;
@@ -58,8 +57,8 @@ public class ConfigManager implements ConfigSource {
       return b;
     }
 
-    if(a instanceof FallbackProperties) {
-      FallbackProperties tmp = (FallbackProperties)a;
+    if (a instanceof FallbackProperties) {
+      FallbackProperties tmp = (FallbackProperties) a;
       tmp.addProvider(b, overwrite);
       return tmp;
     } else {
