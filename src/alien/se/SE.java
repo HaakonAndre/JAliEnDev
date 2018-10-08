@@ -422,6 +422,9 @@ public class SE implements Serializable, Comparable<SE> {
 		final PFN pfn = new PFN(GUIDUtils.createGuid(), this);
 
 		pfn.pfn = generateProtocol();
+		
+		if (!seName.contains("::"))
+			return null;
 
 		try {
 			final String reason = AuthorizationFactory.fillAccess(AuthorizationFactory.getDefaultUser(), pfn, AccessType.READ, true);
