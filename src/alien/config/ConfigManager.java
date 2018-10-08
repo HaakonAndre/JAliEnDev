@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import lazyj.ExtProperties;
+import lazyj.FallbackProperties;
 
 public class ConfigManager implements ConfigSource {
   private Map<String, ExtProperties> cfgStorage;
@@ -25,19 +26,12 @@ public class ConfigManager implements ConfigSource {
     Map<String, ExtProperties> newConfiguration = cfgSource.getConfiguration();
 
     for(final Map.Entry<String, ExtProperties> entry: newConfiguration.entrySet()) {
-      String key = entry.getKey();
-
-      ExtProperties oldProp = cfgStorage.get(key);
+      String name = entry.getKey();
+      ExtProperties oldProp = cfgStorage.get(name);
       ExtProperties newProp = entry.getValue();
-      ExtProperties merged;
 
-      if(overwrite) {
-        merged = mergeProperties(oldProp, newProp);
-      } else {
-        merged = mergeProperties(newProp, oldProp);
-      }
-
-      cfgStorage.put(key, merged);
+      ExtProperties merged = mergeProperties(oldProp, newProp);
+      cfgStorage.put(name, merged);
     }
   }
 
@@ -55,11 +49,23 @@ public class ConfigManager implements ConfigSource {
   }
 
   public static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b) {
-    ExtProperties tmp = new ExtProperties(a.getProperties());
+    if(a == null && b == null) {
+      return new ExtProperties();
+    } else if (a != null && b == null) {
+      return a;
+    } else if (a == null && b != null) {
+      return b;
+    }
 
-    for (final Map.Entry<Object, Object> entry : b.getProperties().entrySet())
-    	tmp.set(entry.getKey().toString(), entry.getValue().toString());
-
-    return tmp;
+    if(a instanceof FallbackProperties) {
+      FallbackProperties tmp = (FallbackProperties)a;
+      tmp.addProvider(b);
+      return tmp;
+    } else {
+      FallbackProperties tmp = new FallbackProperties();
+      tmp.addProvider(a);
+      tmp.addProvider(b);
+      return tmp;
+    }
   }
 }
