@@ -121,11 +121,49 @@ class ConfigUtilsTests {
 
   @Test
   void testReloadConfigurationPrimary() {
-    Assertions.fail("not implemented");
+    String read;
+    MockConfigSource srcA = new MockConfigSource();
+    MockConfigSource srcB = new MockConfigSource();
+    ConfigManager cfgManager = new ConfigManager();
+
+    srcA.set("config", "otherkey", "x");
+    srcB.set("config", "otherkey", "x");
+    cfgManager.registerPrimary(srcA);
+    cfgManager.registerPrimary(srcB);
+
+    read = cfgManager.getConfiguration().get("config").gets("key");
+    Assertions.assertEquals(0, read.length());
+
+    srcA.set("config", "key", "a");
+    read = cfgManager.getConfiguration().get("config").gets("key");
+    Assertions.assertEquals("a", read);
+
+    srcB.set("config", "key", "b");
+    read = cfgManager.getConfiguration().get("config").gets("key");
+    Assertions.assertEquals("b", read);
   }
 
   @Test
   void testReloadConfigurationFallback() {
-    Assertions.fail("not implemented");
+    String read;
+    MockConfigSource srcA = new MockConfigSource();
+    MockConfigSource srcB = new MockConfigSource();
+    ConfigManager cfgManager = new ConfigManager();
+
+    srcA.set("config", "otherkey", "x");
+    srcB.set("config", "otherkey", "x");
+    cfgManager.registerPrimary(srcA);
+    cfgManager.registerFallback(srcB);
+
+    read = cfgManager.getConfiguration().get("config").gets("key");
+    Assertions.assertEquals(0, read.length());
+
+    srcA.set("config", "key", "a");
+    read = cfgManager.getConfiguration().get("config").gets("key");
+    Assertions.assertEquals("a", read);
+
+    srcB.set("config", "key", "b");
+    read = cfgManager.getConfiguration().get("config").gets("key");
+    Assertions.assertEquals("a", read);
   }
 }

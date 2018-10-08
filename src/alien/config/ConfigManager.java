@@ -30,7 +30,7 @@ public class ConfigManager implements ConfigSource {
       ExtProperties oldProp = cfgStorage.get(name);
       ExtProperties newProp = entry.getValue();
 
-      ExtProperties merged = mergeProperties(oldProp, newProp);
+      ExtProperties merged = mergeProperties(oldProp, newProp, overwrite);
       cfgStorage.put(name, merged);
     }
   }
@@ -48,7 +48,8 @@ public class ConfigManager implements ConfigSource {
     cfgStorage = Collections.unmodifiableMap(cfgStorage);
   }
 
-  public static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b) {
+  public static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b,
+                                              final boolean overwrite) {
     if(a == null && b == null) {
       return new ExtProperties();
     } else if (a != null && b == null) {
@@ -59,13 +60,17 @@ public class ConfigManager implements ConfigSource {
 
     if(a instanceof FallbackProperties) {
       FallbackProperties tmp = (FallbackProperties)a;
-      tmp.addProvider(b);
+      tmp.addProvider(b, overwrite);
       return tmp;
     } else {
       FallbackProperties tmp = new FallbackProperties();
       tmp.addProvider(a);
-      tmp.addProvider(b);
+      tmp.addProvider(b, overwrite);
       return tmp;
     }
+  }
+
+  public static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b) {
+    return mergeProperties(a, b, false);
   }
 }
