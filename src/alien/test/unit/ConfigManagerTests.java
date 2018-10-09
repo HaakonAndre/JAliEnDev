@@ -33,6 +33,15 @@ class ConfigManagerTests {
     }
   }
 
+  void assertKey(ExtProperties merged, String key, String expected) {
+    String read = merged.gets(key);
+    Assertions.assertEquals(expected, read);
+  }
+
+  void assertKey(ConfigManager mgr, String config, String key, String expected) {
+    assertKey(mgr.getConfiguration().get(config), key, expected);
+  }
+
   @Test
   void testSingleSource() {
     MockConfigSource src = new MockConfigSource();
@@ -40,88 +49,72 @@ class ConfigManagerTests {
 
     src.set("config", "key", "a");
     cfgManager.registerPrimary(src);
-
-    String read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("a", read);
+    assertKey(cfgManager, "config", "key", "a");
   }
 
   @Test
   void testMergeProperties() {
     ExtProperties front = new ExtProperties();
     ExtProperties back = new ExtProperties();
+    ExtProperties merged;
 
     front.set("key", "a");
     back.set("key", "b");
 
-    ExtProperties merged;
-    String read;
-
     merged = ConfigManager.mergeProperties(front, back);
-    read = merged.gets("key");
-    Assertions.assertEquals("a", read);
+    assertKey(merged, "key", "a");
 
     merged = ConfigManager.mergeProperties(back, front);
-    read = merged.gets("key");
-    Assertions.assertEquals("b", read);
+    assertKey(merged, "key", "b");
   }
 
   @Test
   void testMergePropertiesUpdate() {
     ExtProperties front = new ExtProperties();
     ExtProperties back = new ExtProperties();
+    ExtProperties merged;
 
     front.set("otherkey", "c");
     back.set("key", "b");
-
-    ExtProperties merged;
-    String read;
-
     merged = ConfigManager.mergeProperties(front, back);
+
     front.set("key", "a");
-    read = merged.gets("key");
-    Assertions.assertEquals("a", read);
+    assertKey(merged, "key", "a");
   }
 
   @Test
   void testReloadingConfigurationsSingleSource() {
-    String read;
     MockConfigSource src = new MockConfigSource();
-    src.set("config", "key", "a");
-
     ConfigManager cfgManager = new ConfigManager();
+
+    src.set("config", "key", "a");
     cfgManager.registerPrimary(src);
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("a", read);
+
+    assertKey(cfgManager, "config", "key", "a");
 
     src.set("config", "key", "b");
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("b", read);
+    assertKey(cfgManager, "config", "key", "b");
   }
 
   @Test
   void testReloadConfigurationsMultipleSources() {
-    String read;
     MockConfigSource srcA = new MockConfigSource();
     MockConfigSource srcB = new MockConfigSource();
+    ConfigManager cfgManager = new ConfigManager();
 
     srcA.set("config", "otherkey", "a");
     srcB.set("config", "key", "b");
 
-    ConfigManager cfgManager = new ConfigManager();
     cfgManager.registerPrimary(srcA);
     cfgManager.registerFallback(srcB);
-
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("b", read);
+    assertKey(cfgManager, "config", "key", "b");
 
     srcA.set("config", "key", "a");
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("a", read);
+    assertKey(cfgManager, "config", "key", "a");
   }
 
   @Test
   void testReloadConfigurationPrimary() {
-    String read;
     MockConfigSource srcA = new MockConfigSource();
     MockConfigSource srcB = new MockConfigSource();
     ConfigManager cfgManager = new ConfigManager();
@@ -131,21 +124,17 @@ class ConfigManagerTests {
     cfgManager.registerPrimary(srcA);
     cfgManager.registerPrimary(srcB);
 
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals(0, read.length());
+    assertKey(cfgManager, "config", "key", "");
 
     srcA.set("config", "key", "a");
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("a", read);
+    assertKey(cfgManager, "config", "key", "a");
 
     srcB.set("config", "key", "b");
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("b", read);
+    assertKey(cfgManager, "config", "key", "b");
   }
 
   @Test
   void testReloadConfigurationFallback() {
-    String read;
     MockConfigSource srcA = new MockConfigSource();
     MockConfigSource srcB = new MockConfigSource();
     ConfigManager cfgManager = new ConfigManager();
@@ -155,15 +144,12 @@ class ConfigManagerTests {
     cfgManager.registerPrimary(srcA);
     cfgManager.registerFallback(srcB);
 
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals(0, read.length());
+    assertKey(cfgManager, "config", "key", "");
 
     srcA.set("config", "key", "a");
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("a", read);
+    assertKey(cfgManager, "config", "key", "a");
 
     srcB.set("config", "key", "b");
-    read = cfgManager.getConfiguration().get("config").gets("key");
-    Assertions.assertEquals("a", read);
+    assertKey(cfgManager, "config", "key", "a");
   }
 }
