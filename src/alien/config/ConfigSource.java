@@ -5,5 +5,5 @@ import java.util.Map;
 import lazyj.ExtProperties;
 
 public interface ConfigSource {
-  public Map<String, ExtProperties> getConfiguration();
+	public Map<String, ExtProperties> getConfiguration();
 }
