@@ -7,9 +7,9 @@ import java.util.Map;
 import lazyj.ExtProperties;
 
 public class BuiltinConfiguration implements ConfigSource {
-  // TODO: break dependency on ConfigUtils!
-  public Map<String, ExtProperties> getConfiguration() {
-    Map<String, ExtProperties> tmpProperties = new HashMap<String, ExtProperties>();
+	// TODO: break dependency on ConfigUtils!
+	public Map<String, ExtProperties> getConfiguration() {
+		Map<String, ExtProperties> tmpProperties = new HashMap<String, ExtProperties>();
 
 		try {
 			for (String name : ConfigUtils.getResourceListing(ConfigUtils.class, "config/"))
@@ -28,6 +28,6 @@ public class BuiltinConfiguration implements ConfigSource {
 			// cannot load the default configuration files for any reason
 		}
 
-    return tmpProperties;
-  }
+		return tmpProperties;
+	}
 }
