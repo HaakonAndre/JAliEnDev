@@ -5,14 +5,10 @@
  * Learn how to create Gradle builds at https://guides.gradle.org/creating-new-gradle-builds/
  */
 apply plugin: 'java'
+apply plugin: 'eclipse'
 
 repositories {
 	flatDir(dirs: 'lib')
-}
-
-sourceSets {
-	main.java.srcDir 'src'
-	test.java.srcDir 'src'
 }
 
 dependencies {
@@ -25,6 +21,8 @@ dependencies {
 	compile 'org.bouncycastle:bcprov-jdk15on:160'
 	compile 'org.junit:junit-platform-console-standalone:1.3.1'
 	compile 'org.sqlite:sqlite-jdbc:3.9.1-SNAPSHOT'
+        compile 'org.json:json-simple:1.1.1'
+        compile 'org.nfunk.jep:jep:2.4.0'
 
 	compile name: 'apmon'
 	compile name: 'catalina'
@@ -89,7 +87,6 @@ task all {
 
 test {
 	useJUnitPlatform()
-	include 'alien/test/**'
 	testLogging {
 		events "passed", "skipped", "failed"
 	}
