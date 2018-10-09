@@ -113,7 +113,8 @@ public class ConfigUtils {
     manager.registerPrimary(new ConfigurationFolders(manager.getConfiguration()));
     manager.registerPrimary(new SystemConfiguration());
     manager.registerPrimary(new MLConfigurationSource());
-    manager.registerFallback(new DBConfigurationSource(manager.getConfiguration()));
+    detectDirectDBConnection(); // isCentralService() returns cached result
+    manager.registerFallback(new DBConfigurationSource(manager.getConfiguration(), hasDirectDBConnection));
     return manager;
   }
 

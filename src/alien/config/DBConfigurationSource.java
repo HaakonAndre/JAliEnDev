@@ -9,9 +9,11 @@ import lazyj.ExtProperties;
 
 class DBConfigurationSource implements ConfigSource {
   private Map<String, ExtProperties> oldConfig;
+  private boolean isCentralService;
 
-  public DBConfigurationSource(final Map<String, ExtProperties> oldConfig) {
+  public DBConfigurationSource(final Map<String, ExtProperties> oldConfig, boolean isCentralService) {
     this.oldConfig = oldConfig;
+    this.isCentralService = isCentralService;
   }
 
   public Map<String, ExtProperties> getConfiguration() {
@@ -23,7 +25,7 @@ class DBConfigurationSource implements ConfigSource {
   private ExtProperties getConfigFromDB(final ExtProperties fileConfig) {
     ExtProperties tmp = new ExtProperties();
 
-		if (isCentralService() && fileConfig.getb("jalien.config.hasDBBackend", true)) {
+		if (isCentralService && fileConfig.getb("jalien.config.hasDBBackend", true)) {
 			final DBFunctions dbAdmin = new DBFunctions(oldConfig.get("admin"));
 
 
@@ -35,17 +37,5 @@ class DBConfigurationSource implements ConfigSource {
 		}
 
     return tmp;
-  }
-
-  public boolean isCentralService() {
-		for (final Map.Entry<String, ExtProperties> entry : oldConfig.entrySet()) {
-			final ExtProperties prop = entry.getValue();
-
-      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-        return true;
-      }
-		}
-
-    return false;
   }
 }
