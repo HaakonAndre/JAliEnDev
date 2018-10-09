@@ -5,7 +5,7 @@ import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -289,7 +289,7 @@ public class SE implements Serializable, Comparable<SE> {
 		if (s == null)
 			return null;
 
-		final Set<String> ret = new HashSet<>();
+		final Set<String> ret = new LinkedHashSet<>();
 
 		final StringTokenizer st = new StringTokenizer(s, ",");
 
@@ -422,7 +422,7 @@ public class SE implements Serializable, Comparable<SE> {
 		final PFN pfn = new PFN(GUIDUtils.createGuid(), this);
 
 		pfn.pfn = generateProtocol();
-		
+
 		if (!seName.contains("::"))
 			return null;
 
