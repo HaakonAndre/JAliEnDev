@@ -73,16 +73,18 @@ public class ConfigUtils {
 		}
 	}
 
-	private static void detectDirectDBConnection() {
-		hasDirectDBConnection = false;
+	private static boolean detectDirectDBConnection(final Map<String, ExtProperties> config) {
+		boolean detected = false;
 
-		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
+		for (final Map.Entry<String, ExtProperties> entry : config.entrySet()) {
 			final ExtProperties prop = entry.getValue();
 
 			if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-				hasDirectDBConnection = true;
+				detected = true;
 			}
 		}
+
+    return detected;
 	}
 
 	public static boolean hasMLConfig() {
@@ -113,8 +115,8 @@ public class ConfigUtils {
 		manager.registerPrimary(new ConfigurationFolders(manager.getConfiguration()));
 		manager.registerPrimary(new SystemConfiguration());
 		manager.registerPrimary(new MLConfigurationSource());
-		detectDirectDBConnection(); // isCentralService() returns cached result
-		manager.registerFallback(new DBConfigurationSource(manager.getConfiguration(), hasDirectDBConnection));
+		boolean isCentralService = detectDirectDBConnection(manager.getConfiguration());
+		manager.registerFallback(new DBConfigurationSource(manager.getConfiguration(), isCentralService));
 		return manager;
 	}
 
@@ -122,7 +124,7 @@ public class ConfigUtils {
 		cfgManager = m;
 		otherConfigFiles = cfgManager.getConfiguration();
 
-		detectDirectDBConnection();
+		hasDirectDBConnection = detectDirectDBConnection(otherConfigFiles);
 		configureLogging();
 		storeMlConfig();
 
