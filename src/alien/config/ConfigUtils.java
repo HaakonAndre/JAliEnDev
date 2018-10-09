@@ -57,10 +57,10 @@ public class ConfigUtils {
 
 	private static boolean hasDirectDBConnection = false;
 
-  private static void configureLogging(Map<String, ExtProperties> configuration) {
+  private static void configureLogging() {
 		// now let's configure the logging, if allowed to
-    ExtProperties fileConfig = configuration.get("config");
-		if (fileConfig.getb("jalien.configure.logging", true) && configuration.containsKey("logging")) {
+    ExtProperties fileConfig = otherConfigFiles.get("config");
+		if (fileConfig.getb("jalien.configure.logging", true) && otherConfigFiles.containsKey("logging")) {
       logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
 
 			// tell ML not to configure its logger
@@ -87,8 +87,6 @@ public class ConfigUtils {
   }
 
   private static void storeMlConfig() {
-    // TODO: remove duplicated code, see MLConfigurationSource!
-
     // Configure the MonaLisa target
 		if (!hasMLConfig())
 			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
@@ -117,7 +115,7 @@ public class ConfigUtils {
 		otherConfigFiles = cfgManager.getConfiguration();
 
     detectDirectDBConnection();
-    configureLogging(cfgManager.getConfiguration());
+    configureLogging();
     storeMlConfig();
 
     // Create local logger
