@@ -49,13 +49,15 @@ public class ConfigUtils {
 	/**
 	 * Logger
 	 */
-	static transient final Logger logger;
+	static transient Logger logger;
 
 	private static Map<String, ExtProperties> otherConfigFiles;
 
 	private static LoggingConfigurator logging = null;
 
 	private static boolean hasDirectDBConnection = false;
+
+  private static ConfigManager cfgManager;
 
   private static void configureLogging() {
 		// now let's configure the logging, if allowed to
@@ -105,16 +107,18 @@ public class ConfigUtils {
     AppConfig.reloadProps();
   }
 
-	static {
-    // TODO: change ConfigurationFolders() source to load from a single folder only!
-    ConfigManager cfgManager = new ConfigManager();
-    cfgManager.registerPrimary(new BuiltinConfiguration());
-    cfgManager.registerPrimary(new ConfigurationFolders(cfgManager.getConfiguration()));
-    cfgManager.registerPrimary(new SystemConfiguration());
-    cfgManager.registerPrimary(new MLConfigurationSource());
-    cfgManager.registerFallback(new DBConfigurationSource(cfgManager.getConfiguration()));
-    cfgManager.makeReadonly();
+  private static ConfigManager getDefaultConfigManager() {
+    ConfigManager manager = new ConfigManager();
+    manager.registerPrimary(new BuiltinConfiguration());
+    manager.registerPrimary(new ConfigurationFolders(manager.getConfiguration()));
+    manager.registerPrimary(new SystemConfiguration());
+    manager.registerPrimary(new MLConfigurationSource());
+    manager.registerFallback(new DBConfigurationSource(manager.getConfiguration()));
+    return manager;
+  }
 
+  public static void init(ConfigManager m) {
+    cfgManager = m;
 		otherConfigFiles = cfgManager.getConfiguration();
 
     detectDirectDBConnection();
@@ -127,6 +131,10 @@ public class ConfigUtils {
 		if (logger.isLoggable(Level.FINE))
 			logger.log(Level.FINE,
                  "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig());
+  }
+
+	static {
+    init(getDefaultConfigManager());
 	}
 
 	private static String userDefinedAppName = null;
