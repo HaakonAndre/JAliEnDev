@@ -12,7 +12,7 @@ import alien.config.ConfigSource;
 
 import lazyj.ExtProperties;
 
-class ConfigUtilsTests {
+class ConfigManagerTests {
   private class MockConfigSource implements ConfigSource {
     private Map<String, ExtProperties> cfgStorage;
 
