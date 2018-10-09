@@ -72,6 +72,8 @@ public class ConfigUtils {
   }
 
   private static void detectDirectDBConnection() {
+    hasDirectDBConnection = false;
+
 		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
 			final ExtProperties prop = entry.getValue();
 
