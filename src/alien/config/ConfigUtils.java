@@ -84,7 +84,7 @@ public class ConfigUtils {
 			}
 		}
 
-    return detected;
+		return detected;
 	}
 
 	public static boolean hasMLConfig() {
@@ -123,7 +123,6 @@ public class ConfigUtils {
 	public static void init(ConfigManager m) {
 		cfgManager = m;
 		otherConfigFiles = cfgManager.getConfiguration();
-
 		hasDirectDBConnection = detectDirectDBConnection(otherConfigFiles);
 		configureLogging();
 		storeMlConfig();
