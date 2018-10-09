@@ -30,14 +30,14 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-import alien.user.LDAPHelper;
-
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
 import lazyj.cache.ExpirationCache;
 import lazyj.commands.SystemCommand;
 
 import lia.Monitor.monitor.AppConfig;
+
+import alien.user.LDAPHelper;
 
 /**
  * @author costing
@@ -57,13 +57,13 @@ public class ConfigUtils {
 
 	private static boolean hasDirectDBConnection = false;
 
-  private static ConfigManager cfgManager;
+	private static ConfigManager cfgManager;
 
-  private static void configureLogging() {
+	private static void configureLogging() {
 		// now let's configure the logging, if allowed to
-    ExtProperties fileConfig = otherConfigFiles.get("config");
+		ExtProperties fileConfig = otherConfigFiles.get("config");
 		if (fileConfig.getb("jalien.configure.logging", true) && otherConfigFiles.containsKey("logging")) {
-      logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
+			logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
 
 			// tell ML not to configure its logger
 			System.setProperty("lia.Monitor.monitor.LoggerConfigClass.preconfiguredLogging", "true");
@@ -71,27 +71,27 @@ public class ConfigUtils {
 			// same to lazyj
 			System.setProperty("lazyj.use_java_logger", "true");
 		}
-  }
+	}
 
-  private static void detectDirectDBConnection() {
-    hasDirectDBConnection = false;
+	private static void detectDirectDBConnection() {
+		hasDirectDBConnection = false;
 
 		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet()) {
 			final ExtProperties prop = entry.getValue();
 
-      if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
-        hasDirectDBConnection = true;
-      }
+			if (prop.gets("driver").length() > 0 && prop.gets("password").length() > 0) {
+				hasDirectDBConnection = true;
+			}
 		}
-  }
+	}
 
-  public static boolean hasMLConfig() {
+	public static boolean hasMLConfig() {
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
 		return mlConfigURL != null && mlConfigURL.trim().length() > 0;
-  }
+	}
 
-  private static void storeMlConfig() {
-    // Configure the MonaLisa target
+	private static void storeMlConfig() {
+		// Configure the MonaLisa target
 		if (!hasMLConfig())
 			// write a copy of our main configuration content and, if any, a separate ML configuration file to ML's configuration registry
 			for (final String configFile : new String[] { "config", "mlconfig", "App" }) {
@@ -104,38 +104,37 @@ public class ConfigUtils {
 						AppConfig.setProperty(key, prop.getProperty(key));
 				}
 			}
-    AppConfig.reloadProps();
-  }
+		AppConfig.reloadProps();
+	}
 
-  private static ConfigManager getDefaultConfigManager() {
-    ConfigManager manager = new ConfigManager();
-    manager.registerPrimary(new BuiltinConfiguration());
-    manager.registerPrimary(new ConfigurationFolders(manager.getConfiguration()));
-    manager.registerPrimary(new SystemConfiguration());
-    manager.registerPrimary(new MLConfigurationSource());
-    detectDirectDBConnection(); // isCentralService() returns cached result
-    manager.registerFallback(new DBConfigurationSource(manager.getConfiguration(), hasDirectDBConnection));
-    return manager;
-  }
+	private static ConfigManager getDefaultConfigManager() {
+		ConfigManager manager = new ConfigManager();
+		manager.registerPrimary(new BuiltinConfiguration());
+		manager.registerPrimary(new ConfigurationFolders(manager.getConfiguration()));
+		manager.registerPrimary(new SystemConfiguration());
+		manager.registerPrimary(new MLConfigurationSource());
+		detectDirectDBConnection(); // isCentralService() returns cached result
+		manager.registerFallback(new DBConfigurationSource(manager.getConfiguration(), hasDirectDBConnection));
+		return manager;
+	}
 
-  public static void init(ConfigManager m) {
-    cfgManager = m;
+	public static void init(ConfigManager m) {
+		cfgManager = m;
 		otherConfigFiles = cfgManager.getConfiguration();
 
-    detectDirectDBConnection();
-    configureLogging();
-    storeMlConfig();
+		detectDirectDBConnection();
+		configureLogging();
+		storeMlConfig();
 
-    // Create local logger
+		// Create local logger
 		logger = ConfigUtils.getLogger(ConfigUtils.class.getCanonicalName());
 
 		if (logger.isLoggable(Level.FINE))
-			logger.log(Level.FINE,
-                 "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig());
-  }
+			logger.log(Level.FINE, "Configuration loaded. Own logging configuration: " + (logging != null ? "true" : "false") + ", ML configuration detected: " + hasMLConfig());
+	}
 
 	static {
-    init(getDefaultConfigManager());
+		init(getDefaultConfigManager());
 	}
 
 	private static String userDefinedAppName = null;
@@ -180,7 +179,7 @@ public class ConfigUtils {
 	 * @throws UnsupportedEncodingException
 	 * @throws IOException
 	 */
-  // TODO: move this method from ConfigUtils to BuiltinProperties
+	// TODO: move this method from ConfigUtils to BuiltinProperties
 	public static Collection<String> getResourceListing(final Class<?> referenceClass, final String path) throws URISyntaxException, UnsupportedEncodingException, IOException {
 		URL dirURL = referenceClass.getClassLoader().getResource(path);
 		if (dirURL != null && dirURL.getProtocol().equals("file")) {
@@ -256,7 +255,7 @@ public class ConfigUtils {
 	 * @return application configuration
 	 */
 	public static final ExtProperties getConfig() {
-    return otherConfigFiles.get("config");
+		return otherConfigFiles.get("config");
 	}
 
 	/**
@@ -266,7 +265,7 @@ public class ConfigUtils {
 	 * @return configuration contents
 	 */
 	public static final ExtProperties getConfiguration(final String key) {
-    return otherConfigFiles.get(key);
+		return otherConfigFiles.get(key);
 	}
 
 	/**
@@ -450,7 +449,7 @@ public class ConfigUtils {
 		// Overwrite values
 		configuration.put("organisation", "ALICE");
 		// if (appConfig != null) {
-    if(otherConfigFiles.containsKey("config")) {
+		if (otherConfigFiles.containsKey("config")) {
 			// final Properties props = appConfig.getProperties();
 			final Properties props = otherConfigFiles.get("config").getProperties();
 			for (final Object s : props.keySet()) {
