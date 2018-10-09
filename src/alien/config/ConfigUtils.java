@@ -102,6 +102,7 @@ public class ConfigUtils {
 						AppConfig.setProperty(key, prop.getProperty(key));
 				}
 			}
+    AppConfig.reloadProps();
   }
 
 	static {
