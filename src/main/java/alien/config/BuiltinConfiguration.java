@@ -6,6 +6,10 @@ import java.util.Map;
 
 import lazyj.ExtProperties;
 
+/**
+ * @author nhardi
+ *
+ */
 public class BuiltinConfiguration implements ConfigSource {
 	// TODO: break dependency on ConfigUtils!
 	public Map<String, ExtProperties> getConfiguration() {

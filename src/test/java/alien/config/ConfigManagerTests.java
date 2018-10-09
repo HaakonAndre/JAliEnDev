@@ -1,4 +1,4 @@
-package alien.test.unit;
+package alien.config;
 
 import java.util.HashMap;
 import java.util.Map;

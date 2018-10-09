@@ -87,6 +87,11 @@ public class ConfigUtils {
 		return detected;
 	}
 
+	/**
+	 *
+	 *
+	 * @return
+	 */
 	public static boolean hasMLConfig() {
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
 		return mlConfigURL != null && mlConfigURL.trim().length() > 0;
