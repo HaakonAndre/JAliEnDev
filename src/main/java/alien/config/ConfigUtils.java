@@ -46,9 +46,6 @@ import alien.user.LDAPHelper;
 public class ConfigUtils {
 	private static ExpirationCache<String, String> seenLoggers = new ExpirationCache<>();
 
-	/**
-	 * Logger
-	 */
 	static transient Logger logger;
 
 	private static Map<String, ExtProperties> otherConfigFiles;
@@ -88,9 +85,9 @@ public class ConfigUtils {
 	}
 
 	/**
+	 * Helper method to check if ML config is valid. Reads system properties.
 	 *
-	 *
-	 * @return
+	 * @return true if lia.Monitor.ConfigURL property is set and non-empty
 	 */
 	public static boolean hasMLConfig() {
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
@@ -125,6 +122,16 @@ public class ConfigUtils {
 		return manager;
 	}
 
+	/**
+	 * Initialize ConfigUtils with given ConfigManager.
+	 *
+	 * This method is called when the class is loaded (see the static block).
+	 * The default ConfigManager is constructed in that case.
+	 *
+	 * This method is usually used only for testing.
+	 *
+	 * @param m ConfigManager to be used for initialization.
+	 */
 	public static void init(ConfigManager m) {
 		cfgManager = m;
 		otherConfigFiles = cfgManager.getConfiguration();
