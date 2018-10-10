@@ -9,23 +9,23 @@ import java.util.Map;
 import lazyj.ExtProperties;
 
 class ConfigurationFolders implements ConfigSource {
-  private Map<String, ExtProperties> oldConfig;
+	private Map<String, ExtProperties> oldConfig;
 
-  public ConfigurationFolders(final Map<String, ExtProperties> oldConfig) {
-    this.oldConfig = oldConfig;
-  }
+	public ConfigurationFolders(final Map<String, ExtProperties> oldConfig) {
+		this.oldConfig = oldConfig;
+	}
 
-  @Override
-  public Map<String, ExtProperties> getConfiguration() {
-    return getFromConfigFolders(oldConfig);
-  }
+	@Override
+	public Map<String, ExtProperties> getConfiguration() {
+		return getFromConfigFolders(oldConfig);
+	}
 
-  private Map<String, ExtProperties> getFromConfigFolders(final Map<String, ExtProperties> oldConfigFiles) {
-    Map<String, ExtProperties> tmp = new HashMap<>();
+	private Map<String, ExtProperties> getFromConfigFolders(final Map<String, ExtProperties> oldConfigFiles) {
+		Map<String, ExtProperties> tmp = new HashMap<>();
 
 		// configuration files in the indicated config folder overwrite the defaults from classpath
-    // TODO: extract into a method, return a map, merge with the otheronfigFiles
-    // NOTE: this method extends previously found properties!
+		// TODO: extract into a method, return a map, merge with the otheronfigFiles
+		// NOTE: this method extends previously found properties!
 		final String defaultConfigLocation = System.getProperty("user.home") + System.getProperty("file.separator") + ".alien" + System.getProperty("file.separator") + "config";
 		final String configOption = System.getProperty("AliEnConfig", "config");
 
@@ -56,7 +56,7 @@ class ConfigurationFolders implements ConfigSource {
 			}
 		}
 
-    return tmp;
-  }
+		return tmp;
+	}
 
 }

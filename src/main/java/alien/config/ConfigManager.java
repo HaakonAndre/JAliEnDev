@@ -65,7 +65,8 @@ public class ConfigManager implements ConfigSource {
 		if (a instanceof FallbackProperties) {
 			tmp = (FallbackProperties) a;
 			tmp.addProvider(b, overwrite);
-		} else {
+		}
+		else {
 			tmp = new FallbackProperties();
 			tmp.addProvider(a);
 			tmp.addProvider(b, overwrite);
