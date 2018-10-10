@@ -20,7 +20,7 @@ class ConfigurationFolders implements ConfigSource {
 		return getFromConfigFolders(oldConfig);
 	}
 
-	private Map<String, ExtProperties> getFromConfigFolders(final Map<String, ExtProperties> oldConfigFiles) {
+	private static Map<String, ExtProperties> getFromConfigFolders(final Map<String, ExtProperties> oldConfigFiles) {
 		Map<String, ExtProperties> tmp = new HashMap<>();
 
 		// configuration files in the indicated config folder overwrite the defaults from classpath

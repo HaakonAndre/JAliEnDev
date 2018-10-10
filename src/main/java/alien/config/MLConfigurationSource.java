@@ -22,7 +22,7 @@ public class MLConfigurationSource implements ConfigSource {
 		return tmp;
 	}
 
-	private ExtProperties getConfigFromML() {
+	private static ExtProperties getConfigFromML() {
 		// TODO: remove duplicated code here and in ConfigUtils!
 		final String mlConfigURL = System.getProperty("lia.Monitor.ConfigURL");
 		final boolean hasMLConfig = mlConfigURL != null && mlConfigURL.trim().length() > 0;
