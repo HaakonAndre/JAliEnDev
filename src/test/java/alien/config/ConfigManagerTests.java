@@ -4,7 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import alien.config.ConfigManager;
@@ -17,7 +16,7 @@ class ConfigManagerTests {
 		private Map<String, ExtProperties> cfgStorage;
 
 		public MockConfigSource() {
-			cfgStorage = new HashMap<String, ExtProperties>();
+			cfgStorage = new HashMap<>();
 		}
 
 		public void set(String file, String key, String value) {
@@ -28,17 +27,18 @@ class ConfigManagerTests {
 			cfgStorage.get(file).set(key, value);
 		}
 
+		@Override
 		public Map<String, ExtProperties> getConfiguration() {
 			return cfgStorage;
 		}
 	}
 
-	void assertKey(ExtProperties merged, String key, String expected) {
+	static void assertKey(ExtProperties merged, String key, String expected) {
 		String read = merged.gets(key);
 		Assertions.assertEquals(expected, read);
 	}
 
-	void assertKey(ConfigManager mgr, String config, String key, String expected) {
+	static void assertKey(ConfigManager mgr, String config, String key, String expected) {
 		assertKey(mgr.getConfiguration().get(config), key, expected);
 	}
 

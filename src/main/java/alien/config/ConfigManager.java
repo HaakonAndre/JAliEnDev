@@ -10,7 +10,7 @@ public class ConfigManager implements ConfigSource {
 	private Map<String, ExtProperties> cfgStorage;
 
 	public ConfigManager() {
-		cfgStorage = new HashMap<String, ExtProperties>();
+		cfgStorage = new HashMap<>();
 	}
 
 	public void registerPrimary(ConfigSource cfgSource) {
@@ -34,6 +34,7 @@ public class ConfigManager implements ConfigSource {
 		}
 	}
 
+	@Override
 	public Map<String, ExtProperties> getConfiguration() {
 		return cfgStorage;
 	}
@@ -60,17 +61,16 @@ public class ConfigManager implements ConfigSource {
 					return b;
 				}
 
+		FallbackProperties tmp;
 		if (a instanceof FallbackProperties) {
-			FallbackProperties tmp = (FallbackProperties) a;
+			tmp = (FallbackProperties) a;
 			tmp.addProvider(b, overwrite);
-			return tmp;
-		}
-		else {
-			FallbackProperties tmp = new FallbackProperties();
+		} else {
+			tmp = new FallbackProperties();
 			tmp.addProvider(a);
 			tmp.addProvider(b, overwrite);
-			return tmp;
 		}
+		return tmp;
 	}
 
 	public static ExtProperties mergeProperties(final ExtProperties a, final ExtProperties b) {

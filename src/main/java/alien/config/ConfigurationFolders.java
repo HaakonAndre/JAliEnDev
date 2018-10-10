@@ -15,12 +15,13 @@ class ConfigurationFolders implements ConfigSource {
     this.oldConfig = oldConfig;
   }
 
+  @Override
   public Map<String, ExtProperties> getConfiguration() {
     return getFromConfigFolders(oldConfig);
   }
 
   private Map<String, ExtProperties> getFromConfigFolders(final Map<String, ExtProperties> oldConfigFiles) {
-    Map<String, ExtProperties> tmp = new HashMap<String, ExtProperties>();
+    Map<String, ExtProperties> tmp = new HashMap<>();
 
 		// configuration files in the indicated config folder overwrite the defaults from classpath
     // TODO: extract into a method, return a map, merge with the otheronfigFiles

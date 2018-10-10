@@ -12,8 +12,9 @@ import lazyj.ExtProperties;
  */
 public class BuiltinConfiguration implements ConfigSource {
 	// TODO: break dependency on ConfigUtils!
+	@Override
 	public Map<String, ExtProperties> getConfiguration() {
-		Map<String, ExtProperties> tmpProperties = new HashMap<String, ExtProperties>();
+		Map<String, ExtProperties> tmpProperties = new HashMap<>();
 
 		try {
 			for (String name : ConfigUtils.getResourceListing(ConfigUtils.class, "config/"))

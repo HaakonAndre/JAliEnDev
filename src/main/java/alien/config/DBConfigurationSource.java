@@ -16,8 +16,9 @@ class DBConfigurationSource implements ConfigSource {
 		this.isCentralService = isCentralService;
 	}
 
+	@Override
 	public Map<String, ExtProperties> getConfiguration() {
-		Map<String, ExtProperties> dbConfig = new HashMap<String, ExtProperties>();
+		Map<String, ExtProperties> dbConfig = new HashMap<>();
 		dbConfig.put("config", getConfigFromDB(oldConfig.get("config")));
 		return dbConfig;
 	}
@@ -26,9 +27,7 @@ class DBConfigurationSource implements ConfigSource {
 		ExtProperties tmp = new ExtProperties();
 
 		if (isCentralService && fileConfig.getb("jalien.config.hasDBBackend", true)) {
-			final DBFunctions dbAdmin = new DBFunctions(oldConfig.get("admin"));
-
-			if (dbAdmin != null) {
+			try(final DBFunctions dbAdmin = new DBFunctions(oldConfig.get("admin"))) {
 				final DBProperties dbProp = new DBProperties(dbAdmin);
 				dbProp.makeReadOnly();
 				tmp = dbProp;

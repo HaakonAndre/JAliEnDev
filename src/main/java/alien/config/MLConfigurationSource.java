@@ -9,8 +9,9 @@ import lazyj.ExtProperties;
 import lia.Monitor.monitor.AppConfig;
 
 public class MLConfigurationSource implements ConfigSource {
+	@Override
 	public Map<String, ExtProperties> getConfiguration() {
-		Map<String, ExtProperties> tmp = new HashMap<String, ExtProperties>();
+		Map<String, ExtProperties> tmp = new HashMap<>();
 		tmp.put("config", getConfigFromML());
 		return tmp;
 	}
