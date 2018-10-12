@@ -575,8 +575,20 @@ public class Xrootd extends Protocol {
 				throw new SourceException(sMessage);
 			}
 
-			if (!checkDownloadedFile(target, pfn))
-				throw new SourceException("Local file doesn't match catalogue details (" + (target.exists() ? "" + target.length() : "n/a") + " vs " + guid.size + ")");
+			if (!checkDownloadedFile(target, pfn)) {
+				String message = "Local file doesn't match catalogue details";
+
+				if (target.exists()) {
+					if (target.length() != guid.size)
+						message += ", local file size is different from the expected value (" + target.length() + " vs " + guid.size + ")";
+					else
+						message += ", MD5 checksums differ";
+				}
+				else
+					message += ", local file could not be created";
+
+				throw new SourceException(message);
+			}
 		} catch (final SourceException ioe) {
 			if (target.exists() && !target.delete())
 				logger.log(Level.WARNING, "Could not delete temporary file on IO exception: " + target);
