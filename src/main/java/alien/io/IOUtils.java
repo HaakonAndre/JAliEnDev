@@ -247,9 +247,9 @@ public class IOUtils {
 
 						return target;
 					} catch (final ZipException e) {
-						logger.log(Level.WARNING, "ZipException parsing the content of " + f.getAbsolutePath(), e);
+						logger.log(Level.WARNING, "ZipException parsing the content of " + f.getAbsolutePath() + " of GUID " + guid.guid, e);
 					} catch (final IOException e) {
-						logger.log(Level.WARNING, "IOException extracting " + archiveFileName + " from " + f.getAbsolutePath() + " to parse as ZIP", e);
+						logger.log(Level.WARNING, "IOException extracting " + archiveFileName + " from " + f.getAbsolutePath() + " of GUID " + guid.guid + " to parse as ZIP", e);
 					}
 
 					return null;
