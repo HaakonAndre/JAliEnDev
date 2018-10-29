@@ -352,8 +352,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		// ttl recalculation
 		final long jobAgentCurrentTime = new java.util.Date().getTime();
-		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime);
-		int timeleft = origTtl - time_subs - 300;
+		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime)/1000; //convert to seconds
+		int timeleft = origTtl - time_subs;
 
 		logger.log(Level.INFO, "Still have " + timeleft + " seconds to live (" + jobAgentCurrentTime + "-" + jobAgentStartTime + "=" + time_subs + ")");
 
@@ -364,7 +364,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			timeleft = proxy;
 
 		// safety time for saving, etc
-		timeleft -= 300;
+		timeleft -= 600;
 
 		// what is the minimum we want to run with? (100MB?)
 		if (space <= 100 * 1024 * 1024) {
