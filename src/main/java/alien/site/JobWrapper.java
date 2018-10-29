@@ -31,6 +31,7 @@ import alien.catalogue.PFN;
 import alien.catalogue.XmlCollection;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
+import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
 import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
@@ -115,7 +116,7 @@ public class JobWrapper implements Runnable {
 //		packMan = (PackMan) siteMap.get("PackMan");
 		packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
 
-		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
+		pid = MonitorFactory.getSelfProcessID();
 
 		try {
 			inputFromJobAgent = new ObjectInputStream(System.in);
@@ -425,7 +426,8 @@ public class JobWrapper implements Runnable {
 			final XmlCollection c = new XmlCollection();
 			c.setName("jobinputdata");
 			final List<String> datalist = jdl.getInputData(true);
-
+			
+			//TODO: Change
 			for (final String s : datalist) {
 				final LFN l = c_api.getLFN(s);
 				if (l == null)
