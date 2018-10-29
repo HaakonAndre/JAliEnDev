@@ -132,8 +132,7 @@ public class JobWrapper implements Runnable {
 			logger.log(Level.INFO, "We received the following username: " + username);
 			
 		} catch (final IOException | ClassNotFoundException e) {
-			System.err.println("Error: Could not receive data from JobAgent");
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
 		}
 		
 		if((tokenCert != null) && (tokenKey != null)){
@@ -142,8 +141,7 @@ public class JobWrapper implements Runnable {
 				logger.log(Level.INFO, "Token successfully created");
 				JAKeyStore.loadKeyStore();
 			} catch (final Exception e) {
-				System.err.println("Error. Could not load tokenCert and/or tokenKey");
-				e.printStackTrace();
+				logger.log(Level.SEVERE, "Error. Could not load tokenCert and/or tokenKey" + e);
 			}
 		}
 
@@ -161,11 +159,11 @@ public class JobWrapper implements Runnable {
 		// We start, if needed, the node JBox
 		// Does it check a previous one is already running?
 		try {
-			System.err.println("Trying to start JBox");
+			logger.log(Level.INFO, "Trying to start JBox");
 			JBoxServer.startJBoxService(0);
 		} catch (final Exception e) {
-			System.err.println("Unable to start JBox.");
-			e.printStackTrace();
+			logger.log(Level.WARNING, "Unable to start JBox." + e);
+
 		}
 
 		logger.log(Level.INFO, "Jbox started");
@@ -182,12 +180,12 @@ public class JobWrapper implements Runnable {
 
 		for (final String pack : packToInstall) {
 			if(packMan == null)
-				System.err.println("PACKMAN IS NULL!!");
+				logger.log(Level.WARNING, "Packman is null!");
 			ok = packMan.installPackage(username, pack, null);
 			if (ok == null) {
 				logger.log(Level.INFO, "Error installing the package " + pack);
 				//monitor.sendParameter("ja_status", "ERROR_IP");
-				System.err.println("Error installing " + pack);
+				logger.log(Level.SEVERE, "Error installing " + pack);
 				System.exit(1);
 			}
 		}
@@ -226,8 +224,7 @@ public class JobWrapper implements Runnable {
 			
 			return 0;
 		} catch (final Exception e) {
-			System.err.println("Unable to handle job");
-			e.printStackTrace();
+			logger.log(Level.SEVERE, "Unable to handle job" + e);
 			return -1;
 		}
 	}
@@ -271,11 +268,6 @@ public class JobWrapper implements Runnable {
 		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		final Map<String, String> processEnv = pBuilder.environment();
 		
-		System.err.println("Environment packages: ");
-		for (Map.Entry<String, String> entry : environment_packages.entrySet()) {
-		    System.err.println(entry.getKey()+" : "+entry.getValue());
-		}
-		
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
 
@@ -289,20 +281,19 @@ public class JobWrapper implements Runnable {
 			p = pBuilder.start();
 
 		} catch (final IOException ioe) {
-			System.out.println("Exception running " + cmd + " : " + ioe.getMessage());
+			logger.log(Level.INFO, "Exception running " + cmd + " : " + ioe.getMessage());
 			return -2;
 		}
 
 		if(!p.isAlive()){
-			System.out.println("The process for: " + cmd + " has terminated. Failed to execute?");
+			logger.log(Level.INFO, "The process for: " + cmd + " has terminated. Failed to execute?");
 			return -2;
 		}
 
 		try {
 			p.waitFor();
 		} catch (final InterruptedException e) {
-			System.out.println("Interrupted while waiting for process to finish execution");
-			e.printStackTrace();
+			logger.log(Level.INFO, "Interrupted while waiting for process to finish execution" + e);
 		}
 
 		return 0;
@@ -356,7 +347,7 @@ public class JobWrapper implements Runnable {
 		final List<LFN> iFiles = c_api.getLFNs(filesToDownload, true, false);
 
 		if (iFiles == null || iFiles.size() != filesToDownload.size()) {
-			System.out.println("Not all requested files could be located");
+			logger.log(Level.WARNING, "Not all requested files could be located");
 			return false;
 		}
 
@@ -371,7 +362,7 @@ public class JobWrapper implements Runnable {
 				localFile = new File(currentDir, l.getFileName() + "." + i);
 
 			if (localFile.exists()) {
-				System.out.println("Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
+				logger.log(Level.WARNING, "Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
 				return false;
 			}
 
@@ -382,7 +373,7 @@ public class JobWrapper implements Runnable {
 			final List<PFN> pfns = c_api.getPFNsToRead(entry.getKey(), null, null);
 
 			if (pfns == null || pfns.size() == 0) {
-				System.out.println("No replicas of " + entry.getKey().getCanonicalName() + " to read from");
+				logger.log(Level.WARNING, "No replicas of " + entry.getKey().getCanonicalName() + " to read from");
 				return false;
 			}
 
@@ -390,19 +381,19 @@ public class JobWrapper implements Runnable {
 
 			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
 
-			System.out.println("GUID g: " + g + " entry.getvalue(): " + entry.getValue());
+			logger.log(Level.INFO, "GUID g: " + g + " entry.getvalue(): " + entry.getValue());
 
 			final File f = IOUtils.get(g, entry.getValue());
 
 			if (f == null) {
-				System.out.println("Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
+				logger.log(Level.WARNING, "Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
 				return false;
 			}
 		}
 
 		dumpInputDataList();
 
-		System.out.println("Sandbox populated: " + currentDir.getAbsolutePath());
+		logger.log(Level.INFO, "Sandbox populated: " + currentDir.getAbsolutePath());
 
 		return true;
 	}
@@ -415,11 +406,11 @@ public class JobWrapper implements Runnable {
 			if (list == null)
 				return;
 
-			System.out.println("Going to create XML: " + list);
+			logger.log(Level.INFO, "Going to create XML: " + list);
 
 			final String format = jdl.gets("InputDataListFormat");
 			if (format == null || !format.equals("xml-single")) {
-				System.out.println("XML format not understood");
+				logger.log(Level.WARNING, "XML format not understood");
 				return;
 			}
 
@@ -440,7 +431,7 @@ public class JobWrapper implements Runnable {
 			Files.write(Paths.get(currentDir.getAbsolutePath() + "/" + list), content.getBytes());
 
 		} catch (final Exception e) {
-			System.out.println("Problem dumping XML: " + e.toString());
+			logger.log(Level.WARNING, "Problem dumping XML: " + e.toString());
 		}
 
 	}
@@ -452,7 +443,7 @@ public class JobWrapper implements Runnable {
 		HashMap<String, String> envmap = new HashMap<>();
 
 		
-		System.err.println("Preparing to install packages");
+		logger.log(Level.INFO, "Preparing to install packages");
 		if (packs != null) {
 			for (final String pack : packs.keySet())
 				packagestring += voalice + pack + "::" + packs.get(pack) + ",";
@@ -467,10 +458,6 @@ public class JobWrapper implements Runnable {
 
 			logger.log(Level.INFO, packagestring);
 			
-			for (Map.Entry<String, String> entry : packs.entrySet()) {
-			    System.err.println(entry.getKey()+" : "+entry.getValue());
-			}
-
 			envmap = (HashMap<String, String>) installPackages(packagesList);
 		}
 
@@ -487,14 +474,14 @@ public class JobWrapper implements Runnable {
 
 		final String outputDir = getJobOutputDir();
 
-		System.out.println("queueId: " + queueId);
-		System.out.println("outputDir: " + outputDir);
-		System.out.println("We are the current user: "  + commander.getUser().getName());
+		logger.log(Level.INFO, "queueId: " + queueId);
+		logger.log(Level.INFO, "outputDir: " + outputDir);
+		logger.log(Level.INFO, "We are the current user: "  + commander.getUser().getName());
 
 		if (c_api.getLFN(outputDir) == null) {
 			final LFN outDir = c_api.createCatalogueDirectory(outputDir);
 			if (outDir == null) {
-				System.err.println("Error creating the OutputDir [" + outputDir + "].");
+				logger.log(Level.SEVERE, "Error creating the OutputDir [" + outputDir + "].");
 				changeStatus(JobStatus.ERROR_SV);
 				return false;
 			}
@@ -514,7 +501,7 @@ public class JobWrapper implements Runnable {
 					filesIncluded = entry.createZip(currentDir.getAbsolutePath());
 
 				localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
-				System.out.println("Processing output file: " + localFile);
+				logger.log(Level.INFO, "Processing output file: " + localFile);
 
 				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 					// Use upload instead
@@ -526,7 +513,7 @@ public class JobWrapper implements Runnable {
 					final String output_upload = out.toString("UTF-8");
 					final String lower_output = output_upload.toLowerCase();
 
-					System.out.println("Output upload: " + output_upload);
+					logger.log(Level.INFO, "Output upload: " + output_upload);
 
 					if (lower_output.contains("only")) {
 						uploadedNotAllCopies = true;
@@ -547,7 +534,7 @@ public class JobWrapper implements Runnable {
 
 				}
 				else {
-					System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
+					logger.log(Level.WARNING, "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 					commander.q_api.putJobLog(queueId, "trace", "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 				}
 
@@ -602,7 +589,7 @@ public class JobWrapper implements Runnable {
 					hashret.put("ALIEN_JDL_" + s.toUpperCase(), value);
 				}
 		} catch (final Exception e) {
-			System.out.println("There was a problem getting JDLVariables: " + e);
+			logger.log(Level.WARNING, "There was a problem getting JDLVariables: " + e);
 		}
 
 		return hashret;
