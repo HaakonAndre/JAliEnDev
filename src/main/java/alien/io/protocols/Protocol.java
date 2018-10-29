@@ -7,13 +7,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
-import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.IOUtils;
@@ -104,8 +104,12 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>, Cl
 			try {
 				final String fileMD5 = IOUtils.getMD5(f);
 
-				if (!fileMD5.equalsIgnoreCase(guid.md5))
+				if (!fileMD5.equalsIgnoreCase(guid.md5)) {
+					if (logger.isLoggable(Level.FINE))
+						logger.log(Level.FINE, "Local file's checksum: " + fileMD5 + " (" + f.getCanonicalPath() + "), expected from GUID (" + guid.guid + "): " + guid.md5);
+
 					return false;
+				}
 
 			} catch (final IOException e) {
 				logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
@@ -113,19 +117,27 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>, Cl
 				return false;
 			}
 		else {
-			final LFN lfn = LFNUtils.getLFN(guid);
-			if (lfn != null && isValidMD5(lfn.md5))
-				try {
-					final String fileMD5 = IOUtils.getMD5(f);
+			final Set<LFN> knownLFNs = guid.getLFNs();
 
-					if (!fileMD5.equalsIgnoreCase(lfn.md5))
-						return false;
+			if (knownLFNs != null)
+				for (final LFN lfn : knownLFNs)
+					if (isValidMD5(lfn.md5))
+						try {
+							final String fileMD5 = IOUtils.getMD5(f);
 
-				} catch (final IOException e) {
-					logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
-					logger.log(Level.SEVERE, e.getMessage());
-					return false;
-				}
+							if (!fileMD5.equalsIgnoreCase(lfn.md5)) {
+								if (logger.isLoggable(Level.FINE))
+									logger.log(Level.FINE, "Local file's checksum: " + fileMD5 + " (" + f.getCanonicalPath() + "), expected from LFN (" + lfn.getCanonicalName() + "): " + lfn.md5);
+
+								return false;
+							}
+
+							return true;
+						} catch (final IOException e) {
+							logger.log(Level.SEVERE, "Error during MD5 check of " + f.getAbsolutePath());
+							logger.log(Level.SEVERE, e.getMessage());
+							return false;
+						}
 		}
 		// otherwise don't check md5 at all
 
@@ -222,7 +234,7 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>, Cl
 	public Object clone() {
 		try {
 			return super.clone();
-		} catch (CloneNotSupportedException e) {
+		} catch (final CloneNotSupportedException e) {
 			logger.log(Level.SEVERE, "Some Protocol doesn't support cloning", e);
 		}
 

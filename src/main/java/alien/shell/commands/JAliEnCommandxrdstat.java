@@ -42,6 +42,8 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 	private boolean ignoreStat = false;
 
+	private boolean verbose = false;
+
 	@Override
 	public void run() {
 		Xrootd xrootd = null;
@@ -199,14 +201,16 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						// just namespace check, no actual IO
 						commander.printOutln(ShellColor.jobStateGreen() + "OK" + ShellColor.reset());
 
-						if (status != null)
-							commander.printOutln("\t\t" + status);
+						if (verbose && status != null)
+							commander.printOutln(status);
 					}
 				} catch (final Throwable t) {
 					final String error = t.getMessage();
 
 					commander.printOutln(ShellColor.jobStateRed() + "ERR" + ShellColor.reset());
-					commander.printOutln("\t\t" + error);
+					
+					if (verbose)
+						commander.printOutln(error);
 
 					if (printCommand && !error.contains(xrootd.getLastCommand().toString()))
 						commander.printOutln("\t\t" + xrootd.getLastCommand());
@@ -225,6 +229,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-i", "When downloading each replica, ignore `stat` calls and directly try to fetch the content."));
 		commander.printOutln(helpOption("-s", "Comma-separated list of SE names to restrict the checking to. Default is to check all replicas."));
 		commander.printOutln(helpOption("-c", "Print the full command line in case of errors."));
+		commander.printOutln(helpOption("-v", "More details on the status."));
 		commander.printOutln();
 	}
 
@@ -250,11 +255,13 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 			parser.accepts("s").withRequiredArg().describedAs("Comma-separated list of SE names to restrict the checking to.");
 			parser.accepts("c");
 			parser.accepts("i");
+			parser.accepts("v");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 			bDownload = options.has("d");
 			printCommand = options.has("c");
 			ignoreStat = options.has("i");
+			verbose = options.has("v");
 
 			if (options.has("s")) {
 				final StringTokenizer st = new StringTokenizer(options.valueOf("s").toString(), ",;");

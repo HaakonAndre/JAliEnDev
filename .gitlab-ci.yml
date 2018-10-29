@@ -1,0 +1,7 @@
+unit-test:
+    image: java:8
+    script: ./gradlew test
+    artifacts:
+        reports:
+            junit: build/test-results/test/TEST-*.xml
+

@@ -16,6 +16,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.Vector;
 import java.util.concurrent.ExecutionException;
@@ -672,8 +673,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			return false;
 		}
 
-		qos.clear();
-
 		for (final PFN p : pfns) {
 			final SE se = commander.c_api.getSE(p.seNumber);
 
@@ -947,18 +946,28 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 				commander.printErrln("Error uploading file to SE: " + commander.c_api.getSE(pfn.seNumber).getName());
 
+				SE se = commander.c_api.getSE(pfn.seNumber);
+
+				final HashMap<String, Integer> replacementQoS = new HashMap<>();
+
+				String qosType = "disk";
+
+				if (se.qos.size() > 0) {
+					// keep the order from LDAP, match in the same order
+					final Set<String> targetSEQoS = new LinkedHashSet<>(se.qos);
+
+					if (qos.size() > 0) {
+						// try to match the original QoS constraints
+						targetSEQoS.retainAll(qos.keySet());
+					}
+
+					if (targetSEQoS.size() > 0)
+						qosType = targetSEQoS.iterator().next();
+				}
+
+				replacementQoS.put(qosType, Integer.valueOf(1));
+
 				synchronized (exses) {
-					SE se = commander.c_api.getSE(pfn.seNumber);
-
-					final HashMap<String, Integer> replacementQoS = new HashMap<>();
-
-					String qosType = "disk";
-
-					if (se.qos.size() > 0)
-						qosType = se.qos.iterator().next();
-
-					replacementQoS.put(qosType, Integer.valueOf(1));
-
 					final List<PFN> newPFNtoTry = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, replacementQoS);
 
 					if (newPFNtoTry != null && newPFNtoTry.size() > 0) {

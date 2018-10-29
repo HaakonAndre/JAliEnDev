@@ -26,8 +26,11 @@ import org.nfunk.jep.JEP;
 import com.datastax.driver.core.ConsistencyLevel;
 
 import alien.config.ConfigUtils;
+import alien.io.TransferUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.se.SE;
+import alien.se.SEUtils;
 import alien.user.AliEnPrincipal;
 import alien.user.AuthorizationChecker;
 import lazyj.Format;
@@ -583,7 +586,7 @@ public class LFNCSDUtils {
 			lfnc.checksum = "d41d8cd98f00b204e9800998ecf8427e";
 			lfnc.parent_id = lfnc_parent.id;
 			lfnc.owner = user.getName();
-			lfnc.gowner = user.getRoles().iterator().next();
+			lfnc.gowner = lfnc.owner;
 			lfnc.perm = "755";
 		}
 		else
@@ -599,6 +602,86 @@ public class LFNCSDUtils {
 			return lfnc.insert();
 
 		return lfnc.update(false, true, old_ctime);
+	}
+
+	/**
+	 * Create a new directory (hierarchy) with a given owner
+	 *
+	 * @param owner
+	 *            owner of the newly created structure(s)
+	 * @param lfnc
+	 *            the path to be created
+	 * @param createMissingParents
+	 *            if <code>true</code> then it will try to create any number of intermediate directories, otherwise the direct parent must already exist
+	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
+	 */
+	public static LFN_CSD mkdir(final AliEnPrincipal owner, final LFN_CSD lfnc, final boolean createMissingParents) {
+		if (owner == null || lfnc == null)
+			return null;
+
+		if (lfnc.exists) {
+			if (lfnc.isDirectory() && AuthorizationChecker.canWrite(lfnc, owner))
+				return lfnc;
+
+			return null;
+		}
+
+		lfnc.owner = owner.getName();
+		lfnc.gowner = lfnc.owner;
+		lfnc.size = 0;
+
+		LFN_CSD parent = new LFN_CSD(lfnc.path, true, null, null, null);
+
+		if (!parent.exists && !createMissingParents)
+			return null;
+
+		while (!parent.exists)
+			parent = new LFN_CSD(parent.path, true, null, null, null);
+
+		if (parent.isDirectory() && AuthorizationChecker.canWrite(parent, owner)) {
+			boolean created = false;
+			try {
+				created = LFN_CSD.createDirectory(lfnc.canonicalName, null, ConsistencyLevel.QUORUM, lfnc.owner, lfnc.gowner, 0, "755", new Date());
+			} catch (Exception e) {
+				logger.severe("LFNCSDUtils: mkdir: exception creating directory: " + lfnc.canonicalName + ": exception: " + e.toString());
+			}
+
+			if (created)
+				return new LFN_CSD(lfnc.canonicalName, true, null, null, null);
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param path
+	 * @param ses
+	 * @param exses
+	 * @param qos
+	 * @param attempts
+	 * @return transfer IDs to each SE
+	 */
+	public static HashMap<String, Long> mirrorLFN(final String path, final List<String> ses, final List<String> exses, final HashMap<String, Integer> qos, final Integer attempts) {
+		LFN_CSD lfnc = new LFN_CSD(path, true, null, null, null);
+
+		if (!lfnc.exists || lfnc.pfns.size() <= 0)
+			return null;
+
+		// find closest SE
+		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
+
+		for (Integer seNumber : lfnc.pfns.keySet()) {
+			exses.add(SEUtils.getSE(seNumber).getName());
+		}
+
+		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
+		final HashMap<String, Long> resmap = new HashMap<>();
+		for (final SE s : found_ses) {
+			final long transferID = attempts != null && attempts.intValue() > 0 ? TransferUtils.mirror(lfnc, s, null, attempts.intValue()) : TransferUtils.mirror(lfnc, s);
+			resmap.put(s.getName(), Long.valueOf(transferID));
+		}
+
+		return resmap;
 	}
 
 }
