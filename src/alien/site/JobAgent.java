@@ -508,7 +508,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
-		pBuilder.redirectError(Redirect.appendTo(new File("/tmp", "stderr"))); // TODO: Remove after testing
 
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
