@@ -51,7 +51,6 @@ public class JobWrapper implements Runnable {
 	// Variables passed through VoBox environment
 	//TODO: To be removed
 	private final Map<String, String> env = System.getenv();
-	private final String ce;
 
 	// Job variables
 	/**
@@ -64,6 +63,7 @@ public class JobWrapper implements Runnable {
 	private String tokenCert;
 	private String tokenKey;
 	private HashMap<String, Object> siteMap = new HashMap<>();
+	private String ce;
 	/**
 	 * @uml.property  name="jobStatus"
 	 * @uml.associationEnd  
@@ -104,12 +104,6 @@ public class JobWrapper implements Runnable {
 	 */
 	public JobWrapper() {
 
-		// TODO: To be put back  
-		/* site = env.get("site");
-        ConfigUtils.getConfig().gets("alice_close_site").trim();
-        ce = env.get("CE"); */
-		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
-
 		//TODO: Send from JobAgent instead of reading from env? Will simplify things for containers.
 		siteMap = (new SiteMap()).getSiteParameters(env);
 		hostName = (String) siteMap.get("Host");
@@ -125,11 +119,13 @@ public class JobWrapper implements Runnable {
 			queueId = (long) inputFromJobAgent.readObject();
 			tokenCert = (String) inputFromJobAgent.readObject();
 			tokenKey = (String) inputFromJobAgent.readObject();
+			ce = (String) inputFromJobAgent.readObject();
 			inputFromJobAgent.close();
 
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
+			logger.log(Level.INFO, "We received the following CE "+ ce);
 			
 		} catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);

@@ -155,7 +155,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public JobAgent() {
 		// site = env.get("site"); // or
 		// ConfigUtils.getConfig().gets("alice_close_site").trim();
-		ce = env.get("CE");
+		
+		//ce = env.get("CE");
+		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
 		
 		logpath = env.getOrDefault("TMPDIR", "/tmp/") + "jobwrapper-logs";
 
@@ -532,6 +534,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.writeObject(queueId);
 			stdinObj.writeObject(tokenCert);
 			stdinObj.writeObject(tokenKey);
+			stdinObj.writeObject(ce);
 
 			stdinObj.close();
 			stdin.close();
