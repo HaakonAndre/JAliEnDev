@@ -1053,41 +1053,6 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
-	 * Delete this LFN in the Catalogue and SE, subentries recursively as well, and cache cleant
-	 *
-	 * @return <code>true</code> if this LFN entry was deleted in the database
-	 */
-	public boolean delete() {
-		return delete(true, true, true);
-	}
-
-	/**
-	 * Delete this LFN in the Catalogue, subfolders recursively as well, and cache cleant
-	 *
-	 * @param purge
-	 *            physically delete the PFNs
-	 *
-	 * @return <code>true</code> if this LFN entry was deleted in the database
-	 */
-	public boolean delete(final boolean purge) {
-		return delete(purge, true, true);
-	}
-
-	/**
-	 * Delete this LFN in the Catalogue
-	 *
-	 * @param purge
-	 *            physically delete the PFNs
-	 * @param recursive
-	 *            for directories, remove all subentries. <B>This code doesn't check permissions, do the check before!</B>
-	 *
-	 * @return <code>true</code> if this LFN entry was deleted in the database
-	 */
-	public boolean delete(final boolean purge, final boolean recursive) {
-		return delete(purge, recursive, true);
-	}
-
-	/**
 	 * Delete this LFN in the Catalogue
 	 *
 	 * @param purge
@@ -1115,14 +1080,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		boolean ok = true;
 
 		counter_left.incrementAndGet();
-		LFNCSDUtils.tPool.submit(new DeleteLFNs(this, counter_left, purge, notifyCache, dirs, error_entries));
-
-		while (counter_left.get() > 0) {
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-				logger.severe("LFN_CSD deleteLFNs: can't wait?: " + e);
-			}
+		try {
+			LFNCSDUtils.tPool.submit(new DeleteLFNs(this, counter_left, purge, notifyCache, dirs, error_entries)).get();
+		} catch (Exception e1) {
+			logger.severe("LFN_CSD: delete: cannot finish delete operation: " + e1.toString());
 		}
 
 		try {
@@ -1221,7 +1182,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				}
 			}
 			else {
-				int modulo = Math.abs(lfnc.id.hashCode() % modulo_se_lookup);
+				int modulo = (lfnc.modulo > 0 ? lfnc.modulo : Math.abs(lfnc.id.hashCode() % modulo_se_lookup));
 
 				try {
 					@SuppressWarnings("resource")
