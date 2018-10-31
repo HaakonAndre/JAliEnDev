@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -621,8 +622,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (!exists)
 			return false;
 
-		final String q = "UPDATE L" + indexTableEntry.tableName + "L SET size=" + size + ",owner=" + e(owner) + ",gowner=" + e(gowner) + ",ctime=" + e(format(ctime)) + ",md5=" + e(md5)
-				+ " WHERE entryId=" + entryId;
+		final String q = "UPDATE L" + indexTableEntry.tableName + "L SET size=" + size + ",owner=" + e(owner) + ",gowner=" + e(gowner) + ",ctime=" + e(format(ctime)) + ",md5=" + e(md5) + ",perm="
+				+ e(perm) + " WHERE entryId=" + entryId;
 
 		if (monitor != null)
 			monitor.incrementCounter("LFN_update");
@@ -730,6 +731,33 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 
 			if (update())
 				return oldOwner;
+		}
+
+		return null;
+	}
+
+	private static final Pattern PERMISSIONS = Pattern.compile("^[0-7]{3}$");
+
+	/**
+	 * Change the access permissions on this LFN
+	 * 
+	 * @param newPermissions
+	 * @return the previous permissions, if anything changed and the change was successfully propagated to the database, or <code>null</code> if nothing was touched
+	 */
+	public String chmod(final String newPermissions) {
+		if (!exists)
+			throw new IllegalAccessError("You asked to chmod an LFN that doesn't exist in the database");
+
+		if (newPermissions == null || newPermissions.length() != 3 || !PERMISSIONS.matcher(newPermissions).matches())
+			throw new IllegalAccessError("Invalid permissions string " + newPermissions);
+
+		if (!newPermissions.equals(perm)) {
+			final String oldPerms = perm;
+
+			this.perm = StringFactory.get(newPermissions);
+
+			if (update())
+				return oldPerms;
 		}
 
 		return null;
