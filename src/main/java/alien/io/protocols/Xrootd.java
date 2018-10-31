@@ -1488,7 +1488,7 @@ public class Xrootd extends Protocol {
 						}
 					}
 
-					if (total > 0)
+					if (total > 0 && free <= total && free >= 0 && used <= total && used >= 0 && largest <= total && largest >= 0)
 						ret.setSpaceInfo(path, total, free, used, largest);
 				}
 			} catch (final InterruptedException ie) {
@@ -1609,7 +1609,7 @@ public class Xrootd extends Protocol {
 						}
 					}
 
-					if (total > 0)
+					if (total > 0 && free <= total && free >= 0 && used <= total && used >= 0 && largest <= total && largest >= 0)
 						ret.setSpaceInfo(path, total, free, used, largest);
 				}
 			} catch (final InterruptedException ie) {
