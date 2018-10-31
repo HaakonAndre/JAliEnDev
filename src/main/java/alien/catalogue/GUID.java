@@ -256,7 +256,7 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 
 			// only the SE list can change, and the size for a collection, and md5 when it was missing
 			if (!db.query("UPDATE G" + tableName + "L SET seStringlist=" + setToString(seStringList) + ", size=" + size + ", md5='" + Format.escSQL(md5) + "', owner='" + Format.escSQL(owner)
-					+ "', gowner='" + Format.escSQL(gowner) + "' WHERE guidId=" + guidId))
+					+ "', gowner='" + Format.escSQL(gowner) + "',perm='" + Format.escSQL(perm) + "' WHERE guidId=" + guidId))
 				// wrong table name or what?
 				return false;
 
@@ -986,6 +986,31 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 	@Override
 	public String getPermissions() {
 		return perm != null ? perm : "644";
+	}
+
+	/**
+	 * Change the access permissions on this LFN
+	 * 
+	 * @param newPermissions
+	 * @return the previous permissions, if anything changed and the change was successfully propagated to the database, or <code>null</code> if nothing was touched
+	 */
+	public String chmod(final String newPermissions) {
+		if (!exists)
+			return null;
+
+		if (newPermissions == null || newPermissions.length() != 3 || !LFN.PERMISSIONS.matcher(newPermissions).matches())
+			throw new IllegalAccessError("Invalid permissions string " + newPermissions);
+
+		if (!newPermissions.equals(perm)) {
+			final String oldPerms = perm;
+
+			this.perm = StringFactory.get(newPermissions);
+
+			if (update())
+				return oldPerms;
+		}
+
+		return null;
 	}
 
 	/*

@@ -736,7 +736,7 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		return null;
 	}
 
-	private static final Pattern PERMISSIONS = Pattern.compile("^[0-7]{3}$");
+	static final Pattern PERMISSIONS = Pattern.compile("^[0-7]{3}$");
 
 	/**
 	 * Change the access permissions on this LFN
