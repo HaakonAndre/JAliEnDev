@@ -736,7 +736,7 @@ public class LFNUtils {
 					}
 
 					// Upload this file to grid
-					IOUtils.upload(f, xmlCollectionName, owner);
+					IOUtils.upload(f, xmlCollectionName, owner, 4);
 					f.delete();
 				}
 
