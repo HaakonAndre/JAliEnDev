@@ -45,7 +45,7 @@ import alien.user.UserFactory;
 public class JobWrapper implements Runnable {
 
 	// Folders and files
-	private File currentDir = new File("");
+	private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
 	
 	// Variables passed through VoBox environment
 	//TODO: To be removed
@@ -194,17 +194,20 @@ public class JobWrapper implements Runnable {
 		    changeStatus(JobStatus.STARTED);
 			
 			if (!getInputFiles()) {
+				System.err.println("Failed to get inputfiles");
 				changeStatus(JobStatus.ERROR_IB);
 				return -1;
 			}
 
 			// run payload
 			if (execute() < 0){
+				System.err.println("Failed to run payload");
 				changeStatus(JobStatus.ERROR_E);
 				return -1;
 			}
 				
 			if (!validate()){
+				System.err.println("validation failed");
 				changeStatus(JobStatus.ERROR_V);
 				return -1;
 			}
@@ -230,6 +233,9 @@ public class JobWrapper implements Runnable {
 	 *         execution errors
 	 */
 	private int executeCommand(final String command, final List<String> arguments) {
+		
+		System.err.println("Starting command execution");
+		
 		final List<String> cmd = new LinkedList<>();
 
 		final int idx = command.lastIndexOf('/');
@@ -238,8 +244,9 @@ public class JobWrapper implements Runnable {
 
 		final File fExe = new File(currentDir, cmdStrip);
 
-		if (!fExe.exists())
-			return -1;
+		if (!fExe.exists()){
+			System.err.println("ERROR. Executable was not found. Did it download successfully?");
+			return -1; }
 
 		fExe.setExecutable(true);
 
