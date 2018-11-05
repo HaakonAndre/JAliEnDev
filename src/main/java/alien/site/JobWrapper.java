@@ -194,20 +194,20 @@ public class JobWrapper implements Runnable {
 		    changeStatus(JobStatus.STARTED);
 			
 			if (!getInputFiles()) {
-				System.err.println("Failed to get inputfiles");
+				logger.log(Level.SEVERE, "Failed to get inputfiles");
 				changeStatus(JobStatus.ERROR_IB);
 				return -1;
 			}
 
 			// run payload
 			if (execute() < 0){
-				System.err.println("Failed to run payload");
+				logger.log(Level.SEVERE, "Failed to run payload");
 				changeStatus(JobStatus.ERROR_E);
 				return -1;
 			}
 				
 			if (!validate()){
-				System.err.println("validation failed");
+				logger.log(Level.SEVERE, "Validation failed");
 				changeStatus(JobStatus.ERROR_V);
 				return -1;
 			}
@@ -234,7 +234,7 @@ public class JobWrapper implements Runnable {
 	 */
 	private int executeCommand(final String command, final List<String> arguments) {
 		
-		System.err.println("Starting command execution");
+		logger.log(Level.INFO, "Starting execution of command: " + command);
 		
 		final List<String> cmd = new LinkedList<>();
 
@@ -245,7 +245,7 @@ public class JobWrapper implements Runnable {
 		final File fExe = new File(currentDir, cmdStrip);
 
 		if (!fExe.exists()){
-			System.err.println("ERROR. Executable was not found. Did it download successfully?");
+			logger.log(Level.SEVERE,"ERROR. Executable was not found");
 			return -1; }
 
 		fExe.setExecutable(true);
