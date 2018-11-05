@@ -135,9 +135,19 @@ public class LFNCSDUtils {
 
 		logger.info("Going to recurseAndFilterLFNs: " + path + " - " + file_pattern + " - " + index + " - " + flags + " - " + path_parts.toString());
 
-		final RecurseLFNs rl;
+		final RecurseLFNs rl = new RecurseLFNs(null, operation, path, pat, index, path_parts, flags, metadata, null) {
+			@Override
+			public void notifyUp() {
+				this.counter_left.decrementAndGet();
+				if (this.counter_left.get() == 0)
+					this.counter_left.decrementAndGet();
+				synchronized (this) {
+					this.notifyAll();
+				}
+				return;
+			}
+		};
 		try {
-			rl = new RecurseLFNs(null, operation, path, pat, index, path_parts, flags, metadata);
 			tPool.submit(rl);
 		} catch (RejectedExecutionException ree) {
 			logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit: " + ree);
@@ -146,7 +156,7 @@ public class LFNCSDUtils {
 
 		// lock and check counter
 		synchronized (rl) {
-			while (rl.counter_left.get() > 0) {
+			while (rl.counter_left.get() >= 0) {
 				try {
 					rl.wait(60 * 1000);
 				} catch (InterruptedException e) {
@@ -155,7 +165,7 @@ public class LFNCSDUtils {
 			}
 		}
 
-		return rl.exitOk();
+		return rl.critical_errors;
 	}
 
 	private static class RecurseLFNs implements Runnable {
@@ -166,12 +176,15 @@ public class LFNCSDUtils {
 		final ArrayList<String> parts;
 		final int flags;
 		final String metadata;
-		final RecurseLFNs top;
-		Integer exitCode = Integer.valueOf(0);
-		AtomicInteger counter_left = null;
+		final RecurseLFNs parent;
+		boolean critical_errors = false;
+		AtomicInteger counter_left = new AtomicInteger(0);
+		LFN_CSD dir = null;
+		LFN_CSD lfnc_dir = null;
+		int submitted = 0;
 
-		public RecurseLFNs(final RecurseLFNs top, final RecursiveOp operation, final String base, final Pattern file_pattern, final int index, final ArrayList<String> parts, final int flags,
-				final String metadata) {
+		public RecurseLFNs(final RecurseLFNs parent, final RecursiveOp operation, final String base, final Pattern file_pattern, final int index, final ArrayList<String> parts, final int flags,
+				final String metadata, final LFN_CSD lfnc_dir) {
 			this.operation = operation;
 			this.base = base;
 			this.file_pattern = file_pattern;
@@ -179,16 +192,27 @@ public class LFNCSDUtils {
 			this.parts = parts;
 			this.flags = flags;
 			this.metadata = metadata;
-			if (top == null) {
-				this.top = this;
-				this.counter_left = new AtomicInteger(1);
-			}
+
+			if (parent == null)
+				this.parent = this;
 			else
-				this.top = top;
+				this.parent = parent;
+
+			if (lfnc_dir == null)
+				dir = new LFN_CSD(base, true, append_table, null, null);
+			else
+				dir = lfnc_dir;
 		}
 
-		public boolean exitOk() {
-			return exitCode.intValue() == 0;
+		public void notifyUp() {
+			this.counter_left.decrementAndGet();
+			if (this.counter_left.get() <= 0) {
+				if (!critical_errors && !operation.getOnlyAppend()) {
+					if (!operation.callback(dir))
+						parent.critical_errors = true;
+				}
+				parent.notifyUp();
+			}
 		}
 
 		@Override
@@ -204,13 +228,21 @@ public class LFNCSDUtils {
 			if ((flags & LFNCSDUtils.FIND_INCLUDE_DIRS) != 0)
 				includeDirs = true;
 
-			LFN_CSD dir = new LFN_CSD(base, true, append_table, null, null);
 			if (!dir.exists || dir.type != 'd') {
 				logger.severe("LFNCSDUtils recurseAndFilterLFNs: initial dir invalid - " + base);
 				return;
 			}
 
 			List<LFN_CSD> list = dir.list(true, append_table, clevel);
+
+			// if the dir is empty, do the operation and notify
+			if (list.isEmpty()) {
+				if (!operation.getOnlyAppend()) {
+					if (!operation.callback(dir))
+						parent.critical_errors = true;
+				}
+				parent.notifyUp();
+			}
 
 			Pattern p;
 			if (lastpart || operation.getRecurseInfinitely())
@@ -262,8 +294,11 @@ public class LFNCSDUtils {
 									if (result != null && result instanceof Double && ((Double) result).intValue() == 1.0) {
 										if (filesVersion != null)
 											filesVersion.add(lfnc);
-										else
-											operation.callback(lfnc); // col.add(lfnc);
+										else {
+											if (!operation.callback(lfnc)) {
+												parent.critical_errors = true;
+											}
+										}
 									}
 								} catch (Exception e) {
 									logger.info("RecurseLFNs metadata - cannot get result: " + e);
@@ -277,8 +312,11 @@ public class LFNCSDUtils {
 							else {
 								if (filesVersion != null)
 									filesVersion.add(lfnc);
-								else
-									operation.callback(lfnc); // col.add(lfnc);
+								else {
+									if (!operation.callback(lfnc)) {
+										parent.critical_errors = true;
+									}
+								}
 							}
 						}
 					}
@@ -291,13 +329,16 @@ public class LFNCSDUtils {
 							if (includeDirs) {
 								Matcher m = p.matcher(operation.getRecurseInfinitely() ? lfnc.canonicalName : lfnc.child);
 								if (m.matches())
-									operation.callback(lfnc); // col.add(lfnc);
+									if (!operation.callback(lfnc)) {
+										parent.critical_errors = true;
+									}
 							}
 							if (operation.getRecurseInfinitely()) {
 								// submit
 								try {
-									top.counter_left.incrementAndGet();
-									tPool.submit(new RecurseLFNs(top, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata));
+									this.counter_left.incrementAndGet();
+									submitted++;
+									tPool.submit(new RecurseLFNs(this, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata, lfnc));
 								} catch (RejectedExecutionException ree) {
 									logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit: " + ree);
 								}
@@ -312,8 +353,9 @@ public class LFNCSDUtils {
 						if (m.matches()) {
 							// submit the dir
 							try {
-								top.counter_left.incrementAndGet();
-								tPool.submit(new RecurseLFNs(top, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata));
+								this.counter_left.incrementAndGet();
+								submitted++;
+								tPool.submit(new RecurseLFNs(this, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata, lfnc));
 							} catch (RejectedExecutionException ree) {
 								logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit dir - " + base + lfnc.child + "/" + ": " + ree);
 							}
@@ -352,16 +394,15 @@ public class LFNCSDUtils {
 				}
 
 				for (String lfnc_str : lfn_to_csd.keySet())
-					operation.callback(lfn_to_csd.get(lfnc_str)); // col.add(lfn_to_csd.get(lfnc_str));
+					if (!operation.callback(lfn_to_csd.get(lfnc_str))) {
+						parent.critical_errors = true;
+					}
 
 			}
 
-			// check the counter
-			top.counter_left.decrementAndGet();
-			if (top.counter_left.get() <= 0) {
-				synchronized (top) {
-					top.notifyAll();
-				}
+			// check if there are submitted or notify
+			if (submitted == 0 && !list.isEmpty()) {
+				notifyUp();
 			}
 
 		}
@@ -377,6 +418,7 @@ public class LFNCSDUtils {
 	public static Collection<LFN_CSD> find(final String base_path, final String pattern, final int flags, final String metadata) {
 		Append ap = new Append();
 		ap.setRecurseInfinitely(true);
+		ap.setOnlyAppend(true);
 		recurseAndFilterLFNs(ap, base_path, "*" + pattern, metadata, flags);
 		return ap.getLfnsOk();
 	}
@@ -389,6 +431,7 @@ public class LFNCSDUtils {
 		// if need to resolve wildcard and recurse, we call the recurse method
 		if (path.contains("*") || path.contains("?")) {
 			Append ap = new Append();
+			ap.setOnlyAppend(true);
 			recurseAndFilterLFNs(ap, path, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
 			return ap.getLfnsOk();
 		}

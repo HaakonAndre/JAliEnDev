@@ -13,6 +13,7 @@ public abstract class RecursiveOp {
 	final Set<LFN_CSD> lfns_ok = new TreeSet<>();
 	final Set<LFN_CSD> lfns_error = new TreeSet<>();
 	boolean recurse_infinitely = false;
+	boolean onlyAppend = false;
 
 	/**
 	 * @param lfnc
@@ -32,6 +33,20 @@ public abstract class RecursiveOp {
 	 */
 	public void setRecurseInfinitely(final boolean ri) {
 		this.recurse_infinitely = ri;
+	}
+
+	/**
+	 * @return onlyAppend
+	 */
+	public boolean getOnlyAppend() {
+		return onlyAppend;
+	}
+
+	/**
+	 * @param oa
+	 */
+	public void setOnlyAppend(final boolean oa) {
+		this.onlyAppend = oa;
 	}
 
 	/**
