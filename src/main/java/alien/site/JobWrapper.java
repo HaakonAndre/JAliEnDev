@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.ProcessBuilder.Redirect;
-import java.lang.management.ManagementFactory;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -190,9 +189,7 @@ public class JobWrapper implements Runnable {
 
 	private int runJob() {
 		try {
-			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);		
-
-//			jobWorkdir = String.format("%s%s%d", workdir, defaultOutputDirPrefix, Long.valueOf(queueId));
+			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);
 		    
 		    changeStatus(JobStatus.STARTED);
 			

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
@@ -12,9 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -308,8 +304,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "Sending monitoring values...");
 
 		monitor.sendParameter("job_id", 0);
-//		monitor.sendParameter("statusID", Double.valueOf(jobStatus.getAliEnLevel()));  //JobStatus is now JobWrapper only
-		monitor.sendParameter("ja_status", jaStatus.DONE.getValue()); //TODO: May be errors during run. Use exit code from JobWrapper to report them.
+		monitor.sendParameter("ja_status", jaStatus.DONE.getValue());
 
 		logger.log(Level.INFO, "Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");
 
@@ -584,7 +579,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					if(code!=0)
 						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + logpath + " for more details");
 				} catch (final IllegalThreadStateException e) {
-					logger.log(Level.WARNING, "Exception waiting for the process to finish", e);
+					logger.log(Level.INFO, "Waiting for the JobWrapper process to finish");
 					// TODO: check job-token exist (job not killed)
 
 					// process hasn't terminated
