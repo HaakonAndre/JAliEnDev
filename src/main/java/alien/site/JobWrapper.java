@@ -192,7 +192,7 @@ public class JobWrapper implements Runnable {
 			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);
 		    
 		    changeStatus(JobStatus.STARTED);
-			
+		    
 			if (!getInputFiles()) {
 				logger.log(Level.SEVERE, "Failed to get inputfiles");
 				changeStatus(JobStatus.ERROR_IB);
@@ -211,7 +211,7 @@ public class JobWrapper implements Runnable {
 				changeStatus(JobStatus.ERROR_V);
 				return -1;
 			}
-
+			
 			if (jobStatus == JobStatus.RUNNING)
 				changeStatus(JobStatus.SAVING);
 
@@ -343,7 +343,7 @@ public class JobWrapper implements Runnable {
 
 		if (s != null)
 			filesToDownload.add(s);
-
+		
 		final List<LFN> iFiles = c_api.getLFNs(filesToDownload, true, false);
 
 		if (iFiles == null || iFiles.size() != filesToDownload.size()) {
@@ -356,10 +356,12 @@ public class JobWrapper implements Runnable {
 		for (final LFN l : iFiles) {
 			File localFile = new File(currentDir, l.getFileName());
 
-			final int i = 0;
-
-			while (localFile.exists() && i < 100000)
+			int i = 0;
+			
+			while (localFile.exists() && i < 100000) {
 				localFile = new File(currentDir, l.getFileName() + "." + i);
+				i++;
+				}
 
 			if (localFile.exists()) {
 				logger.log(Level.WARNING, "Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
@@ -376,7 +378,7 @@ public class JobWrapper implements Runnable {
 				logger.log(Level.WARNING, "No replicas of " + entry.getKey().getCanonicalName() + " to read from");
 				return false;
 			}
-
+			
 			final GUID g = pfns.iterator().next().getGuid();
 
 			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
@@ -384,11 +386,12 @@ public class JobWrapper implements Runnable {
 			logger.log(Level.INFO, "GUID g: " + g + " entry.getvalue(): " + entry.getValue());
 
 			final File f = IOUtils.get(g, entry.getValue());
-
+			
 			if (f == null) {
 				logger.log(Level.WARNING, "Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
 				return false;
 			}
+			
 		}
 
 		dumpInputDataList();
