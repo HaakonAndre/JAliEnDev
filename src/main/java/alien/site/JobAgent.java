@@ -560,6 +560,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 			@Override
 			public void run() {
 				p.destroy();
+				if(p.isAlive()){
+					p.destroyForcibly();
+				}
 			}
 		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob
 
