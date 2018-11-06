@@ -208,8 +208,11 @@ public class LFNCSDUtils {
 			if (this.counter_left.decrementAndGet() <= 0) {
 				if (!critical_errors && !operation.getOnlyAppend()) {
 					if (!operation.callback(dir))
-						parent.critical_errors = true;
+						critical_errors = true;
 				}
+				if (critical_errors)
+					parent.critical_errors = true;
+
 				parent.notifyUp();
 			}
 		}
