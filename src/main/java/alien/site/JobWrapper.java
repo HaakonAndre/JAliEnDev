@@ -164,7 +164,7 @@ public class JobWrapper implements Runnable {
 		logger.log(Level.INFO, "Jbox started");
 
 		// process payload
-		int runCode = runJob();
+		final int runCode = runJob();
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
 		System.exit(runCode);
@@ -215,8 +215,10 @@ public class JobWrapper implements Runnable {
 			if (jobStatus == JobStatus.RUNNING)
 				changeStatus(JobStatus.SAVING);
 
-			if (!uploadOutputFiles())
+			if (!uploadOutputFiles()){
+				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
+			}
 			
 			return 0;
 		} catch (final Exception e) {

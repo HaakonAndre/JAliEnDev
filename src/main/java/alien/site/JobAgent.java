@@ -58,7 +58,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
 	private final String ce;
-	private int origTtl;
+	private final int origTtl;
 
 	// Job variables
 	private JDL jdl = null;
@@ -306,7 +306,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		monitor.sendParameter("job_id", 0);
 		monitor.sendParameter("ja_status", jaStatus.DONE.getValue());
 
-		logger.log(Level.INFO, "Copying logs to "  + logpath + '-' + Long.valueOf(queueId) + "...");
+		logger.log(Level.INFO, "Copying JobWrapper logs from exec dir to "  + logpath + '-' + Long.valueOf(queueId) + "...");
 
 		copyLogs();
 
@@ -319,7 +319,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			forEach(File::delete);
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Error deleting the job workdir: " + e.toString());
-		}
+		} 
 
 		RES_WORKDIR_SIZE = ZERO;
 		RES_VMEM = ZERO;
@@ -510,7 +510,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
 
 		pBuilder.directory(tempDir);
-
+		
 		final Process p;
 
 		// stdin from the viewpoint of the wrapper
