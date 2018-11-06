@@ -138,11 +138,11 @@ public class LFNCSDUtils {
 		final RecurseLFNs rl = new RecurseLFNs(null, operation, path, pat, index, path_parts, flags, metadata, null) {
 			@Override
 			public void notifyUp() {
-				this.counter_left.decrementAndGet();
-				if (this.counter_left.get() == 0)
+				if (this.counter_left.decrementAndGet() == 0) {
 					this.counter_left.decrementAndGet();
-				synchronized (this) {
-					this.notifyAll();
+					synchronized (this) {
+						this.notifyAll();
+					}
 				}
 				return;
 			}
@@ -205,8 +205,7 @@ public class LFNCSDUtils {
 		}
 
 		public void notifyUp() {
-			this.counter_left.decrementAndGet();
-			if (this.counter_left.get() <= 0) {
+			if (this.counter_left.decrementAndGet() <= 0) {
 				if (!critical_errors && !operation.getOnlyAppend()) {
 					if (!operation.callback(dir))
 						parent.critical_errors = true;
