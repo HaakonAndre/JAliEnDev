@@ -1,16 +1,15 @@
 package alien.site;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -18,6 +17,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -43,6 +43,7 @@ import apmon.ApMonException;
 import apmon.ApMonMonitoringConstants;
 import apmon.BkThread;
 import apmon.MonitoredJob;
+import lazyj.ExtProperties;
 
 /**
  * Gets matched jobs, and launches JobWrapper for executing them
@@ -53,7 +54,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private File tempDir = null;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
 	private String jobWorkdir = "";
-	private String logpath = "";
+	private String jobWrapperLogDir = "";
+	
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -155,7 +157,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		//ce = env.get("CE");
 		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
 		
-		logpath = env.getOrDefault("TMPDIR", "/tmp/") + "jobwrapper-logs";
+		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp/") + "jalien-jobwrapper.log";
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
@@ -288,6 +290,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 			// Set up constraints
 			getMemoryRequirements();
 
+			setupJobWrapperLogging();
+			
 			final int selfProcessID = MonitorFactory.getSelfProcessID();
 			final List<String> launchCommand = generateLaunchCommand(selfProcessID);
 
@@ -306,10 +310,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		monitor.sendParameter("job_id", 0);
 		monitor.sendParameter("ja_status", jaStatus.DONE.getValue());
 
-		logger.log(Level.INFO, "Copying JobWrapper logs from exec dir to "  + logpath + '-' + Long.valueOf(queueId) + "...");
-
-		copyLogs();
-
 		logger.log(Level.INFO, "Cleaning up after execution...");
 
 		try {
@@ -319,7 +319,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			forEach(File::delete);
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Error deleting the job workdir: " + e.toString());
-		} 
+		}
 
 		RES_WORKDIR_SIZE = ZERO;
 		RES_VMEM = ZERO;
@@ -480,10 +480,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 				readArg = (scanner.next());
 
 				switch (readArg) {
+
 				case "-cp":
 					scanner.next();
 					break;
 				case "alien.site.JobAgent":
+					cmd.add("-DAliEnConfig="+jobWorkdir);
 					cmd.add("-cp");
 					cmd.add(path.toString());
 					cmd.add("alien.site.JobWrapper");
@@ -580,7 +582,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					processNotFinished = false;
 					logger.log(Level.INFO, "JobWrapper has finished execution. Exit code: " + code);
 					if(code!=0)
-						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + logpath + " for more details");
+						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + jobWrapperLogDir + " for more details");
 				} catch (final IllegalThreadStateException e) {
 					logger.log(Level.INFO, "Waiting for the JobWrapper process to finish");
 					// TODO: check job-token exist (job not killed)
@@ -742,36 +744,43 @@ public class JobAgent implements MonitoringObject, Runnable {
 		return true;
 	}
 	
-	private void copyLogs(){
 
-		final File logDir = new File(logpath + '-' + Long.valueOf(queueId));
-		if (!logDir.exists()) {
-			final boolean created = logDir.mkdirs();
-			if (!created) {
-				logger.log(Level.WARNING, "log directory can't be created: " + logpath);
-				return;
-			}
-		}
+	void setupJobWrapperLogging(){
 
-		final File[] listOfFiles = tempDir.listFiles();
-
-		Path filePath;
-		Path destPath;
+		Properties props = new Properties();
 		try {
-			for (File file : listOfFiles) {
-				if (file.isFile() && file.getName().endsWith(".log")) {
-					
-					filePath = file.toPath();
-					destPath= Paths.get(logDir.getPath() + "/" + file.getName());
-					
-					if(Files.exists(destPath))
-						Files.write(destPath, Files.readAllLines(filePath, StandardCharsets.UTF_8), StandardCharsets.UTF_8, StandardOpenOption.APPEND);
-					else Files.copy(filePath, destPath);					
-				}
-			}
-		}  catch (final IOException e) {
-			logger.log(Level.WARNING, "Warning: An error occurred while copying logs to " + logpath, e);
+			ExtProperties ep = ConfigUtils.getConfiguration("loggging");
+
+			props = ep.getProperties();
+			
+			props.setProperty("java.util.logging.FileHandler.pattern", jobWrapperLogDir);
+
+			logger.log(Level.INFO, "Logging properties loaded for the JobWrapper");
+		} catch (Exception e) {
+
+			logger.log(Level.INFO, "Logging properties for JobWrapper not loaded. Stacktrace: ", e);
+			logger.log(Level.INFO, "Using fallback logging configurations for JobWrapper");
+			
+			props.put("handlers", "java.util.logging.FileHandler");
+			props.put("java.util.logging.FileHandler.pattern", jobWrapperLogDir);
+			props.put("java.util.logging.FileHandler.limit", "0");
+			props.put("java.util.logging.FileHandler.count", "1");
+			props.put("alien.log.WarningFileHandler.append", "true");
+			props.put("java.util.logging.FileHandler.formatter", "java.util.logging.SimpleFormatter");
+			props.put(".level", "FINEST");
+			props.put("lia.level", "WARNING");
+			props.put("lazyj.level", "WARNING");
+		    props.put("apmon.level", "WARNING");
+		    props.put("alien.level", "FINEST");
+		    props.put("alien.monitoring.Monitor.level", "WARNING");
+		    props.put("use_java_logger", "true");	    		
 		}
+		
+	    try {
+			props.store(new FileOutputStream(jobWorkdir+"/logging.properties"), null);
+		} catch (IOException e1) {
+			logger.log(Level.WARNING, "Failed to configure JobWrapper logging", e1);
+		} 
 	}
 
 }
