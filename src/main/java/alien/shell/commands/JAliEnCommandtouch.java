@@ -12,9 +12,11 @@ public class JAliEnCommandtouch extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		for (final String path : this.filelist)
-			commander.c_api.touchLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path));
-
+		for (final String path : this.filelist) {
+			if (commander.c_api.touchLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path)) == null) {
+				commander.setReturnCode(1, "Failed to touch the LFN: " + FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path));
+			}
+		}
 	}
 
 	@Override
