@@ -776,8 +776,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		    props.put("use_java_logger", "true");	    		
 		}
 		
-	    try {
-			props.store(new FileOutputStream(jobWorkdir+"/logging.properties"), null);
+	    try (FileOutputStream str = new FileOutputStream(jobWorkdir+"/logging.properties")){
+			props.store(str, null);
 		} catch (IOException e1) {
 			logger.log(Level.WARNING, "Failed to configure JobWrapper logging", e1);
 		} 
