@@ -469,11 +469,14 @@ public class ArchiveMemberDelete {
 			// Clean up local files
 			FileUtils.deleteDirectory(new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted"));
 			newArchive.delete();
-
 		} catch (final IOException e1) {
+			System.err.println("[" + new Date() + "] " + remoteFile + ": I/O exception. Abort");
 			e1.printStackTrace();
 		} catch (final ServerException e1) {
 			System.err.println("[" + new Date() + "] " + remoteFile + ": Could not get PFN. Abort");
+			e1.printStackTrace();
+		} catch (final OutOfMemoryError e1) {
+			System.err.println("[" + new Date() + "] " + "Out of memory. Abort");
 			e1.printStackTrace();
 		}
 	}
