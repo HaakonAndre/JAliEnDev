@@ -42,24 +42,24 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 					commander.printOutln("Owner: " + g.owner + ":" + g.gowner);
 					commander.printOutln("Permissions: " + g.perm);
 					commander.printOutln("Size: " + g.size + " (" + Format.size(g.size) + ")");
-					commander.printOut("guid" + lfnName);
-					commander.printOut("owner" + g.owner);
-					commander.printOut("gowner" + g.gowner);
-					commander.printOut("perm" + g.perm);
-					commander.printOut("size" + g.size);
+					commander.printOut("guid", lfnName);
+					commander.printOut("owner", g.owner);
+					commander.printOut("gowner", g.gowner);
+					commander.printOut("perm", g.perm);
+					commander.printOut("size", String.valueOf(g.size));
 
 					if (g.md5 != null && g.md5.length() > 0) {
 						commander.printOutln("MD5: " + g.md5);
-						commander.printOut("md5" + g.md5);
+						commander.printOut("md5", g.md5);
 					}
 
 					final long gTime = GUIDUtils.epochTime(g.guid);
 
 					commander.printOutln("Created: " + (new Date(gTime)) + " (" + gTime + ") by " + GUIDUtils.getMacAddr(g.guid));
-					commander.printOut("guidctime" + gTime);
+					commander.printOut("guidctime", String.valueOf(gTime));
 
 					commander.printOutln("Last change: " + g.ctime + " (" + g.ctime.getTime() + ")");
-					commander.printOut("ctime" + g.ctime);
+					commander.printOut("ctime", String.valueOf(g.ctime.getTime() / 1000));
 
 					final Set<PFN> pfns = g.getPFNs();
 
@@ -95,32 +95,32 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 				commander.printOutln("Owner: " + lfn.owner + ":" + lfn.gowner);
 				commander.printOutln("Permissions: " + lfn.perm);
 				commander.printOutln("Last change: " + lfn.ctime + " (" + lfn.ctime.getTime() + ")");
-				commander.printOut("file" + lfn.getCanonicalName());
-				commander.printOut("type" + lfn.type);
-				commander.printOut("owner" + lfn.owner);
-				commander.printOut("gowner" + lfn.gowner);
-				commander.printOut("perm" + lfn.perm);
-				commander.printOut("ctime" + lfn.ctime);
+				commander.printOut("file", lfn.getCanonicalName());
+				commander.printOut("type", String.valueOf(lfn.type));
+				commander.printOut("owner", lfn.owner);
+				commander.printOut("gowner", lfn.gowner);
+				commander.printOut("perm", lfn.perm);
+				commander.printOut("ctime", String.valueOf(lfn.ctime.getTime() / 1000));
 
 				if (!lfn.isDirectory()) {
 					commander.printOutln("Size: " + lfn.size + " (" + Format.size(lfn.size) + ")");
 					commander.printOutln("MD5: " + lfn.md5);
-					commander.printOut("size" + lfn.size);
-					commander.printOut("md5" + lfn.md5);
+					commander.printOut("size", String.valueOf(lfn.size));
+					commander.printOut("md5", lfn.md5);
 
 					if (lfn.guid != null) {
 						final long gTime = GUIDUtils.epochTime(lfn.guid);
 
 						commander.printOutln("GUID: " + lfn.guid);
 						commander.printOutln("\tGUID created on " + (new Date(gTime)) + " (" + gTime + ") by " + GUIDUtils.getMacAddr(lfn.guid));
-						commander.printOut("guid" + lfn.guid);
-						commander.printOut("guidctime" + gTime);
+						commander.printOut("guid", String.valueOf(lfn.guid));
+						commander.printOut("guidctime", String.valueOf(gTime));
 					}
 				}
 
 				if (lfn.jobid > 0) {
 					commander.printOutln("Job ID: " + lfn.jobid);
-					commander.printOut("jobid" + lfn.jobid);
+					commander.printOut("jobid", String.valueOf(lfn.jobid));
 				}
 			}
 
