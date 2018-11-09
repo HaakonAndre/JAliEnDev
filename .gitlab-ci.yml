@@ -1,7 +1,17 @@
+stages:
+  - unit
+  - e2e
+
 unit-test:
     image: java:8
     script: ./gradlew test
+    stage: unit
     artifacts:
         reports:
             junit: build/test-results/test/TEST-*.xml
 
+e2e-test:
+  image: registry.gitlab.com/finestructure/pipeline-trigger
+  stage: e2e
+  script:
+    - trigger -h gitlab.cern.ch -a "$API_TOKEN" -p "$CI_JOB_TOKEN" -t dev 46440
