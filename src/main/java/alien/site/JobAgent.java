@@ -157,7 +157,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		//ce = env.get("CE");
 		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
 		
-		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp/") + "jalien-jobwrapper.log";
+		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log";
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
@@ -478,9 +478,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 			String readArg;
 			while (scanner.hasNext()) {
 				readArg = (scanner.next());
-
+				
 				switch (readArg) {
-
 				case "-cp":
 					scanner.next();
 					break;
