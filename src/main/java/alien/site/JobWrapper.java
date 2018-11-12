@@ -46,6 +46,7 @@ public class JobWrapper implements Runnable {
 
 	// Folders and files
 	private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
+	private String currentDirFolder = currentDir.getAbsolutePath().substring(currentDir.getAbsolutePath().lastIndexOf('/') + 1);
 	
 	// Variables passed through VoBox environment
 	//TODO: To be removed
@@ -102,7 +103,7 @@ public class JobWrapper implements Runnable {
 	/**
 	 */
 	public JobWrapper() {
-
+		
 		//TODO: Send from JobAgent instead of reading from env? Will simplify things for containers.
 		siteMap = (new SiteMap()).getSiteParameters(env);
 		hostName = (String) siteMap.get("Host");
@@ -643,10 +644,10 @@ public class JobWrapper implements Runnable {
 		String outputDir = jdl.getOutputDir();
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + currentDir.getAbsolutePath() + queueId);
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + currentDirFolder);
 		else
 			if (outputDir == null)
-				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + currentDir.getAbsolutePath() + queueId);
+				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + currentDirFolder);
 
 		return outputDir;
 	}
