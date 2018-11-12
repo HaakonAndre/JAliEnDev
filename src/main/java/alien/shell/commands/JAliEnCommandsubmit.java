@@ -30,7 +30,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 			if (content != null)
 				try {
 					final JDL jdl;
-					final String[] args = alArguments.size() > 1 ? alArguments.subList(1, alArguments.size() - 1).toArray(new String[0]) : null;
+					final String[] args = getArgs();
 
 					try {
 						jdl = TaskQueueUtils.applyJDLArguments(content, args);
@@ -58,6 +58,10 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 		else
 			commander.setReturnCode(1, "Not able to get the file " + alArguments.get(0));
 	}
+
+  public String[] getArgs() {
+    return alArguments.size() > 1 ? alArguments.subList(1, alArguments.size()).toArray(new String[0]) : null;
+  }
 
 	/**
 	 * printout the help info
