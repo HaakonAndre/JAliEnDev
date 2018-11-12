@@ -132,7 +132,8 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
+	 * @param path
+	 *            absolute path to the LFN
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path) {
@@ -149,8 +150,10 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
-	 * @param recursive <code>true</code> to delete directory's content recursively
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param recursive
+	 *            <code>true</code> to delete directory's content recursively
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive) {
@@ -167,9 +170,12 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
-	 * @param recursive <code>true</code> to delete directory's content recursively
-	 * @param purge <code>true</code> to delete a physical copy
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param recursive
+	 *            <code>true</code> to delete directory's content recursively
+	 * @param purge
+	 *            <code>true</code> to delete a physical copy
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive, final boolean purge) {
@@ -186,8 +192,10 @@ public class CatalogueApiUtils {
 	/**
 	 * Move a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
-	 * @param newpath absolute path to the target
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param newpath
+	 *            absolute path to the target
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public LFN moveLFN(final String path, final String newpath) {
@@ -610,12 +618,13 @@ public class CatalogueApiUtils {
 	 * @param site
 	 * @param write
 	 * @param lfn
+	 * @param qos 
 	 * @return SE distance list
 	 */
-	public List<HashMap<SE, Double>> listSEDistance(final String site, final boolean write, final String lfn) {
+	public List<HashMap<SE, Double>> listSEDistance(final String site, final boolean write, final String lfn, final String qos) {
 		ListSEDistance lsd;
 		try {
-			lsd = Dispatcher.execute(new ListSEDistance(commander.getUser(), site, write, lfn));
+			lsd = Dispatcher.execute(new ListSEDistance(commander.getUser(), site, write, lfn, qos));
 			return (lsd != null ? lsd.getSEDistances() : null);
 		} catch (final ServerException e) {
 			e.printStackTrace();

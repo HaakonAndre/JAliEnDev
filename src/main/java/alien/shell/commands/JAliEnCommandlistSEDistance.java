@@ -7,6 +7,8 @@ import java.util.Set;
 import alien.catalogue.FileSystemUtils;
 import alien.se.SE;
 import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 
 /**
  * @author costing
@@ -16,27 +18,39 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	private boolean useWriteMetrics;
 	private String site;
 	private String lfn_name;
+	private String qos;
 
 	@Override
 	public void run() {
-		if (!this.useWriteMetrics && (this.lfn_name == null || this.lfn_name.length() == 0)) {
-			commander.printErrln("No LFN specified for read metrics");
-			return;
-		}
+		/*
+		 * if (!this.useWriteMetrics && (this.lfn_name == null || this.lfn_name.length() == 0)) {
+		 * commander.printErrln("No LFN specified for read metrics");
+		 * return;
+		 * }
+		 */
 
 		if (lfn_name != null && lfn_name.length() != 0)
 			this.lfn_name = FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), this.lfn_name);
-		final List<HashMap<SE, Double>> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name);
+
+		final List<HashMap<SE, Double>> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name, this.qos);
+
+		if (results == null) {
+			commander.printErrln("No results from server");
+			return;
+		}
+
 		for (final HashMap<SE, Double> smap : results) {
 			final Set<SE> selist = smap.keySet();
+
 			for (final SE s : selist) {
 				if (!s.seName.contains("::"))
 					continue;
 
-				commander.printOutln(String.format("%1$" + 40 + "s", s.seName) + "\t(read: " + String.format("%.9f", Double.valueOf(s.demoteRead)) + ",  write: "
-						+ String.format("%.9f", Double.valueOf(s.demoteWrite)) + ",  distance: " + String.format("%.9f", smap.get(s)) + ")");
+				commander.printOutln(String.format("%1$" + 40 + "s", s.seName) + "\t(read: " + String.format("% .3f", Double.valueOf(s.demoteRead)) + ",  write: "
+						+ String.format("% .3f", Double.valueOf(s.demoteWrite)) + ",  distance: " + String.format("% .3f", smap.get(s)) + ")");
 			}
 		}
+
 		commander.printOutln();
 	}
 
@@ -44,13 +58,10 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	public void printHelp() {
 		commander.printOutln();
 		commander.printOutln("listSEDistance: Returns the closest working SE for a particular site. Usage");
-		commander.printOutln();
-		commander.printOutln(" listSEDistance [<site>] [read [<lfn>]|write]");
-		commander.printOutln();
-		commander.printOutln();
-		commander.printOutln(" Options:");
-		commander.printOutln("   <site>: site name. Default: current site");
-		commander.printOutln("   [read|write]: action. Default write. In the case of read, if an lfn is specified, use only SE that contain that file");
+		commander.printOutln(helpStartOptions());
+		commander.printOutln(helpOption("-site", "site to base the results to, instead of using the default mapping of this client to a site"));
+		commander.printOutln(helpOption("-read", "use the read metrics, optionally with an LFN for which to sort the replicas. Default is to print the write metrics."));
+		commander.printOutln(helpOption("-qos", "restrict the returned SEs to this particular tag"));
 		commander.printOutln();
 	}
 
@@ -67,26 +78,28 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 	public JAliEnCommandlistSEDistance(final JAliEnCOMMander commander, final List<String> alArguments) throws OptionException {
 		super(commander, alArguments);
 
-		this.useWriteMetrics = true;
-		try {
-			final int argLen = alArguments.size();
-			if (argLen == 0)
-				return;
-			String arg = alArguments.get(0);
-			if (!arg.equals("read") && !arg.equals("write"))
-				this.site = arg;
-			else
-				this.useWriteMetrics = (arg.equals("write"));
-			arg = alArguments.get(1);
-			if (!arg.equals("read") && !arg.equals("write"))
-				this.lfn_name = arg;
-			else
-				this.useWriteMetrics = (arg.equals("write"));
-			arg = alArguments.get(2);
-			if (!this.useWriteMetrics && this.lfn_name == null)
-				this.lfn_name = arg;
-		} catch (@SuppressWarnings("unused") final IndexOutOfBoundsException e) {
-			// ignore
+		final OptionParser parser = new OptionParser();
+		parser.accepts("qos").withRequiredArg();
+		parser.accepts("read").withOptionalArg();
+		parser.accepts("site").withRequiredArg();
+
+		final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
+
+		if (options.hasArgument("qos"))
+			qos = options.valueOf("qos").toString();
+		else
+			qos = null;
+
+		if (options.has("read")) {
+			this.useWriteMetrics = false;
+
+			if (options.hasArgument("read"))
+				this.lfn_name = options.valueOf("read").toString();
 		}
+		else
+			this.useWriteMetrics = true;
+
+		if (options.has("site"))
+			this.site = options.valueOf("site").toString();
 	}
 }
