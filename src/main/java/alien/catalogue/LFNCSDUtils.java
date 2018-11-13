@@ -25,6 +25,7 @@ import org.nfunk.jep.JEP;
 import com.datastax.driver.core.ConsistencyLevel;
 
 import alien.catalogue.recursive.Append;
+import alien.catalogue.recursive.Delete;
 import alien.catalogue.recursive.RecursiveOp;
 import alien.config.ConfigUtils;
 import alien.io.TransferUtils;
@@ -573,59 +574,33 @@ public class LFNCSDUtils {
 	 * @param notifyCache
 	 * @return final lfns deleted and errors
 	 */
-	/*
-	 * TODO change to RecursiveOp
-	 * public static ArrayList<Set<LFN_CSD>> delete(final AliEnPrincipal user, final String lfn, final boolean purge, final boolean recursive, final boolean notifyCache) {
-	 * // Let's assume for now that the lfn come as absolute paths, otherwise:
-	 * // final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
-	 * final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
-	 * final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
-	 * final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
-	 * ret.add(lfnc_ok);
-	 * ret.add(lfnc_error);
-	 * 
-	 * // expand wildcards and filter if needed
-	 * if (lfn.contains("*") || lfn.contains("?") || recursive) {
-	 * final Collection<LFN_CSD> lfnsToRm = recurseAndFilterLFNs("rm", lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
-	 * 
-	 * for (LFN_CSD l : lfnsToRm) {
-	 * // check permissions to rm
-	 * if (!AuthorizationChecker.canWrite(l, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * continue;
-	 * }
-	 * // rm and add to the final collection of lfns
-	 * if (l.delete(purge, recursive, notifyCache, lfnc_ok, lfnc_error)) {
-	 * lfnc_ok.add(l);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * }
-	 * }
-	 * }
-	 * else {
-	 * final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
-	 * // check permissions to rm
-	 * if (!AuthorizationChecker.canWrite(lfnc, user)) {
-	 * logger.info("LFNCSDUtils: rm: no permission to delete lfn: " + lfnc);
-	 * lfnc_error.add(lfnc);
-	 * return ret;
-	 * }
-	 * // rm and add to the final collection of lfns
-	 * if (lfnc.delete(purge, recursive, notifyCache, lfnc_ok, lfnc_error)) {
-	 * lfnc_ok.add(lfnc);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + lfnc.getCanonicalName());
-	 * lfnc_error.add(lfnc);
-	 * }
-	 * }
-	 * 
-	 * return ret;
-	 * }
-	 */
+
+	public static boolean delete(final AliEnPrincipal user, final String lfn, final boolean purge, final boolean recursive, final boolean notifyCache) {
+		// Let's assume for now that the lfn come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+
+		// expand wildcards and filter if needed
+		if (lfn.contains("*") || lfn.contains("?") || recursive) {
+			Delete de = new Delete();
+			de.setUser(user);
+			recurseAndFilterLFNs(de, lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+			return de.getLfnsError().isEmpty();
+		}
+
+		final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
+		// check permissions to rm
+		if (!AuthorizationChecker.canWrite(lfnc, user)) {
+			logger.info("LFNCSDUtils: rm: no permission to delete lfn: " + lfnc);
+			return false;
+		}
+		// rm
+		if (!lfnc.delete(purge, recursive, notifyCache)) {
+			logger.info("LFNCSDUtils: rm: cannot delete lfn: " + lfnc);
+			return false;
+		}
+
+		return true;
+	}
 
 	/**
 	 * Touch an LFN_CSD: if the entry exists, update its timestamp, otherwise try to create an empty file

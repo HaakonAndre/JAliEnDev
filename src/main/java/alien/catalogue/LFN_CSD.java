@@ -7,10 +7,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1064,6 +1062,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	 *
 	 * @return <code>true</code> if this LFN entry was deleted in the database
 	 */
+	@SuppressWarnings("resource")
 	public boolean delete(final boolean purge, final boolean recursive, final boolean notifyCache) {
 		if (!exists)
 			throw new IllegalAccessError("You asked to delete an LFN that doesn't exist!");
@@ -1073,178 +1072,75 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			return false;
 		}
 
-		// control variables
-		AtomicInteger counter_left = new AtomicInteger();
-		TreeSet<LFN_CSD> dirs = new TreeSet<>();
-		TreeSet<LFN_CSD> error_entries = new TreeSet<>();
-		boolean ok = true;
-
-		counter_left.incrementAndGet();
 		try {
-			LFNCSDUtils.tPool.submit(new DeleteLFNs(this, counter_left, purge, notifyCache, dirs, error_entries)).get();
-		} catch (Exception e1) {
-			logger.severe("LFN_CSD: delete: cannot finish delete operation: " + e1.toString());
-		}
-
-		try {
-			@SuppressWarnings("resource")
 			final Session session = DBCassandra.getInstance();
 			if (session == null) {
-				logger.severe("LFN_CSD: delete: could not get an instance: " + this.getCanonicalName());
+				logger.severe("LFN_CSD: delete: could not get an instance: " + getCanonicalName());
 				return false;
 			}
 
-			// delete unique file
+			BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
+			bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
+			PreparedStatement statement;
+
+			// Delete the entry from index and metadata
+			statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? AND path=?");
+			bs.add(statement.bind(this.parent_id, this.child));
+
+			statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=? AND id=?");
+			bs.add(statement.bind(this.parent_id, this.id));
+
 			if (!isDirectory()) {
-				PreparedStatement statement;
+				// Delete the entry from ids and se_lookup. Will be deleted from the hierarchy (index, metadata) using the parent folder
+				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_ids_table + " WHERE child_id=?");
+				bs.add(statement.bind(this.id));
 
-				BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
-				bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
-
-				// Delete the entry from index and metadata
-				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=? AND path=?");
-				bs.add(statement.bind(this.parent_id, this.child));
-
-				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=? AND id=?");
-				bs.add(statement.bind(this.parent_id, this.id));
-
-				ResultSet rs = session.execute(bs);
-				if (!rs.wasApplied()) {
-					logger.severe("LFN_CSD: delete: problem deleting file entry: " + this.getCanonicalName());
-					ok = false;
-				}
-			}
-
-			// delete entries by folders
-			for (LFN_CSD l : dirs) {
-				PreparedStatement statement;
-
-				BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
-				bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
-
-				// Delete the entry from index and metadata
-				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_index_table + " WHERE path_id=?");
-				bs.add(statement.bind(l.id));
-
-				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=?");
-				bs.add(statement.bind(l.id));
-
-				ResultSet rs = session.execute(bs);
-				if (!rs.wasApplied()) {
-					logger.severe("LFN_CSD: delete: problem deleting folder entry: " + l.getCanonicalName());
-					ok = false;
-				}
-			}
-		} catch (Exception e) {
-			logger.severe("LFN_CSD: delete: problem deleting folders/file: " + e.toString());
-			ok = false;
-		}
-
-		// show errors
-		for (LFN_CSD l : error_entries) {
-			logger.severe("LFN_CSD: delete: problem removing: " + l.getCanonicalName());
-		}
-
-		return ok;
-	}
-
-	private static class DeleteLFNs implements Runnable {
-		final LFN_CSD lfnc;
-		final AtomicInteger counter_left;
-		final boolean purge;
-		final boolean notifyCache;
-		final TreeSet<LFN_CSD> dirs;
-		final TreeSet<LFN_CSD> error_entries;
-
-		public DeleteLFNs(final LFN_CSD lfn, final AtomicInteger counter_left, final boolean purge, final boolean notifyCache, final TreeSet<LFN_CSD> dirs, final TreeSet<LFN_CSD> error_entries) {
-			this.lfnc = lfn;
-			this.counter_left = counter_left;
-			this.purge = purge;
-			this.notifyCache = notifyCache;
-			this.dirs = dirs;
-			this.error_entries = error_entries;
-		}
-
-		@Override
-		public void run() {
-			if (monitor != null)
-				monitor.incrementCounter("LFN_CSD_delete");
-
-			if (lfnc.isDirectory()) {
-				dirs.add(lfnc);
-
-				final List<LFN_CSD> subentries = lfnc.list(true);
-
-				// do not notify the cache of every subentry but only once for the entire folder
-				for (final LFN_CSD subentry : subentries) {
-					counter_left.incrementAndGet();
-					LFNCSDUtils.tPool.submit(new DeleteLFNs(subentry, counter_left, purge, notifyCache, dirs, error_entries));
-				}
-			}
-			else {
-				int modulo = (lfnc.modulo > 0 ? lfnc.modulo : Math.abs(lfnc.id.hashCode() % modulo_se_lookup));
-
-				try {
-					@SuppressWarnings("resource")
-					final Session session = DBCassandra.getInstance();
-					if (session == null) {
-						error_entries.add(lfnc);
-						logger.severe("LFN_CSD: DeleteLFNs could not get an instance: " + lfnc.getCanonicalName());
-						return;
+				// remove se_lookups entry for physical files
+				if (this.isFile() || this.isArchive()) {
+					int modulol = (this.modulo > 0 ? this.modulo : Math.abs(this.id.hashCode() % modulo_se_lookup));
+					for (Integer senumber : this.pfns.keySet()) {
+						statement = getOrInsertPreparedStatement(session, "DELETE FROM " + se_lookup_table + " WHERE senumber=? AND modulo=? AND id=?");
+						bs.add(statement.bind(senumber, Integer.valueOf(modulol), this.id));
 					}
-
-					PreparedStatement statement;
-
-					BatchStatement bs = new BatchStatement(BatchStatement.Type.LOGGED);
-					bs.setConsistencyLevel(ConsistencyLevel.QUORUM);
-
-					// Delete the entry from ids and se_lookup. Will be deleted from the hierarchy (index, metadata) using the parent folder
-					statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_ids_table + " WHERE child_id=?");
-					bs.add(statement.bind(lfnc.id));
-
-					if (lfnc.isFile() || lfnc.isArchive()) {
-						for (Integer senumber : lfnc.pfns.keySet()) {
-							statement = getOrInsertPreparedStatement(session, "DELETE FROM " + se_lookup_table + " WHERE senumber=? AND modulo=? AND id=?");
-							bs.add(statement.bind(senumber, Integer.valueOf(modulo), lfnc.id));
-						}
-					}
-
-					ResultSet rs = session.execute(bs);
-					if (!rs.wasApplied()) {
-						error_entries.add(lfnc);
-						logger.severe("LFN_CSD: DeleteLFNs problem deleting from ids and se_lookup?: " + lfnc.getCanonicalName());
-					}
-
-					if (notifyCache) {
-						String toWipe = lfnc.getCanonicalName();
-
-						if (lfnc.isDirectory())
-							toWipe += ".*";
-
-						TextCache.invalidateLFN(toWipe);
-					}
-
-				} catch (Exception e) {
-					error_entries.add(lfnc);
-					logger.severe("LFN_CSD: DeleteLFNs Exception deleting LFN: " + e.toString());
 				}
 
-				if (purge && lfnc.id != null) {
+				// cleanup cache entry
+				if (notifyCache) {
+					String toWipe = this.getCanonicalName();
+
+					if (this.isDirectory())
+						toWipe += ".*";
+
+					TextCache.invalidateLFN(toWipe);
+				}
+
+				// insert into the physical removal queue
+				if (purge && this.id != null) {
 					try (DBFunctions db = ConfigUtils.getDB("alice_users")) {
-						for (Integer senumber : lfnc.pfns.keySet()) {
+						for (Integer senumber : this.pfns.keySet()) {
 							db.setQueryTimeout(120);
-							db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, lfnc.id, senumber, lfnc.checksum,
-									Long.valueOf(lfnc.size));
+							db.query("INSERT IGNORE INTO orphan_pfns_" + senumber + " (guid, se, md5sum, size) VALUES (string2binary(?), ?, ?, ?);", false, this.id, senumber, this.checksum,
+									Long.valueOf(this.size));
 						}
 					} catch (Exception e) {
-						error_entries.add(lfnc);
-						logger.severe("LFN_CSD: DeleteLFNs problem inserting into PFN cleanup queue: " + lfnc.getCanonicalName() + " - " + e.toString());
+						logger.severe("LFN_CSD: delete: problem inserting into PFN cleanup queue: " + getCanonicalName() + " - " + e.toString());
+						return false;
 					}
 				}
 			}
 
-			counter_left.decrementAndGet();
+			ResultSet rs = session.execute(bs);
+			if (!rs.wasApplied()) {
+				logger.severe("LFN_CSD: delete: problem deleting folder entry: " + getCanonicalName());
+				return false;
+			}
+
+		} catch (Exception e) {
+			logger.severe("LFN_CSD: delete: problem deleting folders/file: " + e.toString());
+			return false;
 		}
+
+		return true;
 	}
 
 	/**

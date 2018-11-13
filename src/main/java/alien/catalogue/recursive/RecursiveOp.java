@@ -4,6 +4,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import alien.catalogue.LFN_CSD;
+import alien.user.AliEnPrincipal;
 
 /**
  * @author mmmartin
@@ -14,6 +15,7 @@ public abstract class RecursiveOp {
 	final Set<LFN_CSD> lfns_error = new TreeSet<>();
 	boolean recurse_infinitely = false;
 	boolean onlyAppend = false;
+	AliEnPrincipal user = null;
 
 	/**
 	 * @param lfnc
@@ -47,6 +49,20 @@ public abstract class RecursiveOp {
 	 */
 	public void setOnlyAppend(final boolean oa) {
 		this.onlyAppend = oa;
+	}
+
+	/**
+	 * @return user
+	 */
+	public AliEnPrincipal getuser() {
+		return user;
+	}
+
+	/**
+	 * @param us
+	 */
+	public void setUser(final AliEnPrincipal us) {
+		this.user = us;
 	}
 
 	/**
