@@ -18,6 +18,8 @@ public abstract class RecursiveOp {
 	AliEnPrincipal user = null;
 	LFN_CSD lfnc_target = null;
 	LFN_CSD lfnc_target_parent = null;
+	String new_owner = null;
+	String new_group = null;
 
 	/**
 	 * @param lfnc
@@ -107,6 +109,34 @@ public abstract class RecursiveOp {
 	 */
 	public Set<LFN_CSD> getLfnsError() {
 		return lfns_error;
+	}
+
+	/**
+	 * @return new_owner
+	 */
+	public String getNewOwner() {
+		return new_owner;
+	}
+
+	/**
+	 * @param no
+	 */
+	public void setNewOwner(final String no) {
+		new_owner = no;
+	}
+
+	/**
+	 * @return new_group
+	 */
+	public String getNewGroup() {
+		return new_group;
+	}
+
+	/**
+	 * @param ng
+	 */
+	public void setNewGroup(final String ng) {
+		new_group = ng;
 	}
 
 }

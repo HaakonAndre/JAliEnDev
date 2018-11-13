@@ -25,6 +25,7 @@ import org.nfunk.jep.JEP;
 import com.datastax.driver.core.ConsistencyLevel;
 
 import alien.catalogue.recursive.Append;
+import alien.catalogue.recursive.Chown;
 import alien.catalogue.recursive.Delete;
 import alien.catalogue.recursive.Move;
 import alien.catalogue.recursive.RecursiveOp;
@@ -713,62 +714,39 @@ public class LFNCSDUtils {
 	 * @param recursive
 	 * @return <code>true</code> if successful
 	 */
-	/*
-	 * TODO change to RecursiveOp
-	 * public static ArrayList<Set<LFN_CSD>> chown(final AliEnPrincipal user, final String lfn, final String new_owner, final String new_group, final boolean recursive) {
-	 * if (lfn == null || lfn.isEmpty() || new_owner == null || new_owner.isEmpty())
-	 * return null;
-	 * 
-	 * // Let's assume for now that the lfn come as absolute paths, otherwise:
-	 * // final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
-	 * final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
-	 * final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
-	 * final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
-	 * ret.add(lfnc_ok);
-	 * ret.add(lfnc_error);
-	 * 
-	 * // expand wildcards and filter if needed
-	 * if (lfn.contains("*") || lfn.contains("?") || recursive) {
-	 * final Collection<LFN_CSD> lfnsToChown = recurseAndFilterLFNs("chown", lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
-	 * 
-	 * for (LFN_CSD l : lfnsToChown) {
-	 * // check permissions to rm
-	 * if (!AuthorizationChecker.canWrite(l, user)) {
-	 * logger.info("LFNCSDUtils: chown: no permission on the source: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * continue;
-	 * }
-	 * // chown and add to the final collection of lfns
-	 * if (!l.owner.equals(new_owner) || (new_group != null && !l.gowner.equals(new_group))) {
-	 * if (l.chown(true, false, null, recursive)) {
-	 * lfnc_ok.add(l);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: chown: couldn't chown lfn: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * }
-	 * }
-	 * }
-	 * }
-	 * else {
-	 * final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
-	 * // check permissions to chown
-	 * if (!AuthorizationChecker.canWrite(lfnc, user)) {
-	 * logger.info("LFNCSDUtils: chown: no permission to chown lfn: " + lfnc);
-	 * lfnc_error.add(lfnc);
-	 * return ret;
-	 * }
-	 * // chown and add to the final collection of lfns
-	 * if (lfnc.update(true, false, null, false)) {
-	 * lfnc_ok.add(lfnc);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: chown: couldn't chown lfn: " + lfnc.getCanonicalName());
-	 * lfnc_error.add(lfnc);
-	 * }
-	 * }
-	 * 
-	 * return ret;
-	 * }
-	 */
+
+	public static boolean chown(final AliEnPrincipal user, final String lfn, final String new_owner, final String new_group, final boolean recursive) {
+		if (lfn == null || lfn.isEmpty() || new_owner == null || new_owner.isEmpty())
+			return false;
+
+		// Let's assume for now that the lfn come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+
+		// expand wildcards and filter if needed
+		if (lfn.contains("*") || lfn.contains("?") || recursive) {
+			Chown ch = new Chown();
+			ch.setUser(user);
+			ch.setNewOwner(new_owner);
+			ch.setNewGroup(new_group);
+			recurseAndFilterLFNs(ch, lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+			return ch.getLfnsError().isEmpty();
+		}
+
+		final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
+		// check permissions to chown
+		if (!AuthorizationChecker.canWrite(lfnc, user)) {
+			logger.info("LFNCSDUtils: chown: no permission to chown lfn: " + lfnc);
+			return false;
+		}
+		// chown
+		lfnc.owner = new_owner;
+		lfnc.gowner = new_group;
+		if (!lfnc.update(true, false, null)) {
+			logger.info("LFNCSDUtils: chown: couldn't chown lfn: " + lfnc.getCanonicalName());
+			return false;
+		}
+
+		return true;
+	}
+
 }

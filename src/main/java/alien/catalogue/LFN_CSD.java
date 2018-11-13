@@ -1269,22 +1269,14 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 	}
 
 	/**
-	 * @return true is LFN_CSD updated correctly, false otherwise
-	 */
-	public boolean update() {
-		return update(false, false, null);
-	}
-
-	/**
 	 * @param owner_or_size_changed
 	 * @param ctime_changed
 	 * @param old_ctime
 	 * @return true is LFN_CSD updated correctly, false otherwise. Takes into account if the owner or size changed to update se_lookup too
 	 */
+	@SuppressWarnings("resource")
 	public boolean update(final boolean owner_or_size_changed, final boolean ctime_changed, final Date old_ctime) {
-		boolean ok = true;
 		try {
-			@SuppressWarnings("resource")
 			final Session session = DBCassandra.getInstance();
 			if (session == null) {
 				logger.severe("LFN_CSD: update: could not get an instance: " + this.getCanonicalName());
@@ -1301,14 +1293,14 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 				statement = getOrInsertPreparedStatement(session, "INSERT INTO " + lfn_index_table + " (path_id,path,ctime,child_id,flag)" + " VALUES (?,?,?,?,?)");
 				bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
-			}
-			else {
-				statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_index_table + " SET ctime=?,flag=? WHERE path_id=? AND path=?");
-				bs.add(statement.bind(ctime, Integer.valueOf(flag), parent_id, child));
-			}
 
-			statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_ids_table + " SET ctime=?,flag=? WHERE child_id=?");
-			bs.add(statement.bind(ctime, Integer.valueOf(flag), id));
+				statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_ids_table + " SET ctime=?,flag=? WHERE child_id=?");
+				bs.add(statement.bind(ctime, Integer.valueOf(flag), id));
+			}
+			// else { // if needed to change flag at some point, same should be done for lfn_ids
+			// statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_index_table + " SET flag=? WHERE path_id=? AND path=?");
+			// bs.add(statement.bind(ctime, Integer.valueOf(flag), parent_id, child));
+			// }
 
 			statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_metadata_table + " SET size=?,owner=?,gowner=?,ctime=?,checksum=?,metadata=?,pfns=? WHERE parent_id=? AND id=?");
 			bs.add(statement.bind(Long.valueOf(size), owner, gowner, ctime, checksum, metadata, pfns, parent_id, id));
@@ -1325,14 +1317,14 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			ResultSet rs = session.execute(bs);
 			if (!rs.wasApplied()) {
 				logger.severe("LFN_CSD: update: problem updating entry: " + getCanonicalName());
-				ok = false;
+				return false;
 			}
 		} catch (Exception e) {
 			logger.severe("LFN_CSD: update: problem update entry: " + e.toString());
-			ok = false;
+			return false;
 		}
 
-		return ok;
+		return true;
 	}
 
 }
