@@ -16,6 +16,8 @@ public abstract class RecursiveOp {
 	boolean recurse_infinitely = false;
 	boolean onlyAppend = false;
 	AliEnPrincipal user = null;
+	LFN_CSD lfnc_target = null;
+	LFN_CSD lfnc_target_parent = null;
 
 	/**
 	 * @param lfnc
@@ -63,6 +65,34 @@ public abstract class RecursiveOp {
 	 */
 	public void setUser(final AliEnPrincipal us) {
 		this.user = us;
+	}
+
+	/**
+	 * @return lfn_target
+	 */
+	public LFN_CSD getLfnTarget() {
+		return lfnc_target;
+	}
+
+	/**
+	 * @param lfnct
+	 */
+	public void setLfnTarget(final LFN_CSD lfnct) {
+		this.lfnc_target = lfnct;
+	}
+
+	/**
+	 * @return user
+	 */
+	public LFN_CSD getLfnTargetParent() {
+		return lfnc_target_parent;
+	}
+
+	/**
+	 * @param lfnctp
+	 */
+	public void setLfnTargetParent(final LFN_CSD lfnctp) {
+		this.lfnc_target_parent = lfnctp;
 	}
 
 	/**

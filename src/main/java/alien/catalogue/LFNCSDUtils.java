@@ -26,6 +26,7 @@ import com.datastax.driver.core.ConsistencyLevel;
 
 import alien.catalogue.recursive.Append;
 import alien.catalogue.recursive.Delete;
+import alien.catalogue.recursive.Move;
 import alien.catalogue.recursive.RecursiveOp;
 import alien.config.ConfigUtils;
 import alien.io.TransferUtils;
@@ -498,73 +499,52 @@ public class LFNCSDUtils {
 	 * @param destination
 	 * @return final lfns moved and errors
 	 */
-	/*
-	 * TODO change to RecursiveOp
-	 * public static ArrayList<Set<LFN_CSD>> mv(final AliEnPrincipal user, final String source, final String destination) {
-	 * // Let's assume for now that the source and destination come as absolute paths, otherwise:
-	 * // final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
-	 * // final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
-	 * if (source.equals(destination)) {
-	 * logger.info("LFNCSDUtils: mv: the source and destination are the same: " + source + " -> " + destination);
-	 * return null;
-	 * }
-	 * 
-	 * final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
-	 * final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
-	 * final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
-	 * ret.add(lfnc_ok);
-	 * ret.add(lfnc_error);
-	 * final String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
-	 * final LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
-	 * final LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
-	 * 
-	 * if (!lfnc_target_parent.exists) {
-	 * logger.info("LFNCSDUtils: mv: the destination doesn't exist: " + destination);
-	 * return null;
-	 * }
-	 * if (!AuthorizationChecker.canWrite(lfnc_target_parent, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the destination: " + destination);
-	 * return null;
-	 * }
-	 * 
-	 * // expand wildcards and filter if needed
-	 * if (source.contains("*") || source.contains("?")) {
-	 * final Collection<LFN_CSD> lfnsToMv = recurseAndFilterLFNs("mv", source, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
-	 * 
-	 * for (LFN_CSD l : lfnsToMv) {
-	 * // check permissions to move
-	 * if (!AuthorizationChecker.canWrite(l, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * continue;
-	 * }
-	 * // move and add to the final collection of lfns
-	 * final LFN_CSD lfncf = LFN_CSD.mv(l, lfnc_target, lfnc_target_parent);
-	 * if (lfncf != null)
-	 * lfnc_ok.add(lfncf);
-	 * else
-	 * lfnc_error.add(l);
-	 * }
-	 * }
-	 * else {
-	 * LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
-	 * // check permissions to move
-	 * if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
-	 * lfnc_error.add(lfnc_source);
-	 * return ret;
-	 * }
-	 * // move and add to the final collection of lfns
-	 * final LFN_CSD lfncf = LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent);
-	 * if (lfncf != null)
-	 * lfnc_ok.add(lfncf);
-	 * else
-	 * lfnc_error.add(lfnc_source);
-	 * }
-	 * 
-	 * return ret;
-	 * }
-	 */
+	public static boolean mv(final AliEnPrincipal user, final String source, final String destination) {
+		// Let's assume for now that the source and destination come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+		// final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
+		if (source.equals(destination)) {
+			logger.info("LFNCSDUtils: mv: the source and destination are the same: " + source + " -> " + destination);
+			return false;
+		}
+
+		final String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
+		final LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
+		final LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
+
+		if (!lfnc_target_parent.exists) {
+			logger.info("LFNCSDUtils: mv: the destination doesn't exist: " + destination);
+			return false;
+		}
+		if (!AuthorizationChecker.canWrite(lfnc_target_parent, user)) {
+			logger.info("LFNCSDUtils: mv: no permission on the destination: " + destination);
+			return false;
+		}
+
+		// expand wildcards and filter if needed
+		if (source.contains("*") || source.contains("?")) {
+			Move mv = new Move();
+			mv.setUser(user);
+			mv.setLfnTarget(lfnc_target);
+			mv.setLfnTargetParent(lfnc_target_parent);
+			recurseAndFilterLFNs(mv, source, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+			return mv.getLfnsError().isEmpty();
+		}
+
+		LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
+		// check permissions to move
+		if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
+			logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
+			return false;
+		}
+		// move and add to the final collection of lfns
+		if (LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent) == null) {
+			logger.info("LFNCSDUtils: mv: failed to mv: " + source);
+			return false;
+		}
+
+		return true;
+	}
 
 	/**
 	 * @param user
