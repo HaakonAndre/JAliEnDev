@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -47,7 +48,7 @@ public class JobWrapper implements Runnable {
 	// Folders and files
 	private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
 	private String currentDirFolder = currentDir.getAbsolutePath().substring(currentDir.getAbsolutePath().lastIndexOf('/') + 1);
-	
+
 	// Variables passed through VoBox environment
 	//TODO: To be removed
 	private final Map<String, String> env = System.getenv();
@@ -103,11 +104,11 @@ public class JobWrapper implements Runnable {
 	/**
 	 */
 	public JobWrapper() {
-		
+
 		//TODO: Send from JobAgent instead of reading from env? Will simplify things for containers.
 		siteMap = (new SiteMap()).getSiteParameters(env);
 		hostName = (String) siteMap.get("Host");
-//		packMan = (PackMan) siteMap.get("PackMan");
+		//		packMan = (PackMan) siteMap.get("PackMan");
 		packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
 
 		pid = MonitorFactory.getSelfProcessID();
@@ -126,11 +127,11 @@ public class JobWrapper implements Runnable {
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
 			logger.log(Level.INFO, "We received the following CE "+ ce);
-			
+
 		} catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
 		}
-		
+
 		if((tokenCert != null) && (tokenKey != null)){
 			try {
 				JAKeyStore.createTokenFromString(tokenCert, tokenKey);
@@ -143,7 +144,7 @@ public class JobWrapper implements Runnable {
 
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
-		
+
 		logger.log(Level.INFO, "JobWrapper initialised. Running as the following user: " + commander.getUser().getName());
 	}
 
@@ -151,7 +152,7 @@ public class JobWrapper implements Runnable {
 	public void run() {
 
 		logger.log(Level.INFO, "Starting JobWrapper in " + hostName);
-		
+
 		// We start, if needed, the node JBox
 		// Does it check a previous one is already running?
 		try {
@@ -191,36 +192,36 @@ public class JobWrapper implements Runnable {
 	private int runJob() {
 		try {
 			logger.log(Level.INFO, "Started JobWrapper for: " + jdl);
-		    
-		    changeStatus(JobStatus.STARTED);
-		    
+
+			sendStatus(JobStatus.STARTED);
+
 			if (!getInputFiles()) {
 				logger.log(Level.SEVERE, "Failed to get inputfiles");
-				changeStatus(JobStatus.ERROR_IB);
+				sendStatus(JobStatus.ERROR_IB);
 				return -1;
 			}
 
 			// run payload
 			if (execute() < 0){
 				logger.log(Level.SEVERE, "Failed to run payload");
-				changeStatus(JobStatus.ERROR_E);
+				sendStatus(JobStatus.ERROR_E);
 				return -1;
 			}
-				
+
 			if (!validate()){
 				logger.log(Level.SEVERE, "Validation failed");
-				changeStatus(JobStatus.ERROR_V);
+				sendStatus(JobStatus.ERROR_V);
 				return -1;
 			}
-			
+
 			if (jobStatus == JobStatus.RUNNING)
-				changeStatus(JobStatus.SAVING);
+				sendStatus(JobStatus.SAVING);
 
 			if (!uploadOutputFiles()){
 				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
 			}
-			
+
 			return 0;
 		} catch (final Exception e) {
 			logger.log(Level.SEVERE, "Unable to handle job" + e);
@@ -236,9 +237,9 @@ public class JobWrapper implements Runnable {
 	 *         execution errors
 	 */
 	private int executeCommand(final String command, final List<String> arguments) {
-		
+
 		logger.log(Level.INFO, "Starting execution of command: " + command);
-		
+
 		final List<String> cmd = new LinkedList<>();
 
 		final int idx = command.lastIndexOf('/');
@@ -267,10 +268,10 @@ public class JobWrapper implements Runnable {
 		logger.log(Level.INFO, "Executing: " + cmd + ", arguments is " + arguments + " pid: " + pid);
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(cmd);
-		
+
 		final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
 		final Map<String, String> processEnv = pBuilder.environment();
-		
+
 		processEnv.putAll(environment_packages);
 		processEnv.putAll(loadJDLEnvironmentVariables());
 
@@ -280,7 +281,7 @@ public class JobWrapper implements Runnable {
 		final Process p;
 
 		try {
-			changeStatus(JobStatus.RUNNING);
+			sendStatus(JobStatus.STARTED);
 			p = pBuilder.start();
 
 		} catch (final IOException ioe) {
@@ -346,7 +347,7 @@ public class JobWrapper implements Runnable {
 
 		if (s != null)
 			filesToDownload.add(s);
-		
+
 		final List<LFN> iFiles = c_api.getLFNs(filesToDownload, true, false);
 
 		if (iFiles == null || iFiles.size() != filesToDownload.size()) {
@@ -360,11 +361,11 @@ public class JobWrapper implements Runnable {
 			File localFile = new File(currentDir, l.getFileName());
 
 			int i = 0;
-			
+
 			while (localFile.exists() && i < 100000) {
 				localFile = new File(currentDir, l.getFileName() + "." + i);
 				i++;
-				}
+			}
 
 			if (localFile.exists()) {
 				logger.log(Level.WARNING, "Too many occurences of " + l.getFileName() + " in " + currentDir.getAbsolutePath());
@@ -381,7 +382,7 @@ public class JobWrapper implements Runnable {
 				logger.log(Level.WARNING, "No replicas of " + entry.getKey().getCanonicalName() + " to read from");
 				return false;
 			}
-			
+
 			final GUID g = pfns.iterator().next().getGuid();
 
 			commander.q_api.putJobLog(queueId, "trace", "Getting InputFile: " + entry.getKey().getCanonicalName());
@@ -389,12 +390,12 @@ public class JobWrapper implements Runnable {
 			logger.log(Level.INFO, "GUID g: " + g + " entry.getvalue(): " + entry.getValue());
 
 			final File f = IOUtils.get(g, entry.getValue());
-			
+
 			if (f == null) {
 				logger.log(Level.WARNING, "Could not download " + entry.getKey().getCanonicalName() + " to " + entry.getValue().getAbsolutePath());
 				return false;
 			}
-			
+
 		}
 
 		dumpInputDataList();
@@ -423,7 +424,7 @@ public class JobWrapper implements Runnable {
 			final XmlCollection c = new XmlCollection();
 			c.setName("jobinputdata");
 			final List<String> datalist = jdl.getInputData(true);
-			
+
 			//TODO: Change
 			for (final String s : datalist) {
 				final LFN l = c_api.getLFN(s);
@@ -448,7 +449,7 @@ public class JobWrapper implements Runnable {
 		final HashMap<String, String> packs = (HashMap<String, String>) jdl.getPackages();
 		HashMap<String, String> envmap = new HashMap<>();
 
-		
+
 		logger.log(Level.INFO, "Preparing to install packages");
 		if (packs != null) {
 			for (final String pack : packs.keySet())
@@ -463,7 +464,7 @@ public class JobWrapper implements Runnable {
 			packagesList.add(packagestring);
 
 			logger.log(Level.INFO, packagestring);
-			
+
 			envmap = (HashMap<String, String>) installPackages(packagesList);
 		}
 
@@ -488,7 +489,7 @@ public class JobWrapper implements Runnable {
 			final LFN outDir = c_api.createCatalogueDirectory(outputDir);
 			if (outDir == null) {
 				logger.log(Level.SEVERE, "Error creating the OutputDir [" + outputDir + "].");
-				changeStatus(JobStatus.ERROR_SV);
+				sendStatus(JobStatus.ERROR_SV);
 				return false;
 			}
 		}
@@ -552,12 +553,12 @@ public class JobWrapper implements Runnable {
 
 		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V) {
 			if (!uploadedAllOutFiles)
-				changeStatus(JobStatus.ERROR_SV);
+				sendStatus(JobStatus.ERROR_SV);
 			else
 				if (uploadedNotAllCopies)
-					changeStatus(JobStatus.DONE_WARN);
+					sendStatus(JobStatus.DONE_WARN);
 				else
-					changeStatus(JobStatus.DONE);
+					sendStatus(JobStatus.DONE);
 		}
 
 		return uploadedAllOutFiles;
@@ -613,28 +614,35 @@ public class JobWrapper implements Runnable {
 	/**
 	 * @param newStatus
 	 */
-	public void changeStatus(final JobStatus newStatus) {
-		final HashMap<String, Object> extrafields = new HashMap<>();
-		extrafields.put("exechost", this.ce);
-		// if final status with saved files, we set the path
-		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) {
-			extrafields.put("path", getJobOutputDir());
+	public void sendStatus(final JobStatus newStatus) {
+		  HashMap<String, Object> extrafields = new HashMap<>();
+          extrafields.put("exechost", this.ce);
+          // if final status with saved files, we set the path
+          if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) 
+                  extrafields.put("path", getJobOutputDir());
+          else
+                  if (newStatus == JobStatus.RUNNING) {
+                          extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+                          extrafields.put("node", hostName);
+                  }
+                  else
+                          extrafields = null;
 
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		}
-		else
-			if (newStatus == JobStatus.RUNNING) {
-				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-				extrafields.put("node", hostName);
+          try {
+                  ObjectOutputStream outputToJobAgent = new ObjectOutputStream(System.out);
 
-				TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-			}
-			else
-				TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+                  final String newStatusString = newStatus.name();
 
-		jobStatus = newStatus;
+                  outputToJobAgent.writeObject(newStatusString);
+                  outputToJobAgent.writeObject(extrafields);
 
-		return;
+          } catch (IOException e) {
+        	  logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent");
+          }
+
+          jobStatus = newStatus;
+
+          return;
 	}
 
 	/**

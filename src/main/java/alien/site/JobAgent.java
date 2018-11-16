@@ -3,8 +3,11 @@ package alien.site;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
@@ -28,8 +31,10 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import alien.api.JBoxServer;
 import alien.api.Request;
 import alien.api.taskQueue.GetMatchJob;
+import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -534,7 +539,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			stdinObj.close();
 			stdin.close();
-		} catch (final IOException ioe) {
+		} catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
 			return -2;
 		}
@@ -565,8 +570,33 @@ public class JobAgent implements MonitoringObject, Runnable {
 					p.destroyForcibly();
 				}
 			}
-		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob
+		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
+		
+		//Listen for job updates from the jobwrapper
+		Runnable jobWrapperListener = () -> {
+			
+			InputStream stdout;
+			ObjectInputStream stdoutObj;
+			
+			stdout = p.getInputStream();
 
+			while(p.isAlive()){
+				try {
+
+                    stdoutObj = new ObjectInputStream(stdout);
+                    
+                    String newStatusString = (String) stdoutObj.readObject();                    
+					HashMap<String, Object> extrafields = (HashMap<String, Object>) stdoutObj.readObject();
+                    
+                    JobStatus newStatus = JobStatus.getStatus(newStatusString);
+                    changeJobStatus(newStatus, extrafields);
+					
+				} catch (Exception e) {
+					//Do nothing.
+				}
+			}
+		}; new Thread(jobWrapperListener).start();
+		
 		boolean processNotFinished = true;
 		int code = 0;
 
@@ -591,7 +621,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 						monitor_loops++;
 						final String error = checkProcessResources();
 						if (error != null) {
-							p.destroy();
+							p.destroy(); //TODO: JobAgent does not report the job has been terminated!
 							logger.log(Level.SEVERE, "Process overusing resources: " + error);
 							return -2;
 						}
@@ -748,7 +778,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		Properties props = new Properties();
 		try {
-			ExtProperties ep = ConfigUtils.getConfiguration("loggging");
+			ExtProperties ep = ConfigUtils.getConfiguration("logging");
 
 			props = ep.getProperties();
 			
@@ -757,7 +787,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, "Logging properties loaded for the JobWrapper");
 		} catch (Exception e) {
 
-			logger.log(Level.INFO, "Logging properties for JobWrapper not loaded. Stacktrace: ", e);
+			logger.log(Level.INFO, "Logging properties for JobWrapper not found.");
 			logger.log(Level.INFO, "Using fallback logging configurations for JobWrapper");
 			
 			props.put("handlers", "java.util.logging.FileHandler");
@@ -781,5 +811,18 @@ public class JobAgent implements MonitoringObject, Runnable {
 			logger.log(Level.WARNING, "Failed to configure JobWrapper logging", e1);
 		} 
 	}
+	
+	public void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
+
+		if(extrafields != null)
+			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
+		else TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+
+		jobStatus = newStatus;
+
+		return;
+	}
+	
+	
 
 }
