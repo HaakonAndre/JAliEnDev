@@ -583,7 +583,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			while(p.isAlive()){
 				try {
-
                     stdoutObj = new ObjectInputStream(stdout);
                     
                     String newStatusString = (String) stdoutObj.readObject();                    
@@ -592,8 +591,10 @@ public class JobAgent implements MonitoringObject, Runnable {
                     JobStatus newStatus = JobStatus.getStatus(newStatusString);
                     changeJobStatus(newStatus, extrafields);
 					
-				} catch (Exception e) {
-					//Do nothing.
+				} catch (ClassNotFoundException e) {
+					logger.log(Level.INFO, "Received something from JobWrapper, but it wasn't a status update (exception?). Ignoring");
+				} catch (IOException e) {
+					logger.log(Level.WARNING, "Could not receive update from JW");
 				}
 			}
 		}; new Thread(jobWrapperListener).start();
