@@ -507,6 +507,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
 		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
 
@@ -638,6 +639,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		} finally {
 			t.cancel();
 			apmon.removeJobToMonitor(payloadPID);
+			if(jobStatus == JobStatus.STARTED || jobStatus == JobStatus.RUNNING)
+				changeJobStatus(JobStatus.ERROR_E, null); //JobWrapper was killed before the job could be completed
 		}
 	}
 
