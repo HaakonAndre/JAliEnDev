@@ -99,7 +99,7 @@ public class ArchiveMemberDelete {
 		// /alice/sim/2018/LHC18e1a/246053/075
 		String parentdir = xmlEntry.substring(0, xmlEntry.lastIndexOf("/"));
 		final String lastStringToken = parentdir.substring(parentdir.lastIndexOf("/") + 1);
-		if (!lastStringToken.matches("^\\d+$")) {
+		if (!lastStringToken.matches("^\\d+.\\d+$")) {
 			parentdir = parentdir.substring(0, parentdir.lastIndexOf("/"));
 		}
 
