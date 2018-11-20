@@ -240,4 +240,14 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>, Cl
 
 		return null;
 	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return protocolID() == ((Protocol) obj).protocolID();
+	}
+
+	@Override
+	public int hashCode() {
+		return protocolID() * 17 + getPreference();
+	}
 }
