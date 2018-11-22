@@ -149,7 +149,7 @@ public class JobWrapper implements Runnable {
 	}
 
 	@Override
-	public void run() {
+	public void run(){
 
 		logger.log(Level.INFO, "Starting JobWrapper in " + hostName);
 
@@ -160,7 +160,6 @@ public class JobWrapper implements Runnable {
 			JBoxServer.startJBoxService(0);
 		} catch (final Exception e) {
 			logger.log(Level.WARNING, "Unable to start JBox." + e);
-
 		}
 
 		logger.log(Level.INFO, "Jbox started");
@@ -169,6 +168,13 @@ public class JobWrapper implements Runnable {
 		final int runCode = runJob();
 
 		logger.log(Level.INFO, "JobWrapper has finished execution");
+		
+		try {
+			wait(5); //Wait for the JobAgent to catch the final statusupdate
+		} catch (InterruptedException e){
+			logger.log(Level.INFO, "JobWrapper will exit without waiting");
+		}
+		
 		System.exit(runCode);
 	}
 
@@ -281,7 +287,6 @@ public class JobWrapper implements Runnable {
 		final Process p;
 
 		try {
-			sendStatus(JobStatus.STARTED);
 			p = pBuilder.start();
 
 		} catch (final IOException ioe) {
@@ -307,6 +312,7 @@ public class JobWrapper implements Runnable {
 	private int execute() {
 		commander.q_api.putJobLog(queueId, "trace", "Starting execution");
 
+		sendStatus(JobStatus.RUNNING);
 		final int code = executeCommand(jdl.gets("Executable"), jdl.getArguments());
 
 		return code;
@@ -546,7 +552,7 @@ public class JobWrapper implements Runnable {
 				}
 
 			} catch (final IOException e) {
-				e.printStackTrace();
+				logger.log(Level.WARNING, "IOException received while attempting to upload files");
 				uploadedAllOutFiles = false;
 			}
 		}
@@ -625,8 +631,6 @@ public class JobWrapper implements Runnable {
                           extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
                           extrafields.put("node", hostName);
                   }
-                  else
-                          extrafields = null;
 
           try {
                   ObjectOutputStream outputToJobAgent = new ObjectOutputStream(System.out);

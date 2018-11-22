@@ -1,5 +1,6 @@
 package alien.site;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.StreamCorruptedException;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
@@ -580,21 +582,27 @@ public class JobAgent implements MonitoringObject, Runnable {
 			ObjectInputStream stdoutObj;
 			
 			stdout = p.getInputStream();
-
+			
 			while(p.isAlive()){
 				try {
-                    stdoutObj = new ObjectInputStream(stdout);
-                    
-                    String newStatusString = (String) stdoutObj.readObject();                    
+					stdoutObj = new ObjectInputStream(stdout);
+
+					String newStatusString = (String) stdoutObj.readObject();                    
 					HashMap<String, Object> extrafields = (HashMap<String, Object>) stdoutObj.readObject();
-                    
-                    JobStatus newStatus = JobStatus.getStatus(newStatusString);
-                    changeJobStatus(newStatus, extrafields);
-					
-				} catch (ClassNotFoundException e) {
+
+					logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
+
+					JobStatus newStatus = JobStatus.getStatus(newStatusString);
+					changeJobStatus(newStatus, extrafields);
+
+				} catch (ClassNotFoundException | StreamCorruptedException e) {
 					logger.log(Level.INFO, "Received something from JobWrapper, but it wasn't a status update (exception?). Ignoring");
-				} catch (IOException e) {
+				} catch (EOFException e1){
+					logger.log(Level.INFO, "JobWrapper has finished sending status updates");
+				}catch (NullPointerException e2) {
 					logger.log(Level.WARNING, "Could not receive update from JW");
+				} catch (Exception e3){
+					logger.log(Level.WARNING, "Exception received: " + e3);
 				}
 			}
 		}; new Thread(jobWrapperListener).start();
@@ -641,7 +649,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 			t.cancel();
 			apmon.removeJobToMonitor(payloadPID);
 			if(jobStatus == JobStatus.STARTED || jobStatus == JobStatus.RUNNING)
-				changeJobStatus(JobStatus.ERROR_E, null); //JobWrapper was killed before the job could be completed
+				changeJobStatus(JobStatus.ERROR_V, null); //JobWrapper was killed before the job could be completed TODO: Set to ERROR_E after testing
+			else if (jobStatus == JobStatus.SAVING){
+				changeJobStatus(JobStatus.ERROR_SV, null);
+			}
 		}
 	}
 
@@ -668,7 +679,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			if (jobinfo == null || diskinfo == null) {
 				logger.log(Level.WARNING, "JobInfo or DiskInfo monitor null");
-				return "Not available";
+//      		return "Not available"; TODO: Adjust and put back again
 			}
 
 			// getting cpu, memory and runtime info
@@ -818,15 +829,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 	
 	public void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
 
-		if(extrafields != null)
-			TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
-		else TaskQueueApiUtils.setJobStatus(queueId, newStatus);
+		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 
 		jobStatus = newStatus;
 
 		return;
 	}
-	
-	
-
 }
