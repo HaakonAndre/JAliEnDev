@@ -18,6 +18,7 @@ import alien.catalogue.CatalogEntity;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
+import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.catalogue.Package;
 import alien.catalogue.access.AccessType;
@@ -759,6 +760,64 @@ public class CatalogueApiUtils {
 			logger.log(Level.WARNING, "Could not return members for " + archive);
 			e.getCause().printStackTrace();
 		}
+		return null;
+	}
+
+	/**
+	 * Get LFN_CSDs from String as a listing, only if it exists
+	 *
+	 * @param slfn
+	 *            name of the LFN
+	 * @return the LFNCSD objects
+	 */
+	public Collection<LFN_CSD> getLFNCSDs(final String slfn) {
+		try {
+			return Dispatcher.execute(new LFNCSDListingfromString(commander.getUser(), slfn)).getLFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Find an LFNCSD based on pattern and save to XmlCollection
+	 * 
+	 * @param path
+	 * @param pattern
+	 * @param query
+	 * @param flags
+	 * @param xmlCollectionName
+	 * @param queueid
+	 * @return result LFNCSDs
+	 */
+	public Collection<LFN_CSD> find_csd(final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, Long queueid) {
+		try {
+			return Dispatcher.execute(new FindCsdfromString(commander.getUser(), path, pattern, query, flags, xmlCollectionName, queueid)).getLFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Create a directory in the Cassandra catalogue
+	 *
+	 * @param path
+	 * @param createNonExistentParents
+	 * @return LFN_CSD of the created directory, if successful, else <code>null</code>
+	 */
+	public LFN_CSD createCatalogueDirectoryCsd(final String path, final boolean createNonExistentParents) {
+		try {
+			return Dispatcher.execute(new CreateCsdCatDirfromString(commander.getUser(), path, createNonExistentParents)).getDir();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not create the CatDir: " + path);
+			e.getCause().printStackTrace();
+		}
+
 		return null;
 	}
 }

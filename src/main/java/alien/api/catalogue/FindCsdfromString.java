@@ -1,0 +1,92 @@
+package alien.api.catalogue;
+
+import java.util.Collection;
+
+import alien.api.Request;
+import alien.catalogue.LFNCSDUtils;
+import alien.catalogue.LFN_CSD;
+import alien.user.AliEnPrincipal;
+
+/**
+ *
+ * @author mmmartin
+ * @since November 23, 2018
+ */
+public class FindCsdfromString extends Request {
+
+	private static final long serialVersionUID = -5938936122293608584L;
+	private final String path;
+	private final String pattern;
+	private final String query;
+	private final int flags;
+	private Collection<LFN_CSD> lfns;
+	// private final String xmlCollectionName; // TODO filter jobid and create and upload XML collections
+	// private Long queueid = Long.valueOf(0);
+
+	// /**
+	// * @param user
+	// * @param path
+	// * @param pattern
+	// * @param flags
+	// */
+	// public FindCsdfromString(final AliEnPrincipal user, final String path, final String pattern, final int flags) {
+	// setRequestUser(user);
+	// this.path = path;
+	// this.pattern = pattern;
+	// this.query = null;
+	// this.flags = flags;
+	// // this.xmlCollectionName = "";
+	// }
+
+	/**
+	 * @param user
+	 * @param path
+	 * @param pattern
+	 * @param query
+	 * @param flags
+	 * @param xmlCollectionName
+	 * @param queueid
+	 */
+	public FindCsdfromString(final AliEnPrincipal user, final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, final Long queueid) {
+		setRequestUser(user);
+		this.path = path;
+		this.pattern = pattern;
+		this.query = query;
+		this.flags = flags;
+		// this.xmlCollectionName = xmlCollectionName;
+		// this.queueid = queueid;
+	}
+
+	// /**
+	// * @param user
+	// * @param path
+	// * @param pattern
+	// * @param flags
+	// * @param xmlCollectionName
+	// */
+	// public FindCsdfromString(final AliEnPrincipal user, final String path, final String pattern, final int flags, final String xmlCollectionName) {
+	// setRequestUser(user);
+	// this.path = path;
+	// this.pattern = pattern;
+	// this.query = null;
+	// this.flags = flags;
+	// // this.xmlCollectionName = xmlCollectionName;
+	// }
+
+	@Override
+	public void run() {
+		lfns = LFNCSDUtils.find(path, pattern, flags, query);
+	}
+
+	/**
+	 * @return the found LFNs
+	 */
+	public Collection<LFN_CSD> getLFNs() {
+		return this.lfns;
+	}
+
+	@Override
+	public String toString() {
+		return "Asked for : path (" + this.path + "), pattern (" + this.pattern + "), flags (" + this.flags + ") reply is:\n" + this.lfns;
+	}
+}

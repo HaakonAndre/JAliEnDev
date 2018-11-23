@@ -629,15 +629,17 @@ public class LFNCSDUtils {
 	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
-	 * @param lfnc
+	 * @param lfncs
 	 *            the path to be created
 	 * @param createMissingParents
 	 *            if <code>true</code> then it will try to create any number of intermediate directories, otherwise the direct parent must already exist
 	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
-	public static LFN_CSD mkdir(final AliEnPrincipal owner, final LFN_CSD lfnc, final boolean createMissingParents) {
-		if (owner == null || lfnc == null)
+	public static LFN_CSD mkdir(final AliEnPrincipal owner, final String lfncs, final boolean createMissingParents) {
+		if (owner == null || lfncs == null)
 			return null;
+
+		final LFN_CSD lfnc = new LFN_CSD(lfncs, true, null, null, null);
 
 		if (lfnc.exists) {
 			if (lfnc.isDirectory() && AuthorizationChecker.canWrite(lfnc, owner))
@@ -714,7 +716,6 @@ public class LFNCSDUtils {
 	 * @param recursive
 	 * @return <code>true</code> if successful
 	 */
-
 	public static boolean chown(final AliEnPrincipal user, final String lfn, final String new_owner, final String new_group, final boolean recursive) {
 		if (lfn == null || lfn.isEmpty() || new_owner == null || new_owner.isEmpty())
 			return false;
