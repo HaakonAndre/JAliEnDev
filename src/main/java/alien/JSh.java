@@ -170,7 +170,7 @@ public class JSh {
 		Process p;
 
 		try {
-			p = Runtime.getRuntime().exec(new String[] { "java", "-Duserid=" + UserFactory.getUserID(), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-server",
+			p = Runtime.getRuntime().exec(new String[] { "java", "-Xmx32m", "-Xms32m", "-Duserid=" + UserFactory.getUserID(), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-server",
 					"-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"), "alien.JBox" });
 
 		} catch (final IOException ioe) {
@@ -197,15 +197,17 @@ public class JSh {
 		String sLine;
 
 		try (BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
-			if ((sLine = err.readLine()) != null) {
+			int cnt = 0;
+
+			while ((sLine = err.readLine()) != null && ++cnt < 100) {
 				if (sLine.equals(JBoxServer.passACK)) {
 					System.out.println();
 					return true;
 				}
-				System.err.println(sLine);
-				return false;
 			}
 
+			System.err.println("JBox agent could not be started, it is likely that the password you have provided is not correct");
+			return false;
 		} catch (final IOException ioe) {
 			System.err.println("Error starting jBox: " + ioe.getMessage());
 			return false;
@@ -226,7 +228,6 @@ public class JSh {
 				// ignore
 			}
 		}
-		return false;
 	}
 
 	private static final String kill = "/bin/kill";
