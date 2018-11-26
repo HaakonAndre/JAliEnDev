@@ -750,4 +750,35 @@ public class LFNCSDUtils {
 		return true;
 	}
 
+	/**
+	 * @param path
+	 * @param getFromDB
+	 * @return LFN_CSD corresponding to path
+	 */
+	public static LFN_CSD getLFN(String path, boolean getFromDB) {
+		return new LFN_CSD(path, getFromDB, null, null, null);
+	}
+
+	/**
+	 * @param lfn
+	 * @return true if the path fits a LFN path pattern
+	 */
+	public static boolean isValidLFN(String lfn) {
+		return Pattern.matches("^(/[^/]*)+./?$", lfn); // possibly that pattern should be refined
+	}
+
+	/**
+	 * @param lfn_uuid
+	 * @return true if the string fits a UUID pattern
+	 */
+	public static boolean isValidUUID(String lfn_uuid) {
+		try {
+			final UUID id = UUID.fromString(lfn_uuid);
+			return id != null;
+		} catch (Exception e) {
+			logger.info("LFNCSDUtils: the string " + lfn_uuid + " is not a UUID: " + e.toString());
+			return false;
+		}
+	}
+
 }

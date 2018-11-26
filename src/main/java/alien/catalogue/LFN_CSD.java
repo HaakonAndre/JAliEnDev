@@ -852,10 +852,10 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		bs.add(statement.bind(parent_id, child, ctime, id, Integer.valueOf(flag)));
 
 		// Insert the entry in the ids // TODO: (double-check) use IF NOT EXISTS to avoid collisions when inserting paths ?
-		if (!isDirectory()) {
-			statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tids + " (child_id,path_id,path,ctime,flag)" + " VALUES (?,?,?,?,?)");
-			bs.add(statement.bind(id, parent_id, child, ctime, Integer.valueOf(flag)));
-		}
+		// if (!isDirectory()) {
+		statement = getOrInsertPreparedStatement(session, "INSERT INTO " + tids + " (child_id,path_id,path,ctime,flag)" + " VALUES (?,?,?,?,?)");
+		bs.add(statement.bind(id, parent_id, child, ctime, Integer.valueOf(flag)));
+		// }
 
 		// Insert the entry in the metadata
 		if (insert_metadata) {
@@ -1090,10 +1090,11 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 			statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_metadata_table + " WHERE parent_id=? AND id=?");
 			bs.add(statement.bind(this.parent_id, this.id));
 
+			// Delete the entry from ids and se_lookup. Will be deleted from the hierarchy (index, metadata) using the parent folder
+			statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_ids_table + " WHERE child_id=?");
+			bs.add(statement.bind(this.id));
+
 			if (!isDirectory()) {
-				// Delete the entry from ids and se_lookup. Will be deleted from the hierarchy (index, metadata) using the parent folder
-				statement = getOrInsertPreparedStatement(session, "DELETE FROM " + lfn_ids_table + " WHERE child_id=?");
-				bs.add(statement.bind(this.id));
 
 				// remove se_lookups entry for physical files
 				if (this.isFile() || this.isArchive()) {
@@ -1236,7 +1237,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				lfnc_source.child = lfnc_target.child;
 			}
 
-			if (!lfnc_source.isDirectory() && (different_parent || different_name)) {
+			if ((different_parent || different_name)) { // !lfnc_source.isDirectory() &&
 				statement = getOrInsertPreparedStatement(session, "UPDATE " + lfn_ids_table + " SET path_id=?,path=? WHERE child_id=?");
 				bs.add(statement.bind(final_parent_id, lfnc_source.child, lfnc_source.id));
 			}

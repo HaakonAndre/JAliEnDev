@@ -619,7 +619,7 @@ public class CatalogueApiUtils {
 	 * @param site
 	 * @param write
 	 * @param lfn
-	 * @param qos 
+	 * @param qos
 	 * @return SE distance list
 	 */
 	public List<HashMap<SE, Double>> listSEDistance(final String site, final boolean write, final String lfn, final String qos) {
@@ -815,6 +815,50 @@ public class CatalogueApiUtils {
 			return Dispatcher.execute(new CreateCsdCatDirfromString(commander.getUser(), path, createNonExistentParents)).getDir();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not create the CatDir: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 *
+	 * @param path
+	 * @return LFNCSD of the created file, if successful, else <code>null</code>
+	 */
+	public LFN_CSD touchLFNCSD(final String path) {
+		try {
+			return Dispatcher.execute(new TouchLFNCSDfromString(commander.getUser(), path)).getLFN();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not create the file: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get LFN_CSDs from String as a listing, only if it exists
+	 *
+	 * @param slfn
+	 * @return the LFNCSD objects
+	 */
+	public Collection<LFN_CSD> getLFNCSD(final Collection<String> slfn) {
+		return getLFNCSD(slfn, false);
+	}
+
+	/**
+	 * Get LFN_CSDs from String as a listing, only if it exists
+	 *
+	 * @param slfn
+	 * @param lfns_are_uuids
+	 * @return the LFNCSD objects
+	 */
+	public Collection<LFN_CSD> getLFNCSD(final Collection<String> slfn, final boolean lfns_are_uuids) {
+		try {
+			return Dispatcher.execute(new LFNCSDfromString(commander.getUser(), true, false, lfns_are_uuids, slfn)).getLFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFNs: " + slfn.toString());
 			e.getCause().printStackTrace();
 		}
 
