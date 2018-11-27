@@ -46,7 +46,7 @@ public final class CatalogueUtils {
 	 */
 	static transient final Monitor monitor = MonitorFactory.getMonitor(CatalogueUtils.class.getCanonicalName());
 
-	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<>() {
+	private static GenericLastValuesCache<Integer, Host> hostsCache = new GenericLastValuesCache<Integer, Host>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
