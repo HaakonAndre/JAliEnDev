@@ -735,7 +735,7 @@ public class LFNCSDUtils {
 
 		final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
 		// check permissions to chown
-		if (!AuthorizationChecker.canWrite(lfnc, user)) {
+		if (!AuthorizationChecker.isOwner(lfnc, user)) {
 			logger.info("LFNCSDUtils: chown: no permission to chown lfn: " + lfnc);
 			return false;
 		}

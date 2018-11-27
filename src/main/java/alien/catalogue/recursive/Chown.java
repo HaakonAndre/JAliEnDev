@@ -12,7 +12,7 @@ public class Chown extends RecursiveOp {
 	@Override
 	public boolean callback(LFN_CSD l) {
 		// check permissions to chown
-		if (!AuthorizationChecker.canWrite(l, user)) {
+		if (!AuthorizationChecker.isOwner(l, user)) {
 			lfns_error.add(l);
 			return false;
 		}

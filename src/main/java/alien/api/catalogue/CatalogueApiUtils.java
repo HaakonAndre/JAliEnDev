@@ -922,4 +922,30 @@ public class CatalogueApiUtils {
 		return null;
 	}
 
+	/**
+	 * @param lfn_name
+	 * @param username_to_chown
+	 * @param groupname_to_chown
+	 * @param recursive
+	 * @return command result for each lfncsd
+	 */
+	public boolean chownLFNCSD(final String lfn_name, final String username_to_chown, final String groupname_to_chown, final boolean recursive) {
+		if (lfn_name == null || lfn_name.length() == 0)
+			return false;
+
+		final LFN_CSD lfn = this.getLFNCSD(lfn_name);
+
+		if (lfn == null || !lfn.exists)
+			return false;
+		try {
+			final ChownLFNCSD cl = Dispatcher.execute(new ChownLFNCSD(commander.getUser(), lfn_name, username_to_chown, groupname_to_chown, recursive));
+			if (cl != null)
+				return cl.getSuccess();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not chown " + lfn_name + " for " + username_to_chown);
+			e.getCause().printStackTrace();
+		}
+		return false;
+	}
+
 }
