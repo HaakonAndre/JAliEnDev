@@ -9,7 +9,14 @@ import java.util.logging.Logger;
  * @author mmmartin
  */
 public abstract class BatchQueue {
+	/**
+	 * Logging mechanism shared with the implementing code 
+	 */
 	protected Logger logger = null;
+	
+	/**
+	 * Common configuration mechanism with the BQ implementations
+	 */
 	protected HashMap<String, Object> config = null;
 
 	/**
