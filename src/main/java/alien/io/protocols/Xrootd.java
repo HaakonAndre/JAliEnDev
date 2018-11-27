@@ -46,6 +46,10 @@ public class Xrootd extends Protocol {
 	static transient final Logger logger = ConfigUtils.getLogger(Xrootd.class.getCanonicalName());
 
 	private static String xrdcpdebug = "-d";
+	
+	/**
+	 * Debug level to pass to xrdcp commands 
+	 */
 	protected int xrdcpdebuglevel = 0;
 
 	/**

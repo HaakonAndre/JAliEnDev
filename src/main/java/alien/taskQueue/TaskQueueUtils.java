@@ -1667,7 +1667,7 @@ public class TaskQueueUtils {
 		}
 	}
 
-	private static final GenericLastValuesCache<String, Integer> userIdCache = new GenericLastValuesCache<String, Integer>() {
+	private static final GenericLastValuesCache<String, Integer> userIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -1746,7 +1746,7 @@ public class TaskQueueUtils {
 		return userIdCache.get(owner);
 	}
 
-	private static final GenericLastValuesCache<String, Integer> commandIdCache = new GenericLastValuesCache<String, Integer>() {
+	private static final GenericLastValuesCache<String, Integer> commandIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -1789,7 +1789,7 @@ public class TaskQueueUtils {
 		return commandIdCache.get(command);
 	}
 
-	private static final GenericLastValuesCache<String, Integer> hostIdCache = new GenericLastValuesCache<String, Integer>() {
+	private static final GenericLastValuesCache<String, Integer> hostIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -1832,7 +1832,7 @@ public class TaskQueueUtils {
 		return hostIdCache.get(host);
 	}
 
-	private static final GenericLastValuesCache<String, Integer> notifyIdCache = new GenericLastValuesCache<String, Integer>() {
+	private static final GenericLastValuesCache<String, Integer> notifyIdCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -1875,7 +1875,7 @@ public class TaskQueueUtils {
 		return notifyIdCache.get(notify);
 	}
 
-	private static final GenericLastValuesCache<Integer, String> userCache = new GenericLastValuesCache<Integer, String>() {
+	private static final GenericLastValuesCache<Integer, String> userCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -1907,7 +1907,7 @@ public class TaskQueueUtils {
 		return userCache.get(Integer.valueOf(userId));
 	}
 
-	private static final GenericLastValuesCache<Integer, String> hostCache = new GenericLastValuesCache<Integer, String>() {
+	private static final GenericLastValuesCache<Integer, String> hostCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -1944,7 +1944,7 @@ public class TaskQueueUtils {
 		return hostCache.get(Integer.valueOf(hostId));
 	}
 
-	private static final GenericLastValuesCache<Integer, String> notifyCache = new GenericLastValuesCache<Integer, String>() {
+	private static final GenericLastValuesCache<Integer, String> notifyCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -1976,7 +1976,7 @@ public class TaskQueueUtils {
 		return notifyCache.get(Integer.valueOf(notifyId));
 	}
 
-	private static final GenericLastValuesCache<Integer, String> commandCache = new GenericLastValuesCache<Integer, String>() {
+	private static final GenericLastValuesCache<Integer, String> commandCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override
@@ -2797,7 +2797,7 @@ public class TaskQueueUtils {
 		return 0;
 	}
 
-	private static final GenericLastValuesCache<Integer, String> siteNameCache = new GenericLastValuesCache<Integer, String>() {
+	private static final GenericLastValuesCache<Integer, String> siteNameCache = new GenericLastValuesCache<>() {
 		private static final long serialVersionUID = 1L;
 
 		@Override

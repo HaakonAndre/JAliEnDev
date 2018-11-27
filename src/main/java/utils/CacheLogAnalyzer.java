@@ -315,7 +315,7 @@ public class CacheLogAnalyzer {
 		}
 	}
 
-	private static final Comparator<Map.Entry<String, AtomicInteger>> entryComparator = new Comparator<Map.Entry<String, AtomicInteger>>() {
+	private static final Comparator<Map.Entry<String, AtomicInteger>> entryComparator = new Comparator<>() {
 
 		@Override
 		public int compare(final Entry<String, AtomicInteger> o1, final Entry<String, AtomicInteger> o2) {
