@@ -500,13 +500,13 @@ public class LFNCSDUtils {
 	 * @param destination
 	 * @return final lfns moved and errors
 	 */
-	public static boolean mv(final AliEnPrincipal user, final String source, final String destination) {
+	public static int mv(final AliEnPrincipal user, final String source, final String destination) {
 		// Let's assume for now that the source and destination come as absolute paths, otherwise:
 		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
 		// final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
 		if (source.equals(destination)) {
 			logger.info("LFNCSDUtils: mv: the source and destination are the same: " + source + " -> " + destination);
-			return false;
+			return 1;
 		}
 
 		final String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
@@ -514,12 +514,12 @@ public class LFNCSDUtils {
 		final LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
 
 		if (!lfnc_target_parent.exists) {
-			logger.info("LFNCSDUtils: mv: the destination doesn't exist: " + destination);
-			return false;
+			logger.info("LFNCSDUtils: mv: the destination parent doesn't exist: " + destination);
+			return 2;
 		}
 		if (!AuthorizationChecker.canWrite(lfnc_target_parent, user)) {
 			logger.info("LFNCSDUtils: mv: no permission on the destination: " + destination);
-			return false;
+			return 3;
 		}
 
 		// expand wildcards and filter if needed
@@ -529,22 +529,22 @@ public class LFNCSDUtils {
 			mv.setLfnTarget(lfnc_target);
 			mv.setLfnTargetParent(lfnc_target_parent);
 			recurseAndFilterLFNs(mv, source, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
-			return mv.getLfnsError().isEmpty();
+			return (mv.getLfnsError().isEmpty() ? 0 : 4);
 		}
 
 		LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
 		// check permissions to move
 		if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
 			logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
-			return false;
+			return 5;
 		}
 		// move and add to the final collection of lfns
 		if (LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent) == null) {
 			logger.info("LFNCSDUtils: mv: failed to mv: " + source);
-			return false;
+			return 6;
 		}
 
-		return true;
+		return 0;
 	}
 
 	/**

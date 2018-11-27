@@ -838,7 +838,7 @@ public class CatalogueApiUtils {
 	}
 
 	/**
-	 * Get LFN_CSDs from String as a listing, only if it exists
+	 * Get LFN_CSDs from collection
 	 *
 	 * @param slfn
 	 * @return the LFNCSD objects
@@ -848,7 +848,26 @@ public class CatalogueApiUtils {
 	}
 
 	/**
-	 * Get LFN_CSDs from String as a listing, only if it exists
+	 * Get LFN_CSD from String
+	 *
+	 * @param lfn_path
+	 * @return the LFNCSD object
+	 */
+	public LFN_CSD getLFNCSD(final String lfn_path) {
+		ArrayList<String> slfn = new ArrayList<>();
+		slfn.add(lfn_path);
+		Collection<LFN_CSD> slfn_res = new ArrayList<>();
+
+		slfn_res = getLFNCSD(slfn, false);
+
+		if (slfn_res != null && slfn_res.iterator().hasNext())
+			return slfn_res.iterator().next();
+
+		return null;
+	}
+
+	/**
+	 * Get LFN_CSDs from collection, potentially using UUIDs
 	 *
 	 * @param slfn
 	 * @param lfns_are_uuids
@@ -863,5 +882,25 @@ public class CatalogueApiUtils {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Move a LFNCSD in the catalogue
+	 *
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param newpath
+	 *            absolute path to the target
+	 * @return code of the LFNCSD mv
+	 */
+	public int moveLFNCSD(final String path, final String newpath) {
+		try {
+			return Dispatcher.execute(new MoveLFNCSDfromString(commander.getUser(), path, newpath)).getMvCode();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not move the LFN-->newLFN: " + path + "-->" + newpath);
+			e.getCause().printStackTrace();
+		}
+
+		return -1;
 	}
 }
