@@ -82,7 +82,7 @@ public class JAliEnCommandmv_csd extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("mv", " <LFN1> [<LFN2>...]  <targetLFN>"));
+		commander.printOutln(helpUsage("mv_csd", " <LFN1> [<LFN2>...]  <targetLFN>"));
 		commander.printOutln();
 	}
 

@@ -42,7 +42,7 @@ public class JAliEnCommandmkdir_csd extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("mkdir", "[-options] <directory> [<directory>[,<directory>]]"));
+		commander.printOutln(helpUsage("mkdir_csd", "[-options] <directory> [<directory>[,<directory>]]"));
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-p", "create parents as needed"));
 		commander.printOutln(helpOption("-silent", "execute command silently"));

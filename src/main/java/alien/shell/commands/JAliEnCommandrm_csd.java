@@ -60,7 +60,7 @@ public class JAliEnCommandrm_csd extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("rm", " <LFN> [<LFN>...]"));
+		commander.printOutln(helpUsage("rm_csd", " <LFN> [<LFN>...]"));
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-r, -R", "remove directories and their contents recursively"));
 		commander.printOutln();

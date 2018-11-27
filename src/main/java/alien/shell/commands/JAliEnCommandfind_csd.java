@@ -138,7 +138,7 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("find", "<path>  <pattern> flags"));
+		commander.printOutln(helpUsage("find_csd", "<path>  <pattern> flags metadata(not implemented)")); // TODO metadata
 		commander.printOutln();
 
 		commander.printOutln(helpStartOptions());

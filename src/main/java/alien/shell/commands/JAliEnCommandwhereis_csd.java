@@ -107,7 +107,7 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("whereis", "[-options] [<filename>]"));
+		commander.printOutln(helpUsage("whereis_csd", "[-options] [<filename>]"));
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-g", "use the lfn as uuid"));
 		commander.printOutln(helpOption("-r", "resolve links (do not give back pointers to zip archives)"));

@@ -22,7 +22,7 @@ public class JAliEnCommandtouch_csd extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("touch", " <LFN> [<LFN>[,<LFN>]]"));
+		commander.printOutln(helpUsage("touch_csd", " <LFN> [<LFN>[,<LFN>]]"));
 		commander.printOutln();
 	}
 

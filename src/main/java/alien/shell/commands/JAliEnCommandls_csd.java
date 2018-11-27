@@ -177,7 +177,7 @@ public class JAliEnCommandls_csd extends JAliEnBaseCommand {
 	@Override
 	public void printHelp() {
 		commander.printOutln();
-		commander.printOutln(helpUsage("ls", "[-options] [<directory>]"));
+		commander.printOutln(helpUsage("ls_csd", "[-options] [<directory>]"));
 		commander.printOutln(helpStartOptions());
 		commander.printOutln(helpOption("-l", "long format"));
 		commander.printOutln(helpOption("-a", "show hidden .* files"));

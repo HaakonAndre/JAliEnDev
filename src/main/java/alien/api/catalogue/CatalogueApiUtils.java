@@ -903,4 +903,23 @@ public class CatalogueApiUtils {
 
 		return -1;
 	}
+
+	/**
+	 * Get GUID from String
+	 *
+	 * @param uuid
+	 *            UUID as String
+	 * @return the LFNCSD object
+	 */
+	public LFN_CSD guid2lfncsd(final String uuid) {
+		try {
+			return Dispatcher.execute(new LFNCSDfromUUIDString(commander.getUser(), uuid)).getLFNCSD();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get UUID: " + uuid);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
 }
