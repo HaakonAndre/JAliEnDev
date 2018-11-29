@@ -31,6 +31,10 @@ public class JAliEnCommandcd_csd extends JAliEnBaseCommand {
 		}
 		else
 			commander.setReturnCode(1, "No such file or directory");
+
+		// TODO for now we do cd on both backends
+		JAliEnCommandcd cd = new JAliEnCommandcd(commander, alArguments);
+		cd.run();
 	}
 
 	/**

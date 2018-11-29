@@ -79,9 +79,9 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "get", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd", "find",
-			"find_csd", "listFilesFromCollection", "scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user", "touch",
-			"touch_csd", "type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "addMirror", "addTag", "addTagValue", "chgroup", "chown", "chown_csd",
+	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "get", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd",
+			"find", "find_csd", "listFilesFromCollection", "scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user",
+			"touch", "touch_csd", "type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "addMirror", "addTag", "addTagValue", "chgroup", "chown", "chown_csd",
 			"createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo", "jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum", "mirror", "queue", "queueinfo", "register",
 			"registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat",
 			"whois" };

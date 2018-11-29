@@ -534,7 +534,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 
 	@Override
 	public String getName() {
-		return canonicalName;
+		return child;
 	}
 
 	/**
