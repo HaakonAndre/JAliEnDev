@@ -948,4 +948,28 @@ public class CatalogueApiUtils {
 		return false;
 	}
 
+	/**
+	 * Get PFNs for reading by LFNCSD
+	 * 
+	 *
+	 * @param entity
+	 *            LFN or GUID to get access to
+	 * @param ses
+	 *            SEs to prioritize to read from
+	 * @param exses
+	 *            SEs to deprioritize to read from
+	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized
+	 */
+	public List<PFN> getPFNsToReadCsd(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
+		try {
+
+			return Dispatcher.execute(new PFNforReadOrDelCsd(commander.getUser(), commander.getSite(), AccessType.READ, entity, ses, exses)).getPFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get PFN for: " + entity);
+			e.getCause().printStackTrace();
+
+		}
+		return null;
+	}
+
 }

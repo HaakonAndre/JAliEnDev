@@ -5,6 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -1326,6 +1327,25 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Get the PFNs for this LFN_CSD
+	 *
+	 * @return set of physical locations
+	 */
+	public Set<PFN> getPFNs() {
+		Set<PFN> pfnCache = new LinkedHashSet<>();
+
+		if (monitor != null)
+			monitor.incrementCounter("PFN_CSD_db_lookup");
+
+		for (Integer senumber : this.pfns.keySet()) {
+			final PFN pfn = new PFN(senumber, this.pfns.get(senumber), this.id, this.size);
+			pfnCache.add(pfn);
+		}
+
+		return pfnCache;
 	}
 
 }

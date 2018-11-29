@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.catalogue.GUID;
+import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.io.xrootd.envelopes.XrootDEnvelopeSigner;
@@ -76,7 +77,7 @@ public final class AuthorizationFactory {
 	public static String fillAccess(final GUID guid, final AccessType access) {
 		if (defaultAccount == null)
 			getDefaultUser();
-		
+
 		if (defaultAccount == null)
 			return "There is no default account set";
 
@@ -202,6 +203,76 @@ public final class AuthorizationFactory {
 		final SE referenceSE = pfn.getSE();
 
 		final XrootDEnvelope env = new XrootDEnvelope(access, pfn);
+
+		try {
+			if (pfn.getPFN().startsWith("root://"))
+				if (referenceSE == null || referenceSE.needsEncryptedEnvelope)
+					// System.out.println("SE needs encrypted envelope");
+					XrootDEnvelopeSigner.encryptEnvelope(env);
+				else
+					XrootDEnvelopeSigner.signEnvelope(env);
+		} catch (final GeneralSecurityException gse) {
+			logger.log(Level.SEVERE, "Cannot sign and encrypt envelope", gse);
+		}
+
+		pfn.ticket = new AccessTicket(access, env);
+
+		return null;
+	}
+
+	/**
+	 * Request access
+	 *
+	 * @param user
+	 * @param lfnc
+	 * @param pfn
+	 * @param access
+	 * @param skipSanityChecks
+	 *            set to <code>true</code> for manual operations that would otherwise fail since the details are not consistent in the catalogue database
+	 * @return <code>null</code> if access was granted, otherwise the reason why the access was rejected
+	 */
+	public static String fillAccessCsd(final AliEnPrincipal user, final LFN_CSD lfnc, final PFN pfn, final AccessType access, final boolean skipSanityChecks) {
+		if (logger.isLoggable(Level.FINE))
+			logger.log(Level.FINE, pfn + ", user: " + user + ", access: " + access);
+
+		// final GUID guid = pfn.getGuid();
+		//
+		// if (guid == null)
+		// return "GUID is null for this object";
+		//
+		// final Set<PFN> pfns = guid.getPFNs();
+
+		if (access == AccessType.WRITE) {
+			// PFN must not be part of the ones already registered to the GUID
+
+			if (!AuthorizationChecker.canWrite(lfnc, user))
+				return "User (" + user + ") is not allowed to write this entry: " + lfnc + " - " + pfn.pfn;
+			//
+			// if (pfns != null && pfns.contains(pfn))
+			// return "PFN already associated to the GUID";
+		}
+		else {
+			if (access == AccessType.DELETE || access == AccessType.READ) {
+				// PFN must be a part of the ones registered to the GUID
+
+				if (access == AccessType.DELETE) {
+					if (!AuthorizationChecker.canWrite(lfnc, user))
+						return "User is not allowed to delete this entry";
+				}
+				else
+					if (!AuthorizationChecker.canRead(lfnc, user))
+						return "User is not allowed to read this entry";
+
+				// if (!skipSanityChecks && (pfns == null || !pfns.contains(pfn)))
+				// return "PFN is not registered";
+			}
+			else
+				return "Unknown access type : " + access;
+		}
+
+		final SE referenceSE = pfn.getSE();
+
+		final XrootDEnvelope env = new XrootDEnvelope(access, pfn, lfnc);
 
 		try {
 			if (pfn.getPFN().startsWith("root://"))

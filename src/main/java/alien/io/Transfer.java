@@ -191,8 +191,12 @@ public class Transfer implements Serializable, Runnable {
 					ret.add((Protocol) Factory.xrd3cp4.clone());
 			}
 
-			if (Factory.xrootd.isSupported())
-				ret.add((Protocol) Factory.xrootd.clone());
+			if (Factory.xrootd.isSupported()) {
+				if (!pfn.isCsd)
+					ret.add((Protocol) Factory.xrootd.clone());
+				else
+					ret.add((Protocol) Factory.xrootdcsd.clone());
+			}
 		}
 		else
 			if (s.equals("http")) {

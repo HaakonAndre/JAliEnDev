@@ -691,4 +691,12 @@ public final class GUIDUtils {
 
 		return true;
 	}
+
+	/**
+	 * @param pfn
+	 * @return the GUID, or <code>null</code> if it cannot be located
+	 */
+	public static GUID getGUID(final PFN pfn) {
+		return new GUID(pfn);
+	}
 }
