@@ -9,8 +9,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
-import alien.api.aaa.GetTokenCertificate;
-import alien.api.aaa.TokenCertificateType;
+import alien.api.token.GetTokenCertificate;
+import alien.api.token.TokenCertificateType;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;

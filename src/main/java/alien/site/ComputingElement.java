@@ -20,10 +20,10 @@ import java.util.logging.Logger;
 
 import alien.api.Dispatcher;
 import alien.api.JBoxServer;
-import alien.api.aaa.GetTokenCertificate;
-import alien.api.aaa.TokenCertificateType;
 import alien.api.taskQueue.GetNumberFreeSlots;
 import alien.api.taskQueue.GetNumberWaitingJobs;
+import alien.api.token.GetTokenCertificate;
+import alien.api.token.TokenCertificateType;
 import alien.config.ConfigUtils;
 import alien.log.LogUtils;
 import alien.monitoring.MonitorFactory;

@@ -1,4 +1,4 @@
-package alien.api.aaa;
+package alien.api.token;
 
 import java.io.IOException;
 import java.io.StringWriter;

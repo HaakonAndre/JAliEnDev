@@ -4,8 +4,8 @@ import java.util.List;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
-import alien.api.aaa.GetTokenCertificate;
-import alien.api.aaa.TokenCertificateType;
+import alien.api.token.GetTokenCertificate;
+import alien.api.token.TokenCertificateType;
 import alien.user.AliEnPrincipal;
 import alien.user.UserFactory;
 import joptsimple.OptionException;
