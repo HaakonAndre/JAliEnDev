@@ -136,7 +136,7 @@ public class LFNCSDUtils {
 
 		Pattern pat = Pattern.compile(file_pattern);
 
-		logger.info("Going to recurseAndFilterLFNs: " + path + " - " + file_pattern + " - " + index + " - " + flags + " - " + path_parts.toString());
+		logger.info("Going to recurseAndFilterLFNs: " + path + " - " + file_pattern + " - " + index + " - " + flags + " - " + path_parts.toString() + " metadata: " + metadata);
 
 		final RecurseLFNs rl = new RecurseLFNs(null, operation, path, pat, index, path_parts, flags, metadata, null) {
 			@Override
@@ -261,6 +261,7 @@ public class LFNCSDUtils {
 				jep = new JEP();
 				jep.setAllowUndeclared(true);
 				String expression = Format.replace(Format.replace(Format.replace(metadata, "and", "&&"), "or", "||"), ":", "__");
+				expression = expression.replaceAll("\"", "");
 				jep.parseExpression(expression);
 			}
 
@@ -289,6 +290,7 @@ public class LFNCSDUtils {
 										logger.info("Skipped: " + s + e);
 										continue;
 									}
+
 									keys_values.add(s);
 									jep.addVariable(s, value);
 								}

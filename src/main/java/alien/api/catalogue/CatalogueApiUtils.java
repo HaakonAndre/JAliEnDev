@@ -786,15 +786,15 @@ public class CatalogueApiUtils {
 	 * 
 	 * @param path
 	 * @param pattern
-	 * @param query
+	 * @param metadata
 	 * @param flags
 	 * @param xmlCollectionName
 	 * @param queueid
 	 * @return result LFNCSDs
 	 */
-	public Collection<LFN_CSD> find_csd(final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, Long queueid) {
+	public Collection<LFN_CSD> find_csd(final String path, final String pattern, final String metadata, final int flags, final String xmlCollectionName, Long queueid) {
 		try {
-			return Dispatcher.execute(new FindCsdfromString(commander.getUser(), path, pattern, query, flags, xmlCollectionName, queueid)).getLFNs();
+			return Dispatcher.execute(new FindCsdfromString(commander.getUser(), path, pattern, metadata, flags, xmlCollectionName, queueid)).getLFNs();
 		} catch (final ServerException e) {
 			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
 			e.getCause().printStackTrace();

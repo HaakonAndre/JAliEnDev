@@ -17,7 +17,7 @@ public class FindCsdfromString extends Request {
 	private static final long serialVersionUID = -5938936122293608584L;
 	private final String path;
 	private final String pattern;
-	private final String query;
+	private final String metadata;
 	private final int flags;
 	private Collection<LFN_CSD> lfns;
 	// private final String xmlCollectionName; // TODO filter jobid and create and upload XML collections
@@ -42,16 +42,16 @@ public class FindCsdfromString extends Request {
 	 * @param user
 	 * @param path
 	 * @param pattern
-	 * @param query
+	 * @param metadata
 	 * @param flags
 	 * @param xmlCollectionName
 	 * @param queueid
 	 */
-	public FindCsdfromString(final AliEnPrincipal user, final String path, final String pattern, final String query, final int flags, final String xmlCollectionName, final Long queueid) {
+	public FindCsdfromString(final AliEnPrincipal user, final String path, final String pattern, final String metadata, final int flags, final String xmlCollectionName, final Long queueid) {
 		setRequestUser(user);
 		this.path = path;
 		this.pattern = pattern;
-		this.query = query;
+		this.metadata = metadata;
 		this.flags = flags;
 		// this.xmlCollectionName = xmlCollectionName;
 		// this.queueid = queueid;
@@ -75,7 +75,7 @@ public class FindCsdfromString extends Request {
 
 	@Override
 	public void run() {
-		lfns = LFNCSDUtils.find(path, pattern, flags, query);
+		lfns = LFNCSDUtils.find(path, pattern, flags, metadata);
 	}
 
 	/**

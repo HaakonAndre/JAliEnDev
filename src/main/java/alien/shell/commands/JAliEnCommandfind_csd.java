@@ -53,11 +53,18 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 	 */
 	private boolean bL = false;
 
+	/**
+	 * marker for -m argument : filter by metadata query
+	 */
+	private boolean bM = false;
+
 	private List<String> alPaths = null;
 
 	private Collection<LFN_CSD> lfns = null;
 
 	private Long queueid = Long.valueOf(0);
+
+	private String metadata = null;
 
 	/**
 	 * returns the LFNCSDs that were the result of the find
@@ -80,13 +87,13 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 		}
 
 		int flags = 0;
-		String query = "";
+		// String query = "";
 
 		if (bD)
 			flags = flags | LFNUtils.FIND_INCLUDE_DIRS;
 		if (bY) {
-			for (int i = 2; i < alPaths.size(); i++)
-				query += alPaths.get(i) + " ";
+			// for (int i = 2; i < alPaths.size(); i++)
+			// query += alPaths.get(i) + " ";
 			flags = flags | LFNUtils.FIND_BIGGEST_VERSION;
 		}
 		if (bX)
@@ -96,7 +103,7 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 
 		String xmlCollectionPath = xmlCollectionName != null ? FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), xmlCollectionName) : null;
 
-		lfns = commander.c_api.find_csd(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), query, flags, xmlCollectionPath,
+		lfns = commander.c_api.find_csd(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), alPaths.get(0)), alPaths.get(1), metadata, flags, xmlCollectionPath,
 				queueid);
 
 		if (lfns != null) {
@@ -150,6 +157,7 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-d", "return also the directories"));
 		commander.printOutln(helpOption("-l[h]", "long format, optionally human readable file sizes"));
 		commander.printOutln(helpOption("-j <queueid>", "filter files created by a certain job"));
+		commander.printOutln(helpOption("-m \"<expression>\"", "filter files by metadata"));
 		commander.printOutln();
 	}
 
@@ -181,6 +189,7 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 			parser.accepts("l");
 			parser.accepts("s");
 			parser.accepts("x").withRequiredArg();
+			parser.accepts("m").withRequiredArg();
 			parser.accepts("a");
 			parser.accepts("h");
 			parser.accepts("d");
@@ -192,6 +201,11 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 			if (options.has("x") && options.hasArgument("x")) {
 				bX = true;
 				xmlCollectionName = (String) options.valueOf("x");
+			}
+
+			if (options.has("m") && options.hasArgument("m")) {
+				bM = true;
+				metadata = (String) options.valueOf("m");
 			}
 
 			if (options.has("j") && options.hasArgument("j")) {
@@ -229,6 +243,8 @@ public class JAliEnCommandfind_csd extends JAliEnBaseCommand {
 			sb.append(" -d ");
 		if (bJ)
 			sb.append(" -j ");
+		if (bM)
+			sb.append(" -m ");
 
 		sb.append("}");
 
