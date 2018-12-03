@@ -1,13 +1,15 @@
 package alien.site;
 
+import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.io.StreamCorruptedException;
 import java.lang.ProcessBuilder.Redirect;
 import java.lang.management.ManagementFactory;
@@ -32,8 +34,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import alien.api.JBoxServer;
 import alien.api.Request;
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
@@ -62,7 +62,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
 	private String jobWorkdir = "";
 	private String jobWrapperLogDir = "";
-	
+
 
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
@@ -108,7 +108,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		ERROR_JDL(-4), //incorrect jdl
 		ERROR_DIRS(-5), //error creating directories, not enough free space in workdir
 		ERROR_START(-6); //error forking to start job
-		
+
 		private final int value;
 
 		private jaStatus(int value) {
@@ -119,7 +119,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			return value;
 		}
 	}
-	
+
 	private final int jobagent_requests = 1; // TODO: restore to 5
 
 	/**
@@ -160,10 +160,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public JobAgent() {
 		// site = env.get("site"); // or
 		// ConfigUtils.getConfig().gets("alice_close_site").trim();
-		
+
 		//ce = env.get("CE");
 		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
-		
+
 		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log";
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
@@ -180,7 +180,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
 		else jobAgentId = Request.getVMID().toString();
-					
+
 		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
 		workdir = (String) siteMap.get("workdir");
@@ -220,7 +220,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		int count = jobagent_requests;
 		while (count > 0) {
 			if (!updateDynamicParameters())
-				
+
 				break;
 
 			logger.log(Level.INFO, siteMap.toString());
@@ -229,11 +229,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 				monitor.sendParameter("ja_status", jaStatus.REQUESTING_JOB.getValue());
 				monitor.sendParameter("TTL", siteMap.get("TTL"));
-				
+
 				final GetMatchJob jobMatch = commander.q_api.getMatchJob(siteMap);
-				
+
 				matchedJob = jobMatch.getMatchJob();
-				
+
 				// TODELETE
 				if (matchedJob != null)
 					logger.log(Level.INFO, matchedJob.toString());
@@ -251,14 +251,14 @@ public class JobAgent implements MonitoringObject, Runnable {
 					logger.log(Level.INFO, jdl.getExecutable());
 					logger.log(Level.INFO, username);
 					logger.log(Level.INFO, Long.toString(queueId));
-								
+
 					// process payload
 					handleJob();
 
 					cleanup();
 				}
 				else { //TODO: Handle matchedJob.containsKey("Error") after all?
-						logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
+					logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
 
 					try {
 						// TODO?: monitor.sendBgMonitoring
@@ -298,7 +298,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			getMemoryRequirements();
 
 			setupJobWrapperLogging();
-			
+
 			final int selfProcessID = MonitorFactory.getSelfProcessID();
 			final List<String> launchCommand = generateLaunchCommand(selfProcessID);
 
@@ -375,11 +375,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, "There is not enough space left: " + space);
 			return false;
 		}
-		
+
 		// set timeleft to time until certificate expires (-15min)
 		long timeToCertExpire = TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - jobAgentCurrentTime);
 		timeleft = (int)timeToCertExpire - 900;
-		
+
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
 			return false; // TODO: Put back
@@ -485,7 +485,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			String readArg;
 			while (scanner.hasNext()) {
 				readArg = (scanner.next());
-				
+
 				switch (readArg) {
 				case "-cp":
 					scanner.next();
@@ -509,7 +509,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	public int launchJobWrapper(List<String> launchCommand, boolean monitorJob) {
 		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
 
@@ -518,13 +517,14 @@ public class JobAgent implements MonitoringObject, Runnable {
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
 
+		pBuilder.redirectError(Redirect.INHERIT);
+
 		pBuilder.directory(tempDir);
-		
+
 		final Process p;
 
 		// stdin from the viewpoint of the wrapper
 		OutputStream stdin;
-
 		ObjectOutputStream stdinObj;
 
 		try {
@@ -540,8 +540,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.writeObject(tokenKey);
 			stdinObj.writeObject(ce);
 
-			stdinObj.close();
-			stdin.close();
+			stdinObj.flush();
 		} catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
 			return -2;
@@ -574,39 +573,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			}
 		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
-		
+
 		//Listen for job updates from the jobwrapper
-		Runnable jobWrapperListener = () -> {
-			
-			InputStream stdout;
-			ObjectInputStream stdoutObj;
-			
-			stdout = p.getInputStream();
-			
-			while(p.isAlive()){
-				try {
-					stdoutObj = new ObjectInputStream(stdout);
+		Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdin));
+		jobWrapperListener.start();
 
-					String newStatusString = (String) stdoutObj.readObject();                    
-					HashMap<String, Object> extrafields = (HashMap<String, Object>) stdoutObj.readObject();
-
-					logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
-
-					JobStatus newStatus = JobStatus.getStatus(newStatusString);
-					changeJobStatus(newStatus, extrafields);
-
-				} catch (ClassNotFoundException | StreamCorruptedException e) {
-					logger.log(Level.INFO, "Received something from JobWrapper, but it wasn't a status update (exception?). Ignoring");
-				} catch (EOFException e1){
-					logger.log(Level.INFO, "JobWrapper has finished sending status updates");
-				}catch (NullPointerException e2) {
-					logger.log(Level.WARNING, "Could not receive update from JW");
-				} catch (Exception e3){
-					logger.log(Level.WARNING, "Exception received: " + e3);
-				}
-			}
-		}; new Thread(jobWrapperListener).start();
-		
 		boolean processNotFinished = true;
 		int code = 0;
 
@@ -646,12 +617,19 @@ public class JobAgent implements MonitoringObject, Runnable {
 			logger.log(Level.WARNING, "Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
 			return -2;
 		} finally {
-			t.cancel();
+			try{
+				t.cancel();
+				stdinObj.close();
+				stdin.close();
+				jobWrapperListener.interrupt();
+			} catch (Exception e){
+				logger.log(Level.WARNING, "Not all resources from the current job could be cleared: " + e);
+			}
 			apmon.removeJobToMonitor(payloadPID);
 			if(jobStatus == JobStatus.STARTED || jobStatus == JobStatus.RUNNING)
-				changeJobStatus(JobStatus.ERROR_V, null); //JobWrapper was killed before the job could be completed TODO: Set to ERROR_E after testing
+				changeJobStatus(JobStatus.ERROR_E, null); //JobWrapper was killed before the job could be completed
 			else if (jobStatus == JobStatus.SAVING){
-				changeJobStatus(JobStatus.ERROR_SV, null);
+				changeJobStatus(JobStatus.ERROR_SV, null); //JobWrapper was killed during saving
 			}
 		}
 	}
@@ -679,7 +657,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			if (jobinfo == null || diskinfo == null) {
 				logger.log(Level.WARNING, "JobInfo or DiskInfo monitor null");
-//      		return "Not available"; TODO: Adjust and put back again
+				//      		return "Not available"; TODO: Adjust and put back again
 			}
 
 			// getting cpu, memory and runtime info
@@ -787,7 +765,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		return true;
 	}
-	
+
 
 	void setupJobWrapperLogging(){
 
@@ -796,7 +774,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			ExtProperties ep = ConfigUtils.getConfiguration("logging");
 
 			props = ep.getProperties();
-			
+
 			props.setProperty("java.util.logging.FileHandler.pattern", jobWrapperLogDir);
 
 			logger.log(Level.INFO, "Logging properties loaded for the JobWrapper");
@@ -804,7 +782,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			logger.log(Level.INFO, "Logging properties for JobWrapper not found.");
 			logger.log(Level.INFO, "Using fallback logging configurations for JobWrapper");
-			
+
 			props.put("handlers", "java.util.logging.FileHandler");
 			props.put("java.util.logging.FileHandler.pattern", jobWrapperLogDir);
 			props.put("java.util.logging.FileHandler.limit", "0");
@@ -814,19 +792,19 @@ public class JobAgent implements MonitoringObject, Runnable {
 			props.put(".level", "FINEST");
 			props.put("lia.level", "WARNING");
 			props.put("lazyj.level", "WARNING");
-		    props.put("apmon.level", "WARNING");
-		    props.put("alien.level", "FINEST");
-		    props.put("alien.monitoring.Monitor.level", "WARNING");
-		    props.put("use_java_logger", "true");	    		
+			props.put("apmon.level", "WARNING");
+			props.put("alien.level", "FINEST");
+			props.put("alien.monitoring.Monitor.level", "WARNING");
+			props.put("use_java_logger", "true");	    		
 		}
-		
-	    try (FileOutputStream str = new FileOutputStream(jobWorkdir+"/logging.properties")){
+
+		try (FileOutputStream str = new FileOutputStream(jobWorkdir+"/logging.properties")){
 			props.store(str, null);
 		} catch (IOException e1) {
 			logger.log(Level.WARNING, "Failed to configure JobWrapper logging", e1);
 		} 
 	}
-	
+
 	public void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
 
 		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
@@ -835,4 +813,45 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		return;
 	}
+	
+	private Runnable createJobWrapperListener(Process p, OutputStream stdin){
+		
+		Runnable jobWrapperListener = () -> {
+			
+			InputStream stdout = p.getInputStream();	
+			PrintWriter stdinPrinter = new PrintWriter(stdin);
+
+			while(p.isAlive()){
+				try {
+					BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
+					String receivedString = stdoutReader.readLine();                 
+					//HashMap<String, Object> extrafields = (HashMap<String, Object>) stdoutObj.readObject();
+					
+					if(receivedString.contains("|")){
+
+						String[] received = receivedString.split("\\|");
+
+						String newStatusString = received[1];
+						
+						logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
+
+						JobStatus newStatus = JobStatus.getStatus(newStatusString);
+						changeJobStatus(newStatus, null);
+						
+						stdinPrinter.println("|"+newStatusString);
+						stdinPrinter.flush();
+					}
+				} catch (StreamCorruptedException e) {
+					logger.log(Level.INFO, "Received something from JobWrapper, but it wasn't a status update (corrupted?). Ignoring");
+				} catch (EOFException | NullPointerException e1){
+					logger.log(Level.INFO, "JobWrapper has stopped sending updates");
+				} catch (Exception e2){
+					logger.log(Level.WARNING, "Exception received: " + e2);
+				}
+			}
+		}; 
+		
+		return jobWrapperListener;
+	}
+	
 }

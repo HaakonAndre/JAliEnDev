@@ -1,10 +1,11 @@
 package alien.site;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -20,10 +21,8 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
-import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
@@ -70,6 +69,7 @@ public class JobWrapper implements Runnable {
 	 * @uml.associationEnd  
 	 */
 	private JobStatus jobStatus;
+	String receivedStatus = "";
 
 	// Other
 	/**
@@ -99,7 +99,7 @@ public class JobWrapper implements Runnable {
 	/**
 	 * Streams for data transfer
 	 */
-	private ObjectInputStream inputFromJobAgent;
+	private ObjectInputStream inputFromJobAgent = null;
 
 	/**
 	 */
@@ -121,7 +121,6 @@ public class JobWrapper implements Runnable {
 			tokenCert = (String) inputFromJobAgent.readObject();
 			tokenKey = (String) inputFromJobAgent.readObject();
 			ce = (String) inputFromJobAgent.readObject();
-			inputFromJobAgent.close();
 
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
@@ -164,17 +163,22 @@ public class JobWrapper implements Runnable {
 
 		logger.log(Level.INFO, "Jbox started");
 
+		// Start listening for messages from the JobAgent
+		Thread jobAgentListener = new Thread(createJobAgentListener());
+		jobAgentListener.start();
+		
 		// process payload
 		final int runCode = runJob();
 
-		logger.log(Level.INFO, "JobWrapper has finished execution");
-		
 		try {
-			wait(5); //Wait for the JobAgent to catch the final statusupdate
-		} catch (InterruptedException e){
-			logger.log(Level.INFO, "JobWrapper will exit without waiting");
+			jobAgentListener.interrupt();
+			inputFromJobAgent.close();
+		} catch (Exception e) {
+			logger.log(Level.WARNING, "An exception occurred during cleanup: " + e);
 		}
 		
+		logger.log(Level.INFO, "JobWrapper has finished execution");
+
 		System.exit(runCode);
 	}
 
@@ -621,32 +625,45 @@ public class JobWrapper implements Runnable {
 	 * @param newStatus
 	 */
 	public void sendStatus(final JobStatus newStatus) {
-		  HashMap<String, Object> extrafields = new HashMap<>();
-          extrafields.put("exechost", this.ce);
-          // if final status with saved files, we set the path
-          if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) 
-                  extrafields.put("path", getJobOutputDir());
-          else
-                  if (newStatus == JobStatus.RUNNING) {
-                          extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-                          extrafields.put("node", hostName);
-                  }
+		HashMap<String, Object> extrafields = new HashMap<>();
+		extrafields.put("exechost", this.ce);
+		// if final status with saved files, we set the path
+		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) 
+			extrafields.put("path", getJobOutputDir());
+		else
+			if (newStatus == JobStatus.RUNNING) {
+				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
+				extrafields.put("node", hostName);
+			}
 
-          try {
-                  ObjectOutputStream outputToJobAgent = new ObjectOutputStream(System.out);
+		try {
+			final String newStatusString = newStatus.name();
 
-                  final String newStatusString = newStatus.name();
+			// outputToJobAgent.writeObject(extrafields);
 
-                  outputToJobAgent.writeObject(newStatusString);
-                  outputToJobAgent.writeObject(extrafields);
+			if (inputFromJobAgent != null){
 
-          } catch (IOException e) {
-        	  logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent");
-          }
+				// receivedStatus is updated by the JobAgentListener
+				while(!receivedStatus.equals(newStatusString)){
 
-          jobStatus = newStatus;
+					System.out.printf("%s%n", "|" + newStatusString);
+					System.out.flush();
 
-          return;
+					Thread.sleep(10*1000); //sleep for 10s, then retry
+				}
+			}
+			else {
+				System.out.printf("%s%n", "|" + newStatusString);
+				System.out.flush();
+			}
+
+		} catch (Exception e) {
+			logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent");
+		}
+
+		jobStatus = newStatus;
+
+		return;
 	}
 
 	/**
@@ -662,6 +679,35 @@ public class JobWrapper implements Runnable {
 				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + currentDirFolder);
 
 		return outputDir;
+	}
+	
+	
+	private Runnable createJobAgentListener(){
+		
+		Runnable jobAgentListener = () -> {
+
+			BufferedReader inputFromJobAgent = new BufferedReader(new InputStreamReader(System.in));
+
+			while(true){
+				try {
+					String receivedString = inputFromJobAgent.readLine();
+
+					if(receivedString.contains("|")){
+
+						String[] received = receivedString.split("\\|");
+
+						receivedStatus = received[1];
+
+						logger.log(Level.SEVERE, "CONFIRMED: " + receivedStatus);
+					}
+				} catch (Exception e) {
+
+				}
+			}
+		}; 
+		
+		return jobAgentListener;
+		
 	}
 
 }
