@@ -18,6 +18,7 @@ import alien.catalogue.CatalogEntity;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
+import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.catalogue.Package;
 import alien.catalogue.access.AccessType;
@@ -132,7 +133,8 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
+	 * @param path
+	 *            absolute path to the LFN
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path) {
@@ -149,8 +151,10 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
-	 * @param recursive <code>true</code> to delete directory's content recursively
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param recursive
+	 *            <code>true</code> to delete directory's content recursively
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive) {
@@ -167,9 +171,12 @@ public class CatalogueApiUtils {
 	/**
 	 * Remove a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
-	 * @param recursive <code>true</code> to delete directory's content recursively
-	 * @param purge <code>true</code> to delete a physical copy
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param recursive
+	 *            <code>true</code> to delete directory's content recursively
+	 * @param purge
+	 *            <code>true</code> to delete a physical copy
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public boolean removeLFN(final String path, final boolean recursive, final boolean purge) {
@@ -186,8 +193,10 @@ public class CatalogueApiUtils {
 	/**
 	 * Move a LFN in the Catalogue
 	 *
-	 * @param path absolute path to the LFN
-	 * @param newpath absolute path to the target
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param newpath
+	 *            absolute path to the target
 	 * @return state of the LFN's deletion <code>null</code>
 	 */
 	public LFN moveLFN(final String path, final String newpath) {
@@ -610,12 +619,13 @@ public class CatalogueApiUtils {
 	 * @param site
 	 * @param write
 	 * @param lfn
+	 * @param qos
 	 * @return SE distance list
 	 */
-	public List<HashMap<SE, Double>> listSEDistance(final String site, final boolean write, final String lfn) {
+	public List<HashMap<SE, Double>> listSEDistance(final String site, final boolean write, final String lfn, final String qos) {
 		ListSEDistance lsd;
 		try {
-			lsd = Dispatcher.execute(new ListSEDistance(commander.getUser(), site, write, lfn));
+			lsd = Dispatcher.execute(new ListSEDistance(commander.getUser(), site, write, lfn, qos));
 			return (lsd != null ? lsd.getSEDistances() : null);
 		} catch (final ServerException e) {
 			e.printStackTrace();
@@ -752,4 +762,214 @@ public class CatalogueApiUtils {
 		}
 		return null;
 	}
+
+	/**
+	 * Get LFN_CSDs from String as a listing, only if it exists
+	 *
+	 * @param slfn
+	 *            name of the LFN
+	 * @return the LFNCSD objects
+	 */
+	public Collection<LFN_CSD> getLFNCSDs(final String slfn) {
+		try {
+			return Dispatcher.execute(new LFNCSDListingfromString(commander.getUser(), slfn)).getLFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFN: " + slfn);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Find an LFNCSD based on pattern and save to XmlCollection
+	 * 
+	 * @param path
+	 * @param pattern
+	 * @param metadata
+	 * @param flags
+	 * @param xmlCollectionName
+	 * @param queueid
+	 * @return result LFNCSDs
+	 */
+	public Collection<LFN_CSD> find_csd(final String path, final String pattern, final String metadata, final int flags, final String xmlCollectionName, Long queueid) {
+		try {
+			return Dispatcher.execute(new FindCsdfromString(commander.getUser(), path, pattern, metadata, flags, xmlCollectionName, queueid)).getLFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Unable to execute find: path (" + path + "), pattern (" + pattern + "), flags (" + flags + ")");
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Create a directory in the Cassandra catalogue
+	 *
+	 * @param path
+	 * @param createNonExistentParents
+	 * @return LFN_CSD of the created directory, if successful, else <code>null</code>
+	 */
+	public LFN_CSD createCatalogueDirectoryCsd(final String path, final boolean createNonExistentParents) {
+		try {
+			return Dispatcher.execute(new CreateCsdCatDirfromString(commander.getUser(), path, createNonExistentParents)).getDir();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not create the CatDir: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 *
+	 * @param path
+	 * @return LFNCSD of the created file, if successful, else <code>null</code>
+	 */
+	public LFN_CSD touchLFNCSD(final String path) {
+		try {
+			return Dispatcher.execute(new TouchLFNCSDfromString(commander.getUser(), path)).getLFN();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not create the file: " + path);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get LFN_CSDs from collection
+	 *
+	 * @param slfn
+	 * @return the LFNCSD objects
+	 */
+	public Collection<LFN_CSD> getLFNCSD(final Collection<String> slfn) {
+		return getLFNCSD(slfn, false);
+	}
+
+	/**
+	 * Get LFN_CSD from String
+	 *
+	 * @param lfn_path
+	 * @return the LFNCSD object
+	 */
+	public LFN_CSD getLFNCSD(final String lfn_path) {
+		ArrayList<String> slfn = new ArrayList<>();
+		slfn.add(lfn_path);
+		Collection<LFN_CSD> slfn_res = new ArrayList<>();
+
+		slfn_res = getLFNCSD(slfn, false);
+
+		if (slfn_res != null && slfn_res.iterator().hasNext())
+			return slfn_res.iterator().next();
+
+		return null;
+	}
+
+	/**
+	 * Get LFN_CSDs from collection, potentially using UUIDs
+	 *
+	 * @param slfn
+	 * @param lfns_are_uuids
+	 * @return the LFNCSD objects
+	 */
+	public Collection<LFN_CSD> getLFNCSD(final Collection<String> slfn, final boolean lfns_are_uuids) {
+		try {
+			return Dispatcher.execute(new LFNCSDfromString(commander.getUser(), true, false, lfns_are_uuids, slfn)).getLFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get LFNs: " + slfn.toString());
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * Move a LFNCSD in the catalogue
+	 *
+	 * @param path
+	 *            absolute path to the LFN
+	 * @param newpath
+	 *            absolute path to the target
+	 * @return code of the LFNCSD mv
+	 */
+	public int moveLFNCSD(final String path, final String newpath) {
+		try {
+			return Dispatcher.execute(new MoveLFNCSDfromString(commander.getUser(), path, newpath)).getMvCode();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not move the LFN-->newLFN: " + path + "-->" + newpath);
+			e.getCause().printStackTrace();
+		}
+
+		return -1;
+	}
+
+	/**
+	 * Get GUID from String
+	 *
+	 * @param uuid
+	 *            UUID as String
+	 * @return the LFNCSD object
+	 */
+	public LFN_CSD guid2lfncsd(final String uuid) {
+		try {
+			return Dispatcher.execute(new LFNCSDfromUUIDString(commander.getUser(), uuid)).getLFNCSD();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get UUID: " + uuid);
+			e.getCause().printStackTrace();
+		}
+
+		return null;
+	}
+
+	/**
+	 * @param lfn_name
+	 * @param username_to_chown
+	 * @param groupname_to_chown
+	 * @param recursive
+	 * @return command result for each lfncsd
+	 */
+	public boolean chownLFNCSD(final String lfn_name, final String username_to_chown, final String groupname_to_chown, final boolean recursive) {
+		if (lfn_name == null || lfn_name.length() == 0)
+			return false;
+
+		final LFN_CSD lfn = this.getLFNCSD(lfn_name);
+
+		if (lfn == null || !lfn.exists)
+			return false;
+		try {
+			final ChownLFNCSD cl = Dispatcher.execute(new ChownLFNCSD(commander.getUser(), lfn_name, username_to_chown, groupname_to_chown, recursive));
+			if (cl != null)
+				return cl.getSuccess();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not chown " + lfn_name + " for " + username_to_chown);
+			e.getCause().printStackTrace();
+		}
+		return false;
+	}
+
+	/**
+	 * Get PFNs for reading by LFNCSD
+	 * 
+	 *
+	 * @param entity
+	 *            LFN or GUID to get access to
+	 * @param ses
+	 *            SEs to prioritize to read from
+	 * @param exses
+	 *            SEs to deprioritize to read from
+	 * @return PFNs, filled with read envelopes and credentials if necessary and authorized
+	 */
+	public List<PFN> getPFNsToReadCsd(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
+		try {
+
+			return Dispatcher.execute(new PFNforReadOrDelCsd(commander.getUser(), commander.getSite(), AccessType.READ, entity, ses, exses)).getPFNs();
+		} catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get PFN for: " + entity);
+			e.getCause().printStackTrace();
+
+		}
+		return null;
+	}
+
 }

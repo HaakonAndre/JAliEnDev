@@ -16,7 +16,7 @@ public class JAliEnCommandpwd extends JAliEnBaseCommand {
 		String ret = "";
 		ret += commander.curDir.getCanonicalName();
 		logger.info("PWD line : " + ret);
-		commander.printOutln("pwd", commander.curDir.getCanonicalName());
+		commander.printOut("pwd", commander.curDir.getCanonicalName());
 		commander.printOutln(ret);
 	}
 

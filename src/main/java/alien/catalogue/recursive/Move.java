@@ -7,17 +7,17 @@ import alien.user.AuthorizationChecker;
  * @author mmmartin
  *
  */
-public class Delete extends RecursiveOp {
+public class Move extends RecursiveOp {
 
 	@Override
 	public boolean callback(LFN_CSD l) {
-		// check permissions to rm
+		// check permissions to mv
 		if (!AuthorizationChecker.canWrite(l, user)) {
 			lfns_error.add(l);
 			return false;
 		}
-		// rm and add to the final collection of lfns
-		if (!l.delete(true, true, true)) {
+		// mv and add to the final collection of lfns
+		if (LFN_CSD.mv(l, lfnc_target, lfnc_target_parent) == null) {
 			lfns_error.add(l);
 			return false;
 		}

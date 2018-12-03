@@ -8,6 +8,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 
@@ -170,8 +172,60 @@ public class JSh {
 		Process p;
 
 		try {
-			p = Runtime.getRuntime().exec(new String[] { "java", "-Duserid=" + UserFactory.getUserID(), "-DAliEnConfig=" + System.getProperty("AliEnConfig"), "-server",
-					"-Djava.io.tmpdir=" + System.getProperty("java.io.tmpdir"), "alien.JBox" });
+			final List<String> jboxCmdLine = new ArrayList<>();
+
+			String userID = UserFactory.getUserID();
+
+			String configDir = System.getProperty("AliEnConfig");
+
+			String tmpDir = System.getProperty("java.io.tmpdir");
+
+			final String javaOpts = System.getenv("JAVA_OPTS");
+
+			jboxCmdLine.add("java");
+
+			boolean memorySettings = false;
+
+			if (javaOpts != null) {
+				StringTokenizer st = new StringTokenizer(javaOpts);
+				while (st.hasMoreTokens()) {
+					final String tok = st.nextToken();
+
+					jboxCmdLine.add(tok);
+
+					if (tok.startsWith("-Xms") || tok.startsWith("-Xmx"))
+						memorySettings = true;
+
+					if (tok.startsWith("-Duserid"))
+						userID = null;
+
+					if (tok.startsWith("-Djava.io.tmpdir"))
+						tmpDir = null;
+
+					if (tok.startsWith("-DAliEnConfig"))
+						configDir = null;
+				}
+			}
+
+			if (!memorySettings) {
+				// memory limiting parameters, either inherited from the current process' environment or (for developers essentially) set to some sane default values
+				jboxCmdLine.add("-client");
+				jboxCmdLine.add("-Xmx64m");
+				jboxCmdLine.add("-Xms64m");
+			}
+
+			if (tmpDir != null && tmpDir.length() > 0)
+				jboxCmdLine.add("-Djava.io.tmpdir=" + tmpDir);
+
+			if (configDir != null && configDir.length() > 0)
+				jboxCmdLine.add("-DAliEnConfig=" + configDir);
+
+			if (userID != null && userID.length() > 0)
+				jboxCmdLine.add("-Duserid=" + userID);
+
+			jboxCmdLine.add("alien.JBox");
+
+			p = Runtime.getRuntime().exec(jboxCmdLine.toArray(new String[0]));
 
 		} catch (final IOException ioe) {
 			System.err.println("Error starting jBox : " + ioe.getMessage());
@@ -197,15 +251,17 @@ public class JSh {
 		String sLine;
 
 		try (BufferedReader err = new BufferedReader(new InputStreamReader(p.getErrorStream()))) {
-			if ((sLine = err.readLine()) != null) {
+			int cnt = 0;
+
+			while ((sLine = err.readLine()) != null && ++cnt < 100) {
 				if (sLine.equals(JBoxServer.passACK)) {
 					System.out.println();
 					return true;
 				}
-				System.err.println(sLine);
-				return false;
 			}
 
+			System.err.println("JBox agent could not be started, it is likely that the password you have provided is not correct");
+			return false;
 		} catch (final IOException ioe) {
 			System.err.println("Error starting jBox: " + ioe.getMessage());
 			return false;
@@ -226,7 +282,6 @@ public class JSh {
 				// ignore
 			}
 		}
-		return false;
 	}
 
 	private static final String kill = "/bin/kill";

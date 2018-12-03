@@ -28,6 +28,7 @@ import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
+import lazyj.DBFunctions;
 
 /**
  * @author costing
@@ -190,8 +191,12 @@ public class Transfer implements Serializable, Runnable {
 					ret.add((Protocol) Factory.xrd3cp4.clone());
 			}
 
-			if (Factory.xrootd.isSupported())
-				ret.add((Protocol) Factory.xrootd.clone());
+			if (Factory.xrootd.isSupported()) {
+				if (!pfn.isCsd)
+					ret.add((Protocol) Factory.xrootd.clone());
+				else
+					ret.add((Protocol) Factory.xrootdcsd.clone());
+			}
 		}
 		else
 			if (s.equals("http")) {
@@ -268,9 +273,52 @@ public class Transfer implements Serializable, Runnable {
 		}
 	}
 
+	private static Set<Integer> SE_FORCED_3RD = null;
+
+	private static long lastForced3RDRefresh = System.currentTimeMillis();
+
+	private static synchronized Set<Integer> getForced3RDMap() {
+		if (SE_FORCED_3RD == null || (System.currentTimeMillis() - lastForced3RDRefresh > 1000 * 60)) {
+			SE_FORCED_3RD = new HashSet<>();
+
+			try (DBFunctions db = ConfigUtils.getDB("transfers")) {
+				if (db != null) {
+					db.query("SELECT sename,protocol FROM PROTOCOLS ORDER BY 1,2;");
+
+					while (db.moveNext()) {
+						final SE se = SEUtils.getSE(db.gets(1));
+
+						if (se != null) {
+							final Integer key = Integer.valueOf(se.seNumber);
+
+							if (db.gets(2).equals("xrd3cp"))
+								SE_FORCED_3RD.add(key);
+							else
+								if (db.gets(2).equals("xrdcp"))
+									SE_FORCED_3RD.remove(key);
+						}
+					}
+				}
+			}
+
+			lastForced3RDRefresh = System.currentTimeMillis();
+		}
+
+		return SE_FORCED_3RD;
+	}
+
+	private static boolean isTPCForced(final PFN pfn) {
+		return getForced3RDMap().contains(Integer.valueOf(pfn.seNumber));
+	}
+
 	private void doWork(final PFN target) {
+		if (target == null)
+			return;
+
 		// try the best protocols first
 		final Set<Protocol> protocols = new HashSet<>();
+
+		boolean forceTPC = isTPCForced(target);
 
 		for (final PFN source : sources) {
 			if (referenceGUID == null)
@@ -280,6 +328,8 @@ public class Transfer implements Serializable, Runnable {
 
 			if (common != null && common.size() > 0)
 				protocols.addAll(common);
+
+			forceTPC = forceTPC && isTPCForced(source);
 		}
 
 		if (protocols.size() == 0) {
@@ -297,9 +347,6 @@ public class Transfer implements Serializable, Runnable {
 
 			return;
 		}
-
-		if (target == null)
-			return;
 
 		final SE s = target.getSE();
 
@@ -320,10 +367,27 @@ public class Transfer implements Serializable, Runnable {
 		// sort protocols by preference
 		final List<Protocol> sortedProtocols = new ArrayList<>(TransferUtils.filterProtocols(s, protocols));
 
+		if (forceTPC) {
+			// if both Xrootd and Xrd3cp4 are in the list then remove Xrootd
+
+			boolean containsXrd3cp4 = false;
+			Protocol xrootd = null;
+
+			for (final Protocol p : sortedProtocols)
+				if (p.protocolID() == Factory.xrootd.protocolID())
+					xrootd = p;
+				else
+					if (p.protocolID() == Factory.xrd3cp4.protocolID())
+						containsXrd3cp4 = true;
+
+			if (containsXrd3cp4 && xrootd != null)
+				sortedProtocols.remove(xrootd);
+		}
+
 		Collections.sort(sortedProtocols);
 
 		if (logger.isLoggable(Level.FINE))
-			logger.log(Level.FINE, transferId + " : Sorted protocols : " + sortedProtocols);
+			logger.log(Level.FINE, transferId + " : Sorted protocols : " + sortedProtocols + ", force TPC : " + forceTPC);
 
 		for (final Protocol p : sortedProtocols) {
 			// sort pfns function of the distance between source, target and

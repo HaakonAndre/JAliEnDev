@@ -32,12 +32,12 @@ import alien.user.AliEnPrincipal;
  */
 public class JsonWebsocketEndpoint extends Endpoint {
 	AliEnPrincipal userIdentity = null;
-	
+
 	/**
 	 * Commander
 	 */
 	JAliEnCOMMander commander = null;
-	
+
 	private UIPrintWriter out = null;
 	private OutputStream os = null;
 
@@ -68,12 +68,12 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	}
 
 	/**
-	 *  Object to send notifications about the state of connection
+	 * Object to send notifications about the state of connection
 	 */
 	final Object stateObject = new Object();
 
 	@Override
-	public void onOpen(Session session, EndpointConfig endpointConfig) {
+	public void onOpen(final Session session, final EndpointConfig endpointConfig) {
 		RemoteEndpoint.Basic remoteEndpointBasic = session.getBasicRemote();
 		Principal userPrincipal = session.getUserPrincipal();
 		userIdentity = (AliEnPrincipal) userPrincipal;
@@ -87,7 +87,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		setShellPrintWriter(os, "json");
 		commander = new JAliEnCOMMander(userIdentity, null, null, out);
 
-		session.addMessageHandler(new EchoMessageHandlerText(remoteEndpointBasic, commander, out));
+		session.addMessageHandler(new EchoMessageHandlerText(session, commander, out));
 		_startTime = System.currentTimeMillis();
 		_lastActivityTime = System.currentTimeMillis();
 
@@ -115,7 +115,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	}
 
 	@Override
-	public void onClose(Session session, CloseReason closeReason) {
+	public void onClose(final Session session, final CloseReason closeReason) {
 		commander.kill = true;
 
 		out = null;
@@ -142,19 +142,21 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	}
 
 	@Override
-	public void onError(Session session, Throwable thr) {
+	public void onError(final Session session, final Throwable thr) {
 		//
 	}
 
 	private static class EchoMessageHandlerText implements MessageHandler.Partial<String> {
 
+		private final Session session;
 		private final RemoteEndpoint.Basic remoteEndpointBasic;
 
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
 
-		EchoMessageHandlerText(RemoteEndpoint.Basic remoteEndpointBasic, JAliEnCOMMander commander, UIPrintWriter out) {
-			this.remoteEndpointBasic = remoteEndpointBasic;
+		EchoMessageHandlerText(final Session session, final JAliEnCOMMander commander, final UIPrintWriter out) {
+			this.session = session;
+			this.remoteEndpointBasic = session.getBasicRemote();
 			this.commander = commander;
 			this.out = out;
 		}
@@ -174,7 +176,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		}
 
 		@Override
-		public void onMessage(String message, boolean last) {
+		public void onMessage(final String message, final boolean last) {
 			try {
 				if (remoteEndpointBasic != null) {
 					// Try to parse incoming JSON
@@ -186,7 +188,9 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						pobj = parser.parse(new StringReader(message));
 						jsonObject = (JSONObject) pobj;
 					} catch (@SuppressWarnings("unused") ParseException e) {
-						remoteEndpointBasic.sendText("Incoming JSON not ok", last);
+						synchronized (session) {
+							remoteEndpointBasic.sendText("Incoming JSON not ok", last);
+						}
 						return;
 					}
 
@@ -211,24 +215,24 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 					// Send the command to executor and send the result back to
 					// client via OutputStream
-					synchronized (commander) {
+					synchronized (session) {
 						commander.status.set(1);
 						commander.setLine(out, fullCmd.toArray(new String[0]));
 						commander.notifyAll();
-					}
 
-					// Set metadata
-					out.setMetaInfo("user", commander.getUser().getName());
-					out.setMetaInfo("currentdir", commander.getCurrentDirName());
-					out.setMetaInfo("site", commander.getSite());
+						// Set metadata
+						out.setMetaInfo("user", commander.getUser().getName());
+						out.setMetaInfo("currentdir", commander.getCurrentDirName());
+						out.setMetaInfo("site", commander.getSite());
+					}
 
 					waitCommandFinish();
 					_lastActivityTime = System.currentTimeMillis();
 				}
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-			} catch (Exception e) {
+			} catch (final Exception e) {
 				e.printStackTrace();
 			}
 		}

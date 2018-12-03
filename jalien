@@ -38,6 +38,7 @@ if [ "$1" == "setup" ]; then
 
     chmod 400 ${HOME}/.globus/userkey.pem
     chmod 440 ${HOME}/.globus/usercert.pem
+    exit 0 # we done our job, let's exit
 
 elif [ "$1" == "login" ]; then
     shift

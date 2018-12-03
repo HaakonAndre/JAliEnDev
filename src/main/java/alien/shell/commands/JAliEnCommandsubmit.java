@@ -30,12 +30,13 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 			if (content != null)
 				try {
 					final JDL jdl;
-					final String[] args = alArguments.size() > 1 ? alArguments.subList(1, alArguments.size() - 1).toArray(new String[0]) : null;
+					final String[] args = getArgs();
 
 					try {
 						jdl = TaskQueueUtils.applyJDLArguments(content, args);
 					} catch (final IOException ioe) {
-						commander.printErrln("Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
+						commander.printErrln(
+								"Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
 						return;
 					}
 					jdl.set("JDLPath", alArguments.get(0));
@@ -43,8 +44,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 					queueId = commander.q_api.submitJob(jdl);
 					if (queueId > 0) {
 						commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
-					}
-					else
+					} else
 						commander.printErrln("Error submitting " + alArguments.get(0));
 				}
 
@@ -57,6 +57,13 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 
 		else
 			commander.setReturnCode(1, "Not able to get the file " + alArguments.get(0));
+	}
+
+	/**
+	 * @return the arguments as a String array
+	 */
+	public String[] getArgs() {
+		return alArguments.size() > 1 ? alArguments.subList(1, alArguments.size()).toArray(new String[0]) : null;
 	}
 
 	/**

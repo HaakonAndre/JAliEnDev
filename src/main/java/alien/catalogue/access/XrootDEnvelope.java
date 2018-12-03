@@ -14,6 +14,7 @@ import alien.catalogue.BookingTable;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.se.SE;
@@ -92,6 +93,19 @@ public class XrootDEnvelope implements Serializable {
 
 		setUnsignedEnvelope();
 		setUnEncryptedEnvelope();
+	}
+
+	/**
+	 * @param type
+	 * @param pfn
+	 * @param lfnc
+	 */
+	public XrootDEnvelope(final AccessType type, final PFN pfn, final LFN_CSD lfnc) {
+		this.type = type;
+		this.pfn = pfn;
+
+		setUnsignedEnvelope(lfnc);
+		setUnEncryptedEnvelope(lfnc);
 	}
 
 	/**
@@ -510,5 +524,169 @@ public class XrootDEnvelope implements Serializable {
 	 */
 	public String getEncryptedEnvelope() {
 		return encryptedEnvelope;
+	}
+
+	/**
+	 * set url envelope
+	 * 
+	 * @param lfnc
+	 */
+	public void setUnsignedEnvelope(LFN_CSD lfnc) {
+
+		setTransactionURL(lfnc);
+
+		// final GUID guid = pfn.getGuid();
+		//
+		// final Set<LFN> lfns = guid.getLFNs();
+
+		final HashMap<String, String> e = new HashMap<>(8);
+
+		e.put("turl", pfn.getPFN());
+		if (archiveAnchorLFN != null)
+			e.put("turl", pfn.getPFN() + "#" + archiveAnchorLFN.getFileName());
+
+		e.put("access", type.toString());
+
+		e.put("lfn", "/NOLFN");
+
+		if (archiveAnchorLFN != null)
+			e.put("lfn", archiveAnchorLFN.getCanonicalName());
+		else
+			if (lfnc.exists)
+				e.put("lfn", lfnc.getCanonicalName());
+
+		if (archiveAnchorLFN == null) {
+			e.put("guid", lfnc.id.toString());
+			e.put("size", String.valueOf(lfnc.size));
+			e.put("md5", lfnc.checksum);
+
+		}
+		else {
+			final GUID archiveAnchorGUID = GUIDUtils.getGUID(archiveAnchorLFN);
+			e.put("zguid", lfnc.id.toString());
+			e.put("guid", archiveAnchorGUID.getName());
+			e.put("size", String.valueOf(archiveAnchorGUID.size));
+			e.put("md5", archiveAnchorGUID.md5);
+		}
+
+		final SE se = pfn.getSE();
+
+		if (se != null)
+			if ("alice::cern::setest".equalsIgnoreCase(se.getName()))
+				e.put("se", "alice::cern::testse");
+			else
+				e.put("se", se.getName());
+
+		e.put("xurl", addXURLForSpecialSEs(e.get("lfn")));
+
+		final StringTokenizer hash = new StringTokenizer(hashord, "-");
+
+		final StringBuilder ret = new StringBuilder();
+		final StringBuilder usedHashOrd = new StringBuilder();
+
+		while (hash.hasMoreTokens()) {
+			final String key = hash.nextToken();
+
+			if (e.get(key) != null) {
+				ret.append(key).append('=').append(e.get(key)).append('&');
+				usedHashOrd.append(key).append('-');
+			}
+		}
+
+		ret.append("hashord=").append(usedHashOrd).append("hashord");
+
+		unSignedEnvelope = ret.toString();
+	}
+
+	/**
+	 * @param lfnc
+	 *
+	 */
+	public void setTransactionURL(LFN_CSD lfnc) {
+		final SE se = pfn.getSE();
+
+		if (se == null) {
+			if (logger.isLoggable(Level.WARNING))
+				logger.log(Level.WARNING, "Null SE for " + pfn);
+
+			turl = pfn.pfn;
+			return;
+		}
+
+		if (se.seName.indexOf("DCACHE") > 0) {
+			// final GUID guid = pfn.getGuid();
+			//
+			// final Set<LFN> lfns = guid.getLFNs();
+
+			if (lfnc.exists)
+				turl = se.seioDaemons + "/" + lfnc.getCanonicalName();
+			else
+				turl = se.seioDaemons + "//NOLFN";
+		}
+		else {
+			final Matcher m = PFN_EXTRACT.matcher(pfn.pfn);
+
+			if (m.matches())
+				if (archiveAnchorLFN != null)
+					turl = se.seioDaemons + "/" + m.group(4) + "#" + archiveAnchorLFN.getFileName();
+				else
+					turl = se.seioDaemons + "/" + m.group(4);
+			if (archiveAnchorLFN != null)
+				turl = pfn.pfn + "#" + archiveAnchorLFN.getFileName();
+			else
+				turl = pfn.pfn;
+		}
+	}
+
+	/**
+	 * set envelope
+	 * 
+	 * @param lfnc
+	 */
+	private void setUnEncryptedEnvelope(LFN_CSD lfnc) {
+
+		final String access = type.toString().replace("write", "write-once");
+
+		String sPFN = pfn.getPFN();
+
+		final int idx = sPFN.indexOf("//");
+
+		if (idx >= 0)
+			sPFN = sPFN.substring(sPFN.indexOf("//", idx + 2) + 1);
+
+		// final GUID guid = pfn.getGuid();
+		//
+		// final Set<LFN> lfns = guid.getLFNs();
+
+		String ret = "<authz>\n  <file>\n" + "    <access>" + access + "</access>\n";
+
+		String sturl = pfn.getPFN();
+		if (archiveAnchorLFN != null)
+			sturl += "#" + archiveAnchorLFN.getFileName();
+
+		ret += "    <turl>" + Format.escHtml(sturl) + "</turl>\n";
+
+		LFN_CSD refLFN = null;
+		// UUID refGUID = null;
+
+		if (archiveAnchorLFN != null) {
+			// refGUID = lfnc.id;
+			refLFN = lfnc;
+		}
+		else
+			if (lfnc.exists)
+				refLFN = lfnc;
+
+		if (refLFN != null)
+			ret += "    <lfn>" + Format.escHtml(refLFN.getCanonicalName()) + "</lfn>\n";
+		else
+			ret += "    <lfn>/NOLFN</lfn>\n";
+
+		final SE se = pfn.getSE();
+
+		ret += "    <size>" + lfnc.size + "</size>" + "\n" + "    <guid>" + Format.escHtml(lfnc.id.toString().toUpperCase()) + "</guid>\n" + "    <md5>" + Format.escHtml(lfnc.checksum) + "</md5>\n"
+				+ "    <pfn>" + Format.escHtml(sPFN) + "</pfn>\n" + "    <se>" + Format.escHtml(se != null ? se.getName() : "VO::UNKNOWN::SE") + "</se>\n" + "  </file>\n</authz>\n";
+
+		unEncryptedEnvelope = ret;
 	}
 }

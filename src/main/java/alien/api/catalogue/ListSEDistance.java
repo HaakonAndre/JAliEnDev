@@ -27,17 +27,22 @@ public class ListSEDistance extends Request {
 	private String site;
 	private List<SE> ses;
 	private List<HashMap<SE, Double>> distances;
+	private final String qos;
 
 	/**
 	 * @param user
 	 * @param sitename
 	 * @param write
 	 * @param lfn_name
+	 * @param qos
+	 *            QoS to restrict to, if not <code>null</code>
 	 */
-	public ListSEDistance(final AliEnPrincipal user, final String sitename, final boolean write, final String lfn_name) {
+	public ListSEDistance(final AliEnPrincipal user, final String sitename, final boolean write, final String lfn_name, final String qos) {
 		setRequestUser(user);
 		this.lfn_name = lfn_name;
 		this.write = write;
+		this.qos = qos;
+
 		if (sitename == null || sitename.length() == 0)
 			this.site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
 		else
@@ -51,29 +56,37 @@ public class ListSEDistance extends Request {
 			this.ses = SEUtils.getClosestSEs(this.site, true);
 		else {
 			// for read with lfn specified
-			this.ses = new ArrayList<>();
-			if (this.lfn_name == null)
-				return;
-			LFN lfn = null;
-			if (this.lfn_name != null && this.lfn_name.length() != 0)
-				lfn = LFNUtils.getLFN(this.lfn_name);
 
-			if (lfn == null)
-				return;
+			if (this.lfn_name == null || this.lfn_name.length() == 0)
+				this.ses = SEUtils.getClosestSEs(this.site, false);
+			else {
+				this.ses = new ArrayList<>();
 
-			final List<PFN> lp = SEUtils.sortBySite(lfn.whereis(), this.site, true, false);
+				LFN lfn = null;
+				if (this.lfn_name != null && this.lfn_name.length() != 0)
+					lfn = LFNUtils.getLFN(this.lfn_name);
 
-			if (lp == null)
-				return;
-			for (final PFN p : lp)
-				this.ses.add(p.getSE());
+				if (lfn == null)
+					return;
+
+				final List<PFN> lp = SEUtils.sortBySite(lfn.whereis(), this.site, true, false);
+
+				if (lp == null)
+					return;
+
+				for (final PFN p : lp)
+					this.ses.add(p.getSE());
+			}
 		}
 
 		this.distances = new LinkedList<>();
 
 		for (final SE se : this.ses) {
+			if (qos != null && !se.isQosType(qos))
+				continue;
+
 			final HashMap<SE, Double> hm = new HashMap<>();
-			hm.put(se, SEUtils.getDistance(this.site, se, true));
+			hm.put(se, SEUtils.getDistance(this.site, se, write));
 			this.distances.add(hm);
 		}
 	}

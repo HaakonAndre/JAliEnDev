@@ -1,21 +1,26 @@
-#!/bin/bash -e
+#!/bin/bash
 
 if ! echo "$CLASSPATH" | grep -q alien-users.jar -; then
-    if [ -f "$JALIEN_ROOT/lib/alien-users.jar" ]; then
-	CLASSPATH="$JALIEN_ROOT/lib/alien-users.jar:$CLASSPATH"
-    else
-        IAMHERE=`dirname $0`
-	if [ -f "$IAMHERE/../lib/alien-users.jar" ]; then
-	    CLASSPATH="$IAMHERE/../lib/alien-users.jar:$CLASSPATH"
-	else
-	    echo "Cannot locate alien-users.jar, please set JALIEN_ROOT or CLASSPATH to include it"
-	    exit 1
+    for JARPATH in `pwd` "$JALIEN_ROOT/lib" "`dirname $0`/../lib"; do
+	if [ -f "$JARPATH/alien-users.jar" ]; then
+	    CLASSPATH="$JARPATH/alien-users.jar:$CLASSPATH"
 	fi
-    fi
+    done
+fi
+
+if ! echo "$CLASSPATH" | grep -q alien-users.jar -; then
+    echo "Cannot locate alien-users.jar, please set JALIEN_ROOT or CLASSPATH to include it"
+    exit 1
 fi
 
 JALIEN_MAIN=${JALIEN_MAIN:-alien.JSh}
 
-JAVA_OPTS=${JAVA_OPTS:--Xms32M -Xmx32M}
+JAVA_OPTS=${JAVA_OPTS:--client -Xms16M -Xmx64M}
 
-exec java $JAVA_OPTS $JALIEN_MAIN "$@"
+if [ ! -z "$TMPDIR" ]; then
+    JAVA_OPTS="$JAVA_OPTS -Djava.io.tmpdir=$TMPDIR"
+fi
+
+export CLASSPATH JAVA_OPTS
+
+exec java $JAVA_OPTS "$@" $JALIEN_MAIN

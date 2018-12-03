@@ -25,6 +25,9 @@ import org.nfunk.jep.JEP;
 import com.datastax.driver.core.ConsistencyLevel;
 
 import alien.catalogue.recursive.Append;
+import alien.catalogue.recursive.Chown;
+import alien.catalogue.recursive.Delete;
+import alien.catalogue.recursive.Move;
 import alien.catalogue.recursive.RecursiveOp;
 import alien.config.ConfigUtils;
 import alien.io.TransferUtils;
@@ -133,11 +136,21 @@ public class LFNCSDUtils {
 
 		Pattern pat = Pattern.compile(file_pattern);
 
-		logger.info("Going to recurseAndFilterLFNs: " + path + " - " + file_pattern + " - " + index + " - " + flags + " - " + path_parts.toString());
+		logger.info("Going to recurseAndFilterLFNs: " + path + " - " + file_pattern + " - " + index + " - " + flags + " - " + path_parts.toString() + " metadata: " + metadata);
 
-		final RecurseLFNs rl;
+		final RecurseLFNs rl = new RecurseLFNs(null, operation, path, pat, index, path_parts, flags, metadata, null) {
+			@Override
+			public void notifyUp() {
+				if (this.counter_left.decrementAndGet() == 0) {
+					this.counter_left.decrementAndGet();
+					synchronized (this) {
+						this.notifyAll();
+					}
+				}
+				return;
+			}
+		};
 		try {
-			rl = new RecurseLFNs(null, operation, path, pat, index, path_parts, flags, metadata);
 			tPool.submit(rl);
 		} catch (RejectedExecutionException ree) {
 			logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit: " + ree);
@@ -146,7 +159,7 @@ public class LFNCSDUtils {
 
 		// lock and check counter
 		synchronized (rl) {
-			while (rl.counter_left.get() > 0) {
+			while (rl.counter_left.get() >= 0) {
 				try {
 					rl.wait(60 * 1000);
 				} catch (InterruptedException e) {
@@ -155,7 +168,7 @@ public class LFNCSDUtils {
 			}
 		}
 
-		return rl.exitOk();
+		return rl.critical_errors;
 	}
 
 	private static class RecurseLFNs implements Runnable {
@@ -166,12 +179,15 @@ public class LFNCSDUtils {
 		final ArrayList<String> parts;
 		final int flags;
 		final String metadata;
-		final RecurseLFNs top;
-		Integer exitCode = Integer.valueOf(0);
-		AtomicInteger counter_left = null;
+		final RecurseLFNs parent;
+		boolean critical_errors = false;
+		AtomicInteger counter_left = new AtomicInteger(0);
+		LFN_CSD dir = null;
+		LFN_CSD lfnc_dir = null;
+		int submitted = 0;
 
-		public RecurseLFNs(final RecurseLFNs top, final RecursiveOp operation, final String base, final Pattern file_pattern, final int index, final ArrayList<String> parts, final int flags,
-				final String metadata) {
+		public RecurseLFNs(final RecurseLFNs parent, final RecursiveOp operation, final String base, final Pattern file_pattern, final int index, final ArrayList<String> parts, final int flags,
+				final String metadata, final LFN_CSD lfnc_dir) {
 			this.operation = operation;
 			this.base = base;
 			this.file_pattern = file_pattern;
@@ -179,16 +195,29 @@ public class LFNCSDUtils {
 			this.parts = parts;
 			this.flags = flags;
 			this.metadata = metadata;
-			if (top == null) {
-				this.top = this;
-				this.counter_left = new AtomicInteger(1);
-			}
+
+			if (parent == null)
+				this.parent = this;
 			else
-				this.top = top;
+				this.parent = parent;
+
+			if (lfnc_dir == null)
+				dir = new LFN_CSD(base, true, append_table, null, null);
+			else
+				dir = lfnc_dir;
 		}
 
-		public boolean exitOk() {
-			return exitCode.intValue() == 0;
+		public void notifyUp() {
+			if (this.counter_left.decrementAndGet() <= 0) {
+				if (!critical_errors && !operation.getOnlyAppend()) {
+					if (!operation.callback(dir))
+						critical_errors = true;
+				}
+				if (critical_errors)
+					parent.critical_errors = true;
+
+				parent.notifyUp();
+			}
 		}
 
 		@Override
@@ -204,13 +233,21 @@ public class LFNCSDUtils {
 			if ((flags & LFNCSDUtils.FIND_INCLUDE_DIRS) != 0)
 				includeDirs = true;
 
-			LFN_CSD dir = new LFN_CSD(base, true, append_table, null, null);
 			if (!dir.exists || dir.type != 'd') {
 				logger.severe("LFNCSDUtils recurseAndFilterLFNs: initial dir invalid - " + base);
 				return;
 			}
 
 			List<LFN_CSD> list = dir.list(true, append_table, clevel);
+
+			// if the dir is empty, do the operation and notify
+			if (list.isEmpty()) {
+				if (!operation.getOnlyAppend()) {
+					if (!operation.callback(dir))
+						parent.critical_errors = true;
+				}
+				parent.notifyUp();
+			}
 
 			Pattern p;
 			if (lastpart || operation.getRecurseInfinitely())
@@ -224,6 +261,7 @@ public class LFNCSDUtils {
 				jep = new JEP();
 				jep.setAllowUndeclared(true);
 				String expression = Format.replace(Format.replace(Format.replace(metadata, "and", "&&"), "or", "||"), ":", "__");
+				expression = expression.replaceAll("\"", "");
 				jep.parseExpression(expression);
 			}
 
@@ -252,6 +290,7 @@ public class LFNCSDUtils {
 										logger.info("Skipped: " + s + e);
 										continue;
 									}
+
 									keys_values.add(s);
 									jep.addVariable(s, value);
 								}
@@ -262,8 +301,11 @@ public class LFNCSDUtils {
 									if (result != null && result instanceof Double && ((Double) result).intValue() == 1.0) {
 										if (filesVersion != null)
 											filesVersion.add(lfnc);
-										else
-											operation.callback(lfnc); // col.add(lfnc);
+										else {
+											if (!operation.callback(lfnc)) {
+												parent.critical_errors = true;
+											}
+										}
 									}
 								} catch (Exception e) {
 									logger.info("RecurseLFNs metadata - cannot get result: " + e);
@@ -277,8 +319,11 @@ public class LFNCSDUtils {
 							else {
 								if (filesVersion != null)
 									filesVersion.add(lfnc);
-								else
-									operation.callback(lfnc); // col.add(lfnc);
+								else {
+									if (!operation.callback(lfnc)) {
+										parent.critical_errors = true;
+									}
+								}
 							}
 						}
 					}
@@ -291,13 +336,16 @@ public class LFNCSDUtils {
 							if (includeDirs) {
 								Matcher m = p.matcher(operation.getRecurseInfinitely() ? lfnc.canonicalName : lfnc.child);
 								if (m.matches())
-									operation.callback(lfnc); // col.add(lfnc);
+									if (!operation.callback(lfnc)) {
+										parent.critical_errors = true;
+									}
 							}
 							if (operation.getRecurseInfinitely()) {
 								// submit
 								try {
-									top.counter_left.incrementAndGet();
-									tPool.submit(new RecurseLFNs(top, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata));
+									this.counter_left.incrementAndGet();
+									submitted++;
+									tPool.submit(new RecurseLFNs(this, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata, lfnc));
 								} catch (RejectedExecutionException ree) {
 									logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit: " + ree);
 								}
@@ -312,8 +360,9 @@ public class LFNCSDUtils {
 						if (m.matches()) {
 							// submit the dir
 							try {
-								top.counter_left.incrementAndGet();
-								tPool.submit(new RecurseLFNs(top, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata));
+								this.counter_left.incrementAndGet();
+								submitted++;
+								tPool.submit(new RecurseLFNs(this, operation, base + lfnc.child + "/", file_pattern, index + 1, parts, flags, metadata, lfnc));
 							} catch (RejectedExecutionException ree) {
 								logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't submit dir - " + base + lfnc.child + "/" + ": " + ree);
 							}
@@ -352,16 +401,15 @@ public class LFNCSDUtils {
 				}
 
 				for (String lfnc_str : lfn_to_csd.keySet())
-					operation.callback(lfn_to_csd.get(lfnc_str)); // col.add(lfn_to_csd.get(lfnc_str));
+					if (!operation.callback(lfn_to_csd.get(lfnc_str))) {
+						parent.critical_errors = true;
+					}
 
 			}
 
-			// check the counter
-			top.counter_left.decrementAndGet();
-			if (top.counter_left.get() <= 0) {
-				synchronized (top) {
-					top.notifyAll();
-				}
+			// check if there are submitted or notify
+			if (submitted == 0 && !list.isEmpty()) {
+				notifyUp();
 			}
 
 		}
@@ -377,6 +425,7 @@ public class LFNCSDUtils {
 	public static Collection<LFN_CSD> find(final String base_path, final String pattern, final int flags, final String metadata) {
 		Append ap = new Append();
 		ap.setRecurseInfinitely(true);
+		ap.setOnlyAppend(true);
 		recurseAndFilterLFNs(ap, base_path, "*" + pattern, metadata, flags);
 		return ap.getLfnsOk();
 	}
@@ -389,6 +438,7 @@ public class LFNCSDUtils {
 		// if need to resolve wildcard and recurse, we call the recurse method
 		if (path.contains("*") || path.contains("?")) {
 			Append ap = new Append();
+			ap.setOnlyAppend(true);
 			recurseAndFilterLFNs(ap, path, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
 			return ap.getLfnsOk();
 		}
@@ -452,73 +502,52 @@ public class LFNCSDUtils {
 	 * @param destination
 	 * @return final lfns moved and errors
 	 */
-	/*
-	 * TODO change to RecursiveOp
-	 * public static ArrayList<Set<LFN_CSD>> mv(final AliEnPrincipal user, final String source, final String destination) {
-	 * // Let's assume for now that the source and destination come as absolute paths, otherwise:
-	 * // final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
-	 * // final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
-	 * if (source.equals(destination)) {
-	 * logger.info("LFNCSDUtils: mv: the source and destination are the same: " + source + " -> " + destination);
-	 * return null;
-	 * }
-	 * 
-	 * final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
-	 * final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
-	 * final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
-	 * ret.add(lfnc_ok);
-	 * ret.add(lfnc_error);
-	 * final String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
-	 * final LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
-	 * final LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
-	 * 
-	 * if (!lfnc_target_parent.exists) {
-	 * logger.info("LFNCSDUtils: mv: the destination doesn't exist: " + destination);
-	 * return null;
-	 * }
-	 * if (!AuthorizationChecker.canWrite(lfnc_target_parent, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the destination: " + destination);
-	 * return null;
-	 * }
-	 * 
-	 * // expand wildcards and filter if needed
-	 * if (source.contains("*") || source.contains("?")) {
-	 * final Collection<LFN_CSD> lfnsToMv = recurseAndFilterLFNs("mv", source, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
-	 * 
-	 * for (LFN_CSD l : lfnsToMv) {
-	 * // check permissions to move
-	 * if (!AuthorizationChecker.canWrite(l, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * continue;
-	 * }
-	 * // move and add to the final collection of lfns
-	 * final LFN_CSD lfncf = LFN_CSD.mv(l, lfnc_target, lfnc_target_parent);
-	 * if (lfncf != null)
-	 * lfnc_ok.add(lfncf);
-	 * else
-	 * lfnc_error.add(l);
-	 * }
-	 * }
-	 * else {
-	 * LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
-	 * // check permissions to move
-	 * if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
-	 * lfnc_error.add(lfnc_source);
-	 * return ret;
-	 * }
-	 * // move and add to the final collection of lfns
-	 * final LFN_CSD lfncf = LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent);
-	 * if (lfncf != null)
-	 * lfnc_ok.add(lfncf);
-	 * else
-	 * lfnc_error.add(lfnc_source);
-	 * }
-	 * 
-	 * return ret;
-	 * }
-	 */
+	public static int mv(final AliEnPrincipal user, final String source, final String destination) {
+		// Let's assume for now that the source and destination come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+		// final String dst = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), destination);
+		if (source.equals(destination)) {
+			logger.info("LFNCSDUtils: mv: the source and destination are the same: " + source + " -> " + destination);
+			return 1;
+		}
+
+		final String[] destination_parts = LFN_CSD.getPathAndChildFromCanonicalName(destination);
+		final LFN_CSD lfnc_target_parent = new LFN_CSD(destination_parts[0], true, null, null, null);
+		final LFN_CSD lfnc_target = new LFN_CSD(destination, true, null, lfnc_target_parent.id, null);
+
+		if (!lfnc_target_parent.exists) {
+			logger.info("LFNCSDUtils: mv: the destination parent doesn't exist: " + destination);
+			return 2;
+		}
+		if (!AuthorizationChecker.canWrite(lfnc_target_parent, user)) {
+			logger.info("LFNCSDUtils: mv: no permission on the destination: " + destination);
+			return 3;
+		}
+
+		// expand wildcards and filter if needed
+		if (source.contains("*") || source.contains("?")) {
+			Move mv = new Move();
+			mv.setUser(user);
+			mv.setLfnTarget(lfnc_target);
+			mv.setLfnTargetParent(lfnc_target_parent);
+			recurseAndFilterLFNs(mv, source, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+			return (mv.getLfnsError().isEmpty() ? 0 : 4);
+		}
+
+		LFN_CSD lfnc_source = new LFN_CSD(source, true, null, null, null);
+		// check permissions to move
+		if (!AuthorizationChecker.canWrite(lfnc_source, user)) {
+			logger.info("LFNCSDUtils: mv: no permission on the source: " + source);
+			return 5;
+		}
+		// move and add to the final collection of lfns
+		if (LFN_CSD.mv(lfnc_source, lfnc_target, lfnc_target_parent) == null) {
+			logger.info("LFNCSDUtils: mv: failed to mv: " + source);
+			return 6;
+		}
+
+		return 0;
+	}
 
 	/**
 	 * @param user
@@ -528,59 +557,33 @@ public class LFNCSDUtils {
 	 * @param notifyCache
 	 * @return final lfns deleted and errors
 	 */
-	/*
-	 * TODO change to RecursiveOp
-	 * public static ArrayList<Set<LFN_CSD>> delete(final AliEnPrincipal user, final String lfn, final boolean purge, final boolean recursive, final boolean notifyCache) {
-	 * // Let's assume for now that the lfn come as absolute paths, otherwise:
-	 * // final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
-	 * final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
-	 * final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
-	 * final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
-	 * ret.add(lfnc_ok);
-	 * ret.add(lfnc_error);
-	 * 
-	 * // expand wildcards and filter if needed
-	 * if (lfn.contains("*") || lfn.contains("?") || recursive) {
-	 * final Collection<LFN_CSD> lfnsToRm = recurseAndFilterLFNs("rm", lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
-	 * 
-	 * for (LFN_CSD l : lfnsToRm) {
-	 * // check permissions to rm
-	 * if (!AuthorizationChecker.canWrite(l, user)) {
-	 * logger.info("LFNCSDUtils: mv: no permission on the source: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * continue;
-	 * }
-	 * // rm and add to the final collection of lfns
-	 * if (l.delete(purge, recursive, notifyCache, lfnc_ok, lfnc_error)) {
-	 * lfnc_ok.add(l);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * }
-	 * }
-	 * }
-	 * else {
-	 * final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
-	 * // check permissions to rm
-	 * if (!AuthorizationChecker.canWrite(lfnc, user)) {
-	 * logger.info("LFNCSDUtils: rm: no permission to delete lfn: " + lfnc);
-	 * lfnc_error.add(lfnc);
-	 * return ret;
-	 * }
-	 * // rm and add to the final collection of lfns
-	 * if (lfnc.delete(purge, recursive, notifyCache, lfnc_ok, lfnc_error)) {
-	 * lfnc_ok.add(lfnc);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: rm: couldn't delete lfn: " + lfnc.getCanonicalName());
-	 * lfnc_error.add(lfnc);
-	 * }
-	 * }
-	 * 
-	 * return ret;
-	 * }
-	 */
+
+	public static boolean delete(final AliEnPrincipal user, final String lfn, final boolean purge, final boolean recursive, final boolean notifyCache) {
+		// Let's assume for now that the lfn come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+
+		// expand wildcards and filter if needed
+		if (lfn.contains("*") || lfn.contains("?") || recursive) {
+			Delete de = new Delete();
+			de.setUser(user);
+			recurseAndFilterLFNs(de, lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+			return de.getLfnsError().isEmpty();
+		}
+
+		final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
+		// check permissions to rm
+		if (!AuthorizationChecker.canWrite(lfnc, user)) {
+			logger.info("LFNCSDUtils: rm: no permission to delete lfn: " + lfnc);
+			return false;
+		}
+		// rm
+		if (!lfnc.delete(purge, recursive, notifyCache)) {
+			logger.info("LFNCSDUtils: rm: cannot delete lfn: " + lfnc);
+			return false;
+		}
+
+		return true;
+	}
 
 	/**
 	 * Touch an LFN_CSD: if the entry exists, update its timestamp, otherwise try to create an empty file
@@ -628,15 +631,17 @@ public class LFNCSDUtils {
 	 *
 	 * @param owner
 	 *            owner of the newly created structure(s)
-	 * @param lfnc
+	 * @param lfncs
 	 *            the path to be created
 	 * @param createMissingParents
 	 *            if <code>true</code> then it will try to create any number of intermediate directories, otherwise the direct parent must already exist
 	 * @return the (new or existing) directory, if the owner can create it, <code>null</code> if the owner is not allowed to do this operation
 	 */
-	public static LFN_CSD mkdir(final AliEnPrincipal owner, final LFN_CSD lfnc, final boolean createMissingParents) {
-		if (owner == null || lfnc == null)
+	public static LFN_CSD mkdir(final AliEnPrincipal owner, final String lfncs, final boolean createMissingParents) {
+		if (owner == null || lfncs == null)
 			return null;
+
+		final LFN_CSD lfnc = new LFN_CSD(lfncs, true, null, null, null);
 
 		if (lfnc.exists) {
 			if (lfnc.isDirectory() && AuthorizationChecker.canWrite(lfnc, owner))
@@ -713,62 +718,69 @@ public class LFNCSDUtils {
 	 * @param recursive
 	 * @return <code>true</code> if successful
 	 */
-	/*
-	 * TODO change to RecursiveOp
-	 * public static ArrayList<Set<LFN_CSD>> chown(final AliEnPrincipal user, final String lfn, final String new_owner, final String new_group, final boolean recursive) {
-	 * if (lfn == null || lfn.isEmpty() || new_owner == null || new_owner.isEmpty())
-	 * return null;
-	 * 
-	 * // Let's assume for now that the lfn come as absolute paths, otherwise:
-	 * // final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
-	 * final TreeSet<LFN_CSD> lfnc_ok = new TreeSet<>();
-	 * final TreeSet<LFN_CSD> lfnc_error = new TreeSet<>();
-	 * final ArrayList<Set<LFN_CSD>> ret = new ArrayList<>();
-	 * ret.add(lfnc_ok);
-	 * ret.add(lfnc_error);
-	 * 
-	 * // expand wildcards and filter if needed
-	 * if (lfn.contains("*") || lfn.contains("?") || recursive) {
-	 * final Collection<LFN_CSD> lfnsToChown = recurseAndFilterLFNs("chown", lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
-	 * 
-	 * for (LFN_CSD l : lfnsToChown) {
-	 * // check permissions to rm
-	 * if (!AuthorizationChecker.canWrite(l, user)) {
-	 * logger.info("LFNCSDUtils: chown: no permission on the source: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * continue;
-	 * }
-	 * // chown and add to the final collection of lfns
-	 * if (!l.owner.equals(new_owner) || (new_group != null && !l.gowner.equals(new_group))) {
-	 * if (l.chown(true, false, null, recursive)) {
-	 * lfnc_ok.add(l);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: chown: couldn't chown lfn: " + l.getCanonicalName());
-	 * lfnc_error.add(l);
-	 * }
-	 * }
-	 * }
-	 * }
-	 * else {
-	 * final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
-	 * // check permissions to chown
-	 * if (!AuthorizationChecker.canWrite(lfnc, user)) {
-	 * logger.info("LFNCSDUtils: chown: no permission to chown lfn: " + lfnc);
-	 * lfnc_error.add(lfnc);
-	 * return ret;
-	 * }
-	 * // chown and add to the final collection of lfns
-	 * if (lfnc.update(true, false, null, false)) {
-	 * lfnc_ok.add(lfnc);
-	 * }
-	 * else {
-	 * logger.info("LFNCSDUtils: chown: couldn't chown lfn: " + lfnc.getCanonicalName());
-	 * lfnc_error.add(lfnc);
-	 * }
-	 * }
-	 * 
-	 * return ret;
-	 * }
+	public static boolean chown(final AliEnPrincipal user, final String lfn, final String new_owner, final String new_group, final boolean recursive) {
+		if (lfn == null || lfn.isEmpty() || new_owner == null || new_owner.isEmpty())
+			return false;
+
+		// Let's assume for now that the lfn come as absolute paths, otherwise:
+		// final String src = FileSystemUtils.getAbsolutePath(user.getName(), (currentDir != null ? currentDir : null), source);
+
+		// expand wildcards and filter if needed
+		if (lfn.contains("*") || lfn.contains("?") || recursive) {
+			Chown ch = new Chown();
+			ch.setUser(user);
+			ch.setNewOwner(new_owner);
+			ch.setNewGroup(new_group);
+			recurseAndFilterLFNs(ch, lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
+			return ch.getLfnsError().isEmpty();
+		}
+
+		final LFN_CSD lfnc = new LFN_CSD(lfn, true, null, null, null);
+		// check permissions to chown
+		if (!AuthorizationChecker.isOwner(lfnc, user)) {
+			logger.info("LFNCSDUtils: chown: no permission to chown lfn: " + lfnc);
+			return false;
+		}
+		// chown
+		lfnc.owner = new_owner;
+		lfnc.gowner = new_group;
+		if (!lfnc.update(true, false, null)) {
+			logger.info("LFNCSDUtils: chown: couldn't chown lfn: " + lfnc.getCanonicalName());
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * @param path
+	 * @param getFromDB
+	 * @return LFN_CSD corresponding to path
 	 */
+	public static LFN_CSD getLFN(String path, boolean getFromDB) {
+		return new LFN_CSD(path, getFromDB, null, null, null);
+	}
+
+	/**
+	 * @param lfn
+	 * @return true if the path fits a LFN path pattern
+	 */
+	public static boolean isValidLFN(String lfn) {
+		return Pattern.matches("^(/[^/]*)+./?$", lfn); // possibly that pattern should be refined
+	}
+
+	/**
+	 * @param lfn_uuid
+	 * @return true if the string fits a UUID pattern
+	 */
+	public static boolean isValidUUID(String lfn_uuid) {
+		try {
+			final UUID id = UUID.fromString(lfn_uuid);
+			return id != null;
+		} catch (Exception e) {
+			logger.info("LFNCSDUtils: the string " + lfn_uuid + " is not a UUID: " + e.toString());
+			return false;
+		}
+	}
+
 }

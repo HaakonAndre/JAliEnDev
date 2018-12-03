@@ -166,6 +166,21 @@ public class GUID implements Comparable<GUID>, CatalogEntity {
 		seAutoStringList = new LinkedHashSet<>();
 	}
 
+	/**
+	 * Create a new GUID for LFN_CSD
+	 *
+	 * @param pfn
+	 */
+	public GUID(final PFN pfn) {
+		this.guid = pfn.getUUID();
+		this.exists = true;
+		this.perm = "644";
+		seStringList = new LinkedHashSet<>();
+		seAutoStringList = new LinkedHashSet<>();
+		this.host = 8;
+		this.tableName = 0;
+	}
+
 	private void init(final DBFunctions db) {
 		guidId = db.geti("guidId");
 

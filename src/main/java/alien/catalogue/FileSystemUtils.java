@@ -1,7 +1,6 @@
 package alien.catalogue;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -11,7 +10,6 @@ import java.util.regex.Pattern;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
-import alien.api.catalogue.FindfromString;
 import alien.api.catalogue.LFNListingfromString;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -274,7 +272,7 @@ public final class FileSystemUtils {
 	 */
 	public static String getAbsolutePath(final String user, final String currentDirectory, final String cataloguePath) {
 		String currentDir = currentDirectory != null ? currentDirectory : UsersHelper.getHomeDir(user);
-		
+
 		if (!currentDir.endsWith("/"))
 			currentDir += "/";
 
@@ -336,5 +334,19 @@ public final class FileSystemUtils {
 			ret.append(translation[lfn.perm.charAt(pos) - '0']);
 
 		return ret.toString();
+	}
+
+	/**
+	 * Get the type+perm string for LFN_CSD
+	 *
+	 * @param lfnc
+	 * @return type+perm String e.g. -rwxrwxr-x or drwxr-xr-x
+	 */
+	public static String getFormatedTypeAndPerm(final LFN_CSD lfnc) {
+		LFN l = new LFN("");
+		l.perm = lfnc.perm;
+		l.type = lfnc.type;
+
+		return getFormatedTypeAndPerm(l);
 	}
 }

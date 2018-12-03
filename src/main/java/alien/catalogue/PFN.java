@@ -6,8 +6,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
 
-import lazyj.DBFunctions;
-import lazyj.StringFactory;
 import alien.catalogue.access.AccessTicket;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
@@ -15,6 +13,8 @@ import alien.monitoring.MonitorFactory;
 import alien.se.SE;
 import alien.se.SEUtils;
 import alien.shell.commands.JAliEnCOMMander;
+import lazyj.DBFunctions;
+import lazyj.StringFactory;
 
 /**
  * Wrapper around a G*L_PFN row
@@ -86,6 +86,11 @@ public class PFN implements Serializable, Comparable<PFN> {
 	private final int hashCode;
 
 	private transient SE overrideSE = null;
+
+	/**
+	 * flag to know is a PFN for LFN_CSD accesses
+	 */
+	public boolean isCsd = false;
 
 	/**
 	 * @param db
@@ -167,6 +172,24 @@ public class PFN implements Serializable, Comparable<PFN> {
 		this.host = guid.host;
 		this.tableNumber = guid.tableName;
 		this.hashCode = this.pfn.hashCode();
+	}
+
+	/**
+	 * Create PFN from LFN_CSD
+	 * 
+	 * @param senumber
+	 * @param pfn
+	 * @param id
+	 * @param size
+	 */
+	public PFN(final Integer senumber, final String pfn, final UUID id, final long size) {
+		this.pfn = pfn; // TODO recreate the pfn with the seioDaemons
+		this.seNumber = senumber.intValue();
+		this.hashCode = this.pfn != null ? this.pfn.hashCode() : guid.hashCode();
+		this.isCsd = true;
+		this.uuid = id;
+		this.guid = GUIDUtils.getGUID(id);
+		this.guid.size = size;
 	}
 
 	/**
