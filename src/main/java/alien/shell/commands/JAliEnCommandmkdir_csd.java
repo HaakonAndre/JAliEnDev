@@ -34,6 +34,9 @@ public class JAliEnCommandmkdir_csd extends JAliEnBaseCommand {
 			if (commander.c_api.createCatalogueDirectoryCsd(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), path), bP) == null)
 				commander.setReturnCode(1, "Could not create directory (or non-existing parents): " + path);
 		}
+
+		JAliEnCommandmkdir md = new JAliEnCommandmkdir(commander, alPaths);
+		md.run();
 	}
 
 	/**
