@@ -69,7 +69,7 @@ public class JobWrapper implements Runnable {
 	 * @uml.associationEnd  
 	 */
 	private JobStatus jobStatus;
-	String receivedStatus = "";
+	private String receivedStatus = "";
 
 	// Other
 	/**
@@ -164,7 +164,7 @@ public class JobWrapper implements Runnable {
 		logger.log(Level.INFO, "Jbox started");
 
 		// Start listening for messages from the JobAgent
-		Thread jobAgentListener = new Thread(createJobAgentListener());
+		final Thread jobAgentListener = new Thread(createJobAgentListener());
 		jobAgentListener.start();
 		
 		// process payload
@@ -645,7 +645,6 @@ public class JobWrapper implements Runnable {
 
 				// receivedStatus is updated by the JobAgentListener
 				while(!receivedStatus.equals(newStatusString)){
-
 					System.out.printf("%s%n", "|" + newStatusString);
 					System.out.flush();
 
@@ -683,17 +682,15 @@ public class JobWrapper implements Runnable {
 	
 	
 	private Runnable createJobAgentListener(){
-		
-		Runnable jobAgentListener = () -> {
+		final Runnable jobAgentListener = () -> {
 
-			BufferedReader inputFromJobAgent = new BufferedReader(new InputStreamReader(System.in));
+			final BufferedReader inputFromJobAgent = new BufferedReader(new InputStreamReader(System.in));
 
 			while(true){
 				try {
 					String receivedString = inputFromJobAgent.readLine();
 
 					if(receivedString.contains("|")){
-
 						String[] received = receivedString.split("\\|");
 
 						receivedStatus = received[1];
@@ -701,13 +698,11 @@ public class JobWrapper implements Runnable {
 						logger.log(Level.SEVERE, "CONFIRMED: " + receivedStatus);
 					}
 				} catch (Exception e) {
-
+					logger.log(Level.INFO, "Received something from JobWrapper, but it could not be read (corrupted?)");
 				}
 			}
 		}; 
-		
 		return jobAgentListener;
-		
 	}
 
 }

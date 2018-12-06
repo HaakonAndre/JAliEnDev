@@ -575,7 +575,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
 
 		//Listen for job updates from the jobwrapper
-		Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdin));
+		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdin));
 		jobWrapperListener.start();
 
 		boolean processNotFinished = true;
@@ -768,7 +768,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 
 	void setupJobWrapperLogging(){
-
 		Properties props = new Properties();
 		try {
 			ExtProperties ep = ConfigUtils.getConfiguration("logging");
@@ -806,7 +805,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 	}
 
 	public void changeJobStatus(final JobStatus newStatus, HashMap<String, Object> extrafields) {
-
 		TaskQueueApiUtils.setJobStatus(queueId, newStatus, extrafields);
 
 		jobStatus = newStatus;
@@ -815,23 +813,20 @@ public class JobAgent implements MonitoringObject, Runnable {
 	}
 	
 	private Runnable createJobWrapperListener(Process p, OutputStream stdin){
-		
-		Runnable jobWrapperListener = () -> {
+		final Runnable jobWrapperListener = () -> {
 			
-			InputStream stdout = p.getInputStream();	
-			PrintWriter stdinPrinter = new PrintWriter(stdin);
+			final InputStream stdout = p.getInputStream();	
+			final PrintWriter stdinPrinter = new PrintWriter(stdin);
 
 			while(p.isAlive()){
 				try {
-					BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
-					String receivedString = stdoutReader.readLine();                 
+					final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
+					final String receivedString = stdoutReader.readLine();                 
 					//HashMap<String, Object> extrafields = (HashMap<String, Object>) stdoutObj.readObject();
 					
 					if(receivedString.contains("|")){
-
-						String[] received = receivedString.split("\\|");
-
-						String newStatusString = received[1];
+						final String[] received = receivedString.split("\\|");
+						final String newStatusString = received[1];
 						
 						logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
 
