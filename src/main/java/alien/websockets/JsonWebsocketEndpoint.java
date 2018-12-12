@@ -12,6 +12,7 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
 import javax.websocket.RemoteEndpoint;
 import javax.websocket.Session;
+import javax.websocket.server.ServerEndpointConfig;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,7 +43,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	private OutputStream os = null;
 
 	private void setShellPrintWriter(final OutputStream os, final String shelltype) {
-		if (shelltype.equals("jaliensh"))
+		if (shelltype.equals("plain"))
 			out = new JShPrintWriter(os);
 		else
 			if (shelltype.equals("json"))
@@ -84,7 +85,12 @@ public class JsonWebsocketEndpoint extends Endpoint {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		setShellPrintWriter(os, "json");
+		final ServerEndpointConfig serverConfig = (ServerEndpointConfig) endpointConfig;
+		if (serverConfig.getPath() == "/websocket/json")
+			setShellPrintWriter(os, "json");
+		else
+			setShellPrintWriter(os, "plain");
+
 		commander = new JAliEnCOMMander(userIdentity, null, null, out);
 
 		session.addMessageHandler(new EchoMessageHandlerText(session, commander, out));
@@ -148,14 +154,12 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 	private static class EchoMessageHandlerText implements MessageHandler.Partial<String> {
 
-		private final Session session;
 		private final RemoteEndpoint.Basic remoteEndpointBasic;
 
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
 
 		EchoMessageHandlerText(final Session session, final JAliEnCOMMander commander, final UIPrintWriter out) {
-			this.session = session;
 			this.remoteEndpointBasic = session.getBasicRemote();
 			this.commander = commander;
 			this.out = out;
@@ -188,7 +192,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						pobj = parser.parse(new StringReader(message));
 						jsonObject = (JSONObject) pobj;
 					} catch (@SuppressWarnings("unused") ParseException e) {
-						synchronized (session) {
+						synchronized (remoteEndpointBasic) {
 							remoteEndpointBasic.sendText("Incoming JSON not ok", last);
 						}
 						return;
@@ -215,7 +219,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 					// Send the command to executor and send the result back to
 					// client via OutputStream
-					synchronized (session) {
+					synchronized (commander) {
 						commander.status.set(1);
 						commander.setLine(out, fullCmd.toArray(new String[0]));
 						commander.notifyAll();

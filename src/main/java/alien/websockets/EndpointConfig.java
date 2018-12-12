@@ -10,7 +10,7 @@ import javax.websocket.server.ServerEndpointConfig;
 /**
  * @author yuw
  *
- * EndpointConfig is called by Tomcat to create JsonWebsocketEndpoint
+ *         EndpointConfig is called by Tomcat to create JsonWebsocketEndpoint
  */
 public class EndpointConfig implements ServerApplicationConfig {
 
@@ -21,6 +21,7 @@ public class EndpointConfig implements ServerApplicationConfig {
 
 		if (scanned.contains(JsonWebsocketEndpoint.class)) {
 			result.add(ServerEndpointConfig.Builder.create(JsonWebsocketEndpoint.class, "/websocket/json").build());
+			result.add(ServerEndpointConfig.Builder.create(JsonWebsocketEndpoint.class, "/websocket/plain").build());
 		}
 
 		return result;
