@@ -16,8 +16,14 @@ if [[ -z "${JARFILE}" ]]; then
     export JALIEN_HOME
   fi
 
-  JAR_LIST_MAIN=$(find "${JALIEN_HOME}" -maxdepth 1 -name "*.jar" -printf "%p:" | sed 's/.$//')
-  JAR_LIST_LIB=$(find "${JALIEN_HOME}/lib/" -name "*.jar" -printf "%p:" | sed 's/.$//')
+  JAR_LIST_MAIN="";
+  for mainjar in ${JALIEN_HOME}/*.jar; do JAR_LIST_MAIN="${JAR_LIST_MAIN}${mainjar}:" ; done;
+  JAR_LIST_MAIN=$( echo "${JAR_LIST_MAIN}" | sed 's/.$//')
+
+  JAR_LIST_LIB="";
+  for libjar in ${JALIEN_HOME}/lib/*.jar; do JAR_LIST_LIB="${JAR_LIST_LIB}${libjar}:" ; done;
+  JAR_LIST_LIB=$( echo "${JAR_LIST_LIB}" | sed 's/.$//')
+
   export CLASSPATH="${JAR_LIST_MAIN}:${JAR_LIST_LIB}"
 fi
 
