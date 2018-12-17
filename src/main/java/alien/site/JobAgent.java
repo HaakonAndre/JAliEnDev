@@ -812,6 +812,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 		return;
 	}
 	
+	/**
+	 * @param p A JobWrapper subprocess
+	 * @param stdin Stdin for the subprocess
+	 * @return Returns a jobWrapperListener that listens to updates from a JobWrapper process, each a string in the following format:
+	 * 
+	 * |JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
+	 */
 	private Runnable createJobWrapperListener(Process p, OutputStream stdin){
 		final Runnable jobWrapperListener = () -> {
 			
@@ -822,17 +829,24 @@ public class JobAgent implements MonitoringObject, Runnable {
 				try {
 					final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
 					final String receivedString = stdoutReader.readLine();                 
-					//HashMap<String, Object> extrafields = (HashMap<String, Object>) stdoutObj.readObject();
 					
 					if(receivedString.contains("|")){
 						final String[] received = receivedString.split("\\|");
 						final String newStatusString = received[1];
 						
 						logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
-
-						JobStatus newStatus = JobStatus.getStatus(newStatusString);
-						changeJobStatus(newStatus, null);
 						
+						final HashMap<String, Object> extrafields = new HashMap<>();
+						
+						for (int i=2; i<received.length; i+=2){
+						extrafields.put(received[i], received[i+1]);
+						logger.log(Level.INFO, "Putting in extrafields: " + received[i] + " " + received[i+1]);
+						}
+
+						final JobStatus newStatus = JobStatus.getStatus(newStatusString);
+						changeJobStatus(newStatus, extrafields);
+						
+						//echo back status to confirm
 						stdinPrinter.println("|"+newStatusString);
 						stdinPrinter.flush();
 					}
@@ -845,7 +859,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			}
 		}; 
-		
 		return jobWrapperListener;
 	}
 	

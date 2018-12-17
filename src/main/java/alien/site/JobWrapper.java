@@ -622,46 +622,46 @@ public class JobWrapper implements Runnable {
 	}
 
 	/**
+	 * "Sends" a status update to JobAgent as a string in the following format:
+	 * 
+	 * |JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
+	 * 
 	 * @param newStatus
 	 */
 	public void sendStatus(final JobStatus newStatus) {
-		HashMap<String, Object> extrafields = new HashMap<>();
-		extrafields.put("exechost", this.ce);
+		String sendString = "|" + newStatus.name();
+		sendString += "|exechost|" + this.ce;
+		
 		// if final status with saved files, we set the path
 		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) 
-			extrafields.put("path", getJobOutputDir());
+			sendString += "|path|" + getJobOutputDir();
 		else
 			if (newStatus == JobStatus.RUNNING) {
-				extrafields.put("spyurl", hostName + ":" + JBoxServer.getPort());
-				extrafields.put("node", hostName);
+				sendString += "|spyurl|" + hostName + ":" + JBoxServer.getPort();
+				sendString += "|node|" + hostName;
 			}
 
 		try {
-			final String newStatusString = newStatus.name();
-
-			// outputToJobAgent.writeObject(extrafields);
-
 			if (inputFromJobAgent != null){
-
-				// receivedStatus is updated by the JobAgentListener
-				while(!receivedStatus.equals(newStatusString)){
-					System.out.printf("%s%n", "|" + newStatusString);
+				// receivedStatus is updated by a JobAgentListener
+				while(!receivedStatus.equals(newStatus.name())){
+					logger.log(Level.INFO, "SENDING: " + sendString);
+					System.out.printf("%s%n", sendString);
 					System.out.flush();
 
 					Thread.sleep(10*1000); //sleep for 10s, then retry
 				}
 			}
 			else {
-				System.out.printf("%s%n", "|" + newStatusString);
+				logger.log(Level.INFO, "SENDING: " + sendString);
+				System.out.printf("%s%n", sendString);
 				System.out.flush();
 			}
 
 		} catch (Exception e) {
 			logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent");
 		}
-
 		jobStatus = newStatus;
-
 		return;
 	}
 
@@ -688,10 +688,10 @@ public class JobWrapper implements Runnable {
 
 			while(true){
 				try {
-					String receivedString = inputFromJobAgent.readLine();
+					final String receivedString = inputFromJobAgent.readLine();
 
 					if(receivedString.contains("|")){
-						String[] received = receivedString.split("\\|");
+						final String[] received = receivedString.split("\\|");
 
 						receivedStatus = received[1];
 
