@@ -22,7 +22,11 @@ BUILDDIR="${JALIEN_HOME}/temp_build_dir"
 mkdir -p ${BUILDDIR}/config &>/dev/null
 
 CLASSPATH=.:../
-JAR_LIST_LIB=$(find ${JALIEN_HOME}/lib/ -name "*.jar" -printf "%p:" | sed 's/.$//')
+
+JAR_LIST_LIB="";
+for libjar in ${JALIEN_HOME}/lib/*.jar; do JAR_LIST_LIB="${JAR_LIST_LIB}${libjar}:" ; done;
+JAR_LIST_LIB=$( echo "${JAR_LIST_LIB}" | sed 's/.$//')
+
 export CLASSPATH="${CLASSPATH}:${JAR_LIST_LIB}"
 
 # prepare files in build dir
