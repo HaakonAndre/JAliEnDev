@@ -7,6 +7,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -205,8 +206,8 @@ public final class CatalogueUtils {
 		return Collections.unmodifiableList(guidIndexCache);
 	}
 
-	private static Set<IndexTableEntry> indextable = null;
-	private static Set<String> tableentries = null;
+	private static List<IndexTableEntry> indextable = null;
+	private static Map<String, IndexTableEntry> tableentries = null;
 	private static long lastIndexTableUpdate = 0;
 
 	private static final ReentrantReadWriteLock indextableRWLock = new ReentrantReadWriteLock();
@@ -232,16 +233,16 @@ public final class CatalogueUtils {
 								db.setReadOnly(true);
 								db.setQueryTimeout(60);
 
-								if (db.query("SELECT SQL_NO_CACHE * FROM INDEXTABLE;")) {
-									final Set<IndexTableEntry> newIndextable = new HashSet<>();
-									final Set<String> newTableentries = new HashSet<>();
+								if (db.query("SELECT SQL_NO_CACHE * FROM INDEXTABLE order by length(lfn) desc,lfn;")) {
+									final List<IndexTableEntry> newIndextable = new ArrayList<>();
+									final Map<String, IndexTableEntry> newTableentries = new HashMap<>();
 
 									while (db.moveNext()) {
 										final IndexTableEntry entry = new IndexTableEntry(db);
 
 										newIndextable.add(entry);
 
-										newTableentries.add(db.gets("lfn"));
+										newTableentries.put(db.gets("lfn"), entry);
 									}
 
 									if (newIndextable.size() > 0) {
@@ -302,7 +303,7 @@ public final class CatalogueUtils {
 			return null;
 
 		for (final IndexTableEntry ite : indextable)
-			if (ite.hostIndex == hostId && ite.tableName == tableName)
+			if (ite.tableName == tableName && ite.hostIndex == hostId)
 				return ite;
 
 		return null;
@@ -311,13 +312,13 @@ public final class CatalogueUtils {
 	/**
 	 * @return all known L%L tables
 	 */
-	public static Set<IndexTableEntry> getAllIndexTables() {
+	public static Collection<IndexTableEntry> getAllIndexTables() {
 		updateIndexTableCache();
 
 		if (indextable == null)
 			return null;
 
-		return Collections.unmodifiableSet(indextable);
+		return Collections.unmodifiableList(indextable);
 	}
 
 	/**
@@ -387,16 +388,16 @@ public final class CatalogueUtils {
 	 * @param path
 	 * @return <code>true</code> if this path is held in a separate table
 	 */
-	public static boolean isSeparateTable(final String path) {
+	public static IndexTableEntry getSeparateTable(final String path) {
 		if (path == null || path.length() == 0 || !path.startsWith("/"))
-			return false;
+			return null;
 
 		updateIndexTableCache();
 
 		if (!path.endsWith("/"))
-			return tableentries.contains(path + "/");
+			return tableentries.get(path + "/");
 
-		return tableentries.contains(path);
+		return tableentries.get(path);
 	}
 
 	/**
@@ -512,7 +513,7 @@ public final class CatalogueUtils {
 	}
 
 	private static long lfnCleanup(final Map<UUID, Long> guids, final PrintWriter pw) {
-		final Set<IndexTableEntry> indextableCollection = CatalogueUtils.getAllIndexTables();
+		final Collection<IndexTableEntry> indextableCollection = CatalogueUtils.getAllIndexTables();
 
 		int cnt = 0;
 

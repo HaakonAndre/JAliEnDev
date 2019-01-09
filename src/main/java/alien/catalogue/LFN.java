@@ -695,7 +695,8 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 							toWipe += ".*";
 
 						TextCache.invalidateLFN(toWipe);
-					} catch (final Throwable t) {
+					}
+					catch (final Throwable t) {
 						logger.log(java.util.logging.Level.WARNING, "Cannot invalidate cache entry", t);
 					}
 
@@ -775,20 +776,19 @@ public class LFN implements Comparable<LFN>, CatalogEntity {
 		if (monitor != null)
 			monitor.incrementCounter("LFN_list");
 
-		if (CatalogueUtils.isSeparateTable(getCanonicalName())) {
-			final IndexTableEntry other = CatalogueUtils.getClosestMatch(getCanonicalName());
+		final IndexTableEntry separateTable = CatalogueUtils.getSeparateTable(getCanonicalName());
 
-			if (other != null) {
-				final String q = "SELECT * FROM L" + other.tableName + "L WHERE dir=(SELECT entryId FROM L" + other.tableName + "L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
+		if (separateTable != null) {
+			final String q = "SELECT * FROM L" + separateTable.tableName + "L WHERE dir=(SELECT entryId FROM L" + separateTable.tableName
+					+ "L WHERE lfn='') AND lfn IS NOT NULL AND lfn!='' ORDER BY lfn ASC;";
 
-				try (DBFunctions db = other.getDB()) {
-					db.setReadOnly(true);
+			try (DBFunctions db = separateTable.getDB()) {
+				db.setReadOnly(true);
 
-					db.query(q);
+				db.query(q);
 
-					while (db.moveNext())
-						ret.add(new LFN(db, other));
-				}
+				while (db.moveNext())
+					ret.add(new LFN(db, separateTable));
 			}
 
 			return ret;
