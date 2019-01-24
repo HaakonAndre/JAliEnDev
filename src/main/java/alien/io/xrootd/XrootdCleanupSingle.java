@@ -3,9 +3,9 @@ package alien.io.xrootd;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -15,7 +15,6 @@ import java.util.regex.Pattern;
 
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
-import alien.catalogue.PFN;
 import alien.config.ConfigUtils;
 import alien.se.SE;
 import alien.se.SEUtils;
@@ -43,6 +42,8 @@ public class XrootdCleanupSingle extends Thread {
 	private final AtomicLong filesRemoved = new AtomicLong();
 	private final AtomicLong filesKept = new AtomicLong();
 	private final AtomicLong dirsSeen = new AtomicLong();
+
+	private String currentPath = null;
 
 	/**
 	 * How many items are currently in progress
@@ -106,11 +107,12 @@ public class XrootdCleanupSingle extends Thread {
 
 		dirsSeen.incrementAndGet();
 
+		currentPath = path;
+
 		try {
 			final XrootdListing listing = new XrootdListing(server, actualPath, setSE ? se : null);
 
-			for (final XrootdFile file : listing.getFiles())
-				fileCheck(file);
+			fileCheck(listing.getFiles());
 
 			for (final XrootdFile dir : listing.getDirs()) {
 				final int idx = dir.path.indexOf(actualPath);
@@ -118,67 +120,62 @@ public class XrootdCleanupSingle extends Thread {
 				if (idx >= 0 && dir.path.matches(".*/\\d{2}(/\\d{5})?/?$"))
 					storageCleanup(dir.path.substring(idx + actualPath.length() - path.length()));
 			}
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			System.err.println(ioe.getMessage());
 			ioe.printStackTrace();
 		}
 	}
 
-	private void fileCheck(final XrootdFile file) {
+	private void fileCheck(final Collection<XrootdFile> files) {
+		final Map<UUID, XrootdFile> askUUIDs = new HashMap<>(files.size());
+
 		try {
-			if (System.currentTimeMillis() - file.date.getTime() < 1000L * 60 * 60 * 24 * 7)
-				// ignore very recent files, if running on the slave they might not be propagated yet
-				return;
+			for (final XrootdFile file : files) {
+				if (System.currentTimeMillis() - file.date.getTime() < 1000L * 60 * 60 * 24 * 7)
+					// ignore very recent files, if running on the slave they might not be propagated yet
+					continue;
 
-			final UUID uuid;
+				final UUID uuid;
 
-			try {
-				uuid = UUID.fromString(file.getName());
-			} catch (@SuppressWarnings("unused") final Exception e) {
-				// not an alien file name, ignore
-				return;
-			}
+				try {
+					uuid = UUID.fromString(file.getName());
 
-			final GUID guid = GUIDUtils.getGUID(uuid);
+					askUUIDs.put(uuid, file);
 
-			boolean remove = false;
-
-			if (guid == null)
-				remove = true;
-			else {
-				final Set<PFN> pfns = guid.getPFNs();
-
-				if (pfns == null || pfns.size() == 0)
-					remove = true;
-				else {
-					boolean found = false;
-
-					for (final PFN pfn : pfns)
-						if (se.equals(pfn.getSE())) {
-							found = true;
-							break;
-						}
-
-					remove = !found;
+					processed.incrementAndGet();
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
+					// not an alien file name, ignore
+					continue;
 				}
 			}
-
-			if (remove) {
-				if (removeFile(file)) {
-					sizeRemoved.addAndGet(file.size);
-					filesRemoved.incrementAndGet();
-				}
-			}
-			else {
-				sizeKept.addAndGet(file.size);
-				filesKept.incrementAndGet();
-			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println(e.getMessage());
 			e.printStackTrace();
 		}
 
-		processed.incrementAndGet();
+		final Collection<GUID> foundGUIDs = GUIDUtils.getGUIDs(askUUIDs.keySet().toArray(new UUID[0]));
+
+		for (final GUID g : foundGUIDs)
+			if (g.hasReplica(se)) {
+				final XrootdFile toKeep = askUUIDs.remove(g.guid);
+
+				if (toKeep != null) {
+					sizeKept.addAndGet(toKeep.size);
+					filesKept.incrementAndGet();
+				}
+			}
+
+		// at this point the askUUIDs map contains AliEn files on the storage that shouldn't be there
+		// everything from it can be removed
+
+		for (final XrootdFile file : askUUIDs.values())
+			if (removeFile(file)) {
+				sizeRemoved.addAndGet(file.size);
+				filesRemoved.incrementAndGet();
+			}
 	}
 
 	// B6B6EF58-4000-11E0-9CE5-001F29EB8B98
@@ -216,7 +213,7 @@ public class XrootdCleanupSingle extends Thread {
 	@Override
 	public String toString() {
 		return "Removed " + filesRemoved + " files (" + Format.size(sizeRemoved.longValue()) + "), " + "kept " + filesKept + " files (" + Format.size(sizeKept.longValue()) + "), listed " + dirsSeen
-				+ " directories from " + se.seName;
+				+ " directories from " + se.seName + ", currently at " + currentPath;
 	}
 
 	@Override
@@ -311,7 +308,8 @@ public class XrootdCleanupSingle extends Thread {
 
 				fw.write("Overall progress: " + totalFilesRemoved + " files (" + Format.size(totalSizeRemoved) + ") removed / " + totalFilesKept + " files (" + Format.size(totalSizeKept)
 						+ ") kept, " + totalDirsSeen + " directories visited");
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				System.err.println("Cannot dump stats, error was: " + ioe.getMessage());
 			}
 		} while (active);
