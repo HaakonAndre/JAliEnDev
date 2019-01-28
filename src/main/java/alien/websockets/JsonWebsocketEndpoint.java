@@ -1,5 +1,6 @@
 package alien.websockets;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
@@ -75,16 +76,10 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 	@Override
 	public void onOpen(final Session session, final EndpointConfig endpointConfig) {
-		RemoteEndpoint.Basic remoteEndpointBasic = session.getBasicRemote();
-		Principal userPrincipal = session.getUserPrincipal();
+		final Principal userPrincipal = session.getUserPrincipal();
 		userIdentity = (AliEnPrincipal) userPrincipal;
 
-		try {
-			os = remoteEndpointBasic.getSendStream();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		os = new ByteArrayOutputStream();
 		final ServerEndpointConfig serverConfig = (ServerEndpointConfig) endpointConfig;
 		if (serverConfig.getPath() == "/websocket/json")
 			setShellPrintWriter(os, "json");
@@ -93,7 +88,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 		commander = new JAliEnCOMMander(userIdentity, null, null, out);
 
-		session.addMessageHandler(new EchoMessageHandlerText(session, commander, out));
+		session.addMessageHandler(new EchoMessageHandlerText(session, commander, out, os));
 		_startTime = System.currentTimeMillis();
 		_lastActivityTime = System.currentTimeMillis();
 
@@ -110,7 +105,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						}
 					}
 
-					if (getUptime() > 172800000 || userIdentity.getUserCert()[0].getNotAfter().getTime() > System.currentTimeMillis()) // 2 days
+					if (getUptime() > 172800000 || commander.getUser().getUserCert()[0].getNotAfter().getTime() > System.currentTimeMillis()) // 2 days
 						onClose(session, new CloseReason(null, "Connection expired (run for more than 2 days)"));
 
 					if (System.currentTimeMillis() - _lastActivityTime > 3 * 60 * 60 * 1000) // 3 hours
@@ -158,11 +153,13 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
+		private OutputStream os = null;
 
-		EchoMessageHandlerText(final Session session, final JAliEnCOMMander commander, final UIPrintWriter out) {
+		EchoMessageHandlerText(final Session session, final JAliEnCOMMander commander, final UIPrintWriter out, OutputStream os) {
 			this.remoteEndpointBasic = session.getBasicRemote();
 			this.commander = commander;
 			this.out = out;
+			this.os = os;
 		}
 
 		private void waitCommandFinish() {
@@ -193,7 +190,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						jsonObject = (JSONObject) pobj;
 					} catch (@SuppressWarnings("unused") ParseException e) {
 						synchronized (remoteEndpointBasic) {
-							remoteEndpointBasic.sendText("Incoming JSON not ok", last);
+							remoteEndpointBasic.sendText("Incoming JSON not ok", true);
 						}
 						return;
 					}
@@ -231,6 +228,11 @@ public class JsonWebsocketEndpoint extends Endpoint {
 					}
 
 					waitCommandFinish();
+
+					// Send back the result to the client
+					synchronized (remoteEndpointBasic) {
+						remoteEndpointBasic.sendText(((ByteArrayOutputStream) os).toString(), true);
+					}
 					_lastActivityTime = System.currentTimeMillis();
 				}
 			} catch (final IOException e) {
