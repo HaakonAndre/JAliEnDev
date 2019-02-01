@@ -831,9 +831,9 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			return true;
 		}
-
-		if (bD)
-			sourceFile.delete();
+		else
+			if (bD)
+				sourceFile.delete();
 
 		return commit(envelopes, registerPFNs, guid, bD ? null : sourceFile, referenceCount, true);
 	}
