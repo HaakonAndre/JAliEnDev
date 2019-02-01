@@ -841,14 +841,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	private final class BackgroundUpload extends Thread {
 		private final GUID guid;
 		private final List<Future<UploadWork>> futures;
+		private final int originalNoOfCopies;
 		private final File fileToDeleteOnComplete;
 
 		public BackgroundUpload(final GUID guid, final List<Future<UploadWork>> futures, final File fileToDeleteOnComplete) {
-			super("alien.shell.commands.JAliEnCommandcp.BackgroundUpload (" + guid.guid + " x " + futures.size() + ")");
+			super("alien.shell.commands.JAliEnCommandcp.BackgroundUpload (" + futures.size() + " x " + guid.guid + " )");
 
 			this.guid = guid;
 			this.futures = futures;
 			this.fileToDeleteOnComplete = fileToDeleteOnComplete;
+			this.originalNoOfCopies = futures.size();
 		}
 
 		@Override
@@ -857,6 +859,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			while (futures.size() > 0) {
 				final Iterator<Future<UploadWork>> it = futures.iterator();
+
+				boolean anyChange = false;
 
 				while (it.hasNext()) {
 					final Future<UploadWork> f = it.next();
@@ -879,7 +883,20 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							logger.log(Level.FINE, "Error getting the upload result of " + guid.guid, e);
 						} finally {
 							it.remove();
+							anyChange = true;
 						}
+					}
+				}
+
+				if (futures.size() > 0) {
+					if (anyChange)
+						setName("alien.shell.commands.JAliEnCommandcp.BackgroundUpload (" + futures.size() + " / " + originalNoOfCopies + " x " + guid.guid + ")");
+
+					try {
+						Thread.sleep(100);
+					} catch (@SuppressWarnings("unused")
+					final InterruptedException ie) {
+						break;
 					}
 				}
 			}
