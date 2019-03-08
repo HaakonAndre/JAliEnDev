@@ -46,7 +46,6 @@ import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMException;
 import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
-import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JceOpenSSLPKCS8DecryptorProviderBuilder;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
@@ -617,7 +616,7 @@ public class JAKeyStore {
 		}
 	}
 
-	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final PasswordFinder pFinder) throws Exception {
+	private static void addKeyPairToKeyStore(final KeyStore ks, final String entryBaseName, final String privKeyLocation, final String pubKeyLocation, final JPasswordFinder pFinder) throws Exception {
 		ks.setEntry(entryBaseName, new KeyStore.PrivateKeyEntry(loadPrivX509(privKeyLocation, pFinder != null ? pFinder.getPassword() : null), loadPubX509(pubKeyLocation, true)),
 				new KeyStore.PasswordProtection(pass));
 	}
@@ -787,7 +786,7 @@ public class JAKeyStore {
 		return null;
 	}
 
-	private static class JPasswordFinder implements PasswordFinder {
+	private static class JPasswordFinder {
 
 		private final char[] password;
 
@@ -795,7 +794,6 @@ public class JAKeyStore {
 			this.password = password;
 		}
 
-		@Override
 		public char[] getPassword() {
 			return Arrays.copyOf(password, password.length);
 		}
