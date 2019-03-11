@@ -57,8 +57,6 @@ import org.bouncycastle.pkcs.PKCSException;
 import alien.catalogue.CatalogueUtils;
 import alien.config.ConfigUtils;
 import lazyj.ExtProperties;
-import lazyj.Utils;
-import lazyj.commands.CommandOutput;
 import lazyj.commands.SystemCommand;
 
 /**
@@ -122,7 +120,7 @@ public class JAKeyStore {
 			loadTrusts(trustStore);
 		}
 		catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-			// TODO Auto-generated catch block
+			logger.log(Level.WARNING, "Exception loading trust stores (static block)", e);
 			e.printStackTrace();
 		}
 
@@ -222,56 +220,6 @@ public class JAKeyStore {
 		}
 		catch (final IOException e) {
 			logger.log(Level.WARNING, "Error checking or modifying permissions on " + user_key, e);
-		}
-
-		return false;
-	}
-
-	/**
-	 * Check file permissions of certificate and key
-	 *
-	 * @param name
-	 *            type of file (cert|key)
-	 * @param file
-	 *            path to file
-	 * @param chmod
-	 *            numeric code for permissions
-	 * @param force
-	 *            force change permissions (set to false to ask for confirmation)
-	 */
-	private static boolean changeMod(final String name, final File file, final int chmod, final boolean force) {
-		try {
-			if (!force) {
-				String ack = "";
-				final Console cons = System.console();
-
-				if (cons == null)
-					return false;
-
-				System.out.println("Your Grid " + name + " file has wrong permissions.");
-				System.out.println("The file [ " + file.getCanonicalPath() + " ] should have permissions [ " + chmod + " ].");
-
-				if ((ack = cons.readLine("%s", "Would you correct this now [Yes/no]?")) != null)
-					if (Utils.stringToBool(ack, true)) {
-						final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
-
-						if (co.exitCode != 0)
-							System.err.println("Could not change permissions: " + co.stderr);
-
-						return co.exitCode == 0;
-					}
-			}
-			else {
-				final CommandOutput co = SystemCommand.bash("chmod " + chmod + " " + file.getCanonicalPath(), false);
-
-				if (co.exitCode != 0)
-					System.err.println("Could not change permissions: " + co.stderr);
-
-				return co.exitCode == 0;
-			}
-		}
-		catch (@SuppressWarnings("unused") final IOException e) {
-			// ignore
 		}
 
 		return false;
