@@ -120,7 +120,7 @@ public class JAKeyStore {
 			loadTrusts(trustStore);
 		}
 		catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
-			logger.log(Level.WARNING, "Exception loading trust stores (static block)", e);
+			logger.log(Level.SEVERE, "Exception during loading trust stores (static block)", e);
 			e.printStackTrace();
 		}
 
@@ -185,7 +185,7 @@ public class JAKeyStore {
 			}
 		}
 		catch (final KeyStoreException | CertificateException | NoSuchAlgorithmException e) {
-			logger.log(Level.WARNING, "Exception loading trust stores", e);
+			logger.log(Level.WARNING, "Exception during loading trust stores", e);
 		}
 	}
 
@@ -860,7 +860,7 @@ public class JAKeyStore {
 				}
 			}
 			catch (final KeyStoreException e) {
-				// TODO Auto-generated catch block
+				logger.log(Level.SEVERE, "Exception during loading client cert");
 				e.printStackTrace();
 			}
 			return JAKeyStore.clientCert;
@@ -872,7 +872,7 @@ public class JAKeyStore {
 						loadKeyStore();
 				}
 				catch (final KeyStoreException e) {
-					// TODO Auto-generated catch block
+					logger.log(Level.SEVERE, "Exception during loading host cert");
 					e.printStackTrace();
 				}
 				return JAKeyStore.hostCert;
@@ -884,7 +884,7 @@ public class JAKeyStore {
 							loadKeyStore();
 					}
 					catch (final KeyStoreException e) {
-						// TODO Auto-generated catch block
+						logger.log(Level.SEVERE, "Exception during loading token cert");
 						e.printStackTrace();
 					}
 					return JAKeyStore.tokenCert;
