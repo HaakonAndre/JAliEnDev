@@ -211,8 +211,8 @@ public class JSh {
 			if (!memorySettings) {
 				// memory limiting parameters, either inherited from the current process' environment or (for developers essentially) set to some sane default values
 				jboxCmdLine.add("-server");
-				jboxCmdLine.add("-Xmx4G");
-				jboxCmdLine.add("-Xms4G");
+				jboxCmdLine.add("-Xmx64m");
+				jboxCmdLine.add("-Xms512m");
 			}
 
 			if (tmpDir != null && tmpDir.length() > 0)
