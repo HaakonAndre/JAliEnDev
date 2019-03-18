@@ -847,7 +847,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 						changeJobStatus(newStatus, extrafields);
 						
 						//echo back status to confirm
-						stdinPrinter.println("|"+newStatusString);
+						stdinPrinter.println(newStatusString);
 						stdinPrinter.flush();
 					}
 				} catch (StreamCorruptedException e) {

@@ -644,7 +644,7 @@ public class JobWrapper implements Runnable {
 		try {
 			if (inputFromJobAgent != null){
 				// receivedStatus is updated by a JobAgentListener
-				while(!receivedStatus.equals(newStatus.name())){
+				while(!receivedStatus.contains(newStatus.name())){
 					logger.log(Level.INFO, "SENDING: " + sendString);
 					System.out.printf("%s%n", sendString);
 					System.out.flush();
@@ -679,24 +679,18 @@ public class JobWrapper implements Runnable {
 
 		return outputDir;
 	}
-	
-	
+	/**
+	 * @return a Runnable that will continuously listen for updates written to the system inputstream by the JobAgent
+	 */
 	private Runnable createJobAgentListener(){
 		final Runnable jobAgentListener = () -> {
-
 			final BufferedReader inputFromJobAgent = new BufferedReader(new InputStreamReader(System.in));
 
 			while(true){
 				try {
-					final String receivedString = inputFromJobAgent.readLine();
+					receivedStatus = inputFromJobAgent.readLine();
 
-					if(receivedString.contains("|")){
-						final String[] received = receivedString.split("\\|");
-
-						receivedStatus = received[1];
-
-						logger.log(Level.SEVERE, "CONFIRMED: " + receivedStatus);
-					}
+					logger.log(Level.SEVERE, "CONFIRMED: " + receivedStatus);
 				} catch (Exception e) {
 					logger.log(Level.INFO, "Received something from JobWrapper, but it could not be read (corrupted?)");
 				}
