@@ -517,13 +517,6 @@ public class ConfigUtils {
 	public static void main(final String[] args) {
 		System.out.println("Has direct db connection: " + hasDirectDBConnection);
 
-		dumpConfiguration("config", otherConfigFiles.get("config"));
-
-		if (logging != null)
-			dumpConfiguration("logging", logging.prop);
-
-		System.out.println("\nOther configuration files:");
-
 		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet())
 			dumpConfiguration(entry.getKey(), entry.getValue());
 	}

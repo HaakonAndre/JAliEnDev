@@ -1311,7 +1311,7 @@ public class LFN_CSD implements Comparable<LFN_CSD>, CatalogEntity {
 				final Set<Integer> seNumbers = pfns.keySet();
 
 				for (int seNumber : seNumbers) {
-					statement = getOrInsertPreparedStatement(session, "UPDATE " + se_lookup_table + " SET owner=?,size=? where senumber=?,modulo=? AND id=?");
+					statement = getOrInsertPreparedStatement(session, "UPDATE " + se_lookup_table + " SET owner=?,size=? where senumber=? AND modulo=? AND id=?");
 					bs.add(statement.bind(owner, Long.valueOf(size), Integer.valueOf(seNumber), Integer.valueOf(modulo), id));
 				}
 			}

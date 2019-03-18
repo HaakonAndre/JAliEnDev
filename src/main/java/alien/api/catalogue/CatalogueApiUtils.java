@@ -933,10 +933,10 @@ public class CatalogueApiUtils {
 		if (lfn_name == null || lfn_name.length() == 0)
 			return false;
 
-		final LFN_CSD lfn = this.getLFNCSD(lfn_name);
-
-		if (lfn == null || !lfn.exists)
-			return false;
+		// final LFN_CSD lfn = this.getLFNCSD(lfn_name);
+		//
+		// if (lfn == null || !lfn.exists)
+		// return false;
 		try {
 			final ChownLFNCSD cl = Dispatcher.execute(new ChownLFNCSD(commander.getUser(), lfn_name, username_to_chown, groupname_to_chown, recursive));
 			if (cl != null)

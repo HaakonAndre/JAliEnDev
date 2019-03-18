@@ -1,4 +1,4 @@
-package alien.api.aaa;
+package alien.api.token;
 
 /**
  * Possible token certificate types

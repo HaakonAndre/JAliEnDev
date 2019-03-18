@@ -108,7 +108,8 @@ public class JBoxServer extends Thread {
 
 				try {
 					Thread.sleep(1000 * 60);
-				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// it's interrupted when it should exit
 					break;
 				}
@@ -231,11 +232,13 @@ public class JBoxServer extends Thread {
 
 				return true;
 
-			} catch (final Exception e1) {
+			}
+			catch (final Exception e1) {
 				logger.log(Level.SEVERE, "Could not open file " + tokenFile + " to write", e1);
 				return false;
 			}
-		} catch (final Throwable e) {
+		}
+		catch (final Throwable e) {
 			logger.log(Level.SEVERE, "Could not get user id! The token file could not be created ", e);
 
 			return false;
@@ -297,11 +300,13 @@ public class JBoxServer extends Thread {
 
 				return true;
 
-			} catch (final Exception e1) {
+			}
+			catch (final Exception e1) {
 				logger.log(Level.SEVERE, "Could not open file " + envFile.getAbsolutePath() + " to write", e1);
 				return false;
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Could not get user id! The env file could not be created ", e);
 			return false;
 		}
@@ -363,7 +368,8 @@ public class JBoxServer extends Thread {
 					synchronized (commander.status) {
 						commander.status.wait(1000);
 					}
-				} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException ie) {
 					// ignore
 				}
 		}
@@ -465,9 +471,11 @@ public class JBoxServer extends Thread {
 											try {
 												commander.interrupt();
 												commander.kill = true;
-											} catch (@SuppressWarnings("unused") final Throwable t) {
+											}
+											catch (@SuppressWarnings("unused") final Throwable t) {
 												// ignore
-											} finally {
+											}
+											finally {
 												System.out.println("SIGINT reset commander");
 
 												// kill the active command and start a new instance
@@ -510,22 +518,26 @@ public class JBoxServer extends Thread {
 									logger.severe("Received more than one command");
 								// some error, there was more than one command
 								// attached to the document
-							} catch (final Exception e) {
+							}
+							catch (final Exception e) {
 								logger.severe("Parse error " + e.getMessage());
 							}
 						}
 						else
 							sCommand += "\n" + sLine;
 
-			} catch (final Throwable e) {
+			}
+			catch (final Throwable e) {
 				logger.log(Level.INFO, "Error running the commander.", e);
-			} finally {
+			}
+			finally {
 				waitCommandFinish();
 
 				if (br != null)
 					try {
 						br.close();
-					} catch (@SuppressWarnings("unused") final IOException ioe) {
+					}
+					catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore
 					}
 
@@ -535,17 +547,20 @@ public class JBoxServer extends Thread {
 
 				try {
 					s.shutdownOutput();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
 					// nothing particular
 				}
 				try {
 					s.shutdownInput();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
 					// ignore
 				}
 				try {
 					s.close();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
 					// ignore
 				}
 			}
@@ -566,7 +581,8 @@ public class JBoxServer extends Thread {
 
 		try {
 			ssocket.close();
-		} catch (@SuppressWarnings("unused") final IOException e) {
+		}
+		catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore, we're dead anyway
 		}
 
@@ -588,7 +604,8 @@ public class JBoxServer extends Thread {
 				connection = new UIConnection(s);
 
 				connection.start();
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				if (alive)
 					logger.log(Level.WARNING, "Cannot use socket: ", e.getMessage());
 			}
@@ -614,25 +631,25 @@ public class JBoxServer extends Thread {
 		preempt();
 
 		// Get port range from config
-		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
-		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", "10200"));
 		final boolean portAny = ConfigUtils.getConfig().getb("port.range.any", true);
+
+		final int portMin = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.start", "10100"));
+		final int portMax = Integer.parseInt(ConfigUtils.getConfig().gets("port.range.end", portAny ? String.valueOf(portMin + 1) : "10200"));
 
 		for (int port = portMin; port < portMax; port++)
 			try {
-				if (portAny)
-					port = 0; // Start server on any available port provided by the system
-				server = new JBoxServer(port, iDebugLevel);
+				server = new JBoxServer(portAny ? 0 : port, iDebugLevel);
 				server.start();
 
 				logger.log(Level.INFO, "JBox listening on port " + server.port);
 				System.out.println("JBox is listening on port " + server.port);
 
 				break;
-			} catch (final Exception ioe) {
+			}
+			catch (final Exception ioe) {
 				// we don't need the already in use info on the port, maybe
 				// there's another user on the machine...
-				logger.log(Level.FINE, "JBox: Could not listen on port " + (port != 0 ? String.valueOf(port) : "\"any\""), ioe);
+				logger.log(Level.FINE, "JBox: Could not listen on port " + String.valueOf(portAny ? 0 : port), ioe);
 			}
 	}
 

@@ -96,7 +96,7 @@ public class JAliEnCommandlistSEs extends JAliEnBaseCommand {
 
 			commander.printOutln(String.format("%1$" + maxSENameLength + "s", se.originalName) + "\t" + String.format("%3d", Integer.valueOf(se.seNumber)) + "\t" + padLeft(Format.size(totalSpace), 8)
 					+ "\t" + padLeft(Format.size(usedSpace), 8) + "\t" + padLeft(Format.size(freeSpace), 8) + "\t" + String.format("% .4f", Double.valueOf(se.demoteRead)) + " "
-					+ String.format("% .4f", Double.valueOf(se.demoteWrite)) + "\t" + qos + "\t  " + se.seioDaemons);
+					+ String.format("% .4f", Double.valueOf(se.demoteWrite)) + "\t" + qos + "\t  " + se.generateProtocol());
 		}
 
 		commander.printOutln();

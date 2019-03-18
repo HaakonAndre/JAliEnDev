@@ -161,7 +161,7 @@ public class LFNCSDUtils {
 		synchronized (rl) {
 			while (rl.counter_left.get() >= 0) {
 				try {
-					rl.wait(60 * 1000);
+					rl.wait(1 * 1000);
 				} catch (InterruptedException e) {
 					logger.severe("LFNCSDUtils recurseAndFilterLFNs: can't wait" + e);
 				}
@@ -731,6 +731,7 @@ public class LFNCSDUtils {
 			ch.setUser(user);
 			ch.setNewOwner(new_owner);
 			ch.setNewGroup(new_group);
+			ch.setRecurseInfinitely(true);
 			recurseAndFilterLFNs(ch, lfn, null, null, LFNCSDUtils.FIND_INCLUDE_DIRS);
 			return ch.getLfnsError().isEmpty();
 		}

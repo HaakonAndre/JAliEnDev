@@ -11,8 +11,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import alien.api.Dispatcher;
 import alien.api.ServerException;
-import alien.api.aaa.GetTokenCertificate;
-import alien.api.aaa.TokenCertificateType;
+import alien.api.token.GetTokenCertificate;
+import alien.api.token.TokenCertificateType;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.taskQueue.JobToken;

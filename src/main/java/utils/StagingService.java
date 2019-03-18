@@ -2,6 +2,7 @@ package utils;
 
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -56,7 +57,8 @@ public class StagingService {
 		public void run() {
 			try {
 				Factory.xrootd.prepare(pfn);
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				System.err.println("Could not background stage: " + pfn.getPFN() + ", the error message was:\n" + ioe.getMessage());
 			}
 		}
@@ -76,19 +78,55 @@ public class StagingService {
 			final LFN l = LFNUtils.getLFN(lfn);
 
 			if (l != null) {
-				final Set<PFN> pfns = l.whereis();
+				final Set<PFN> originalPfns = l.whereis();
 
-				if (pfns != null)
+				if (originalPfns != null) {
+					final Set<PFN> pfns = new HashSet<>(originalPfns);
+
+					boolean hasDiskCopyAtCern = false;
+
+					Iterator<PFN> it = pfns.iterator();
+
+					// first pass: remove non-existing SEs and check if it has a copy on disk at CERN
+					while (it.hasNext()) {
+						final PFN p = it.next();
+
+						final SE se = p.getSE();
+
+						if (se == null) {
+							it.remove();
+							continue;
+						}
+
+						if (se.seName.toUpperCase().startsWith("ALICE::CERN::EOS"))
+							hasDiskCopyAtCern = true;
+					}
+
+					if (hasDiskCopyAtCern) {
+						// don't stage at CERN if it already has a copy on disk here
+						it = pfns.iterator();
+
+						while (it.hasNext()) {
+							final PFN p = it.next();
+
+							if (p.getSE().seName.toUpperCase().contains("::CERN::"))
+								it.remove();
+						}
+					}
+
+					// stage the remaining tape replicas
 					for (final PFN p : pfns)
 						if (syncSEs.size() == 0 || syncSEs.contains(Integer.valueOf(p.seNumber)))
 							try {
 								Factory.xrootd.prepareCond(p);
-							} catch (final IOException ioe) {
+							}
+							catch (final IOException ioe) {
 								System.err.println("Could not stage: " + p.getPFN() + ", the error message was:\n" + ioe.getMessage());
 								delete = false;
 							}
 						else
 							bgexecutor.submit(new StagePFN(p));
+				}
 			}
 
 			try (DBFunctions db = getDB()) {
@@ -122,8 +160,8 @@ public class StagingService {
 		for (final String arg : args)
 			try {
 				syncSEs.add(Integer.valueOf(arg));
-			} catch (@SuppressWarnings("unused")
-			final NumberFormatException nfe) {
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				final SE se = SEUtils.getSE(arg);
 
 				if (se != null)

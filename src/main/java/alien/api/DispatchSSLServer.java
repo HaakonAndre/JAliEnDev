@@ -27,6 +27,8 @@ import javax.net.ssl.TrustManagerFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.api.taskQueue.GetMatchJob;
+import alien.api.taskQueue.SetJobStatus;
+import alien.api.taskQueue.PutJobLog;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -160,11 +162,11 @@ public class DispatchSSLServer extends Thread {
 
 							if (r.getEffectiveRequester().isJobAgent() && !(r instanceof GetMatchJob)) {
 
-								//Allowing the JobAgent to change the job status allows it to act on possible JobWrapper terminations/faults
-								if(r.getClass().getName().equals("alien.api.taskQueue.SetJobStatus"))
+								//Allowing the JobAgent to change the job status enables it to act on possible JobWrapper terminations/faults
+								if(r instanceof SetJobStatus)
 									shouldRun = true;
-								//A JobAgent will log its progress/the resources it allocates for the JobWrapper sandbox
-								else if(r.getClass().getName().equals("alien.api.taskQueue.PutJobLog"))
+								//Enables the JobAgent to report its progress/the resources it allocates for the JobWrapper sandbox
+								else if(r instanceof PutJobLog)
 									shouldRun = true;
 								else {
 									// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)

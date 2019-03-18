@@ -58,7 +58,7 @@ public class LFNUtils {
 		if (g == null)
 			return null;
 
-		final Set<IndexTableEntry> indextable = CatalogueUtils.getAllIndexTables();
+		final Collection<IndexTableEntry> indextable = CatalogueUtils.getAllIndexTables();
 
 		if (indextable == null)
 			return null;
@@ -103,7 +103,7 @@ public class LFNUtils {
 		if (uuids == null || uuids.size() == 0)
 			return null;
 
-		final Set<IndexTableEntry> indextable = CatalogueUtils.getAllIndexTables();
+		final Collection<IndexTableEntry> indextable = CatalogueUtils.getAllIndexTables();
 
 		if (indextable == null)
 			return null;

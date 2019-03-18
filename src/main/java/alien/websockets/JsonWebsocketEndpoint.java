@@ -1,5 +1,6 @@
 package alien.websockets;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
@@ -12,6 +13,7 @@ import javax.websocket.EndpointConfig;
 import javax.websocket.MessageHandler;
 import javax.websocket.RemoteEndpoint;
 import javax.websocket.Session;
+import javax.websocket.server.ServerEndpointConfig;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -42,7 +44,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 	private OutputStream os = null;
 
 	private void setShellPrintWriter(final OutputStream os, final String shelltype) {
-		if (shelltype.equals("jaliensh"))
+		if (shelltype.equals("plain"))
 			out = new JShPrintWriter(os);
 		else
 			if (shelltype.equals("json"))
@@ -74,20 +76,19 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 	@Override
 	public void onOpen(final Session session, final EndpointConfig endpointConfig) {
-		RemoteEndpoint.Basic remoteEndpointBasic = session.getBasicRemote();
-		Principal userPrincipal = session.getUserPrincipal();
+		final Principal userPrincipal = session.getUserPrincipal();
 		userIdentity = (AliEnPrincipal) userPrincipal;
 
-		try {
-			os = remoteEndpointBasic.getSendStream();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		setShellPrintWriter(os, "json");
+		os = new ByteArrayOutputStream();
+		final ServerEndpointConfig serverConfig = (ServerEndpointConfig) endpointConfig;
+		if (serverConfig.getPath() == "/websocket/json")
+			setShellPrintWriter(os, "json");
+		else
+			setShellPrintWriter(os, "plain");
+
 		commander = new JAliEnCOMMander(userIdentity, null, null, out);
 
-		session.addMessageHandler(new EchoMessageHandlerText(session, commander, out));
+		session.addMessageHandler(new EchoMessageHandlerText(session, commander, out, os));
 		_startTime = System.currentTimeMillis();
 		_lastActivityTime = System.currentTimeMillis();
 
@@ -104,7 +105,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						}
 					}
 
-					if (getUptime() > 172800000 || userIdentity.getUserCert()[0].getNotAfter().getTime() > System.currentTimeMillis()) // 2 days
+					if (getUptime() > 172800000 || commander.getUser().getUserCert()[0].getNotAfter().getTime() > System.currentTimeMillis()) // 2 days
 						onClose(session, new CloseReason(null, "Connection expired (run for more than 2 days)"));
 
 					if (System.currentTimeMillis() - _lastActivityTime > 3 * 60 * 60 * 1000) // 3 hours
@@ -148,23 +149,24 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 	private static class EchoMessageHandlerText implements MessageHandler.Partial<String> {
 
-		private final Session session;
 		private final RemoteEndpoint.Basic remoteEndpointBasic;
 
 		private JAliEnCOMMander commander = null;
 		private UIPrintWriter out = null;
+		private OutputStream os = null;
 
-		EchoMessageHandlerText(final Session session, final JAliEnCOMMander commander, final UIPrintWriter out) {
-			this.session = session;
+		EchoMessageHandlerText(final Session session, final JAliEnCOMMander commander, final UIPrintWriter out, OutputStream os) {
 			this.remoteEndpointBasic = session.getBasicRemote();
 			this.commander = commander;
 			this.out = out;
+			this.os = os;
 		}
 
 		private void waitCommandFinish() {
 			// wait for the previous command to finish
 			if (commander == null)
 				return;
+
 			while (commander.status.get() == 1)
 				try {
 					synchronized (commander.status) {
@@ -188,8 +190,8 @@ public class JsonWebsocketEndpoint extends Endpoint {
 						pobj = parser.parse(new StringReader(message));
 						jsonObject = (JSONObject) pobj;
 					} catch (@SuppressWarnings("unused") ParseException e) {
-						synchronized (session) {
-							remoteEndpointBasic.sendText("Incoming JSON not ok", last);
+						synchronized (remoteEndpointBasic) {
+							remoteEndpointBasic.sendText("Incoming JSON not ok", true);
 						}
 						return;
 					}
@@ -215,18 +217,19 @@ public class JsonWebsocketEndpoint extends Endpoint {
 
 					// Send the command to executor and send the result back to
 					// client via OutputStream
-					synchronized (session) {
+					synchronized (commander) {
 						commander.status.set(1);
 						commander.setLine(out, fullCmd.toArray(new String[0]));
 						commander.notifyAll();
-
-						// Set metadata
-						out.setMetaInfo("user", commander.getUser().getName());
-						out.setMetaInfo("currentdir", commander.getCurrentDirName());
-						out.setMetaInfo("site", commander.getSite());
 					}
-
 					waitCommandFinish();
+
+					// Send back the result to the client
+					synchronized (remoteEndpointBasic) {
+						final ByteArrayOutputStream baos = (ByteArrayOutputStream) os;
+						remoteEndpointBasic.sendText(baos.toString(), true);
+						baos.reset();
+					}
 					_lastActivityTime = System.currentTimeMillis();
 				}
 			} catch (final IOException e) {
