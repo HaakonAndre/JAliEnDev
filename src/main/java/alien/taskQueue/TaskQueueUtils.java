@@ -3123,7 +3123,7 @@ public class TaskQueueUtils {
 					}
 
 					logger.info("Resubmit: putting joblog and returning");
-					putJobLog(queueId, "state", "Job resubmitted (back to WAITING", null);
+					putJobLog(queueId, "state", "Job resubmitted (back to WAITING)", null);
 					return new AbstractMap.SimpleEntry<>(Integer.valueOf(0), "Resubmit: back to WAITING: " + queueId);
 				}
 
