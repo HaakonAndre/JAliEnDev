@@ -1580,7 +1580,7 @@ public class TaskQueueUtils {
 		final InetAddress addr = account.getRemoteEndpoint();
 
 		if (addr != null)
-			clientAddress = addr.getCanonicalHostName();
+			clientAddress = Utils.getHostName(addr.getHostAddress());
 		else
 			clientAddress = MonitorFactory.getSelfHostname();
 
