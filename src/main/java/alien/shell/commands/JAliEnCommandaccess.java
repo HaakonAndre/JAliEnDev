@@ -151,7 +151,9 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void printHelp() {
-		// ignore
+		commander.printOutln();
+		commander.printOutln(helpUsage("access", "<read|write> <lfn> [<specs>]"));
+		commander.printOutln();
 	}
 
 	/**
@@ -240,8 +242,5 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				commander.printErrln("Illegal Request type specified [error in request].");
 
 		}
-		else
-			commander.printErrln("No Request type specified [error in request].");
-
 	}
 }

@@ -177,7 +177,8 @@ public class JAliEnCOMMander extends Thread {
 			if (curDir == null)
 				try {
 					this.curDir = c_api.getLFN(myHome);
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					logger.log(Level.WARNING, "Exception initializing connection", e);
 				}
 			else
@@ -331,7 +332,8 @@ public class JAliEnCOMMander extends Thread {
 			synchronized (this) {
 				try {
 					wait(1000);
-				} catch (@SuppressWarnings("unused") final InterruptedException e) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					// ignore
 				}
 			}
@@ -353,9 +355,11 @@ public class JAliEnCOMMander extends Thread {
 					setName("Commander: Executing: " + Arrays.toString(arg));
 
 					execute();
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					logger.log(Level.WARNING, "Got exception", e);
-				} finally {
+				}
+				finally {
 					out = null;
 
 					setName("Commander: Idle");
@@ -366,7 +370,8 @@ public class JAliEnCOMMander extends Thread {
 					}
 				}
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "Got exception", e);
 		}
 	}
@@ -416,7 +421,8 @@ public class JAliEnCOMMander extends Thread {
 				if (arg[i].startsWith("-debug=")) {
 					try {
 						debug = Integer.parseInt(arg[i].substring(arg[i].indexOf('=') + 1));
-					} catch (@SuppressWarnings("unused") final NumberFormatException n) {
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException n) {
 						// ignore
 					}
 					args.remove(arg[i]);
@@ -461,7 +467,8 @@ public class JAliEnCOMMander extends Thread {
 
 			try {
 				jcommand = getCommand(comm, param);
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 
 				if (e.getCause() instanceof OptionException || e.getCause() instanceof NumberFormatException)
 					out.setReturnCode(-2, "Illegal command options\n");
@@ -477,14 +484,21 @@ public class JAliEnCOMMander extends Thread {
 			try {
 				if (jcommand == null)
 					out.setReturnCode(-6, "No such command or not implemented yet. ");
-				else
-					if (!help && (args.size() != 0 || jcommand.canRunWithoutArguments()))
-						jcommand.run();
-					else {
-						out.setReturnCode(-4, "Command requires an argument");
+				else {
+					if (help) {
 						jcommand.printHelp();
 					}
-			} catch (final Exception e) {
+					else
+						if (args.size() != 0 || jcommand.canRunWithoutArguments()) {
+							jcommand.run();
+						}
+						else {
+							out.setReturnCode(-4, "Command requires an argument");
+							jcommand.printHelp();
+						}
+				}
+			}
+			catch (final Exception e) {
 				e.printStackTrace();
 
 				out.setReturnCode(-5, "Error executing the command [" + comm + "]: \n" + Format.stackTraceToString(e));
@@ -520,10 +534,12 @@ public class JAliEnCOMMander extends Thread {
 			@SuppressWarnings({ "rawtypes", "unchecked" })
 			final java.lang.reflect.Constructor co = cl.getConstructor(new Class[] { JAliEnCOMMander.class, List.class });
 			return (JAliEnBaseCommand) co.newInstance(objectParm);
-		} catch (@SuppressWarnings("unused") final ClassNotFoundException e) {
+		}
+		catch (@SuppressWarnings("unused") final ClassNotFoundException e) {
 			// System.out.println("No such command or not implemented");
 			return null;
-		} catch (final java.lang.reflect.InvocationTargetException e) {
+		}
+		catch (final java.lang.reflect.InvocationTargetException e) {
 			logger.log(Level.SEVERE, "Exception running command", e);
 			return null;
 		}
