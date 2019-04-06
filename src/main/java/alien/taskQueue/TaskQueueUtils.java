@@ -513,7 +513,7 @@ public class TaskQueueUtils {
 	 * @param limit
 	 * @return the subjobs, if any
 	 */
-	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Integer> id, final List<String> site, final int limit) {
+	public static List<Job> getMasterJobStat(final long queueId, final Set<JobStatus> status, final List<Long> id, final List<String> site, final int limit) {
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
@@ -554,7 +554,7 @@ public class TaskQueueUtils {
 
 				boolean first = true;
 
-				for (final int i : id) {
+				for (final long i : id) {
 					if (!first)
 						whe.append(',');
 					else
