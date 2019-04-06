@@ -79,14 +79,14 @@ public class JAliEnCOMMander extends Thread {
 	/**
 	 * The commands that have a JAliEnCommand* implementation
 	 */
-	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "get", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd",
+	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd",
 			"find", "find_csd", "listFilesFromCollection", "scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user",
 			"touch", "touch_csd", "type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "addMirror", "addTag", "addTagValue", "chgroup", "chown", "chown_csd",
-			"createCollection", "deleteMirror", "df", "du", "fquota", "jobinfo", "jquota", "killTransfer", "listSEDistance", "listTransfer", "md5sum", "mirror", "queue", "queueinfo", "register",
+			"createCollection", "deleteMirror", "df", "du", "fquota", "jquota", "listSEDistance", "listTransfer", "md5sum", "mirror", "queue", "queueinfo", "register",
 			"registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat",
 			"whois" };
 
-	private static final String[] jAliEnAdminCommandList = new String[] { "addTrigger", "addHost", "queue", "register", "addSE", "addUser", "calculateFileQuota", "calculateJobQuota", "groupmembers" };
+	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 
 	/**
 	 * The commands that are advertised on the shell, e.g. by tab+tab
@@ -96,7 +96,6 @@ public class JAliEnCOMMander extends Thread {
 	static {
 		final List<String> comm_set = new ArrayList<>(Arrays.asList(jAliEnCommandList));
 		final List<String> comms = comm_set;
-		comms.addAll(Arrays.asList(jAliEnAdminCommandList));
 		comms.add("shutdown");
 
 		comms.addAll(FileEditor.getAvailableEditorCommands());
@@ -237,11 +236,11 @@ public class JAliEnCOMMander extends Thread {
 		}
 
 		if (AliEnPrincipal.roleIsAdmin(AliEnPrincipal.userRole()))
-			for (int i = 0; i < commandList.length; i++) {
+			for (int i = 0; i < jAliEnAdminCommandList.length; i++) {
 				if (i > 0)
 					commands.append(' ');
 
-				commands.append(commandList[i]);
+				commands.append(jAliEnAdminCommandList[i]);
 			}
 
 		return commands.toString();
@@ -489,7 +488,7 @@ public class JAliEnCOMMander extends Thread {
 						jcommand.printHelp();
 					}
 					else
-						if (args.size() != 0 || jcommand.canRunWithoutArguments()) {
+						if (jcommand.areArgumentsOk() && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
 							jcommand.run();
 						}
 						else {
