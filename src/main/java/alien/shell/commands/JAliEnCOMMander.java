@@ -32,7 +32,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Atomic status update of the command execution
-	 * 
+	 *
 	 * @author costing
 	 * @since 2018-09-11
 	 */
@@ -48,7 +48,7 @@ public class JAliEnCOMMander extends Thread {
 
 		/**
 		 * Set the new status code
-		 * 
+		 *
 		 * @param newValue
 		 * @return the old value
 		 */
@@ -80,11 +80,9 @@ public class JAliEnCOMMander extends Thread {
 	 * The commands that have a JAliEnCommand* implementation
 	 */
 	private static final String[] jAliEnCommandList = new String[] { "ls", "ls_csd", "cat", "cat_csd", "whereis", "whereis_csd", "cp", "cp_csd", "cd", "cd_csd", "time", "mkdir", "mkdir_csd",
-			"find", "find_csd", "listFilesFromCollection", "scrlog", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user",
-			"touch", "touch_csd", "type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "addMirror", "addTag", "addTagValue", "chgroup", "chown", "chown_csd",
-			"createCollection", "deleteMirror", "df", "du", "fquota", "jquota", "listSEDistance", "listTransfer", "md5sum", "mirror", "queue", "queueinfo", "register",
-			"registerOutput", "removeTag", "removeTagValue", "resubmit", "resubmitTransfer", "showTags", "showTagValue", "spy", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat",
-			"whois" };
+			"find", "find_csd", "listFilesFromCollection", "submit", "motd", "access", "commit", "packages", "pwd", "ps", "rmdir", "rm", "rm_csd", "mv", "mv_csd", "masterjob", "user",
+			"touch", "touch_csd", "type", "kill", "lfn2guid", "guid2lfn", "guid2lfn_csd", "w", "uptime", "addFileToCollection", "chgroup", "chown", "chown_csd", "deleteMirror", "df", "du", "fquota",
+			"jquota", "listSEDistance", "listTransfer", "md5sum", "mirror", "resubmit", "top", "groups", "token", "uuid", "stat", "listSEs", "xrdstat", "whois" };
 
 	private static final String[] jAliEnAdminCommandList = new String[] { "queue", "register", "groupmembers" };
 
@@ -561,7 +559,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Print a key-value pair to the output stream
-	 * 
+	 *
 	 * @param key
 	 * @param value
 	 */
@@ -573,7 +571,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Print the string to the output stream
-	 * 
+	 *
 	 * @param value
 	 */
 	public void printOut(final String value) {
@@ -583,7 +581,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Print a key-value (+"\n") pair to the output stream
-	 * 
+	 *
 	 * @param key
 	 * @param value
 	 */
@@ -593,7 +591,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Print the line to the output stream
-	 * 
+	 *
 	 * @param value
 	 */
 	public void printOutln(final String value) {
@@ -609,7 +607,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Print an error message to the output stream
-	 * 
+	 *
 	 * @param value
 	 */
 	public void printErr(final String value) {
@@ -619,7 +617,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Print an error message line to the output stream
-	 * 
+	 *
 	 * @param value
 	 */
 	public void printErrln(final String value) {
@@ -628,7 +626,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Set the command's return code and print an error message to the output stream
-	 * 
+	 *
 	 * @param exitCode
 	 * @param errorMessage
 	 */
@@ -639,7 +637,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Set the command's return arguments (for RootPrinter)
-	 * 
+	 *
 	 * @param args
 	 */
 	public void setReturnArgs(final String args) {
@@ -648,7 +646,7 @@ public class JAliEnCOMMander extends Thread {
 	}
 
 	/**
-	 * 
+	 *
 	 */
 	public void pending() {
 		if (!commandIsSilent())
@@ -657,7 +655,7 @@ public class JAliEnCOMMander extends Thread {
 
 	/**
 	 * Get commander's output stream writer
-	 * 
+	 *
 	 * @return UIPrintWriter
 	 */
 	public UIPrintWriter getPrintWriter() {
