@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -95,6 +96,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private Path path = null;
+	private static final String DEFAULT_JOB_CONTAINER_PATH = "/tmp/centos-7";
 
 	private enum jaStatus{
 		REQUESTING_JOB(1),
@@ -292,8 +294,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			commander.q_api.putJobLog(queueId, "trace", "Job preparing to run in: " + hostName);
 
-			//changeStatus(JobStatus.STARTED);
-
 			// Set up constraints
 			getMemoryRequirements();
 
@@ -475,36 +475,70 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 */
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
-			final Process p = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
-			p.waitFor();
+			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
+			cmdChecker.waitFor();
+			final Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
 
-			final Scanner scanner = new Scanner(p.getInputStream());
+			List<String> launchCmd = new ArrayList<String>();
 
-			List<String> cmd = new ArrayList<String>();
+			//TODO: Uncomment after testing
+			//final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
 
+			final String containerImgPath = DEFAULT_JOB_CONTAINER_PATH;
+			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
+				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
+			}
+
+			//Check if Singularity is present on site. If yes, add singularity to launchCmd
+			try {
+				//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?
+
+				final String siteTmp = env.getOrDefault("TMPDIR", "/tmp");
+
+				final Process singularityProbe = Runtime.getRuntime()
+						.exec("singularity exec -B " + siteTmp + ":/tmp " + containerImgPath + " /tmp/jdk-11.0.2+9-jre/bin/java -version");
+				singularityProbe.waitFor();
+
+				final Scanner probeScanner = new Scanner(singularityProbe.getErrorStream());
+				while(probeScanner.hasNext()) {
+					if(probeScanner.next().contains("Runtime")) {
+						launchCmd.add("singularity");
+						launchCmd.add("exec");
+						launchCmd.add("--pwd");
+						launchCmd.add("/workdir");
+						launchCmd.add("-B");
+						launchCmd.add(":/cvmfs," + siteTmp + ":/tmp," + jobWorkdir + ":/workdir");
+						launchCmd.add(containerImgPath);
+					}
+				}
+				probeScanner.close();
+			}catch (Exception e2) {
+				logger.log(Level.SEVERE, "Failed to start Singularity: " + e2.toString());
+			}
+
+			//Continue as normal, with or without containers
 			String readArg;
-			while (scanner.hasNext()) {
-				readArg = (scanner.next());
-
+			while (cmdScanner.hasNext()) {
+				readArg = (cmdScanner.next());
 				switch (readArg) {
 				case "-cp":
-					scanner.next();
+					cmdScanner.next();
 					break;
 				case "alien.site.JobAgent":
-					cmd.add("-DAliEnConfig="+jobWorkdir);
-					cmd.add("-cp");
-					cmd.add(path.toString());
-					cmd.add("alien.site.JobWrapper");
+					launchCmd.add("-DAliEnConfig="+jobWorkdir);
+					launchCmd.add("-cp");
+					launchCmd.add(path.toString());
+					launchCmd.add("alien.site.JobWrapper");
 					break;
 				default:
-					cmd.add(readArg);
+					launchCmd.add(readArg);
 				}
 			}
-			scanner.close();
+			cmdScanner.close();
 
-			return cmd;
+			return launchCmd;
 		} catch (final IOException e) {
-			logger.log(Level.SEVERE, "Could not generate JobWrapper launch command: " + e.getStackTrace());
+			logger.log(Level.SEVERE, "Could not generate JobWrapper launch command: " + e.toString());
 			return null;
 		}
 	}
@@ -527,6 +561,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 		OutputStream stdin;
 		ObjectOutputStream stdinObj;
 
+		InputStream stdout;
+		ObjectInputStream stdoutObj;
+
+		int wrapperPID = -1;
+
 		try {
 			p = pBuilder.start();
 
@@ -541,6 +580,16 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.writeObject(ce);
 
 			stdinObj.flush();
+
+			logger.log(Level.INFO, "JDL info sent to JobWrapper");
+
+			stdout = p.getInputStream();	
+			stdoutObj = new ObjectInputStream(stdout);
+
+			wrapperPID = (int) stdoutObj.readObject();
+
+			logger.log(Level.INFO, "Received JobWrapper PID: " + wrapperPID);
+
 		} catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
 			return -2;
@@ -555,9 +604,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "Child: " + child.get(1).toString());
 
 		if (monitorJob) {
-			payloadPID = child.get(1).intValue();
-			apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName);
-			mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
+			//payloadPID = child.get(1).intValue();
+			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
+			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce, hostName);
 			final String fs = checkProcessResources();
 			if (fs == null)
 				sendProcessResources();
@@ -575,7 +624,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
 
 		//Listen for job updates from the jobwrapper
-		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdin));
+		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdout, stdin));
 		jobWrapperListener.start();
 
 		boolean processNotFinished = true;
@@ -811,7 +860,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		return;
 	}
-	
+
 	/**
 	 * @param p A JobWrapper subprocess
 	 * @param stdin Stdin for the subprocess
@@ -819,33 +868,33 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * 
 	 * |JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 */
-	private Runnable createJobWrapperListener(Process p, OutputStream stdin){
+	private Runnable createJobWrapperListener(Process p, InputStream stdout, OutputStream stdin){
 		final Runnable jobWrapperListener = () -> {
-			
-			final InputStream stdout = p.getInputStream();	
+
+			//			final InputStream stdout = p.getInputStream();	
 			final PrintWriter stdinPrinter = new PrintWriter(stdin);
 
 			while(p.isAlive()){
 				try {
 					final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
 					final String receivedString = stdoutReader.readLine();                 
-					
+
 					if(receivedString.contains("|")){
 						final String[] received = receivedString.split("\\|");
 						final String newStatusString = received[1];
-						
+
 						logger.log(Level.INFO, "Received new status update from JobWrapper: " + newStatusString);
-						
+
 						final HashMap<String, Object> extrafields = new HashMap<>();
-						
+
 						for (int i=2; i<received.length; i+=2){
-						extrafields.put(received[i], received[i+1]);
-						logger.log(Level.INFO, "Putting in extrafields: " + received[i] + " " + received[i+1]);
+							extrafields.put(received[i], received[i+1]);
+							logger.log(Level.INFO, "Putting in extrafields: " + received[i] + " " + received[i+1]);
 						}
 
 						final JobStatus newStatus = JobStatus.getStatus(newStatusString);
 						changeJobStatus(newStatus, extrafields);
-						
+
 						//echo back status to confirm
 						stdinPrinter.println(newStatusString);
 						stdinPrinter.flush();
@@ -854,6 +903,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					logger.log(Level.INFO, "Received something from JobWrapper, but it wasn't a status update (corrupted?). Ignoring");
 				} catch (EOFException | NullPointerException e1){
 					logger.log(Level.INFO, "JobWrapper has stopped sending updates");
+					break; 
 				} catch (Exception e2){
 					logger.log(Level.WARNING, "Exception received: " + e2);
 				}
@@ -861,5 +911,5 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}; 
 		return jobWrapperListener;
 	}
-	
+
 }
