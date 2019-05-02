@@ -211,9 +211,13 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					
 					if (verbose)
 						commander.printOutln(error);
-
-					if (printCommand && !error.contains(xrootd.getLastCommand().toString()))
-						commander.printOutln("\t\t" + xrootd.getLastCommand());
+					
+					if (printCommand) {
+						final String cmd = xrootd.getFormattedLastCommand();
+						
+						if (!error.contains(cmd))
+							commander.printOutln(cmd);
+					}
 				}
 			}
 		}
