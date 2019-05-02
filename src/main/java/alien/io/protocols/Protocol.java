@@ -256,8 +256,10 @@ public abstract class Protocol implements Serializable, Comparable<Protocol>, Cl
 
 		boolean first = true;
 
-		if (getLastCommand() != null) {
-			for (String cmdToken : getLastCommand()) {
+		final List<String> lastCmd = getLastCommand();
+
+		if (lastCmd != null) {
+			for (String cmdToken : lastCmd) {
 				if (!first)
 					sb.append(' ');
 
