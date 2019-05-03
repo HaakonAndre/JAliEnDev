@@ -95,8 +95,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private String hostName = null;
 	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
-	private Path path = null;
-	private static final String DEFAULT_JOB_CONTAINER_PATH = "/tmp/centos-7";
+	private String path = null;
+	private String jarName =  null;
+	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
 
 	private enum jaStatus{
 		REQUESTING_JOB(1),
@@ -209,7 +210,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 		monitor.addMonitoring("jobAgent-TODO", this);
 
 		try {
-			path = Paths.get(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+			path = Paths.get(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
+		    jarName = new java.io.File(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getName();
+		    path = path.replace(jarName, "");
 		} catch (final URISyntaxException e) {
 			logger.log(Level.SEVERE, "Could not obtain AliEn jar path: " + e.toString());
 		}
@@ -297,11 +300,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 			// Set up constraints
 			getMemoryRequirements();
 
-			setupJobWrapperLogging();
-
 			final int selfProcessID = MonitorFactory.getSelfProcessID();
 			final List<String> launchCommand = generateLaunchCommand(selfProcessID);
 
+			setupJobWrapperLogging();
+			
 			commander.q_api.putJobLog(queueId, "trace", "Starting JobWrapper");
 
 			launchJobWrapper(launchCommand, true);
@@ -495,20 +498,32 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 				final String siteTmp = env.getOrDefault("TMPDIR", "/tmp");
 
+				
+				//TODO: Remove after testing. JDK will be in CVMFS
+				final Process copyJDK = Runtime.getRuntime()
+						.exec("cp -rf jdk-11.0.2+9-jre " + jobWorkdir + "/jdk-11.0.2+9-jre && cp alien-users.jar " + jobWorkdir);
+				copyJDK.waitFor();
+				
+				
 				final Process singularityProbe = Runtime.getRuntime()
-						.exec("singularity exec -B " + siteTmp + ":/tmp " + containerImgPath + " /tmp/jdk-11.0.2+9-jre/bin/java -version");
+						.exec("singularity exec -B " + jobWorkdir + ":/workdirr " + containerImgPath + " /workdirr/jdk-11.0.2+9-jre/bin/java -version");
 				singularityProbe.waitFor();
 
 				final Scanner probeScanner = new Scanner(singularityProbe.getErrorStream());
 				while(probeScanner.hasNext()) {
-					if(probeScanner.next().contains("Runtime")) {
+					String next = probeScanner.next();
+					if(next.contains("Runtime")) {
 						launchCmd.add("singularity");
 						launchCmd.add("exec");
 						launchCmd.add("--pwd");
-						launchCmd.add("/workdir");
+						launchCmd.add("/workdirr");
 						launchCmd.add("-B");
-						launchCmd.add(":/cvmfs," + siteTmp + ":/tmp," + jobWorkdir + ":/workdir");
+						launchCmd.add(":/cvmfs," + siteTmp + ":/tmp," + jobWorkdir + ":/workdirr");
 						launchCmd.add(containerImgPath);
+						
+						path = "/workdirr";
+						jobWrapperLogDir = "/tmp/jalien-jobwrapper.log";
+						
 					}
 				}
 				probeScanner.close();
@@ -527,7 +542,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				case "alien.site.JobAgent":
 					launchCmd.add("-DAliEnConfig="+jobWorkdir);
 					launchCmd.add("-cp");
-					launchCmd.add(path.toString());
+					launchCmd.add(path+"/"+jarName);
 					launchCmd.add("alien.site.JobWrapper");
 					break;
 				default:
@@ -553,7 +568,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		pBuilder.redirectError(Redirect.INHERIT);
 
-		pBuilder.directory(tempDir);
+		//TODO: Put back after testing. pBuilder.directory(tempDir);
 
 		final Process p;
 
@@ -578,6 +593,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.writeObject(tokenCert);
 			stdinObj.writeObject(tokenKey);
 			stdinObj.writeObject(ce);
+			stdinObj.writeObject(siteMap);
+			stdinObj.writeObject(defaultOutputDirPrefix);
 
 			stdinObj.flush();
 
@@ -641,7 +658,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 					processNotFinished = false;
 					logger.log(Level.INFO, "JobWrapper has finished execution. Exit code: " + code);
 					if(code!=0)
-						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + jobWrapperLogDir + " for more details");
+						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log " + " for more details");
 				} catch (final IllegalThreadStateException e) {
 					logger.log(Level.INFO, "Waiting for the JobWrapper process to finish");
 					// TODO: check job-token exist (job not killed)

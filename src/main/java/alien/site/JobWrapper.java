@@ -46,8 +46,10 @@ import alien.user.UserFactory;
 public class JobWrapper implements Runnable {
 
 	// Folders and files
+	//TODO: This will break when using a set directory in a container (for overlay/underlay workaround)
 	private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
-	private String currentDirFolder = currentDir.getAbsolutePath().substring(currentDir.getAbsolutePath().lastIndexOf('/') + 1);
+	//	private String currentDirFolder = currentDir.getAbsolutePath().substring(currentDir.getAbsolutePath().lastIndexOf('/') + 1);
+	private String defaultOutputDirPrefix = "";
 
 	// Variables passed through VoBox environment
 	//TODO: To be removed
@@ -105,13 +107,15 @@ public class JobWrapper implements Runnable {
 
 	/**
 	 */
+	@SuppressWarnings("unchecked")
 	public JobWrapper() {
 
 		//TODO: Send from JobAgent instead of reading from env? Will simplify things for containers.
-		siteMap = (new SiteMap()).getSiteParameters(env);
-		hostName = (String) siteMap.get("Host");
+		//		siteMap = (new SiteMap()).getSiteParameters(env);
+		//		hostName = (String) siteMap.get("Host");
 		//		packMan = (PackMan) siteMap.get("PackMan");
-		packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
+		//TODO: Always bind mount to /cvmfs in container
+		//      packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
 
 		pid = MonitorFactory.getSelfProcessID();
 
@@ -123,18 +127,19 @@ public class JobWrapper implements Runnable {
 			tokenCert = (String) inputFromJobAgent.readObject();
 			tokenKey = (String) inputFromJobAgent.readObject();
 			ce = (String) inputFromJobAgent.readObject();
+			siteMap = (HashMap<String, Object>) inputFromJobAgent.readObject();
+			defaultOutputDirPrefix = (String) inputFromJobAgent.readObject();
 
 			logger.log(Level.INFO, "We received the following tokenCert: " + tokenCert);
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
 			logger.log(Level.INFO, "We received the following CE "+ ce);
-			
+
 			logger.log(Level.INFO, "Sending PID to JobAgent");
-			
+
 			outputToJobAgent = new ObjectOutputStream(System.out);
 			outputToJobAgent.writeObject(pid);
-			outputToJobAgent.flush();
-			
+			outputToJobAgent.flush();	
 		} catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
 		}
@@ -148,6 +153,9 @@ public class JobWrapper implements Runnable {
 				logger.log(Level.SEVERE, "Error. Could not load tokenCert and/or tokenKey" + e);
 			}
 		}
+
+		hostName = (String) siteMap.get("Host");
+		packMan = (PackMan) siteMap.get("PackMan");
 
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
@@ -174,7 +182,7 @@ public class JobWrapper implements Runnable {
 		// Start listening for messages from the JobAgent
 		final Thread jobAgentListener = new Thread(createJobAgentListener());
 		jobAgentListener.start();
-		
+
 		// process payload
 		final int runCode = runJob();
 
@@ -184,7 +192,7 @@ public class JobWrapper implements Runnable {
 		} catch (Exception e) {
 			logger.log(Level.WARNING, "An exception occurred during cleanup: " + e);
 		}
-		
+
 		logger.log(Level.INFO, "JobWrapper has finished execution");
 
 		System.exit(runCode);
@@ -639,7 +647,7 @@ public class JobWrapper implements Runnable {
 	public void sendStatus(final JobStatus newStatus) {
 		String sendString = "|" + newStatus.name();
 		sendString += "|exechost|" + this.ce;
-		
+
 		// if final status with saved files, we set the path
 		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) 
 			sendString += "|path|" + getJobOutputDir();
@@ -680,10 +688,10 @@ public class JobWrapper implements Runnable {
 		String outputDir = jdl.getOutputDir();
 
 		if (jobStatus == JobStatus.ERROR_V || jobStatus == JobStatus.ERROR_E)
-			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + currentDirFolder);
+			outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + "recycle/" + defaultOutputDirPrefix + queueId);
 		else
 			if (outputDir == null)
-				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + currentDirFolder);
+				outputDir = FileSystemUtils.getAbsolutePath(username, null, "~" + defaultOutputDirPrefix + queueId);
 
 		return outputDir;
 	}
