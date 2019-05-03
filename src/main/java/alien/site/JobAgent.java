@@ -324,9 +324,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		try {
 			Files.walk(tempDir.toPath())
+			.map(Path::toFile)
 			.sorted(Comparator.reverseOrder()) //or else tempdir will appear before its contents
-			.map(Path::toFile).
-			forEach(File::delete);
+			.forEach(File::delete);
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Error deleting the job workdir: " + e.toString());
 		}
@@ -523,7 +523,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 						
 						path = "/workdirr";
 						jobWrapperLogDir = "/tmp/jalien-jobwrapper.log";
-						
 					}
 				}
 				probeScanner.close();
