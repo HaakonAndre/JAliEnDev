@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -63,6 +64,8 @@ public class Xrootd extends Protocol {
 	 * Statically filled variable, <code>true</code> when
 	 */
 	protected static boolean xrootdNewerThan4 = false;
+
+	private Map<String, String> extraEnvVariables = new HashMap<>();
 
 	static {
 		try {
@@ -805,6 +808,17 @@ public class Xrootd extends Protocol {
 
 	private static final String[] XRD_LOGLEVEL = { "Error", "Warning", "Info", "Debug", "Dump" };
 
+	/**
+	 * Set some extra environment variable. See the xrdcp manual for all the options.
+	 * 
+	 * @param key environment variable name
+	 * @param value value to set, can be <code>null</code> to remove any existing value
+	 * @return the previously set value for this key
+	 */
+	public String setEnvVariable(final String key, final String value) {
+		return extraEnvVariables.put(key, value);
+	}
+
 	private void setCommonEnv(final ProcessBuilder pBuilder, final String defaultApplicationName) {
 		final Map<String, String> env = new LinkedHashMap<>();
 
@@ -823,6 +837,13 @@ public class Xrootd extends Protocol {
 
 		if (timeout > 0)
 			env.put("XRD_REQUESTTIMEOUT", String.valueOf(timeout));
+
+		for (final Map.Entry<String, String> entry : extraEnvVariables.entrySet()) {
+			if (entry.getValue() != null)
+				env.put(entry.getKey(), entry.getValue());
+			else
+				env.remove(entry.getKey());
+		}
 
 		setLastCommandEnv(env);
 		pBuilder.environment().putAll(env);
@@ -1739,5 +1760,14 @@ public class Xrootd extends Protocol {
 		}
 
 		return ret;
+	}
+	
+	@Override
+	public Object clone() {
+		final Xrootd theClone = (Xrootd) super.clone();
+		
+		theClone.extraEnvVariables = new HashMap<>(this.extraEnvVariables);
+		
+		return theClone;
 	}
 }
