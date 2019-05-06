@@ -51,10 +51,6 @@ public class JobWrapper implements Runnable {
 	//	private String currentDirFolder = currentDir.getAbsolutePath().substring(currentDir.getAbsolutePath().lastIndexOf('/') + 1);
 	private String defaultOutputDirPrefix = "";
 
-	// Variables passed through VoBox environment
-	//TODO: To be removed
-	private final Map<String, String> env = System.getenv();
-
 	// Job variables
 	/**
 	 * @uml.property  name="jdl"
@@ -65,7 +61,7 @@ public class JobWrapper implements Runnable {
 	private String username;
 	private String tokenCert;
 	private String tokenKey;
-	private HashMap<String, Object> siteMap = new HashMap<>();
+	private HashMap<String, Object> siteMap;
 	private String ce;
 	/**
 	 * @uml.property  name="jobStatus"

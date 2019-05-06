@@ -325,7 +325,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		try {
 			Files.walk(tempDir.toPath())
 			.map(Path::toFile)
-			.sorted(Comparator.reverseOrder()) //or else tempdir will appear before its contents
+			.sorted(Comparator.reverseOrder()) //or else dir will appear before its contents
 			.forEach(File::delete);
 		} catch (IOException e) {
 			logger.log(Level.WARNING, "Error deleting the job workdir: " + e.toString());
@@ -484,10 +484,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			List<String> launchCmd = new ArrayList<String>();
 
-			//TODO: Uncomment after testing
-			//final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
+			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
 
-			final String containerImgPath = DEFAULT_JOB_CONTAINER_PATH;
 			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
 				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
 			}
@@ -567,7 +565,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		pBuilder.redirectError(Redirect.INHERIT);
 
-		//TODO: Put back after testing. pBuilder.directory(tempDir);
+		pBuilder.directory(tempDir);
 
 		final Process p;
 
