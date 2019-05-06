@@ -1761,4 +1761,13 @@ public class Xrootd extends Protocol {
 
 		return ret;
 	}
+	
+	@Override
+	public Object clone() {
+		final Xrootd theClone = (Xrootd) super.clone();
+		
+		theClone.extraEnvVariables = new HashMap<>(this.extraEnvVariables);
+		
+		return theClone;
+	}
 }
