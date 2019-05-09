@@ -825,7 +825,7 @@ public class Xrootd extends Protocol {
 		env.put("XRD_CONNECTIONWINDOW", DIConnectionWindow);
 		env.put("XRD_CONNECTIONRETRY", "1");
 		env.put("XRD_TIMEOUTRESOLUTION", "1");
-		env.put("XRD_PREFERIPV4", "true");
+		env.put("XRD_PREFERIPV4", "1");
 
 		if (xrdcpdebuglevel > 0)
 			env.put("XRD_LOGLEVEL", XRD_LOGLEVEL[Math.min(xrdcpdebuglevel, XRD_LOGLEVEL.length) - 1]);
