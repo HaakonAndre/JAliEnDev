@@ -95,7 +95,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private String hostName = null;
 	private final int pid;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
-	private String path = null;
+	private String jarPath = null;
 	private String jarName =  null;
 	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
 
@@ -210,9 +210,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 		monitor.addMonitoring("jobAgent-TODO", this);
 
 		try {
-			path = Paths.get(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI()).toString();
-		    jarName = new java.io.File(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getName();
-		    path = path.replace(jarName, "");
+			File filepath = new java.io.File(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+			jarName = filepath.getName();
+			jarPath = filepath.toString().replace(jarName, "");
 		} catch (final URISyntaxException e) {
 			logger.log(Level.SEVERE, "Could not obtain AliEn jar path: " + e.toString());
 		}
@@ -304,7 +304,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			final List<String> launchCommand = generateLaunchCommand(selfProcessID);
 
 			setupJobWrapperLogging();
-			
+
 			commander.q_api.putJobLog(queueId, "trace", "Starting JobWrapper");
 
 			launchJobWrapper(launchCommand, true);
@@ -496,13 +496,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 				final String siteTmp = env.getOrDefault("TMPDIR", "/tmp");
 
-				
+
 				//TODO: Remove after testing. JDK will be in CVMFS
 				final Process copyJDK = Runtime.getRuntime()
 						.exec("cp -rf jdk-11.0.2+9-jre " + jobWorkdir + "/jdk-11.0.2+9-jre && cp alien-users.jar " + jobWorkdir);
 				copyJDK.waitFor();
-				
-				
+
+
 				final Process singularityProbe = Runtime.getRuntime()
 						.exec("singularity exec -B " + jobWorkdir + ":/workdirr " + containerImgPath + " /workdirr/jdk-11.0.2+9-jre/bin/java -version");
 				singularityProbe.waitFor();
@@ -518,9 +518,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 						launchCmd.add("-B");
 						launchCmd.add(":/cvmfs," + siteTmp + ":/tmp," + jobWorkdir + ":/workdirr");
 						launchCmd.add(containerImgPath);
-						
-						path = "/workdirr";
+
+						jarPath = "/workdirr";
 						jobWrapperLogDir = "/tmp/jalien-jobwrapper.log";
+						break;
 					}
 				}
 				probeScanner.close();
@@ -539,7 +540,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				case "alien.site.JobAgent":
 					launchCmd.add("-DAliEnConfig="+jobWorkdir);
 					launchCmd.add("-cp");
-					launchCmd.add(path+"/"+jarName);
+					launchCmd.add(jarPath+"/"+jarName);
 					launchCmd.add("alien.site.JobWrapper");
 					break;
 				default:
