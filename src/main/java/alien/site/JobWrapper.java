@@ -45,71 +45,65 @@ import alien.user.UserFactory;
  */
 public class JobWrapper implements Runnable {
 
-	// Folders and files
-	//TODO: This will break when using a set directory in a container (for overlay/underlay workaround)
-	private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
-	//	private String currentDirFolder = currentDir.getAbsolutePath().substring(currentDir.getAbsolutePath().lastIndexOf('/') + 1);
-	private String defaultOutputDirPrefix = "";
+    // Folders and files
+    private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
+    private String defaultOutputDirPrefix;
 
-	// Job variables
-	/**
-	 * @uml.property  name="jdl"
-	 * @uml.associationEnd  
-	 */
-	private JDL jdl = null;
-	private long queueId;
-	private String username;
-	private String tokenCert;
-	private String tokenKey;
-	private HashMap<String, Object> siteMap;
-	private String ce;
-	/**
-	 * @uml.property  name="jobStatus"
-	 * @uml.associationEnd  
-	 */
-	private JobStatus jobStatus;
-	private String receivedStatus = "";
+    // Job variables
+    /**
+     * @uml.property  name="jdl"
+     * @uml.associationEnd  
+     */
+    private JDL jdl;
+    private long queueId;
+    private String username;
+    private String tokenCert;
+    private String tokenKey;
+    private HashMap<String, Object> siteMap;
+    private String ce;
+    /**
+     * @uml.property  name="jobStatus"
+     * @uml.associationEnd  
+     */
+    private JobStatus jobStatus;
+    private String receivedStatus = "";
 
-	// Other
-	/**
-	 * @uml.property  name="packMan"
-	 * @uml.associationEnd  
-	 */
-	private PackMan packMan = null;
-	private String hostName = null;
-	private final int pid;
-	/**
-	 * @uml.property  name="commander"
-	 * @uml.associationEnd  
-	 */
-	private final JAliEnCOMMander commander;
+    // Other
+    /**
+     * @uml.property  name="packMan"
+     * @uml.associationEnd  
+     */
+    private PackMan packMan;
+    private String hostName;
+    private final int pid;
+    /**
+     * @uml.property  name="commander"
+     * @uml.associationEnd  
+     */
+    private final JAliEnCOMMander commander;
 
-	/**
-	 * @uml.property  name="c_api"
-	 * @uml.associationEnd  
-	 */
-	private final CatalogueApiUtils c_api;
+    /**
+     * @uml.property  name="c_api"
+     * @uml.associationEnd  
+     */
+    private final CatalogueApiUtils c_api;
 
-	/**
-	 * logger object
-	 */
-	static transient final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
+    /**
+     * logger object
+     */
+    static transient final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
 
-	/**
-	 * Streams for data transfer
-	 */
-	private ObjectInputStream inputFromJobAgent = null;
-	private ObjectOutputStream outputToJobAgent = null;
+    /**
+     * Streams for data transfer
+     */
+    private ObjectInputStream inputFromJobAgent;
+    private ObjectOutputStream outputToJobAgent;
 
-	/**
-	 */
-	@SuppressWarnings("unchecked")
+    /**
+     */
+    @SuppressWarnings("unchecked")
 	public JobWrapper() {
 
-		//TODO: Send from JobAgent instead of reading from env? Will simplify things for containers.
-		//		siteMap = (new SiteMap()).getSiteParameters(env);
-		//		hostName = (String) siteMap.get("Host");
-		//		packMan = (PackMan) siteMap.get("PackMan");
 		//TODO: Always bind mount to /cvmfs in container
 		//      packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
 
@@ -135,7 +129,7 @@ public class JobWrapper implements Runnable {
 
 			outputToJobAgent = new ObjectOutputStream(System.out);
 			outputToJobAgent.writeObject(pid);
-			outputToJobAgent.flush();	
+			outputToJobAgent.flush();
 		} catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
 		}
@@ -669,7 +663,6 @@ public class JobWrapper implements Runnable {
 				System.out.printf("%s%n", sendString);
 				System.out.flush();
 			}
-
 		} catch (Exception e) {
 			logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent");
 		}

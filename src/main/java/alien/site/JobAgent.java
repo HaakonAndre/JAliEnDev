@@ -13,11 +13,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StreamCorruptedException;
 import java.lang.ProcessBuilder.Redirect;
-import java.lang.management.ManagementFactory;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -58,31 +56,31 @@ import lazyj.ExtProperties;
  */
 public class JobAgent implements MonitoringObject, Runnable {
 
-	// Folders and files
-	private File tempDir = null;
-	private static final String defaultOutputDirPrefix = "/jalien-job-";
-	private String jobWorkdir = "";
-	private String jobWrapperLogDir = "";
-
-
+	
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
 	private final String ce;
 	private final int origTtl;
+	
+	// Folders and files
+	private File tempDir;
+	private static final String defaultOutputDirPrefix = "/jalien-job-";
+	private String jobWorkdir;
+	private String jobWrapperLogDir;
+	private final String siteTmp = env.getOrDefault("TMPDIR", "/tmp");
 
 	// Job variables
-	private JDL jdl = null;
+	private JDL jdl;
 	private long queueId;
 	private String username;
 	private String tokenCert;
 	private String tokenKey;
-	private String jobAgentId = "";
-	private String workdir = null;
-	private HashMap<String, Object> matchedJob = null;
+	private String jobAgentId;
+	private String workdir;
+	private HashMap<String, Object> matchedJob;
 	private HashMap<String, Object> siteMap = new HashMap<>();
 	private int workdirMaxSizeMB;
 	private int jobMaxMemoryMB;
-	private int payloadPID;
 	private MonitoredJob mj;
 	private Double prevCpuTime;
 	private long prevTime = 0;
@@ -90,14 +88,17 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 	private int totalJobs;
 	private final long jobAgentStartTime = new java.util.Date().getTime();
+	
+	// Container specific
+	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
+	private static final String CONTAINER_JOBDIR = "/workdirr";
+	private static final String CONTAINER_TMPDIR = "/tmp";
 
 	// Other
-	private String hostName = null;
-	private final int pid;
+	private String hostName;
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
-	private String jarPath = null;
-	private String jarName =  null;
-	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
+	private String jarPath;
+	private String jarName;
 
 	private enum jaStatus{
 		REQUESTING_JOB(1),
@@ -183,8 +184,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		if (env.containsKey("ALIEN_JOBAGENT_ID"))
 			jobAgentId = env.get("ALIEN_JOBAGENT_ID");
 		else jobAgentId = Request.getVMID().toString();
-
-		pid = Integer.parseInt(ManagementFactory.getRuntimeMXBean().getName().split("@")[0]);
 
 		workdir = (String) siteMap.get("workdir");
 
@@ -494,17 +493,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 			try {
 				//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?
 
-				final String siteTmp = env.getOrDefault("TMPDIR", "/tmp");
-
-
 				//TODO: Remove after testing. JDK will be in CVMFS
 				final Process copyJDK = Runtime.getRuntime()
 						.exec("cp -rf jdk-11.0.2+9-jre " + jobWorkdir + "/jdk-11.0.2+9-jre && cp alien-users.jar " + jobWorkdir);
 				copyJDK.waitFor();
 
-
 				final Process singularityProbe = Runtime.getRuntime()
-						.exec("singularity exec -B " + jobWorkdir + ":/workdirr " + containerImgPath + " /workdirr/jdk-11.0.2+9-jre/bin/java -version");
+						.exec("singularity exec -B " + jobWorkdir + ":" + CONTAINER_JOBDIR + " " + containerImgPath + " /workdirr/jdk-11.0.2+9-jre/bin/java -version");
 				singularityProbe.waitFor();
 
 				final Scanner probeScanner = new Scanner(singularityProbe.getErrorStream());
@@ -514,9 +509,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 						launchCmd.add("singularity");
 						launchCmd.add("exec");
 						launchCmd.add("--pwd");
-						launchCmd.add("/workdirr");
+						launchCmd.add(CONTAINER_JOBDIR);
 						launchCmd.add("-B");
-						launchCmd.add(":/cvmfs," + siteTmp + ":/tmp," + jobWorkdir + ":/workdirr");
+						launchCmd.add(":/cvmfs," + siteTmp + ":" + CONTAINER_TMPDIR + "," + jobWorkdir + ":" + CONTAINER_JOBDIR);
 						launchCmd.add(containerImgPath);
 
 						jarPath = "/workdirr";
@@ -610,14 +605,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 			return -2;
 		}
 
-		mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
-		final Vector<Integer> child = mj.getChildren();
-		if (child == null || child.size() <= 1) {
-			logger.log(Level.WARNING, "Can't get children. Failed to execute? " + launchCommand.toString() + " child: " + child);
-			return -1;
-		}
-		logger.log(Level.INFO, "Child: " + child.get(1).toString());
-
 		if (monitorJob) {
 			//payloadPID = child.get(1).intValue();
 			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
@@ -689,7 +676,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			} catch (Exception e){
 				logger.log(Level.WARNING, "Not all resources from the current job could be cleared: " + e);
 			}
-			apmon.removeJobToMonitor(payloadPID);
+			apmon.removeJobToMonitor(wrapperPID);
 			if(jobStatus == JobStatus.STARTED || jobStatus == JobStatus.RUNNING)
 				changeJobStatus(JobStatus.ERROR_E, null); //JobWrapper was killed before the job could be completed
 			else if (jobStatus == JobStatus.SAVING){
