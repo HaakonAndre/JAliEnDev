@@ -110,7 +110,7 @@ public final class MonitorFactory {
 			if (m == null && getConfigBoolean(component, "enabled", true)) {
 				m = new Monitor(component);
 
-				final int interval = getConfigInt(component, "period", ConfigUtils.getConfig().gets("APMON_CONFIG", null) != null ? 120 : 60);
+				final int interval = getConfigInt(component, "period", isJob() ? 120 : 60);
 
 				final ScheduledFuture<?> future = executor.scheduleAtFixedRate(m, random.nextInt(interval), interval, TimeUnit.SECONDS);
 
@@ -176,7 +176,7 @@ public final class MonitorFactory {
 		}
 
 		try {
-			if (getConfigBoolean(component, "DiskDF", true))
+			if (getConfigBoolean(component, "DiskDF", isJob() ? false : true))
 				systemMonitor.addModule(new DiskDF());
 		}
 		catch (final Exception e) {
@@ -240,11 +240,15 @@ public final class MonitorFactory {
 			logger.log(Level.WARNING, "ApMon is null, so self monitoring cannot run");
 	}
 
-	private static Vector<String> getApMonDestinations() {
-		final String siteVoBox = ConfigUtils.getConfig().gets("APMON_CONFIG", null);
+	private static boolean isJob() {
+		final String test = ConfigUtils.getConfig().gets("APMON_CONFIG", null);
 
-		if (siteVoBox != null && siteVoBox.length() > 0) {
-			final StringTokenizer st = new StringTokenizer(siteVoBox, ","); //$NON-NLS-1$
+		return test != null && test.trim().length() > 0;
+	}
+
+	private static Vector<String> getApMonDestinations() {
+		if (isJob()) {
+			final StringTokenizer st = new StringTokenizer(ConfigUtils.getConfig().gets("APMON_CONFIG", null), ","); //$NON-NLS-1$
 
 			final Vector<String> vReturn = new Vector<>(st.countTokens());
 
