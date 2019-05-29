@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.security.KeyStoreException;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -14,11 +15,15 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
@@ -27,8 +32,8 @@ import javax.net.ssl.TrustManagerFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import alien.api.taskQueue.GetMatchJob;
-import alien.api.taskQueue.SetJobStatus;
 import alien.api.taskQueue.PutJobLog;
+import alien.api.taskQueue.SetJobStatus;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -36,6 +41,7 @@ import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 import lazyj.Format;
+import utils.CachedThreadPool;
 
 /**
  * @author costing
@@ -84,6 +90,21 @@ public class DispatchSSLServer extends Thread {
 
 	private int objectsSentCounter = 0;
 
+	private static AtomicInteger activeSessions = new AtomicInteger();
+
+	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS);
+
+	static {
+		monitor.addMonitoring("activeSessions", (names, values) -> {
+			names.add("activeSessions");
+			values.add(Double.valueOf(activeSessions.get()));
+			names.add("acceptorPoolSize");
+			values.add(Double.valueOf(acceptorPool.getPoolSize()));
+			names.add("acceptorPoolQueueLength");
+			values.add(Double.valueOf(acceptorPool.getQueue().size()));
+		});
+	}
+
 	/**
 	 * E.g. the CE proxy should act as a forwarding bridge between JA and central services
 	 *
@@ -99,9 +120,8 @@ public class DispatchSSLServer extends Thread {
 
 	/**
 	 * @param connection
-	 * @throws IOException
 	 */
-	public DispatchSSLServer(final Socket connection) throws IOException {
+	public DispatchSSLServer(final Socket connection) {
 		this.connection = connection;
 
 		setName(connection.getInetAddress().toString());
@@ -114,6 +134,9 @@ public class DispatchSSLServer extends Thread {
 			connection.setTcpNoDelay(true);
 			connection.setTrafficClass(0x10);
 
+			// clients that did not send any command for a long time (default one hour) are disconnected
+			connection.setSoTimeout(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.idleTimeout_seconds", 3600) * 1000);
+
 			this.os = connection.getOutputStream();
 
 			this.oos = new ObjectOutputStream(this.os);
@@ -121,7 +144,8 @@ public class DispatchSSLServer extends Thread {
 			this.os.flush();
 
 			this.ois = new ObjectInputStream(connection.getInputStream());
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			logger.log(Level.WARNING, "Exception initializing the SSL socket", e);
 			return;
 		}
@@ -138,6 +162,8 @@ public class DispatchSSLServer extends Thread {
 		long lLasted = 0;
 
 		int requestCount = 0;
+
+		activeSessions.incrementAndGet();
 
 		try {
 			while (true) {
@@ -162,17 +188,18 @@ public class DispatchSSLServer extends Thread {
 
 							if (r.getEffectiveRequester().isJobAgent() && !(r instanceof GetMatchJob)) {
 
-								//Allowing the JobAgent to change the job status enables it to act on possible JobWrapper terminations/faults
-								if(r instanceof SetJobStatus)
+								// Allowing the JobAgent to change the job status enables it to act on possible JobWrapper terminations/faults
+								if (r instanceof SetJobStatus)
 									shouldRun = true;
-								//Enables the JobAgent to report its progress/the resources it allocates for the JobWrapper sandbox
-								else if(r instanceof PutJobLog)
-									shouldRun = true;
-								else {
-									// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)
-									r.setException(new ServerException("You are not allowed to call " + r.getClass().getName() + " as job agent", null));
-									shouldRun = false;
-								}
+								// Enables the JobAgent to report its progress/the resources it allocates for the JobWrapper sandbox
+								else
+									if (r instanceof PutJobLog)
+										shouldRun = true;
+									else {
+										// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)
+										r.setException(new ServerException("You are not allowed to call " + r.getClass().getName() + " as job agent", null));
+										shouldRun = false;
+									}
 							}
 
 							if (r.getEffectiveRequester().isJob()) {
@@ -182,7 +209,8 @@ public class DispatchSSLServer extends Thread {
 							if (shouldRun)
 								try {
 									r.run();
-								} catch (final Exception e) {
+								}
+								catch (final Exception e) {
 									logger.log(Level.WARNING, "Returning an exception to the client", e);
 
 									r.setException(new ServerException(e.getMessage(), e));
@@ -223,30 +251,38 @@ public class DispatchSSLServer extends Thread {
 					else
 						logger.log(Level.WARNING, "I don't know what to do with an object of type " + o.getClass().getCanonicalName());
 			}
-		} catch (@SuppressWarnings("unused") final EOFException e) {
+		}
+		catch (@SuppressWarnings("unused") final EOFException e) {
 			logger.log(Level.WARNING, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval(lLasted) + " to process and "
 					+ Format.toInterval(lSerialization) + " to serialize");
-		} catch (final Throwable e) {
+		}
+		catch (final Throwable e) {
 			logger.log(Level.WARNING, "Main thread for " + getName() + " threw an error after sending " + requestCount + " requests that took in total " + Format.toInterval(lLasted)
-			+ " to process and " + Format.toInterval(lSerialization) + " to serialize", e);
-		} finally {
+					+ " to process and " + Format.toInterval(lSerialization) + " to serialize", e);
+		}
+		finally {
+			activeSessions.decrementAndGet();
+
 			if (ois != null)
 				try {
 					ois.close();
-				} catch (@SuppressWarnings("unused") final IOException ioe) {
+				}
+				catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
 			if (oos != null)
 				try {
 					oos.close();
-				} catch (@SuppressWarnings("unused") final IOException ioe) {
+				}
+				catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
 			try {
 				connection.close();
-			} catch (@SuppressWarnings("unused") final IOException ioe) {
+			}
+			catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore
 			}
 		}
@@ -255,7 +291,8 @@ public class DispatchSSLServer extends Thread {
 	private static boolean isHostCertValid() {
 		try {
 			((java.security.cert.X509Certificate) JAKeyStore.getKeyStore().getCertificateChain("User.cert")[0]).checkValidity();
-		} catch (@SuppressWarnings("unused") final CertificateException | KeyStoreException e) {
+		}
+		catch (@SuppressWarnings("unused") final CertificateException | KeyStoreException e) {
 			return false;
 		}
 
@@ -279,7 +316,8 @@ public class DispatchSSLServer extends Thread {
 				try {
 					port = Integer.parseInt(address.substring(idx + 1).trim());
 					address = address.substring(0, idx).trim();
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
 					port = defaultPort;
 				}
 		}
@@ -342,58 +380,78 @@ public class DispatchSSLServer extends Thread {
 					// communication
 					final SSLSocket c = (SSLSocket) server.accept();
 
-					if (!c.getSession().isValid()) {
-						logger.log(Level.WARNING, "Invalid SSL connection from " + c.getRemoteSocketAddress());
-
-						monitor.incrementCounter("invalid_ssl_connection");
-
-						continue;
-					}
-
-					X509Certificate[] peerCertChain = null;
-
-					if (server.getNeedClientAuth() == true) {
-						logger.log(Level.INFO, "Printing client information:");
-						final Certificate[] peerCerts = c.getSession().getPeerCertificates();
-
-						if (peerCerts != null) {
-							peerCertChain = new X509Certificate[peerCerts.length];
-
-							for (int i = 0; i < peerCerts.length; i++) {
-								if (peerCerts[i] instanceof X509Certificate) {
-									X509Certificate xCert = (X509Certificate) peerCerts[i];
-									logger.log(Level.FINE, printClientInfo(xCert));
-									peerCertChain[i] = xCert;
-								}
-								else {
-									logger.log(Level.WARNING, "Peer certificate is not an X509 instance but instead a " + peerCerts[i].getType());
-								}
-							}
-
-						}
-						else
-							logger.log(Level.INFO, "Failed to get peer certificates");
-					}
-
-					final DispatchSSLServer serv = new DispatchSSLServer(c);
-					if (server.getNeedClientAuth() == true)
-						serv.partnerCerts = peerCertChain;
-
-					serv.start();
-
-					monitor.incrementCounter("accepted_connections");
-				} catch (final IOException ioe) {
+					acceptorPool.submit(() -> handleOneSSLSocket(c, true));
+				}
+				catch (final IOException ioe) {
 					logger.log(Level.WARNING, "Exception treating a client", ioe);
 
 					monitor.incrementCounter("exception_handling_client");
 				}
 			}
 
-		} catch (
-
-				final Throwable e) {
+		}
+		catch (final Throwable e) {
 			logger.log(Level.SEVERE, "Could not initiate SSL Server Socket.", e);
 		}
+	}
+
+	private static void handleOneSSLSocket(final SSLSocket c, final boolean needClientAuth) {
+		try {
+			// clients have 10s to negotiate the SSL
+			c.setSoTimeout(10 * 1000);
+		}
+		catch (final SocketException e1) {
+			logger.log(Level.WARNING, "Cannot setSoTimeout for the initial communication", e1);
+		}
+
+		if (!c.getSession().isValid()) {
+			logger.log(Level.WARNING, "Invalid SSL connection from " + c.getRemoteSocketAddress());
+
+			monitor.incrementCounter("invalid_ssl_connection");
+		}
+
+		X509Certificate[] peerCertChain = null;
+
+		if (needClientAuth) {
+			logger.log(Level.INFO, "Printing client information:");
+			Certificate[] peerCerts;
+			try {
+				peerCerts = c.getSession().getPeerCertificates();
+			}
+			catch (final SSLPeerUnverifiedException e) {
+				logger.log(Level.WARNING, "Client certificate cannot be validated", e);
+
+				monitor.incrementCounter("invalid_ssl_connection");
+
+				return;
+			}
+
+			if (peerCerts != null) {
+				peerCertChain = new X509Certificate[peerCerts.length];
+
+				for (int i = 0; i < peerCerts.length; i++) {
+					if (peerCerts[i] instanceof X509Certificate) {
+						final X509Certificate xCert = (X509Certificate) peerCerts[i];
+						logger.log(Level.FINE, getClientInfo(xCert));
+						peerCertChain[i] = xCert;
+					}
+					else {
+						logger.log(Level.WARNING, "Peer certificate is not an X509 instance but instead a " + peerCerts[i].getType());
+					}
+				}
+
+			}
+			else
+				logger.log(Level.INFO, "Failed to get peer certificates");
+		}
+
+		final DispatchSSLServer serv = new DispatchSSLServer(c);
+		if (needClientAuth)
+			serv.partnerCerts = peerCertChain;
+
+		serv.start();
+
+		monitor.incrementCounter("accepted_connections");
 	}
 
 	/**
@@ -404,10 +462,10 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Print client info on SSL partner
 	 */
-	private static String printClientInfo(final X509Certificate cert) {
+	private static String getClientInfo(final X509Certificate cert) {
 		return "Peer Certificate Information:\n" + "- Subject: " + cert.getSubjectDN().getName() + "- Issuer: \n" + cert.getIssuerDN().getName() + "- Version: \n" + cert.getVersion()
-		+ "- Start Time: \n" + cert.getNotBefore().toString() + "\n" + "- End Time: " + cert.getNotAfter().toString() + "\n" + "- Signature Algorithm: " + cert.getSigAlgName() + "\n"
-		+ "- Serial Number: " + cert.getSerialNumber();
+				+ "- Start Time: \n" + cert.getNotBefore().toString() + "\n" + "- End Time: " + cert.getNotAfter().toString() + "\n" + "- Signature Algorithm: " + cert.getSigAlgName() + "\n"
+				+ "- Serial Number: " + cert.getSerialNumber();
 	}
 
 	/**
