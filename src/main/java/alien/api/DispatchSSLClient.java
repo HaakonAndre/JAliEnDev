@@ -84,6 +84,9 @@ public class DispatchSSLClient extends Thread {
 
 		connection.setTcpNoDelay(true);
 		connection.setTrafficClass(0x10);
+		
+		// client expect an answer promptly, the 15 minute default value should be large enough to accomodate even heavy requests
+		connection.setSoTimeout(ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.readTimeout_seconds", 900) * 1000);
 
 		this.ois = new ObjectInputStream(connection.getInputStream());
 
@@ -185,6 +188,9 @@ public class DispatchSSLClient extends Thread {
 					@SuppressWarnings("resource")
 					// this object is kept in the map, cannot be closed here
 					final SSLSocket client = (SSLSocket) f.createSocket(s, address, p, true);
+					
+					// 10s to negociate SSL, if it takes more than this to connect just try another endpoint
+					client.setSoTimeout(10*1000);
 
 					// print info
 					printSocketInfo(client);

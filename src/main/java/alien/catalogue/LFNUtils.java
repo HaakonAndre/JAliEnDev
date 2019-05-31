@@ -1176,7 +1176,7 @@ public class LFNUtils {
 			return -254;
 
 		// find closest SE
-		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
+		final String site = ConfigUtils.getCloseSite();
 		final List<SE> ses = SEUtils.getClosestSEs(site, true);
 
 		if (ses.size() == 0)
@@ -1209,7 +1209,7 @@ public class LFNUtils {
 			return null;
 
 		// find closest SE
-		final String site = ConfigUtils.getConfig().gets("alice_close_site", "CERN").trim();
+		final String site = ConfigUtils.getCloseSite();
 		final List<SE> found_ses = SEUtils.getBestSEsOnSpecs(site, ses, exses, qos, true);
 		final HashMap<String, Long> resmap = new HashMap<>();
 		for (final SE s : found_ses) {

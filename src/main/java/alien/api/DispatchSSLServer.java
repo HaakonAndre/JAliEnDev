@@ -15,7 +15,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -98,8 +97,10 @@ public class DispatchSSLServer extends Thread {
 		monitor.addMonitoring("activeSessions", (names, values) -> {
 			names.add("activeSessions");
 			values.add(Double.valueOf(activeSessions.get()));
+			
 			names.add("acceptorPoolSize");
 			values.add(Double.valueOf(acceptorPool.getPoolSize()));
+			
 			names.add("acceptorPoolQueueLength");
 			values.add(Double.valueOf(acceptorPool.getQueue().size()));
 		});
@@ -239,9 +240,7 @@ public class DispatchSSLServer extends Thread {
 
 						lSerialization += serializationDuration;
 
-						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName()); // +
-						// ":
-						// "+r.toString());
+						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
 						monitor.addMeasurement("request_processing", requestProcessingDuration);
 						monitor.addMeasurement("serialization", serializationDuration);

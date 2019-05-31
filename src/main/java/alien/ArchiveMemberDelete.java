@@ -407,12 +407,18 @@ public class ArchiveMemberDelete {
 			while (it.hasNext()) {
 				final PFN pfn = it.next();
 
+				if (pfn == null) {
+					System.err.println("One of the PFNs in the removeArchivePFN is null");
+					continue;
+				}
+
 				try {
-					System.out.println("[" + new Date() + "] Deleting copy at " + pfn.getSE().getName());
+					System.out.println("[" + new Date() + "] Deleting pfn: " + pfn.pfn);
 					if (!Factory.xrootd.delete(pfn)) {
 						System.err.println("[" + new Date() + "] " + remoteFile + ": Could not delete " + pfn.pfn);
 					}
-				} catch (final IOException e) {
+				}
+				catch (final IOException e) {
 					e.printStackTrace();
 				}
 			}
