@@ -479,7 +479,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
 			List<String> launchCmd = new ArrayList<String>();
-
+			
 			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
 			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
 				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
@@ -488,13 +488,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 			//Check if Singularity is present on site. If yes, add singularity to launchCmd
 			//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?			
 			try {
-				//TODO: Remove after testing. JDK will be in CVMFS
-				final Process copyJDK = Runtime.getRuntime()
-						.exec("cp -rf jdk-11.0.2+9-jre " + jobWorkdir + "/jdk-11.0.2+9-jre && cp alien-users.jar " + jobWorkdir);
-				copyJDK.waitFor();
-
 				final Process singularityProbe = Runtime.getRuntime()
-						.exec("singularity exec -B " + jobWorkdir + ":" + CONTAINER_JOBDIR + " " + containerImgPath + " /workdirr/jdk-11.0.2+9-jre/bin/java -version");
+						.exec("singularity exec -B " + jobWorkdir + ":" + CONTAINER_JOBDIR + " " + containerImgPath + "java -version");
 				singularityProbe.waitFor();
 
 				final Scanner probeScanner = new Scanner(singularityProbe.getErrorStream());
