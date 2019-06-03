@@ -158,7 +158,7 @@ public class JAliEnCOMMander extends Thread {
 		q_api = new TaskQueueApiUtils(this);
 
 		this.user = (user != null) ? user : AuthorizationFactory.getDefaultUser();
-		this.site = (site != null) ? site : ConfigUtils.getConfig().gets("alice_close_site").trim();
+		this.site = (site != null) ? site : ConfigUtils.getCloseSite();
 		localFileCash = new HashMap<>();
 		this.out = out;
 		this.bColour = out != null ? out.colour() : false;
