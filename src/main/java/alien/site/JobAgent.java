@@ -65,6 +65,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	// Folders and files
 	private File tempDir;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
+	private static final String jobWrapperLogName = "jalien-jobwrapper.log";
 	private String jobWorkdir;
 	private String jobWrapperLogDir;
 	private final String siteTmp = env.getOrDefault("TMPDIR", "/tmp");
@@ -168,7 +169,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		//ce = env.get("CE");
 		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
 
-		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log";
+		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp") + "/" + jobWrapperLogName;
 
 		String DN = commander.getUser().getUserCert()[0].getSubjectDN().toString();
 
@@ -384,7 +385,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
-			return false; // TODO: Put back
+			return false;
 		}
 
 		siteMap.put("Disk", Long.valueOf(space));
@@ -477,22 +478,16 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 */
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
-			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
-			cmdChecker.waitFor();
-			final Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
-
 			List<String> launchCmd = new ArrayList<String>();
 
 			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
-
 			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
 				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
 			}
 
 			//Check if Singularity is present on site. If yes, add singularity to launchCmd
+			//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?			
 			try {
-				//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?
-
 				//TODO: Remove after testing. JDK will be in CVMFS
 				final Process copyJDK = Runtime.getRuntime()
 						.exec("cp -rf jdk-11.0.2+9-jre " + jobWorkdir + "/jdk-11.0.2+9-jre && cp alien-users.jar " + jobWorkdir);
@@ -514,8 +509,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 						launchCmd.add(":/cvmfs," + siteTmp + ":" + CONTAINER_TMPDIR + "," + jobWorkdir + ":" + CONTAINER_JOBDIR);
 						launchCmd.add(containerImgPath);
 
-						jarPath = "/workdirr";
-						jobWrapperLogDir = "/tmp/jalien-jobwrapper.log";
+						jarPath = CONTAINER_JOBDIR;
+						jobWrapperLogDir = CONTAINER_TMPDIR + "/" + jobWrapperLogName; 
 						break;
 					}
 				}
@@ -525,6 +520,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 			}
 
 			//Continue as normal, with or without containers
+			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
+			cmdChecker.waitFor();
+			final Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
 			String readArg;
 			while (cmdScanner.hasNext()) {
 				readArg = (cmdScanner.next());
@@ -646,14 +644,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log " + " for more details");
 				} catch (final IllegalThreadStateException e) {
 					logger.log(Level.INFO, "Waiting for the JobWrapper process to finish");
-					// TODO: check job-token exist (job not killed)
 
 					// process hasn't terminated
 					if (monitorJob) {
 						monitor_loops++;
 						final String error = checkProcessResources();
 						if (error != null) {
-							p.destroy(); //TODO: JobAgent does not report the job has been terminated!
+							p.destroy();
 							logger.log(Level.SEVERE, "Process overusing resources: " + error);
 							return -2;
 						}
