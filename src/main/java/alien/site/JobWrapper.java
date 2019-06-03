@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import alien.api.JBoxServer;
+import alien.api.TomcatServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
@@ -41,7 +41,7 @@ import alien.user.JAKeyStore;
 import alien.user.UserFactory;
 
 /**
- * Job execution wrapper, running an embedded JBox for in/out-bound communications
+ * Job execution wrapper, running an embedded Tomcat server for in/out-bound communications
  */
 public class JobWrapper implements Runnable {
 
@@ -158,16 +158,16 @@ public class JobWrapper implements Runnable {
 
 		logger.log(Level.INFO, "Starting JobWrapper in " + hostName);
 
-		// We start, if needed, the node JBox
+		// We start, if needed, the node Tomcat server
 		// Does it check a previous one is already running?
 		try {
-			logger.log(Level.INFO, "Trying to start JBox");
-			JBoxServer.startJBoxService(0);
+			logger.log(Level.INFO, "Trying to start Tomcat");
+			TomcatServer.startTomcatServer();
 		} catch (final Exception e) {
-			logger.log(Level.WARNING, "Unable to start JBox." + e);
+			logger.log(Level.WARNING, "Unable to start Tomcat." + e);
 		}
 
-		logger.log(Level.INFO, "Jbox started");
+		logger.log(Level.INFO, "Tomcat started");
 
 		// Start listening for messages from the JobAgent
 		final Thread jobAgentListener = new Thread(createJobAgentListener());
@@ -643,7 +643,7 @@ public class JobWrapper implements Runnable {
 			sendString += "|path|" + getJobOutputDir();
 		else
 			if (newStatus == JobStatus.RUNNING) {
-				sendString += "|spyurl|" + hostName + ":" + JBoxServer.getPort();
+				sendString += "|spyurl|" + hostName + ":" + TomcatServer.getPort();
 				sendString += "|node|" + hostName;
 			}
 
