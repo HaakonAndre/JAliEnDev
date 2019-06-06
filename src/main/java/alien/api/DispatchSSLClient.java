@@ -14,9 +14,8 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,7 +33,7 @@ import alien.user.JAKeyStore;
  * @author costing
  *
  */
-public class DispatchSSLClient extends Thread {
+public class DispatchSSLClient {
 
 	/**
 	 * Reset the object stream every this many objects sent
@@ -48,8 +47,8 @@ public class DispatchSSLClient extends Thread {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(DispatchSSLClient.class.getCanonicalName());
 
-	private static final int defaultPort = 5282;
-	private static final String defaultHost = "localhost";
+	private static final int defaultPort = 8098;
+	private static final String defaultHost = "alice-jcentral.cern.ch";
 	private static String serviceName = "apiService";
 
 	private static String addr = null;
@@ -79,13 +78,13 @@ public class DispatchSSLClient extends Thread {
 	 * @throws IOException
 	 */
 	protected DispatchSSLClient(final Socket connection) throws IOException {
-
 		this.connection = connection;
 
 		connection.setTcpNoDelay(true);
 		connection.setTrafficClass(0x10);
-		
-		// client expect an answer promptly, the 15 minute default value should be large enough to accomodate even heavy requests
+		connection.setSoLinger(false, 0);
+
+		// client expect an answer promptly, the 15 minute default value should be large enough to accommodate even heavy requests
 		connection.setSoTimeout(ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.readTimeout_seconds", 900) * 1000);
 
 		this.ois = new ObjectInputStream(connection.getInputStream());
@@ -101,55 +100,152 @@ public class DispatchSSLClient extends Thread {
 		return this.connection.getInetAddress().toString();
 	}
 
-	@Override
-	public void run() {
-		// check
+	private transient static DispatchSSLClient instance = null;
+
+	private static void connectTo(final List<InetAddress> allAddresses, final int targetPort, final SSLSocketFactory factory, final Object callback, final AtomicInteger connectionState) {
+		// connect timeout in config should be given in seconds
+		final int connectTimeout = ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.ConnectTimeout", 10) * 1000;
+
+		for (final InetAddress endpointToTry : allAddresses) {
+			try {
+				if (connectionState.get() == 1) {
+					logger.log(Level.FINE, "Another thread established a connection, bailing out");
+
+					return;
+				}
+
+				@SuppressWarnings("resource")
+				// the socket will be passed along to the SSL one below, and to the connection cache
+				final Socket s = new Socket();
+				s.connect(new InetSocketAddress(endpointToTry, targetPort), connectTimeout);
+
+				@SuppressWarnings("resource")
+				// this object is kept in the map, cannot be closed here
+				final SSLSocket client = (SSLSocket) factory.createSocket(s, endpointToTry.getHostAddress(), targetPort, true);
+
+				// 10s to negociate SSL, if it takes more than this to connect just try another endpoint
+				client.setSoTimeout(10 * 1000);
+
+				// print info
+				printSocketInfo(client, Level.FINE);
+
+				client.startHandshake();
+
+				final Certificate[] peerCerts = client.getSession().getPeerCertificates();
+
+				if (peerCerts != null) {
+					if (logger.isLoggable(Level.INFO)) {
+						logger.log(Level.INFO, "Printing peer's information:");
+
+						for (final Certificate peerCert : peerCerts) {
+							final X509Certificate xCert = (X509Certificate) peerCert;
+
+							logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + xCert.getSubjectDN().getName() + "\n" + xCert.getIssuerDN().getName() + "\n"
+									+ Level.INFO + "- Start Time: " + xCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + xCert.getNotAfter().toString());
+						}
+					}
+
+					if (connectionState.getAndSet(1) != 1) {
+						final DispatchSSLClient sc = new DispatchSSLClient(client);
+						System.out.println("Connection to JCentral (" + endpointToTry.getHostAddress() + ":" + targetPort + ") established.");
+
+						instance = sc;
+
+						synchronized (callback) {
+							callback.notifyAll();
+						}
+					}
+					else {
+						// somebody beat us and connected faster on another socket, close this slow one
+						client.close();
+					}
+
+					break;
+				}
+				logger.log(Level.FINE, "We didn't get any peer/service cert from " + endpointToTry.getHostAddress() + ":" + targetPort);
+			}
+			catch (final ConnectException e) {
+				logger.log(Level.FINE, "Could not connect to JCentral instance on " + endpointToTry.getHostAddress() + ":" + targetPort, e);
+			}
+			catch (final Throwable e) {
+				logger.log(Level.FINE, "Could not initiate SSL connection to the server on " + endpointToTry.getHostAddress() + ":" + targetPort, e);
+			}
+		}
 	}
 
-	private static HashMap<Integer, DispatchSSLClient> instance = new HashMap<>(20);
-
 	/**
-	 * @param address
-	 * @param p
 	 * @return instance
 	 * @throws IOException
 	 */
-	public static DispatchSSLClient getInstance(final String address, final int p) throws IOException {
+	private static DispatchSSLClient getInstance() throws IOException {
+		if (instance == null) {
+			initializeSocketInfo();
 
-		final Integer portNo = Integer.valueOf(p);
-
-		if (instance.get(portNo) == null) {
 			// connect to the other end
-			logger.log(Level.INFO, "Connecting to JCentral on " + address + ":" + p);
-			System.out.println("Connecting to JCentral on " + address + ":" + p);
+			logger.log(Level.INFO, "Connecting to JCentral on " + addr + ":" + port);
+			System.out.println("Connecting to JCentral on " + addr + ":" + port);
 
 			Security.addProvider(new BouncyCastleProvider());
 
-			final List<InetAddress> allAddresses = new ArrayList<>();
+			final List<InetAddress> ipv4 = new ArrayList<>();
+			final List<InetAddress> ipv6 = new ArrayList<>();
+			final List<InetAddress> defaultOrder = new ArrayList<>();
 
 			try {
-				final InetAddress[] resolvedAddresses = InetAddress.getAllByName(address);
+				final InetAddress[] resolvedAddresses = InetAddress.getAllByName(addr);
 
-				for (final InetAddress logAddress : resolvedAddresses)
-					allAddresses.add(logAddress);
+				for (final InetAddress logAddress : resolvedAddresses) {
+					defaultOrder.add(logAddress);
+
+					if (logAddress instanceof Inet6Address)
+						ipv6.add(logAddress);
+					else
+						ipv4.add(logAddress);
+				}
 			}
 			catch (final IOException ex) {
-				logger.log(Level.SEVERE, "Could not resolve IP address of central services (" + address + ":" + p + ")", ex);
-				System.err.println("Could not resolve IP address of central services (" + address + ":" + p + "): " + ex.getMessage());
+				logger.log(Level.SEVERE, "Could not resolve IP address of central services (" + addr + ":" + port + ")", ex);
+				System.err.println("Could not resolve IP address of central services (" + addr + ":" + port + "): " + ex.getMessage());
 				return null;
 			}
 
+			if (defaultOrder.size() == 0) {
+				logger.log(Level.SEVERE, "Empty address list for this hostname: " + addr);
+				System.err.println("Empty address list for this hostname: " + addr);
+				return null;
+			}
+
+			final List<InetAddress> mainProtocol;
+			final List<InetAddress> fallbackProtocol;
+
 			if (ConfigUtils.getConfig().getb("alien.api.DispatchSSLClient.PreferIPv6", true)) {
-				System.err.println("Sorting the addresses in IPv6 first mode");
-				Collections.sort(allAddresses, (a1, a2) -> (a1 instanceof Inet6Address) ? -1 : 0);
+				if (ipv6.size() > 0) {
+					mainProtocol = ipv6;
+					fallbackProtocol = ipv4;
+				}
+				else {
+					mainProtocol = ipv4;
+					fallbackProtocol = null;
+				}
 			}
 			else
 				if (ConfigUtils.getConfig().getb("alien.api.DispatchSSLClient.PreferIPv4", false)) {
-					System.err.println("Sorting the addresses in IPv4 first mode");
-					Collections.sort(allAddresses, (a1, a2) -> (a1 instanceof Inet6Address) ? 1 : 0);
+					if (ipv4.size() > 0) {
+						mainProtocol = ipv4;
+						fallbackProtocol = ipv6;
+					}
+					else {
+						mainProtocol = ipv6;
+						fallbackProtocol = null;
+					}
+				}
+				else {
+					mainProtocol = defaultOrder;
+					fallbackProtocol = null;
 				}
 
-			logger.log(Level.FINER, "Will try to connect to the central services in the following order: " + allAddresses.toString());
+			if (logger.isLoggable(Level.FINER))
+				logger.log(Level.FINER, "Will try to connect to the central services in the following order: " + mainProtocol + " then " + fallbackProtocol);
 
 			final SSLSocketFactory f;
 			try {
@@ -175,59 +271,54 @@ public class DispatchSSLClient extends Thread {
 				return null;
 			}
 
-			// connect timeout in config should be given in seconds
-			final int connectTimeout = ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.ConnectTimeout", 10) * 1000;
+			final Object callbackObject = new Object();
 
-			for (final InetAddress endpointToTry : allAddresses) {
+			final AtomicInteger connectionState = new AtomicInteger(0);
+
+			new Thread(() -> connectTo(mainProtocol, port, f, callbackObject, connectionState)).start();
+
+			try {
+				synchronized (callbackObject) {
+					if (instance == null)
+						callbackObject.wait(ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.happyEyeballsTimeout", 1000));
+				}
+			}
+			catch (InterruptedException ie) {
+				throw new IOException("Connection was interrupted", ie);
+			}
+
+			// was either notified or timed out, let's see what is the last state
+			if (instance != null)
+				return instance;
+
+			logger.log(Level.FINE, "Could not establish a connection on the preferred protocol so far, will add the fallback solution to the mix");
+
+			// no connection could be established on the main protocol so far, let's try the fallback protocol, if available
+
+			if (fallbackProtocol != null && fallbackProtocol.size() > 0)
+				new Thread(() -> connectTo(fallbackProtocol, port, f, callbackObject, connectionState)).start();
+
+			// wait up to a minute for a connection to be established
+			for (int i = 0; i < ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.connectionTimeoutSteps", 60); i++) {
 				try {
-					@SuppressWarnings("resource")
-					// the socket will be passed along to the SSL one below, and to the connection cache
-					final Socket s = new Socket();
-					s.connect(new InetSocketAddress(endpointToTry, p), connectTimeout);
-
-					@SuppressWarnings("resource")
-					// this object is kept in the map, cannot be closed here
-					final SSLSocket client = (SSLSocket) f.createSocket(s, address, p, true);
-					
-					// 10s to negociate SSL, if it takes more than this to connect just try another endpoint
-					client.setSoTimeout(10*1000);
-
-					// print info
-					printSocketInfo(client);
-
-					client.startHandshake();
-
-					final Certificate[] peerCerts = client.getSession().getPeerCertificates();
-
-					if (peerCerts != null) {
-						if (logger.isLoggable(Level.INFO)) {
-							logger.log(Level.INFO, "Printing peer's information:");
-
-							for (final Certificate peerCert : peerCerts) {
-								final X509Certificate xCert = (X509Certificate) peerCert;
-
-								logger.log(Level.INFO, "Peer's Certificate Information:\n" + Level.INFO, "- Subject: " + xCert.getSubjectDN().getName() + "\n" + xCert.getIssuerDN().getName() + "\n"
-										+ Level.INFO + "- Start Time: " + xCert.getNotBefore().toString() + "\n" + Level.INFO + "- End Time: " + xCert.getNotAfter().toString());
-							}
-						}
-
-						final DispatchSSLClient sc = new DispatchSSLClient(client);
-						System.out.println("Connection to JCentral (" + endpointToTry.getHostAddress() + ":" + p + ") established.");
-						instance.put(portNo, sc);
-						break;
+					synchronized (callbackObject) {
+						if (instance == null)
+							callbackObject.wait(ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.connectionTimeoutResolution", 1000));
 					}
-					logger.log(Level.FINE, "We didn't get any peer/service cert from " + endpointToTry.getHostAddress() + ":" + p);
 				}
-				catch (final ConnectException e) {
-					logger.log(Level.FINE, "Could not connect to JCentral instance on " + endpointToTry.getHostAddress() + ":" + p, e);
+				catch (InterruptedException ie) {
+					throw new IOException("Connection was interrupted", ie);
 				}
-				catch (final Throwable e) {
-					logger.log(Level.FINE, "Could not initiate SSL connection to the server on " + endpointToTry.getHostAddress() + ":" + p, e);
+
+				if (instance != null) {
+					logger.log(Level.FINE, "Connection worked at step " + i);
+
+					break;
 				}
 			}
 		}
 
-		return instance.get(portNo);
+		return instance;
 	}
 
 	@SuppressWarnings("unused")
@@ -255,8 +346,6 @@ public class DispatchSSLClient extends Thread {
 			catch (final IOException ioe) {
 				// ignore
 			}
-
-		instance = null;
 	}
 
 	/**
@@ -294,13 +383,16 @@ public class DispatchSSLClient extends Thread {
 	 * @throws ServerException
 	 */
 	public static synchronized <T extends Request> T dispatchRequest(final T r) throws ServerException {
-		initializeSocketInfo();
 		try {
 			return dispatchARequest(r);
 		}
 		catch (@SuppressWarnings("unused") final IOException e) {
 			// Now let's try, if we can reconnect
-			instance.put(Integer.valueOf(port), null);
+			if (instance != null) {
+				instance.close();
+				instance = null;
+			}
+
 			try {
 				return dispatchARequest(r);
 			}
@@ -310,7 +402,6 @@ public class DispatchSSLClient extends Thread {
 				return null;
 			}
 		}
-
 	}
 
 	/**
@@ -322,8 +413,7 @@ public class DispatchSSLClient extends Thread {
 	 *             if the server didn't like the request content
 	 */
 	public static synchronized <T extends Request> T dispatchARequest(final T r) throws IOException, ServerException {
-
-		final DispatchSSLClient c = getInstance(addr, port);
+		final DispatchSSLClient c = getInstance();
 
 		if (c == null)
 			throw new IOException("Connection is null");
@@ -338,7 +428,6 @@ public class DispatchSSLClient extends Thread {
 		}
 
 		c.oos.flush();
-		c.os.flush();
 
 		lSerialization += System.currentTimeMillis() - lStart;
 
@@ -373,13 +462,14 @@ public class DispatchSSLClient extends Thread {
 		return reply;
 	}
 
-	private static void printSocketInfo(final SSLSocket s) {
+	private static void printSocketInfo(final SSLSocket s, final Level level) {
+		if (logger.isLoggable(level)) {
+			logger.log(level, "Remote address: " + s.getInetAddress().toString() + ":" + s.getPort());
+			logger.log(level, "   Local socket address = " + s.getLocalSocketAddress().toString());
 
-		logger.log(Level.INFO, "Remote address: " + s.getInetAddress().toString() + ":" + s.getPort());
-		logger.log(Level.INFO, "   Local socket address = " + s.getLocalSocketAddress().toString());
-
-		logger.log(Level.INFO, "   Cipher suite = " + s.getSession().getCipherSuite());
-		logger.log(Level.INFO, "   Protocol = " + s.getSession().getProtocol());
+			logger.log(level, "   Cipher suite = " + s.getSession().getCipherSuite());
+			logger.log(level, "   Protocol = " + s.getSession().getProtocol());
+		}
 	}
 
 }
