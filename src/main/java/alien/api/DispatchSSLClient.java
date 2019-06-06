@@ -14,6 +14,8 @@ import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -189,14 +191,17 @@ public class DispatchSSLClient {
 
 			final List<InetAddress> ipv4 = new ArrayList<>();
 			final List<InetAddress> ipv6 = new ArrayList<>();
-			final List<InetAddress> defaultOrder = new ArrayList<>();
 
 			try {
 				final InetAddress[] resolvedAddresses = InetAddress.getAllByName(addr);
 
-				for (final InetAddress logAddress : resolvedAddresses) {
-					defaultOrder.add(logAddress);
+				if (resolvedAddresses == null || resolvedAddresses.length == 0) {
+					logger.log(Level.SEVERE, "Empty address list for this hostname: " + addr);
+					System.err.println("Empty address list for this hostname: " + addr);
+					return null;
+				}
 
+				for (final InetAddress logAddress : resolvedAddresses) {
 					if (logAddress instanceof Inet6Address)
 						ipv6.add(logAddress);
 					else
@@ -209,11 +214,8 @@ public class DispatchSSLClient {
 				return null;
 			}
 
-			if (defaultOrder.size() == 0) {
-				logger.log(Level.SEVERE, "Empty address list for this hostname: " + addr);
-				System.err.println("Empty address list for this hostname: " + addr);
-				return null;
-			}
+			Collections.shuffle(ipv6);
+			Collections.shuffle(ipv4);
 
 			final List<InetAddress> mainProtocol;
 			final List<InetAddress> fallbackProtocol;
@@ -240,7 +242,20 @@ public class DispatchSSLClient {
 					}
 				}
 				else {
-					mainProtocol = defaultOrder;
+					mainProtocol = new ArrayList<>();
+
+					// inspired by rfc8305, interleave the protocols, giving a slight preference to IPv6					
+					final Iterator<InetAddress> it6 = ipv6.iterator();
+					final Iterator<InetAddress> it4 = ipv4.iterator();
+
+					while (it6.hasNext() || it4.hasNext()) {
+						if (it6.hasNext())
+							mainProtocol.add(it6.next());
+
+						if (it4.hasNext())
+							mainProtocol.add(it4.next());
+					}
+
 					fallbackProtocol = null;
 				}
 
@@ -291,12 +306,12 @@ public class DispatchSSLClient {
 			if (instance != null)
 				return instance;
 
-			logger.log(Level.FINE, "Could not establish a connection on the preferred protocol so far, will add the fallback solution to the mix");
-
 			final Thread tFallback;
 
 			// no connection could be established on the main protocol so far, let's try the fallback protocol, if available
 			if (fallbackProtocol != null && fallbackProtocol.size() > 0) {
+				logger.log(Level.FINE, "Could not establish a connection on the preferred protocol so far, will add the fallback solution to the mix");
+
 				tFallback = new Thread(() -> connectTo(fallbackProtocol, port, f, callbackObject, connectionState));
 				tFallback.start();
 			}
