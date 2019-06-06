@@ -108,8 +108,8 @@ public class DispatchSSLClient {
 
 		for (final InetAddress endpointToTry : allAddresses) {
 			try {
-				if (connectionState.get() == 1) {
-					logger.log(Level.FINE, "Another thread established a connection, bailing out");
+				if (connectionState.get() != 0) {
+					logger.log(Level.FINEST, "The thread trying to connect to " + allAddresses + " was told to exit, currently having reached " + endpointToTry);
 
 					return;
 				}
@@ -145,15 +145,11 @@ public class DispatchSSLClient {
 						}
 					}
 
-					if (connectionState.getAndSet(1) != 1) {
+					if (connectionState.compareAndSet(0, 1)) {
 						final DispatchSSLClient sc = new DispatchSSLClient(client);
 						System.out.println("Connection to JCentral (" + endpointToTry.getHostAddress() + ":" + targetPort + ") established.");
 
 						instance = sc;
-
-						synchronized (callback) {
-							callback.notifyAll();
-						}
 					}
 					else {
 						// somebody beat us and connected faster on another socket, close this slow one
@@ -170,6 +166,10 @@ public class DispatchSSLClient {
 			catch (final Throwable e) {
 				logger.log(Level.FINE, "Could not initiate SSL connection to the server on " + endpointToTry.getHostAddress() + ":" + targetPort, e);
 			}
+		}
+
+		synchronized (callback) {
+			callback.notifyAll();
 		}
 	}
 
@@ -259,8 +259,7 @@ public class DispatchSSLClient {
 				java.lang.System.setProperty("jdk.tls.client.protocols", "TLSv1.2");
 				final SSLContext ssc = SSLContext.getInstance("TLS");
 
-				// initialize SSL with certificate and the trusted CA and pub
-				// certs
+				// initialize SSL with certificate and the trusted CA and pub certs
 				ssc.init(kmf.getKeyManagers(), JAKeyStore.trusts, new SecureRandom());
 
 				f = ssc.getSocketFactory();
@@ -275,7 +274,8 @@ public class DispatchSSLClient {
 
 			final AtomicInteger connectionState = new AtomicInteger(0);
 
-			new Thread(() -> connectTo(mainProtocol, port, f, callbackObject, connectionState)).start();
+			final Thread tMain = new Thread(() -> connectTo(mainProtocol, port, f, callbackObject, connectionState));
+			tMain.start();
 
 			try {
 				synchronized (callbackObject) {
@@ -293,10 +293,15 @@ public class DispatchSSLClient {
 
 			logger.log(Level.FINE, "Could not establish a connection on the preferred protocol so far, will add the fallback solution to the mix");
 
-			// no connection could be established on the main protocol so far, let's try the fallback protocol, if available
+			final Thread tFallback;
 
-			if (fallbackProtocol != null && fallbackProtocol.size() > 0)
-				new Thread(() -> connectTo(fallbackProtocol, port, f, callbackObject, connectionState)).start();
+			// no connection could be established on the main protocol so far, let's try the fallback protocol, if available
+			if (fallbackProtocol != null && fallbackProtocol.size() > 0) {
+				tFallback = new Thread(() -> connectTo(fallbackProtocol, port, f, callbackObject, connectionState));
+				tFallback.start();
+			}
+			else
+				tFallback = null;
 
 			// wait up to a minute for a connection to be established
 			for (int i = 0; i < ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.connectionTimeoutSteps", 60); i++) {
@@ -316,6 +321,14 @@ public class DispatchSSLClient {
 					break;
 				}
 			}
+
+			connectionState.set(2); // tell the threads to exit, if they haven't done so already
+
+			if (tMain.isAlive())
+				tMain.interrupt();
+
+			if (tFallback != null && tFallback.isAlive())
+				tFallback.interrupt();
 		}
 
 		return instance;
