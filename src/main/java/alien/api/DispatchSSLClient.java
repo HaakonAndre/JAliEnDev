@@ -482,6 +482,8 @@ public class DispatchSSLClient {
 		@SuppressWarnings("unchecked")
 		final T reply = (T) o;
 
+		reply.setPartnerAddress(c.connection.getInetAddress());
+		
 		final ServerException ex = reply.getException();
 
 		if (ex != null)
