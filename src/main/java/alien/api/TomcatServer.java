@@ -67,6 +67,7 @@ public class TomcatServer {
 		this.websocketPort = tomcatPort;
 
 		tomcat = new Tomcat();
+		tomcat.setBaseDir(System.getProperty("java.io.tmpdir"));
 		tomcat.setPort(tomcatPort);
 		final Service service = tomcat.getService();
 		tomcat.getService().removeConnector(tomcat.getConnector()); // remove default connector
