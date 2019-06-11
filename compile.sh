@@ -46,7 +46,7 @@ generate_users () {
   echo "Preparing alien-users.jar"
   cd "${BUILDDIR}"
   # extract all specified java classes
-  for dependency in ${JALIEN_HOME}/lib/{FarmMonitor.jar,apmon.jar,bcp*.jar,catalina.jar,javax.json-api-*.jar,jline-*.jar,jopt-simple-*.jar,json-simple-*.jar,lazyj.jar,servlet-api.jar,tomcat-*.jar,ca-api*.jar,java-ca-lib*.jar,annotations-api.jar}; do
+  for dependency in ${JALIEN_HOME}/lib/{FarmMonitor.jar,apmon.jar,bcp*.jar,catalina.jar,javax.json-api-*.jar,jline-*.jar,jopt-simple-*.jar,json-simple-*.jar,lazyj.jar,servlet-api.jar,tomcat-*.jar,ca-api*.jar,java-ca-lib*.jar,annotations-api.jar,jaspic-api.jar}; do
     jar xf ${dependency}
   done
   rm -rf META-INF
@@ -77,8 +77,8 @@ generate_cs () {
 
 
 if [[ "${ARG}" == "all" ]]; then
-  generate_cs
   generate_users
+  generate_cs
 elif [[ "${ARG}" == "cs" ]]; then
   generate_cs
 elif [[ "${ARG}" == "users" ]]; then
