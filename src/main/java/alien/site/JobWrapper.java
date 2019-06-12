@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -33,7 +32,6 @@ import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
-import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
@@ -97,7 +95,6 @@ public class JobWrapper implements Runnable {
      * Streams for data transfer
      */
     private ObjectInputStream inputFromJobAgent;
-    private ObjectOutputStream outputToJobAgent;
 
     /**
      */
@@ -124,12 +121,6 @@ public class JobWrapper implements Runnable {
 			logger.log(Level.INFO, "We received the following tokenKey: " + tokenKey);
 			logger.log(Level.INFO, "We received the following username: " + username);
 			logger.log(Level.INFO, "We received the following CE "+ ce);
-
-			logger.log(Level.INFO, "Sending PID to JobAgent");
-
-			outputToJobAgent = new ObjectOutputStream(System.out);
-			outputToJobAgent.writeObject(pid);
-			outputToJobAgent.flush();
 		} catch (final IOException | ClassNotFoundException e) {
 			logger.log(Level.SEVERE, "Error: Could not receive data from JobAgent" + e);
 		}

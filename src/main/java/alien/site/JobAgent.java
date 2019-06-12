@@ -56,12 +56,12 @@ import lazyj.ExtProperties;
  */
 public class JobAgent implements MonitoringObject, Runnable {
 
-	
+
 	// Variables passed through VoBox environment
 	private final Map<String, String> env = System.getenv();
 	private final String ce;
 	private final int origTtl;
-	
+
 	// Folders and files
 	private File tempDir;
 	private static final String defaultOutputDirPrefix = "/jalien-job-";
@@ -89,9 +89,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 	private int totalJobs;
 	private final long jobAgentStartTime = new java.util.Date().getTime();
-	
+
 	// Container specific
 	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
+	private static final String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin/alienv";
 	private static final String CONTAINER_JOBDIR = "/workdirr";
 	private static final String CONTAINER_TMPDIR = "/tmp";
 
@@ -213,6 +214,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 			File filepath = new java.io.File(JobAgent.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
 			jarName = filepath.getName();
 			jarPath = filepath.toString().replace(jarName, "");
+
+
 		} catch (final URISyntaxException e) {
 			logger.log(Level.SEVERE, "Could not obtain AliEn jar path: " + e.toString());
 		}
@@ -479,45 +482,16 @@ public class JobAgent implements MonitoringObject, Runnable {
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
 			List<String> launchCmd = new ArrayList<String>();
-			
+
 			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
 			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
 				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
 			}
 
-			//Check if Singularity is present on site. If yes, add singularity to launchCmd
-			//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?			
-			try {
-				final Process singularityProbe = Runtime.getRuntime()
-						.exec("singularity exec -B " + jobWorkdir + ":" + CONTAINER_JOBDIR + " " + containerImgPath + "java -version");
-				singularityProbe.waitFor();
-
-				final Scanner probeScanner = new Scanner(singularityProbe.getErrorStream());
-				while(probeScanner.hasNext()) {
-					String next = probeScanner.next();
-					if(next.contains("Runtime")) {
-						launchCmd.add("singularity");
-						launchCmd.add("exec");
-						launchCmd.add("--pwd");
-						launchCmd.add(CONTAINER_JOBDIR);
-						launchCmd.add("-B");
-						launchCmd.add(":/cvmfs," + siteTmp + ":" + CONTAINER_TMPDIR + "," + jobWorkdir + ":" + CONTAINER_JOBDIR);
-						launchCmd.add(containerImgPath);
-
-						jarPath = CONTAINER_JOBDIR;
-						jobWrapperLogDir = CONTAINER_TMPDIR + "/" + jobWrapperLogName; 
-						break;
-					}
-				}
-				probeScanner.close();
-			}catch (Exception e2) {
-				logger.log(Level.SEVERE, "Failed to start Singularity: " + e2.toString());
-			}
-
-			//Continue as normal, with or without containers
+			//Main cmd for starting the JobWrapper
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
 			cmdChecker.waitFor();
-			final Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
+			Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
 			String readArg;
 			while (cmdScanner.hasNext()) {
 				readArg = (cmdScanner.next());
@@ -528,7 +502,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				case "alien.site.JobAgent":
 					launchCmd.add("-DAliEnConfig="+jobWorkdir);
 					launchCmd.add("-cp");
-					launchCmd.add(jarPath+"/"+jarName);
+					launchCmd.add(jarPath+jarName);
 					launchCmd.add("alien.site.JobWrapper");
 					break;
 				default:
@@ -536,6 +510,45 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			}
 			cmdScanner.close();
+
+			//Check if Singularity is present on site. If yes, add singularity to launchCmd
+			try {                
+				//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?	
+				List<String> singularityCmd = new ArrayList<String>();
+				singularityCmd.add("singularity");
+				singularityCmd.add("exec");
+				singularityCmd.add("-C");
+				singularityCmd.add("--pwd");
+				singularityCmd.add(CONTAINER_JOBDIR);
+				singularityCmd.add("-B");
+				singularityCmd.add("/cvmfs:/cvmfs," + siteTmp + ":" + CONTAINER_TMPDIR + "," + jobWorkdir + ":" + CONTAINER_JOBDIR);
+				singularityCmd.add(containerImgPath);
+				singularityCmd.add("/bin/bash");
+				singularityCmd.add("-c");
+
+				String setupEnv = "source <( " + ALIENV_DIR + " printenv JAliEn ); ";
+				String javaTest = "java -version";
+
+				singularityCmd.add(setupEnv + javaTest);
+
+				ProcessBuilder pb = new ProcessBuilder(singularityCmd);
+				Process singularityProbe = pb.start();
+				singularityProbe.waitFor();
+
+				cmdScanner = new Scanner(singularityProbe.getErrorStream());
+				while(cmdScanner.hasNext()) {
+					if(cmdScanner.next().contains("Runtime")) {
+						singularityCmd.set(singularityCmd.size()-1, setupEnv + String.join(" ", launchCmd));
+
+						jobWrapperLogDir = CONTAINER_TMPDIR + "/" + jobWrapperLogName; 
+						return singularityCmd;
+					}
+				}
+			}catch (Exception e2) {
+				logger.log(Level.SEVERE, "Failed to start Singularity: " + e2.toString());
+			}finally {
+				cmdScanner.close();
+			}
 
 			return launchCmd;
 		} catch (final IOException e) {
@@ -562,9 +575,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		OutputStream stdin;
 		ObjectOutputStream stdinObj;
 
-		InputStream stdout;
-		ObjectInputStream stdoutObj;
-
 		int wrapperPID = -1;
 
 		try {
@@ -585,13 +595,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.flush();
 
 			logger.log(Level.INFO, "JDL info sent to JobWrapper");
-
-			stdout = p.getInputStream();	
-			stdoutObj = new ObjectInputStream(stdout);
-
-			wrapperPID = (int) stdoutObj.readObject();
-
-			logger.log(Level.INFO, "Received JobWrapper PID: " + wrapperPID);
+			
+			//Wait for JobWrapper to start
+			InputStream stdout = p.getInputStream();
+			stdout.read();
 
 		} catch (final Exception ioe) {
 			logger.log(Level.SEVERE, "Exception running " + launchCommand + " : " + ioe.getMessage());
@@ -599,9 +606,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 
 		if (monitorJob) {
-			//payloadPID = child.get(1).intValue();
+			wrapperPID = (int)p.pid();
+			
 			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
 			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce, hostName);
+			
 			final String fs = checkProcessResources();
 			if (fs == null)
 				sendProcessResources();
@@ -619,7 +628,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
 
 		//Listen for job updates from the jobwrapper
-		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdout, stdin));
+		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdin));
 		jobWrapperListener.start();
 
 		boolean processNotFinished = true;
@@ -862,10 +871,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * 
 	 * |JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 */
-	private Runnable createJobWrapperListener(Process p, InputStream stdout, OutputStream stdin){
+	private Runnable createJobWrapperListener(Process p, OutputStream stdin){
 		final Runnable jobWrapperListener = () -> {
 
-			//			final InputStream stdout = p.getInputStream();	
+			final InputStream stdout = p.getInputStream();	
 			final PrintWriter stdinPrinter = new PrintWriter(stdin);
 
 			while(p.isAlive()){
