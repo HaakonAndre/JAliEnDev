@@ -243,7 +243,7 @@ public final class MonitorFactory {
 	private static boolean isJob() {
 		final String test = ConfigUtils.getConfig().gets("APMON_CONFIG", null);
 
-		return test != null && test.trim().length() > 0;
+		return test != null && test.length() > 0;
 	}
 
 	private static Vector<String> getApMonDestinations() {

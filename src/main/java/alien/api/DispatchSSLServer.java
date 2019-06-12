@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -34,6 +35,7 @@ import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.PutJobLog;
 import alien.api.taskQueue.SetJobStatus;
 import alien.config.ConfigUtils;
+import alien.monitoring.CacheMonitor;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
 import alien.user.AliEnPrincipal;
@@ -93,17 +95,23 @@ public class DispatchSSLServer extends Thread {
 
 	private static final CachedThreadPool acceptorPool = new CachedThreadPool(ConfigUtils.getConfig().geti("alien.api.DispatchSSLServer.maxAcceptorThreads", 16), 10, TimeUnit.SECONDS);
 
+	private static CacheMonitor ipv6Connections = null;
+
 	static {
-		monitor.addMonitoring("activeSessions", (names, values) -> {
-			names.add("activeSessions");
-			values.add(Double.valueOf(activeSessions.get()));
-			
-			names.add("acceptorPoolSize");
-			values.add(Double.valueOf(acceptorPool.getPoolSize()));
-			
-			names.add("acceptorPoolQueueLength");
-			values.add(Double.valueOf(acceptorPool.getQueue().size()));
-		});
+		if (monitor != null) {
+			monitor.addMonitoring("activeSessions", (names, values) -> {
+				names.add("activeSessions");
+				values.add(Double.valueOf(activeSessions.get()));
+
+				names.add("acceptorPoolSize");
+				values.add(Double.valueOf(acceptorPool.getPoolSize()));
+
+				names.add("acceptorPoolQueueLength");
+				values.add(Double.valueOf(acceptorPool.getQueue().size()));
+			});
+
+			ipv6Connections = monitor.getCacheMonitor("ipv6_connections");
+		}
 	}
 
 	/**
@@ -242,8 +250,10 @@ public class DispatchSSLServer extends Thread {
 
 						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
-						monitor.addMeasurement("request_processing", requestProcessingDuration);
-						monitor.addMeasurement("serialization", serializationDuration);
+						if (monitor != null) {
+							monitor.addMeasurement("request_processing", requestProcessingDuration);
+							monitor.addMeasurement("serialization", serializationDuration);
+						}
 
 						requestCount++;
 					}
@@ -384,7 +394,8 @@ public class DispatchSSLServer extends Thread {
 				catch (final IOException ioe) {
 					logger.log(Level.WARNING, "Exception treating a client", ioe);
 
-					monitor.incrementCounter("exception_handling_client");
+					if (monitor != null)
+						monitor.incrementCounter("exception_handling_client");
 				}
 			}
 
@@ -406,7 +417,8 @@ public class DispatchSSLServer extends Thread {
 		if (!c.getSession().isValid()) {
 			logger.log(Level.WARNING, "Invalid SSL connection from " + c.getRemoteSocketAddress());
 
-			monitor.incrementCounter("invalid_ssl_connection");
+			if (monitor != null)
+				monitor.incrementCounter("invalid_ssl_connection");
 		}
 
 		X509Certificate[] peerCertChain = null;
@@ -420,7 +432,8 @@ public class DispatchSSLServer extends Thread {
 			catch (final SSLPeerUnverifiedException e) {
 				logger.log(Level.WARNING, "Client certificate cannot be validated", e);
 
-				monitor.incrementCounter("invalid_ssl_connection");
+				if (monitor != null)
+					monitor.incrementCounter("invalid_ssl_connection");
 
 				return;
 			}
@@ -450,7 +463,14 @@ public class DispatchSSLServer extends Thread {
 
 		serv.start();
 
-		monitor.incrementCounter("accepted_connections");
+		if (monitor != null) {
+			monitor.incrementCounter("accepted_connections");
+
+			if (c.getInetAddress() instanceof Inet6Address)
+				ipv6Connections.incrementHits();
+			else
+				ipv6Connections.incrementMisses();
+		}
 	}
 
 	/**

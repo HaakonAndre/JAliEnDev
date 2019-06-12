@@ -318,19 +318,18 @@ public class ArchiveMemberDelete {
 
 			// Upload the new archive to the Grid
 			//
-			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid: " + newArchiveFullPath);
-
 			final File newArchive = new File(System.getProperty("user.dir") + System.getProperty("file.separator") + "extracted" + System.getProperty("file.separator") + archiveName);
 
-			LFN newArchiveLFN = commander.c_api.getLFN(newArchiveFullPath);
-			if (newArchiveLFN != null) {
+			while (commander.c_api.getLFN(newArchiveFullPath) != null) {
 				// Delete registertemp/root_archive.zip if there is any
+				System.out.println("[" + new Date() + "] Deleting corrupted " + newArchiveFullPath);
 				commander.c_api.removeLFN(newArchiveFullPath);
 			}
 
+			System.out.println("[" + new Date() + "] Uploading the new archive to the Grid: " + newArchiveFullPath);
 			commander.c_api.uploadFile(newArchive, newArchiveFullPath, "-w", "-S", "disk:1"); // Create only one replica
 
-			newArchiveLFN = commander.c_api.getLFN(newArchiveFullPath);
+			final LFN newArchiveLFN = commander.c_api.getLFN(newArchiveFullPath);
 			if (newArchiveLFN == null || !newArchiveLFN.exists) {
 				System.err.println("[" + new Date() + "] " + remoteFile + ": Failed to upload archive " + newArchiveFullPath);
 				validation.println("Upload failed " + newArchiveFullPath);
