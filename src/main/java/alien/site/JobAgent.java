@@ -575,6 +575,8 @@ public class JobAgent implements MonitoringObject, Runnable {
 		OutputStream stdin;
 		ObjectOutputStream stdinObj;
 
+		InputStream stdout;
+		
 		int wrapperPID = -1;
 
 		try {
@@ -597,7 +599,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			logger.log(Level.INFO, "JDL info sent to JobWrapper");
 			
 			//Wait for JobWrapper to start
-			InputStream stdout = p.getInputStream();
+			stdout = p.getInputStream();
 			stdout.read();
 
 		} catch (final Exception ioe) {
@@ -628,7 +630,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
 
 		//Listen for job updates from the jobwrapper
-		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdin));
+		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdout, stdin));
 		jobWrapperListener.start();
 
 		boolean processNotFinished = true;
@@ -871,10 +873,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * 
 	 * |JobStatus|extrafield1_key|extrafield1_val|extrafield2_key|extrafield2_val|...
 	 */
-	private Runnable createJobWrapperListener(Process p, OutputStream stdin){
+	private Runnable createJobWrapperListener(Process p, InputStream stdout, OutputStream stdin){
 		final Runnable jobWrapperListener = () -> {
 
-			final InputStream stdout = p.getInputStream();	
+			//final InputStream stdout = p.getInputStream();	
 			final PrintWriter stdinPrinter = new PrintWriter(stdin);
 
 			while(p.isAlive()){
