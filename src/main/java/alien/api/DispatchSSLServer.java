@@ -38,6 +38,7 @@ import alien.config.ConfigUtils;
 import alien.monitoring.CacheMonitor;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.monitoring.Timing;
 import alien.user.AliEnPrincipal;
 import alien.user.JAKeyStore;
 import alien.user.UserFactory;
@@ -168,7 +169,7 @@ public class DispatchSSLServer extends Thread {
 
 		remoteIdentity.setRemoteEndpoint(connection.getInetAddress());
 
-		long lLasted = 0;
+		double lLasted = 0;
 
 		int requestCount = 0;
 
@@ -182,7 +183,7 @@ public class DispatchSSLServer extends Thread {
 					if (o instanceof Request) {
 						Request r = (Request) o;
 
-						final long lStart = System.currentTimeMillis();
+						final Timing timing = new Timing();
 
 						r.setPartnerIdentity(remoteIdentity);
 
@@ -226,11 +227,11 @@ public class DispatchSSLServer extends Thread {
 								}
 						}
 
-						final long requestProcessingDuration = System.currentTimeMillis() - lStart;
-
+						final double requestProcessingDuration = timing.getMillis();
+						
 						lLasted += requestProcessingDuration;
 
-						final long lSer = System.currentTimeMillis();
+						timing.startTiming();
 
 						// System.err.println("When returning the object, ex is "+r.getException());
 
@@ -242,17 +243,16 @@ public class DispatchSSLServer extends Thread {
 						}
 
 						oos.flush();
-						os.flush();
 
-						final long serializationDuration = System.currentTimeMillis() - lSer;
-
-						lSerialization += serializationDuration;
+						final double serializationTime = timing.getMillis();
+						
+						lSerialization += serializationTime;
 
 						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
 						if (monitor != null) {
 							monitor.addMeasurement("request_processing", requestProcessingDuration);
-							monitor.addMeasurement("serialization", serializationDuration);
+							monitor.addMeasurement("serialization", serializationTime);
 						}
 
 						requestCount++;
@@ -262,12 +262,12 @@ public class DispatchSSLServer extends Thread {
 			}
 		}
 		catch (@SuppressWarnings("unused") final EOFException e) {
-			logger.log(Level.WARNING, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval(lLasted) + " to process and "
-					+ Format.toInterval(lSerialization) + " to serialize");
+			logger.log(Level.WARNING, "Client " + getName() + " disconnected after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted) + " to process and "
+					+ Format.toInterval((long) lSerialization) + " to serialize");
 		}
 		catch (final Throwable e) {
-			logger.log(Level.WARNING, "Main thread for " + getName() + " threw an error after sending " + requestCount + " requests that took in total " + Format.toInterval(lLasted)
-					+ " to process and " + Format.toInterval(lSerialization) + " to serialize", e);
+			logger.log(Level.WARNING, "Main thread for " + getName() + " threw an error after sending " + requestCount + " requests that took in total " + Format.toInterval((long) lLasted)
+					+ " to process and " + Format.toInterval((long) lSerialization) + " to serialize", e);
 		}
 		finally {
 			activeSessions.decrementAndGet();
@@ -476,7 +476,7 @@ public class DispatchSSLServer extends Thread {
 	/**
 	 * Total amount of time (in milliseconds) spent in writing objects to the socket.
 	 */
-	public static long lSerialization = 0;
+	public static double lSerialization = 0;
 
 	/**
 	 * Print client info on SSL partner
