@@ -92,7 +92,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	// Container specific
 	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
 	private static final String ALIENV_DIR = "/cvmfs/alice.cern.ch/bin/alienv";
-	private static final String CONTAINER_JOBDIR = "/workdirr";
+	private static final String CONTAINER_JOBDIR = "/workdir";
 	private static final String CONTAINER_TMPDIR = "/tmp";
 
 	// Other
@@ -481,14 +481,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 */
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
+			//Main cmd for starting the JobWrapper
 			final List<String> launchCmd = new ArrayList<String>();
 
-			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
-			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
-				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
-			}
-
-			//Main cmd for starting the JobWrapper
 			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
 			cmdChecker.waitFor();
 			Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
@@ -510,11 +505,16 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			}
 			cmdScanner.close();
+			
+			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
+			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
+				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
+			}
 
 			//Check if Singularity is present on site. If yes, add singularity to launchCmd
 			try {                
 				//TODO: Contains workaround for missing overlay/underlay. TMPDIR will be mounted to /tmp, and workdir to /workdir, in container. Remove?	
-				List<String> singularityCmd = new ArrayList<String>();
+				final List<String> singularityCmd = new ArrayList<String>();
 				singularityCmd.add("singularity");
 				singularityCmd.add("exec");
 				singularityCmd.add("-C");
