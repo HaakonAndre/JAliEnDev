@@ -7,7 +7,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -101,6 +100,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private String jarPath;
 	private String jarName;
+	private int wrapperPID;
 
 	private enum jaStatus{
 		REQUESTING_JOB(1),
@@ -481,7 +481,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 */
 	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
 		try {
-			List<String> launchCmd = new ArrayList<String>();
+			final List<String> launchCmd = new ArrayList<String>();
 
 			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
 			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
@@ -526,13 +526,13 @@ public class JobAgent implements MonitoringObject, Runnable {
 				singularityCmd.add("/bin/bash");
 				singularityCmd.add("-c");
 
-				String setupEnv = "source <( " + ALIENV_DIR + " printenv JAliEn ); ";
-				String javaTest = "java -version";
+				final String setupEnv = "source <( " + ALIENV_DIR + " printenv JAliEn ); ";
+				final String javaTest = "java -version";
 
 				singularityCmd.add(setupEnv + javaTest);
 
-				ProcessBuilder pb = new ProcessBuilder(singularityCmd);
-				Process singularityProbe = pb.start();
+				final ProcessBuilder pb = new ProcessBuilder(singularityCmd);
+				final Process singularityProbe = pb.start();
 				singularityProbe.waitFor();
 
 				cmdScanner = new Scanner(singularityProbe.getErrorStream());
@@ -544,7 +544,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 						return singularityCmd;
 					}
 				}
-			}catch (Exception e2) {
+			}catch (final Exception e2) {
 				logger.log(Level.SEVERE, "Failed to start Singularity: " + e2.toString());
 			}finally {
 				cmdScanner.close();
@@ -561,24 +561,19 @@ public class JobAgent implements MonitoringObject, Runnable {
 		logger.log(Level.INFO, "Launching jobwrapper using the command: " + launchCommand.toString());
 
 		final ProcessBuilder pBuilder = new ProcessBuilder(launchCommand);
-
 		pBuilder.environment().remove("JALIEN_TOKEN_CERT");
 		pBuilder.environment().remove("JALIEN_TOKEN_KEY");
-
 		pBuilder.redirectError(Redirect.INHERIT);
-
 		pBuilder.directory(tempDir);
 
 		final Process p;
 
 		// stdin from the viewpoint of the wrapper
-		OutputStream stdin;
-		ObjectOutputStream stdinObj;
+		final OutputStream stdin;
+		final ObjectOutputStream stdinObj;
 
-		InputStream stdout;
+		final InputStream stdout;
 		
-		int wrapperPID = -1;
-
 		try {
 			p = pBuilder.start();
 
@@ -676,7 +671,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				stdinObj.close();
 				stdin.close();
 				jobWrapperListener.interrupt();
-			} catch (Exception e){
+			} catch (final Exception e){
 				logger.log(Level.WARNING, "Not all resources from the current job could be cleared: " + e);
 			}
 			apmon.removeJobToMonitor(wrapperPID);
@@ -831,7 +826,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			props.setProperty("java.util.logging.FileHandler.pattern", jobWrapperLogDir);
 
 			logger.log(Level.INFO, "Logging properties loaded for the JobWrapper");
-		} catch (Exception e) {
+		} catch (final Exception e) {
 
 			logger.log(Level.INFO, "Logging properties for JobWrapper not found.");
 			logger.log(Level.INFO, "Using fallback logging configurations for JobWrapper");
@@ -876,12 +871,11 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private Runnable createJobWrapperListener(Process p, InputStream stdout, OutputStream stdin){
 		final Runnable jobWrapperListener = () -> {
 
-			//final InputStream stdout = p.getInputStream();	
 			final PrintWriter stdinPrinter = new PrintWriter(stdin);
-
+			final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
+			
 			while(p.isAlive()){
 				try {
-					final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
 					final String receivedString = stdoutReader.readLine();                 
 
 					if(receivedString.contains("|")){
@@ -904,12 +898,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 						stdinPrinter.println(newStatusString);
 						stdinPrinter.flush();
 					}
-				} catch (StreamCorruptedException e) {
-					logger.log(Level.INFO, "Received something from JobWrapper, but it wasn't a status update (corrupted?). Ignoring");
-				} catch (EOFException | NullPointerException e1){
+				} catch (final StreamCorruptedException e) {
+					logger.log(Level.WARNING, "Received something from JobWrapper, but it wasn't a status update (corrupted?). Ignoring");
+				} catch (final EOFException | NullPointerException e1){
 					logger.log(Level.INFO, "JobWrapper has stopped sending updates");
 					break; 
-				} catch (Exception e2){
+				} catch (final Exception e2){
 					logger.log(Level.WARNING, "Exception received: " + e2);
 				}
 			}

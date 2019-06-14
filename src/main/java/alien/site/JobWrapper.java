@@ -170,7 +170,7 @@ public class JobWrapper implements Runnable {
 		try {
 			jobAgentListener.interrupt();
 			inputFromJobAgent.close();
-		} catch (Exception e) {
+		} catch (final Exception e) {
 			logger.log(Level.WARNING, "An exception occurred during cleanup: " + e);
 		}
 
@@ -654,8 +654,8 @@ public class JobWrapper implements Runnable {
 				System.out.printf("%s%n", sendString);
 				System.out.flush();
 			}
-		} catch (Exception e) {
-			logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent");
+		} catch (final Exception e) {
+			logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent: " + e);
 		}
 		jobStatus = newStatus;
 		return;
@@ -685,10 +685,15 @@ public class JobWrapper implements Runnable {
 			while(true){
 				try {
 					receivedStatus = inputFromJobAgent.readLine();
-
-					logger.log(Level.SEVERE, "CONFIRMED: " + receivedStatus);
-				} catch (Exception e) {
-					logger.log(Level.INFO, "Received something from JobWrapper, but it could not be read (corrupted?)");
+					
+					if(receivedStatus != null)
+						logger.log(Level.INFO, "Confirmed from JobAgent: " + receivedStatus);
+					else {
+						logger.log(Level.SEVERE, "Unable to receive message from JobAgent. Stream is closed. Is JobAgent running?");
+						break;
+					}
+				} catch (final Exception e) {
+					logger.log(Level.WARNING, "Received something from JobWrapper, but it could not be read (corrupted?): " + e);
 				}
 			}
 		}; 
