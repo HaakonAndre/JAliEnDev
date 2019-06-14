@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletResponse;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
+import alien.monitoring.Timing;
 import lazyj.Format;
 import lazyj.LRUMap;
 import lazyj.RequestWrapper;
@@ -364,7 +365,7 @@ public class TextCache extends HttpServlet {
 
 	private static synchronized long getSlowQueryThreshold() {
 		if (System.currentTimeMillis() - slowQueryThresholdCheck > 1000 * 60) {
-			slowQueryThreshold = ConfigUtils.getConfig().getl("alien.servlets.TextCache.logSlowQueries", 0) * 1000000;
+			slowQueryThreshold = ConfigUtils.getConfig().getl("alien.servlets.TextCache.logSlowQueries", 0);
 
 			slowQueryThresholdCheck = System.currentTimeMillis();
 		}
@@ -374,21 +375,21 @@ public class TextCache extends HttpServlet {
 
 	@Override
 	protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
-		final long start = System.nanoTime();
+		final Timing timing = new Timing();
 
 		try (PrintWriter pwOut = response.getWriter()) {
 			execRealGet(new RequestWrapper(request), response, pwOut);
 		}
 
-		final long duration = System.nanoTime() - start;
-
+		final double duration = timing.getMillis();
+		
 		if (monitor != null)
-			monitor.addMeasurement("ms_to_answer", duration / 1000000d);
+			monitor.addMeasurement("ms_to_answer", duration);
 
 		final long logSlowQueries = getSlowQueryThreshold();
 
 		if (logSlowQueries > 0 && duration > logSlowQueries)
-			System.err.println("Slow query : " + Format.point(duration / 1000000d) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
+			System.err.println("Slow query : " + Format.point(duration) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
 
 		logRequest(request);
 	}
