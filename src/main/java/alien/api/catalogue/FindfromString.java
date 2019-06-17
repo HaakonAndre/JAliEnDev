@@ -93,7 +93,7 @@ public class FindfromString extends Request implements Cacheable {
 
 	@Override
 	public String toString() {
-		return "Asked for : path (" + this.path + "), pattern (" + this.pattern + "), flags (" + this.flags + ") reply is:\n" + this.lfns;
+		return "Asked for : path (" + this.path + "), pattern (" + this.pattern + "), flags (" + this.flags + ") reply " + (this.lfns != null ? "contains " + this.lfns.size() + " LFNs" : "is null");
 	}
 
 	/**
