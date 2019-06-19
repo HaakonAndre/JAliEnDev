@@ -31,9 +31,6 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import alien.api.taskQueue.GetMatchJob;
-import alien.api.taskQueue.PutJobLog;
-import alien.api.taskQueue.SetJobStatus;
 import alien.config.ConfigUtils;
 import alien.monitoring.CacheMonitor;
 import alien.monitoring.Monitor;
@@ -189,46 +186,17 @@ public class DispatchSSLServer extends Thread {
 
 						r.setPartnerCertificate(partnerCerts);
 
-						if (forwardRequest)
-							r = DispatchSSLClient.dispatchRequest(r);
-						else {
-							r.authorizeUserAndRole();
+						try {
+							r = Dispatcher.execute(r, forwardRequest);
+						}
+						catch (final Exception e) {
+							logger.log(Level.WARNING, "Returning an exception to the client", e);
 
-							boolean shouldRun = true;
-
-							if (r.getEffectiveRequester().isJobAgent() && !(r instanceof GetMatchJob)) {
-
-								// Allowing the JobAgent to change the job status enables it to act on possible JobWrapper terminations/faults
-								if (r instanceof SetJobStatus)
-									shouldRun = true;
-								// Enables the JobAgent to report its progress/the resources it allocates for the JobWrapper sandbox
-								else
-									if (r instanceof PutJobLog)
-										shouldRun = true;
-									else {
-										// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)
-										r.setException(new ServerException("You are not allowed to call " + r.getClass().getName() + " as job agent", null));
-										shouldRun = false;
-									}
-							}
-
-							if (r.getEffectiveRequester().isJob()) {
-								// TODO : firewall all the commands that the job can have access to (whereis, access (read only for anything but the output directory ...))
-							}
-
-							if (shouldRun)
-								try {
-									r.run();
-								}
-								catch (final Exception e) {
-									logger.log(Level.WARNING, "Returning an exception to the client", e);
-
-									r.setException(new ServerException(e.getMessage(), e));
-								}
+							r.setException(new ServerException(e.getMessage(), e));
 						}
 
 						final double requestProcessingDuration = timing.getMillis();
-						
+
 						lLasted += requestProcessingDuration;
 
 						timing.startTiming();
@@ -245,7 +213,7 @@ public class DispatchSSLServer extends Thread {
 						oos.flush();
 
 						final double serializationTime = timing.getMillis();
-						
+
 						lSerialization += serializationTime;
 
 						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
