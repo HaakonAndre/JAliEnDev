@@ -20,6 +20,13 @@ public class Dispatcher {
 
 	static transient final Monitor monitor = MonitorFactory.getMonitor(Dispatcher.class.getCanonicalName());
 
+	static {
+		monitor.addMonitoring("object_cache_status", (names, values) -> {
+			names.add("object_cache_size");
+			values.add(Double.valueOf(cache.size()));
+		});
+	}
+
 	/**
 	 * @param r
 	 *            request to execute
@@ -68,17 +75,17 @@ public class Dispatcher {
 		final T ret;
 
 		final Timing timing = new Timing();
-		
-		if (ConfigUtils.isCentralService() && !forceRemote) {			
+
+		if (ConfigUtils.isCentralService() && !forceRemote) {
 			r.authorizeUserAndRole();
 			r.run();
 			ret = r;
-			
+
 			monitor.addMeasurement("executed_requests", timing);
 		}
 		else {
 			ret = dispatchRequest(r);
-			
+
 			monitor.addMeasurement("forwarded_requests", timing);
 		}
 
