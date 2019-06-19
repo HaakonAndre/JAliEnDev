@@ -2,6 +2,9 @@ package alien.api;
 
 import java.lang.ref.WeakReference;
 
+import alien.api.taskQueue.GetMatchJob;
+import alien.api.taskQueue.PutJobLog;
+import alien.api.taskQueue.SetJobStatus;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -78,10 +81,17 @@ public class Dispatcher {
 
 		if (ConfigUtils.isCentralService() && !forceRemote) {
 			r.authorizeUserAndRole();
-			r.run();
-			ret = r;
 
-			monitor.addMeasurement("executed_requests", timing);
+			if (passesFirewallRules(r)) {
+				monitor.addMeasurement("executed_requests", timing);
+
+				r.run();
+			}
+			else {
+				monitor.addMeasurement("firewalled_requests", timing);
+			}
+
+			ret = r;
 		}
 		else {
 			ret = dispatchRequest(r);
@@ -93,6 +103,34 @@ public class Dispatcher {
 			cache.put(key, new WeakReference<Request>(ret), ((Cacheable) ret).getTimeout());
 
 		return ret;
+	}
+
+	/**
+	 * Check if the request should be allowed run
+	 * 
+	 * @param r request to check
+	 * @return <code>true</code> if it can be run, <code>false</code> if not
+	 */
+	private static final boolean passesFirewallRules(final Request r) {
+		if (r.getEffectiveRequester().isJobAgent() && !(r instanceof GetMatchJob)) {
+			// Allowing the JobAgent to change the job status enables it to act on possible JobWrapper terminations/faults
+			if (r instanceof SetJobStatus)
+				return true;
+
+			// Enables the JobAgent to report its progress/the resources it allocates for the JobWrapper sandbox
+			if (r instanceof PutJobLog)
+				return true;
+
+			// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)
+			r.setException(new ServerException("You are not allowed to call " + r.getClass().getName() + " as job agent", null));
+			return false;
+		}
+
+		if (r.getEffectiveRequester().isJob()) {
+			// TODO : firewall all the commands that the job can have access to (whereis, access (read only for anything but the output directory ...))
+		}
+
+		return true;
 	}
 
 	private static <T extends Request> T dispatchRequest(final T r) throws ServerException {
