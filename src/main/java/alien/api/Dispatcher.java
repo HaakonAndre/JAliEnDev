@@ -1,10 +1,12 @@
 package alien.api;
 
-import lazyj.cache.ExpirationCache;
-
 import java.lang.ref.WeakReference;
 
 import alien.config.ConfigUtils;
+import alien.monitoring.Monitor;
+import alien.monitoring.MonitorFactory;
+import alien.monitoring.Timing;
+import lazyj.cache.ExpirationCache;
 
 /**
  * @author costing
@@ -15,6 +17,8 @@ public class Dispatcher {
 	private static final boolean useParallelConnections = false;
 
 	private static final ExpirationCache<String, WeakReference<Request>> cache = new ExpirationCache<>(10240);
+
+	static transient final Monitor monitor = MonitorFactory.getMonitor(Dispatcher.class.getCanonicalName());
 
 	/**
 	 * @param r
@@ -38,35 +42,50 @@ public class Dispatcher {
 	 */
 	@SuppressWarnings("unchecked")
 	public static <T extends Request> T execute(final T r, final boolean forceRemote) throws ServerException {
-		if (ConfigUtils.isCentralService() && !forceRemote) {
-			// System.out.println("Running centrally: " + r.toString());
-			r.authorizeUserAndRole();
-			r.run();
-			return r;
-		}
+		final boolean isCacheable = r instanceof Cacheable;
+
+		final String key;
+
+		if (isCacheable)
+			key = r.getClass().getCanonicalName() + "#" + ((Cacheable) r).getKey();
+		else
+			key = null;
 
 		if (r instanceof Cacheable) {
-			final Cacheable c = (Cacheable) r;
-
-			final String key = r.getClass().getCanonicalName() + "#" + c.getKey();
-
 			final WeakReference<Request> cachedObject = cache.get(key);
 
 			final Object cachedValue;
 
 			if (cachedObject != null && (cachedValue = cachedObject.get()) != null) {
+				monitor.incrementCacheHits("object_cache");
 				return (T) cachedValue;
 			}
+			monitor.incrementCacheMisses("object_cache");
+		}
+		else
+			monitor.incrementCounter("non_cacheable");
 
-			final T ret = dispatchRequest(r);
+		final T ret;
 
-			if (ret != null)
-				cache.put(key, new WeakReference<Request>(ret), ((Cacheable) ret).getTimeout());
-
-			return ret;
+		final Timing timing = new Timing();
+		
+		if (ConfigUtils.isCentralService() && !forceRemote) {			
+			r.authorizeUserAndRole();
+			r.run();
+			ret = r;
+			
+			monitor.addMeasurement("executed_requests", timing);
+		}
+		else {
+			ret = dispatchRequest(r);
+			
+			monitor.addMeasurement("forwarded_requests", timing);
 		}
 
-		return dispatchRequest(r);
+		if (isCacheable && ret != null)
+			cache.put(key, new WeakReference<Request>(ret), ((Cacheable) ret).getTimeout());
+
+		return ret;
 	}
 
 	private static <T extends Request> T dispatchRequest(final T r) throws ServerException {
