@@ -430,7 +430,7 @@ public class JAliEnCOMMander extends Thread {
 						args.remove(arg[i]);
 					}
 					else
-						if ("-h".equals(arg[i]) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
+						if (("-h".equals(arg[i]) && !comm.equals("du")) || "--h".equals(arg[i]) || "-help".equals(arg[i]) || "--help".equals(arg[i])) {
 							help = true;
 							args.remove(arg[i]);
 						}
