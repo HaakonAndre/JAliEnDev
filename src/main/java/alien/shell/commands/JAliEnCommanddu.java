@@ -7,6 +7,7 @@ import java.util.Set;
 
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.LFN;
+import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
@@ -108,7 +109,7 @@ public class JAliEnCommanddu extends JAliEnBaseCommand {
 		for (final String path : pathsToRunOn) {
 			final DUStats stats = new DUStats();
 
-			final Collection<LFN> lfns = commander.c_api.find(path, "*", null, 0, null, null);
+			final Collection<LFN> lfns = commander.c_api.find(path, "*", null, LFNUtils.FIND_INCLUDE_DIRS | LFNUtils.FIND_NO_SORT, null, null);
 
 			if (lfns != null) {
 				for (final LFN l : lfns) {
