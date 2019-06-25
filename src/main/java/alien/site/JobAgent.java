@@ -87,7 +87,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	private JobStatus jobStatus;
 
 	private int totalJobs;
-	private final long jobAgentStartTime = new java.util.Date().getTime();
+	private final long jobAgentStartTime = System.currentTimeMillis();
 
 	// Container specific
 	private static final String DEFAULT_JOB_CONTAINER_PATH = "centos-7";
@@ -179,6 +179,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		totalJobs = 0;
 
 		siteMap = (new SiteMap()).getSiteParameters(env);
+		siteMap.put("CE", ce); //TODO: Remove after testing
 
 		hostName = (String) siteMap.get("Localhost");
 		// alienCm = (String) siteMap.get("alienCm");
@@ -253,6 +254,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 					tokenCert = (String) matchedJob.get("TokenCertificate");
 					tokenKey = (String) matchedJob.get("TokenKey");
 
+					matchedJob.entrySet().forEach(entry->{
+						System.err.println(entry.getKey() + " " + entry.getValue());  
+					});
+
 					// TODO: commander.setUser(username);
 					// commander.setSite(site);
 
@@ -266,19 +271,21 @@ public class JobAgent implements MonitoringObject, Runnable {
 					cleanup();
 				}
 				else { //TODO: Handle matchedJob.containsKey("Error") after all?
-					logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now. Idling 20secs zZz...");
-
-					try {
-						// TODO?: monitor.sendBgMonitoring
-						Thread.sleep(20000);
-					} catch (final InterruptedException e) {
-						logger.log(Level.WARNING, "Interrupt received", e);
-					}
+					logger.log(Level.INFO, "We didn't get anything back. Nothing to run right now.");
 				}
 			} catch (final Exception e) {
 				logger.log(Level.INFO, "Error getting a matching job: ",e);
 			}
 			count--;
+			if (count!=0) {
+				logger.log(Level.INFO, "Idling 20secs zZz...");
+				try {
+					// TODO?: monitor.sendBgMonitoring
+					Thread.sleep(20*1000);
+				} catch (final InterruptedException e) {
+					logger.log(Level.WARNING, "Interrupt received", e);
+				}
+			}
 		}
 
 		logger.log(Level.INFO, "JobAgent finished, id: " + jobAgentId + " totalJobs: " + totalJobs);
@@ -303,8 +310,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			// Set up constraints
 			getMemoryRequirements();
 
-			final int selfProcessID = MonitorFactory.getSelfProcessID();
-			final List<String> launchCommand = generateLaunchCommand(selfProcessID);
+			final List<String> launchCommand = generateLaunchCommand();
 
 			setupJobWrapperLogging();
 
@@ -361,7 +367,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		final long space = new File(workdir).getFreeSpace() / 1024;
 
 		// ttl recalculation
-		final long jobAgentCurrentTime = new java.util.Date().getTime();
+		final long jobAgentCurrentTime = System.currentTimeMillis();
 		final int time_subs = (int) (jobAgentCurrentTime - jobAgentStartTime)/1000; //convert to seconds
 		int timeleft = origTtl - time_subs;
 
@@ -383,8 +389,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		}
 
 		// set timeleft to time until certificate expires (-15min)
-		long timeToCertExpire = TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - jobAgentCurrentTime);
-		timeleft = (int)timeToCertExpire - 900;
+		timeleft = getRemainingProxyTime() - 900;
 
 		if (timeleft <= 0) {
 			logger.log(Level.INFO, "There is not enough time left: " + timeleft);
@@ -401,8 +406,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * @return the time in seconds that proxy is still valid for
 	 */
 	private int getRemainingProxyTime() {
-		// TODO: to be modified!
-		return origTtl;
+		return (int)TimeUnit.MILLISECONDS.toSeconds(commander.getUser().getUserCert()[0].getNotAfter().getTime() - System.currentTimeMillis());
 	}
 
 	private void getMemoryRequirements() {
@@ -416,16 +420,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				final String number = workdirMaxSize.substring(0, m.start());
 				final String unit = workdirMaxSize.substring(m.start());
 
-				switch (unit) {
-				case "KB":
-					workdirMaxSizeMB = Integer.parseInt(number) / 1024;
-					break;
-				case "GB":
-					workdirMaxSizeMB = Integer.parseInt(number) * 1024;
-					break;
-				default: // MB
-					workdirMaxSizeMB = Integer.parseInt(number);
-				}
+				workdirMaxSizeMB = convertStringUnitToIntegerMB(unit, number);
 			}
 			else
 				workdirMaxSizeMB = Integer.parseInt(workdirMaxSize);
@@ -444,16 +439,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				final String number = maxmemory.substring(0, m.start());
 				final String unit = maxmemory.substring(m.start());
 
-				switch (unit) {
-				case "KB":
-					jobMaxMemoryMB = Integer.parseInt(number) / 1024;
-					break;
-				case "GB":
-					jobMaxMemoryMB = Integer.parseInt(number) * 1024;
-					break;
-				default: // MB
-					jobMaxMemoryMB = Integer.parseInt(number);
-				}
+				jobMaxMemoryMB = convertStringUnitToIntegerMB(unit, number);
 			}
 			else
 				jobMaxMemoryMB = Integer.parseInt(maxmemory);
@@ -479,12 +465,12 @@ public class JobAgent implements MonitoringObject, Runnable {
 	 * @param processID
 	 * @return Command w/arguments for starting the JobWrapper, based on the command used for the JobAgent
 	 */
-	public List<String> generateLaunchCommand(int processID) throws InterruptedException {
+	public List<String> generateLaunchCommand() throws InterruptedException {
 		try {
 			//Main cmd for starting the JobWrapper
 			final List<String> launchCmd = new ArrayList<String>();
 
-			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + processID + " -o command=");
+			final Process cmdChecker = Runtime.getRuntime().exec("ps -p " + MonitorFactory.getSelfProcessID() + " -o command=");
 			cmdChecker.waitFor();
 			Scanner cmdScanner = new Scanner(cmdChecker.getInputStream());
 			String readArg;
@@ -505,7 +491,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 				}
 			}
 			cmdScanner.close();
-			
+
 			final String containerImgPath = env.getOrDefault("JOB_CONTAINER_PATH", DEFAULT_JOB_CONTAINER_PATH);
 			if(containerImgPath.equals(DEFAULT_JOB_CONTAINER_PATH)) {
 				logger.log(Level.INFO, "Environment variable JOB_CONTAINER_PATH not set. Using default path instead: " +  DEFAULT_JOB_CONTAINER_PATH);
@@ -526,7 +512,9 @@ public class JobAgent implements MonitoringObject, Runnable {
 				singularityCmd.add("/bin/bash");
 				singularityCmd.add("-c");
 
-				final String setupEnv = "source <( " + ALIENV_DIR + " printenv JAliEn ); ";
+				final String loadedmodules = env.get("LOADEDMODULES");
+				final String jalienVersion = loadedmodules.substring(loadedmodules.lastIndexOf(':') + 1);
+				final String setupEnv = "source <( " + ALIENV_DIR + " printenv " + jalienVersion + " ); ";
 				final String javaTest = "java -version";
 
 				singularityCmd.add(setupEnv + javaTest);
@@ -573,7 +561,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		final ObjectOutputStream stdinObj;
 
 		final InputStream stdout;
-		
+
 		try {
 			p = pBuilder.start();
 
@@ -592,7 +580,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.flush();
 
 			logger.log(Level.INFO, "JDL info sent to JobWrapper");
-			
+
 			//Wait for JobWrapper to start
 			stdout = p.getInputStream();
 			stdout.read();
@@ -604,17 +592,16 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 		if (monitorJob) {
 			wrapperPID = (int)p.pid();
-			
+
 			apmon.addJobToMonitor(wrapperPID, jobWorkdir, ce, hostName);
 			mj = new MonitoredJob(wrapperPID, jobWorkdir, ce, hostName);
-			
+
 			final String fs = checkProcessResources();
 			if (fs == null)
 				sendProcessResources();
 		}
 
-		final Timer t = new Timer();
-		t.schedule(new TimerTask() {
+		TimerTask killProcess = new TimerTask() {
 			@Override
 			public void run() {
 				p.destroy();
@@ -622,7 +609,10 @@ public class JobAgent implements MonitoringObject, Runnable {
 					p.destroyForcibly();
 				}
 			}
-		}, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
+		};
+
+		final Timer t = new Timer();
+		t.schedule(killProcess, TimeUnit.MILLISECONDS.convert(ttlForJob(), TimeUnit.SECONDS)); // TODO: ttlForJob		
 
 		//Listen for job updates from the jobwrapper
 		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdout, stdin));
@@ -651,7 +641,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 						monitor_loops++;
 						final String error = checkProcessResources();
 						if (error != null) {
-							p.destroy();
+							killProcess.run();
 							logger.log(Level.SEVERE, "Process overusing resources: " + error);
 							return -2;
 						}
@@ -873,7 +863,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 			final PrintWriter stdinPrinter = new PrintWriter(stdin);
 			final BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(stdout));
-			
+
 			while(p.isAlive()){
 				try {
 					final String receivedString = stdoutReader.readLine();                 
@@ -911,4 +901,14 @@ public class JobAgent implements MonitoringObject, Runnable {
 		return jobWrapperListener;
 	}
 
+	private int convertStringUnitToIntegerMB(String unit, String number) {
+		switch (unit) {
+		case "KB":
+			return Integer.parseInt(number) / 1024;
+		case "GB":
+			return Integer.parseInt(number) * 1024;
+		default: // MB
+			return Integer.parseInt(number);
+		}
+	}
 }
