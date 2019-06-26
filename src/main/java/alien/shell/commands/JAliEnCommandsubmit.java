@@ -27,7 +27,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 		if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
 			final String content = Utils.readFile(fout.getAbsolutePath());
 
-			if (content != null)
+			if (content != null) {
 				try {
 					final JDL jdl;
 					final String[] args = getArgs();
@@ -35,8 +35,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 					try {
 						jdl = TaskQueueUtils.applyJDLArguments(content, args);
 					} catch (final IOException ioe) {
-						commander.printErrln(
-								"Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
+						commander.setReturnCode(1, "Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
 						return;
 					}
 					jdl.set("JDLPath", alArguments.get(0));
@@ -44,19 +43,20 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 					queueId = commander.q_api.submitJob(jdl);
 					if (queueId > 0) {
 						commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
-					} else
+						commander.printOut("jobId", String.valueOf(queueId));
+					}
+					else
 						commander.printErrln("Error submitting " + alArguments.get(0));
-				}
 
-				catch (final ServerException e) {
-					commander.printErrln("Error submitting " + alArguments.get(0) + ", " + e.getMessage());
+				} catch (final ServerException e) {
+					commander.setReturnCode(2, "Error submitting " + alArguments.get(0) + ", " + e.getMessage());
 				}
+			}
 			else
-				commander.printErrln("Could not read the contents of " + fout.getAbsolutePath());
+				commander.setReturnCode(3, "Could not read the contents of " + fout.getAbsolutePath());
 		}
-
 		else
-			commander.setReturnCode(1, "Not able to get the file " + alArguments.get(0));
+			commander.setReturnCode(4, "Not able to get the file " + alArguments.get(0));
 	}
 
 	/**
