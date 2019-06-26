@@ -514,6 +514,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 
 				final String loadedmodules = env.get("LOADEDMODULES");
 				final String jalienVersion = loadedmodules.substring(loadedmodules.lastIndexOf(':') + 1);
+				
 				final String setupEnv = "source <( " + ALIENV_DIR + " printenv " + jalienVersion + " ); ";
 				final String javaTest = "java -version";
 
@@ -580,6 +581,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			stdinObj.flush();
 
 			logger.log(Level.INFO, "JDL info sent to JobWrapper");
+			commander.q_api.putJobLog(queueId, "trace", "JobWrapper started");
 
 			//Wait for JobWrapper to start
 			stdout = p.getInputStream();

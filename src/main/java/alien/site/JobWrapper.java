@@ -209,16 +209,25 @@ public class JobWrapper implements Runnable {
 			}
 
 			// run payload
-			if (execute() < 0){
+			final int execExitCode = execute();
+			if (execExitCode < 0){
 				logger.log(Level.SEVERE, "Failed to run payload");
+				commander.q_api.putJobLog(queueId, "trace", "Failed to run payload. Exit code: " + execExitCode);
 				sendStatus(JobStatus.ERROR_E);
-				return -1;
+				return execExitCode;
 			}
 
-			if (!validate()){
+			final int valExitCode = validate();
+			if (valExitCode < 0){
 				logger.log(Level.SEVERE, "Validation failed");
+				commander.q_api.putJobLog(queueId, "trace", "Validation failed. Exit code: " + valExitCode);
+				
+				final String fileTrace = getTraceFromFile();
+				if(fileTrace != null)
+					commander.q_api.putJobLog(queueId, "trace", fileTrace);	
+				
 				sendStatus(JobStatus.ERROR_V);
-				return -1;
+				return valExitCode;
 			}
 
 			if (jobStatus == JobStatus.RUNNING)
@@ -297,7 +306,7 @@ public class JobWrapper implements Runnable {
 
 		if(!p.isAlive()){
 			logger.log(Level.INFO, "The process for: " + cmd + " has terminated. Failed to execute?");
-			return -2;
+			return p.exitValue();
 		}
 
 		try {
@@ -306,7 +315,7 @@ public class JobWrapper implements Runnable {
 			logger.log(Level.INFO, "Interrupted while waiting for process to finish execution" + e);
 		}
 
-		return 0;
+		return p.exitValue();
 
 	}
 
@@ -319,7 +328,7 @@ public class JobWrapper implements Runnable {
 		return code;
 	}
 
-	private boolean validate() {
+	private int validate() {
 		int code = 0;
 
 		final String validation = jdl.gets("ValidationCommand");
@@ -329,7 +338,7 @@ public class JobWrapper implements Runnable {
 			code = executeCommand(validation, null);
 		}
 
-		return code == 0;
+		return code;
 	}
 
 	private boolean getInputFiles() {
@@ -699,5 +708,18 @@ public class JobWrapper implements Runnable {
 		}; 
 		return jobAgentListener;
 	}
-
+	
+	private String getTraceFromFile() {
+		final File traceFile = new File(".alienValidation.trace");
+		
+		if (traceFile.exists()) {
+			try {
+				return new String(Files.readAllBytes(traceFile.toPath()));
+			}catch (final Exception e){
+				logger.log(Level.WARNING, "An error occurred when reading .alienValidation.trace");
+			}
+		}
+		logger.log(Level.INFO, ".alienValidation.trace does not exist.");
+		return null;
+	}
 }
