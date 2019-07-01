@@ -18,6 +18,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
+import alien.monitoring.Timing;
 
 /**
  * @author mmmartin
@@ -122,7 +123,8 @@ public class CatalogueTestsWhereis {
 				try {
 					while (!tPool.awaitTermination(5, TimeUnit.SECONDS))
 						System.out.println("Waiting for threads finishing..." + tPool.getActiveCount());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Something went wrong in shutdown!: " + e);
 				}
 
@@ -157,7 +159,8 @@ public class CatalogueTestsWhereis {
 					System.out.println("Shutdown executor");
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -228,34 +231,36 @@ public class CatalogueTestsWhereis {
 					break;
 
 				if (l.isFile()) {
-					final long start = System.nanoTime();
-					// Add lfn again
-					final LFN temp = LFNUtils.getLFN(l.getCanonicalName());
-					if (temp == null) {
-						final String msg = "Failed to get lfn temp: " + l.getCanonicalName();
-						failed_files.println(msg);
-						failed_files.flush();
-						continue;
-					}
-					final Set<PFN> pfns = l.whereis();
-					if (pfns == null || pfns.isEmpty()) {
-						final String msg = "Failed to get PFNS: " + l.getCanonicalName();
-						failed_files.println(msg);
-						failed_files.flush();
-						continue;
-					}
-					final long duration_ns = System.nanoTime() - start;
+					try (Timing t = new Timing()) {
+						// Add lfn again
+						final LFN temp = LFNUtils.getLFN(l.getCanonicalName());
+						if (temp == null) {
+							final String msg = "Failed to get lfn temp: " + l.getCanonicalName();
+							failed_files.println(msg);
+							failed_files.flush();
+							continue;
+						}
+						final Set<PFN> pfns = l.whereis();
+						if (pfns == null || pfns.isEmpty()) {
+							final String msg = "Failed to get PFNS: " + l.getCanonicalName();
+							failed_files.println(msg);
+							failed_files.flush();
+							continue;
+						}
 
-					ns_count.addAndGet(duration_ns);
+						final long duration_ns = t.getNanos();
 
-					final int counter2 = global_count.incrementAndGet();
-					if (counter2 >= limit)
-						limit_reached = true;
+						ns_count.addAndGet(duration_ns);
 
-					if (counter2 % 5000 == 0) {
-						// out.println("LFN: " + dir.getCanonicalName() + " - Count: " + counter2 + " Time: " + new Date());
-						out.println("LFN: " + dir.getCanonicalName() + " Estimation: " + (ns_count.get() / counter2) / 1000000. + " - Count: " + counter2 + " Time: " + new Date());
-						out.flush();
+						final int counter2 = global_count.incrementAndGet();
+						if (counter2 >= limit)
+							limit_reached = true;
+
+						if (counter2 % 5000 == 0) {
+							// out.println("LFN: " + dir.getCanonicalName() + " - Count: " + counter2 + " Time: " + new Date());
+							out.println("LFN: " + dir.getCanonicalName() + " Estimation: " + (ns_count.get() / counter2) / 1000000. + " - Count: " + counter2 + " Time: " + new Date());
+							out.flush();
+						}
 					}
 				}
 				else
@@ -263,7 +268,8 @@ public class CatalogueTestsWhereis {
 						try {
 							if (!limit_reached)
 								tPool.submit(new RecurseLFN(l));
-						} catch (final RejectedExecutionException ree) {
+						}
+						catch (final RejectedExecutionException ree) {
 							final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 							System.err.println(msg);
 							failed_folders.println(msg);
@@ -341,7 +347,8 @@ public class CatalogueTestsWhereis {
 						try {
 							if (!limit_reached)
 								tPool.submit(new RecurseLFNCassandra(l));
-						} catch (final RejectedExecutionException ree) {
+						}
+						catch (final RejectedExecutionException ree) {
 							final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 							System.err.println(msg);
 							failed_folders.println(msg);

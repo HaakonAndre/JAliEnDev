@@ -503,15 +503,16 @@ public class CatalogueToCassandraThreads {
 				lfnc.metadata = metadata;
 
 				// Insert into lfns_auto
-				final long start = System.nanoTime();
-				if (!lfnc.insert("_auto", clevel)) {
-					final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
-					System.err.println(msg);
-				}
-				else {
-					final long duration_ns = System.nanoTime() - start;
-					ns_count.addAndGet(duration_ns);
-					timing_count.incrementAndGet();
+				try (Timing t = new Timing()) {
+					if (!lfnc.insert("_auto", clevel)) {
+						final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
+						System.err.println(msg);
+					}
+					else {
+						final long duration_ns = t.getNanos();
+						ns_count.addAndGet(duration_ns);
+						timing_count.incrementAndGet();
+					}
 				}
 			}
 		}

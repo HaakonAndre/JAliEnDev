@@ -473,15 +473,16 @@ public class CatalogueTestWhereisGenerated {
 				lfnc.metadata = metadata;
 
 				// Insert into lfns_auto
-				final long start = System.nanoTime();
-				if (!lfnc.insert(lfntable, clevel)) {
-					final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
-					System.err.println(msg);
-				}
-				else {
-					final long duration_ns = System.nanoTime() - start;
-					ns_count_insert.addAndGet(duration_ns);
-					timing_count_insert.incrementAndGet();
+				try (Timing t = new Timing()) {
+					if (!lfnc.insert(lfntable, clevel)) {
+						final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
+						System.err.println(msg);
+					}
+					else {
+						final long duration_ns = t.getNanos();
+						ns_count_insert.addAndGet(duration_ns);
+						timing_count_insert.incrementAndGet();
+					}
 				}
 			}
 		}
