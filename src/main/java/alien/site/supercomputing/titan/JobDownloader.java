@@ -189,7 +189,8 @@ public class JobDownloader extends Thread {
 			 * //break;
 			 * }
 			 */
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.INFO, "Error getting a matching job: " + e);
 		}
 		System.out.println("Finishing downloader thread");
@@ -255,7 +256,8 @@ public class JobDownloader extends Thread {
 				// varvalues.add(ce);
 				varvalues.add(hostName);
 				apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				System.err.println("Error running ApMon call: " + e.getMessage());
 			}
 
@@ -272,7 +274,8 @@ public class JobDownloader extends Thread {
 				apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
 			}
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Unable to handle job");
 			e.printStackTrace();
 		}
@@ -322,7 +325,8 @@ public class JobDownloader extends Thread {
 				// "", current_rank )
 
 				break;
-			} catch (final SQLException e) {
+			}
+			catch (final SQLException e) {
 				System.err.println("Failed to insert job: " + e.getMessage());
 				logger.log(Level.INFO, "Failed to insert job: " + e.getMessage());
 				System.out.println("DBname: " + dbname);
@@ -330,10 +334,12 @@ public class JobDownloader extends Thread {
 				System.out.println("Retrying...");
 				try {
 					Thread.sleep(2000);
-				} catch (@SuppressWarnings("unused") final InterruptedException ei) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException ei) {
 					System.err.println("Sleep in DispatchSSLMTClient.getInstance has been interrupted");
 				}
-			} catch (final FileNotFoundException e) {
+			}
+			catch (final FileNotFoundException e) {
 				System.err.println("Failed to write variables file: " + e.getMessage());
 			}
 
@@ -399,14 +405,14 @@ public class JobDownloader extends Thread {
 				final String unit = workdirMaxSize.substring(m.start());
 
 				switch (unit) {
-				case "KB":
-					workdirMaxSizeMB = Integer.parseInt(number) / 1024;
-					break;
-				case "GB":
-					workdirMaxSizeMB = Integer.parseInt(number) * 1024;
-					break;
-				default: // MB
-					workdirMaxSizeMB = Integer.parseInt(number);
+					case "KB":
+						workdirMaxSizeMB = Integer.parseInt(number) / 1024;
+						break;
+					case "GB":
+						workdirMaxSizeMB = Integer.parseInt(number) * 1024;
+						break;
+					default: // MB
+						workdirMaxSizeMB = Integer.parseInt(number);
 				}
 			}
 			else
@@ -427,14 +433,14 @@ public class JobDownloader extends Thread {
 				final String unit = maxmemory.substring(m.start());
 
 				switch (unit) {
-				case "KB":
-					jobMaxMemoryMB = Integer.parseInt(number) / 1024;
-					break;
-				case "GB":
-					jobMaxMemoryMB = Integer.parseInt(number) * 1024;
-					break;
-				default: // MB
-					jobMaxMemoryMB = Integer.parseInt(number);
+					case "KB":
+						jobMaxMemoryMB = Integer.parseInt(number) / 1024;
+						break;
+					case "GB":
+						jobMaxMemoryMB = Integer.parseInt(number) * 1024;
+						break;
+					default: // MB
+						jobMaxMemoryMB = Integer.parseInt(number);
 				}
 			}
 			else
@@ -478,7 +484,8 @@ public class JobDownloader extends Thread {
 
 					hashret.put("ALIEN_JDL_" + s.toUpperCase(), value);
 				}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("There was a problem getting JDLVariables: " + e);
 		}
 
@@ -604,7 +611,8 @@ public class JobDownloader extends Thread {
 			synchronized (fda) {
 				fda.wait();
 			}
-		} catch (@SuppressWarnings("unused") final InterruptedException e) {
+		}
+		catch (@SuppressWarnings("unused") final InterruptedException e) {
 			// ignore
 		}
 		dumpInputDataList();
@@ -622,11 +630,14 @@ public class JobDownloader extends Thread {
 
 				System.out.println("Now copying: " + p.getSecond() + " to " + tempDir.getAbsolutePath() + "/" + p.getFirst().getFileName());
 
-				try (FileChannel source = new FileInputStream(p.getSecond()).getChannel();
-						FileChannel destination = new FileOutputStream(tempDir.getAbsolutePath() + "/" + p.getFirst().getFileName()).getChannel()) {
+				try (FileInputStream fis = new FileInputStream(p.getSecond());
+						FileChannel source = fis.getChannel();
+						FileOutputStream fos = new FileOutputStream(tempDir.getAbsolutePath() + "/" + p.getFirst().getFileName());
+						FileChannel destination = fos.getChannel()) {
 					// source = new FileInputStream(TempFileManager.getAny(guid)).getChannel();
 					destination.transferFrom(source, 0, source.size());
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					System.err.println("Exception happened on file copy: " + e.getMessage());
 					e.printStackTrace();
 				}
@@ -716,7 +727,8 @@ public class JobDownloader extends Thread {
 
 			Files.write(Paths.get(jobWorkdir + "/" + list), content.getBytes());
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Problem dumping XML: " + e.toString());
 		}
 
@@ -767,16 +779,16 @@ public class JobDownloader extends Thread {
 	/*
 	 * private long ttlForJob() {
 	 * final Integer iTTL = jdl.getInteger("TTL");
-	 * 
+	 *
 	 * int ttl = (iTTL != null ? iTTL.intValue() : 0) + 300;
 	 * commander.q_api.putJobLog(queueId.longValue(), "trace", "Job asks to run for " + ttl + " seconds");
-	 * 
+	 *
 	 * final String proxyttl = jdl.gets("ProxyTTL");
 	 * if (proxyttl != null) {
 	 * ttl = ((Integer) siteMap.get("TTL")).intValue() - 600;
 	 * commander.q_api.putJobLog(queueId.longValue(), "trace", "ProxyTTL enabled, running for " + ttl + " seconds");
 	 * }
-	 * 
+	 *
 	 * return ttl;
 	 * }
 	 */
