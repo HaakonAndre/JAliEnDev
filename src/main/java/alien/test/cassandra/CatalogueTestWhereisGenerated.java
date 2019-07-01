@@ -48,7 +48,8 @@ public class CatalogueTestWhereisGenerated {
 	static {
 		try {
 			ctime_fixed = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss").parse("2017-01-01 00:00:00");
-		} catch (ParseException e) {
+		}
+		catch (final ParseException e) {
 			System.err.println(e);
 			System.exit(-1);
 		}
@@ -232,7 +233,8 @@ public class CatalogueTestWhereisGenerated {
 				try {
 					while (!tPool.awaitTermination(5, TimeUnit.SECONDS))
 						System.out.println("Waiting for threads finishing..." + tPool.getActiveCount());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Something went wrong in shutdown!: " + e);
 				}
 
@@ -250,14 +252,15 @@ public class CatalogueTestWhereisGenerated {
 		int counter = 0;
 		int write_n = 0;
 		int counter_write = 0;
-		long limit_minus_base = limit - base;
+		final long limit_minus_base = limit - base;
 		String type_last_op = "read";
 		long last_value = 0;
 		while (no_termination) {
 			while (tPool.getQueue().size() > 300000) { // keep the pool queue size small
 				try {
 					Thread.sleep(3000);
-				} catch (InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Cannot sleep in AddPath loop?!: " + e);
 				}
 			}
@@ -271,7 +274,7 @@ public class CatalogueTestWhereisGenerated {
 			}
 			else {
 				type_last_op = "read";
-				long newValue = ((long) (rdm.nextGaussian() * stddev)) + (limit_minus_base / 2);
+				final long newValue = ((long) (rdm.nextGaussian() * stddev)) + (limit_minus_base / 2);
 				if (newValue < base || newValue > limit)
 					continue;
 				last_value = newValue;
@@ -295,7 +298,8 @@ public class CatalogueTestWhereisGenerated {
 					System.out.println("Shutdown executor");
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -351,51 +355,50 @@ public class CatalogueTestWhereisGenerated {
 				}
 
 				boolean error = false;
-				final Timing timing = new Timing();
-				switch (type) {
-				case 0: // LFN
-					final LFN temp = LFNUtils.getLFN(lfn);
-					if (temp == null) {
-						final String msg = "Failed to get lfn temp: " + lfn;
-						failed_files.println(msg);
-						failed_files.flush();
-						error = true;
-						break;
+				try (final Timing timing = new Timing(monitor, "ms_whereis_cassandra")) {
+					switch (type) {
+						case 0: // LFN
+							final LFN temp = LFNUtils.getLFN(lfn);
+							if (temp == null) {
+								final String msg = "Failed to get lfn temp: " + lfn;
+								failed_files.println(msg);
+								failed_files.flush();
+								error = true;
+								break;
+							}
+							final Set<PFN> pfns = temp.whereis();
+							if (pfns == null || pfns.isEmpty()) {
+								final String msg = "Failed to get PFNS: " + lfn;
+								failed_files.println(msg);
+								failed_files.flush();
+								error = true;
+								break;
+							}
+							break;
+						case 1: // LFN_CSD
+							final LFN_CSD lfnc = new LFN_CSD(lfn, false, lfntable, null, null);
+							final HashMap<Integer, String> pfnsc = lfnc.whereis(lfntable, clevel);
+							if (pfnsc == null || pfnsc.isEmpty()) {
+								final String msg = "Failed to get PFNS: " + lfn;
+								failed_files.println(msg);
+								failed_files.flush();
+								System.err.println(msg);
+								continue;
+							}
+							break;
 					}
-					final Set<PFN> pfns = temp.whereis();
-					if (pfns == null || pfns.isEmpty()) {
-						final String msg = "Failed to get PFNS: " + lfn;
-						failed_files.println(msg);
-						failed_files.flush();
-						error = true;
-						break;
-					}
-					break;
-				case 1: // LFN_CSD
-					final LFN_CSD lfnc = new LFN_CSD(lfn, false, lfntable, null, null);
-					final HashMap<Integer, String> pfnsc = lfnc.whereis(lfntable, clevel);
-					if (pfnsc == null || pfnsc.isEmpty()) {
-						final String msg = "Failed to get PFNS: " + lfn;
-						failed_files.println(msg);
-						failed_files.flush();
-						System.err.println(msg);
+
+					if (error)
 						continue;
-					}
-					break;
+
+					timing.endTiming();
+
+					final long duration_ns = timing.getNanos();
+					ns_count.addAndGet(duration_ns);
+					final long counter2 = timing_count.incrementAndGet();
+					if (counter2 >= limit_count)
+						limit_reached = true;
 				}
-
-				if (error)
-					continue;
-
-				final long duration_ns = timing.getNanos();
-				ns_count.addAndGet(duration_ns);
-				final long counter2 = timing_count.incrementAndGet();
-
-				if (monitor != null)
-					monitor.addMeasurement("ms_whereis_cassandra", duration_ns / 1000000.);
-
-				if (counter2 >= limit_count)
-					limit_reached = true;
 			}
 		}
 	}
@@ -423,7 +426,8 @@ public class CatalogueTestWhereisGenerated {
 						break;
 					}
 					Thread.sleep(500);
-				} catch (Exception e) {
+				}
+				catch (final Exception e) {
 					System.out.println("There was a timeout/exception on the createDirectory level: " + lfnparent + " Exception: " + e);
 				}
 			}
@@ -487,7 +491,8 @@ public class CatalogueTestWhereisGenerated {
 	private static void startLocalCacheTomcat() {
 		try {
 			tomcat = new EmbeddedTomcat("*");
-		} catch (final ServletException se) {
+		}
+		catch (final ServletException se) {
 			System.err.println("Cannot create the Tomcat server: " + se.getMessage());
 			return;
 		}
@@ -497,7 +502,8 @@ public class CatalogueTestWhereisGenerated {
 		// Start the server
 		try {
 			tomcat.start();
-		} catch (final LifecycleException le) {
+		}
+		catch (final LifecycleException le) {
 			System.err.println("Cannot start the Tomcat server: " + le.getMessage());
 			return;
 		}

@@ -252,24 +252,22 @@ public class Transfer implements Serializable, Runnable {
 	@Override
 	public void run() {
 		for (final PFN target : targets) {
-			final Timing timing = new Timing();
+			try (Timing timing = new Timing(monitor, "transfer_time")) {
+				doWork(target);
 
-			doWork(target);
+				if (exitCode == OK)
+					successfulTransfers.add(target);
+				else
+					failedTransfers.add(target);
 
-			if (exitCode == OK)
-				successfulTransfers.add(target);
-			else
-				failedTransfers.add(target);
+				timing.endTiming();
 
-			timing.endTiming();
+				if (monitor != null) {
+					monitor.incrementCounter("transfer_status_" + exitCode);
 
-			if (monitor != null) {
-				monitor.addMeasurement("transfer_time", timing);
-
-				monitor.incrementCounter("transfer_status_" + exitCode);
-
-				if (exitCode == 0 && referenceGUID != null)
-					monitor.addMeasurement("transfer_MB", referenceGUID.size / (1024 * 1024d));
+					if (exitCode == 0 && referenceGUID != null)
+						monitor.addMeasurement("transfer_MB", referenceGUID.size / (1024 * 1024d));
+				}
 			}
 		}
 	}
@@ -461,9 +459,11 @@ public class Transfer implements Serializable, Runnable {
 					exitCode = OK;
 					failureReason = null;
 					return;
-				} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
+				}
+				catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 					// ignore
-				} catch (final IOException ioe) {
+				}
+				catch (final IOException ioe) {
 					exitCode = FAILED_SOURCE;
 					failureReason = ioe.getMessage();
 				}
@@ -488,9 +488,11 @@ public class Transfer implements Serializable, Runnable {
 			try {
 				temp = p.get(source, null);
 				break;
-			} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
+			}
+			catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 				// ignore
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				exitCode = FAILED_SOURCE;
 				failureReason = ioe.getMessage();
 			}
@@ -510,12 +512,15 @@ public class Transfer implements Serializable, Runnable {
 				targetPFN = target.pfn;
 
 				return;
-			} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
+			}
+			catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 				// ignore
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				exitCode = FAILED_TARGET;
 				failureReason = ioe.getMessage();
-			} finally {
+			}
+			finally {
 				TempFileManager.release(temp);
 			}
 		}
@@ -533,27 +538,32 @@ public class Transfer implements Serializable, Runnable {
 			targetPFN = target.pfn;
 
 			return;
-		} catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
+		}
+		catch (@SuppressWarnings("unused") final UnsupportedOperationException uoe) {
 			// ignore, move to the next one
-		} catch (final SourceException se) {
+		}
+		catch (final SourceException se) {
 			exitCode = FAILED_SOURCE;
 			failureReason = se.getMessage();
 
 			logger.log(Level.WARNING,
 					"Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with source exception: " + failureReason);
-		} catch (final TargetException se) {
+		}
+		catch (final TargetException se) {
 			exitCode = FAILED_TARGET;
 			failureReason = se.getMessage();
 
 			logger.log(Level.WARNING,
 					"Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with target exception: " + failureReason);
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			exitCode = FAILED_SYSTEM;
 			failureReason = e.getMessage();
 
 			logger.log(Level.WARNING,
 					"Transfer " + transferId + ", " + p.getClass().getSimpleName() + " (" + source.getPFN() + " -> " + target.getPFN() + ") failed with generic exception: " + failureReason);
-		} finally {
+		}
+		finally {
 			TransferUtils.logAttempt(p, source, target, exitCode, failureReason);
 		}
 	}

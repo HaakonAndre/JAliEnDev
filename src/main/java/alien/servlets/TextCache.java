@@ -375,23 +375,22 @@ public class TextCache extends HttpServlet {
 
 	@Override
 	protected void doGet(final HttpServletRequest request, final HttpServletResponse response) throws ServletException, IOException {
-		final Timing timing = new Timing();
+		try (Timing timing = new Timing(monitor, "ms_to_answer")) {
+			try (PrintWriter pwOut = response.getWriter()) {
+				execRealGet(new RequestWrapper(request), response, pwOut);
+			}
 
-		try (PrintWriter pwOut = response.getWriter()) {
-			execRealGet(new RequestWrapper(request), response, pwOut);
+			timing.endTiming();
+
+			final double duration = timing.getMillis();
+
+			final long logSlowQueries = getSlowQueryThreshold();
+
+			if (logSlowQueries > 0 && duration > logSlowQueries)
+				System.err.println("Slow query : " + Format.point(duration) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
+
+			logRequest(request);
 		}
-
-		final double duration = timing.getMillis();
-		
-		if (monitor != null)
-			monitor.addMeasurement("ms_to_answer", duration);
-
-		final long logSlowQueries = getSlowQueryThreshold();
-
-		if (logSlowQueries > 0 && duration > logSlowQueries)
-			System.err.println("Slow query : " + Format.point(duration) + "ms : " + request.getRemoteAddr() + " : " + request.getQueryString());
-
-		logRequest(request);
 	}
 
 	private static final void execRealGet(final RequestWrapper rw, final HttpServletResponse response, final PrintWriter pwOut) {

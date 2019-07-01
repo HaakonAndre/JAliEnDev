@@ -58,7 +58,8 @@ public class CatalogueToCassandraThreads {
 	static {
 		try {
 			ctime_fixed = new SimpleDateFormat("yyyy-mm-dd hh:mm:ss").parse("2017-01-01 00:00:00");
-		} catch (ParseException e) {
+		}
+		catch (final ParseException e) {
 			System.err.println(e);
 			System.exit(-1);
 		}
@@ -231,7 +232,8 @@ public class CatalogueToCassandraThreads {
 				try {
 					while (!tPool.awaitTermination(5, TimeUnit.SECONDS))
 						System.out.println("Waiting for threads finishing..." + tPool.getActiveCount());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Something went wrong in shutdown!: " + e);
 				}
 
@@ -249,7 +251,8 @@ public class CatalogueToCassandraThreads {
 						for (final LFN l : activeThreadFolders.values())
 							pendingTasks.println(l.lfn);
 					}
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					System.err.println("Something went wrong dumping tasks!: " + e.toString() + " - " + tQueue.toString());
 				}
 			}
@@ -274,7 +277,8 @@ public class CatalogueToCassandraThreads {
 					}
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -383,7 +387,8 @@ public class CatalogueToCassandraThreads {
 			while (tPool.getQueue().size() > 300000) { // keep the pool queue size small
 				try {
 					Thread.sleep(3000);
-				} catch (InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Cannot sleep in AddPath loop?!: " + e);
 				}
 			}
@@ -403,7 +408,8 @@ public class CatalogueToCassandraThreads {
 					System.out.println("Shutdown executor");
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -450,7 +456,8 @@ public class CatalogueToCassandraThreads {
 						break;
 					}
 					Thread.sleep(500);
-				} catch (Exception e) {
+				}
+				catch (final Exception e) {
 					System.out.println("There was a timeout/exception on the createDirectory level: " + lfnparent + " Exception: " + e);
 				}
 			}
@@ -633,7 +640,8 @@ public class CatalogueToCassandraThreads {
 							}
 							created = true;
 							break;
-						} catch (Exception e) {
+						}
+						catch (final Exception e) {
 							final String msg = "Exception inserting directory: " + l.getCanonicalName() + " Time: " + new Date() + " Exception: " + e;
 							System.err.println(msg);
 							failed_folders.println(msg);
@@ -655,7 +663,8 @@ public class CatalogueToCassandraThreads {
 					try {
 						if (!shouldexit)
 							tPool.submit(new Recurse(l));
-					} catch (final RejectedExecutionException ree) {
+					}
+					catch (final RejectedExecutionException ree) {
 						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -719,20 +728,20 @@ public class CatalogueToCassandraThreads {
 								lfnc.pfns = pfnset;
 							}
 
-							final Timing timing = new Timing();
-							if (!lfnc.insert(null, clevel)) {
-								final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
-								System.err.println(msg);
-								failed_files.println(msg);
-								failed_files.flush();
-							}
-							else {
-								final long duration_ns = timing.getNanos();
-								ns_count.addAndGet(duration_ns);
-								timing_count.incrementAndGet();
+							try (final Timing timing = new Timing(monitor, "ms_insert_cassandra")) {
+								if (!lfnc.insert(null, clevel)) {
+									final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
+									System.err.println(msg);
+									failed_files.println(msg);
+									failed_files.flush();
+								}
+								else {
+									timing.endTiming();
 
-								if (monitor != null)
-									monitor.addMeasurement("ms_insert_cassandra", duration_ns / 1000000.);
+									final long duration_ns = timing.getNanos();
+									ns_count.addAndGet(duration_ns);
+									timing_count.incrementAndGet();
+								}
 							}
 						}
 			}

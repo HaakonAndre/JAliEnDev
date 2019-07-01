@@ -1,10 +1,13 @@
 package alien.api;
 
 import java.lang.ref.WeakReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.PutJobLog;
 import alien.api.taskQueue.SetJobStatus;
+import alien.api.token.GetTokenCertificate;
 import alien.config.ConfigUtils;
 import alien.monitoring.Monitor;
 import alien.monitoring.MonitorFactory;
@@ -22,6 +25,11 @@ public class Dispatcher {
 	private static final ExpirationCache<String, WeakReference<Request>> cache = new ExpirationCache<>(10240);
 
 	static transient final Monitor monitor = MonitorFactory.getMonitor(Dispatcher.class.getCanonicalName());
+
+	/**
+	 * Logger
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(Dispatcher.class.getCanonicalName());
 
 	static {
 		monitor.addMonitoring("object_cache_status", (names, values) -> {
@@ -77,26 +85,26 @@ public class Dispatcher {
 
 		final T ret;
 
-		final Timing timing = new Timing();
+		try (Timing timing = new Timing()) {
+			if (ConfigUtils.isCentralService() && !forceRemote) {
+				r.authorizeUserAndRole();
 
-		if (ConfigUtils.isCentralService() && !forceRemote) {
-			r.authorizeUserAndRole();
+				if (passesFirewallRules(r)) {
+					monitor.addMeasurement("executed_requests", timing);
 
-			if (passesFirewallRules(r)) {
-				monitor.addMeasurement("executed_requests", timing);
+					r.run();
+				}
+				else {
+					monitor.addMeasurement("firewalled_requests", timing);
+				}
 
-				r.run();
+				ret = r;
 			}
 			else {
-				monitor.addMeasurement("firewalled_requests", timing);
+				ret = dispatchRequest(r);
+
+				monitor.addMeasurement("forwarded_requests", timing);
 			}
-
-			ret = r;
-		}
-		else {
-			ret = dispatchRequest(r);
-
-			monitor.addMeasurement("forwarded_requests", timing);
 		}
 
 		if (isCacheable && ret != null)
@@ -107,7 +115,7 @@ public class Dispatcher {
 
 	/**
 	 * Check if the request should be allowed run
-	 * 
+	 *
 	 * @param r request to check
 	 * @return <code>true</code> if it can be run, <code>false</code> if not
 	 */
@@ -121,7 +129,13 @@ public class Dispatcher {
 			if (r instanceof PutJobLog)
 				return true;
 
+			// Allows JobAgents to retrieve job token certificates for the actual job to run with
+			if (r instanceof GetTokenCertificate)
+				return true;
+
 			// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)
+			logger.log(Level.SEVERE, "A request was firewalled: " + r.getClass().getName() + " as " + r.getEffectiveRequester());
+
 			r.setException(new ServerException("You are not allowed to call " + r.getClass().getName() + " as job agent", null));
 			return false;
 		}

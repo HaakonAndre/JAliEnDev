@@ -180,47 +180,47 @@ public class DispatchSSLServer extends Thread {
 					if (o instanceof Request) {
 						Request r = (Request) o;
 
-						final Timing timing = new Timing();
+						try (Timing timing = new Timing()) {
+							r.setPartnerIdentity(remoteIdentity);
 
-						r.setPartnerIdentity(remoteIdentity);
+							r.setPartnerCertificate(partnerCerts);
 
-						r.setPartnerCertificate(partnerCerts);
+							try {
+								r = Dispatcher.execute(r, forwardRequest);
+							}
+							catch (final Exception e) {
+								logger.log(Level.WARNING, "Returning an exception to the client", e);
 
-						try {
-							r = Dispatcher.execute(r, forwardRequest);
-						}
-						catch (final Exception e) {
-							logger.log(Level.WARNING, "Returning an exception to the client", e);
+								r.setException(new ServerException(e.getMessage(), e));
+							}
 
-							r.setException(new ServerException(e.getMessage(), e));
-						}
+							final double requestProcessingDuration = timing.getMillis();
 
-						final double requestProcessingDuration = timing.getMillis();
+							lLasted += requestProcessingDuration;
 
-						lLasted += requestProcessingDuration;
+							timing.startTiming();
 
-						timing.startTiming();
+							// System.err.println("When returning the object, ex is "+r.getException());
 
-						// System.err.println("When returning the object, ex is "+r.getException());
+							oos.writeObject(r);
 
-						oos.writeObject(r);
+							if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
+								oos.reset();
+								objectsSentCounter = 0;
+							}
 
-						if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
-							oos.reset();
-							objectsSentCounter = 0;
-						}
+							oos.flush();
 
-						oos.flush();
+							final double serializationTime = timing.getMillis();
 
-						final double serializationTime = timing.getMillis();
+							lSerialization += serializationTime;
 
-						lSerialization += serializationTime;
+							logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
-						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
-
-						if (monitor != null) {
-							monitor.addMeasurement("request_processing", requestProcessingDuration);
-							monitor.addMeasurement("serialization", serializationTime);
+							if (monitor != null) {
+								monitor.addMeasurement("request_processing", requestProcessingDuration);
+								monitor.addMeasurement("serialization", serializationTime);
+							}
 						}
 
 						requestCount++;

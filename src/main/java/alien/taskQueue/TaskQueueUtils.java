@@ -177,8 +177,6 @@ public class TaskQueueUtils {
 				monitor.incrementCounter("TQ_jobdetails");
 			}
 
-			final Timing timing = new Timing();
-
 			final String q;
 
 			if (dbStructure2_20) {
@@ -202,10 +200,10 @@ public class TaskQueueUtils {
 
 			db.setReadOnly(true);
 
-			if (!db.query(q, false, Long.valueOf(queueId)))
-				return null;
-
-			monitor.addMeasurement("TQ_jobdetails_ms", timing);
+			try (Timing t = new Timing(monitor, "TQ_jobdetails_ms")) {
+				if (!db.query(q, false, Long.valueOf(queueId)))
+					return null;
+			}
 
 			if (!db.moveNext())
 				return null;
@@ -290,15 +288,12 @@ public class TaskQueueUtils {
 
 			q += " AND received>UNIX_TIMESTAMP(now())-60*60*24*14 ORDER BY queueId ASC;";
 
-			final Timing timing = new Timing();
-
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
 
-			db.query(q);
-
-			if (monitor != null)
-				monitor.addMeasurement("TQ_getmasterjobs_ms", timing);
+			try (Timing t = new Timing(monitor, "TQ_getmasterjobs_ms")) {
+				db.query(q);
+			}
 
 			while (db.moveNext())
 				ret.add(new Job(db, loadJDL));
@@ -368,8 +363,6 @@ public class TaskQueueUtils {
 				monitor.incrementCounter("TQ_getmasterjob_stats");
 			}
 
-			final Timing timing = new Timing();
-
 			final String q;
 
 			if (dbStructure2_20)
@@ -380,10 +373,9 @@ public class TaskQueueUtils {
 			db.setReadOnly(true);
 			db.setQueryTimeout(600);
 
-			db.query(q);
-
-			if (monitor != null)
-				monitor.addMeasurement("TQ_getmasterjob_stats_ms", timing);
+			try (final Timing timing = new Timing(monitor, "TQ_getmasterjob_stats_ms")) {
+				db.query(q);
+			}
 
 			Map<JobStatus, Integer> m = null;
 			long oldJobID = -1;
@@ -487,15 +479,12 @@ public class TaskQueueUtils {
 				else
 					q = "SELECT " + (loadJDL ? "*" : ALL_BUT_JDL) + " FROM QUEUEARCHIVE" + archiveYear + " WHERE split=? AND status!='KILLED' ORDER BY queueId ASC;";
 
-			final Timing timing = new Timing();
-
 			db.setReadOnly(true);
 			db.setQueryTimeout(300);
 
-			db.query(q, false, Long.valueOf(queueId));
-
-			if (monitor != null)
-				monitor.addMeasurement("TQ_getsubjobs_ms", timing);
+			try (final Timing timing = new Timing(monitor, "TQ_getsubjobs_ms")) {
+				db.query(q, false, Long.valueOf(queueId));
+			}
 
 			while (db.moveNext())
 				ret.add(new Job(db, loadJDL));
