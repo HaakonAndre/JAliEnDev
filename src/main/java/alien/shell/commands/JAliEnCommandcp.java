@@ -1082,7 +1082,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					replacementQoS.put(qosType, Integer.valueOf(1));
 
 					synchronized (exses) {
-						final List<PFN> newPFNtoTry = commander.c_api.getPFNsToWrite(lfn, guid, ses, exses, replacementQoS);
+						final List<PFN> newPFNtoTry = commander.c_api.getPFNsToWrite(lfn, guid, ses, new ArrayList<>(exses), replacementQoS);
 
 						if (newPFNtoTry != null && newPFNtoTry.size() > 0) {
 							pfn = newPFNtoTry.get(0);
@@ -1118,7 +1118,11 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		commander.printOutln(helpOption("-S", "[se[,se2[,!se3[,qos:count]]]]"));
 		commander.printOutln(helpOption("-t", "create a local temp file"));
 		commander.printOutln(helpOption("-silent", "execute command silently"));
+		commander.printOutln(helpOption("-w", "wait for all replicas to complete upload before returning (default " + bW + ")"));
+		commander.printOutln(helpOption("-W", "do _not_ wait for all replicas to complete upload, return as soon as the first replica is available"));
 		commander.printOutln(helpOption("-T", "Use this many concurrent threads (where possible) - default 1"));
+		commander.printOutln(helpOption("-d", "delete local file after a successful upload (i.e. move local to Grid)"));
+		commander.printOutln(helpOption("-j", "the job ID that has created the file"));
 		commander.printOutln();
 	}
 
