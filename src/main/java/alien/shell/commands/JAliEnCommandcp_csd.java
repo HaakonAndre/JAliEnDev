@@ -228,14 +228,16 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 									break;
 								}
-						} finally {
+						}
+						finally {
 							TempFileManager.release(tempLocalFile);
 						}
 					}
 				}
 				else
 					output = proto.get(pfn, file);
-			} catch (final IOException e) {
+			}
+			catch (final IOException e) {
 				lastException = e;
 				output = null;
 			}
@@ -360,7 +362,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 										final FileTime time = FileTime.fromMillis(lfn.ctime.getTime());
 										attributes.setTimes(time, time, time);
 									}
-								} catch (final Throwable t) {
+								}
+								catch (final Throwable t) {
 									// this is not worth reporting to the user
 									logger.log(Level.WARNING, "Exception setting file last modified timestamp", t);
 								}
@@ -371,7 +374,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 							if ((lastException = pA.getLastException()) != null)
 								logger.log(Level.WARNING, "Attempt to fetch " + pfn + " failed", lastException);
 
-						} catch (final Exception e) {
+						}
+						catch (final Exception e) {
 							e.printStackTrace();
 						}
 
@@ -521,7 +525,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 					if (oneFileToReturn == null)
 						oneFileToReturn = result.getResult();
-				} catch (InterruptedException | ExecutionException e) {
+				}
+				catch (InterruptedException | ExecutionException e) {
 					logger.log(Level.WARNING, "Exception waiting for a future", e);
 				}
 			}
@@ -629,7 +634,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 		try {
 			guid = GUIDUtils.createGuid(sourceFile, commander.user);
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			commander.printErrln("Couldn't create the GUID : " + e.getMessage());
 			if (isSilent()) {
 				final IOException ex = new IOException("Couldn't create the GUID based on " + sourceFile, e);
@@ -663,7 +669,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 				return false;
 			}
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			commander.printErrln("Couldn't get any access ticket.");
 
 			if (isSilent())
@@ -717,11 +724,14 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 							if (!bW)
 								break;
 						}
-					} catch (final InterruptedException e) {
+					}
+					catch (final InterruptedException e) {
 						logger.log(Level.WARNING, "Interrupted operation", e);
-					} catch (final ExecutionException e) {
+					}
+					catch (final ExecutionException e) {
 						logger.log(Level.WARNING, "Execution exception", e);
-					} finally {
+					}
+					finally {
 						it.remove();
 					}
 			}
@@ -744,7 +754,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					} catch (@SuppressWarnings("unused") final InterruptedException e) {
+					}
+					catch (@SuppressWarnings("unused") final InterruptedException e) {
 						return false;
 					}
 				}
@@ -798,13 +809,16 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 							if (envelope != null)
 								envelopes.add(envelope);
-						} catch (final InterruptedException e) {
+						}
+						catch (final InterruptedException e) {
 							// Interrupted upload
 							logger.log(Level.FINE, "Interrupted upload of " + guid.guid, e);
-						} catch (final ExecutionException e) {
+						}
+						catch (final ExecutionException e) {
 							// Error executing
 							logger.log(Level.FINE, "Error getting the upload result of " + guid.guid, e);
-						} finally {
+						}
+						finally {
 							it.remove();
 						}
 					}
@@ -903,11 +917,13 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 
 					try {
 						targetPFNResult = protocol.put(pfn, sourceFile);
-					} catch (@SuppressWarnings("unused") final IOException ioe) {
+					}
+					catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, will try next protocol or fetch another
 						// replica to replace this one
 					}
-				} catch (@SuppressWarnings("unused") final Exception e) {
+				}
+				catch (@SuppressWarnings("unused") final Exception e) {
 					// e.printStackTrace();
 				}
 
@@ -1081,7 +1097,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 						if (spec.contains("::")) {
 							if (spec.indexOf("::") != spec.lastIndexOf("::"))
 								if (spec.startsWith("!")) // an exSE spec
-									exses.add(spec.toUpperCase());
+									exses.add(spec.toUpperCase().substring(1));
 								else {// an SE spec
 									ses.add(spec.toUpperCase());
 									referenceCount++;
@@ -1098,7 +1114,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 									else
 										throw new JAliEnCommandException("Number of replicas has to be stricly positive, in " + spec);
 
-								} catch (final Exception e) {
+								}
+								catch (final Exception e) {
 									throw new JAliEnCommandException("Could not parse the QoS string " + spec, e);
 								}
 							else
@@ -1121,7 +1138,8 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 			if (options.has("T"))
 				concurrentOperations = ((Integer) options.valueOf("T")).intValue();
 
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}
