@@ -531,7 +531,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 	}
 
 	private static final ExecutorService UPLOAD_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE,
-			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.keepAliveTime", 2), TimeUnit.SECONDS, new ThreadFactory() {
+			ConfigUtils.getConfig().getl("alien.shell.commands.JAliEnCommandcp.UPLOAD_THREAD_POOL.timeOutSeconds", 2), TimeUnit.SECONDS, new ThreadFactory() {
 				@Override
 				public Thread newThread(Runnable r) {
 					final Thread t = new Thread(r, "JAliEnCommandcp.UPLOAD_THREAD_POOL");
