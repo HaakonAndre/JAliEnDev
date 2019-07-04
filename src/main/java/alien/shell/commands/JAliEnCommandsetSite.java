@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 
 import joptsimple.OptionException;
+import lazyj.Format;
 import lazyj.Utils;
 
 /**
@@ -19,6 +20,11 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 	 */
 	@Override
 	public void run() {
+		if (targetSiteName == null || targetSiteName.length() == 0) {
+			commander.printOutln("Keeping the current close site: " + commander.getSite());
+			return;
+		}
+
 		if (targetSiteName.equalsIgnoreCase("auto")) {
 			try {
 				String autoSiteName = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp", null);
@@ -33,6 +39,24 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 			catch (final IOException ioe) {
 				commander.printErrln("Could not retrieve the site name from the external service: " + ioe.getMessage());
 				return;
+			}
+		}
+		else {
+			if (targetSiteName.indexOf(':') >= 0 || targetSiteName.indexOf('.') >= 0) {
+				try {
+					String autoSiteName = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp?ip=" + Format.encode(targetSiteName), null);
+
+					if (autoSiteName != null && autoSiteName.length() > 0)
+						targetSiteName = autoSiteName.trim();
+					else {
+						commander.printErrln("Could not map " + targetSiteName + " to a site name at the moment, keeping previous value of " + commander.getSite());
+						return;
+					}
+				}
+				catch (final IOException ioe) {
+					commander.printErrln("Could not retrieve the site name for " + targetSiteName + " from the external service: " + ioe.getMessage());
+					return;
+				}
 			}
 		}
 
@@ -52,14 +76,9 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 		commander.printOutln();
 	}
 
-	/**
-	 * setSite cannot run without arguments
-	 *
-	 * @return <code>false</code>
-	 */
 	@Override
 	public boolean canRunWithoutArguments() {
-		return false;
+		return true;
 	}
 
 	/**
@@ -75,7 +94,7 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 		super(commander, alArguments);
 
 		if (alArguments.size() > 0)
-			targetSiteName = alArguments.get(0);
+			targetSiteName = alArguments.get(0).trim();
 	}
 
 }
