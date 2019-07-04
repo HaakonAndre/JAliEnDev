@@ -11,7 +11,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import alien.config.ConfigUtils;
-import apmon.ApMon;
 import lazyj.Format;
 import lia.Monitor.monitor.MCluster;
 import lia.Monitor.monitor.MFarm;
@@ -213,7 +212,7 @@ public class Monitor implements Runnable {
 
 	/**
 	 * Add a timing result, in milliseconds
-	 * 
+	 *
 	 * @param key
 	 * @param timing the duration of a measurement, converted to milliseconds
 	 * @return accumulated so far, or <code>-1</code> if there was any error
@@ -290,9 +289,9 @@ public class Monitor implements Runnable {
 
 	@Override
 	public void run() {
-		final ApMon apmon = MonitorFactory.getApMonSender();
+		final MonitorDataSender sender = MonitorFactory.getMonitorDataSender();
 
-		if (apmon == null)
+		if (sender.isEmpty())
 			return;
 
 		final List<Object> values = new ArrayList<>();
@@ -389,22 +388,7 @@ public class Monitor implements Runnable {
 			return;
 		}
 
-		final ApMon apmon = MonitorFactory.getApMonSender();
-
-		if (apmon == null)
-			return;
-
-		if (logger.isLoggable(Level.FINEST))
-			logger.log(Level.FINEST, "Sending on " + clusterName + " / " + nodeName + "\n" + paramNames + "\n" + paramValues);
-
-		try {
-			synchronized (apmon) {
-				apmon.sendParameters(clusterName, nodeName, paramNames.size(), paramNames, paramValues);
-			}
-		}
-		catch (final Throwable t) {
-			logger.log(Level.SEVERE, "Cannot send ApMon datagram", t);
-		}
+		MonitorFactory.getMonitorDataSender().sendParameters(clusterName, nodeName, paramNames, paramValues);
 	}
 
 	/**
