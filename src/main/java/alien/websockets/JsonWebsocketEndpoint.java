@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -35,6 +37,7 @@ import alien.shell.commands.JShPrintWriter;
 import alien.shell.commands.UIPrintWriter;
 import alien.shell.commands.XMLPrintWriter;
 import alien.user.AliEnPrincipal;
+import lazyj.Utils;
 
 /**
  * @author yuw
@@ -169,7 +172,7 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		else
 			setShellPrintWriter(os, "plain");
 
-		commander = new JAliEnCOMMander(userIdentity, null, null, out);
+		commander = new JAliEnCOMMander(userIdentity, null, getSite(getRemoteIP(session)), out);
 
 		final SessionContext context = new SessionContext(this, session, commander.getUser().getUserCert()[0].getNotAfter().getTime());
 
@@ -178,6 +181,66 @@ public class JsonWebsocketEndpoint extends Endpoint {
 		sessionQueue.add(context);
 
 		monitor.incrementCounter("new_sessions");
+	}
+
+	private static String getSite(final String ip) {
+		if (ip == null) {
+			logger.log(Level.SEVERE, "Client IP address is unknown");
+			return null;
+		}
+
+		try {
+			final String site = Utils.download("http://alimonitor.cern.ch/services/getClosestSite.jsp?ip=" + ip, null);
+
+			if (logger.isLoggable(Level.FINE))
+				logger.log(Level.FINE, "Client IP address " + ip + " mapped to " + site);
+
+			if (site != null)
+				return site.trim();
+		}
+		catch (IOException ioe) {
+			logger.log(Level.SEVERE, "Cannot get the closest site information for " + ip, ioe);
+		}
+
+		return null;
+	}
+
+	private static String getRemoteIP(final Session session) {
+		try {
+			Object obj = session.getAsyncRemote();
+
+			for (final String fieldName : new String[] { "base", "socketWrapper", "socket", "sc", "remoteAddress" }) {
+				obj = getField(obj, fieldName);
+
+				if (obj == null)
+					return null;
+			}
+
+			return ((InetSocketAddress) obj).getAddress().getHostAddress();
+		}
+		catch (final Throwable t) {
+			logger.log(Level.SEVERE, "Cannot extract the remote IP address from a session", t);
+		}
+
+		return null;
+	}
+
+	private static Object getField(Object obj, String fieldName) {
+		Class<?> objClass = obj.getClass();
+
+		for (; objClass != Object.class; objClass = objClass.getSuperclass()) {
+			try {
+				Field field;
+				field = objClass.getDeclaredField(fieldName);
+				field.setAccessible(true);
+				return field.get(obj);
+			}
+			catch (@SuppressWarnings("unused") Exception e) {
+				// ignore
+			}
+		}
+
+		return null;
 	}
 
 	@Override
