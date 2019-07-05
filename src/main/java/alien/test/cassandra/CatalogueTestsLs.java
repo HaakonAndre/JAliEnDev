@@ -16,6 +16,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.LFN_CVMFS;
 import alien.catalogue.LFN_JSON;
+import alien.monitoring.Timing;
 
 /**
  * @author mmmartin
@@ -113,7 +114,8 @@ public class CatalogueTestsLs {
 				try {
 					while (!tPool.awaitTermination(5, TimeUnit.SECONDS))
 						System.out.println("Waiting for threads finishing..." + tPool.getActiveCount());
-				} catch (final InterruptedException e) {
+				}
+				catch (final InterruptedException e) {
 					System.err.println("Something went wrong in shutdown!: " + e);
 				}
 
@@ -150,7 +152,8 @@ public class CatalogueTestsLs {
 					System.out.println("Shutdown executor");
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -216,11 +219,13 @@ public class CatalogueTestsLs {
 
 			// DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
-			final long start = System.nanoTime();
-			final List<LFN> list = dir.list();
-			final long duration_ms = (long) ((System.nanoTime() - start) / 1000000d);
+			final List<LFN> list;
+			try (Timing t = new Timing()) {
+				list = dir.list();
+				final long duration_ms = (long) t.getMillis();
 
-			ms_count.addAndGet(duration_ms);
+				ms_count.addAndGet(duration_ms);
+			}
 
 			if (list.isEmpty())
 				return;
@@ -230,7 +235,8 @@ public class CatalogueTestsLs {
 					try {
 						if (!limit_reached)
 							tPool.submit(new RecurseLFN(l));
-					} catch (final RejectedExecutionException ree) {
+					}
+					catch (final RejectedExecutionException ree) {
 						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -291,7 +297,8 @@ public class CatalogueTestsLs {
 					try {
 						if (!limit_reached)
 							tPool.submit(new RecurseLFNJSON(l));
-					} catch (final RejectedExecutionException ree) {
+					}
+					catch (final RejectedExecutionException ree) {
 						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 						System.err.println(msg);
 						failed_folders.println(msg);
@@ -352,7 +359,8 @@ public class CatalogueTestsLs {
 					try {
 						if (!limit_reached)
 							tPool.submit(new RecurseLFNCVMFS(l));
-					} catch (final RejectedExecutionException ree) {
+					}
+					catch (final RejectedExecutionException ree) {
 						final String msg = "Interrupted directory: " + l.getCanonicalName() + " Parent: " + dir.getCanonicalName() + " Time: " + new Date() + " Message: " + ree.getMessage();
 						System.err.println(msg);
 						failed_folders.println(msg);

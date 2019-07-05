@@ -7,6 +7,7 @@ import java.util.logging.Level;
 import alien.api.Dispatcher;
 import alien.api.Ping;
 import alien.api.ServerException;
+import alien.monitoring.Timing;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -36,9 +37,7 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 
 		commander.printOutln();
 
-		try {
-			final long absStartTime = System.nanoTime();
-
+		try (Timing tGlobal = new Timing()) {
 			Ping p = null;
 
 			long min = -1;
@@ -47,36 +46,34 @@ public class JAliEnCommandping extends JAliEnBaseCommand {
 			long sum2 = 0;
 
 			for (int i = 0; i < count; i++) {
-				final long startTime = System.nanoTime();
+				try (Timing t = new Timing()) {
+					p = Dispatcher.execute(new Ping());
 
-				p = Dispatcher.execute(new Ping());
+					t.endTiming();
 
-				final long endTime = System.nanoTime();
+					final long delta = t.getNanos();
 
-				final long delta = endTime - startTime;
+					if (min < 0 || delta < min)
+						min = delta;
 
-				if (min < 0 || delta < min)
-					min = delta;
+					max = Math.max(max, delta);
 
-				max = Math.max(max, delta);
+					sum += delta;
+					sum2 += delta * delta;
 
-				sum += delta;
-				sum2 += delta * delta;
+					commander.printOutln("reply from " + p.getPartnerAddress() + ": time=" + Format.point(t.getMillis()) + " ms");
 
-				commander.printOutln("reply from " + p.getPartnerAddress() + ": time=" + Format.point(delta / NANO_TO_MS) + " ms");
+					if (i < count && sleep > 0)
+						try {
+							Thread.sleep(sleep);
+						}
+						catch (@SuppressWarnings("unused") InterruptedException e) {
+							return;
+						}
+				}
 
-				if (i < count && sleep > 0)
-					try {
-						Thread.sleep(sleep);
-					}
-					catch (@SuppressWarnings("unused") InterruptedException e) {
-						return;
-					}
+				commander.printOutln(count + " packets transmitted, time " + Format.point(tGlobal.getMillis()) + " ms");
 			}
-
-			final long absEndTime = System.nanoTime();
-
-			commander.printOutln(count + " packets transmitted, time " + Format.point((absEndTime - absStartTime) / NANO_TO_MS) + " ms");
 
 			double mdev = Math.sqrt(sum2 / count - (sum * sum) / (count * count));
 

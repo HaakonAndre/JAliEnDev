@@ -17,6 +17,7 @@ import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
 import alien.catalogue.PFN;
+import alien.monitoring.Timing;
 import alien.se.SE;
 import alien.se.SEUtils;
 
@@ -181,7 +182,8 @@ public class CatalogueToCatalogueThreads {
 					System.out.println("Shutdown executor");
 				}
 			}
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Something went wrong!: " + e);
 		}
 
@@ -265,32 +267,33 @@ public class CatalogueToCatalogueThreads {
 				guid.md5 = lfnc.md5;
 				guid.perm = lfnc.perm;
 
-				final long start = System.nanoTime();
-				// Insert LFN and GUID
-				if (!LFNUtils.insertLFN(lfnc)) { // changed visibility to public
-					final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
-					System.err.println(msg);
-					continue;
-				}
+				try (Timing t = new Timing()) {
+					// Insert LFN and GUID
+					if (!LFNUtils.insertLFN(lfnc)) { // changed visibility to public
+						final String msg = "Error inserting lfn: " + lfnc.getCanonicalName() + " Time: " + new Date();
+						System.err.println(msg);
+						continue;
+					}
 
-				// Add PFNS change constructor to guid, se using 2 ses always
-				final PFN pfn1 = new PFN(guid, se1); // New constructor
-				if (!guid.addPFN(pfn1)) {
-					final String msg = "Error inserting pfn1: " + lfnc.getCanonicalName() + " Time: " + new Date();
-					System.err.println(msg);
-					continue;
-				}
+					// Add PFNS change constructor to guid, se using 2 ses always
+					final PFN pfn1 = new PFN(guid, se1); // New constructor
+					if (!guid.addPFN(pfn1)) {
+						final String msg = "Error inserting pfn1: " + lfnc.getCanonicalName() + " Time: " + new Date();
+						System.err.println(msg);
+						continue;
+					}
 
-				final PFN pfn2 = new PFN(guid, se2);
-				if (!guid.addPFN(pfn2)) {
-					final String msg = "Error inserting pfn2: " + lfnc.getCanonicalName() + " Time: " + new Date();
-					System.err.println(msg);
-					continue;
-				}
+					final PFN pfn2 = new PFN(guid, se2);
+					if (!guid.addPFN(pfn2)) {
+						final String msg = "Error inserting pfn2: " + lfnc.getCanonicalName() + " Time: " + new Date();
+						System.err.println(msg);
+						continue;
+					}
 
-				final long duration_ns = System.nanoTime() - start;
-				ns_count.addAndGet(duration_ns);
-				timing_count.incrementAndGet();
+					final long duration_ns = t.getNanos();
+					ns_count.addAndGet(duration_ns);
+					timing_count.incrementAndGet();
+				}
 			}
 		}
 	}

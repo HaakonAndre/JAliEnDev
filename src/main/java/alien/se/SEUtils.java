@@ -144,12 +144,14 @@ public final class SEUtils {
 								seCacheUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
-				} finally {
+				}
+				finally {
 					seCacheWriteLock.unlock();
 					seCacheReadLock.lock();
 				}
 			}
-		} finally {
+		}
+		finally {
 			seCacheReadLock.unlock();
 		}
 	}
@@ -177,7 +179,8 @@ public final class SEUtils {
 				final SEfromString response = Dispatcher.execute(request);
 				// System.err.println("Response: " + response);
 				return response != null ? response.getSE() : null;
-			} catch (@SuppressWarnings("unused") final ServerException se) {
+			}
+			catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
 
@@ -205,7 +208,8 @@ public final class SEUtils {
 		if (!ConfigUtils.isCentralService())
 			try {
 				return Dispatcher.execute(new SEfromString(null, seName)).getSE();
-			} catch (@SuppressWarnings("unused") final ServerException se) {
+			}
+			catch (@SuppressWarnings("unused") final ServerException se) {
 				return null;
 			}
 
@@ -314,13 +318,15 @@ public final class SEUtils {
 								seDistanceUpdated = System.currentTimeMillis() - CatalogueUtils.CACHE_TIMEOUT + 1000 * 10;
 						}
 					}
-				} finally {
+				}
+				finally {
 					seDistanceWriteLock.unlock();
 				}
 
 				seDistanceReadLock.lock();
 			}
-		} finally {
+		}
+		finally {
 			seDistanceReadLock.unlock();
 		}
 	}
@@ -472,16 +478,24 @@ public final class SEUtils {
 
 		final List<SE> SEs;
 
-		if (ses != null)
+		if (ses != null && ses.size() > 0)
 			SEs = SEUtils.getSEs(ses);
 		else
 			SEs = new ArrayList<>();
 
-		final List<SE> exSEs = SEUtils.getSEs(exses);
+		List<SE> exSEs = null;
 
-		SEs.removeAll(exSEs);
+		if (exses != null && exses.size() > 0) {
+			exSEs = SEUtils.getSEs(exses);
 
-		exSEs.addAll(SEs);
+			if (exSEs != null) {
+				SEs.removeAll(exSEs);
+				exSEs.addAll(SEs);
+			}
+		}
+
+		if (exSEs == null)
+			exSEs = new ArrayList<>(SEs);
 
 		for (final Map.Entry<String, Integer> qosDef : qos.entrySet())
 			if (qosDef.getValue().intValue() > 0) {
@@ -1051,7 +1065,8 @@ public final class SEUtils {
 								try {
 									final UUID u = UUID.fromString(gdb.gets(4));
 									pw.print(GUIDUtils.epochTime(u));
-								} catch (@SuppressWarnings("unused") final Throwable t) {
+								}
+								catch (@SuppressWarnings("unused") final Throwable t) {
 									// ignore any errors
 								}
 
@@ -1069,7 +1084,8 @@ public final class SEUtils {
 								try {
 									final UUID u = UUID.fromString(guid);
 									pw.print(GUIDUtils.epochTime(u));
-								} catch (@SuppressWarnings("unused") final Throwable t) {
+								}
+								catch (@SuppressWarnings("unused") final Throwable t) {
 									// ignore any errors
 								}
 

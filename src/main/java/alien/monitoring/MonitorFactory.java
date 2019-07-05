@@ -69,7 +69,7 @@ public final class MonitorFactory {
 	 */
 	static transient final Logger logger = ConfigUtils.getLogger(MonitorFactory.class.getCanonicalName());
 
-	private static ApMon apmonInstance = null;
+	private static MonitorDataSender senderInstance = null;
 
 	private static final Map<String, Monitor> monitors = new HashMap<>();
 
@@ -220,7 +220,7 @@ public final class MonitorFactory {
 		if (selfMonitor == null)
 			return;
 
-		selfMonitor.addMonitoring("self", new SelfMonitor());
+		selfMonitor.addMonitoring("Self", new SelfMonitor());
 
 		final ApMon apmon = getApMonSender();
 
@@ -367,13 +367,22 @@ public final class MonitorFactory {
 	 *
 	 * @return the sender
 	 */
-	public static synchronized ApMon getApMonSender() {
-		if (apmonInstance != null)
-			return apmonInstance;
+	public static ApMon getApMonSender() {
+		return getMonitorDataSender().getApMonInstance();
+	}
+
+	/**
+	 * @return the wrapper around all monitoring data senders
+	 */
+	public static synchronized MonitorDataSender getMonitorDataSender() {
+		if (senderInstance != null)
+			return senderInstance;
 
 		final Vector<String> destinations = getApMonDestinations();
 
 		logger.log(Level.FINE, "ApMon destinations : " + destinations);
+
+		ApMon apmonInstance = null;
 
 		try {
 			apmonInstance = new ApMon(destinations);
@@ -385,7 +394,9 @@ public final class MonitorFactory {
 			logger.log(Level.SEVERE, "Cannot instantiate ApMon because ApMonException ", e);
 		}
 
-		return apmonInstance;
+		senderInstance = new MonitorDataSender(apmonInstance);
+
+		return senderInstance;
 	}
 
 	private static final String PROC_SELF = "/proc/self";

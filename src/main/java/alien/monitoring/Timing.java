@@ -1,19 +1,37 @@
 package alien.monitoring;
 
+import java.io.Closeable;
+
 /**
  * @author costing
  * @since 2019-06-12
  */
-public final class Timing {
+public final class Timing implements Closeable {
 
 	private long startedTimestamp;
 	private long endedTimestamp = -1;
+
+	private Monitor monitor = null;
+	private String key = null;
 
 	/**
 	 * Initialize the timer with the current nano time
 	 */
 	public Timing() {
 		startedTimestamp = System.nanoTime();
+	}
+
+	/**
+	 * Initialize the timer with the current nano time and a target monitor object
+	 *
+	 * @param monitor
+	 * @param key
+	 */
+	public Timing(final Monitor monitor, final String key) {
+		this();
+
+		this.monitor = monitor;
+		this.key = key;
 	}
 
 	/**
@@ -69,5 +87,11 @@ public final class Timing {
 	 */
 	public double getSeconds() {
 		return getNanos() / 1000000000.;
+	}
+
+	@Override
+	public void close() {
+		if (monitor != null)
+			monitor.addMeasurement(key, this);
 	}
 }

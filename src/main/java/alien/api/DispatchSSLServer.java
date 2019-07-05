@@ -31,9 +31,6 @@ import javax.net.ssl.TrustManagerFactory;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import alien.api.taskQueue.GetMatchJob;
-import alien.api.taskQueue.PutJobLog;
-import alien.api.taskQueue.SetJobStatus;
 import alien.config.ConfigUtils;
 import alien.monitoring.CacheMonitor;
 import alien.monitoring.Monitor;
@@ -183,76 +180,47 @@ public class DispatchSSLServer extends Thread {
 					if (o instanceof Request) {
 						Request r = (Request) o;
 
-						final Timing timing = new Timing();
+						try (Timing timing = new Timing()) {
+							r.setPartnerIdentity(remoteIdentity);
 
-						r.setPartnerIdentity(remoteIdentity);
+							r.setPartnerCertificate(partnerCerts);
 
-						r.setPartnerCertificate(partnerCerts);
+							try {
+								r = Dispatcher.execute(r, forwardRequest);
+							}
+							catch (final Exception e) {
+								logger.log(Level.WARNING, "Returning an exception to the client", e);
 
-						if (forwardRequest)
-							r = DispatchSSLClient.dispatchRequest(r);
-						else {
-							r.authorizeUserAndRole();
-
-							boolean shouldRun = true;
-
-							if (r.getEffectiveRequester().isJobAgent() && !(r instanceof GetMatchJob)) {
-
-								// Allowing the JobAgent to change the job status enables it to act on possible JobWrapper terminations/faults
-								if (r instanceof SetJobStatus)
-									shouldRun = true;
-								// Enables the JobAgent to report its progress/the resources it allocates for the JobWrapper sandbox
-								else
-									if (r instanceof PutJobLog)
-										shouldRun = true;
-									else {
-										// TODO : add above all commands that a JobAgent should run (setting job status, uploading traces)
-										r.setException(new ServerException("You are not allowed to call " + r.getClass().getName() + " as job agent", null));
-										shouldRun = false;
-									}
+								r.setException(new ServerException(e.getMessage(), e));
 							}
 
-							if (r.getEffectiveRequester().isJob()) {
-								// TODO : firewall all the commands that the job can have access to (whereis, access (read only for anything but the output directory ...))
+							final double requestProcessingDuration = timing.getMillis();
+
+							lLasted += requestProcessingDuration;
+
+							timing.startTiming();
+
+							// System.err.println("When returning the object, ex is "+r.getException());
+
+							oos.writeObject(r);
+
+							if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
+								oos.reset();
+								objectsSentCounter = 0;
 							}
 
-							if (shouldRun)
-								try {
-									r.run();
-								}
-								catch (final Exception e) {
-									logger.log(Level.WARNING, "Returning an exception to the client", e);
+							oos.flush();
 
-									r.setException(new ServerException(e.getMessage(), e));
-								}
-						}
+							final double serializationTime = timing.getMillis();
 
-						final double requestProcessingDuration = timing.getMillis();
-						
-						lLasted += requestProcessingDuration;
+							lSerialization += serializationTime;
 
-						timing.startTiming();
+							logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
 
-						// System.err.println("When returning the object, ex is "+r.getException());
-
-						oos.writeObject(r);
-
-						if (++objectsSentCounter >= RESET_OBJECT_STREAM_COUNTER) {
-							oos.reset();
-							objectsSentCounter = 0;
-						}
-
-						oos.flush();
-
-						final double serializationTime = timing.getMillis();
-						
-						lSerialization += serializationTime;
-
-						logger.log(Level.INFO, "Got request from " + r.getRequesterIdentity() + " : " + r.getClass().getCanonicalName());
-
-						if (monitor != null) {
-							monitor.addMeasurement("request_processing", requestProcessingDuration);
-							monitor.addMeasurement("serialization", serializationTime);
+							if (monitor != null) {
+								monitor.addMeasurement("request_processing", requestProcessingDuration);
+								monitor.addMeasurement("serialization", serializationTime);
+							}
 						}
 
 						requestCount++;

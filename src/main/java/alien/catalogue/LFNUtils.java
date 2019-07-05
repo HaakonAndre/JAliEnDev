@@ -630,7 +630,7 @@ public class LFNUtils {
 	/**
 	 * find only files of a given job, -j in AliEn `find`
 	 */
-	public static final int FIND_FILTER_JOBID = 3;
+	public static final int FIND_FILTER_JOBID = 32;
 
 	/**
 	 * @param path

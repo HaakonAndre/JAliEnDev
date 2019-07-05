@@ -50,9 +50,7 @@ public class JToken extends HttpServlet {
 
 	@Override
 	protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-		final Timing timing = new Timing();
-
-		try {
+		try (Timing timing = new Timing(monitor, "ms_to_answer")) {
 			final RequestWrapper rw = new RequestWrapper(req);
 
 			final long queueId = rw.getl("queueId", -1);
@@ -83,13 +81,11 @@ public class JToken extends HttpServlet {
 					os.println("    'token' => '" + JobToken.generateToken() + "'");
 					os.println("  }");
 					os.println("];");
-				} catch (final ServerException e) {
+				}
+				catch (final ServerException e) {
 					resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception executing the request: " + e.getMessage());
 				}
 			}
-		} finally {
-			if (monitor != null)
-				monitor.addMeasurement("ms_to_answer", timing);
 		}
 	}
 }

@@ -38,7 +38,8 @@ public class CachedThreadPool extends ThreadPoolExecutor {
 		public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) {
 			try {
 				executor.getQueue().put(r);
-			} catch (@SuppressWarnings("unused") InterruptedException e) {
+			}
+			catch (@SuppressWarnings("unused") InterruptedException e) {
 				Thread.currentThread().interrupt();
 				return;
 			}
@@ -49,11 +50,13 @@ public class CachedThreadPool extends ThreadPoolExecutor {
 	@SuppressWarnings("javadoc")
 	public CachedThreadPool(final int maxPoolSize, final long timeout, final TimeUnit timeUnit) {
 		super(0, maxPoolSize, timeout, timeUnit, new RejectingQueue(), new MyHandler());
+		allowCoreThreadTimeOut(true);
 	}
 
 	@SuppressWarnings("javadoc")
 	public CachedThreadPool(final int maxPoolSize, final long timeout, final TimeUnit timeUnit, final ThreadFactory factory) {
 		super(0, maxPoolSize, timeout, timeUnit, new RejectingQueue(), factory, new MyHandler());
+		allowCoreThreadTimeOut(true);
 	}
 
 }

@@ -34,32 +34,29 @@ public class IndexTableLookup extends HttpServlet {
 
 	@Override
 	protected void doGet(final HttpServletRequest req, final HttpServletResponse resp) throws ServletException, IOException {
-		final Timing timing = new Timing();
+		try (Timing timing = new Timing(monitor, "ms_to_answer")) {
+			final String lfn = req.getParameter("lfn");
 
-		final String lfn = req.getParameter("lfn");
+			if (lfn != null && lfn.length() > 0) {
+				final IndexTableEntry entry = CatalogueUtils.getClosestMatch(lfn);
 
-		if (lfn != null && lfn.length() > 0) {
-			final IndexTableEntry entry = CatalogueUtils.getClosestMatch(lfn);
+				try (ServletOutputStream os = resp.getOutputStream()) {
+					final StringBuilder sb = new StringBuilder(128);
 
-			try (ServletOutputStream os = resp.getOutputStream()) {
-				final StringBuilder sb = new StringBuilder(128);
+					sb.append("$VAR1=[{'hostIndex'=>'").append(entry.hostIndex).append("','indexId'=>'").append(entry.indexId).append("','tableName'=>'").append(entry.tableName).append("','lfn'=>'")
+							.append(entry.lfn).append("'}];\n");
 
-				sb.append("$VAR1=[{'hostIndex'=>'").append(entry.hostIndex).append("','indexId'=>'").append(entry.indexId).append("','tableName'=>'").append(entry.tableName).append("','lfn'=>'")
-						.append(entry.lfn).append("'}];\n");
+					os.print(sb.toString());
+				}
+			}
+			else {
+				final String refresh = req.getParameter("refresh");
 
-				os.print(sb.toString());
+				if (refresh != null && refresh.length() > 0) {
+					System.err.println("IndexTable cache refresh called");
+					CatalogueUtils.invalidateIndexTableCache();
+				}
 			}
 		}
-		else {
-			final String refresh = req.getParameter("refresh");
-
-			if (refresh != null && refresh.length() > 0){
-				System.err.println("IndexTable cache refresh called");
-				CatalogueUtils.invalidateIndexTableCache();
-			}
-		}
-
-		if (monitor != null)
-			monitor.addMeasurement("ms_to_answer", timing);
 	}
 }

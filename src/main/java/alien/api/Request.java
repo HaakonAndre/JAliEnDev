@@ -1,5 +1,6 @@
 package alien.api;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.UUID;
@@ -214,7 +215,7 @@ public abstract class Request implements Serializable, Runnable {
 	 */
 	public final void setPartnerAddress(final InetAddress ip) {
 		if (this.partner_address != null)
-			throw new IllegalAccessError("You are not allowed to overwrite this field!");
+			throw new IllegalAccessError("You are not allowed to overwrite this field from " + this.partner_address + " to " + ip);
 
 		this.partner_address = ip;
 	}
@@ -235,5 +236,20 @@ public abstract class Request implements Serializable, Runnable {
 	 */
 	public final ServerException getException() {
 		return exception;
+	}
+
+	/**
+	 * Custom deserialization, making sure the transient fields are not set
+	 * 
+	 * @param stream
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 */
+	private void readObject(java.io.ObjectInputStream stream) throws IOException, ClassNotFoundException {
+		stream.defaultReadObject();
+
+		this.partner_address = null;
+		this.partner_identity = null;
+		this.partner_certificate = null;
 	}
 }

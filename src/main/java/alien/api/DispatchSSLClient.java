@@ -244,7 +244,7 @@ public class DispatchSSLClient {
 				else {
 					mainProtocol = new ArrayList<>();
 
-					// inspired by rfc8305, interleave the protocols, giving a slight preference to IPv6					
+					// inspired by rfc8305, interleave the protocols, giving a slight preference to IPv6
 					final Iterator<InetAddress> it6 = ipv6.iterator();
 					final Iterator<InetAddress> it4 = ipv4.iterator();
 
@@ -298,7 +298,7 @@ public class DispatchSSLClient {
 						callbackObject.wait(ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.happyEyeballsTimeout", 1000));
 				}
 			}
-			catch (InterruptedException ie) {
+			catch (final InterruptedException ie) {
 				throw new IOException("Connection was interrupted", ie);
 			}
 
@@ -326,7 +326,7 @@ public class DispatchSSLClient {
 							callbackObject.wait(ConfigUtils.getConfig().geti("alien.api.DispatchSSLClient.connectionTimeoutResolution", 1000));
 					}
 				}
-				catch (InterruptedException ie) {
+				catch (final InterruptedException ie) {
 					throw new IOException("Connection was interrupted", ie);
 				}
 
@@ -463,8 +463,8 @@ public class DispatchSSLClient {
 		try {
 			o = c.ois.readObject();
 		}
-		catch (final ClassNotFoundException | IOException e) {
-			throw new IOException(e.getMessage());
+		catch (final ClassNotFoundException e) {
+			throw new IOException(e);
 		}
 
 		if (o == null) {
@@ -483,7 +483,7 @@ public class DispatchSSLClient {
 		final T reply = (T) o;
 
 		reply.setPartnerAddress(c.connection.getInetAddress());
-		
+
 		final ServerException ex = reply.getException();
 
 		if (ex != null)

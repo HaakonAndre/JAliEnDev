@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package alien.monitoring;
 
@@ -12,11 +12,11 @@ import java.util.Vector;
 public interface MonitoringObject {
 
 	/**
-	 * Fill the two vectors with names and values produced by the instance 
-	 * 
+	 * Fill the two vectors with names and values produced by the instance
+	 *
 	 * @param paramNames
 	 * @param paramValues
 	 */
 	void fillValues(final Vector<String> paramNames, final Vector<Object> paramValues);
-	
+
 }

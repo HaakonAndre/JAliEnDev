@@ -68,7 +68,8 @@ public class IOUtils {
 		MessageDigest md;
 		try {
 			md = MessageDigest.getInstance("MD5");
-		} catch (final NoSuchAlgorithmException e1) {
+		}
+		catch (final NoSuchAlgorithmException e1) {
 			throw new IOException("Could not initialize MD5 digester", e1);
 		}
 
@@ -84,7 +85,8 @@ public class IOUtils {
 			final byte[] digest = md.digest();
 
 			return String.format("%032x", new BigInteger(1, digest));
-		} catch (final IOException ioe) {
+		}
+		catch (final IOException ioe) {
 			throw ioe;
 		}
 	}
@@ -102,7 +104,7 @@ public class IOUtils {
 		return get(guid, null);
 	}
 
-	private static final CachedThreadPool PARALLEL_DW_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE, ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.keepAliveTime", 2),
+	private static final CachedThreadPool PARALLEL_DW_THREAD_POOL = new CachedThreadPool(Integer.MAX_VALUE, ConfigUtils.getConfig().getl("alien.io.IOUtils.PARALLEL_DW_THREAD_POOL.timeOutSeconds", 2),
 			TimeUnit.SECONDS, r -> {
 				final Thread t = new Thread(r, "IOUtils.PARALLEL_DW_THREAD_POOL");
 				t.setDaemon(true);
@@ -134,7 +136,8 @@ public class IOUtils {
 
 					return null;
 				}
-			} finally {
+			}
+			finally {
 				TempFileManager.release(cachedContent);
 			}
 
@@ -191,7 +194,8 @@ public class IOUtils {
 
 						if (f != null)
 							break;
-					} catch (final IOException e) {
+					}
+					catch (final IOException e) {
 						logger.log(Level.INFO, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
 					}
 
@@ -246,15 +250,18 @@ public class IOUtils {
 								TempFileManager.putPersistent(guid, localFile);
 
 						return target;
-					} catch (final ZipException e) {
+					}
+					catch (final ZipException e) {
 						logger.log(Level.WARNING, "ZipException parsing the content of " + f.getAbsolutePath() + " of GUID " + guid.guid, e);
-					} catch (final IOException e) {
+					}
+					catch (final IOException e) {
 						logger.log(Level.WARNING, "IOException extracting " + archiveFileName + " from " + f.getAbsolutePath() + " of GUID " + guid.guid + " to parse as ZIP", e);
 					}
 
 					return null;
 				}
-		} finally {
+		}
+		finally {
 			TempFileManager.release(f);
 		}
 
@@ -285,7 +292,8 @@ public class IOUtils {
 
 						if (f != null)
 							break;
-					} catch (final IOException e) {
+					}
+					catch (final IOException e) {
 						logger.log(Level.FINE, "Failed to fetch " + realPfn.pfn + " by " + protocol, e);
 					}
 
@@ -293,7 +301,8 @@ public class IOUtils {
 					synchronized (lock) {
 						lock.notifyAll();
 					}
-			} catch (@SuppressWarnings("unused") final Throwable t) {
+			}
+			catch (@SuppressWarnings("unused") final Throwable t) {
 				if (f != null)
 					TempFileManager.release(f);
 			}
@@ -351,11 +360,14 @@ public class IOUtils {
 								logger.log(Level.FINER, "The first replica to reply was: " + dw.getPFN().pfn);
 							else
 								logger.log(Level.FINER, "This replica was not accessible: " + dw.getPFN().pfn);
-					} catch (final InterruptedException e) {
+					}
+					catch (final InterruptedException e) {
 						e.printStackTrace();
-					} catch (final ExecutionException e) {
+					}
+					catch (final ExecutionException e) {
 						e.printStackTrace();
-					} finally {
+					}
+					finally {
 						it.remove();
 					}
 
@@ -368,7 +380,8 @@ public class IOUtils {
 				synchronized (lock) {
 					try {
 						lock.wait(100);
-					} catch (@SuppressWarnings("unused") final InterruptedException e) {
+					}
+					catch (@SuppressWarnings("unused") final InterruptedException e) {
 						break;
 					}
 				}
@@ -426,9 +439,11 @@ public class IOUtils {
 		if (f != null)
 			try {
 				return Utils.readFile(f.getCanonicalPath());
-			} catch (@SuppressWarnings("unused") final IOException ioe) {
+			}
+			catch (@SuppressWarnings("unused") final IOException ioe) {
 				// ignore, shouldn't be ...
-			} finally {
+			}
+			finally {
 				TempFileManager.release(f);
 			}
 
