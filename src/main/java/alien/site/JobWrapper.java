@@ -43,62 +43,62 @@ import alien.user.UserFactory;
  */
 public class JobWrapper implements Runnable {
 
-    // Folders and files
-    private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
-    private String defaultOutputDirPrefix;
+	// Folders and files
+	private final File currentDir = new File(Paths.get(".").toAbsolutePath().normalize().toString());
+	private String defaultOutputDirPrefix;
 
-    // Job variables
-    /**
-     * @uml.property  name="jdl"
-     * @uml.associationEnd  
-     */
-    private JDL jdl;
-    private long queueId;
-    private String username;
-    private String tokenCert;
-    private String tokenKey;
-    private HashMap<String, Object> siteMap;
-    private String ce;
-    /**
-     * @uml.property  name="jobStatus"
-     * @uml.associationEnd  
-     */
-    private JobStatus jobStatus;
-    private String receivedStatus = "";
+	// Job variables
+	/**
+	 * @uml.property  name="jdl"
+	 * @uml.associationEnd  
+	 */
+	private JDL jdl;
+	private long queueId;
+	private String username;
+	private String tokenCert;
+	private String tokenKey;
+	private HashMap<String, Object> siteMap;
+	private String ce;
+	/**
+	 * @uml.property  name="jobStatus"
+	 * @uml.associationEnd  
+	 */
+	private JobStatus jobStatus;
+	private String receivedStatus = "";
 
-    // Other
-    /**
-     * @uml.property  name="packMan"
-     * @uml.associationEnd  
-     */
-    private PackMan packMan;
-    private String hostName;
-    private final int pid;
-    /**
-     * @uml.property  name="commander"
-     * @uml.associationEnd  
-     */
-    private final JAliEnCOMMander commander;
+	// Other
+	/**
+	 * @uml.property  name="packMan"
+	 * @uml.associationEnd  
+	 */
+	private PackMan packMan;
+	private String hostName;
+	private final int pid;
+	/**
+	 * @uml.property  name="commander"
+	 * @uml.associationEnd  
+	 */
+	private final JAliEnCOMMander commander;
 
-    /**
-     * @uml.property  name="c_api"
-     * @uml.associationEnd  
-     */
-    private final CatalogueApiUtils c_api;
+	/**
+	 * @uml.property  name="c_api"
+	 * @uml.associationEnd  
+	 */
+	private final CatalogueApiUtils c_api;
 
-    /**
-     * logger object
-     */
-    static transient final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
+	/**
+	 * logger object
+	 */
+	static transient final Logger logger = ConfigUtils.getLogger(JobWrapper.class.getCanonicalName());
 
-    /**
-     * Streams for data transfer
-     */
-    private ObjectInputStream inputFromJobAgent;
+	/**
+	 * Streams for data transfer
+	 */
+	private ObjectInputStream inputFromJobAgent;
 
-    /**
-     */
-    @SuppressWarnings("unchecked")
+	/**
+	 */
+	@SuppressWarnings("unchecked")
 	public JobWrapper() {
 
 		//TODO: Always bind mount to /cvmfs in container
@@ -214,24 +214,22 @@ public class JobWrapper implements Runnable {
 				logger.log(Level.SEVERE, "Failed to run payload");
 				commander.q_api.putJobLog(queueId, "trace", "Failed to run payload. Exit code: " + execExitCode);
 				sendStatus(JobStatus.ERROR_E);
-				return execExitCode;
+				if (jdl.gets("OutputErrorE") != null)
+					return uploadOutputFiles() ? execExitCode : -1;
 			}
 
 			final int valExitCode = validate();
 			if (valExitCode < 0){
 				logger.log(Level.SEVERE, "Validation failed");
 				commander.q_api.putJobLog(queueId, "trace", "Validation failed. Exit code: " + valExitCode);
-				
+
 				final String fileTrace = getTraceFromFile();
 				if(fileTrace != null)
 					commander.q_api.putJobLog(queueId, "trace", fileTrace);	
-				
+
 				sendStatus(JobStatus.ERROR_V);
 				return valExitCode;
 			}
-
-			if (jobStatus == JobStatus.RUNNING)
-				sendStatus(JobStatus.SAVING);
 
 			if (!uploadOutputFiles()){
 				logger.log(Level.SEVERE, "Failed to upload output files");
@@ -492,6 +490,8 @@ public class JobWrapper implements Runnable {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
+		sendStatus(JobStatus.SAVING);
+
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
 		logger.log(Level.INFO, "Uploading output for: " + jdl);
 
@@ -574,7 +574,7 @@ public class JobWrapper implements Runnable {
 				if (uploadedNotAllCopies)
 					sendStatus(JobStatus.DONE_WARN);
 				else
-					sendStatus(JobStatus.DONE);
+					sendStatus(JobStatus.SAVED);
 		}
 
 		return uploadedAllOutFiles;
@@ -694,7 +694,7 @@ public class JobWrapper implements Runnable {
 			while(true){
 				try {
 					receivedStatus = inputFromJobAgent.readLine();
-					
+
 					if(receivedStatus != null)
 						logger.log(Level.INFO, "Confirmed from JobAgent: " + receivedStatus);
 					else {
@@ -708,15 +708,15 @@ public class JobWrapper implements Runnable {
 		}; 
 		return jobAgentListener;
 	}
-	
+
 	private String getTraceFromFile() {
 		final File traceFile = new File(".alienValidation.trace");
-		
+
 		if (traceFile.exists()) {
 			try {
 				return new String(Files.readAllBytes(traceFile.toPath()));
 			}catch (final Exception e){
-				logger.log(Level.WARNING, "An error occurred when reading .alienValidation.trace");
+				logger.log(Level.WARNING, "An error occurred when reading .alienValidation.trace: " + e);
 			}
 		}
 		logger.log(Level.INFO, ".alienValidation.trace does not exist.");
