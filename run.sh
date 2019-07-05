@@ -27,8 +27,19 @@ if [[ -z "${JARFILE}" ]]; then
   export CLASSPATH="${JAR_LIST_MAIN}:${JAR_LIST_LIB}"
 fi
 
-JALIEN_OPTS_DEFAULT="-server -Xms64m -Xmx512m -XX:+UseG1GC -XX:+DisableExplicitGC -XX:+UseCompressedOops \
--XX:+OptimizeStringConcat -XX:MaxTrivialSize=1K -XX:CompileThreshold=20000 -Duserid=$(id -u) -Dcom.sun.jndi.ldap.connect.pool=false"
+if [ -z "$JALIEN_MEM" ]; then
+    export JALIEN_MEM="-Xms64m -Xmx512m"
+fi
+
+if [ -z "$JALIEN_GC" ]; then
+    export JALIEN_GC=" -XX:+UseG1GC -XX:+DisableExplicitGC -XX:+UseCompressedOops -XX:MaxTrivialSize=1K"
+fi
+
+if [ -z "$JALIEN_JVM_OPTIONS" ]; then
+    export JALIEN_JVM_OPTIONS="-server -XX:+OptimizeStringConcat -XX:CompileThreshold=20000"
+fi
+
+JALIEN_OPTS_DEFAULT="$JALIEN_JVM_OPTIONS $JALIEN_MEM $JALIEN_GC -Duserid=$(id -u) -Dcom.sun.jndi.ldap.connect.pool=false"
 
 JAVA_VERSION=`java -version 2>&1 | sed -e 's/.*version "\([[:digit:]]*\)\(.*\)/\1/; 1q'`
 

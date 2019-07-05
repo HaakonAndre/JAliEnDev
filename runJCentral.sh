@@ -17,7 +17,7 @@ export JAVA_HOME=${JAVA_HOME:-/opt/java}
 
 export PATH=$JAVA_HOME/bin:$PATH
 
-./run.sh \
+JALIEN_MEM="-Xms2g -Xmx4g" ./run.sh \
     -XX:CompileThreshold=5 \
     -DAliEnConfig=${CONFIG_DIR} \
     -Dsun.security.ssl.allowUnsafeRenegotiation=true \
