@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -740,7 +741,8 @@ public class LFNUtils {
 					f.delete();
 				}
 
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				logger.log(Level.SEVERE, "Could not upload the XML collection because " + e.toString());
 				e.printStackTrace();
 			}
@@ -761,7 +763,7 @@ public class LFNUtils {
 			db.setReadOnly(true);
 			db.setQueryTimeout(30);
 
-			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND path='" + Format.escSQL(path) + "' LIKE concat(path,'%') ORDER BY length(path) DESC;");
+			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND path LIKE '" + Format.escSQL(path) + "%' ORDER BY length(path) DESC;");
 
 			while (db.moveNext())
 				ret.add(db.gets(1));
@@ -778,8 +780,6 @@ public class LFNUtils {
 	 * @return the files that match the metadata query
 	 */
 	public static Set<LFN> findByMetadata(final String path, final String pattern, final String tag, final String query) {
-		final Set<LFN> ret = new LinkedHashSet<>();
-
 		if (monitor != null)
 			monitor.incrementCounter("LFN_findByMetadata");
 
@@ -787,30 +787,38 @@ public class LFNUtils {
 			if (db == null) {
 				logger.log(Level.WARNING, "Cannot get a DB instance");
 
-				return ret;
+				return Collections.emptySet();
 			}
 
 			db.setQueryTimeout(600);
 			db.setReadOnly(true);
 
+			final Map<String, LFN> retMap = new HashMap<>();
+
 			for (final String tableName : getTagTableNames(path, tag)) {
-				final String q = "SELECT file from (SELECT @rn :=  CASE WHEN @prev_dir <> dir_number THEN 1 ELSE @rn+1 END AS rn, @prev_dir:=dir_number, file FROM " + Format.escSQL(tableName) + " "
-						+ Format.escSQL(tag) + ", (SELECT @rn := 0) r WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
-						+ Format.escSQL(query.replace(":", ".") + "having rn=1 order by dir_number, version desc) x");
+				final String q = "SELECT file FROM " + Format.escSQL(tableName) + " "
+						+ Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
+						+ Format.escSQL(query.replace(":", ".") + " order by dir_number, version desc, file desc;");
 
 				if (!db.query(q))
 					continue;
 
 				while (db.moveNext()) {
-					final LFN l = LFNUtils.getLFN(db.gets(1));
+					final String fileName = db.gets(1);
 
-					if (l != null)
-						ret.add(l);
+					final String dirName = fileName.substring(0, fileName.lastIndexOf('/'));
+
+					if (!retMap.containsKey(dirName)) {
+						final LFN l = LFNUtils.getLFN(db.gets(1));
+
+						if (l != null)
+							retMap.put(dirName, l);
+					}
 				}
 			}
-		}
 
-		return ret;
+			return new TreeSet<>(retMap.values());
+		}
 	}
 
 	/**
@@ -1255,7 +1263,8 @@ public class LFNUtils {
 										ret.add(file);
 										continue;
 									}
-								} catch (final Exception e) {
+								}
+								catch (final Exception e) {
 									logger.log(Level.WARNING, "Failed to get GUID: " + e);
 									return null;
 								}
@@ -1292,7 +1301,8 @@ public class LFNUtils {
 						zipMember = p.pfn.substring(p.pfn.indexOf('?') + 1);
 
 						break;
-					} catch (final Exception e) {
+					}
+					catch (final Exception e) {
 						logger.log(Level.WARNING, "Failed to parse guid ", e);
 						return null;
 					}
@@ -1310,7 +1320,8 @@ public class LFNUtils {
 				for (final LFN otherFile : parentDir.list())
 					if (otherFile.isFile() && otherFile.guid != null && otherFile.guid.equals(guid))
 						return otherFile;
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.WARNING, "Failed to return real LFN ", e);
 		}
 
