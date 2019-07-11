@@ -844,7 +844,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 	 */
 	boolean commit(final Vector<String> envelopes, final Vector<String> registerPFNs, final GUID guid, final File sourceFile, final int desiredCount, final boolean report) {
 		if (envelopes.size() != 0) {
-			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes);
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, false);
 
 			if (report && (registeredPFNs == null || registeredPFNs.size() != envelopes.size()))
 				commander.printErrln("From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
@@ -853,7 +853,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 		int registeredPFNsCount = 0;
 
 		if (registerPFNs != null && registerPFNs.size() > 0) {
-			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs);
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs, false);
 
 			registeredPFNsCount = registeredPFNs != null ? registeredPFNs.size() : 0;
 

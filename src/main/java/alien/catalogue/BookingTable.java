@@ -207,6 +207,10 @@ public class BookingTable {
 		}
 	}
 
+	private static enum BOOKING_STATE {
+		COMMITED, REJECTED, KEPT
+	}
+
 	/**
 	 * Promote this entry to the catalog
 	 *
@@ -215,7 +219,7 @@ public class BookingTable {
 	 * @return true if successful, false if not
 	 */
 	public static LFN commit(final AliEnPrincipal user, final PFN pfn) {
-		return mark(user, pfn, true);
+		return mark(user, pfn, BOOKING_STATE.COMMITED);
 	}
 
 	/**
@@ -226,10 +230,21 @@ public class BookingTable {
 	 * @return true if marking was ok, false if not
 	 */
 	public static boolean reject(final AliEnPrincipal user, final PFN pfn) {
-		return mark(user, pfn, false) != null;
+		return mark(user, pfn, BOOKING_STATE.REJECTED) != null;
 	}
 
-	private static LFN mark(final AliEnPrincipal user, final PFN pfn, final boolean ok) {
+	/**
+	 * Mark this entry as a valid output from a job, to be used at a later time by, for example, registerOutput
+	 * 
+	 * @param user
+	 * @param pfn
+	 * @return true if at least one PFN was kept as output of a previous job, but not committed
+	 */
+	public static boolean keep(final AliEnPrincipal user, final PFN pfn) {
+		return mark(user, pfn, BOOKING_STATE.KEPT) != null;
+	}
+
+	private static LFN mark(final AliEnPrincipal user, final PFN pfn, final BOOKING_STATE state) {
 		LFN ret = null;
 
 		try (DBFunctions db = getDB()) {
@@ -265,9 +280,18 @@ public class BookingTable {
 
 			w += " AND owner" + eq(user.getName());
 
-			if (!ok) {
-				db.query("UPDATE LFN_BOOKED SET expiretime=-1*(unix_timestamp(now())+60*60*24*30) WHERE " + w);
-				return new LFN("/bogus");
+			if (state == BOOKING_STATE.REJECTED) {
+				if (db.query("UPDATE LFN_BOOKED SET expiretime=-1*(unix_timestamp(now())+60*60*24*30) WHERE " + w) && db.getUpdateCount() > 0)
+					return new LFN("/bogus");
+
+				return null;
+			}
+
+			if (state == BOOKING_STATE.KEPT) {
+				if (db.query("UPDATE LFN_BOOKED SET existing=10 WHERE " + w) && db.getUpdateCount() > 0)
+					return new LFN("/bogus");
+
+				return null;
 			}
 
 			if (!guid.addPFN(pfn))
@@ -402,6 +426,20 @@ public class BookingTable {
 			retpfn.pfn = pfn;
 
 			return retpfn;
+		}
+	}
+
+	/**
+	 * Release all the booked PFNs by a previous iteration of this job ID
+	 * 
+	 * @param jobID
+	 * @return the number of physical files (PFNs) that were marked as ready to be collected by the orphan PFNs cleanup procedure
+	 */
+	public static int resubmitJob(final Long jobID) {
+		try (DBFunctions db = getDB()) {
+			db.query("UPDATE LFN_BOOKED SET expiretime=-1*(unix_timestamp(now())+60*60*24*30) WHERE jobid=?", false, jobID);
+
+			return db.getUpdateCount();
 		}
 	}
 }

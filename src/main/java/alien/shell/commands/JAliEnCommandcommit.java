@@ -65,7 +65,7 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 		final List<PFN> pfns;
 
 		if (rawenvelope.contains("signature="))
-			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope));
+			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope), false);
 		else
 			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5);
 
@@ -140,7 +140,8 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 			if (arg.hasNext())
 				try {
 					size = Integer.parseInt(arg.next());
-				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
+				}
+				catch (@SuppressWarnings("unused") final NumberFormatException e) {
 					// ignore
 				}
 			if (arg.hasNext())
