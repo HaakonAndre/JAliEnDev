@@ -210,16 +210,20 @@ public class JobWrapper implements Runnable {
 
 			// run payload
 			final int execExitCode = execute();
-			if (execExitCode < 0){
+			if (execExitCode != 0){
 				logger.log(Level.SEVERE, "Failed to run payload");
 				commander.q_api.putJobLog(queueId, "trace", "Failed to run payload. Exit code: " + execExitCode);
-				sendStatus(JobStatus.ERROR_E);
+				jobStatus = JobStatus.ERROR_E; //Set, but don't send just yet (in case of upload).
 				if (jdl.gets("OutputErrorE") != null)
 					return uploadOutputFiles() ? execExitCode : -1;
+				else {
+					sendStatus(jobStatus);
+					return execExitCode;
+				}
 			}
 
 			final int valExitCode = validate();
-			if (valExitCode < 0){
+			if (valExitCode != 0){
 				logger.log(Level.SEVERE, "Validation failed");
 				commander.q_api.putJobLog(queueId, "trace", "Validation failed. Exit code: " + valExitCode);
 
@@ -490,12 +494,16 @@ public class JobWrapper implements Runnable {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
-		sendStatus(JobStatus.SAVING);
-
 		commander.q_api.putJobLog(queueId, "trace", "Going to uploadOutputFiles");
 		logger.log(Level.INFO, "Uploading output for: " + jdl);
 
 		final String outputDir = getJobOutputDir();
+		
+		String tag = "Output";
+		if (jobStatus == JobStatus.ERROR_E)
+			tag = "OutputErrorE";
+		
+		sendStatus(JobStatus.SAVING);
 
 		logger.log(Level.INFO, "queueId: " + queueId);
 		logger.log(Level.INFO, "outputDir: " + outputDir);
@@ -509,10 +517,6 @@ public class JobWrapper implements Runnable {
 				return false;
 			}
 		}
-
-		String tag = "Output";
-		if (jobStatus == JobStatus.ERROR_E)
-			tag = "OutputErrorE";
 
 		final ParsedOutput filesTable = new ParsedOutput(queueId, jdl, currentDir.getAbsolutePath(), tag);
 
@@ -530,9 +534,16 @@ public class JobWrapper implements Runnable {
 					// Use upload instead
 					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName());
 
+					String args = "-w,-S," + 
+							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2") + 
+							",-j," + String.valueOf(queueId) + "";
+					
+					//Don't commit in case of ERROR_E
+					if (tag.equals("OutputErrorE"))
+						args += ",-nc";
+
 					final ByteArrayOutputStream out = new ByteArrayOutputStream();
-					IOUtils.upload(localFile, outputDir + "/" + entry.getName(), UserFactory.getByUsername(username), out, "-w", "-S",
-							(entry.getOptions() != null && entry.getOptions().length() > 0 ? entry.getOptions().replace('=', ':') : "disk:2"), "-j", String.valueOf(queueId));
+					IOUtils.upload(localFile, outputDir + "/" + entry.getName(), UserFactory.getByUsername(username), out, args.split(","));
 					final String output_upload = out.toString("UTF-8");
 					final String lower_output = output_upload.toLowerCase();
 
@@ -550,11 +561,10 @@ public class JobWrapper implements Runnable {
 							break;
 						}
 
-					if (filesIncluded != null) {
+					if (filesIncluded != null && !tag.equals("OutputErrorE")) {
 						// Register lfn links to archive
-						CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));
+						CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));				
 					}
-
 				}
 				else {
 					logger.log(Level.WARNING, "Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
@@ -566,16 +576,20 @@ public class JobWrapper implements Runnable {
 				uploadedAllOutFiles = false;
 			}
 		}
+		
+		if (!uploadedAllOutFiles) {
+			sendStatus(JobStatus.ERROR_SV); 
+			return false;
+		}//else 
+			//sendStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 
-		if (jobStatus != JobStatus.ERROR_E && jobStatus != JobStatus.ERROR_V) {
-			if (!uploadedAllOutFiles)
-				sendStatus(JobStatus.ERROR_SV);
+		if (!tag.equals("OutputErrorE")) {
+			if (uploadedNotAllCopies)
+				sendStatus(JobStatus.DONE_WARN);
 			else
-				if (uploadedNotAllCopies)
-					sendStatus(JobStatus.DONE_WARN);
-				else
-					sendStatus(JobStatus.SAVED);
-		}
+				sendStatus(JobStatus.DONE);
+		} else 
+			sendStatus(JobStatus.ERROR_E);
 
 		return uploadedAllOutFiles;
 	}
@@ -635,14 +649,16 @@ public class JobWrapper implements Runnable {
 	 * @param newStatus
 	 */
 	public void sendStatus(final JobStatus newStatus) {
-		String sendString = "|" + newStatus.name();
+		jobStatus = newStatus;
+		
+		String sendString = "|" + jobStatus.name();
 		sendString += "|exechost|" + this.ce;
-
+		
 		// if final status with saved files, we set the path
-		if (newStatus == JobStatus.DONE || newStatus == JobStatus.DONE_WARN || newStatus == JobStatus.ERROR_E || newStatus == JobStatus.ERROR_V) 
+		if (jobStatus == JobStatus.DONE || jobStatus == JobStatus.DONE_WARN || jobStatus == JobStatus.ERROR_E || jobStatus == JobStatus.ERROR_V) 
 			sendString += "|path|" + getJobOutputDir();
 		else
-			if (newStatus == JobStatus.RUNNING) {
+			if (jobStatus == JobStatus.RUNNING) {
 				sendString += "|spyurl|" + hostName + ":" + TomcatServer.getPort();
 				sendString += "|node|" + hostName;
 			}
@@ -650,7 +666,7 @@ public class JobWrapper implements Runnable {
 		try {
 			if (inputFromJobAgent != null){
 				// receivedStatus is updated by a JobAgentListener
-				while(!receivedStatus.contains(newStatus.name())){
+				while(!receivedStatus.contains(jobStatus.name())){
 					logger.log(Level.INFO, "SENDING: " + sendString);
 					System.out.printf("%s%n", sendString);
 					System.out.flush();
@@ -666,7 +682,6 @@ public class JobWrapper implements Runnable {
 		} catch (final Exception e) {
 			logger.log(Level.WARNING, "Failed to send jobstatus update to JobAgent: " + e);
 		}
-		jobStatus = newStatus;
 		return;
 	}
 
