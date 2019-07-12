@@ -1387,7 +1387,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 							for (final PFN pfn : pfns)
 								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 
-							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes);
+							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes, false);
 							if (!pfns.equals(pfnsok))
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size() + " could be uploaded");

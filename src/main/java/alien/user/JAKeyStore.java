@@ -29,6 +29,7 @@ import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
@@ -118,7 +119,7 @@ public class JAKeyStore {
 			trustStore = KeyStore.getInstance("JKS");
 			trustStore.load(null, pass);
 			loadTrusts(trustStore);
-		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
+		} catch (final KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			logger.log(Level.SEVERE, "Exception during loading trust stores (static block)", e);
 			e.printStackTrace();
 		}
@@ -148,7 +149,7 @@ public class JAKeyStore {
 
 					for (final File trust : dirContents)
 						if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
-							try (FileInputStream fis = new FileInputStream(trust)) {
+							try (final FileInputStream fis = new FileInputStream(trust)) {
 								final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
 								if (logger.isLoggable(Level.FINE))
 									logger.log(Level.FINE, "Trusting now: " + c.getSubjectDN());
@@ -168,7 +169,7 @@ public class JAKeyStore {
 			}
 
 			if (iLoaded == 0)
-				try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
+				try (final InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
 					keystore.load(classpathTrusts, "castore".toCharArray());
 					logger.log(Level.WARNING, "Found " + keystore.size() + " default trusted CAs in classpath");
 				} catch (final Throwable t) {
@@ -218,23 +219,6 @@ public class JAKeyStore {
 		}
 
 		return false;
-	}
-
-	/**
-	 * @return true if ok
-	 * @throws Exception
-	 */
-	private static boolean loadClientKeyStorage() throws Exception {
-		// return loadClientKeyStorage(false);
-		// return loadClientKeyStorage(true);
-		// String proxy = System.getenv().get("X509_USER_PROXY");
-		// if (proxy != null) {
-		// System.out.println("Using proxy");
-		// return loadProxy();
-		// }
-		// System.out.println("Using certificates");
-		return loadClientKeyStorage(false);
-
 	}
 
 	/**
@@ -357,7 +341,7 @@ public class JAKeyStore {
 	 * @return true if ok
 	 * @throws Exception
 	 */
-	private static boolean loadClientKeyStorage(final boolean noUserPass) throws Exception {
+	private static boolean loadClientKeyStorage() throws Exception {
 		System.out.println("LOADING USER CERT");
 
 		final ExtProperties config = ConfigUtils.getConfig();
@@ -374,6 +358,17 @@ public class JAKeyStore {
 		}
 
 		clientCert = KeyStore.getInstance("JKS");
+		boolean noUserPass = true;
+
+		try (Scanner scanner = new Scanner(new File(user_key))) {
+			while (scanner.hasNext()) {
+				String nextToken = scanner.next();
+				if (nextToken.contains("ENCRYPTED")) {
+					noUserPass = false;
+					break;
+				}
+			}
+		}
 
 		JPasswordFinder jpf;
 

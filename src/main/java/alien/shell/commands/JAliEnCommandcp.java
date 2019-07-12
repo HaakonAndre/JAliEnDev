@@ -91,6 +91,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	private long jobId = -1;
 
+	private boolean noCommit = false;
+
 	// public long timingChallenge = 0;
 
 	// public boolean isATimeChallenge = false;
@@ -762,7 +764,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			referenceCount = pfns.size();
 
 		final Vector<String> envelopes = new Vector<>(pfns.size());
-		final Vector<String> registerPFNs = new Vector<>(pfns.size());
 
 		final ArrayList<Future<UploadWork>> futures = new ArrayList<>(pfns.size());
 
@@ -809,11 +810,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (!bW && pfns.size() > 1 && envelopes.size() > 0) {
-				if (commit(envelopes, registerPFNs, guid, bD ? null : sourceFile, 1 + registerPFNs.size(), true))
+				if (commit(envelopes, guid, bD ? null : sourceFile, envelopes.size(), true)) {
+					envelopes.clear();
 					break;
-
-				envelopes.clear();
-				registerPFNs.clear();
+				}
 			}
 
 			if (futures.size() > 0) {
@@ -845,7 +845,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (bD)
 				sourceFile.delete();
 
-		return commit(envelopes, registerPFNs, guid, bD ? null : sourceFile, referenceCount, true);
+		return commit(envelopes, guid, bD ? null : sourceFile, referenceCount, true);
 	}
 
 	private final class BackgroundUpload extends Thread {
@@ -915,7 +915,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (envelopes.size() > 0)
-				commit(envelopes, null, guid, null, futures.size(), false);
+				commit(envelopes, guid, null, futures.size(), false);
 
 			if (fileToDeleteOnComplete != null)
 				fileToDeleteOnComplete.delete();
@@ -931,38 +931,27 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 * @param report
 	 * @return <code>true</code> if the request was successful
 	 */
-	boolean commit(final Vector<String> envelopes, final Vector<String> registerPFNs, final GUID guid, final File sourceFile, final int desiredCount, final boolean report) {
+	boolean commit(final Vector<String> envelopes, final GUID guid, final File sourceFile, final int desiredCount, final boolean report) {
 		if (envelopes.size() != 0) {
-			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes);
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, noCommit);
 
 			if (report && (registeredPFNs == null || registeredPFNs.size() != envelopes.size()))
 				commander.printErrln("From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
 		}
 
-		int registeredPFNsCount = 0;
-
-		if (registerPFNs != null && registerPFNs.size() > 0) {
-			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs);
-
-			registeredPFNsCount = registeredPFNs != null ? registeredPFNs.size() : 0;
-
-			if (report && registeredPFNsCount != registerPFNs.size())
-				commander.printErrln("From the " + registerPFNs.size() + " pfns only " + registeredPFNsCount + " were registered");
-		}
-
-		if (sourceFile != null && envelopes.size() + registeredPFNsCount > 0)
+		if (sourceFile != null && envelopes.size() > 0)
 			TempFileManager.putPersistent(guid, sourceFile);
 
-		if (desiredCount == envelopes.size() + registeredPFNsCount) {
+		if (desiredCount <= envelopes.size()) {
 			if (report)
 				commander.printOutln("File successfully uploaded to " + desiredCount + " SEs");
 
 			return true;
 		}
 		else
-			if (envelopes.size() + registeredPFNsCount > 0) {
+			if (envelopes.size() > 0) {
 				if (report)
-					commander.printErrln("Only " + (envelopes.size() + registeredPFNsCount) + " out of " + desiredCount + " requested replicas could be uploaded");
+					commander.printErrln("Only " + envelopes.size() + " out of " + desiredCount + " requested replicas could be uploaded");
 
 				return true;
 			}
@@ -1172,6 +1161,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			parser.accepts("j").withRequiredArg().ofType(Long.class);
 			parser.accepts("T").withRequiredArg().ofType(Integer.class);
 			parser.accepts("silent");
+			parser.accepts("nc");
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
@@ -1197,6 +1187,15 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (options.has("j"))
 				jobId = ((Long) options.valueOf("j")).longValue();
+
+			if (options.has("nc")) {
+				if (jobId > 0)
+					noCommit = true;
+				else {
+					commander.printErrln("no commit flag can only be set for job outputs");
+					return;
+				}
+			}
 
 			if (options.has("S") && options.hasArgument("S"))
 				if ((String) options.valueOf("S") != null) {
@@ -1246,7 +1245,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 			if (options.has("T"))
 				concurrentOperations = ((Integer) options.valueOf("T")).intValue();
-
 		}
 		catch (final OptionException e) {
 			printHelp();

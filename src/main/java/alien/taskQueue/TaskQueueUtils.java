@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.LFNfromString;
+import alien.catalogue.BookingTable;
 import alien.catalogue.CatalogueUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.LFNUtils;
@@ -3013,7 +3014,7 @@ public class TaskQueueUtils {
 
 			final String path = jdl.gets("Path");
 
-			if (!clearPathAndResultsJDL(queueId)) {
+			if (!clearPathAndResultsJDL(Long.valueOf(queueId))) {
 				logger.info("Cannot cleanup path and resultsJdl: " + queueId);
 				return new AbstractMap.SimpleEntry<>(Integer.valueOf(3), "Resubmit: cannot cleanup path and resultsJdl: " + queueId);
 			}
@@ -3358,7 +3359,9 @@ public class TaskQueueUtils {
 		return params;
 	}
 
-	private static boolean clearPathAndResultsJDL(final long queueId) {
+	private static boolean clearPathAndResultsJDL(final Long queueId) {
+		BookingTable.resubmitJob(queueId);
+
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)
 				return false;
@@ -3368,7 +3371,7 @@ public class TaskQueueUtils {
 			db.setReadOnly(false);
 			db.setQueryTimeout(60);
 
-			if (!db.query("update QUEUEJDL set path=null,resultsJdl=null where queueId=?", false, Long.valueOf(queueId)))
+			if (!db.query("update QUEUEJDL set path=null,resultsJdl=null where queueId=?", false, queueId))
 				return false;
 
 			return db.getUpdateCount() != 0;

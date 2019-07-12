@@ -114,7 +114,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 
 		if (offset >= lfns.size())
 			return;
-			
+
 		if (lfns != null) {
 			if (bX) {
 				return;
@@ -214,6 +214,7 @@ public class JAliEnCommandfind extends JAliEnBaseCommand {
 			parser.accepts("j").withRequiredArg().ofType(Long.class);
 			parser.accepts("l").withRequiredArg().ofType(Long.class);
 			parser.accepts("o").withRequiredArg().ofType(Long.class);
+			parser.accepts("z"); // ignored option, just to maintain compatibility with AliEn
 
 			final OptionSet options = parser.parse(alArguments.toArray(new String[] {}));
 
