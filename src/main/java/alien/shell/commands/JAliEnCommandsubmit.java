@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.List;
 
 import alien.api.ServerException;
+import alien.io.protocols.TempFileManager;
 import alien.shell.ShellColor;
 import alien.taskQueue.JDL;
 import alien.taskQueue.TaskQueueUtils;
@@ -24,39 +25,46 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 
 		final File fout = catFile(alArguments.get(0));
 
-		if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
-			final String content = Utils.readFile(fout.getAbsolutePath());
+		try {
+			if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
+				final String content = Utils.readFile(fout.getAbsolutePath());
 
-			if (content != null) {
-				try {
-					final JDL jdl;
-					final String[] args = getArgs();
-
+				if (content != null) {
 					try {
-						jdl = TaskQueueUtils.applyJDLArguments(content, args);
-					} catch (final IOException ioe) {
-						commander.setReturnCode(1, "Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
-						return;
-					}
-					jdl.set("JDLPath", alArguments.get(0));
+						final JDL jdl;
+						final String[] args = getArgs();
 
-					queueId = commander.q_api.submitJob(jdl);
-					if (queueId > 0) {
-						commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
-						commander.printOut("jobId", String.valueOf(queueId));
-					}
-					else
-						commander.printErrln("Error submitting " + alArguments.get(0));
+						try {
+							jdl = TaskQueueUtils.applyJDLArguments(content, args);
+						}
+						catch (final IOException ioe) {
+							commander.setReturnCode(1, "Error submitting " + alArguments.get(0) + ", JDL error: " + ioe.getMessage());
+							return;
+						}
+						jdl.set("JDLPath", alArguments.get(0));
 
-				} catch (final ServerException e) {
-					commander.setReturnCode(2, "Error submitting " + alArguments.get(0) + ", " + e.getMessage());
+						queueId = commander.q_api.submitJob(jdl);
+						if (queueId > 0) {
+							commander.printOutln("Your new job ID is " + ShellColor.blue() + queueId + ShellColor.reset());
+							commander.printOut("jobId", String.valueOf(queueId));
+						}
+						else
+							commander.printErrln("Error submitting " + alArguments.get(0));
+
+					}
+					catch (final ServerException e) {
+						commander.setReturnCode(2, "Error submitting " + alArguments.get(0) + ", " + e.getMessage());
+					}
 				}
+				else
+					commander.setReturnCode(3, "Could not read the contents of " + fout.getAbsolutePath());
 			}
 			else
-				commander.setReturnCode(3, "Could not read the contents of " + fout.getAbsolutePath());
+				commander.setReturnCode(4, "Not able to get the file " + alArguments.get(0));
 		}
-		else
-			commander.setReturnCode(4, "Not able to get the file " + alArguments.get(0));
+		finally {
+			TempFileManager.release(fout);
+		}
 	}
 
 	/**
