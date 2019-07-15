@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import alien.api.TomcatServer;
 import alien.api.catalogue.CatalogueApiUtils;
@@ -526,11 +527,27 @@ public class JobWrapper implements Runnable {
 			File localFile;
 			ArrayList<String> filesIncluded = null;
 			try {
-				if (entry.isArchive())
-					filesIncluded = entry.createZip(currentDir.getAbsolutePath());
-
 				localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
 				logger.log(Level.INFO, "Processing output file: " + localFile);
+				
+				if (entry.isArchive()) {
+					filesIncluded = entry.createZip(currentDir.getAbsolutePath());
+					
+					//TODO: Move everything related to resultsJDL to a separate method(?)
+					jdl.set("OutputArchive", entry.getName());
+					jdl.set("OutputArchiveHash", IOUtils.getMD5(localFile));
+					
+					jdl.set("OutputFiles", String.join(", ", filesIncluded));
+					
+					String FileMD5s = entry.getMD5sIncluded().values().stream().map(Object::toString).collect(Collectors.joining(", "));
+					jdl.set("OutputFilesHashes", String.join(", ", FileMD5s));
+					
+					String FileSizes = entry.getSizesIncluded().values().stream().map(Object::toString).collect(Collectors.joining(", "));
+					jdl.set("OutPutFilesSizes", String.join(", ", FileSizes));
+				} else {
+					jdl.set("OutputFiles", entry.getName());
+					jdl.set("OutputFileSizes", localFile.length());
+				}
 
 				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 					// Use upload instead
