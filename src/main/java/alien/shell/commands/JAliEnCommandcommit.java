@@ -3,6 +3,7 @@ package alien.shell.commands;
 import java.util.Arrays;
 import java.util.List;
 
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.PFN;
 
 /**
@@ -65,9 +66,9 @@ public class JAliEnCommandcommit extends JAliEnBaseCommand {
 		final List<PFN> pfns;
 
 		if (rawenvelope.contains("signature="))
-			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope), false);
+			pfns = commander.c_api.registerEnvelopes(Arrays.asList(rawenvelope), BOOKING_STATE.COMMITED);
 		else
-			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5);
+			pfns = commander.c_api.registerEncryptedEnvelope(rawenvelope, size, md5, BOOKING_STATE.COMMITED);
 
 		String ret = "";
 		if (pfns != null && pfns.size() > 0) {

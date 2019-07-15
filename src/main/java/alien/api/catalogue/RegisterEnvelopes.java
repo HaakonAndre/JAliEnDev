@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 
 import alien.api.Request;
 import alien.catalogue.BookingTable;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.PFN;
 import alien.catalogue.access.XrootDEnvelope;
 import alien.catalogue.access.XrootDEnvelopeReply;
@@ -41,19 +42,19 @@ public class RegisterEnvelopes extends Request {
 	private int size = 0;
 	private String md5 = null;
 
-	private boolean onlySetFlag = false;
+	private BOOKING_STATE targetState = BOOKING_STATE.COMMITED;
 
 	/**
 	 * Register PFNs with envelopes
 	 *
 	 * @param user
 	 * @param signedEnvelopes
-	 * @param onlySetFlag set to <code>true</code> when the file is only to be kept (as output of a job) and not actually committed
+	 * @param state what to do which the respective entries
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final List<String> signedEnvelopes, final boolean onlySetFlag) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final List<String> signedEnvelopes, final BOOKING_STATE state) {
 		setRequestUser(user);
 		this.signedEnvelopes = signedEnvelopes;
-		this.onlySetFlag = onlySetFlag;
+		this.targetState = state;
 	}
 
 	/**
@@ -64,21 +65,18 @@ public class RegisterEnvelopes extends Request {
 	 * @param encryptedEnvelope
 	 * @param size
 	 * @param md5
-	 * @param onlySetFlag set to <code>true</code> when the file is only to be kept (as output of a job) and not actually committed
+	 * @param state what to do which the respective entries
 	 */
-	public RegisterEnvelopes(final AliEnPrincipal user, final String encryptedEnvelope, final int size, final String md5, final boolean onlySetFlag) {
+	public RegisterEnvelopes(final AliEnPrincipal user, final String encryptedEnvelope, final int size, final String md5, final BOOKING_STATE state) {
 		setRequestUser(user);
 		this.encryptedEnvelope = encryptedEnvelope;
 		this.size = size;
 		this.md5 = md5;
-		this.onlySetFlag = onlySetFlag;
+		this.targetState = state;
 	}
 
 	private boolean flagEntry(final PFN onePFN) {
-		if (onlySetFlag)
-			return BookingTable.keep(getEffectiveRequester(), onePFN);
-
-		return BookingTable.commit(getEffectiveRequester(), onePFN) != null;
+		return BookingTable.mark(getEffectiveRequester(), onePFN, targetState) != null;
 	}
 
 	@Override

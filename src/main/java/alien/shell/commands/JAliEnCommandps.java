@@ -57,7 +57,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 		logger.log(Level.INFO, "getJDL " + String.valueOf(getJDL));
 
 		if (getJDL != 0) {
-			final String jdl = commander.q_api.getJDL(getJDL);
+			final String jdl = commander.q_api.getJDL(getJDL, true);
 			if (jdl != null)
 				if (commander.bColour)
 					commander.printOutln(ShellColor.jobStateRed() + jdl + ShellColor.reset());

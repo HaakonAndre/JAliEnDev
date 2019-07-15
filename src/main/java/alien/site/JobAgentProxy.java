@@ -40,6 +40,7 @@ import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.GetMatchJob;
 import alien.api.taskQueue.TaskQueueApiUtils;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -178,7 +179,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 		try {
 			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-		} catch (final UnknownHostException e) {
+		}
+		catch (final UnknownHostException e) {
 			System.err.println("Couldn't get hostname");
 			e.printStackTrace();
 		}
@@ -210,9 +212,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			System.out.println("CPUFAMILY: " + RES_CPUFAMILY);
 			System.out.println("CPUMHZ: " + RES_CPUMHZ);
 			System.out.println("NOCPUS: " + RES_NOCPUS);
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			System.out.println("Problem with the monitoring objects IO Exception: " + e.toString());
-		} catch (final ApMonException e) {
+		}
+		catch (final ApMonException e) {
 			System.out.println("Problem with the monitoring objects ApMon Exception: " + e.toString());
 		}
 
@@ -261,14 +265,17 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					out.println(dbname);
 				}
 			}
-		} catch (
+		}
+		catch (
 
 		SQLException e) {
 			System.err.println("Unable to start JobAgentProxy for Titan because of SQLite exception: " + e.getMessage());
 			System.exit(-1);
-		} catch (NumberFormatException e) {
+		}
+		catch (NumberFormatException e) {
 			System.err.println("Number of Titan cores (TITAN_CORES_CLAIMED environment variable) has incorrect value: " + e.getMessage());
-		} catch (@SuppressWarnings("unused") Exception e) {
+		}
+		catch (@SuppressWarnings("unused") Exception e) {
 			System.err.println("Failed to open dblink file " + dblink);
 		}
 
@@ -285,7 +292,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				while (true) {
 					try {
 						Thread.sleep(5 * 60 * 1000);
-					} catch (@SuppressWarnings("unused") InterruptedException e) {
+					}
+					catch (@SuppressWarnings("unused") InterruptedException e) {
 						// ignore
 					}
 					checkProcessResources();
@@ -309,7 +317,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		try {
 			System.out.println("Trying to start JBox");
 			JBoxServer.startJBoxService(0);
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
@@ -346,7 +355,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					idleRanks.add(new TitanJobStatus(rs.getInt("rank"), Long.valueOf(rs.getLong("queue_id")), rs.getString("job_folder"), rs.getString("status"), rs.getInt("exec_code"),
 							rs.getInt("val_code")));
 				}
-			} catch (SQLException e) {
+			}
+			catch (SQLException e) {
 				System.err.println("Getting free slots failed: " + e.getMessage());
 				continue;
 			}
@@ -356,9 +366,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			if (count == 0) {
 				try {
 					Thread.sleep(30000);
-				} catch (@SuppressWarnings("unused") InterruptedException e) {
+				}
+				catch (@SuppressWarnings("unused") InterruptedException e) {
 					// ignore
-				} finally {
+				}
+				finally {
 					System.out.println("Going for the next round....");
 				}
 				continue;
@@ -376,14 +388,16 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					try {
 						byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
 						jdl_content = new String(encoded, Charset.defaultCharset());
-					} catch (IOException e) {
+					}
+					catch (IOException e) {
 						System.err.println("Unable to read JDL file: " + e.getMessage());
 					}
 					if (jdl_content != null) {
 						jdl = null;
 						try {
 							jdl = new JDL(Job.sanitizeJDL(jdl_content));
-						} catch (IOException e) {
+						}
+						catch (IOException e) {
 							System.err.println("Unable to parse JDL: " + e.getMessage());
 						}
 						if (jdl != null) {
@@ -400,7 +414,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 							try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement();) {
 								statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", Integer.valueOf(js.rank)));
-							} catch (@SuppressWarnings("unused") SQLException e) {
+							}
+							catch (@SuppressWarnings("unused") SQLException e) {
 								System.err.println("Update job state to I failed");
 							}
 						}
@@ -482,7 +497,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 						 * }
 						 */
 					}
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					logger.log(Level.INFO, "Error getting a matching job: " + e);
 				}
 				count--;
@@ -490,7 +506,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 			try {
 				sleep(60000);
-			} catch (InterruptedException e) {
+			}
+			catch (InterruptedException e) {
 				System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
 			}
 		}
@@ -591,12 +608,12 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 	private PackMan getPackman() {
 		switch (env.get("installationMethod")) {
-		case "CVMFS":
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
-		default:
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
+			case "CVMFS":
+				siteMap.put("CVMFS", Integer.valueOf(1));
+				return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
+			default:
+				siteMap.put("CVMFS", Integer.valueOf(1));
+				return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
 		}
 	}
 
@@ -713,7 +730,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			 * uploadOutputFiles();
 			 */
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Unable to handle job");
 			e.printStackTrace();
 		}
@@ -824,93 +842,95 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	 * System.out.println(e.getMessage());
 	 * }
 	 * /////////////
-
-	// EXPERIMENTAL
-	// pBuilder = new ProcessBuilder(cmd);
-	ProcessBuilder pBuilder = new ProcessBuilder("sleep", "200");
-
-	pBuilder.directory(tempDir);
-
-	final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
-	final Map<String, String> processEnv = pBuilder.environment();processEnv.putAll(environment_packages);processEnv.putAll(
-
-	loadJDLEnvironmentVariables());
-
-		pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
-		pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
-		// pBuilder.redirectErrorStream(true);
-
-		final Process p;
-
-		try {
-			changeStatus(JobStatus.RUNNING);
-
-			p = pBuilder.start();
-		} catch (final IOException ioe) {
-			System.out.println("Exception running " + cmd + " : " + ioe.getMessage());
-			return -2;
-		}
-
-		final Timer t = new Timer();
-		t.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				p.destroy();
-			}
-		}, TimeUnit.MILLISECONDS.convert(timeout, unit));
-
-		mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
-		final Vector<Integer> child = mj.getChildren();
-		if (child == null || child.size() <= 1) {
-			System.err.println("Can't get children. Failed to execute? " + cmd.toString() + " child: " + child);
-			return -1;
-		}
-		System.out.println("Child: " + child.get(1).toString());
-
-		boolean processNotFinished = true;
-		int code = 0;
-
-		if (monitorJob) {
-			payloadPID = child.get(1).intValue();
-			apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); // TODO: test
-			mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
-			checkProcessResources();
-			sendProcessResources();
-		}
-
-		int monitor_loops = 0;
-		try {
-			while (processNotFinished)
-				try {
-					Thread.sleep(60 * 1000);
-					code = p.exitValue();
-					processNotFinished = false;
-				} catch (final IllegalThreadStateException e) {
-					// TODO: check job-token exist (job not killed)
-
-					// process hasn't terminated
-					if (monitorJob) {
-						monitor_loops++;
-						final String error = checkProcessResources();
-						if (error != null) {
-							p.destroy();
-							System.out.println("Process overusing resources: " + error);
-							return -2;
-						}
-						if (monitor_loops == 10) {
-							monitor_loops = 0;
-							sendProcessResources();
-						}
-					}
-				}
-			return code;
-		} catch (final InterruptedException ie) {
-			System.out.println("Interrupted while waiting for this command to finish: " + cmd.toString());
-			return -2;
-		} finally {
-			t.cancel();
-		}
-	}*/
+	 * 
+	 * // EXPERIMENTAL
+	 * // pBuilder = new ProcessBuilder(cmd);
+	 * ProcessBuilder pBuilder = new ProcessBuilder("sleep", "200");
+	 * 
+	 * pBuilder.directory(tempDir);
+	 * 
+	 * final HashMap<String, String> environment_packages = getJobPackagesEnvironment();
+	 * final Map<String, String> processEnv = pBuilder.environment();processEnv.putAll(environment_packages);processEnv.putAll(
+	 * 
+	 * loadJDLEnvironmentVariables());
+	 * 
+	 * pBuilder.redirectOutput(Redirect.appendTo(new File(tempDir, "stdout")));
+	 * pBuilder.redirectError(Redirect.appendTo(new File(tempDir, "stderr")));
+	 * // pBuilder.redirectErrorStream(true);
+	 * 
+	 * final Process p;
+	 * 
+	 * try {
+	 * changeStatus(JobStatus.RUNNING);
+	 * 
+	 * p = pBuilder.start();
+	 * } catch (final IOException ioe) {
+	 * System.out.println("Exception running " + cmd + " : " + ioe.getMessage());
+	 * return -2;
+	 * }
+	 * 
+	 * final Timer t = new Timer();
+	 * t.schedule(new TimerTask() {
+	 * 
+	 * @Override
+	 * public void run() {
+	 * p.destroy();
+	 * }
+	 * }, TimeUnit.MILLISECONDS.convert(timeout, unit));
+	 * 
+	 * mj = new MonitoredJob(pid, jobWorkdir, ce, hostName);
+	 * final Vector<Integer> child = mj.getChildren();
+	 * if (child == null || child.size() <= 1) {
+	 * System.err.println("Can't get children. Failed to execute? " + cmd.toString() + " child: " + child);
+	 * return -1;
+	 * }
+	 * System.out.println("Child: " + child.get(1).toString());
+	 * 
+	 * boolean processNotFinished = true;
+	 * int code = 0;
+	 * 
+	 * if (monitorJob) {
+	 * payloadPID = child.get(1).intValue();
+	 * apmon.addJobToMonitor(payloadPID, jobWorkdir, ce, hostName); // TODO: test
+	 * mj = new MonitoredJob(payloadPID, jobWorkdir, ce, hostName);
+	 * checkProcessResources();
+	 * sendProcessResources();
+	 * }
+	 * 
+	 * int monitor_loops = 0;
+	 * try {
+	 * while (processNotFinished)
+	 * try {
+	 * Thread.sleep(60 * 1000);
+	 * code = p.exitValue();
+	 * processNotFinished = false;
+	 * } catch (final IllegalThreadStateException e) {
+	 * // TODO: check job-token exist (job not killed)
+	 * 
+	 * // process hasn't terminated
+	 * if (monitorJob) {
+	 * monitor_loops++;
+	 * final String error = checkProcessResources();
+	 * if (error != null) {
+	 * p.destroy();
+	 * System.out.println("Process overusing resources: " + error);
+	 * return -2;
+	 * }
+	 * if (monitor_loops == 10) {
+	 * monitor_loops = 0;
+	 * sendProcessResources();
+	 * }
+	 * }
+	 * }
+	 * return code;
+	 * } catch (final InterruptedException ie) {
+	 * System.out.println("Interrupted while waiting for this command to finish: " + cmd.toString());
+	 * return -2;
+	 * } finally {
+	 * t.cancel();
+	 * }
+	 * }
+	 */
 
 	void sendProcessResources() {
 		// EXPERIMENTAL
@@ -937,7 +957,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			}
 			// delete all
 			statement.executeUpdate("DELETE FROM alien_jobs_monitoring");
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			System.err.println("Unable to get monitoring data: " + e.getMessage());
 		}
 		// foreach send
@@ -1042,14 +1063,14 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				final String unit = workdirMaxSize.substring(m.start());
 
 				switch (unit) {
-				case "KB":
-					workdirMaxSizeMB = Integer.parseInt(number) / 1024;
-					break;
-				case "GB":
-					workdirMaxSizeMB = Integer.parseInt(number) * 1024;
-					break;
-				default: // MB
-					workdirMaxSizeMB = Integer.parseInt(number);
+					case "KB":
+						workdirMaxSizeMB = Integer.parseInt(number) / 1024;
+						break;
+					case "GB":
+						workdirMaxSizeMB = Integer.parseInt(number) * 1024;
+						break;
+					default: // MB
+						workdirMaxSizeMB = Integer.parseInt(number);
 				}
 			}
 			else
@@ -1070,14 +1091,14 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 				final String unit = maxmemory.substring(m.start());
 
 				switch (unit) {
-				case "KB":
-					jobMaxMemoryMB = Integer.parseInt(number) / 1024;
-					break;
-				case "GB":
-					jobMaxMemoryMB = Integer.parseInt(number) * 1024;
-					break;
-				default: // MB
-					jobMaxMemoryMB = Integer.parseInt(number);
+					case "KB":
+						jobMaxMemoryMB = Integer.parseInt(number) / 1024;
+						break;
+					case "GB":
+						jobMaxMemoryMB = Integer.parseInt(number) * 1024;
+						break;
+					default: // MB
+						jobMaxMemoryMB = Integer.parseInt(number);
 				}
 			}
 			else
@@ -1125,9 +1146,11 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 			statement.executeUpdate(String.format("UPDATE alien_jobs SET queue_id=%d, job_folder='%s', status='%s', executable='%s', validation='%s', environment='%s' " + "WHERE rank=%d",
 					Long.valueOf(queueId), tempDir, "Q", getLocalCommand(jdl.gets("Executable"), jdl.getArguments()), validationCommand != null ? getLocalCommand(validationCommand, null) : "", "",
 					Integer.valueOf(current_rank)));
-		} catch (SQLException e) {
+		}
+		catch (SQLException e) {
 			System.err.println("Failed to insert job: " + e.getMessage());
-		} catch (@SuppressWarnings("unused") FileNotFoundException e) {
+		}
+		catch (@SuppressWarnings("unused") FileNotFoundException e) {
 			System.err.println("Failed to write variables file");
 		}
 
@@ -1259,7 +1282,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 			Files.write(Paths.get(jobWorkdir + "/" + list), content.getBytes());
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Problem dumping XML: " + e.toString());
 		}
 
@@ -1349,7 +1373,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 						String md5 = null;
 						try {
 							md5 = IOUtils.getMD5(localFile);
-						} catch (@SuppressWarnings("unused") final Exception e1) {
+						}
+						catch (@SuppressWarnings("unused") final Exception e1) {
 							// ignore
 						}
 						if (md5 == null)
@@ -1387,7 +1412,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 							for (final PFN pfn : pfns)
 								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 
-							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes, false);
+							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes, BOOKING_STATE.COMMITED);
 							if (!pfns.equals(pfnsok))
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size() + " could be uploaded");
@@ -1405,7 +1430,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 					else
 						System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 
-				} catch (final IOException e) {
+				}
+				catch (final IOException e) {
 					e.printStackTrace();
 					uploadedAllOutFiles = false;
 				}
@@ -1478,7 +1504,8 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 
 					hashret.put("ALIEN_JDL_" + s.toUpperCase(), value);
 				}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("There was a problem getting JDLVariables: " + e);
 		}
 
@@ -1493,7 +1520,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 	public static void main(final String[] args) throws IOException {
 		final JobAgentProxy ja = new JobAgentProxy();
 		// ja.run();
-		
+
 	}
 
 	/**

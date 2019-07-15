@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import alien.api.JBoxServer;
 import alien.api.catalogue.CatalogueApiUtils;
 import alien.api.taskQueue.TaskQueueApiUtils;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -104,14 +105,16 @@ public class JobUploader extends Thread {
 		try {
 			final byte[] encoded = Files.readAllBytes(Paths.get(js.jobFolder + "/jdl"));
 			jdl_content = new String(encoded, Charset.defaultCharset());
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			System.err.println("Unable to read JDL file: " + e.getMessage());
 		}
 		if (jdl_content != null) {
 			jdl = null;
 			try {
 				jdl = new JDL(Job.sanitizeJDL(jdl_content));
-			} catch (final IOException e) {
+			}
+			catch (final IOException e) {
 				System.err.println("Unable to parse JDL: " + e.getMessage());
 			}
 			if (jdl != null) {
@@ -127,7 +130,8 @@ public class JobUploader extends Thread {
 					varvalues.add(queueId);
 					try {
 						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-					} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+					}
+					catch (@SuppressWarnings("unused") ApMonException | IOException e) {
 						// ignore
 					}
 				}
@@ -144,7 +148,8 @@ public class JobUploader extends Thread {
 						varvalues.add(queueId);
 						try {
 							apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-						} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+						}
+						catch (@SuppressWarnings("unused") ApMonException | IOException e) {
 							// ignore
 						}
 					}
@@ -160,7 +165,8 @@ public class JobUploader extends Thread {
 						varvalues.add(queueId);
 						try {
 							apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-						} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+						}
+						catch (@SuppressWarnings("unused") ApMonException | IOException e) {
 							// ignore
 						}
 					}
@@ -172,11 +178,13 @@ public class JobUploader extends Thread {
 				while (i-- > 0) {
 					try (Connection connection = DriverManager.getConnection(dbname); Statement statement = connection.createStatement()) {
 						statement.executeUpdate(String.format("UPDATE alien_jobs SET status='I' WHERE rank=%d", Integer.valueOf(js.rank)));
-					} catch (final SQLException e) {
+					}
+					catch (final SQLException e) {
 						System.err.println("Update job state to I failed: " + e.getMessage());
 						try {
 							Thread.sleep(2000);
-						} catch (@SuppressWarnings("unused") final InterruptedException ei) {
+						}
+						catch (@SuppressWarnings("unused") final InterruptedException ei) {
 							System.err.println("Sleep in DispatchSSLMTClient.getInstance has been interrupted");
 						}
 						continue;
@@ -243,7 +251,8 @@ public class JobUploader extends Thread {
 			try {
 				apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
 				apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", queueId), 3, varnames, varvalues);
-			} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+			}
+			catch (@SuppressWarnings("unused") ApMonException | IOException e) {
 				// ignore
 			}
 			return false;
@@ -287,7 +296,8 @@ public class JobUploader extends Thread {
 						String md5 = null;
 						try {
 							md5 = IOUtils.getMD5(localFile);
-						} catch (@SuppressWarnings("unused") final Exception e1) {
+						}
+						catch (@SuppressWarnings("unused") final Exception e1) {
 							// ignore
 						}
 						if (md5 == null)
@@ -325,7 +335,7 @@ public class JobUploader extends Thread {
 							for (final PFN pfn : pfns)
 								envelopes.add(pfn.ticket.envelope.getSignedEnvelope());
 
-							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes, false);
+							final List<PFN> pfnsok = c_api.registerEnvelopes(envelopes, BOOKING_STATE.COMMITED);
 							if (!pfns.equals(pfnsok))
 								if (pfnsok != null && pfnsok.size() > 0) {
 									System.out.println("Only " + pfnsok.size() + " could be uploaded");
@@ -343,7 +353,8 @@ public class JobUploader extends Thread {
 					else
 						System.out.println("Can't upload output file " + localFile.getName() + ", does not exist or has zero size.");
 
-				} catch (final IOException e) {
+				}
+				catch (final IOException e) {
 					e.printStackTrace();
 					uploadedAllOutFiles = false;
 				}
@@ -363,7 +374,8 @@ public class JobUploader extends Thread {
 				varvalues.add(queueId);
 				try {
 					apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-				} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+				}
+				catch (@SuppressWarnings("unused") ApMonException | IOException e) {
 					// ignore
 				}
 			}
@@ -381,7 +393,8 @@ public class JobUploader extends Thread {
 					try {
 						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
 						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", queueId), 3, varnames, varvalues);
-					} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+					}
+					catch (@SuppressWarnings("unused") ApMonException | IOException e) {
 						// ignore
 					}
 				}
@@ -397,7 +410,8 @@ public class JobUploader extends Thread {
 					varvalues.add(queueId);
 					try {
 						apmon.sendParameters(ce + "_Jobs", String.format("%d", queueId), 2, varnames, varvalues);
-					} catch (@SuppressWarnings("unused") ApMonException | IOException e) {
+					}
+					catch (@SuppressWarnings("unused") ApMonException | IOException e) {
 						// ignore
 					}
 				}

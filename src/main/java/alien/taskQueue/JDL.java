@@ -131,7 +131,8 @@ public class JDL implements Serializable {
 
 				sb.append(line).append('\n');
 			}
-		} catch (@SuppressWarnings("unused") final IOException e) {
+		}
+		catch (@SuppressWarnings("unused") final IOException e) {
 			// cannot be
 		}
 
@@ -165,32 +166,33 @@ public class JDL implements Serializable {
 			boolean bQuote = false;
 			boolean bClean = false;
 
-			outer: while (idxEnd < content.length()) {
+			outer:
+			while (idxEnd < content.length()) {
 				final char c = content.charAt(idxEnd);
 
 				switch (c) {
-				case '\\':
-					bEsc = !bEsc;
+					case '\\':
+						bEsc = !bEsc;
 
-					break;
-				case '"':
-					if (!bEsc)
-						bQuote = !bQuote;
+						break;
+					case '"':
+						if (!bEsc)
+							bQuote = !bQuote;
 
-					bEsc = false;
+						bEsc = false;
 
-					break;
-				case ';':
-					if (!bEsc && !bQuote) {
-						bClean = true;
-						break outer;
-					}
+						break;
+					case ';':
+						if (!bEsc && !bQuote) {
+							bClean = true;
+							break outer;
+						}
 
-					bEsc = false;
+						bEsc = false;
 
-					break;
-				default:
-					bEsc = false;
+						break;
+					default:
+						bEsc = false;
 				}
 
 				idxEnd++;
@@ -313,7 +315,8 @@ public class JDL implements Serializable {
 
 		try {
 			return Integer.valueOf(Integer.valueOf(getString(o)).intValue());
-		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -335,7 +338,8 @@ public class JDL implements Serializable {
 
 		try {
 			return Float.valueOf(getString(o));
-		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -373,19 +377,22 @@ public class JDL implements Serializable {
 
 		try {
 			return Integer.valueOf(value);
-		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
 		try {
 			return Long.valueOf(value);
-		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
 		try {
 			return Double.valueOf(value);
-		} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+		}
+		catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 			// ignore
 		}
 
@@ -433,7 +440,8 @@ public class JDL implements Serializable {
 
 					try {
 						return Integer.parseInt(run);
-					} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+					}
+					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 						return -1;
 					}
 				}
@@ -459,7 +467,8 @@ public class JDL implements Serializable {
 		if (split.startsWith("production:"))
 			try {
 				return Integer.parseInt(split.substring(split.lastIndexOf('-') + 1));
-			} catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
+			}
+			catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
 				// ignore
 			}
 
@@ -482,7 +491,8 @@ public class JDL implements Serializable {
 					final XmlCollection x = new XmlCollection(LFNUtils.getLFN(file));
 
 					return x;
-				} catch (@SuppressWarnings("unused") final IOException ioe) {
+				}
+				catch (@SuppressWarnings("unused") final IOException ioe) {
 					// ignore
 				}
 
@@ -774,7 +784,8 @@ public class JDL implements Serializable {
 				final String sVersion = s.substring(idx2 + 2);
 
 				ret.put(sPackage, sVersion);
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				System.err.println("Exception parsing package definition: " + s + " : " + t.getMessage());
 			}
 		}
@@ -802,7 +813,8 @@ public class JDL implements Serializable {
 			final String s = it.next();
 			try {
 				ret.put(s, get(s));
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				System.err.println("Exception parsing JDL variable definition: " + s + " : " + t.getMessage());
 			}
 		}
@@ -898,7 +910,8 @@ public class JDL implements Serializable {
 				if (st.nextToken().equals("--nevents") && st.hasMoreTokens())
 					try {
 						return Integer.parseInt(st.nextToken());
-					} catch (final NumberFormatException nfe) {
+					}
+					catch (final NumberFormatException nfe) {
 						System.err.println("Could not parse the number of events from this line: " + splitarguments + " : " + nfe.getMessage());
 					}
 		}
@@ -948,7 +961,8 @@ public class JDL implements Serializable {
 				if (m.matches())
 					return Integer.parseInt(m.group(2));
 			}
-		} catch (@SuppressWarnings("unused") final IOException ioe) {
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
 			// ignore, cannot happen
 		}
 
@@ -1433,7 +1447,22 @@ public class JDL implements Serializable {
 	 * @return the set of files
 	 */
 	public Set<String> getOutputFileSet(final boolean includeArchiveMembers, final boolean excludeArchives) {
-		final List<String> outputFiles = getOutputFiles();
+		return getOutputFileSet(null, includeArchiveMembers, excludeArchives);
+	}
+
+	/**
+	 * Get the set of files (and patterns!) that the job is expected to register
+	 * 
+	 * @param tag if indicated then parse the given tag name instead of the default tag set (Output, OutputArchive, OutputFile)
+	 *
+	 * @param includeArchiveMembers
+	 *            if <code>true</code> then archive member (patterns) are included
+	 * @param excludeArchives
+	 *            if <code>true</code> then archives will be skipped
+	 * @return the set of files
+	 */
+	public Set<String> getOutputFileSet(final String tag, final boolean includeArchiveMembers, final boolean excludeArchives) {
+		final List<String> outputFiles = tag != null ? getOutputFiles(tag) : getOutputFiles();
 
 		final Set<String> ret = new TreeSet<>();
 

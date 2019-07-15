@@ -32,6 +32,7 @@ import java.util.zip.ZipInputStream;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.PFNforWrite;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -844,7 +845,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 	 */
 	boolean commit(final Vector<String> envelopes, final Vector<String> registerPFNs, final GUID guid, final File sourceFile, final int desiredCount, final boolean report) {
 		if (envelopes.size() != 0) {
-			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, false);
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, BOOKING_STATE.COMMITED);
 
 			if (report && (registeredPFNs == null || registeredPFNs.size() != envelopes.size()))
 				commander.printErrln("From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
@@ -853,7 +854,7 @@ public class JAliEnCommandcp_csd extends JAliEnBaseCommand {
 		int registeredPFNsCount = 0;
 
 		if (registerPFNs != null && registerPFNs.size() > 0) {
-			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs, false);
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(registerPFNs, BOOKING_STATE.COMMITED);
 
 			registeredPFNsCount = registeredPFNs != null ? registeredPFNs.size() : 0;
 
