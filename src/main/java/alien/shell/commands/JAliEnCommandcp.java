@@ -33,12 +33,12 @@ import java.util.zip.ZipInputStream;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.PFNforWrite;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
 import alien.catalogue.LFN;
 import alien.catalogue.PFN;
-import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.config.ConfigUtils;
 import alien.io.Transfer;
 import alien.io.protocols.Protocol;
@@ -101,9 +101,20 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
+		if (bT) {
+			try {
+				final File fTemp = File.createTempFile("jalien.get.", ".temp");
 
-		if (bT)
-			localFile = copyGridToLocal(source, null);
+				fTemp.delete();
+
+				localFile = copyGridToLocal(source, fTemp);
+
+				fTemp.deleteOnExit();
+			}
+			catch (@SuppressWarnings("unused") IOException ioe) {
+				commander.printErrln("Cannot create temporary file");
+			}
+		}
 		else {
 			commander.outNextResult();
 			if (!localFileSpec(source) && localFileSpec(target)) {
@@ -310,8 +321,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 									zi.closeEntry();
 
 									output = file;
-
-									TempFileManager.putPersistent(pfn.getGuid(), output);
 
 									break;
 								}
