@@ -109,10 +109,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 				localFile = copyGridToLocal(source, fTemp);
 
-				if (localFile != null) {
+				if (localFile != null)
 					TempFileManager.putTemp(GUIDUtils.createGuid(localFile, null), localFile);
-					TempFileManager.release(localFile);
-				}
 			}
 			catch (@SuppressWarnings("unused") IOException ioe) {
 				commander.printErrln("Cannot create temporary file");
