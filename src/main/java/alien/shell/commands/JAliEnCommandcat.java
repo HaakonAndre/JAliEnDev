@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.io.protocols.TempFileManager;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -71,8 +72,8 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 							commander.printOutln();
 						}
 
-					} catch (@SuppressWarnings("unused")
-					final IOException ioe) {
+					}
+					catch (@SuppressWarnings("unused") final IOException ioe) {
 						// ignore, cannot happen
 					}
 				}
@@ -102,11 +103,12 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 		JAliEnCommandcp cp;
 		try {
 			cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand("cp", new Object[] { commander, args });
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			return null;
 		}
-		
+
 		silent();
 
 		try {
@@ -116,14 +118,20 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 				Thread.sleep(500);
 				commander.pending();
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			return null;
 		}
-		
+
 		verbose();
-		
-		return cp.getOutputFile();
+
+		final File outFile = cp.getOutputFile();
+
+		if (outFile != null)
+			TempFileManager.release(outFile);
+
+		return outFile;
 	}
 
 	/**
@@ -185,7 +193,8 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			bE = options.has("E");
 			bT = options.has("T");
 
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}
