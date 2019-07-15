@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
+import alien.io.protocols.TempFileManager;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -33,57 +34,63 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 	public void run() {
 		for (final String eachFileName : alPaths) {
 			final File fout = catFile(eachFileName);
-			int count = 0;
-			if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
-				final String content = Utils.readFile(fout.getAbsolutePath());
-				if (content != null) {
-					final BufferedReader br = new BufferedReader(new StringReader(content));
 
-					String line;
+			try {
+				int count = 0;
+				if (fout != null && fout.exists() && fout.isFile() && fout.canRead()) {
+					final String content = Utils.readFile(fout.getAbsolutePath());
+					if (content != null) {
+						final BufferedReader br = new BufferedReader(new StringReader(content));
 
-					try {
-						while ((line = br.readLine()) != null) {
-							if (bO)
-								try (FileWriter fstream = new FileWriter(eachFileName); BufferedWriter o = new BufferedWriter(fstream)) {
-									o.write(content);
+						String line;
+
+						try {
+							while ((line = br.readLine()) != null) {
+								if (bO)
+									try (FileWriter fstream = new FileWriter(eachFileName); BufferedWriter o = new BufferedWriter(fstream)) {
+										o.write(content);
+									}
+
+								if (bN) {
+									commander.printOut("count", count + "");
+									commander.printOut(++count + "  ");
+								}
+								else
+									if (bB)
+										if (line.trim().length() > 0) {
+											commander.printOut("count", count + "");
+											commander.printOut(++count + "  ");
+										}
+								if (bT)
+									line = Format.replace(line, "\t", "^I");
+
+								commander.printOut("value", line);
+								commander.printOut(line);
+								if (bE) {
+									commander.printOut("value", "$");
+									commander.printOut("$");
 								}
 
-							if (bN) {
-								commander.printOut("count", count + "");
-								commander.printOut(++count + "  ");
-							}
-							else
-								if (bB)
-									if (line.trim().length() > 0) {
-										commander.printOut("count", count + "");
-										commander.printOut(++count + "  ");
-									}
-							if (bT)
-								line = Format.replace(line, "\t", "^I");
-
-							commander.printOut("value", line);
-							commander.printOut(line);
-							if (bE) {
-								commander.printOut("value", "$");
-								commander.printOut("$");
+								commander.printOutln();
 							}
 
-							commander.printOutln();
 						}
-
-					} catch (@SuppressWarnings("unused")
-					final IOException ioe) {
-						// ignore, cannot happen
+						catch (@SuppressWarnings("unused") final IOException ioe) {
+							// ignore, cannot happen
+						}
 					}
+
+					else
+						commander.printErrln("Could not read the contents of " + fout.getAbsolutePath());
 				}
+				else {
+					commander.printErrln("Not able to get this file: " + eachFileName);
 
-				else
-					commander.printErrln("Could not read the contents of " + fout.getAbsolutePath());
+					commander.setReturnCode(1, "Not able to get the file");
+				}
 			}
-			else {
-				commander.printErrln("Not able to get this file: " + eachFileName);
-
-				commander.setReturnCode(1, "Not able to get the file");
+			finally {
+				TempFileManager.release(fout);
 			}
 		}
 
@@ -102,11 +109,12 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 		JAliEnCommandcp cp;
 		try {
 			cp = (JAliEnCommandcp) JAliEnCOMMander.getCommand("cp", new Object[] { commander, args });
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			return null;
 		}
-		
+
 		silent();
 
 		try {
@@ -116,13 +124,14 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 				Thread.sleep(500);
 				commander.pending();
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			e.printStackTrace();
 			return null;
 		}
-		
+
 		verbose();
-		
+
 		return cp.getOutputFile();
 	}
 
@@ -185,7 +194,8 @@ public class JAliEnCommandcat extends JAliEnBaseCommand {
 			bE = options.has("E");
 			bT = options.has("T");
 
-		} catch (final OptionException e) {
+		}
+		catch (final OptionException e) {
 			printHelp();
 			throw e;
 		}

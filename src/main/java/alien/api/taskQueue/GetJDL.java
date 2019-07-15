@@ -21,18 +21,22 @@ public class GetJDL extends Request {
 
 	private String jdl;
 
+	private boolean originalJDL = true;
+
 	/**
 	 * @param user
-	 * @param queueId
+	 * @param queueId job ID
+	 * @param originalJDL whether to return the original JDL (<code>true</code>) or the resulting JDL (<code>false</code>)
 	 */
-	public GetJDL(final AliEnPrincipal user, final long queueId) {
+	public GetJDL(final AliEnPrincipal user, final long queueId, final boolean originalJDL) {
 		setRequestUser(user);
 		this.queueId = queueId;
+		this.originalJDL = originalJDL;
 	}
 
 	@Override
 	public void run() {
-		this.jdl = Job.sanitizeJDL(TaskQueueUtils.getJDL(queueId));
+		this.jdl = Job.sanitizeJDL(TaskQueueUtils.getJDL(queueId, originalJDL));
 	}
 
 	/**

@@ -3,6 +3,7 @@ package alien.catalogue;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -207,8 +208,23 @@ public class BookingTable {
 		}
 	}
 
-	private static enum BOOKING_STATE {
-		COMMITED, REJECTED, KEPT
+	/**
+	 * @author costing
+	 * @since 2019-07-15
+	 */
+	public static enum BOOKING_STATE {
+		/**
+		 * Commit the entry to the catalogue
+		 */
+		COMMITED,
+		/**
+		 * When the entry is known to have failed, mark it for asap removing
+		 */
+		REJECTED,
+		/**
+		 * The upload was successful but the file is not to be registered yet
+		 */
+		KEPT
 	}
 
 	/**
@@ -235,7 +251,7 @@ public class BookingTable {
 
 	/**
 	 * Mark this entry as a valid output from a job, to be used at a later time by, for example, registerOutput
-	 * 
+	 *
 	 * @param user
 	 * @param pfn
 	 * @return true if at least one PFN was kept as output of a previous job, but not committed
@@ -244,7 +260,17 @@ public class BookingTable {
 		return mark(user, pfn, BOOKING_STATE.KEPT) != null;
 	}
 
-	private static LFN mark(final AliEnPrincipal user, final PFN pfn, final BOOKING_STATE state) {
+	private static LFN BOGUS_ENTRY = new LFN("/bogus");
+
+	/**
+	 * Move the entry from the booking table
+	 *
+	 * @param user user requesting this operation
+	 * @param pfn the PFN to commit
+	 * @param state state to put the entry in
+	 * @return <code>null</code> in case of error, or the booked LFN if the entry was committed (or some bogus entry if it was removed, the value is not important in this case)
+	 */
+	public static LFN mark(final AliEnPrincipal user, final PFN pfn, final BOOKING_STATE state) {
 		LFN ret = null;
 
 		try (DBFunctions db = getDB()) {
@@ -282,14 +308,14 @@ public class BookingTable {
 
 			if (state == BOOKING_STATE.REJECTED) {
 				if (db.query("UPDATE LFN_BOOKED SET expiretime=-1*(unix_timestamp(now())+60*60*24*30) WHERE " + w) && db.getUpdateCount() > 0)
-					return new LFN("/bogus");
+					return BOGUS_ENTRY;
 
 				return null;
 			}
 
 			if (state == BOOKING_STATE.KEPT) {
 				if (db.query("UPDATE LFN_BOOKED SET existing=10 WHERE " + w) && db.getUpdateCount() > 0)
-					return new LFN("/bogus");
+					return BOGUS_ENTRY;
 
 				return null;
 			}
@@ -431,7 +457,7 @@ public class BookingTable {
 
 	/**
 	 * Release all the booked PFNs by a previous iteration of this job ID
-	 * 
+	 *
 	 * @param jobID
 	 * @return the number of physical files (PFNs) that were marked as ready to be collected by the orphan PFNs cleanup procedure
 	 */
@@ -441,5 +467,39 @@ public class BookingTable {
 
 			return db.getUpdateCount();
 		}
+	}
+
+	/**
+	 * Register all the uncommitted files of a particular job ID
+	 *
+	 * @param user
+	 * @param jobID
+	 * @return the registered files
+	 */
+	public static Set<LFN> registerOutput(final AliEnPrincipal user, final Long jobID) {
+		final Set<LFN> ret = new HashSet<>();
+
+		try (DBFunctions db = getDB()) {
+			// this query will return both physical files as well as archive members, if any
+			db.query("SELECT pfn FROM LFN_BOOKED WHERE jobid=? AND expiretime>0 AND owner=?;", false, jobID, user.getName());
+
+			while (db.moveNext()) {
+				try {
+					final PFN pfn = getBookedPFN(db.gets(1));
+
+					if (pfn != null) {
+						final LFN l = mark(user, pfn, BOOKING_STATE.COMMITED);
+
+						if (l != null)
+							ret.add(l);
+					}
+				}
+				catch (@SuppressWarnings("unused") final IOException e) {
+					// ignore
+				}
+			}
+		}
+
+		return ret;
 	}
 }

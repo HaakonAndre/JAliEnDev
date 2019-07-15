@@ -21,6 +21,7 @@ import alien.catalogue.LFN;
 import alien.catalogue.LFN_CSD;
 import alien.catalogue.PFN;
 import alien.catalogue.Package;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.access.AccessType;
 import alien.config.ConfigUtils;
 import alien.io.TransferDetails;
@@ -324,9 +325,9 @@ public class CatalogueApiUtils {
 	 *
 	 * @param envelopes
 	 * @return PFNs that were successfully registered
-	 * @param onlySetFlag set to <code>true</code> when the file is only to be kept (as output of a job) and not actually committed
+	 * @param state the state to register the files in
 	 */
-	public List<PFN> registerEnvelopes(final List<String> envelopes, final boolean onlySetFlag) {
+	public List<PFN> registerEnvelopes(final List<String> envelopes, final BOOKING_STATE state) {
 		try {
 			final List<String> encryptedEnvelopes = new LinkedList<>();
 			final List<String> signedEnvelopes = new LinkedList<>();
@@ -340,14 +341,14 @@ public class CatalogueApiUtils {
 			final List<PFN> ret = new LinkedList<>();
 
 			if (signedEnvelopes.size() > 0) {
-				final List<PFN> signedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), envelopes, onlySetFlag)).getPFNs();
+				final List<PFN> signedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), envelopes, state)).getPFNs();
 
 				if (signedPFNs != null && signedPFNs.size() > 0)
 					ret.addAll(signedPFNs);
 			}
 
 			for (final String envelope : encryptedEnvelopes) {
-				final List<PFN> encryptedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), envelope, 0, null, onlySetFlag)).getPFNs();
+				final List<PFN> encryptedPFNs = Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), envelope, 0, null, state)).getPFNs();
 
 				if (encryptedPFNs != null && encryptedPFNs.size() > 0)
 					ret.addAll(encryptedPFNs);
@@ -369,11 +370,12 @@ public class CatalogueApiUtils {
 	 * @param encryptedEnvelope
 	 * @param size
 	 * @param md5
+	 * @param state what to do with the given files
 	 * @return PFNs that were successfully registered
 	 */
-	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5) {
+	public List<PFN> registerEncryptedEnvelope(final String encryptedEnvelope, final int size, final String md5, final BOOKING_STATE state) {
 		try {
-			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), encryptedEnvelope, size, md5, false)).getPFNs();
+			return Dispatcher.execute(new RegisterEnvelopes(commander.getUser(), encryptedEnvelope, size, md5, state)).getPFNs();
 		}
 		catch (final ServerException e) {
 			logger.log(Level.WARNING, "Could not get PFNs for: " + encryptedEnvelope);
@@ -1000,7 +1002,6 @@ public class CatalogueApiUtils {
 	 */
 	public List<PFN> getPFNsToReadCsd(final CatalogEntity entity, final List<String> ses, final List<String> exses) {
 		try {
-
 			return Dispatcher.execute(new PFNforReadOrDelCsd(commander.getUser(), commander.getSite(), AccessType.READ, entity, ses, exses)).getPFNs();
 		}
 		catch (final ServerException e) {
@@ -1011,4 +1012,20 @@ public class CatalogueApiUtils {
 		return null;
 	}
 
+	/**
+	 * Register the output of a given job ID
+	 * 
+	 * @param jobId job ID to register the output of
+	 * @return the list of booked (so written but not yet committed) LFNs for this (normally failed) job ID
+	 */
+	public Collection<LFN> registerOutput(final long jobId) {
+		try {
+			return Dispatcher.execute(new RegisterOutput(commander.getUser(), jobId)).getRegisteredLFNs();
+		}
+		catch (final ServerException e) {
+			logger.log(Level.WARNING, "Could not get booked LFNs for job ID " + jobId);
+			e.getCause().printStackTrace();
+		}
+		return null;
+	}
 }

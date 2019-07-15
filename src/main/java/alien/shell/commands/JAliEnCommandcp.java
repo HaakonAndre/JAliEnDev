@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -32,6 +33,7 @@ import java.util.zip.ZipInputStream;
 import alien.api.Dispatcher;
 import alien.api.ServerException;
 import alien.api.catalogue.PFNforWrite;
+import alien.catalogue.BookingTable.BOOKING_STATE;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.GUIDUtils;
@@ -99,9 +101,21 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
+		if (bT) {
+			try {
+				final File fTemp = File.createTempFile("jalien.get.", ".temp");
 
-		if (bT)
-			localFile = copyGridToLocal(source, null);
+				fTemp.delete();
+
+				localFile = copyGridToLocal(source, fTemp);
+
+				if (localFile != null)
+					TempFileManager.putTemp(GUIDUtils.createGuid(localFile, null), localFile);
+			}
+			catch (@SuppressWarnings("unused") IOException ioe) {
+				commander.printErrln("Cannot create temporary file");
+			}
+		}
 		else {
 			commander.outNextResult();
 			if (!localFileSpec(source) && localFileSpec(target)) {
@@ -308,8 +322,6 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 									zi.closeEntry();
 
 									output = file;
-
-									TempFileManager.putPersistent(pfn.getGuid(), output);
 
 									break;
 								}
@@ -933,7 +945,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 */
 	boolean commit(final Vector<String> envelopes, final GUID guid, final File sourceFile, final int desiredCount, final boolean report) {
 		if (envelopes.size() != 0) {
-			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, noCommit);
+			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, noCommit ? BOOKING_STATE.KEPT : BOOKING_STATE.COMMITED);
 
 			if (report && (registeredPFNs == null || registeredPFNs.size() != envelopes.size()))
 				commander.printErrln("From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
@@ -1032,6 +1044,18 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					returnEnvelope = targetPFNResult;
 			}
 			else {
+				// release the file for immediate collection
+				if (pfn.ticket != null && pfn.ticket.envelope != null) {
+					String rejectEnvelope = pfn.ticket.envelope.getEncryptedEnvelope();
+
+					if (rejectEnvelope == null)
+						rejectEnvelope = pfn.ticket.envelope.getSignedEnvelope();
+
+					// blind call to the central services to reject this failed copy
+					if (rejectEnvelope != null)
+						commander.c_api.registerEnvelopes(Arrays.asList(rejectEnvelope), BOOKING_STATE.REJECTED);
+				}
+
 				SE se = commander.c_api.getSE(pfn.seNumber);
 
 				final String failedSEName = se.getName();

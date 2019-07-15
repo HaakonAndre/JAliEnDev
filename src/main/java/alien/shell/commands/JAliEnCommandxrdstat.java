@@ -54,7 +54,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 		if (jobIDs != null) {
 			for (final Long jobID : jobIDs) {
-				final String jdl = commander.q_api.getJDL(jobID.longValue());
+				final String jdl = commander.q_api.getJDL(jobID.longValue(), true);
 
 				if (jdl == null) {
 					commander.printErrln("Cannot retrieve JDL of job ID " + jobID);

@@ -40,7 +40,8 @@ public class TaskQueueApiUtils {
 			final GetUptime uptime = Dispatcher.execute(new GetUptime());
 
 			return uptime.getStats();
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could not get an uptime stats: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -66,7 +67,8 @@ public class TaskQueueApiUtils {
 			final GetPS ps = Dispatcher.execute(new GetPS(commander.getUser(), states, users, sites, nodes, mjobs, jobid, orderByKey, limit));
 
 			return ps.returnPS();
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could not get a PS listing: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -88,7 +90,8 @@ public class TaskQueueApiUtils {
 			// return mj.masterJobStatus();
 			return mj.subJobStatus();
 
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get a PS listing: ");
 			e.getCause().printStackTrace();
 		}
@@ -106,7 +109,8 @@ public class TaskQueueApiUtils {
 			final GetTraceLog trace = Dispatcher.execute(new GetTraceLog(commander.getUser(), queueId));
 
 			return trace.getTraceLog();
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get not a TraceLog: ");
 			e.getCause().printStackTrace();
 		}
@@ -116,15 +120,17 @@ public class TaskQueueApiUtils {
 
 	/**
 	 * @param queueId
+	 * @param originalJDL whether to return the original JDL (<code>true</code>) or the resulting JDL (<code>false</code>)
 	 * @return a JDL as String
 	 */
-	public String getJDL(final long queueId) {
+	public String getJDL(final long queueId, final boolean originalJDL) {
 
 		try {
-			final GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), queueId));
+			final GetJDL jdl = Dispatcher.execute(new GetJDL(commander.getUser(), queueId, originalJDL));
 
 			return jdl.getJDL();
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get not a JDL: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -142,7 +148,8 @@ public class TaskQueueApiUtils {
 			final GetJob job = Dispatcher.execute(new GetJob(commander.getUser(), queueId));
 
 			return job.getJob();
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get not the Job: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -160,7 +167,8 @@ public class TaskQueueApiUtils {
 			final GetJobs job = Dispatcher.execute(new GetJobs(commander.getUser(), queueIds));
 
 			return job.getJobs();
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get not the Jobs: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -178,7 +186,8 @@ public class TaskQueueApiUtils {
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status));
 
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get not a Job's status: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -195,7 +204,8 @@ public class TaskQueueApiUtils {
 		try {
 			Dispatcher.execute(new SetJobStatus(jobnumber, status, extrafields));
 
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get not a Job's status: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -236,7 +246,8 @@ public class TaskQueueApiUtils {
 			Dispatcher.execute(j);
 			return j.wasKilled();
 
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Could not kill the job  with id: [" + queueId + "]");
 			e.printStackTrace();
 		}
@@ -251,7 +262,8 @@ public class TaskQueueApiUtils {
 			final GetQuota gq = new GetQuota(commander.getUser());
 			final GetQuota gqres = Dispatcher.execute(gq);
 			return gqres.getQuota();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Exception in GetQuota: " + e.getMessage());
 		}
 		return null;
@@ -266,7 +278,8 @@ public class TaskQueueApiUtils {
 			final GetFileQuota gqres = Dispatcher.execute(gq);
 
 			return gqres.getFileQuota();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Exception in getFileQuota: " + e.getMessage());
 		}
 		return null;
@@ -282,7 +295,8 @@ public class TaskQueueApiUtils {
 		try {
 			final PutJobLog sq = new PutJobLog(jobid, tag, message);
 			Dispatcher.execute(sq);
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Exception in putJobLog: " + e.getMessage());
 		}
 		return;
@@ -298,7 +312,8 @@ public class TaskQueueApiUtils {
 			final SetFileQuota sq = new SetFileQuota(commander.getUser(), fld, val);
 			final SetFileQuota sqres = Dispatcher.execute(sq);
 			return sqres.getSucceeded();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Exception in setFileQuota: " + e.getMessage());
 		}
 		return false;
@@ -314,7 +329,8 @@ public class TaskQueueApiUtils {
 			final SetJobsQuota sq = new SetJobsQuota(commander.getUser(), fld, val);
 			final SetJobsQuota sqres = Dispatcher.execute(sq);
 			return sqres.getSucceeded();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Exception in setFileQuota: " + e.getMessage());
 		}
 		return false;
@@ -329,7 +345,8 @@ public class TaskQueueApiUtils {
 			final GetGroupMembers gm = new GetGroupMembers(commander.getUser(), group);
 			final GetGroupMembers gmres = Dispatcher.execute(gm);
 			return gmres.getMembers();
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Exception in setFileQuota: " + e.getMessage());
 		}
 		return null;
@@ -344,7 +361,8 @@ public class TaskQueueApiUtils {
 		try {
 			final GetMatchJob gmj = Dispatcher.execute(new GetMatchJob(commander.getUser(), matchRequest));
 			return gmj;
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could not get a match Job: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -360,7 +378,8 @@ public class TaskQueueApiUtils {
 		try {
 			final GetNumberWaitingJobs gmj = Dispatcher.execute(new GetNumberWaitingJobs(commander.getUser(), matchRequest));
 			return gmj;
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could not get number of matching jobs: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -379,7 +398,8 @@ public class TaskQueueApiUtils {
 		try {
 			final GetNumberFreeSlots gmj = Dispatcher.execute(new GetNumberFreeSlots(commander.getUser(), host, port, ceName, version));
 			return gmj;
-		} catch (final ServerException e) {
+		}
+		catch (final ServerException e) {
 			System.out.println("Could get not free slots: " + e.getMessage());
 			e.getCause().printStackTrace();
 		}
@@ -396,7 +416,8 @@ public class TaskQueueApiUtils {
 		try {
 			final ResubmitJob j = Dispatcher.execute(new ResubmitJob(commander.getUser(), queueId));
 			return j;
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.out.println("Could not resubmit the job  with id: [" + queueId + "]");
 			e.printStackTrace();
 		}

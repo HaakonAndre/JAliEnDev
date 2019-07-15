@@ -116,9 +116,14 @@ public class TempFileManager extends LRUMap<GUID, File> {
 			f = tempInstance.get(key);
 		}
 
-		if (f != null && f.exists() && f.isFile() && f.canRead()) {
-			lock(f);
-			return f;
+		try {
+			if (f != null && f.exists() && f.isFile() && f.canRead() && f.length() == key.size && IOUtils.getMD5(f).equals(key.md5)) {
+				lock(f);
+				return f;
+			}
+		}
+		catch (final IOException ioe) {
+			logger.log(Level.WARNING, "Error computing md5 checksum of " + f.getAbsolutePath(), ioe);
 		}
 
 		return null;
@@ -140,8 +145,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		try {
 			if (f != null && f.exists() && f.isFile() && f.canRead() && f.length() == key.size && IOUtils.getMD5(f).equalsIgnoreCase(key.md5))
 				return f;
-		} catch (@SuppressWarnings("unused")
-		final IOException e) {
+		}
+		catch (@SuppressWarnings("unused") final IOException e) {
 			// ignore
 		}
 
@@ -201,7 +206,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		if (logger.isLoggable(Level.FINEST))
 			try {
 				throw new IOException();
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				logger.log(Level.FINEST, f.getAbsolutePath() + " locked by", ioe);
 			}
 	}
@@ -222,7 +228,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 		if ((!removed && logger.isLoggable(Level.FINE)) || logger.isLoggable(Level.FINEST))
 			try {
 				throw new IOException();
-			} catch (final IOException ioe) {
+			}
+			catch (final IOException ioe) {
 				logger.log(Level.FINE, "Asked to release a file " + (removed ? "that was indeed locked: " : "that was not previously locked: ") + f.getAbsolutePath(), ioe);
 			}
 
@@ -294,7 +301,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 				try {
 					collected = gc();
-				} catch (final Throwable t) {
+				}
+				catch (final Throwable t) {
 					logger.log(Level.WARNING, "Exception collecting gc", t);
 				}
 
@@ -310,8 +318,8 @@ public class TempFileManager extends LRUMap<GUID, File> {
 
 				try {
 					sleep(sleepTime);
-				} catch (@SuppressWarnings("unused")
-				final InterruptedException e) {
+				}
+				catch (@SuppressWarnings("unused") final InterruptedException e) {
 					return;
 				}
 			}
