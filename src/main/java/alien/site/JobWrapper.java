@@ -21,8 +21,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import alien.api.TomcatServer;
 import alien.api.catalogue.CatalogueApiUtils;
+import alien.api.taskQueue.TaskQueueApiUtils;
 import alien.catalogue.FileSystemUtils;
 import alien.catalogue.GUID;
 import alien.catalogue.LFN;
@@ -576,6 +578,9 @@ public class JobWrapper implements Runnable {
 				uploadedAllOutFiles = false;
 			}
 		}
+		
+		TaskQueueApiUtils tq_api = new TaskQueueApiUtils(commander);
+		tq_api.addResultsJdl(jdl, queueId);
 		
 		if (!uploadedAllOutFiles) {
 			sendStatus(JobStatus.ERROR_SV); 

@@ -403,4 +403,22 @@ public class TaskQueueApiUtils {
 		return null;
 	}
 
+	/**
+	 * 
+	 * Submit resultsJdl for given queueId	
+	 * 
+	 * @param jdl
+	 * @param queueId
+	 * @return
+	 */
+	public AddResultsJDL addResultsJdl(JDL jdl, long queueId) {
+		try {
+			final AddResultsJDL arj = Dispatcher.execute(new AddResultsJDL(jdl, queueId));
+			return arj;
+		} catch (final Exception e) {
+			System.out.println("Could not add the results JDL for job : " + e.getMessage());
+			e.printStackTrace();
+		}
+		return null;
+	}
 }

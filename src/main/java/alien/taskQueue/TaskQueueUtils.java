@@ -3377,5 +3377,21 @@ public class TaskQueueUtils {
 			return db.getUpdateCount() != 0;
 		}
 	}
+	
+	public static boolean addResultsJdl(final JDL jdl, final Long queueId) {
+
+		logger.log(Level.INFO, "Going to add the following resultsJdl: " + jdl);
+
+		try (DBFunctions db = getQueueDB()) {
+			if (db == null)
+				return false;
+
+			if (!db.query("update QUEUEJDL set resultsJdl=('" + jdl.toString() + "') where queueId=?", false, queueId))
+				return false;
+
+			return true;
+		}
+
+	}
 
 }
