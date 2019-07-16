@@ -763,7 +763,7 @@ public class LFNUtils {
 			db.setReadOnly(true);
 			db.setQueryTimeout(30);
 
-			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND path LIKE '" + Format.escSQL(path) + "%' ORDER BY length(path) DESC;");
+			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND path LIKE ? ORDER BY length(path) DESC;", false, tag, path + "%");
 
 			while (db.moveNext())
 				ret.add(db.gets(1));
