@@ -765,7 +765,7 @@ public class LFNUtils {
 			db.setQueryTimeout(30);
 
 			if (includeParents)
-				db.query("SELECT tableName FROM TAG0 WHERE tagName=? AND ? LIKE concat(path,'%') ORDER BY length(path) desc, path desc LIMIT 1;", false, tag, path + "%");
+				db.query("SELECT tableName FROM TAG0 WHERE tagName=? AND ? LIKE concat(path,'%') ORDER BY length(path) desc, path desc LIMIT 1;", false, tag, path);
 			else
 				db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND path LIKE ?", false, tag, path + "%");
 
