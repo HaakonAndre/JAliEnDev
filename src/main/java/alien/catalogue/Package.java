@@ -190,7 +190,7 @@ public class Package implements Comparable<Package>, Serializable {
 			dbDeps.setQueryTimeout(60);
 
 			for (final String dir : dirs)
-				for (final String tableName : LFNUtils.getTagTableNames(dir, "PackageDef")) {
+				for (final String tableName : LFNUtils.getTagTableNames(dir, "PackageDef", true)) {
 					dbDeps.query("SELECT dependencies FROM " + tableName + " WHERE file='" + Format.escSQL(dir) + "';");
 
 					while (dbDeps.moveNext()) {
