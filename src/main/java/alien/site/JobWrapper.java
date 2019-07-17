@@ -216,9 +216,8 @@ public class JobWrapper implements Runnable {
 			if (execExitCode != 0){
 				logger.log(Level.SEVERE, "Failed to run payload");
 				commander.q_api.putJobLog(queueId, "trace", "Failed to run payload. Exit code: " + execExitCode);
-				jobStatus = JobStatus.ERROR_E; //Set, but don't send just yet (in case of upload).
 				if (jdl.gets("OutputErrorE") != null)
-					return uploadOutputFiles() ? execExitCode : -1;
+					return uploadOutputFiles(true) ? execExitCode : -1;
 				else {
 					sendStatus(jobStatus);
 					return execExitCode;
@@ -238,7 +237,7 @@ public class JobWrapper implements Runnable {
 				return valExitCode;
 			}
 
-			if (!uploadOutputFiles()){
+			if (!uploadOutputFiles(false)){
 				logger.log(Level.SEVERE, "Failed to upload output files");
 				return -1;
 			}
@@ -493,7 +492,7 @@ public class JobWrapper implements Runnable {
 		return envmap;
 	}
 
-	private boolean uploadOutputFiles() {
+	private boolean uploadOutputFiles(boolean ERROR_E) {
 		boolean uploadedAllOutFiles = true;
 		boolean uploadedNotAllCopies = false;
 
@@ -503,7 +502,7 @@ public class JobWrapper implements Runnable {
 		final String outputDir = getJobOutputDir();
 		
 		String tag = "Output";
-		if (jobStatus == JobStatus.ERROR_E)
+		if (ERROR_E)
 			tag = "OutputErrorE";
 		
 		sendStatus(JobStatus.SAVING);
@@ -525,30 +524,13 @@ public class JobWrapper implements Runnable {
 
 		for (final OutputEntry entry : filesTable.getEntries()) {
 			File localFile;
-			ArrayList<String> filesIncluded = null;
 			try {
 				localFile = new File(currentDir.getAbsolutePath() + "/" + entry.getName());
 				logger.log(Level.INFO, "Processing output file: " + localFile);
 				
-				if (entry.isArchive()) {
-					filesIncluded = entry.createZip(currentDir.getAbsolutePath());
-					
-					//TODO: Move everything related to resultsJDL to a separate method(?)
-					jdl.set("OutputArchive", entry.getName());
-					jdl.set("OutputArchiveHash", IOUtils.getMD5(localFile));
-					
-					jdl.set("OutputFiles", String.join(", ", filesIncluded));
-					
-					String FileMD5s = entry.getMD5sIncluded().values().stream().map(Object::toString).collect(Collectors.joining(", "));
-					jdl.set("OutputFilesHashes", String.join(", ", FileMD5s));
-					
-					String FileSizes = entry.getSizesIncluded().values().stream().map(Object::toString).collect(Collectors.joining(", "));
-					jdl.set("OutPutFilesSizes", String.join(", ", FileSizes));
-				} else {
-					jdl.set("OutputFiles", entry.getName());
-					jdl.set("OutputFileSizes", localFile.length());
-				}
-
+				if (entry.isArchive())
+					entry.createZip(currentDir.getAbsolutePath());
+			
 				if (localFile.exists() && localFile.isFile() && localFile.canRead() && localFile.length() > 0) {
 					// Use upload instead
 					commander.q_api.putJobLog(queueId, "trace", "Uploading: " + entry.getName());
@@ -558,7 +540,7 @@ public class JobWrapper implements Runnable {
 							",-j," + String.valueOf(queueId) + "";
 					
 					//Don't commit in case of ERROR_E
-					if (tag.equals("OutputErrorE"))
+					if (ERROR_E)
 						args += ",-nc";
 
 					final ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -580,7 +562,7 @@ public class JobWrapper implements Runnable {
 							break;
 						}
 
-					if (filesIncluded != null && !tag.equals("OutputErrorE")) {
+					if (!ERROR_E) {
 						// Register lfn links to archive
 						CatalogueApiUtils.registerEntry(entry, outputDir + "/", UserFactory.getByUsername(username));				
 					}
@@ -596,8 +578,7 @@ public class JobWrapper implements Runnable {
 			}
 		}
 		
-		TaskQueueApiUtils tq_api = new TaskQueueApiUtils(commander);
-		tq_api.addResultsJdl(jdl, queueId);
+		createAndAddResultsJDL(filesTable);
 		
 		if (!uploadedAllOutFiles) {
 			sendStatus(JobStatus.ERROR_SV); 
@@ -605,7 +586,7 @@ public class JobWrapper implements Runnable {
 		}//else 
 			//sendStatus(JobStatus.SAVED); TODO: To be put back later if still needed
 
-		if (!tag.equals("OutputErrorE")) {
+		if (!ERROR_E) {
 			if (uploadedNotAllCopies)
 				sendStatus(JobStatus.DONE_WARN);
 			else
@@ -758,5 +739,48 @@ public class JobWrapper implements Runnable {
 		}
 		logger.log(Level.INFO, ".alienValidation.trace does not exist.");
 		return null;
+	}
+	
+	private void createAndAddResultsJDL(ParsedOutput filesTable) {
+		
+		ArrayList<String> jdlOutput = new ArrayList<String>();
+		for(final OutputEntry entry : filesTable.getEntries()){
+			
+			String entryString = entry.getName();
+			File entryFile = new File(currentDir.getAbsolutePath() + "/" + entryString);
+			
+			entryString += ";" + String.valueOf(entryFile.length());
+			
+			try {
+				entryString += ";" + IOUtils.getMD5(entryFile);
+			} catch (IOException e) {
+				logger.log(Level.WARNING, "Could not generate MD5 for a file: " + e);
+			}
+			
+			jdlOutput.add(entryString);
+			
+			//Also add the archive files to outputlist
+			if (entry.isArchive()) {
+				
+				ArrayList<String> archiveFiles = entry.getFilesIncluded();
+				HashMap<String, Long> archiveSizes = entry.getSizesIncluded();
+				HashMap<String, String> archiveMd5s = entry.getMD5sIncluded();
+				for(final String archiveEntry : archiveFiles) {
+					
+					String archiveEntryString = archiveEntry;
+					
+					archiveEntryString += ";" + archiveSizes.get(archiveEntry);
+					archiveEntryString += ";" + archiveMd5s.get(archiveEntry);
+					archiveEntryString += ";" + entry.getName(); //name of its archive
+					
+					jdlOutput.add(archiveEntryString);
+				}
+			}
+			
+		}
+		jdl.set("OutputFiles", "\n" + String.join("\n", jdlOutput));
+		
+		TaskQueueApiUtils tq_api = new TaskQueueApiUtils(commander);
+		tq_api.addResultsJdl(jdl, queueId);
 	}
 }
