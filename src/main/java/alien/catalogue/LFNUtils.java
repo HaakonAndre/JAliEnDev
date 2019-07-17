@@ -752,18 +752,22 @@ public class LFNUtils {
 	}
 
 	/**
-	 * @param path
-	 * @param tag
+	 * @param path starting path
+	 * @param tag tag to search for
+	 * @param includeParents whether to include the parent folders in the search (for package dependencies for example) or not (for OCDB searches from a base path)
 	 * @return metadata table where this tag can be found for this path, or <code>null</code> if there is no such entry
 	 */
-	public static Set<String> getTagTableNames(final String path, final String tag) {
+	public static Set<String> getTagTableNames(final String path, final String tag, final boolean includeParents) {
 		final Set<String> ret = new HashSet<>();
 
 		try (DBFunctions db = ConfigUtils.getDB("alice_data")) {
 			db.setReadOnly(true);
 			db.setQueryTimeout(30);
 
-			db.query("SELECT distinct tableName FROM TAG0 WHERE tagName='" + Format.escSQL(tag) + "' AND path LIKE '" + Format.escSQL(path) + "%' ORDER BY length(path) DESC;");
+			if (includeParents)
+				db.query("SELECT tableName FROM TAG0 WHERE tagName=? AND ? LIKE concat(path,'%') ORDER BY length(path) desc, path desc;", false, tag, path);
+			else
+				db.query("SELECT distinct tableName FROM TAG0 WHERE tagName=? AND path LIKE ?", false, tag, path + "%");
 
 			while (db.moveNext())
 				ret.add(db.gets(1));
@@ -795,7 +799,7 @@ public class LFNUtils {
 
 			final Map<String, LFN> retMap = new HashMap<>();
 
-			for (final String tableName : getTagTableNames(path, tag)) {
+			for (final String tableName : getTagTableNames(path, tag, false)) {
 				final String q = "SELECT file FROM " + Format.escSQL(tableName) + " "
 						+ Format.escSQL(tag) + " WHERE file LIKE '" + Format.escSQL(path + "%" + pattern + "%") + "' AND "
 						+ Format.escSQL(query.replace(":", ".") + " order by dir_number, version desc, file desc;");

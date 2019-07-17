@@ -18,7 +18,11 @@ public enum TokenCertificateType {
 	/**
 	 * A generic Job Agent identity that will be able to then request an actual job and run it
 	 */
-	JOB_AGENT_TOKEN(2);
+	JOB_AGENT_TOKEN(2),
+	/**
+	 * Trusted host (VoBox)
+	 */
+	HOST(365);
 
 	private int maxValidityDays;
 

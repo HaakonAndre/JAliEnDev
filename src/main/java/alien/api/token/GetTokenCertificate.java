@@ -52,7 +52,8 @@ public class GetTokenCertificate extends Request {
 
 			try {
 				rootCertTemp = CA.loadRootCertificate(caFile, caPassword.toCharArray(), caAlias);
-			} catch (final Throwable t) {
+			}
+			catch (final Throwable t) {
 				System.err.println("Exception loading root CA certificate from " + caFile + " (alias " + caAlias + "), password '" + caPassword + "'");
 				System.err.println(t.getMessage());
 				t.printStackTrace();
@@ -139,35 +140,44 @@ public class GetTokenCertificate extends Request {
 		final String requester = getEffectiveRequester().getDefaultUser();
 
 		switch (certificateType) {
-		case USER_CERTIFICATE:
-			if (getEffectiveRequester().isJob() || getEffectiveRequester().isJobAgent())
-				throw new IllegalArgumentException("You can't request a User token as JobAgent or Job");
+			case USER_CERTIFICATE:
+				if (getEffectiveRequester().isJob() || getEffectiveRequester().isJobAgent())
+					throw new IllegalArgumentException("You can't request a User token as JobAgent or Job");
 
-			final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
+				final String requested = getEffectiveRequester().canBecome(requestedUser) ? requestedUser : requester;
 
-			builder = builder.setCn("Users").setCn(requester).setOu(requested);
-			break;
-		case JOB_TOKEN:
-			if (!getEffectiveRequester().isJobAgent())
-				throw new IllegalArgumentException("Only a JobAgent can ask for a Job token");
+				builder = builder.setCn("Users").setCn(requester).setOu(requested);
+				break;
+			case JOB_TOKEN:
+				if (!getEffectiveRequester().isJobAgent())
+					throw new IllegalArgumentException("Only a JobAgent can ask for a Job token");
 
-			if (extension == null || extension.length() == 0)
-				throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
+				if (extension == null || extension.length() == 0)
+					throw new IllegalArgumentException("Job token requires the job ID to be passed as certificate extension");
 
-			builder = builder.setCn("Jobs").setCn(requestedUser).setOu(requestedUser);
-			break;
-		case JOB_AGENT_TOKEN:
-			if (!getEffectiveRequester().canBecome("vobox"))
-				throw new IllegalArgumentException("You don't have permissions to ask for a JobAgent token");
+				builder = builder.setCn("Jobs").setCn(requestedUser).setOu(requestedUser);
+				break;
+			case JOB_AGENT_TOKEN:
+				if (!getEffectiveRequester().canBecome("vobox"))
+					throw new IllegalArgumentException("You don't have permissions to ask for a JobAgent token");
 
-			builder = builder.setCn("JobAgent");
-			break;
-		default:
-			throw new IllegalArgumentException("Sorry, what?");
+				builder = builder.setCn("JobAgent");
+				break;
+			case HOST:
+				if (!getEffectiveRequester().canBecome("admin"))
+					throw new IllegalArgumentException("Only admin can do that");
+
+				builder = builder.setOu("ALICE");
+				break;
+			default:
+				throw new IllegalArgumentException("Sorry, what?");
 		}
 
 		if (extension != null && extension.length() > 0)
-			builder = builder.setOu(extension);
+			if (certificateType == TokenCertificateType.HOST)
+				builder = builder.setCn(extension);
+			else
+				builder = builder.setOu(extension);
 
 		final DistinguishedName userDN = builder.build();
 
@@ -256,7 +266,8 @@ public class GetTokenCertificate extends Request {
 		final StringWriter sw = new StringWriter(2000);
 		try (JcaPEMWriter writer = new JcaPEMWriter(sw)) {
 			writer.writeObject(securityObject);
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			e.printStackTrace();
 		}
 		return sw.toString();

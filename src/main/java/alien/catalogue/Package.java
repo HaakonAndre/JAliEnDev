@@ -190,8 +190,8 @@ public class Package implements Comparable<Package>, Serializable {
 			dbDeps.setQueryTimeout(60);
 
 			for (final String dir : dirs)
-				for (final String tableName : LFNUtils.getTagTableNames(dir, "PackageDef")) {
-					dbDeps.query("SELECT dependencies FROM " + tableName + " WHERE file='" + Format.escSQL(dir) + "';");
+				for (final String tableName : LFNUtils.getTagTableNames(dir, "PackageDef", true)) {
+					dbDeps.query("SELECT dependencies FROM " + tableName + " WHERE ? like concat(file,'%')", false, dir);
 
 					while (dbDeps.moveNext()) {
 						final StringTokenizer st = new StringTokenizer(dbDeps.gets(1), ", ");
