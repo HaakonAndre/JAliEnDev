@@ -1,7 +1,6 @@
 package alien.test.cassandra;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
@@ -93,7 +92,7 @@ public class CassandraMonitor {
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_index,name=TotalDiskSpaceUsed",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=lfn_metadata,name=TotalDiskSpaceUsed",
 			"org.apache.cassandra.metrics:type=ColumnFamily,keyspace=catalogue,scope=se_lookup,name=TotalDiskSpaceUsed" };
-	
+
 	/**
 	 * Attributes to read
 	 */
@@ -135,8 +134,8 @@ public class CassandraMonitor {
 
 		// set serviceUrl
 		if (args.length >= 2) {
-			String jmxhost = args[0];
-			String jmxport = args[1];
+			final String jmxhost = args[0];
+			final String jmxport = args[1];
 			serviceUrl = "service:jmx:rmi://" + jmxhost + "/jndi/rmi://" + jmxhost + ":" + jmxport + "/jmxrmi";
 		}
 		else
@@ -144,7 +143,7 @@ public class CassandraMonitor {
 
 		logger.info("Service URL: " + serviceUrl);
 
-		String[] credentials = { user, pass };
+		final String[] credentials = { user, pass };
 		envpass.put(JMXConnector.CREDENTIALS, credentials);
 
 		try {
@@ -154,10 +153,11 @@ public class CassandraMonitor {
 				hostName = args[2];
 			}
 			else
-				hostName = InetAddress.getLocalHost().getCanonicalHostName();
+				hostName = ConfigUtils.getLocalHostname();
 
 			url = new JMXServiceURL(serviceUrl);
-		} catch (final Exception e1) {
+		}
+		catch (final Exception e1) {
 			System.err.println("Exception creating JMXServiceURL or JMXConnector: " + e1);
 			logger.log(Level.SEVERE, "Exception creating JMXServiceURL: " + e1);
 			System.exit(-1);
@@ -215,11 +215,13 @@ public class CassandraMonitor {
 
 						apmon.sendParameters("Cassandra_Nodes", hostName, paramNames.size(), paramNames, paramValues);
 					}
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					logger.log(Level.SEVERE, "Exception sending parameters: " + e);
 				}
 
-			} catch (AttributeNotFoundException | InstanceNotFoundException | MalformedObjectNameException | MBeanException | ReflectionException | IOException e) {
+			}
+			catch (AttributeNotFoundException | InstanceNotFoundException | MalformedObjectNameException | MBeanException | ReflectionException | IOException e) {
 				logger.log(Level.SEVERE, "Exception getting attribute: " + e);
 			}
 
@@ -227,7 +229,8 @@ public class CassandraMonitor {
 
 			try {
 				Thread.sleep(60000);
-			} catch (final InterruptedException e2) {
+			}
+			catch (final InterruptedException e2) {
 				logger.log(Level.SEVERE, "Exception sleeping: " + e2);
 			}
 		}
@@ -263,7 +266,8 @@ public class CassandraMonitor {
 			// e.printStackTrace();
 			// }
 
-		} finally {
+		}
+		finally {
 			if (jmxc != null)
 				jmxc.close();
 		}

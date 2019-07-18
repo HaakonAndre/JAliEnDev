@@ -1573,7 +1573,7 @@ public class TaskQueueUtils {
 		if (addr != null)
 			clientAddress = Utils.getHostName(addr.getHostAddress());
 		else
-			clientAddress = MonitorFactory.getSelfHostname();
+			clientAddress = ConfigUtils.getLocalHostname();
 
 		try (DBFunctions db = getQueueDB()) {
 			if (db == null)

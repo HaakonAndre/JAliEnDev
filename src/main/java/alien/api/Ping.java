@@ -1,9 +1,9 @@
 package alien.api;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import alien.config.ConfigUtils;
 
 /**
  * @author costing
@@ -22,13 +22,7 @@ public class Ping extends Request {
 	public void run() {
 		serverInfo = new LinkedHashMap<>();
 
-		try {
-			serverInfo.put("hostname", InetAddress.getLocalHost().getCanonicalHostName());
-		}
-		catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		serverInfo.put("hostname", ConfigUtils.getLocalHostname());
 	}
 
 	/**
