@@ -620,44 +620,44 @@ public class JobAgent implements MonitoringObject, Runnable {
 		final Thread jobWrapperListener = new Thread(createJobWrapperListener(p, stdout, stdin));
 		jobWrapperListener.start();
 
-		boolean processNotFinished = true;
 		int code = 0;
 
 		logger.log(Level.INFO, "About to enter monitor loop. Is the JobWrapper process alive?: " + p.isAlive());
 
 		int monitor_loops = 0;
 		try {
-			while (processNotFinished)
-				try {
-					Thread.sleep(5 * 1000); // TODO: Change to 60
-					code = p.exitValue();
-					processNotFinished = false;
-					logger.log(Level.INFO, "JobWrapper has finished execution. Exit code: " + code);
-					if(code!=0)
-						logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log " + " for more details");
-				} catch (final IllegalThreadStateException e) {
-					logger.log(Level.INFO, "Waiting for the JobWrapper process to finish");
+			while (p.isAlive()) {
+				logger.log(Level.INFO, "Waiting for the JobWrapper process to finish");
 
-					// process hasn't terminated
-					if (monitorJob) {
-						monitor_loops++;
-						final String error = checkProcessResources();
-						if (error != null) {
-							killProcess.run();
-							logger.log(Level.SEVERE, "Process overusing resources: " + error);
-							return -2;
-						}
-						if (monitor_loops == 10) {
-							monitor_loops = 0;
-							sendProcessResources();
-						}
+				// process hasn't terminated
+				if (monitorJob) {
+					monitor_loops++;
+					final String error = checkProcessResources();
+					if (error != null) {
+						killProcess.run();
+						logger.log(Level.SEVERE, "Process overusing resources: " + error);
+						return -2;
+					}
+					if (monitor_loops == 10) {
+						monitor_loops = 0;
+						sendProcessResources();
 					}
 				}
+				try {
+					Thread.sleep(5 * 1000);
+				} catch (final InterruptedException ie) {
+					logger.log(Level.WARNING, "Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
+					return -2;					
+				}
+			}
+			code = p.exitValue();
+
+			logger.log(Level.INFO, "JobWrapper has finished execution. Exit code: " + code);
+			if(code!=0)
+				logger.log(Level.WARNING, "Error encountered: see the JobWrapper logs in: " + env.getOrDefault("TMPDIR", "/tmp") + "/jalien-jobwrapper.log " + " for more details");
+
 			return code;
-		} catch (final InterruptedException ie) {
-			logger.log(Level.WARNING, "Interrupted while waiting for the JobWrapper to finish execution: " + ie.getMessage());
-			return -2;
-		} finally {
+		}  finally {
 			try{
 				t.cancel();
 				stdinObj.close();
@@ -697,6 +697,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 			final HashMap<Long, Double> diskinfo = mj.readJobDiskUsage();
 
 			if (jobinfo == null || diskinfo == null) {
+								
 				logger.log(Level.WARNING, "JobInfo or DiskInfo monitor null");
 				//      		return "Not available"; TODO: Adjust and put back again
 			}
