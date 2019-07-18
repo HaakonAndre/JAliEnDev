@@ -74,7 +74,8 @@ public class TransferBroker {
 		if (resultSet != null) {
 			try {
 				resultSet.close();
-			} catch (@SuppressWarnings("unused") final Throwable t) {
+			}
+			catch (@SuppressWarnings("unused") final Throwable t) {
 				// ignore
 			}
 
@@ -84,7 +85,8 @@ public class TransferBroker {
 		if (stat != null) {
 			try {
 				stat.close();
-			} catch (@SuppressWarnings("unused") final Throwable t) {
+			}
+			catch (@SuppressWarnings("unused") final Throwable t) {
 				// ignore
 			}
 
@@ -114,7 +116,8 @@ public class TransferBroker {
 			}
 
 			return true;
-		} catch (final SQLException e) {
+		}
+		catch (final SQLException e) {
 			logger.log(Level.WARNING, "Exception executing the query", e);
 
 			return false;
@@ -260,7 +263,8 @@ public class TransferBroker {
 						executeQuery(dbc, "insert into active_transfers (last_active, se_name, transfer_id, transfer_agent_id, pid, host) VALUES (" + System.currentTimeMillis() / 1000 + ", " + "'"
 								+ Format.escSQL(targetSE) + "', " + transferId + ", " + agent.getTransferAgentID() + ", " + agent.getPID() + ", '" + Format.escSQL(agent.getHostName()) + "');");
 
-					} finally {
+					}
+					finally {
 						executeQuery(dbc, "unlock tables;");
 						executeClose();
 
@@ -268,7 +272,8 @@ public class TransferBroker {
 					}
 
 					break;
-				} catch (final Exception e) {
+				}
+				catch (final Exception e) {
 					logger.log(Level.WARNING, "Exception fetching data from the query", e);
 					// ignore
 				}
@@ -510,39 +515,39 @@ public class TransferBroker {
 
 	private static final String getTransferStatus(final int exitCode) {
 		switch (exitCode) {
-		case Transfer.OK:
-			return "DONE";
-		case Transfer.FAILED_SOURCE:
-			return "FAILED";
-		case Transfer.FAILED_TARGET:
-			return "FAILED";
-		case Transfer.FAILED_UNKNOWN:
-			return "FAILED";
-		case Transfer.FAILED_SYSTEM:
-			return "KILLED";
-		case Transfer.DELAYED:
-			return "WAITING";
-		default:
-			return "TRANSFERRING";
+			case Transfer.OK:
+				return "DONE";
+			case Transfer.FAILED_SOURCE:
+				return "FAILED";
+			case Transfer.FAILED_TARGET:
+				return "FAILED";
+			case Transfer.FAILED_UNKNOWN:
+				return "FAILED";
+			case Transfer.FAILED_SYSTEM:
+				return "KILLED";
+			case Transfer.DELAYED:
+				return "WAITING";
+			default:
+				return "TRANSFERRING";
 		}
 	}
 
 	private static final int getAliEnTransferStatus(final int exitCode) {
 		switch (exitCode) {
-		case Transfer.OK:
-			return 7;
-		case Transfer.FAILED_SOURCE:
-			return -1;
-		case Transfer.FAILED_TARGET:
-			return -1;
-		case Transfer.FAILED_UNKNOWN:
-			return -1;
-		case Transfer.FAILED_SYSTEM:
-			return -2;
-		case Transfer.DELAYED:
-			return -3;
-		default:
-			return 5; // transferring
+			case Transfer.OK:
+				return 7;
+			case Transfer.FAILED_SOURCE:
+				return -1;
+			case Transfer.FAILED_TARGET:
+				return -1;
+			case Transfer.FAILED_UNKNOWN:
+				return -1;
+			case Transfer.FAILED_SYSTEM:
+				return -2;
+			case Transfer.DELAYED:
+				return -3;
+			default:
+				return 5; // transferring
 		}
 	}
 
@@ -575,7 +580,8 @@ public class TransferBroker {
 							+ ", reason='TransferAgent no longer active' WHERE status='TRANSFERRING' AND transferId NOT IN (SELECT transfer_id FROM active_transfers);");
 
 					executeQuery(dbc, "UPDATE TRANSFERS_DIRECT SET status='WAITING', finished=0 WHERE (status='INSERTING') OR ((status='FAILED' OR status='KILLED') AND (attempts>=0));");
-				} finally {
+				}
+				finally {
 					executeQuery(dbc, "commit;");
 					executeQuery(dbc, "unlock tables;");
 					executeQuery(dbc, "SET autocommit = 1;");
@@ -585,7 +591,8 @@ public class TransferBroker {
 					dbc.free();
 				}
 			}
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception cleaning up", t);
 		}
 
@@ -631,15 +638,18 @@ public class TransferBroker {
 
 				if (executeQuery(dbc, "INSERT IGNORE INTO " + archiveTableName + " SELECT * FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<" + limitReceived + ");"))
 					executeQuery(dbc, "DELETE FROM TRANSFERS_DIRECT WHERE (finished<" + limit + " AND finished>0) OR (received<" + limitReceived + ");");
-			} finally {
+			}
+			finally {
 				executeQuery(dbc, "unlock tables;");
 				executeClose();
 
 				dbc.free();
 			}
-		} catch (final Throwable t) {
+		}
+		catch (final Throwable t) {
 			logger.log(Level.SEVERE, "Exception archiving", t);
-		} finally {
+		}
+		finally {
 			lastArchived = System.currentTimeMillis();
 		}
 	}
@@ -666,7 +676,7 @@ public class TransferBroker {
 			db.setReadOnly(true);
 
 			db.query("SELECT transfer_agent_id, pid, host FROM active_transfers WHERE transfer_id=? AND (transfer_agent_id!=? OR pid!=? OR host!=?);", false, Long.valueOf(t.getTransferId()),
-					ta.getTransferAgentID(), Integer.valueOf(MonitorFactory.getSelfProcessID()), MonitorFactory.getSelfHostname());
+					ta.getTransferAgentID(), Integer.valueOf(MonitorFactory.getSelfProcessID()), ConfigUtils.getLocalHostname());
 
 			db.setReadOnly(false);
 
@@ -701,7 +711,7 @@ public class TransferBroker {
 			values.put("transfer_id", Long.valueOf(t.getTransferId()));
 			values.put("transfer_agent_id", ta.getTransferAgentID());
 			values.put("pid", Integer.valueOf(MonitorFactory.getSelfProcessID()));
-			values.put("host", MonitorFactory.getSelfHostname());
+			values.put("host", ConfigUtils.getLocalHostname());
 
 			if (t.lastTriedSE > 0) {
 				final SE se = SEUtils.getSE(t.lastTriedSE);
@@ -738,7 +748,8 @@ public class TransferBroker {
 				if (db.getUpdateCount() > 0)
 					logger.log(Level.INFO, "Re-stated " + t.getTransferId() + " from " + prevStatus + " to TRANSFERRING");
 			}
-		} catch (final Throwable ex) {
+		}
+		catch (final Throwable ex) {
 			logger.log(Level.SEVERE, "Exception updating status", ex);
 		}
 
@@ -791,7 +802,8 @@ public class TransferBroker {
 				targets.add(ConfigUtils.getConfig().gets("CS_ApMon", "aliendb4.cern.ch"));
 
 				apmon = new ApMon(targets);
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				logger.log(Level.WARNING, "Could not initialize apmon", e);
 				return;
 			}
@@ -857,12 +869,15 @@ public class TransferBroker {
 
 			try {
 				apmon.sendParameters(cluster, String.valueOf(t.getTransferId()), p.size(), p, v);
-			} catch (final Exception e) {
+			}
+			catch (final Exception e) {
 				logger.log(Level.WARNING, "Could not send apmon message: " + p + " -> " + v, e);
-			} finally {
+			}
+			finally {
 				apmon.stopIt();
 			}
-		} catch (final Throwable ex) {
+		}
+		catch (final Throwable ex) {
 			logger.log(Level.WARNING, "Exception reporting the monitoring", ex);
 		}
 	}
