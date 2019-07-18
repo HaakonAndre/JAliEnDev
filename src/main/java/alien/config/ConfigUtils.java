@@ -11,6 +11,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -30,14 +32,13 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
+import alien.user.LDAPHelper;
 import lazyj.DBFunctions;
 import lazyj.ExtProperties;
+import lazyj.Utils;
 import lazyj.cache.ExpirationCache;
 import lazyj.commands.SystemCommand;
-
 import lia.Monitor.monitor.AppConfig;
-
-import alien.user.LDAPHelper;
 
 /**
  * @author costing
@@ -58,7 +59,7 @@ public class ConfigUtils {
 
 	private static void configureLogging() {
 		// now let's configure the logging, if allowed to
-		ExtProperties fileConfig = otherConfigFiles.get("config");
+		final ExtProperties fileConfig = otherConfigFiles.get("config");
 		if (fileConfig.getb("jalien.configure.logging", true) && otherConfigFiles.containsKey("logging")) {
 			logging = new LoggingConfigurator(otherConfigFiles.get("logging"));
 
@@ -112,12 +113,12 @@ public class ConfigUtils {
 	}
 
 	private static ConfigManager getDefaultConfigManager() {
-		ConfigManager manager = new ConfigManager();
+		final ConfigManager manager = new ConfigManager();
 		manager.registerPrimary(new BuiltinConfiguration());
 		manager.registerPrimary(new ConfigurationFolders(manager.getConfiguration()));
 		manager.registerPrimary(new SystemConfiguration());
 		manager.registerPrimary(new MLConfigurationSource());
-		boolean isCentralService = detectDirectDBConnection(manager.getConfiguration());
+		final boolean isCentralService = detectDirectDBConnection(manager.getConfiguration());
 		manager.registerFallback(new DBConfigurationSource(manager.getConfiguration(), isCentralService));
 		return manager;
 	}
@@ -132,7 +133,7 @@ public class ConfigUtils {
 	 *
 	 * @param m ConfigManager to be used for initialization.
 	 */
-	public static void init(ConfigManager m) {
+	public static void init(final ConfigManager m) {
 		cfgManager = m;
 		otherConfigFiles = cfgManager.getConfiguration();
 		hasDirectDBConnection = detectDirectDBConnection(otherConfigFiles);
@@ -387,25 +388,133 @@ public class ConfigUtils {
 		return getConfigFromLdap(false);
 	}
 
+	private static String resolvedLocalHostname = null;
+
+	/**
+	 * Get the current machine's fqdn. Default is to take it from InetAddress.getLocalHost(), but can be overridden by setting
+	 * the <i>hostname</i> configuration key (in config.properties, environment, or JVM runtime parameters)
+	 *
+	 * @return the local hostname
+	 */
+	public static String getLocalHostname() {
+		if (resolvedLocalHostname != null)
+			return resolvedLocalHostname;
+
+		String hostName = getConfig().gets("hostname", null);
+
+		if (hostName == null || hostName.length() == 0 || !hostName.contains(".")) {
+			try {
+				hostName = InetAddress.getLocalHost().getCanonicalHostName();
+			}
+			catch (final UnknownHostException e) {
+				logger.log(Level.SEVERE, "Error: couldn't get hostname", e);
+				return null;
+			}
+		}
+
+		if (hostName == null || hostName.length() == 0 || !hostName.contains(".")) {
+			final Set<String> hostNameCandidates = new HashSet<>();
+
+			try {
+				final Enumeration<NetworkInterface> cards = NetworkInterface.getNetworkInterfaces();
+
+				while (cards.hasMoreElements()) {
+					final NetworkInterface nic = cards.nextElement();
+
+					for (final InterfaceAddress iface : nic.getInterfaceAddresses()) {
+						final InetAddress addr = iface.getAddress();
+
+						if (!addr.isAnyLocalAddress() && !addr.isLinkLocalAddress() && !addr.isLoopbackAddress() && !addr.isMulticastAddress()) {
+							final String someHostName = addr.getCanonicalHostName();
+
+							if (!addr.getHostAddress().equals(someHostName))
+								hostNameCandidates.add(someHostName.toLowerCase());
+						}
+					}
+				}
+			}
+			catch (final Throwable t) {
+				System.err.println(t.getMessage());
+			}
+
+			if (hostNameCandidates.size() > 1) {
+				// try to connect outside and see if any of the local addresses is used
+				final String externalAddress = getExternalVisibleAddress(true);
+
+				if (hostNameCandidates.contains(externalAddress))
+					// great, one matches exactly!
+					hostName = externalAddress;
+				else
+					// no good idea on which one to choose, pick one of them ...
+					hostName = hostNameCandidates.iterator().next();
+			}
+			else
+				if (hostNameCandidates.size() == 1)
+					hostName = hostNameCandidates.iterator().next();
+		}
+
+		if (hostName == null || hostName.length() == 0)
+			return null;
+
+		hostName = hostName.replace("/.$/", "");
+		hostName = hostName.replace("dyndns.cern.ch", "cern.ch");
+
+		logger.log(Level.INFO, "Local hostname resolved as " + hostName);
+
+		resolvedLocalHostname = hostName;
+
+		return hostName;
+	}
+
+	/**
+	 * Connect to an external service and see which address is visible
+	 *
+	 * @param hostname <code>true</code> to return the FQDN (if known), or <code>false</code> to return the IP
+	 * @return the IP or FQDN (if known)
+	 */
+	public static String getExternalVisibleAddress(final boolean hostname) {
+		try {
+			final String content = Utils.download("http://alimonitor.cern.ch/services/ip.jsp", null);
+
+			final String key = hostname ? "FQDN:" : "IP:";
+
+			final int idx = content.indexOf(key);
+
+			if (idx >= 0) {
+				int idxTo = content.indexOf('\n', idx);
+
+				if (idxTo < 0)
+					idxTo = content.length();
+
+				return content.substring(idx + key.length(), idxTo).toLowerCase();
+			}
+		}
+		catch (@SuppressWarnings("unused") final IOException ioe) {
+			// ignore
+		}
+
+		return null;
+	}
+
 	/**
 	 * @param checkContent
 	 * @return global config map
 	 */
 	public static HashMap<String, Object> getConfigFromLdap(final boolean checkContent) {
-		final HashMap<String, Object> configuration = new HashMap<>();
 		// Get hostname and domain
-		String hostName = "";
-		String domain = "";
-		try {
-			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-			hostName = hostName.replace("/.$/", "");
-			hostName = hostName.replace("dyndns.cern.ch", "cern.ch");
-			domain = hostName.substring(hostName.indexOf(".") + 1, hostName.length());
-		}
-		catch (final UnknownHostException e) {
-			logger.severe("Error: couldn't get hostname: " + e.toString());
-			return null;
-		}
+
+		return getConfigFromLdap(checkContent, getLocalHostname());
+	}
+
+	/**
+	 * @param checkContent
+	 * @param hostName
+	 * @return LDAP configuration, for a particular hostname
+	 */
+	public static HashMap<String, Object> getConfigFromLdap(final boolean checkContent, final String hostName) {
+		final String domain = hostName.substring(hostName.indexOf(".") + 1, hostName.length());
+
+		final HashMap<String, Object> configuration = new HashMap<>();
 
 		final HashMap<String, Object> voConfig = LDAPHelper.getVOConfig();
 		if (voConfig == null || voConfig.size() == 0)
@@ -521,6 +630,8 @@ public class ConfigUtils {
 	public static void main(final String[] args) {
 		System.out.println("Has direct db connection: " + hasDirectDBConnection);
 
+		System.out.println("Local hostname resolved as: " + getLocalHostname());
+
 		for (final Map.Entry<String, ExtProperties> entry : otherConfigFiles.entrySet())
 			dumpConfiguration(entry.getKey(), entry.getValue());
 	}
@@ -543,7 +654,7 @@ public class ConfigUtils {
 
 	/**
 	 * Get the closest site mapped to current location of the client.
-	 * 
+	 *
 	 * @return the close site (or where the job runs), as pointed by the env variable <code>ALIEN_SITE</code>, or, if not defined, the configuration key <code>alice_close_site</code>
 	 */
 	public static String getCloseSite() {
