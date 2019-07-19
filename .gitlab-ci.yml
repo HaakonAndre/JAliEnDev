@@ -3,7 +3,7 @@ stages:
   - e2e
 
 unit-test:
-    image: java:8
+    image: openjdk:12
     script: ./gradlew test
     stage: unit
     artifacts:
