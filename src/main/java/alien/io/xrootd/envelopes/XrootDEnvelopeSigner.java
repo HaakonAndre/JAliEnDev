@@ -101,19 +101,6 @@ public class XrootDEnvelopeSigner {
 		SEPubKey = sePubKey;
 	}
 
-	private static String localHostName = null;
-
-	private static final String getLocalHostName() {
-		if (localHostName == null)
-			try {
-				localHostName = java.net.InetAddress.getLocalHost().getHostName();
-			} catch (@SuppressWarnings("unused") final Exception e) {
-				// ignore
-			}
-
-		return localHostName;
-	}
-
 	/**
 	 * @param envelope
 	 * @throws NoSuchAlgorithmException
@@ -125,7 +112,7 @@ public class XrootDEnvelopeSigner {
 		final long issued = System.currentTimeMillis() / 1000L;
 		final long expires = issued + 60 * 60 * 24;
 
-		final String toBeSigned = envelope.getUnsignedEnvelope() + "-issuer-issued-expires&issuer=" + JAliEnIAm.whatsMyName() + "_" + getLocalHostName() + "&issued=" + issued + "&expires=" + expires;
+		final String toBeSigned = envelope.getUnsignedEnvelope() + "-issuer-issued-expires&issuer=" + JAliEnIAm.whatsMyName() + "_" + ConfigUtils.getLocalHostname() + "&issued=" + issued + "&expires=" + expires;
 
 		final Signature signer = Signature.getInstance("SHA384withRSA");
 

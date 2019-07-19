@@ -81,7 +81,7 @@ public class Monitor implements Runnable {
 
 		final String pattern = MonitorFactory.getConfigString(component, "node_name", "${hostname}");
 
-		nodeName = Format.replace(pattern, "${hostname}", MonitorFactory.getSelfHostname());
+		nodeName = Format.replace(pattern, "${hostname}", ConfigUtils.getLocalHostname());
 	}
 
 	/**

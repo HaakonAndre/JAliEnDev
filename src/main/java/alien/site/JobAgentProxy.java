@@ -5,8 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -177,13 +175,7 @@ public class JobAgentProxy extends Thread implements MonitoringObject {
 		if (env.containsKey("closeSE"))
 			extrasites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
 
-		try {
-			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-		}
-		catch (final UnknownHostException e) {
-			System.err.println("Couldn't get hostname");
-			e.printStackTrace();
-		}
+		hostName = ConfigUtils.getLocalHostname();
 
 		alienCm = hostName;
 		if (env.containsKey("ALIEN_CM_AS_LDAP_PROXY"))

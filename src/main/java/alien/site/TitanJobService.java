@@ -2,7 +2,6 @@ package alien.site;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -76,7 +75,7 @@ public class TitanJobService implements MonitoringObject, Runnable {
 	private PackMan packMan = null;
 	String hostName = null;
 	private String alienCm = null;
-	
+
 	final JAliEnCOMMander commander = JAliEnCOMMander.getInstance();
 	private static final HashMap<String, Integer> jaStatus = new HashMap<>();
 
@@ -131,12 +130,7 @@ public class TitanJobService implements MonitoringObject, Runnable {
 		if (env.containsKey("closeSE"))
 			extrasites = new ArrayList<>(Arrays.asList(env.get("closeSE").split(",")));
 
-		try {
-			hostName = InetAddress.getLocalHost().getCanonicalHostName();
-		} catch (final UnknownHostException e) {
-			System.err.println("Couldn't get hostname");
-			e.printStackTrace();
-		}
+		hostName = ConfigUtils.getLocalHostname();
 
 		alienCm = hostName;
 		if (env.containsKey("ALIEN_CM_AS_LDAP_PROXY"))
@@ -164,9 +158,11 @@ public class TitanJobService implements MonitoringObject, Runnable {
 			System.out.println("CPUFAMILY: " + RES_CPUFAMILY);
 			System.out.println("CPUMHZ: " + RES_CPUMHZ);
 			System.out.println("NOCPUS: " + RES_NOCPUS);
-		} catch (final IOException e) {
+		}
+		catch (final IOException e) {
 			System.out.println("Problem with the monitoring objects IO Exception: " + e.toString());
-		} catch (final ApMonException e) {
+		}
+		catch (final ApMonException e) {
 			System.out.println("Problem with the monitoring objects ApMon Exception: " + e.toString());
 		}
 
@@ -264,11 +260,14 @@ public class TitanJobService implements MonitoringObject, Runnable {
 					try {
 						// apmon.sendParameters(ce+"_Jobs", String.format("%d",pi.queueId), 6, varnames, varvalues);
 						apmon.sendParameters("TaskQueue_Jobs_ALICE", String.format("%d", pi.queueId), 6, varnames, varvalues);
-					} catch (final ApMonException e) {
+					}
+					catch (final ApMonException e) {
 						System.out.println("Apmon exception: " + e.getMessage());
-					} catch (final UnknownHostException e) {
+					}
+					catch (final UnknownHostException e) {
 						System.out.println("Unknown host exception: " + e.getMessage());
-					} catch (final SocketException e) {
+					}
+					catch (final SocketException e) {
 						System.out.println("Socket exception: " + e.getMessage());
 					}
 
@@ -288,7 +287,8 @@ public class TitanJobService implements MonitoringObject, Runnable {
 				while (true) {
 					try {
 						Thread.sleep(1 * 60 * 1000);
-					} catch (@SuppressWarnings("unused") final InterruptedException e) {
+					}
+					catch (@SuppressWarnings("unused") final InterruptedException e) {
 						// ignore
 					}
 					sendProcessResources();
@@ -310,7 +310,8 @@ public class TitanJobService implements MonitoringObject, Runnable {
 		try {
 			System.out.println("Trying to start JBox");
 			JBoxServer.startJBoxService(0);
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			System.err.println("Unable to start JBox.");
 			e.printStackTrace();
 		}
@@ -352,7 +353,8 @@ public class TitanJobService implements MonitoringObject, Runnable {
 	private static void roundSleep() {
 		try {
 			Thread.sleep(60000);
-		} catch (final InterruptedException e) {
+		}
+		catch (final InterruptedException e) {
 			System.err.println("Sleep after full JA cycle failed: " + e.getMessage());
 		}
 	}
@@ -420,12 +422,12 @@ public class TitanJobService implements MonitoringObject, Runnable {
 
 	private PackMan getPackman() {
 		switch (env.get("installationMethod")) {
-		case "CVMFS":
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
-		default:
-			siteMap.put("CVMFS", Integer.valueOf(1));
-			return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
+			case "CVMFS":
+				siteMap.put("CVMFS", Integer.valueOf(1));
+				return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
+			default:
+				siteMap.put("CVMFS", Integer.valueOf(1));
+				return new CVMFS("/lustre/atlas/proj-shared/csc108/psvirin/alice.cern.ch/alice.cern.ch/bin/");
 		}
 	}
 

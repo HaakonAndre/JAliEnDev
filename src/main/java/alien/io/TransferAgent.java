@@ -26,7 +26,7 @@ public class TransferAgent extends Thread {
 
 	private final int pid = MonitorFactory.getSelfProcessID();
 
-	private final String hostname = MonitorFactory.getSelfHostname();
+	private final String hostname = ConfigUtils.getLocalHostname();
 
 	/**
 	 *
@@ -95,9 +95,11 @@ public class TransferAgent extends Thread {
 
 					try {
 						work.run();
-					} catch (final Exception e) {
+					}
+					catch (final Exception e) {
 						logger.log(Level.WARNING, "Transfer threw exception", e);
-					} finally {
+					}
+					finally {
 						logger.log(Level.INFO, "Transfer finished: " + work);
 
 						TransferBroker.notifyTransferComplete(work);
@@ -119,11 +121,13 @@ public class TransferAgent extends Thread {
 						Thread.sleep(1000 * 30); // try in 30 seconds again to
 													// see if there is anything
 													// for it to do
-					} catch (@SuppressWarnings("unused") final InterruptedException ie) {
+					}
+					catch (@SuppressWarnings("unused") final InterruptedException ie) {
 						// ignore
 					}
 			}
-		} catch (final Exception e) {
+		}
+		catch (final Exception e) {
 			logger.log(Level.SEVERE, "Exiting after an exception", e);
 		}
 	}
@@ -191,7 +195,8 @@ public class TransferAgent extends Thread {
 
 					ta.signalStop();
 				}
-			} catch (@SuppressWarnings("unused") final Exception e) {
+			}
+			catch (@SuppressWarnings("unused") final Exception e) {
 				// ignore
 			}
 

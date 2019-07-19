@@ -7,8 +7,6 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.List;
@@ -439,17 +437,9 @@ public class ComputingElement extends Thread {
 		}
 
 		// prepare some needed fields for the queue
-		if (!config.containsKey("host_host") || (config.get("host_host") == null)) {
-			InetAddress ip;
-			String hostname = "";
-			try {
-				ip = InetAddress.getLocalHost();
-				hostname = ip.getCanonicalHostName();
-			} catch (final UnknownHostException e) {
-				logger.log(Level.WARNING, "Problem identifying local host", e);
-			}
-			config.put("host_host", hostname);
-		}
+		if (!config.containsKey("host_host") || (config.get("host_host") == null))
+			config.put("host_host", ConfigUtils.getLocalHostname());
+		
 		if (!config.containsKey("host_port") || (config.get("host_port") == null))
 			config.put("host_port", Integer.valueOf(this.port));
 
