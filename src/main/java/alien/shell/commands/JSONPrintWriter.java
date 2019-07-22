@@ -41,13 +41,11 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@Override
 	protected void blackwhitemode() {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	protected void colourmode() {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override
@@ -68,14 +66,9 @@ public class JSONPrintWriter extends UIPrintWriter {
 			currentResult.put("message", line);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected void printErr(final String line) {
-		// If there already was an error message, concatenate strings
-		if (metadataResult.get("error") != null)
-			metadataResult.put("error", metadataResult.get("error") + line);
-		else
-			metadataResult.put("error", line);
+		setMetaInfo("error", line);
 	}
 
 	@Override
@@ -112,7 +105,6 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@Override
 	protected void pending() {
 		// TODO Auto-generated method stub
-
 	}
 
 	@SuppressWarnings("unchecked")
@@ -144,8 +136,13 @@ public class JSONPrintWriter extends UIPrintWriter {
 	@SuppressWarnings("unchecked")
 	@Override
 	public void setMetaInfo(final String key, final String value) {
-		if (value != null)
-			metadataResult.put(key, value);
+		if (value != null) {
+			// If there was an error message, append string with a new line
+			if (key.equals("error") && metadataResult.containsKey(key) && !metadataResult.get(key).equals(""))
+				metadataResult.put(key, metadataResult.get(key) + "\n" + value);
+			else
+				metadataResult.put(key, value);
+		}
 	}
 
 	@Override
@@ -158,5 +155,4 @@ public class JSONPrintWriter extends UIPrintWriter {
 	protected boolean isRootPrinter() {
 		return true;
 	}
-
 }

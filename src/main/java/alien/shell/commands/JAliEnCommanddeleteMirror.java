@@ -26,12 +26,12 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 		}
 		if (useLFNasGuid) {
 			if (!GUIDUtils.isValidGUID(this.lfn)) {
-				commander.printErrln("This is not a valid GUID");
+				commander.setReturnCode(1, "This is not a valid GUID");
 				return;
 			}
 			final GUID guid = commander.c_api.getGUID(this.lfn);
 			if (guid == null) {
-				commander.printErrln("No such GUID");
+				commander.setReturnCode(2, "No such GUID");
 				return;
 			}
 		}
@@ -60,7 +60,7 @@ public class JAliEnCommanddeleteMirror extends JAliEnBaseCommand {
 				errline = "unknown result code " + result;
 				break;
 			}
-			commander.printErrln("Error deleting mirror: " + errline);
+			commander.setReturnCode(3, "Error deleting mirror: " + errline);
 		}
 		// check is PFN
 	}

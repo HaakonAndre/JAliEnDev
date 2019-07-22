@@ -75,17 +75,12 @@ public class JAliEnCommandcat_csd extends JAliEnBaseCommand {
 						// ignore, cannot happen
 					}
 				}
-
 				else
-					commander.printErrln("Could not read the contents of " + fout.getAbsolutePath());
+					commander.setReturnCode(1, "Could not read the contents of " + fout.getAbsolutePath());
 			}
-			else {
-				commander.printErrln("Not able to get this file: " + eachFileName);
-
-				commander.setReturnCode(1, "Not able to get the file");
-			}
+			else
+				commander.setReturnCode(2, "Not able to get the file: " + eachFileName);
 		}
-
 	}
 
 	/**

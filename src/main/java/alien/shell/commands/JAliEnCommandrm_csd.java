@@ -46,10 +46,10 @@ public class JAliEnCommandrm_csd extends JAliEnBaseCommand {
 				final RemoveLFNCSDfromString a = Dispatcher.execute(rlfn);
 
 				if (!a.wasRemoved())
-					commander.printErrln("Failed to remove: " + sPath);
+					commander.setReturnCode(1, "Failed to remove: " + sPath);
 			} catch (final ServerException e) {
 				e.getCause().printStackTrace();
-				commander.printErrln("Failed to remove: " + sPath);
+				commander.setReturnCode(1, "Failed to remove: " + sPath);
 			}
 		}
 	}

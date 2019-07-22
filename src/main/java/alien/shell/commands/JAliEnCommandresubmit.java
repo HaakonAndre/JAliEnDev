@@ -22,7 +22,7 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 			Entry<Integer, String> rc = (rj != null ? rj.resubmitEntry() : null);
 
 			if (rc == null) {
-				commander.printErrln("Problem with the resubmit request" + queueId);
+				commander.setReturnCode(1, "Problem with the resubmit request" + queueId);
 			}
 			else {
 				switch (rc.getKey().intValue()) {
@@ -30,7 +30,7 @@ public class JAliEnCommandresubmit extends JAliEnBaseCommand {
 					commander.printOutln(rc.getValue());
 					break;
 				default:
-					commander.printErrln(rc.getValue());
+					commander.setReturnCode(rc.getKey().intValue(), rc.getValue());
 					break;
 				}
 			}

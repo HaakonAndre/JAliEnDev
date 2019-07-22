@@ -31,28 +31,24 @@ public class JAliEnCommandrmdir extends JAliEnBaseCommand {
 						if (bP) {
 							commander.printOutln("Inside Parent Directory");
 							if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-								commander.printErrln("Could not remove directory (or non-existing parents): " + path);
-
+								commander.setReturnCode(1, "Could not remove directory (or non-existing parents): " + path);
 								logger.log(Level.WARNING, "Could not remove directory (or non-existing parents): " + path);
-
 							}
 						}
 						else
 							if (!commander.c_api.removeCatalogueDirectory(dir.getCanonicalName())) {
-								commander.printErrln("Could not remove directory: " + path);
+								commander.setReturnCode(1, "Could not remove directory: " + path);
 								logger.log(Level.WARNING, "Could not remove directory: " + path);
-
 							}
 					}
 					else
-						commander.setReturnCode(1, "Permission denied on directory: [" + path + "]");
-
+						commander.setReturnCode(2, "Permission denied on directory: [" + path + "]");
 				}
 				else
-					commander.setReturnCode(2, "Not a directory: [" + path + "]");
+					commander.setReturnCode(3, "Not a directory: [" + path + "]");
 			}
 			else
-				commander.setReturnCode(3, "No such file or directory: [" + path + "]");
+				commander.setReturnCode(4, "No such file or directory: [" + path + "]");
 		}
 	}
 

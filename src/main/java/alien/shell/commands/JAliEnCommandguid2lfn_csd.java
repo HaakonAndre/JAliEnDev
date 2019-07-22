@@ -24,12 +24,12 @@ public class JAliEnCommandguid2lfn_csd extends JAliEnBaseCommand {
 		final LFN_CSD lfnc = commander.c_api.guid2lfncsd(guidName);
 
 		if (lfnc == null)
-			commander.printOutln("Could not get the UUID [" + guidName + "].");
+			commander.setReturnCode(1, "Could not get the UUID [" + guidName + "].");
 		else
 			if (lfnc.exists)
 				commander.printOutln("LFN: " + lfnc.getCanonicalName());
 			else
-				commander.printErrln("No LFNs are associated to this UUID [" + guidName + "].");
+				commander.setReturnCode(2, "No LFNs are associated to this UUID [" + guidName + "].");
 	}
 
 	/**

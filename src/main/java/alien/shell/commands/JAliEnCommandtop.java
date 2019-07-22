@@ -15,6 +15,7 @@ public class JAliEnCommandtop extends JAliEnBaseCommand {
 		// final String username = commander.user.getName();
 
 		// TODO implement this
+		commander.setReturnCode(1, "not implemented yet");
 	}
 
 	@Override

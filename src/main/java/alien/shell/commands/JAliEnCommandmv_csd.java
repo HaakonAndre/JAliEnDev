@@ -37,7 +37,7 @@ public class JAliEnCommandmv_csd extends JAliEnBaseCommand {
 			final LFN_CSD lfnc_target = commander.c_api.getLFNCSD(fullTarget);
 
 			if (lfnc_target == null || !lfnc_target.isDirectory()) {
-				commander.printErrln("When moving several sources, the destination must be a directory");
+				commander.setReturnCode(6, "When moving several sources, the destination must be a directory");
 				return;
 			}
 		}
@@ -52,22 +52,22 @@ public class JAliEnCommandmv_csd extends JAliEnBaseCommand {
 
 			switch (code) {
 			case 1:
-				commander.printErrln("Source and destination are the same");
+				commander.setReturnCode(code, "Source and destination are the same");
 				break;
 			case 2:
-				commander.printErrln("The destination parent doesn't exist");
+				commander.setReturnCode(code, "The destination parent doesn't exist");
 				break;
 			case 3:
-				commander.printErrln("No permission to write on destination");
+				commander.setReturnCode(code, "No permission to write on destination");
 				break;
 			case 4:
-				commander.printErrln("Some entries failed to be moved");
+				commander.setReturnCode(code, "Some entries failed to be moved");
 				break;
 			case 5:
-				commander.printErrln("No permission to move the source");
+				commander.setReturnCode(code, "No permission to move the source");
 				break;
 			case 6:
-				commander.printErrln("Cannot mv " + fullSource + "into " + fullTarget);
+				commander.setReturnCode(code, "Cannot mv " + fullSource + "into " + fullTarget);
 				break;
 			default:
 				break;

@@ -360,9 +360,9 @@ public class JAKeyStore {
 		clientCert = KeyStore.getInstance("JKS");
 		boolean noUserPass = true;
 
-		try (Scanner scanner = new Scanner(new File(user_key))) {
+		try (final Scanner scanner = new Scanner(new File(user_key))) {
 			while (scanner.hasNext()) {
-				String nextToken = scanner.next();
+				final String nextToken = scanner.next();
 				if (nextToken.contains("ENCRYPTED")) {
 					noUserPass = false;
 					break;
@@ -437,7 +437,8 @@ public class JAKeyStore {
 			loadTrusts(tokenCert);
 
 			addKeyPairToKeyStore(tokenCert, "User.cert", token_key, token_cert, null);
-		} catch (@SuppressWarnings("unused") final Exception e) {
+		} catch (final Exception e) {
+			e.printStackTrace();
 			return false;
 		}
 		return true;

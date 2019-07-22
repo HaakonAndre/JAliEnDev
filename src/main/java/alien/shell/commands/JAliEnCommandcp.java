@@ -125,13 +125,14 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 				if (!localFile.exists() || localFile.isDirectory())
 					copyGridToLocal(source, localFile);
 				else {
-					commander.printErrln("A local file already exists with this name: " + target);
+					commander.setReturnCode(1, "A local file already exists with this name: " + target);
 
 					if (isSilent()) {
 						final IOException ex = new IOException("A local file already exists with this name: " + target);
 
 						throw new IOError(ex);
 					}
+					return;
 				}
 			}
 			else
@@ -140,36 +141,18 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					final File sourceFile = new File(getLocalFileSpec(source));
 
-					if (!sourceFile.exists()) {
-						commander.printErrln("A local file with this name does not exists: " + source);
-						if (isSilent()) {
-							final IOException ex = new IOException("Local file " + source + " doesn't exist");
+					if (!targetLFNExists(target))
+						if (sourceFile.exists())
+							copyLocalToGrid(sourceFile, target);
+						else {
+							commander.setReturnCode(2, "A local file with this name does not exists.");
+							if (isSilent()) {
+								final IOException ex = new IOException("Local file " + target + " doesn't exist");
 
-							throw new IOError(ex);
+								throw new IOError(ex);
+							}
+							return;
 						}
-					}
-
-					final LFN currentDir = commander.getCurrentDir();
-
-					LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, target));
-
-					if (tLFN != null) {
-						if (tLFN.isDirectory()) {
-							target = tLFN.getCanonicalName() + "/" + sourceFile.getName();
-
-							tLFN = commander.c_api.getLFN(target);
-						}
-					}
-
-					if (tLFN == null || !tLFN.exists) {
-						copyLocalToGrid(sourceFile, target);
-					}
-					else {
-						commander.printErrln("Target file already exists: " + tLFN.getCanonicalName());
-
-						if (isSilent())
-							throw new IOError(new IOException("Target file already exists: " + tLFN.getCanonicalName()));
-					}
 				}
 				else {
 					// copying between two Grid endpoints
@@ -179,13 +162,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					final LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, target));
 
 					if (tLFN != null && tLFN.exists && !tLFN.isDirectory()) {
-						commander.printErrln("Target file already exists: " + tLFN.getCanonicalName());
+						commander.setReturnCode(3, "Target file already exists: " + tLFN.getCanonicalName());
 						if (isSilent()) {
 							final IOException ex = new IOException("Target file already exists: " + tLFN.getCanonicalName());
 
 							throw new IOError(ex);
 						}
-
 						return;
 					}
 
@@ -194,8 +176,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 					if (expandedPaths.size() == 0) {
-						commander.printErrln("No such file: " + source);
-
+						commander.setReturnCode(4, "No such file: " + source);
 						return;
 					}
 
@@ -203,13 +184,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 						// if more than one file then the target must be an existing directory
 
 						if (tLFN == null || !tLFN.exists || !tLFN.isDirectory()) {
-							commander.printErrln("Multiple sources can only be copied to a targe directory");
+							commander.setReturnCode(5, "Multiple sources can only be copied to a target directory");
 							if (isSilent()) {
-								final IOException ex = new IOException("Multiple sources can only be copied to a targe directory");
+								final IOException ex = new IOException("Multiple sources can only be copied to a target directory");
 
 								throw new IOError(ex);
 							}
-
 							return;
 						}
 					}
@@ -235,7 +215,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 						if (actualLFN != null && actualLFN.exists) {
 							lastError = "Target already exists: " + actualTarget;
-							commander.printErrln(lastError);
+							commander.setReturnCode(3, lastError);
 							continue;
 						}
 
@@ -246,13 +226,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 							}
 							else {
 								lastError = "Could not copy " + sFile + " -> " + actualTarget;
-								commander.printErrln(lastError);
+								commander.setReturnCode(6, lastError);
 								continue;
 							}
 						}
 						else {
 							lastError = "Could not get the contents of " + sFile;
-							commander.printErrln(lastError);
+							commander.setReturnCode(7, lastError);
 							continue;
 						}
 					}
@@ -304,7 +284,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 						final String archiveFileName = archiveMember.getFileName();
 
-						try (ZipInputStream zi = new ZipInputStream(new FileInputStream(tempLocalFile))) {
+						try (final ZipInputStream zi = new ZipInputStream(new FileInputStream(tempLocalFile))) {
 							ZipEntry zipentry;
 
 							while ((zipentry = zi.getNextEntry()) != null)
@@ -355,6 +335,19 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		}
 	}
 
+	private boolean targetLFNExists(final String targetLFN) {
+		final LFN currentDir = commander.getCurrentDir();
+
+		final LFN tLFN = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, targetLFN));
+
+		if (tLFN != null) {
+			commander.setReturnCode(3, "The target LFN already exists: " + targetLFN);
+
+			return true;
+		}
+		return false;
+	}
+
 	private class GridToLocal implements Runnable {
 		private final String sourcelfn;
 		private final String longestMatchingPath;
@@ -367,14 +360,12 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			this.targetLocalFile = targetLocalFile;
 		}
 
-		@SuppressWarnings("synthetic-access")
 		@Override
 		public void run() {
 			final LFN lfn = commander.c_api.getLFN(sourcelfn);
 
 			if (lfn == null) {
-				commander.printErrln("Could not get the file's LFN: " + sourcelfn);
-
+				commander.setReturnCode(101, "Could not get the file's LFN: " + sourcelfn);
 				return;
 			}
 
@@ -396,13 +387,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 					if (fDir.exists()) {
 						if (!fDir.isDirectory()) {
-							commander.printErrln("This file exists and I cannot create the same directory here: " + fDir.getAbsolutePath());
+							commander.setReturnCode(102, "This file exists and I cannot create the same directory here: " + fDir.getAbsolutePath());
 							return;
 						}
 					}
 					else
 						if (!fDir.mkdirs()) {
-							commander.printErrln("Could not create the directory: " + fDir.getAbsolutePath());
+							commander.setReturnCode(103, "Could not create the directory: " + fDir.getAbsolutePath());
 							return;
 						}
 				}
@@ -411,7 +402,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (writeToLocalFile != null && writeToLocalFile.exists()) {
-				commander.printErrln("Local copy target " + writeToLocalFile + " exists, skipping it");
+				commander.setReturnCode(104, "Local copy target " + writeToLocalFile + " exists, skipping it");
 				return;
 			}
 
@@ -471,10 +462,10 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 					}
 				}
 			else
-				commander.printErrln("No replicas for this LFN: " + lfn.getCanonicalName());
+				commander.setReturnCode(105, "No replicas for this LFN: " + lfn.getCanonicalName());
 
 			if (resultFile == null)
-				commander.printErrln("Could not get the file: " + sourcelfn + " to " + (writeToLocalFile != null ? writeToLocalFile.getAbsolutePath() : " a temporary file")
+				commander.setReturnCode(106, "Could not get the file: " + sourcelfn + " to " + (writeToLocalFile != null ? writeToLocalFile.getAbsolutePath() : " a temporary file")
 						+ (lastException != null ? ", error was: " + lastException.getMessage() : ""));
 		}
 
@@ -506,8 +497,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		final List<String> expandedPaths = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 		if (expandedPaths.size() == 0) {
-			commander.printErrln("No such file: " + sourceLFN);
-
+			commander.setReturnCode(107, "No such file: " + sourceLFN);
 			return null;
 		}
 
@@ -541,18 +531,18 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			// the target cannot be a file
 			if (targetLocalFile.exists()) {
 				if (!targetLocalFile.isDirectory()) {
-					commander.printErrln("Local target must be a directory when copying multiple files");
+					commander.setReturnCode(108, "Local target must be a directory when copying multiple files");
 					return null;
 				}
 
 				if (!targetLocalFile.canWrite()) {
-					commander.printErrln("Cannot write into " + targetLocalFile.getAbsolutePath());
+					commander.setReturnCode(109, "Cannot write into " + targetLocalFile.getAbsolutePath());
 					return null;
 				}
 			}
 			else
 				if (!targetLocalFile.mkdirs()) {
-					commander.printErrln("Could not create the output target directory: " + targetLocalFile.getAbsolutePath());
+					commander.setReturnCode(110, "Could not create the output target directory: " + targetLocalFile.getAbsolutePath());
 					return null;
 				}
 		}
@@ -685,7 +675,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 	 */
 	public boolean copyLocalToGrid(final File sourceFile, final String targetLFN) {
 		if (!sourceFile.exists() || !sourceFile.isFile() || !sourceFile.canRead()) {
-			commander.printErrln("Could not get the local file: " + sourceFile.getAbsolutePath());
+			commander.setReturnCode(201, "Could not get the local file: " + sourceFile.getAbsolutePath());
 			if (isSilent()) {
 				final IOException ex = new IOException("Could not get the local file: " + sourceFile.getAbsolutePath());
 
@@ -704,16 +694,20 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		if (lfn.exists)
 			if (lfn.isFile()) {
 				if (!commander.c_api.removeLFN(lfn.getCanonicalName())) {
-					commander.printErrln("Cannot remove the previously existing file: " + lfn.getCanonicalName());
+					commander.setReturnCode(202, "Cannot remove the previously existing file: " + lfn.getCanonicalName());
 					if (isSilent())
 						throw new IOError(new IOException("Cannot remove the previously existing file: " + lfn.getCanonicalName()));
+
+					return false;
 				}
 			}
 			else {
-				commander.printErrln("Target existing and is not a file: " + lfn.getCanonicalName());
+				commander.setReturnCode(203, "Target existing and is not a file: " + lfn.getCanonicalName());
 
 				if (isSilent())
 					throw new IOError(new IOException("Target existing and is not a file: " + lfn.getCanonicalName()));
+
+				return false;
 			}
 
 		final GUID guid;
@@ -722,7 +716,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			guid = GUIDUtils.createGuid(sourceFile, commander.user);
 		}
 		catch (final IOException e) {
-			commander.printErrln("Couldn't create the GUID : " + e.getMessage());
+			commander.setReturnCode(204, "Couldn't create the GUID : " + e.getMessage());
 			if (isSilent()) {
 				final IOException ex = new IOException("Couldn't create the GUID based on " + sourceFile, e);
 
@@ -748,16 +742,16 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			if (pfns == null || pfns.size() == 0) {
 				final String err = pfw.getErrorMessage();
 
+				commander.setReturnCode(205, err != null ? err : "Could not get any write access tickets for " + lfn.getCanonicalName());
+
 				if (isSilent())
 					throw new IOError(new IOException(err != null ? err : "No write access tickets were returned for " + lfn.getCanonicalName()));
-
-				commander.printErr(err != null ? err : "Could not get any write access tickets for " + lfn.getCanonicalName());
 
 				return false;
 			}
 		}
 		catch (final ServerException e) {
-			commander.printErrln("Couldn't get any access ticket.");
+			commander.setReturnCode(206, "Couldn't get any access ticket.");
 
 			if (isSilent())
 				throw new IOError(new IOException("Call for write PFNs for " + lfn.getCanonicalName() + " failed", e.getCause()));
@@ -948,7 +942,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			final List<PFN> registeredPFNs = commander.c_api.registerEnvelopes(envelopes, noCommit ? BOOKING_STATE.KEPT : BOOKING_STATE.COMMITED);
 
 			if (report && (registeredPFNs == null || registeredPFNs.size() != envelopes.size()))
-				commander.printErrln("From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
+				commander.setReturnCode(301,
+						"From the " + envelopes.size() + " replica with tickets only " + (registeredPFNs != null ? String.valueOf(registeredPFNs.size()) : "null") + " were registered");
 		}
 
 		if (sourceFile != null && envelopes.size() > 0)
@@ -963,13 +958,13 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 		else
 			if (envelopes.size() > 0) {
 				if (report)
-					commander.printErrln("Only " + envelopes.size() + " out of " + desiredCount + " requested replicas could be uploaded");
+					commander.printOutln("Only " + envelopes.size() + " out of " + desiredCount + " requested replicas could be uploaded");
 
 				return true;
 			}
 			else
 				if (report) {
-					commander.printOutln("Upload failed, sorry!");
+					commander.setReturnCode(302, "Upload failed, sorry!");
 					if (isSilent()) {
 						final IOException ex = new IOException("Upload failed");
 
@@ -1022,7 +1017,8 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 			}
 
 			if (targetPFNResult != null) {
-				// commander.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath() + " to " + pfn.getPFN());
+				// commander.printOutln("Successfully uploaded " + sourceFile.getAbsolutePath()
+				// + " to " + pfn.getPFN());
 
 				if (pfn.ticket != null && pfn.ticket.envelope != null)
 					if (pfn.ticket.envelope.getSignedEnvelope() != null)

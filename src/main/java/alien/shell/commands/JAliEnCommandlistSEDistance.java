@@ -35,7 +35,7 @@ public class JAliEnCommandlistSEDistance extends JAliEnBaseCommand {
 		final List<HashMap<SE, Double>> results = commander.c_api.listSEDistance(site, this.useWriteMetrics, this.lfn_name, this.qos);
 
 		if (results == null) {
-			commander.printErrln("No results from server");
+			commander.setReturnCode(1, "No results from server");
 			return;
 		}
 

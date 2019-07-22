@@ -49,7 +49,7 @@ public class JAliEnCommandsubmit extends JAliEnCommandcat {
 							commander.printOut("jobId", String.valueOf(queueId));
 						}
 						else
-							commander.printErrln("Error submitting " + alArguments.get(0));
+							commander.setReturnCode(2, "Error submitting " + alArguments.get(0));
 
 					}
 					catch (final ServerException e) {

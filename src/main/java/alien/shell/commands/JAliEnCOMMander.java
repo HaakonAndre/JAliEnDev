@@ -491,6 +491,7 @@ public class JAliEnCOMMander extends Thread {
 					}
 					else
 						if (jcommand.areArgumentsOk() && (args.size() != 0 || jcommand.canRunWithoutArguments())) {
+							out.setReturnCode(0, "");
 							jcommand.run();
 						}
 						else {

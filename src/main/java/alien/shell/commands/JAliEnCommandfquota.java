@@ -29,7 +29,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 		if (command.equals("list")) {
 			final FileQuota q = commander.q_api.getFileQuota();
 			if (q == null) {
-				commander.printErrln("No file quota found for user " + username);
+				commander.setReturnCode(1, "No file quota found for user " + username);
 				return;
 			}
 
@@ -39,12 +39,12 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 
 		if (command.equals("set")) {
 			if (this.param_to_set == null) {
-				commander.printErrln("Error in parameter name");
+				commander.setReturnCode(2, "Error in parameter name");
 				return;
 			}
 			else
 				if (this.value_to_set == null || this.value_to_set.longValue() == 0) {
-					commander.printErrln("Error in value");
+					commander.setReturnCode(3, "Error in value");
 					printHelp();
 					return;
 				}
@@ -52,7 +52,7 @@ public class JAliEnCommandfquota extends JAliEnBaseCommand {
 			if (commander.q_api.setFileQuota(this.param_to_set, this.value_to_set.toString()))
 				commander.printOutln("Result: ok, " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 			else
-				commander.printOutln("Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
+				commander.setReturnCode(4, "Result: failed to set " + this.param_to_set + "=" + this.value_to_set.toString() + " for user=" + username);
 		}
 	}
 

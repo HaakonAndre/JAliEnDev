@@ -67,7 +67,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 
 		if (lfn == null) {
 			logger.log(Level.INFO, "Not able to retrieve LFN from Catalogue ");
-			commander.printErrln("Not able to retrieve LFN from Catalogue [error in processing].");
+			commander.setReturnCode(1, "Not able to retrieve LFN from Catalogue [error in processing].");
 			return;
 		}
 
@@ -91,59 +91,58 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 			}
 			else {
 				logger.log(Level.SEVERE, "Unknown access type");
-				commander.printErrln("Unknown access type [error in processing].");
+				commander.setReturnCode(2, "Unknown access type [error in processing].");
+				return;
 			}
 
-		if (pfns == null || pfns.size() < 1) {
-			logger.log(Level.SEVERE, "Error getting the LFN/GUID");
-			commander.printErrln("Not able to get request LFN/GUID [error in processing].");
+		if (pfns == null || pfns.isEmpty()) {
+			logger.log(Level.SEVERE, "No PFNs for this LFN");
+			commander.setReturnCode(3, "No PFNs for this LFN");
+			return;
 		}
 
-		if (pfns != null && !pfns.isEmpty())
-			for (final PFN pfn : pfns) {
-				commander.outNextResult();
-				commander.printOutln(pfn.pfn);
-				final SE se = commander.c_api.getSE(pfn.seNumber);
+		for (final PFN pfn : pfns) {
+			commander.outNextResult();
+			commander.printOutln(pfn.pfn);
+			final SE se = commander.c_api.getSE(pfn.seNumber);
 
-				if (se != null) {
-					commander.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
+			if (se != null) {
+				commander.printOutln("SE: " + se.seName + " (" + (se.needsEncryptedEnvelope ? "needs" : "doesn't need") + " encrypted envelopes)");
 
-					if (pfn.ticket != null) {
-						final XrootDEnvelope env = pfn.ticket.envelope;
+				if (pfn.ticket != null) {
+					final XrootDEnvelope env = pfn.ticket.envelope;
 
-						if (!"alice::cern::setest".equals(se.getName().toLowerCase()))
-							if (se.needsEncryptedEnvelope) {
-								commander.printOut("envelope", env.getEncryptedEnvelope());
-								commander.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
-							}
-							else {
-								commander.printOut("envelope", env.getSignedEnvelope());
-								commander.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
-							}
-
-						// If archive member access requested, add it's filename as anchor
-						if (pfn.ticket.envelope.getArchiveAnchor() != null) {
-							commander.printOut("url", pfn.ticket.envelope.getTransactionURL() + "#" + pfn.ticket.envelope.getArchiveAnchor().getFileName());
+					if (!"alice::cern::setest".equals(se.getName().toLowerCase()))
+						if (se.needsEncryptedEnvelope) {
+							commander.printOut("envelope", env.getEncryptedEnvelope());
+							commander.printOutln("Encrypted envelope:\n" + env.getEncryptedEnvelope());
 						}
 						else {
-							commander.printOut("url", pfn.ticket.envelope.getTransactionURL());
+							commander.printOut("envelope", env.getSignedEnvelope());
+							commander.printOutln("Signed envelope:\n" + env.getSignedEnvelope());
 						}
 
-						commander.printOut("pfn", pfn.toString());
-						commander.printOut("guid", pfn.getGuid().getName());
-						commander.printOut("se", pfn.getSE().getName());
-						commander.printOut("tags", pfn.getSE().qos.toString());
-						commander.printOut("nSEs", String.valueOf(pfns.size()));
-						commander.printOut("user", commander.user.getName());
-						commander.printOut("md5", lfn.md5);
-						commander.printOut("size", String.valueOf(lfn.getSize()));
-						commander.printOut("exists", String.valueOf(lfn.exists));
-						commander.printOutln();
+					// If archive member access requested, add it's filename as anchor
+					if (pfn.ticket.envelope.getArchiveAnchor() != null) {
+						commander.printOut("url", pfn.ticket.envelope.getTransactionURL() + "#" + pfn.ticket.envelope.getArchiveAnchor().getFileName());
 					}
+					else {
+						commander.printOut("url", pfn.ticket.envelope.getTransactionURL());
+					}
+
+					commander.printOut("pfn", pfn.toString());
+					commander.printOut("guid", pfn.getGuid().getName());
+					commander.printOut("se", pfn.getSE().getName());
+					commander.printOut("tags", pfn.getSE().qos.toString());
+					commander.printOut("nSEs", String.valueOf(pfns.size()));
+					commander.printOut("user", commander.user.getName());
+					commander.printOut("md5", lfn.md5);
+					commander.printOut("size", String.valueOf(lfn.getSize()));
+					commander.printOut("exists", String.valueOf(lfn.exists));
+					commander.printOutln();
 				}
 			}
-		else
-			commander.printErrln("No PFNs for this LFN");
+		}
 	}
 
 	/**
@@ -239,8 +238,7 @@ public class JAliEnCommandaccess extends JAliEnBaseCommand {
 				}
 			}
 			else
-				commander.printErrln("Illegal Request type specified [error in request].");
-
+				commander.setReturnCode(4, "Illegal Request type specified [error in request].");
 		}
 	}
 }

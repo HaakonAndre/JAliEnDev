@@ -25,15 +25,15 @@ public class JAliEnCommandlfn2guid extends JAliEnBaseCommand {
 		final LFN lfn = commander.c_api.getLFN(FileSystemUtils.getAbsolutePath(commander.user.getName(), commander.getCurrentDirName(), lfnName));
 
 		if (lfn == null)
-			commander.printErrln("Could not get the LFN [" + lfnName + "].");
+			commander.setReturnCode(1, "Could not get the LFN [" + lfnName + "].");
 		else
 			if (lfn.isDirectory())
-				commander.printErrln("The LFN is a directory [" + lfn.getCanonicalName() + "].");
+				commander.setReturnCode(2, "The LFN is a directory [" + lfn.getCanonicalName() + "].");
 			else
 				if (lfn.guid != null)
 					commander.printOutln(padRight(lfn.getCanonicalName(), 80) + lfn.guid);
 				else
-					commander.printErrln("Could not get the GUID for [" + lfn.getCanonicalName() + "].");
+					commander.setReturnCode(3, "Could not get the GUID for [" + lfn.getCanonicalName() + "].");
 
 		commander.outNextResult();
 	}

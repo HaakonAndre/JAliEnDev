@@ -22,9 +22,8 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 
 		for (final Job job : jobs)
 			if (AuthorizationChecker.canModifyJob(job, commander.user))
-				commander.q_api.killJob(job.queueId);
-
-		commander.setReturnCode(1, "not implemented yet ");
+				if (!commander.q_api.killJob(job.queueId))
+					commander.setReturnCode(1, "Could not kill the job  with id: [" + job.queueId + "]");
 	}
 
 	/**
@@ -64,7 +63,8 @@ public class JAliEnCommandkill extends JAliEnBaseCommand {
 		for (final String id : alArguments)
 			try {
 				queueIds.add(Long.valueOf(id));
-			} catch (final NumberFormatException e) {
+			}
+			catch (final NumberFormatException e) {
 				throw new JAliEnCommandException("Invalid job ID: " + id, e);
 			}
 	}

@@ -45,7 +45,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			if (GUIDUtils.isValidGUID(lfnOrGuid))
 				guid = lfnOrGuid;
 			else {
-				commander.printErrln("This is not a valid GUID: " + lfnOrGuid);
+				commander.setReturnCode(1, "This is not a valid GUID: " + lfnOrGuid);
 				return;
 			}
 		}
@@ -61,7 +61,7 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 				}
 				else
 					if (lfn != null && !lfn.isFile()) {
-						commander.printErrln("The path you indicated is not a file: " + lfnOrGuid);
+						commander.setReturnCode(2, "The path you indicated is not a file: " + lfnOrGuid);
 						return;
 					}
 		}
@@ -82,12 +82,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 							pfns = commander.c_api.getPFNs(archiveGUID);
 
 							if (pfns == null) {
-								commander.printErrln("Archive with GUID " + archiveGUID + " doesn't exist");
+								commander.setReturnCode(3, "Archive with GUID " + archiveGUID + " doesn't exist");
 								return;
 							}
 
 							if (pfns.size() == 0) {
-								commander.printErrln("Archive with GUID " + archiveGUID + " doesn't have any replicas, this file cannot be used");
+								commander.setReturnCode(4, "Archive with GUID " + archiveGUID + " doesn't have any replicas, this file cannot be used");
 								return;
 							}
 						}
@@ -119,12 +119,12 @@ public class JAliEnCommandwhereis extends JAliEnBaseCommand {
 			}
 			else
 				if (pfns == null)
-					commander.printErrln("GUID " + guid + " does not exist in the catalogue");
+					commander.setReturnCode(5, "GUID " + guid + " does not exist in the catalogue");
 				else
-					commander.printErrln("GUID " + guid + " has no replicas, this is a lost file");
+					commander.setReturnCode(6, "GUID " + guid + " has no replicas, this is a lost file");
 		}
 		else
-			commander.printErrln("This file doesn't exist in the catalogue: " + lfnOrGuid);
+			commander.setReturnCode(7, "This file doesn't exist in the catalogue: " + lfnOrGuid);
 
 	}
 

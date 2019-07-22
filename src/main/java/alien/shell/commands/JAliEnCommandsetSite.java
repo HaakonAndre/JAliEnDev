@@ -32,12 +32,12 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 				if (autoSiteName != null && autoSiteName.length() > 0)
 					targetSiteName = autoSiteName.trim();
 				else {
-					commander.printErrln("Could not map you to a site name at the moment, keeping previous value of " + commander.getSite());
+					commander.setReturnCode(1, "Could not map you to a site name at the moment, keeping previous value of " + commander.getSite());
 					return;
 				}
 			}
 			catch (final IOException ioe) {
-				commander.printErrln("Could not retrieve the site name from the external service: " + ioe.getMessage());
+				commander.setReturnCode(2, "Could not retrieve the site name from the external service: " + ioe.getMessage());
 				return;
 			}
 		}
@@ -49,12 +49,12 @@ public class JAliEnCommandsetSite extends JAliEnBaseCommand {
 					if (autoSiteName != null && autoSiteName.length() > 0)
 						targetSiteName = autoSiteName.trim();
 					else {
-						commander.printErrln("Could not map " + targetSiteName + " to a site name at the moment, keeping previous value of " + commander.getSite());
+						commander.setReturnCode(1, "Could not map " + targetSiteName + " to a site name at the moment, keeping previous value of " + commander.getSite());
 						return;
 					}
 				}
 				catch (final IOException ioe) {
-					commander.printErrln("Could not retrieve the site name for " + targetSiteName + " from the external service: " + ioe.getMessage());
+					commander.setReturnCode(2, "Could not retrieve the site name for " + targetSiteName + " from the external service: " + ioe.getMessage());
 					return;
 				}
 			}

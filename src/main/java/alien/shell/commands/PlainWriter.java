@@ -138,7 +138,8 @@ public class PlainWriter extends UIPrintWriter {
 
 	@Override
 	void setReturnCode(final int exitCode, final String errorMessage) {
-		printErr(errorMessage);
+		if (!errorMessage.isEmpty())
+			printErr(errorMessage);
 	}
 
 }

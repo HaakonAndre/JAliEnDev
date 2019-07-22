@@ -57,7 +57,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 				final String jdl = commander.q_api.getJDL(jobID.longValue(), true);
 
 				if (jdl == null) {
-					commander.printErrln("Cannot retrieve JDL of job ID " + jobID);
+					commander.setReturnCode(1, "Cannot retrieve JDL of job ID " + jobID);
 				}
 				else {
 					try {
@@ -68,10 +68,10 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						if (dataFiles != null && dataFiles.size() > 0)
 							this.alPaths.addAll(dataFiles);
 						else
-							commander.printErrln("Job ID " + jobID + " doesn't have input data, nothing to check for it");
+							commander.setReturnCode(2, "Job ID " + jobID + " doesn't have input data, nothing to check for it");
 					}
 					catch (final IOException ioe) {
-						commander.printErrln("Cannot parse the JDL of job ID " + jobID + " : " + ioe.getMessage());
+						commander.setReturnCode(3, "Cannot parse the JDL of job ID " + jobID + " : " + ioe.getMessage());
 					}
 				}
 			}
@@ -89,7 +89,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 					referenceGUID = commander.c_api.getGUID(lfnName);
 
 					if (referenceGUID == null) {
-						commander.printErrln("This GUID does not exist in the catalogue: " + lfnName);
+						commander.setReturnCode(4, "This GUID does not exist in the catalogue: " + lfnName);
 						continue;
 					}
 				}
@@ -131,7 +131,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						}
 					}
 					else {
-						commander.printErrln("This LFN does not exist in the catalogue: " + lfnName);
+						commander.setReturnCode(5, "This LFN does not exist in the catalogue: " + lfnName);
 						continue;
 					}
 				}
@@ -140,7 +140,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 				if (lfn.guid != null)
 					referenceGUID = commander.c_api.getGUID(lfn.guid.toString());
 				else {
-					commander.printErrln("Could not get the GUID of " + lfn.getCanonicalName());
+					commander.setReturnCode(6, "Could not get the GUID of " + lfn.getCanonicalName());
 					continue;
 				}
 
@@ -198,14 +198,18 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 
 								timing = System.currentTimeMillis() - lStart;
 
-								if (f.length() != referenceGUID.size)
+								if (f.length() != referenceGUID.size) {
+									commander.setReturnCode(7, "Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
 									throw new IOException("Downloaded file size is different from the catalogue (" + f.length() + " vs " + referenceGUID.size + ")");
+								}
 
 								if (referenceGUID.md5 != null && referenceGUID.md5.length() > 0) {
 									final String fileMD5 = IOUtils.getMD5(f);
 
-									if (!fileMD5.equalsIgnoreCase(referenceGUID.md5))
+									if (!fileMD5.equalsIgnoreCase(referenceGUID.md5)) {
+										commander.setReturnCode(8, "The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
 										throw new IOException("The MD5 checksum of the downloaded file is not the expected one (" + fileMD5 + " vs " + referenceGUID.md5 + ")");
+									}
 								}
 							}
 						}
@@ -312,10 +316,10 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						if (se != null)
 							ses.add(se);
 						else
-							commander.printOutln("The SE you have indicated doesn't exist: " + tok);
+							commander.setReturnCode(9, "The SE you have indicated doesn't exist: " + tok);
 					}
 					catch (final Throwable t) {
-						commander.printOutln("What's this? " + tok + " : " + t.getMessage());
+						commander.setReturnCode(10, "What's this? " + tok + " : " + t.getMessage());
 					}
 				}
 			}
@@ -328,7 +332,7 @@ public class JAliEnCommandxrdstat extends JAliEnBaseCommand {
 						jobIDs.add(Long.valueOf(o.toString()));
 					}
 					catch (@SuppressWarnings("unused") final NumberFormatException nfe) {
-						commander.printOutln("Invalid job ID: " + o);
+						commander.setReturnCode(11, "Invalid job ID: " + o);
 					}
 				}
 			}

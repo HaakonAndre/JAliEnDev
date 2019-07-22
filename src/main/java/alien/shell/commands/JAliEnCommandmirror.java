@@ -106,7 +106,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.useLFNasGuid && !GUIDUtils.isValidGUID(this.lfn)) {
-			commander.printErrln("Invalid GUID was specified");
+			commander.setReturnCode(1, "Invalid GUID was specified");
 			return;
 		}
 
@@ -126,8 +126,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 					toMirrorEntries = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 					if (toMirrorEntries.size() == 0) {
-						commander.printErrln("No such file: " + this.lfn);
-
+						commander.setReturnCode(2, "No such file: " + this.lfn);
 						return;
 					}
 				}
@@ -164,7 +163,7 @@ public class JAliEnCommandmirror extends JAliEnBaseCommand {
 				}
 			}
 			catch (final IllegalArgumentException e) {
-				commander.printErrln(e.getMessage());
+				commander.setReturnCode(3, e.getMessage());
 			}
 		}
 	}

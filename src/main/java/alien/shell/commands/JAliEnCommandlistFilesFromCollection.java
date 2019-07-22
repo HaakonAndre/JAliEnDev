@@ -65,7 +65,7 @@ public class JAliEnCommandlistFilesFromCollection extends JAliEnBaseCommand {
 		}
 
 		if (errorMessage != null) {
-			commander.printErrln(errorMessage);
+			commander.setReturnCode(1, errorMessage);
 
 			return;
 		}

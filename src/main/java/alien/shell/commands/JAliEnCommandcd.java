@@ -32,15 +32,17 @@ public class JAliEnCommandcd extends JAliEnBaseCommand {
 				commander.setReturnCode(1, "Cannot open: " + alArguments.get(0) + " is file, not a directory");
 		}
 		else
-			commander.setReturnCode(1, "No such file or directory");
+			commander.setReturnCode(2, "No such file or directory");
 	}
 
 	/**
-	 * printout the help info, none for this command
+	 * printout the help info
 	 */
 	@Override
 	public void printHelp() {
-		// ignore
+		commander.printOutln();
+		commander.printOutln(helpUsage("cd", "[dir]"));
+		commander.printOutln();
 	}
 
 	/**

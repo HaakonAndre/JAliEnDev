@@ -26,37 +26,39 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.user == null || this.files == null || this.files.size() < 1) {
-			commander.printErr("No user or file entered");
+			commander.setReturnCode(1, "No user or file entered");
 			return;
 		}
 
 		final LFN currentDir = commander.getCurrentDir();
 
 		for (final String file : files) {
-			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(), currentDir != null ? currentDir.getCanonicalName() : null, file);
+			final String absolutePath = FileSystemUtils.getAbsolutePath(commander.user.getName(),
+					currentDir != null ? currentDir.getCanonicalName() : null, file);
 
 			final List<String> chownTargets = FileSystemUtils.expandPathWildCards(absolutePath, commander.user);
 
 			if (chownTargets.size() == 0) {
-				commander.printErrln("No such file: " + file);
-
+				commander.setReturnCode(2, "No such file: " + file);
 				return;
 			}
 
 			for (final String path : chownTargets) {
 				// run chown command
-				final HashMap<String, Boolean> results = commander.c_api.chownLFN(path, this.user, this.group, this.recursive);
+				final HashMap<String, Boolean> results = commander.c_api.chownLFN(path, this.user, this.group,
+						this.recursive);
 
 				if (results == null) {
-					commander.printErr("Failed to chown file(s)");
+					commander.setReturnCode(3, "Failed to chown file " + path);
 					continue;
 				}
 
 				for (final String filename : results.keySet()) {
 					final Boolean b = results.get(filename);
 
-					if (b == null || !b.booleanValue())
-						commander.printErrln(filename + ": unable to chown");
+					if (b == null || !b.booleanValue()) {
+						commander.setReturnCode(3, filename + ": unable to chown");
+					}
 				}
 			}
 		}
@@ -107,8 +109,7 @@ public class JAliEnCommandchown extends JAliEnBaseCommand {
 
 			// get file
 			this.files = params.subList(1, params.size());
-		}
-		catch (final OptionException e) {
+		} catch (final OptionException e) {
 			// printHelp();
 			throw e;
 		}

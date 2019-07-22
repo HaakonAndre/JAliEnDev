@@ -462,7 +462,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 				try {
 					getJDL = ((Long) options.valueOf("jdl")).longValue();
 				} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-					commander.printErrln("Illegal job ID " + options.valueOf("jdl"));
+					commander.setReturnCode(1, "Illegal job ID " + options.valueOf("jdl"));
 					getJDL = -1;
 				}
 			else
@@ -470,7 +470,7 @@ public class JAliEnCommandps extends JAliEnBaseCommand {
 					try {
 						getTrace = ((Long) options.valueOf("trace")).longValue();
 					} catch (@SuppressWarnings("unused") final NumberFormatException e) {
-						commander.printErrln("Illegal job ID " + options.valueOf("trace"));
+						commander.setReturnCode(2, "Illegal job ID " + options.valueOf("trace"));
 						getTrace = -1;
 					}
 				else {

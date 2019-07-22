@@ -25,7 +25,7 @@ public class JAliEnCommandchown_csd extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.user == null || this.file == null) {
-			commander.printErr("No user or file entered");
+			commander.setReturnCode(1, "No user or file entered");
 			return;
 		}
 
@@ -35,8 +35,7 @@ public class JAliEnCommandchown_csd extends JAliEnBaseCommand {
 		final boolean result = commander.c_api.chownLFNCSD(path, this.user, this.group, this.recursive);
 
 		if (!result)
-			commander.printErrln("Failed to chown file(s): " + path + (recursive ? "(recursive)" : "(non-recursive)"));
-
+			commander.setReturnCode(2, "Failed to chown file(s): " + path + (recursive ? "(recursive)" : "(non-recursive)"));
 	}
 
 	@Override

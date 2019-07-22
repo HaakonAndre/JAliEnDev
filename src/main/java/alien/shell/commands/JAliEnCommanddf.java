@@ -11,8 +11,7 @@ public class JAliEnCommanddf extends JAliEnBaseCommand {
 
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
-
+		commander.setReturnCode(1, "not implemented yet");
 	}
 
 	@Override

@@ -12,7 +12,7 @@ public class JAliEnCommandgroupmembers extends JAliEnBaseCommand {
 	@Override
 	public void run() {
 		if (this.group == null || this.group.equals("")) {
-			commander.printErrln("No group name passed");
+			commander.setReturnCode(1, "No group name passed");
 			return;
 		}
 		final Set<String> users = commander.q_api.getGroupMembers(this.group);

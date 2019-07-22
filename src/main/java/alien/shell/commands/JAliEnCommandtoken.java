@@ -77,14 +77,14 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 				if (options.has("jobid"))
 					extension = (String) options.valueOf("jobid");
 				else
-					commander.printErrln("You should pass a job extension for this type of certificate request");
+					commander.setReturnCode(1, "You should pass a job extension for this type of certificate request");
 
 			if (tokentype == TokenCertificateType.HOST)
 				if (options.has("hostname")) {
 					extension = ((String) options.valueOf("hostname")).trim();
 
 					if (extension.length() == 0 || !extension.contains(".")) {
-						commander.printErrln("Please pass a FQDN as hostname instead of `" + extension + "`");
+						commander.setReturnCode(2, "Please pass a FQDN as hostname instead of `" + extension + "`");
 						setArgumentsOk(false);
 					}
 					else
@@ -92,12 +92,12 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 							InetAddress.getByName(extension);
 						}
 						catch (@SuppressWarnings("unused") Throwable t) {
-							commander.printErrln("hostname `" + extension + "` cannot be resolved");
+							commander.setReturnCode(3, "hostname `" + extension + "` cannot be resolved");
 							setArgumentsOk(false);
 						}
 				}
 				else {
-					commander.printErrln("You must indicate the hostname for which to issue the certificate!");
+					commander.setReturnCode(4, "You must indicate the hostname for which to issue the certificate!");
 					setArgumentsOk(false);
 				}
 		}
@@ -116,13 +116,13 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 		}
 		catch (final ServerException e1) {
 			logger.log(Level.WARNING, "Cannot get the token you asked for", e1);
-			commander.printErrln("Server didn't execute your request, reason was: " + e1.getMessage());
+			commander.setReturnCode(5, "Server didn't execute your request, reason was: " + e1.getMessage());
 			return;
 		}
 
 		// Try to switch user
 		final java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
-		final String user = commander.user.getDefaultUser();
+		final String defaultuser = commander.user.getDefaultUser();
 		AliEnPrincipal switchUser;
 
 		if (requestedUser != null) {
@@ -133,13 +133,13 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 					if ((switchUser = UserFactory.getByRole(requestedUser)) != null)
 						commander.user = switchUser;
 					else
-						commander.printErrln("User " + requestedUser + " cannot be found. Abort");
+						commander.setReturnCode(6, "User " + requestedUser + " cannot be found. Abort");
 
 				commander.user.setUserCert(cert);
-				commander.user.setDefaultUser(user);
+				commander.user.setDefaultUser(defaultuser);
 			}
 			else
-				commander.printErrln("Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
+				commander.setReturnCode(7, "Switching user " + commander.user.getName() + " to [" + requestedUser + "] failed");
 		}
 
 		// Return tokens
@@ -154,7 +154,7 @@ public class JAliEnCommandtoken extends JAliEnBaseCommand {
 			commander.printOut(tokenreq.getPrivateKeyAsString());
 		}
 		else
-			commander.printErrln("User " + requestedUser + " cannot be found. Abort");
+			commander.setReturnCode(6, "User " + requestedUser + " cannot be found. Abort");
 	}
 
 	@Override

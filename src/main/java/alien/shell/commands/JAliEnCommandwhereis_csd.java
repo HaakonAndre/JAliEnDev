@@ -61,7 +61,7 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 
 			// check for empty or null pfn set
 			if (wi == null || wi.size() == 0)
-				commander.printErrln("Empty PFNs");
+				commander.setReturnCode(1, "Empty PFNs");
 			else {
 				Integer se = Integer.valueOf(0);
 				String pfn = "";
@@ -81,7 +81,7 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 						return;
 					}
 
-					commander.printErrln("Following link chain led to incorrect LFN: " + pfn);
+					commander.setReturnCode(2, "Following link chain led to incorrect LFN: " + pfn);
 				}
 				else {
 					// PFNs for physical files with senumber-pfn map
@@ -96,7 +96,7 @@ public class JAliEnCommandwhereis_csd extends JAliEnBaseCommand {
 			}
 		}
 		else {
-			commander.printErrln("Didn't find the LFN/UUID " + lfnOrGuid);
+			commander.setReturnCode(3, "Didn't find the LFN/UUID " + lfnOrGuid);
 		}
 
 	}

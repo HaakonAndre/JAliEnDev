@@ -30,14 +30,14 @@ public class JAliEnCommanduuid extends JAliEnBaseCommand {
 				try {
 					u = UUID.fromString(lfnName);
 				} catch (@SuppressWarnings("unused") Throwable t) {
-					commander.printErrln("File does not exist: " + lfnName);
+					commander.setReturnCode(1, "File does not exist: " + lfnName);
 				}
 			}
 			else {
 				if (lfn.guid != null)
 					u = lfn.guid;
 				else
-					commander.printErrln("This entry is not a file: " + lfnName);
+					commander.setReturnCode(2, "This entry is not a file: " + lfnName);
 			}
 
 			if (u != null) {

@@ -18,6 +18,7 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 	public void run() {
 		java.security.cert.X509Certificate[] cert = commander.user.getUserCert();
 		AliEnPrincipal switchUser;
+		final String defaultuser = commander.user.getDefaultUser();
 
 		if (commander.user.canBecome(user)) {
 			if ((switchUser = UserFactory.getByUsername(user)) != null)
@@ -25,13 +26,16 @@ public class JAliEnCommanduser extends JAliEnBaseCommand {
 			else
 				if ((switchUser = UserFactory.getByRole(user)) != null)
 					commander.user = switchUser;
-				else
-					commander.printErrln("User " + user + " cannot be found. Abort");
+				else {
+					commander.setReturnCode(1, "User " + user + " cannot be found. Abort");
+				}
 
 			commander.user.setUserCert(cert);
+			commander.user.setDefaultUser(defaultuser);
 		}
-		else
-			commander.printErrln("Switching user " + commander.user.getName() + " to [" + user + "] failed");
+		else {
+			commander.setReturnCode(2, "Switching user " + commander.user.getName() + " to [" + user + "] failed");
+		}
 	}
 
 	/**

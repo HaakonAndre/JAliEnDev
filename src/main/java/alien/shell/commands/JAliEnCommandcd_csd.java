@@ -30,7 +30,7 @@ public class JAliEnCommandcd_csd extends JAliEnBaseCommand {
 				commander.setReturnCode(1, "Cannot cd: " + alArguments.get(0) + " is file, not a directory");
 		}
 		else
-			commander.setReturnCode(1, "No such file or directory");
+			commander.setReturnCode(2, "No such file or directory");
 
 		// TODO for now we do cd on both backends
 		JAliEnCommandcd cd = new JAliEnCommandcd(commander, alArguments);
@@ -38,11 +38,13 @@ public class JAliEnCommandcd_csd extends JAliEnBaseCommand {
 	}
 
 	/**
-	 * printout the help info, none for this command
+	 * printout the help info
 	 */
 	@Override
 	public void printHelp() {
-		// ignore
+		commander.printOutln();
+		commander.printOutln(helpUsage("cd", "[dir]"));
+		commander.printOutln();
 	}
 
 	/**
