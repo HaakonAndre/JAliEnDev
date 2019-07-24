@@ -629,7 +629,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 			while (p.isAlive()) {
 				logger.log(Level.INFO, "Waiting for the JobWrapper process to finish");
 
-				// process hasn't terminated
 				if (monitorJob) {
 					monitor_loops++;
 					final String error = checkProcessResources();

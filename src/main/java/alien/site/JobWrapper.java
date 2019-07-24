@@ -743,7 +743,7 @@ public class JobWrapper implements Runnable {
 	
 	private void createAndAddResultsJDL(ParsedOutput filesTable) {
 		
-		ArrayList<String> jdlOutput = new ArrayList<String>();
+		final ArrayList<String> jdlOutput = new ArrayList<String>();
 		for(final OutputEntry entry : filesTable.getEntries()){
 			
 			String entryString = entry.getName();
@@ -762,9 +762,9 @@ public class JobWrapper implements Runnable {
 			//Also add the archive files to outputlist
 			if (entry.isArchive()) {
 				
-				ArrayList<String> archiveFiles = entry.getFilesIncluded();
-				HashMap<String, Long> archiveSizes = entry.getSizesIncluded();
-				HashMap<String, String> archiveMd5s = entry.getMD5sIncluded();
+				final ArrayList<String> archiveFiles = entry.getFilesIncluded();
+				final HashMap<String, Long> archiveSizes = entry.getSizesIncluded();
+				final HashMap<String, String> archiveMd5s = entry.getMD5sIncluded();
 				for(final String archiveEntry : archiveFiles) {
 					
 					String archiveEntryString = archiveEntry;
