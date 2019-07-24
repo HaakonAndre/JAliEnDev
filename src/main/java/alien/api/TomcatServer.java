@@ -548,4 +548,16 @@ public class TomcatServer {
 				logger.log(Level.FINE, "Tomcat: Could not listen on port " + port, ioe);
 			}
 	}
+	
+	/**
+	 *
+	 * Get the port used by tomcatServer
+	 *
+	 * @return the TCP port this server is listening on. Can be negative to signal that the server is actually not listening on any port (yet?)
+	 *
+	 */
+	public static int getPort() {
+		return tomcatServer != null ? tomcatServer.websocketPort: -1;
+	}
+	
 }

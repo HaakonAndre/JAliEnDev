@@ -231,6 +231,9 @@ public class OutputEntry implements Serializable {
 						out.write(b, 0, count);
 				}
 			}
+			
+			// Only keep files with md5
+			filesIncluded.retainAll(md5members.keySet());
 
 			if (!hasPhysicalFiles)
 				Files.delete(Paths.get(path + this.name));
