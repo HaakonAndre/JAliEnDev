@@ -87,7 +87,7 @@ public class JAliEnCommandstat extends JAliEnBaseCommand {
 					}
 				}
 				else
-					commander.printErrln("This LFN does not exist in the catalogue: " + lfnName);
+					commander.setReturnCode(1, "This LFN does not exist in the catalogue: " + lfnName);
 			}
 			else {
 				commander.printOutln("File: " + lfn.getCanonicalName());
