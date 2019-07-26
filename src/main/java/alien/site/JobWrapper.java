@@ -35,6 +35,7 @@ import alien.config.ConfigUtils;
 import alien.io.IOUtils;
 import alien.monitoring.MonitorFactory;
 import alien.shell.commands.JAliEnCOMMander;
+import alien.site.packman.CVMFS;
 import alien.site.packman.PackMan;
 import alien.taskQueue.JDL;
 import alien.taskQueue.JobStatus;
@@ -104,9 +105,6 @@ public class JobWrapper implements Runnable {
 	@SuppressWarnings("unchecked")
 	public JobWrapper() {
 
-		//TODO: Always bind mount to /cvmfs in container
-		//      packMan = new CVMFS(env.containsKey("CVMFS_PATH") ? env.get("CVMFS_PATH") : ""); //TODO: Check if CVMFS is present?
-
 		pid = MonitorFactory.getSelfProcessID();
 
 		try {
@@ -141,6 +139,9 @@ public class JobWrapper implements Runnable {
 		hostName = (String) siteMap.get("Host");
 		packMan = (PackMan) siteMap.get("PackMan");
 
+		if(packMan == null)
+			packMan = new CVMFS("");
+		
 		commander = JAliEnCOMMander.getInstance();
 		c_api = new CatalogueApiUtils(commander);
 
