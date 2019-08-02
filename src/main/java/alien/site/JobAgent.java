@@ -167,8 +167,7 @@ public class JobAgent implements MonitoringObject, Runnable {
 		// site = env.get("site"); // or
 		// ConfigUtils.getConfig().gets("alice_close_site").trim();
 
-		//ce = env.get("CE");
-		ce = "ALICE::CERN::Juno"; //TODO: Remove after testing
+		ce = env.get("CE");
 
 		jobWrapperLogDir = env.getOrDefault("TMPDIR", "/tmp") + "/" + jobWrapperLogName;
 
@@ -179,7 +178,6 @@ public class JobAgent implements MonitoringObject, Runnable {
 		totalJobs = 0;
 
 		siteMap = (new SiteMap()).getSiteParameters(env);
-		siteMap.put("CE", ce); //TODO: Remove after testing
 
 		hostName = (String) siteMap.get("Localhost");
 		// alienCm = (String) siteMap.get("alienCm");
