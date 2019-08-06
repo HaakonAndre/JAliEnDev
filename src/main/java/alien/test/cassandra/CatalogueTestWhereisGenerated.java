@@ -355,7 +355,7 @@ public class CatalogueTestWhereisGenerated {
 				}
 
 				boolean error = false;
-				try (final Timing timing = new Timing(monitor, "ms_whereis_cassandra")) {
+				try (Timing timing = new Timing(monitor, "ms_whereis_cassandra")) {
 					switch (type) {
 						case 0: // LFN
 							final LFN temp = LFNUtils.getLFN(lfn);

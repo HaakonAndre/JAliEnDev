@@ -149,7 +149,7 @@ public class JAKeyStore {
 
 					for (final File trust : dirContents)
 						if (trust.getName().endsWith("der") || trust.getName().endsWith(".0"))
-							try (final FileInputStream fis = new FileInputStream(trust)) {
+							try (FileInputStream fis = new FileInputStream(trust)) {
 								final X509Certificate c = (X509Certificate) cf.generateCertificate(fis);
 								if (logger.isLoggable(Level.FINE))
 									logger.log(Level.FINE, "Trusting now: " + c.getSubjectDN());
@@ -169,7 +169,7 @@ public class JAKeyStore {
 			}
 
 			if (iLoaded == 0)
-				try (final InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
+				try (InputStream classpathTrusts = JAKeyStore.class.getClassLoader().getResourceAsStream("trusted_authorities.jks")) {
 					keystore.load(classpathTrusts, "castore".toCharArray());
 					logger.log(Level.WARNING, "Found " + keystore.size() + " default trusted CAs in classpath");
 				} catch (final Throwable t) {
@@ -248,7 +248,7 @@ public class JAKeyStore {
 			// public static List<?> readPemObjects(InputStream is, final String pphrase)
 			public List<Object> readPemObjects(final InputStream is, final String pphrase) throws IOException {
 				final List<Object> list = new LinkedList<>();
-				try (final PEMParser pr2 = new PEMParser(new InputStreamReader(is))) {
+				try (PEMParser pr2 = new PEMParser(new InputStreamReader(is))) {
 					final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
 					final JcaX509CertificateConverter certconv = new JcaX509CertificateConverter().setProvider("BC");
 
@@ -315,7 +315,7 @@ public class JAKeyStore {
 			// ignore
 		}
 
-		try (final FileInputStream proxyIS = new FileInputStream(proxyLocation)) {
+		try (FileInputStream proxyIS = new FileInputStream(proxyLocation)) {
 			final List<Object> l = (new PkiUtils()).readPemObjects(proxyIS, "");
 			final KeyPair kp = (KeyPair) l.get(1);
 			final ArrayList<X509Certificate> x509l = new ArrayList<>();
@@ -360,7 +360,7 @@ public class JAKeyStore {
 		clientCert = KeyStore.getInstance("JKS");
 		boolean noUserPass = true;
 
-		try (final Scanner scanner = new Scanner(new File(user_key))) {
+		try (Scanner scanner = new Scanner(new File(user_key))) {
 			while (scanner.hasNext()) {
 				final String nextToken = scanner.next();
 				if (nextToken.contains("ENCRYPTED")) {
@@ -535,7 +535,7 @@ public class JAKeyStore {
 
 		// pass = getRandomString();
 
-		try (final FileInputStream f = new FileInputStream(keyStoreName)) {
+		try (FileInputStream f = new FileInputStream(keyStoreName)) {
 			try {
 				ks.load(null, pass);
 			} catch (final NoSuchAlgorithmException e) {
@@ -568,7 +568,7 @@ public class JAKeyStore {
 	 * @param password
 	 */
 	public static void saveKeyStore(final KeyStore ks, final String filename, final char[] password) {
-		try (final FileOutputStream fo = new FileOutputStream(filename)) {
+		try (FileOutputStream fo = new FileOutputStream(filename)) {
 			try {
 				ks.store(fo, password);
 			} catch (final KeyStoreException e) {
@@ -606,7 +606,7 @@ public class JAKeyStore {
 			source = new StringReader(keyFileLocation);
 		}
 
-		try (final PEMParser reader = new PEMParser(new BufferedReader(source))) {
+		try (PEMParser reader = new PEMParser(new BufferedReader(source))) {
 			Object obj;
 			while ((obj = reader.readObject()) != null) {
 				if (obj instanceof PEMEncryptedKeyPair) {
@@ -664,7 +664,7 @@ public class JAKeyStore {
 			source = new StringReader(certFileLocation);
 		}
 
-		try (final PEMParser reader = new PEMParser(new BufferedReader(source))) {
+		try (PEMParser reader = new PEMParser(new BufferedReader(source))) {
 			Object obj;
 
 			final ArrayList<X509Certificate> chain = new ArrayList<>();

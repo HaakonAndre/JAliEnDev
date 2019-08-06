@@ -729,7 +729,7 @@ public class CatalogueToCassandraThreads {
 								lfnc.pfns = pfnset;
 							}
 
-							try (final Timing timing = new Timing(monitor, "ms_insert_cassandra")) {
+							try (Timing timing = new Timing(monitor, "ms_insert_cassandra")) {
 								if (!lfnc.insert(null, clevel)) {
 									final String msg = "Error inserting file: " + l.getCanonicalName() + " Time: " + new Date();
 									System.err.println(msg);

@@ -136,7 +136,7 @@ public class FixCompression {
 
 		// Main procedure
 		//
-		try (final PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
+		try (PrintWriter validation = new PrintWriter(new FileOutputStream("validation_error.message", true))) {
 
 			final List<PFN> remoteArchivePFN = Dispatcher.execute(new PFNforReadOrDel(commander.getUser(), commander.getSite(), AccessType.DELETE, remoteArchiveLFN, null, null)).getPFNs();
 			if (remoteArchivePFN.size() == 0) {
@@ -384,7 +384,7 @@ public class FixCompression {
 		}
 
 		// Start unpacking the archive
-		try (final ZipInputStream zipIn = new ZipInputStream(new FileInputStream(basedir + System.getProperty("file.separator") + archiveName))) {
+		try (ZipInputStream zipIn = new ZipInputStream(new FileInputStream(basedir + System.getProperty("file.separator") + archiveName))) {
 			ZipEntry entry = zipIn.getNextEntry();
 			// iterates over entries in the zip file
 			while (entry != null) {
@@ -422,8 +422,8 @@ public class FixCompression {
 	 * @param filePath
 	 * @throws IOException
 	 */
-	private static void extractFile(ZipInputStream zipIn, final String filePath) throws IOException {
-		try (final BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
+	private static void extractFile(final ZipInputStream zipIn, final String filePath) throws IOException {
+		try (BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath))) {
 			byte[] bytesIn = new byte[BUFFER_SIZE];
 			int read = 0;
 			while ((read = zipIn.read(bytesIn)) != -1) {

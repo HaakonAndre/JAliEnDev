@@ -284,7 +284,7 @@ public class JAliEnCommandcp extends JAliEnBaseCommand {
 
 						final String archiveFileName = archiveMember.getFileName();
 
-						try (final ZipInputStream zi = new ZipInputStream(new FileInputStream(tempLocalFile))) {
+						try (ZipInputStream zi = new ZipInputStream(new FileInputStream(tempLocalFile))) {
 							ZipEntry zipentry;
 
 							while ((zipentry = zi.getNextEntry()) != null)
